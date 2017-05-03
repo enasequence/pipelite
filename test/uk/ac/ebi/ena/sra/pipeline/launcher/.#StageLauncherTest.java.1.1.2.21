@@ -1,0 +1,333 @@
+package uk.ac.ebi.ena.sra.pipeline.launcher;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import org.junit.Test;
+
+import uk.ac.ebi.ena.sra.pipeline.configuration.ProcessConfiguration;
+import uk.ac.ebi.ena.sra.pipeline.configuration.StageLauncherConfiguration;
+import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Dependency;
+import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
+import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Process;
+import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
+import uk.ac.ebi.ena.sra.pipeline.launcher.iface.StageTask;
+
+public class 
+StageLauncherTest
+{
+    public static enum 
+    TestStage implements Stage
+    {
+        OK1( TestTaskOK1.class ),
+        OK2( TestTaskOK2.class ),
+        TRANSIENT_ERROR( TestTaskTransientError.class ),
+        PERMANENT_ERROR( TestTaskPermanentError.class );
+        
+        TestStage( Class<? extends StageTask>  klass )            
+        {
+            this.klass            = klass;
+        }
+              
+        final private Class<? extends StageTask>  klass;
+        
+        public Class<? extends StageTask>
+        getTaskClass()
+        {
+            return klass;
+        }
+        
+        
+        public String
+        getDescription()
+        {
+            return "";
+        }
+         
+        
+        public Dependency[]
+        getDependsOn()
+        {
+            return null;
+        }
+        
+        
+        @Override
+        public String
+        getName()
+        {
+            return toString();
+        }  
+        
+        
+        @Override
+        public Integer
+        getResourceMemory()
+        {
+            return null;
+        }
+
+        
+        @Override
+        public Integer
+        getResourceCPU()
+        {
+            return null;
+        }     
+        
+        
+        @Override
+        public StageLauncherType
+        getStageLauncherType()
+        {
+            return null;
+        }
+
+        
+        @Override
+        public String
+        getCommand()
+        {
+            return null;
+        }  
+        
+        
+        @Override
+        public Integer
+        getLevel()
+        {
+            return null;
+        }
+        
+    }
+    
+    
+    public static class 
+    TestTaskOK1 implements StageTask
+    {
+        @Override
+        public void 
+        init( Object id, 
+              boolean is_commit ) throws Throwable 
+        {
+        }
+
+        @Override
+        public void 
+        execute() throws Throwable 
+        {
+            ;
+        }
+
+        @Override
+        public void 
+        unwind() 
+        {
+        }
+    }
+
+    public static class 
+    TestTaskOK2 implements StageTask
+    {
+        @Override
+        public void 
+        init( Object id, 
+              boolean is_commit ) throws Throwable 
+        {
+        }
+
+        @Override
+        public void 
+        execute() throws Throwable 
+        {
+            throw new TestExceptionOK2();
+        }
+
+        @Override
+        public void 
+        unwind() 
+        {
+        }
+    }
+
+    public static class 
+    TestTaskTransientError implements StageTask
+    {
+        @Override
+        public void 
+        init( Object id, 
+              boolean is_commit ) throws Throwable 
+        {
+        }
+
+        @Override
+        public void 
+        execute() throws Throwable 
+        {
+            throw new TestExceptionTransientError();
+        }
+
+        @Override
+        public void 
+        unwind() 
+        {
+        }
+    }
+
+    public static class 
+    TestTaskPermanentError implements StageTask
+    {
+        @Override
+        public void 
+        init( Object id, 
+              boolean is_commit ) throws Throwable 
+        {
+        }
+
+        @Override
+        public void 
+        execute() throws Throwable 
+        {
+            throw new TestExceptionPermanentError();
+        }
+
+        @Override
+        public void 
+        unwind() 
+        {
+        }
+    }
+    
+    public static class 
+    TestExceptionOK2 extends Exception
+    {
+        private static final long serialVersionUID = 1L;
+    }
+
+    public static class 
+    TestExceptionPermanentError extends Exception
+    {
+        private static final long serialVersionUID = 1L;        
+    }
+
+    public static class
+    TestExceptionTransientError extends Exception
+    {
+        private static final long serialVersionUID = 1L;        
+    }
+    
+    
+    public enum 
+    TestExecutionResult implements ExecutionResult
+    { 
+        OK_1( "OK_1", null, ResultType.SUCCESS ),
+        OK_2( "OK_2", TestExceptionOK2.class, ResultType.SUCCESS ),
+        TRANSIENT_ERROR( "TRANSIENT_ERROR", TestExceptionTransientError.class, ResultType.TRANSIENT_ERROR ),
+        PERMANENT_ERROR( "PERMANENT_ERROR", TestExceptionPermanentError.class, ResultType.PERMANENT_ERROR );
+
+        final String message;
+        final ResultType type;
+        final Class<Throwable> cause;
+
+        @SuppressWarnings( "unchecked" )
+        TestExecutionResult( String message, Class<?> cause, ResultType type )
+        {
+            this.message   = message;
+            this.type      = type;
+            this.cause     = (Class<Throwable>)cause;
+        }
+        
+
+        @Override
+        public ResultType
+        getType()
+        {
+            return type;
+        }
+        
+        
+        @Override
+        public Class<Throwable>
+        getCause()
+        {
+           return cause;
+        }
+
+        
+        @Override
+        public String
+        getMessage()
+        {
+            return message;
+        }        
+    };
+            
+    
+    
+    @Test
+    public void
+    Test() throws Throwable
+    {
+        ProcessConfiguration configuration = new ProcessConfiguration( "oracle_era.properties" );
+        configuration.setStageLauncherType( StageLauncherType.INTERNAL_STAGE_LAUNCHER );
+        String pipelineName = "StageLauncherTest_Test";
+        configuration.setPipelineName( pipelineName );
+        String process_id = "StageLauncherTest_Test";
+        configuration.setRedoCount( 5 );
+        
+        Process process = new ProcessDefinition( pipelineName, TestStage.class, TestExecutionResult.class );                                                           
+              
+        OracleStorage storage = null;        
+        try
+        {
+            storage = new OracleStorage( configuration );        
+            storage.saveProcess( process );
+            
+            ProcessInstance processInstance = storage.resetProcessInstance( process, process_id );
+            
+            StageLauncher stageLauncher = new StageLauncher( new StageLauncherConfiguration( configuration ),
+                                                             storage );
+            
+            // Test            
+            {      
+                ExecutionResult result = stageLauncher.execute( processInstance, TestStage.OK1.getName(), null, null, null );
+                assertNotNull( result );
+                assertEquals( Process.DEFAULT_SUCCESS.getMessage(), result.getMessage() );
+                StageInstance instance = storage.loadStageInstance( processInstance, TestStage.OK1 );
+                assertEquals( Process.DEFAULT_SUCCESS.getMessage(), instance.getResultMessage() );
+            }
+        
+            // Test OK2
+            {                                            
+                ExecutionResult result = stageLauncher.execute( processInstance, TestStage.OK2.getName(), null, null, null );
+                assertNotNull( result );
+                assertEquals( TestExecutionResult.OK_2.getMessage(), result.getMessage() );
+                StageInstance instance = storage.loadStageInstance( processInstance, TestStage.OK2 );
+                assertEquals( "OK_2", instance.getResultMessage() );
+            }
+        
+            // Test TRANSIENT_ERROR
+            {                                            
+                ExecutionResult result = stageLauncher.execute( processInstance, TestStage.TRANSIENT_ERROR.getName(), null, null, null );
+                assertNotNull( result );
+                assertEquals( TestExecutionResult.TRANSIENT_ERROR.getMessage(), result.getMessage() );
+                StageInstance instance = storage.loadStageInstance( processInstance, TestStage.TRANSIENT_ERROR );
+                assertEquals( "TRANSIENT_ERROR", instance.getResultMessage() );
+            }
+            
+            // Test PERMANENT_ERROR
+            {                                            
+                ExecutionResult result = stageLauncher.execute( processInstance, TestStage.PERMANENT_ERROR.getName(), null, null, null );
+                assertNotNull( result );
+                assertEquals( TestExecutionResult.PERMANENT_ERROR.getMessage(), result.getMessage() );
+                StageInstance instance = storage.loadStageInstance( processInstance, TestStage.PERMANENT_ERROR );
+                assertEquals( "PERMANENT_ERROR", instance.getResultMessage() );
+            }
+            
+        } finally
+        {
+            if( null != storage )
+                storage.close();
+        }            
+    }
+}
