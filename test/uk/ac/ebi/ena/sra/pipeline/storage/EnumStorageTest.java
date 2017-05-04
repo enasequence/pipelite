@@ -33,9 +33,9 @@ EnumStorageTest
     public static enum 
     __testovye_shagee implements Stage
     {
-        Œƒ»Õ,
-        ƒ¬¿,
-        “–»;
+        –û–î–ò–ù,
+        –î–í–ê,
+        –¢–†–ò;
 
         
         @Override public Class<? extends StageTask>
@@ -87,8 +87,8 @@ EnumStorageTest
     test() throws StorageException, NoSuchFieldException
     {
         EnumStorage<__testovye_shagee> es = new EnumStorage<__testovye_shagee>( __testovye_shagee.class );
-        es.setProcessIdFactory( new ProcessIdFactory() { public String getProcessId() { return "»ƒ≈Õ“»‘» ¿“Œ–"; } } );
-        es.setPipelineName( "“≈—“Œ¬¿ﬂ_À»Õ»ﬂ" );
+        es.setProcessIdFactory( new ProcessIdFactory() { public String getProcessId() { return "–ò–î–ï–ù–¢–ò–§–ò–ö–ê–¢–û–†"; } } );
+        es.setPipelineName( "–¢–ï–°–¢–û–í–ê–Ø_–õ–ò–ù–ò–Ø" );
         List<StageInstance> si_list = new ArrayList<>();
         Stream.of( __testovye_shagee.values() ).forEach( stage -> {
             try
