@@ -5,7 +5,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.WeakHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -21,7 +22,7 @@ TaggedPoolExecutor extends ThreadPoolExecutor
     public 
     TaggedPoolExecutor( int corePoolSize )
     {
-        super( corePoolSize, corePoolSize, 1, TimeUnit.DAYS, new LinkedBlockingQueue<Runnable>( corePoolSize ) );
+        super( corePoolSize, corePoolSize, 0, TimeUnit.DAYS, new SynchronousQueue<Runnable>() );
     }
 
     
@@ -34,8 +35,17 @@ TaggedPoolExecutor extends ThreadPoolExecutor
                 return;
             running.put( id, runnable );
         }
-        
-        super.execute( runnable );
+        try
+        {
+            super.execute( runnable );
+        } catch( RejectedExecutionException ree )
+        {
+            synchronized( running )
+            {
+                running.remove( id, runnable );
+            }
+            throw ree;
+        }
     }
 
 
