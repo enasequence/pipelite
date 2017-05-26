@@ -144,6 +144,8 @@ ProcessLauncher implements PipeliteProcess
             
             load_state();
             
+            save_state(); //this is to check permissions
+            
             if( State.ACTIVE != state.getState() )
             {
                 log.warn( String.format( "Invoked for process %s with state %s.", getProcessId(), state.getState() ) );
@@ -168,6 +170,8 @@ ProcessLauncher implements PipeliteProcess
                 return;
             }
 
+            save_stages(); //this is to check permissions
+            
             if( !eval_process() )
             {
                 log.warn( String.format( "Terminal state reached for %s", state ) );
@@ -185,7 +189,8 @@ ProcessLauncher implements PipeliteProcess
             }
         } catch ( StorageException e )
         {
-            e.printStackTrace();
+            log.error( e.getMessage(), e );
+            
         } finally
         {
             unlock_stages();
