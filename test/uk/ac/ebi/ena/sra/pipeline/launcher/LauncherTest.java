@@ -141,7 +141,7 @@ log.info( "Available parallelism: " + ForkJoinPool.getCommonPoolParallelism() );
 
         Assert.assertTrue( 0 == pool.getActiveCount() ); //Threads should properly react to interrupt
         pool.shutdownNow();
-        Assert.assertTrue( task_speed - delay < 1000 );  //Performance degradation?
+        Assert.assertTrue( task_speed - delay < 3000 );  //Performance degradation?
     }
 
 

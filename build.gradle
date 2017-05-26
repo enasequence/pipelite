@@ -9,7 +9,7 @@ apply plugin: 'maven'
 compileJava.options.encoding = 'UTF-8'
 
 group = 'uk.ac.ebi'
-ext.version_base = '2.0.1'
+ext.version_base = '2.0.2'
 version = version_base
 buildDir = 'target'
 
@@ -121,3 +121,9 @@ publishing {
 	}
 }
 
+
+install {
+    repositories.mavenInstaller {
+        pom.artifactId = 'pipelite'
+    }
+}

@@ -10,7 +10,8 @@ PipeliteState
         RUNNING,   //cannot be selected
         INACTIVE,  //cannot be selected
         COMPLETED, //cannot be selected
-        CANCELLED; //cannot be selected
+        CANCELLED, //cannot be selected
+        FAILED;    //cannot be selected
     }
     
     

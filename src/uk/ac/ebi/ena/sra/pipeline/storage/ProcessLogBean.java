@@ -126,12 +126,19 @@ ProcessLogBean
     public void
     setThrowable( Throwable t )
     {
-        setMessage( t.getMessage() );
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter( sw );
-        t.printStackTrace( pw );
-        setExceptionText( sw.toString() );
-        pw.close();
+    	if( null != t )
+    	{
+    		setMessage( t.getMessage() );
+    		StringWriter sw = new StringWriter();
+    		PrintWriter pw = new PrintWriter( sw );
+    		t.printStackTrace( pw );
+    		setExceptionText( sw.toString() );
+    		pw.close();
+    	} else
+    	{
+    		setMessage( null );
+    		setExceptionText( null );
+    	}
     }
     
     

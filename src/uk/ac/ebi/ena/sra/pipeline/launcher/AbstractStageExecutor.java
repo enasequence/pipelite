@@ -22,14 +22,6 @@ AbstractStageExecutor implements StageExecutor
         this.TRANSLATOR    = translator;
     }
 
-    
-    @SuppressWarnings( "unchecked" ) public <T extends AbstractStageExecutor> T
-    setReprocessProcessed( boolean reprocess_processed )
-    {
-        this.reprocess_processed = reprocess_processed;
-        return (T) this;
-    }
-
 
     @SuppressWarnings( "unchecked" ) public <T extends AbstractStageExecutor> T
     setRedoCount( int redo )
@@ -55,11 +47,16 @@ AbstractStageExecutor implements StageExecutor
         //check permanent errors
         if( null != ei && null != ei.getFinish() )
         {
-            if( RESULT_TYPE.PERMANENT_ERROR == ei.getResultType() ) 
-                return reprocess_processed ? EvalResult.StageTransient : EvalResult.ProcessTerminal;
-                        
-            if( RESULT_TYPE.SUCCESS == ei.getResultType() )
-                return reprocess_processed || ei.getResultType().canReprocess() ? EvalResult.StageTransient : EvalResult.StageTerminal;
+//        	if( reprocess_processed )
+//        		return EvalResult.StageTransient;
+//        	else
+        		switch ( ei.getResultType() )
+        		{
+        		case PERMANENT_ERROR:
+        			return EvalResult.ProcessTerminal;
+				default:
+					return ei.getResultType().canReprocess() ? EvalResult.StageTransient : EvalResult.StageTerminal;
+        		}
         }
         
         return EvalResult.StageTransient;

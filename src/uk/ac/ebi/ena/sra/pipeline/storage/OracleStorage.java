@@ -28,7 +28,7 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
     private Connection connection;
     private String     pipeline_name;
     private String     stage_table_name;
-    private String     state_table_name;
+    private String     process_table_name;
     private MemoryLocker mlocker = new MemoryLocker();
        
 
@@ -41,6 +41,13 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
     @Override public void
     load( PipeliteState state ) throws StorageException
     {
+    	load( state, false );
+    }
+    
+    
+    @Deprecated public void
+    load( PipeliteState state, boolean do_lock ) throws StorageException
+    {
         if( null != state.getPipelineName() && !pipeline_name.equals( state.getPipelineName() ) )
         {
             throw new StorageException( "state object pipeline name incorrect" );
@@ -48,14 +55,15 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
             
         try( PreparedStatement ps = connection.prepareStatement( String.format( "select %1$s, %2$s, %3$s, %4$s, %5$s, %7$s "
                                                                               + "  from %6$s "
-                                                                              + " where %1$s = ? and %2$s = ?",
-                                                                                PIPELINE_COLUMN_NAME,
-                                                                                PROCESS_COLUMN_NAME,
-                                                                                PROCESS_PRIORITY_COLUMN_NAME,
-                                                                                PROCESS_STATE_COLUMN_NAME,
-                                                                                PROCESS_COMMENT_COLUMN_NAME,
-                                                                                state_table_name,
-                                                                                ATTEMPT_COLUMN_NAME ) ) )
+                                                                              + " where %1$s = ? and %2$s = ? %8$s",
+                                                                               /*1*/ PIPELINE_COLUMN_NAME,
+                                                                               /*2*/ PROCESS_COLUMN_NAME,
+                                                                               /*3*/ PROCESS_PRIORITY_COLUMN_NAME,
+                                                                               /*4*/ PROCESS_STATE_COLUMN_NAME,
+                                                                               /*5*/ PROCESS_COMMENT_COLUMN_NAME,
+                                                                               /*6*/ process_table_name,
+                                                                               /*7*/ ATTEMPT_COLUMN_NAME,
+                                                                               /*8*/ do_lock ? LOCK_EXPRESSION : "" ) ) )
         {
             ps.setString( 1, pipeline_name );
             ps.setString( 2, state.getProcessId() );
@@ -112,7 +120,7 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
             + " ) T1 on ( T0.%2$s = T1.%2$s and T0.%3$s = T1.%3$s ) "
             + " when matched then update set  %4$s = T1.%4$s, %5$s = T1.%5$s, %6$s = T1.%6$s, %7$s = T1.%7$s " 
             + " when not matched then insert ( %2$s, %3$s, %4$s, %5$s, %6$s, %7$s ) values ( T1.%2$s, T1.%3$s, T1.%4$s, T1.%5$s, T1.%6$s, T1.%7$s )",
-            state_table_name,
+            process_table_name,
             PIPELINE_COLUMN_NAME,
             PROCESS_COLUMN_NAME,
             PROCESS_PRIORITY_COLUMN_NAME,
@@ -528,14 +536,14 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
     public String
     getStateTableName()
     {
-        return state_table_name;
+        return process_table_name;
     }
 
 
     public void
     setProcessTableName( String state_table_name )
     {
-        this.state_table_name = state_table_name;
+        this.process_table_name = state_table_name;
     }
 
 

@@ -32,10 +32,10 @@ OracleProcessIdSource implements OracleCommons, TaskIdSource
     {
         return String.format( 
                " select * from ( "
-             + " with T0 as ( select * from %1$s where state in ( 'ACTIVE' ) and %2$s = '%3$s' and %6$s < %7$s ) "
+             + " with T0 as ( select * from %1$s where state in ( 'ACTIVE' ) and %2$s = '%3$s' ) " //and %6$s < %7$s ) "
              + " select %4$s "
              + "   from T0 "
-             + " order by %5$s - nvl( exec_cnt, 0 ) desc nulls first, " 
+             + " order by %5$s - mod( %6$s, %7$s ) desc nulls first, " 
              + "          %5$s desc, " 
              + "          %4$s "
              + " ) where rownum < ?",

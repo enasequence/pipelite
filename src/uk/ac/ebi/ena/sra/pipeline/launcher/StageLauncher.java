@@ -81,7 +81,6 @@ public class StageLauncher
     execute()
     {
         StageExecutor executor = new InternalStageExecutor( new ResultTranslator( DefaultConfiguration.currentSet().getCommitStatus() ) )
-                                    .setReprocessProcessed( true )
                                     .setRedoCount( DefaultConfiguration.currentSet().getStagesRedoCount() );
         
         StageInstance instance = new StageInstance();
@@ -115,7 +114,6 @@ public class StageLauncher
     execute( String process_id, String stage_name, boolean force )
     {
         InternalStageExecutor executor = new InternalStageExecutor( new ResultTranslator( DefaultConfiguration.currentSet().getCommitStatus() ) )
-                                            .setReprocessProcessed( true )
                                             .setRedoCount( DefaultConfiguration.currentSet().getStagesRedoCount() );
         StageInstance instance = new StageInstance();
         instance.setProcessID( process_id );

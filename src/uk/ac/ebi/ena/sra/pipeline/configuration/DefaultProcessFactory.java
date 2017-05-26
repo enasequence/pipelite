@@ -23,6 +23,7 @@ DefaultProcessFactory implements ProcessFactory
         ProcessLauncher process = new ProcessLauncher();
         process.setPipelineName( DefaultConfiguration.currentSet().getPipelineName() );
         process.setProcessID( process_id );
+        process.setRedoCount( DefaultConfiguration.currentSet().getStagesRedoCount() );
         //TODO: locking routine should be changed
         //process.setExecutor( new DetachedStageExecutor( DefaultConfiguration.currentSet().getCommitStatus() ) );
 

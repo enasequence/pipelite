@@ -38,7 +38,7 @@ ProcessLauncher implements PipeliteProcess
     private String process_id;
     private String pipeline_name;
     private final  PatternLayout layout;
-    private PipeliteState    state;
+    PipeliteState    state;
     private StageInstance[]  instances;    
     private StorageBackend   storage;
     private StageExecutor    executor;
@@ -47,6 +47,7 @@ ProcessLauncher implements PipeliteProcess
     private ResourceLocker   locker;
     private ExecutionResult[] commit_statuses;
     private String __name;
+	private int max_redo_count = 1;
     
     
     public
@@ -126,13 +127,7 @@ ProcessLauncher implements PipeliteProcess
     }
     
     
-    private void
-    setCompleted()
-    {
-        state.setState( State.COMPLETED );
-    }
-    
-    
+    /* TODO: possible split to extract initialisation */
     void
     lifecycle()
     {
@@ -141,15 +136,29 @@ ProcessLauncher implements PipeliteProcess
             init_state();
             init_stages();
             
+//            if( !lock_process() )
+//            {
+//            	log.error( String.format( "There were problems while locking process %s.", getProcessId() ) );
+//            	return;
+//            }
+            
             load_state();
             
             if( State.ACTIVE != state.getState() )
+            {
                 log.warn( String.format( "Invoked for process %s with state %s.", getProcessId(), state.getState() ) );
+                state.setState( State.ACTIVE );
+            }
             
-            
+            if( !load_stages() )
+            {
+                log.error( String.format( "There were problems while loading stages for process %s.", getProcessId() ) );
+                return;
+            }
+
             if( !lock_stages() )
             {
-                log.error( String.format( "There were problems while locking stages for process %s.", getProcessId() ) );
+                log.error( String.format( "There were problems while locking process or stages for process %s.", getProcessId() ) );
                 return;
             }   
             
@@ -159,24 +168,45 @@ ProcessLauncher implements PipeliteProcess
                 return;
             }
 
-            if( !can_process() )
+            if( !eval_process() )
             {
-                log.warn( String.format( "Terminal state reached for process %s.", getProcessId() ) );
-                setCompleted();
+                log.warn( String.format( "Terminal state reached for %s", state ) );
             } else
             {
-                execute_stages();
+            	increment_process_counter();
+            	execute_stages();
                 save_stages();
+                if( eval_process() )
+                {
+                	if( 0 < state.getExecCount() &&  0 == state.getExecCount() % max_redo_count )
+                    	state.setState( State.INACTIVE );
+                }
+                save_state();
             }
-            
-            save_state();
         } catch ( StorageException e )
         {
             e.printStackTrace();
+        } finally
+        {
+            unlock_stages();
         }
     }
         
     
+    private void 
+    increment_process_counter() 
+    {
+    	state.exec_cnt ++;
+	}
+
+
+	private boolean
+    lock_process()
+    {
+		return locker.lock( new ResourceLock( state.getPipelineName(), state.getProcessId() ) );
+    }
+    
+	
     private boolean
     lock_stages()
     {
@@ -195,6 +225,16 @@ ProcessLauncher implements PipeliteProcess
     }
 
     
+    private void
+    unlock_stages()
+    {
+        for( StageInstance i : instances )
+        {
+            if( locker.is_locked( new ResourceLock( i.getStageName(), i.getProcessID() ) ) )
+                locker.unlock( new ResourceLock( i.getStageName(), i.getProcessID() ) );
+        }
+    }
+    
 
     // Existing statuses:
     // 1 unknown /not processed.  StageTransient
@@ -208,7 +248,7 @@ ProcessLauncher implements PipeliteProcess
     
     
     private boolean
-    can_process()
+    eval_process()
     {
         int to_process = instances.length;
         
@@ -224,23 +264,28 @@ loop:   for( int i = 0; i < instances.length; ++i  )
             switch( executor.can_execute( instance ) )
             {
             case StageTransient:
-            break;
+            	break;
 
             case StageTerminal:
                     to_process --;
                 break;
 
             case ProcessTerminal:
-                    to_process -= to_process;
-            break;// loop;
+                    //to_process -= to_process;
+                    ExecutionInstance ei = instance.getExecutionInstance();
+                	state.setState( null != ei && ei.getResultType().isFailure() ? State.FAILED : State.COMPLETED );
+            return false;
             }    
                     
         }
-        
+
         // no stages to process
         if( 0 >= to_process )
+        {
+        	state.setState( State.COMPLETED );
             return false;
-                    
+            
+        } 
         return true;
     }
 
@@ -272,7 +317,6 @@ loop:   for( int i = 0; i < instances.length; ++i  )
     {
         try
         {
-            state.setExecCount( state.getExecCount() + 1 );
             storage.save( state );
         } catch( StorageException e )
         {
@@ -397,7 +441,7 @@ loop:   for( int i = 0; i < instances.length; ++i  )
                 
                 if( result.getType().isFailure() )
                 {
-                    emit_log( instance, executor.get_info() );
+                    emit_log( instance, info );
                     break;
                 }
             }
@@ -543,8 +587,7 @@ loop:   for( int i = 0; i < instances.length; ++i  )
                                                  .getConstructor( String.class, ResultTranslator.class )
                                                  .newInstance( "", new ResultTranslator( DefaultConfiguration.currentSet().getCommitStatus() ) ) );
 
-                process.setExecutor( executor.setReprocessProcessed( params.is_force )
-                                             .setRedoCount( DefaultConfiguration.currentSet().getStagesRedoCount() ) );
+                process.setExecutor( executor.setRedoCount( DefaultConfiguration.currentSet().getStagesRedoCount() ) );
                 process.lifecycle();
             }
         } finally
@@ -649,4 +692,11 @@ loop:   for( int i = 0; i < instances.length; ++i  )
         this.pipeline_name = pipeline_name;
     }
 
+    
+    public void 
+    setRedoCount( int max_redo_count )
+    {
+    	this.max_redo_count  = max_redo_count;
+    }
+    
 }
