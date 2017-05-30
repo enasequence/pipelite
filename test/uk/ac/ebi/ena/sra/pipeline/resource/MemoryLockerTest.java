@@ -11,13 +11,13 @@ MemoryLockerTest
     Test()
     {
         MemoryLocker ml = new MemoryLocker();
-        ResourceLock rl = new ResourceLock( "1", "Я" );
-        Assert.assertTrue( ml.lock( new ResourceLock( "1", "Я" ) ) );
-        Assert.assertTrue( ml.is_locked( new ResourceLock( "1", "Я" ) ) );
-        Assert.assertTrue( ml.lock( new ResourceLock( "2", "Я" ) ) );
-        Assert.assertTrue( ml.is_locked( new ResourceLock( "2", "Я" ) ) );
+        StageResourceLock rl = new StageResourceLock( "1", "1" );
+        Assert.assertTrue( ml.lock( new StageResourceLock( "1", "1" ) ) );
+        Assert.assertTrue( ml.is_locked( new StageResourceLock( "1", "1" ) ) );
+        Assert.assertTrue( ml.lock( new StageResourceLock( "2", "1" ) ) );
+        Assert.assertTrue( ml.is_locked( new StageResourceLock( "2", "1" ) ) );
         Assert.assertTrue( ml.unlock( rl ) );
-        Assert.assertFalse( ml.is_locked( new ResourceLock( "1", "Я" ) ) );
-        Assert.assertTrue( ml.is_locked( new ResourceLock( "2", "Я" ) ) );
+        Assert.assertFalse( ml.is_locked( new StageResourceLock( "1", "1" ) ) );
+        Assert.assertTrue( ml.is_locked( new StageResourceLock( "2", "1" ) ) );
     }
 }

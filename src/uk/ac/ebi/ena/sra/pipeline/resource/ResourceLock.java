@@ -1,7 +1,7 @@
 package uk.ac.ebi.ena.sra.pipeline.resource;
 
 
-public class 
+public abstract class 
 ResourceLock
 {
     private String lock_id;

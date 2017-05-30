@@ -10,8 +10,9 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState;
 import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult.RESULT_TYPE;
 import uk.ac.ebi.ena.sra.pipeline.resource.MemoryLocker;
-import uk.ac.ebi.ena.sra.pipeline.resource.ResourceLock;
+import uk.ac.ebi.ena.sra.pipeline.resource.ProcessResourceLock;
 import uk.ac.ebi.ena.sra.pipeline.resource.ResourceLocker;
+import uk.ac.ebi.ena.sra.pipeline.resource.StageResourceLock;
 
 
 public class 
@@ -602,7 +603,7 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
 
     //TODO specify contract
     @Override public boolean
-    lock( ResourceLock rl )
+    lock( StageResourceLock rl )
     {
         StageInstance si = new StageInstance();
         si.setPipelineName( pipeline_name );
@@ -620,19 +621,51 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
 
 
     @Override public boolean
-    unlock( ResourceLock rl )
+    unlock( StageResourceLock rl )
     {
         return mlocker.unlock( rl );
     }
 
 
     @Override public boolean
-    is_locked( ResourceLock rl )
+    is_locked( StageResourceLock rl )
     {
         return mlocker.is_locked( rl );
     }
 
+    
+    //TODO specify contract
+    @Override public boolean
+    lock( ProcessResourceLock rl )
+    {
+        PipeliteState pi = new PipeliteState();
+        pi.setPipelineName( pipeline_name );
+        pi.setProcessId( rl.getLockOwner() );
+        try
+        {
+            load( pi, true );
+            return mlocker.lock( rl );
+        } catch( StorageException e )
+        {
+            return false;
+        }
+    }
 
+
+    @Override public boolean
+    unlock( ProcessResourceLock rl )
+    {
+        return mlocker.unlock( rl );
+    }
+
+
+    @Override public boolean
+    is_locked( ProcessResourceLock rl )
+    {
+        return mlocker.is_locked( rl );
+    }
+
+    
     @Override public String
     getExecutionId() throws StorageException
     {

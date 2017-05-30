@@ -20,8 +20,9 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.StageExecutor.EvalResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.StageExecutor.ExecutionInfo;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
-import uk.ac.ebi.ena.sra.pipeline.resource.ResourceLock;
+import uk.ac.ebi.ena.sra.pipeline.resource.ProcessResourceLock;
 import uk.ac.ebi.ena.sra.pipeline.resource.ResourceLocker;
+import uk.ac.ebi.ena.sra.pipeline.resource.StageResourceLock;
 import uk.ac.ebi.ena.sra.pipeline.storage.OracleStorage;
 import uk.ac.ebi.ena.sra.pipeline.storage.ProcessLogBean;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
@@ -136,14 +137,14 @@ ProcessLauncher implements PipeliteProcess
             init_state();
             init_stages();
             
-//            if( !lock_process() )
-//            {
-//            	log.error( String.format( "There were problems while locking process %s.", getProcessId() ) );
-//            	return;
-//            }
+            load_state();
+            if( !lock_process() )
+            {
+            	log.error( String.format( "There were problems while locking process %s.", getProcessId() ) );
+            	return;
+            }
             
             load_state();
-            
             save_state(); //this is to check permissions
             
             if( State.ACTIVE != state.getState() )
@@ -194,6 +195,7 @@ ProcessLauncher implements PipeliteProcess
         } finally
         {
             unlock_stages();
+            unlock_process();
         }
     }
         
@@ -208,20 +210,28 @@ ProcessLauncher implements PipeliteProcess
 	private boolean
     lock_process()
     {
-		return locker.lock( new ResourceLock( state.getPipelineName(), state.getProcessId() ) );
+		return locker.lock( new ProcessResourceLock( state.getPipelineName(), state.getProcessId() ) );
     }
     
 	
-    private boolean
+	private void
+    unlock_process()
+    {
+		if( locker.is_locked( new ProcessResourceLock( state.getPipelineName(), state.getProcessId() ) ) )
+			locker.unlock( new ProcessResourceLock( state.getPipelineName(), state.getProcessId() ) );;
+    }
+	
+	
+	private boolean
     lock_stages()
     {
         for( StageInstance instance : instances )
         {
-            if( !locker.lock( new ResourceLock( instance.getStageName(), instance.getProcessID() ) ) )
+            if( !locker.lock( new StageResourceLock( instance.getStageName(), instance.getProcessID() ) ) )
             {
                 for( StageInstance i : instances )
-                    if( locker.is_locked( new ResourceLock( i.getStageName(), i.getProcessID() ) ) )
-                        locker.unlock( new ResourceLock( i.getStageName(), i.getProcessID() ) );
+                    if( locker.is_locked( new StageResourceLock( i.getStageName(), i.getProcessID() ) ) )
+                        locker.unlock( new StageResourceLock( i.getStageName(), i.getProcessID() ) );
                 return false;
             }       
         }
@@ -235,8 +245,8 @@ ProcessLauncher implements PipeliteProcess
     {
         for( StageInstance i : instances )
         {
-            if( locker.is_locked( new ResourceLock( i.getStageName(), i.getProcessID() ) ) )
-                locker.unlock( new ResourceLock( i.getStageName(), i.getProcessID() ) );
+            if( locker.is_locked( new StageResourceLock( i.getStageName(), i.getProcessID() ) ) )
+                locker.unlock( new StageResourceLock( i.getStageName(), i.getProcessID() ) );
         }
     }
     
