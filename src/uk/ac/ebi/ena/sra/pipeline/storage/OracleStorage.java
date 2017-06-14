@@ -1,5 +1,6 @@
 package uk.ac.ebi.ena.sra.pipeline.storage;
 
+import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -359,8 +360,15 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
             ps.setString( 9, null == instance.getExecutionInstance() ? null : null == instance.getExecutionInstance().getResultType() ? null : instance.getExecutionInstance().getResultType().toString() );
       
             ps.setObject( 10, null == instance.getExecutionInstance() ? null : instance.getExecutionInstance().getResult() );
-            ps.setObject( 11, null == instance.getExecutionInstance() ? null : instance.getExecutionInstance().getStdout() );
-            ps.setString( 12, null == instance.getExecutionInstance() ? null : instance.getExecutionInstance().getStderr() );
+            
+        	Clob stdout = connection.createClob();
+        	stdout.setString( 1, null == instance.getExecutionInstance() ? null : instance.getExecutionInstance().getStdout() );
+
+            Clob stderr = connection.createClob();
+            stderr.setString( 1, null == instance.getExecutionInstance() ? null : instance.getExecutionInstance().getStderr() );
+
+            ps.setObject( 11, stdout );
+            ps.setObject( 12, stderr );
 
             int rows = ps.executeUpdate();
             if( 1 != rows )
