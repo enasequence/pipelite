@@ -59,7 +59,8 @@ InternalStageExecutor extends AbstractStageExecutor
             {
                 info = new ExecutionInfo();
                 info.setThrowable( exception );
-                
+                info.setExitCode( Integer.valueOf( TRANSLATOR.getCommitStatus( exception ).getExitCode() ) );
+
                 if( null != task )
                     task.unwind();
             }

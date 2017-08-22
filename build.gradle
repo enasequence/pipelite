@@ -9,7 +9,7 @@ apply plugin: 'maven'
 compileJava.options.encoding = 'UTF-8'
 
 group = 'uk.ac.ebi'
-ext.version_base = '2.0.3'
+ext.version_base = '2.0.4'
 version = version_base
 buildDir = 'target'
 
@@ -56,7 +56,7 @@ dependencies {
   compile(group: 'commons-lang', name: 'commons-lang', version: '2.4')
   compile(group: 'commons-net', name: 'commons-net', version: '2.0')
   compile(group: 'org.apache.commons', name: 'commons-compress', version: '1.10')
-  compile(group: 'com.beust', name: 'jcommander', version: '1.47')
+  compile(group: 'com.beust', name: 'jcommander', version: '1.71')
   compile( group: 'com.oracle', name: 'ojdbc6', version: '11.2.0.4.0' )
   compile(group: 'com.oracle.oc4j', name: 'xdb', version: '11')
   compile 'org.apache.xmlbeans:xmlbeans:2.3.0'
