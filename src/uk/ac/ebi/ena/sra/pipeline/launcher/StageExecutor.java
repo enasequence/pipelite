@@ -33,6 +33,7 @@ StageExecutor
         private String  stdout;
         private Throwable t;
         private Integer exit_code;
+        private String  log_message;
         
         
         public String 
@@ -131,6 +132,20 @@ StageExecutor
         {
             return exit_code;
         }
+
+
+		public String 
+		getLogMessage() 
+		{
+			return log_message;
+		}
+
+
+		public void 
+		setLogMessage( String log_message )
+		{
+			this.log_message = log_message;
+		}
     }
 
     

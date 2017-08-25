@@ -171,7 +171,7 @@ ProcessLauncher implements PipeliteProcess
                 return;
             }
 
-            save_stages(); //this is to check permissions
+            save_stages(); //this is to check database permissions
             
             if( !eval_process() )
             {
@@ -468,7 +468,9 @@ loop:   for( int i = 0; i < instances.length; ++i  )
               ExecutionInfo info )
     {
         ProcessLogBean bean = new ProcessLogBean();
-        bean.setThrowable( info.getThrowable() );
+        //TODO: eval usage of Throwable, ExceptionText and Message
+        bean.setThrowable( info.getThrowable() ); 
+        bean.setExceptionText( info.getLogMessage() );
         bean.setMessage( instance.getExecutionInstance().getResult() );
         bean.setLSFHosts( info.getHost() );
         bean.setLSFJobID( null != info.getPID() ? info.getPID().longValue() : null );

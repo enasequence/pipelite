@@ -181,7 +181,8 @@ LSFStageExecutor extends AbstractStageExecutor implements LSFExecutorConfig
         info.setExitCode( Integer.valueOf( ec.getExitCode() ) );
         info.setHost( ec.getHost() );
         info.setPID( ec.getPID() );
-        info.setThrowable( new ExternalCallException( ec ) );
+        info.setThrowable( null );
+        info.setLogMessage( new ExternalCallException( ec ).toString() );
     }
 
     

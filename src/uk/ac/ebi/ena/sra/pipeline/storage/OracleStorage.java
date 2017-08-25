@@ -426,7 +426,7 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
             ps.setString( 3, bean.getStage() );
             ps.setObject( 4, bean.getExecutionId() );
             ps.setString( 5, bean.getMessage() );
-            ps.setString( 6, bean.getExceptionText() );
+            ps.setString( 6, null != bean.getExceptionText() && bean.getExceptionText().length() > 3000 ? bean.getExceptionText().substring( 0, 3000 ) : bean.getExceptionText() );
             ps.setObject( 7, bean.getLSFJobID() );
             ps.setString( 8, bean.getLSFHost() );
             

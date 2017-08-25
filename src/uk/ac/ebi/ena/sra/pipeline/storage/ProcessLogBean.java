@@ -16,7 +16,7 @@ public class
 ProcessLogBean
 {
     private static final int MESSAGE_FIELD_LENGTH = 255;
-    private static final int EXCEPTION_FIELD_LENGTH = 4000;
+    private static final int EXCEPTION_FIELD_LENGTH = 256 * 1024;
     
     final static String PIPELINE_FIELD_NAME   = "PIPELINE";
     final static String PROCESS_FIELD_NAME    = "PROCESS-ID";
