@@ -38,25 +38,18 @@ AbstractStageExecutor implements StageExecutor
         if( !instance.isEnabled() )
             return EvalResult.StageTerminal;
         
-        // redo counter exceeded
-//        if( instance.getExecutionCount() > redo )
-//            return EvalResult.ProcessTerminal;
-                               
         ExecutionInstance ei = instance.getExecutionInstance();
         
         //check permanent errors
         if( null != ei && null != ei.getFinish() )
         {
-//        	if( reprocess_processed )
-//        		return EvalResult.StageTransient;
-//        	else
-        		switch ( ei.getResultType() )
-        		{
-        		case PERMANENT_ERROR:
-        			return EvalResult.ProcessTerminal;
-				default:
-					return ei.getResultType().canReprocess() ? EvalResult.StageTransient : EvalResult.StageTerminal;
-        		}
+    		switch ( ei.getResultType() )
+    		{
+    		case PERMANENT_ERROR:
+    			return EvalResult.ProcessTerminal;
+			default:
+				return ei.getResultType().canReprocess() ? EvalResult.StageTransient : EvalResult.StageTerminal;
+    		}
         }
         
         return EvalResult.StageTransient;

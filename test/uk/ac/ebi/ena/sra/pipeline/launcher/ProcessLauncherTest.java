@@ -266,7 +266,7 @@ ProcessLauncherTest
             verify( pl, times( 1 ) ).lifecycle();
             verify( spiedExecutor, times( 2 ) ).execute( any( StageInstance.class ) );
             
-            Assert.assertEquals( State.INACTIVE, pl.state.getState() );
+            Assert.assertEquals( State.FAILED, pl.state.getState() );
             Assert.assertEquals( 1, pl.state.getExecCount() );
             
             //Re-run

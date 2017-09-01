@@ -186,8 +186,8 @@ ProcessLauncher implements PipeliteProcess
                 	if( 0 < state.getExecCount() &&  0 == state.getExecCount() % max_redo_count )
                     	state.setState( State.INACTIVE );
                 }
-                save_state();
             }
+            save_state();
         } catch ( StorageException e )
         {
             log.error( e.getMessage(), e );
@@ -322,7 +322,7 @@ loop:   for( int i = 0; i < instances.length; ++i  )
             storage.load( state );
         } catch( StorageException e )
         {
-            log.warn( e );
+        	log.error( e.getMessage(), e );
         }
     }
 
@@ -335,7 +335,7 @@ loop:   for( int i = 0; i < instances.length; ++i  )
             storage.save( state );
         } catch( StorageException e )
         {
-            log.warn( e );
+            log.error( e.getMessage(), e );
         }
     }
     
@@ -397,7 +397,7 @@ loop:   for( int i = 0; i < instances.length; ++i  )
                     storage.save( bean );
                 } catch( StorageException se1 )
                 {
-                    se1.printStackTrace();
+                    log.error( se1.getMessage(), se1 );
                 }
             }
         }
@@ -483,7 +483,7 @@ loop:   for( int i = 0; i < instances.length; ++i  )
             storage.save( bean );
         } catch( StorageException e )
         {
-            e.printStackTrace();
+            log.error( e.getMessage(), e );
         }
     }
     
