@@ -18,14 +18,14 @@ ProcessLogBean
     private static final int MESSAGE_FIELD_LENGTH = 255;
     private static final int EXCEPTION_FIELD_LENGTH = 256 * 1024;
     
-    final static String PIPELINE_FIELD_NAME   = "PIPELINE";
-    final static String PROCESS_FIELD_NAME    = "PROCESS-ID";
-    final static String STAGE_FIELD_NAME      = "STAGE";
-    final static String EXEC_ID_FIELD_NAME    = "EXEC-ID";
+    final static String PIPELINE_FIELD_NAME   = "PIPELINE_NAME";
+    final static String PROCESS_FIELD_NAME    = "PROCESS_ID";
+    final static String STAGE_FIELD_NAME      = "STAGE_NAME";
+    final static String EXEC_ID_FIELD_NAME    = "EXEC_ID";
 	final static String EXCEPTION_FIELD_NAME  = "EXCEPTION";
 	final static String LSF_JOB_ID_FIELD_NAME = "JOBID";
 	final static String LSF_HOST_FIELD_NAME   = "HOSTS";
-	final static String DATE_FIELD_NAME       = "LOG-DATE";
+	final static String DATE_FIELD_NAME       = "LOG_DATE";
 	final static String MESSAGE_FIELD_NAME    = "MESSAGE";
 	
 	
