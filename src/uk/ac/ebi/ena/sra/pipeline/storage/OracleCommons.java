@@ -18,6 +18,7 @@ OracleCommons
     final static String  EXEC_RESULT_TYPE_COLUMN_NAME = "EXEC_RESULT_TYPE";
     final static String  EXEC_STDOUT_COLUMN_NAME      = "EXEC_STDOUT";
     final static String  EXEC_STDERR_COLUMN_NAME      = "EXEC_STDERR";
+	final static String  EXEC_CMDLINE_COLUMN_NAME     = "EXEC_CMD_LINE";
     
 
     final static String  PROCESS_PRIORITY_COLUMN_NAME = "PRIORITY";

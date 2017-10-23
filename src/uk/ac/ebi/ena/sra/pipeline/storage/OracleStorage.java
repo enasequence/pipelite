@@ -26,6 +26,8 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
 
 
     private static final String ENABLED_VALUE = "Y";
+
+
     
     private Connection connection;
     private String     pipeline_name;
@@ -169,7 +171,7 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
         ResultSet rows = null;
         try
         {
-            ps = connection.prepareStatement( String.format( "select %s, %s, %s, %s, %s, %s, %s"
+            ps = connection.prepareStatement( String.format( "select %s, %s, %s, %s, %s, %s, %s, %s "
                                                            + "  from %s" +
                                                              " where %s = ?", 
                                                              EXEC_ID_COLUMN_NAME,
@@ -177,8 +179,12 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
                                                              EXEC_START_COLUMN_NAME,
                                                              EXEC_RESULT_COLUMN_NAME,
                                                              EXEC_RESULT_TYPE_COLUMN_NAME,
+                                                             
+                                                             //TODO remove
                                                              EXEC_STDERR_COLUMN_NAME,
                                                              EXEC_STDOUT_COLUMN_NAME,
+                                                             EXEC_CMDLINE_COLUMN_NAME,
+                                                             
                                                              stage_table_name,
                                                              EXEC_ID_COLUMN_NAME ) );
             
@@ -195,8 +201,11 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
                 String rtype = rows.getString( EXEC_RESULT_TYPE_COLUMN_NAME );
                 instance.setResultType( null == rtype ? null : RESULT_TYPE.valueOf( rtype ) );
                 
+                //TODO remove
                 instance.setStderr( rows.getString( EXEC_STDERR_COLUMN_NAME ) );
                 instance.setStdout( rows.getString( EXEC_STDOUT_COLUMN_NAME ) );
+                instance.setCmdLine( rows.getString( EXEC_CMDLINE_COLUMN_NAME ) );
+                
                 ++ rownum;
             }
             if( 1 != rownum )
@@ -318,8 +327,8 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
         try
         {
             ps = connection.prepareStatement( String.format( 
-                    " merge into %13$s T0 "  
-                  + " using ( select ? %1$s, ? %2$s, ? %3$s, ? %4$s, ? %5$s, ? %6$s, ? %7$s, ? %8$s, ? %9$s, ? %10$s, ? %11$s, ? %12$s from dual ) T1 " 
+                    " merge into %14$s T0 "  
+                  + " using ( select ? %1$s, ? %2$s, ? %3$s, ? %4$s, ? %5$s, ? %6$s, ? %7$s, ? %8$s, ? %9$s, ? %10$s, ? %11$s, ? %12$s, ? %13$s from dual ) T1 " 
                   + " on ( T0.%1$s = T1.%1$s and T0.%2$s = T1.%2$s and T0.%3$s = T1.%3$s ) "  
                   + " when matched then update set " 
                   + "  %4$s = T1.%4$s, "
@@ -330,9 +339,10 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
                   + "  %9$s = T1.%9$s, "
                   + "  %10$s = T1.%10$s, "
                   + "  %11$s = T1.%11$s, "
-                  + "  %12$s = T1.%12$s "
-                  + " when not matched then insert( %1$s, %2$s, %3$s, %4$s, %5$s, %6$s, %7$s, %8$s, %9$s, %10$s, %11$s, %12$s ) "
-                  + "                       values( T1.%1$s, T1.%2$s, T1.%3$s, T1.%4$s, T1.%5$s, T1.%6$s, T1.%7$s, T1.%8$s, T1.%9$s, T1.%10$s, T1.%11$s, T1.%12$s ) ",
+                  + "  %12$s = T1.%12$s, "
+                  + "  %13$s = T1.%13$s "
+                  + " when not matched then insert( %1$s, %2$s, %3$s, %4$s, %5$s, %6$s, %7$s, %8$s, %9$s, %10$s, %11$s, %12$s, %13$s ) "
+                  + "                       values( T1.%1$s, T1.%2$s, T1.%3$s, T1.%4$s, T1.%5$s, T1.%6$s, T1.%7$s, T1.%8$s, T1.%9$s, T1.%10$s, T1.%11$s, T1.%12$s, T1.%13$s ) ",
 /* 1 */           PIPELINE_COLUMN_NAME,
 /* 2 */           PROCESS_COLUMN_NAME, 
 /* 3 */           STAGE_NAME_COLUMN_NAME,
@@ -345,7 +355,8 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
 /* 10 */          EXEC_RESULT_COLUMN_NAME,
 /* 11 */          EXEC_STDOUT_COLUMN_NAME,
 /* 12 */          EXEC_STDERR_COLUMN_NAME,
-/* 13 */          getTableName() ) );
+/* 13 */          EXEC_CMDLINE_COLUMN_NAME,
+/* 14 */          getTableName() ) );
  
             ps.setObject( 1, pipeline_name );
             ps.setObject( 2, instance.getProcessID() );
@@ -361,15 +372,10 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
       
             ps.setObject( 10, null == instance.getExecutionInstance() ? null : instance.getExecutionInstance().getResult() );
             
-        	Clob stdout = connection.createClob();
-        	stdout.setString( 1, null == instance.getExecutionInstance() ? null : instance.getExecutionInstance().getStdout() );
-
-            Clob stderr = connection.createClob();
-            stderr.setString( 1, null == instance.getExecutionInstance() ? null : instance.getExecutionInstance().getStderr() );
-
-            ps.setObject( 11, stdout );
-            ps.setObject( 12, stderr );
-
+            ps.setObject( 11, makeClob( connection, null == instance.getExecutionInstance() ? null : instance.getExecutionInstance().getStdout() ) );
+            ps.setObject( 12, makeClob( connection, null == instance.getExecutionInstance() ? null : instance.getExecutionInstance().getStderr() ) );
+            ps.setObject( 13, makeClob( connection, null == instance.getExecutionInstance() ? null : instance.getExecutionInstance().getCmdLine() ) );
+            
             int rows = ps.executeUpdate();
             if( 1 != rows )
                 throw new StorageException( "Can't update exactly 1 row!" );
@@ -396,6 +402,15 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
         }
     }
  
+    
+    private Clob
+    makeClob( Connection connection, String value ) throws SQLException
+    {
+    	Clob clob = connection.createClob();
+    	clob.setString( 1, value );
+    	return clob;
+    }
+    
     
     //TODO add exec_id
     @Override public void 
@@ -564,7 +579,7 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
         {
             ps = connection.prepareStatement( String.format( "update %s "
                                                            + "   set %s = ?, %s = ?, %s = ?, "
-                                                           + "       %s = ?, %s = ?, %s = ? "
+                                                           + "       %s = ?, %s = ?, %s = ?, %s = ? "
                                                            + " where %s = ?", 
                                                              stage_table_name,
                                                              EXEC_START_COLUMN_NAME,
@@ -573,6 +588,7 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
                                                              EXEC_RESULT_COLUMN_NAME,
                                                              EXEC_STDERR_COLUMN_NAME,
                                                              EXEC_STDOUT_COLUMN_NAME,
+                                                             EXEC_CMDLINE_COLUMN_NAME,
                                                              EXEC_ID_COLUMN_NAME ) );
             
             ps.setObject( 1, instance.getStart() );
@@ -580,9 +596,12 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
             ps.setString( 3, null == instance.getResultType() ? null : instance.getResultType().toString() );
             
             ps.setObject( 4, instance.getResult() );
-            ps.setString( 5, instance.getStderr() );
-            ps.setString( 6, instance.getStdout() );
-            ps.setString( 7, instance.getExecutionId() );
+            
+            ps.setObject( 5, makeClob( connection, instance.getStderr() ) );
+            ps.setObject( 6, makeClob( connection, instance.getStdout() ) );
+            ps.setObject( 7, makeClob( connection, instance.getCmdLine() ) );
+            
+            ps.setString( 8, instance.getExecutionId() );
       
             int rows = ps.executeUpdate();
             if( 1 != rows )

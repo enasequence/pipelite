@@ -184,7 +184,7 @@ ProcessLauncher implements PipeliteProcess
                 if( eval_process() )
                 {
                 	if( 0 < state.getExecCount() &&  0 == state.getExecCount() % max_redo_count )
-                    	state.setState( State.INACTIVE );
+                    	state.setState( State.FAILED );
                 }
             }
             save_state();
@@ -451,7 +451,8 @@ loop:   for( int i = 0; i < instances.length; ++i  )
                 ei.setResult( result.getMessage() );
                 ei.setStderr( info.getStderr() );
                 ei.setStdout( info.getStdout() );
-
+                ei.setCmdLine(info.getCommandline() );
+                
                 storage.save( ei );
                 
                 if( result.getType().isFailure() )
@@ -562,6 +563,7 @@ loop:   for( int i = 0; i < instances.length; ++i  )
     initStorageBackend()
     {
         OracleStorage os = new OracleStorage();
+        os.setProcessTableName( DefaultConfiguration.currentSet().getProcessTableName() );
         os.setStageTableName( DefaultConfiguration.currentSet().getStageTableName() );
         os.setPipelineName( DefaultConfiguration.currentSet().getPipelineName() );
         os.setLogTableName( DefaultConfiguration.currentSet().getLogTableName() );

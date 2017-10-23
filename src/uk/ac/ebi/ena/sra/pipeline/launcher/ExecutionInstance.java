@@ -15,7 +15,7 @@ ExecutionInstance
     String EXEC_RESULT; //      VARCHAR2( 255 ),  -- length decreased
     String EXEC_STDOUT; //      CLOB, --VARCHAR2( 4000 ), --( or clob ) 
     String EXEC_STDERR; //      CLOB, --VARCHAR2( 4000 ), --( or clob )
-    
+    String EXEC_CMDLINE; // CLOB;    
     
     
     public
@@ -34,6 +34,7 @@ ExecutionInstance
         this.EXEC_RESULT = null == from.EXEC_RESULT ? null : new String( from.EXEC_RESULT );
         this.EXEC_STDOUT = null == from.EXEC_STDOUT ? null : new String( from.EXEC_STDOUT );
         this.EXEC_STDERR = null == from.EXEC_STDERR ? null : new String( from.EXEC_STDERR );
+        this.EXEC_CMDLINE = null == from.EXEC_CMDLINE ? null : new String( from.EXEC_CMDLINE );
     }
     
     
@@ -55,7 +56,8 @@ ExecutionInstance
             && ( null == this.EXEC_RESULT_TYPE ? null == ( (ExecutionInstance)another ).EXEC_RESULT_TYPE : this.EXEC_RESULT_TYPE.equals( ( (ExecutionInstance)another ).EXEC_RESULT_TYPE ) )
             && ( null == this.EXEC_RESULT ? null == ( (ExecutionInstance)another ).EXEC_RESULT : this.EXEC_RESULT.equals( ( (ExecutionInstance)another ).EXEC_RESULT ) )
             && ( null == this.EXEC_STDOUT ? null == ( (ExecutionInstance)another ).EXEC_STDOUT : this.EXEC_STDOUT.equals( ( (ExecutionInstance)another ).EXEC_STDOUT ) )
-            && ( null == this.EXEC_STDERR ? null == ( (ExecutionInstance)another ).EXEC_STDERR : this.EXEC_STDERR.equals( ( (ExecutionInstance)another ).EXEC_STDERR ) );
+            && ( null == this.EXEC_STDERR ? null == ( (ExecutionInstance)another ).EXEC_STDERR : this.EXEC_STDERR.equals( ( (ExecutionInstance)another ).EXEC_STDERR ) )
+            && ( null == this.EXEC_CMDLINE ? null == ( (ExecutionInstance)another ).EXEC_CMDLINE : this.EXEC_CMDLINE.equals( ( (ExecutionInstance)another ).EXEC_CMDLINE ) );
     }
     
     
@@ -156,4 +158,18 @@ ExecutionInstance
     {
         EXEC_STDERR = stderr;
     }
+
+
+	public String 
+	getCmdLine() 
+	{
+		return EXEC_CMDLINE;
+	}
+
+
+	public void 
+	setCmdLine( String exec_cmdline ) 
+	{
+		EXEC_CMDLINE = exec_cmdline;
+	}
 }

@@ -72,7 +72,7 @@ OracleStorageTest
         connection = createConnection();
         
         OracleProcessIdSource ps = new OracleProcessIdSource();
-        ps.setTableName( "DROP_PIPELITE_STATE" );
+        ps.setTableName( "PIPELITE_PROCESS" );
         ps.setExecutionResultArray( ExecutionResults.values() );
         ps.setRedoCount( Integer.MAX_VALUE );
         ps.setConnection( connection );
@@ -82,8 +82,8 @@ OracleStorageTest
                 
         OracleStorage os = new OracleStorage();
         os.setPipelineName( PIPELINE_NAME );
-        os.setProcessTableName( "DROP_PIPELITE_STATE" );
-        os.setStageTableName( "DROP_PIPELITE_STAGE" );
+        os.setProcessTableName( "PIPELITE_PROCESS" );
+        os.setStageTableName( "PIPELITE_STAGE" );
         os.setConnection( connection );
         db_backend = os;
     }

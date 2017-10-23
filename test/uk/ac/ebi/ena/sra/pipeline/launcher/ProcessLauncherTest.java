@@ -235,6 +235,7 @@ ProcessLauncherTest
                 	  ExecutionInfo info = new ExecutionInfo();
                       info.setExitCode( invocation_exit_code.length > inv_cnt.get() ? invocation_exit_code[ inv_cnt.getAndIncrement() ] : 0  );
                       info.setThrowable( null );
+                      info.setCommandline( "Command Line" );
                       info.setStderr( "Stderr" );
                       info.setStdout( "Stdout" );
                       return info;
@@ -260,13 +261,13 @@ ProcessLauncherTest
             StageExecutor spiedExecutor = initExecutor( ERESULTS.values(), new int[] { 0, 2, 0, 2 } );
             ProcessLauncher pl = initProcessLauncher( stages, ERESULTS.values(), mockedStorage, spiedExecutor );
             pl.setLocker( new MemoryLocker() );
-            
+            pl.setRedoCount( 2 );
             pl.lifecycle();
             
             verify( pl, times( 1 ) ).lifecycle();
             verify( spiedExecutor, times( 2 ) ).execute( any( StageInstance.class ) );
             
-            Assert.assertEquals( State.FAILED, pl.state.getState() );
+            Assert.assertEquals( State.ACTIVE, pl.state.getState() );
             Assert.assertEquals( 1, pl.state.getExecCount() );
             
             //Re-run
@@ -274,7 +275,7 @@ ProcessLauncherTest
 
             verify( pl, times( 2 ) ).lifecycle();
             verify( spiedExecutor, times( 4 ) ).execute( any( StageInstance.class ) );
-            Assert.assertEquals( State.INACTIVE, pl.state.getState() );
+            Assert.assertEquals( State.FAILED, pl.state.getState() );
             Assert.assertEquals( 2, pl.state.getExecCount() );
             
         }
