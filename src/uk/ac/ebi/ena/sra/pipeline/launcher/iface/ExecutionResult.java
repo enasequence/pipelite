@@ -39,8 +39,8 @@ ExecutionResult
         }
     };
     
-    public RESULT_TYPE        getType();
-    public byte               getExitCode(); // exit code for status. unique.
-    public Class<Throwable>   getCause();    // throwable that can cause the status. unique.
-    public String             getMessage();  // commit message. unique.
+    public RESULT_TYPE                getType();
+    public byte                       getExitCode(); // exit code for status. unique.
+    public Class<? extends Throwable> getCause();    // throwable that can cause the status. unique.
+    public String                     getMessage();  // commit message. unique.
 }

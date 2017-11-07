@@ -385,13 +385,14 @@ loop:   for( int i = 0; i < instances.length; ++i  )
                 }
 
                 ProcessLogBean bean = new ProcessLogBean();
-                
+                bean.setPipelineName( getPipelineName() );
                 bean.setProcessID( getProcessId() );
                 bean.setStage( instance.getStageName() );
                 bean.setThrowable( se );
                 bean.setMessage( bean_message );
                 bean.setLSFJobID( null );
                 bean.setLSFHosts( null );
+                bean.setExecutionId( ( null == instance.getExecutionInstance() ? null : instance.getExecutionInstance().getExecutionId() ) );
                 try
                 {
                     storage.save( bean );
@@ -478,7 +479,7 @@ loop:   for( int i = 0; i < instances.length; ++i  )
         bean.setProcessID( instance.getProcessID() );
         bean.setStage( instance.getStageName() );
         bean.setPipelineName( instance.getPipelineName() );
-        bean.setExecutionId( instance.getExecutionInstance().getExecutionId() );
+        bean.setExecutionId( ( null == instance.getExecutionInstance() ? null : instance.getExecutionInstance().getExecutionId() ) );
         try
         {
             storage.save( bean );

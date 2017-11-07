@@ -14,11 +14,12 @@ import uk.ac.ebi.ena.sra.pipeline.executors.LSFExecutorConfig;
 public class 
 LSFStageExecutor extends AbstractStageExecutor implements LSFExecutorConfig
 {
-    private boolean do_commit = true;
-    private boolean was_error;
-    ExecutionInfo   info;
-    final private   ExternalCallBackEnd back_end; 
-    private         ExecutorConfig rc = new LSFExecutorConfig() {};    
+    private boolean  do_commit = true;
+    private boolean  was_error;
+    ExecutionInfo    info;
+    final private    ExternalCallBackEnd back_end; 
+    private          ExecutorConfig rc = new LSFExecutorConfig() {};
+
     
     public
     LSFStageExecutor( String pipeline_name, 
@@ -50,28 +51,32 @@ LSFStageExecutor extends AbstractStageExecutor implements LSFExecutorConfig
     @Override public int 
     getLSFMemoryReservationTimeout() 
     { 
-        return ((LSFExecutorConfig)rc).getLSFMemoryReservationTimeout(); 
+        return null == rc ? LSFExecutorConfig.super.getLSFMemoryReservationTimeout() 
+        		          : ((LSFExecutorConfig)rc).getLSFMemoryReservationTimeout(); 
     }
     
     
     @Override public int 
     getLSFMemoryLimit() 
     { 
-        return ((LSFExecutorConfig)rc).getLSFMemoryLimit(); 
+        return null == rc ? LSFExecutorConfig.super.getLSFMemoryLimit() 
+        		          : ((LSFExecutorConfig)rc).getLSFMemoryLimit(); 
     }
     
     
     @Override public int 
     getLSFCPUCores() 
     { 
-        return ((LSFExecutorConfig)rc).getLSFCPUCores(); 
+        return null == rc ? LSFExecutorConfig.super.getLSFCPUCores() 
+        		          : ((LSFExecutorConfig)rc).getLSFCPUCores(); 
     };
     
     
     @Override public int 
     getJavaMemoryLimit() 
     { 
-        return ((LSFExecutorConfig)rc).getJavaMemoryLimit(); 
+        return null == rc ? LSFExecutorConfig.super.getJavaMemoryLimit() 
+        		          : ((LSFExecutorConfig)rc).getJavaMemoryLimit(); 
     }
     
     
@@ -90,16 +95,25 @@ LSFStageExecutor extends AbstractStageExecutor implements LSFExecutorConfig
             ( (LSFBackEnd)back_end ).cpu_cores = params.getLSFCPUCores();
             ( (LSFBackEnd)back_end ).memory_limit = params.getLSFMemoryLimit();
             ( (LSFBackEnd)back_end ).memory_reservation_timeout = params.getLSFMemoryReservationTimeout();
+            this.rc = params;
         }
     }
     
+    //TODO looks overengineered
+    @Override public String[]
+    getPropertiesPass()
+    {
+    	 return null == rc ? LSFExecutorConfig.super.getPropertiesPass() 
+    			           : ((LSFExecutorConfig)rc).getPropertiesPass(); 
+    }
+
     
     private List<String> 
     constructArgs( StageInstance instance, boolean commit )
     {
         List<String>p_args = new ArrayList<String>();
 
-        p_args.add( "-XX:+OptimizeStringConcat" );
+
         p_args.add( "-XX:+UseSerialGC" );
      
         int memory_limit = getJavaMemoryLimit();
@@ -109,6 +123,8 @@ LSFStageExecutor extends AbstractStageExecutor implements LSFExecutorConfig
         p_args.add( String.format( "-D%s=%s", 
                                    DefaultConfiguration.currentSet().getConfigPrefixName(), 
                                    DefaultConfiguration.currentSet().getConfigSourceName() ) ); 
+
+        appendProperties( p_args, getPropertiesPass() );
         
         p_args.add( "-cp" );
         p_args.add( System.getProperty( "java.class.path" ) ); 
@@ -131,9 +147,9 @@ LSFStageExecutor extends AbstractStageExecutor implements LSFExecutorConfig
         
         return p_args;
     }
-    
-    
-    public void 
+
+
+	public void 
     execute( StageInstance instance )
     {
         if( EvalResult.StageTransient == can_execute( instance ) )
@@ -201,16 +217,14 @@ LSFStageExecutor extends AbstractStageExecutor implements LSFExecutorConfig
     }
 
 
-    @Override
-    public void 
+    @Override public void 
     setClientCanCommit( boolean do_commit )
     {
         this.do_commit = do_commit;
     }
     
     
-    @Override
-    public boolean 
+    @Override public boolean 
     getClientCanCommit()
     {
         return this.do_commit;

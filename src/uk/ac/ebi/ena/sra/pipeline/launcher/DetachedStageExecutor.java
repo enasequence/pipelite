@@ -47,6 +47,8 @@ DetachedStageExecutor extends AbstractStageExecutor implements DetachedExecutorC
                                    DefaultConfiguration.currentSet().getConfigPrefixName(), 
                                    DefaultConfiguration.currentSet().getConfigSourceName() ) ); 
         
+        appendProperties( p_args, getPropertiesPass() );
+        
         p_args.add( "-cp" );
         p_args.add( System.getProperty( "java.class.path" ) ); 
         p_args.add( StageLauncher.class.getName() );
@@ -139,6 +141,16 @@ DetachedStageExecutor extends AbstractStageExecutor implements DetachedExecutorC
     @Override public int 
     getJavaMemoryLimit() 
     { 
-        return ((DetachedExecutorConfig)rc).getJavaMemoryLimit(); 
+        return null == rc ? DetachedExecutorConfig.super.getJavaMemoryLimit() 
+        		          : ((DetachedExecutorConfig)rc).getJavaMemoryLimit(); 
+    }
+    
+    
+    //TODO looks overengineered
+    @Override public String[]
+    getPropertiesPass()
+    {
+    	 return null == rc ? DetachedExecutorConfig.super.getPropertiesPass() 
+    			           : ((DetachedExecutorConfig)rc).getPropertiesPass(); 
     }
 }

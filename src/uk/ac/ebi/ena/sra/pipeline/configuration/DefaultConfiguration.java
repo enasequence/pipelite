@@ -45,6 +45,7 @@ ConfigurationException extends RuntimeException
 @interface
 PipeliteProperty
 {
+	boolean required() default true;
 };
 
 
@@ -111,9 +112,10 @@ DefaultConfiguration
             {
                { 
                    PipeliteProperty p = m.getAnnotation( PipeliteProperty.class );
-                   if( null != p )
+                   if( null != p && p.required() )
                        this.getClass().getDeclaredMethod( m.getName() ).invoke( this );
                }
+               
                {
                    PipelitePropertyIntRange p = m.getAnnotation( PipelitePropertyIntRange.class );
                    if( null != p && p.range().length > 0 )
@@ -401,5 +403,24 @@ DefaultConfiguration
     getProcessTableName()
     {
         return getProperty( "process.table.name" );
+    }
+	
+	
+	@PipeliteProperty( required = false ) public String[]
+    getPropertiesPass()
+    {
+		String pass = null;
+        try
+        { 
+        	pass = getProperty( "properties.pass" );
+        } catch ( ConfigurationException ce )
+        {
+        	//ignore;
+        }
+        
+    	if( null == pass || 0 == pass.trim().length() )
+    		return new String[] {};
+    	else
+    		return pass.split( ":" );
     }
 }

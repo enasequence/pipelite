@@ -36,7 +36,7 @@ ResultTranslator
         
         for( ExecutionResult csd : results )
         {
-            Class<Throwable> cause = csd.getCause();
+            Class<? extends Throwable> cause = csd.getCause();
             if( klass == cause || ( null != cause && cause.isInstance( t ) ) )
                     return csd;
         }

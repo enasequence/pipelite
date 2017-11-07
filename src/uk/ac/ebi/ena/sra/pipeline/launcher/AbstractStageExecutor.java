@@ -1,8 +1,8 @@
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
-import org.apache.log4j.Logger;
+import java.util.List;
 
-import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult.RESULT_TYPE;
+import org.apache.log4j.Logger;
 
 
 public abstract class 
@@ -54,4 +54,16 @@ AbstractStageExecutor implements StageExecutor
         
         return EvalResult.StageTransient;
     }
+
+
+	protected void 
+	appendProperties(List<String> p_args, String...properties_to_pass) 
+	{
+		for( String name : properties_to_pass )
+	    {
+	    	for( Object p_name : System.getProperties().keySet() )
+	    		if( String.valueOf( p_name ).startsWith( name ) )
+	    			p_args.add( String.format( "-D%s=%s", p_name, System.getProperties().get( p_name ) ) );
+	    }
+	}
 }
