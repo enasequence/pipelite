@@ -1,197 +1,101 @@
 package uk.ac.ebi.ena.sra.pipeline.base.util;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.lang.management.ManagementFactory;
+import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 
-public class 
-FileLocker
+import org.apache.log4j.Logger;
+
+import sun.misc.Cleaner;
+
+@Deprecated public class 
+FileLocker implements AutoCloseable
 {
-
+	protected RandomAccessFile raf;
+	protected FileChannel fc;
+	protected FileLock fl;
+	
     protected String   path;
-    protected File     file;
-    protected FileLock fileLock;
-    protected long     timeout;
+    protected File     lockFile;
+    private Logger log  = Logger.getLogger( getClass() );
     
-    
-    FileLocker( LOCK_TYPE type, long timeout )
-    {
-        this( type.getFileName(), timeout );
-    }
-    
-    
-    private boolean 
-    checkExists( File file )
-    {
-        boolean result = false;
-        int     attempts = 3;
-        do
-        {
-            result = ( file.isFile() || file.exists() );
-            try
-            {
-                Thread.sleep( 1000 );
-            } catch( InterruptedException ie )
-            {
-                ;
-            }
-        }while( !result && 0 < attempts-- );
-        
-        return result;
-    }
-    
-    
-    FileLocker( String path, long timeout )
-    {
-        File lockFile = new File( path ).getAbsoluteFile();
-        if( timeout > 0 )
-        {
-            long end_time = System.currentTimeMillis() + timeout;
-            while( checkExists( lockFile ) )
-            {
-                if( System.currentTimeMillis() > end_time )
-                    throw new FileLockException( path, "Timeout. Lock file already exists.", null );
-                try
-                {
-                    Thread.sleep( 1000 );
-                } catch( InterruptedException e )
-                {
-                    ;
-                }
-            }
-        } else if( timeout < 0 )
-        {
-            while( checkExists( lockFile ) )
-                try
-                {
-                    Thread.sleep( 1000 );
-                } catch( InterruptedException e )
-                {
-                    ;
-                }
-        } else
-        {
-            if( checkExists( lockFile ) )
-                throw new FileLockException( path, "Lock file already exists.", null );
-        }
-        
+	FileLocker( String path )
+	{
+		this.path = path;
+		lockFile = new File( path ).getAbsoluteFile();
+        log.info( "locking on " + lockFile );
         try
         {
-            lockFile.getParentFile().mkdirs();
-            if( !lockFile.createNewFile() )
-            {
-                throw new FileLockException( path, "Failed to create lock file or parent folders.", null );
-            }
-        } catch( IOException e1 )
+        	if( !lockFile.getParentFile().exists() && !lockFile.getParentFile().mkdirs() )
+            	throw new FileLockException( path, "Failed to create lock parent folders", null );
+        	
+        	Files.write( lockFile.toPath(), new byte[] {}, StandardOpenOption.APPEND, StandardOpenOption.CREATE, StandardOpenOption.DELETE_ON_CLOSE );
+        	this.raf = new RandomAccessFile( lockFile, "rws" );            
+        	this.fc  = raf.getChannel();
+        	this.fl  = fc.tryLock( 0L, Long.MAX_VALUE, false );
+        	        	
+
+        	fc.truncate( 0 );
+        	MappedByteBuffer out = fc.map( FileChannel.MapMode.READ_WRITE, 0, ManagementFactory.getRuntimeMXBean().getName().getBytes().length );
+        	out.put( ManagementFactory.getRuntimeMXBean().getName().getBytes() );
+        	Cleaner cleaner = ((sun.nio.ch.DirectBuffer) out).cleaner();
+        	if( cleaner != null )
+                cleaner.clean();
+
+        } catch( OverlappingFileLockException | IOException e1 )
         {
             throw new FileLockException( path, "Failed to create lock file.", e1 );
         }
         
-        try
-        {
-            lockFile.deleteOnExit();
-
-            FileOutputStream fos = null;
-            try
-            {
-                fos = new FileOutputStream( lockFile );
-            } catch( FileNotFoundException e1 )
-            {
-                throw new FileLockException( path, "Failed to open lock file.", e1 );
-            }
-            FileChannel lockFileChannel = fos.getChannel();
-            try
-            {
-                fileLock = lockFileChannel.tryLock();
-            } catch( IOException e1 )
-            {
-                throw new FileLockException( path, "Failed to lock the file.", e1 );
-            }
-            if( fileLock == null )
-            {
-                throw new FileLockException( path, "Failed to acquire file lock.", null );
-            }
-            try
-            {
-                fos.write( ManagementFactory.getRuntimeMXBean().getName().getBytes() );
-                fos.flush();
-            } catch( IOException e )
-            {
-                throw new FileLockException( path, "Failed to write into the locked file.", e );
-            }
-        } catch( Throwable t )
-        {
-            release();
-            if( t instanceof FileLockException )
-                throw (FileLockException) t;
-            throw new FileLockException( path, "Unexpected exception while locking file.", t );
-        }
     }
     
     
-    public static synchronized FileLocker 
-    tryLock( LOCK_TYPE type, long timeout ) throws FileLockException
-    {
-        return new FileLocker( type, timeout );
-    }
-
-    
-    @Deprecated
     public static synchronized FileLocker 
     tryLock( String path ) throws FileLockException
     {
-        return new FileLocker( path, 0 );
+        return new FileLocker( path );
     }
 
     
     public synchronized void 
     release()
     {
-        if( fileLock != null )
-            try
+    	if( this.fl != null )
+        {
+    		try
             {
-                fileLock.release();
+                fl.release();
+                raf.close();
             } catch( Throwable t )
             {
+            	t.printStackTrace();
             }
-        if( file != null && file.exists() )
-            try
+
+        	try
             {
-                file.delete();
+                lockFile.delete();
             } catch( Throwable t )
             {
+            	t.printStackTrace();
             }
+        }
     }
 
-    public String getPath()
+    
+    public String 
+    getPath()
     {
         return path;
     }
 
 
-    enum
-    LOCK_TYPE
-    {
-        MKDIR( System.getProperty( "user.home" ) + "/.era_mkdir.lock" );
-        
-        String f_name;
-        LOCK_TYPE( String f_name )
-        {
-            this.f_name = f_name;
-        }
-        
-        public String
-        getFileName()
-        {
-            return f_name;
-        }
-    }
-    
-    
     public static class 
     FileLockException extends RuntimeException
     {
@@ -215,4 +119,11 @@ FileLocker
             this.path = path;
         }
     }
+
+
+	@Override public void 
+	close() throws Exception 
+	{
+		release();
+	}
 }

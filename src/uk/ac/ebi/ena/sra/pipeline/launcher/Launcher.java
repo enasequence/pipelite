@@ -1,6 +1,8 @@
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
@@ -22,6 +24,7 @@ import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultExecutorFactory;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultLauncherParams;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultProcessFactory;
+import uk.ac.ebi.ena.sra.pipeline.filelock.FileLockManager;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.TaskIdSource;
 import uk.ac.ebi.ena.sra.pipeline.storage.OracleProcessIdSource;
@@ -170,34 +173,34 @@ Launcher
         PipeliteLauncher   launcher   = null;
         
         
-        try( Connection connection = DefaultConfiguration.currentSet().createConnection() ) 
+        try( FileLockManager lockman    = new FileLockManager();
+        	 Connection      connection = DefaultConfiguration.currentSet().createConnection(); ) 
         {
-            fileLocker = FileLocker.tryLock( params.lock );
-            
-            task_id_source = initTaskIdSource();
-            
-            launcher = new PipeliteLauncher();
-            launcher.setTaskIdSource( task_id_source );
-            launcher.setProcessFactory( new DefaultProcessFactory() );
-            launcher.setExecutorFactory( new DefaultExecutorFactory( DefaultConfiguration.currentSet().getPipelineName(),
-                                                                     new ResultTranslator( DefaultConfiguration.currentSet().getCommitStatus() ), 
-                                                                     params.queue_name, 
-                                                                     params.lsf_user,
-                                                                     params.lsf_mem, 
-                                                                     params.lsf_mem_timeout,
-                                                                     params.lsf_cpu_cores,
-                                                                     DefaultConfiguration.currentSet().getStagesRedoCount() ) );
-            
-            launcher.setSourceReadTimeout( 120 * 1000 );
-            launcher.setProcessPool( init( params.workers ) );
-            launcher.execute();
-            
-        } catch( FileLockException e )
-        {
-            System.out.println( String.format( "another instance of %s is already running [%s]", 
-                                                Launcher.class.getName(), 
-                                                e.getPath() ) );
-            System.exit( 1 );
+            if( lockman.tryLock( params.lock ) )
+            {
+	            task_id_source = initTaskIdSource();
+	            
+	            launcher = new PipeliteLauncher();
+	            launcher.setTaskIdSource( task_id_source );
+	            launcher.setProcessFactory( new DefaultProcessFactory() );
+	            launcher.setExecutorFactory( new DefaultExecutorFactory( DefaultConfiguration.currentSet().getPipelineName(),
+	                                                                     new ResultTranslator( DefaultConfiguration.currentSet().getCommitStatus() ), 
+	                                                                     params.queue_name, 
+	                                                                     params.lsf_user,
+	                                                                     params.lsf_mem, 
+	                                                                     params.lsf_mem_timeout,
+	                                                                     params.lsf_cpu_cores,
+	                                                                     DefaultConfiguration.currentSet().getStagesRedoCount() ) );
+	            
+	            launcher.setSourceReadTimeout( 120 * 1000 );
+	            launcher.setProcessPool( init( params.workers ) );
+	            launcher.execute();
+	            
+            } else
+            {
+                System.out.println( String.format( "another instance of %s is already running %s", Launcher.class.getName(), Files.readAllLines( Paths.get( params.lock ) ) ) );
+                System.exit( 1 );
+            }
             
         }catch( Throwable e )
         {
@@ -207,7 +210,6 @@ Launcher
         }finally
         {
             launcher.shutdown();
-            fileLocker.release();
             ((OracleProcessIdSource)task_id_source).done();
         }
     }
