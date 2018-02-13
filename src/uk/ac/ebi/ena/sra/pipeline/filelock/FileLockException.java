@@ -1,7 +1,5 @@
 package uk.ac.ebi.ena.sra.pipeline.filelock;
 
-import com.sun.mail.handlers.message_rfc822;
-
 public class 
 FileLockException extends RuntimeException
 {

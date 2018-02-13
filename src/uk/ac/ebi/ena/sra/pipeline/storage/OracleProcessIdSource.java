@@ -10,7 +10,6 @@ import java.util.List;
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.log4j.Logger;
 
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.TaskIdSource;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
 
@@ -25,18 +24,23 @@ OracleProcessIdSource implements OracleCommons, TaskIdSource
     private Connection connection;
     private ExecutionResult[] execution_result_array;
     private int        window = 2000;
-    
+
     
     private String
     prepareQuery()
     {
         return String.format( 
                " select * from ( "
-             + " with T0 as ( select * from %1$s where state in ( 'ACTIVE' ) and %2$s = '%3$s' ) " //and %6$s < %7$s ) "
+             + " with T0 as ( "
+             + " 	select * "
+             + "	  from %1$s "
+             + "     where state in ( 'ACTIVE' ) "
+             + "       and %2$s = '%3$s' "
+             + " 	   and ( mod( %6$s, %7$s ) = 0 or audit_time > sysdate - 1/24 ) "
+             + " ) "
              + " select %4$s "
              + "   from T0 "
-             + " order by %5$s - mod( %6$s, %7$s ) desc nulls first, " 
-             + "          %5$s desc, " 
+             + " order by %5$s desc nulls first, " 
              + "          %4$s "
              + " ) where rownum < ?",
 /* 1 */      getTableName(),

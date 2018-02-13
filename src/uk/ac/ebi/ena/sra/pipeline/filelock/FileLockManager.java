@@ -102,8 +102,13 @@ FileLockManager implements AutoCloseable
 		File lockFile = new File( path ).getAbsoluteFile();
 		
         log.info( "locking on " + lockFile );
+        
         try
         {
+        	//Demand file not exist for at least 30 sec 
+        	for( int attempt = 0; attempt < 3 && !lockFile.exists(); ++attempt )
+        		Thread.sleep( 10 * 1000 );
+        	
         	if( !lockFile.getParentFile().exists() && !lockFile.getParentFile().mkdirs() )
             	throw new FileLockException( new FileLockInfo( lockFile.getPath(), null, null, 0 ), "Failed to create lock parent folders", null );
 
@@ -138,7 +143,7 @@ FileLockManager implements AutoCloseable
         		if( cleaner != null )
         			cleaner.clean();
         	}
-        } catch( OverlappingFileLockException | IOException e1 )
+        } catch( OverlappingFileLockException | IOException | InterruptedException e1 )
         {
             throw new FileLockException( new FileLockInfo( lockFile.getPath(), null, null, 0 ), "Failed to create lock file.", e1 );
         }
