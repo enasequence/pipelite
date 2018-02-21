@@ -1,5 +1,9 @@
 package uk.ac.ebi.ena.sra.pipeline.filelock;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.junit.Assert;
@@ -25,6 +29,7 @@ FileLockManagerTest
 		try( FileLockManager flman = new FileLockManager() )
 		{
 			log.info( "Port: " + flman.getPort() );
+			Files.write( Paths.get( LOCK_FILE_NAME ), "123@localhost:9999 99".getBytes(), StandardOpenOption.TRUNCATE_EXISTING );
 			Assert.assertTrue( flman.tryLock( LOCK_FILE_NAME ) );
 			Assert.assertFalse( flman.tryLock( LOCK_FILE_NAME ) );
 		}		

@@ -53,7 +53,8 @@ FileLockManager implements AutoCloseable
 	public
 	FileLockManager( int port ) throws InterruptedException
 	{
-		this.pong = new Pong( this.port, ManagementFactory.getRuntimeMXBean().getName() );
+		FileLockInfo info = new FileLockInfo( null, ManagementFactory.getRuntimeMXBean().getName(), port );
+		this.pong = new Pong( info.port, info.machine, info.pid );
 		e.submit( this.pong );
 		this.port = pong.getPort(); 
 	}
@@ -76,12 +77,12 @@ FileLockManager implements AutoCloseable
 	private static FileLockInfo
 	parseFileLock( String line )
 	{
-		Pattern lock_pattern = Pattern.compile( "([\\d]+)@([^:]+):([\\d]+)" );
+		Pattern lock_pattern = Pattern.compile( "^([\\d]+)@([^:]+):([\\d]{2,5}) .*$" );
 		Matcher m = lock_pattern.matcher( line );
 		if( m.matches() )
 		{
 			log.info( "To parse: " + line );
-			return new FileLockInfo( null, m.group( 1 ) + "@" + m.group( 2 ), m.group( 2 ), Integer.parseInt( m.group( 3 ) ) );
+			return new FileLockInfo( null, Integer.parseInt( m.group( 1 ) ), m.group( 2 ), Integer.parseInt( m.group( 3 ) ) );
 		}
 		
 		return null;
@@ -91,7 +92,7 @@ FileLockManager implements AutoCloseable
 	private static String
 	formFileLock( FileLockInfo info )
 	{
-		return String.format( "%s:%s", info.machine_id, info.port );
+		return String.format( "%s@%s:%s ", info.pid, info.machine, info.port );
 	}
 	
 	
@@ -110,7 +111,7 @@ FileLockManager implements AutoCloseable
         		Thread.sleep( 10 * 1000 );
         	
         	if( !lockFile.getParentFile().exists() && !lockFile.getParentFile().mkdirs() )
-            	throw new FileLockException( new FileLockInfo( lockFile.getPath(), null, null, 0 ), "Failed to create lock parent folders", null );
+            	throw new FileLockException( new FileLockInfo( lockFile.getPath(), 0, null, 0 ), "Failed to create lock parent folders", null );
 
         	try( RandomAccessFile raf = new RandomAccessFile( lockFile, "rws" );            
         		 FileChannel      fc  = raf.getChannel();
@@ -130,7 +131,7 @@ FileLockManager implements AutoCloseable
         		
         		if( null != info )
         		{
-        			info = new FileLockInfo( path, info.machine_id, info.machine, info.port );
+        			info = new FileLockInfo( path, info.pid, info.machine, info.port );
         			if( pingLockOwner( info ) )
         			{
         				log.info( "Busy: " + info );			
@@ -138,14 +139,16 @@ FileLockManager implements AutoCloseable
         			}
         		}
 
-        		out.put( ( ManagementFactory.getRuntimeMXBean().getName() + ":" + String.valueOf( port ) ).getBytes( StandardCharsets.UTF_8 ) );
+        		byte[] buf = ( formFileLock( new FileLockInfo( path, ManagementFactory.getRuntimeMXBean().getName(), port ) ) ).getBytes( StandardCharsets.UTF_8 );
+        		out.put( buf );
+        		
         		Cleaner cleaner = ((sun.nio.ch.DirectBuffer) out).cleaner();
         		if( cleaner != null )
         			cleaner.clean();
         	}
         } catch( OverlappingFileLockException | IOException | InterruptedException e1 )
         {
-            throw new FileLockException( new FileLockInfo( lockFile.getPath(), null, null, 0 ), "Failed to create lock file.", e1 );
+            throw new FileLockException( new FileLockInfo( lockFile.getPath(), 0, null, 0 ), "Failed to create lock file.", e1 );
         }
         
         return true;
@@ -160,15 +163,17 @@ FileLockManager implements AutoCloseable
 		ServerSocket server;
 		int port;
 		CountDownLatch l = new CountDownLatch( 1 );
-		final String machine_id;
+		final String machine;
+		final int pid;
 		
 		volatile boolean stop = false;
 		
 		
-		Pong( int port, String machine_id )
+		Pong( int port, String machine, int pid )
 		{
 			this.port = port;
-			this.machine_id  = machine_id;
+			this.machine = machine;
+			this.pid = pid;
 		}
 
 		
@@ -204,7 +209,7 @@ FileLockManager implements AutoCloseable
 				   {
 					   String request_line = input_reader.readLine();
 					   FileLockInfo info = FileLockManager.this.parseFileLock( request_line );
-					   String reply = String.valueOf( null == info ? Boolean.FALSE : this.machine_id.equals( info.machine_id ) ? Boolean.TRUE : Boolean.FALSE ) + "\n";
+					   String reply = String.valueOf( null == info ? Boolean.FALSE : ( this.pid == info.pid && this.machine.equals( info.machine ) ) ? Boolean.TRUE : Boolean.FALSE ) + "\n";
 					   client_stream.writeBytes( reply );
 					   log.info( "recv: " + request_line + ", resp: " + reply );
 				   } catch( Throwable t )

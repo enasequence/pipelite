@@ -5,14 +5,22 @@ FileLockInfo
 {
 	final int    port;
 	final String machine;
-	final String machine_id;
+	final int    pid;
 	final String path;
 	
-	
-	FileLockInfo( String path, String machine_id, String machine, int port )
+	FileLockInfo( String path, String machine_id, int port )
 	{
 		this.path = path;
-		this.machine_id = machine_id;
+		this.pid = Integer.parseInt( machine_id.split( "@" )[ 0 ] );
+		this.machine = machine_id.split( "@" )[ 1 ];
+		this.port = port;
+	}
+	
+	
+	FileLockInfo( String path, int pid, String machine, int port )
+	{
+		this.path = path;
+		this.pid = pid;
 		this.machine = machine;
 		this.port = port;
 	}
@@ -21,6 +29,6 @@ FileLockInfo
 	public String
 	toString()
 	{
-		return String.format( "%s [id: %s, host: %s, port: %d]", path, machine_id, machine, port );
+		return String.format( "%s [pid: %s, host: %s, port: %d]", path, pid, machine, port );
 	}
 }
