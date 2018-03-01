@@ -8,6 +8,9 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.log4j.Logger;
 
 import uk.ac.ebi.ena.sra.pipeline.resource.ResourceLocker;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
@@ -32,6 +35,8 @@ PipeliteLauncher
         default public ResourceLocker getLocker() { throw new RuntimeException( "Method must be overriden" ); }
         default public void           setLocker( ResourceLocker locker ) { throw new RuntimeException( "Method must be overriden" ); }
         default public void           setExecutor( StageExecutor executor ) {}
+        default public void           stop() {}
+        default public boolean        isStopped() { return false; }
     }
     
     public interface StageExecutorFactory { public StageExecutor getExecutor(); }
@@ -47,8 +52,9 @@ PipeliteLauncher
     private int source_read_timeout = 60 * 1000;
     private boolean exit_when_empty;
     private StageExecutorFactory executor_factory;
+    private volatile boolean do_stop;
+    private Logger   log = Logger.getLogger( this.getClass() );
     
-
     
     public void
     setProcessFactory( ProcessFactory process_factory )
@@ -85,6 +91,34 @@ PipeliteLauncher
     shutdown()
     {
         thread_pool.shutdown();
+        thread_pool.running.forEach( ( p, r ) -> {
+            log.info( "Sending stop to " + p );
+            ( (ProcessLauncher)r).stop(); 
+        } );
+        try
+        {
+            while( !thread_pool.awaitTermination( 30, TimeUnit.SECONDS ) )
+            {
+                log.info( "Awaiting for completion of " + thread_pool.getActiveCount() + " threads " );
+            }
+        } catch( InterruptedException ie )
+        {
+            Thread.currentThread().interrupt();
+        }
+    }
+    
+    
+    public void
+    stop()
+    {
+        this.do_stop = true; 
+    }
+    
+    
+    public boolean
+    isStopped()
+    {
+        return this.do_stop; 
     }
     
     
@@ -92,7 +126,7 @@ PipeliteLauncher
     execute() throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException
     {
         List<String> task_queue = null;
-        while( null != ( task_queue = ( thread_pool.getCorePoolSize() - thread_pool.getActiveCount() ) > 0 ? getTaskIdSource().getTaskQueue() : Collections.emptyList() ) )
+main:   while( !do_stop && null != ( task_queue = ( thread_pool.getCorePoolSize() - thread_pool.getActiveCount() ) > 0 ? getTaskIdSource().getTaskQueue() : Collections.emptyList() ) )
         {
             if( exit_when_empty && task_queue.isEmpty() )
                 break;
@@ -109,16 +143,22 @@ PipeliteLauncher
                     break;
                 }
             }           
-
-            try
+            
+            long until = System.currentTimeMillis() + getSourceReadTimout();
+            while( until > System.currentTimeMillis() )
             {
-                Thread.sleep( getSourceReadTimout() );
-            } catch( InterruptedException e )
-            {
-                Thread.currentThread().interrupt();
-                break;
+                try
+                {
+                    Thread.sleep( 1000 );
+                    if( 0 == thread_pool.getActiveCount() && !task_queue.isEmpty() )
+                        break;
+                } catch( InterruptedException e )
+                {
+                    Thread.currentThread().interrupt();
+                    break main;
+                }
             }
-        };
+        }
     }
     
     

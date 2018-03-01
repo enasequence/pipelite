@@ -1,39 +1,55 @@
 package uk.ac.ebi.ena.sra.pipeline.resource;
 
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class 
 ResourceLock
 {
-    private String lock_id;
-    private String lock_owner;
+    private String[] parts;
+    private String   pipeline_name;
+    protected String separator = "/";
     
+    
+    public String
+    getSeparator()
+    {
+        return this.separator;
+    }
     
     public
-    ResourceLock( String lock_id, String lock_owner )
+    ResourceLock( String pipeline_name, String...parts )
     {
-        this.lock_id = lock_id;
-        this.lock_owner = lock_owner;
+        this.parts = parts;
+        this.pipeline_name = pipeline_name;
     }
     
     
-    public String 
+    public String[] 
+    getParts()
+    {
+        return parts;
+    };
+    
+    
+    public String
     getLockId()
     {
-        return lock_id;
-    };
+        return Stream.of( parts ).collect( Collectors.joining( getSeparator() ) );
+    }
     
     
     public String 
     getLockOwner()
     {
-        return lock_owner;
+        return pipeline_name;
     }
 
     
     @Override public int
     hashCode()
     {
-        return getLockId().hashCode();
+        return getParts().hashCode();
     }
     
     
@@ -58,6 +74,6 @@ ResourceLock
     @Override public String 
     toString()
     {
-        return String.format( "%s: %s", getLockId(), getLockOwner() );
+        return String.format( "%2$s: %1$s", getLockId(), getLockOwner() );
     }
 }

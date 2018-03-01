@@ -49,7 +49,8 @@ ProcessLauncher implements PipeliteProcess
     private ExecutionResult[] commit_statuses;
     private String __name;
 	private int max_redo_count = 1;
-    
+    private volatile boolean do_stop;
+	
     
     public
     ProcessLauncher()
@@ -132,70 +133,73 @@ ProcessLauncher implements PipeliteProcess
     void
     lifecycle()
     {
-        try
+        if( !do_stop )
         {
-            init_state();
-            init_stages();
-            
-            load_state();
-            if( !lock_process() )
+            try
             {
-            	log.error( String.format( "There were problems while locking process %s.", getProcessId() ) );
-            	return;
-            }
-            
-            load_state();
-            save_state(); //this is to check permissions
-            
-            if( State.ACTIVE != state.getState() )
-            {
-                log.warn( String.format( "Invoked for process %s with state %s.", getProcessId(), state.getState() ) );
-                state.setState( State.ACTIVE );
-            }
-            
-            if( !load_stages() )
-            {
-                log.error( String.format( "There were problems while loading stages for process %s.", getProcessId() ) );
-                return;
-            }
-
-            if( !lock_stages() )
-            {
-                log.error( String.format( "There were problems while locking process or stages for process %s.", getProcessId() ) );
-                return;
-            }   
-            
-            if( !load_stages() )
-            {
-                log.error( String.format( "There were problems while loading stages for process %s.", getProcessId() ) );
-                return;
-            }
-
-            save_stages(); //this is to check database permissions
-            
-            if( !eval_process() )
-            {
-                log.warn( String.format( "Terminal state reached for %s", state ) );
-            } else
-            {
-            	increment_process_counter();
-            	execute_stages();
-                save_stages();
-                if( eval_process() )
+                init_state();
+                init_stages();
+                
+                load_state();
+                if( !lock_process() )
                 {
-                	if( 0 < state.getExecCount() &&  0 == state.getExecCount() % max_redo_count )
-                    	state.setState( State.FAILED );
+                	log.error( String.format( "There were problems while locking process %s.", getProcessId() ) );
+                	return;
                 }
+                
+                load_state();
+                save_state(); //this is to check permissions
+                
+                if( State.ACTIVE != state.getState() )
+                {
+                    log.warn( String.format( "Invoked for process %s with state %s.", getProcessId(), state.getState() ) );
+                    state.setState( State.ACTIVE );
+                }
+                
+                if( !load_stages() )
+                {
+                    log.error( String.format( "There were problems while loading stages for process %s.", getProcessId() ) );
+                    return;
+                }
+    
+    //            if( !lock_stages() )
+    //            {
+    //                log.error( String.format( "There were problems while locking process or stages for process %s.", getProcessId() ) );
+    //                return;
+    //            }   
+                
+                if( !load_stages() )
+                {
+                    log.error( String.format( "There were problems while loading stages for process %s.", getProcessId() ) );
+                    return;
+                }
+    
+                save_stages(); //this is to check database permissions
+                
+                if( !eval_process() )
+                {
+                    log.warn( String.format( "Terminal state reached for %s", state ) );
+                } else
+                {
+                	increment_process_counter();
+                	execute_stages();
+                    save_stages();
+                    if( eval_process() )
+                    {
+                    	if( 0 < state.getExecCount() &&  0 == state.getExecCount() % max_redo_count )
+                        	state.setState( State.FAILED );
+                    }
+                }
+                save_state();
+            } catch ( StorageException e )
+            {
+                log.error( e.getMessage(), e );
+                
+            } finally
+            {
+    //            unlock_stages();
+                unlock_process();
             }
-            save_state();
-        } catch ( StorageException e )
-        {
-            log.error( e.getMessage(), e );
-            
-        } finally
-        {
-            unlock_stages();
-            unlock_process();
         }
     }
         
@@ -227,11 +231,11 @@ ProcessLauncher implements PipeliteProcess
     {
         for( StageInstance instance : instances )
         {
-            if( !locker.lock( new StageResourceLock( instance.getStageName(), instance.getProcessID() ) ) )
+            if( !locker.lock( new StageResourceLock( instance.getPipelineName(), instance.getProcessID(), instance.getStageName() ) ) )
             {
                 for( StageInstance i : instances )
-                    if( locker.is_locked( new StageResourceLock( i.getStageName(), i.getProcessID() ) ) )
-                        locker.unlock( new StageResourceLock( i.getStageName(), i.getProcessID() ) );
+                    if( locker.is_locked( new StageResourceLock( i.getPipelineName(), i.getProcessID(), i.getStageName() ) ) )
+                        locker.unlock( new StageResourceLock( i.getPipelineName(), i.getProcessID(), i.getStageName() ) );
                 return false;
             }       
         }
@@ -245,8 +249,8 @@ ProcessLauncher implements PipeliteProcess
     {
         for( StageInstance i : instances )
         {
-            if( locker.is_locked( new StageResourceLock( i.getStageName(), i.getProcessID() ) ) )
-                locker.unlock( new StageResourceLock( i.getStageName(), i.getProcessID() ) );
+            if( locker.is_locked( new StageResourceLock( i.getPipelineName(), i.getProcessID(), i.getStageName() ) ) )
+                locker.unlock( new StageResourceLock( i.getPipelineName(), i.getProcessID(), i.getStageName() ) );
         }
     }
     
@@ -380,7 +384,7 @@ loop:   for( int i = 0; i < instances.length; ++i  )
                     && 54 == ( (SQLException)t ).getErrorCode() )
                 {
                     //LOCKED: code is 54 //state 61000
-                    System.out.println( ( (SQLException)t ).getSQLState() );
+                    log.info( ( (SQLException)t ).getSQLState() );
                     bean_message = "Unable to lock process";
                 }
 
@@ -418,7 +422,11 @@ loop:   for( int i = 0; i < instances.length; ++i  )
     private void
     execute_stages() throws StorageException
     {
-        for( StageInstance instance : instances ) // TODO: replace with eval.next() and whole process re-evaluation 
+        for( StageInstance instance : instances ) // TODO: replace with eval.next() and whole process re-evaluation
+        {
+            if( do_stop )
+                break;
+            
             if( EvalResult.StageTransient == executor.can_execute( instance ) )
             {
                 if( null != instance.getResourceConfig( executor.getClass() ) )
@@ -462,6 +470,7 @@ loop:   for( int i = 0; i < instances.length; ++i  )
                     break;
                 }
             }
+        }
     }
 
 
@@ -717,6 +726,20 @@ loop:   for( int i = 0; i < instances.length; ++i  )
     setRedoCount( int max_redo_count )
     {
     	this.max_redo_count  = max_redo_count;
+    }
+
+
+    @Override public void
+    stop()
+    {
+        this.do_stop = true;
+    }
+
+
+    @Override public boolean
+    isStopped()
+    {
+        return this.do_stop;
     }
     
 }

@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 
 import org.apache.log4j.DailyRollingFileAppender;
@@ -17,22 +18,21 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 
+import com.beust.jcommander.JCommander;
+
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall.LSFQueue;
-import uk.ac.ebi.ena.sra.pipeline.base.util.FileLocker;
-import uk.ac.ebi.ena.sra.pipeline.base.util.FileLocker.FileLockException;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultExecutorFactory;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultLauncherParams;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultProcessFactory;
-import uk.ac.ebi.ena.sra.pipeline.filelock.FileLockManager;
+import uk.ac.ebi.ena.sra.pipeline.dblock.DBLockManager;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.TaskIdSource;
+import uk.ac.ebi.ena.sra.pipeline.resource.ResourceLocker;
 import uk.ac.ebi.ena.sra.pipeline.storage.OracleProcessIdSource;
 import uk.ac.ebi.ena.sra.pipeline.storage.OracleStorage;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
-
-import com.beust.jcommander.JCommander;
 
 
 public class 
@@ -46,7 +46,7 @@ Launcher
     
     
     private static ProcessPoolExecutor
-    init( int workers ) throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException
+    init( int workers, StorageBackend storage, ResourceLocker locker ) throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException
     {
          return new ProcessPoolExecutor( workers ) 
                     { 
@@ -63,38 +63,22 @@ Launcher
                                   e.printStackTrace();
                               } 
                             
-                              try
-                              {
-                                  storage.close();
-                              } catch( StorageException e )
-                              {
-                                  // TODO Auto-generated catch block
-                                  e.printStackTrace();
-                              } 
+//                              try
+//                              {
+//                                  storage.close();
+//                              } catch( StorageException e )
+//                              {
+//                                  // TODO Auto-generated catch block
+//                                  e.printStackTrace();
+//                              } 
                           }
                           
                           
                           public void 
                           init( PipeliteProcess process ) 
                           { 
-                              try
-                              {
-                                  OracleStorage os = initStorageBackend();
-                                  ((PipeliteProcess)process).setStorage( os );
-                                  ((PipeliteProcess)process).setLocker( os );
-                              } catch( SQLException e )
-                              {
-                                  e.printStackTrace();
-                              } catch( InstantiationException e )
-                              {
-                                  e.printStackTrace();
-                              } catch( IllegalAccessException e )
-                              {
-                                  e.printStackTrace();
-                              } catch( ClassNotFoundException e )
-                              {
-                                  e.printStackTrace();
-                              }
+                              ((PipeliteProcess)process).setStorage( storage );
+                              ((PipeliteProcess)process).setLocker( locker );
                           }
                       };
     }
@@ -105,7 +89,10 @@ Launcher
     {
         OracleStorage os = new OracleStorage();
         
-        os.setConnection( DefaultConfiguration.currentSet().createConnection() );
+        Connection connection = DefaultConfiguration.currentSet().createConnection();
+        connection.setAutoCommit( true );
+        
+        os.setConnection( connection );
         os.setProcessTableName( DefaultConfiguration.currentSet().getProcessTableName() );
         os.setStageTableName( DefaultConfiguration.currentSet().getStageTableName() );
         os.setPipelineName( DefaultConfiguration.currentSet().getPipelineName() );
@@ -134,13 +121,13 @@ Launcher
     
     
     public static void 
-    main( String[] args ) throws IOException 
+    main( String[] args ) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException 
     {
         
         DefaultLauncherParams params  = new DefaultLauncherParams();
         JCommander jc  = new JCommander( params );
         LSFQueue queue = DefaultLauncherParams.DEFAULT_LSF_QUEUE;
-        
+
         try
         {
             jc.parse( args );
@@ -169,18 +156,19 @@ Launcher
 
         
         TaskIdSource task_id_source = null;        
-        FileLocker fileLocker = null;
-        PipeliteLauncher   launcher   = null;
+        PipeliteLauncher launcher = new PipeliteLauncher();
+        OracleStorage    storage = null;
+        CountDownLatch latch = new CountDownLatch( 1 );
         
-        
-        try( FileLockManager lockman    = new FileLockManager();
-        	 Connection      connection = DefaultConfiguration.currentSet().createConnection(); ) 
+        try( LauncherLockManager lockman = new DBLockManager( DefaultConfiguration.currentSet().createConnection(), DefaultConfiguration.currentSet().getPipelineName() ) )
         {
+            storage  = initStorageBackend();
+            
             if( lockman.tryLock( params.lock ) )
             {
 	            task_id_source = initTaskIdSource();
 	            
-	            launcher = new PipeliteLauncher();
+	            
 	            launcher.setTaskIdSource( task_id_source );
 	            launcher.setProcessFactory( new DefaultProcessFactory() );
 	            launcher.setExecutorFactory( new DefaultExecutorFactory( DefaultConfiguration.currentSet().getPipelineName(),
@@ -193,12 +181,36 @@ Launcher
 	                                                                     DefaultConfiguration.currentSet().getStagesRedoCount() ) );
 	            
 	            launcher.setSourceReadTimeout( 120 * 1000 );
-	            launcher.setProcessPool( init( params.workers ) );
-	            launcher.execute();
+	            launcher.setProcessPool( init( params.workers, storage, (ResourceLocker)lockman ) );
+
+	            //TODO remove
+	            Runtime.getRuntime().addShutdownHook( new Thread( new Runnable() 
+	            { 
+	                Thread t = Thread.currentThread(); 
+	                @Override public void 
+	                run() 
+	                { 
+	                    launcher.stop();
+	                    t.interrupt();
+System.out.println( t.getName() + " thread interrupted from " + Thread.currentThread().getName() );	                    
+	                    try
+                        {
+                            latch.await();
+System.out.println( t.getName() + " exited" );                            
+                        } catch( InterruptedException e )
+                        {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+	                } 
+	            } ) );
 	            
+	            launcher.execute();
+	            lockman.unlock( params.lock );
+
             } else
             {
-                System.out.println( String.format( "another instance of %s is already running %s", Launcher.class.getName(), Files.readAllLines( Paths.get( params.lock ) ) ) );
+                System.out.println( String.format( "another instance of %s is already running %s", Launcher.class.getName(), Files.exists( Paths.get( params.lock ) ) ? Files.readAllLines( Paths.get( params.lock ) ) : params.lock ) );
                 System.exit( 1 );
             }
             
@@ -209,8 +221,39 @@ Launcher
             
         }finally
         {
-            launcher.shutdown();
-            ((OracleProcessIdSource)task_id_source).done();
+            try
+            {
+                launcher.shutdown();
+            } catch( Throwable t )
+            {
+                t.printStackTrace();
+            }
+            
+            try
+            {
+                ((OracleProcessIdSource)task_id_source).done();
+            } catch( Throwable t )
+            {
+                t.printStackTrace();
+            }
+            
+            try
+            {
+                storage.flush();
+            } catch( StorageException e )
+            {
+                e.printStackTrace();
+            } 
+
+            try
+            {
+                storage.close();
+            } catch( StorageException e )
+            {
+                e.printStackTrace();
+            } 
+            
+            latch.countDown();
         }
     }
 }

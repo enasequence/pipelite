@@ -40,6 +40,7 @@ OracleProcessIdSource implements OracleCommons, TaskIdSource
              + " ) "
              + " select %4$s "
              + "   from T0 "
+             + "   where not exists ( select 1 from pipelite_lock where %2$s = '%3$s' and lock_id = %4$s ) "
              + " order by %5$s desc nulls first, " 
              + "          %4$s "
              + " ) where rownum < ?",

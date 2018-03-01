@@ -19,6 +19,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -28,12 +29,13 @@ import java.util.regex.Pattern;
 import org.apache.log4j.Logger;
 
 import sun.misc.Cleaner;
+import uk.ac.ebi.ena.sra.pipeline.launcher.LauncherLockManager;
 
 
 
 //PID@MACHINE
 public class 
-FileLockManager implements AutoCloseable
+FileLockManager implements LauncherLockManager
 {
 	private static final long FILE_LOCK_LENGTH = 666;
 	static Logger log = Logger.getLogger( FileLockManagerTest.class );
@@ -67,13 +69,19 @@ FileLockManager implements AutoCloseable
 	}
 	
 
-	public static boolean 
+	@Override public boolean 
 	unlock( String path )
 	{
 		return false;
 	}
 	
-	
+
+	@Override public void 
+	purge( Timestamp before_date ) 
+	{
+		;
+	}
+
 	private static FileLockInfo
 	parseFileLock( String line )
 	{
@@ -257,4 +265,26 @@ FileLockManager implements AutoCloseable
 	{
 		this.e.shutdown();
 	}
+
+	
+    @Override public boolean
+    isLocked( String lock_id )
+    {
+        throw new UnsupportedOperationException();
+    }
+
+
+    @Override public boolean
+    terminate( String lock_id )
+    {
+        throw new UnsupportedOperationException();
+    }
+
+
+    @Override public boolean
+    isBeingHeld( String lock_id )
+    {
+        throw new UnsupportedOperationException();
+    }
+
 }

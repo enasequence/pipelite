@@ -5,8 +5,8 @@ ProcessResourceLock extends ResourceLock
 {
 
 	public
-	ProcessResourceLock( String lock_id, String lock_owner ) 
+	ProcessResourceLock( String lock_owner, String lock_id ) 
 	{
-		super(lock_id, lock_owner);
+		super( lock_owner, lock_id );
 	}
 }
