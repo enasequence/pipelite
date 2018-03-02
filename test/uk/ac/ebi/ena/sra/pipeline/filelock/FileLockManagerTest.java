@@ -29,7 +29,7 @@ FileLockManagerTest
 		try( FileLockManager flman = new FileLockManager() )
 		{
 			log.info( "Port: " + flman.getPort() );
-			Files.write( Paths.get( LOCK_FILE_NAME ), "123@localhost:9999 99".getBytes(), StandardOpenOption.TRUNCATE_EXISTING );
+			Files.write( Paths.get( LOCK_FILE_NAME ), "123@localhost:9999 99".getBytes(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING );
 			Assert.assertTrue( flman.tryLock( LOCK_FILE_NAME ) );
 			Assert.assertFalse( flman.tryLock( LOCK_FILE_NAME ) );
 		}		
