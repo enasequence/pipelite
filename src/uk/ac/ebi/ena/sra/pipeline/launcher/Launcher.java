@@ -160,7 +160,8 @@ Launcher
         OracleStorage    storage = null;
         CountDownLatch latch = new CountDownLatch( 1 );
         
-        try( LauncherLockManager lockman = new DBLockManager( DefaultConfiguration.currentSet().createConnection(), DefaultConfiguration.currentSet().getPipelineName() ) )
+        try( Connection connection = DefaultConfiguration.currentSet().createConnection();
+             LauncherLockManager lockman = new DBLockManager( connection, DefaultConfiguration.currentSet().getPipelineName() ) )
         {
             storage  = initStorageBackend();
             

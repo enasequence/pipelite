@@ -77,9 +77,9 @@ FileLockManager implements LauncherLockManager
 	
 
 	@Override public void 
-	purge( Timestamp before_date ) 
+	purge( String allocator_name ) 
 	{
-		;
+	    throw new UnsupportedOperationException();
 	}
 
 	private static FileLockInfo
@@ -283,6 +283,13 @@ FileLockManager implements LauncherLockManager
 
     @Override public boolean
     isBeingHeld( String lock_id )
+    {
+        throw new UnsupportedOperationException();
+    }
+
+
+    @Override public void
+    purgeDead()
     {
         throw new UnsupportedOperationException();
     }

@@ -3,11 +3,12 @@ package uk.ac.ebi.ena.sra.pipeline.filelock;
 public class 
 FileLockInfo 
 {
-	final int    port;
-	final String machine;
-	final int    pid;
-	final String path;
+	final public int    port;
+	final public String machine;
+	final public int    pid;
+	final public String path;
 	
+	public 
 	FileLockInfo( String path, String machine_id, int port )
 	{
 		this.path = path;
@@ -17,6 +18,7 @@ FileLockInfo
 	}
 	
 	
+	public 
 	FileLockInfo( String path, int pid, String machine, int port )
 	{
 		this.path = path;

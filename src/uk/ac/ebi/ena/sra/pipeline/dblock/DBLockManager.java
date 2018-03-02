@@ -1,15 +1,22 @@
 package uk.ac.ebi.ena.sra.pipeline.dblock;
 
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Instant;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
+import uk.ac.ebi.ena.sra.pipeline.filelock.FileLockInfo;
 import uk.ac.ebi.ena.sra.pipeline.launcher.LauncherLockManager;
 import uk.ac.ebi.ena.sra.pipeline.resource.ProcessResourceLock;
 import uk.ac.ebi.ena.sra.pipeline.resource.ResourceLock;
@@ -21,24 +28,99 @@ DBLockManager implements LauncherLockManager, ResourceLocker
 {
 	final private Connection connection;
 	final private String pipeline_name;
-	final private String allocator_name = ManagementFactory.getRuntimeMXBean().getName();
+	final private String allocator_name;
 	final private Logger log = Logger.getLogger( this.getClass() );
+	ExecutorService e = Executors.newSingleThreadExecutor();
+	final private AbstractPingPong pingpong;
 	
 	public
-	DBLockManager( Connection connection, String pipeilne_name )
+	DBLockManager( Connection connection, String pipeilne_name ) throws InterruptedException
 	{
 		this.connection    = connection;
 		this.pipeline_name = pipeilne_name;
+		String allocator_name = ManagementFactory.getRuntimeMXBean().getName();
+		
+		e.submit( pingpong = new AbstractPingPong( 0, 
+		                                           allocator_name.split( "@" )[ 1 ],
+		                                           Integer.valueOf( allocator_name.split( "@" )[ 0 ] ) ) 
+		{
+		    private Pattern lock_pattern = Pattern.compile( "^([\\d]+)@([^:]+):([\\d]{2,5})$" );
+		    
+            @Override public FileLockInfo
+            parseFileLock( String request_line )
+            {
+                Matcher m = lock_pattern.matcher( request_line );
+                if( m.matches() )
+                {
+                    log.info( "To parse: " + request_line );
+                    return new FileLockInfo( null, Integer.parseInt( m.group( 1 ) ), m.group( 2 ), Integer.parseInt( m.group( 3 ) ) );
+                }
+                
+                return null;
+            }
+            
+            @Override public String
+            formFileLock( FileLockInfo info )
+            {
+                return String.format( "%d@%s:%d", info.pid, info.machine, info.port );
+            }
+        } );
+		
+		this.allocator_name = pingpong.formFileLock( pingpong.getLockInfo() );
 	}
 	
 	
+	public void
+	purgeDead() throws InterruptedException
+	{
+        try( PreparedStatement ps = connection.prepareStatement( "select distinct allocator_name from pipelite_lock where pipeline_name = ? and allocator_name <> ? " ) )
+        {
+            ps.setString( 1, this.pipeline_name );
+            ps.setString( 2, this.allocator_name );
+            ps.execute();
+            try( ResultSet rs = ps.getResultSet() )
+            {
+                while( rs.next() )
+                {
+                    String allocator_name = rs.getString( "allocator_name" );
+                    try
+                    {
+                        int attempt = 3;
+                        int attempt_index = 0;
+                        while( !pingpong.pingLockOwner( pingpong.parseFileLock( allocator_name ) ) )
+                        {
+                            log.info( ++attempt_index + " attempt failed to ping " + allocator_name );
+                            if( attempt-- == 0 )
+                            {
+                                purge( allocator_name );
+                                break;
+                            }
+                            Thread.sleep( ( 1 << attempt_index  ) * 1000 );
+                        }
+                    } catch( IOException e )
+                    {
+                        log.info( "Cannot purge lock " + allocator_name );
+                    }
+                }
+            }
+        } catch( SQLException e )
+        {
+            log.info( "ERROR: " + e.getMessage() );
+        }
+	}
 
+	
+	public Connection
+	getConnection()
+	{
+	    return this.connection;
+	}
+
+	
 	@Override public void 
 	close() throws Exception 
 	{
-	    purge( Timestamp.from( Instant.now() ) );
-		connection.rollback();
-		connection.close();
+	    purge( pingpong.formFileLock( pingpong.getLockInfo() ) );
 	}
 
 	
@@ -274,20 +356,19 @@ DBLockManager implements LauncherLockManager, ResourceLocker
 
 
     @Override public void 
-	purge( Timestamp before_date ) 
+	purge( String allocator_name ) 
 	{
 		try( PreparedStatement ps = connection.prepareStatement(
 				" declare "
 				+ " pragma autonomous_transaction; "
 				+ " begin "
-				+ " update pipelite_lock set lock_id = null, allocator_name = null where pipeline_name = ? and allocator_name = ? and audit_time < ?; "
+				+ "   update pipelite_lock set lock_id = null, allocator_name = null where pipeline_name = ? and allocator_name = ? ; "
 				+ " commit; "
 				+ " end;"
 			  ) )
 		{
 			ps.setString( 1, this.pipeline_name );
 			ps.setString( 2, allocator_name );
-			ps.setTimestamp( 3, before_date );
 			ps.execute();
 		} catch( SQLException e )
 		{
