@@ -36,7 +36,7 @@ OracleProcessIdSource implements OracleCommons, TaskIdSource
              + "	  from %1$s "
              + "     where state in ( 'ACTIVE' ) "
              + "       and %2$s = '%3$s' "
-             + " 	   and ( mod( %6$s, %7$s ) = 0 or audit_time < sysdate - 1/24 ) "
+             + " 	   and ( mod( %6$s, %7$s ) = 0 or audit_time < sysdate - 1/24/12 ) "
              + " ) "
              + " select %4$s "
              + "   from T0 "
