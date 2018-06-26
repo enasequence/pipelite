@@ -42,7 +42,9 @@ Launcher
     TaggedPoolExecutor thread_pool;
     Map<Future<?>, ProcessLauncher> task_map = new HashMap<Future<?>, ProcessLauncher>();
     
-    final static int MEMORY_LIMIT = 15000; 
+    final static int MEMORY_LIMIT = 15000;
+    private static final int DEFAULT_ERROR_EXIT = 1;
+    private static final int NORMAL_EXIT = 0; 
     
     
     private static ProcessPoolExecutor
@@ -123,7 +125,6 @@ Launcher
     public static void 
     main( String[] args ) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException 
     {
-        
         DefaultLauncherParams params  = new DefaultLauncherParams();
         JCommander jc  = new JCommander( params );
         LSFQueue queue = DefaultLauncherParams.DEFAULT_LSF_QUEUE;
@@ -143,10 +144,15 @@ Launcher
         {
             System.out.println( "**" );
             jc.usage();
-            System.exit( 1 );
+            System.exit( DEFAULT_ERROR_EXIT );
         }
-        
+        System.exit( main2( params ) );
+    }
 
+
+    private static int 
+    main2( DefaultLauncherParams params ) throws IOException
+    {
         PatternLayout   layout = new PatternLayout( "%d{ISO8601} %-5p [%t] " + DefaultConfiguration.currentSet().getPipelineName() + " %c{1}:%L - %m%n" );
         FileAppender  appender = new DailyRollingFileAppender( layout, params.log_file, "'.'yyyy-ww" );
         appender.setThreshold( Level.ALL );
@@ -212,13 +218,14 @@ System.out.println( t.getName() + " exited" );
             } else
             {
                 System.out.println( String.format( "another instance of %s is already running %s", Launcher.class.getName(), Files.exists( Paths.get( params.lock ) ) ? Files.readAllLines( Paths.get( params.lock ) ) : params.lock ) );
-                System.exit( 1 );
+                return DEFAULT_ERROR_EXIT;
             }
             
+            return NORMAL_EXIT;
         }catch( Throwable e )
         {
             e.printStackTrace();
-            System.exit( 1 );
+            return DEFAULT_ERROR_EXIT;
             
         }finally
         {
