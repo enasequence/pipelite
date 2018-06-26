@@ -110,6 +110,7 @@ publishing {
       artifacts { 
       	archives jar 
       	archives sourceJar{ classifier "sources" }
+      	artifactId 'pipelite'
     	}
     }
   }
