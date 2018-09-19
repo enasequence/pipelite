@@ -92,7 +92,7 @@ Launcher
         OracleStorage os = new OracleStorage();
         
         Connection connection = DefaultConfiguration.currentSet().createConnection();
-        connection.setAutoCommit( true );
+        connection.setAutoCommit( false );
         
         os.setConnection( connection );
         os.setProcessTableName( DefaultConfiguration.currentSet().getProcessTableName() );
