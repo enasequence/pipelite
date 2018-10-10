@@ -90,21 +90,25 @@ PipeliteLauncher
     void
     shutdown()
     {
-        thread_pool.shutdown();
-        thread_pool.running.forEach( ( p, r ) -> {
-            log.info( "Sending stop to " + p );
-            ( (ProcessLauncher)r).stop(); 
-        } );
-        try
-        {
-            while( !thread_pool.awaitTermination( 30, TimeUnit.SECONDS ) )
-            {
-                log.info( "Awaiting for completion of " + thread_pool.getActiveCount() + " threads " );
-            }
-        } catch( InterruptedException ie )
-        {
-            Thread.currentThread().interrupt();
-        }
+    	if( null != thread_pool )
+    	{
+    		thread_pool.shutdown();
+    		thread_pool.running.forEach( ( p, r ) -> {
+    			log.info( "Sending stop to " + p );
+    			( (ProcessLauncher)r).stop(); 
+    		} );
+    		
+	        try
+	        {
+	            while( !thread_pool.awaitTermination( 30, TimeUnit.SECONDS ) )
+	            {
+	                log.info( "Awaiting for completion of " + thread_pool.getActiveCount() + " threads " );
+	            }
+	        } catch( InterruptedException ie )
+	        {
+	            Thread.currentThread().interrupt();
+	        }
+    	}
     }
     
     
