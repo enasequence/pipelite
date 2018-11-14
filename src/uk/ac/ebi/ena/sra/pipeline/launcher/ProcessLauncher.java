@@ -611,7 +611,7 @@ loop:   for( int i = 0; i < instances.length; ++i  )
                 OracleStorage os = initStorageBackend();
                 os.setConnection( connection );
                 process.setStorage( os );
-                
+                process.setLocker( os );                
                 AbstractStageExecutor executor = (AbstractStageExecutor)( Class.forName( params.executor_class )
                                                  .getConstructor( String.class, ResultTranslator.class )
                                                  .newInstance( "", new ResultTranslator( DefaultConfiguration.currentSet().getCommitStatus() ) ) );

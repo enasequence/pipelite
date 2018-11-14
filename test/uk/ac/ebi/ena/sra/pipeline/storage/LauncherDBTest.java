@@ -65,7 +65,7 @@ LauncherDBTest
         Connection connection = createConnection();
 
         OracleTaskIdSource id_src = new OracleTaskIdSource();
-        id_src.setTableName( "DROP_PIPELITE_STAGE" );
+        id_src.setTableName( "PIPELITE_STAGE" );
         id_src.setExecutionResultArray( ExecutionResults.values() );
         id_src.setRedoCount( Integer.MAX_VALUE );
         id_src.setConnection( connection );

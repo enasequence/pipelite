@@ -9,7 +9,7 @@ apply plugin: 'maven'
 compileJava.options.encoding = 'UTF-8'
 
 group = 'uk.ac.ebi'
-ext.version_base = '2.1.4'
+ext.version_base = '2.3.0'
 version = version_base
 buildDir = 'target'
 
@@ -57,14 +57,17 @@ dependencies {
   compile(group: 'commons-net', name: 'commons-net', version: '2.0')
   compile(group: 'org.apache.commons', name: 'commons-compress', version: '1.10')
   compile(group: 'com.beust', name: 'jcommander', version: '1.71')
-  compile( group: 'com.oracle', name: 'ojdbc6', version: '11.2.0.4.0' )
-  compile(group: 'com.oracle.oc4j', name: 'xdb', version: '11')
-  compile 'org.apache.xmlbeans:xmlbeans:2.3.0'
+  
+  compile(group: 'com.oracle', name: 'ojdbc8', version: '12.2.0.1.0')
+  compile(group: 'com.oracle', name: 'xdb', version: '12.2.0.1.0')
+  //compile(group: 'com.oracle', name: 'xmlparserv2', version: '12.2.0.1.0_PARSED_REMOVED_SERVICES' )
+
+  compile 'org.apache.xmlbeans:xmlbeans:2.5.0'
   compile 'log4j:log4j:1.2.17'
   compile( group: 'net.sf.samtools', name: 'sam', version: '1.85' )
   compile( group: 'javax.mail', name: 'mail', version: '1.4' )
   compile( group: 'org.mockito', name: 'mockito-all', version: '1.9.5' )
-  compile( group: 'uk.ac.ebi', name: 'sra-base', version: '1.1.10' ) 
+  compile( group: 'uk.ac.ebi', name: 'sra-base', version: '1.2.0' ) 
   compile "junit:junit:4.11"
   //TODO consider migration to ORM
   //compile( group: 'com.j256.ormlite', name: 'ormlite-jdbc', version: '5.0' )

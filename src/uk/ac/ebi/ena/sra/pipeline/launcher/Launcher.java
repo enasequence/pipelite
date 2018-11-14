@@ -213,6 +213,7 @@ System.out.println( t.getName() + " exited" );
 	            } ) );
 	            
 	            launcher.execute();
+	            //TODO: check that all processes unlocks themselves
 	            lockman.unlock( params.lock );
 
             } else

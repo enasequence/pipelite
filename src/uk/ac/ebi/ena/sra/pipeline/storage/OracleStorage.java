@@ -667,7 +667,7 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
     {
         PipeliteState pi = new PipeliteState();
         pi.setPipelineName( pipeline_name );
-        pi.setProcessId( rl.getLockOwner() );
+        pi.setProcessId( rl.getLockId() );
         try
         {
             load( pi, true );
