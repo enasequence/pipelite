@@ -8,6 +8,7 @@ import java.io.PrintWriter;
 import java.net.ConnectException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.concurrent.CountDownLatch;
 
@@ -104,6 +105,12 @@ AbstractPingPong implements Runnable
                }
 
             }
+        } catch( SocketException e )
+        {
+        	if( stop )
+        		log.info( "exit requested" );
+        	else 
+        		e.printStackTrace();
         } catch (IOException e) 
         {
         

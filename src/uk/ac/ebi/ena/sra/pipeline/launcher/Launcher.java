@@ -165,104 +165,111 @@ Launcher
         PipeliteLauncher launcher = new PipeliteLauncher();
         OracleStorage    storage = null;
         CountDownLatch latch = new CountDownLatch( 1 );
-        
-        try( Connection connection = DefaultConfiguration.currentSet().createConnection();
-             LauncherLockManager lockman = new DBLockManager( connection, DefaultConfiguration.currentSet().getPipelineName() ) )
+
+        try( Connection connection = DefaultConfiguration.currentSet().createConnection() )
         {
-            storage  = initStorageBackend();
-            
-            if( lockman.tryLock( params.lock ) )
-            {
-	            task_id_source = initTaskIdSource();
+        	try( LauncherLockManager lockman = new DBLockManager( connection, DefaultConfiguration.currentSet().getPipelineName() ) )
+        	{
+	            storage  = initStorageBackend();
 	            
+	            if( lockman.tryLock( params.lock ) )
+	            {
+		            task_id_source = initTaskIdSource();
+		            
+		            
+		            launcher.setTaskIdSource( task_id_source );
+		            launcher.setProcessFactory( new DefaultProcessFactory() );
+		            launcher.setExecutorFactory( new DefaultExecutorFactory( DefaultConfiguration.currentSet().getPipelineName(),
+		                                                                     new ResultTranslator( DefaultConfiguration.currentSet().getCommitStatus() ), 
+		                                                                     params.queue_name, 
+		                                                                     params.lsf_user,
+		                                                                     params.lsf_mem, 
+		                                                                     params.lsf_mem_timeout,
+		                                                                     params.lsf_cpu_cores,
+		                                                                     DefaultConfiguration.currentSet().getStagesRedoCount() ) );
+		            
+		            launcher.setSourceReadTimeout( 120 * 1000 );
+		            launcher.setProcessPool( init( params.workers, storage, (ResourceLocker)lockman ) );
+	
+		            //TODO remove
+		            Runtime.getRuntime().addShutdownHook( new Thread( new Runnable() 
+		            { 
+		                Thread t = Thread.currentThread(); 
+		                @Override public void 
+		                run() 
+		                { 
+		                    launcher.stop();
+	System.out.println( t.getName() + " Stop requested from " + Thread.currentThread().getName() );	                    
+		                    try
+	                        {
+	                            latch.await();
+	                            t.interrupt();
+	System.out.println( t.getName() + " exited" );                            
+	                        } catch( InterruptedException e )
+	                        {
+	                            // TODO Auto-generated catch block
+	                            e.printStackTrace();
+	                        }
+		                } 
+		            } ) );
+		            
+		            launcher.execute();
+		            //TODO: check that all processes unlocks themselves
+		            lockman.unlock( params.lock );
+	
+	            } else
+	            {
+	                System.out.println( String.format( "another instance of %s is already running %s", Launcher.class.getName(), Files.exists( Paths.get( params.lock ) ) ? Files.readAllLines( Paths.get( params.lock ) ) : params.lock ) );
+	                return DEFAULT_ERROR_EXIT;
+	            }
 	            
-	            launcher.setTaskIdSource( task_id_source );
-	            launcher.setProcessFactory( new DefaultProcessFactory() );
-	            launcher.setExecutorFactory( new DefaultExecutorFactory( DefaultConfiguration.currentSet().getPipelineName(),
-	                                                                     new ResultTranslator( DefaultConfiguration.currentSet().getCommitStatus() ), 
-	                                                                     params.queue_name, 
-	                                                                     params.lsf_user,
-	                                                                     params.lsf_mem, 
-	                                                                     params.lsf_mem_timeout,
-	                                                                     params.lsf_cpu_cores,
-	                                                                     DefaultConfiguration.currentSet().getStagesRedoCount() ) );
+	            return NORMAL_EXIT;
+	        }catch( Throwable e )
+	        {
+	            e.printStackTrace();
+	            return DEFAULT_ERROR_EXIT;
 	            
-	            launcher.setSourceReadTimeout( 120 * 1000 );
-	            launcher.setProcessPool( init( params.workers, storage, (ResourceLocker)lockman ) );
+	        }finally
+	        {
+	            try
+	            {
+	                launcher.shutdown();
+	            } catch( Throwable t )
+	            {
+	                t.printStackTrace();
+	            }
+	            
+	            try
+	            {
+	                ((OracleProcessIdSource)task_id_source).done();
+	            } catch( Throwable t )
+	            {
+	                t.printStackTrace();
+	            }
+	            
+	            try
+	            {
+	                storage.flush();
+	            } catch( StorageException e )
+	            {
+	                e.printStackTrace();
+	            } 
+	
+	            try
+	            {
+	                storage.close();
+	            } catch( StorageException e )
+	            {
+	                e.printStackTrace();
+	            } 
+	            
+	            latch.countDown();
+	        }
 
-	            //TODO remove
-	            Runtime.getRuntime().addShutdownHook( new Thread( new Runnable() 
-	            { 
-	                Thread t = Thread.currentThread(); 
-	                @Override public void 
-	                run() 
-	                { 
-	                    launcher.stop();
-	                    t.interrupt();
-System.out.println( t.getName() + " thread interrupted from " + Thread.currentThread().getName() );	                    
-	                    try
-                        {
-                            latch.await();
-System.out.println( t.getName() + " exited" );                            
-                        } catch( InterruptedException e )
-                        {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        }
-	                } 
-	            } ) );
-	            
-	            launcher.execute();
-	            //TODO: check that all processes unlocks themselves
-	            lockman.unlock( params.lock );
-
-            } else
-            {
-                System.out.println( String.format( "another instance of %s is already running %s", Launcher.class.getName(), Files.exists( Paths.get( params.lock ) ) ? Files.readAllLines( Paths.get( params.lock ) ) : params.lock ) );
-                return DEFAULT_ERROR_EXIT;
-            }
-            
-            return NORMAL_EXIT;
         }catch( Throwable e )
         {
             e.printStackTrace();
             return DEFAULT_ERROR_EXIT;
-            
-        }finally
-        {
-            try
-            {
-                launcher.shutdown();
-            } catch( Throwable t )
-            {
-                t.printStackTrace();
-            }
-            
-            try
-            {
-                ((OracleProcessIdSource)task_id_source).done();
-            } catch( Throwable t )
-            {
-                t.printStackTrace();
-            }
-            
-            try
-            {
-                storage.flush();
-            } catch( StorageException e )
-            {
-                e.printStackTrace();
-            } 
-
-            try
-            {
-                storage.close();
-            } catch( StorageException e )
-            {
-                e.printStackTrace();
-            } 
-            
-            latch.countDown();
         }
     }
 }

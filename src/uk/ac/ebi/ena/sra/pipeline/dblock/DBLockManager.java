@@ -121,6 +121,7 @@ DBLockManager implements LauncherLockManager, ResourceLocker
 	close() throws Exception 
 	{
 	    purge( pingpong.formFileLock( pingpong.getLockInfo() ) );
+	    pingpong.stop();
 	}
 
 	

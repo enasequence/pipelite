@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
+import org.apache.log4j.Logger;
+
 /**
  * A database connection (session) with selects executed on regular intervals to help to keep long running sessions alive.
  * 
@@ -33,6 +35,7 @@ HeartBeatConnection implements Connection
     private final String     select_query;
     private final Thread     ripper; 
     private volatile boolean ripped;
+    private Logger log = Logger.getLogger( this.getClass() );
 
     /**
      * @param connection The database connection.
@@ -104,6 +107,7 @@ HeartBeatConnection implements Connection
     @Override public void 
     close() throws SQLException
     {
+    	log.info( "close() method called from:", new Throwable().fillInStackTrace() );
         try
         {
             ripped = true;
