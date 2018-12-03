@@ -241,7 +241,8 @@ Launcher
 	            
 	            try
 	            {
-	                ((OracleProcessIdSource)task_id_source).done();
+	            	if( null != task_id_source && task_id_source instanceof OracleProcessIdSource )
+	            		((OracleProcessIdSource)task_id_source).done();
 	            } catch( Throwable t )
 	            {
 	                t.printStackTrace();
