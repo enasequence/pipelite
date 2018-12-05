@@ -107,7 +107,7 @@ HeartBeatConnection implements Connection
     @Override public void 
     close() throws SQLException
     {
-    	log.info( "close() method called from:", new Throwable().fillInStackTrace() );
+//    	log.info( "close() method called from:", new Throwable().fillInStackTrace() );
         try
         {
             ripped = true;
