@@ -16,7 +16,19 @@ buildDir = 'target'
 
 configurations.all {
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+
+	if( !hasProperty( 'artifactoryUsername' ) )
+		project.ext.properties.artifactoryUsername = ''
+	else
+		project.ext.properties.artifactoryUsername = artifactoryUsername;
+		
+	if( !hasProperty( 'artifactoryPassword' ) )
+		project.ext.properties.artifactoryPassword = ''
+	else
+	 	project.ext.properties.artifactoryPassword = artifactoryPassword;
 }
+
+
 
 
 //ant.importBuild( 'build/beans-build.xml' ) { antTargetName -> 'ant' + antTargetName }
@@ -82,8 +94,8 @@ task sourceJar(type: Jar) { from sourceSets.main.allJava }
 
 test {
 	outputs.upToDateWhen {false}
-	testClassesDir = sourceSets.main.output.classesDir;
-	classpath      = sourceSets.main.runtimeClasspath;
+	testClassesDirs = sourceSets.main.output.classesDirs
+	classpath       = sourceSets.main.runtimeClasspath;
 
   	// listen to events in the test execution lifecycle
   	beforeTest { descriptor ->
@@ -107,28 +119,27 @@ test {
 
 
 publishing {
-  publications {
-    mavenJava(MavenPublication) {
-      from components.java
-      artifacts { 
-      	archives jar 
-      	archives sourceJar{ classifier "sources" }
-      	artifactId 'pipelite'
-    	}
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+			artifacts { 
+      			archives jar 
+      			archives sourceJar{ classifier "sources" }
+      			artifactId 'pipelite'
+    		}
+        }
     }
-  }
-
-	repositories {
-	    maven {
-	        credentials {
-	            username artifactoryUsername
-	            password artifactoryPassword
-	        }
-	        url "http://ena-dev:8081/artifactory/libs-release-local"
-	    }
-	}
-
+    repositories {
+        maven {
+            credentials {
+                username project.ext.properties.artifactoryUsername
+                password project.ext.properties.artifactoryPassword
+            }
+            url "http://ena-dev:8081/artifactory/libs-release-local"
+        }
+    }
 }
+
 
 install {
     repositories.mavenInstaller {
