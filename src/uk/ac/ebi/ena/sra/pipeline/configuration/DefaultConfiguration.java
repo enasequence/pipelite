@@ -240,6 +240,13 @@ DefaultConfiguration
 	
 	
     @PipeliteProperty public String
+	getDefaultLSFOutputRedirection()
+	{
+	    return getProperty( "default.lsf-output-redirection" );
+	}
+
+    
+    @PipeliteProperty public String
 	getSMTPMailFrom()
 	{
 		return getProperty( "smtp.mail-from" );

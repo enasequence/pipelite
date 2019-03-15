@@ -1,11 +1,13 @@
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCall;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall;
+import uk.ac.ebi.ena.sra.pipeline.base.external.lsf.LSFJobDescriptor;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
 import uk.ac.ebi.ena.sra.pipeline.executors.LSFExecutorConfig;
@@ -44,7 +46,9 @@ LSFStageExecutor extends AbstractStageExecutor implements LSFExecutorConfig
                       int lsf_cpu_cores )
     {
         super( pipeline_name, translator );
-        this.back_end = (ExternalCallBackEnd) new LSFBackEnd( queue, lsf_user, lsf_mem, lsf_mem_timeout, lsf_cpu_cores );
+        LSFBackEnd be = new LSFBackEnd( queue, lsf_user, lsf_mem, lsf_mem_timeout, lsf_cpu_cores );
+        be.setOutputFolderPath( Paths.get( DefaultConfiguration.CURRENT.getDefaultLSFOutputRedirection() ) );
+        this.back_end = (ExternalCallBackEnd) be;
     }
     
     

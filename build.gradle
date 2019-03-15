@@ -9,7 +9,7 @@ apply plugin: 'maven'
 compileJava.options.encoding = 'UTF-8'
 
 group = 'uk.ac.ebi'
-ext.version_base = '2.3.4'
+ext.version_base = '2.4.0'
 version = version_base
 buildDir = 'target'
 
@@ -79,7 +79,7 @@ dependencies {
   compile( group: 'net.sf.samtools', name: 'sam', version: '1.85' )
   compile( group: 'javax.mail', name: 'mail', version: '1.4' )
   compile( group: 'org.mockito', name: 'mockito-all', version: '1.9.5' )
-  compile( group: 'uk.ac.ebi', name: 'sra-base', version: '1.3.2' ) 
+  compile( group: 'uk.ac.ebi', name: 'sra-base', version: '1.4.0' ) 
   compile "junit:junit:4.11"
   //TODO consider migration to ORM
   //compile( group: 'com.j256.ormlite', name: 'ormlite-jdbc', version: '5.0' )
