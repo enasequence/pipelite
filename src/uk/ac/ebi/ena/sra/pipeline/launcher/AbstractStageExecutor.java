@@ -41,7 +41,7 @@ AbstractStageExecutor implements StageExecutor
         ExecutionInstance ei = instance.getExecutionInstance();
         
         //check permanent errors
-        if( null != ei && null != ei.getFinish() )
+        if( null != ei && null != ei.getFinish() && null != ei.getResultType() )
         {
     		switch ( ei.getResultType() )
     		{
