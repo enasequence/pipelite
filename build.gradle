@@ -123,31 +123,58 @@ test {
 //task wrapper(type: Wrapper) { gradleVersion = '1.12' }
 
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-			artifacts { 
-      			archives jar 
-      			archives sourceJar{ classifier "sources" }
-      			artifactId 'pipelite'
-    		}
-        }
-    }
-    repositories {
-        maven {
-            credentials {
-                username project.ext.properties.artifactoryUsername
-                password project.ext.properties.artifactoryPassword
-            }
-            url "http://ena-dev:8081/artifactory/libs-release-local"
-        }
-    }
-}
-
-
 install {
     repositories.mavenInstaller {
         pom.artifactId = 'pipelite'
     }
 }
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+		artifacts { 
+      			archives jar 
+      			archives sourceJar{ classifier "sources" }
+      			artifactId 'pipelite'
+   		}
+	
+     	from components.java     	    	
+      	artifact sourceJar{ classifier "sources" }
+      	artifact jar
+   		}
+    }
+    repositories {
+	    maven {
+            // Project specific maven repository in Gitlab. 
+            url "https://gitlab.ebi.ac.uk/api/v4/projects/883/packages/maven"
+            // Developer token in Gitlab.
+            credentials(HttpHeaderCredentials) {
+                name = "Private-Token"
+                value = project.ext.properties.gitlab_private_token
+            }
+            authentication {
+                header( HttpHeaderAuthentication )
+            }
+	    }
+    }
+}
+
+
+task writePom {
+    doLast {
+        pom {
+            project {
+                licenses {
+                    license {
+                        name 'The Apache Software License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        distribution 'repo'
+                    }
+                }
+            }
+        }.writeTo( "pom.xml" )
+    }
+}   
+
+
+compileJava.dependsOn( writePom )
