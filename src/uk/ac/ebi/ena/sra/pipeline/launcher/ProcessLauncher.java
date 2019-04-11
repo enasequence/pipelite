@@ -4,6 +4,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Appender;
@@ -12,6 +13,9 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.apache.log4j.net.SMTPAppender;
+
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
 
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
@@ -27,9 +31,6 @@ import uk.ac.ebi.ena.sra.pipeline.storage.OracleStorage;
 import uk.ac.ebi.ena.sra.pipeline.storage.ProcessLogBean;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
-
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.Parameter;
 
 public class 
 ProcessLauncher implements PipeliteProcess
@@ -226,35 +227,6 @@ ProcessLauncher implements PipeliteProcess
     }
 	
 	
-	private boolean
-    lock_stages()
-    {
-        for( StageInstance instance : instances )
-        {
-            if( !locker.lock( new StageResourceLock( instance.getPipelineName(), instance.getProcessID(), instance.getStageName() ) ) )
-            {
-                for( StageInstance i : instances )
-                    if( locker.is_locked( new StageResourceLock( i.getPipelineName(), i.getProcessID(), i.getStageName() ) ) )
-                        locker.unlock( new StageResourceLock( i.getPipelineName(), i.getProcessID(), i.getStageName() ) );
-                return false;
-            }       
-        }
-        
-        return true;
-    }
-
-    
-    private void
-    unlock_stages()
-    {
-        for( StageInstance i : instances )
-        {
-            if( locker.is_locked( new StageResourceLock( i.getPipelineName(), i.getProcessID(), i.getStageName() ) ) )
-                locker.unlock( new StageResourceLock( i.getPipelineName(), i.getProcessID(), i.getStageName() ) );
-        }
-    }
-    
-
     // Existing statuses:
     // 1 unknown /not processed.  StageTransient
     // 2 permanent success.       StageTerminal
@@ -444,8 +416,12 @@ loop:   for( int i = 0; i < instances.length; ++i  )
                 ExecutionInfo info = executor.get_info();
 
                 instance.setExecutionCount( instance.getExecutionCount() + 1 );
-                invalidate_dependands( instance, false );
-           
+                storage.save( instance );
+
+                List<StageInstance> dependend = invalidate_dependands( instance );
+                for( StageInstance si : dependend )
+                	storage.save( si );
+                
                 //Translate execution result to exec status
                 ExecutionResult result = null;
                 if( null != info.getThrowable() )
@@ -463,6 +439,7 @@ loop:   for( int i = 0; i < instances.length; ++i  )
                 ei.setCmdLine(info.getCommandline() );
                 
                 storage.save( ei );
+                storage.flush();
                 
                 if( result.getType().isFailure() )
                 {
@@ -499,8 +476,16 @@ loop:   for( int i = 0; i < instances.length; ++i  )
     }
     
     
+    private List<StageInstance> 
+    invalidate_dependands( StageInstance from_instance )
+    {
+    	List<StageInstance> result = new ArrayList<>( getStages().length );
+    	invalidate_dependands( from_instance, false, result );
+    	return result;
+    }
+    
     private void
-    invalidate_dependands( StageInstance from_instance, boolean reset )
+    invalidate_dependands( StageInstance from_instance, boolean reset, List<StageInstance> touched )
     {
        for( StageInstance i : instances )
        {
@@ -511,11 +496,14 @@ loop:   for( int i = 0; i < instances.length; ++i  )
                continue;
            
            if( i.getDependsOn().equals( from_instance.getStageName() ) )
-               invalidate_dependands( i, true );
+               invalidate_dependands( i, true, touched );
        }
        
        if( reset )
+       {
            executor.reset( from_instance );
+           touched.add( from_instance );
+       }
     }
 
     
