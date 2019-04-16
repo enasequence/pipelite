@@ -84,7 +84,6 @@ dependencies {
 
   compile 'org.apache.xmlbeans:xmlbeans:2.5.0'
   compile 'log4j:log4j:1.2.17'
-  compile( group: 'net.sf.samtools', name: 'sam', version: '1.85' )
   compile( group: 'javax.mail', name: 'mail', version: '1.4' )
   compile( group: 'org.mockito', name: 'mockito-all', version: '1.9.5' )
   compile( group: 'uk.ac.ebi', name: 'sra-base', version: '1.4.1' ) 
@@ -138,17 +137,24 @@ install {
 publishing {
     publications {
         mavenJava(MavenPublication) {
-		artifacts { 
-      			archives jar 
-      			archives sourceJar{ classifier "sources" }
-      			artifactId 'pipelite'
-   		}
-	
-     	from components.java     	    	
-      	artifact sourceJar{ classifier "sources" }
-      	artifact jar
-   		}
+        	artifactId 'pipelite'
+     		from components.java     	    	
+	      	artifact sourceJar{ classifier "sources" }
+
+	    pom {
+    	    name = "Pipelite"
+	        description = "Pipeline manager"
+        	url = "https://github.com/enasequence/ena-pipelite"
+        	licenses {
+          		license {
+            		name = "The Apache License, Version 2.0"
+            		url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+   		       	}
+        	}
+      	}
+      }
     }
+
     repositories {
 	    maven {
             // Project specific maven repository in Gitlab. 
@@ -170,6 +176,10 @@ task writePom {
     doLast {
         pom {
             project {
+                name = "Pipelite"
+	        	description = "Pipeline manager"
+        		url = "https://github.com/enasequence/ena-pipelite"
+            
                 licenses {
                     license {
                         name 'The Apache Software License, Version 2.0'
