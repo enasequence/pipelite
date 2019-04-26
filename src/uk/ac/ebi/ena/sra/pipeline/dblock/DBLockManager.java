@@ -6,9 +6,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.sql.Types;
-import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
@@ -73,21 +71,30 @@ DBLockManager implements LauncherLockManager, ResourceLocker
 	public void
 	purgeDead() throws InterruptedException
 	{
-        try( PreparedStatement ps = connection.prepareStatement( "select distinct allocator_name from pipelite_lock where pipeline_name = ? and allocator_name <> ? " ) )
+        try( PreparedStatement ps = connection.prepareStatement( "select * from table( pipelite_lock_pkg.get_allocators() )" ) )
         {
-            ps.setString( 1, this.pipeline_name );
-            ps.setString( 2, this.allocator_name );
             ps.execute();
             try( ResultSet rs = ps.getResultSet() )
             {
                 while( rs.next() )
                 {
+                	String pipeline_name  = rs.getString( "pipeline_name" );
                     String allocator_name = rs.getString( "allocator_name" );
+                    if( !this.pipeline_name.equals( pipeline_name ) || this.allocator_name.equals( allocator_name ) )
+                    	continue;
+                    
+                    FileLockInfo lock_info = pingpong.parseFileLock( allocator_name );
+                    if( null == lock_info )
+                    {
+                    	log.info( "cannot parse lock: " + allocator_name );
+                    	continue;
+                    }
+                    
                     try
                     {
                         int attempt = 3;
                         int attempt_index = 0;
-                        while( !pingpong.pingLockOwner( pingpong.parseFileLock( allocator_name ) ) )
+                        while( !pingpong.pingLockOwner( lock_info ) )
                         {
                             log.info( ++attempt_index + " attempt failed to ping " + allocator_name );
                             if( attempt-- == 0 )
@@ -128,38 +135,7 @@ DBLockManager implements LauncherLockManager, ResourceLocker
 	@Override public boolean
 	tryLock( String lock_id ) 
 	{
-		try( PreparedStatement ps = connection.prepareStatement(
-				" declare "
-				+ " pragma autonomous_transaction; "
-				+ " v_selected pls_integer; "
-				+ " v_pipeline_name varchar2(255) := ?; "
-				+ " v_lock_id varchar2(255) := ?; "
-				+ " v_allocator_name varchar2(255) := ?; "
-				+ " begin "
-				+ " for v_cur in ( select rowid, rownum from pipelite_lock where pipeline_name = v_pipeline_name and lock_id is null ) " 
-				+ " loop "
-				+ " begin "
-				+ " select v_cur.rownum into v_selected from pipelite_lock where rowid = v_cur.rowid for update skip locked; "
-				+ " if v_selected is not null "
-				+ " then "
-				   /* dbms_output.put_line( 'rownum: ' || v_selected || ', rowid: ' || v_cur.rowid ); */
-				+ "   if v_lock_id is not null "
-				+ "   then "
-				+ "     update pipelite_lock " 
-				+ "        set lock_id = v_lock_id, "
-				+ "            allocator_name = v_allocator_name " //SYS_CONTEXT( 'USERENV', 'OS_USER' ) || '@' || SYS_CONTEXT( 'USERENV', 'HOST' ) "
-				+ "      where rowid = v_cur.rowid; "
-				+ "     commit; "
-				+ "    end if; "
-				+ "   return; "
-				+ "  end if; "
-				+ " exception "
-				+ "  when NO_DATA_FOUND THEN v_selected := null; "
-				+ " end; "
-				+ " end loop; "
-				+ "  raise_application_error( -20001, 'Resource ' || v_pipeline_name || ' depleted' || case when v_lock_id is not null then ' or lock ' || v_lock_id || ' already exists' end ); "
-				+ " end; " 
-				 ) )
+		try( PreparedStatement ps = connection.prepareStatement( "{ call pipelite_lock_pkg.try_lock( ?, ?, ? ) }" ) )
 		{
 			ps.setString( 1, this.pipeline_name );
 			
@@ -170,37 +146,24 @@ DBLockManager implements LauncherLockManager, ResourceLocker
 			{
 				ps.setString( 2, lock_id );
 			}
-			 ps.setString( 3, allocator_name );
+			
+			ps.setString( 3, allocator_name );
 			
 			ps.execute();
 			return true;
 		} catch( SQLException e )
 		{
-			log.info( "ERROR: " + e.getMessage() );
-//			if( 20001 == e.getErrorCode() )
-//				e.getMessage();
+			log.error( "ERROR: " + e.getMessage() );
 			return false;
 		}
 	}
-
    
+	
 	@Override public boolean
 	isLocked( String lock_id )
 	{
-       try( PreparedStatement ps = connection.prepareStatement(
-                " declare "
-                + " pragma autonomous_transaction; "
-                + " v_pipeline_name varchar2(255) := ?; "
-                + " v_lock_id varchar2(255) := ?; " 
-                + " begin " 
-                + "     for v_cur in ( select rowid, rownum from pipelite_lock where pipeline_name = v_pipeline_name and lock_id = v_lock_id ) " 
-                + "     loop " 
-                + "         return; "
-                + "     end loop; "
-                + "  raise_application_error( -20001, 'Lock ' || v_lock_id || ' not found for resource ' || v_pipeline_name ); "
-                + " end; "
-                 ) )
-        {
+       try( PreparedStatement ps = connection.prepareStatement( "{ call pipelite_lock_pkg.is_locked( ?, ?, ? ) }" ) )
+       {
             ps.setString( 1, this.pipeline_name );
             
             if( null == lock_id )
@@ -211,6 +174,7 @@ DBLockManager implements LauncherLockManager, ResourceLocker
                 ps.setString( 2, lock_id );
             }
             
+            ps.setNull( 3, Types.VARCHAR );
             ps.execute();
             return true;
         } catch( SQLException e )
@@ -218,30 +182,13 @@ DBLockManager implements LauncherLockManager, ResourceLocker
             return false;
         }
 	}
-	
+
 	
     @Override public boolean
     isBeingHeld( String lock_id )
     {
-       try( PreparedStatement ps = connection.prepareStatement(
-                " declare "
-                + " pragma autonomous_transaction; "
-                + " v_pipeline_name varchar2(255) := ?; "
-                + " v_lock_id varchar2(255) := ?; " 
-                + " v_allocator_name varchar2(255) := ?; "
-                + " begin " 
-                + "     for v_cur in ( select rowid, rownum "
-                + "                      from pipelite_lock "
-                + "                     where pipeline_name = v_pipeline_name "
-                + "                       and lock_id = v_lock_id "
-                + "                       and allocator_name = v_allocator_name ) " 
-                + "     loop " 
-                + "         return; "
-                + "     end loop; "
-                + "  raise_application_error( -20001, 'Lock ' || v_lock_id || ' not found for resource ' || v_pipeline_name ); "
-                + " end; "
-                 ) )
-        {
+       try( PreparedStatement ps = connection.prepareStatement( "{ call pipelite_lock_pkg.is_locked( ?, ?, ? ) }" ) )
+       {
             ps.setString( 1, this.pipeline_name );
             
             if( null == lock_id )
@@ -265,30 +212,7 @@ DBLockManager implements LauncherLockManager, ResourceLocker
 	@Override public boolean 
 	unlock( String lock_id ) 
 	{
-		try( PreparedStatement ps = connection.prepareStatement(
-				" declare "
-				+ " pragma autonomous_transaction; "
-				+ " v_pipeline_name varchar2(255) := ?; "
-				+ " v_lock_id varchar2(255) := ?; " 
-                + " v_allocator_name varchar2(255) := ?; "
-				+ " begin " 
-				+ " for v_cur in ( select rowid, rownum "
-				+ "                  from pipelite_lock "
-				+ "                 where pipeline_name = v_pipeline_name "
-				+ "                   and lock_id = v_lock_id "
-				+ "                   and allocator_name = v_allocator_name "
-				+ "                   for update skip locked ) " 
-				+ " loop " 
-				+ "  update pipelite_lock " 
-				+ "     set lock_id = null, "
-				+ "         allocator_name = null "
-				+ "   where rowid = v_cur.rowid; "
-				+ "  commit; "
-				+ "  return; "
-				+ " end loop; "
-				+ "  raise_application_error( -20001, 'Lock ' || v_lock_id || ' not found for resource ' || v_pipeline_name ); "
-				+ " end; "
-				 ) )
+		try( PreparedStatement ps = connection.prepareStatement( "{ call pipelite_lock_pkg.unlock( ?, ?, ? ) }" ) )
 		{
 			ps.setString( 1, this.pipeline_name );
 			
@@ -302,9 +226,10 @@ DBLockManager implements LauncherLockManager, ResourceLocker
 			ps.setString( 3, allocator_name );
 			ps.execute();
 			return true;
+			
 		} catch( SQLException e )
 		{
-			log.info( "ERROR: " + e.getMessage() );
+			log.error( "ERROR: " + e.getMessage() );
 			return false;
 		}
 	}
@@ -313,28 +238,7 @@ DBLockManager implements LauncherLockManager, ResourceLocker
     @Override public boolean 
     terminate( String lock_id ) 
     {
-        try( PreparedStatement ps = connection.prepareStatement(
-                " declare "
-                + " pragma autonomous_transaction; "
-                + " v_pipeline_name varchar2(255) := ?; "
-                + " v_lock_id varchar2(255) := ?; " 
-                + " begin " 
-                + " for v_cur in ( select rowid, rownum "
-                + "                  from pipelite_lock "
-                + "                 where pipeline_name = v_pipeline_name "
-                + "                   and lock_id = v_lock_id "
-                + "                   for update skip locked ) " 
-                + " loop " 
-                + "  update pipelite_lock " 
-                + "     set lock_id = null, "
-                + "         allocator_name = null "
-                + "   where rowid = v_cur.rowid; "
-                + "  commit; "
-                + "  return; "
-                + " end loop; "
-                + "  raise_application_error( -20001, 'Lock ' || v_lock_id || ' not found for resource ' || v_pipeline_name ); "
-                + " end; "
-                 ) )
+        try( PreparedStatement ps = connection.prepareStatement( "{ call pipelite_lock_pkg.unlock( ?, ?, ? ) }" ) )
         {
             ps.setString( 1, this.pipeline_name );
             
@@ -346,11 +250,13 @@ DBLockManager implements LauncherLockManager, ResourceLocker
                 ps.setString( 2, lock_id );
             }
 
+            ps.setNull( 3, Types.VARCHAR );
             ps.execute();
             return true;
+
         } catch( SQLException e )
         {
-            log.info( "ERROR: " + e.getMessage() );
+            log.error( "ERROR: " + e.getMessage() );
             return false;
         }
     }
@@ -359,21 +265,15 @@ DBLockManager implements LauncherLockManager, ResourceLocker
     @Override public void 
 	purge( String allocator_name ) 
 	{
-		try( PreparedStatement ps = connection.prepareStatement(
-				" declare "
-				+ " pragma autonomous_transaction; "
-				+ " begin "
-				+ "   update pipelite_lock set lock_id = null, allocator_name = null where pipeline_name = ? and allocator_name = ? ; "
-				+ " commit; "
-				+ " end;"
-			  ) )
+		try( PreparedStatement ps = connection.prepareStatement( "{ call pipelite_lock_pkg.purge_locks( ?, ? ) }" ) )
 		{
 			ps.setString( 1, this.pipeline_name );
 			ps.setString( 2, allocator_name );
 			ps.execute();
+
 		} catch( SQLException e )
 		{
-			log.info( "ERROR: " + e.getMessage() );
+			log.error( "ERROR: " + e.getMessage() );
 		}	
 	}
 
