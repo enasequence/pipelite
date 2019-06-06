@@ -1,15 +1,10 @@
 package uk.ac.ebi.ena.sra.pipeline.configuration;
 
-import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall.LSFQueue;
-
 import com.beust.jcommander.Parameter;
 
 public class
 DefaultLauncherParams
 {
-    public final static LSFQueue DEFAULT_LSF_QUEUE = LSFQueue.research_rh6;
-    
-    
     @Parameter( names = "--workers", description = "number of simultaniously working processes" )
     public int workers = 2;
     
@@ -17,7 +12,7 @@ DefaultLauncherParams
     public String lock = "/var/tmp/.launcher.lock";
     
     @Parameter( names = "--queue", description = "LSF queue name" )
-    public String queue_name = DEFAULT_LSF_QUEUE.getQueueName();
+    public String queue_name;
     
     @Parameter( names = "--mail-to", description = "comma-separated list of mail addresses" )
     public String mail_to = DefaultConfiguration.currentSet().getDefaultMailTo();

@@ -5,10 +5,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 
@@ -21,6 +20,7 @@ import org.apache.log4j.PatternLayout;
 import com.beust.jcommander.JCommander;
 
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall.LSFQueue;
+import uk.ac.ebi.ena.sra.pipeline.base.external.lsf.LSFBqueues;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultExecutorFactory;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultLauncherParams;
@@ -38,8 +38,7 @@ import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
 public class 
 Launcher
 {
-    final static Map<Object, ProcessLauncher> tasks = Collections.synchronizedMap( new WeakHashMap<Object, ProcessLauncher>() ); 
-    TaggedPoolExecutor thread_pool;
+	TaggedPoolExecutor thread_pool;
     Map<Future<?>, ProcessLauncher> task_map = new HashMap<Future<?>, ProcessLauncher>();
     
     final static int MEMORY_LIMIT = 15000;
@@ -127,17 +126,22 @@ Launcher
     {
         DefaultLauncherParams params  = new DefaultLauncherParams();
         JCommander jc  = new JCommander( params );
-        LSFQueue queue = DefaultLauncherParams.DEFAULT_LSF_QUEUE;
 
         try
         {
             jc.parse( args );
-            queue = LSFQueue.findByName( params.queue_name );
-            if( null == queue )
+            
+            if( null != params.queue_name
+             && params.queue_name.trim().length() > 0
+             && !"default".equals( params.queue_name.trim() ) )
             {
-                System.out.println( "Available queues: " );
-                for( LSFQueue q : LSFQueue.values() )
-                    System.out.println( q.getQueueName() );
+	            Set<String> queues = new LSFBqueues().executeAndGet();
+	            if( !queues.contains( params.queue_name) )
+	            {
+	                System.out.println( "Available queues: " );
+	                for( LSFQueue q : LSFQueue.values() )
+	                    System.out.println( q.getQueueName() );
+	            }
             }
             
         }catch( Exception e )

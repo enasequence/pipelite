@@ -12,17 +12,14 @@ ProcessPoolExecutor extends TaggedPoolExecutor
     }
 
     
-    @Override
-    @Deprecated
-    public void
+    @Override @Deprecated public void
     execute( Object id, Runnable runnable )
     {
         super.execute( id, runnable );
     }
     
     
-    @Override
-    public void 
+    @Override public void 
     execute( Runnable process )
     {
         execute( ( (PipeliteProcess)process).getProcessId(), process );
@@ -36,8 +33,7 @@ ProcessPoolExecutor extends TaggedPoolExecutor
     init( PipeliteProcess r );
 
     
-    @Override
-    protected void 
+    @Override protected void 
     afterExecute( Runnable r, Throwable t )
     {
         unwind( (PipeliteProcess) r );
@@ -45,8 +41,7 @@ ProcessPoolExecutor extends TaggedPoolExecutor
     }
 
     
-    @Override
-    protected void 
+    @Override protected void 
     beforeExecute( Thread t, Runnable r )
     {
         super.beforeExecute( t, r );

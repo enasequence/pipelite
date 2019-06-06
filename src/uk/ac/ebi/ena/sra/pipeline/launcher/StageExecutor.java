@@ -2,7 +2,6 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
 
-
 public interface 
 StageExecutor
 {
@@ -35,7 +34,7 @@ StageExecutor
         private Integer exit_code;
         private String  log_message;
         
-        
+
         public String 
         getHost()
         {
@@ -151,7 +150,7 @@ StageExecutor
     
     void          reset( StageInstance instance );
     void          execute( StageInstance instance );
-    void          configure( ExecutorConfig params );
+    <T extends ExecutorConfig> void configure( T params );
     EvalResult    can_execute( StageInstance instance );
 //    boolean       was_error();
     ExecutionInfo get_info();

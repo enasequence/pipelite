@@ -49,9 +49,10 @@ TaggedPoolExecutor extends ThreadPoolExecutor
     }
 
 
-    protected void 
+    @Override protected void 
     afterExecute( Runnable r, Throwable t )
     {
+        super.afterExecute( r, t );
         synchronized( running )
         {
             if( !running.containsValue( r ) )
@@ -67,11 +68,10 @@ TaggedPoolExecutor extends ThreadPoolExecutor
                 }
             }
         }
-        super.afterExecute( r, t );
     }
 
 
-    protected void 
+    @Override protected void 
     beforeExecute( Thread t, Runnable r )
     {
         super.beforeExecute( t, r );

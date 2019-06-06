@@ -3,12 +3,12 @@ package uk.ac.ebi.ena.sra.pipeline.executors;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 
 
-public interface 
-LSFExecutorConfig extends ExecutorConfig
+public class 
+LSFExecutorConfig implements ExecutorConfig
 {
-    default public int getLSFMemoryReservationTimeout() { return DefaultConfiguration.CURRENT.getDefaultLSFMemTimeout(); }
-    default public int getLSFMemoryLimit() { return DefaultConfiguration.CURRENT.getDefaultLSFMem(); }
-    default public int getLSFCPUCores() { return DefaultConfiguration.CURRENT.getDefaultLSFCpuCores(); }
-    default public int getJavaMemoryLimit() { return getLSFMemoryLimit() - 1500; }
-    default public String[] getPropertiesPass() { return DefaultConfiguration.CURRENT.getPropertiesPass(); }
+    public int getLSFMemoryReservationTimeout() { return DefaultConfiguration.CURRENT.getDefaultLSFMemTimeout(); }
+    public int getLSFMemoryLimit() { return DefaultConfiguration.CURRENT.getDefaultLSFMem(); }
+    public int getLSFCPUCores() { return DefaultConfiguration.CURRENT.getDefaultLSFCpuCores(); }
+    public int getJavaMemoryLimit() { return getLSFMemoryLimit() - 1500; }
+    public String[] getPropertiesPass() { return DefaultConfiguration.CURRENT.getPropertiesPass(); }
 }

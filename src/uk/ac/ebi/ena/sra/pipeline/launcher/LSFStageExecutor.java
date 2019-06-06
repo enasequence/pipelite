@@ -1,5 +1,6 @@
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,20 +8,22 @@ import java.util.List;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCall;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall;
-import uk.ac.ebi.ena.sra.pipeline.base.external.lsf.LSFJobDescriptor;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
 import uk.ac.ebi.ena.sra.pipeline.executors.LSFExecutorConfig;
 
 
 public class 
-LSFStageExecutor extends AbstractStageExecutor implements LSFExecutorConfig
+LSFStageExecutor extends AbstractStageExecutor //implements LSFExecutorConfig
 {
     private boolean  do_commit = true;
     private boolean  was_error;
     ExecutionInfo    info;
-    final private    ExternalCallBackEnd back_end; 
-    private          ExecutorConfig rc = new LSFExecutorConfig() {};
+    final private    LSFBackEnd back_end; 
+//    private          LSFExecutorConfig rc = new LSFExecutorConfig();
+    private String   config_prefix_name;
+    private String   config_source_name;
+	private String[] properties_pass;
 
     
     public
@@ -32,7 +35,11 @@ LSFStageExecutor extends AbstractStageExecutor implements LSFExecutorConfig
               DefaultConfiguration.CURRENT.getDefaultLSFUser(),
               DefaultConfiguration.CURRENT.getDefaultLSFMem(),
               DefaultConfiguration.CURRENT.getDefaultLSFMemTimeout(),
-              DefaultConfiguration.CURRENT.getDefaultLSFCpuCores() );
+              DefaultConfiguration.CURRENT.getDefaultLSFCpuCores(),
+              Paths.get( DefaultConfiguration.CURRENT.getDefaultLSFOutputRedirection() ), 
+              DefaultConfiguration.CURRENT.getConfigPrefixName(), 
+              DefaultConfiguration.CURRENT.getConfigSourceName(),
+              DefaultConfiguration.CURRENT.getPropertiesPass() );
     }
     
     
@@ -45,42 +52,63 @@ LSFStageExecutor extends AbstractStageExecutor implements LSFExecutorConfig
                       int lsf_mem_timeout,
                       int lsf_cpu_cores )
     {
+    	this( pipeline_name, translator, queue, lsf_user, lsf_mem, lsf_mem_timeout, lsf_cpu_cores, 
+    	      Paths.get( DefaultConfiguration.CURRENT.getDefaultLSFOutputRedirection() ),
+              DefaultConfiguration.CURRENT.getConfigPrefixName(), 
+              DefaultConfiguration.CURRENT.getConfigSourceName(),
+              DefaultConfiguration.CURRENT.getPropertiesPass() );
+    }
+    
+    
+    LSFStageExecutor( String pipeline_name, 
+                      ResultTranslator translator, 
+                      String queue,
+                      String lsf_user,
+                      int lsf_mem, 
+                      int lsf_mem_timeout,
+                      int lsf_cpu_cores,
+                      Path output_path,
+                      String config_prefix_name,
+                      String config_source_name,
+                      String[] properties_pass )
+    {
         super( pipeline_name, translator );
         LSFBackEnd be = new LSFBackEnd( queue, lsf_user, lsf_mem, lsf_mem_timeout, lsf_cpu_cores );
-        be.setOutputFolderPath( Paths.get( DefaultConfiguration.CURRENT.getDefaultLSFOutputRedirection() ) );
-        this.back_end = (ExternalCallBackEnd) be;
+        be.setOutputFolderPath( output_path );
+        
+        this.back_end = be;
+        this.config_prefix_name = config_prefix_name;
+        this.config_source_name = config_source_name;
+        this.properties_pass    = properties_pass;
     }
     
     
-    @Override public int 
+    public int 
     getLSFMemoryReservationTimeout() 
     { 
-        return null == rc ? LSFExecutorConfig.super.getLSFMemoryReservationTimeout() 
-        		          : ((LSFExecutorConfig)rc).getLSFMemoryReservationTimeout(); 
+        return back_end.memory_reservation_timeout; 
     }
     
     
-    @Override public int 
+    public int 
     getLSFMemoryLimit() 
     { 
-        return null == rc ? LSFExecutorConfig.super.getLSFMemoryLimit() 
-        		          : ((LSFExecutorConfig)rc).getLSFMemoryLimit(); 
+        return back_end.memory_limit; 
     }
     
     
-    @Override public int 
+    public int 
     getLSFCPUCores() 
     { 
-        return null == rc ? LSFExecutorConfig.super.getLSFCPUCores() 
-        		          : ((LSFExecutorConfig)rc).getLSFCPUCores(); 
+        return back_end.cpu_cores;
     };
     
     
-    @Override public int 
+    //TODO: re-factor
+    public int 
     getJavaMemoryLimit() 
     { 
-        return null == rc ? LSFExecutorConfig.super.getJavaMemoryLimit() 
-        		          : ((LSFExecutorConfig)rc).getJavaMemoryLimit(); 
+        return getLSFMemoryLimit() - 1500; 
     }
     
     
@@ -99,16 +127,14 @@ LSFStageExecutor extends AbstractStageExecutor implements LSFExecutorConfig
             ( (LSFBackEnd)back_end ).cpu_cores = params.getLSFCPUCores();
             ( (LSFBackEnd)back_end ).memory_limit = params.getLSFMemoryLimit();
             ( (LSFBackEnd)back_end ).memory_reservation_timeout = params.getLSFMemoryReservationTimeout();
-            this.rc = params;
         }
     }
     
-    //TODO looks overengineered
-    @Override public String[]
+    
+    public String[]
     getPropertiesPass()
     {
-    	 return null == rc ? LSFExecutorConfig.super.getPropertiesPass() 
-    			           : ((LSFExecutorConfig)rc).getPropertiesPass(); 
+    	 return properties_pass; 
     }
 
     
@@ -124,9 +150,7 @@ LSFStageExecutor extends AbstractStageExecutor implements LSFExecutorConfig
         if( 0 < memory_limit ) // TODO check
             p_args.add( String.format( "-Xmx%dM", memory_limit ) );
         
-        p_args.add( String.format( "-D%s=%s", 
-                                   DefaultConfiguration.currentSet().getConfigPrefixName(), 
-                                   DefaultConfiguration.currentSet().getConfigSourceName() ) ); 
+        p_args.add( String.format( "-D%s=%s", config_prefix_name, config_source_name ) );
 
         appendProperties( p_args, getPropertiesPass() );
         
@@ -162,8 +186,8 @@ LSFStageExecutor extends AbstractStageExecutor implements LSFExecutorConfig
 
             List<String> p_args = constructArgs( instance, do_commit );
 
-            ExternalCall ec     = back_end.new_call_instance( String.format( "%s--%s--%s", 
-                                                                             PIPELINE_NAME, //TODO: get from instance 
+            ExternalCall ec     = back_end.new_call_instance( String.format( "%s--%s--%s",
+                                                                             instance.getPipelineName(), 
                                                                              instance.getProcessID(),
                                                                              instance.getStageName() ), 
                                                               "java", 
@@ -171,9 +195,14 @@ LSFStageExecutor extends AbstractStageExecutor implements LSFExecutorConfig
 
             if( ec instanceof LSFClusterCall  )
             {
-                ( (LSFClusterCall) ec ).setMemoryLimit( getLSFMemoryLimit() );
-                ( (LSFClusterCall) ec ).setMemoryReservationTimeout( getLSFMemoryReservationTimeout() );
-                ( (LSFClusterCall) ec ).setCPUNumber( getLSFCPUCores() );
+            	LSFClusterCall call = ( (LSFClusterCall) ec ); 
+                LSFExecutorConfig si_config = instance.getResourceConfig( LSFStageExecutor.class );
+                if( null != si_config )
+                {
+                	call.setMemoryLimit( si_config.getLSFMemoryLimit() );
+                	call.setMemoryReservationTimeout( si_config.getLSFMemoryReservationTimeout() );
+                	call.setCPUNumber( si_config.getLSFCPUCores() );
+                }
             }
             
             log.info( ec.getCommandLine() );
@@ -235,9 +264,9 @@ LSFStageExecutor extends AbstractStageExecutor implements LSFExecutorConfig
     }
     
 
-    @Override public void
-    configure( ExecutorConfig rc )
-    {
-        this.rc = rc;
-    }
+	@Override public <T extends ExecutorConfig> void 
+	configure( T params ) 
+	{
+	    configure( (LSFExecutorConfig) params );
+	}
 }
