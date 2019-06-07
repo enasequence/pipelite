@@ -93,6 +93,7 @@ HeartBeatConnection implements Connection
                                                         } while( !HeartBeatConnection.this.ripped );
                                                         
                                                    } }  );
+        this.ripper.setDaemon( true );
         this.ripper.start();
     }
 

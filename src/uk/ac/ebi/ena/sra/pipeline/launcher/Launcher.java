@@ -131,6 +131,7 @@ Launcher
         {
             jc.parse( args );
             
+            //Extra checks for existing queues 
             if( null != params.queue_name
              && params.queue_name.trim().length() > 0
              && !"default".equals( params.queue_name.trim() ) )
@@ -138,9 +139,12 @@ Launcher
 	            Set<String> queues = new LSFBqueues().executeAndGet();
 	            if( !queues.contains( params.queue_name) )
 	            {
+	            	System.out.printf( "Supplied queue \"%s\" is missing.\n", params.queue_name );
 	                System.out.println( "Available queues: " );
 	                for( LSFQueue q : LSFQueue.values() )
-	                    System.out.println( q.getQueueName() );
+	                    System.out.printf( "\t%s\n", q.getQueueName() );
+	                
+	                System.exit( DEFAULT_ERROR_EXIT );
 	            }
             }
             
