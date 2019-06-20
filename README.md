@@ -103,14 +103,14 @@ Note: following tables and fields must be presented in database schema. Naming o
 ### \<process> table
 
 collumn name | data type | nullable | data default
-- | - | - | -
+--- | --- | --- | ---
 <process_table_id> | VARCHAR2(15 BYTE) | No |
 PROCESS_CNT | NUMBER(5,0) | No | 0
 
 ### \<stage> table
 
 collumn name | data type
-- | -
+--- | ---
 <process_table_id> | VARCHAR2(15 BYTE)
 <stage_name> | VARCHAR2(50 BYTE)
 PROCESS_DATE | DATE
@@ -119,7 +119,7 @@ PROCESS_ERROR | VARCHAR2(4000 BYTE)
 ### \<log> table
 
 collumn name | data type
-- | -
+--- | ---
 <log_table_id> | NUMBER
 <process_table_id> | VARCHAR2(15 BYTE)
 <stage_name> | VARCHAR(50)
