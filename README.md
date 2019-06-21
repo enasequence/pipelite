@@ -210,11 +210,8 @@ Launches execution for process ID, also interacts with data base. Locks correspo
 stage' table rows.
 
 *	--stage \<stage_name> - stage name to execute.
-*	--force - force if error
 *	--mail-to \<list> - comma-separated list of mail addresses, default is: `pipelite.default.mail-to`
 value
-*	--insert - inserts process IDs & stages names if they are not exists in table.
-**Warning. Experimental**.
 
 ### uk.ac.ebi.ena.sra.pipeline.launcher.StageLauncher
 Launches class for supplied stage. It does not lock process and stage tables but current version can
@@ -222,13 +219,3 @@ insert log records to log table.
 *	--id  \<process_table_id> - process instance id to execute
 *	--stage \<stage_name> - stage name to execute
 *	--force - optional
-
-
-## Dependencies
-
-Pipelite project needs following libs:
-*	mail.jar
-*	ojdbc6.jar
-*	commons-exec.jar
-*	jcommander.jar
-*	log4j.jar
