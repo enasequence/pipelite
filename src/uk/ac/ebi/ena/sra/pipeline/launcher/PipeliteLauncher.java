@@ -2,11 +2,9 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import java.sql.SQLException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
-import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -41,10 +39,7 @@ PipeliteLauncher
     
     public interface StageExecutorFactory { public StageExecutor getExecutor(); }
 
-
-    final static Map<Object, ProcessLauncher> tasks = Collections.synchronizedMap( new WeakHashMap<Object, ProcessLauncher>() ); 
     TaggedPoolExecutor thread_pool;
-    Map<Future<?>, ProcessLauncher> task_map = new HashMap<Future<?>, ProcessLauncher>();
     
     final static int MEMORY_LIMIT = 15000; 
     TaskIdSource task_id_source;

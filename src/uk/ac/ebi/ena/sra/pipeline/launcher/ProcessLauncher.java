@@ -26,7 +26,6 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
 import uk.ac.ebi.ena.sra.pipeline.resource.ProcessResourceLock;
 import uk.ac.ebi.ena.sra.pipeline.resource.ResourceLocker;
-import uk.ac.ebi.ena.sra.pipeline.resource.StageResourceLock;
 import uk.ac.ebi.ena.sra.pipeline.storage.OracleStorage;
 import uk.ac.ebi.ena.sra.pipeline.storage.ProcessLogBean;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
@@ -200,10 +199,18 @@ ProcessLauncher implements PipeliteProcess
             {
     //            unlock_stages();
                 unlock_process();
+                purge_stages();
             }
         }
     }
         
+    
+    private void
+    purge_stages()
+    {
+        instances = null;
+    }
+    
     
     private void 
     increment_process_counter() 

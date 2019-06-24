@@ -5,11 +5,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
 
 import org.apache.log4j.DailyRollingFileAppender;
 import org.apache.log4j.FileAppender;
@@ -38,9 +35,6 @@ import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
 public class 
 Launcher
 {
-	TaggedPoolExecutor thread_pool;
-    Map<Future<?>, ProcessLauncher> task_map = new HashMap<Future<?>, ProcessLauncher>();
-    
     final static int MEMORY_LIMIT = 15000;
     private static final int DEFAULT_ERROR_EXIT = 1;
     private static final int NORMAL_EXIT = 0; 

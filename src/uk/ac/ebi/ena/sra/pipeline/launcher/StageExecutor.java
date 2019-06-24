@@ -1,5 +1,6 @@
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
+import uk.ac.ebi.ena.sra.pipeline.base.common.CompressedString;
 import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
 
 public interface 
@@ -28,8 +29,8 @@ StageExecutor
         private String  host;
         private Integer pid;
         private String  commandline;
-        private String  stderr;
-        private String  stdout;
+        private CompressedString stderr;
+        private CompressedString stdout;
         private Throwable t;
         private Integer exit_code;
         private String  log_message;
@@ -80,28 +81,28 @@ StageExecutor
         public String 
         getStderr()
         {
-            return stderr;
+            return null == stderr ? null : stderr.toString();
         }
         
         
         public void
         setStderr( String stderr )
         {
-            this.stderr = stderr;
+            this.stderr = new CompressedString( stderr );
         }
         
         
         public String 
         getStdout()
         {
-            return stdout;
+            return null == stdout ? null : stdout.toString();
         }
         
         
         public void 
         setStdout( String stdout )
         {
-            this.stdout = stdout;
+            this.stdout = new CompressedString( stdout );
         }
         
         

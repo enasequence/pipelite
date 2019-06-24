@@ -5,6 +5,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInstance;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState;
@@ -323,6 +325,7 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
     @Override public void
     save( StageInstance instance ) throws StorageException
     {
+    	List<Clob> clob_list = new ArrayList<>(); 
         PreparedStatement ps = null;
         try
         {
@@ -372,9 +375,9 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
       
             ps.setObject( 10, null == instance.getExecutionInstance() ? null : instance.getExecutionInstance().getResult() );
             
-            ps.setObject( 11, makeClob( connection, null == instance.getExecutionInstance() ? null : instance.getExecutionInstance().getStdout() ) );
-            ps.setObject( 12, makeClob( connection, null == instance.getExecutionInstance() ? null : instance.getExecutionInstance().getStderr() ) );
-            ps.setObject( 13, makeClob( connection, null == instance.getExecutionInstance() ? null : instance.getExecutionInstance().getCmdLine() ) );
+            ps.setObject( 11, makeClob( connection, null == instance.getExecutionInstance() ? null : instance.getExecutionInstance().getStdout(), clob_list ) );
+            ps.setObject( 12, makeClob( connection, null == instance.getExecutionInstance() ? null : instance.getExecutionInstance().getStderr(), clob_list ) );
+            ps.setObject( 13, makeClob( connection, null == instance.getExecutionInstance() ? null : instance.getExecutionInstance().getCmdLine(), clob_list ) );
             
             int rows = ps.executeUpdate();
             if( 1 != rows )
@@ -389,6 +392,15 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
             
         }finally
         {
+        	clob_list.forEach( e -> {
+				try {
+					e.free();
+				} catch( SQLException e1 ) 
+				{
+					throw new RuntimeException( e1 );
+				}
+			} );
+        	
             if( null != ps )
             {
                 try
@@ -404,10 +416,11 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
  
     
     private Clob
-    makeClob( Connection connection, String value ) throws SQLException
+    makeClob( Connection connection, String value, List<Clob> list ) throws SQLException
     {
     	Clob clob = connection.createClob();
     	clob.setString( 1, value );
+    	list.add( clob );
     	return clob;
     }
     
@@ -574,6 +587,7 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
     @Override public void
     save( ExecutionInstance instance ) throws StorageException
     {
+    	List<Clob> clob_list = new ArrayList<>();
         PreparedStatement ps = null;
         try
         {
@@ -597,9 +611,9 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
             
             ps.setObject( 4, instance.getResult() );
             
-            ps.setObject( 5, makeClob( connection, instance.getStderr() ) );
-            ps.setObject( 6, makeClob( connection, instance.getStdout() ) );
-            ps.setObject( 7, makeClob( connection, instance.getCmdLine() ) );
+            ps.setObject( 5, makeClob( connection, instance.getStderr(), clob_list ) );
+            ps.setObject( 6, makeClob( connection, instance.getStdout(), clob_list ) );
+            ps.setObject( 7, makeClob( connection, instance.getCmdLine(), clob_list ) );
             
             ps.setString( 8, instance.getExecutionId() );
       
@@ -613,6 +627,17 @@ OracleStorage implements OracleCommons, StorageBackend, ResourceLocker
             
         }finally
         {
+        	clob_list.forEach( e -> {
+				try 
+				{
+					e.free();
+				}catch( SQLException e1 ) 
+				{
+					throw new RuntimeException( e1 );
+				}
+			} );
+        	
+        	
             if( null != ps )
             {
                 try
