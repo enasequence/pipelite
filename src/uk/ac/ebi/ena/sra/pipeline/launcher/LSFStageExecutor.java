@@ -11,6 +11,7 @@ import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
 import uk.ac.ebi.ena.sra.pipeline.executors.LSFExecutorConfig;
+import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
 
 
 public class 
@@ -24,6 +25,7 @@ LSFStageExecutor extends AbstractStageExecutor //implements LSFExecutorConfig
     private String   config_prefix_name;
     private String   config_source_name;
 	private String[] properties_pass;
+	private ExecutionResult default_failure_result;
 
     
     public
@@ -75,7 +77,7 @@ LSFStageExecutor extends AbstractStageExecutor //implements LSFExecutorConfig
         super( pipeline_name, translator );
         LSFBackEnd be = new LSFBackEnd( queue, lsf_user, lsf_mem, lsf_mem_timeout, lsf_cpu_cores );
         be.setOutputFolderPath( output_path );
-        
+        this.default_failure_result = translator.getCommitStatusDefaultFailure();
         this.back_end = be;
         this.config_prefix_name = config_prefix_name;
         this.config_source_name = config_source_name;
@@ -195,7 +197,8 @@ LSFStageExecutor extends AbstractStageExecutor //implements LSFExecutorConfig
 
             if( ec instanceof LSFClusterCall  )
             {
-            	LSFClusterCall call = ( (LSFClusterCall) ec ); 
+            	LSFClusterCall call = ( (LSFClusterCall) ec );
+            	call.setTaskLostExitCode( default_failure_result.getExitCode() );
                 LSFExecutorConfig si_config = instance.getResourceConfig( LSFStageExecutor.class );
                 if( null != si_config )
                 {
