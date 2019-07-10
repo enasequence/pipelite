@@ -11,26 +11,30 @@ There is a configuration file that you need to supply to Pipelite each time you 
 Current property set is looking now like:
 
 ```
-pipelite.process.table.name=[<process> table]
-pipelite.process.table.key.column.name=[<process_table_id> field name]
+pipelite.pipeline.name=[pipeline_name]
 pipelite.stage.table.name=[<stage> table]
-pipelite.stage.table.key.column.name=[<stage_table_id> field name]
 pipelite.log.table.name=[<log> table]
-pipelite.log.table.key.column.name=[<log_table_id> field name]
-pipelite.log.sequence.name=[name of sequence for ids of <log_table_id>]
-pipelite.process.redo.count=[number of redo times for commit statuses that have canRedo set to true]
-pipelite.job.name.prefix=[job prefix which would be part job name for LSF]
+pipelite.stages.redo.count=[number of redo times for commit statuses that have canRedo set to true]
+pipelite.tables.pipeline.column.name=[<pipeline_name> field name]
+pipelite.process.table.name=[<process> table]
+pipelite.tables.process.column.name=[<process_id> field name]
+pipelite.tables.stage.column.name=[<stage_name> field name]
 pipelite.stages.enum=[full enum name for pipeline stages]
 pipelite.commit.status.enum=[full enum name for pipeline commit statuses]
 pipelite.default.mail-to=[default mail recipient for error logs]
 pipelite.default.lsf-user=[default lsf user to have lsf errors submitted]
+pipelite.default.lsf-cores=[number of cores available for a process]
+pipelite.default.lsf-queue=[lsf queue name]
 pipelite.default.lsf-mem=[memory requested for each lsf job (in megs)]
+pipelite.default.lsf-mem-timeout=[lsf memory timeout (in minutes)]
+pipelite.default.lsf-output-redirection=[log directory. can't be local]
 pipelite.smtp.server=[smtp server for errors message submission]
 pipelite.smtp.mail-from=[from field in e-mail]
 pipelite.jdbc.driver=[class name for jdbc driver]
 pipelite.jdbc.url=[database connect string]
 pipelite.jdbc.user=[database user]
 pipelite.jdbc.password=[database password]
+pipelite.properties.pass=[arbitrary supervisor jvm properties]
 ```
 
 ## Enums
@@ -107,6 +111,20 @@ the exit code is used to resolve commit message for database.
 Pipelite structure and endpoints overview is presented below
 
 ![Pipelite overview](resource/images/pipelite_overview.png)
+
+Inner interfaces and classes (file submission pipeline is used as an example):
+
+* Launcher: initializes pipelite components (pipelite launcher, storage, task source)
+* PipeliteLauncher: executes processes in a thread pool
+* PipeliteProcess (ProcessLauncher): provides stage instances to a stage executor
+* ResourceLocker (DBLockManager, MemoryLocker, OracleStorage): manages locking for prevention of process overlapping
+* StageExecutor (LSFStageExecutor, DetachedStageExecutor, InternalStageExecutor): executes stage instances on a dedicated machine (depends on implementation)
+* StageInstance: instance of a stage with process id and other parameters
+* Stage (Stages): enum containing all stage tasks of a given implementation
+* StageTask (ARCHIVE, MANIFEST): implementation of a task to be executed by piplite
+* StorageBackend (EnumStorage, OracleStorage): connection to database
+* DefaultConfiguration: launch configurations
+
 
 ## Database structure
 
@@ -219,3 +237,8 @@ insert log records to log table.
 *	--id  \<process_table_id> - process instance id to execute
 *	--stage \<stage_name> - stage name to execute
 *	--force - optional
+
+
+## Example project
+
+https://github.com/enasequence/ena-pipelite-example
