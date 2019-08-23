@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.log4j.DailyRollingFileAppender;
-import org.apache.log4j.FileAppender;
+import org.apache.log4j.EnhancedPatternLayout;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
@@ -155,8 +155,8 @@ Launcher
     private static int 
     main2( DefaultLauncherParams params ) throws IOException
     {
-        PatternLayout   layout = new PatternLayout( "%d{ISO8601} %-5p [%t] " + DefaultConfiguration.currentSet().getPipelineName() + " %c{1}:%L - %m%n" );
-        FileAppender  appender = new DailyRollingFileAppender( layout, params.log_file, "'.'yyyy-ww" );
+    	EnhancedPatternLayout    layout   = new EnhancedPatternLayout( "%d{ISO8601} %-5p [%t] " + DefaultConfiguration.currentSet().getPipelineName() + " %c{1}:%L - %m%n" );
+        DailyRollingFileAppender appender = new DailyRollingFileAppender( layout, params.log_file, "'.'yyyy-ww" );
         appender.setThreshold( Level.ALL );
         Logger.getRootLogger().removeAllAppenders();
         Logger.getRootLogger().addAppender( appender );
