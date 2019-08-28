@@ -12,5 +12,6 @@ LSFExecutorConfig implements ExecutorConfig
     public int getJavaMemoryLimit() { return getLSFMemoryLimit() - 1500; }
     public String getLsfUser() { return DefaultConfiguration.CURRENT.getDefaultLSFUser(); }
     public String getLsfQueue() { return DefaultConfiguration.CURRENT.getDefaultLSFQueue(); }
+    public String getLsfOutputPath() { return DefaultConfiguration.CURRENT.getDefaultLSFOutputRedirection(); }
     public String[] getPropertiesPass() { return DefaultConfiguration.CURRENT.getPropertiesPass(); }
 }

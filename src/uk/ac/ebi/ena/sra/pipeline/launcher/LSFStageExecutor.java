@@ -16,20 +16,20 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
 public class 
 LSFStageExecutor extends AbstractStageExecutor
 {
-
-    private String lsf_queue;
-    private String lsf_user;
-    private final Path lsf_output_path;
     private boolean  do_commit = true;
     ExecutionInfo    info;
     private String   config_prefix_name;
     private String   config_source_name;
+    private int java_memory_limit;
     private String[] properties_pass;
     private ExecutionResult default_failure_result;
+
     private int cpu_cores;
     private int lsf_memory_limit;
     private int lsf_memory_reservation_timeout;
-    private int java_memory_limit;
+    private String lsf_queue;
+    private String lsf_user;
+    private Path lsf_output_path;
 
 
     public
@@ -79,8 +79,6 @@ LSFStageExecutor extends AbstractStageExecutor
                       String[] properties_pass )
     {
         super( pipeline_name, translator );
-        LSFBackEnd be = new LSFBackEnd( queue, lsf_user, lsf_mem, lsf_mem_timeout, lsf_cpu_cores );
-        be.setOutputFolderPath( output_path );
         this.default_failure_result = translator.getCommitStatusDefaultFailure();
         this.config_prefix_name = config_prefix_name;
         this.config_source_name = config_source_name;
@@ -114,6 +112,7 @@ LSFStageExecutor extends AbstractStageExecutor
             properties_pass = params.getPropertiesPass();
             lsf_user = params.getLsfUser();
             lsf_queue = params.getLsfQueue();
+            lsf_output_path = Paths.get( params.getLsfOutputPath() );
         }
     }
     

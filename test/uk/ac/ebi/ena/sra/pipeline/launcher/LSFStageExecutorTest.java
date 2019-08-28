@@ -86,6 +86,7 @@ LSFStageExecutorTest
 			@Override public int getLSFCPUCores() { return  12; }
 			@Override public String getLsfUser() { return "LSFUSER"; }
 			@Override public String getLsfQueue() { return "LSFQUEUE"; }
+			@Override public String getLsfOutputPath() { return "redir"; }
 			@Override public String[] getPropertiesPass() { return new String[] { }; }
 		} );
 
@@ -101,6 +102,8 @@ LSFStageExecutorTest
 		Assert.assertTrue( cmdl.contains( " -Xmx400M" ) );
 		Assert.assertTrue( cmdl.contains( " -n 12" ) );
 		Assert.assertTrue( cmdl.contains( " -q LSFQUEUE" ) );
+		Assert.assertTrue( cmdl.contains( " -oo redir\\" ) );
+		Assert.assertTrue( cmdl.contains( " -eo redir\\" ) );
 	}
 
 	@Test public void
