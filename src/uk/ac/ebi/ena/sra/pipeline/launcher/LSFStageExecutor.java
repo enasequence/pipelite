@@ -7,7 +7,6 @@ import java.util.List;
 
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCall;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
-import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
 import uk.ac.ebi.ena.sra.pipeline.executors.LSFExecutorConfig;
@@ -17,16 +16,22 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
 public class 
 LSFStageExecutor extends AbstractStageExecutor
 {
+
+    private String lsf_queue;
+    private String lsf_user;
+    private final Path lsf_output_path;
     private boolean  do_commit = true;
-    private boolean  was_error;
     ExecutionInfo    info;
-    final private    LSFBackEnd back_end;
     private String   config_prefix_name;
     private String   config_source_name;
-	private String[] properties_pass;
-	private ExecutionResult default_failure_result;
+    private String[] properties_pass;
+    private ExecutionResult default_failure_result;
+    private int cpu_cores;
+    private int lsf_memory_limit;
+    private int lsf_memory_reservation_timeout;
+    private int java_memory_limit;
 
-    
+
     public
     LSFStageExecutor( String pipeline_name, 
                       ResultTranslator translator )
@@ -77,41 +82,18 @@ LSFStageExecutor extends AbstractStageExecutor
         LSFBackEnd be = new LSFBackEnd( queue, lsf_user, lsf_mem, lsf_mem_timeout, lsf_cpu_cores );
         be.setOutputFolderPath( output_path );
         this.default_failure_result = translator.getCommitStatusDefaultFailure();
-        this.back_end = be;
         this.config_prefix_name = config_prefix_name;
         this.config_source_name = config_source_name;
-        this.properties_pass    = properties_pass;
+
+        this.cpu_cores = lsf_cpu_cores;
+        this.lsf_memory_limit = lsf_mem;
+        this.lsf_memory_reservation_timeout = lsf_mem_timeout;
+        this.java_memory_limit = -1;
+        this.properties_pass = properties_pass;
+        this.lsf_queue = queue;
+        this.lsf_user = lsf_user;
+        this.lsf_output_path = output_path;
     }
-    
-    
-    public int 
-    getLSFMemoryReservationTimeout() 
-    { 
-        return back_end.memory_reservation_timeout; 
-    }
-    
-    
-    public int 
-    getLSFMemoryLimit() 
-    { 
-        return back_end.memory_limit; 
-    }
-    
-    
-    public int 
-    getLSFCPUCores() 
-    { 
-        return back_end.cpu_cores;
-    };
-    
-    
-    //TODO: re-factor
-    public int 
-    getJavaMemoryLimit() 
-    { 
-        return getLSFMemoryLimit() - 1500; 
-    }
-    
     
     public void
     reset( StageInstance instance )
@@ -125,9 +107,13 @@ LSFStageExecutor extends AbstractStageExecutor
     {
         if( null != params )
         {
-            ( (LSFBackEnd)back_end ).cpu_cores = params.getLSFCPUCores();
-            ( (LSFBackEnd)back_end ).memory_limit = params.getLSFMemoryLimit();
-            ( (LSFBackEnd)back_end ).memory_reservation_timeout = params.getLSFMemoryReservationTimeout();
+            cpu_cores = params.getLSFCPUCores();
+            lsf_memory_limit = params.getLSFMemoryLimit();
+            lsf_memory_reservation_timeout = params.getLSFMemoryReservationTimeout();
+            java_memory_limit = params.getJavaMemoryLimit();
+            properties_pass = params.getPropertiesPass();
+            lsf_user = params.getLsfUser();
+            lsf_queue = params.getLsfQueue();
         }
     }
     
@@ -147,7 +133,8 @@ LSFStageExecutor extends AbstractStageExecutor
 
         p_args.add( "-XX:+UseSerialGC" );
      
-        int memory_limit = getJavaMemoryLimit();
+        int memory_limit = java_memory_limit;
+
         if( 0 < memory_limit ) // TODO check
             p_args.add( String.format( "-Xmx%dM", memory_limit ) );
         
@@ -178,7 +165,15 @@ LSFStageExecutor extends AbstractStageExecutor
     }
 
 
-	public void 
+    private LSFBackEnd
+    configureBackend()
+    {
+        LSFBackEnd back_end = new LSFBackEnd( lsf_queue, lsf_user, lsf_memory_limit, lsf_memory_reservation_timeout, cpu_cores );
+        back_end.setOutputFolderPath( lsf_output_path );
+        return back_end;
+    }
+
+    public void
     execute( StageInstance instance )
     {
         if( EvalResult.StageTransient == can_execute( instance ) )
@@ -187,25 +182,14 @@ LSFStageExecutor extends AbstractStageExecutor
 
             List<String> p_args = constructArgs( instance, do_commit );
 
+            LSFBackEnd back_end = configureBackend();
+
             ExternalCall ec     = back_end.new_call_instance( String.format( "%s--%s--%s",
                                                                              instance.getPipelineName(), 
                                                                              instance.getProcessID(),
                                                                              instance.getStageName() ), 
                                                               "java", 
                                                               p_args.toArray( new String[ p_args.size() ] ) );
-
-            if( ec instanceof LSFClusterCall  )
-            {
-            	LSFClusterCall call = ( (LSFClusterCall) ec );
-            	call.setTaskLostExitCode( default_failure_result.getExitCode() );
-                LSFExecutorConfig si_config = instance.getResourceConfig( LSFExecutorConfig.class );
-                if( null != si_config )
-                {
-                	call.setMemoryLimit( si_config.getLSFMemoryLimit() );
-                	call.setMemoryReservationTimeout( si_config.getLSFMemoryReservationTimeout() );
-                	call.setCPUNumber( si_config.getLSFCPUCores() );
-                }
-            }
             
             log.info( ec.getCommandLine() );
             
@@ -236,19 +220,11 @@ LSFStageExecutor extends AbstractStageExecutor
         info.setLogMessage( new ExternalCallException( ec ).toString() );
     }
 
-    
-    
+
     public ExecutionInfo
     get_info()
     {
         return info;
-    }
-    
-    
-    public boolean 
-    was_error()
-    {
-        return was_error;
     }
 
 
@@ -272,8 +248,8 @@ LSFStageExecutor extends AbstractStageExecutor
 
 
     @Override public <T extends ExecutorConfig> void
-	configure( T params ) 
-	{
-	    configure( (LSFExecutorConfig) params );
-	}
+    configure( T params )
+    {
+        configure( (LSFExecutorConfig) params );
+    }
 }
