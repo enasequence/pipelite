@@ -130,7 +130,12 @@ DetachedStageExecutor extends AbstractStageExecutor implements DetachedExecutorC
         return this.do_commit;
     }
 
-    
+    @Override
+    public Class<? extends ExecutorConfig> getConfigClass() {
+        return DetachedExecutorConfig.class;
+    }
+
+
     @Override public void
     configure( ExecutorConfig rc )
     {

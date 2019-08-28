@@ -158,4 +158,5 @@ StageExecutor
     
     void setClientCanCommit( boolean do_commit );
     boolean getClientCanCommit();
+    Class<? extends ExecutorConfig> getConfigClass();
 }

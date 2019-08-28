@@ -15,13 +15,12 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
 
 
 public class 
-LSFStageExecutor extends AbstractStageExecutor //implements LSFExecutorConfig
+LSFStageExecutor extends AbstractStageExecutor
 {
     private boolean  do_commit = true;
     private boolean  was_error;
     ExecutionInfo    info;
-    final private    LSFBackEnd back_end; 
-//    private          LSFExecutorConfig rc = new LSFExecutorConfig();
+    final private    LSFBackEnd back_end;
     private String   config_prefix_name;
     private String   config_source_name;
 	private String[] properties_pass;
@@ -199,7 +198,7 @@ LSFStageExecutor extends AbstractStageExecutor //implements LSFExecutorConfig
             {
             	LSFClusterCall call = ( (LSFClusterCall) ec );
             	call.setTaskLostExitCode( default_failure_result.getExitCode() );
-                LSFExecutorConfig si_config = instance.getResourceConfig( LSFStageExecutor.class );
+                LSFExecutorConfig si_config = instance.getResourceConfig( LSFExecutorConfig.class );
                 if( null != si_config )
                 {
                 	call.setMemoryLimit( si_config.getLSFMemoryLimit() );
@@ -265,9 +264,14 @@ LSFStageExecutor extends AbstractStageExecutor //implements LSFExecutorConfig
     {
         return this.do_commit;
     }
-    
 
-	@Override public <T extends ExecutorConfig> void 
+    @Override
+    public Class<? extends ExecutorConfig> getConfigClass() {
+        return LSFExecutorConfig.class;
+    }
+
+
+    @Override public <T extends ExecutorConfig> void
 	configure( T params ) 
 	{
 	    configure( (LSFExecutorConfig) params );

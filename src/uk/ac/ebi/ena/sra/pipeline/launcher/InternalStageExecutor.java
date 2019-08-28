@@ -88,7 +88,12 @@ InternalStageExecutor extends AbstractStageExecutor
         return do_commit;
     }
 
-    
+    @Override
+    public Class<? extends ExecutorConfig> getConfigClass() {
+        return null;
+    }
+
+
     public StageTask 
     get_task()
     {

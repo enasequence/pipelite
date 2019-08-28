@@ -71,26 +71,19 @@ StageInstance
     
     
     public <T extends ExecutorConfig> T
-    getResourceConfig( Class<? extends StageExecutor> klass )
+        getResourceConfig( Class<? extends ExecutorConfig> klass )
     {
         if( null == resource_config )
             return null;
-                    
-        for( Class<?> i : klass.getInterfaces() )
+
+        for( ExecutorConfig r : resource_config )
         {
-            if( ExecutorConfig.class.isAssignableFrom( i ) 
-                && !( i.getClass().equals( ExecutorConfig.class ) ) )
+            try
             {
-                    for( ExecutorConfig r : resource_config )
-                    {
-                        try
-                        {
-                            return (T)i.cast( r );
-                        }catch( ClassCastException cce )
-                        {
-                            ;//cce.printStackTrace();
-                        }
-                    }
+                return (T)klass.cast( r );
+            }catch( ClassCastException cce )
+            {
+                ;
             }
         }
         return null;

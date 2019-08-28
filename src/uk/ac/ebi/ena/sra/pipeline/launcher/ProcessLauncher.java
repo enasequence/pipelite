@@ -408,8 +408,8 @@ loop:   for( int i = 0; i < instances.length; ++i  )
             
             if( EvalResult.StageTransient == executor.can_execute( instance ) )
             {
-                if( null != instance.getResourceConfig( executor.getClass() ) )
-                    executor.configure( instance.getResourceConfig( executor.getClass() ) );
+                if( null != instance.getResourceConfig( executor.getConfigClass() ) )
+                    executor.configure( instance.getResourceConfig( executor.getConfigClass() ) );
                 
                 ExecutionInstance ei = instance.getExecutionInstance();
                 ei.setStartTime( new Timestamp( System.currentTimeMillis() ) );
