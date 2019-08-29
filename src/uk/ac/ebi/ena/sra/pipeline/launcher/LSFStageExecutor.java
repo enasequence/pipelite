@@ -171,14 +171,17 @@ LSFStageExecutor extends AbstractStageExecutor
             log.info( ec.getCommandLine() );
             
             ec.execute();
-           
             fillExecutionInfo( ec );
             
-            String print_msg = String.format( "Finished execution of stage %s\n%s", 
-                                              instance.getStageName(),
-                                              new ExternalCallException( ec ).toString() );
-
-            log.info( print_msg );
+// Critical section to avoid constructing large strings multiple times            
+            synchronized( LSFStageExecutor.class )
+			{
+            	String print_msg = String.format( "Finished execution of stage %s\n%s", 
+                                                  instance.getStageName(),
+                                                  new ExternalCallException( ec ).toString() );
+            
+                log.info( print_msg );
+            }
         }
     }
 

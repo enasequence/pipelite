@@ -33,7 +33,7 @@ StageExecutor
         private CompressedString stdout;
         private Throwable t;
         private Integer exit_code;
-        private String  log_message;
+        private CompressedString log_message;
         
 
         public String 
@@ -92,6 +92,13 @@ StageExecutor
         }
         
         
+        public void
+        setStderr( CompressedString stderr )
+        {
+            this.stderr = stderr;
+        }
+        
+        
         public String 
         getStdout()
         {
@@ -105,6 +112,13 @@ StageExecutor
             this.stdout = new CompressedString( stdout );
         }
         
+        
+        public void 
+        setStdout( CompressedString stdout )
+        {
+            this.stdout = stdout;
+        }
+
         
         public Throwable 
         getThrowable()
@@ -137,14 +151,14 @@ StageExecutor
 		public String 
 		getLogMessage() 
 		{
-			return log_message;
+			return null ==  log_message ? null : log_message.toString();
 		}
 
 
 		public void 
 		setLogMessage( String log_message )
 		{
-			this.log_message = log_message;
+			this.log_message = new CompressedString( log_message );
 		}
     }
 

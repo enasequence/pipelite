@@ -9,7 +9,7 @@ apply plugin: 'maven'
 compileJava.options.encoding = 'UTF-8'
 
 group = 'uk.ac.ebi'
-ext.version_base = '2.4.5.stage_memory_and_cores_exconf'
+ext.version_base = '2.4.6.stage_memory_and_cores_exconf'
 version = version_base
 buildDir = 'target'
 
