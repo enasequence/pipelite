@@ -3,10 +3,14 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
+import java.util.Set;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCall;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
+import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
 import uk.ac.ebi.ena.sra.pipeline.executors.LSFExecutorConfig;
@@ -76,6 +80,16 @@ LSFStageExecutor extends AbstractStageExecutor
     	 return properties_pass; 
     }
 
+
+    private String []
+    mergePropertiesPass( String [] pp1, String [] pp2 )
+    {
+        Set<String> set1 = new HashSet<>( Arrays.asList( pp1 ) );
+        Set<String> set2 = new HashSet<>( Arrays.asList( pp2 ) );
+        set1.addAll( set2 );
+        return set1.toArray( new String[ set1.size() ] );
+    }
+
     
     private List<String> 
     constructArgs( StageInstance instance, boolean commit )
@@ -92,7 +106,8 @@ LSFStageExecutor extends AbstractStageExecutor
         
         p_args.add( String.format( "-D%s=%s", config_prefix_name, config_source_name ) );
 
-        appendProperties( p_args, getPropertiesPass() );
+        String [] prop_pass = mergePropertiesPass( getPropertiesPass(), instance.getPropertiesPass() );
+        appendProperties( p_args, prop_pass );
         
         p_args.add( "-cp" );
         p_args.add( System.getProperty( "java.class.path" ) ); 
@@ -147,6 +162,12 @@ LSFStageExecutor extends AbstractStageExecutor
                                                               "java", 
                                                               p_args.toArray( new String[ p_args.size() ] ) );
             
+            if( ec instanceof LSFClusterCall)
+            {
+            	LSFClusterCall call = ( (LSFClusterCall) ec );
+            	call.setTaskLostExitCode( default_failure_result.getExitCode() );
+            }
+
             log.info( ec.getCommandLine() );
             
             ec.execute();

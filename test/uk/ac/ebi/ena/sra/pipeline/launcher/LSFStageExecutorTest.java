@@ -2,13 +2,8 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import java.io.IOException;
 import java.nio.file.Files;
-
-import java.nio.file.Path;
 import org.junit.Assert;
 import org.junit.Test;
-
-
-import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.executors.LSFExecutorConfig;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
 
@@ -42,6 +37,18 @@ LSFStageExecutorTest
 	}
 
 
+	private StageInstance
+	makeDefaultStageInstance()
+	{
+		return new StageInstance() {
+			{
+				setEnabled(true);
+				setPropertiesPass(new String[]{});
+			}
+		};
+	}
+
+
 	@Test public void
 	testNoQueue() throws IOException
 	{
@@ -60,12 +67,7 @@ LSFStageExecutorTest
 		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
 				"NOFILE", "NOPATH", new String[] { }, cfg_def );
 		
-		se.execute( new StageInstance() 
-		{ 
-			{ 
-				setEnabled( true ); 
-			} 
-		} );
+		se.execute( makeDefaultStageInstance() );
 		
 		
 		Assert.assertFalse( se.get_info().getCommandline().contains( "-q " ) );
@@ -91,12 +93,7 @@ LSFStageExecutorTest
 		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
 				"NOFILE", "NOPATH", new String[] { }, cfg_def );
 		
-		se.execute( new StageInstance() 
-		{ 
-			{ 
-				setEnabled( true ); 
-			} 
-		} );
+		se.execute( makeDefaultStageInstance() );
 
 
 		Assert.assertTrue( se.get_info().getCommandline().contains( "-q queue" ) );
@@ -123,12 +120,7 @@ LSFStageExecutorTest
 
 		se.configure( cfg_stg );
 
-		se.execute( new StageInstance()
-		{
-			{
-				setEnabled( true );
-			}
-		} );
+		se.execute( makeDefaultStageInstance() );
 
 		String cmdl = se.get_info().getCommandline();
 		Assert.assertTrue( cmdl.contains( " -M 2000 -R rusage[mem=2000:duration=14]" ) );
@@ -137,6 +129,7 @@ LSFStageExecutorTest
 		Assert.assertTrue( cmdl.contains( " -oo " + tmpd_stg + "\\" ) );
 		Assert.assertTrue( cmdl.contains( " -eo " + tmpd_stg + "\\" ) );
 	}
+
 
 	@Test public void
 	genericConfig() throws IOException
@@ -148,12 +141,7 @@ LSFStageExecutorTest
 
 		se.configure( null );
 
-		se.execute( new StageInstance()
-		{
-			{
-				setEnabled( true );
-			}
-		} );
+		se.execute( makeDefaultStageInstance() );
 
 		String cmdl = se.get_info().getCommandline();
 		Assert.assertTrue( cmdl.contains( " -M 1024 -R rusage[mem=1024:duration=9]" ) );
@@ -175,11 +163,53 @@ LSFStageExecutorTest
 		{
 			{
 				setEnabled( true );
+				setPropertiesPass( new String[] { } );
 				setJavaMemoryLimit( 2000 );
 			}
 		} );
 
 		String cmdl = se.get_info().getCommandline();
 		Assert.assertTrue( cmdl.contains( " -Xmx2000M" ) );
+	}
+
+
+	@Test public void
+	propertiesPassStageSpecific() throws IOException
+	{
+		ResultTranslator translator = makeResultTranslator();
+		LSFExecutorConfig cfg_def = makeDefaultConfig();
+		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
+				"NOFILE", "NOPATH", new String[] { "user.dir" }, cfg_def );
+
+		se.configure( null );
+
+		se.execute( new StageInstance()
+		{
+			{
+				setEnabled( true );
+				setPropertiesPass( new String [] { "user.country" } );
+			}
+		} );
+
+		String cmdl = se.get_info().getCommandline();
+		Assert.assertTrue( cmdl.contains( " -Duser.country=" ) );
+		Assert.assertTrue( cmdl.contains( " -Duser.dir=" ) );
+	}
+
+
+	@Test public void
+	propertiesPassGeneric() throws IOException
+	{
+		ResultTranslator translator = makeResultTranslator();
+		LSFExecutorConfig cfg_def = makeDefaultConfig();
+		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
+				"NOFILE", "NOPATH", new String[] { "user.dir" }, cfg_def );
+
+		se.configure( null );
+
+		se.execute( makeDefaultStageInstance() );
+
+		String cmdl = se.get_info().getCommandline();
+		Assert.assertTrue( cmdl.contains( " -Duser.dir=" ) );
 	}
 }
