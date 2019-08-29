@@ -20,77 +20,39 @@ LSFStageExecutor extends AbstractStageExecutor
     ExecutionInfo    info;
     private String   config_prefix_name;
     private String   config_source_name;
-    private int java_memory_limit;
-    private String[] properties_pass;
     private ExecutionResult default_failure_result;
-
-    private int cpu_cores;
-    private int lsf_memory_limit;
-    private int lsf_memory_reservation_timeout;
-    private String lsf_queue;
-    private String lsf_user;
-    private Path lsf_output_path;
+    private String[] properties_pass;
+    LSFExecutorConfig config;
 
 
     public
     LSFStageExecutor( String pipeline_name, 
-                      ResultTranslator translator )
+                      ResultTranslator translator,
+                      LSFExecutorConfig config )
     {
-        this( pipeline_name, translator,
-              DefaultConfiguration.CURRENT.getDefaultLSFQueue(),
-              DefaultConfiguration.CURRENT.getDefaultLSFUser(),
-              DefaultConfiguration.CURRENT.getDefaultLSFMem(),
-              DefaultConfiguration.CURRENT.getDefaultLSFMemTimeout(),
-              DefaultConfiguration.CURRENT.getDefaultLSFCpuCores(),
-              Paths.get( DefaultConfiguration.CURRENT.getDefaultLSFOutputRedirection() ), 
-              DefaultConfiguration.CURRENT.getConfigPrefixName(), 
+    	this( pipeline_name, translator,
+              DefaultConfiguration.CURRENT.getConfigPrefixName(),
               DefaultConfiguration.CURRENT.getConfigSourceName(),
-              DefaultConfiguration.CURRENT.getPropertiesPass() );
-    }
-    
-    
-    public
-    LSFStageExecutor( String pipeline_name, 
-                      ResultTranslator translator, 
-                      String queue,
-                      String lsf_user,
-                      int lsf_mem, 
-                      int lsf_mem_timeout,
-                      int lsf_cpu_cores )
-    {
-    	this( pipeline_name, translator, queue, lsf_user, lsf_mem, lsf_mem_timeout, lsf_cpu_cores, 
-    	      Paths.get( DefaultConfiguration.CURRENT.getDefaultLSFOutputRedirection() ),
-              DefaultConfiguration.CURRENT.getConfigPrefixName(), 
-              DefaultConfiguration.CURRENT.getConfigSourceName(),
-              DefaultConfiguration.CURRENT.getPropertiesPass() );
+              DefaultConfiguration.CURRENT.getPropertiesPass(),
+              config );
     }
     
     
     LSFStageExecutor( String pipeline_name, 
-                      ResultTranslator translator, 
-                      String queue,
-                      String lsf_user,
-                      int lsf_mem, 
-                      int lsf_mem_timeout,
-                      int lsf_cpu_cores,
-                      Path output_path,
+                      ResultTranslator translator,
                       String config_prefix_name,
                       String config_source_name,
-                      String[] properties_pass )
+                      String[] properties_pass,
+                      LSFExecutorConfig config )
     {
         super( pipeline_name, translator );
         this.default_failure_result = translator.getCommitStatusDefaultFailure();
         this.config_prefix_name = config_prefix_name;
         this.config_source_name = config_source_name;
 
-        this.cpu_cores = lsf_cpu_cores;
-        this.lsf_memory_limit = lsf_mem;
-        this.lsf_memory_reservation_timeout = lsf_mem_timeout;
-        this.java_memory_limit = -1;
         this.properties_pass = properties_pass;
-        this.lsf_queue = queue;
-        this.lsf_user = lsf_user;
-        this.lsf_output_path = output_path;
+
+        this.config = config;
     }
     
     public void
@@ -104,16 +66,7 @@ LSFStageExecutor extends AbstractStageExecutor
     configure( LSFExecutorConfig params )
     {
         if( null != params )
-        {
-            cpu_cores = params.getLSFCPUCores();
-            lsf_memory_limit = params.getLSFMemoryLimit();
-            lsf_memory_reservation_timeout = params.getLSFMemoryReservationTimeout();
-            java_memory_limit = params.getJavaMemoryLimit();
-            properties_pass = params.getPropertiesPass();
-            lsf_user = params.getLsfUser();
-            lsf_queue = params.getLsfQueue();
-            lsf_output_path = Paths.get( params.getLsfOutputPath() );
-        }
+            this.config = params;
     }
     
     
@@ -132,7 +85,7 @@ LSFStageExecutor extends AbstractStageExecutor
 
         p_args.add( "-XX:+UseSerialGC" );
      
-        int memory_limit = java_memory_limit;
+        int memory_limit = instance.getJavaMemoryLimit();
 
         if( 0 < memory_limit ) // TODO check
             p_args.add( String.format( "-Xmx%dM", memory_limit ) );
@@ -167,8 +120,12 @@ LSFStageExecutor extends AbstractStageExecutor
     private LSFBackEnd
     configureBackend()
     {
-        LSFBackEnd back_end = new LSFBackEnd( lsf_queue, lsf_user, lsf_memory_limit, lsf_memory_reservation_timeout, cpu_cores );
-        back_end.setOutputFolderPath( lsf_output_path );
+        LSFBackEnd back_end = new LSFBackEnd( config.getLsfQueue(),
+                                              config.getLsfUser(),
+                                              config.getLSFMemoryLimit(),
+                                              config.getLSFMemoryReservationTimeout(),
+                                              config.getLSFCPUCores() );
+        back_end.setOutputFolderPath( Paths.get( config.getLsfOutputPath() ) );
         return back_end;
     }
 

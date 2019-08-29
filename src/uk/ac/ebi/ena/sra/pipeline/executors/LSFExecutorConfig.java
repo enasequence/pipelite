@@ -9,9 +9,7 @@ LSFExecutorConfig implements ExecutorConfig
     public int getLSFMemoryReservationTimeout() { return DefaultConfiguration.CURRENT.getDefaultLSFMemTimeout(); }
     public int getLSFMemoryLimit() { return DefaultConfiguration.CURRENT.getDefaultLSFMem(); }
     public int getLSFCPUCores() { return DefaultConfiguration.CURRENT.getDefaultLSFCpuCores(); }
-    public int getJavaMemoryLimit() { return getLSFMemoryLimit() - 1500; }
     public String getLsfUser() { return DefaultConfiguration.CURRENT.getDefaultLSFUser(); }
     public String getLsfQueue() { return DefaultConfiguration.CURRENT.getDefaultLSFQueue(); }
     public String getLsfOutputPath() { return DefaultConfiguration.CURRENT.getDefaultLSFOutputRedirection(); }
-    public String[] getPropertiesPass() { return DefaultConfiguration.CURRENT.getPropertiesPass(); }
 }

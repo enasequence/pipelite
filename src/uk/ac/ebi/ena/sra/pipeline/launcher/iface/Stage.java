@@ -9,5 +9,7 @@ Stage
     public Class<? extends StageTask> getTaskClass();
     public Stage getDependsOn();
     public String getDescription();
+    default public int getJavaMemoryLimit() { return -1; };
+    default public String[] getPropertiesPass() { return null; };
     default public ExecutorConfig[] getExecutorConfig() { return new ExecutorConfig[] {}; };
 }

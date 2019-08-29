@@ -339,6 +339,8 @@ loop:   for( int i = 0; i < instances.length; ++i  )
             instance.setProcessID( process_id );
             instance.setPipelineName( pipeline_name );
             instance.setDependsOn( null == stage.getDependsOn() ? null : stage.getDependsOn().toString() );
+            instance.setJavaMemoryLimit( stage.getJavaMemoryLimit() );
+            instance.setPropertiesPass( stage.getPropertiesPass() );
             
             instances[ i ] = instance;
         }

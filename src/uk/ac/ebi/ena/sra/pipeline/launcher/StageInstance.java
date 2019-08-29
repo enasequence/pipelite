@@ -12,6 +12,8 @@ StageInstance
     private String pipeline_name;
     private String depends_on;
     private boolean enabled;
+    private int java_memory_limit;
+    private String[] properties_pass;
     private ExecutorConfig resource_config[];
     private ExecutionInstance execution_instance = new ExecutionInstance();
     
@@ -33,6 +35,8 @@ StageInstance
         this.pipeline_name = from.pipeline_name;
         this.depends_on = from.depends_on;
         this.enabled = from.enabled;
+        this.java_memory_limit = from.java_memory_limit;
+        this.properties_pass = from.properties_pass;
         this.resource_config = from.resource_config;
         this.execution_instance = new ExecutionInstance( from.execution_instance );
     }
@@ -68,8 +72,23 @@ StageInstance
     {
         return String.format( "[%s]-[%s]-[%s]-[%d]", getPipelineName(), getProcessID(), getStageName(), getExecutionCount() );
     }
-    
-    
+
+    public int getJavaMemoryLimit() {
+        return java_memory_limit;
+    }
+
+    public void setJavaMemoryLimit(int java_memory_limit) {
+        this.java_memory_limit = java_memory_limit;
+    }
+
+    public String[] getPropertiesPass() {
+        return properties_pass;
+    }
+
+    public void setPropertiesPass(String[] properties_pass) {
+        this.properties_pass = properties_pass;
+    }
+
     public <T extends ExecutorConfig> T
         getResourceConfig( Class<? extends ExecutorConfig> klass )
     {

@@ -1,6 +1,7 @@
 package uk.ac.ebi.ena.sra.pipeline.configuration;
 
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall.LSFQueue;
+import uk.ac.ebi.ena.sra.pipeline.executors.LSFExecutorConfig;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.StageExecutorFactory;
 import uk.ac.ebi.ena.sra.pipeline.launcher.LSFStageExecutor;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ResultTranslator;
@@ -45,13 +46,17 @@ DefaultExecutorFactory implements StageExecutorFactory
     public StageExecutor
     getExecutor()
     {
+        LSFExecutorConfig cfg_def = new LSFExecutorConfig() {
+            @Override public int getLSFMemoryLimit() { return  lsf_mem; }
+            @Override public int getLSFMemoryReservationTimeout() { return lsf_mem_timeout; }
+            @Override public int getLSFCPUCores() { return  lsf_cpu_cores; }
+            @Override public String getLsfUser() { return lsf_user; }
+            @Override public String getLsfQueue() { return queue; }
+        };
+
         StageExecutor executor = new LSFStageExecutor( pipeline_name, 
                                                        translator, 
-                                                       queue,
-                                                       lsf_user,
-                                                       lsf_mem, 
-                                                       lsf_mem_timeout,
-                                                       lsf_cpu_cores ).setRedoCount( redo );
+                                                       cfg_def ).setRedoCount( redo );
         executor.setClientCanCommit( true );
         return executor;
     }
