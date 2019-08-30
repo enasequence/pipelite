@@ -109,7 +109,6 @@ LSFStageExecutorTest
 				"NOFILE", "NOPATH", new String[] { }, cfg_def );
 
 		String tmpd_stg = Files.createTempDirectory("LSF-TEST-OUTPUT-STG").toString();
-		System.out.println( tmpd_stg );
 		LSFExecutorConfig cfg_stg = new LSFExecutorConfig() {
 			@Override public int getLSFMemoryLimit() { return  2000; }
 			@Override public int getLSFMemoryReservationTimeout() { return  14; }
@@ -124,12 +123,11 @@ LSFStageExecutorTest
 		se.execute( makeDefaultStageInstance() );
 
 		String cmdl = se.get_info().getCommandline();
-		System.out.println( cmdl );
 		Assert.assertTrue( cmdl.contains( " -M 2000 -R rusage[mem=2000:duration=14]" ) );
 		Assert.assertTrue( cmdl.contains( " -n 12" ) );
 		Assert.assertTrue( cmdl.contains( " -q LSFQUEUE" ) );
-		Assert.assertTrue( cmdl.contains( " -oo " + tmpd_stg + "\\" ) );
-		Assert.assertTrue( cmdl.contains( " -eo " + tmpd_stg + "\\" ) );
+		Assert.assertTrue( cmdl.contains( " -oo " + tmpd_stg ) );
+		Assert.assertTrue( cmdl.contains( " -eo " + tmpd_stg ) );
 	}
 
 
