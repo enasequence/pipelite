@@ -123,6 +123,7 @@ LSFStageExecutorTest
 		se.execute( makeDefaultStageInstance() );
 
 		String cmdl = se.get_info().getCommandline();
+		System.out.println( cmdl );
 		Assert.assertTrue( cmdl.contains( " -M 2000 -R rusage[mem=2000:duration=14]" ) );
 		Assert.assertTrue( cmdl.contains( " -n 12" ) );
 		Assert.assertTrue( cmdl.contains( " -q LSFQUEUE" ) );
