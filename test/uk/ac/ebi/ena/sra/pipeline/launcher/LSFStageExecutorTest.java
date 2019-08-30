@@ -108,7 +108,8 @@ LSFStageExecutorTest
 		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
 				"NOFILE", "NOPATH", new String[] { }, cfg_def );
 
-		String tmpd_stg = Files.createTempDirectory("LSF-TEST-OUTPUT-STG").toString();
+		String tmpd_stg = Files.createTempDirectory("LSF-TEST-OUTPUT-STG").toAbsolutePath().toString();
+		System.out.println( tmpd_stg );
 		LSFExecutorConfig cfg_stg = new LSFExecutorConfig() {
 			@Override public int getLSFMemoryLimit() { return  2000; }
 			@Override public int getLSFMemoryReservationTimeout() { return  14; }
