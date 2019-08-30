@@ -174,6 +174,29 @@ LSFStageExecutorTest
 
 
 	@Test public void
+	javaMemoryNotSet() throws IOException
+	{
+		ResultTranslator translator = makeResultTranslator();
+		LSFExecutorConfig cfg_def = makeDefaultConfig();
+		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
+				"NOFILE", "NOPATH", new String[] { }, cfg_def );
+
+		se.configure( null );
+
+		se.execute( new StageInstance()
+		{
+			{
+				setEnabled( true );
+				setPropertiesPass( new String[] { } );
+			}
+		} );
+
+		String cmdl = se.get_info().getCommandline();
+		Assert.assertTrue( !cmdl.contains( " -Xmx" ) );
+	}
+
+
+	@Test public void
 	propertiesPassStageSpecific() throws IOException
 	{
 		ResultTranslator translator = makeResultTranslator();
@@ -211,5 +234,29 @@ LSFStageExecutorTest
 
 		String cmdl = se.get_info().getCommandline();
 		Assert.assertTrue( cmdl.contains( " -Duser.dir=" ) );
+	}
+
+
+	@Test public void
+	prefixAndSource() throws IOException
+	{
+		ResultTranslator translator = makeResultTranslator();
+		LSFExecutorConfig cfg_def = makeDefaultConfig();
+
+		String prefix = "NOFILE";
+		String source = "NOPATH";
+		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
+				prefix, source, new String[] { "user.dir" }, cfg_def );
+
+		se.execute( new StageInstance()
+		{
+			{
+				setEnabled( true );
+				setPropertiesPass( new String[] { } );
+			}
+		} );
+
+		String cmdl = se.get_info().getCommandline();
+		Assert.assertTrue( cmdl.contains( " -D" +  prefix + "=" + source ) );
 	}
 }

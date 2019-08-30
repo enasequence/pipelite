@@ -1,8 +1,11 @@
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
+import java.util.Set;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCall;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
@@ -12,15 +15,14 @@ import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
 public class 
 DetachedStageExecutor extends AbstractStageExecutor
 {
-    private static final String DEFAULT_EXECUTION_ID = "DetachedStageExecutor";
     private boolean do_commit = true;
     private String   config_prefix_name;
     private String   config_source_name;
-    private int memory_limit;
-    private boolean was_error;
     ExecutionInfo   info;
     protected ExternalCallBackEnd back_end = new SimpleBackEnd();
     private String[] properties_pass;
+
+    DetachedExecutorConfig config;
     
     public
     DetachedStageExecutor( String pipeline_name, ResultTranslator translator )
@@ -47,24 +49,32 @@ DetachedStageExecutor extends AbstractStageExecutor
     {
         instance.setExecutionInstance( new ExecutionInstance() );
     }
-    
-    
+
+
+    private String []
+    mergePropertiesPass( String [] pp1, String [] pp2 )
+    {
+        Set<String> set1 = new HashSet<>( Arrays.asList( pp1 ) );
+        Set<String> set2 = new HashSet<>( Arrays.asList( pp2 ) );
+        set1.addAll( set2 );
+        return set1.toArray( new String[ set1.size() ] );
+    }
+
+
     private List<String> 
     constructArgs( StageInstance instance, boolean commit )
     {
         List<String>p_args = new ArrayList<String>();
-        
-        int memory_limit = getJavaMemoryLimit();
-        DetachedExecutorConfig si_config = instance.getResourceConfig( DetachedExecutorConfig.class );
-        if( null != si_config )
-            memory_limit = si_config.getJavaMemoryLimit();
+
+        int memory_limit = instance.getJavaMemoryLimit();
 
         if( 0 < memory_limit ) // TODO check
             p_args.add( String.format( "-Xmx%dM", memory_limit ) );
         
         p_args.add( String.format( "-D%s=%s", config_prefix_name, config_source_name ) );
-        
-        appendProperties( p_args, getPropertiesPass() );
+
+        String [] prop_pass = mergePropertiesPass( getPropertiesPass(), instance.getPropertiesPass() );
+        appendProperties( p_args, prop_pass );
         
         p_args.add( "-cp" );
         p_args.add( System.getProperty( "java.class.path" ) ); 
@@ -148,6 +158,7 @@ DetachedStageExecutor extends AbstractStageExecutor
         return this.do_commit;
     }
 
+
     @Override
     public Class<? extends ExecutorConfig> getConfigClass() {
         return DetachedExecutorConfig.class;
@@ -160,19 +171,11 @@ DetachedStageExecutor extends AbstractStageExecutor
         DetachedExecutorConfig params = (DetachedExecutorConfig)rc;
         if( null != params )
         {
-            memory_limit = params.getJavaMemoryLimit();
+            this.config = params;
         }
     }
     
-    
-    public int
-    getJavaMemoryLimit() 
-    { 
-        return memory_limit;
-    }
-    
-    
-    //TODO looks overengineered
+
     public String[]
     getPropertiesPass()
     {
