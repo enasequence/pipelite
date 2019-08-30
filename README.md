@@ -50,6 +50,9 @@ Stage
     public Class<? extends StageTask>   getTaskClass();
     public Stage                        getDependsOn();
     public String                       getDescription();
+    default public int getJavaMemoryLimit() { return -1; };
+    default public String[] getPropertiesPass() { return new String[] {}; };
+    default public ExecutorConfig[] getExecutorConfig() { return new ExecutorConfig[] {}; };
 }
 ```
 
@@ -59,6 +62,9 @@ Where:
 Dependencies used to resolve following dependant stages to clean results in case of failures in
 current stage.
 *	`getDescription` returns textual description for the stage
+* `getJavaMemoryLimit` optional. Returns java memory limitation, used as `-Xmx` jvm parameter 
+* `getPropertiesPass` optional. Returns array of names of system properties to pass from supervisor jvm to backend jvm
+* `getExecutorConfig` optional. Returns object of a class extending `ExecutorConfig`. Used to pass backend specific configurations
 
 Note: `stage name (toString())` is used in current version to obtain name for `<stage_table_id>`
 field. One  needs a good reason to override this method in  their stage enum.
@@ -227,7 +233,8 @@ value
 Launches execution for process ID, also interacts with data base. Locks corresponding process' and
 stage' table rows.
 
-*	--stage \<stage_name> - stage name to execute.
+* --executor - executor class (backend)
+*	--stage \<stage_name> - stage name to execute
 *	--mail-to \<list> - comma-separated list of mail addresses, default is: `pipelite.default.mail-to`
 value
 
@@ -236,7 +243,9 @@ Launches class for supplied stage. It does not lock process and stage tables but
 insert log records to log table.
 *	--id  \<process_table_id> - process instance id to execute
 *	--stage \<stage_name> - stage name to execute
-*	--force - optional
+*	--commit - force commit client data
+* --enabled - flag for enabling/disabling stage
+* --exec-cnt - execution counter for tracking
 
 
 ## Example project
