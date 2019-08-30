@@ -24,7 +24,7 @@ LSFStageExecutorTest
 	private LSFExecutorConfig
 	makeDefaultConfig() throws IOException
 	{
-		String tmpd_def = Files.createTempDirectory("LSF-TEST-OUTPUT-DEF").toString();
+		String tmpd_def = "LSF-TEST-OUTPUT-DEF"; // Files.createTempDirectory("LSF-TEST-OUTPUT-DEF").toString();
 
 		return new LSFExecutorConfig() {
 			@Override public int getLSFMemoryLimit() { return  1024; }
@@ -54,7 +54,7 @@ LSFStageExecutorTest
 	{
 		ResultTranslator translator = makeResultTranslator();
 
-		String tmpd_def = Files.createTempDirectory("LSF-TEST-OUTPUT-DEF").toString();
+		String tmpd_def = "LSF-TEST-OUTPUT-DEF"; // Files.createTempDirectory("LSF-TEST-OUTPUT-DEF").toString();
 		LSFExecutorConfig cfg_def = new LSFExecutorConfig() {
 			@Override public int getLSFMemoryLimit() { return  1024; }
 			@Override public int getLSFMemoryReservationTimeout() { return 9; }
@@ -80,7 +80,7 @@ LSFStageExecutorTest
 	{
 		ResultTranslator translator = makeResultTranslator();
 
-		String tmpd_def = Files.createTempDirectory("LSF-TEST-OUTPUT-DEF").toString();
+		String tmpd_def = "LSF-TEST-OUTPUT-DEF"; // Files.createTempDirectory("LSF-TEST-OUTPUT-DEF").toString();
 		LSFExecutorConfig cfg_def = new LSFExecutorConfig() {
 			@Override public int getLSFMemoryLimit() { return  1024; }
 			@Override public int getLSFMemoryReservationTimeout() { return 9; }
@@ -108,8 +108,7 @@ LSFStageExecutorTest
 		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
 				"NOFILE", "NOPATH", new String[] { }, cfg_def );
 
-		String tmpd_stg = Files.createTempDirectory("LSF-TEST-OUTPUT-STG").toAbsolutePath().toString();
-		System.out.println( tmpd_stg );
+		String tmpd_stg = "LSF-TEST-OUTPUT-STG"; // Files.createTempDirectory("LSF-TEST-OUTPUT-STG").toString();
 		LSFExecutorConfig cfg_stg = new LSFExecutorConfig() {
 			@Override public int getLSFMemoryLimit() { return  2000; }
 			@Override public int getLSFMemoryReservationTimeout() { return  14; }
