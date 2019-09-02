@@ -61,13 +61,25 @@ Where:
 *	`getDependsOn` returns stage from the stage depends on. null if no dependencies.
 Dependencies used to resolve following dependant stages to clean results in case of failures in
 current stage.
-*	`getDescription` returns textual description for the stage
-* `getJavaMemoryLimit` optional. Returns java memory limitation, used as `-Xmx` jvm parameter 
-* `getPropertiesPass` optional. Returns array of names of system properties to pass from supervisor jvm to backend jvm
-* `getExecutorConfig` optional. Returns object of a class extending `ExecutorConfig`. Used to pass backend specific configurations
+*	`getDescription` (String) Textual description for the stage
+* `getJavaMemoryLimit` (int) optional. Java memory limitation, used as `-Xmx` jvm parameter 
+* `getPropertiesPass` (String[]) optional. Array of names of system properties to pass from supervisor jvm to backend jvm
+* `getExecutorConfig` (ExecutorConfig[]) optional. Array of objects of a class extending `ExecutorConfig`. Used to pass backend specific configurations
 
 Note: `stage name (toString())` is used in current version to obtain name for `<stage_table_id>`
 field. One  needs a good reason to override this method in  their stage enum.
+
+It is possible to set stage specific parameters for LSF backend using `getExecutorConfig`.
+For that the array returned by `getExecutorConfig` must contain object overriding `LSFExecutorConfig`.
+LSF backend specific parameters are returned by the following `LSFExecutorConfig` methods:
+* `getLSFMemoryReservationTimeout` (int) memory reservation timeout in seconds
+* `getLSFMemoryLimit` (int) LSF memory limit in MB
+* `getLSFCPUCores` (int) number of CPU cores
+* `getLsfUser` (String) LSF user name
+* `getLsfQueue` (String) LSF queue name
+* `getLsfOutputPath` (String) path for LSF output files
+
+Note: `getLSFMemoryLimit` must be at least 1500 greater than `getJavaMemoryLimit`, otherwise `getJavaMemoryLimit` will be ignored.
 
 Commit statuses enum should implement `ExecutionResult`. The purpose of it to translate return
 codes (byte) and `Throwables` to human readable messages and back.
