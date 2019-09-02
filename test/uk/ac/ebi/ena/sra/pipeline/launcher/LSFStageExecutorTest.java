@@ -197,6 +197,84 @@ LSFStageExecutorTest
 
 
 	@Test public void
+	lsfMem1500GreaterThanJavaMem() throws IOException
+	{
+		ResultTranslator translator = makeResultTranslator();
+		LSFExecutorConfig cfg_def = makeDefaultConfig();
+		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
+				"NOFILE", "NOPATH", new String[] { }, cfg_def );
+
+		String tmpd_stg = Files.createTempDirectory("LSF-TEST-OUTPUT-STG").toString();
+		LSFExecutorConfig cfg_stg = new LSFExecutorConfig() {
+			@Override public int getLSFMemoryLimit() { return  2000; }
+			@Override public int getLSFMemoryReservationTimeout() { return  14; }
+			@Override public int getLSFCPUCores() { return  12; }
+			@Override public String getLsfUser() { return "LSFUSER"; }
+			@Override public String getLsfQueue() { return "LSFQUEUE"; }
+			@Override public String getLsfOutputPath() { return tmpd_stg; }
+		};
+
+		se.configure( cfg_stg );
+
+		se.execute( new StageInstance()
+		{
+			{
+				setEnabled( true );
+				setPropertiesPass( new String[] { } );
+				setJavaMemoryLimit( 500 );
+			}
+		} );
+
+		String cmdl = se.get_info().getCommandline();
+		Assert.assertTrue( cmdl.contains( " -M 2000 -R rusage[mem=2000:duration=14]" ) );
+		Assert.assertTrue( cmdl.contains( " -n 12" ) );
+		Assert.assertTrue( cmdl.contains( " -q LSFQUEUE" ) );
+		Assert.assertTrue( cmdl.contains( " -oo " + tmpd_stg ) );
+		Assert.assertTrue( cmdl.contains( " -eo " + tmpd_stg ) );
+		Assert.assertTrue( cmdl.contains( " -Xmx500M" ) );
+	}
+
+
+	@Test public void
+	javaMem1500LargerThanLsfMem() throws IOException
+	{
+		ResultTranslator translator = makeResultTranslator();
+		LSFExecutorConfig cfg_def = makeDefaultConfig();
+		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
+				"NOFILE", "NOPATH", new String[] { }, cfg_def );
+
+		String tmpd_stg = Files.createTempDirectory("LSF-TEST-OUTPUT-STG").toString();
+		LSFExecutorConfig cfg_stg = new LSFExecutorConfig() {
+			@Override public int getLSFMemoryLimit() { return  2000; }
+			@Override public int getLSFMemoryReservationTimeout() { return  14; }
+			@Override public int getLSFCPUCores() { return  12; }
+			@Override public String getLsfUser() { return "LSFUSER"; }
+			@Override public String getLsfQueue() { return "LSFQUEUE"; }
+			@Override public String getLsfOutputPath() { return tmpd_stg; }
+		};
+
+		se.configure( cfg_stg );
+
+		se.execute( new StageInstance()
+		{
+			{
+				setEnabled( true );
+				setPropertiesPass( new String[] { } );
+				setJavaMemoryLimit( 501 );
+			}
+		} );
+
+		String cmdl = se.get_info().getCommandline();
+		Assert.assertTrue( cmdl.contains( " -M 2000 -R rusage[mem=2000:duration=14]" ) );
+		Assert.assertTrue( cmdl.contains( " -n 12" ) );
+		Assert.assertTrue( cmdl.contains( " -q LSFQUEUE" ) );
+		Assert.assertTrue( cmdl.contains( " -oo " + tmpd_stg ) );
+		Assert.assertTrue( cmdl.contains( " -eo " + tmpd_stg ) );
+		Assert.assertTrue( !cmdl.contains( " -Xmx" ) );
+	}
+
+
+	@Test public void
 	propertiesPassStageSpecific() throws IOException
 	{
 		ResultTranslator translator = makeResultTranslator();
