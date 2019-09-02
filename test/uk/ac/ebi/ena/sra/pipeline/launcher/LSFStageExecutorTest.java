@@ -27,7 +27,7 @@ LSFStageExecutorTest
 		String tmpd_def = Files.createTempDirectory("LSF-TEST-OUTPUT-DEF").toString();
 
 		return new LSFExecutorConfig() {
-			@Override public int getLSFMemoryLimit() { return  1024; }
+			@Override public int getLSFMemoryLimit() { return  2048; }
 			@Override public int getLSFMemoryReservationTimeout() { return 9; }
 			@Override public int getLSFCPUCores() { return  6; }
 			@Override public String getLsfUser() { return "LSFUSER"; }
@@ -144,7 +144,7 @@ LSFStageExecutorTest
 		se.execute( makeDefaultStageInstance() );
 
 		String cmdl = se.get_info().getCommandline();
-		Assert.assertTrue( cmdl.contains( " -M 1024 -R rusage[mem=1024:duration=9]" ) );
+		Assert.assertTrue( cmdl.contains( " -M 2048 -R rusage[mem=2048:duration=9]" ) );
 		Assert.assertTrue( cmdl.contains( " -n 6 " ) );
 	}
 
@@ -164,12 +164,12 @@ LSFStageExecutorTest
 			{
 				setEnabled( true );
 				setPropertiesPass( new String[] { } );
-				setJavaMemoryLimit( 2000 );
+				setJavaMemoryLimit( 200 );
 			}
 		} );
 
 		String cmdl = se.get_info().getCommandline();
-		Assert.assertTrue( cmdl.contains( " -Xmx2000M" ) );
+		Assert.assertTrue( cmdl.contains( " -Xmx200M" ) );
 	}
 
 
