@@ -101,7 +101,7 @@ LSFStageExecutor extends AbstractStageExecutor
      
         int memory_limit = instance.getJavaMemoryLimit();
 
-        if( ( config.getLSFMemoryLimit() >= memory_limit + 1500 ) && ( 0 < memory_limit ) ) // TODO check
+        if( ( config.getLSFMemoryLimit() >= memory_limit ) && ( 0 < memory_limit ) ) // TODO check
             p_args.add( String.format( "-Xmx%dM", memory_limit ) );
         
         p_args.add( String.format( "-D%s=%s", config_prefix_name, config_source_name ) );

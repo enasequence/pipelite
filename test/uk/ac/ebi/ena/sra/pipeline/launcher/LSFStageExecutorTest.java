@@ -150,6 +150,22 @@ LSFStageExecutorTest
 
 
 	@Test public void
+	genericConfigNoConfCall() throws IOException
+	{
+		ResultTranslator translator = makeResultTranslator();
+		LSFExecutorConfig cfg_def = makeDefaultConfig();
+		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
+				"NOFILE", "NOPATH", new String[] { }, cfg_def );
+
+		se.execute( makeDefaultStageInstance() );
+
+		String cmdl = se.get_info().getCommandline();
+		Assert.assertTrue( cmdl.contains( " -M 2048 -R rusage[mem=2048:duration=9]" ) );
+		Assert.assertTrue( cmdl.contains( " -n 6 " ) );
+	}
+
+
+	@Test public void
 	javaMemory() throws IOException
 	{
 		ResultTranslator translator = makeResultTranslator();
@@ -197,7 +213,7 @@ LSFStageExecutorTest
 
 
 	@Test public void
-	lsfMem1500GreaterThanJavaMem() throws IOException
+	lsfMemGreaterThanJavaMem() throws IOException
 	{
 		ResultTranslator translator = makeResultTranslator();
 		LSFExecutorConfig cfg_def = makeDefaultConfig();
@@ -236,7 +252,7 @@ LSFStageExecutorTest
 
 
 	@Test public void
-	javaMem1500LargerThanLsfMem() throws IOException
+	javaMemGreaterThanLsfMem() throws IOException
 	{
 		ResultTranslator translator = makeResultTranslator();
 		LSFExecutorConfig cfg_def = makeDefaultConfig();
@@ -260,7 +276,7 @@ LSFStageExecutorTest
 			{
 				setEnabled( true );
 				setPropertiesPass( new String[] { } );
-				setJavaMemoryLimit( 501 );
+				setJavaMemoryLimit( 2001 );
 			}
 		} );
 
