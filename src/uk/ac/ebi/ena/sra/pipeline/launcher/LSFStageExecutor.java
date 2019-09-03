@@ -99,11 +99,31 @@ LSFStageExecutor extends AbstractStageExecutor
 
         p_args.add( "-XX:+UseSerialGC" );
      
-        int memory_limit = instance.getJavaMemoryLimit();
+        int java_memory_limit = instance.getJavaMemoryLimit();
+        int lsf_memory_limit = config.getLSFMemoryLimit();
 
-        if( ( config.getLSFMemoryLimit() >= memory_limit ) && ( 0 < memory_limit ) ) // TODO check
-            p_args.add( String.format( "-Xmx%dM", memory_limit ) );
-        
+        if( lsf_memory_limit < java_memory_limit )
+        {
+            log.warn( "LSF memory limit is lower than java memory limit. Setting default java memory limit." );
+            java_memory_limit = lsf_memory_limit - 1500;
+        }
+
+        if( 0 >= java_memory_limit ) // TODO check
+        {
+            java_memory_limit = lsf_memory_limit - 1500;
+            if( 0 >= java_memory_limit ) {
+                log.warn( "Java memory limit is 0 or less. Ignoring parameter." );
+            }
+            else
+            {
+                log.warn( "Java memory limit is 0 or less. Setting default java memory limit." );
+                p_args.add( String.format( "-Xmx%dM", java_memory_limit ) );
+            }
+        } else
+        {
+            p_args.add( String.format( "-Xmx%dM", java_memory_limit ) );
+        }
+
         p_args.add( String.format( "-D%s=%s", config_prefix_name, config_source_name ) );
 
         String [] prop_pass = mergePropertiesPass( getPropertiesPass(), instance.getPropertiesPass() );
