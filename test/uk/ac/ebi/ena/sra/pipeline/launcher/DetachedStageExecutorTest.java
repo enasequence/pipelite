@@ -1,6 +1,5 @@
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
-import java.io.IOException;
 import org.junit.Assert;
 import org.junit.Test;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
@@ -22,7 +21,7 @@ public class DetachedStageExecutorTest {
       {
         setEnabled( true );
         setPropertiesPass( new String[] { } );
-        setJavaMemoryLimit( 2000 );
+        setMemoryLimit( 2000 );
       }
     } );
 

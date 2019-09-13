@@ -1,6 +1,5 @@
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,6 +19,8 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
 public class 
 LSFStageExecutor extends AbstractStageExecutor
 {
+    public static final int LSF_JVM_MEMORY_DELTA_MB = 1500;
+
     private boolean  do_commit = true;
     ExecutionInfo    info;
     private String   config_prefix_name;
@@ -99,26 +100,12 @@ LSFStageExecutor extends AbstractStageExecutor
 
         p_args.add( "-XX:+UseSerialGC" );
      
-        int java_memory_limit = instance.getJavaMemoryLimit();
-        int lsf_memory_limit = config.getLSFMemoryLimit();
+        int lsf_memory_limit = instance.getMemoryLimit();
+        int java_memory_limit = lsf_memory_limit - LSF_JVM_MEMORY_DELTA_MB;
 
-        if( lsf_memory_limit < java_memory_limit )
+        if( 0 >= java_memory_limit )
         {
-            log.warn( "LSF memory limit is lower than java memory limit. Setting default java memory limit." );
-            java_memory_limit = lsf_memory_limit - 1500;
-        }
-
-        if( 0 >= java_memory_limit ) // TODO check
-        {
-            java_memory_limit = lsf_memory_limit - 1500;
-            if( 0 >= java_memory_limit ) {
-                log.warn( "Java memory limit is 0 or less. Ignoring parameter." );
-            }
-            else
-            {
-                log.warn( "Java memory limit is 0 or less. Setting default java memory limit." );
-                p_args.add( String.format( "-Xmx%dM", java_memory_limit ) );
-            }
+            log.warn( "LSF memory is lower than " + LSF_JVM_MEMORY_DELTA_MB + "MB. Java memory limit will not be set." );
         } else
         {
             p_args.add( String.format( "-Xmx%dM", java_memory_limit ) );
@@ -153,13 +140,12 @@ LSFStageExecutor extends AbstractStageExecutor
 
 
     private LSFBackEnd
-    configureBackend()
+    configureBackend( StageInstance instance )
     {
         LSFBackEnd back_end = new LSFBackEnd( config.getLsfQueue(),
-                                              config.getLsfUser(),
-                                              config.getLSFMemoryLimit(),
+                                              instance.getMemoryLimit(),
                                               config.getLSFMemoryReservationTimeout(),
-                                              config.getLSFCPUCores() );
+                                              instance.getCPUCores() );
         back_end.setOutputFolderPath( Paths.get( config.getLsfOutputPath() ) );
         return back_end;
     }
@@ -173,7 +159,7 @@ LSFStageExecutor extends AbstractStageExecutor
 
             List<String> p_args = constructArgs( instance, do_commit );
 
-            LSFBackEnd back_end = configureBackend();
+            LSFBackEnd back_end = configureBackend( instance );
 
             ExternalCall ec     = back_end.new_call_instance( String.format( "%s--%s--%s",
                                                                              instance.getPipelineName(), 

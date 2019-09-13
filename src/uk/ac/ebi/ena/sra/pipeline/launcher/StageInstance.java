@@ -12,13 +12,13 @@ StageInstance
     private String pipeline_name;
     private String depends_on;
     private boolean enabled;
-    private int java_memory_limit;
+    private int memory_limit;
+    private int cpu_cores;
     private String[] properties_pass;
     private ExecutorConfig resource_config[];
     private ExecutionInstance execution_instance = new ExecutionInstance();
-    
-    
-    
+
+
     public 
     StageInstance()
     {
@@ -35,7 +35,7 @@ StageInstance
         this.pipeline_name = from.pipeline_name;
         this.depends_on = from.depends_on;
         this.enabled = from.enabled;
-        this.java_memory_limit = from.java_memory_limit;
+        this.memory_limit = from.memory_limit;
         this.properties_pass = from.properties_pass;
         this.resource_config = from.resource_config;
         this.execution_instance = new ExecutionInstance( from.execution_instance );
@@ -73,12 +73,20 @@ StageInstance
         return String.format( "[%s]-[%s]-[%s]-[%d]", getPipelineName(), getProcessID(), getStageName(), getExecutionCount() );
     }
 
-    public int getJavaMemoryLimit() {
-        return java_memory_limit;
+    public int getMemoryLimit() {
+        return memory_limit;
     }
 
-    public void setJavaMemoryLimit(int java_memory_limit) {
-        this.java_memory_limit = java_memory_limit;
+    public void setMemoryLimit(int memory_limit) {
+        this.memory_limit = memory_limit;
+    }
+
+    public void setCPUCores(int cpu_cores) {
+        this.cpu_cores = cpu_cores;
+    }
+
+    public int getCPUCores() {
+        return cpu_cores;
     }
 
     public String[] getPropertiesPass() {
@@ -107,29 +115,29 @@ StageInstance
         }
         return null;
     }
-    
-    
+
+
     public void
     setResourceConfig( ExecutorConfig...resource_config )
     {
         this.resource_config = resource_config;
     }
-    
-    
+
+
     public boolean
     isEnabled()
     {
         return enabled;
     }
-        
-    
+
+
     public void
     setEnabled( boolean enabled )
     {
         this.enabled = enabled;
     }
 
-   
+
     public int
     getExecutionCount()
     {
@@ -137,63 +145,63 @@ StageInstance
     }
 
 
-    public void 
+    public void
     setExecutionCount( int exec_cnt )
     {
         this.exec_cnt = exec_cnt;
     }
 
-    
-    public String 
+
+    public String
     getPipelineName()
     {
         return pipeline_name;
     }
 
 
-    public void 
+    public void
     setPipelineName( String pipeline_name )
     {
         this.pipeline_name = pipeline_name;
     }
 
-    
-    public String 
+
+    public String
     getProcessID()
     {
         return process_id;
     }
 
 
-    public void 
+    public void
     setProcessID( String process_id )
     {
         this.process_id = process_id;
     }
 
-    
-    public String 
+
+    public String
     getStageName()
     {
         return stage_name;
     }
 
 
-    public void 
+    public void
     setStageName( String stage_name )
     {
         this.stage_name = stage_name;
     }
 
 
-    public void 
+    public void
     setDependsOn( String depends_on )
     {
         this.depends_on = depends_on;
     }
 
 
-    public String 
+    public String
     getDependsOn()
     {
         return depends_on;
@@ -205,12 +213,11 @@ StageInstance
     {
         execution_instance = ei;
     }
-    
-    
+
+
     public ExecutionInstance
     getExecutionInstance()
     {
         return execution_instance;
     }
-
 }

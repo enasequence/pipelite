@@ -66,7 +66,7 @@ DetachedStageExecutor extends AbstractStageExecutor
     {
         List<String>p_args = new ArrayList<String>();
 
-        int memory_limit = instance.getJavaMemoryLimit();
+        int memory_limit = instance.getMemoryLimit();
 
         if( 0 < memory_limit ) // TODO check
             p_args.add( String.format( "-Xmx%dM", memory_limit ) );

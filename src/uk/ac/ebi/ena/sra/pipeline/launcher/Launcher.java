@@ -184,10 +184,7 @@ Launcher
 		            launcher.setExecutorFactory( new DefaultExecutorFactory( DefaultConfiguration.currentSet().getPipelineName(),
 		                                                                     new ResultTranslator( DefaultConfiguration.currentSet().getCommitStatus() ), 
 		                                                                     params.queue_name, 
-		                                                                     params.lsf_user,
-		                                                                     params.lsf_mem, 
 		                                                                     params.lsf_mem_timeout,
-		                                                                     params.lsf_cpu_cores,
 		                                                                     DefaultConfiguration.currentSet().getStagesRedoCount() ) );
 		            
 		            launcher.setSourceReadTimeout( 120 * 1000 );

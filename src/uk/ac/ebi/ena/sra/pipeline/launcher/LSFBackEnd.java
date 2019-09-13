@@ -2,19 +2,17 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall.LSFQueue;
 
 public class 
 LSFBackEnd implements ExternalCallBackEnd
 {
-    String   queue;
-    int      memory_limit;
-    String   mail_to; 
-    int      memory_reservation_timeout;
-    int      cpu_cores;
-	private  Path output_path;
+    String queue;
+    int memory_limit;
+    int memory_reservation_timeout;
+    int cpu_cores;
+    private Path output_path;
     
     
     @Override public LSFClusterCall
@@ -52,24 +50,16 @@ LSFBackEnd implements ExternalCallBackEnd
         call.setQueue( queue );
         return call;
     }
-    
-    
-    @Deprecated LSFBackEnd( LSFQueue queue, String mail_to, int default_memory_limit, int default_memory_reservation_timeout, int default_cpu_cores )
-    {
-    	this( queue.getQueueName(), mail_to, default_memory_limit, default_memory_reservation_timeout, default_cpu_cores );
-    }
 
     
     public 
-    LSFBackEnd( String queue_name, String mail_to, int default_memory_limit, int default_memory_reservation_timeout, int default_cpu_cores )
+    LSFBackEnd( String queue_name, int default_memory_limit, int default_memory_reservation_timeout, int default_cpu_cores )
     {
         this.queue = queue_name;
         this.memory_limit = default_memory_limit;
         this.memory_reservation_timeout = default_memory_reservation_timeout;
         this.cpu_cores = default_cpu_cores;
-        this.mail_to = mail_to;
         this.output_path = Paths.get( System.getProperty( "java.io.tmpdir" ) );
-
     }
     
     
@@ -78,12 +68,4 @@ LSFBackEnd implements ExternalCallBackEnd
     {
     	this.output_path = output_path; 
     }
-    
-    
-    public Path 
-    getOutputFolderPath()
-    {
-    	return this.output_path; 
-    }
-
 }

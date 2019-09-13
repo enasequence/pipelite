@@ -22,7 +22,6 @@ pipelite.tables.stage.column.name=[<stage_name> field name]
 pipelite.stages.enum=[full enum name for pipeline stages]
 pipelite.commit.status.enum=[full enum name for pipeline commit statuses]
 pipelite.default.mail-to=[default mail recipient for error logs]
-pipelite.default.lsf-user=[default lsf user to have lsf errors submitted]
 pipelite.default.lsf-cores=[number of cores available for a process]
 pipelite.default.lsf-queue=[lsf queue name]
 pipelite.default.lsf-mem=[memory requested for each lsf job (in megs)]
@@ -34,7 +33,7 @@ pipelite.jdbc.driver=[class name for jdbc driver]
 pipelite.jdbc.url=[database connect string]
 pipelite.jdbc.user=[database user]
 pipelite.jdbc.password=[database password]
-pipelite.properties.pass=[arbitrary supervisor jvm properties]
+pipelite.properties.pass=[list of system properties separated by ":" to pass from supervisor jvm to stage jvm]
 ```
 
 ## Enums
@@ -44,15 +43,16 @@ Descriptions of pipeline stages (property `pipelite.stages.enum`) and commit sta
 Stages should implement `Stage` interface.
 
 ```java
-public interface
+public interface 
 Stage
 {
-    public Class<? extends StageTask>   getTaskClass();
-    public Stage                        getDependsOn();
-    public String                       getDescription();
-    default public int getJavaMemoryLimit() { return -1; };
-    default public String[] getPropertiesPass() { return new String[] {}; };
-    default public ExecutorConfig[] getExecutorConfig() { return new ExecutorConfig[] {}; };
+    public Class<? extends StageTask> getTaskClass();
+    public Stage getDependsOn();
+    public String getDescription();
+    default public int getMemoryLimit() { return -1; }
+    default public int getCPUCores() { return 1; }
+    default public String[] getPropertiesPass() { return new String[] {}; }
+    default public ExecutorConfig[] getExecutorConfig() { return new ExecutorConfig[] {}; }
 }
 ```
 
@@ -62,24 +62,22 @@ Where:
 Dependencies used to resolve following dependant stages to clean results in case of failures in
 current stage.
 *	`getDescription` (String) Textual description for the stage
-* `getJavaMemoryLimit` (int) optional. Java memory limitation, used as `-Xmx` jvm parameter 
+* `getMemoryLimit` (int) optional. Memory limitation for the stage 
+* `getCPUCores` (int) optional. CPU cores number limitation for the stage 
 * `getPropertiesPass` (String[]) optional. Array of names of system properties to pass from supervisor jvm to backend jvm
 * `getExecutorConfig` (ExecutorConfig[]) optional. Array of objects of a class extending `ExecutorConfig`. Used to pass backend specific configurations
 
 Note: `stage name (toString())` is used in current version to obtain name for `<stage_table_id>`
 field. One  needs a good reason to override this method in  their stage enum.
+Note: With LSF backend `getMemoryLimit` sets memory limit per LSF process,
+JVM memory limit will be automatically set to `getMemoryLimit - 1500` if possible or will not be set otherwise.
 
 It is possible to set stage specific parameters for LSF backend using `getExecutorConfig`.
 For that the array returned by `getExecutorConfig` must contain object overriding `LSFExecutorConfig`.
 LSF backend specific parameters are returned by the following `LSFExecutorConfig` methods:
 * `getLSFMemoryReservationTimeout` (int) memory reservation timeout in seconds
-* `getLSFMemoryLimit` (int) LSF memory limit in MB
-* `getLSFCPUCores` (int) number of CPU cores
-* `getLsfUser` (String) LSF user name
 * `getLsfQueue` (String) LSF queue name
 * `getLsfOutputPath` (String) path for LSF output files
-
-Note: `getLSFMemoryLimit` must be at least 1500 greater than `getJavaMemoryLimit`, otherwise `getJavaMemoryLimit` will be ignored.
 
 Commit statuses enum should implement `ExecutionResult`. The purpose of it to translate return
 codes (byte) and `Throwables` to human readable messages and back.

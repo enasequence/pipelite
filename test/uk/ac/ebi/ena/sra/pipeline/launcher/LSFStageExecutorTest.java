@@ -180,7 +180,7 @@ LSFStageExecutorTest
 			{
 				setEnabled( true );
 				setPropertiesPass( new String[] { } );
-				setJavaMemoryLimit( 200 );
+				setMemoryLimit( 200 );
 			}
 		} );
 
@@ -268,7 +268,7 @@ LSFStageExecutorTest
 			{
 				setEnabled( true );
 				setPropertiesPass( new String[] { } );
-				setJavaMemoryLimit( 500 );
+				setMemoryLimit( 500 );
 			}
 		} );
 
@@ -307,7 +307,7 @@ LSFStageExecutorTest
 			{
 				setEnabled( true );
 				setPropertiesPass( new String[] { } );
-				setJavaMemoryLimit( 2001 );
+				setMemoryLimit( 2001 );
 			}
 		} );
 
@@ -346,7 +346,7 @@ LSFStageExecutorTest
 			{
 				setEnabled( true );
 				setPropertiesPass( new String[] { } );
-				setJavaMemoryLimit( 2001 );
+				setMemoryLimit( 2001 );
 			}
 		} );
 
