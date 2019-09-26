@@ -27,10 +27,7 @@ LSFStageExecutorTest
 		String tmpd_def = Files.createTempDirectory("LSF-TEST-OUTPUT-DEF").toString();
 
 		return new LSFExecutorConfig() {
-			@Override public int getLSFMemoryLimit() { return  2048; }
 			@Override public int getLSFMemoryReservationTimeout() { return 9; }
-			@Override public int getLSFCPUCores() { return  6; }
-			@Override public String getLsfUser() { return "LSFUSER"; }
 			@Override public String getLsfQueue() { return "LSFQUEUE"; }
 			@Override public String getLsfOutputPath() { return tmpd_def; }
 		};
@@ -44,6 +41,8 @@ LSFStageExecutorTest
 			{
 				setEnabled(true);
 				setPropertiesPass(new String[]{});
+				setMemoryLimit( 2048 );
+				setCPUCores( 6 );
 			}
 		};
 	}
@@ -56,10 +55,7 @@ LSFStageExecutorTest
 
 		String tmpd_def = Files.createTempDirectory("LSF-TEST-OUTPUT-DEF").toString();
 		LSFExecutorConfig cfg_def = new LSFExecutorConfig() {
-			@Override public int getLSFMemoryLimit() { return  1024; }
 			@Override public int getLSFMemoryReservationTimeout() { return 9; }
-			@Override public int getLSFCPUCores() { return  6; }
-			@Override public String getLsfUser() { return "LSFUSER"; }
 			@Override public String getLsfQueue() { return null; }
 			@Override public String getLsfOutputPath() { return tmpd_def; }
 		};
@@ -82,10 +78,7 @@ LSFStageExecutorTest
 
 		String tmpd_def = Files.createTempDirectory("LSF-TEST-OUTPUT-DEF").toString();
 		LSFExecutorConfig cfg_def = new LSFExecutorConfig() {
-			@Override public int getLSFMemoryLimit() { return  1024; }
 			@Override public int getLSFMemoryReservationTimeout() { return 9; }
-			@Override public int getLSFCPUCores() { return  6; }
-			@Override public String getLsfUser() { return "LSFUSER"; }
 			@Override public String getLsfQueue() { return "queue"; }
 			@Override public String getLsfOutputPath() { return tmpd_def; }
 		};
@@ -110,17 +103,22 @@ LSFStageExecutorTest
 
 		String tmpd_stg = Files.createTempDirectory("LSF-TEST-OUTPUT-STG").toString();
 		LSFExecutorConfig cfg_stg = new LSFExecutorConfig() {
-			@Override public int getLSFMemoryLimit() { return  2000; }
 			@Override public int getLSFMemoryReservationTimeout() { return  14; }
-			@Override public int getLSFCPUCores() { return  12; }
-			@Override public String getLsfUser() { return "LSFUSER"; }
 			@Override public String getLsfQueue() { return "LSFQUEUE"; }
 			@Override public String getLsfOutputPath() { return tmpd_stg; }
 		};
 
 		se.configure( cfg_stg );
 
-		se.execute( makeDefaultStageInstance() );
+		se.execute( new StageInstance()
+		{
+			{
+				setEnabled( true );
+				setPropertiesPass( new String[] { } );
+				setMemoryLimit( 2000 );
+				setCPUCores( 12 );
+			}
+		} );
 
 		String cmdl = se.get_info().getCommandline();
 		Assert.assertTrue( cmdl.contains( " -M 2000 -R rusage[mem=2000:duration=14]" ) );
@@ -180,7 +178,7 @@ LSFStageExecutorTest
 			{
 				setEnabled( true );
 				setPropertiesPass( new String[] { } );
-				setMemoryLimit( 200 );
+				setMemoryLimit( 1700 );
 			}
 		} );
 
@@ -208,23 +206,21 @@ LSFStageExecutorTest
 		} );
 
 		String cmdl = se.get_info().getCommandline();
-		Assert.assertTrue( cmdl.contains( " -Xmx548M" ) );
+		Assert.assertTrue( cmdl.contains( " -M 0 -R rusage[mem=0:duration=9]" ) );
+		Assert.assertTrue( !cmdl.contains( " -Xmx" ) );
 	}
 
 
 	@Test public void
-	javaMemoryNotSetBelow1500() throws IOException
+	memoryBelow1500() throws IOException
 	{
 		ResultTranslator translator = makeResultTranslator();
 		String tmpd_def = Files.createTempDirectory("LSF-TEST-OUTPUT-DEF").toString();
 		LSFExecutorConfig cfg_def = new LSFExecutorConfig() {
-		@Override public int getLSFMemoryLimit() { return  1048; }
-		@Override public int getLSFMemoryReservationTimeout() { return 9; }
-		@Override public int getLSFCPUCores() { return  6; }
-		@Override public String getLsfUser() { return "LSFUSER"; }
-		@Override public String getLsfQueue() { return "LSFQUEUE"; }
-		@Override public String getLsfOutputPath() { return tmpd_def; }
-	};
+			@Override public int getLSFMemoryReservationTimeout() { return 9; }
+			@Override public String getLsfQueue() { return "LSFQUEUE"; }
+			@Override public String getLsfOutputPath() { return tmpd_def; }
+		};
 		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
 				"NOFILE", "NOPATH", new String[] { }, cfg_def );
 
@@ -235,127 +231,11 @@ LSFStageExecutorTest
 			{
 				setEnabled( true );
 				setPropertiesPass( new String[] { } );
+				setMemoryLimit( 1400 );
 			}
 		} );
 
 		String cmdl = se.get_info().getCommandline();
-		Assert.assertTrue( !cmdl.contains( " -Xmx" ) );
-	}
-
-
-	@Test public void
-	lsfMemGreaterThanJavaMem() throws IOException
-	{
-		ResultTranslator translator = makeResultTranslator();
-		LSFExecutorConfig cfg_def = makeDefaultConfig();
-		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
-				"NOFILE", "NOPATH", new String[] { }, cfg_def );
-
-		String tmpd_stg = Files.createTempDirectory("LSF-TEST-OUTPUT-STG").toString();
-		LSFExecutorConfig cfg_stg = new LSFExecutorConfig() {
-			@Override public int getLSFMemoryLimit() { return  2000; }
-			@Override public int getLSFMemoryReservationTimeout() { return  14; }
-			@Override public int getLSFCPUCores() { return  12; }
-			@Override public String getLsfUser() { return "LSFUSER"; }
-			@Override public String getLsfQueue() { return "LSFQUEUE"; }
-			@Override public String getLsfOutputPath() { return tmpd_stg; }
-		};
-
-		se.configure( cfg_stg );
-
-		se.execute( new StageInstance()
-		{
-			{
-				setEnabled( true );
-				setPropertiesPass( new String[] { } );
-				setMemoryLimit( 500 );
-			}
-		} );
-
-		String cmdl = se.get_info().getCommandline();
-		Assert.assertTrue( cmdl.contains( " -M 2000 -R rusage[mem=2000:duration=14]" ) );
-		Assert.assertTrue( cmdl.contains( " -n 12" ) );
-		Assert.assertTrue( cmdl.contains( " -q LSFQUEUE" ) );
-		Assert.assertTrue( cmdl.contains( " -oo " + tmpd_stg ) );
-		Assert.assertTrue( cmdl.contains( " -eo " + tmpd_stg ) );
-		Assert.assertTrue( cmdl.contains( " -Xmx500M" ) );
-	}
-
-
-	@Test public void
-	javaMemGreaterThanLsfMem() throws IOException
-	{
-		ResultTranslator translator = makeResultTranslator();
-		LSFExecutorConfig cfg_def = makeDefaultConfig();
-		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
-				"NOFILE", "NOPATH", new String[] { }, cfg_def );
-
-		String tmpd_stg = Files.createTempDirectory("LSF-TEST-OUTPUT-STG").toString();
-		LSFExecutorConfig cfg_stg = new LSFExecutorConfig() {
-			@Override public int getLSFMemoryLimit() { return  2000; }
-			@Override public int getLSFMemoryReservationTimeout() { return  14; }
-			@Override public int getLSFCPUCores() { return  12; }
-			@Override public String getLsfUser() { return "LSFUSER"; }
-			@Override public String getLsfQueue() { return "LSFQUEUE"; }
-			@Override public String getLsfOutputPath() { return tmpd_stg; }
-		};
-
-		se.configure( cfg_stg );
-
-		se.execute( new StageInstance()
-		{
-			{
-				setEnabled( true );
-				setPropertiesPass( new String[] { } );
-				setMemoryLimit( 2001 );
-			}
-		} );
-
-		String cmdl = se.get_info().getCommandline();
-		Assert.assertTrue( cmdl.contains( " -M 2000 -R rusage[mem=2000:duration=14]" ) );
-		Assert.assertTrue( cmdl.contains( " -n 12" ) );
-		Assert.assertTrue( cmdl.contains( " -q LSFQUEUE" ) );
-		Assert.assertTrue( cmdl.contains( " -oo " + tmpd_stg ) );
-		Assert.assertTrue( cmdl.contains( " -eo " + tmpd_stg ) );
-		Assert.assertTrue( cmdl.contains( " -Xmx500M" ) );
-	}
-
-
-	@Test public void
-	javaMemGreaterThanLsfMemBelow1500() throws IOException
-	{
-		ResultTranslator translator = makeResultTranslator();
-		LSFExecutorConfig cfg_def = makeDefaultConfig();
-		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
-				"NOFILE", "NOPATH", new String[] { }, cfg_def );
-
-		String tmpd_stg = Files.createTempDirectory("LSF-TEST-OUTPUT-STG").toString();
-		LSFExecutorConfig cfg_stg = new LSFExecutorConfig() {
-			@Override public int getLSFMemoryLimit() { return  1499; }
-			@Override public int getLSFMemoryReservationTimeout() { return  14; }
-			@Override public int getLSFCPUCores() { return  12; }
-			@Override public String getLsfUser() { return "LSFUSER"; }
-			@Override public String getLsfQueue() { return "LSFQUEUE"; }
-			@Override public String getLsfOutputPath() { return tmpd_stg; }
-		};
-
-		se.configure( cfg_stg );
-
-		se.execute( new StageInstance()
-		{
-			{
-				setEnabled( true );
-				setPropertiesPass( new String[] { } );
-				setMemoryLimit( 2001 );
-			}
-		} );
-
-		String cmdl = se.get_info().getCommandline();
-		Assert.assertTrue( cmdl.contains( " -M 1499 -R rusage[mem=1499:duration=14]" ) );
-		Assert.assertTrue( cmdl.contains( " -n 12" ) );
-		Assert.assertTrue( cmdl.contains( " -q LSFQUEUE" ) );
-		Assert.assertTrue( cmdl.contains( " -oo " + tmpd_stg ) );
-		Assert.assertTrue( cmdl.contains( " -eo " + tmpd_stg ) );
 		Assert.assertTrue( !cmdl.contains( " -Xmx" ) );
 	}
 
