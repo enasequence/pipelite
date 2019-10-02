@@ -86,11 +86,41 @@ LSFStageExecutorTest
 
 		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator, 2340,3,
 				"NOFILE", "NOPATH", new String[] { }, cfg_def );
-		
+
 		se.execute( makeDefaultStageInstance() );
 
 
 		Assert.assertTrue( se.get_info().getCommandline().contains( "-q queue" ) );
+	}
+
+
+	@Test public void
+	testStageSpecificQueue() throws IOException
+	{
+		ResultTranslator translator = makeResultTranslator();
+
+		String tmpd_def = Files.createTempDirectory("LSF-TEST-OUTPUT-DEF").toString();
+		LSFExecutorConfig cfg_def = new LSFExecutorConfig() {
+			@Override public int getLSFMemoryReservationTimeout() { return 9; }
+			@Override public String getLsfQueue() { return "queue"; }
+			@Override public String getLsfOutputPath() { return tmpd_def; }
+		};
+
+		String tmpd_stg = Files.createTempDirectory("LSF-TEST-OUTPUT-STG").toString();
+		LSFExecutorConfig cfg_stg = new LSFExecutorConfig() {
+			@Override public int getLSFMemoryReservationTimeout() { return  14; }
+			@Override public String getLsfQueue() { return "LSFQUEUE"; }
+			@Override public String getLsfOutputPath() { return tmpd_stg; }
+		};
+
+		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator, 2340,3,
+				"NOFILE", "NOPATH", new String[] { }, cfg_def );
+
+		se.configure( cfg_stg );
+
+		se.execute( makeDefaultStageInstance() );
+
+		Assert.assertTrue( se.get_info().getCommandline().contains( "-q LSFQUEUE" ) );
 	}
 
 
