@@ -60,7 +60,7 @@ LSFStageExecutorTest
 			@Override public String getLsfOutputPath() { return tmpd_def; }
 		};
 
-		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
+		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator, 2340,3,
 				"NOFILE", "NOPATH", new String[] { }, cfg_def );
 		
 		se.execute( makeDefaultStageInstance() );
@@ -83,7 +83,7 @@ LSFStageExecutorTest
 			@Override public String getLsfOutputPath() { return tmpd_def; }
 		};
 
-		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
+		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator, 2340,3,
 				"NOFILE", "NOPATH", new String[] { }, cfg_def );
 		
 		se.execute( makeDefaultStageInstance() );
@@ -98,7 +98,7 @@ LSFStageExecutorTest
 	{
 		ResultTranslator translator = makeResultTranslator();
 		LSFExecutorConfig cfg_def = makeDefaultConfig();
-		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
+		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator, 2340,3,
 				"NOFILE", "NOPATH", new String[] { }, cfg_def );
 
 		String tmpd_stg = Files.createTempDirectory("LSF-TEST-OUTPUT-STG").toString();
@@ -134,7 +134,7 @@ LSFStageExecutorTest
 	{
 		ResultTranslator translator = makeResultTranslator();
 		LSFExecutorConfig cfg_def = makeDefaultConfig();
-		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
+		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator, 2340,3,
 				"NOFILE", "NOPATH", new String[] { }, cfg_def );
 
 		se.configure( null );
@@ -152,7 +152,7 @@ LSFStageExecutorTest
 	{
 		ResultTranslator translator = makeResultTranslator();
 		LSFExecutorConfig cfg_def = makeDefaultConfig();
-		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
+		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator, 2340,3,
 				"NOFILE", "NOPATH", new String[] { }, cfg_def );
 
 		se.execute( makeDefaultStageInstance() );
@@ -168,7 +168,7 @@ LSFStageExecutorTest
 	{
 		ResultTranslator translator = makeResultTranslator();
 		LSFExecutorConfig cfg_def = makeDefaultConfig();
-		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
+		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator, 2340,3,
 				"NOFILE", "NOPATH", new String[] { }, cfg_def );
 
 		se.configure( null );
@@ -192,7 +192,7 @@ LSFStageExecutorTest
 	{
 		ResultTranslator translator = makeResultTranslator();
 		LSFExecutorConfig cfg_def = makeDefaultConfig();
-		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
+		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator, 2340,3,
 				"NOFILE", "NOPATH", new String[] { }, cfg_def );
 
 		se.configure( null );
@@ -221,7 +221,7 @@ LSFStageExecutorTest
 			@Override public String getLsfQueue() { return "LSFQUEUE"; }
 			@Override public String getLsfOutputPath() { return tmpd_def; }
 		};
-		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
+		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator, 2340,3,
 				"NOFILE", "NOPATH", new String[] { }, cfg_def );
 
 		se.configure( null );
@@ -245,7 +245,7 @@ LSFStageExecutorTest
 	{
 		ResultTranslator translator = makeResultTranslator();
 		LSFExecutorConfig cfg_def = makeDefaultConfig();
-		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
+		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator, 2340,3,
 				"NOFILE", "NOPATH", new String[] { "user.dir" }, cfg_def );
 
 		se.configure( null );
@@ -269,7 +269,7 @@ LSFStageExecutorTest
 	{
 		ResultTranslator translator = makeResultTranslator();
 		LSFExecutorConfig cfg_def = makeDefaultConfig();
-		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
+		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator, 2340,3,
 				"NOFILE", "NOPATH", new String[] { "user.dir" }, cfg_def );
 
 		se.configure( null );
@@ -289,7 +289,7 @@ LSFStageExecutorTest
 
 		String prefix = "NOFILE";
 		String source = "NOPATH";
-		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator,
+		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator, 2340,3,
 				prefix, source, new String[] { "user.dir" }, cfg_def );
 
 		se.execute( new StageInstance()

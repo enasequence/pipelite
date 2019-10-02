@@ -18,7 +18,7 @@ DefaultLauncherParams
     public int lsf_cpu_cores = DefaultConfiguration.currentSet().getDefaultLSFCpuCores();
 
     @Parameter( names = "--queue", description = "LSF queue name" )
-    public String queue_name;
+    public String queue_name = DefaultConfiguration.currentSet().getDefaultLSFQueue();
 
     @Parameter( names = "--log-file", description = "log file" )
     public String log_file = "/var/tmp/launcher.log";

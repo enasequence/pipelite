@@ -31,6 +31,8 @@ pipelite.jdbc.url=[database connect string]
 pipelite.jdbc.user=[database user]
 pipelite.jdbc.password=[database password]
 pipelite.properties.pass=[list of system properties separated by ":" to pass from supervisor jvm to stage jvm]
+property.prefix.name=[------------]
+property.source.name=[-----------]
 ```
 
 ## Enums
@@ -227,14 +229,13 @@ Launches supervisory program which interact with database and spawns sub-process
 (currently only LSF back-end supported). Does not do any database locking itself, all locking
 done by calling ProcessLauncher class. Creates file lock to prevent occasional execution of copy.
 Command line parameters are:
-*	--workers \<number> - number of simultaneously working processes. default value is: `10`;
-*	--lock \<path> - lock file path, default is `/var/tmp/.launcher.lock`
-*	--queue \<queue_name> - LSF queue name, default is `research-rh6`
-*	--mail-to \<list> - comma-separated list of mail addresses, default is `pipelite.default.mail-to`
-value
-*	--lsf-user \<user>- user for LSF reports, default is `pipelite.default.lsf-user` value
-*	--lsf-mem \<number> - memory for single LSF job, default is `pipelite.default.lsf-mem` value
-*	--log-file \<path> - log file, default is `/var/tmp/launcher.log`
+* --workers \<number> - number of simultaneously working processes. default value is: `2`;
+* --lock \<path> - lock file path, default is `/var/tmp/.launcher.lock`;
+* --memory-limit ------
+* --cpu-cores-limit ------
+* --queue \<queue_name> - LSF queue name;
+* --log-file \<path> - log file, default is `/var/tmp/launcher.log`
+* --lsf-mem-timeout \<number> - memory timeout for single LSF job, default is `pipelite.default.lsf-mem-timeout` value
 
 ### uk.ac.ebi.ena.sra.pipeline.launcher.ProcessLauncher
 Launches execution for process ID, also interacts with data base. Locks corresponding process' and
@@ -245,6 +246,12 @@ stage' table rows.
 *	--mail-to \<list> - comma-separated list of mail addresses, default is: `pipelite.default.mail-to`
 value
 
+* --executor - executor class (backend)
+* --stage \<stage_name> - stage name to execute
+* --force
+* --mail-to \<list> - comma-separated list of mail addresses, default is: `pipelite.default.mail-to` value
+* --insert
+
 ### uk.ac.ebi.ena.sra.pipeline.launcher.StageLauncher
 Launches class for supplied stage. It does not lock process and stage tables but current version can
 insert log records to log table.
@@ -253,6 +260,16 @@ insert log records to log table.
 *	--commit - force commit client data
 * --enabled - flag for enabling/disabling stage
 * --exec-cnt - execution counter for tracking
+
+## Configuration priorities
+
+Some properties can be specified in multiple places at the same time (command line, properties file, stage implementation).
+In this case the order will be:
+* if `stage` provides properties values, these values will be used;
+* if a property is not (can not) be provided by stage it will be set `from command line`;
+* if a property is not set by stage and not provided in command line it will be set from `properties file`;
+* otherwise property will be set to the `default` hardcoded value.
+
 
 
 ## Example project

@@ -183,7 +183,9 @@ Launcher
 		            launcher.setProcessFactory( new DefaultProcessFactory() );
 		            launcher.setExecutorFactory( new DefaultExecutorFactory( DefaultConfiguration.currentSet().getPipelineName(),
 		                                                                     new ResultTranslator( DefaultConfiguration.currentSet().getCommitStatus() ), 
-		                                                                     params.queue_name, 
+		                                                                     params.queue_name,
+		                                                                     params.lsf_mem,
+                                                                         params.lsf_cpu_cores,
 		                                                                     params.lsf_mem_timeout,
 		                                                                     DefaultConfiguration.currentSet().getStagesRedoCount() ) );
 		            

@@ -673,15 +673,8 @@ loop:   for( int i = 0; i < instances.length; ++i  )
         @Parameter( names = "--stage", description = "Stage name to execute" )
         String stage;
         
-        @Parameter( names = "--force", description = "Force re-execution" )
-        boolean is_force;
-        
         @Parameter( names = "--mail-to", description = "" )
         String mail_to = DefaultConfiguration.currentSet().getDefaultMailTo();
-        
-        @Parameter( names = "--insert", description = "insert rows if not exist" )
-        boolean is_insert;
-        
     }
 
 

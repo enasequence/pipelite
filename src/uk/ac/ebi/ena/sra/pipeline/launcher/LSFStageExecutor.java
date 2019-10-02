@@ -27,15 +27,21 @@ LSFStageExecutor extends AbstractStageExecutor
     private String   config_source_name;
     private ExecutionResult default_failure_result;
     private String[] properties_pass;
-    LSFExecutorConfig config;
+    private LSFExecutorConfig config;
+    private int lsf_memory_limit;
+    private int cpu_cores;
 
 
     public
     LSFStageExecutor( String pipeline_name, 
                       ResultTranslator translator,
+                      int lsf_memory_limit,
+                      int cpu_cores,
                       LSFExecutorConfig config )
     {
     	this( pipeline_name, translator,
+              lsf_memory_limit,
+              cpu_cores,
               DefaultConfiguration.CURRENT.getConfigPrefixName(),
               DefaultConfiguration.CURRENT.getConfigSourceName(),
               DefaultConfiguration.CURRENT.getPropertiesPass(),
@@ -45,6 +51,8 @@ LSFStageExecutor extends AbstractStageExecutor
     
     LSFStageExecutor( String pipeline_name, 
                       ResultTranslator translator,
+                      int lsf_memory_limit,
+                      int cpu_cores,
                       String config_prefix_name,
                       String config_source_name,
                       String[] properties_pass,
@@ -55,6 +63,8 @@ LSFStageExecutor extends AbstractStageExecutor
         this.config_prefix_name = config_prefix_name;
         this.config_source_name = config_source_name;
 
+        this.lsf_memory_limit = lsf_memory_limit;
+        this.cpu_cores = cpu_cores;
         this.properties_pass = properties_pass;
 
         this.config = config;
@@ -101,6 +111,10 @@ LSFStageExecutor extends AbstractStageExecutor
         p_args.add( "-XX:+UseSerialGC" );
      
         int lsf_memory_limit = instance.getMemoryLimit();
+        if( lsf_memory_limit <= 0 ) {
+            lsf_memory_limit = this.lsf_memory_limit;
+        }
+
         int java_memory_limit = lsf_memory_limit - LSF_JVM_MEMORY_DELTA_MB;
 
         if( 0 >= java_memory_limit )
