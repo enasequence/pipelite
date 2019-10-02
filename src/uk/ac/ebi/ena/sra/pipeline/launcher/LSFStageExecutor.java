@@ -156,10 +156,19 @@ LSFStageExecutor extends AbstractStageExecutor
     private LSFBackEnd
     configureBackend( StageInstance instance )
     {
+        int mem = instance.getMemoryLimit();
+        if( mem <= 0 ) {
+            mem = lsf_memory_limit;
+        }
+        int cpu = instance.getCPUCores();
+        if( cpu <= 0 ) {
+            cpu = cpu_cores;
+        }
+
         LSFBackEnd back_end = new LSFBackEnd( config.getLsfQueue(),
-                                              instance.getMemoryLimit(),
+                                              mem,
                                               config.getLSFMemoryReservationTimeout(),
-                                              instance.getCPUCores() );
+                                              cpu );
         back_end.setOutputFolderPath( Paths.get( config.getLsfOutputPath() ) );
         return back_end;
     }

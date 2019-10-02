@@ -41,8 +41,9 @@ LSFStageExecutorTest
 			{
 				setEnabled(true);
 				setPropertiesPass(new String[]{});
-				setMemoryLimit( 2048 );
-				setCPUCores( 6 );
+				setCPUCores( 1 );
+				setMemoryLimit( -1 );
+				setPropertiesPass(new String[] {});
 			}
 		};
 	}
@@ -142,8 +143,8 @@ LSFStageExecutorTest
 		se.execute( makeDefaultStageInstance() );
 
 		String cmdl = se.get_info().getCommandline();
-		Assert.assertTrue( cmdl.contains( " -M 2048 -R rusage[mem=2048:duration=9]" ) );
-		Assert.assertTrue( cmdl.contains( " -n 6 " ) );
+		Assert.assertTrue( cmdl.contains( " -M 2340 -R rusage[mem=2340:duration=9]" ) );
+		Assert.assertTrue( cmdl.contains( " -n 1 " ) );
 	}
 
 
@@ -158,8 +159,8 @@ LSFStageExecutorTest
 		se.execute( makeDefaultStageInstance() );
 
 		String cmdl = se.get_info().getCommandline();
-		Assert.assertTrue( cmdl.contains( " -M 2048 -R rusage[mem=2048:duration=9]" ) );
-		Assert.assertTrue( cmdl.contains( " -n 6 " ) );
+		Assert.assertTrue( cmdl.contains( " -M 2340 -R rusage[mem=2340:duration=9]" ) );
+		Assert.assertTrue( cmdl.contains( " -n 1 " ) );
 	}
 
 
@@ -206,8 +207,8 @@ LSFStageExecutorTest
 		} );
 
 		String cmdl = se.get_info().getCommandline();
-		Assert.assertTrue( cmdl.contains( " -M 0 -R rusage[mem=0:duration=9]" ) );
-		Assert.assertTrue( !cmdl.contains( " -Xmx" ) );
+		Assert.assertTrue( cmdl.contains( " -M 2340 -R rusage[mem=2340:duration=9]" ) );
+		Assert.assertTrue( cmdl.contains( " -Xmx840M" ) );
 	}
 
 
