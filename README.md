@@ -35,6 +35,10 @@ property.prefix.name=[system property name to set on backend machine, inteded to
 property.source.name=[system property value to set on backend machine, inteded to provide pipeline specific properties file, optional]
 ```
 
+Note: `pipelite.default.lsf-mem, pipelite.default.lsf-cores, pipelite.default.lsf-queue, pipelite.default.lsf-mem-timeout`
+will only apply if not implemented in stage.
+
+
 ## Enums
 
 Descriptions of pipeline stages (property `pipelite.stages.enum`) and commit statuses
@@ -230,12 +234,15 @@ Launches supervisory program which interact with database and spawns sub-process
 done by calling ProcessLauncher class. Creates file lock to prevent occasional execution of copy.
 Command line parameters are:
 * --workers \<number> - number of simultaneously working processes. default value is: `2`;
-* --lock \<path> - lock file path;
+* --lock \<path> - lock file path, default is `/var/tmp/.launcher.lock`;
 * --memory-limit \<number> -  memory requested for each lsf job (in megs), if <= 0 will be set to default 1700;
 * --cpu-cores-limit \<number> - number of cores available for a process, if <= 0 will be set to default 1;
 * --queue \<queue_name> - LSF queue name;
-* --log-file \<path> - log file;
+* --log-file \<path> - log file, default is `/var/tmp/launcher.log`;
 * --lsf-mem-timeout \<number> - memory timeout for single LSF job (minutes), if <= 0 will be set to default 60.
+
+Note: `memory-limit, cpu-cores-limit, queue, lsf-mem-timeout` will only apply if not implemented in stage.
+
 
 ### uk.ac.ebi.ena.sra.pipeline.launcher.ProcessLauncher
 Launches execution for process ID, also interacts with data base. Locks corresponding process' and
