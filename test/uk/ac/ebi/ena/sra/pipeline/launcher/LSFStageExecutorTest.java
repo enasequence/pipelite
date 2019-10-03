@@ -161,6 +161,42 @@ LSFStageExecutorTest
 
 
 	@Test public void
+	defaultMemoryCoresReserveConfig() throws IOException
+	{
+		ResultTranslator translator = makeResultTranslator();
+		LSFExecutorConfig cfg_def = makeDefaultConfig();
+		LSFStageExecutor se = new LSFStageExecutor( "TEST", translator, -1,-1,
+				"NOFILE", "NOPATH", new String[] { }, cfg_def );
+
+		String tmpd_stg = Files.createTempDirectory("LSF-TEST-OUTPUT-STG").toString();
+		LSFExecutorConfig cfg_stg = new LSFExecutorConfig() {
+			@Override public int getLSFMemoryReservationTimeout() { return  -1; }
+			@Override public String getLsfQueue() { return "LSFQUEUE"; }
+			@Override public String getLsfOutputPath() { return tmpd_stg; }
+		};
+
+		se.configure( cfg_stg );
+
+		se.execute( new StageInstance()
+		{
+			{
+				setEnabled( true );
+				setPropertiesPass( new String[] { } );
+				setMemoryLimit( -1 );
+				setCPUCores( -1 );
+			}
+		} );
+
+		String cmdl = se.get_info().getCommandline();
+		Assert.assertTrue( cmdl.contains( " -M 1700 -R rusage[mem=1700:duration=60]" ) );
+		Assert.assertTrue( cmdl.contains( " -n 1" ) );
+		Assert.assertTrue( cmdl.contains( " -q LSFQUEUE" ) );
+		Assert.assertTrue( cmdl.contains( " -oo " + tmpd_stg ) );
+		Assert.assertTrue( cmdl.contains( " -eo " + tmpd_stg ) );
+	}
+
+
+	@Test public void
 	genericConfig() throws IOException
 	{
 		ResultTranslator translator = makeResultTranslator();

@@ -20,6 +20,8 @@ public class
 LSFStageExecutor extends AbstractStageExecutor
 {
     public static final int LSF_JVM_MEMORY_DELTA_MB = 1500;
+    public static final int LSF_JVM_MEMORY_OVERHEAD_MB = 200;
+    public static final int LSF_JVM_MEMORY_RESERVATION_TIMEOUT_DEFAULT_MINUTES = 60;
 
     private boolean  do_commit = true;
     ExecutionInfo    info;
@@ -159,15 +161,28 @@ LSFStageExecutor extends AbstractStageExecutor
         int mem = instance.getMemoryLimit();
         if( mem <= 0 ) {
             mem = lsf_memory_limit;
+            if( mem <= 0 ) {
+                log.warn( "Setting LSF memory limit to default value " + LSF_JVM_MEMORY_DELTA_MB + LSF_JVM_MEMORY_OVERHEAD_MB + "MB." );
+                mem = LSF_JVM_MEMORY_DELTA_MB + LSF_JVM_MEMORY_OVERHEAD_MB;
+            }
         }
         int cpu = instance.getCPUCores();
         if( cpu <= 0 ) {
             cpu = cpu_cores;
+            if( cpu <= 0 ) {
+                log.warn( "Setting CPU cores count to default value 1" );
+                cpu = 1;
+            }
+        }
+        int mem_res = config.getLSFMemoryReservationTimeout();
+        if( mem_res <= 0 ) {
+            mem_res = LSF_JVM_MEMORY_RESERVATION_TIMEOUT_DEFAULT_MINUTES;
+            log.warn( "Setting LSF memory timeout to default value " + LSF_JVM_MEMORY_RESERVATION_TIMEOUT_DEFAULT_MINUTES + "min." );
         }
 
         LSFBackEnd back_end = new LSFBackEnd( config.getLsfQueue(),
                                               mem,
-                                              config.getLSFMemoryReservationTimeout(),
+                                              mem_res,
                                               cpu );
         back_end.setOutputFolderPath( Paths.get( config.getLsfOutputPath() ) );
         return back_end;

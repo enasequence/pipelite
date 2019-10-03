@@ -19,10 +19,10 @@ pipelite.process.table.name=[<process> table]
 pipelite.stages.enum=[full enum name for pipeline stages]
 pipelite.commit.status.enum=[full enum name for pipeline commit statuses]
 pipelite.default.mail-to=[default mail recipient for error logs]
-pipelite.default.lsf-cores=[number of cores available for a process]
+pipelite.default.lsf-cores=[number of cores available for a process. . if <= 0 will be set to default 1]
 pipelite.default.lsf-queue=[lsf queue name]
-pipelite.default.lsf-mem=[memory requested for each lsf job (in megs)]
-pipelite.default.lsf-mem-timeout=[lsf memory timeout (in minutes)]
+pipelite.default.lsf-mem=[memory requested for each lsf job (in megs). if <= 0 will be set to default 1700]
+pipelite.default.lsf-mem-timeout=[lsf memory timeout (in minutes). if <= 0 will be set to default 60]
 pipelite.default.lsf-output-redirection=[log directory. can't be local]
 pipelite.smtp.server=[smtp server for errors message submission]
 pipelite.smtp.mail-from=[from field in e-mail]
@@ -231,11 +231,11 @@ done by calling ProcessLauncher class. Creates file lock to prevent occasional e
 Command line parameters are:
 * --workers \<number> - number of simultaneously working processes. default value is: `2`;
 * --lock \<path> - lock file path;
-* --memory-limit \<number> -  memory requested for each lsf job (in megs);
-* --cpu-cores-limit \<number> - number of cores available for a process;
+* --memory-limit \<number> -  memory requested for each lsf job (in megs), if <= 0 will be set to default 1700;
+* --cpu-cores-limit \<number> - number of cores available for a process, if <= 0 will be set to default 1;
 * --queue \<queue_name> - LSF queue name;
 * --log-file \<path> - log file;
-* --lsf-mem-timeout \<number> - memory timeout for single LSF job, default is `pipelite.default.lsf-mem-timeout` value
+* --lsf-mem-timeout \<number> - memory timeout for single LSF job (minutes), if <= 0 will be set to default 60.
 
 ### uk.ac.ebi.ena.sra.pipeline.launcher.ProcessLauncher
 Launches execution for process ID, also interacts with data base. Locks corresponding process' and
