@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>uk.ac.ebi</groupId>
   <artifactId>ena-pipelite</artifactId>
-  <version>2.5.2.lfs_vs_java_mem_00</version>
+  <version>2.5.2</version>
   <name>Pipelite</name>
   <description>Pipeline manager</description>
   <url>https://github.com/enasequence/ena-pipelite</url>
