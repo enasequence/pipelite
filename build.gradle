@@ -5,7 +5,7 @@ apply plugin: 'maven'
 compileJava.options.encoding = 'UTF-8'
 
 group = 'uk.ac.ebi'
-ext.version_base = '2.5.7'
+ext.version_base = '2.5.8'
 version = version_base
 
 configurations.all {

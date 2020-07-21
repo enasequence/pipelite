@@ -129,7 +129,7 @@ the exit code is used to resolve commit message for database.
 
 Pipelite structure and endpoints overview is presented below
 
-![Pipelite overview](resource/images/pipelite_overview.png)
+![Pipelite overview](src/main/resources/images/pipelite_overview.png)
 
 Inner interfaces and classes (file submission pipeline is used as an example):
 
