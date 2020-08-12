@@ -60,7 +60,7 @@ public class ProcessLauncherTest {
     }
 
     @Override
-    public TaskExecutionResultType getTaskExecutionResultType() {
+    public TaskExecutionResultType getExecutionResultType() {
       return type;
     }
 
@@ -75,7 +75,7 @@ public class ProcessLauncherTest {
     }
 
     @Override
-    public String getMessage() {
+    public String getExecutionResult() {
       return this.toString();
     }
   };
@@ -106,7 +106,7 @@ public class ProcessLauncherTest {
                 si.getExecutionInstance().setStartTime(new Timestamp(System.currentTimeMillis()));
                 si.getExecutionInstance().setFinishTime(new Timestamp(System.currentTimeMillis()));
                 si.getExecutionInstance().setResult(init_results[counter.get() - 1].toString());
-                si.getExecutionInstance().setResultType(init_results[counter.get() - 1].getTaskExecutionResultType());
+                si.getExecutionInstance().setResultType(init_results[counter.get() - 1].getExecutionResultType());
 
                 si.setDependsOn(1 == counter.get() ? null : names[counter.get() - 2]);
 

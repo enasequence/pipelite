@@ -30,7 +30,7 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.TaskIdSource;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState.State;
 import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
-import pipelite.task.result.ExecutionResults;
+import pipelite.task.result.DefaultTaskExecutionResults;
 
 public class IdSourceTest {
   static TaskIdSource id_src;
@@ -71,7 +71,7 @@ public class IdSourceTest {
 
     OracleProcessIdSource ps = new OracleProcessIdSource();
     ps.setTableName("PIPELITE_PROCESS");
-    ps.setExecutionResultArray(ExecutionResults.values());
+    ps.setExecutionResultArray(DefaultTaskExecutionResults.values());
     ps.setRedoCount(Integer.MAX_VALUE);
     ps.setConnection(connection);
     ps.setPipelineName(PIPELINE_NAME);

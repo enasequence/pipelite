@@ -363,8 +363,8 @@ public class ProcessLauncher implements PipeliteProcess {
           result = translator.getCommitStatus(info.getExitCode());
         }
 
-        ei.setResultType(result.getTaskExecutionResultType());
-        ei.setResult(result.getMessage());
+        ei.setResultType(result.getExecutionResultType());
+        ei.setResult(result.getExecutionResult());
         ei.setStderr(info.getStderr());
         ei.setStdout(info.getStdout());
         ei.setCmdLine(info.getCommandline());

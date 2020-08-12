@@ -25,7 +25,7 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessPoolExecutor;
 import pipelite.task.executor.TaskExecutor;
-import pipelite.task.result.ExecutionResults;
+import pipelite.task.result.DefaultTaskExecutionResults;
 
 public class LauncherDBTest {
   static final long delay = 5 * 1000;
@@ -67,7 +67,7 @@ public class LauncherDBTest {
 
     OracleTaskIdSource id_src = new OracleTaskIdSource();
     id_src.setTableName("PIPELITE_STAGE");
-    id_src.setExecutionResultArray(ExecutionResults.values());
+    id_src.setExecutionResultArray(DefaultTaskExecutionResults.values());
     id_src.setRedoCount(Integer.MAX_VALUE);
     id_src.setConnection(connection);
     id_src.init();

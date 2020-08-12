@@ -25,7 +25,7 @@ public class LSFStageExecutorTest {
         new TaskExecutionResult[] {
           new TaskExecutionResult() {
             @Override
-            public TaskExecutionResultType getTaskExecutionResultType() {
+            public TaskExecutionResultType getExecutionResultType() {
               return null;
             }
 
@@ -40,7 +40,7 @@ public class LSFStageExecutorTest {
             }
 
             @Override
-            public String getMessage() {
+            public String getExecutionResult() {
               return null;
             }
           }

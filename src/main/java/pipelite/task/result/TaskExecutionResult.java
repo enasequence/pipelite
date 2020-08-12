@@ -12,23 +12,23 @@ package pipelite.task.result;
 
 public interface TaskExecutionResult {
 
-  TaskExecutionResultType getTaskExecutionResultType();
+  TaskExecutionResultType getExecutionResultType();
 
-  default boolean isError() {
-    return getTaskExecutionResultType().isError();
-  }
-
-  default boolean isPermanentError() {
-    return getTaskExecutionResultType() == TaskExecutionResultType.PERMANENT_ERROR;
-  }
-
-  default boolean isTransientError() {
-    return getTaskExecutionResultType() == TaskExecutionResultType.TRANSIENT_ERROR;
-  }
+  String getExecutionResult();
 
   byte getExitCode();
 
-  Class<? extends Throwable> getCause(); // throwable that can cause the status. unique.
+  Class<? extends Throwable> getCause(); // TODO
 
-  String getMessage(); // commit message. unique.
+  default boolean isError() {
+    return getExecutionResultType().isError();
+  }
+
+  default boolean isPermanentError() {
+    return getExecutionResultType() == TaskExecutionResultType.PERMANENT_ERROR;
+  }
+
+  default boolean isTransientError() {
+    return getExecutionResultType() == TaskExecutionResultType.TRANSIENT_ERROR;
+  }
 }

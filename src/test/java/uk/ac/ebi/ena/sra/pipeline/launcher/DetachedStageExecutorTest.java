@@ -26,7 +26,7 @@ public class DetachedStageExecutorTest {
                 new TaskExecutionResult[] {
                   new TaskExecutionResult() {
                     @Override
-                    public TaskExecutionResultType getTaskExecutionResultType() {
+                    public TaskExecutionResultType getExecutionResultType() {
                       return null;
                     }
 
@@ -41,7 +41,7 @@ public class DetachedStageExecutorTest {
                     }
 
                     @Override
-                    public String getMessage() {
+                    public String getExecutionResult() {
                       return null;
                     }
                   }
@@ -72,7 +72,7 @@ public class DetachedStageExecutorTest {
                 new TaskExecutionResult[] {
                   new TaskExecutionResult() {
                     @Override
-                    public TaskExecutionResultType getTaskExecutionResultType() {
+                    public TaskExecutionResultType getExecutionResultType() {
                       return null;
                     }
 
@@ -87,7 +87,7 @@ public class DetachedStageExecutorTest {
                     }
 
                     @Override
-                    public String getMessage() {
+                    public String getExecutionResult() {
                       return null;
                     }
                   }
@@ -119,7 +119,7 @@ public class DetachedStageExecutorTest {
                 new TaskExecutionResult[] {
                   new TaskExecutionResult() {
                     @Override
-                    public TaskExecutionResultType getTaskExecutionResultType() {
+                    public TaskExecutionResultType getExecutionResultType() {
                       return null;
                     }
 
@@ -134,7 +134,7 @@ public class DetachedStageExecutorTest {
                     }
 
                     @Override
-                    public String getMessage() {
+                    public String getExecutionResult() {
                       return null;
                     }
                   }
@@ -166,7 +166,7 @@ public class DetachedStageExecutorTest {
                 new TaskExecutionResult[] {
                   new TaskExecutionResult() {
                     @Override
-                    public TaskExecutionResultType getTaskExecutionResultType() {
+                    public TaskExecutionResultType getExecutionResultType() {
                       return null;
                     }
 
@@ -181,7 +181,7 @@ public class DetachedStageExecutorTest {
                     }
 
                     @Override
-                    public String getMessage() {
+                    public String getExecutionResult() {
                       return null;
                     }
                   }
