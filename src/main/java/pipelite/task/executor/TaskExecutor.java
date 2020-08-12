@@ -10,7 +10,7 @@
  */
 package pipelite.task.executor;
 
-import pipelite.task.state.TaskState;
+import pipelite.task.state.TaskExecutionState;
 import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInfo;
 import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
@@ -23,7 +23,7 @@ public interface TaskExecutor {
 
   <T extends ExecutorConfig> void configure(T params);
 
-  TaskState can_execute(StageInstance instance);
+  TaskExecutionState can_execute(StageInstance instance);
   //    boolean       was_error();
   ExecutionInfo get_info();
 

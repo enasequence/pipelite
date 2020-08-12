@@ -14,16 +14,18 @@ import java.io.IOException;
 import java.nio.file.Files;
 import org.junit.Assert;
 import org.junit.Test;
+import pipelite.task.result.TaskExecutionResultTranslator;
+import pipelite.task.result.TaskExecutionResultType;
 import uk.ac.ebi.ena.sra.pipeline.executors.LSFExecutorConfig;
-import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
+import pipelite.task.result.TaskExecutionResult;
 
 public class LSFStageExecutorTest {
-  private ResultTranslator makeResultTranslator() {
-    return new ResultTranslator(
-        new ExecutionResult[] {
-          new ExecutionResult() {
+  private TaskExecutionResultTranslator makeResultTranslator() {
+    return new TaskExecutionResultTranslator(
+        new TaskExecutionResult[] {
+          new TaskExecutionResult() {
             @Override
-            public RESULT_TYPE getType() {
+            public TaskExecutionResultType getTaskExecutionResultType() {
               return null;
             }
 
@@ -80,7 +82,7 @@ public class LSFStageExecutorTest {
 
   @Test
   public void testNoQueue() throws IOException {
-    ResultTranslator translator = makeResultTranslator();
+    TaskExecutionResultTranslator translator = makeResultTranslator();
 
     String tmpd_def = Files.createTempDirectory("LSF-TEST-OUTPUT-DEF").toString();
     LSFExecutorConfig cfg_def =
@@ -112,7 +114,7 @@ public class LSFStageExecutorTest {
 
   @Test
   public void testQueue() throws IOException {
-    ResultTranslator translator = makeResultTranslator();
+    TaskExecutionResultTranslator translator = makeResultTranslator();
 
     String tmpd_def = Files.createTempDirectory("LSF-TEST-OUTPUT-DEF").toString();
     LSFExecutorConfig cfg_def =
@@ -144,7 +146,7 @@ public class LSFStageExecutorTest {
 
   @Test
   public void testStageSpecificQueue() throws IOException {
-    ResultTranslator translator = makeResultTranslator();
+    TaskExecutionResultTranslator translator = makeResultTranslator();
 
     String tmpd_def = Files.createTempDirectory("LSF-TEST-OUTPUT-DEF").toString();
     LSFExecutorConfig cfg_def =
@@ -197,7 +199,7 @@ public class LSFStageExecutorTest {
 
   @Test
   public void stageSpecificConfig() throws IOException {
-    ResultTranslator translator = makeResultTranslator();
+    TaskExecutionResultTranslator translator = makeResultTranslator();
     LSFExecutorConfig cfg_def = makeDefaultConfig();
     LSFStageExecutor se =
         new LSFStageExecutor(
@@ -244,7 +246,7 @@ public class LSFStageExecutorTest {
 
   @Test
   public void defaultMemoryCoresReserveConfig() throws IOException {
-    ResultTranslator translator = makeResultTranslator();
+    TaskExecutionResultTranslator translator = makeResultTranslator();
     LSFExecutorConfig cfg_def = makeDefaultConfig();
     LSFStageExecutor se =
         new LSFStageExecutor(
@@ -291,7 +293,7 @@ public class LSFStageExecutorTest {
 
   @Test
   public void genericConfig() throws IOException {
-    ResultTranslator translator = makeResultTranslator();
+    TaskExecutionResultTranslator translator = makeResultTranslator();
     LSFExecutorConfig cfg_def = makeDefaultConfig();
     LSFStageExecutor se =
         new LSFStageExecutor(
@@ -308,7 +310,7 @@ public class LSFStageExecutorTest {
 
   @Test
   public void genericConfigNoConfCall() throws IOException {
-    ResultTranslator translator = makeResultTranslator();
+    TaskExecutionResultTranslator translator = makeResultTranslator();
     LSFExecutorConfig cfg_def = makeDefaultConfig();
     LSFStageExecutor se =
         new LSFStageExecutor(
@@ -323,7 +325,7 @@ public class LSFStageExecutorTest {
 
   @Test
   public void javaMemory() throws IOException {
-    ResultTranslator translator = makeResultTranslator();
+    TaskExecutionResultTranslator translator = makeResultTranslator();
     LSFExecutorConfig cfg_def = makeDefaultConfig();
     LSFStageExecutor se =
         new LSFStageExecutor(
@@ -346,7 +348,7 @@ public class LSFStageExecutorTest {
 
   @Test
   public void javaMemoryNotSet() throws IOException {
-    ResultTranslator translator = makeResultTranslator();
+    TaskExecutionResultTranslator translator = makeResultTranslator();
     LSFExecutorConfig cfg_def = makeDefaultConfig();
     LSFStageExecutor se =
         new LSFStageExecutor(
@@ -369,7 +371,7 @@ public class LSFStageExecutorTest {
 
   @Test
   public void memoryBelow1500() throws IOException {
-    ResultTranslator translator = makeResultTranslator();
+    TaskExecutionResultTranslator translator = makeResultTranslator();
     String tmpd_def = Files.createTempDirectory("LSF-TEST-OUTPUT-DEF").toString();
     LSFExecutorConfig cfg_def =
         new LSFExecutorConfig() {
@@ -409,7 +411,7 @@ public class LSFStageExecutorTest {
 
   @Test
   public void propertiesPassStageSpecific() throws IOException {
-    ResultTranslator translator = makeResultTranslator();
+    TaskExecutionResultTranslator translator = makeResultTranslator();
     LSFExecutorConfig cfg_def = makeDefaultConfig();
     LSFStageExecutor se =
         new LSFStageExecutor(
@@ -432,7 +434,7 @@ public class LSFStageExecutorTest {
 
   @Test
   public void propertiesPassGeneric() throws IOException {
-    ResultTranslator translator = makeResultTranslator();
+    TaskExecutionResultTranslator translator = makeResultTranslator();
     LSFExecutorConfig cfg_def = makeDefaultConfig();
     LSFStageExecutor se =
         new LSFStageExecutor(
@@ -448,7 +450,7 @@ public class LSFStageExecutorTest {
 
   @Test
   public void prefixAndSource() throws IOException {
-    ResultTranslator translator = makeResultTranslator();
+    TaskExecutionResultTranslator translator = makeResultTranslator();
     LSFExecutorConfig cfg_def = makeDefaultConfig();
 
     String prefix = "NOFILE";

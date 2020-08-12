@@ -20,7 +20,7 @@ import java.util.List;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInstance;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState;
 import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
-import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult.RESULT_TYPE;
+import pipelite.task.result.TaskExecutionResultType;
 import uk.ac.ebi.ena.sra.pipeline.resource.MemoryLocker;
 import uk.ac.ebi.ena.sra.pipeline.resource.ProcessResourceLock;
 import uk.ac.ebi.ena.sra.pipeline.resource.ResourceLocker;
@@ -182,7 +182,7 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
         instance.setResult(rows.getString(EXEC_RESULT_COLUMN_NAME));
 
         String rtype = rows.getString(EXEC_RESULT_TYPE_COLUMN_NAME);
-        instance.setResultType(null == rtype ? null : RESULT_TYPE.valueOf(rtype));
+        instance.setResultType(null == rtype ? null : TaskExecutionResultType.valueOf(rtype));
 
         // TODO remove
         instance.setStderr(rows.getString(EXEC_STDERR_COLUMN_NAME));

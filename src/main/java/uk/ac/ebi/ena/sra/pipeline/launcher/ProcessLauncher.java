@@ -26,11 +26,12 @@ import org.apache.log4j.PatternLayout;
 import org.apache.log4j.net.SMTPAppender;
 import pipelite.task.executor.AbstractTaskExecutor;
 import pipelite.task.executor.TaskExecutor;
+import pipelite.task.result.TaskExecutionResultTranslator;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState.State;
-import pipelite.task.state.TaskState;
-import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
+import pipelite.task.state.TaskExecutionState;
+import pipelite.task.result.TaskExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
 import uk.ac.ebi.ena.sra.pipeline.resource.ProcessResourceLock;
 import uk.ac.ebi.ena.sra.pipeline.resource.ResourceLocker;
@@ -49,10 +50,10 @@ public class ProcessLauncher implements PipeliteProcess {
   private StageInstance[] instances;
   private StorageBackend storage;
   private TaskExecutor executor;
-  private ResultTranslator translator;
+  private TaskExecutionResultTranslator translator;
   private Stage[] stages;
   private ResourceLocker locker;
-  private ExecutionResult[] commit_statuses;
+  private TaskExecutionResult[] commit_statuses;
   private String __name;
   private int max_redo_count = 1;
   private volatile boolean do_stop;
@@ -229,7 +230,7 @@ public class ProcessLauncher implements PipeliteProcess {
           // to_process -= to_process;
           ExecutionInstance ei = instance.getExecutionInstance();
           state.setState(
-              null != ei && ei.getResultType().isFailure() ? State.FAILED : State.COMPLETED);
+              null != ei && ei.getResultType().isError() ? State.FAILED : State.COMPLETED);
           return false;
       }
     }
@@ -267,7 +268,7 @@ public class ProcessLauncher implements PipeliteProcess {
   private void init_stages() {
     Stage[] stages = getStages();
     instances = new StageInstance[stages.length];
-    translator = new ResultTranslator(commit_statuses);
+    translator = new TaskExecutionResultTranslator(commit_statuses);
 
     for (int i = 0; i < instances.length; ++i) {
       Stage stage = stages[i];
@@ -333,7 +334,7 @@ public class ProcessLauncher implements PipeliteProcess {
     {
       if (do_stop) break;
 
-      if (TaskState.ACTIVE_TASK == executor.can_execute(instance)) {
+      if (TaskExecutionState.ACTIVE_TASK == executor.can_execute(instance)) {
         if (null != instance.getResourceConfig(executor.getConfigClass()))
           executor.configure(instance.getResourceConfig(executor.getConfigClass()));
 
@@ -355,14 +356,14 @@ public class ProcessLauncher implements PipeliteProcess {
         for (StageInstance si : dependend) storage.save(si);
 
         // Translate execution result to exec status
-        ExecutionResult result = null;
+        TaskExecutionResult result = null;
         if (null != info.getThrowable()) {
           result = translator.getCommitStatus(info.getThrowable());
         } else {
           result = translator.getCommitStatus(info.getExitCode());
         }
 
-        ei.setResultType(result.getType());
+        ei.setResultType(result.getTaskExecutionResultType());
         ei.setResult(result.getMessage());
         ei.setStderr(info.getStderr());
         ei.setStdout(info.getStdout());
@@ -371,7 +372,7 @@ public class ProcessLauncher implements PipeliteProcess {
         storage.save(ei);
         storage.flush();
 
-        if (result.getType().isFailure()) {
+        if (result.isError()) {
           emit_log(instance, info);
           break;
         }
@@ -508,10 +509,10 @@ public class ProcessLauncher implements PipeliteProcess {
         AbstractTaskExecutor executor =
             (AbstractTaskExecutor)
                 (Class.forName(params.executor_class)
-                    .getConstructor(String.class, ResultTranslator.class)
+                    .getConstructor(String.class, TaskExecutionResultTranslator.class)
                     .newInstance(
                         "",
-                        new ResultTranslator(DefaultConfiguration.currentSet().getCommitStatus())));
+                        new TaskExecutionResultTranslator(DefaultConfiguration.currentSet().getCommitStatus())));
 
         process.setExecutor(executor);
         process.lifecycle();
@@ -527,11 +528,11 @@ public class ProcessLauncher implements PipeliteProcess {
     }
   }
 
-  public void setCommitStatuses(ExecutionResult[] commit_statuses) {
+  public void setCommitStatuses(TaskExecutionResult[] commit_statuses) {
     this.commit_statuses = commit_statuses;
   }
 
-  public ExecutionResult[] getCommitStatuses() {
+  public TaskExecutionResult[] getCommitStatuses() {
     return commit_statuses;
   }
 

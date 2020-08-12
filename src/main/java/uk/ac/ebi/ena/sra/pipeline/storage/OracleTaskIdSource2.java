@@ -18,8 +18,9 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.log4j.Logger;
+import pipelite.task.result.TaskExecutionResultType;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.TaskIdSource;
-import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
+import pipelite.task.result.TaskExecutionResult;
 
 public class OracleTaskIdSource2 implements OracleCommons, TaskIdSource {
   Logger log = Logger.getLogger(this.getClass());
@@ -27,17 +28,18 @@ public class OracleTaskIdSource2 implements OracleCommons, TaskIdSource {
   private String table_name;
   private String pipeline_name;
   private int redo_count;
-  private ExecutionResult[] commit_status;
+  private TaskExecutionResult[] commit_status;
   private Connection connection;
 
   private String prepareQuery() {
     StringBuilder redo = new StringBuilder();
     StringBuilder terminal = new StringBuilder();
 
-    for (ExecutionResult cs : commit_status) {
-      if (cs.getType().canReprocess()) redo.append("'").append(cs.toString()).append("', ");
+    for (TaskExecutionResult cs : commit_status) {
+      if (cs.isTransientError())
+        redo.append("'").append(cs.toString()).append("', ");
 
-      if (cs.getType().isFailure() && !cs.getType().canReprocess())
+      if (cs.isPermanentError())
         terminal.append("'").append(cs.toString()).append("', ");
     }
 
@@ -131,11 +133,11 @@ public class OracleTaskIdSource2 implements OracleCommons, TaskIdSource {
     this.redo_count = redo_count;
   }
 
-  public void setCommitStatus(ExecutionResult commit_status[]) {
+  public void setCommitStatus(TaskExecutionResult commit_status[]) {
     this.commit_status = commit_status;
   }
 
-  public ExecutionResult[] getCommitStatus() {
+  public TaskExecutionResult[] getCommitStatus() {
     return this.commit_status;
   }
 

@@ -22,6 +22,7 @@ import org.apache.log4j.DailyRollingFileAppender;
 import org.apache.log4j.EnhancedPatternLayout;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import pipelite.task.result.TaskExecutionResultTranslator;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall.LSFQueue;
 import uk.ac.ebi.ena.sra.pipeline.base.external.lsf.LSFBqueues;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
@@ -163,7 +164,7 @@ public class Launcher {
           launcher.setExecutorFactory(
               new DefaultExecutorFactory(
                   DefaultConfiguration.currentSet().getPipelineName(),
-                  new ResultTranslator(DefaultConfiguration.currentSet().getCommitStatus()),
+                  new TaskExecutionResultTranslator(DefaultConfiguration.currentSet().getCommitStatus()),
                   params.queue_name,
                   params.lsf_mem,
                   params.lsf_cpu_cores,

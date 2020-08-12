@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
-import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
+import pipelite.task.result.TaskExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
 
 class ConfigurationException extends RuntimeException {
@@ -305,8 +305,8 @@ public enum DefaultConfiguration {
   }
 
   @PipeliteProperty
-  public ExecutionResult[] getCommitStatus() {
-    return loadEnumConstants(getProperty("commit.status.enum"), ExecutionResult.class);
+  public TaskExecutionResult[] getCommitStatus() {
+    return loadEnumConstants(getProperty("commit.status.enum"), TaskExecutionResult.class);
   }
 
   @PipeliteProperty

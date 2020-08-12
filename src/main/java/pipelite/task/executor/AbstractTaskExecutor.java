@@ -12,25 +12,26 @@ package pipelite.task.executor;
 
 import java.util.List;
 import org.apache.log4j.Logger;
-import pipelite.task.state.TaskState;
+import pipelite.task.result.TaskExecutionResultType;
+import pipelite.task.state.TaskExecutionState;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInstance;
-import uk.ac.ebi.ena.sra.pipeline.launcher.ResultTranslator;
+import pipelite.task.result.TaskExecutionResultTranslator;
 import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
 
 public abstract class AbstractTaskExecutor implements TaskExecutor {
   protected Logger log = Logger.getLogger(this.getClass());
   protected final String PIPELINE_NAME;
-  protected final ResultTranslator TRANSLATOR;
+  protected final TaskExecutionResultTranslator TRANSLATOR;
 
-  public AbstractTaskExecutor(String pipeline_name, ResultTranslator translator) {
+  public AbstractTaskExecutor(String pipeline_name, TaskExecutionResultTranslator translator) {
     this.PIPELINE_NAME = pipeline_name;
     this.TRANSLATOR = translator;
   }
 
   @Override
-  public TaskState can_execute(StageInstance instance) {
+  public TaskExecutionState can_execute(StageInstance instance) {
     // disabled stage
-    if (!instance.isEnabled()) return TaskState.DISABLED_TASK;
+    if (!instance.isEnabled()) return TaskExecutionState.DISABLED_TASK;
 
     ExecutionInstance ei = instance.getExecutionInstance();
 
@@ -38,15 +39,15 @@ public abstract class AbstractTaskExecutor implements TaskExecutor {
     if (null != ei && null != ei.getFinish() && null != ei.getResultType()) {
       switch (ei.getResultType()) {
         case PERMANENT_ERROR:
-          return TaskState.COMPLETED_TASK;
+          return TaskExecutionState.COMPLETED_TASK;
         default:
-          return ei.getResultType().canReprocess()
-              ? TaskState.ACTIVE_TASK
-              : TaskState.DISABLED_TASK;
+          return ei.getResultType() == TaskExecutionResultType.TRANSIENT_ERROR
+              ? TaskExecutionState.ACTIVE_TASK
+              : TaskExecutionState.DISABLED_TASK;
       }
     }
 
-    return TaskState.ACTIVE_TASK;
+    return TaskExecutionState.ACTIVE_TASK;
   }
 
   protected void appendProperties(List<String> p_args, String... properties_to_pass) {

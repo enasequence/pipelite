@@ -20,6 +20,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import pipelite.task.executor.TaskExecutor;
+import pipelite.task.result.TaskExecutionResultTranslator;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.StageTask;
 
@@ -83,7 +84,7 @@ public class StageLauncher {
   public int execute() {
     TaskExecutor executor =
         new InternalStageExecutor(
-                new ResultTranslator(DefaultConfiguration.currentSet().getCommitStatus()));
+                new TaskExecutionResultTranslator(DefaultConfiguration.currentSet().getCommitStatus()));
 
     StageInstance instance = new StageInstance();
     instance.setProcessID(process_id);
@@ -107,7 +108,7 @@ public class StageLauncher {
   public InternalExecutionResult execute(String process_id, String stage_name, boolean force) {
     InternalStageExecutor executor =
         new InternalStageExecutor(
-                new ResultTranslator(DefaultConfiguration.currentSet().getCommitStatus()));
+                new TaskExecutionResultTranslator(DefaultConfiguration.currentSet().getCommitStatus()));
     StageInstance instance = new StageInstance();
     instance.setProcessID(process_id);
     instance.setStageName(stage_name);

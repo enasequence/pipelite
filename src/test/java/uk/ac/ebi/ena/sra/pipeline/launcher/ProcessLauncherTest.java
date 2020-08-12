@@ -27,8 +27,10 @@ import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import pipelite.task.executor.TaskExecutor;
+import pipelite.task.result.TaskExecutionResultTranslator;
+import pipelite.task.result.TaskExecutionResultType;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState.State;
-import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
+import pipelite.task.result.TaskExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
 import uk.ac.ebi.ena.sra.pipeline.resource.MemoryLocker;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
@@ -39,44 +41,26 @@ public class ProcessLauncherTest {
   private static final String MOCKED_PIPELINE = "MOCKED PIPELINE";
   static Logger log = Logger.getLogger(ProcessLauncherTest.class);
 
-  class StageInstanceInitializer {
-    final String stageName;
-    final String execMessage;
-    final Timestamp execDate;
-    final int exec_cnt;
-    final boolean enabled;
-
-    public StageInstanceInitializer(
-        String stageName, String execMessage, Timestamp execDate, int exec_cnt, boolean enabled) {
-      this.stageName = stageName;
-      this.execMessage = execMessage;
-      this.execDate = execDate;
-      this.exec_cnt = exec_cnt;
-      this.enabled = enabled;
-    }
-  }
-
   @BeforeClass
   public static void setup() {
     PropertyConfigurator.configure("resource/test.log4j.properties");
   }
 
-  enum ERESULTS implements ExecutionResult {
-    OK(ExecutionResult.RESULT_TYPE.SUCCESS, 0),
-    PERMANENT(ExecutionResult.RESULT_TYPE.PERMANENT_ERROR, 1),
-    TRANSIENT(ExecutionResult.RESULT_TYPE.TRANSIENT_ERROR, 2),
-    PSHPSH(ExecutionResult.RESULT_TYPE.SKIPPED, 3);
+  enum ERESULTS implements TaskExecutionResult {
+    OK(TaskExecutionResultType.SUCCESS, 0),
+    PERMANENT(TaskExecutionResultType.PERMANENT_ERROR, 1),
+    TRANSIENT(TaskExecutionResultType.TRANSIENT_ERROR, 2);
 
-    public final ExecutionResult.RESULT_TYPE type;
+    public final TaskExecutionResultType type;
     public final int code;
 
-    ERESULTS(RESULT_TYPE type, int code) {
+    ERESULTS(TaskExecutionResultType type, int code) {
       this.type = type;
       this.code = code;
     }
 
     @Override
-    public RESULT_TYPE getType() {
+    public TaskExecutionResultType getTaskExecutionResultType() {
       return type;
     }
 
@@ -122,7 +106,7 @@ public class ProcessLauncherTest {
                 si.getExecutionInstance().setStartTime(new Timestamp(System.currentTimeMillis()));
                 si.getExecutionInstance().setFinishTime(new Timestamp(System.currentTimeMillis()));
                 si.getExecutionInstance().setResult(init_results[counter.get() - 1].toString());
-                si.getExecutionInstance().setResultType(init_results[counter.get() - 1].getType());
+                si.getExecutionInstance().setResultType(init_results[counter.get() - 1].getTaskExecutionResultType());
 
                 si.setDependsOn(1 == counter.get() ? null : names[counter.get() - 2]);
 
@@ -173,7 +157,7 @@ public class ProcessLauncherTest {
   }
 
   private ProcessLauncher initProcessLauncher(
-      Stage[] stages, ExecutionResult[] results, StorageBackend storage, TaskExecutor executor) {
+          Stage[] stages, TaskExecutionResult[] results, StorageBackend storage, TaskExecutor executor) {
     ProcessLauncher process = spy(new ProcessLauncher());
     process.setProcessID("TEST_PROCESS");
     process.setStorage(storage);
@@ -183,8 +167,8 @@ public class ProcessLauncherTest {
     return process;
   }
 
-  private TaskExecutor initExecutor(ExecutionResult[] results, int... invocation_exit_code) {
-    TaskExecutor spiedExecutor = spy(new InternalStageExecutor(new ResultTranslator(results)));
+  private TaskExecutor initExecutor(TaskExecutionResult[] results, int... invocation_exit_code) {
+    TaskExecutor spiedExecutor = spy(new InternalStageExecutor(new TaskExecutionResultTranslator(results)));
     final AtomicInteger inv_cnt = new AtomicInteger(0);
     doAnswer(
             new Answer<Object>() {
@@ -230,7 +214,7 @@ public class ProcessLauncherTest {
               new String[] {
                 "1: SOVSE MALI YOBA", "2: MALI YOBA", "3: BOLSHE YOBA", "4: OCHE BOLSHE YOBA"
               },
-              new ERESULTS[] {ERESULTS.OK, ERESULTS.OK, ERESULTS.TRANSIENT, ERESULTS.PSHPSH},
+              new ERESULTS[] {ERESULTS.OK, ERESULTS.OK, ERESULTS.TRANSIENT, ERESULTS.OK },
               new boolean[] {false, true, true, true});
 
       TaskExecutor spiedExecutor = initExecutor(ERESULTS.values(), new int[] {0, 2, 0, 2});
@@ -259,7 +243,7 @@ public class ProcessLauncherTest {
       StorageBackend mockedStorage =
           initStorage(
               new String[] {"SOVSE MALI YOBA", "MALI YOBA", "BOLSHE YOBA", "OCHE BOLSHE YOBA"},
-              new ERESULTS[] {ERESULTS.PERMANENT, ERESULTS.OK, ERESULTS.TRANSIENT, ERESULTS.PSHPSH},
+              new ERESULTS[] {ERESULTS.PERMANENT, ERESULTS.OK, ERESULTS.TRANSIENT, ERESULTS.OK},
               new boolean[] {false, false, true, true});
 
       TaskExecutor spiedExecutor = initExecutor(ERESULTS.values());
@@ -277,7 +261,7 @@ public class ProcessLauncherTest {
       StorageBackend mockedStorage =
           initStorage(
               new String[] {"SOVSE MALI YOBA", "MALI YOBA", "BOLSHE YOBA", "OCHE BOLSHE YOBA"},
-              new ERESULTS[] {ERESULTS.OK, ERESULTS.OK, ERESULTS.TRANSIENT, ERESULTS.PSHPSH},
+              new ERESULTS[] {ERESULTS.OK, ERESULTS.OK, ERESULTS.TRANSIENT, ERESULTS.OK},
               new boolean[] {false, true, true, true});
 
       TaskExecutor spiedExecutor = initExecutor(ERESULTS.values());
@@ -294,7 +278,7 @@ public class ProcessLauncherTest {
       StorageBackend mockedStorage =
           initStorage(
               new String[] {"SOVSE MALI YOBA", "MALI YOBA", "BOLSHE YOBA", "OCHE BOLSHE YOBA"},
-              new ERESULTS[] {ERESULTS.PERMANENT, ERESULTS.OK, ERESULTS.TRANSIENT, ERESULTS.PSHPSH},
+              new ERESULTS[] {ERESULTS.PERMANENT, ERESULTS.OK, ERESULTS.TRANSIENT, ERESULTS.OK},
               new boolean[] {true, true, true, true});
 
       TaskExecutor spiedExecutor = initExecutor(ERESULTS.values());
@@ -313,7 +297,7 @@ public class ProcessLauncherTest {
       StorageBackend mockedStorage =
           initStorage(
               new String[] {"SOVSE MALI YOBA", "MALI YOBA", "BOLSHE YOBA", "OCHE BOLSHE YOBA"},
-              new ERESULTS[] {ERESULTS.TRANSIENT, ERESULTS.OK, ERESULTS.TRANSIENT, ERESULTS.PSHPSH},
+              new ERESULTS[] {ERESULTS.TRANSIENT, ERESULTS.OK, ERESULTS.TRANSIENT, ERESULTS.OK},
               new boolean[] {true, true, true, true});
 
       TaskExecutor spiedExecutor = initExecutor(ERESULTS.values());

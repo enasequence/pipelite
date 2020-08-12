@@ -18,14 +18,15 @@ import java.util.List;
 import java.util.Set;
 
 import pipelite.task.executor.AbstractTaskExecutor;
-import pipelite.task.state.TaskState;
+import pipelite.task.result.TaskExecutionResultTranslator;
+import pipelite.task.state.TaskExecutionState;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCall;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
 import uk.ac.ebi.ena.sra.pipeline.executors.LSFExecutorConfig;
-import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
+import pipelite.task.result.TaskExecutionResult;
 
 public class LSFStageExecutor extends AbstractTaskExecutor {
   public static final int LSF_JVM_MEMORY_DELTA_MB = 1500;
@@ -36,7 +37,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
   ExecutionInfo info;
   private String config_prefix_name;
   private String config_source_name;
-  private ExecutionResult default_failure_result;
+  private TaskExecutionResult default_failure_result;
   private String[] properties_pass;
   private LSFExecutorConfig config;
   private int lsf_memory_limit;
@@ -44,7 +45,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
 
   public LSFStageExecutor(
       String pipeline_name,
-      ResultTranslator translator,
+      TaskExecutionResultTranslator translator,
       int lsf_memory_limit,
       int cpu_cores,
       LSFExecutorConfig config) {
@@ -61,7 +62,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
 
   LSFStageExecutor(
       String pipeline_name,
-      ResultTranslator translator,
+      TaskExecutionResultTranslator translator,
       int lsf_memory_limit,
       int cpu_cores,
       String config_prefix_name,
@@ -183,7 +184,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
   }
 
   public void execute(StageInstance instance) {
-    if (TaskState.ACTIVE_TASK == can_execute(instance)) {
+    if (TaskExecutionState.ACTIVE_TASK == can_execute(instance)) {
       log.info(
           String.format(
               "%sxecuting stage %s",

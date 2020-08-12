@@ -8,19 +8,17 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package uk.ac.ebi.ena.sra.pipeline.mock.schedule;
+package pipelite.task.result;
 
-import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
+import pipelite.task.result.TaskExecutionResult;
+import pipelite.task.result.TaskExecutionResultType;
 
-/*
- * SAMPLE CommitStatus. Must be substituted
- */
-public enum ExecutionResults implements ExecutionResult {
-  OK(null, 0, null, RESULT_TYPE.SUCCESS),
-  SKIPPED("SKIPPED", 51, Exception.class, RESULT_TYPE.SUCCESS),
-  UNKNOWN_FAILURE("UNKNOWN_FAILURE", 53, Throwable.class, RESULT_TYPE.TRANSIENT_ERROR);
+public enum ExecutionResults implements TaskExecutionResult {
+  OK(null, 0, null, TaskExecutionResultType.SUCCESS),
+  SKIPPED("SKIPPED", 51, Exception.class, TaskExecutionResultType.SUCCESS),
+  UNKNOWN_FAILURE("UNKNOWN_FAILURE", 53, Throwable.class, TaskExecutionResultType.TRANSIENT_ERROR);
 
-  ExecutionResults(String message, int exit_code, Class<?> cause, RESULT_TYPE type) {
+  ExecutionResults(String message, int exit_code, Class<?> cause, TaskExecutionResultType type) {
     this.message = message;
     this.type = type;
     this.exit_code = (byte) exit_code;
@@ -28,7 +26,7 @@ public enum ExecutionResults implements ExecutionResult {
   }
 
   final String message;
-  final RESULT_TYPE type;
+  final TaskExecutionResultType type;
   final byte exit_code;
   final Class<?> cause;
 
@@ -48,7 +46,7 @@ public enum ExecutionResults implements ExecutionResult {
   }
 
   @Override
-  public RESULT_TYPE getType() {
+  public TaskExecutionResultType getTaskExecutionResultType() {
     return type;
   }
 }

@@ -14,12 +14,12 @@ import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall.LSFQueue;
 import uk.ac.ebi.ena.sra.pipeline.executors.LSFExecutorConfig;
 import uk.ac.ebi.ena.sra.pipeline.launcher.LSFStageExecutor;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.StageExecutorFactory;
-import uk.ac.ebi.ena.sra.pipeline.launcher.ResultTranslator;
+import pipelite.task.result.TaskExecutionResultTranslator;
 import pipelite.task.executor.TaskExecutor;
 
 public class DefaultExecutorFactory implements StageExecutorFactory {
   private String pipeline_name;
-  private ResultTranslator translator;
+  private TaskExecutionResultTranslator translator;
   private String queue;
   private int memory_limit;
   private int cpu_cores;
@@ -28,7 +28,7 @@ public class DefaultExecutorFactory implements StageExecutorFactory {
 
   public DefaultExecutorFactory(
       String pipeline_name,
-      ResultTranslator translator,
+      TaskExecutionResultTranslator translator,
       String queue,
       int memory_limit,
       int cpu_cores,

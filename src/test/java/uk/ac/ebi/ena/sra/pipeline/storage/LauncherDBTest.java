@@ -25,7 +25,7 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessPoolExecutor;
 import pipelite.task.executor.TaskExecutor;
-import uk.ac.ebi.ena.sra.pipeline.mock.schedule.ExecutionResults;
+import pipelite.task.result.ExecutionResults;
 
 public class LauncherDBTest {
   static final long delay = 5 * 1000;

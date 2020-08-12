@@ -30,7 +30,7 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.TaskIdSource;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState.State;
 import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
-import uk.ac.ebi.ena.sra.pipeline.mock.schedule.ExecutionResults;
+import pipelite.task.result.ExecutionResults;
 
 public class IdSourceTest {
   static TaskIdSource id_src;

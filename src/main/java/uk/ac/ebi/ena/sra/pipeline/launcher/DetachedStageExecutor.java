@@ -17,7 +17,8 @@ import java.util.List;
 import java.util.Set;
 
 import pipelite.task.executor.AbstractTaskExecutor;
-import pipelite.task.state.TaskState;
+import pipelite.task.result.TaskExecutionResultTranslator;
+import pipelite.task.state.TaskExecutionState;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCall;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
 import uk.ac.ebi.ena.sra.pipeline.executors.DetachedExecutorConfig;
@@ -35,7 +36,7 @@ public class DetachedStageExecutor extends AbstractTaskExecutor {
 
   public DetachedStageExecutor(
       String pipeline_name,
-      ResultTranslator translator,
+      TaskExecutionResultTranslator translator,
       String config_prefix_name,
       String config_source_name,
       String[] properties_pass) {
@@ -86,7 +87,7 @@ public class DetachedStageExecutor extends AbstractTaskExecutor {
   }
 
   public void execute(StageInstance instance) {
-    if (TaskState.ACTIVE_TASK == can_execute(instance)) {
+    if (TaskExecutionState.ACTIVE_TASK == can_execute(instance)) {
       log.info(
           String.format(
               "%sxecuting stage %s",

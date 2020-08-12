@@ -11,10 +11,11 @@
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import pipelite.task.executor.AbstractTaskExecutor;
-import pipelite.task.state.TaskState;
+import pipelite.task.result.TaskExecutionResultTranslator;
+import pipelite.task.state.TaskExecutionState;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
-import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
+import pipelite.task.result.TaskExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.StageTask;
 
 public class InternalStageExecutor extends AbstractTaskExecutor {
@@ -23,7 +24,7 @@ public class InternalStageExecutor extends AbstractTaskExecutor {
   protected ExternalCallBackEnd back_end = new SimpleBackEnd();
   private StageTask task = null;
 
-  public InternalStageExecutor(ResultTranslator translator) {
+  public InternalStageExecutor(TaskExecutionResultTranslator translator) {
     super("", translator);
   }
 
@@ -33,10 +34,10 @@ public class InternalStageExecutor extends AbstractTaskExecutor {
   }
 
   public void execute(StageInstance instance) {
-    ExecutionResult execution_result = null;
+    TaskExecutionResult execution_result = null;
     Throwable exception = null;
 
-    if (TaskState.ACTIVE_TASK == can_execute(instance)) {
+    if (TaskExecutionState.ACTIVE_TASK == can_execute(instance)) {
       try {
         if (null != DefaultConfiguration.currentSet().getPropertyPrefixName()) {
           System.setProperty(

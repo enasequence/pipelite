@@ -8,29 +8,28 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package uk.ac.ebi.ena.sra.pipeline.launcher;
+package pipelite.task.result;
 
-import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
+public class TaskExecutionResultTranslator {
 
-public class ResultTranslator {
-  private final ExecutionResult[] results;
+  private final TaskExecutionResult[] results;
 
-  public ResultTranslator(ExecutionResult[] results) {
+  public TaskExecutionResultTranslator(TaskExecutionResult[] results) {
     this.results = results;
   }
 
-  private ExecutionResult getCommitStatusOK() {
+  private TaskExecutionResult getCommitStatusOK() {
     return results[0];
   }
 
-  protected ExecutionResult getCommitStatusDefaultFailure() {
+  public TaskExecutionResult getCommitStatusDefaultFailure() {
     return results[results.length - 1];
   }
 
-  protected ExecutionResult getCommitStatus(Throwable t) {
+  public TaskExecutionResult getCommitStatus(Throwable t) {
     Class<?> klass = null == t ? null : t.getClass();
 
-    for (ExecutionResult csd : results) {
+    for (TaskExecutionResult csd : results) {
       Class<? extends Throwable> cause = csd.getCause();
       if (klass == cause || (null != cause && cause.isInstance(t))) return csd;
     }
@@ -38,19 +37,16 @@ public class ResultTranslator {
     return getCommitStatusDefaultFailure();
   }
 
-  protected ExecutionResult getCommitStatus(int exit_code) {
-    if (0 == exit_code) return getCommitStatusOK();
-
-    for (ExecutionResult csd : results) {
-      if (exit_code == csd.getExitCode()) return csd;
+  public TaskExecutionResult getCommitStatus(int exitCode) {
+    if (0 == exitCode) {
+      return getCommitStatusOK();
     }
 
-    return getCommitStatusDefaultFailure();
-  }
-
-  protected ExecutionResult getCommitStatus(String name) {
-    for (ExecutionResult csd : results)
-      if (name == csd.getMessage() || (null != name && name.equals(csd.getMessage()))) return csd;
+    for (TaskExecutionResult csd : results) {
+      if (exitCode == csd.getExitCode()) {
+        return csd;
+      }
+    }
 
     return getCommitStatusDefaultFailure();
   }

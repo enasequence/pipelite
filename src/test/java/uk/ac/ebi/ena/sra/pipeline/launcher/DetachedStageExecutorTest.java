@@ -12,7 +12,9 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import org.junit.Assert;
 import org.junit.Test;
-import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
+import pipelite.task.result.TaskExecutionResultTranslator;
+import pipelite.task.result.TaskExecutionResult;
+import pipelite.task.result.TaskExecutionResultType;
 
 public class DetachedStageExecutorTest {
   @Test
@@ -20,11 +22,11 @@ public class DetachedStageExecutorTest {
     DetachedStageExecutor se =
         new DetachedStageExecutor(
             "TEST",
-            new ResultTranslator(
-                new ExecutionResult[] {
-                  new ExecutionResult() {
+            new TaskExecutionResultTranslator(
+                new TaskExecutionResult[] {
+                  new TaskExecutionResult() {
                     @Override
-                    public RESULT_TYPE getType() {
+                    public TaskExecutionResultType getTaskExecutionResultType() {
                       return null;
                     }
 
@@ -66,11 +68,11 @@ public class DetachedStageExecutorTest {
     DetachedStageExecutor se =
         new DetachedStageExecutor(
             "TEST",
-            new ResultTranslator(
-                new ExecutionResult[] {
-                  new ExecutionResult() {
+            new TaskExecutionResultTranslator(
+                new TaskExecutionResult[] {
+                  new TaskExecutionResult() {
                     @Override
-                    public RESULT_TYPE getType() {
+                    public TaskExecutionResultType getTaskExecutionResultType() {
                       return null;
                     }
 
@@ -113,11 +115,11 @@ public class DetachedStageExecutorTest {
     DetachedStageExecutor se =
         new DetachedStageExecutor(
             "TEST",
-            new ResultTranslator(
-                new ExecutionResult[] {
-                  new ExecutionResult() {
+            new TaskExecutionResultTranslator(
+                new TaskExecutionResult[] {
+                  new TaskExecutionResult() {
                     @Override
-                    public RESULT_TYPE getType() {
+                    public TaskExecutionResultType getTaskExecutionResultType() {
                       return null;
                     }
 
@@ -160,11 +162,11 @@ public class DetachedStageExecutorTest {
     DetachedStageExecutor se =
         new DetachedStageExecutor(
             "TEST",
-            new ResultTranslator(
-                new ExecutionResult[] {
-                  new ExecutionResult() {
+            new TaskExecutionResultTranslator(
+                new TaskExecutionResult[] {
+                  new TaskExecutionResult() {
                     @Override
-                    public RESULT_TYPE getType() {
+                    public TaskExecutionResultType getTaskExecutionResultType() {
                       return null;
                     }
 
