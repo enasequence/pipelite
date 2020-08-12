@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
+import pipelite.task.executor.TaskExecutor;
 import uk.ac.ebi.ena.sra.pipeline.resource.ResourceLocker;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
 
@@ -33,7 +34,7 @@ public class PipeliteLauncher {
   public interface PipeliteProcess extends Runnable {
     public String getProcessId();
 
-    public StageExecutor getExecutor();
+    public TaskExecutor getExecutor();
 
     public default void setProcessID(String process_id) {
       throw new RuntimeException("Method must be overriden");
@@ -55,7 +56,7 @@ public class PipeliteLauncher {
       throw new RuntimeException("Method must be overriden");
     }
 
-    public default void setExecutor(StageExecutor executor) {}
+    public default void setExecutor(TaskExecutor executor) {}
 
     public default void stop() {}
 
@@ -65,7 +66,7 @@ public class PipeliteLauncher {
   }
 
   public interface StageExecutorFactory {
-    public StageExecutor getExecutor();
+    public TaskExecutor getExecutor();
   }
 
   TaggedPoolExecutor thread_pool;

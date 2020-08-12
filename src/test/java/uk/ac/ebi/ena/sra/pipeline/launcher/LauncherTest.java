@@ -21,6 +21,7 @@ import org.apache.log4j.PropertyConfigurator;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import pipelite.task.executor.TaskExecutor;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.StageExecutorFactory;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
@@ -57,7 +58,7 @@ public class LauncherTest {
     StageExecutorFactory e_src =
         new StageExecutorFactory() {
           @Override
-          public StageExecutor getExecutor() {
+          public TaskExecutor getExecutor() {
             return null;
           }
         };
@@ -87,7 +88,7 @@ public class LauncherTest {
               }
 
               @Override
-              public StageExecutor getExecutor() {
+              public TaskExecutor getExecutor() {
                 return null;
               }
             };
@@ -147,5 +148,5 @@ public class LauncherTest {
 
   public void setStorage(StorageBackend storage) {}
 
-  public void setExecutor(StageExecutor executor) {}
+  public void setExecutor(TaskExecutor executor) {}
 }

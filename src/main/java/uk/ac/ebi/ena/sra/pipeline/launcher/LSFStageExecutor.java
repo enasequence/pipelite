@@ -16,6 +16,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import pipelite.task.executor.AbstractTaskExecutor;
+import pipelite.task.state.TaskState;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCall;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall;
@@ -24,7 +27,7 @@ import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
 import uk.ac.ebi.ena.sra.pipeline.executors.LSFExecutorConfig;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
 
-public class LSFStageExecutor extends AbstractStageExecutor {
+public class LSFStageExecutor extends AbstractTaskExecutor {
   public static final int LSF_JVM_MEMORY_DELTA_MB = 1500;
   public static final int LSF_JVM_MEMORY_OVERHEAD_MB = 200;
   public static final int LSF_JVM_MEMORY_RESERVATION_TIMEOUT_DEFAULT_MINUTES = 60;
@@ -180,7 +183,7 @@ public class LSFStageExecutor extends AbstractStageExecutor {
   }
 
   public void execute(StageInstance instance) {
-    if (EvalResult.StageTransient == can_execute(instance)) {
+    if (TaskState.ACTIVE_TASK == can_execute(instance)) {
       log.info(
           String.format(
               "%sxecuting stage %s",
@@ -234,16 +237,6 @@ public class LSFStageExecutor extends AbstractStageExecutor {
 
   public ExecutionInfo get_info() {
     return info;
-  }
-
-  @Override
-  public void setClientCanCommit(boolean do_commit) {
-    this.do_commit = do_commit;
-  }
-
-  @Override
-  public boolean getClientCanCommit() {
-    return this.do_commit;
   }
 
   @Override

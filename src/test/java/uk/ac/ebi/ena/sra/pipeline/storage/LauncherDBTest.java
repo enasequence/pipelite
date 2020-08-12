@@ -24,7 +24,7 @@ import uk.ac.ebi.ena.sra.pipeline.configuration.OracleHeartBeatConnection;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessPoolExecutor;
-import uk.ac.ebi.ena.sra.pipeline.launcher.StageExecutor;
+import pipelite.task.executor.TaskExecutor;
 import uk.ac.ebi.ena.sra.pipeline.mock.schedule.ExecutionResults;
 
 public class LauncherDBTest {
@@ -97,7 +97,7 @@ public class LauncherDBTest {
               }
 
               @Override
-              public StageExecutor getExecutor() {
+              public TaskExecutor getExecutor() {
                 return null;
               }
             };
@@ -153,5 +153,5 @@ public class LauncherDBTest {
 
   public void setStorage(StorageBackend storage) {}
 
-  public void setExecutor(StageExecutor executor) {}
+  public void setExecutor(TaskExecutor executor) {}
 }

@@ -8,7 +8,24 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package uk.ac.ebi.ena.sra.pipeline.executors;
+package pipelite.task.executor;
 
-public interface ExecutorConfig {
+import pipelite.task.state.TaskState;
+import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
+import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInfo;
+import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
+
+public interface TaskExecutor {
+
+  void reset(StageInstance instance);
+
+  void execute(StageInstance instance);
+
+  <T extends ExecutorConfig> void configure(T params);
+
+  TaskState can_execute(StageInstance instance);
+  //    boolean       was_error();
+  ExecutionInfo get_info();
+
+  Class<? extends ExecutorConfig> getConfigClass();
 }

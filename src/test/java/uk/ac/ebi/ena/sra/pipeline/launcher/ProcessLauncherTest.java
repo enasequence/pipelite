@@ -26,8 +26,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import pipelite.task.executor.TaskExecutor;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState.State;
-import uk.ac.ebi.ena.sra.pipeline.launcher.StageExecutor.ExecutionInfo;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
 import uk.ac.ebi.ena.sra.pipeline.resource.MemoryLocker;
@@ -173,7 +173,7 @@ public class ProcessLauncherTest {
   }
 
   private ProcessLauncher initProcessLauncher(
-      Stage[] stages, ExecutionResult[] results, StorageBackend storage, StageExecutor executor) {
+      Stage[] stages, ExecutionResult[] results, StorageBackend storage, TaskExecutor executor) {
     ProcessLauncher process = spy(new ProcessLauncher());
     process.setProcessID("TEST_PROCESS");
     process.setStorage(storage);
@@ -183,8 +183,8 @@ public class ProcessLauncherTest {
     return process;
   }
 
-  private StageExecutor initExecutor(ExecutionResult[] results, int... invocation_exit_code) {
-    StageExecutor spiedExecutor = spy(new InternalStageExecutor(new ResultTranslator(results)));
+  private TaskExecutor initExecutor(ExecutionResult[] results, int... invocation_exit_code) {
+    TaskExecutor spiedExecutor = spy(new InternalStageExecutor(new ResultTranslator(results)));
     final AtomicInteger inv_cnt = new AtomicInteger(0);
     doAnswer(
             new Answer<Object>() {
@@ -233,7 +233,7 @@ public class ProcessLauncherTest {
               new ERESULTS[] {ERESULTS.OK, ERESULTS.OK, ERESULTS.TRANSIENT, ERESULTS.PSHPSH},
               new boolean[] {false, true, true, true});
 
-      StageExecutor spiedExecutor = initExecutor(ERESULTS.values(), new int[] {0, 2, 0, 2});
+      TaskExecutor spiedExecutor = initExecutor(ERESULTS.values(), new int[] {0, 2, 0, 2});
       ProcessLauncher pl =
           initProcessLauncher(stages, ERESULTS.values(), mockedStorage, spiedExecutor);
       pl.setLocker(new MemoryLocker());
@@ -262,7 +262,7 @@ public class ProcessLauncherTest {
               new ERESULTS[] {ERESULTS.PERMANENT, ERESULTS.OK, ERESULTS.TRANSIENT, ERESULTS.PSHPSH},
               new boolean[] {false, false, true, true});
 
-      StageExecutor spiedExecutor = initExecutor(ERESULTS.values());
+      TaskExecutor spiedExecutor = initExecutor(ERESULTS.values());
       ProcessLauncher pl =
           initProcessLauncher(stages, ERESULTS.values(), mockedStorage, spiedExecutor);
       pl.setLocker(new MemoryLocker());
@@ -280,7 +280,7 @@ public class ProcessLauncherTest {
               new ERESULTS[] {ERESULTS.OK, ERESULTS.OK, ERESULTS.TRANSIENT, ERESULTS.PSHPSH},
               new boolean[] {false, true, true, true});
 
-      StageExecutor spiedExecutor = initExecutor(ERESULTS.values());
+      TaskExecutor spiedExecutor = initExecutor(ERESULTS.values());
       ProcessLauncher pl =
           initProcessLauncher(stages, ERESULTS.values(), mockedStorage, spiedExecutor);
       pl.setLocker(new MemoryLocker());
@@ -297,7 +297,7 @@ public class ProcessLauncherTest {
               new ERESULTS[] {ERESULTS.PERMANENT, ERESULTS.OK, ERESULTS.TRANSIENT, ERESULTS.PSHPSH},
               new boolean[] {true, true, true, true});
 
-      StageExecutor spiedExecutor = initExecutor(ERESULTS.values());
+      TaskExecutor spiedExecutor = initExecutor(ERESULTS.values());
       ProcessLauncher pl =
           initProcessLauncher(stages, ERESULTS.values(), mockedStorage, spiedExecutor);
       pl.setLocker(new MemoryLocker());
@@ -316,7 +316,7 @@ public class ProcessLauncherTest {
               new ERESULTS[] {ERESULTS.TRANSIENT, ERESULTS.OK, ERESULTS.TRANSIENT, ERESULTS.PSHPSH},
               new boolean[] {true, true, true, true});
 
-      StageExecutor spiedExecutor = initExecutor(ERESULTS.values());
+      TaskExecutor spiedExecutor = initExecutor(ERESULTS.values());
       ProcessLauncher pl =
           initProcessLauncher(stages, ERESULTS.values(), mockedStorage, spiedExecutor);
       pl.setLocker(new MemoryLocker());

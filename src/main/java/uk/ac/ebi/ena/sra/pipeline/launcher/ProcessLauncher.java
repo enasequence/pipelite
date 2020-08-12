@@ -24,11 +24,12 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.apache.log4j.net.SMTPAppender;
+import pipelite.task.executor.AbstractTaskExecutor;
+import pipelite.task.executor.TaskExecutor;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState.State;
-import uk.ac.ebi.ena.sra.pipeline.launcher.StageExecutor.EvalResult;
-import uk.ac.ebi.ena.sra.pipeline.launcher.StageExecutor.ExecutionInfo;
+import pipelite.task.state.TaskState;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
 import uk.ac.ebi.ena.sra.pipeline.resource.ProcessResourceLock;
@@ -47,7 +48,7 @@ public class ProcessLauncher implements PipeliteProcess {
   PipeliteState state;
   private StageInstance[] instances;
   private StorageBackend storage;
-  private StageExecutor executor;
+  private TaskExecutor executor;
   private ResultTranslator translator;
   private Stage[] stages;
   private ResourceLocker locker;
@@ -68,7 +69,7 @@ public class ProcessLauncher implements PipeliteProcess {
   }
 
   @Override
-  public void setExecutor(StageExecutor executor) {
+  public void setExecutor(TaskExecutor executor) {
     this.executor = executor;
   }
 
@@ -217,14 +218,14 @@ public class ProcessLauncher implements PipeliteProcess {
               executor.can_execute(instance),
               instance.getExecutionCount()));
       switch (executor.can_execute(instance)) {
-        case StageTransient:
+        case ACTIVE_TASK:
           break;
 
-        case StageTerminal:
+        case DISABLED_TASK:
           to_process--;
           break;
 
-        case ProcessTerminal:
+        case COMPLETED_TASK:
           // to_process -= to_process;
           ExecutionInstance ei = instance.getExecutionInstance();
           state.setState(
@@ -332,7 +333,7 @@ public class ProcessLauncher implements PipeliteProcess {
     {
       if (do_stop) break;
 
-      if (EvalResult.StageTransient == executor.can_execute(instance)) {
+      if (TaskState.ACTIVE_TASK == executor.can_execute(instance)) {
         if (null != instance.getResourceConfig(executor.getConfigClass()))
           executor.configure(instance.getResourceConfig(executor.getConfigClass()));
 
@@ -504,16 +505,15 @@ public class ProcessLauncher implements PipeliteProcess {
         os.setConnection(connection);
         process.setStorage(os);
         process.setLocker(os);
-        AbstractStageExecutor executor =
-            (AbstractStageExecutor)
+        AbstractTaskExecutor executor =
+            (AbstractTaskExecutor)
                 (Class.forName(params.executor_class)
                     .getConstructor(String.class, ResultTranslator.class)
                     .newInstance(
                         "",
                         new ResultTranslator(DefaultConfiguration.currentSet().getCommitStatus())));
 
-        process.setExecutor(
-            executor.setRedoCount(DefaultConfiguration.currentSet().getStagesRedoCount()));
+        process.setExecutor(executor);
         process.lifecycle();
       }
     } finally {
@@ -560,7 +560,7 @@ public class ProcessLauncher implements PipeliteProcess {
   }
 
   @Override
-  public StageExecutor getExecutor() {
+  public TaskExecutor getExecutor() {
     return this.executor;
   }
 

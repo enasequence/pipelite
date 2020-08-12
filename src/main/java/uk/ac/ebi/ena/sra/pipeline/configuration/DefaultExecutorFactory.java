@@ -15,7 +15,7 @@ import uk.ac.ebi.ena.sra.pipeline.executors.LSFExecutorConfig;
 import uk.ac.ebi.ena.sra.pipeline.launcher.LSFStageExecutor;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.StageExecutorFactory;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ResultTranslator;
-import uk.ac.ebi.ena.sra.pipeline.launcher.StageExecutor;
+import pipelite.task.executor.TaskExecutor;
 
 public class DefaultExecutorFactory implements StageExecutorFactory {
   private String pipeline_name;
@@ -45,7 +45,7 @@ public class DefaultExecutorFactory implements StageExecutorFactory {
     this.redo = redo;
   }
 
-  public StageExecutor getExecutor() {
+  public TaskExecutor getExecutor() {
     LSFExecutorConfig cfg_def =
         new LSFExecutorConfig() {
           @Override
@@ -59,10 +59,9 @@ public class DefaultExecutorFactory implements StageExecutorFactory {
           }
         };
 
-    StageExecutor executor =
-        new LSFStageExecutor(pipeline_name, translator, memory_limit, cpu_cores, cfg_def)
-            .setRedoCount(redo);
-    executor.setClientCanCommit(true);
+    TaskExecutor executor =
+        new LSFStageExecutor(pipeline_name, translator, memory_limit, cpu_cores, cfg_def);
+
     return executor;
   }
 }

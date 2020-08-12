@@ -8,33 +8,29 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package uk.ac.ebi.ena.sra.pipeline.launcher;
+package pipelite.task.executor;
 
 import java.util.List;
 import org.apache.log4j.Logger;
+import pipelite.task.state.TaskState;
+import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInstance;
+import uk.ac.ebi.ena.sra.pipeline.launcher.ResultTranslator;
+import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
 
-public abstract class AbstractStageExecutor implements StageExecutor {
+public abstract class AbstractTaskExecutor implements TaskExecutor {
   protected Logger log = Logger.getLogger(this.getClass());
   protected final String PIPELINE_NAME;
   protected final ResultTranslator TRANSLATOR;
-  protected boolean reprocess_processed;
-  private int redo;
 
-  public AbstractStageExecutor(String pipeline_name, ResultTranslator translator) {
+  public AbstractTaskExecutor(String pipeline_name, ResultTranslator translator) {
     this.PIPELINE_NAME = pipeline_name;
     this.TRANSLATOR = translator;
   }
 
-  @SuppressWarnings("unchecked")
-  public <T extends AbstractStageExecutor> T setRedoCount(int redo) {
-    this.redo = redo;
-    return (T) this;
-  }
-
   @Override
-  public EvalResult can_execute(StageInstance instance) {
+  public TaskState can_execute(StageInstance instance) {
     // disabled stage
-    if (!instance.isEnabled()) return EvalResult.StageTerminal;
+    if (!instance.isEnabled()) return TaskState.DISABLED_TASK;
 
     ExecutionInstance ei = instance.getExecutionInstance();
 
@@ -42,15 +38,15 @@ public abstract class AbstractStageExecutor implements StageExecutor {
     if (null != ei && null != ei.getFinish() && null != ei.getResultType()) {
       switch (ei.getResultType()) {
         case PERMANENT_ERROR:
-          return EvalResult.ProcessTerminal;
+          return TaskState.COMPLETED_TASK;
         default:
           return ei.getResultType().canReprocess()
-              ? EvalResult.StageTransient
-              : EvalResult.StageTerminal;
+              ? TaskState.ACTIVE_TASK
+              : TaskState.DISABLED_TASK;
       }
     }
 
-    return EvalResult.StageTransient;
+    return TaskState.ACTIVE_TASK;
   }
 
   protected void appendProperties(List<String> p_args, String... properties_to_pass) {

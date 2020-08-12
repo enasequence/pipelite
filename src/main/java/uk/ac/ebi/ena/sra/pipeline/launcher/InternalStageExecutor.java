@@ -10,12 +10,14 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
+import pipelite.task.executor.AbstractTaskExecutor;
+import pipelite.task.state.TaskState;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.StageTask;
 
-public class InternalStageExecutor extends AbstractStageExecutor {
+public class InternalStageExecutor extends AbstractTaskExecutor {
   private ExecutionInfo info;
   private boolean do_commit;
   protected ExternalCallBackEnd back_end = new SimpleBackEnd();
@@ -34,7 +36,7 @@ public class InternalStageExecutor extends AbstractStageExecutor {
     ExecutionResult execution_result = null;
     Throwable exception = null;
 
-    if (EvalResult.StageTransient == can_execute(instance)) {
+    if (TaskState.ACTIVE_TASK == can_execute(instance)) {
       try {
         if (null != DefaultConfiguration.currentSet().getPropertyPrefixName()) {
           System.setProperty(
@@ -64,16 +66,6 @@ public class InternalStageExecutor extends AbstractStageExecutor {
   @Override
   public ExecutionInfo get_info() {
     return info;
-  }
-
-  @Override
-  public void setClientCanCommit(boolean do_commit) {
-    this.do_commit = do_commit;
-  }
-
-  @Override
-  public boolean getClientCanCommit() {
-    return do_commit;
   }
 
   @Override
