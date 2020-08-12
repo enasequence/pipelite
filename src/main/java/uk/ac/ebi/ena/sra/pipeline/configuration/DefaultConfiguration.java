@@ -1,3 +1,13 @@
+/*
+ * Copyright 2018-2019 EMBL - European Bioinformatics Institute
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
+ * file except in compliance with the License. You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
 package uk.ac.ebi.ena.sra.pipeline.configuration;
 
 import java.io.File;
@@ -19,8 +29,7 @@ import java.util.stream.Collectors;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
 
-class
-ConfigurationException extends RuntimeException {
+class ConfigurationException extends RuntimeException {
 
   private static final long serialVersionUID = 1L;
 
@@ -31,36 +40,27 @@ ConfigurationException extends RuntimeException {
   public ConfigurationException(Throwable value) {
     super(value);
   }
-
 };
-
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})
-@interface
-PipeliteProperty {
+@interface PipeliteProperty {
 
   boolean required() default true;
 };
 
-
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})
-@interface
-PipelitePropertyIntRange {
+@interface PipelitePropertyIntRange {
 
   int[] range() default {};
 };
 
-
-public enum
-DefaultConfiguration {
+public enum DefaultConfiguration {
   CURRENT("pipelite");
-
   final String prefix, f_name;
   static final String SEPARATOR = ".";
   final Properties p;
-
 
   DefaultConfiguration(String prefix) {
     this.prefix = prefix;
@@ -89,10 +89,9 @@ DefaultConfiguration {
     }
   }
 
-
-  private void
-  checkProperties()
-      throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+  private void checkProperties()
+      throws IllegalAccessException, IllegalArgumentException, InvocationTargetException,
+          NoSuchMethodException, SecurityException {
     List<String> result = new ArrayList<>();
     for (Method m : this.getClass().getDeclaredMethods()) {
       try {
@@ -121,42 +120,30 @@ DefaultConfiguration {
     }
   }
 
-
-  public String
-  getConfigPrefixName() {
+  public String getConfigPrefixName() {
     return prefix;
   }
 
-
-  public String
-  getConfigSourceName() {
+  public String getConfigSourceName() {
     return f_name;
   }
 
-
-  String
-  getProperty(String key) throws ConfigurationException {
+  String getProperty(String key) throws ConfigurationException {
     String e_key = prefix + SEPARATOR + key;
     if (!p.containsKey(e_key)) {
       throw new ConfigurationException(
-          String.format("FATAL: Property key %s for mode %s file[%s] not found!",
-              e_key,
-              prefix,
-              f_name));
+          String.format(
+              "FATAL: Property key %s for mode %s file[%s] not found!", e_key, prefix, f_name));
     }
     return p.getProperty(e_key);
   }
 
-
-  static public DefaultConfiguration
-  currentSet() {
+  public static DefaultConfiguration currentSet() {
     return CURRENT;
   }
 
-
-  //@PipeliteProperty
-  public String
-  getPropertyPrefixName() {
+  // @PipeliteProperty
+  public String getPropertyPrefixName() {
     try {
       return getProperty("property.prefix.name");
     } catch (ConfigurationException ce) {
@@ -164,100 +151,72 @@ DefaultConfiguration {
     }
   }
 
-
-  //@PipeliteProperty
-  public String
-  getPropertySourceName() {
+  // @PipeliteProperty
+  public String getPropertySourceName() {
     return getProperty("property.source.name");
   }
 
-
   @PipeliteProperty
-  public String
-  getSMTPServer() {
+  public String getSMTPServer() {
     return getProperty("smtp.server");
   }
 
-
   @PipeliteProperty
-  public String
-  getDefaultMailTo() {
+  public String getDefaultMailTo() {
     return getProperty("default.mail-to");
   }
 
-
   @PipeliteProperty
-  public int
-  getDefaultLSFCpuCores() {
+  public int getDefaultLSFCpuCores() {
     return Integer.parseInt(getProperty("default.lsf-cores"));
   }
 
-
   @PipeliteProperty
-  public String
-  getDefaultLSFQueue() {
+  public String getDefaultLSFQueue() {
     return getProperty("default.lsf-queue");
   }
 
-
   @PipeliteProperty
-  public int
-  getDefaultLSFMem() {
+  public int getDefaultLSFMem() {
     return Integer.parseInt(getProperty("default.lsf-mem"));
   }
 
-
   @PipeliteProperty
-  public int
-  getDefaultLSFMemTimeout() {
+  public int getDefaultLSFMemTimeout() {
     return Integer.parseInt(getProperty("default.lsf-mem-timeout"));
   }
 
-
   @PipeliteProperty
-  public String
-  getDefaultLSFOutputRedirection() {
+  public String getDefaultLSFOutputRedirection() {
     return getProperty("default.lsf-output-redirection");
   }
 
-
   @PipeliteProperty
-  public String
-  getSMTPMailFrom() {
+  public String getSMTPMailFrom() {
     return getProperty("smtp.mail-from");
   }
 
-
   @PipeliteProperty
-  public String
-  getJDBCUser() {
+  public String getJDBCUser() {
     return getProperty("jdbc.user");
   }
 
-
   @PipeliteProperty
-  public String
-  getJDBCPassword() {
+  public String getJDBCPassword() {
     return getProperty("jdbc.password");
   }
 
-
   @PipeliteProperty
-  public String
-  getJDBCDriver() {
+  public String getJDBCDriver() {
     return getProperty("jdbc.driver");
   }
 
-
   @PipeliteProperty
-  public String
-  getJDBCUrl() {
+  public String getJDBCUrl() {
     return getProperty("jdbc.url");
   }
 
-
-  public Connection
-  createConnection()
+  public Connection createConnection()
       throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
     Properties props = new Properties();
     props.put("user", getJDBCUser());
@@ -265,52 +224,40 @@ DefaultConfiguration {
     props.put("SetBigStringTryClob", "true");
 
     Class.forName(getJDBCDriver());
-    Connection connection = new OracleHeartBeatConnection(
-        DriverManager.getConnection(getJDBCUrl(), props));
+    Connection connection =
+        new OracleHeartBeatConnection(DriverManager.getConnection(getJDBCUrl(), props));
     connection.setAutoCommit(false);
 
     return connection;
   }
 
-
   @PipeliteProperty
-  public String
-  getStageTableName() {
+  public String getStageTableName() {
     return getProperty("stage.table.name");
   }
 
-
   @PipeliteProperty
-  public String
-  getLogTableName() {
+  public String getLogTableName() {
     return getProperty("log.table.name");
   }
 
-
   @PipeliteProperty
-  public String
-  getPipelineName() {
+  public String getPipelineName() {
     return getProperty("pipeline.name");
   }
 
-
   @PipeliteProperty
-  public int
-  getStagesRedoCount() {
+  public int getStagesRedoCount() {
     return Integer.valueOf(getProperty("stages.redo.count"));
   }
 
-
   @SuppressWarnings("unchecked")
-  public <T> T[]
-  loadEnumConstants(String name, Class<?> iface_klass) {
+  public <T> T[] loadEnumConstants(String name, Class<?> iface_klass) {
     return (T[]) loadEnum(name, iface_klass).getEnumConstants();
   }
 
-
   @SuppressWarnings("unchecked")
-  public Class<? extends Enum<?>>
-  loadEnum(String name, Class<?> iface_klass) {
+  public Class<? extends Enum<?>> loadEnum(String name, Class<?> iface_klass) {
     try {
       Class<? extends Enum<?>> klass = (Class<? extends Enum<?>>) Class.forName(name);
 
@@ -338,16 +285,12 @@ DefaultConfiguration {
     }
   }
 
-
   @PipeliteProperty
-  public Stage[]
-  getStages() {
+  public Stage[] getStages() {
     return loadEnumConstants(getProperty("stages.enum"), Stage.class);
   }
 
-
-  public Stage
-  getStage(String name) {
+  public Stage getStage(String name) {
     Stage[] stages = getStages();
     for (Stage sd : stages) {
       if (name.equals(sd.toString())) {
@@ -355,38 +298,33 @@ DefaultConfiguration {
       }
     }
 
-    throw new ConfigurationException(String.format("No stage with name %s found in enum of %s",
-        name,
-        null == stages ? "null" : Arrays.asList(stages)));
+    throw new ConfigurationException(
+        String.format(
+            "No stage with name %s found in enum of %s",
+            name, null == stages ? "null" : Arrays.asList(stages)));
   }
 
-
   @PipeliteProperty
-  public ExecutionResult[]
-  getCommitStatus() {
+  public ExecutionResult[] getCommitStatus() {
     return loadEnumConstants(getProperty("commit.status.enum"), ExecutionResult.class);
   }
 
-
   @PipeliteProperty
-  public String
-  getProcessTableName() {
+  public String getProcessTableName() {
     return getProperty("process.table.name");
   }
 
-
   @PipeliteProperty(required = false)
-  public String[]
-  getPropertiesPass() {
+  public String[] getPropertiesPass() {
     String pass = null;
     try {
       pass = getProperty("properties.pass");
     } catch (ConfigurationException ce) {
-      //ignore;
+      // ignore;
     }
 
     if (null == pass || 0 == pass.trim().length()) {
-      return new String[]{};
+      return new String[] {};
     } else {
       return pass.split(":");
     }

@@ -1,3 +1,13 @@
+/*
+ * Copyright 2018-2019 EMBL - European Bioinformatics Institute
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
+ * file except in compliance with the License. You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import org.junit.Assert;
@@ -5,107 +15,192 @@ import org.junit.Test;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.ExecutionResult;
 
 public class DetachedStageExecutorTest {
-  @Test public void
-  javaMemory()
-  {
-    DetachedStageExecutor se = new DetachedStageExecutor( "TEST",
-        new ResultTranslator( new ExecutionResult[] { new ExecutionResult() {
-          @Override public RESULT_TYPE getType() { return null; }
-          @Override public byte getExitCode() { return 0; }
-          @Override public Class<? extends Throwable> getCause() { return null; }
-          @Override public String getMessage() { return null; } } } ),
-        "NOFILE", "NOPATH",  new String[] { } );
+  @Test
+  public void javaMemory() {
+    DetachedStageExecutor se =
+        new DetachedStageExecutor(
+            "TEST",
+            new ResultTranslator(
+                new ExecutionResult[] {
+                  new ExecutionResult() {
+                    @Override
+                    public RESULT_TYPE getType() {
+                      return null;
+                    }
 
-    se.execute( new StageInstance()
-    {
-      {
-        setEnabled( true );
-        setPropertiesPass( new String[] { } );
-        setMemoryLimit( 2000 );
-      }
-    } );
+                    @Override
+                    public byte getExitCode() {
+                      return 0;
+                    }
 
-    String cmdl = se.get_info().getCommandline();
-    Assert.assertTrue( cmdl.contains( " -Xmx2000M" ) );
-  }
+                    @Override
+                    public Class<? extends Throwable> getCause() {
+                      return null;
+                    }
 
+                    @Override
+                    public String getMessage() {
+                      return null;
+                    }
+                  }
+                }),
+            "NOFILE",
+            "NOPATH",
+            new String[] {});
 
-  @Test public void
-  javaMemoryNotSet()
-  {
-    DetachedStageExecutor se = new DetachedStageExecutor( "TEST",
-        new ResultTranslator( new ExecutionResult[] { new ExecutionResult() {
-          @Override public RESULT_TYPE getType() { return null; }
-          @Override public byte getExitCode() { return 0; }
-          @Override public Class<? extends Throwable> getCause() { return null; }
-          @Override public String getMessage() { return null; } } } ),
-        "NOFILE", "NOPATH",  new String[] { } );
-
-    se.execute( new StageInstance()
-    {
-      {
-        setEnabled( true );
-        setPropertiesPass( new String[] { } );
-      }
-    } );
+    se.execute(
+        new StageInstance() {
+          {
+            setEnabled(true);
+            setPropertiesPass(new String[] {});
+            setMemoryLimit(2000);
+          }
+        });
 
     String cmdl = se.get_info().getCommandline();
-    Assert.assertTrue( !cmdl.contains( " -Xmx2000M" ) );
+    Assert.assertTrue(cmdl.contains(" -Xmx2000M"));
   }
 
+  @Test
+  public void javaMemoryNotSet() {
+    DetachedStageExecutor se =
+        new DetachedStageExecutor(
+            "TEST",
+            new ResultTranslator(
+                new ExecutionResult[] {
+                  new ExecutionResult() {
+                    @Override
+                    public RESULT_TYPE getType() {
+                      return null;
+                    }
 
-  @Test public void
-  prefixAndSource()
-  {
+                    @Override
+                    public byte getExitCode() {
+                      return 0;
+                    }
+
+                    @Override
+                    public Class<? extends Throwable> getCause() {
+                      return null;
+                    }
+
+                    @Override
+                    public String getMessage() {
+                      return null;
+                    }
+                  }
+                }),
+            "NOFILE",
+            "NOPATH",
+            new String[] {});
+
+    se.execute(
+        new StageInstance() {
+          {
+            setEnabled(true);
+            setPropertiesPass(new String[] {});
+          }
+        });
+
+    String cmdl = se.get_info().getCommandline();
+    Assert.assertTrue(!cmdl.contains(" -Xmx2000M"));
+  }
+
+  @Test
+  public void prefixAndSource() {
     String prefix = "NOFILE";
     String source = "NOPATH";
-    DetachedStageExecutor se = new DetachedStageExecutor( "TEST",
-        new ResultTranslator( new ExecutionResult[] { new ExecutionResult() {
-          @Override public RESULT_TYPE getType() { return null; }
-          @Override public byte getExitCode() { return 0; }
-          @Override public Class<? extends Throwable> getCause() { return null; }
-          @Override public String getMessage() { return null; } } } ),
-        prefix, source, new String[] { } );
+    DetachedStageExecutor se =
+        new DetachedStageExecutor(
+            "TEST",
+            new ResultTranslator(
+                new ExecutionResult[] {
+                  new ExecutionResult() {
+                    @Override
+                    public RESULT_TYPE getType() {
+                      return null;
+                    }
 
-    se.execute( new StageInstance()
-    {
-      {
-        setEnabled( true );
-        setPropertiesPass( new String[] { } );
-      }
-    } );
+                    @Override
+                    public byte getExitCode() {
+                      return 0;
+                    }
+
+                    @Override
+                    public Class<? extends Throwable> getCause() {
+                      return null;
+                    }
+
+                    @Override
+                    public String getMessage() {
+                      return null;
+                    }
+                  }
+                }),
+            prefix,
+            source,
+            new String[] {});
+
+    se.execute(
+        new StageInstance() {
+          {
+            setEnabled(true);
+            setPropertiesPass(new String[] {});
+          }
+        });
 
     String cmdl = se.get_info().getCommandline();
-    Assert.assertTrue( cmdl.contains( " -D" +  prefix + "=" + source ) );
+    Assert.assertTrue(cmdl.contains(" -D" + prefix + "=" + source));
   }
 
-
-  @Test public void
-  propertiesPassStageSpecific()
-  {
+  @Test
+  public void propertiesPassStageSpecific() {
     String prefix = "NOFILE";
     String source = "NOPATH";
-    DetachedStageExecutor se = new DetachedStageExecutor( "TEST",
-        new ResultTranslator( new ExecutionResult[] { new ExecutionResult() {
-          @Override public RESULT_TYPE getType() { return null; }
-          @Override public byte getExitCode() { return 0; }
-          @Override public Class<? extends Throwable> getCause() { return null; }
-          @Override public String getMessage() { return null; } } } ),
-        prefix, source, new String[] { "user.dir" } );
+    DetachedStageExecutor se =
+        new DetachedStageExecutor(
+            "TEST",
+            new ResultTranslator(
+                new ExecutionResult[] {
+                  new ExecutionResult() {
+                    @Override
+                    public RESULT_TYPE getType() {
+                      return null;
+                    }
 
-    se.configure( null );
+                    @Override
+                    public byte getExitCode() {
+                      return 0;
+                    }
 
-    se.execute( new StageInstance()
-    {
-      {
-        setEnabled( true );
-        setPropertiesPass( new String[] { } );
-        setPropertiesPass( new String [] { "user.country" } );
-      }
-    } );
+                    @Override
+                    public Class<? extends Throwable> getCause() {
+                      return null;
+                    }
+
+                    @Override
+                    public String getMessage() {
+                      return null;
+                    }
+                  }
+                }),
+            prefix,
+            source,
+            new String[] {"user.dir"});
+
+    se.configure(null);
+
+    se.execute(
+        new StageInstance() {
+          {
+            setEnabled(true);
+            setPropertiesPass(new String[] {});
+            setPropertiesPass(new String[] {"user.country"});
+          }
+        });
 
     String cmdl = se.get_info().getCommandline();
-    Assert.assertTrue( cmdl.contains( " -Duser.country=" ) );
-    Assert.assertTrue( cmdl.contains( " -Duser.dir=" ) );
+    Assert.assertTrue(cmdl.contains(" -Duser.country="));
+    Assert.assertTrue(cmdl.contains(" -Duser.dir="));
   }
 }

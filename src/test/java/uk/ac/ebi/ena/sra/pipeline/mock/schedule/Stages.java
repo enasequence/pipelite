@@ -1,3 +1,13 @@
+/*
+ * Copyright 2018-2019 EMBL - European Bioinformatics Institute
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
+ * file except in compliance with the License. You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
 package uk.ac.ebi.ena.sra.pipeline.mock.schedule;
 
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
@@ -6,53 +16,30 @@ import uk.ac.ebi.ena.sra.pipeline.mock.stages.FirstStage;
 import uk.ac.ebi.ena.sra.pipeline.mock.stages.SecondStage;
 import uk.ac.ebi.ena.sra.pipeline.mock.stages.ThirdStage;
 
+public enum Stages implements Stage {
+  FIRST(FirstStage.class, "Sample stage", null),
+  SECOND(SecondStage.class, "Second sample stage", FIRST),
+  THIRD(ThirdStage.class, "Third sample stage", SECOND);
 
-public enum 
-Stages implements Stage
-{
-    FIRST( FirstStage.class, 
-           "Sample stage", 
-           null ),
-	SECOND( SecondStage.class, 
-            "Second sample stage", 
-            FIRST ),
-	THIRD( ThirdStage.class, 
-           "Third sample stage", 
-           SECOND );
+  Stages(Class<? extends StageTask> klass, String description, Stages dependable) {
+    this.klass = klass;
+    this.description = description;
+    this.dependable = dependable;
+  }
 
-	
-    Stages( Class<? extends StageTask>  klass,
-            String description,
-            Stages dependable )            
-    {
-        this.klass            = klass;
-        this.description      = description;
-        this.dependable       = dependable;
-    }
-    
-    
-    final private Class<? extends StageTask>  klass;
-    final private String description;
-    final private Stages dependable;
-    
-    
-    public Class<? extends StageTask>
-    getTaskClass()
-    {
-        return klass;
-    }
-    
-    
-    public String
-    getDescription()
-    {
-        return description;
-    }
-    
-    
-    public Stages
-    getDependsOn()
-    {
-        return dependable;
-    }
+  private final Class<? extends StageTask> klass;
+  private final String description;
+  private final Stages dependable;
+
+  public Class<? extends StageTask> getTaskClass() {
+    return klass;
+  }
+
+  public String getDescription() {
+    return description;
+  }
+
+  public Stages getDependsOn() {
+    return dependable;
+  }
 }
