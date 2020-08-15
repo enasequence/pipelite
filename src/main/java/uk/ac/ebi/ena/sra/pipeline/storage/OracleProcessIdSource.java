@@ -19,7 +19,7 @@ import java.util.List;
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.log4j.Logger;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.TaskIdSource;
-import pipelite.task.result.TaskExecutionResult;
+import pipelite.task.result.ExecutionResult;
 
 public class OracleProcessIdSource implements OracleCommons, TaskIdSource {
   Logger log = Logger.getLogger(this.getClass());
@@ -28,7 +28,7 @@ public class OracleProcessIdSource implements OracleCommons, TaskIdSource {
   private String pipeline_name;
   private int redo_count;
   private Connection connection;
-  private TaskExecutionResult[] execution_result_array;
+  private ExecutionResult[] execution_result_array;
   private int window = 2000;
 
   private String prepareQuery() {
@@ -78,11 +78,11 @@ public class OracleProcessIdSource implements OracleCommons, TaskIdSource {
     return result;
   }
 
-  public void setExecutionResultArray(TaskExecutionResult execution_result_array[]) {
+  public void setExecutionResultArray(ExecutionResult execution_result_array[]) {
     this.execution_result_array = execution_result_array;
   }
 
-  public TaskExecutionResult[] getExecutionResultArray() {
+  public ExecutionResult[] getExecutionResultArray() {
     return execution_result_array;
   }
 

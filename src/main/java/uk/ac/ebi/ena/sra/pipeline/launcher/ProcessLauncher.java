@@ -26,12 +26,12 @@ import org.apache.log4j.PatternLayout;
 import org.apache.log4j.net.SMTPAppender;
 import pipelite.task.executor.AbstractTaskExecutor;
 import pipelite.task.executor.TaskExecutor;
-import pipelite.task.result.TaskExecutionResultTranslator;
+import pipelite.task.result.resolver.ExecutionResultExceptionResolver;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState.State;
 import pipelite.task.state.TaskExecutionState;
-import pipelite.task.result.TaskExecutionResult;
+import pipelite.task.result.ExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
 import uk.ac.ebi.ena.sra.pipeline.resource.ProcessResourceLock;
 import uk.ac.ebi.ena.sra.pipeline.resource.ResourceLocker;
@@ -41,6 +41,9 @@ import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
 
 public class ProcessLauncher implements PipeliteProcess {
+
+  private final ExecutionResultExceptionResolver resolver;
+
   private static final String MAIL_APPENDER = "MAIL_APPENDER";
   private Logger log;
   private String process_id;
@@ -50,15 +53,15 @@ public class ProcessLauncher implements PipeliteProcess {
   private StageInstance[] instances;
   private StorageBackend storage;
   private TaskExecutor executor;
-  private TaskExecutionResultTranslator translator;
   private Stage[] stages;
   private ResourceLocker locker;
-  private TaskExecutionResult[] commit_statuses;
   private String __name;
   private int max_redo_count = 1;
   private volatile boolean do_stop;
 
-  public ProcessLauncher() {
+  public ProcessLauncher(ExecutionResultExceptionResolver resolver) {
+    this.resolver = resolver;
+
     layout = createLayout();
     log = Logger.getLogger(process_id + " " + getClass().getSimpleName());
     log.removeAllAppenders();
@@ -268,7 +271,6 @@ public class ProcessLauncher implements PipeliteProcess {
   private void init_stages() {
     Stage[] stages = getStages();
     instances = new StageInstance[stages.length];
-    translator = new TaskExecutionResultTranslator(commit_statuses);
 
     for (int i = 0; i < instances.length; ++i) {
       Stage stage = stages[i];
@@ -356,15 +358,15 @@ public class ProcessLauncher implements PipeliteProcess {
         for (StageInstance si : dependend) storage.save(si);
 
         // Translate execution result to exec status
-        TaskExecutionResult result = null;
+        ExecutionResult result = null;
         if (null != info.getThrowable()) {
-          result = translator.getCommitStatus(info.getThrowable());
+          result = resolver.resolveError(info.getThrowable());
         } else {
-          result = translator.getCommitStatus(info.getExitCode());
+          result = resolver.exitCodeSerializer().deserialize(info.getExitCode());
         }
 
-        ei.setResultType(result.getExecutionResultType());
-        ei.setResult(result.getExecutionResult());
+        ei.setResultType(result.getResultType());
+        ei.setResult(result.getResultName());
         ei.setStderr(info.getStderr());
         ei.setStdout(info.getStdout());
         ei.setCmdLine(info.getCommandline());
@@ -479,9 +481,6 @@ public class ProcessLauncher implements PipeliteProcess {
           SecurityException {
     Connection connection = null;
 
-    Stage stage =
-        (null == params.stage) ? null : DefaultConfiguration.currentSet().getStage(params.stage);
-
     try {
       connection = DefaultConfiguration.currentSet().createConnection();
 
@@ -499,7 +498,9 @@ public class ProcessLauncher implements PipeliteProcess {
                       params.mail_to,
                       layout));
 
-        ProcessLauncher process = new ProcessLauncher();
+        ExecutionResultExceptionResolver resolver = DefaultConfiguration.CURRENT.getResolver();
+
+        ProcessLauncher process = new ProcessLauncher(resolver);
         process.setProcessID(process_id);
         process.setStages(DefaultConfiguration.currentSet().getStages());
         OracleStorage os = initStorageBackend();
@@ -509,10 +510,10 @@ public class ProcessLauncher implements PipeliteProcess {
         AbstractTaskExecutor executor =
             (AbstractTaskExecutor)
                 (Class.forName(params.executor_class)
-                    .getConstructor(String.class, TaskExecutionResultTranslator.class)
+                    .getConstructor(String.class, ExecutionResultExceptionResolver.class)
                     .newInstance(
                         "",
-                        new TaskExecutionResultTranslator(DefaultConfiguration.currentSet().getCommitStatus())));
+                        resolver));
 
         process.setExecutor(executor);
         process.lifecycle();
@@ -526,14 +527,6 @@ public class ProcessLauncher implements PipeliteProcess {
         }
       }
     }
-  }
-
-  public void setCommitStatuses(TaskExecutionResult[] commit_statuses) {
-    this.commit_statuses = commit_statuses;
-  }
-
-  public TaskExecutionResult[] getCommitStatuses() {
-    return commit_statuses;
   }
 
   @Override

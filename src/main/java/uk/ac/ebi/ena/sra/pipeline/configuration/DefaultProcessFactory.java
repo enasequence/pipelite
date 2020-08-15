@@ -10,19 +10,23 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.configuration;
 
+import pipelite.task.result.resolver.ExecutionResultExceptionResolver;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessFactory;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.StageExecutorFactory;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessLauncher;
 
 public class DefaultProcessFactory implements ProcessFactory {
-  StageExecutorFactory executor_factory;
 
-  public DefaultProcessFactory() {}
+  private final ExecutionResultExceptionResolver resolver;
+
+  public DefaultProcessFactory(ExecutionResultExceptionResolver resolver) {
+    this.resolver = resolver;
+  }
 
   @Override
   public PipeliteProcess getProcess(String process_id) {
-    ProcessLauncher process = new ProcessLauncher();
+    ProcessLauncher process = new ProcessLauncher(resolver);
     process.setPipelineName(DefaultConfiguration.currentSet().getPipelineName());
     process.setProcessID(process_id);
     process.setRedoCount(DefaultConfiguration.currentSet().getStagesRedoCount());
@@ -31,7 +35,6 @@ public class DefaultProcessFactory implements ProcessFactory {
     // DefaultConfiguration.currentSet().getCommitStatus() ) );
 
     process.setStages(DefaultConfiguration.currentSet().getStages());
-    process.setCommitStatuses(DefaultConfiguration.currentSet().getCommitStatus());
     return process;
   }
 }

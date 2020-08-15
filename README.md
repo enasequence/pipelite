@@ -17,7 +17,6 @@ pipelite.log.table.name=[<log> table]
 pipelite.stages.redo.count=[number of redo times for commit statuses that have canRedo set to true]
 pipelite.process.table.name=[<process> table]
 pipelite.stages.enum=[full enum name for pipeline stages]
-pipelite.commit.status.enum=[full enum name for pipeline commit statuses]
 pipelite.default.mail-to=[default mail recipient for error logs]
 pipelite.default.lsf-cores=[number of cores available for a process. . if <= 0 will be set to default 1]
 pipelite.default.lsf-queue=[lsf queue name]
@@ -42,7 +41,6 @@ will only apply if not implemented in stage.
 ## Enums
 
 Descriptions of pipeline stages (property `pipelite.stages.enum`) and commit statuses
-(property `pipelite.commit.status.enum`) should be implemented via java enums.
 Stages should implement `Stage` interface.
 
 ```java

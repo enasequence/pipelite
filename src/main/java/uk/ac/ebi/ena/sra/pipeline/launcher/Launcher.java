@@ -22,11 +22,11 @@ import org.apache.log4j.DailyRollingFileAppender;
 import org.apache.log4j.EnhancedPatternLayout;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import pipelite.task.result.TaskExecutionResultTranslator;
+import pipelite.task.result.resolver.ExecutionResultExceptionResolver;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall.LSFQueue;
 import uk.ac.ebi.ena.sra.pipeline.base.external.lsf.LSFBqueues;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
-import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultExecutorFactory;
+import uk.ac.ebi.ena.sra.pipeline.configuration.LSFExecutorFactory;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultLauncherParams;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultProcessFactory;
 import uk.ac.ebi.ena.sra.pipeline.dblock.DBLockManager;
@@ -39,36 +39,26 @@ import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
 
 public class Launcher {
-  static final int MEMORY_LIMIT = 15000;
+
   private static final int DEFAULT_ERROR_EXIT = 1;
   private static final int NORMAL_EXIT = 0;
 
   private static ProcessPoolExecutor init(
-      int workers, StorageBackend storage, ResourceLocker locker)
-      throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+      int workers, StorageBackend storage, ResourceLocker locker) {
     return new ProcessPoolExecutor(workers) {
       public void unwind(PipeliteProcess process) {
-        StorageBackend storage = ((PipeliteProcess) process).getStorage();
+        StorageBackend storage = process.getStorage();
         try {
           storage.flush();
         } catch (StorageException e) {
           // TODO Auto-generated catch block
           e.printStackTrace();
         }
-
-        //                              try
-        //                              {
-        //                                  storage.close();
-        //                              } catch( StorageException e )
-        //                              {
-        //                                  // TODO Auto-generated catch block
-        //                                  e.printStackTrace();
-        //                              }
       }
 
       public void init(PipeliteProcess process) {
-        ((PipeliteProcess) process).setStorage(storage);
-        ((PipeliteProcess) process).setLocker(locker);
+        process.setStorage(storage);
+        process.setLocker(locker);
       }
     };
   }
@@ -88,7 +78,7 @@ public class Launcher {
     return os;
   }
 
-  private static TaskIdSource initTaskIdSource()
+  private static TaskIdSource initTaskIdSource(ExecutionResultExceptionResolver resolver)
       throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
     OracleProcessIdSource ts = new OracleProcessIdSource();
 
@@ -96,15 +86,14 @@ public class Launcher {
     ts.setTableName(DefaultConfiguration.currentSet().getProcessTableName());
     ts.setPipelineName(DefaultConfiguration.currentSet().getPipelineName());
     ts.setRedoCount(DefaultConfiguration.currentSet().getStagesRedoCount());
-    ts.setExecutionResultArray(DefaultConfiguration.currentSet().getCommitStatus());
+    ts.setExecutionResultArray(resolver.resultsArray());
     ts.init();
 
     return ts;
   }
 
   public static void main(String[] args)
-      throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException,
-          SQLException {
+      throws IOException {
     DefaultLauncherParams params = new DefaultLauncherParams();
     JCommander jc = new JCommander(params);
 
@@ -130,10 +119,13 @@ public class Launcher {
       jc.usage();
       System.exit(DEFAULT_ERROR_EXIT);
     }
-    System.exit(main2(params));
+
+    ExecutionResultExceptionResolver resolver = DefaultConfiguration.CURRENT.getResolver();
+
+    System.exit(main2(resolver, params));
   }
 
-  private static int main2(DefaultLauncherParams params) throws IOException {
+  private static int main2(ExecutionResultExceptionResolver resolver, DefaultLauncherParams params) throws IOException {
     EnhancedPatternLayout layout =
         new EnhancedPatternLayout(
             "%d{ISO8601} %-5p [%t] "
@@ -157,14 +149,14 @@ public class Launcher {
         storage = initStorageBackend();
 
         if (lockman.tryLock(params.lock)) {
-          task_id_source = initTaskIdSource();
+          task_id_source = initTaskIdSource(resolver);
 
           launcher.setTaskIdSource(task_id_source);
-          launcher.setProcessFactory(new DefaultProcessFactory());
+          launcher.setProcessFactory(new DefaultProcessFactory(resolver));
           launcher.setExecutorFactory(
-              new DefaultExecutorFactory(
+              new LSFExecutorFactory(
                   DefaultConfiguration.currentSet().getPipelineName(),
-                  new TaskExecutionResultTranslator(DefaultConfiguration.currentSet().getCommitStatus()),
+                  resolver,
                   params.queue_name,
                   params.lsf_mem,
                   params.lsf_cpu_cores,

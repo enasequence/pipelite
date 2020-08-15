@@ -11,7 +11,7 @@
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import java.sql.Timestamp;
-import pipelite.task.result.TaskExecutionResultType;
+import pipelite.task.result.ExecutionResultType;
 
 public class ExecutionInstance {
 
@@ -19,7 +19,7 @@ public class ExecutionInstance {
       EXEC_ID; //          NUMBER( 16, 0 ), --execution id to match logs against specific execution.
   Timestamp EXEC_START; //       DATE,          --execution start date
   Timestamp EXEC_DATE; //        DATE,
-  TaskExecutionResultType
+  ExecutionResultType
       EXEC_RESULT_TYPE; //  VARCHAR2( 64 ),   --FK or CHECK. proposed: 'successful execution' ,
   // 'transient error', 'permanent error', 'skipped execution'.
   String EXEC_RESULT; //      VARCHAR2( 255 ),  -- length decreased
@@ -98,11 +98,11 @@ public class ExecutionInstance {
     EXEC_DATE = finish;
   }
 
-  public TaskExecutionResultType getResultType() {
+  public ExecutionResultType getResultType() {
     return EXEC_RESULT_TYPE;
   }
 
-  public void setResultType(TaskExecutionResultType result_type) {
+  public void setResultType(ExecutionResultType result_type) {
     EXEC_RESULT_TYPE = result_type;
   }
 

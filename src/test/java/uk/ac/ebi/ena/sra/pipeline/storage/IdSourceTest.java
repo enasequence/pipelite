@@ -25,12 +25,12 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import pipelite.task.result.resolver.ExecutionResultResolver;
 import uk.ac.ebi.ena.sra.pipeline.configuration.OracleHeartBeatConnection;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.TaskIdSource;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState.State;
 import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
-import pipelite.task.result.DefaultTaskExecutionResults;
 
 public class IdSourceTest {
   static TaskIdSource id_src;
@@ -71,7 +71,7 @@ public class IdSourceTest {
 
     OracleProcessIdSource ps = new OracleProcessIdSource();
     ps.setTableName("PIPELITE_PROCESS");
-    ps.setExecutionResultArray(DefaultTaskExecutionResults.values());
+    ps.setExecutionResultArray(ExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER.resultsArray());
     ps.setRedoCount(Integer.MAX_VALUE);
     ps.setConnection(connection);
     ps.setPipelineName(PIPELINE_NAME);

@@ -27,10 +27,9 @@ import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import pipelite.task.executor.TaskExecutor;
-import pipelite.task.result.TaskExecutionResultTranslator;
-import pipelite.task.result.TaskExecutionResultType;
+import pipelite.task.result.resolver.ExecutionResultExceptionResolver;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState.State;
-import pipelite.task.result.TaskExecutionResult;
+import pipelite.task.result.ExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
 import uk.ac.ebi.ena.sra.pipeline.resource.MemoryLocker;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
@@ -41,47 +40,46 @@ public class ProcessLauncherTest {
   private static final String MOCKED_PIPELINE = "MOCKED PIPELINE";
   static Logger log = Logger.getLogger(ProcessLauncherTest.class);
 
+  private final static class TransientException extends RuntimeException {}
+  private final static class PermanentException extends RuntimeException {}
+
+  private final static ExecutionResultExceptionResolver resolver =
+          ExecutionResultExceptionResolver.builder()
+                  .transientError(TransientException.class, "TRANSIENT_ERROR")
+                  .permanentError(PermanentException.class, "PERMANENT_ERROR")
+                  .build();
+
+  private static ExecutionResult success() {
+    return resolver.success();
+  }
+
+  private static ExecutionResult transientError() {
+    return resolver.resolveError(new TransientException());
+  }
+
+  private static ExecutionResult permanentError()  {
+    return resolver.resolveError(new PermanentException());
+  }
+
+  private static int successExitCode () {
+    return resolver.exitCodeSerializer().serialize(resolver.success());
+  }
+
+  private static int transientErrorExitCode () {
+    return resolver.exitCodeSerializer().serialize(resolver.resolveError(new TransientException()));
+  }
+
+  private static int permanentErrorExitCode () {
+    return resolver.exitCodeSerializer().serialize(resolver.resolveError(new PermanentException()));
+  }
+
   @BeforeClass
   public static void setup() {
     PropertyConfigurator.configure("resource/test.log4j.properties");
   }
 
-  enum ERESULTS implements TaskExecutionResult {
-    OK(TaskExecutionResultType.SUCCESS, 0),
-    PERMANENT(TaskExecutionResultType.PERMANENT_ERROR, 1),
-    TRANSIENT(TaskExecutionResultType.TRANSIENT_ERROR, 2);
-
-    public final TaskExecutionResultType type;
-    public final int code;
-
-    ERESULTS(TaskExecutionResultType type, int code) {
-      this.type = type;
-      this.code = code;
-    }
-
-    @Override
-    public TaskExecutionResultType getExecutionResultType() {
-      return type;
-    }
-
-    @Override
-    public byte getExitCode() {
-      return (byte) code;
-    }
-
-    @Override
-    public Class<Throwable> getCause() {
-      return null;
-    }
-
-    @Override
-    public String getExecutionResult() {
-      return this.toString();
-    }
-  };
-
   private StorageBackend initStorage(
-      final String[] names, final ERESULTS[] init_results, final boolean[] enabled)
+      final String[] names, final ExecutionResult[] init_results, final boolean[] enabled)
       throws StorageException {
     StorageBackend mockedStorage = mock(StorageBackend.class);
     final PipeliteState stored_state = new PipeliteState();
@@ -106,7 +104,7 @@ public class ProcessLauncherTest {
                 si.getExecutionInstance().setStartTime(new Timestamp(System.currentTimeMillis()));
                 si.getExecutionInstance().setFinishTime(new Timestamp(System.currentTimeMillis()));
                 si.getExecutionInstance().setResult(init_results[counter.get() - 1].toString());
-                si.getExecutionInstance().setResultType(init_results[counter.get() - 1].getExecutionResultType());
+                si.getExecutionInstance().setResultType(init_results[counter.get() - 1].getResultType());
 
                 si.setDependsOn(1 == counter.get() ? null : names[counter.get() - 2]);
 
@@ -157,18 +155,17 @@ public class ProcessLauncherTest {
   }
 
   private ProcessLauncher initProcessLauncher(
-          Stage[] stages, TaskExecutionResult[] results, StorageBackend storage, TaskExecutor executor) {
-    ProcessLauncher process = spy(new ProcessLauncher());
+          Stage[] stages, ExecutionResultExceptionResolver resolver, StorageBackend storage, TaskExecutor executor) {
+    ProcessLauncher process = spy(new ProcessLauncher(resolver));
     process.setProcessID("TEST_PROCESS");
     process.setStorage(storage);
     process.setExecutor(executor);
     process.setStages(stages);
-    process.setCommitStatuses(results);
     return process;
   }
 
-  private TaskExecutor initExecutor(TaskExecutionResult[] results, int... invocation_exit_code) {
-    TaskExecutor spiedExecutor = spy(new InternalStageExecutor(new TaskExecutionResultTranslator(results)));
+  private TaskExecutor initExecutor(ExecutionResultExceptionResolver resolver, int... invocation_exit_code) {
+    TaskExecutor spiedExecutor = spy(new InternalStageExecutor(resolver));
     final AtomicInteger inv_cnt = new AtomicInteger(0);
     doAnswer(
             new Answer<Object>() {
@@ -209,17 +206,18 @@ public class ProcessLauncherTest {
         new Stage[] {mock(Stage.class), mock(Stage.class), mock(Stage.class), mock(Stage.class)};
 
     {
+
       StorageBackend mockedStorage =
           initStorage(
               new String[] {
                 "1: SOVSE MALI YOBA", "2: MALI YOBA", "3: BOLSHE YOBA", "4: OCHE BOLSHE YOBA"
               },
-              new ERESULTS[] {ERESULTS.OK, ERESULTS.OK, ERESULTS.TRANSIENT, ERESULTS.OK },
+              new ExecutionResult[] {success(), success(), transientError(), success() },
               new boolean[] {false, true, true, true});
 
-      TaskExecutor spiedExecutor = initExecutor(ERESULTS.values(), new int[] {0, 2, 0, 2});
+      TaskExecutor spiedExecutor = initExecutor(resolver, new int[] {successExitCode(), transientErrorExitCode(), successExitCode(), transientErrorExitCode()});
       ProcessLauncher pl =
-          initProcessLauncher(stages, ERESULTS.values(), mockedStorage, spiedExecutor);
+          initProcessLauncher(stages, resolver, mockedStorage, spiedExecutor);
       pl.setLocker(new MemoryLocker());
       pl.setRedoCount(2);
       pl.lifecycle();
@@ -240,33 +238,34 @@ public class ProcessLauncherTest {
     }
 
     {
+
+
       StorageBackend mockedStorage =
           initStorage(
               new String[] {"SOVSE MALI YOBA", "MALI YOBA", "BOLSHE YOBA", "OCHE BOLSHE YOBA"},
-              new ERESULTS[] {ERESULTS.PERMANENT, ERESULTS.OK, ERESULTS.TRANSIENT, ERESULTS.OK},
+              new ExecutionResult[] {permanentError(), success(), transientError(), success()},
               new boolean[] {false, false, true, true});
 
-      TaskExecutor spiedExecutor = initExecutor(ERESULTS.values());
+      TaskExecutor spiedExecutor = initExecutor(resolver);
       ProcessLauncher pl =
-          initProcessLauncher(stages, ERESULTS.values(), mockedStorage, spiedExecutor);
+          initProcessLauncher(stages, resolver, mockedStorage, spiedExecutor);
       pl.setLocker(new MemoryLocker());
       pl.lifecycle();
 
       verify(pl, times(1)).lifecycle();
       verify(spiedExecutor, times(2)).execute(any(StageInstance.class));
     }
-    ;
 
     {
       StorageBackend mockedStorage =
           initStorage(
               new String[] {"SOVSE MALI YOBA", "MALI YOBA", "BOLSHE YOBA", "OCHE BOLSHE YOBA"},
-              new ERESULTS[] {ERESULTS.OK, ERESULTS.OK, ERESULTS.TRANSIENT, ERESULTS.OK},
+              new ExecutionResult[] {success(), success(), transientError(), success()},
               new boolean[] {false, true, true, true});
 
-      TaskExecutor spiedExecutor = initExecutor(ERESULTS.values());
+      TaskExecutor spiedExecutor = initExecutor(resolver);
       ProcessLauncher pl =
-          initProcessLauncher(stages, ERESULTS.values(), mockedStorage, spiedExecutor);
+          initProcessLauncher(stages, resolver, mockedStorage, spiedExecutor);
       pl.setLocker(new MemoryLocker());
       pl.lifecycle();
 
@@ -278,12 +277,12 @@ public class ProcessLauncherTest {
       StorageBackend mockedStorage =
           initStorage(
               new String[] {"SOVSE MALI YOBA", "MALI YOBA", "BOLSHE YOBA", "OCHE BOLSHE YOBA"},
-              new ERESULTS[] {ERESULTS.PERMANENT, ERESULTS.OK, ERESULTS.TRANSIENT, ERESULTS.OK},
+              new ExecutionResult[] {permanentError(), success(), transientError(), success()},
               new boolean[] {true, true, true, true});
 
-      TaskExecutor spiedExecutor = initExecutor(ERESULTS.values());
+      TaskExecutor spiedExecutor = initExecutor(resolver);
       ProcessLauncher pl =
-          initProcessLauncher(stages, ERESULTS.values(), mockedStorage, spiedExecutor);
+          initProcessLauncher(stages, resolver, mockedStorage, spiedExecutor);
       pl.setLocker(new MemoryLocker());
       pl.lifecycle();
 
@@ -297,12 +296,12 @@ public class ProcessLauncherTest {
       StorageBackend mockedStorage =
           initStorage(
               new String[] {"SOVSE MALI YOBA", "MALI YOBA", "BOLSHE YOBA", "OCHE BOLSHE YOBA"},
-              new ERESULTS[] {ERESULTS.TRANSIENT, ERESULTS.OK, ERESULTS.TRANSIENT, ERESULTS.OK},
+              new ExecutionResult[] {transientError(), success(), transientError(), success()},
               new boolean[] {true, true, true, true});
 
-      TaskExecutor spiedExecutor = initExecutor(ERESULTS.values());
+      TaskExecutor spiedExecutor = initExecutor(resolver);
       ProcessLauncher pl =
-          initProcessLauncher(stages, ERESULTS.values(), mockedStorage, spiedExecutor);
+          initProcessLauncher(stages, resolver, mockedStorage, spiedExecutor);
       pl.setLocker(new MemoryLocker());
       pl.lifecycle();
 

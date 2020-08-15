@@ -11,11 +11,10 @@
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import pipelite.task.executor.AbstractTaskExecutor;
-import pipelite.task.result.TaskExecutionResultTranslator;
+import pipelite.task.result.resolver.ExecutionResultExceptionResolver;
 import pipelite.task.state.TaskExecutionState;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
-import pipelite.task.result.TaskExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.StageTask;
 
 public class InternalStageExecutor extends AbstractTaskExecutor {
@@ -24,8 +23,8 @@ public class InternalStageExecutor extends AbstractTaskExecutor {
   protected ExternalCallBackEnd back_end = new SimpleBackEnd();
   private StageTask task = null;
 
-  public InternalStageExecutor(TaskExecutionResultTranslator translator) {
-    super("", translator);
+  public InternalStageExecutor(ExecutionResultExceptionResolver resolver) {
+    super("", resolver);
   }
 
   @Override
@@ -34,7 +33,6 @@ public class InternalStageExecutor extends AbstractTaskExecutor {
   }
 
   public void execute(StageInstance instance) {
-    TaskExecutionResult execution_result = null;
     Throwable exception = null;
 
     if (TaskExecutionState.ACTIVE_TASK == can_execute(instance)) {
@@ -57,7 +55,7 @@ public class InternalStageExecutor extends AbstractTaskExecutor {
       } finally {
         info = new ExecutionInfo();
         info.setThrowable(exception);
-        info.setExitCode(Integer.valueOf(TRANSLATOR.getCommitStatus(exception).getExitCode()));
+        info.setExitCode(Integer.valueOf(resolver.exitCodeSerializer().serialize(resolver.resolveError(exception))));
 
         if (null != task) task.unwind();
       }

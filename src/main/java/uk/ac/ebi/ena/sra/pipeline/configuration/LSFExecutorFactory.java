@@ -10,25 +10,25 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.configuration;
 
+import pipelite.task.result.resolver.ExecutionResultExceptionResolver;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall.LSFQueue;
 import uk.ac.ebi.ena.sra.pipeline.executors.LSFExecutorConfig;
 import uk.ac.ebi.ena.sra.pipeline.launcher.LSFStageExecutor;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.StageExecutorFactory;
-import pipelite.task.result.TaskExecutionResultTranslator;
 import pipelite.task.executor.TaskExecutor;
 
-public class DefaultExecutorFactory implements StageExecutorFactory {
+public class LSFExecutorFactory implements StageExecutorFactory {
   private String pipeline_name;
-  private TaskExecutionResultTranslator translator;
+  private ExecutionResultExceptionResolver resolver;
   private String queue;
   private int memory_limit;
   private int cpu_cores;
   private int lsf_mem_timeout;
   private int redo;
 
-  public DefaultExecutorFactory(
+  public LSFExecutorFactory(
       String pipeline_name,
-      TaskExecutionResultTranslator translator,
+      ExecutionResultExceptionResolver resolver,
       String queue,
       int memory_limit,
       int cpu_cores,
@@ -37,7 +37,7 @@ public class DefaultExecutorFactory implements StageExecutorFactory {
     LSFQueue.findByName(queue);
 
     this.pipeline_name = pipeline_name;
-    this.translator = translator;
+    this.resolver = resolver;
     this.queue = queue;
     this.memory_limit = memory_limit;
     this.cpu_cores = cpu_cores;
@@ -60,7 +60,7 @@ public class DefaultExecutorFactory implements StageExecutorFactory {
         };
 
     TaskExecutor executor =
-        new LSFStageExecutor(pipeline_name, translator, memory_limit, cpu_cores, cfg_def);
+        new LSFStageExecutor(pipeline_name, resolver, memory_limit, cpu_cores, cfg_def);
 
     return executor;
   }

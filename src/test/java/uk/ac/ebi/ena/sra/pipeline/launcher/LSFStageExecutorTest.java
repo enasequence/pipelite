@@ -14,37 +14,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import org.junit.Assert;
 import org.junit.Test;
-import pipelite.task.result.TaskExecutionResultTranslator;
-import pipelite.task.result.TaskExecutionResultType;
+import pipelite.task.result.resolver.ExecutionResultExceptionResolver;
+import pipelite.task.result.resolver.ExecutionResultResolver;
 import uk.ac.ebi.ena.sra.pipeline.executors.LSFExecutorConfig;
-import pipelite.task.result.TaskExecutionResult;
 
 public class LSFStageExecutorTest {
-  private TaskExecutionResultTranslator makeResultTranslator() {
-    return new TaskExecutionResultTranslator(
-        new TaskExecutionResult[] {
-          new TaskExecutionResult() {
-            @Override
-            public TaskExecutionResultType getExecutionResultType() {
-              return null;
-            }
-
-            @Override
-            public byte getExitCode() {
-              return 0;
-            }
-
-            @Override
-            public Class<? extends Throwable> getCause() {
-              return null;
-            }
-
-            @Override
-            public String getExecutionResult() {
-              return null;
-            }
-          }
-        });
+  private ExecutionResultExceptionResolver resolver() {
+      return ExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER;
   }
 
   private LSFExecutorConfig makeDefaultConfig() throws IOException {
@@ -82,8 +58,6 @@ public class LSFStageExecutorTest {
 
   @Test
   public void testNoQueue() throws IOException {
-    TaskExecutionResultTranslator translator = makeResultTranslator();
-
     String tmpd_def = Files.createTempDirectory("LSF-TEST-OUTPUT-DEF").toString();
     LSFExecutorConfig cfg_def =
         new LSFExecutorConfig() {
@@ -105,7 +79,7 @@ public class LSFStageExecutorTest {
 
     LSFStageExecutor se =
         new LSFStageExecutor(
-            "TEST", translator, 2340, 3, "NOFILE", "NOPATH", new String[] {}, cfg_def);
+            "TEST", resolver(), 2340, 3, "NOFILE", "NOPATH", new String[] {}, cfg_def);
 
     se.execute(makeDefaultStageInstance());
 
@@ -114,8 +88,6 @@ public class LSFStageExecutorTest {
 
   @Test
   public void testQueue() throws IOException {
-    TaskExecutionResultTranslator translator = makeResultTranslator();
-
     String tmpd_def = Files.createTempDirectory("LSF-TEST-OUTPUT-DEF").toString();
     LSFExecutorConfig cfg_def =
         new LSFExecutorConfig() {
@@ -137,7 +109,7 @@ public class LSFStageExecutorTest {
 
     LSFStageExecutor se =
         new LSFStageExecutor(
-            "TEST", translator, 2340, 3, "NOFILE", "NOPATH", new String[] {}, cfg_def);
+            "TEST", resolver(), 2340, 3, "NOFILE", "NOPATH", new String[] {}, cfg_def);
 
     se.execute(makeDefaultStageInstance());
 
@@ -146,7 +118,6 @@ public class LSFStageExecutorTest {
 
   @Test
   public void testStageSpecificQueue() throws IOException {
-    TaskExecutionResultTranslator translator = makeResultTranslator();
 
     String tmpd_def = Files.createTempDirectory("LSF-TEST-OUTPUT-DEF").toString();
     LSFExecutorConfig cfg_def =
@@ -188,7 +159,7 @@ public class LSFStageExecutorTest {
 
     LSFStageExecutor se =
         new LSFStageExecutor(
-            "TEST", translator, 2340, 3, "NOFILE", "NOPATH", new String[] {}, cfg_def);
+            "TEST", resolver(), 2340, 3, "NOFILE", "NOPATH", new String[] {}, cfg_def);
 
     se.configure(cfg_stg);
 
@@ -199,11 +170,11 @@ public class LSFStageExecutorTest {
 
   @Test
   public void stageSpecificConfig() throws IOException {
-    TaskExecutionResultTranslator translator = makeResultTranslator();
+
     LSFExecutorConfig cfg_def = makeDefaultConfig();
     LSFStageExecutor se =
         new LSFStageExecutor(
-            "TEST", translator, 2340, 3, "NOFILE", "NOPATH", new String[] {}, cfg_def);
+            "TEST", resolver(), 2340, 3, "NOFILE", "NOPATH", new String[] {}, cfg_def);
 
     String tmpd_stg = Files.createTempDirectory("LSF-TEST-OUTPUT-STG").toString();
     LSFExecutorConfig cfg_stg =
@@ -246,11 +217,11 @@ public class LSFStageExecutorTest {
 
   @Test
   public void defaultMemoryCoresReserveConfig() throws IOException {
-    TaskExecutionResultTranslator translator = makeResultTranslator();
+
     LSFExecutorConfig cfg_def = makeDefaultConfig();
     LSFStageExecutor se =
         new LSFStageExecutor(
-            "TEST", translator, -1, -1, "NOFILE", "NOPATH", new String[] {}, cfg_def);
+            "TEST", resolver(), -1, -1, "NOFILE", "NOPATH", new String[] {}, cfg_def);
 
     String tmpd_stg = Files.createTempDirectory("LSF-TEST-OUTPUT-STG").toString();
     LSFExecutorConfig cfg_stg =
@@ -293,11 +264,11 @@ public class LSFStageExecutorTest {
 
   @Test
   public void genericConfig() throws IOException {
-    TaskExecutionResultTranslator translator = makeResultTranslator();
+
     LSFExecutorConfig cfg_def = makeDefaultConfig();
     LSFStageExecutor se =
         new LSFStageExecutor(
-            "TEST", translator, 2340, 3, "NOFILE", "NOPATH", new String[] {}, cfg_def);
+            "TEST", resolver(), 2340, 3, "NOFILE", "NOPATH", new String[] {}, cfg_def);
 
     se.configure(null);
 
@@ -310,11 +281,11 @@ public class LSFStageExecutorTest {
 
   @Test
   public void genericConfigNoConfCall() throws IOException {
-    TaskExecutionResultTranslator translator = makeResultTranslator();
+
     LSFExecutorConfig cfg_def = makeDefaultConfig();
     LSFStageExecutor se =
         new LSFStageExecutor(
-            "TEST", translator, 2340, 3, "NOFILE", "NOPATH", new String[] {}, cfg_def);
+            "TEST", resolver(), 2340, 3, "NOFILE", "NOPATH", new String[] {}, cfg_def);
 
     se.execute(makeDefaultStageInstance());
 
@@ -325,11 +296,11 @@ public class LSFStageExecutorTest {
 
   @Test
   public void javaMemory() throws IOException {
-    TaskExecutionResultTranslator translator = makeResultTranslator();
+
     LSFExecutorConfig cfg_def = makeDefaultConfig();
     LSFStageExecutor se =
         new LSFStageExecutor(
-            "TEST", translator, 2340, 3, "NOFILE", "NOPATH", new String[] {}, cfg_def);
+            "TEST", resolver(), 2340, 3, "NOFILE", "NOPATH", new String[] {}, cfg_def);
 
     se.configure(null);
 
@@ -348,11 +319,11 @@ public class LSFStageExecutorTest {
 
   @Test
   public void javaMemoryNotSet() throws IOException {
-    TaskExecutionResultTranslator translator = makeResultTranslator();
+
     LSFExecutorConfig cfg_def = makeDefaultConfig();
     LSFStageExecutor se =
         new LSFStageExecutor(
-            "TEST", translator, 2340, 3, "NOFILE", "NOPATH", new String[] {}, cfg_def);
+            "TEST", resolver(), 2340, 3, "NOFILE", "NOPATH", new String[] {}, cfg_def);
 
     se.configure(null);
 
@@ -371,7 +342,7 @@ public class LSFStageExecutorTest {
 
   @Test
   public void memoryBelow1500() throws IOException {
-    TaskExecutionResultTranslator translator = makeResultTranslator();
+
     String tmpd_def = Files.createTempDirectory("LSF-TEST-OUTPUT-DEF").toString();
     LSFExecutorConfig cfg_def =
         new LSFExecutorConfig() {
@@ -392,7 +363,7 @@ public class LSFStageExecutorTest {
         };
     LSFStageExecutor se =
         new LSFStageExecutor(
-            "TEST", translator, 2340, 3, "NOFILE", "NOPATH", new String[] {}, cfg_def);
+            "TEST", resolver(), 2340, 3, "NOFILE", "NOPATH", new String[] {}, cfg_def);
 
     se.configure(null);
 
@@ -411,11 +382,11 @@ public class LSFStageExecutorTest {
 
   @Test
   public void propertiesPassStageSpecific() throws IOException {
-    TaskExecutionResultTranslator translator = makeResultTranslator();
+
     LSFExecutorConfig cfg_def = makeDefaultConfig();
     LSFStageExecutor se =
         new LSFStageExecutor(
-            "TEST", translator, 2340, 3, "NOFILE", "NOPATH", new String[] {"user.dir"}, cfg_def);
+            "TEST", resolver(), 2340, 3, "NOFILE", "NOPATH", new String[] {"user.dir"}, cfg_def);
 
     se.configure(null);
 
@@ -434,11 +405,11 @@ public class LSFStageExecutorTest {
 
   @Test
   public void propertiesPassGeneric() throws IOException {
-    TaskExecutionResultTranslator translator = makeResultTranslator();
+
     LSFExecutorConfig cfg_def = makeDefaultConfig();
     LSFStageExecutor se =
         new LSFStageExecutor(
-            "TEST", translator, 2340, 3, "NOFILE", "NOPATH", new String[] {"user.dir"}, cfg_def);
+            "TEST", resolver(), 2340, 3, "NOFILE", "NOPATH", new String[] {"user.dir"}, cfg_def);
 
     se.configure(null);
 
@@ -450,14 +421,14 @@ public class LSFStageExecutorTest {
 
   @Test
   public void prefixAndSource() throws IOException {
-    TaskExecutionResultTranslator translator = makeResultTranslator();
+
     LSFExecutorConfig cfg_def = makeDefaultConfig();
 
     String prefix = "NOFILE";
     String source = "NOPATH";
     LSFStageExecutor se =
         new LSFStageExecutor(
-            "TEST", translator, 2340, 3, prefix, source, new String[] {"user.dir"}, cfg_def);
+            "TEST", resolver(), 2340, 3, prefix, source, new String[] {"user.dir"}, cfg_def);
 
     se.execute(
         new StageInstance() {

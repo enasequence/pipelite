@@ -20,12 +20,12 @@ import org.apache.log4j.PropertyConfigurator;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import pipelite.task.result.resolver.ExecutionResultResolver;
 import uk.ac.ebi.ena.sra.pipeline.configuration.OracleHeartBeatConnection;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessPoolExecutor;
 import pipelite.task.executor.TaskExecutor;
-import pipelite.task.result.DefaultTaskExecutionResults;
 
 public class LauncherDBTest {
   static final long delay = 5 * 1000;
@@ -67,7 +67,7 @@ public class LauncherDBTest {
 
     OracleTaskIdSource id_src = new OracleTaskIdSource();
     id_src.setTableName("PIPELITE_STAGE");
-    id_src.setExecutionResultArray(DefaultTaskExecutionResults.values());
+    id_src.setExecutionResultArray(ExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER.resultsArray());
     id_src.setRedoCount(Integer.MAX_VALUE);
     id_src.setConnection(connection);
     id_src.init();

@@ -12,9 +12,9 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import org.junit.Assert;
 import org.junit.Test;
-import pipelite.task.result.TaskExecutionResultTranslator;
-import pipelite.task.result.TaskExecutionResult;
-import pipelite.task.result.TaskExecutionResultType;
+import pipelite.task.result.ExecutionResult;
+import pipelite.task.result.ExecutionResultType;
+import pipelite.task.result.resolver.ExecutionResultResolver;
 
 public class DetachedStageExecutorTest {
   @Test
@@ -22,30 +22,7 @@ public class DetachedStageExecutorTest {
     DetachedStageExecutor se =
         new DetachedStageExecutor(
             "TEST",
-            new TaskExecutionResultTranslator(
-                new TaskExecutionResult[] {
-                  new TaskExecutionResult() {
-                    @Override
-                    public TaskExecutionResultType getExecutionResultType() {
-                      return null;
-                    }
-
-                    @Override
-                    public byte getExitCode() {
-                      return 0;
-                    }
-
-                    @Override
-                    public Class<? extends Throwable> getCause() {
-                      return null;
-                    }
-
-                    @Override
-                    public String getExecutionResult() {
-                      return null;
-                    }
-                  }
-                }),
+            ExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER,
             "NOFILE",
             "NOPATH",
             new String[] {});
@@ -68,30 +45,7 @@ public class DetachedStageExecutorTest {
     DetachedStageExecutor se =
         new DetachedStageExecutor(
             "TEST",
-            new TaskExecutionResultTranslator(
-                new TaskExecutionResult[] {
-                  new TaskExecutionResult() {
-                    @Override
-                    public TaskExecutionResultType getExecutionResultType() {
-                      return null;
-                    }
-
-                    @Override
-                    public byte getExitCode() {
-                      return 0;
-                    }
-
-                    @Override
-                    public Class<? extends Throwable> getCause() {
-                      return null;
-                    }
-
-                    @Override
-                    public String getExecutionResult() {
-                      return null;
-                    }
-                  }
-                }),
+            ExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER,
             "NOFILE",
             "NOPATH",
             new String[] {});
@@ -115,30 +69,7 @@ public class DetachedStageExecutorTest {
     DetachedStageExecutor se =
         new DetachedStageExecutor(
             "TEST",
-            new TaskExecutionResultTranslator(
-                new TaskExecutionResult[] {
-                  new TaskExecutionResult() {
-                    @Override
-                    public TaskExecutionResultType getExecutionResultType() {
-                      return null;
-                    }
-
-                    @Override
-                    public byte getExitCode() {
-                      return 0;
-                    }
-
-                    @Override
-                    public Class<? extends Throwable> getCause() {
-                      return null;
-                    }
-
-                    @Override
-                    public String getExecutionResult() {
-                      return null;
-                    }
-                  }
-                }),
+            ExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER,
             prefix,
             source,
             new String[] {});
@@ -162,30 +93,7 @@ public class DetachedStageExecutorTest {
     DetachedStageExecutor se =
         new DetachedStageExecutor(
             "TEST",
-            new TaskExecutionResultTranslator(
-                new TaskExecutionResult[] {
-                  new TaskExecutionResult() {
-                    @Override
-                    public TaskExecutionResultType getExecutionResultType() {
-                      return null;
-                    }
-
-                    @Override
-                    public byte getExitCode() {
-                      return 0;
-                    }
-
-                    @Override
-                    public Class<? extends Throwable> getCause() {
-                      return null;
-                    }
-
-                    @Override
-                    public String getExecutionResult() {
-                      return null;
-                    }
-                  }
-                }),
+            ExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER,
             prefix,
             source,
             new String[] {"user.dir"});

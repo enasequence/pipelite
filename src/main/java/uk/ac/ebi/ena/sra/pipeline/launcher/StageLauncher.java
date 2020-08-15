@@ -20,7 +20,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import pipelite.task.executor.TaskExecutor;
-import pipelite.task.result.TaskExecutionResultTranslator;
+import pipelite.task.result.resolver.ExecutionResultExceptionResolver;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.StageTask;
 
@@ -72,7 +72,10 @@ public class StageLauncher {
 
     try {
       jc.parse(args);
-      System.exit(sl.execute());
+
+      ExecutionResultExceptionResolver resolver = DefaultConfiguration.CURRENT.getResolver();
+
+      System.exit(sl.execute(resolver));
 
     } catch (ParameterException pe) {
 
@@ -81,10 +84,8 @@ public class StageLauncher {
     }
   }
 
-  public int execute() {
-    TaskExecutor executor =
-        new InternalStageExecutor(
-                new TaskExecutionResultTranslator(DefaultConfiguration.currentSet().getCommitStatus()));
+  public int execute(ExecutionResultExceptionResolver resolver) {
+    TaskExecutor executor = new InternalStageExecutor(resolver);
 
     StageInstance instance = new StageInstance();
     instance.setProcessID(process_id);
@@ -93,28 +94,5 @@ public class StageLauncher {
     instance.setExecutionCount(exec_cnt);
     executor.execute(instance);
     return executor.get_info().getExitCode();
-  }
-
-  public static class InternalExecutionResult {
-    public InternalExecutionResult(int exitCode, StageTask task) {
-      this.exitCode = exitCode;
-      this.task = task;
-    }
-
-    public final int exitCode;
-    public final StageTask task;
-  }
-
-  public InternalExecutionResult execute(String process_id, String stage_name, boolean force) {
-    InternalStageExecutor executor =
-        new InternalStageExecutor(
-                new TaskExecutionResultTranslator(DefaultConfiguration.currentSet().getCommitStatus()));
-    StageInstance instance = new StageInstance();
-    instance.setProcessID(process_id);
-    instance.setStageName(stage_name);
-    instance.setEnabled(true);
-    instance.setExecutionCount(0);
-    executor.execute(instance);
-    return new InternalExecutionResult(executor.get_info().getExitCode(), executor.get_task());
   }
 }
