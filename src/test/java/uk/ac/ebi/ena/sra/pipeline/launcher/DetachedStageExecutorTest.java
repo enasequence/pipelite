@@ -12,7 +12,7 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import org.junit.Assert;
 import org.junit.Test;
-import pipelite.task.result.resolver.ExecutionResultResolver;
+import pipelite.task.result.resolver.TaskExecutionResultResolver;
 
 public class DetachedStageExecutorTest {
   @Test
@@ -20,7 +20,7 @@ public class DetachedStageExecutorTest {
     DetachedStageExecutor se =
         new DetachedStageExecutor(
             "TEST",
-            ExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER,
+            TaskExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER,
             "NOFILE",
             "NOPATH",
             new String[] {});
@@ -43,7 +43,7 @@ public class DetachedStageExecutorTest {
     DetachedStageExecutor se =
         new DetachedStageExecutor(
             "TEST",
-            ExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER,
+            TaskExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER,
             "NOFILE",
             "NOPATH",
             new String[] {});
@@ -67,7 +67,7 @@ public class DetachedStageExecutorTest {
     DetachedStageExecutor se =
         new DetachedStageExecutor(
             "TEST",
-            ExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER,
+            TaskExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER,
             prefix,
             source,
             new String[] {});
@@ -91,7 +91,7 @@ public class DetachedStageExecutorTest {
     DetachedStageExecutor se =
         new DetachedStageExecutor(
             "TEST",
-            ExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER,
+            TaskExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER,
             prefix,
             source,
             new String[] {"user.dir"});

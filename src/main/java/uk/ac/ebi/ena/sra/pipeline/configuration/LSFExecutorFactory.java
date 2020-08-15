@@ -10,7 +10,7 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.configuration;
 
-import pipelite.task.result.resolver.ExecutionResultExceptionResolver;
+import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall.LSFQueue;
 import uk.ac.ebi.ena.sra.pipeline.executors.LSFExecutorConfig;
 import uk.ac.ebi.ena.sra.pipeline.launcher.LSFStageExecutor;
@@ -19,7 +19,7 @@ import pipelite.task.executor.TaskExecutor;
 
 public class LSFExecutorFactory implements StageExecutorFactory {
   private final String pipeline_name;
-  private final ExecutionResultExceptionResolver resolver;
+  private final TaskExecutionResultExceptionResolver resolver;
   private final String queue;
   private final int memory_limit;
   private final int cpu_cores;
@@ -27,7 +27,7 @@ public class LSFExecutorFactory implements StageExecutorFactory {
 
     public LSFExecutorFactory(
             String pipeline_name,
-            ExecutionResultExceptionResolver resolver,
+            TaskExecutionResultExceptionResolver resolver,
             String queue,
             int memory_limit,
             int cpu_cores,

@@ -1,27 +1,27 @@
 package pipelite.task.result.serializer;
 
 import lombok.Value;
-import pipelite.task.result.ExecutionResult;
-import pipelite.task.result.resolver.ExecutionResultResolver;
+import pipelite.task.result.TaskExecutionResult;
+import pipelite.task.result.resolver.TaskExecutionResultResolver;
 
 import java.util.List;
 
 @Value
-public class ExecutionResultExitCodeSerializer implements ExecutionResultSerializer<Integer> {
+public class TaskExecutionResultExitCodeSerializer<T> implements TaskExecutionResultSerializer<Integer> {
 
-  private final ExecutionResultResolver resolver;
+  private final TaskExecutionResultResolver<T> resolver;
 
   @Override
-  public Integer serialize(ExecutionResult result) {
+  public Integer serialize(TaskExecutionResult result) {
     int value = resolver.results().indexOf(result);
     checkValue(value);
     return value;
   }
 
   @Override
-  public ExecutionResult deserialize(Integer value) {
+  public TaskExecutionResult deserialize(Integer value) {
     checkValue(value);
-    List<ExecutionResult> results = resolver.results();
+    List<TaskExecutionResult> results = resolver.results();
     return results.get(value);
   }
 

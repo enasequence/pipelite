@@ -24,7 +24,7 @@ public interface TaskExecutor {
   <T extends ExecutorConfig> void configure(T params);
 
   TaskExecutionState can_execute(StageInstance instance);
-  //    boolean       was_error();
+
   ExecutionInfo get_info();
 
   Class<? extends ExecutorConfig> getConfigClass();

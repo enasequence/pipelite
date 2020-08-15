@@ -10,16 +10,16 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.configuration;
 
-import pipelite.task.result.resolver.ExecutionResultExceptionResolver;
+import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessFactory;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessLauncher;
 
 public class DefaultProcessFactory implements ProcessFactory {
 
-  private final ExecutionResultExceptionResolver resolver;
+  private final TaskExecutionResultExceptionResolver resolver;
 
-  public DefaultProcessFactory(ExecutionResultExceptionResolver resolver) {
+  public DefaultProcessFactory(TaskExecutionResultExceptionResolver resolver) {
     this.resolver = resolver;
   }
 

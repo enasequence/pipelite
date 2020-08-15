@@ -26,12 +26,12 @@ import org.apache.log4j.PatternLayout;
 import org.apache.log4j.net.SMTPAppender;
 import pipelite.task.executor.AbstractTaskExecutor;
 import pipelite.task.executor.TaskExecutor;
-import pipelite.task.result.resolver.ExecutionResultExceptionResolver;
+import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState.State;
 import pipelite.task.state.TaskExecutionState;
-import pipelite.task.result.ExecutionResult;
+import pipelite.task.result.TaskExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
 import uk.ac.ebi.ena.sra.pipeline.resource.ProcessResourceLock;
 import uk.ac.ebi.ena.sra.pipeline.resource.ResourceLocker;
@@ -42,7 +42,7 @@ import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
 
 public class ProcessLauncher implements PipeliteProcess {
 
-  private final ExecutionResultExceptionResolver resolver;
+  private final TaskExecutionResultExceptionResolver resolver;
 
   private static final String MAIL_APPENDER = "MAIL_APPENDER";
   private final Logger log;
@@ -58,7 +58,7 @@ public class ProcessLauncher implements PipeliteProcess {
   private int max_redo_count = 1;
   private volatile boolean do_stop;
 
-  public ProcessLauncher(ExecutionResultExceptionResolver resolver) {
+  public ProcessLauncher(TaskExecutionResultExceptionResolver resolver) {
     this.resolver = resolver;
 
     PatternLayout layout = createLayout();
@@ -354,7 +354,7 @@ public class ProcessLauncher implements PipeliteProcess {
         for (StageInstance si : dependend) storage.save(si);
 
         // Translate execution result to exec status
-        ExecutionResult result;
+        TaskExecutionResult result;
         if (null != info.getThrowable()) {
           result = resolver.resolveError(info.getThrowable());
         } else {
@@ -494,7 +494,7 @@ public class ProcessLauncher implements PipeliteProcess {
                       params.mail_to,
                       layout));
 
-        ExecutionResultExceptionResolver resolver = DefaultConfiguration.CURRENT.getResolver();
+        TaskExecutionResultExceptionResolver resolver = DefaultConfiguration.CURRENT.getResolver();
 
         ProcessLauncher process = new ProcessLauncher(resolver);
         process.setProcessID(process_id);
@@ -506,7 +506,7 @@ public class ProcessLauncher implements PipeliteProcess {
         AbstractTaskExecutor executor =
             (AbstractTaskExecutor)
                 (Class.forName(params.executor_class)
-                    .getConstructor(String.class, ExecutionResultExceptionResolver.class)
+                    .getConstructor(String.class, TaskExecutionResultExceptionResolver.class)
                     .newInstance(
                         "",
                         resolver));

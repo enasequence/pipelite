@@ -11,7 +11,7 @@
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import pipelite.task.executor.AbstractTaskExecutor;
-import pipelite.task.result.resolver.ExecutionResultExceptionResolver;
+import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
 import pipelite.task.state.TaskExecutionState;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
@@ -21,7 +21,7 @@ public class InternalStageExecutor extends AbstractTaskExecutor {
   private ExecutionInfo info;
   private StageTask task = null;
 
-  public InternalStageExecutor(ExecutionResultExceptionResolver resolver) {
+  public InternalStageExecutor(TaskExecutionResultExceptionResolver resolver) {
     super("", resolver);
   }
 

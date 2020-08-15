@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Set;
 
 import pipelite.task.executor.AbstractTaskExecutor;
-import pipelite.task.result.resolver.ExecutionResultExceptionResolver;
+import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
 import pipelite.task.state.TaskExecutionState;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCall;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
@@ -26,7 +26,7 @@ import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
 import uk.ac.ebi.ena.sra.pipeline.executors.LSFExecutorConfig;
-import pipelite.task.result.ExecutionResult;
+import pipelite.task.result.TaskExecutionResult;
 
 public class LSFStageExecutor extends AbstractTaskExecutor {
   public static final int LSF_JVM_MEMORY_DELTA_MB = 1500;
@@ -36,7 +36,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
   ExecutionInfo info;
   private final String config_prefix_name;
   private final String config_source_name;
-  private final ExecutionResult internalError;
+  private final TaskExecutionResult internalError;
   private final String[] properties_pass;
   private LSFExecutorConfig config;
   private final int lsf_memory_limit;
@@ -44,7 +44,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
 
   public LSFStageExecutor(
       String pipeline_name,
-      ExecutionResultExceptionResolver resolver,
+      TaskExecutionResultExceptionResolver resolver,
       int lsf_memory_limit,
       int cpu_cores,
       LSFExecutorConfig config) {
@@ -61,7 +61,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
 
   LSFStageExecutor(
       String pipeline_name,
-      ExecutionResultExceptionResolver  resolver,
+      TaskExecutionResultExceptionResolver resolver,
       int lsf_memory_limit,
       int cpu_cores,
       String config_prefix_name,

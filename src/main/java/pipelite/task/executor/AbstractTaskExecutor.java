@@ -12,8 +12,8 @@ package pipelite.task.executor;
 
 import java.util.List;
 import org.apache.log4j.Logger;
-import pipelite.task.result.ExecutionResultType;
-import pipelite.task.result.resolver.ExecutionResultExceptionResolver;
+import pipelite.task.result.TaskoExecutionResultType;
+import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
 import pipelite.task.state.TaskExecutionState;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInstance;
 import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
@@ -21,9 +21,9 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
 public abstract class AbstractTaskExecutor implements TaskExecutor {
   protected final Logger log = Logger.getLogger(this.getClass());
   protected final String PIPELINE_NAME;
-  protected final ExecutionResultExceptionResolver resolver;
+  protected final TaskExecutionResultExceptionResolver resolver;
 
-  public AbstractTaskExecutor(String pipeline_name, ExecutionResultExceptionResolver resolver) {
+  public AbstractTaskExecutor(String pipeline_name, TaskExecutionResultExceptionResolver resolver) {
     this.PIPELINE_NAME = pipeline_name;
     this.resolver = resolver;
   }
@@ -41,7 +41,7 @@ public abstract class AbstractTaskExecutor implements TaskExecutor {
         case PERMANENT_ERROR:
           return TaskExecutionState.COMPLETED_TASK;
         default:
-          return ei.getResultType() == ExecutionResultType.TRANSIENT_ERROR
+          return ei.getResultType() == TaskoExecutionResultType.TRANSIENT_ERROR
               ? TaskExecutionState.ACTIVE_TASK
               : TaskExecutionState.DISABLED_TASK;
       }

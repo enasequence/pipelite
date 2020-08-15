@@ -14,13 +14,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import org.junit.Assert;
 import org.junit.Test;
-import pipelite.task.result.resolver.ExecutionResultExceptionResolver;
-import pipelite.task.result.resolver.ExecutionResultResolver;
+import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
+import pipelite.task.result.resolver.TaskExecutionResultResolver;
 import uk.ac.ebi.ena.sra.pipeline.executors.LSFExecutorConfig;
 
 public class LSFStageExecutorTest {
-  private ExecutionResultExceptionResolver resolver() {
-      return ExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER;
+  private TaskExecutionResultExceptionResolver resolver() {
+      return TaskExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER;
   }
 
   private LSFExecutorConfig makeDefaultConfig() throws IOException {

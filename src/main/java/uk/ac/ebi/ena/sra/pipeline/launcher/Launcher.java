@@ -22,7 +22,7 @@ import org.apache.log4j.DailyRollingFileAppender;
 import org.apache.log4j.EnhancedPatternLayout;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import pipelite.task.result.resolver.ExecutionResultExceptionResolver;
+import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall.LSFQueue;
 import uk.ac.ebi.ena.sra.pipeline.base.external.lsf.LSFBqueues;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
@@ -78,7 +78,7 @@ public class Launcher {
     return os;
   }
 
-  private static TaskIdSource initTaskIdSource(ExecutionResultExceptionResolver resolver)
+  private static TaskIdSource initTaskIdSource(TaskExecutionResultExceptionResolver resolver)
       throws ClassNotFoundException, SQLException {
     OracleProcessIdSource ts = new OracleProcessIdSource();
 
@@ -120,12 +120,12 @@ public class Launcher {
       System.exit(DEFAULT_ERROR_EXIT);
     }
 
-    ExecutionResultExceptionResolver resolver = DefaultConfiguration.CURRENT.getResolver();
+    TaskExecutionResultExceptionResolver resolver = DefaultConfiguration.CURRENT.getResolver();
 
     System.exit(main2(resolver, params));
   }
 
-  private static int main2(ExecutionResultExceptionResolver resolver, DefaultLauncherParams params) throws IOException {
+  private static int main2(TaskExecutionResultExceptionResolver resolver, DefaultLauncherParams params) throws IOException {
     EnhancedPatternLayout layout =
         new EnhancedPatternLayout(
             "%d{ISO8601} %-5p [%t] "

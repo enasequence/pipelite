@@ -26,8 +26,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-import pipelite.task.result.resolver.ExecutionResultExceptionResolver;
-import pipelite.task.result.resolver.ExecutionResultResolver;
+import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
+import pipelite.task.result.resolver.TaskExecutionResultResolver;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
 
 class ConfigurationException extends RuntimeException {
@@ -306,10 +306,10 @@ public enum DefaultConfiguration {
   }
 
 
-  public ExecutionResultExceptionResolver getResolver() {
+  public TaskExecutionResultExceptionResolver getResolver() {
     // TODO: allow the resolver to be changed
     // TODO: optimally the resolver should be for each stage
-    return ExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER;
+    return TaskExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER;
 //    return loadEnumConstants(getProperty("commit.status.enum"), ExecutionResult.class);
   }
 
