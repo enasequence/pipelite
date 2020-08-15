@@ -20,13 +20,13 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
 
 public class EnumStorage<T extends Enum<T> & Stage> implements StorageBackend {
   public interface ProcessIdFactory {
-    public default String getProcessId() {
+    default String getProcessId() {
       return null;
-    };
-  };
+    }
+  }
 
-  Logger log = Logger.getLogger(getClass());
-  Class<T> e;
+    final Logger log = Logger.getLogger(getClass());
+  final Class<T> e;
   private String pipeline_name;
   private ProcessIdFactory idf = new ProcessIdFactory() {};
 
@@ -43,7 +43,7 @@ public class EnumStorage<T extends Enum<T> & Stage> implements StorageBackend {
   }
 
   @Override
-  public void load(PipeliteState ps) throws StorageException {
+  public void load(PipeliteState ps) {
     ps.setExecCount(0);
     ps.setState(State.ACTIVE);
     ps.setPriority(0);
@@ -51,27 +51,27 @@ public class EnumStorage<T extends Enum<T> & Stage> implements StorageBackend {
   }
 
   @Override
-  public void save(PipeliteState ps) throws StorageException {
+  public void save(PipeliteState ps) {
     log.info(ps);
   }
 
   @Override
-  public void save(StageInstance si) throws StorageException {
+  public void save(StageInstance si) {
     log.info(si);
   }
 
   @Override
-  public void load(ExecutionInstance ei) throws StorageException {
+  public void load(ExecutionInstance ei) {
     log.info(ei);
   }
 
   @Override
-  public void save(ExecutionInstance ei) throws StorageException {
+  public void save(ExecutionInstance ei) {
     log.info(ei);
   }
 
   @Override
-  public void save(ProcessLogBean bean) throws StorageException {
+  public void save(ProcessLogBean bean) {
     try {
       bean.getPipelineName();
     } catch (NoSuchFieldException e) {
@@ -82,17 +82,17 @@ public class EnumStorage<T extends Enum<T> & Stage> implements StorageBackend {
   }
 
   @Override
-  public void flush() throws StorageException {
+  public void flush() {
     // do nothing
   }
 
   @Override
-  public void close() throws StorageException {
+  public void close() {
     // do nothing
   }
 
   @Override
-  public void load(StageInstance si) throws StorageException {
+  public void load(StageInstance si) {
     Stream.of(e.getEnumConstants())
         .filter(s -> s.toString().equals(si.getStageName()))
         .findFirst()
@@ -113,7 +113,7 @@ public class EnumStorage<T extends Enum<T> & Stage> implements StorageBackend {
   }
 
   @Override
-  public String getExecutionId() throws StorageException {
+  public String getExecutionId() {
     return "1";
   }
 }

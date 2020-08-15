@@ -14,9 +14,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public abstract class ResourceLock {
-  private String[] parts;
-  private String pipeline_name;
-  protected String separator = "/";
+  private final String[] parts;
+  private final String pipeline_name;
+  protected final String separator = "/";
 
   public String getSeparator() {
     return this.separator;
@@ -29,9 +29,9 @@ public abstract class ResourceLock {
 
   public String[] getParts() {
     return parts;
-  };
+  }
 
-  public String getLockId() {
+    public String getLockId() {
     return Stream.of(parts).collect(Collectors.joining(getSeparator()));
   }
 

@@ -24,20 +24,19 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.StageTask;
 import uk.ac.ebi.ena.sra.pipeline.storage.EnumStorage.ProcessIdFactory;
-import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
 
 public class EnumStorageTest {
-  static Logger log = Logger.getLogger(EnumStorageTest.class);
+  static final Logger log = Logger.getLogger(EnumStorageTest.class);
 
   @BeforeClass
   public static void beforeClass() {
     PropertyConfigurator.configure("resource/test.log4j.properties");
   }
 
-  public static enum __testovye_shagee implements Stage {
-    ОДИН,
-    ДВА,
-    ТРИ;
+  public enum __testovye_shagee implements Stage {
+    ONE,
+    TWO,
+    THREE;
 
     @Override
     public Class<? extends StageTask> getTaskClass() {
@@ -46,10 +45,10 @@ public class EnumStorageTest {
             public void unwind() {}
 
             @Override
-            public void init(Object id, boolean do_commit) throws Throwable {}
+            public void init(Object id) {}
 
             @Override
-            public void execute() throws Throwable {}
+            public void execute() {}
           })
           .getClass();
     }
@@ -66,8 +65,8 @@ public class EnumStorageTest {
   }
 
   @Test
-  public void test() throws StorageException, NoSuchFieldException {
-    EnumStorage<__testovye_shagee> es = new EnumStorage<__testovye_shagee>(__testovye_shagee.class);
+  public void test() throws NoSuchFieldException {
+    EnumStorage<__testovye_shagee> es = new EnumStorage<>(__testovye_shagee.class);
     es.setProcessIdFactory(
         new ProcessIdFactory() {
           public String getProcessId() {
@@ -79,15 +78,11 @@ public class EnumStorageTest {
     Stream.of(__testovye_shagee.values())
         .forEach(
             stage -> {
-              try {
                 StageInstance si = new StageInstance();
                 si.setStageName(stage.toString());
                 es.load(si);
                 log.info(si);
                 si_list.add(si);
-              } catch (StorageException se) {
-                throw new RuntimeException(se);
-              }
             });
     log.info(Arrays.asList(si_list));
     Assert.assertEquals(__testovye_shagee.values().length, si_list.size());

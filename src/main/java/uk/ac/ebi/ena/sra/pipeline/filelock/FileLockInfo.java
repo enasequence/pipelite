@@ -16,13 +16,6 @@ public class FileLockInfo {
   public final int pid;
   public final String path;
 
-  public FileLockInfo(String path, String machine_id, int port) {
-    this.path = path;
-    this.pid = Integer.parseInt(machine_id.split("@")[0]);
-    this.machine = machine_id.split("@")[1];
-    this.port = port;
-  }
-
   public FileLockInfo(String path, int pid, String machine, int port) {
     this.path = path;
     this.pid = pid;

@@ -45,10 +45,9 @@ public class ProcessLauncher implements PipeliteProcess {
   private final ExecutionResultExceptionResolver resolver;
 
   private static final String MAIL_APPENDER = "MAIL_APPENDER";
-  private Logger log;
+  private final Logger log;
   private String process_id;
   private String pipeline_name;
-  private final PatternLayout layout;
   PipeliteState state;
   private StageInstance[] instances;
   private StorageBackend storage;
@@ -62,7 +61,7 @@ public class ProcessLauncher implements PipeliteProcess {
   public ProcessLauncher(ExecutionResultExceptionResolver resolver) {
     this.resolver = resolver;
 
-    layout = createLayout();
+    PatternLayout layout = createLayout();
     log = Logger.getLogger(process_id + " " + getClass().getSimpleName());
     log.removeAllAppenders();
     log.addAppender(new ConsoleAppender(layout));
@@ -196,7 +195,6 @@ public class ProcessLauncher implements PipeliteProcess {
   private void unlock_process() {
     if (locker.is_locked(new ProcessResourceLock(state.getPipelineName(), state.getProcessId())))
       locker.unlock(new ProcessResourceLock(state.getPipelineName(), state.getProcessId()));
-    ;
   }
 
   // Existing statuses:
@@ -210,17 +208,15 @@ public class ProcessLauncher implements PipeliteProcess {
   private boolean eval_process() {
     int to_process = instances.length;
 
-    loop:
-    for (int i = 0; i < instances.length; ++i) {
-      StageInstance instance = instances[i];
+    for (StageInstance instance : instances) {
       log.info(
-          String.format(
-              "Stage [%s], enabled [%b] result [%s] of type [%s], count [%d]",
-              instance.getStageName(),
-              instance.isEnabled(),
-              instance.getExecutionInstance().getResult(),
-              executor.can_execute(instance),
-              instance.getExecutionCount()));
+              String.format(
+                      "Stage [%s], enabled [%b] result [%s] of type [%s], count [%d]",
+                      instance.getStageName(),
+                      instance.isEnabled(),
+                      instance.getExecutionInstance().getResult(),
+                      executor.can_execute(instance),
+                      instance.getExecutionCount()));
       switch (executor.can_execute(instance)) {
         case ACTIVE_TASK:
           break;
@@ -233,7 +229,7 @@ public class ProcessLauncher implements PipeliteProcess {
           // to_process -= to_process;
           ExecutionInstance ei = instance.getExecutionInstance();
           state.setState(
-              null != ei && ei.getResultType().isError() ? State.FAILED : State.COMPLETED);
+                  null != ei && ei.getResultType().isError() ? State.FAILED : State.COMPLETED);
           return false;
       }
     }
@@ -358,7 +354,7 @@ public class ProcessLauncher implements PipeliteProcess {
         for (StageInstance si : dependend) storage.save(si);
 
         // Translate execution result to exec status
-        ExecutionResult result = null;
+        ExecutionResult result;
         if (null != info.getThrowable()) {
           result = resolver.resolveError(info.getThrowable());
         } else {
@@ -443,7 +439,7 @@ public class ProcessLauncher implements PipeliteProcess {
     return mailer;
   }
 
-  public static void main(String args[])
+  public static void main(String[] args)
       throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException,
           IllegalArgumentException, InvocationTargetException, NoSuchMethodException,
           SecurityException {
@@ -541,6 +537,7 @@ public class ProcessLauncher implements PipeliteProcess {
 
   static class Parameters {
     @Parameter(names = "--executor", description = "Executor class")
+    final
     String executor_class = DetachedStageExecutor.class.getName();
 
     @Parameter(required = true)
@@ -549,7 +546,8 @@ public class ProcessLauncher implements PipeliteProcess {
     @Parameter(names = "--stage", description = "Stage name to execute")
     String stage;
 
-    @Parameter(names = "--mail-to", description = "")
+    @Parameter(names = "--mail-to")
+    final
     String mail_to = DefaultConfiguration.currentSet().getDefaultMailTo();
   }
 

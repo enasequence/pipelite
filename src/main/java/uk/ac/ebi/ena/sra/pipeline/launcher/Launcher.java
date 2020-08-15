@@ -64,7 +64,7 @@ public class Launcher {
   }
 
   private static OracleStorage initStorageBackend()
-      throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
+      throws ClassNotFoundException, SQLException {
     OracleStorage os = new OracleStorage();
 
     Connection connection = DefaultConfiguration.currentSet().createConnection();
@@ -79,7 +79,7 @@ public class Launcher {
   }
 
   private static TaskIdSource initTaskIdSource(ExecutionResultExceptionResolver resolver)
-      throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
+      throws ClassNotFoundException, SQLException {
     OracleProcessIdSource ts = new OracleProcessIdSource();
 
     ts.setConnection(DefaultConfiguration.currentSet().createConnection());
@@ -160,8 +160,8 @@ public class Launcher {
                   params.queue_name,
                   params.lsf_mem,
                   params.lsf_cpu_cores,
-                  params.lsf_mem_timeout,
-                  DefaultConfiguration.currentSet().getStagesRedoCount()));
+                  params.lsf_mem_timeout
+              ));
 
           launcher.setSourceReadTimeout(120 * 1000);
           launcher.setProcessPool(init(params.workers, storage, (ResourceLocker) lockman));
@@ -171,7 +171,7 @@ public class Launcher {
               .addShutdownHook(
                   new Thread(
                       new Runnable() {
-                        Thread t = Thread.currentThread();
+                        final Thread t = Thread.currentThread();
 
                         @Override
                         public void run() {
@@ -219,7 +219,7 @@ public class Launcher {
         }
 
         try {
-          if (null != task_id_source && task_id_source instanceof OracleProcessIdSource)
+          if (task_id_source instanceof OracleProcessIdSource)
             ((OracleProcessIdSource) task_id_source).done();
         } catch (Throwable t) {
           t.printStackTrace();

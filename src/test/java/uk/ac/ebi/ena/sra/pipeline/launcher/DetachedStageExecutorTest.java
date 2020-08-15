@@ -12,8 +12,6 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import org.junit.Assert;
 import org.junit.Test;
-import pipelite.task.result.ExecutionResult;
-import pipelite.task.result.ExecutionResultType;
 import pipelite.task.result.resolver.ExecutionResultResolver;
 
 public class DetachedStageExecutorTest {
@@ -59,7 +57,7 @@ public class DetachedStageExecutorTest {
         });
 
     String cmdl = se.get_info().getCommandline();
-    Assert.assertTrue(!cmdl.contains(" -Xmx2000M"));
+      Assert.assertFalse(cmdl.contains(" -Xmx2000M"));
   }
 
   @Test

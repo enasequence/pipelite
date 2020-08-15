@@ -24,12 +24,11 @@ import org.junit.Test;
 import pipelite.task.executor.TaskExecutor;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.StageExecutorFactory;
-import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
 
 public class LauncherTest {
   static final long delay = 5 * 1000;
   static final int workers = ForkJoinPool.getCommonPoolParallelism();
-  static Logger log = Logger.getLogger(LauncherTest.class);
+  static final Logger log = Logger.getLogger(LauncherTest.class);
 
   @BeforeClass
   public static void setup() {
@@ -38,14 +37,14 @@ public class LauncherTest {
 
   @Test
   public void main()
-      throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException,
+      throws SQLException,
           InterruptedException {
     PipeliteLauncher.TaskIdSource id_src =
         new PipeliteLauncher.TaskIdSource() {
           int index = 10;
 
           @Override
-          public List<String> getTaskQueue() throws SQLException {
+          public List<String> getTaskQueue() {
             for (index--; index > 0; )
               return Stream.iterate(0, i -> ++i)
                   .limit(2000)
@@ -56,18 +55,10 @@ public class LauncherTest {
         };
 
     StageExecutorFactory e_src =
-        new StageExecutorFactory() {
-          @Override
-          public TaskExecutor getExecutor() {
-            return null;
-          }
-        };
+            () -> null;
 
     PipeliteLauncher.ProcessFactory pr_src =
-        new PipeliteLauncher.ProcessFactory() {
-          @Override
-          public PipeliteProcess getProcess(String process_id) {
-            return new PipeliteProcess() {
+            process_id -> new PipeliteProcess() {
               @Override
               public void run() {
                 System.out.println("EXECUTING " + process_id);
@@ -92,8 +83,6 @@ public class LauncherTest {
                 return null;
               }
             };
-          }
-        };
 
     ProcessPoolExecutor pool =
         new ProcessPoolExecutor(workers) {
@@ -135,18 +124,8 @@ public class LauncherTest {
     log.info("CPU count: " + Runtime.getRuntime().availableProcessors());
     log.info("Available parallelism: " + ForkJoinPool.getCommonPoolParallelism());
 
-    Assert.assertTrue(0 == pool.getActiveCount()); // Threads should properly react to interrupt
+      Assert.assertEquals(0, pool.getActiveCount()); // Threads should properly react to interrupt
     pool.shutdownNow();
     Assert.assertTrue(task_speed - delay < 3000); // Performance degradation?
   }
-
-  public void setProcessID(String process_id) {}
-
-  public StorageBackend getStorage() {
-    return null;
-  }
-
-  public void setStorage(StorageBackend storage) {}
-
-  public void setExecutor(TaskExecutor executor) {}
 }

@@ -25,8 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
-import java.util.stream.Collectors;
-import pipelite.task.result.ExecutionResult;
+
 import pipelite.task.result.resolver.ExecutionResultExceptionResolver;
 import pipelite.task.result.resolver.ExecutionResultResolver;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
@@ -42,21 +41,21 @@ class ConfigurationException extends RuntimeException {
   public ConfigurationException(Throwable value) {
     super(value);
   }
-};
+}
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})
 @interface PipeliteProperty {
 
   boolean required() default true;
-};
+}
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})
 @interface PipelitePropertyIntRange {
 
   int[] range() default {};
-};
+}
 
 public enum DefaultConfiguration {
   CURRENT("pipelite");
@@ -92,7 +91,7 @@ public enum DefaultConfiguration {
   }
 
   private void checkProperties()
-      throws IllegalAccessException, IllegalArgumentException, InvocationTargetException,
+      throws IllegalAccessException, IllegalArgumentException,
           NoSuchMethodException, SecurityException {
     List<String> result = new ArrayList<>();
     for (Method m : this.getClass().getDeclaredMethods()) {
@@ -118,7 +117,7 @@ public enum DefaultConfiguration {
     }
 
     if (!result.isEmpty()) {
-      throw new ConfigurationException(result.stream().collect(Collectors.joining("%n")));
+      throw new ConfigurationException(String.join("%n", result));
     }
   }
 
@@ -219,7 +218,7 @@ public enum DefaultConfiguration {
   }
 
   public Connection createConnection()
-      throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+      throws SQLException, ClassNotFoundException {
     Properties props = new Properties();
     props.put("user", getJDBCUser());
     props.put("password", getJDBCPassword());
@@ -250,7 +249,7 @@ public enum DefaultConfiguration {
 
   @PipeliteProperty
   public int getStagesRedoCount() {
-    return Integer.valueOf(getProperty("stages.redo.count"));
+    return Integer.parseInt(getProperty("stages.redo.count"));
   }
 
   @SuppressWarnings("unchecked")

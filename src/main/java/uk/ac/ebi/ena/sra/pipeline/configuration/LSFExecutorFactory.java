@@ -18,22 +18,20 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.StageExecutorFactory
 import pipelite.task.executor.TaskExecutor;
 
 public class LSFExecutorFactory implements StageExecutorFactory {
-  private String pipeline_name;
-  private ExecutionResultExceptionResolver resolver;
-  private String queue;
-  private int memory_limit;
-  private int cpu_cores;
-  private int lsf_mem_timeout;
-  private int redo;
+  private final String pipeline_name;
+  private final ExecutionResultExceptionResolver resolver;
+  private final String queue;
+  private final int memory_limit;
+  private final int cpu_cores;
+  private final int lsf_mem_timeout;
 
-  public LSFExecutorFactory(
-      String pipeline_name,
-      ExecutionResultExceptionResolver resolver,
-      String queue,
-      int memory_limit,
-      int cpu_cores,
-      int lsf_mem_timeout,
-      int redo) {
+    public LSFExecutorFactory(
+            String pipeline_name,
+            ExecutionResultExceptionResolver resolver,
+            String queue,
+            int memory_limit,
+            int cpu_cores,
+            int lsf_mem_timeout) {
     LSFQueue.findByName(queue);
 
     this.pipeline_name = pipeline_name;
@@ -42,8 +40,7 @@ public class LSFExecutorFactory implements StageExecutorFactory {
     this.memory_limit = memory_limit;
     this.cpu_cores = cpu_cores;
     this.lsf_mem_timeout = lsf_mem_timeout;
-    this.redo = redo;
-  }
+    }
 
   public TaskExecutor getExecutor() {
     LSFExecutorConfig cfg_def =

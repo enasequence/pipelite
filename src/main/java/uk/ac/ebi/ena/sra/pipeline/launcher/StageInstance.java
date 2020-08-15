@@ -22,7 +22,7 @@ public class StageInstance {
   private int memory_limit;
   private int cpu_cores;
   private String[] properties_pass;
-  private ExecutorConfig resource_config[];
+  private ExecutorConfig[] resource_config;
   private ExecutionInstance execution_instance = new ExecutionInstance();
 
   public StageInstance() {}
@@ -35,6 +35,7 @@ public class StageInstance {
     this.depends_on = from.depends_on;
     this.enabled = from.enabled;
     this.memory_limit = from.memory_limit;
+    this.cpu_cores = from.cpu_cores;
     this.properties_pass = from.properties_pass;
     this.resource_config = from.resource_config;
     this.execution_instance = new ExecutionInstance(from.execution_instance);
@@ -106,7 +107,7 @@ public class StageInstance {
     for (ExecutorConfig r : resource_config) {
       try {
         return (T) klass.cast(r);
-      } catch (ClassCastException cce) {;
+      } catch (ClassCastException cce) {
       }
     }
     return null;

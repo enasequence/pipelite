@@ -22,12 +22,12 @@ import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 
 public class TaggedPoolExecutor extends ThreadPoolExecutor {
-  Logger log = Logger.getLogger(this.getClass());
+  final Logger log = Logger.getLogger(this.getClass());
 
-  Map<Object, Runnable> running = Collections.synchronizedMap(new WeakHashMap<Object, Runnable>());
+  final Map<Object, Runnable> running = Collections.synchronizedMap(new WeakHashMap<>());
 
   public TaggedPoolExecutor(int corePoolSize) {
-    super(corePoolSize, corePoolSize, 0, TimeUnit.DAYS, new SynchronousQueue<Runnable>());
+    super(corePoolSize, corePoolSize, 0, TimeUnit.DAYS, new SynchronousQueue<>());
   }
 
   public void execute(Object id, Runnable runnable) {

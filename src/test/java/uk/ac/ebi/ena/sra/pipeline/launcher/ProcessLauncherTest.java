@@ -38,7 +38,7 @@ import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
 public class ProcessLauncherTest {
 
   private static final String MOCKED_PIPELINE = "MOCKED PIPELINE";
-  static Logger log = Logger.getLogger(ProcessLauncherTest.class);
+  static final Logger log = Logger.getLogger(ProcessLauncherTest.class);
 
   private final static class TransientException extends RuntimeException {}
   private final static class PermanentException extends RuntimeException {}
@@ -118,35 +118,31 @@ public class ProcessLauncherTest {
         .load(any(StageInstance.class));
 
     doAnswer(
-            new Answer<Object>() {
-              public Object answer(InvocationOnMock invocation) {
-                PipeliteState si = (PipeliteState) invocation.getArguments()[0];
-                si.setPipelineName(stored_state.getPipelineName());
-                si.setProcessId(stored_state.getProcessId());
-                si.setState(stored_state.getState());
-                si.setPriority(stored_state.getPriority());
-                si.setExecCount(stored_state.getExecCount());
-                si.setProcessComment(stored_state.getProcessComment());
-                return null;
-              }
+            (Answer<Object>) invocation -> {
+              PipeliteState si = (PipeliteState) invocation.getArguments()[0];
+              si.setPipelineName(stored_state.getPipelineName());
+              si.setProcessId(stored_state.getProcessId());
+              si.setState(stored_state.getState());
+              si.setPriority(stored_state.getPriority());
+              si.setExecCount(stored_state.getExecCount());
+              si.setProcessComment(stored_state.getProcessComment());
+              return null;
             })
         .when(mockedStorage)
         .load(any(PipeliteState.class));
 
     doAnswer(
-            new Answer<Object>() {
-              public Object answer(InvocationOnMock invocation) {
-                PipeliteState si = (PipeliteState) invocation.getArguments()[0];
+            (Answer<Object>) invocation -> {
+              PipeliteState si = (PipeliteState) invocation.getArguments()[0];
 
-                stored_state.setPipelineName(si.getPipelineName());
-                stored_state.setProcessId(si.getProcessId());
-                stored_state.setState(si.getState());
-                stored_state.setPriority(si.getPriority());
-                stored_state.setExecCount(si.getExecCount());
-                stored_state.setProcessComment(si.getProcessComment());
+              stored_state.setPipelineName(si.getPipelineName());
+              stored_state.setProcessId(si.getProcessId());
+              stored_state.setState(si.getState());
+              stored_state.setPriority(si.getPriority());
+              stored_state.setExecCount(si.getExecCount());
+              stored_state.setProcessComment(si.getProcessComment());
 
-                return null;
-              }
+              return null;
             })
         .when(mockedStorage)
         .save(any(PipeliteState.class));
@@ -168,30 +164,26 @@ public class ProcessLauncherTest {
     TaskExecutor spiedExecutor = spy(new InternalStageExecutor(resolver));
     final AtomicInteger inv_cnt = new AtomicInteger(0);
     doAnswer(
-            new Answer<Object>() {
-              public Object answer(InvocationOnMock i) {
-                StageInstance si = (StageInstance) i.getArguments()[0];
-                log.info("Calling execute on \"" + si.getStageName() + "\"");
-                return null;
-              }
+            (Answer<Object>) i -> {
+              StageInstance si = (StageInstance) i.getArguments()[0];
+              log.info("Calling execute on \"" + si.getStageName() + "\"");
+              return null;
             })
         .when(spiedExecutor)
         .execute(any(StageInstance.class));
 
     doAnswer(
-            new Answer<Object>() {
-              public Object answer(InvocationOnMock i) {
-                ExecutionInfo info = new ExecutionInfo();
-                info.setExitCode(
-                    invocation_exit_code.length > inv_cnt.get()
-                        ? invocation_exit_code[inv_cnt.getAndIncrement()]
-                        : 0);
-                info.setThrowable(null);
-                info.setCommandline("Command Line");
-                info.setStderr("Stderr");
-                info.setStdout("Stdout");
-                return info;
-              }
+            (Answer<Object>) i -> {
+              ExecutionInfo info = new ExecutionInfo();
+              info.setExitCode(
+                  invocation_exit_code.length > inv_cnt.get()
+                      ? invocation_exit_code[inv_cnt.getAndIncrement()]
+                      : 0);
+              info.setThrowable(null);
+              info.setCommandline("Command Line");
+              info.setStderr("Stderr");
+              info.setStdout("Stdout");
+              return info;
             })
         .when(spiedExecutor)
         .get_info();
@@ -215,7 +207,7 @@ public class ProcessLauncherTest {
               new ExecutionResult[] {success(), success(), transientError(), success() },
               new boolean[] {false, true, true, true});
 
-      TaskExecutor spiedExecutor = initExecutor(resolver, new int[] {successExitCode(), transientErrorExitCode(), successExitCode(), transientErrorExitCode()});
+      TaskExecutor spiedExecutor = initExecutor(resolver, successExitCode(), transientErrorExitCode(), successExitCode(), transientErrorExitCode());
       ProcessLauncher pl =
           initProcessLauncher(stages, resolver, mockedStorage, spiedExecutor);
       pl.setLocker(new MemoryLocker());

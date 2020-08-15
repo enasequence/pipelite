@@ -14,7 +14,7 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import java.sql.Connection;
-import java.sql.SQLException;
+
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -22,7 +22,6 @@ import org.apache.log4j.PatternLayout;
 import pipelite.task.executor.TaskExecutor;
 import pipelite.task.result.resolver.ExecutionResultExceptionResolver;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
-import uk.ac.ebi.ena.sra.pipeline.launcher.iface.StageTask;
 
 public class StageLauncher {
   static final PatternLayout layout = new PatternLayout("%d{ISO8601} %-5p [%t] %c{1}:%L - %m%n");
@@ -49,13 +48,14 @@ public class StageLauncher {
       description = "stage is enabled",
       hidden = true,
       arity = 1)
+  final
   boolean enabled = true;
   // hidden
   @Parameter(names = PARAMETERS_NAME_EXEC_COUNT, description = "execution counter", hidden = true)
+  final
   int exec_cnt = 0;
 
-  public static void main(String[] args)
-      throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+  public static void main(String[] args) {
     ConsoleAppender appender = new ConsoleAppender(layout, "System.out");
     appender.setThreshold(Level.INFO);
 

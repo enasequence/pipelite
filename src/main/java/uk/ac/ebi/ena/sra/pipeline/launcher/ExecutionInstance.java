@@ -30,14 +30,14 @@ public class ExecutionInstance {
   public ExecutionInstance() {}
 
   public ExecutionInstance(ExecutionInstance from) {
-    this.EXEC_ID = null == from.EXEC_ID ? null : new String(from.EXEC_ID);
+    this.EXEC_ID = null == from.EXEC_ID ? null : from.EXEC_ID;
     this.EXEC_START = null == from.EXEC_START ? null : Timestamp.from(from.EXEC_START.toInstant());
     this.EXEC_DATE = null == from.EXEC_DATE ? null : Timestamp.from(from.EXEC_DATE.toInstant());
     this.EXEC_RESULT_TYPE = from.EXEC_RESULT_TYPE;
-    this.EXEC_RESULT = null == from.EXEC_RESULT ? null : new String(from.EXEC_RESULT);
-    this.EXEC_STDOUT = null == from.EXEC_STDOUT ? null : new String(from.EXEC_STDOUT);
-    this.EXEC_STDERR = null == from.EXEC_STDERR ? null : new String(from.EXEC_STDERR);
-    this.EXEC_CMDLINE = null == from.EXEC_CMDLINE ? null : new String(from.EXEC_CMDLINE);
+    this.EXEC_RESULT = null == from.EXEC_RESULT ? null : from.EXEC_RESULT;
+    this.EXEC_STDOUT = null == from.EXEC_STDOUT ? null : from.EXEC_STDOUT;
+    this.EXEC_STDERR = null == from.EXEC_STDERR ? null : from.EXEC_STDERR;
+    this.EXEC_CMDLINE = null == from.EXEC_CMDLINE ? null : from.EXEC_CMDLINE;
   }
 
   @Override

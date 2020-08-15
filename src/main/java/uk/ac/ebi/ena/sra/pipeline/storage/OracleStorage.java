@@ -37,7 +37,7 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
   private String pipeline_name;
   private String stage_table_name;
   private String process_table_name;
-  private MemoryLocker mlocker = new MemoryLocker();
+  private final MemoryLocker mlocker = new MemoryLocker();
 
   public OracleStorage() {}
 
@@ -144,7 +144,7 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
       if (null != ps) {
         try {
           ps.close();
-        } catch (SQLException e) {;
+        } catch (SQLException e) {
         }
       }
     }
@@ -211,7 +211,7 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
       if (null != ps) {
         try {
           ps.close();
-        } catch (SQLException e) {;
+        } catch (SQLException e) {
         }
       }
     }
@@ -274,7 +274,7 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
       if (null != ps) {
         try {
           ps.close();
-        } catch (SQLException e) {;
+        } catch (SQLException e) {
         }
       }
     }
@@ -407,7 +407,7 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
       if (null != ps) {
         try {
           ps.close();
-        } catch (SQLException e) {;
+        } catch (SQLException e) {
         }
       }
     }
@@ -462,17 +462,14 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
       if (1 != rows)
         throw new StorageException(String.format("Unable to insert into %s", log_table_name));
 
-    } catch (SQLException e) {
-      throw new StorageException(e);
-
-    } catch (NoSuchFieldException e) {
+    } catch (SQLException | NoSuchFieldException e) {
       throw new StorageException(e);
 
     } finally {
       if (null != ps) {
         try {
           ps.close();
-        } catch (SQLException e) {;
+        } catch (SQLException e) {
         }
       }
     }
@@ -592,7 +589,7 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
       if (null != ps) {
         try {
           ps.close();
-        } catch (SQLException e) {;
+        } catch (SQLException e) {
         }
       }
     }

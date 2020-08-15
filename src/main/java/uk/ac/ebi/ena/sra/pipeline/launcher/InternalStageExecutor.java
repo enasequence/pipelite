@@ -19,8 +19,6 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.iface.StageTask;
 
 public class InternalStageExecutor extends AbstractTaskExecutor {
   private ExecutionInfo info;
-  private boolean do_commit;
-  protected ExternalCallBackEnd back_end = new SimpleBackEnd();
   private StageTask task = null;
 
   public InternalStageExecutor(ExecutionResultExceptionResolver resolver) {
@@ -45,8 +43,8 @@ public class InternalStageExecutor extends AbstractTaskExecutor {
 
         Class<? extends StageTask> klass =
             DefaultConfiguration.currentSet().getStage(instance.getStageName()).getTaskClass();
-        task = (StageTask) klass.getConstructor((Class[]) null).newInstance((Object[]) null);
-        task.init(instance.getProcessID(), do_commit);
+        task = klass.getConstructor((Class[]) null).newInstance((Object[]) null);
+        task.init(instance.getProcessID());
         task.execute();
 
       } catch (Throwable e) {
@@ -70,10 +68,6 @@ public class InternalStageExecutor extends AbstractTaskExecutor {
   @Override
   public Class<? extends ExecutorConfig> getConfigClass() {
     return null;
-  }
-
-  public StageTask get_task() {
-    return task;
   }
 
   @Override

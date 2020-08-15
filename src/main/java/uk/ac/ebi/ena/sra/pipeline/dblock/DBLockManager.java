@@ -34,7 +34,7 @@ public class DBLockManager implements LauncherLockManager, ResourceLocker {
   private final String pipeline_name;
   private final String allocator_name;
   private final Logger log = Logger.getLogger(this.getClass());
-  ExecutorService e = Executors.newSingleThreadExecutor();
+  final ExecutorService e = Executors.newSingleThreadExecutor();
   private final AbstractPingPong pingpong;
 
   public DBLockManager(Connection connection, String pipeilne_name) throws InterruptedException {
@@ -45,8 +45,8 @@ public class DBLockManager implements LauncherLockManager, ResourceLocker {
     e.submit(
         pingpong =
             new AbstractPingPong(
-                0, allocator_name.split("@")[1], Integer.valueOf(allocator_name.split("@")[0])) {
-              private Pattern lock_pattern = Pattern.compile("^([\\d]+)@([^:]+):([\\d]{2,5})$");
+                0, allocator_name.split("@")[1], Integer.parseInt(allocator_name.split("@")[0])) {
+              private final Pattern lock_pattern = Pattern.compile("^([\\d]+)@([^:]+):([\\d]{2,5})$");
 
               @Override
               public FileLockInfo parseFileLock(String request_line) {
@@ -105,10 +105,6 @@ public class DBLockManager implements LauncherLockManager, ResourceLocker {
     } catch (SQLException e) {
       log.info("ERROR: " + e.getMessage());
     }
-  }
-
-  public Connection getConnection() {
-    return this.connection;
   }
 
   @Override

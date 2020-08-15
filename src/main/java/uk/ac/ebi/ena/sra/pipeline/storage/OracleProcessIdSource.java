@@ -22,7 +22,7 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.TaskIdSource;
 import pipelite.task.result.ExecutionResult;
 
 public class OracleProcessIdSource implements OracleCommons, TaskIdSource {
-  Logger log = Logger.getLogger(this.getClass());
+  final Logger log = Logger.getLogger(this.getClass());
   private PreparedStatement selectPS;
   private String table_name;
   private String pipeline_name;
@@ -68,7 +68,7 @@ public class OracleProcessIdSource implements OracleCommons, TaskIdSource {
 
   @Override
   public List<String> getTaskQueue() throws SQLException {
-    List<String> result = new ArrayList<String>();
+    List<String> result = new ArrayList<>();
     selectPS.setObject(1, window);
     selectPS.execute();
 
@@ -78,7 +78,7 @@ public class OracleProcessIdSource implements OracleCommons, TaskIdSource {
     return result;
   }
 
-  public void setExecutionResultArray(ExecutionResult execution_result_array[]) {
+  public void setExecutionResultArray(ExecutionResult[] execution_result_array) {
     this.execution_result_array = execution_result_array;
   }
 

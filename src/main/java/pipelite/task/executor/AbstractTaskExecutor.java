@@ -19,7 +19,7 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInstance;
 import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
 
 public abstract class AbstractTaskExecutor implements TaskExecutor {
-  protected Logger log = Logger.getLogger(this.getClass());
+  protected final Logger log = Logger.getLogger(this.getClass());
   protected final String PIPELINE_NAME;
   protected final ExecutionResultExceptionResolver resolver;
 

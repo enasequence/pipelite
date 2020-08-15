@@ -19,7 +19,6 @@ import java.net.ConnectException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.util.concurrent.CountDownLatch;
 import org.apache.log4j.Logger;
 import uk.ac.ebi.ena.sra.pipeline.filelock.FileLockInfo;
@@ -28,10 +27,10 @@ public abstract class AbstractPingPong implements Runnable {
   ServerSocket server;
   int port;
   private FileLockInfo my_info;
-  CountDownLatch l = new CountDownLatch(1);
+  final CountDownLatch l = new CountDownLatch(1);
   final String machine;
   final int pid;
-  private Logger log = Logger.getLogger(this.getClass());
+  private final Logger log = Logger.getLogger(this.getClass());
   volatile boolean stop = false;
 
   public abstract FileLockInfo parseFileLock(String request_line);
@@ -82,12 +81,11 @@ public abstract class AbstractPingPong implements Runnable {
           String request_line = input_reader.readLine();
           FileLockInfo info = parseFileLock(request_line);
           String reply =
-              String.valueOf(
-                      null == info
-                          ? Boolean.FALSE
-                          : (this.pid == info.pid && this.machine.equals(info.machine))
-                              ? Boolean.TRUE
-                              : Boolean.FALSE)
+              (null == info
+                      ? Boolean.FALSE
+                      : (this.pid == info.pid && this.machine.equals(info.machine))
+                      ? Boolean.TRUE
+                      : Boolean.FALSE)
                   + "\n";
           client_stream.writeBytes(reply);
           log.info("recv: " + request_line + ", resp: " + reply);
@@ -106,11 +104,11 @@ public abstract class AbstractPingPong implements Runnable {
     }
   }
 
-  public boolean pingLockOwner(FileLockInfo info) throws UnknownHostException, IOException {
+  public boolean pingLockOwner(FileLockInfo info) throws IOException {
     try (Socket kkSocket = new Socket(info.machine, info.port);
         PrintWriter out = new PrintWriter(kkSocket.getOutputStream(), true);
         BufferedReader in =
-            new BufferedReader(new InputStreamReader(kkSocket.getInputStream())); ) {
+            new BufferedReader(new InputStreamReader(kkSocket.getInputStream()))) {
       out.println(formFileLock(info));
       return Boolean.parseBoolean(in.readLine());
 

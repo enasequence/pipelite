@@ -25,7 +25,7 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.LauncherLockManager;
 
 public class DBLockManagerTest {
   static Logger log = Logger.getLogger(DBLockManagerTest.class);
-  String LOCK_FILE_NAME = "lock.file";
+  final String LOCK_FILE_NAME = "lock.file";
   static Connection connection = null;
 
   @BeforeClass
@@ -40,7 +40,7 @@ public class DBLockManagerTest {
   }
 
   public static Connection createConnection()
-      throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+      throws SQLException, ClassNotFoundException {
     return createConnection(
         "era",
         "eradevt1",
@@ -48,7 +48,7 @@ public class DBLockManagerTest {
   }
 
   public static Connection createConnection(String user, String passwd, String url)
-      throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+      throws SQLException, ClassNotFoundException {
 
     Properties props = new Properties();
     props.put("user", user);

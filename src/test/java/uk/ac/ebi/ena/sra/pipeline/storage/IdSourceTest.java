@@ -35,12 +35,12 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
 public class IdSourceTest {
   static TaskIdSource id_src;
   static StorageBackend db_backend;
-  static Logger log = Logger.getLogger(IdSourceTest.class);
+  static final Logger log = Logger.getLogger(IdSourceTest.class);
   static final String PIPELINE_NAME = "TEST_PIPELINE";
   static Connection connection;
 
   public static Connection createConnection()
-      throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+      throws SQLException, ClassNotFoundException {
     return createConnection(
         "era",
         "eradevt1",
@@ -48,7 +48,7 @@ public class IdSourceTest {
   }
 
   public static Connection createConnection(String user, String passwd, String url)
-      throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+      throws SQLException, ClassNotFoundException {
 
     Properties props = new Properties();
     props.put("user", user);
@@ -64,7 +64,7 @@ public class IdSourceTest {
 
   @BeforeClass
   public static void setup()
-      throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
+      throws ClassNotFoundException, SQLException {
     PropertyConfigurator.configure("resource/test.log4j.properties");
 
     connection = createConnection();
@@ -94,10 +94,9 @@ public class IdSourceTest {
 
   @Test
   public void main()
-      throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException,
-          InterruptedException {
+      throws SQLException {
     List<String> ids = Stream.of("PROCESS_ID1", "PROCESS_ID2").collect(Collectors.toList());
-    ids.stream()
+    ids
         .forEach(
             i -> {
               StageInstance si = new StageInstance();
@@ -115,8 +114,8 @@ public class IdSourceTest {
 
     AtomicInteger cnt = new AtomicInteger(ids.size());
 
-    saved.stream().forEach(e -> e.setPriority(0));
-    saved.stream()
+    saved.forEach(e -> e.setPriority(0));
+    saved
         .forEach(
             e -> {
               try {
@@ -127,20 +126,18 @@ public class IdSourceTest {
             });
 
     List<String> stored = id_src.getTaskQueue();
-    ids.stream()
+    ids
         .forEach(
-            i -> {
-              stored.stream()
-                  .filter(e -> e.equals(i))
-                  .findFirst()
-                  .ifPresent(e -> cnt.decrementAndGet());
-            });
+            i -> stored.stream()
+                .filter(e -> e.equals(i))
+                .findFirst()
+                .ifPresent(e -> cnt.decrementAndGet()));
 
     Assert.assertEquals(0, cnt.get());
 
     AtomicInteger priority = new AtomicInteger();
-    saved.stream().forEach(e -> e.setPriority(priority.getAndAdd(4)));
-    saved.stream()
+    saved.forEach(e -> e.setPriority(priority.getAndAdd(4)));
+    saved
         .forEach(
             e -> {
               try {

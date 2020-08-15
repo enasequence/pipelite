@@ -50,8 +50,8 @@ public class ExecutionResultExceptionResolver extends ExecutionResultResolver<Th
   }
 
   public static class Builder {
-    private Map<Class<? extends Throwable>, ExecutionResult> map = new HashMap<>();
-    private List<ExecutionResult> list = new ArrayList<>();
+    private final Map<Class<? extends Throwable>, ExecutionResult> map = new HashMap<>();
+    private final List<ExecutionResult> list = new ArrayList<>();
 
     public Builder() {
       list.add(success);

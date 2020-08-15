@@ -33,15 +33,14 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
   public static final int LSF_JVM_MEMORY_OVERHEAD_MB = 200;
   public static final int LSF_JVM_MEMORY_RESERVATION_TIMEOUT_DEFAULT_MINUTES = 60;
 
-  private boolean do_commit = true;
   ExecutionInfo info;
-  private String config_prefix_name;
-  private String config_source_name;
-  private ExecutionResult internalError;
-  private String[] properties_pass;
+  private final String config_prefix_name;
+  private final String config_source_name;
+  private final ExecutionResult internalError;
+  private final String[] properties_pass;
   private LSFExecutorConfig config;
-  private int lsf_memory_limit;
-  private int cpu_cores;
+  private final int lsf_memory_limit;
+  private final int cpu_cores;
 
   public LSFStageExecutor(
       String pipeline_name,
@@ -101,7 +100,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
   }
 
   private List<String> constructArgs(StageInstance instance, boolean commit) {
-    List<String> p_args = new ArrayList<String>();
+    List<String> p_args = new ArrayList<>();
 
     p_args.add("-XX:+UseSerialGC");
 
@@ -190,11 +189,12 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
               "%sxecuting stage %s",
               instance.getExecutionCount() > 0 ? "E" : "Re-e", instance.getStageName()));
 
+      boolean do_commit = true;
       List<String> p_args = constructArgs(instance, do_commit);
 
       LSFBackEnd back_end = configureBackend(instance);
 
-      ExternalCall ec =
+      LSFClusterCall call =
           back_end.new_call_instance(
               String.format(
                   "%s--%s--%s",
@@ -202,22 +202,19 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
               "java",
               p_args.toArray(new String[p_args.size()]));
 
-      if (ec instanceof LSFClusterCall) {
-        LSFClusterCall call = ((LSFClusterCall) ec);
-        call.setTaskLostExitCode(resolver.exitCodeSerializer().serialize(internalError));
-      }
+      call.setTaskLostExitCode(resolver.exitCodeSerializer().serialize(internalError));
 
-      log.info(ec.getCommandLine());
+      log.info(call.getCommandLine());
 
-      ec.execute();
-      fillExecutionInfo(ec);
+      call.execute();
+      fillExecutionInfo(call);
 
       // Critical section to avoid constructing large strings multiple times
       synchronized (LSFStageExecutor.class) {
         String print_msg =
             String.format(
                 "Finished execution of stage %s\n%s",
-                instance.getStageName(), new ExternalCallException(ec).toString());
+                instance.getStageName(), new ExternalCallException(call).toString());
 
         log.info(print_msg);
       }
@@ -229,7 +226,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
     info.setCommandline(ec.getCommandLine());
     info.setStdout(ec.getStdout());
     info.setStderr(ec.getStderr());
-    info.setExitCode(Integer.valueOf(ec.getExitCode()));
+    info.setExitCode(ec.getExitCode());
     info.setHost(ec.getHost());
     info.setPID(ec.getPID());
     info.setThrowable(null);

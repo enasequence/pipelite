@@ -24,49 +24,49 @@ public class PipeliteLauncher {
   // Contract for TaskIdSource: user is responsible for checking whether task was completed by
   // pipeline or not
   public interface TaskIdSource {
-    public List<String> getTaskQueue() throws SQLException;
+    List<String> getTaskQueue() throws SQLException;
   }
 
   public interface ProcessFactory {
-    public PipeliteProcess getProcess(String process_id);
+    PipeliteProcess getProcess(String process_id);
   }
 
   public interface PipeliteProcess extends Runnable {
-    public String getProcessId();
+    String getProcessId();
 
-    public TaskExecutor getExecutor();
+    TaskExecutor getExecutor();
 
-    public default void setProcessID(String process_id) {
+    default void setProcessID(String process_id) {
       throw new RuntimeException("Method must be overriden");
     }
 
-    public default StorageBackend getStorage() {
+    default StorageBackend getStorage() {
       throw new RuntimeException("Method must be overriden");
     }
 
-    public default void setStorage(StorageBackend storage) {
+    default void setStorage(StorageBackend storage) {
       throw new RuntimeException("Method must be overriden");
     }
 
-    public default ResourceLocker getLocker() {
+    default ResourceLocker getLocker() {
       throw new RuntimeException("Method must be overriden");
     }
 
-    public default void setLocker(ResourceLocker locker) {
+    default void setLocker(ResourceLocker locker) {
       throw new RuntimeException("Method must be overriden");
     }
 
-    public default void setExecutor(TaskExecutor executor) {}
+    default void setExecutor(TaskExecutor executor) {}
 
-    public default void stop() {}
+    default void stop() {}
 
-    public default boolean isStopped() {
+    default boolean isStopped() {
       return false;
     }
   }
 
   public interface StageExecutorFactory {
-    public TaskExecutor getExecutor();
+    TaskExecutor getExecutor();
   }
 
   TaggedPoolExecutor thread_pool;
@@ -78,7 +78,7 @@ public class PipeliteLauncher {
   private boolean exit_when_empty;
   private StageExecutorFactory executor_factory;
   private volatile boolean do_stop;
-  private Logger log = Logger.getLogger(this.getClass());
+  private final Logger log = Logger.getLogger(this.getClass());
 
   public void setProcessFactory(ProcessFactory process_factory) {
     this.process_factory = process_factory;
@@ -124,8 +124,8 @@ public class PipeliteLauncher {
   }
 
   public void execute()
-      throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
-    List<String> task_queue = null;
+      throws SQLException {
+    List<String> task_queue;
     main:
     while (!do_stop
         && null
@@ -168,10 +168,6 @@ public class PipeliteLauncher {
 
   ProcessFactory getProcessFactory() {
     return process_factory;
-  }
-
-  public boolean getExitWhenNoTasks() {
-    return exit_when_empty;
   }
 
   public void setExitWhenNoTasks(boolean exit_when_empty) {

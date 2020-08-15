@@ -36,19 +36,19 @@ public interface StorageBackend {
     private static final long serialVersionUID = 1L;
   }
 
-  public void load(StageInstance si) throws StorageException;
+  void load(StageInstance si) throws StorageException;
 
-  public void save(StageInstance si) throws StorageException;
+  void save(StageInstance si) throws StorageException;
 
-  public void load(PipeliteState ps) throws StorageException;
+  void load(PipeliteState ps) throws StorageException;
 
-  public void save(PipeliteState ps) throws StorageException;
+  void save(PipeliteState ps) throws StorageException;
 
-  public String getExecutionId() throws StorageException;
+  String getExecutionId() throws StorageException;
 
-  public void load(ExecutionInstance instance) throws StorageException;
+  void load(ExecutionInstance instance) throws StorageException;
 
-  public void save(ExecutionInstance instance) throws StorageException;
+  void save(ExecutionInstance instance) throws StorageException;
 
   //   void load( OracleProcessLogBean bean ) throws StorageException;
   void save(ProcessLogBean bean) throws StorageException;

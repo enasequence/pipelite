@@ -32,7 +32,7 @@ public class LauncherDBTest {
   static final int workers = ForkJoinPool.getCommonPoolParallelism();
 
   public static Connection createConnection()
-      throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+      throws SQLException, ClassNotFoundException {
     return createConnection(
         "era",
         "eradevt1",
@@ -40,7 +40,7 @@ public class LauncherDBTest {
   }
 
   public static Connection createConnection(String user, String passwd, String url)
-      throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+      throws SQLException, ClassNotFoundException {
 
     Properties props = new Properties();
     props.put("user", user);
@@ -61,7 +61,7 @@ public class LauncherDBTest {
 
   @Test
   public void main()
-      throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException,
+      throws ClassNotFoundException, SQLException,
           InterruptedException {
     Connection connection = createConnection();
 
@@ -73,10 +73,7 @@ public class LauncherDBTest {
     id_src.init();
 
     PipeliteLauncher.ProcessFactory pr_src =
-        new PipeliteLauncher.ProcessFactory() {
-          @Override
-          public PipeliteProcess getProcess(String process_id) {
-            return new PipeliteProcess() {
+            process_id -> new PipeliteProcess() {
               @Override
               public void run() {
                 System.out.println("EXECUTING " + process_id);
@@ -101,8 +98,6 @@ public class LauncherDBTest {
                 return null;
               }
             };
-          }
-        };
 
     ProcessPoolExecutor pool =
         new ProcessPoolExecutor(workers) {
@@ -141,17 +136,7 @@ public class LauncherDBTest {
     System.out.println("CPU count: " + Runtime.getRuntime().availableProcessors());
     System.out.println("Available parallelism: " + ForkJoinPool.getCommonPoolParallelism());
 
-    Assert.assertTrue(0 == pool.getActiveCount()); // Threads should properly react to interrupt
+    Assert.assertEquals(0, pool.getActiveCount()); // Threads should properly react to interrupt
     pool.shutdownNow();
   }
-
-  public void setProcessID(String process_id) {}
-
-  public StorageBackend getStorage() {
-    return null;
-  }
-
-  public void setStorage(StorageBackend storage) {}
-
-  public void setExecutor(TaskExecutor executor) {}
 }

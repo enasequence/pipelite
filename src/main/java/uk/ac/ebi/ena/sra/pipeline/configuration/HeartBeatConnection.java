@@ -64,34 +64,31 @@ public class HeartBeatConnection implements Connection {
     this.select_query = select_query;
     this.ripper =
         new Thread(
-            new Runnable() {
-              public void run() {
-                leave:
-                do {
-                  Statement stmt = null;
-                  try {
-                    stmt = HeartBeatConnection.this.connection.createStatement();
-                    stmt.execute(HeartBeatConnection.this.select_query);
-                    Thread.sleep(HeartBeatConnection.this.heartbeat_interval);
+                () -> {
+                  do {
+                    Statement stmt = null;
+                    try {
+                      stmt = HeartBeatConnection.this.connection.createStatement();
+                      stmt.execute(HeartBeatConnection.this.select_query);
+                      Thread.sleep(HeartBeatConnection.this.heartbeat_interval);
 
-                  } catch (InterruptedException ie) {
-                    Thread.interrupted();
+                    } catch (InterruptedException ie) {
+                      Thread.interrupted();
 
-                  } catch (SQLException e) {
-                    e.printStackTrace();
-                    break leave;
-                  } finally {
-                    if (null != stmt)
-                      try {
-                        stmt.close();
-                      } catch (SQLException e) {
-                        e.printStackTrace();
-                        break leave;
-                      }
-                  }
-                } while (!HeartBeatConnection.this.ripped);
-              }
-            });
+                    } catch (SQLException e) {
+                      e.printStackTrace();
+                      break;
+                    } finally {
+                      if (null != stmt)
+                        try {
+                          stmt.close();
+                        } catch (SQLException e) {
+                          e.printStackTrace();
+                          break;
+                        }
+                    }
+                  } while (!HeartBeatConnection.this.ripped);
+                });
     this.ripper.setDaemon(true);
     this.ripper.start();
   }
@@ -108,7 +105,7 @@ public class HeartBeatConnection implements Connection {
       ripped = true;
       ripper.interrupt();
       ripper.join();
-    } catch (InterruptedException e) {;
+    } catch (InterruptedException e) {
     } finally {
       connection.close();
     }

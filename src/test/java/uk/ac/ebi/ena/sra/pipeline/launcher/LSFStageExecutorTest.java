@@ -377,7 +377,7 @@ public class LSFStageExecutorTest {
         });
 
     String cmdl = se.get_info().getCommandline();
-    Assert.assertTrue(!cmdl.contains(" -Xmx"));
+      Assert.assertFalse(cmdl.contains(" -Xmx"));
   }
 
   @Test

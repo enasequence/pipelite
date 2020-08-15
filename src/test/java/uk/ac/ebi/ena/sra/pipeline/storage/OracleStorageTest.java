@@ -31,21 +31,19 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import pipelite.task.result.resolver.ExecutionResultResolver;
 import uk.ac.ebi.ena.sra.pipeline.configuration.OracleHeartBeatConnection;
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.TaskIdSource;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState.State;
 import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
 
 public class OracleStorageTest {
-  static TaskIdSource id_src;
-  static StorageBackend db_backend;
+    static StorageBackend db_backend;
   static Logger log = Logger.getLogger(OracleStorageTest.class);
   static final String PIPELINE_NAME = "RUN_PROCESS";
   static Connection connection;
 
   public static Connection createConnection()
-      throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+      throws SQLException, ClassNotFoundException {
     return createConnection(
         "era",
         "eradevt1",
@@ -53,7 +51,7 @@ public class OracleStorageTest {
   }
 
   public static Connection createConnection(String user, String passwd, String url)
-      throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+      throws SQLException, ClassNotFoundException {
 
     Properties props = new Properties();
     props.put("user", user);
@@ -69,7 +67,7 @@ public class OracleStorageTest {
 
   @BeforeClass
   public static void setup()
-      throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
+      throws ClassNotFoundException, SQLException {
     PropertyConfigurator.configure("resource/test.log4j.properties");
 
     connection = createConnection();
@@ -81,9 +79,8 @@ public class OracleStorageTest {
     ps.setConnection(connection);
     ps.setPipelineName(PIPELINE_NAME);
     ps.init();
-    id_src = ps;
 
-    OracleStorage os = new OracleStorage();
+      OracleStorage os = new OracleStorage();
     os.setPipelineName(PIPELINE_NAME);
     os.setProcessTableName("PIPELITE_PROCESS");
     os.setStageTableName("PIPELITE_STAGE");
@@ -98,17 +95,15 @@ public class OracleStorageTest {
   }
 
   @Test
-  public void main()
-      throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException,
-          InterruptedException {
+  public void main() {
     List<String> ids = Stream.of("PROCESS_ID1", "PROCESS_ID2").collect(Collectors.toList());
     AtomicInteger cnt1 = new AtomicInteger(ids.size());
 
-    ids.stream()
+    ids
         .forEach(
             i -> {
               try {
-                loadTasks(PIPELINE_NAME, Arrays.asList(new String[] {i}));
+                loadTasks(PIPELINE_NAME, Arrays.asList(i));
               } catch (RuntimeException e) {
                 cnt1.decrementAndGet();
               }
@@ -158,7 +153,7 @@ public class OracleStorageTest {
   }
 
   private List<StageInstance> saveStages(List<StageInstance> stages) {
-    stages.stream()
+    stages
         .forEach(
             s -> {
               try {
@@ -171,7 +166,7 @@ public class OracleStorageTest {
   }
 
   private List<StageInstance> saveStages(String pipeline_name, String process_id, Stage... stages) {
-    List<StageInstance> result = new ArrayList<StageInstance>();
+    List<StageInstance> result = new ArrayList<>();
 
     Stream.of(stages)
         .forEach(
@@ -193,7 +188,7 @@ public class OracleStorageTest {
   }
 
   private List<StageInstance> loadStages(String pipeline_name, String process_id, Stage... stages) {
-    List<StageInstance> result = new ArrayList<StageInstance>();
+    List<StageInstance> result = new ArrayList<>();
 
     Stream.of(stages)
         .forEach(

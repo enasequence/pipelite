@@ -16,7 +16,7 @@ import java.util.Map;
 
 public class MemoryLocker implements ResourceLocker {
 
-  Map<String, String> stage_locks = Collections.synchronizedMap(new HashMap<String, String>(256));
+  final Map<String, String> stage_locks = Collections.synchronizedMap(new HashMap<>(256));
 
   @Override
   public boolean lock(StageResourceLock rl) {
@@ -33,7 +33,7 @@ public class MemoryLocker implements ResourceLocker {
     return stage_locks.replace(rl.getLockId(), rl.getLockOwner(), rl.getLockOwner());
   }
 
-  Map<String, String> process_locks = Collections.synchronizedMap(new HashMap<String, String>(256));
+  final Map<String, String> process_locks = Collections.synchronizedMap(new HashMap<>(256));
 
   @Override
   public boolean lock(ProcessResourceLock rl) {

@@ -25,14 +25,11 @@ import uk.ac.ebi.ena.sra.pipeline.executors.DetachedExecutorConfig;
 import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
 
 public class DetachedStageExecutor extends AbstractTaskExecutor {
-  private boolean do_commit = true;
-  private String config_prefix_name;
-  private String config_source_name;
+  private final String config_prefix_name;
+  private final String config_source_name;
   ExecutionInfo info;
-  protected ExternalCallBackEnd back_end = new SimpleBackEnd();
-  private String[] properties_pass;
-
-  DetachedExecutorConfig config;
+  protected final ExternalCallBackEnd back_end = new SimpleBackEnd();
+  private final String[] properties_pass;
 
   public DetachedStageExecutor(
       String pipeline_name,
@@ -58,7 +55,7 @@ public class DetachedStageExecutor extends AbstractTaskExecutor {
   }
 
   private List<String> constructArgs(StageInstance instance, boolean commit) {
-    List<String> p_args = new ArrayList<String>();
+    List<String> p_args = new ArrayList<>();
 
     int memory_limit = instance.getMemoryLimit();
 
@@ -93,6 +90,7 @@ public class DetachedStageExecutor extends AbstractTaskExecutor {
               "%sxecuting stage %s",
               0 == instance.getExecutionCount() ? "E" : "Re-e", instance.getStageName()));
 
+      boolean do_commit = true;
       List<String> p_args = constructArgs(instance, do_commit);
       ExternalCall ec =
           back_end.new_call_instance(
@@ -124,7 +122,7 @@ public class DetachedStageExecutor extends AbstractTaskExecutor {
     info.setCommandline(ec.getCommandLine());
     info.setStdout(ec.getStdout());
     info.setStderr(ec.getStderr());
-    info.setExitCode(Integer.valueOf(ec.getExitCode()));
+    info.setExitCode(ec.getExitCode());
     info.setHost(ec.getHost());
     info.setPID(ec.getPID());
     info.setThrowable(new ExternalCallException(ec));
@@ -143,10 +141,6 @@ public class DetachedStageExecutor extends AbstractTaskExecutor {
 
   @Override
   public void configure(ExecutorConfig rc) {
-    DetachedExecutorConfig params = (DetachedExecutorConfig) rc;
-    if (null != params) {
-      this.config = params;
-    }
   }
 
   public String[] getPropertiesPass() {

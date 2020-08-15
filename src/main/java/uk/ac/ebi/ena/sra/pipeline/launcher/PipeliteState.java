@@ -13,11 +13,8 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 public class PipeliteState {
   public enum State {
     ACTIVE,
-    RUNNING, // cannot be selected
-    INACTIVE, // cannot be selected
-    COMPLETED, // cannot be selected
-    CANCELLED, // cannot be selected
-    FAILED; // cannot be selected
+    COMPLETED,
+    FAILED
   }
 
   String pipeline_name; //  VARCHAR2( 64 ) NOT NULL,

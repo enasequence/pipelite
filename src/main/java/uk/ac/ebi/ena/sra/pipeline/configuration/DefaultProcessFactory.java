@@ -13,7 +13,6 @@ package uk.ac.ebi.ena.sra.pipeline.configuration;
 import pipelite.task.result.resolver.ExecutionResultExceptionResolver;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessFactory;
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.StageExecutorFactory;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessLauncher;
 
 public class DefaultProcessFactory implements ProcessFactory {

@@ -16,13 +16,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.dbutils.DbUtils;
+
 import org.apache.log4j.Logger;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.TaskIdSource;
 import pipelite.task.result.ExecutionResult;
 
 public class OracleTaskIdSource implements OracleCommons, TaskIdSource {
-  Logger log = Logger.getLogger(this.getClass());
+  final Logger log = Logger.getLogger(this.getClass());
   private PreparedStatement selectPS;
   private String table_name;
   private String pipeline_name;
@@ -93,13 +93,9 @@ public class OracleTaskIdSource implements OracleCommons, TaskIdSource {
     this.selectPS = connection.prepareStatement(sql);
   }
 
-  public void done() {
-    DbUtils.closeQuietly(selectPS);
-  }
-
   @Override
   public List<String> getTaskQueue() throws SQLException {
-    List<String> result = new ArrayList<String>();
+    List<String> result = new ArrayList<>();
     selectPS.execute();
 
     try (ResultSet rs = selectPS.getResultSet()) {
@@ -108,7 +104,7 @@ public class OracleTaskIdSource implements OracleCommons, TaskIdSource {
     return result;
   }
 
-  public void setExecutionResultArray(ExecutionResult execution_result_array[]) {
+  public void setExecutionResultArray(ExecutionResult[] execution_result_array) {
     this.execution_result_array = execution_result_array;
   }
 

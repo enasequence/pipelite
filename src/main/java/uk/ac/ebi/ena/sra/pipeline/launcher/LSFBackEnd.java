@@ -15,15 +15,15 @@ import java.nio.file.Paths;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall;
 
 public class LSFBackEnd implements ExternalCallBackEnd {
-  String queue;
-  int memory_limit;
-  int memory_reservation_timeout;
-  int cpu_cores;
+  final String queue;
+  final int memory_limit;
+  final int memory_reservation_timeout;
+  final int cpu_cores;
   private Path output_path;
 
   @Override
   public LSFClusterCall new_call_instance(
-      String job_name, final String executable, final String args[]) {
+      String job_name, final String executable, final String[] args) {
     return new_call_instance(
         job_name, executable, args, memory_limit, memory_reservation_timeout, cpu_cores);
   }
@@ -31,7 +31,7 @@ public class LSFBackEnd implements ExternalCallBackEnd {
   public LSFClusterCall new_call_instance(
       String job_name,
       final String executable,
-      final String args[],
+      final String[] args,
       int memory_limit,
       int memory_reservation_timeout,
       int cpu_cores) {

@@ -13,25 +13,25 @@ package uk.ac.ebi.ena.sra.pipeline.launcher.iface;
 import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
 
 public interface Stage {
-  public Class<? extends StageTask> getTaskClass();
+  Class<? extends StageTask> getTaskClass();
 
-  public Stage getDependsOn();
+  Stage getDependsOn();
 
-  public String getDescription();
+  String getDescription();
 
-  public default int getMemoryLimit() {
+  default int getMemoryLimit() {
     return -1;
   }
 
-  public default int getCPUCores() {
+  default int getCPUCores() {
     return 1;
   }
 
-  public default String[] getPropertiesPass() {
+  default String[] getPropertiesPass() {
     return new String[] {};
   }
 
-  public default ExecutorConfig[] getExecutorConfig() {
+  default ExecutorConfig[] getExecutorConfig() {
     return new ExecutorConfig[] {};
   }
 }

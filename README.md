@@ -47,13 +47,13 @@ Stages should implement `Stage` interface.
 public interface 
 Stage
 {
-    public Class<? extends StageTask> getTaskClass();
-    public Stage getDependsOn();
-    public String getDescription();
-    default public int getMemoryLimit() { return -1; }
-    default public int getCPUCores() { return 1; }
-    default public String[] getPropertiesPass() { return new String[] {}; }
-    default public ExecutorConfig[] getExecutorConfig() { return new ExecutorConfig[] {}; }
+    Class<? extends StageTask> getTaskClass();
+    Stage getDependsOn();
+    String getDescription();
+    default int getMemoryLimit() { return -1; }
+    default int getCPUCores() { return 1; }
+    default String[] getPropertiesPass() { return new String[] {}; }
+    default ExecutorConfig[] getExecutorConfig() { return new ExecutorConfig[] {}; }
 }
 ```
 
@@ -87,10 +87,10 @@ codes (byte) and `Throwables` to human readable messages and back.
 public interface
 ExecutionResult
 {
-    public boolean            canRedo();
-    public byte               getExitCode();
-    public Class<Throwable>   getCause();
-    public String             getMessage();
+    boolean            canRedo();
+    byte               getExitCode();
+    Class<Throwable>   getCause();
+    String             getMessage();
 }
 ```
 
@@ -109,9 +109,9 @@ Each stage class should implement `StageTask` interface
 public interface
 StageTask
 {
-	public void    init( Object id, boolean is_forced ) throws Throwable;
-	public void    execute() throws Throwable;
-	public void    unwind();
+	void    init( Object id, boolean is_forced ) throws Throwable;
+	void    execute() throws Throwable;
+	void    unwind();
 }
 ```
 

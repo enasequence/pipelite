@@ -34,10 +34,10 @@ public class ProcessLogBean {
   static final String DATE_FIELD_NAME = "LOG_DATE";
   static final String MESSAGE_FIELD_NAME = "MESSAGE";
 
-  Map<String, Object> data;
+  final Map<String, Object> data;
 
   public ProcessLogBean() {
-    this(new HashMap<String, Object>());
+    this(new HashMap<>());
   }
 
   public ProcessLogBean(Map<String, Object> data) {

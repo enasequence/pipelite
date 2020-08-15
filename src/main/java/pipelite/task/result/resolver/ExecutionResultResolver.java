@@ -24,7 +24,7 @@ public abstract class ExecutionResultResolver<T> {
   public abstract List<ExecutionResult> results();
 
   public ExecutionResult[] resultsArray() {
-    return results().stream().toArray(ExecutionResult[]::new);
+    return results().toArray(new ExecutionResult[0]);
   }
 
   public ExecutionResultExitCodeSerializer exitCodeSerializer() {
