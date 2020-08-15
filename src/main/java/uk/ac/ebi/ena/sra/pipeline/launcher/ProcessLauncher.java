@@ -24,6 +24,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.apache.log4j.net.SMTPAppender;
+import pipelite.process.instance.ProcessInstance;
 import pipelite.task.executor.AbstractTaskExecutor;
 import pipelite.task.executor.TaskExecutor;
 import pipelite.task.instance.LatestTaskExecution;
@@ -31,7 +32,7 @@ import pipelite.task.instance.TaskInstance;
 import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState.State;
+import pipelite.process.state.ProcessExecutionState;
 import pipelite.task.state.TaskExecutionState;
 import pipelite.task.result.TaskExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
@@ -50,7 +51,7 @@ public class ProcessLauncher implements PipeliteProcess {
   private final Logger log;
   private String process_id;
   private String pipeline_name;
-  PipeliteState state;
+  private ProcessInstance processInstance;
   private TaskInstance[] instances;
   private StorageBackend storage;
   private TaskExecutor executor;
@@ -76,6 +77,11 @@ public class ProcessLauncher implements PipeliteProcess {
   @Override
   public void setExecutor(TaskExecutor executor) {
     this.executor = executor;
+  }
+
+  @Override
+  public ProcessInstance getProcessInstance() {
+    return processInstance;
   }
 
   @Override
@@ -129,11 +135,11 @@ public class ProcessLauncher implements PipeliteProcess {
         load_state();
         save_state(); // this is to check permissions
 
-        if (State.ACTIVE != state.getState()) {
+        if (ProcessExecutionState.ACTIVE != processInstance.getState()) {
           log.warn(
               String.format(
-                  "Invoked for process %s with state %s.", getProcessId(), state.getState()));
-          state.setState(State.ACTIVE);
+                  "Invoked for process %s with state %s.", getProcessId(), processInstance.getState()));
+          processInstance.setState(ProcessExecutionState.ACTIVE);
         }
 
         if (!load_stages()) {
@@ -160,14 +166,14 @@ public class ProcessLauncher implements PipeliteProcess {
         save_stages(); // this is to check database permissions
 
         if (!eval_process()) {
-          log.warn(String.format("Terminal state reached for %s", state));
+          log.warn(String.format("Terminal state reached for %s", processInstance));
         } else {
           increment_process_counter();
           execute_stages();
           save_stages();
           if (eval_process()) {
-            if (0 < state.getExecCount() && 0 == state.getExecCount() % max_redo_count)
-              state.setState(State.FAILED);
+            if (0 < processInstance.getExecutionCount() && 0 == processInstance.getExecutionCount() % max_redo_count)
+              processInstance.setState(ProcessExecutionState.FAILED);
           }
         }
         save_state();
@@ -187,16 +193,16 @@ public class ProcessLauncher implements PipeliteProcess {
   }
 
   private void increment_process_counter() {
-    state.exec_cnt++;
+    processInstance.incrementExecutionCount();
   }
 
   private boolean lock_process() {
-    return locker.lock(new ProcessResourceLock(state.getPipelineName(), state.getProcessId()));
+    return locker.lock(new ProcessResourceLock(processInstance.getPipelineName(), processInstance.getProcessId()));
   }
 
   private void unlock_process() {
-    if (locker.is_locked(new ProcessResourceLock(state.getPipelineName(), state.getProcessId())))
-      locker.unlock(new ProcessResourceLock(state.getPipelineName(), state.getProcessId()));
+    if (locker.is_locked(new ProcessResourceLock(processInstance.getPipelineName(), processInstance.getProcessId())))
+      locker.unlock(new ProcessResourceLock(processInstance.getPipelineName(), processInstance.getProcessId()));
   }
 
   // Existing statuses:
@@ -220,39 +226,39 @@ public class ProcessLauncher implements PipeliteProcess {
                       executor.getTaskExecutionState(instance),
                       instance.getExecutionCount()));
       switch (executor.getTaskExecutionState(instance)) {
-        case ACTIVE_TASK:
+        case ACTIVE:
           break;
 
-        case DISABLED_TASK:
+        case DISABLED:
           to_process--;
           break;
 
-        case COMPLETED_TASK:
+        case COMPLETED:
           // to_process -= to_process;
           LatestTaskExecution ei = instance.getLatestTaskExecution();
-          state.setState(
-                  null != ei && ei.getResultType().isError() ? State.FAILED : State.COMPLETED);
+          processInstance.setState(
+                  null != ei && ei.getResultType().isError() ? ProcessExecutionState.FAILED : ProcessExecutionState.COMPLETED);
           return false;
       }
     }
 
     // no stages to process
     if (0 >= to_process) {
-      state.setState(State.COMPLETED);
+      processInstance.setState(ProcessExecutionState.COMPLETED);
       return false;
     }
     return true;
   }
 
   private void init_state() {
-    state = new PipeliteState();
-    state.setPipelineName(pipeline_name);
-    state.setProcessId(process_id);
+    processInstance = new ProcessInstance();
+    processInstance.setPipelineName(pipeline_name);
+    processInstance.setProcessId(process_id);
   }
 
   private void load_state() {
     try {
-      storage.load(state);
+      storage.load(processInstance);
     } catch (StorageException e) {
       log.error(e.getMessage(), e);
     }
@@ -260,7 +266,7 @@ public class ProcessLauncher implements PipeliteProcess {
 
   private void save_state() {
     try {
-      storage.save(state);
+      storage.save(processInstance);
     } catch (StorageException e) {
       log.error(e.getMessage(), e);
     }
@@ -334,7 +340,7 @@ public class ProcessLauncher implements PipeliteProcess {
     {
       if (do_stop) break;
 
-      if (TaskExecutionState.ACTIVE_TASK == executor.getTaskExecutionState(instance)) {
+      if (TaskExecutionState.ACTIVE == executor.getTaskExecutionState(instance)) {
         if (null != instance.getTaskExecutorConfig(executor.getConfigClass()))
           executor.configure(instance.getTaskExecutorConfig(executor.getConfigClass()));
 

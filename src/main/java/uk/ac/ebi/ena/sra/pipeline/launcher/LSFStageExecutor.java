@@ -185,7 +185,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
   }
 
   public void execute(TaskInstance instance) {
-    if (TaskExecutionState.ACTIVE_TASK == getTaskExecutionState(instance)) {
+    if (TaskExecutionState.ACTIVE == getTaskExecutionState(instance)) {
       log.info(
           String.format(
               "%sxecuting stage %s",

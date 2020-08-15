@@ -20,6 +20,7 @@ import org.apache.log4j.PropertyConfigurator;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import pipelite.process.instance.ProcessInstance;
 import pipelite.task.result.resolver.TaskExecutionResultResolver;
 import uk.ac.ebi.ena.sra.pipeline.configuration.OracleHeartBeatConnection;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher;
@@ -73,7 +74,8 @@ public class LauncherDBTest {
     id_src.init();
 
     PipeliteLauncher.ProcessFactory pr_src =
-            process_id -> new PipeliteProcess() {
+        process_id ->
+            new PipeliteProcess() {
               @Override
               public void run() {
                 System.out.println("EXECUTING " + process_id);
@@ -95,6 +97,11 @@ public class LauncherDBTest {
 
               @Override
               public TaskExecutor getExecutor() {
+                return null;
+              }
+
+              @Override
+              public ProcessInstance getProcessInstance() {
                 return null;
               }
             };

@@ -28,8 +28,8 @@ import org.junit.Test;
 import pipelite.task.result.resolver.TaskExecutionResultResolver;
 import uk.ac.ebi.ena.sra.pipeline.configuration.OracleHeartBeatConnection;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.TaskIdSource;
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState;
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState.State;
+import pipelite.process.instance.ProcessInstance;
+import pipelite.process.state.ProcessExecutionState;
 import pipelite.task.instance.TaskInstance;
 
 public class IdSourceTest {
@@ -110,7 +110,7 @@ public class IdSourceTest {
               }
             });
 
-    List<PipeliteState> saved = saveTasks(PIPELINE_NAME, ids);
+    List<ProcessInstance> saved = saveTasks(PIPELINE_NAME, ids);
 
     AtomicInteger cnt = new AtomicInteger(ids.size());
 
@@ -150,15 +150,17 @@ public class IdSourceTest {
     Assert.assertEquals(stored.get(stored.size() - 1), id_src.getTaskQueue().get(0));
   }
 
-  private List<PipeliteState> saveTasks(String pipeline_name, List<String> ids) {
+  private List<ProcessInstance> saveTasks(String pipeline_name, List<String> ids) {
     return ids.stream()
         .map(
             id -> {
-              PipeliteState result;
+              ProcessInstance result;
               try {
-                result = new PipeliteState(pipeline_name, id);
+                result = new ProcessInstance();
+                result.setPipelineName(pipeline_name);
+                result.setProcessId(id);
                 result.setProcessComment("PROCESS_COMMENT");
-                result.setState(State.ACTIVE);
+                result.setState(ProcessExecutionState.ACTIVE);
                 db_backend.save(result);
 
                 log.info(result);

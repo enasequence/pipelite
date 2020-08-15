@@ -21,6 +21,7 @@ import org.apache.log4j.PropertyConfigurator;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import pipelite.process.instance.ProcessInstance;
 import pipelite.task.executor.TaskExecutor;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.StageExecutorFactory;
@@ -36,9 +37,7 @@ public class LauncherTest {
   }
 
   @Test
-  public void main()
-      throws SQLException,
-          InterruptedException {
+  public void main() throws SQLException, InterruptedException {
     PipeliteLauncher.TaskIdSource id_src =
         new PipeliteLauncher.TaskIdSource() {
           int index = 10;
@@ -54,11 +53,11 @@ public class LauncherTest {
           }
         };
 
-    StageExecutorFactory e_src =
-            () -> null;
+    StageExecutorFactory e_src = () -> null;
 
     PipeliteLauncher.ProcessFactory pr_src =
-            process_id -> new PipeliteProcess() {
+        process_id ->
+            new PipeliteProcess() {
               @Override
               public void run() {
                 System.out.println("EXECUTING " + process_id);
@@ -80,6 +79,11 @@ public class LauncherTest {
 
               @Override
               public TaskExecutor getExecutor() {
+                return null;
+              }
+
+              @Override
+              public ProcessInstance getProcessInstance() {
                 return null;
               }
             };
@@ -124,7 +128,7 @@ public class LauncherTest {
     log.info("CPU count: " + Runtime.getRuntime().availableProcessors());
     log.info("Available parallelism: " + ForkJoinPool.getCommonPoolParallelism());
 
-      Assert.assertEquals(0, pool.getActiveCount()); // Threads should properly react to interrupt
+    Assert.assertEquals(0, pool.getActiveCount()); // Threads should properly react to interrupt
     pool.shutdownNow();
     Assert.assertTrue(task_speed - delay < 3000); // Performance degradation?
   }

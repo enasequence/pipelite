@@ -26,10 +26,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import pipelite.process.instance.ProcessInstance;
 import pipelite.task.executor.TaskExecutor;
 import pipelite.task.instance.TaskInstance;
 import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState.State;
+import pipelite.process.state.ProcessExecutionState;
 import pipelite.task.result.TaskExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
 import uk.ac.ebi.ena.sra.pipeline.resource.MemoryLocker;
@@ -83,11 +84,11 @@ public class ProcessLauncherTest {
           final String[] names, final TaskExecutionResult[] init_results, final boolean[] enabled)
       throws StorageException {
     StorageBackend mockedStorage = mock(StorageBackend.class);
-    final PipeliteState stored_state = new PipeliteState();
+    final ProcessInstance stored_state = new ProcessInstance();
     stored_state.setPipelineName(MOCKED_PIPELINE);
     stored_state.setProcessId("YOBA-PROCESS");
-    stored_state.setState(State.ACTIVE);
-    stored_state.setExecCount(0);
+    stored_state.setState(ProcessExecutionState.ACTIVE);
+    stored_state.setExecutionCount(0);
     stored_state.setPriority(1);
     stored_state.setProcessComment("PSHPSH! ALO YOBA ETO TY?");
 
@@ -119,33 +120,33 @@ public class ProcessLauncherTest {
 
     doAnswer(
             (Answer<Object>) invocation -> {
-              PipeliteState si = (PipeliteState) invocation.getArguments()[0];
+              ProcessInstance si = (ProcessInstance) invocation.getArguments()[0];
               si.setPipelineName(stored_state.getPipelineName());
               si.setProcessId(stored_state.getProcessId());
               si.setState(stored_state.getState());
               si.setPriority(stored_state.getPriority());
-              si.setExecCount(stored_state.getExecCount());
+              si.setExecutionCount(stored_state.getExecutionCount());
               si.setProcessComment(stored_state.getProcessComment());
               return null;
             })
         .when(mockedStorage)
-        .load(any(PipeliteState.class));
+        .load(any(ProcessInstance.class));
 
     doAnswer(
             (Answer<Object>) invocation -> {
-              PipeliteState si = (PipeliteState) invocation.getArguments()[0];
+              ProcessInstance si = (ProcessInstance) invocation.getArguments()[0];
 
               stored_state.setPipelineName(si.getPipelineName());
               stored_state.setProcessId(si.getProcessId());
               stored_state.setState(si.getState());
               stored_state.setPriority(si.getPriority());
-              stored_state.setExecCount(si.getExecCount());
+              stored_state.setExecutionCount(si.getExecutionCount());
               stored_state.setProcessComment(si.getProcessComment());
 
               return null;
             })
         .when(mockedStorage)
-        .save(any(PipeliteState.class));
+        .save(any(ProcessInstance.class));
 
     return mockedStorage;
   }
@@ -217,16 +218,16 @@ public class ProcessLauncherTest {
       verify(pl, times(1)).lifecycle();
       verify(spiedExecutor, times(2)).execute(any(TaskInstance.class));
 
-      Assert.assertEquals(State.ACTIVE, pl.state.getState());
-      Assert.assertEquals(1, pl.state.getExecCount());
+      Assert.assertEquals(ProcessExecutionState.ACTIVE, pl.getProcessInstance().getState());
+      Assert.assertEquals(1, pl.getProcessInstance().getExecutionCount());
 
       // Re-run
       pl.lifecycle();
 
       verify(pl, times(2)).lifecycle();
       verify(spiedExecutor, times(4)).execute(any(TaskInstance.class));
-      Assert.assertEquals(State.FAILED, pl.state.getState());
-      Assert.assertEquals(2, pl.state.getExecCount());
+      Assert.assertEquals(ProcessExecutionState.FAILED, pl.getProcessInstance().getState());
+      Assert.assertEquals(2, pl.getProcessInstance().getExecutionCount());
     }
 
     {
@@ -281,7 +282,7 @@ public class ProcessLauncherTest {
       verify(pl, times(1)).lifecycle();
       verify(spiedExecutor, times(0)).execute(any(TaskInstance.class));
 
-      Assert.assertEquals(State.FAILED, pl.state.getState());
+      Assert.assertEquals(ProcessExecutionState.FAILED, pl.getProcessInstance().getState());
     }
 
     {
@@ -300,7 +301,7 @@ public class ProcessLauncherTest {
       verify(pl, times(1)).lifecycle();
       verify(spiedExecutor, times(4)).execute(any(TaskInstance.class));
 
-      Assert.assertEquals(State.COMPLETED, pl.state.getState());
+      Assert.assertEquals(ProcessExecutionState.COMPLETED, pl.getProcessInstance().getState());
     }
   }
 }

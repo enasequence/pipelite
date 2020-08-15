@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
+import pipelite.process.instance.ProcessInstance;
 import pipelite.task.executor.TaskExecutor;
 import uk.ac.ebi.ena.sra.pipeline.resource.ResourceLocker;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
@@ -39,6 +40,8 @@ public class PipeliteLauncher {
     default void setProcessID(String process_id) {
       throw new RuntimeException("Method must be overriden");
     }
+
+    ProcessInstance getProcessInstance();
 
     default StorageBackend getStorage() {
       throw new RuntimeException("Method must be overriden");

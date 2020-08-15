@@ -31,19 +31,18 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import pipelite.task.result.resolver.TaskExecutionResultResolver;
 import uk.ac.ebi.ena.sra.pipeline.configuration.OracleHeartBeatConnection;
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState;
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState.State;
+import pipelite.process.instance.ProcessInstance;
+import pipelite.process.state.ProcessExecutionState;
 import pipelite.task.instance.TaskInstance;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
 
 public class OracleStorageTest {
-    static StorageBackend db_backend;
+  static StorageBackend db_backend;
   static Logger log = Logger.getLogger(OracleStorageTest.class);
   static final String PIPELINE_NAME = "RUN_PROCESS";
   static Connection connection;
 
-  public static Connection createConnection()
-      throws SQLException, ClassNotFoundException {
+  public static Connection createConnection() throws SQLException, ClassNotFoundException {
     return createConnection(
         "era",
         "eradevt1",
@@ -66,21 +65,21 @@ public class OracleStorageTest {
   }
 
   @BeforeClass
-  public static void setup()
-      throws ClassNotFoundException, SQLException {
+  public static void setup() throws ClassNotFoundException, SQLException {
     PropertyConfigurator.configure("resource/test.log4j.properties");
 
     connection = createConnection();
 
     OracleProcessIdSource ps = new OracleProcessIdSource();
     ps.setTableName("PIPELITE_PROCESS");
-    ps.setExecutionResultArray(TaskExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER.resultsArray());
+    ps.setExecutionResultArray(
+        TaskExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER.resultsArray());
     ps.setRedoCount(Integer.MAX_VALUE);
     ps.setConnection(connection);
     ps.setPipelineName(PIPELINE_NAME);
     ps.init();
 
-      OracleStorage os = new OracleStorage();
+    OracleStorage os = new OracleStorage();
     os.setPipelineName(PIPELINE_NAME);
     os.setProcessTableName("PIPELITE_PROCESS");
     os.setStageTableName("PIPELITE_STAGE");
@@ -99,22 +98,21 @@ public class OracleStorageTest {
     List<String> ids = Stream.of("PROCESS_ID1", "PROCESS_ID2").collect(Collectors.toList());
     AtomicInteger cnt1 = new AtomicInteger(ids.size());
 
-    ids
-        .forEach(
-            i -> {
-              try {
-                loadTasks(PIPELINE_NAME, Arrays.asList(i));
-              } catch (RuntimeException e) {
-                cnt1.decrementAndGet();
-              }
-            });
+    ids.forEach(
+        i -> {
+          try {
+            loadTasks(PIPELINE_NAME, Arrays.asList(i));
+          } catch (RuntimeException e) {
+            cnt1.decrementAndGet();
+          }
+        });
     Assert.assertEquals(0, cnt1.get());
 
-    List<PipeliteState> saved = saveTasks(PIPELINE_NAME, ids);
-    List<PipeliteState> loaded = loadTasks(PIPELINE_NAME, ids);
+    List<ProcessInstance> saved = saveTasks(PIPELINE_NAME, ids);
+    List<ProcessInstance> loaded = loadTasks(PIPELINE_NAME, ids);
     Assert.assertArrayEquals(
-        saved.toArray(new PipeliteState[saved.size()]),
-        loaded.toArray(new PipeliteState[loaded.size()]));
+        saved.toArray(new ProcessInstance[saved.size()]),
+        loaded.toArray(new ProcessInstance[loaded.size()]));
 
     Stage[] stages =
         new Stage[] {mock(Stage.class), mock(Stage.class), mock(Stage.class), mock(Stage.class)};
@@ -153,15 +151,14 @@ public class OracleStorageTest {
   }
 
   private List<TaskInstance> saveStages(List<TaskInstance> stages) {
-    stages
-        .forEach(
-            s -> {
-              try {
-                db_backend.save(s);
-              } catch (Exception e) {
-                throw new RuntimeException(e);
-              }
-            });
+    stages.forEach(
+        s -> {
+          try {
+            db_backend.save(s);
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+        });
     return stages;
   }
 
@@ -210,13 +207,16 @@ public class OracleStorageTest {
     return result;
   }
 
-  private List<PipeliteState> loadTasks(String pipeline_name, List<String> ids) {
+  private List<ProcessInstance> loadTasks(String pipeline_name, List<String> ids) {
     return ids.stream()
         .map(
             id -> {
-              PipeliteState result;
+              ProcessInstance result;
               try {
-                db_backend.load(result = new PipeliteState(pipeline_name, id));
+                result = new ProcessInstance();
+                result.setPipelineName(pipeline_name);
+                result.setProcessId(id);
+                db_backend.load(result);
               } catch (Exception e) {
                 throw new RuntimeException(e);
               }
@@ -225,15 +225,17 @@ public class OracleStorageTest {
         .collect(Collectors.toList());
   }
 
-  private List<PipeliteState> saveTasks(String pipeline_name, List<String> ids) {
+  private List<ProcessInstance> saveTasks(String pipeline_name, List<String> ids) {
     return ids.stream()
         .map(
             id -> {
-              PipeliteState result;
+              ProcessInstance result;
               try {
-                result = new PipeliteState(pipeline_name, id);
+                result = new ProcessInstance();
+                result.setPipelineName(pipeline_name);
+                result.setProcessId(id);
                 result.setProcessComment("PROCESS_COMMENT");
-                result.setState(State.ACTIVE);
+                result.setState(ProcessExecutionState.ACTIVE);
                 db_backend.save(result);
               } catch (Exception e) {
                 throw new RuntimeException(e);

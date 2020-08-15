@@ -35,7 +35,7 @@ public class InternalStageExecutor extends AbstractTaskExecutor {
   public void execute(TaskInstance instance) {
     Throwable exception = null;
 
-    if (TaskExecutionState.ACTIVE_TASK == getTaskExecutionState(instance)) {
+    if (TaskExecutionState.ACTIVE == getTaskExecutionState(instance)) {
       try {
         if (null != DefaultConfiguration.currentSet().getPropertyPrefixName()) {
           System.setProperty(

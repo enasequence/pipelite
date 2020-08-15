@@ -18,9 +18,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import pipelite.process.state.ProcessExecutionState;
 import pipelite.task.result.TaskExecutionResult;
 import pipelite.task.instance.LatestTaskExecution;
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState;
+import pipelite.process.instance.ProcessInstance;
 import pipelite.task.instance.TaskInstance;
 import pipelite.task.result.TaskExecutionResultType;
 import uk.ac.ebi.ena.sra.pipeline.resource.MemoryLocker;
@@ -44,12 +45,12 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
   public OracleStorage() {}
 
   @Override
-  public void load(PipeliteState state) throws StorageException {
+  public void load(ProcessInstance state) throws StorageException {
     load(state, false);
   }
 
   @Deprecated
-  public void load(PipeliteState state, boolean do_lock) throws StorageException {
+  public void load(ProcessInstance state, boolean do_lock) throws StorageException {
     if (null != state.getPipelineName() && !pipeline_name.equals(state.getPipelineName())) {
       throw new StorageException("state object pipeline name incorrect");
     }
@@ -78,12 +79,12 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
           state.setPipelineName(rows.getString(PIPELINE_COLUMN_NAME));
           state.setProcessId(rows.getString(PROCESS_COLUMN_NAME));
           state.setPriority((int) rows.getLong(PROCESS_PRIORITY_COLUMN_NAME));
-          state.setExecCount((int) rows.getLong(ATTEMPT_COLUMN_NAME));
+          state.setExecutionCount((int) rows.getLong(ATTEMPT_COLUMN_NAME));
           String st = rows.getString(PROCESS_STATE_COLUMN_NAME);
           state.setState(
               null == state || 0 == st.trim().length()
-                  ? PipeliteState.State.ACTIVE
-                  : PipeliteState.State.valueOf(st));
+                  ? ProcessExecutionState.ACTIVE
+                  : ProcessExecutionState.valueOf(st));
           state.setProcessComment(rows.getString(PROCESS_COMMENT_COLUMN_NAME));
 
           ++rownum;
@@ -100,7 +101,7 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
   }
 
   @Override
-  public void save(PipeliteState state) throws StorageException {
+  public void save(ProcessInstance state) throws StorageException {
     if (null != state.getPipelineName() && !pipeline_name.equals(state.getPipelineName())) {
       throw new StorageException("state object pipeline name incorrect");
     }
@@ -135,7 +136,7 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
       ps.setObject(3, state.getPriority());
       ps.setString(4, state.getState().toString());
       ps.setObject(5, state.getProcessComment());
-      ps.setObject(6, state.getExecCount());
+      ps.setObject(6, state.getExecutionCount());
 
       int rows = ps.executeUpdate();
       if (1 != rows) throw new StorageException("Can't update exactly 1 row!");
@@ -626,7 +627,7 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
   // TODO specify contract
   @Override
   public boolean lock(ProcessResourceLock rl) {
-    PipeliteState pi = new PipeliteState();
+    ProcessInstance pi = new ProcessInstance();
     pi.setPipelineName(pipeline_name);
     pi.setProcessId(rl.getLockId());
     try {

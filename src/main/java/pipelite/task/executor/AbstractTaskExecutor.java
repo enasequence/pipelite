@@ -38,7 +38,7 @@ public abstract class AbstractTaskExecutor implements TaskExecutor {
 
   public TaskExecutionState getTaskExecutionState(TaskInstance instance) {
     if (!instance.isEnabled()) {
-      return TaskExecutionState.DISABLED_TASK;
+      return TaskExecutionState.DISABLED;
     }
 
     LatestTaskExecution ei = instance.getLatestTaskExecution();
@@ -47,14 +47,14 @@ public abstract class AbstractTaskExecutor implements TaskExecutor {
     if (null != ei && null != ei.getEndTime() && null != ei.getResultType()) {
       switch (ei.getResultType()) {
         case PERMANENT_ERROR:
-          return TaskExecutionState.COMPLETED_TASK;
+          return TaskExecutionState.COMPLETED;
         default:
           return ei.getResultType() == TaskExecutionResultType.TRANSIENT_ERROR
-                  ? TaskExecutionState.ACTIVE_TASK
-                  : TaskExecutionState.DISABLED_TASK;
+                  ? TaskExecutionState.ACTIVE
+                  : TaskExecutionState.DISABLED;
       }
     }
 
-    return TaskExecutionState.ACTIVE_TASK;
+    return TaskExecutionState.ACTIVE;
   }
 }

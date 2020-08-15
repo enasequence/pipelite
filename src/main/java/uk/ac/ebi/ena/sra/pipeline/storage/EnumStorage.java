@@ -13,8 +13,8 @@ package uk.ac.ebi.ena.sra.pipeline.storage;
 import java.util.stream.Stream;
 import org.apache.log4j.Logger;
 import pipelite.task.instance.LatestTaskExecution;
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState;
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState.State;
+import pipelite.process.instance.ProcessInstance;
+import pipelite.process.state.ProcessExecutionState;
 import pipelite.task.instance.TaskInstance;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
 
@@ -43,15 +43,15 @@ public class EnumStorage<T extends Enum<T> & Stage> implements StorageBackend {
   }
 
   @Override
-  public void load(PipeliteState ps) {
-    ps.setExecCount(0);
-    ps.setState(State.ACTIVE);
+  public void load(ProcessInstance ps) {
+    ps.setExecutionCount(0);
+    ps.setState(ProcessExecutionState.ACTIVE);
     ps.setPriority(0);
     log.info(ps);
   }
 
   @Override
-  public void save(PipeliteState ps) {
+  public void save(ProcessInstance ps) {
     log.info(ps);
   }
 
