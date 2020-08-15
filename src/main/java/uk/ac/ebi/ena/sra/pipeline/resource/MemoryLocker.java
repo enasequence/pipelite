@@ -16,23 +16,6 @@ import java.util.Map;
 
 public class MemoryLocker implements ResourceLocker {
 
-  final Map<String, String> stage_locks = Collections.synchronizedMap(new HashMap<>(256));
-
-  @Override
-  public boolean lock(StageResourceLock rl) {
-    return null == stage_locks.putIfAbsent(rl.getLockId(), rl.getLockOwner());
-  }
-
-  @Override
-  public boolean unlock(StageResourceLock rl) {
-    return stage_locks.remove(rl.getLockId(), rl.getLockOwner());
-  }
-
-  @Override
-  public boolean is_locked(StageResourceLock rl) {
-    return stage_locks.replace(rl.getLockId(), rl.getLockOwner(), rl.getLockOwner());
-  }
-
   final Map<String, String> process_locks = Collections.synchronizedMap(new HashMap<>(256));
 
   @Override

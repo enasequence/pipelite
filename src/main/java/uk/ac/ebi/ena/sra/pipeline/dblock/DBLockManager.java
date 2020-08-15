@@ -232,21 +232,6 @@ public class DBLockManager implements LauncherLockManager, ResourceLocker {
   }
 
   @Override
-  public boolean lock(StageResourceLock rl) {
-    return tryLock(composeLock(rl));
-  }
-
-  @Override
-  public boolean unlock(StageResourceLock rl) {
-    return unlock(composeLock(rl));
-  }
-
-  @Override
-  public boolean is_locked(StageResourceLock rl) {
-    return isBeingHeld(composeLock(rl));
-  }
-
-  @Override
   public boolean lock(ProcessResourceLock rl) {
     return tryLock(composeLock(rl));
   }

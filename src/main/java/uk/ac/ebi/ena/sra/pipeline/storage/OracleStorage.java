@@ -601,31 +601,6 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
 
   // TODO specify contract
   @Override
-  public boolean lock(StageResourceLock rl) {
-    TaskInstance si = new TaskInstance();
-    si.setProcessName(pipeline_name);
-    si.setTaskName(rl.getLockId());
-    si.setProcessId(rl.getLockOwner());
-    try {
-      load(si, true);
-      return mlocker.lock(rl);
-    } catch (StorageException e) {
-      return false;
-    }
-  }
-
-  @Override
-  public boolean unlock(StageResourceLock rl) {
-    return mlocker.unlock(rl);
-  }
-
-  @Override
-  public boolean is_locked(StageResourceLock rl) {
-    return mlocker.is_locked(rl);
-  }
-
-  // TODO specify contract
-  @Override
   public boolean lock(ProcessResourceLock rl) {
     ProcessInstance pi = new ProcessInstance();
     pi.setPipelineName(pipeline_name);

@@ -11,11 +11,6 @@
 package uk.ac.ebi.ena.sra.pipeline.resource;
 
 public interface ResourceLocker {
-  boolean lock(StageResourceLock rl);
-
-  boolean unlock(StageResourceLock rl);
-
-  boolean is_locked(StageResourceLock rl);
 
   boolean lock(ProcessResourceLock rl);
 

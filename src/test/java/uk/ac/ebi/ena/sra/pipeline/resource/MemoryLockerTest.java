@@ -18,13 +18,13 @@ public class MemoryLockerTest {
   @Test
   public void Test() {
     MemoryLocker ml = new MemoryLocker();
-    StageResourceLock rl = new StageResourceLock("NULL", "1", "1");
-    Assert.assertTrue(ml.lock(new StageResourceLock("NULL", "1", "1")));
-    Assert.assertTrue(ml.is_locked(new StageResourceLock("NULL", "1", "1")));
-    Assert.assertTrue(ml.lock(new StageResourceLock("NULL", "2", "1")));
-    Assert.assertTrue(ml.is_locked(new StageResourceLock("NULL", "2", "1")));
+    ProcessResourceLock rl = new ProcessResourceLock("pipelineName", "1");
+    Assert.assertTrue(ml.lock(new ProcessResourceLock("pipelineName", "1")));
+    Assert.assertTrue(ml.is_locked(new ProcessResourceLock("pipelineName", "1")));
+    Assert.assertTrue(ml.lock(new ProcessResourceLock("pipelineName", "2")));
+    Assert.assertTrue(ml.is_locked(new ProcessResourceLock("pipelineName", "2")));
     Assert.assertTrue(ml.unlock(rl));
-    Assert.assertFalse(ml.is_locked(new StageResourceLock("NULL", "1", "1")));
-    Assert.assertTrue(ml.is_locked(new StageResourceLock("NULL", "2", "1")));
+    Assert.assertFalse(ml.is_locked(new ProcessResourceLock("pipelineName", "1")));
+    Assert.assertTrue(ml.is_locked(new ProcessResourceLock("pipelineName", "2")));
   }
 }
