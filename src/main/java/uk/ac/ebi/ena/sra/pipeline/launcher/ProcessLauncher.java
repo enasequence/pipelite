@@ -212,12 +212,12 @@ public class ProcessLauncher implements PipeliteProcess {
       log.info(
               String.format(
                       "Stage [%s], enabled [%b] result [%s] of type [%s], count [%d]",
-                      instance.getStageName(),
+                      instance.getTaskName(),
                       instance.isEnabled(),
-                      instance.getExecutionInstance().getResult(),
-                      executor.can_execute(instance),
+                      instance.getExecutionInstance().getResultName(),
+                      executor.getTaskExecutionState(instance),
                       instance.getExecutionCount()));
-      switch (executor.can_execute(instance)) {
+      switch (executor.getTaskExecutionState(instance)) {
         case ACTIVE_TASK:
           break;
 
@@ -271,13 +271,13 @@ public class ProcessLauncher implements PipeliteProcess {
     for (int i = 0; i < instances.length; ++i) {
       Stage stage = stages[i];
       StageInstance instance = new StageInstance();
-      instance.setResourceConfig(stage.getExecutorConfig());
-      instance.setStageName(stage.toString());
-      instance.setProcessID(process_id);
-      instance.setPipelineName(pipeline_name);
+      instance.setTaskExecutorConfig(stage.getExecutorConfig());
+      instance.setTaskName(stage.toString());
+      instance.setProcessId(process_id);
+      instance.setProcessName(pipeline_name);
       instance.setDependsOn(null == stage.getDependsOn() ? null : stage.getDependsOn().toString());
-      instance.setMemoryLimit(stage.getMemoryLimit());
-      instance.setCPUCores(stage.getCPUCores());
+      instance.setMemory(stage.getMemoryLimit());
+      instance.setCores(stage.getCPUCores());
       instance.setPropertiesPass(stage.getPropertiesPass());
 
       instances[i] = instance;
@@ -302,7 +302,7 @@ public class ProcessLauncher implements PipeliteProcess {
         ProcessLogBean bean = new ProcessLogBean();
         bean.setPipelineName(getPipelineName());
         bean.setProcessID(getProcessId());
-        bean.setStage(instance.getStageName());
+        bean.setStage(instance.getTaskName());
         bean.setThrowable(se);
         bean.setMessage(bean_message);
         bean.setLSFJobID(null);
@@ -332,19 +332,19 @@ public class ProcessLauncher implements PipeliteProcess {
     {
       if (do_stop) break;
 
-      if (TaskExecutionState.ACTIVE_TASK == executor.can_execute(instance)) {
-        if (null != instance.getResourceConfig(executor.getConfigClass()))
-          executor.configure(instance.getResourceConfig(executor.getConfigClass()));
+      if (TaskExecutionState.ACTIVE_TASK == executor.getTaskExecutionState(instance)) {
+        if (null != instance.getTaskExecutorConfig(executor.getConfigClass()))
+          executor.configure(instance.getTaskExecutorConfig(executor.getConfigClass()));
 
         ExecutionInstance ei = instance.getExecutionInstance();
         ei.setStartTime(new Timestamp(System.currentTimeMillis()));
         // todo set id
-        ei.setExceutionId(storage.getExecutionId());
+        ei.setExecutionId(storage.getExecutionId());
         storage.save(instance);
 
         executor.execute(instance);
 
-        ei.setFinishTime(new Timestamp(System.currentTimeMillis()));
+        ei.setEndTime(new Timestamp(System.currentTimeMillis()));
         ExecutionInfo info = executor.get_info();
 
         instance.setExecutionCount(instance.getExecutionCount() + 1);
@@ -362,10 +362,10 @@ public class ProcessLauncher implements PipeliteProcess {
         }
 
         ei.setResultType(result.getResultType());
-        ei.setResult(result.getResultName());
+        ei.setResultName(result.getResultName());
         ei.setStderr(info.getStderr());
         ei.setStdout(info.getStdout());
-        ei.setCmdLine(info.getCommandline());
+        ei.setCmd(info.getCommandline());
 
         storage.save(ei);
         storage.flush();
@@ -383,12 +383,12 @@ public class ProcessLauncher implements PipeliteProcess {
     // TODO: eval usage of Throwable, ExceptionText and Message
     bean.setThrowable(info.getThrowable());
     bean.setExceptionText(info.getLogMessage());
-    bean.setMessage(instance.getExecutionInstance().getResult());
+    bean.setMessage(instance.getExecutionInstance().getResultName());
     bean.setLSFHosts(info.getHost());
     bean.setLSFJobID(null != info.getPID() ? info.getPID().longValue() : null);
-    bean.setProcessID(instance.getProcessID());
-    bean.setStage(instance.getStageName());
-    bean.setPipelineName(instance.getPipelineName());
+    bean.setProcessID(instance.getProcessId());
+    bean.setStage(instance.getTaskName());
+    bean.setPipelineName(instance.getProcessName());
     bean.setExecutionId(
         (null == instance.getExecutionInstance()
             ? null
@@ -413,7 +413,7 @@ public class ProcessLauncher implements PipeliteProcess {
 
       if (null == i.getDependsOn()) continue;
 
-      if (i.getDependsOn().equals(from_instance.getStageName()))
+      if (i.getDependsOn().equals(from_instance.getTaskName()))
         invalidate_dependands(i, true, touched);
     }
 

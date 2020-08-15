@@ -94,12 +94,12 @@ public class EnumStorage<T extends Enum<T> & Stage> implements StorageBackend {
   @Override
   public void load(StageInstance si) {
     Stream.of(e.getEnumConstants())
-        .filter(s -> s.toString().equals(si.getStageName()))
+        .filter(s -> s.toString().equals(si.getTaskName()))
         .findFirst()
         .ifPresent(
             s -> {
-              si.setPipelineName(getPipelineName());
-              si.setProcessID(getProcessIdFactory().getProcessId());
+              si.setProcessName(getPipelineName());
+              si.setProcessId(getProcessIdFactory().getProcessId());
               log.info(si);
             });
   }

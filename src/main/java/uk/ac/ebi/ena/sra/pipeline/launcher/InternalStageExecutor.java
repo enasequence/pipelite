@@ -33,7 +33,7 @@ public class InternalStageExecutor extends AbstractTaskExecutor {
   public void execute(StageInstance instance) {
     Throwable exception = null;
 
-    if (TaskExecutionState.ACTIVE_TASK == can_execute(instance)) {
+    if (TaskExecutionState.ACTIVE_TASK == getTaskExecutionState(instance)) {
       try {
         if (null != DefaultConfiguration.currentSet().getPropertyPrefixName()) {
           System.setProperty(
@@ -42,9 +42,9 @@ public class InternalStageExecutor extends AbstractTaskExecutor {
         }
 
         Class<? extends StageTask> klass =
-            DefaultConfiguration.currentSet().getStage(instance.getStageName()).getTaskClass();
+            DefaultConfiguration.currentSet().getStage(instance.getTaskName()).getTaskClass();
         task = klass.getConstructor((Class[]) null).newInstance((Object[]) null);
-        task.init(instance.getProcessID());
+        task.init(instance.getProcessId());
         task.execute();
 
       } catch (Throwable e) {

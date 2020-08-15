@@ -104,7 +104,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
 
     p_args.add("-XX:+UseSerialGC");
 
-    int lsf_memory_limit = instance.getMemoryLimit();
+    int lsf_memory_limit = instance.getMemory();
     if (lsf_memory_limit <= 0) {
       lsf_memory_limit = this.lsf_memory_limit;
     }
@@ -130,10 +130,10 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
     p_args.add(StageLauncher.class.getName());
 
     p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.StageLauncher.PARAMETERS_NAME_ID);
-    p_args.add(instance.getProcessID());
+    p_args.add(instance.getProcessId());
 
     p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.StageLauncher.PARAMETERS_NAME_STAGE);
-    p_args.add(instance.getStageName());
+    p_args.add(instance.getTaskName());
 
     if (commit)
       p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.StageLauncher.PARAMETERS_NAME_FORCE_COMMIT);
@@ -148,7 +148,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
   }
 
   private LSFBackEnd configureBackend(StageInstance instance) {
-    int mem = instance.getMemoryLimit();
+    int mem = instance.getMemory();
     if (mem <= 0) {
       mem = lsf_memory_limit;
       if (mem <= 0) {
@@ -160,7 +160,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
         mem = LSF_JVM_MEMORY_DELTA_MB + LSF_JVM_MEMORY_OVERHEAD_MB;
       }
     }
-    int cpu = instance.getCPUCores();
+    int cpu = instance.getCores();
     if (cpu <= 0) {
       cpu = cpu_cores;
       if (cpu <= 0) {
@@ -183,11 +183,11 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
   }
 
   public void execute(StageInstance instance) {
-    if (TaskExecutionState.ACTIVE_TASK == can_execute(instance)) {
+    if (TaskExecutionState.ACTIVE_TASK == getTaskExecutionState(instance)) {
       log.info(
           String.format(
               "%sxecuting stage %s",
-              instance.getExecutionCount() > 0 ? "E" : "Re-e", instance.getStageName()));
+              instance.getExecutionCount() > 0 ? "E" : "Re-e", instance.getTaskName()));
 
       boolean do_commit = true;
       List<String> p_args = constructArgs(instance, do_commit);
@@ -198,7 +198,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
           back_end.new_call_instance(
               String.format(
                   "%s--%s--%s",
-                  instance.getPipelineName(), instance.getProcessID(), instance.getStageName()),
+                  instance.getProcessName(), instance.getProcessId(), instance.getTaskName()),
               "java",
               p_args.toArray(new String[p_args.size()]));
 
@@ -214,7 +214,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
         String print_msg =
             String.format(
                 "Finished execution of stage %s\n%s",
-                instance.getStageName(), new ExternalCallException(call).toString());
+                instance.getTaskName(), new ExternalCallException(call).toString());
 
         log.info(print_msg);
       }

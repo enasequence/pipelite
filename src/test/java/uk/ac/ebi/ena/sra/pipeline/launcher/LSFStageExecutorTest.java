@@ -49,8 +49,8 @@ public class LSFStageExecutorTest {
       {
         setEnabled(true);
         setPropertiesPass(new String[] {});
-        setCPUCores(1);
-        setMemoryLimit(-1);
+        setCores(1);
+        setMemory(-1);
         setPropertiesPass(new String[] {});
       }
     };
@@ -202,8 +202,8 @@ public class LSFStageExecutorTest {
           {
             setEnabled(true);
             setPropertiesPass(new String[] {});
-            setMemoryLimit(2000);
-            setCPUCores(12);
+            setMemory(2000);
+            setCores(12);
           }
         });
 
@@ -249,8 +249,8 @@ public class LSFStageExecutorTest {
           {
             setEnabled(true);
             setPropertiesPass(new String[] {});
-            setMemoryLimit(-1);
-            setCPUCores(-1);
+            setMemory(-1);
+            setCores(-1);
           }
         });
 
@@ -309,7 +309,7 @@ public class LSFStageExecutorTest {
           {
             setEnabled(true);
             setPropertiesPass(new String[] {});
-            setMemoryLimit(1700);
+            setMemory(1700);
           }
         });
 
@@ -372,7 +372,7 @@ public class LSFStageExecutorTest {
           {
             setEnabled(true);
             setPropertiesPass(new String[] {});
-            setMemoryLimit(1400);
+            setMemory(1400);
           }
         });
 

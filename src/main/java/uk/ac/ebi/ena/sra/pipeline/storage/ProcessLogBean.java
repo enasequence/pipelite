@@ -60,7 +60,7 @@ public class ProcessLogBean {
     setField(STAGE_FIELD_NAME, stage);
   }
 
-  public String getProcessID() throws NoSuchFieldException {
+  public String getProcessId() throws NoSuchFieldException {
     return getField(PROCESS_FIELD_NAME);
   }
 

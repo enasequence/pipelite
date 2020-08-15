@@ -100,9 +100,9 @@ public class IdSourceTest {
         .forEach(
             i -> {
               StageInstance si = new StageInstance();
-              si.setPipelineName(PIPELINE_NAME);
-              si.setStageName("STAGE");
-              si.setProcessID(i);
+              si.setProcessName(PIPELINE_NAME);
+              si.setTaskName("STAGE");
+              si.setProcessId(i);
               try {
                 db_backend.save(si);
               } catch (Exception e) {

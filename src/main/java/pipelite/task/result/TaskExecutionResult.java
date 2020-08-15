@@ -7,10 +7,10 @@ import lombok.Value;
 public class TaskExecutionResult {
 
   @NonNull private final String resultName;
-  @NonNull private final TaskoExecutionResultType resultType;
+  @NonNull private final TaskExecutionResultType resultType;
 
   public boolean isSuccess() {
-    return resultType == TaskoExecutionResultType.SUCCESS;
+    return resultType == TaskExecutionResultType.SUCCESS;
   }
 
   public boolean isError() {
@@ -18,30 +18,30 @@ public class TaskExecutionResult {
   }
 
   public boolean isTransientError() {
-    return resultType == TaskoExecutionResultType.TRANSIENT_ERROR;
+    return resultType == TaskExecutionResultType.TRANSIENT_ERROR;
   }
 
   public boolean isPermanentError() {
-    return resultType == TaskoExecutionResultType.PERMANENT_ERROR;
+    return resultType == TaskExecutionResultType.PERMANENT_ERROR;
   }
 
   public boolean isInternalError() {
-    return resultType == TaskoExecutionResultType.INTERNAL_ERROR;
+    return resultType == TaskExecutionResultType.INTERNAL_ERROR;
   }
 
   public static TaskExecutionResult success() {
-    return new TaskExecutionResult("SUCCESS", TaskoExecutionResultType.SUCCESS); // TODO: localization
+    return new TaskExecutionResult("SUCCESS", TaskExecutionResultType.SUCCESS); // TODO: localization
   }
 
   public static TaskExecutionResult transientError(String resultName) {
-    return new TaskExecutionResult(resultName, TaskoExecutionResultType.TRANSIENT_ERROR);
+    return new TaskExecutionResult(resultName, TaskExecutionResultType.TRANSIENT_ERROR);
   }
 
   public static TaskExecutionResult permanentError(String resultName) {
-    return new TaskExecutionResult(resultName, TaskoExecutionResultType.PERMANENT_ERROR);
+    return new TaskExecutionResult(resultName, TaskExecutionResultType.PERMANENT_ERROR);
   }
 
   public static TaskExecutionResult internalError() {
-    return new TaskExecutionResult("INTERNAL ERROR", TaskoExecutionResultType.INTERNAL_ERROR);  // TODO: localization
+    return new TaskExecutionResult("INTERNAL ERROR", TaskExecutionResultType.INTERNAL_ERROR);  // TODO: localization
   }
 }

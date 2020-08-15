@@ -20,7 +20,7 @@ import java.util.List;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInstance;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState;
 import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
-import pipelite.task.result.TaskoExecutionResultType;
+import pipelite.task.result.TaskExecutionResultType;
 import uk.ac.ebi.ena.sra.pipeline.resource.MemoryLocker;
 import uk.ac.ebi.ena.sra.pipeline.resource.ProcessResourceLock;
 import uk.ac.ebi.ena.sra.pipeline.resource.ResourceLocker;
@@ -177,17 +177,17 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
       rows = ps.executeQuery();
       int rownum = 0;
       while (rows.next()) {
-        instance.setFinishTime(rows.getTimestamp(EXEC_DATE_COLUMN_NAME));
+        instance.setEndTime(rows.getTimestamp(EXEC_DATE_COLUMN_NAME));
         instance.setStartTime(rows.getTimestamp(EXEC_START_COLUMN_NAME));
-        instance.setResult(rows.getString(EXEC_RESULT_COLUMN_NAME));
+        instance.setResultName(rows.getString(EXEC_RESULT_COLUMN_NAME));
 
         String rtype = rows.getString(EXEC_RESULT_TYPE_COLUMN_NAME);
-        instance.setResultType(null == rtype ? null : TaskoExecutionResultType.valueOf(rtype));
+        instance.setResultType(null == rtype ? null : TaskExecutionResultType.valueOf(rtype));
 
         // TODO remove
         instance.setStderr(rows.getString(EXEC_STDERR_COLUMN_NAME));
         instance.setStdout(rows.getString(EXEC_STDOUT_COLUMN_NAME));
-        instance.setCmdLine(rows.getString(EXEC_CMDLINE_COLUMN_NAME));
+        instance.setCmd(rows.getString(EXEC_CMDLINE_COLUMN_NAME));
 
         ++rownum;
       }
@@ -237,14 +237,14 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
                   lock ? LOCK_EXPRESSION : ""));
 
       ps.setObject(1, pipeline_name);
-      ps.setObject(2, instance.getProcessID());
-      ps.setString(3, instance.getStageName());
+      ps.setObject(2, instance.getProcessId());
+      ps.setString(3, instance.getTaskName());
 
       rows = ps.executeQuery();
 
       int rownum = 0;
       while (rows.next()) {
-        instance.getExecutionInstance().setExceutionId(rows.getString(EXEC_ID_COLUMN_NAME));
+        instance.getExecutionInstance().setExecutionId(rows.getString(EXEC_ID_COLUMN_NAME));
         instance.setExecutionCount((int) rows.getLong(ATTEMPT_COLUMN_NAME));
         instance.setEnabled(ENABLED_VALUE.equals(rows.getString(ENABLED_COLUMN_NAME)));
         ++rownum;
@@ -254,7 +254,7 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
         throw new StorageException(
             String.format(
                 "Failed to load stage [%s] for process [%s] of [%s] pipeline",
-                instance.getStageName(), instance.getProcessID(), pipeline_name));
+                instance.getTaskName(), instance.getProcessId(), pipeline_name));
 
       if (null != instance.getExecutionInstance().getExecutionId())
         load(instance.getExecutionInstance());
@@ -325,8 +325,8 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
                   /* 14 */ getTableName()));
 
       ps.setObject(1, pipeline_name);
-      ps.setObject(2, instance.getProcessID());
-      ps.setString(3, instance.getStageName());
+      ps.setObject(2, instance.getProcessId());
+      ps.setString(3, instance.getTaskName());
 
       ps.setObject(4, instance.getExecutionCount());
       ps.setObject(
@@ -340,12 +340,12 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
           7,
           null == instance.getExecutionInstance()
               ? null
-              : instance.getExecutionInstance().getStart());
+              : instance.getExecutionInstance().getStartTime());
       ps.setObject(
           8,
           null == instance.getExecutionInstance()
               ? null
-              : instance.getExecutionInstance().getFinish());
+              : instance.getExecutionInstance().getEndTime());
       ps.setString(
           9,
           null == instance.getExecutionInstance()
@@ -358,7 +358,7 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
           10,
           null == instance.getExecutionInstance()
               ? null
-              : instance.getExecutionInstance().getResult());
+              : instance.getExecutionInstance().getResultName());
 
       ps.setObject(
           11,
@@ -382,7 +382,7 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
               connection,
               null == instance.getExecutionInstance()
                   ? null
-                  : instance.getExecutionInstance().getCmdLine(),
+                  : instance.getExecutionInstance().getCmd(),
               clob_list));
 
       int rows = ps.executeUpdate();
@@ -446,7 +446,7 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
                   EXEC_ID_COLUMN_NAME,
                   log_table_name));
       ps.setString(1, bean.getPipelineName());
-      ps.setString(2, bean.getProcessID());
+      ps.setString(2, bean.getProcessId());
       ps.setString(3, bean.getStage());
       ps.setObject(4, bean.getExecutionId());
       ps.setString(5, bean.getMessage());
@@ -557,16 +557,16 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
                   EXEC_CMDLINE_COLUMN_NAME,
                   EXEC_ID_COLUMN_NAME));
 
-      ps.setObject(1, instance.getStart());
-      ps.setObject(2, instance.getFinish());
+      ps.setObject(1, instance.getStartTime());
+      ps.setObject(2, instance.getEndTime());
       ps.setString(
           3, null == instance.getResultType() ? null : instance.getResultType().toString());
 
-      ps.setObject(4, instance.getResult());
+      ps.setObject(4, instance.getResultName());
 
       ps.setObject(5, makeClob(connection, instance.getStderr(), clob_list));
       ps.setObject(6, makeClob(connection, instance.getStdout(), clob_list));
-      ps.setObject(7, makeClob(connection, instance.getCmdLine(), clob_list));
+      ps.setObject(7, makeClob(connection, instance.getCmd(), clob_list));
 
       ps.setString(8, instance.getExecutionId());
 
@@ -599,9 +599,9 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
   @Override
   public boolean lock(StageResourceLock rl) {
     StageInstance si = new StageInstance();
-    si.setPipelineName(pipeline_name);
-    si.setStageName(rl.getLockId());
-    si.setProcessID(rl.getLockOwner());
+    si.setProcessName(pipeline_name);
+    si.setTaskName(rl.getLockId());
+    si.setProcessId(rl.getLockOwner());
     try {
       load(si, true);
       return mlocker.lock(rl);

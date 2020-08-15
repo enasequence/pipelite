@@ -98,12 +98,12 @@ public class ProcessLauncherTest {
                 StageInstance si = (StageInstance) invocation.getArguments()[0];
                 si.setEnabled(true);
                 si.setExecutionCount(0);
-                si.setProcessID("YOBA-PROCESS");
-                si.setStageName(names[counter.getAndAdd(1)]);
-                si.setPipelineName(MOCKED_PIPELINE);
+                si.setProcessId("YOBA-PROCESS");
+                si.setTaskName(names[counter.getAndAdd(1)]);
+                si.setProcessName(MOCKED_PIPELINE);
                 si.getExecutionInstance().setStartTime(new Timestamp(System.currentTimeMillis()));
-                si.getExecutionInstance().setFinishTime(new Timestamp(System.currentTimeMillis()));
-                si.getExecutionInstance().setResult(init_results[counter.get() - 1].toString());
+                si.getExecutionInstance().setEndTime(new Timestamp(System.currentTimeMillis()));
+                si.getExecutionInstance().setResultName(init_results[counter.get() - 1].toString());
                 si.getExecutionInstance().setResultType(init_results[counter.get() - 1].getResultType());
 
                 si.setDependsOn(1 == counter.get() ? null : names[counter.get() - 2]);
@@ -166,7 +166,7 @@ public class ProcessLauncherTest {
     doAnswer(
             (Answer<Object>) i -> {
               StageInstance si = (StageInstance) i.getArguments()[0];
-              log.info("Calling execute on \"" + si.getStageName() + "\"");
+              log.info("Calling execute on \"" + si.getTaskName() + "\"");
               return null;
             })
         .when(spiedExecutor)

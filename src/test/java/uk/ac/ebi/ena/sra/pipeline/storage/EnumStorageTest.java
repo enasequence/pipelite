@@ -79,7 +79,7 @@ public class EnumStorageTest {
         .forEach(
             stage -> {
                 StageInstance si = new StageInstance();
-                si.setStageName(stage.toString());
+                si.setTaskName(stage.toString());
                 es.load(si);
                 log.info(si);
                 si_list.add(si);

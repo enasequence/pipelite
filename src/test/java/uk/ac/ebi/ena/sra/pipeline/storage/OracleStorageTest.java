@@ -172,10 +172,10 @@ public class OracleStorageTest {
         .forEach(
             s -> {
               StageInstance si = new StageInstance();
-              si.setPipelineName(pipeline_name);
+              si.setProcessName(pipeline_name);
               si.setEnabled(true);
-              si.setProcessID(process_id);
-              si.setStageName(s.toString());
+              si.setProcessId(process_id);
+              si.setTaskName(s.toString());
               result.add(si);
               try {
                 db_backend.save(si);
@@ -194,10 +194,10 @@ public class OracleStorageTest {
         .forEach(
             s -> {
               StageInstance si = new StageInstance();
-              si.setPipelineName(pipeline_name);
+              si.setProcessName(pipeline_name);
               si.setEnabled(true);
-              si.setProcessID(process_id);
-              si.setStageName(s.toString());
+              si.setProcessId(process_id);
+              si.setTaskName(s.toString());
               result.add(si);
 
               try {

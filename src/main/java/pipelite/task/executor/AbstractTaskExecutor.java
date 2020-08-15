@@ -12,7 +12,7 @@ package pipelite.task.executor;
 
 import java.util.List;
 import org.apache.log4j.Logger;
-import pipelite.task.result.TaskoExecutionResultType;
+import pipelite.task.result.TaskExecutionResultType;
 import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
 import pipelite.task.state.TaskExecutionState;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInstance;
@@ -28,33 +28,33 @@ public abstract class AbstractTaskExecutor implements TaskExecutor {
     this.resolver = resolver;
   }
 
-  @Override
-  public TaskExecutionState can_execute(StageInstance instance) {
-    // disabled stage
-    if (!instance.isEnabled()) return TaskExecutionState.DISABLED_TASK;
-
-    ExecutionInstance ei = instance.getExecutionInstance();
-
-    // check permanent errors
-    if (null != ei && null != ei.getFinish() && null != ei.getResultType()) {
-      switch (ei.getResultType()) {
-        case PERMANENT_ERROR:
-          return TaskExecutionState.COMPLETED_TASK;
-        default:
-          return ei.getResultType() == TaskoExecutionResultType.TRANSIENT_ERROR
-              ? TaskExecutionState.ACTIVE_TASK
-              : TaskExecutionState.DISABLED_TASK;
-      }
-    }
-
-    return TaskExecutionState.ACTIVE_TASK;
-  }
-
   protected void appendProperties(List<String> p_args, String... properties_to_pass) {
     for (String name : properties_to_pass) {
       for (Object p_name : System.getProperties().keySet())
         if (String.valueOf(p_name).startsWith(name))
           p_args.add(String.format("-D%s=%s", p_name, System.getProperties().get(p_name)));
     }
+  }
+
+  public TaskExecutionState getTaskExecutionState(StageInstance instance) {
+    if (!instance.isEnabled()) {
+      return TaskExecutionState.DISABLED_TASK;
+    }
+
+    ExecutionInstance ei = instance.getExecutionInstance();
+
+    // check permanent errors
+    if (null != ei && null != ei.getEndTime() && null != ei.getResultType()) {
+      switch (ei.getResultType()) {
+        case PERMANENT_ERROR:
+          return TaskExecutionState.COMPLETED_TASK;
+        default:
+          return ei.getResultType() == TaskExecutionResultType.TRANSIENT_ERROR
+                  ? TaskExecutionState.ACTIVE_TASK
+                  : TaskExecutionState.DISABLED_TASK;
+      }
+    }
+
+    return TaskExecutionState.ACTIVE_TASK;
   }
 }

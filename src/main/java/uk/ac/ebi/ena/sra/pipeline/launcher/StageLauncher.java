@@ -88,8 +88,8 @@ public class StageLauncher {
     TaskExecutor executor = new InternalStageExecutor(resolver);
 
     StageInstance instance = new StageInstance();
-    instance.setProcessID(process_id);
-    instance.setStageName(stage_name);
+    instance.setProcessId(process_id);
+    instance.setTaskName(stage_name);
     instance.setEnabled(enabled);
     instance.setExecutionCount(exec_cnt);
     executor.execute(instance);

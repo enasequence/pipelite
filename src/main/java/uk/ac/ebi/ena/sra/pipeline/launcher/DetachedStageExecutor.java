@@ -57,7 +57,7 @@ public class DetachedStageExecutor extends AbstractTaskExecutor {
   private List<String> constructArgs(StageInstance instance, boolean commit) {
     List<String> p_args = new ArrayList<>();
 
-    int memory_limit = instance.getMemoryLimit();
+    int memory_limit = instance.getMemory();
 
     if (0 < memory_limit) // TODO check
     p_args.add(String.format("-Xmx%dM", memory_limit));
@@ -72,10 +72,10 @@ public class DetachedStageExecutor extends AbstractTaskExecutor {
     p_args.add(StageLauncher.class.getName());
 
     p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.StageLauncher.PARAMETERS_NAME_ID);
-    p_args.add(instance.getProcessID());
+    p_args.add(instance.getProcessId());
 
     p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.StageLauncher.PARAMETERS_NAME_STAGE);
-    p_args.add(instance.getStageName());
+    p_args.add(instance.getTaskName());
 
     if (commit)
       p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.StageLauncher.PARAMETERS_NAME_FORCE_COMMIT);
@@ -84,11 +84,11 @@ public class DetachedStageExecutor extends AbstractTaskExecutor {
   }
 
   public void execute(StageInstance instance) {
-    if (TaskExecutionState.ACTIVE_TASK == can_execute(instance)) {
+    if (TaskExecutionState.ACTIVE_TASK == getTaskExecutionState(instance)) {
       log.info(
           String.format(
               "%sxecuting stage %s",
-              0 == instance.getExecutionCount() ? "E" : "Re-e", instance.getStageName()));
+              0 == instance.getExecutionCount() ? "E" : "Re-e", instance.getTaskName()));
 
       boolean do_commit = true;
       List<String> p_args = constructArgs(instance, do_commit);
@@ -97,8 +97,8 @@ public class DetachedStageExecutor extends AbstractTaskExecutor {
               String.format(
                   "%s~%s~%s",
                   PIPELINE_NAME, // TODO: get from instance
-                  instance.getProcessID(),
-                  instance.getStageName()),
+                  instance.getProcessId(),
+                  instance.getTaskName()),
               "java",
               p_args.toArray(new String[p_args.size()]));
 
@@ -111,7 +111,7 @@ public class DetachedStageExecutor extends AbstractTaskExecutor {
       String print_msg =
           String.format(
               "Finished execution of stage %s\n%s",
-              instance.getStageName(), new ExternalCallException(ec).toString());
+              instance.getTaskName(), new ExternalCallException(ec).toString());
 
       log.info(print_msg);
     }

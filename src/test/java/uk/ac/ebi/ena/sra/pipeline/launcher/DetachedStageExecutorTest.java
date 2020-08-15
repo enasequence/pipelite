@@ -30,7 +30,7 @@ public class DetachedStageExecutorTest {
           {
             setEnabled(true);
             setPropertiesPass(new String[] {});
-            setMemoryLimit(2000);
+            setMemory(2000);
           }
         });
 

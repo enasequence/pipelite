@@ -1,12 +1,12 @@
 package pipelite.task.result;
 
-public enum TaskoExecutionResultType {
+public enum TaskExecutionResultType {
   SUCCESS(false),
   TRANSIENT_ERROR(true),
   PERMANENT_ERROR(true),
   INTERNAL_ERROR(true);
 
-  TaskoExecutionResultType(boolean isError) {
+  TaskExecutionResultType(boolean isError) {
     this.isError = isError;
   }
 
