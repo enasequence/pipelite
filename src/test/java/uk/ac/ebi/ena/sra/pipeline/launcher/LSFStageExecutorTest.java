@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import org.junit.Assert;
 import org.junit.Test;
+import pipelite.task.instance.TaskInstance;
 import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
 import pipelite.task.result.resolver.TaskExecutionResultResolver;
 import uk.ac.ebi.ena.sra.pipeline.executors.LSFExecutorConfig;
@@ -44,8 +45,8 @@ public class LSFStageExecutorTest {
     };
   }
 
-  private StageInstance makeDefaultStageInstance() {
-    return new StageInstance() {
+  private TaskInstance makeDefaultStageInstance() {
+    return new TaskInstance() {
       {
         setEnabled(true);
         setPropertiesPass(new String[] {});
@@ -198,7 +199,7 @@ public class LSFStageExecutorTest {
     se.configure(cfg_stg);
 
     se.execute(
-        new StageInstance() {
+        new TaskInstance() {
           {
             setEnabled(true);
             setPropertiesPass(new String[] {});
@@ -245,7 +246,7 @@ public class LSFStageExecutorTest {
     se.configure(cfg_stg);
 
     se.execute(
-        new StageInstance() {
+        new TaskInstance() {
           {
             setEnabled(true);
             setPropertiesPass(new String[] {});
@@ -305,7 +306,7 @@ public class LSFStageExecutorTest {
     se.configure(null);
 
     se.execute(
-        new StageInstance() {
+        new TaskInstance() {
           {
             setEnabled(true);
             setPropertiesPass(new String[] {});
@@ -328,7 +329,7 @@ public class LSFStageExecutorTest {
     se.configure(null);
 
     se.execute(
-        new StageInstance() {
+        new TaskInstance() {
           {
             setEnabled(true);
             setPropertiesPass(new String[] {});
@@ -368,7 +369,7 @@ public class LSFStageExecutorTest {
     se.configure(null);
 
     se.execute(
-        new StageInstance() {
+        new TaskInstance() {
           {
             setEnabled(true);
             setPropertiesPass(new String[] {});
@@ -391,7 +392,7 @@ public class LSFStageExecutorTest {
     se.configure(null);
 
     se.execute(
-        new StageInstance() {
+        new TaskInstance() {
           {
             setEnabled(true);
             setPropertiesPass(new String[] {"user.country"});
@@ -431,7 +432,7 @@ public class LSFStageExecutorTest {
             "TEST", resolver(), 2340, 3, prefix, source, new String[] {"user.dir"}, cfg_def);
 
     se.execute(
-        new StageInstance() {
+        new TaskInstance() {
           {
             setEnabled(true);
             setPropertiesPass(new String[] {});

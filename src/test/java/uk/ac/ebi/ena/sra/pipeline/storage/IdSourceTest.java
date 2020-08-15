@@ -30,7 +30,7 @@ import uk.ac.ebi.ena.sra.pipeline.configuration.OracleHeartBeatConnection;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.TaskIdSource;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState.State;
-import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
+import pipelite.task.instance.TaskInstance;
 
 public class IdSourceTest {
   static TaskIdSource id_src;
@@ -99,7 +99,7 @@ public class IdSourceTest {
     ids
         .forEach(
             i -> {
-              StageInstance si = new StageInstance();
+              TaskInstance si = new TaskInstance();
               si.setProcessName(PIPELINE_NAME);
               si.setTaskName("STAGE");
               si.setProcessId(i);

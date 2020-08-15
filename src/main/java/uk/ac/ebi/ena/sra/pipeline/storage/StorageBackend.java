@@ -10,10 +10,9 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.storage;
 
-import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInstance;
+import pipelite.task.instance.LatestTaskExecution;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState;
-import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
-import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
+import pipelite.task.instance.TaskInstance;
 
 public interface StorageBackend {
   class StorageException extends Exception {
@@ -36,9 +35,9 @@ public interface StorageBackend {
     private static final long serialVersionUID = 1L;
   }
 
-  void load(StageInstance si) throws StorageException;
+  void load(TaskInstance si) throws StorageException;
 
-  void save(StageInstance si) throws StorageException;
+  void save(TaskInstance si) throws StorageException;
 
   void load(PipeliteState ps) throws StorageException;
 
@@ -46,9 +45,9 @@ public interface StorageBackend {
 
   String getExecutionId() throws StorageException;
 
-  void load(ExecutionInstance instance) throws StorageException;
+  void load(LatestTaskExecution instance) throws StorageException;
 
-  void save(ExecutionInstance instance) throws StorageException;
+  void save(LatestTaskExecution instance) throws StorageException;
 
   //   void load( OracleProcessLogBean bean ) throws StorageException;
   void save(ProcessLogBean bean) throws StorageException;

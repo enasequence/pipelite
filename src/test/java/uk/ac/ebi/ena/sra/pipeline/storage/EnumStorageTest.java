@@ -20,7 +20,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
-import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
+import pipelite.task.instance.TaskInstance;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.StageTask;
 import uk.ac.ebi.ena.sra.pipeline.storage.EnumStorage.ProcessIdFactory;
@@ -74,11 +74,11 @@ public class EnumStorageTest {
           }
         });
     es.setPipelineName("ТЕСТОВАЯ_ЛИНИЯ");
-    List<StageInstance> si_list = new ArrayList<>();
+    List<TaskInstance> si_list = new ArrayList<>();
     Stream.of(__testovye_shagee.values())
         .forEach(
             stage -> {
-                StageInstance si = new StageInstance();
+                TaskInstance si = new TaskInstance();
                 si.setTaskName(stage.toString());
                 es.load(si);
                 log.info(si);

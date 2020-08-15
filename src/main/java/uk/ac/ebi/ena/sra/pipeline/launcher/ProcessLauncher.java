@@ -26,6 +26,8 @@ import org.apache.log4j.PatternLayout;
 import org.apache.log4j.net.SMTPAppender;
 import pipelite.task.executor.AbstractTaskExecutor;
 import pipelite.task.executor.TaskExecutor;
+import pipelite.task.instance.LatestTaskExecution;
+import pipelite.task.instance.TaskInstance;
 import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
@@ -49,7 +51,7 @@ public class ProcessLauncher implements PipeliteProcess {
   private String process_id;
   private String pipeline_name;
   PipeliteState state;
-  private StageInstance[] instances;
+  private TaskInstance[] instances;
   private StorageBackend storage;
   private TaskExecutor executor;
   private Stage[] stages;
@@ -208,13 +210,13 @@ public class ProcessLauncher implements PipeliteProcess {
   private boolean eval_process() {
     int to_process = instances.length;
 
-    for (StageInstance instance : instances) {
+    for (TaskInstance instance : instances) {
       log.info(
               String.format(
                       "Stage [%s], enabled [%b] result [%s] of type [%s], count [%d]",
                       instance.getTaskName(),
                       instance.isEnabled(),
-                      instance.getExecutionInstance().getResultName(),
+                      instance.getLatestTaskExecution().getResultName(),
                       executor.getTaskExecutionState(instance),
                       instance.getExecutionCount()));
       switch (executor.getTaskExecutionState(instance)) {
@@ -227,7 +229,7 @@ public class ProcessLauncher implements PipeliteProcess {
 
         case COMPLETED_TASK:
           // to_process -= to_process;
-          ExecutionInstance ei = instance.getExecutionInstance();
+          LatestTaskExecution ei = instance.getLatestTaskExecution();
           state.setState(
                   null != ei && ei.getResultType().isError() ? State.FAILED : State.COMPLETED);
           return false;
@@ -266,11 +268,11 @@ public class ProcessLauncher implements PipeliteProcess {
 
   private void init_stages() {
     Stage[] stages = getStages();
-    instances = new StageInstance[stages.length];
+    instances = new TaskInstance[stages.length];
 
     for (int i = 0; i < instances.length; ++i) {
       Stage stage = stages[i];
-      StageInstance instance = new StageInstance();
+      TaskInstance instance = new TaskInstance();
       instance.setTaskExecutorConfig(stage.getExecutorConfig());
       instance.setTaskName(stage.toString());
       instance.setProcessId(process_id);
@@ -286,7 +288,7 @@ public class ProcessLauncher implements PipeliteProcess {
 
   private boolean load_stages() {
     boolean result = true;
-    for (StageInstance instance : instances) {
+    for (TaskInstance instance : instances) {
       try {
         storage.load(instance);
       } catch (StorageException se) {
@@ -308,9 +310,9 @@ public class ProcessLauncher implements PipeliteProcess {
         bean.setLSFJobID(null);
         bean.setLSFHosts(null);
         bean.setExecutionId(
-            (null == instance.getExecutionInstance()
+            (null == instance.getLatestTaskExecution()
                 ? null
-                : instance.getExecutionInstance().getExecutionId()));
+                : instance.getLatestTaskExecution().getExecutionId()));
         try {
           storage.save(bean);
         } catch (StorageException se1) {
@@ -323,11 +325,11 @@ public class ProcessLauncher implements PipeliteProcess {
   }
 
   private void save_stages() throws StorageException {
-    for (StageInstance instance : instances) storage.save(instance);
+    for (TaskInstance instance : instances) storage.save(instance);
   }
 
   private void execute_stages() throws StorageException {
-    for (StageInstance instance :
+    for (TaskInstance instance :
         instances) // TODO: replace with eval.next() and whole process re-evaluation
     {
       if (do_stop) break;
@@ -336,7 +338,7 @@ public class ProcessLauncher implements PipeliteProcess {
         if (null != instance.getTaskExecutorConfig(executor.getConfigClass()))
           executor.configure(instance.getTaskExecutorConfig(executor.getConfigClass()));
 
-        ExecutionInstance ei = instance.getExecutionInstance();
+        LatestTaskExecution ei = instance.getLatestTaskExecution();
         ei.setStartTime(new Timestamp(System.currentTimeMillis()));
         // todo set id
         ei.setExecutionId(storage.getExecutionId());
@@ -350,8 +352,8 @@ public class ProcessLauncher implements PipeliteProcess {
         instance.setExecutionCount(instance.getExecutionCount() + 1);
         storage.save(instance);
 
-        List<StageInstance> dependend = invalidate_dependands(instance);
-        for (StageInstance si : dependend) storage.save(si);
+        List<TaskInstance> dependend = invalidate_dependands(instance);
+        for (TaskInstance si : dependend) storage.save(si);
 
         // Translate execution result to exec status
         TaskExecutionResult result;
@@ -361,8 +363,7 @@ public class ProcessLauncher implements PipeliteProcess {
           result = resolver.exitCodeSerializer().deserialize(info.getExitCode());
         }
 
-        ei.setResultType(result.getResultType());
-        ei.setResultName(result.getResultName());
+        ei.setTaskExecutionResult(result);
         ei.setStderr(info.getStderr());
         ei.setStdout(info.getStdout());
         ei.setCmd(info.getCommandline());
@@ -378,21 +379,21 @@ public class ProcessLauncher implements PipeliteProcess {
     }
   }
 
-  private void emit_log(StageInstance instance, ExecutionInfo info) {
+  private void emit_log(TaskInstance instance, ExecutionInfo info) {
     ProcessLogBean bean = new ProcessLogBean();
     // TODO: eval usage of Throwable, ExceptionText and Message
     bean.setThrowable(info.getThrowable());
     bean.setExceptionText(info.getLogMessage());
-    bean.setMessage(instance.getExecutionInstance().getResultName());
+    bean.setMessage(instance.getLatestTaskExecution().getResultName());
     bean.setLSFHosts(info.getHost());
     bean.setLSFJobID(null != info.getPID() ? info.getPID().longValue() : null);
     bean.setProcessID(instance.getProcessId());
     bean.setStage(instance.getTaskName());
     bean.setPipelineName(instance.getProcessName());
     bean.setExecutionId(
-        (null == instance.getExecutionInstance()
+        (null == instance.getLatestTaskExecution()
             ? null
-            : instance.getExecutionInstance().getExecutionId()));
+            : instance.getLatestTaskExecution().getExecutionId()));
     try {
       storage.save(bean);
     } catch (StorageException e) {
@@ -400,15 +401,15 @@ public class ProcessLauncher implements PipeliteProcess {
     }
   }
 
-  private List<StageInstance> invalidate_dependands(StageInstance from_instance) {
-    List<StageInstance> result = new ArrayList<>(getStages().length);
+  private List<TaskInstance> invalidate_dependands(TaskInstance from_instance) {
+    List<TaskInstance> result = new ArrayList<>(getStages().length);
     invalidate_dependands(from_instance, false, result);
     return result;
   }
 
   private void invalidate_dependands(
-      StageInstance from_instance, boolean reset, List<StageInstance> touched) {
-    for (StageInstance i : instances) {
+          TaskInstance from_instance, boolean reset, List<TaskInstance> touched) {
+    for (TaskInstance i : instances) {
       if (i.equals(from_instance)) continue;
 
       if (null == i.getDependsOn()) continue;

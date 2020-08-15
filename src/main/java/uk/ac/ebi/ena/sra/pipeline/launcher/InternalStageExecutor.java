@@ -11,6 +11,8 @@
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import pipelite.task.executor.AbstractTaskExecutor;
+import pipelite.task.instance.LatestTaskExecution;
+import pipelite.task.instance.TaskInstance;
 import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
 import pipelite.task.state.TaskExecutionState;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
@@ -26,11 +28,11 @@ public class InternalStageExecutor extends AbstractTaskExecutor {
   }
 
   @Override
-  public void reset(StageInstance instance) {
-    instance.setExecutionInstance(new ExecutionInstance());
+  public void reset(TaskInstance instance) {
+    instance.setLatestTaskExecution(new LatestTaskExecution());
   }
 
-  public void execute(StageInstance instance) {
+  public void execute(TaskInstance instance) {
     Throwable exception = null;
 
     if (TaskExecutionState.ACTIVE_TASK == getTaskExecutionState(instance)) {

@@ -8,22 +8,30 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package uk.ac.ebi.ena.sra.pipeline.launcher;
+package pipelite.task.instance;
 
 import java.sql.Timestamp;
 
 import lombok.Builder;
 import lombok.Data;
+import pipelite.task.result.TaskExecutionResult;
 import pipelite.task.result.TaskExecutionResultType;
 
 @Data
-public class ExecutionInstance {
+public class LatestTaskExecution {
+  TaskExecutionResult taskExecutionResult;
   String executionId;
   Timestamp startTime;
   Timestamp endTime;
-  TaskExecutionResultType resultType;
-  String resultName;
   String stdout;
   String stderr;
   String cmd;
+
+  public String getResultName() {
+    return (taskExecutionResult == null) ? null : taskExecutionResult.getResultName();
+  }
+
+  public TaskExecutionResultType getResultType() {
+    return (taskExecutionResult == null) ? null : taskExecutionResult.getResultType();
+  }
 }

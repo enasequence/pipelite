@@ -20,6 +20,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import pipelite.task.executor.TaskExecutor;
+import pipelite.task.instance.TaskInstance;
 import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 
@@ -87,7 +88,7 @@ public class StageLauncher {
   public int execute(TaskExecutionResultExceptionResolver resolver) {
     TaskExecutor executor = new InternalStageExecutor(resolver);
 
-    StageInstance instance = new StageInstance();
+    TaskInstance instance = new TaskInstance();
     instance.setProcessId(process_id);
     instance.setTaskName(stage_name);
     instance.setEnabled(enabled);

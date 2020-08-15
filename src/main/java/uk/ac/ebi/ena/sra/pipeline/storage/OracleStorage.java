@@ -17,9 +17,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInstance;
+
+import pipelite.task.result.TaskExecutionResult;
+import pipelite.task.instance.LatestTaskExecution;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState;
-import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
+import pipelite.task.instance.TaskInstance;
 import pipelite.task.result.TaskExecutionResultType;
 import uk.ac.ebi.ena.sra.pipeline.resource.MemoryLocker;
 import uk.ac.ebi.ena.sra.pipeline.resource.ProcessResourceLock;
@@ -151,7 +153,7 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
   }
 
   @Override
-  public void load(ExecutionInstance instance) throws StorageException {
+  public void load(LatestTaskExecution instance) throws StorageException {
     PreparedStatement ps = null;
     ResultSet rows = null;
     try {
@@ -179,10 +181,11 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
       while (rows.next()) {
         instance.setEndTime(rows.getTimestamp(EXEC_DATE_COLUMN_NAME));
         instance.setStartTime(rows.getTimestamp(EXEC_START_COLUMN_NAME));
-        instance.setResultName(rows.getString(EXEC_RESULT_COLUMN_NAME));
 
-        String rtype = rows.getString(EXEC_RESULT_TYPE_COLUMN_NAME);
-        instance.setResultType(null == rtype ? null : TaskExecutionResultType.valueOf(rtype));
+        String resultName = rows.getString(EXEC_RESULT_COLUMN_NAME);
+        String resultTypeString = rows.getString(EXEC_RESULT_TYPE_COLUMN_NAME);
+        TaskExecutionResultType resultType = resultTypeString == null ? null : TaskExecutionResultType.valueOf(resultTypeString);
+        instance.setTaskExecutionResult(new TaskExecutionResult(resultName, resultType));
 
         // TODO remove
         instance.setStderr(rows.getString(EXEC_STDERR_COLUMN_NAME));
@@ -218,7 +221,7 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
   }
 
   @Deprecated
-  public void load(StageInstance instance, boolean lock) throws StorageException {
+  public void load(TaskInstance instance, boolean lock) throws StorageException {
     PreparedStatement ps = null;
     ResultSet rows = null;
 
@@ -244,7 +247,7 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
 
       int rownum = 0;
       while (rows.next()) {
-        instance.getExecutionInstance().setExecutionId(rows.getString(EXEC_ID_COLUMN_NAME));
+        instance.getLatestTaskExecution().setExecutionId(rows.getString(EXEC_ID_COLUMN_NAME));
         instance.setExecutionCount((int) rows.getLong(ATTEMPT_COLUMN_NAME));
         instance.setEnabled(ENABLED_VALUE.equals(rows.getString(ENABLED_COLUMN_NAME)));
         ++rownum;
@@ -256,8 +259,8 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
                 "Failed to load stage [%s] for process [%s] of [%s] pipeline",
                 instance.getTaskName(), instance.getProcessId(), pipeline_name));
 
-      if (null != instance.getExecutionInstance().getExecutionId())
-        load(instance.getExecutionInstance());
+      if (null != instance.getLatestTaskExecution().getExecutionId())
+        load(instance.getLatestTaskExecution());
 
     } catch (SQLException e) {
       throw new StorageException(e);
@@ -281,12 +284,12 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
   }
 
   @Override
-  public void load(StageInstance instance) throws StorageException {
+  public void load(TaskInstance instance) throws StorageException {
     load(instance, false);
   }
 
   @Override
-  public void save(StageInstance instance) throws StorageException {
+  public void save(TaskInstance instance) throws StorageException {
     List<Clob> clob_list = new ArrayList<>();
     PreparedStatement ps = null;
     try {
@@ -331,58 +334,58 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
       ps.setObject(4, instance.getExecutionCount());
       ps.setObject(
           5,
-          null == instance.getExecutionInstance()
+          null == instance.getLatestTaskExecution()
               ? null
-              : instance.getExecutionInstance().getExecutionId());
+              : instance.getLatestTaskExecution().getExecutionId());
       ps.setObject(6, instance.isEnabled() ? "Y" : "N");
 
       ps.setObject(
           7,
-          null == instance.getExecutionInstance()
+          null == instance.getLatestTaskExecution()
               ? null
-              : instance.getExecutionInstance().getStartTime());
+              : instance.getLatestTaskExecution().getStartTime());
       ps.setObject(
           8,
-          null == instance.getExecutionInstance()
+          null == instance.getLatestTaskExecution()
               ? null
-              : instance.getExecutionInstance().getEndTime());
+              : instance.getLatestTaskExecution().getEndTime());
       ps.setString(
           9,
-          null == instance.getExecutionInstance()
+          null == instance.getLatestTaskExecution()
               ? null
-              : null == instance.getExecutionInstance().getResultType()
+              : null == instance.getLatestTaskExecution().getResultType()
                   ? null
-                  : instance.getExecutionInstance().getResultType().toString());
+                  : instance.getLatestTaskExecution().getResultType().toString());
 
       ps.setObject(
           10,
-          null == instance.getExecutionInstance()
+          null == instance.getLatestTaskExecution()
               ? null
-              : instance.getExecutionInstance().getResultName());
+              : instance.getLatestTaskExecution().getResultName());
 
       ps.setObject(
           11,
           makeClob(
               connection,
-              null == instance.getExecutionInstance()
+              null == instance.getLatestTaskExecution()
                   ? null
-                  : instance.getExecutionInstance().getStdout(),
+                  : instance.getLatestTaskExecution().getStdout(),
               clob_list));
       ps.setObject(
           12,
           makeClob(
               connection,
-              null == instance.getExecutionInstance()
+              null == instance.getLatestTaskExecution()
                   ? null
-                  : instance.getExecutionInstance().getStderr(),
+                  : instance.getLatestTaskExecution().getStderr(),
               clob_list));
       ps.setObject(
           13,
           makeClob(
               connection,
-              null == instance.getExecutionInstance()
+              null == instance.getLatestTaskExecution()
                   ? null
-                  : instance.getExecutionInstance().getCmd(),
+                  : instance.getLatestTaskExecution().getCmd(),
               clob_list));
 
       int rows = ps.executeUpdate();
@@ -536,7 +539,7 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
   }
 
   @Override
-  public void save(ExecutionInstance instance) throws StorageException {
+  public void save(LatestTaskExecution instance) throws StorageException {
     List<Clob> clob_list = new ArrayList<>();
     PreparedStatement ps = null;
     try {
@@ -598,7 +601,7 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
   // TODO specify contract
   @Override
   public boolean lock(StageResourceLock rl) {
-    StageInstance si = new StageInstance();
+    TaskInstance si = new TaskInstance();
     si.setProcessName(pipeline_name);
     si.setTaskName(rl.getLockId());
     si.setProcessId(rl.getLockOwner());

@@ -12,6 +12,7 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import org.junit.Assert;
 import org.junit.Test;
+import pipelite.task.instance.TaskInstance;
 import pipelite.task.result.resolver.TaskExecutionResultResolver;
 
 public class DetachedStageExecutorTest {
@@ -26,7 +27,7 @@ public class DetachedStageExecutorTest {
             new String[] {});
 
     se.execute(
-        new StageInstance() {
+        new TaskInstance() {
           {
             setEnabled(true);
             setPropertiesPass(new String[] {});
@@ -49,7 +50,7 @@ public class DetachedStageExecutorTest {
             new String[] {});
 
     se.execute(
-        new StageInstance() {
+        new TaskInstance() {
           {
             setEnabled(true);
             setPropertiesPass(new String[] {});
@@ -73,7 +74,7 @@ public class DetachedStageExecutorTest {
             new String[] {});
 
     se.execute(
-        new StageInstance() {
+        new TaskInstance() {
           {
             setEnabled(true);
             setPropertiesPass(new String[] {});
@@ -99,7 +100,7 @@ public class DetachedStageExecutorTest {
     se.configure(null);
 
     se.execute(
-        new StageInstance() {
+        new TaskInstance() {
           {
             setEnabled(true);
             setPropertiesPass(new String[] {});

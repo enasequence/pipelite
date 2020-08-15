@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Set;
 
 import pipelite.task.executor.AbstractTaskExecutor;
+import pipelite.task.instance.LatestTaskExecution;
+import pipelite.task.instance.TaskInstance;
 import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
 import pipelite.task.state.TaskExecutionState;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCall;
@@ -43,8 +45,8 @@ public class DetachedStageExecutor extends AbstractTaskExecutor {
     this.properties_pass = properties_pass;
   }
 
-  public void reset(StageInstance instance) {
-    instance.setExecutionInstance(new ExecutionInstance());
+  public void reset(TaskInstance instance) {
+    instance.setLatestTaskExecution(new LatestTaskExecution());
   }
 
   private String[] mergePropertiesPass(String[] pp1, String[] pp2) {
@@ -54,7 +56,7 @@ public class DetachedStageExecutor extends AbstractTaskExecutor {
     return set1.toArray(new String[set1.size()]);
   }
 
-  private List<String> constructArgs(StageInstance instance, boolean commit) {
+  private List<String> constructArgs(TaskInstance instance, boolean commit) {
     List<String> p_args = new ArrayList<>();
 
     int memory_limit = instance.getMemory();
@@ -83,7 +85,7 @@ public class DetachedStageExecutor extends AbstractTaskExecutor {
     return p_args;
   }
 
-  public void execute(StageInstance instance) {
+  public void execute(TaskInstance instance) {
     if (TaskExecutionState.ACTIVE_TASK == getTaskExecutionState(instance)) {
       log.info(
           String.format(

@@ -33,7 +33,7 @@ import pipelite.task.result.resolver.TaskExecutionResultResolver;
 import uk.ac.ebi.ena.sra.pipeline.configuration.OracleHeartBeatConnection;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState.State;
-import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
+import pipelite.task.instance.TaskInstance;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
 
 public class OracleStorageTest {
@@ -132,27 +132,27 @@ public class OracleStorageTest {
             });
     Assert.assertEquals(0, cnt.get());
 
-    List<StageInstance> si = saveStages(PIPELINE_NAME, ids.get(0), stages);
-    List<StageInstance> li = loadStages(PIPELINE_NAME, ids.get(0), stages);
+    List<TaskInstance> si = saveStages(PIPELINE_NAME, ids.get(0), stages);
+    List<TaskInstance> li = loadStages(PIPELINE_NAME, ids.get(0), stages);
     Assert.assertArrayEquals(si.toArray(), li.toArray());
 
-    List<StageInstance> ui =
+    List<TaskInstance> ui =
         li.stream()
             .map(
                 e -> {
-                  StageInstance r = new StageInstance(e);
+                  TaskInstance r = new TaskInstance(e);
                   r.setExecutionCount(r.getExecutionCount() + 1);
                   return r;
                 })
             .collect(Collectors.toList());
     Assert.assertNotEquals(li, ui);
 
-    List<StageInstance> sui = saveStages(ui);
-    List<StageInstance> lui = loadStages(PIPELINE_NAME, ids.get(0), stages);
+    List<TaskInstance> sui = saveStages(ui);
+    List<TaskInstance> lui = loadStages(PIPELINE_NAME, ids.get(0), stages);
     Assert.assertEquals(sui, lui);
   }
 
-  private List<StageInstance> saveStages(List<StageInstance> stages) {
+  private List<TaskInstance> saveStages(List<TaskInstance> stages) {
     stages
         .forEach(
             s -> {
@@ -165,13 +165,13 @@ public class OracleStorageTest {
     return stages;
   }
 
-  private List<StageInstance> saveStages(String pipeline_name, String process_id, Stage... stages) {
-    List<StageInstance> result = new ArrayList<>();
+  private List<TaskInstance> saveStages(String pipeline_name, String process_id, Stage... stages) {
+    List<TaskInstance> result = new ArrayList<>();
 
     Stream.of(stages)
         .forEach(
             s -> {
-              StageInstance si = new StageInstance();
+              TaskInstance si = new TaskInstance();
               si.setProcessName(pipeline_name);
               si.setEnabled(true);
               si.setProcessId(process_id);
@@ -187,13 +187,13 @@ public class OracleStorageTest {
     return result;
   }
 
-  private List<StageInstance> loadStages(String pipeline_name, String process_id, Stage... stages) {
-    List<StageInstance> result = new ArrayList<>();
+  private List<TaskInstance> loadStages(String pipeline_name, String process_id, Stage... stages) {
+    List<TaskInstance> result = new ArrayList<>();
 
     Stream.of(stages)
         .forEach(
             s -> {
-              StageInstance si = new StageInstance();
+              TaskInstance si = new TaskInstance();
               si.setProcessName(pipeline_name);
               si.setEnabled(true);
               si.setProcessId(process_id);

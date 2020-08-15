@@ -8,13 +8,13 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package uk.ac.ebi.ena.sra.pipeline.launcher;
+package pipelite.task.instance;
 
 import lombok.Data;
 import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
 
 @Data
-public class StageInstance {
+public class TaskInstance {
   private int executionCount;
   private String processId;
   private String taskName;
@@ -25,11 +25,11 @@ public class StageInstance {
   private int cores;
   private String[] propertiesPass;
   private ExecutorConfig[] taskExecutorConfig;
-  private ExecutionInstance executionInstance = new ExecutionInstance();
+  private LatestTaskExecution latestTaskExecution = new LatestTaskExecution();
 
-  public StageInstance() {}
+  public TaskInstance() {}
 
-  public StageInstance(StageInstance other) {
+  public TaskInstance(TaskInstance other) {
     this.executionCount = other.executionCount;
     this.processId = other.processId;
     this.taskName = other.taskName;
@@ -40,7 +40,7 @@ public class StageInstance {
     this.cores = other.cores;
     this.propertiesPass = other.propertiesPass;
     this.taskExecutorConfig = other.taskExecutorConfig;
-    this.executionInstance = other.executionInstance;
+    this.latestTaskExecution = other.latestTaskExecution;
   }
 
   public <T extends ExecutorConfig> T getTaskExecutorConfig(Class<? extends ExecutorConfig> klass) {
@@ -56,7 +56,7 @@ public class StageInstance {
     return null;
   }
 
-  public void setTaskExecutorConfig(ExecutorConfig ... taskExecutorConfig) {
+  public void setTaskExecutorConfig(ExecutorConfig... taskExecutorConfig) {
     this.taskExecutorConfig = taskExecutorConfig;
   }
 }

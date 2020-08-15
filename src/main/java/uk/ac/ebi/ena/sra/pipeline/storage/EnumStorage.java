@@ -12,10 +12,10 @@ package uk.ac.ebi.ena.sra.pipeline.storage;
 
 import java.util.stream.Stream;
 import org.apache.log4j.Logger;
-import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInstance;
+import pipelite.task.instance.LatestTaskExecution;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteState.State;
-import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
+import pipelite.task.instance.TaskInstance;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
 
 public class EnumStorage<T extends Enum<T> & Stage> implements StorageBackend {
@@ -56,17 +56,17 @@ public class EnumStorage<T extends Enum<T> & Stage> implements StorageBackend {
   }
 
   @Override
-  public void save(StageInstance si) {
+  public void save(TaskInstance si) {
     log.info(si);
   }
 
   @Override
-  public void load(ExecutionInstance ei) {
+  public void load(LatestTaskExecution ei) {
     log.info(ei);
   }
 
   @Override
-  public void save(ExecutionInstance ei) {
+  public void save(LatestTaskExecution ei) {
     log.info(ei);
   }
 
@@ -92,7 +92,7 @@ public class EnumStorage<T extends Enum<T> & Stage> implements StorageBackend {
   }
 
   @Override
-  public void load(StageInstance si) {
+  public void load(TaskInstance si) {
     Stream.of(e.getEnumConstants())
         .filter(s -> s.toString().equals(si.getTaskName()))
         .findFirst()

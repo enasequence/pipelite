@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Set;
 
 import pipelite.task.executor.AbstractTaskExecutor;
+import pipelite.task.instance.LatestTaskExecution;
+import pipelite.task.instance.TaskInstance;
 import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
 import pipelite.task.state.TaskExecutionState;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCall;
@@ -80,8 +82,8 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
     this.config = config;
   }
 
-  public void reset(StageInstance instance) {
-    instance.setExecutionInstance(new ExecutionInstance());
+  public void reset(TaskInstance instance) {
+    instance.setLatestTaskExecution(new LatestTaskExecution());
   }
 
   public void configure(LSFExecutorConfig params) {
@@ -99,7 +101,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
     return set1.toArray(new String[set1.size()]);
   }
 
-  private List<String> constructArgs(StageInstance instance, boolean commit) {
+  private List<String> constructArgs(TaskInstance instance, boolean commit) {
     List<String> p_args = new ArrayList<>();
 
     p_args.add("-XX:+UseSerialGC");
@@ -147,7 +149,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
     return p_args;
   }
 
-  private LSFBackEnd configureBackend(StageInstance instance) {
+  private LSFBackEnd configureBackend(TaskInstance instance) {
     int mem = instance.getMemory();
     if (mem <= 0) {
       mem = lsf_memory_limit;
@@ -182,7 +184,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
     return back_end;
   }
 
-  public void execute(StageInstance instance) {
+  public void execute(TaskInstance instance) {
     if (TaskExecutionState.ACTIVE_TASK == getTaskExecutionState(instance)) {
       log.info(
           String.format(

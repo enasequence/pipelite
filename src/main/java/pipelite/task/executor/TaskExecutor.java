@@ -10,22 +10,20 @@
  */
 package pipelite.task.executor;
 
-import pipelite.task.result.TaskExecutionResultType;
 import pipelite.task.state.TaskExecutionState;
 import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInfo;
-import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInstance;
-import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
+import pipelite.task.instance.TaskInstance;
 
 public interface TaskExecutor {
 
-  void reset(StageInstance instance);
+  void reset(TaskInstance instance);
 
-  void execute(StageInstance instance);
+  void execute(TaskInstance instance);
 
   <T extends ExecutorConfig> void configure(T params);
 
-  TaskExecutionState getTaskExecutionState(StageInstance instance);
+  TaskExecutionState getTaskExecutionState(TaskInstance instance);
 
   ExecutionInfo get_info();
 

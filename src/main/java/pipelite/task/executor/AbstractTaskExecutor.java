@@ -15,8 +15,8 @@ import org.apache.log4j.Logger;
 import pipelite.task.result.TaskExecutionResultType;
 import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
 import pipelite.task.state.TaskExecutionState;
-import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInstance;
-import uk.ac.ebi.ena.sra.pipeline.launcher.StageInstance;
+import pipelite.task.instance.LatestTaskExecution;
+import pipelite.task.instance.TaskInstance;
 
 public abstract class AbstractTaskExecutor implements TaskExecutor {
   protected final Logger log = Logger.getLogger(this.getClass());
@@ -36,12 +36,12 @@ public abstract class AbstractTaskExecutor implements TaskExecutor {
     }
   }
 
-  public TaskExecutionState getTaskExecutionState(StageInstance instance) {
+  public TaskExecutionState getTaskExecutionState(TaskInstance instance) {
     if (!instance.isEnabled()) {
       return TaskExecutionState.DISABLED_TASK;
     }
 
-    ExecutionInstance ei = instance.getExecutionInstance();
+    LatestTaskExecution ei = instance.getLatestTaskExecution();
 
     // check permanent errors
     if (null != ei && null != ei.getEndTime() && null != ei.getResultType()) {
