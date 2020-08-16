@@ -12,7 +12,6 @@ package pipelite.task.instance;
 
 import java.sql.Timestamp;
 
-import lombok.Builder;
 import lombok.Data;
 import pipelite.task.result.TaskExecutionResult;
 import pipelite.task.result.TaskExecutionResultType;

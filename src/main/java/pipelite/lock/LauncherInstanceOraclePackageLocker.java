@@ -11,14 +11,9 @@
 package pipelite.lock;
 
 import lombok.Value;
-import org.apache.log4j.Logger;
 import pipelite.process.instance.ProcessInstance;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Value
 public class LauncherInstanceOraclePackageLocker implements LauncherInstanceLocker {

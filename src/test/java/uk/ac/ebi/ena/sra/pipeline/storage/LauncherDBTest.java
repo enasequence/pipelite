@@ -37,7 +37,7 @@ public class LauncherDBTest {
 
   @Test
   public void main()
-      throws ClassNotFoundException, SQLException,
+      throws SQLException,
           InterruptedException {
     Connection connection = TestConnectionFactory.createConnection();
 

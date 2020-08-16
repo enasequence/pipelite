@@ -13,7 +13,7 @@ package uk.ac.ebi.ena.sra.pipeline.launcher.iface;
 public interface StageTask {
   void init(Object id);
 
-  void execute() throws Throwable;
+  void execute();
 
   void unwind();
 }
