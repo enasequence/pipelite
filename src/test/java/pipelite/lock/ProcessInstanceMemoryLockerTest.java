@@ -24,46 +24,46 @@ public class ProcessInstanceMemoryLockerTest {
   public void test() {
     ProcessInstanceMemoryLocker locker = new ProcessInstanceMemoryLocker();
 
-    String launcherId1 = "TEST1";
-    String launcherId2 = "TEST2";
+    String launcherName1 = "TEST1";
+    String launcherName2 = "TEST2";
 
-    assertTrue(locker.lock(launcherId1, getProcessInstance("1")));
+    assertTrue(locker.lock(launcherName1, getProcessInstance("1")));
     assertTrue(locker.isLocked(getProcessInstance("1")));
 
-    assertTrue(locker.lock(launcherId1, getProcessInstance("2")));
+    assertTrue(locker.lock(launcherName1, getProcessInstance("2")));
     assertTrue(locker.isLocked(getProcessInstance("1")));
     assertTrue(locker.isLocked(getProcessInstance("2")));
 
-    assertTrue(locker.unlock(launcherId1, getProcessInstance("1")));
+    assertTrue(locker.unlock(launcherName1, getProcessInstance("1")));
     assertFalse(locker.isLocked(getProcessInstance("1")));
     assertTrue(locker.isLocked(getProcessInstance("2")));
 
 
-    assertTrue(locker.lock(launcherId2, getProcessInstance("3")));
+    assertTrue(locker.lock(launcherName2, getProcessInstance("3")));
     assertFalse(locker.isLocked(getProcessInstance("1")));
     assertTrue(locker.isLocked(getProcessInstance("2")));
     assertTrue(locker.isLocked(getProcessInstance("3")));
 
-    assertTrue(locker.lock(launcherId2, getProcessInstance("4")));
+    assertTrue(locker.lock(launcherName2, getProcessInstance("4")));
     assertFalse(locker.isLocked(getProcessInstance("1")));
     assertTrue(locker.isLocked(getProcessInstance("2")));
     assertTrue(locker.isLocked(getProcessInstance("3")));
     assertTrue(locker.isLocked(getProcessInstance("4")));
 
-    assertTrue(locker.unlock(launcherId2, getProcessInstance("4")));
+    assertTrue(locker.unlock(launcherName2, getProcessInstance("4")));
     assertFalse(locker.isLocked(getProcessInstance("1")));
     assertTrue(locker.isLocked(getProcessInstance("2")));
     assertTrue(locker.isLocked(getProcessInstance("3")));
     assertFalse(locker.isLocked(getProcessInstance("4")));
 
-    locker.purge(launcherId1, processName);
+    locker.purge(launcherName1, processName);
 
     assertFalse(locker.isLocked(getProcessInstance("1")));
     assertFalse(locker.isLocked(getProcessInstance("2")));
     assertTrue(locker.isLocked(getProcessInstance("3")));
     assertFalse(locker.isLocked(getProcessInstance("4")));
 
-    locker.purge(launcherId2, processName);
+    locker.purge(launcherName2, processName);
 
     assertFalse(locker.isLocked(getProcessInstance("1")));
     assertFalse(locker.isLocked(getProcessInstance("2")));

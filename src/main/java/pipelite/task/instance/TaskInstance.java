@@ -43,19 +43,6 @@ public class TaskInstance {
     this.latestTaskExecution = other.latestTaskExecution;
   }
 
-  public <T extends ExecutorConfig> T getTaskExecutorConfig(Class<? extends ExecutorConfig> klass) {
-    if (null == taskExecutorConfig) {
-      return null;
-    }
-    for (ExecutorConfig config : taskExecutorConfig) {
-      try {
-        return (T) klass.cast(config);
-      } catch (ClassCastException cce) {
-      }
-    }
-    return null;
-  }
-
   public void setTaskExecutorConfig(ExecutorConfig... taskExecutorConfig) {
     this.taskExecutorConfig = taskExecutorConfig;
   }

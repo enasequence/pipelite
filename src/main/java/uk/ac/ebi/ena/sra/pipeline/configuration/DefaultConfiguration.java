@@ -26,8 +26,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
-import pipelite.task.result.resolver.TaskExecutionResultResolver;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
 
 class ConfigurationException extends RuntimeException {
@@ -67,12 +65,13 @@ public enum DefaultConfiguration {
     this.prefix = prefix;
 
     f_name = System.getProperty(prefix);
-
+/*
     if (null == f_name || f_name.trim().length() == 0) {
       throw new ConfigurationException(String.format("Null or empty value for mode %s", prefix));
     }
-
+*/
     p = new Properties();
+    /*
     try {
       p.load(getClass().getResourceAsStream(f_name));
       checkProperties();
@@ -87,9 +86,10 @@ public enum DefaultConfiguration {
       } catch (Exception fe) {
         fe.printStackTrace();
       }
-    }
+    }*/
   }
 
+  /*
   private void checkProperties()
       throws IllegalAccessException, IllegalArgumentException,
           NoSuchMethodException, SecurityException {
@@ -120,6 +120,8 @@ public enum DefaultConfiguration {
       throw new ConfigurationException(String.join("%n", result));
     }
   }
+  */
+
 
   public String getConfigPrefixName() {
     return prefix;
@@ -165,31 +167,6 @@ public enum DefaultConfiguration {
   @PipeliteProperty
   public String getDefaultMailTo() {
     return getProperty("default.mail-to");
-  }
-
-  @PipeliteProperty
-  public int getDefaultLSFCpuCores() {
-    return Integer.parseInt(getProperty("default.lsf-cores"));
-  }
-
-  @PipeliteProperty
-  public String getDefaultLSFQueue() {
-    return getProperty("default.lsf-queue");
-  }
-
-  @PipeliteProperty
-  public int getDefaultLSFMem() {
-    return Integer.parseInt(getProperty("default.lsf-mem"));
-  }
-
-  @PipeliteProperty
-  public int getDefaultLSFMemTimeout() {
-    return Integer.parseInt(getProperty("default.lsf-mem-timeout"));
-  }
-
-  @PipeliteProperty
-  public String getDefaultLSFOutputRedirection() {
-    return getProperty("default.lsf-output-redirection");
   }
 
   @PipeliteProperty
@@ -242,21 +219,6 @@ public enum DefaultConfiguration {
     return getProperty("log.table.name");
   }
 
-  @PipeliteProperty
-  public String getPipelineName() {
-    return getProperty("pipeline.name");
-  }
-
-  @PipeliteProperty
-  public String getLauncherId() {
-    // TODO
-    return getProperty("pipeline.launcher.name");
-  }
-
-  @PipeliteProperty
-  public int getStagesRedoCount() {
-    return Integer.parseInt(getProperty("stages.redo.count"));
-  }
 
   @SuppressWarnings("unchecked")
   public <T> T[] loadEnumConstants(String name, Class<?> iface_klass) {
@@ -310,15 +272,6 @@ public enum DefaultConfiguration {
             "No stage with name %s found in enum of %s",
             name, null == stages ? "null" : Arrays.asList(stages)));
   }
-
-
-  public TaskExecutionResultExceptionResolver getResolver() {
-    // TODO: allow the resolver to be changed
-    // TODO: optimally the resolver should be for each stage
-    return TaskExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER;
-//    return loadEnumConstants(getProperty("commit.status.enum"), ExecutionResult.class);
-  }
-
 
   @PipeliteProperty
   public String getProcessTableName() {

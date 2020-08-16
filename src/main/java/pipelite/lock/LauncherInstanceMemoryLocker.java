@@ -20,28 +20,28 @@ public class LauncherInstanceMemoryLocker implements LauncherInstanceLocker {
 
   @Value
   private static class Lock {
-    private final String launcherId;
+    private final String launcherName;
     private final String processName;
   }
 
   private final Set<Lock> locks = ConcurrentHashMap.newKeySet();
 
   @Override
-  public boolean lock(String launcherId, String processName) {
-    return locks.add(getLock(launcherId, processName));
+  public boolean lock(String launcherName, String processName) {
+    return locks.add(getLock(launcherName, processName));
   }
 
   @Override
-  public boolean isLocked(String launcherId, String processName) {
-    return locks.contains(getLock(launcherId, processName));
+  public boolean isLocked(String launcherName, String processName) {
+    return locks.contains(getLock(launcherName, processName));
   }
 
   @Override
-  public boolean unlock(String launcherId, String processName) {
-    return locks.remove(getLock(launcherId, processName));
+  public boolean unlock(String launcherName, String processName) {
+    return locks.remove(getLock(launcherName, processName));
   }
 
-  private static Lock getLock(String launcherId, String processName) {
-    return new Lock(launcherId, processName);
+  private static Lock getLock(String launcherName, String processName) {
+    return new Lock(launcherName, processName);
   }
 }

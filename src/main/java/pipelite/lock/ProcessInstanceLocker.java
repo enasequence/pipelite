@@ -14,12 +14,12 @@ import pipelite.process.instance.ProcessInstance;
 
 public interface ProcessInstanceLocker {
 
-  boolean lock(String launcherId, ProcessInstance processInstance);
+  boolean lock(String launcherName, ProcessInstance processInstance);
 
-  boolean unlock(String launcherId, ProcessInstance processInstance);
+  boolean unlock(String launcherName, ProcessInstance processInstance);
 
   boolean isLocked(ProcessInstance processInstance);
 
-  void purge(String launcherId, String processName);
+  void purge(String launcherName, String processName);
 
 }

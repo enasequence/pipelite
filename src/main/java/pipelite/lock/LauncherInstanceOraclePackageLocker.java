@@ -25,26 +25,26 @@ public class LauncherInstanceOraclePackageLocker implements LauncherInstanceLock
   }
 
   @Override
-  public boolean lock(String launcherId, String processName) {
+  public boolean lock(String launcherName, String processName) {
     ProcessInstance launcherInstance = new ProcessInstance();
     launcherInstance.setPipelineName(processName);
-    launcherInstance.setProcessId(launcherId);
-    return locker.lock(launcherId, launcherInstance);
+    launcherInstance.setProcessId(launcherName);
+    return locker.lock(launcherName, launcherInstance);
   }
 
   @Override
-  public boolean isLocked(String launcherId, String processName) {
+  public boolean isLocked(String launcherName, String processName) {
     ProcessInstance launcherInstance = new ProcessInstance();
     launcherInstance.setPipelineName(processName);
-    launcherInstance.setProcessId(launcherId);
+    launcherInstance.setProcessId(launcherName);
     return locker.isLocked(launcherInstance);
   }
 
   @Override
-  public boolean unlock(String launcherId, String processName) {
+  public boolean unlock(String launcherName, String processName) {
     ProcessInstance launcherInstance = new ProcessInstance();
     launcherInstance.setPipelineName(processName);
-    launcherInstance.setProcessId(launcherId);
-    return locker.unlock(launcherId, launcherInstance);
+    launcherInstance.setProcessId(launcherName);
+    return locker.unlock(launcherName, launcherInstance);
   }
 }

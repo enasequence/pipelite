@@ -97,8 +97,6 @@ public class DetachedStageExecutorTest {
             source,
             new String[] {"user.dir"});
 
-    se.configure(null);
-
     se.execute(
         new TaskInstance() {
           {

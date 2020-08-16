@@ -25,12 +25,12 @@ public class ProcessInstanceOraclePackageLocker implements ProcessInstanceLocker
   private final Connection connection;
 
   @Override
-  public boolean lock(String launcherId, ProcessInstance processInstance) {
+  public boolean lock(String launcherName, ProcessInstance processInstance) {
     try (PreparedStatement ps =
         connection.prepareStatement("{ call pipelite_lock_pkg.try_lock( ?, ?, ? ) }")) {
       ps.setString(1, processInstance.getPipelineName());
       ps.setString(2, processInstance.getProcessId());
-      ps.setString(3, launcherId);
+      ps.setString(3, launcherName);
       ps.execute();
       return true;
     } catch (SQLException e) {
@@ -54,12 +54,12 @@ public class ProcessInstanceOraclePackageLocker implements ProcessInstanceLocker
   }
 
   @Override
-  public boolean unlock(String launcherId, ProcessInstance processInstance) {
+  public boolean unlock(String launcherName, ProcessInstance processInstance) {
     try (PreparedStatement ps =
         connection.prepareStatement("{ call pipelite_lock_pkg.unlock( ?, ?, ? ) }")) {
       ps.setString(1, processInstance.getPipelineName());
       ps.setString(2, processInstance.getProcessId());
-      ps.setString(3, launcherId);
+      ps.setString(3, launcherName);
       ps.execute();
       return true;
 
@@ -70,11 +70,11 @@ public class ProcessInstanceOraclePackageLocker implements ProcessInstanceLocker
   }
 
   @Override
-  public void purge(String launcherId, String processName) {
+  public void purge(String launcherName, String processName) {
     try (PreparedStatement ps =
         connection.prepareStatement("{ call pipelite_lock_pkg.purge_locks( ?, ? ) }")) {
       ps.setString(1, processName);
-      ps.setString(2, launcherId);
+      ps.setString(2, launcherName);
       ps.execute();
     } catch (SQLException e) {
       log.error("SQLException", e);

@@ -11,6 +11,7 @@
 package uk.ac.ebi.ena.sra.pipeline.configuration;
 
 import lombok.Value;
+import pipelite.ApplicationConfiguration;
 import pipelite.lock.ProcessInstanceLocker;
 import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
@@ -20,16 +21,17 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessLauncher;
 @Value
 public class PipeliteProcessFactory implements ProcessFactory {
 
-  private final String launcherId;
+  private final String launcherName;
+  private final ApplicationConfiguration applicationConfiguration;
   private final TaskExecutionResultExceptionResolver resolver;
   private final ProcessInstanceLocker locker;
 
   @Override
   public PipeliteProcess create(String processId) {
-    ProcessLauncher process = new ProcessLauncher(launcherId, resolver, locker);
+    ProcessLauncher process = new ProcessLauncher(launcherName, resolver, locker);
     process.setProcessID(processId);
-    process.setPipelineName(DefaultConfiguration.currentSet().getPipelineName());
-    process.setRedoCount(DefaultConfiguration.currentSet().getStagesRedoCount());
+    process.setPipelineName(applicationConfiguration.launcherConfiguration.getProcessName());
+    process.setRedoCount(applicationConfiguration.taskExecutorConfiguration.getRetries());
     process.setStages(DefaultConfiguration.currentSet().getStages());
     return process;
   }

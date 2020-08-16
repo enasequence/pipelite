@@ -160,9 +160,9 @@ public class ProcessLauncherTest {
       TaskExecutionResultExceptionResolver resolver,
       StorageBackend storage,
       TaskExecutor executor) {
-    String launcherId = "TEST";
+    String launcherName = "TEST";
     ProcessInstanceLocker locker = new ProcessInstanceMemoryLocker();
-    ProcessLauncher process = spy(new ProcessLauncher(launcherId, resolver, locker));
+    ProcessLauncher process = spy(new ProcessLauncher(launcherName, resolver, locker));
     process.setProcessID("TEST_PROCESS");
     process.setStorage(storage);
     process.setExecutor(executor);

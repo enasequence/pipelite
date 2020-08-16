@@ -1,16 +1,21 @@
 package pipelite.configuration;
 
-import com.beust.jcommander.Parameter;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 
 @Data
+@Builder
+@AllArgsConstructor
 @ConfigurationProperties(prefix = "pipelite.task")
 public class TaskExecutorConfiguration {
 
+    public TaskExecutorConfiguration() {
+    }
+
     /**
-     * Default amount of memory (GBytes) requested for task execution.
+     * Default amount of memory (MBytes) requested for task execution.
      */
     public int memory;
 
@@ -18,4 +23,14 @@ public class TaskExecutorConfiguration {
      * Default number of CPUs requested for task execution.
      */
     public int cores;
+
+    /**
+     * Default number of retries.
+     */
+    public int retries;
+
+    /**
+     * Temporary directory.
+     */
+    public String tempDir;
 }

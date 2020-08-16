@@ -23,25 +23,25 @@ public class LauncherInstanceMemoryLockerTest {
   public void test() {
     LauncherInstanceMemoryLocker locker = new LauncherInstanceMemoryLocker();
 
-    String launcherId1 = "TEST1";
-    String launcherId2 = "TEST2";
+    String launcherName1 = "TEST1";
+    String launcherName2 = "TEST2";
 
-    locker.unlock(launcherId1, processName);
-    locker.unlock(launcherId2, processName);
+    locker.unlock(launcherName1, processName);
+    locker.unlock(launcherName2, processName);
 
-    assertTrue(locker.lock(launcherId1, processName));
-    assertTrue(locker.isLocked(launcherId1, processName));
+    assertTrue(locker.lock(launcherName1, processName));
+    assertTrue(locker.isLocked(launcherName1, processName));
 
-    assertTrue(locker.lock(launcherId2, processName));
-    assertTrue(locker.isLocked(launcherId1, processName));
-    assertTrue(locker.isLocked(launcherId2, processName));
+    assertTrue(locker.lock(launcherName2, processName));
+    assertTrue(locker.isLocked(launcherName1, processName));
+    assertTrue(locker.isLocked(launcherName2, processName));
 
-    assertTrue(locker.unlock(launcherId1, processName));
-    assertFalse(locker.isLocked(launcherId1, processName));
-    assertTrue(locker.isLocked(launcherId2, processName));
+    assertTrue(locker.unlock(launcherName1, processName));
+    assertFalse(locker.isLocked(launcherName1, processName));
+    assertTrue(locker.isLocked(launcherName2, processName));
 
-    assertTrue(locker.unlock(launcherId2, processName));
-    assertFalse(locker.isLocked(launcherId1, processName));
-    assertFalse(locker.isLocked(launcherId2, processName));
+    assertTrue(locker.unlock(launcherName2, processName));
+    assertFalse(locker.isLocked(launcherName1, processName));
+    assertFalse(locker.isLocked(launcherName2, processName));
   }
 }

@@ -21,11 +21,7 @@ public interface TaskExecutor {
 
   void execute(TaskInstance instance);
 
-  <T extends ExecutorConfig> void configure(T params);
-
   TaskExecutionState getTaskExecutionState(TaskInstance instance);
 
   ExecutionInfo get_info();
-
-  Class<? extends ExecutorConfig> getConfigClass();
 }

@@ -28,11 +28,12 @@ public abstract class AbstractTaskExecutor implements TaskExecutor {
     this.resolver = resolver;
   }
 
-  protected void appendProperties(List<String> p_args, String... properties_to_pass) {
-    for (String name : properties_to_pass) {
-      for (Object p_name : System.getProperties().keySet())
-        if (String.valueOf(p_name).startsWith(name))
-          p_args.add(String.format("-D%s=%s", p_name, System.getProperties().get(p_name)));
+  protected void appendProperties(List<String> p_args, String... properties) {
+    for (String property : properties) {
+      String value = System.getProperty(property);
+      if (value != null) {
+          p_args.add(String.format("-D%s=%s", property, value));
+      }
     }
   }
 
@@ -50,8 +51,8 @@ public abstract class AbstractTaskExecutor implements TaskExecutor {
           return TaskExecutionState.COMPLETED;
         default:
           return ei.getResultType() == TaskExecutionResultType.TRANSIENT_ERROR
-                  ? TaskExecutionState.ACTIVE
-                  : TaskExecutionState.DISABLED;
+              ? TaskExecutionState.ACTIVE
+              : TaskExecutionState.DISABLED;
       }
     }
 

@@ -66,14 +66,4 @@ public class InternalStageExecutor extends AbstractTaskExecutor {
   public ExecutionInfo get_info() {
     return info;
   }
-
-  @Override
-  public Class<? extends ExecutorConfig> getConfigClass() {
-    return null;
-  }
-
-  @Override
-  public void configure(ExecutorConfig rc) {
-    // empty
-  }
 }

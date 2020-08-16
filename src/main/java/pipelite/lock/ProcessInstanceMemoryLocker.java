@@ -26,7 +26,7 @@ public class ProcessInstanceMemoryLocker implements ProcessInstanceLocker {
 
   @Value
   private static class LocalLock {
-    private final String launcherId;
+    private final String launcherName;
     private final String processName;
     private final String processId;
   }
@@ -35,17 +35,17 @@ public class ProcessInstanceMemoryLocker implements ProcessInstanceLocker {
   private final Set<LocalLock> localLocks = ConcurrentHashMap.newKeySet();
 
   @Override
-  public boolean lock(String launcherId, ProcessInstance processInstance) {
+  public boolean lock(String launcherName, ProcessInstance processInstance) {
     if (globalLocks.add(getGlobalLock(processInstance))) {
-      localLocks.add(getLocalLock(launcherId, processInstance));
+      localLocks.add(getLocalLock(launcherName, processInstance));
       return true;
     }
     return false;
   }
 
   @Override
-  public boolean unlock(String launcherId, ProcessInstance processInstance) {
-    if (localLocks.remove(getLocalLock(launcherId, processInstance))) {
+  public boolean unlock(String launcherName, ProcessInstance processInstance) {
+    if (localLocks.remove(getLocalLock(launcherName, processInstance))) {
       globalLocks.remove(getGlobalLock(processInstance));
       return true;
     }
@@ -58,9 +58,9 @@ public class ProcessInstanceMemoryLocker implements ProcessInstanceLocker {
   }
 
   @Override
-  public void purge(String launcherId, String processName) {
+  public void purge(String launcherName, String processName) {
     for (LocalLock localLock : localLocks) {
-      if (localLock.getLauncherId().equals(launcherId)
+      if (localLock.getLauncherName().equals(launcherName)
               && localLock.getProcessName().equals(processName)) {
         GlobalLock globalLock =
                 new GlobalLock(localLock.getProcessName(), localLock.getProcessId());
@@ -70,9 +70,9 @@ public class ProcessInstanceMemoryLocker implements ProcessInstanceLocker {
     }
   }
 
-  private static LocalLock getLocalLock(String launcherId, ProcessInstance processInstance) {
+  private static LocalLock getLocalLock(String launcherName, ProcessInstance processInstance) {
     return new LocalLock(
-            launcherId, processInstance.getPipelineName(), processInstance.getProcessId());
+            launcherName, processInstance.getPipelineName(), processInstance.getProcessId());
   }
 
   private static GlobalLock getGlobalLock(ProcessInstance processInstance) {

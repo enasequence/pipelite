@@ -10,9 +10,9 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.configuration;
 
+import pipelite.configuration.LSFTaskExecutorConfiguration;
+import pipelite.configuration.TaskExecutorConfiguration;
 import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
-import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall.LSFQueue;
-import uk.ac.ebi.ena.sra.pipeline.executors.LSFExecutorConfig;
 import uk.ac.ebi.ena.sra.pipeline.launcher.LSFStageExecutor;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.StageExecutorFactory;
 import pipelite.task.executor.TaskExecutor;
@@ -20,44 +20,28 @@ import pipelite.task.executor.TaskExecutor;
 public class LSFExecutorFactory implements StageExecutorFactory {
   private final String pipeline_name;
   private final TaskExecutionResultExceptionResolver resolver;
-  private final String queue;
-  private final int memory_limit;
-  private final int cpu_cores;
-  private final int lsf_mem_timeout;
+  private final TaskExecutorConfiguration taskExecutorConfiguration;
+  private final LSFTaskExecutorConfiguration lsfTaskExecutorConfiguration;
 
-    public LSFExecutorFactory(
-            String pipeline_name,
-            TaskExecutionResultExceptionResolver resolver,
-            String queue,
-            int memory_limit,
-            int cpu_cores,
-            int lsf_mem_timeout) {
-    LSFQueue.findByName(queue);
+  public LSFExecutorFactory(
+      String pipeline_name,
+      TaskExecutionResultExceptionResolver resolver,
+      TaskExecutorConfiguration taskExecutorConfiguration,
+      LSFTaskExecutorConfiguration lsfTaskExecutorConfiguration) {
 
     this.pipeline_name = pipeline_name;
     this.resolver = resolver;
-    this.queue = queue;
-    this.memory_limit = memory_limit;
-    this.cpu_cores = cpu_cores;
-    this.lsf_mem_timeout = lsf_mem_timeout;
-    }
+    this.taskExecutorConfiguration = taskExecutorConfiguration;
+    this.lsfTaskExecutorConfiguration = lsfTaskExecutorConfiguration;
+  }
 
-  public TaskExecutor getExecutor() {
-    LSFExecutorConfig cfg_def =
-        new LSFExecutorConfig() {
-          @Override
-          public int getLSFMemoryReservationTimeout() {
-            return lsf_mem_timeout;
-          }
-
-          @Override
-          public String getLsfQueue() {
-            return queue;
-          }
-        };
-
+  public TaskExecutor create() {
     TaskExecutor executor =
-        new LSFStageExecutor(pipeline_name, resolver, memory_limit, cpu_cores, cfg_def);
+        new LSFStageExecutor(
+            pipeline_name,
+            resolver,
+            taskExecutorConfiguration,
+            lsfTaskExecutorConfiguration);
 
     return executor;
   }

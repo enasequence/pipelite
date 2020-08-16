@@ -135,16 +135,6 @@ public class DetachedStageExecutor extends AbstractTaskExecutor {
     return info;
   }
 
-
-  @Override
-  public Class<? extends ExecutorConfig> getConfigClass() {
-    return DetachedExecutorConfig.class;
-  }
-
-  @Override
-  public void configure(ExecutorConfig rc) {
-  }
-
   public String[] getPropertiesPass() {
     return properties_pass;
   }

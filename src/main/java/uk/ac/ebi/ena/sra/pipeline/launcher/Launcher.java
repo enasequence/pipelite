@@ -10,28 +10,16 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
-import com.beust.jcommander.JCommander;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import org.apache.log4j.DailyRollingFileAppender;
-import org.apache.log4j.EnhancedPatternLayout;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.SpringApplication;
+import pipelite.ApplicationConfiguration;
 import pipelite.lock.LauncherInstanceLocker;
 import pipelite.lock.LauncherInstanceOraclePackageLocker;
 import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
-import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall.LSFQueue;
-import uk.ac.ebi.ena.sra.pipeline.base.external.lsf.LSFBqueues;
+import pipelite.task.result.resolver.TaskExecutionResultResolver;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.configuration.LSFExecutorFactory;
-import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultLauncherParams;
 import uk.ac.ebi.ena.sra.pipeline.configuration.PipeliteProcessFactory;
 import pipelite.lock.ProcessInstanceOraclePackageLocker;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
@@ -43,6 +31,12 @@ import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
 
 public class Launcher {
+
+  private final ApplicationConfiguration applicationConfiguration;
+
+  public Launcher(ApplicationConfiguration applicationConfiguration) {
+    this.applicationConfiguration = applicationConfiguration;
+  }
 
   private static final int DEFAULT_ERROR_EXIT = 1;
   private static final int NORMAL_EXIT = 0;
@@ -66,7 +60,7 @@ public class Launcher {
     };
   }
 
-  private static OracleStorage initStorageBackend() throws ClassNotFoundException, SQLException {
+  private OracleStorage initStorageBackend() throws ClassNotFoundException, SQLException {
     OracleStorage os = new OracleStorage();
 
     Connection connection = DefaultConfiguration.currentSet().createConnection();
@@ -75,19 +69,19 @@ public class Launcher {
     os.setConnection(connection);
     os.setProcessTableName(DefaultConfiguration.currentSet().getProcessTableName());
     os.setStageTableName(DefaultConfiguration.currentSet().getStageTableName());
-    os.setPipelineName(DefaultConfiguration.currentSet().getPipelineName());
+    os.setPipelineName(applicationConfiguration.launcherConfiguration.getProcessName());
     os.setLogTableName(DefaultConfiguration.currentSet().getLogTableName());
     return os;
   }
 
-  private static TaskIdSource initTaskIdSource(TaskExecutionResultExceptionResolver resolver)
+  private TaskIdSource initTaskIdSource(TaskExecutionResultExceptionResolver resolver)
       throws ClassNotFoundException, SQLException {
     OracleProcessIdSource ts = new OracleProcessIdSource();
 
     ts.setConnection(DefaultConfiguration.currentSet().createConnection());
     ts.setTableName(DefaultConfiguration.currentSet().getProcessTableName());
-    ts.setPipelineName(DefaultConfiguration.currentSet().getPipelineName());
-    ts.setRedoCount(DefaultConfiguration.currentSet().getStagesRedoCount());
+    ts.setPipelineName(applicationConfiguration.launcherConfiguration.getProcessName());
+    ts.setRedoCount(applicationConfiguration.taskExecutorConfiguration.getRetries());
     ts.setExecutionResultArray(resolver.resultsArray());
     ts.init();
 
@@ -95,64 +89,26 @@ public class Launcher {
   }
 
   public void run(String... args) {
-
-    DefaultLauncherParams params = new DefaultLauncherParams();
-    JCommander jc = new JCommander(params);
-
     try {
-      jc.parse(args);
-
-      // Extra checks for existing queues
-      if (null != params.queue_name
-          && params.queue_name.trim().length() > 0
-          && !"default".equals(params.queue_name.trim())) {
-        Set<String> queues = new LSFBqueues().executeAndGet();
-        if (!queues.contains(params.queue_name)) {
-          System.out.printf("Supplied queue \"%s\" is missing.\n", params.queue_name);
-          System.out.println("Available queues: ");
-          for (LSFQueue q : LSFQueue.values()) System.out.printf("\t%s\n", q.getQueueName());
-
-          System.exit(DEFAULT_ERROR_EXIT);
-        }
-      }
-
-    } catch (Exception e) {
-      System.out.println("**");
-      jc.usage();
-      System.exit(DEFAULT_ERROR_EXIT);
-    }
-
-    TaskExecutionResultExceptionResolver resolver = DefaultConfiguration.CURRENT.getResolver();
-
-    try {
-      System.exit(main2(resolver, params));
+      System.exit(_run());
     } catch (Exception ex) {
       throw new RuntimeException(ex);
     }
   }
 
-  private static int main2(
-      TaskExecutionResultExceptionResolver resolver, DefaultLauncherParams params)
-      throws IOException {
-    EnhancedPatternLayout layout =
-        new EnhancedPatternLayout(
-            "%d{ISO8601} %-5p [%t] "
-                + DefaultConfiguration.currentSet().getPipelineName()
-                + " %c{1}:%L - %m%n");
-    DailyRollingFileAppender appender =
-        new DailyRollingFileAppender(layout, params.log_file, "'.'yyyy-ww");
-    appender.setThreshold(Level.ALL);
-    Logger.getRootLogger().removeAllAppenders();
-    Logger.getRootLogger().addAppender(appender);
-    Logger.getRootLogger().setLevel(Level.ALL);
+  private int _run() {
+
+    // TODO: get this from property
+    TaskExecutionResultExceptionResolver resolver =
+        TaskExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER;
 
     TaskIdSource task_id_source = null;
     PipeliteLauncher launcher = new PipeliteLauncher();
     OracleStorage storage = null;
     CountDownLatch latch = new CountDownLatch(1);
 
-    String processName = DefaultConfiguration.currentSet().getPipelineName();
-    String launcherId = DefaultConfiguration.currentSet().getLauncherId();
+    String launcherName = applicationConfiguration.launcherConfiguration.getLauncherName();
+    String processName = applicationConfiguration.launcherConfiguration.getProcessName();
 
     try (Connection connection = DefaultConfiguration.currentSet().createConnection()) {
       LauncherInstanceLocker launcherInstanceLocker =
@@ -162,23 +118,26 @@ public class Launcher {
       try {
         storage = initStorageBackend();
 
-        if (launcherInstanceLocker.lock(launcherId, processName)) {
+        if (launcherInstanceLocker.lock(launcherName, processName)) {
           task_id_source = initTaskIdSource(resolver);
 
           launcher.setTaskIdSource(task_id_source);
           launcher.setProcessFactory(
-              new PipeliteProcessFactory(launcherId, resolver, processInstanceLocker));
+              new PipeliteProcessFactory(
+                  launcherName, applicationConfiguration, resolver, processInstanceLocker));
           launcher.setExecutorFactory(
               new LSFExecutorFactory(
                   processName,
                   resolver,
-                  params.queue_name,
-                  params.lsf_mem,
-                  params.lsf_cpu_cores,
-                  params.lsf_mem_timeout));
+                  applicationConfiguration.taskExecutorConfiguration,
+                  applicationConfiguration.lsfTaskExecutorConfiguration));
 
           launcher.setSourceReadTimeout(120 * 1000);
-          launcher.setProcessPool(init(params.workers, storage, processInstanceLocker));
+          launcher.setProcessPool(
+              init(
+                  applicationConfiguration.launcherConfiguration.getWorkers(),
+                  storage,
+                  processInstanceLocker));
 
           // TODO remove
           Runtime.getRuntime()
@@ -206,16 +165,12 @@ public class Launcher {
                       }));
 
           launcher.execute();
-          launcherInstanceLocker.unlock(launcherId, processName);
+          launcherInstanceLocker.unlock(launcherName, processName);
 
         } else {
           System.out.println(
               String.format(
-                  "Launcher is already locked: %s",
-                  Launcher.class.getName(),
-                  Files.exists(Paths.get(params.lock))
-                      ? Files.readAllLines(Paths.get(params.lock))
-                      : params.lock));
+                  "Launcher %s is already locked for process %s.:", launcherName, processName));
           return DEFAULT_ERROR_EXIT;
         }
 

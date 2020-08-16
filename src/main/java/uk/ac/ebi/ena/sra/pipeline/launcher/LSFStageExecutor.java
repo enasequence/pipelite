@@ -17,6 +17,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import pipelite.configuration.LSFTaskExecutorConfiguration;
+import pipelite.configuration.TaskExecutorConfiguration;
 import pipelite.task.executor.AbstractTaskExecutor;
 import pipelite.task.instance.LatestTaskExecution;
 import pipelite.task.instance.TaskInstance;
@@ -27,7 +29,6 @@ import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
-import uk.ac.ebi.ena.sra.pipeline.executors.LSFExecutorConfig;
 import pipelite.task.result.TaskExecutionResult;
 
 public class LSFStageExecutor extends AbstractTaskExecutor {
@@ -40,54 +41,44 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
   private final String config_source_name;
   private final TaskExecutionResult internalError;
   private final String[] properties_pass;
-  private LSFExecutorConfig config;
-  private final int lsf_memory_limit;
-  private final int cpu_cores;
+  private final TaskExecutorConfiguration taskExecutorConfiguration;
+  private final LSFTaskExecutorConfiguration lsfTaskExecutorConfiguration;
 
   public LSFStageExecutor(
       String pipeline_name,
       TaskExecutionResultExceptionResolver resolver,
-      int lsf_memory_limit,
-      int cpu_cores,
-      LSFExecutorConfig config) {
+      TaskExecutorConfiguration taskExecutorConfiguration,
+      LSFTaskExecutorConfiguration lsfTaskExecutorConfiguration) {
     this(
         pipeline_name,
         resolver,
-        lsf_memory_limit,
-        cpu_cores,
         DefaultConfiguration.CURRENT.getConfigPrefixName(),
         DefaultConfiguration.CURRENT.getConfigSourceName(),
         DefaultConfiguration.CURRENT.getPropertiesPass(),
-        config);
+        taskExecutorConfiguration,
+        lsfTaskExecutorConfiguration);
   }
 
   LSFStageExecutor(
       String pipeline_name,
       TaskExecutionResultExceptionResolver resolver,
-      int lsf_memory_limit,
-      int cpu_cores,
       String config_prefix_name,
       String config_source_name,
       String[] properties_pass,
-      LSFExecutorConfig config) {
+      TaskExecutorConfiguration taskExecutorConfiguration,
+      LSFTaskExecutorConfiguration lsfTaskExecutorConfiguration) {
     super(pipeline_name, resolver);
     this.internalError = resolver.internalError();
     this.config_prefix_name = config_prefix_name;
     this.config_source_name = config_source_name;
-
-    this.lsf_memory_limit = lsf_memory_limit;
-    this.cpu_cores = cpu_cores;
     this.properties_pass = properties_pass;
 
-    this.config = config;
+    this.taskExecutorConfiguration = taskExecutorConfiguration;
+    this.lsfTaskExecutorConfiguration = lsfTaskExecutorConfiguration;
   }
 
   public void reset(TaskInstance instance) {
     instance.setLatestTaskExecution(new LatestTaskExecution());
-  }
-
-  public void configure(LSFExecutorConfig params) {
-    if (null != params) this.config = params;
   }
 
   public String[] getPropertiesPass() {
@@ -95,6 +86,12 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
   }
 
   private String[] mergePropertiesPass(String[] pp1, String[] pp2) {
+    if (pp1 == null) {
+      pp1 = new String[0];
+    }
+    if (pp2 == null) {
+      pp2 = new String[0];
+    }
     Set<String> set1 = new HashSet<>(Arrays.asList(pp1));
     Set<String> set2 = new HashSet<>(Arrays.asList(pp2));
     set1.addAll(set2);
@@ -108,7 +105,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
 
     int lsf_memory_limit = instance.getMemory();
     if (lsf_memory_limit <= 0) {
-      lsf_memory_limit = this.lsf_memory_limit;
+      lsf_memory_limit = taskExecutorConfiguration.getMemory();
     }
 
     int java_memory_limit = lsf_memory_limit - LSF_JVM_MEMORY_DELTA_MB;
@@ -152,7 +149,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
   private LSFBackEnd configureBackend(TaskInstance instance) {
     int mem = instance.getMemory();
     if (mem <= 0) {
-      mem = lsf_memory_limit;
+      mem = taskExecutorConfiguration.getMemory();
       if (mem <= 0) {
         log.warn(
             "Setting LSF memory limit to default value "
@@ -164,23 +161,26 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
     }
     int cpu = instance.getCores();
     if (cpu <= 0) {
-      cpu = cpu_cores;
+      cpu = taskExecutorConfiguration.getCores();
       if (cpu <= 0) {
         log.warn("Setting CPU cores count to default value 1");
         cpu = 1;
       }
     }
-    int mem_res = config.getLSFMemoryReservationTimeout();
-    if (mem_res <= 0) {
-      mem_res = LSF_JVM_MEMORY_RESERVATION_TIMEOUT_DEFAULT_MINUTES;
+    Integer memoryReservationTimeout = lsfTaskExecutorConfiguration.getMemoryTimeout();
+    if (memoryReservationTimeout == null) {
+      memoryReservationTimeout = LSF_JVM_MEMORY_RESERVATION_TIMEOUT_DEFAULT_MINUTES;
       log.warn(
           "Setting LSF memory timeout to default value "
               + LSF_JVM_MEMORY_RESERVATION_TIMEOUT_DEFAULT_MINUTES
               + "min.");
     }
 
-    LSFBackEnd back_end = new LSFBackEnd(config.getLsfQueue(), mem, mem_res, cpu);
-    back_end.setOutputFolderPath(Paths.get(config.getLsfOutputPath()));
+    LSFBackEnd back_end =
+        new LSFBackEnd(lsfTaskExecutorConfiguration.getQueue(), mem, memoryReservationTimeout, cpu);
+    if (taskExecutorConfiguration.getTempDir() != null) {
+      back_end.setOutputFolderPath(Paths.get(taskExecutorConfiguration.getTempDir()));
+    }
     return back_end;
   }
 
@@ -237,15 +237,5 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
 
   public ExecutionInfo get_info() {
     return info;
-  }
-
-  @Override
-  public Class<? extends ExecutorConfig> getConfigClass() {
-    return LSFExecutorConfig.class;
-  }
-
-  @Override
-  public <T extends ExecutorConfig> void configure(T params) {
-    configure((LSFExecutorConfig) params);
   }
 }

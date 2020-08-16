@@ -39,7 +39,7 @@ import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
 
 public class ProcessLauncher implements PipeliteProcess {
 
-  private final String launcherId;
+  private final String launcherName;
   private final TaskExecutionResultExceptionResolver resolver;
   private final ProcessInstanceLocker locker;
 
@@ -56,8 +56,8 @@ public class ProcessLauncher implements PipeliteProcess {
   private int max_redo_count = 1;
   private volatile boolean do_stop;
 
-  public ProcessLauncher(String launcherId, TaskExecutionResultExceptionResolver resolver, ProcessInstanceLocker locker) {
-    this.launcherId = launcherId;
+  public ProcessLauncher(String launcherName, TaskExecutionResultExceptionResolver resolver, ProcessInstanceLocker locker) {
+    this.launcherName = launcherName;
     this.resolver = resolver;
     this.locker = locker;
 
@@ -194,12 +194,12 @@ public class ProcessLauncher implements PipeliteProcess {
   }
 
   private boolean lockProcessInstance() {
-    return locker.lock(launcherId, processInstance);
+    return locker.lock(launcherName, processInstance);
   }
 
   private void unlockProcessInstance() {
     if (locker.isLocked(processInstance)) {
-      locker.unlock(launcherId, processInstance);
+      locker.unlock(launcherName, processInstance);
     }
   }
 
@@ -339,8 +339,6 @@ public class ProcessLauncher implements PipeliteProcess {
       if (do_stop) break;
 
       if (TaskExecutionState.ACTIVE == executor.getTaskExecutionState(instance)) {
-        if (null != instance.getTaskExecutorConfig(executor.getConfigClass()))
-          executor.configure(instance.getTaskExecutorConfig(executor.getConfigClass()));
 
         LatestTaskExecution ei = instance.getLatestTaskExecution();
         ei.setStartTime(new Timestamp(System.currentTimeMillis()));
@@ -442,15 +440,6 @@ public class ProcessLauncher implements PipeliteProcess {
     mailer.activateOptions();
     mailer.setName(MAIL_APPENDER);
     return mailer;
-  }
-
-  private static OracleStorage initStorageBackend() {
-    OracleStorage os = new OracleStorage();
-    os.setProcessTableName(DefaultConfiguration.currentSet().getProcessTableName());
-    os.setStageTableName(DefaultConfiguration.currentSet().getStageTableName());
-    os.setPipelineName(DefaultConfiguration.currentSet().getPipelineName());
-    os.setLogTableName(DefaultConfiguration.currentSet().getLogTableName());
-    return os;
   }
 
   @Override

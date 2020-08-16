@@ -65,7 +65,7 @@ public class PipeliteLauncher {
   }
 
   public interface StageExecutorFactory {
-    TaskExecutor getExecutor();
+    TaskExecutor create();
   }
 
   TaggedPoolExecutor thread_pool;
@@ -136,7 +136,7 @@ public class PipeliteLauncher {
 
       for (String process_id : task_queue) {
         PipeliteProcess process = getProcessFactory().create(process_id);
-        process.setExecutor(getExecutorFactory().getExecutor());
+        process.setExecutor(getExecutorFactory().create());
         try {
           thread_pool.execute(process);
         } catch (RejectedExecutionException ree) {

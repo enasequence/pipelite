@@ -10,16 +10,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = TestConfiguration.class)
 @ActiveProfiles("test")
-public class TaskExecutorConfigurationTest {
+public class ProcessConfigurationTest {
 
     @Autowired
-    TaskExecutorConfiguration config;
+    ProcessConfiguration config;
 
     @Test
     public void test() {
-        assertThat(config.getMemory()).isEqualTo(1);
-        assertThat(config.getCores()).isEqualTo(1);
-        assertThat(config.getRetries()).isEqualTo(3);
-        assertThat(config.getTempDir()).isBlank();
+        assertThat(config.getResolver()).isEqualTo("pipelite.task.result.resolver.TaskExecutionResultResolver#DEFAULT_EXCEPTION_RESOLVER");
     }
 }
