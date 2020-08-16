@@ -10,13 +10,13 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.configuration;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class HeartBeatConnectionTest {
   @Test

@@ -21,16 +21,17 @@ import java.util.stream.Stream;
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import pipelite.task.result.resolver.TaskExecutionResultResolver;
 import uk.ac.ebi.ena.sra.pipeline.configuration.OracleHeartBeatConnection;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.TaskIdSource;
 import pipelite.process.instance.ProcessInstance;
 import pipelite.process.state.ProcessExecutionState;
 import pipelite.task.instance.TaskInstance;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class IdSourceTest {
   static TaskIdSource id_src;
@@ -62,7 +63,7 @@ public class IdSourceTest {
     return connection;
   }
 
-  @BeforeClass
+  @BeforeAll
   public static void setup()
       throws ClassNotFoundException, SQLException {
     PropertyConfigurator.configure("resource/test.log4j.properties");
@@ -87,13 +88,13 @@ public class IdSourceTest {
     db_backend = os;
   }
 
-  @AfterClass
+  @AfterAll
   public static void whack() {
     DbUtils.rollbackAndCloseQuietly(connection);
   }
 
   @Test
-  public void main()
+  public void test()
       throws SQLException {
     List<String> ids = Stream.of("PROCESS_ID1", "PROCESS_ID2").collect(Collectors.toList());
     ids
@@ -133,7 +134,7 @@ public class IdSourceTest {
                 .findFirst()
                 .ifPresent(e -> cnt.decrementAndGet()));
 
-    Assert.assertEquals(0, cnt.get());
+    assertEquals(0, cnt.get());
 
     AtomicInteger priority = new AtomicInteger();
     saved.forEach(e -> e.setPriority(priority.getAndAdd(4)));
@@ -147,7 +148,7 @@ public class IdSourceTest {
               }
             });
 
-    Assert.assertEquals(stored.get(stored.size() - 1), id_src.getTaskQueue().get(0));
+    assertEquals(stored.get(stored.size() - 1), id_src.getTaskQueue().get(0));
   }
 
   private List<ProcessInstance> saveTasks(String pipeline_name, List<String> ids) {

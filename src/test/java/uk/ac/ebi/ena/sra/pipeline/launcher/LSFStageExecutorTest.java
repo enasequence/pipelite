@@ -12,12 +12,14 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import org.junit.Assert;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 import pipelite.task.instance.TaskInstance;
 import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
 import pipelite.task.result.resolver.TaskExecutionResultResolver;
 import uk.ac.ebi.ena.sra.pipeline.executors.LSFExecutorConfig;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class LSFStageExecutorTest {
   private TaskExecutionResultExceptionResolver resolver() {
@@ -84,7 +86,7 @@ public class LSFStageExecutorTest {
 
     se.execute(makeDefaultStageInstance());
 
-    Assert.assertFalse(se.get_info().getCommandline().contains("-q "));
+    assertFalse(se.get_info().getCommandline().contains("-q "));
   }
 
   @Test
@@ -114,7 +116,7 @@ public class LSFStageExecutorTest {
 
     se.execute(makeDefaultStageInstance());
 
-    Assert.assertTrue(se.get_info().getCommandline().contains("-q queue"));
+    assertTrue(se.get_info().getCommandline().contains("-q queue"));
   }
 
   @Test
@@ -166,7 +168,7 @@ public class LSFStageExecutorTest {
 
     se.execute(makeDefaultStageInstance());
 
-    Assert.assertTrue(se.get_info().getCommandline().contains("-q LSFQUEUE"));
+    assertTrue(se.get_info().getCommandline().contains("-q LSFQUEUE"));
   }
 
   @Test
@@ -209,11 +211,11 @@ public class LSFStageExecutorTest {
         });
 
     String cmdl = se.get_info().getCommandline();
-    Assert.assertTrue(cmdl.contains(" -M 2000 -R rusage[mem=2000:duration=14]"));
-    Assert.assertTrue(cmdl.contains(" -n 12"));
-    Assert.assertTrue(cmdl.contains(" -q LSFQUEUE"));
-    Assert.assertTrue(cmdl.contains(" -oo " + tmpd_stg));
-    Assert.assertTrue(cmdl.contains(" -eo " + tmpd_stg));
+    assertTrue(cmdl.contains(" -M 2000 -R rusage[mem=2000:duration=14]"));
+    assertTrue(cmdl.contains(" -n 12"));
+    assertTrue(cmdl.contains(" -q LSFQUEUE"));
+    assertTrue(cmdl.contains(" -oo " + tmpd_stg));
+    assertTrue(cmdl.contains(" -eo " + tmpd_stg));
   }
 
   @Test
@@ -256,11 +258,11 @@ public class LSFStageExecutorTest {
         });
 
     String cmdl = se.get_info().getCommandline();
-    Assert.assertTrue(cmdl.contains(" -M 1700 -R rusage[mem=1700:duration=60]"));
-    Assert.assertTrue(cmdl.contains(" -n 1"));
-    Assert.assertTrue(cmdl.contains(" -q LSFQUEUE"));
-    Assert.assertTrue(cmdl.contains(" -oo " + tmpd_stg));
-    Assert.assertTrue(cmdl.contains(" -eo " + tmpd_stg));
+    assertTrue(cmdl.contains(" -M 1700 -R rusage[mem=1700:duration=60]"));
+    assertTrue(cmdl.contains(" -n 1"));
+    assertTrue(cmdl.contains(" -q LSFQUEUE"));
+    assertTrue(cmdl.contains(" -oo " + tmpd_stg));
+    assertTrue(cmdl.contains(" -eo " + tmpd_stg));
   }
 
   @Test
@@ -276,8 +278,8 @@ public class LSFStageExecutorTest {
     se.execute(makeDefaultStageInstance());
 
     String cmdl = se.get_info().getCommandline();
-    Assert.assertTrue(cmdl.contains(" -M 2340 -R rusage[mem=2340:duration=9]"));
-    Assert.assertTrue(cmdl.contains(" -n 1 "));
+    assertTrue(cmdl.contains(" -M 2340 -R rusage[mem=2340:duration=9]"));
+    assertTrue(cmdl.contains(" -n 1 "));
   }
 
   @Test
@@ -291,8 +293,8 @@ public class LSFStageExecutorTest {
     se.execute(makeDefaultStageInstance());
 
     String cmdl = se.get_info().getCommandline();
-    Assert.assertTrue(cmdl.contains(" -M 2340 -R rusage[mem=2340:duration=9]"));
-    Assert.assertTrue(cmdl.contains(" -n 1 "));
+    assertTrue(cmdl.contains(" -M 2340 -R rusage[mem=2340:duration=9]"));
+    assertTrue(cmdl.contains(" -n 1 "));
   }
 
   @Test
@@ -315,7 +317,7 @@ public class LSFStageExecutorTest {
         });
 
     String cmdl = se.get_info().getCommandline();
-    Assert.assertTrue(cmdl.contains(" -Xmx200M"));
+    assertTrue(cmdl.contains(" -Xmx200M"));
   }
 
   @Test
@@ -337,8 +339,8 @@ public class LSFStageExecutorTest {
         });
 
     String cmdl = se.get_info().getCommandline();
-    Assert.assertTrue(cmdl.contains(" -M 2340 -R rusage[mem=2340:duration=9]"));
-    Assert.assertTrue(cmdl.contains(" -Xmx840M"));
+    assertTrue(cmdl.contains(" -M 2340 -R rusage[mem=2340:duration=9]"));
+    assertTrue(cmdl.contains(" -Xmx840M"));
   }
 
   @Test
@@ -378,7 +380,7 @@ public class LSFStageExecutorTest {
         });
 
     String cmdl = se.get_info().getCommandline();
-      Assert.assertFalse(cmdl.contains(" -Xmx"));
+      assertFalse(cmdl.contains(" -Xmx"));
   }
 
   @Test
@@ -400,8 +402,8 @@ public class LSFStageExecutorTest {
         });
 
     String cmdl = se.get_info().getCommandline();
-    Assert.assertTrue(cmdl.contains(" -Duser.country="));
-    Assert.assertTrue(cmdl.contains(" -Duser.dir="));
+    assertTrue(cmdl.contains(" -Duser.country="));
+    assertTrue(cmdl.contains(" -Duser.dir="));
   }
 
   @Test
@@ -417,7 +419,7 @@ public class LSFStageExecutorTest {
     se.execute(makeDefaultStageInstance());
 
     String cmdl = se.get_info().getCommandline();
-    Assert.assertTrue(cmdl.contains(" -Duser.dir="));
+    assertTrue(cmdl.contains(" -Duser.dir="));
   }
 
   @Test
@@ -440,6 +442,6 @@ public class LSFStageExecutorTest {
         });
 
     String cmdl = se.get_info().getCommandline();
-    Assert.assertTrue(cmdl.contains(" -D" + prefix + "=" + source));
+    assertTrue(cmdl.contains(" -D" + prefix + "=" + source));
   }
 }

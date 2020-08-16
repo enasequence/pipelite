@@ -10,9 +10,11 @@
  */
 package pipelite.lock;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import pipelite.process.instance.ProcessInstance;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ProcessInstanceMemoryLockerTest {
 
@@ -25,48 +27,48 @@ public class ProcessInstanceMemoryLockerTest {
     String launcherId1 = "TEST1";
     String launcherId2 = "TEST2";
 
-    Assert.assertTrue(locker.lock(launcherId1, getProcessInstance("1")));
-    Assert.assertTrue(locker.isLocked(getProcessInstance("1")));
+    assertTrue(locker.lock(launcherId1, getProcessInstance("1")));
+    assertTrue(locker.isLocked(getProcessInstance("1")));
 
-    Assert.assertTrue(locker.lock(launcherId1, getProcessInstance("2")));
-    Assert.assertTrue(locker.isLocked(getProcessInstance("1")));
-    Assert.assertTrue(locker.isLocked(getProcessInstance("2")));
+    assertTrue(locker.lock(launcherId1, getProcessInstance("2")));
+    assertTrue(locker.isLocked(getProcessInstance("1")));
+    assertTrue(locker.isLocked(getProcessInstance("2")));
 
-    Assert.assertTrue(locker.unlock(launcherId1, getProcessInstance("1")));
-    Assert.assertFalse(locker.isLocked(getProcessInstance("1")));
-    Assert.assertTrue(locker.isLocked(getProcessInstance("2")));
+    assertTrue(locker.unlock(launcherId1, getProcessInstance("1")));
+    assertFalse(locker.isLocked(getProcessInstance("1")));
+    assertTrue(locker.isLocked(getProcessInstance("2")));
 
 
-    Assert.assertTrue(locker.lock(launcherId2, getProcessInstance("3")));
-    Assert.assertFalse(locker.isLocked(getProcessInstance("1")));
-    Assert.assertTrue(locker.isLocked(getProcessInstance("2")));
-    Assert.assertTrue(locker.isLocked(getProcessInstance("3")));
+    assertTrue(locker.lock(launcherId2, getProcessInstance("3")));
+    assertFalse(locker.isLocked(getProcessInstance("1")));
+    assertTrue(locker.isLocked(getProcessInstance("2")));
+    assertTrue(locker.isLocked(getProcessInstance("3")));
 
-    Assert.assertTrue(locker.lock(launcherId2, getProcessInstance("4")));
-    Assert.assertFalse(locker.isLocked(getProcessInstance("1")));
-    Assert.assertTrue(locker.isLocked(getProcessInstance("2")));
-    Assert.assertTrue(locker.isLocked(getProcessInstance("3")));
-    Assert.assertTrue(locker.isLocked(getProcessInstance("4")));
+    assertTrue(locker.lock(launcherId2, getProcessInstance("4")));
+    assertFalse(locker.isLocked(getProcessInstance("1")));
+    assertTrue(locker.isLocked(getProcessInstance("2")));
+    assertTrue(locker.isLocked(getProcessInstance("3")));
+    assertTrue(locker.isLocked(getProcessInstance("4")));
 
-    Assert.assertTrue(locker.unlock(launcherId2, getProcessInstance("4")));
-    Assert.assertFalse(locker.isLocked(getProcessInstance("1")));
-    Assert.assertTrue(locker.isLocked(getProcessInstance("2")));
-    Assert.assertTrue(locker.isLocked(getProcessInstance("3")));
-    Assert.assertFalse(locker.isLocked(getProcessInstance("4")));
+    assertTrue(locker.unlock(launcherId2, getProcessInstance("4")));
+    assertFalse(locker.isLocked(getProcessInstance("1")));
+    assertTrue(locker.isLocked(getProcessInstance("2")));
+    assertTrue(locker.isLocked(getProcessInstance("3")));
+    assertFalse(locker.isLocked(getProcessInstance("4")));
 
     locker.purge(launcherId1, processName);
 
-    Assert.assertFalse(locker.isLocked(getProcessInstance("1")));
-    Assert.assertFalse(locker.isLocked(getProcessInstance("2")));
-    Assert.assertTrue(locker.isLocked(getProcessInstance("3")));
-    Assert.assertFalse(locker.isLocked(getProcessInstance("4")));
+    assertFalse(locker.isLocked(getProcessInstance("1")));
+    assertFalse(locker.isLocked(getProcessInstance("2")));
+    assertTrue(locker.isLocked(getProcessInstance("3")));
+    assertFalse(locker.isLocked(getProcessInstance("4")));
 
     locker.purge(launcherId2, processName);
 
-    Assert.assertFalse(locker.isLocked(getProcessInstance("1")));
-    Assert.assertFalse(locker.isLocked(getProcessInstance("2")));
-    Assert.assertFalse(locker.isLocked(getProcessInstance("3")));
-    Assert.assertFalse(locker.isLocked(getProcessInstance("4")));
+    assertFalse(locker.isLocked(getProcessInstance("1")));
+    assertFalse(locker.isLocked(getProcessInstance("2")));
+    assertFalse(locker.isLocked(getProcessInstance("3")));
+    assertFalse(locker.isLocked(getProcessInstance("4")));
   }
 
   private static ProcessInstance getProcessInstance(String processId) {

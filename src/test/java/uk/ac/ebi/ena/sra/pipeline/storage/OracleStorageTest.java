@@ -10,6 +10,7 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.storage;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 import java.sql.Connection;
@@ -25,10 +26,9 @@ import java.util.stream.Stream;
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import pipelite.task.result.resolver.TaskExecutionResultResolver;
 import uk.ac.ebi.ena.sra.pipeline.configuration.OracleHeartBeatConnection;
 import pipelite.process.instance.ProcessInstance;
@@ -64,7 +64,7 @@ public class OracleStorageTest {
     return connection;
   }
 
-  @BeforeClass
+  @BeforeAll
   public static void setup() throws ClassNotFoundException, SQLException {
     PropertyConfigurator.configure("resource/test.log4j.properties");
 
@@ -87,14 +87,14 @@ public class OracleStorageTest {
     db_backend = os;
   }
 
-  @AfterClass
+  @AfterAll
   public static void whack() {
     // DbUtils.commitAndCloseQuietly( connection );
     DbUtils.rollbackAndCloseQuietly(connection);
   }
 
   @Test
-  public void main() {
+  public void test() {
     List<String> ids = Stream.of("PROCESS_ID1", "PROCESS_ID2").collect(Collectors.toList());
     AtomicInteger cnt1 = new AtomicInteger(ids.size());
 
@@ -106,11 +106,11 @@ public class OracleStorageTest {
             cnt1.decrementAndGet();
           }
         });
-    Assert.assertEquals(0, cnt1.get());
+    assertEquals(0, cnt1.get());
 
     List<ProcessInstance> saved = saveTasks(PIPELINE_NAME, ids);
     List<ProcessInstance> loaded = loadTasks(PIPELINE_NAME, ids);
-    Assert.assertArrayEquals(
+    assertArrayEquals(
         saved.toArray(new ProcessInstance[saved.size()]),
         loaded.toArray(new ProcessInstance[loaded.size()]));
 
@@ -128,11 +128,11 @@ public class OracleStorageTest {
                 cnt.decrementAndGet();
               }
             });
-    Assert.assertEquals(0, cnt.get());
+    assertEquals(0, cnt.get());
 
     List<TaskInstance> si = saveStages(PIPELINE_NAME, ids.get(0), stages);
     List<TaskInstance> li = loadStages(PIPELINE_NAME, ids.get(0), stages);
-    Assert.assertArrayEquals(si.toArray(), li.toArray());
+    assertArrayEquals(si.toArray(), li.toArray());
 
     List<TaskInstance> ui =
         li.stream()
@@ -143,11 +143,11 @@ public class OracleStorageTest {
                   return r;
                 })
             .collect(Collectors.toList());
-    Assert.assertNotEquals(li, ui);
+    assertNotEquals(li, ui);
 
     List<TaskInstance> sui = saveStages(ui);
     List<TaskInstance> lui = loadStages(PIPELINE_NAME, ids.get(0), stages);
-    Assert.assertEquals(sui, lui);
+    assertEquals(sui, lui);
   }
 
   private List<TaskInstance> saveStages(List<TaskInstance> stages) {

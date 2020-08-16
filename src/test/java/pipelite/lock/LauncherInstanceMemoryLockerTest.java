@@ -10,8 +10,10 @@
  */
 package pipelite.lock;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class LauncherInstanceMemoryLockerTest {
 
@@ -27,19 +29,19 @@ public class LauncherInstanceMemoryLockerTest {
     locker.unlock(launcherId1, processName);
     locker.unlock(launcherId2, processName);
 
-    Assert.assertTrue(locker.lock(launcherId1, processName));
-    Assert.assertTrue(locker.isLocked(launcherId1, processName));
+    assertTrue(locker.lock(launcherId1, processName));
+    assertTrue(locker.isLocked(launcherId1, processName));
 
-    Assert.assertTrue(locker.lock(launcherId2, processName));
-    Assert.assertTrue(locker.isLocked(launcherId1, processName));
-    Assert.assertTrue(locker.isLocked(launcherId2, processName));
+    assertTrue(locker.lock(launcherId2, processName));
+    assertTrue(locker.isLocked(launcherId1, processName));
+    assertTrue(locker.isLocked(launcherId2, processName));
 
-    Assert.assertTrue(locker.unlock(launcherId1, processName));
-    Assert.assertFalse(locker.isLocked(launcherId1, processName));
-    Assert.assertTrue(locker.isLocked(launcherId2, processName));
+    assertTrue(locker.unlock(launcherId1, processName));
+    assertFalse(locker.isLocked(launcherId1, processName));
+    assertTrue(locker.isLocked(launcherId2, processName));
 
-    Assert.assertTrue(locker.unlock(launcherId2, processName));
-    Assert.assertFalse(locker.isLocked(launcherId1, processName));
-    Assert.assertFalse(locker.isLocked(launcherId2, processName));
+    assertTrue(locker.unlock(launcherId2, processName));
+    assertFalse(locker.isLocked(launcherId1, processName));
+    assertFalse(locker.isLocked(launcherId2, processName));
   }
 }

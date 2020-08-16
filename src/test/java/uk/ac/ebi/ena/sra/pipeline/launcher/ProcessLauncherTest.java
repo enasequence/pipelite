@@ -10,6 +10,7 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -21,9 +22,8 @@ import java.sql.Timestamp;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import pipelite.lock.ProcessInstanceLocker;
@@ -77,7 +77,7 @@ public class ProcessLauncherTest {
     return resolver.exitCodeSerializer().serialize(resolver.resolveError(new PermanentException()));
   }
 
-  @BeforeClass
+  @BeforeAll
   public static void setup() {
     PropertyConfigurator.configure("resource/test.log4j.properties");
   }
@@ -233,16 +233,16 @@ public class ProcessLauncherTest {
       verify(pl, times(1)).lifecycle();
       verify(spiedExecutor, times(2)).execute(any(TaskInstance.class));
 
-      Assert.assertEquals(ProcessExecutionState.ACTIVE, pl.getProcessInstance().getState());
-      Assert.assertEquals(1, pl.getProcessInstance().getExecutionCount());
+      assertEquals(ProcessExecutionState.ACTIVE, pl.getProcessInstance().getState());
+      assertEquals(1, pl.getProcessInstance().getExecutionCount());
 
       // Re-run
       pl.lifecycle();
 
       verify(pl, times(2)).lifecycle();
       verify(spiedExecutor, times(4)).execute(any(TaskInstance.class));
-      Assert.assertEquals(ProcessExecutionState.FAILED, pl.getProcessInstance().getState());
-      Assert.assertEquals(2, pl.getProcessInstance().getExecutionCount());
+      assertEquals(ProcessExecutionState.FAILED, pl.getProcessInstance().getState());
+      assertEquals(2, pl.getProcessInstance().getExecutionCount());
     }
 
     {
@@ -289,7 +289,7 @@ public class ProcessLauncherTest {
       verify(pl, times(1)).lifecycle();
       verify(spiedExecutor, times(0)).execute(any(TaskInstance.class));
 
-      Assert.assertEquals(ProcessExecutionState.FAILED, pl.getProcessInstance().getState());
+      assertEquals(ProcessExecutionState.FAILED, pl.getProcessInstance().getState());
     }
 
     {
@@ -306,7 +306,7 @@ public class ProcessLauncherTest {
       verify(pl, times(1)).lifecycle();
       verify(spiedExecutor, times(4)).execute(any(TaskInstance.class));
 
-      Assert.assertEquals(ProcessExecutionState.COMPLETED, pl.getProcessInstance().getState());
+      assertEquals(ProcessExecutionState.COMPLETED, pl.getProcessInstance().getState());
     }
   }
 }

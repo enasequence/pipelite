@@ -15,9 +15,8 @@ import java.sql.SQLException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import org.apache.log4j.PropertyConfigurator;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import pipelite.process.instance.ProcessInstance;
 import pipelite.task.result.resolver.TaskExecutionResultResolver;
 import uk.ac.ebi.ena.sra.pipeline.TestConnectionFactory;
@@ -26,17 +25,19 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessPoolExecutor;
 import pipelite.task.executor.TaskExecutor;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class LauncherDBTest {
   static final long delay = 5 * 1000;
   static final int workers = ForkJoinPool.getCommonPoolParallelism();
 
-    @BeforeClass
+    @BeforeAll
   public static void setup() {
     PropertyConfigurator.configure("resource/test.log4j.properties");
   }
 
   @Test
-  public void main()
+  public void test()
       throws SQLException,
           InterruptedException {
     Connection connection = TestConnectionFactory.createConnection();
@@ -118,7 +119,7 @@ public class LauncherDBTest {
     System.out.println("CPU count: " + Runtime.getRuntime().availableProcessors());
     System.out.println("Available parallelism: " + ForkJoinPool.getCommonPoolParallelism());
 
-    Assert.assertEquals(0, pool.getActiveCount()); // Threads should properly react to interrupt
+    assertEquals(0, pool.getActiveCount()); // Threads should properly react to interrupt
     pool.shutdownNow();
   }
 }

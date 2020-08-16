@@ -18,20 +18,22 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import pipelite.process.instance.ProcessInstance;
 import pipelite.task.executor.TaskExecutor;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.StageExecutorFactory;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class LauncherTest {
   static final long delay = 5 * 1000;
   static final int workers = ForkJoinPool.getCommonPoolParallelism();
   static final Logger log = Logger.getLogger(LauncherTest.class);
 
-  @BeforeClass
+  @BeforeAll
   public static void setup() {
     PropertyConfigurator.configure("resource/test.log4j.properties");
   }
@@ -128,8 +130,8 @@ public class LauncherTest {
     log.info("CPU count: " + Runtime.getRuntime().availableProcessors());
     log.info("Available parallelism: " + ForkJoinPool.getCommonPoolParallelism());
 
-    Assert.assertEquals(0, pool.getActiveCount()); // Threads should properly react to interrupt
+    assertEquals(0, pool.getActiveCount()); // Threads should properly react to interrupt
     pool.shutdownNow();
-    Assert.assertTrue(task_speed - delay < 3000); // Performance degradation?
+    assertTrue(task_speed - delay < 3000); // Performance degradation?
   }
 }

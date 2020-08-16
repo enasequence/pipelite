@@ -10,8 +10,8 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
-import org.junit.Assert;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 import pipelite.task.instance.TaskInstance;
 import pipelite.task.result.resolver.TaskExecutionResultResolver;
 
@@ -36,7 +36,7 @@ public class DetachedStageExecutorTest {
         });
 
     String cmdl = se.get_info().getCommandline();
-    Assert.assertTrue(cmdl.contains(" -Xmx2000M"));
+    assertTrue(cmdl.contains(" -Xmx2000M"));
   }
 
   @Test
@@ -58,7 +58,7 @@ public class DetachedStageExecutorTest {
         });
 
     String cmdl = se.get_info().getCommandline();
-      Assert.assertFalse(cmdl.contains(" -Xmx2000M"));
+      assertFalse(cmdl.contains(" -Xmx2000M"));
   }
 
   @Test
@@ -82,7 +82,7 @@ public class DetachedStageExecutorTest {
         });
 
     String cmdl = se.get_info().getCommandline();
-    Assert.assertTrue(cmdl.contains(" -D" + prefix + "=" + source));
+    assertTrue(cmdl.contains(" -D" + prefix + "=" + source));
   }
 
   @Test
@@ -109,7 +109,7 @@ public class DetachedStageExecutorTest {
         });
 
     String cmdl = se.get_info().getCommandline();
-    Assert.assertTrue(cmdl.contains(" -Duser.country="));
-    Assert.assertTrue(cmdl.contains(" -Duser.dir="));
+    assertTrue(cmdl.contains(" -Duser.country="));
+    assertTrue(cmdl.contains(" -Duser.dir="));
   }
 }

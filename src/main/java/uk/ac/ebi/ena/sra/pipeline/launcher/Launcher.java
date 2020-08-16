@@ -22,6 +22,8 @@ import org.apache.log4j.DailyRollingFileAppender;
 import org.apache.log4j.EnhancedPatternLayout;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
 import pipelite.lock.LauncherInstanceLocker;
 import pipelite.lock.LauncherInstanceOraclePackageLocker;
 import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
@@ -92,7 +94,8 @@ public class Launcher {
     return ts;
   }
 
-  public static void main(String[] args) throws IOException {
+  public void run(String... args) {
+
     DefaultLauncherParams params = new DefaultLauncherParams();
     JCommander jc = new JCommander(params);
 
@@ -121,7 +124,11 @@ public class Launcher {
 
     TaskExecutionResultExceptionResolver resolver = DefaultConfiguration.CURRENT.getResolver();
 
-    System.exit(main2(resolver, params));
+    try {
+      System.exit(main2(resolver, params));
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
   }
 
   private static int main2(
@@ -149,7 +156,7 @@ public class Launcher {
 
     try (Connection connection = DefaultConfiguration.currentSet().createConnection()) {
       LauncherInstanceLocker launcherInstanceLocker =
-              new LauncherInstanceOraclePackageLocker(connection);
+          new LauncherInstanceOraclePackageLocker(connection);
       ProcessInstanceLocker processInstanceLocker =
           new ProcessInstanceOraclePackageLocker(connection);
       try {
