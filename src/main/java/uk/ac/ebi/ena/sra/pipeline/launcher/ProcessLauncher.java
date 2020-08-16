@@ -25,14 +25,12 @@ import pipelite.task.executor.TaskExecutor;
 import pipelite.task.instance.LatestTaskExecution;
 import pipelite.task.instance.TaskInstance;
 import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
-import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import pipelite.process.state.ProcessExecutionState;
 import pipelite.task.state.TaskExecutionState;
 import pipelite.task.result.TaskExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
 import pipelite.lock.ProcessInstanceLocker;
-import uk.ac.ebi.ena.sra.pipeline.storage.OracleStorage;
 import uk.ac.ebi.ena.sra.pipeline.storage.ProcessLogBean;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
@@ -284,7 +282,7 @@ public class ProcessLauncher implements PipeliteProcess {
       instance.setDependsOn(null == stage.getDependsOn() ? null : stage.getDependsOn().toString());
       instance.setMemory(stage.getMemoryLimit());
       instance.setCores(stage.getCPUCores());
-      instance.setPropertiesPass(stage.getPropertiesPass());
+      instance.setJavaSystemProperties(stage.getPropertiesPass());
 
       instances[i] = instance;
     }

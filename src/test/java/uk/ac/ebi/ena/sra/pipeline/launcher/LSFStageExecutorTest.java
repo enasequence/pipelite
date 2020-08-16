@@ -213,7 +213,7 @@ public class LSFStageExecutorTest {
           new TaskInstance() {
             {
               setEnabled(true);
-              setPropertiesPass(new String[] {"PIPELITE_TEST_JAVA_PROPERTY"});
+              setJavaSystemProperties(new String[] {"PIPELITE_TEST_JAVA_PROPERTY"});
             }
           });
 

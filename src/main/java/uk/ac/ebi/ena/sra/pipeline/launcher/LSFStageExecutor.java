@@ -12,10 +12,7 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import pipelite.configuration.LSFTaskExecutorConfiguration;
 import pipelite.configuration.TaskExecutorConfiguration;
@@ -28,7 +25,6 @@ import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCall;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall;
 import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
-import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
 import pipelite.task.result.TaskExecutionResult;
 
 public class LSFStageExecutor extends AbstractTaskExecutor {
@@ -40,7 +36,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
   private final String config_prefix_name;
   private final String config_source_name;
   private final TaskExecutionResult internalError;
-  private final String[] properties_pass;
+  private final String[] javaSystemProperties;
   private final TaskExecutorConfiguration taskExecutorConfiguration;
   private final LSFTaskExecutorConfiguration lsfTaskExecutorConfiguration;
 
@@ -64,14 +60,14 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
       TaskExecutionResultExceptionResolver resolver,
       String config_prefix_name,
       String config_source_name,
-      String[] properties_pass,
+      String[] javaSystemProperties,
       TaskExecutorConfiguration taskExecutorConfiguration,
       LSFTaskExecutorConfiguration lsfTaskExecutorConfiguration) {
     super(pipeline_name, resolver);
     this.internalError = resolver.internalError();
     this.config_prefix_name = config_prefix_name;
     this.config_source_name = config_source_name;
-    this.properties_pass = properties_pass;
+    this.javaSystemProperties = javaSystemProperties;
 
     this.taskExecutorConfiguration = taskExecutorConfiguration;
     this.lsfTaskExecutorConfiguration = lsfTaskExecutorConfiguration;
@@ -81,21 +77,8 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
     instance.setLatestTaskExecution(new LatestTaskExecution());
   }
 
-  public String[] getPropertiesPass() {
-    return properties_pass;
-  }
-
-  private String[] mergePropertiesPass(String[] pp1, String[] pp2) {
-    if (pp1 == null) {
-      pp1 = new String[0];
-    }
-    if (pp2 == null) {
-      pp2 = new String[0];
-    }
-    Set<String> set1 = new HashSet<>(Arrays.asList(pp1));
-    Set<String> set2 = new HashSet<>(Arrays.asList(pp2));
-    set1.addAll(set2);
-    return set1.toArray(new String[set1.size()]);
+  public String[] getJavaSystemProperties() {
+    return javaSystemProperties;
   }
 
   private List<String> constructArgs(TaskInstance instance, boolean commit) {
@@ -121,8 +104,8 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
 
     p_args.add(String.format("-D%s=%s", config_prefix_name, config_source_name));
 
-    String[] prop_pass = mergePropertiesPass(getPropertiesPass(), instance.getPropertiesPass());
-    appendProperties(p_args, prop_pass);
+    String[] prop_pass = mergeJavaSystemProperties(getJavaSystemProperties(), instance.getJavaSystemProperties());
+    addJavaSystemProperties(p_args, prop_pass);
 
     p_args.add("-cp");
     p_args.add(System.getProperty("java.class.path"));

@@ -23,7 +23,7 @@ public class TaskInstance {
   private boolean enabled;
   private int memory;
   private int cores;
-  private String[] propertiesPass;
+  private String[] javaSystemProperties;
   private ExecutorConfig[] taskExecutorConfig;
   private LatestTaskExecution latestTaskExecution = new LatestTaskExecution();
 
@@ -38,7 +38,7 @@ public class TaskInstance {
     this.enabled = other.enabled;
     this.memory = other.memory;
     this.cores = other.cores;
-    this.propertiesPass = other.propertiesPass;
+    this.javaSystemProperties = other.javaSystemProperties;
     this.taskExecutorConfig = other.taskExecutorConfig;
     this.latestTaskExecution = other.latestTaskExecution;
   }

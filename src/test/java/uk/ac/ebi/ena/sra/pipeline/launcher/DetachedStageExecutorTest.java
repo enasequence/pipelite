@@ -30,7 +30,7 @@ public class DetachedStageExecutorTest {
         new TaskInstance() {
           {
             setEnabled(true);
-            setPropertiesPass(new String[] {});
+            setJavaSystemProperties(new String[] {});
             setMemory(2000);
           }
         });
@@ -53,7 +53,7 @@ public class DetachedStageExecutorTest {
         new TaskInstance() {
           {
             setEnabled(true);
-            setPropertiesPass(new String[] {});
+            setJavaSystemProperties(new String[] {});
           }
         });
 
@@ -77,7 +77,7 @@ public class DetachedStageExecutorTest {
         new TaskInstance() {
           {
             setEnabled(true);
-            setPropertiesPass(new String[] {});
+            setJavaSystemProperties(new String[] {});
           }
         });
 
@@ -86,7 +86,7 @@ public class DetachedStageExecutorTest {
   }
 
   @Test
-  public void propertiesPassStageSpecific() {
+  public void testJavaSystemProperties() {
     String prefix = "NOFILE";
     String source = "NOPATH";
     DetachedStageExecutor se =
@@ -101,8 +101,8 @@ public class DetachedStageExecutorTest {
         new TaskInstance() {
           {
             setEnabled(true);
-            setPropertiesPass(new String[] {});
-            setPropertiesPass(new String[] {"user.country"});
+            setJavaSystemProperties(new String[] {});
+            setJavaSystemProperties(new String[] {"user.country"});
           }
         });
 

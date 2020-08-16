@@ -10,7 +10,11 @@
  */
 package pipelite.task.executor;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
 import org.apache.log4j.Logger;
 import pipelite.task.result.TaskExecutionResultType;
 import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
@@ -28,11 +32,24 @@ public abstract class AbstractTaskExecutor implements TaskExecutor {
     this.resolver = resolver;
   }
 
-  protected void appendProperties(List<String> p_args, String... properties) {
+  protected final String[] mergeJavaSystemProperties(String[] pp1, String[] pp2) {
+    if (pp1 == null) {
+      pp1 = new String[0];
+    }
+    if (pp2 == null) {
+      pp2 = new String[0];
+    }
+    Set<String> set1 = new HashSet<>(Arrays.asList(pp1));
+    Set<String> set2 = new HashSet<>(Arrays.asList(pp2));
+    set1.addAll(set2);
+    return set1.toArray(new String[set1.size()]);
+  }
+
+  protected final void addJavaSystemProperties(List<String> p_args, String... properties) {
     for (String property : properties) {
       String value = System.getProperty(property);
       if (value != null) {
-          p_args.add(String.format("-D%s=%s", property, value));
+        p_args.add(String.format("-D%s=%s", property, value));
       }
     }
   }

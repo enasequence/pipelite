@@ -11,10 +11,7 @@
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import pipelite.task.executor.AbstractTaskExecutor;
 import pipelite.task.instance.LatestTaskExecution;
@@ -23,37 +20,28 @@ import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
 import pipelite.task.state.TaskExecutionState;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCall;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
-import uk.ac.ebi.ena.sra.pipeline.executors.DetachedExecutorConfig;
-import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
 
 public class DetachedStageExecutor extends AbstractTaskExecutor {
   private final String config_prefix_name;
   private final String config_source_name;
   ExecutionInfo info;
   protected final ExternalCallBackEnd back_end = new SimpleBackEnd();
-  private final String[] properties_pass;
+  private final String[] javaSystemProperties;
 
   public DetachedStageExecutor(
       String pipeline_name,
       TaskExecutionResultExceptionResolver resolver,
       String config_prefix_name,
       String config_source_name,
-      String[] properties_pass) {
+      String[] javaSystemProperties) {
     super(pipeline_name, resolver);
     this.config_prefix_name = config_prefix_name;
     this.config_source_name = config_source_name;
-    this.properties_pass = properties_pass;
+    this.javaSystemProperties = javaSystemProperties;
   }
 
   public void reset(TaskInstance instance) {
     instance.setLatestTaskExecution(new LatestTaskExecution());
-  }
-
-  private String[] mergePropertiesPass(String[] pp1, String[] pp2) {
-    Set<String> set1 = new HashSet<>(Arrays.asList(pp1));
-    Set<String> set2 = new HashSet<>(Arrays.asList(pp2));
-    set1.addAll(set2);
-    return set1.toArray(new String[set1.size()]);
   }
 
   private List<String> constructArgs(TaskInstance instance, boolean commit) {
@@ -61,13 +49,15 @@ public class DetachedStageExecutor extends AbstractTaskExecutor {
 
     int memory_limit = instance.getMemory();
 
-    if (0 < memory_limit) // TODO check
-    p_args.add(String.format("-Xmx%dM", memory_limit));
+    if (0 < memory_limit) {
+      p_args.add(String.format("-Xmx%dM", memory_limit));
+    }
 
     p_args.add(String.format("-D%s=%s", config_prefix_name, config_source_name));
 
-    String[] prop_pass = mergePropertiesPass(getPropertiesPass(), instance.getPropertiesPass());
-    appendProperties(p_args, prop_pass);
+    String[] javaSystemProperties =
+        mergeJavaSystemProperties(getJavaSystemProperties(), instance.getJavaSystemProperties());
+    addJavaSystemProperties(p_args, javaSystemProperties);
 
     p_args.add("-cp");
     p_args.add(System.getProperty("java.class.path"));
@@ -135,7 +125,7 @@ public class DetachedStageExecutor extends AbstractTaskExecutor {
     return info;
   }
 
-  public String[] getPropertiesPass() {
-    return properties_pass;
+  public String[] getJavaSystemProperties() {
+    return javaSystemProperties;
   }
 }

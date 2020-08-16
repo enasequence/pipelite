@@ -18,4 +18,6 @@ public class StageLauncher {
   public static final String PARAMETERS_NAME_FORCE_COMMIT = "--commit";
   public static final String PARAMETERS_NAME_ENABLED = "--enabled";
   public static final String PARAMETERS_NAME_EXEC_COUNT = "--exec-cnt";
+
+  // TODO: add back ability to run stages
 }
