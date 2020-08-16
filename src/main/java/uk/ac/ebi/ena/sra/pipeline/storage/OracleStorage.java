@@ -24,12 +24,8 @@ import pipelite.task.instance.LatestTaskExecution;
 import pipelite.process.instance.ProcessInstance;
 import pipelite.task.instance.TaskInstance;
 import pipelite.task.result.TaskExecutionResultType;
-import uk.ac.ebi.ena.sra.pipeline.resource.MemoryLocker;
-import uk.ac.ebi.ena.sra.pipeline.resource.ProcessResourceLock;
-import uk.ac.ebi.ena.sra.pipeline.resource.ResourceLocker;
-import uk.ac.ebi.ena.sra.pipeline.resource.StageResourceLock;
 
-public class OracleStorage implements OracleCommons, StorageBackend, ResourceLocker {
+public class OracleStorage implements OracleCommons, StorageBackend {
   private static final String LOCK_EXPRESSION = "for update nowait";
 
   @Deprecated private String log_table_name;
@@ -40,7 +36,6 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
   private String pipeline_name;
   private String stage_table_name;
   private String process_table_name;
-  private final MemoryLocker mlocker = new MemoryLocker();
 
   public OracleStorage() {}
 
@@ -185,7 +180,8 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
 
         String resultName = rows.getString(EXEC_RESULT_COLUMN_NAME);
         String resultTypeString = rows.getString(EXEC_RESULT_TYPE_COLUMN_NAME);
-        TaskExecutionResultType resultType = resultTypeString == null ? null : TaskExecutionResultType.valueOf(resultTypeString);
+        TaskExecutionResultType resultType =
+            resultTypeString == null ? null : TaskExecutionResultType.valueOf(resultTypeString);
         instance.setTaskExecutionResult(new TaskExecutionResult(resultName, resultType));
 
         // TODO remove
@@ -597,30 +593,6 @@ public class OracleStorage implements OracleCommons, StorageBackend, ResourceLoc
         }
       }
     }
-  }
-
-  // TODO specify contract
-  @Override
-  public boolean lock(ProcessResourceLock rl) {
-    ProcessInstance pi = new ProcessInstance();
-    pi.setPipelineName(pipeline_name);
-    pi.setProcessId(rl.getLockId());
-    try {
-      load(pi, true);
-      return mlocker.lock(rl);
-    } catch (StorageException e) {
-      return false;
-    }
-  }
-
-  @Override
-  public boolean unlock(ProcessResourceLock rl) {
-    return mlocker.unlock(rl);
-  }
-
-  @Override
-  public boolean is_locked(ProcessResourceLock rl) {
-    return mlocker.is_locked(rl);
   }
 
   @Override

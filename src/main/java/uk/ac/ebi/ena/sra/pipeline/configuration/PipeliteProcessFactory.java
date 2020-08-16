@@ -10,29 +10,26 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.configuration;
 
+import lombok.Value;
+import pipelite.lock.ProcessInstanceLocker;
 import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessFactory;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessLauncher;
 
-public class DefaultProcessFactory implements ProcessFactory {
+@Value
+public class PipeliteProcessFactory implements ProcessFactory {
 
+  private final String launcherId;
   private final TaskExecutionResultExceptionResolver resolver;
-
-  public DefaultProcessFactory(TaskExecutionResultExceptionResolver resolver) {
-    this.resolver = resolver;
-  }
+  private final ProcessInstanceLocker locker;
 
   @Override
-  public PipeliteProcess getProcess(String process_id) {
-    ProcessLauncher process = new ProcessLauncher(resolver);
+  public PipeliteProcess create(String processId) {
+    ProcessLauncher process = new ProcessLauncher(launcherId, resolver, locker);
+    process.setProcessID(processId);
     process.setPipelineName(DefaultConfiguration.currentSet().getPipelineName());
-    process.setProcessID(process_id);
     process.setRedoCount(DefaultConfiguration.currentSet().getStagesRedoCount());
-    // TODO: locking routine should be changed
-    // process.setExecutor( new DetachedStageExecutor(
-    // DefaultConfiguration.currentSet().getCommitStatus() ) );
-
     process.setStages(DefaultConfiguration.currentSet().getStages());
     return process;
   }

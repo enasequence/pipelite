@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 import pipelite.process.instance.ProcessInstance;
 import pipelite.task.executor.TaskExecutor;
-import uk.ac.ebi.ena.sra.pipeline.resource.ResourceLocker;
+import pipelite.lock.ProcessInstanceLocker;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
 
 public class PipeliteLauncher {
@@ -29,7 +29,7 @@ public class PipeliteLauncher {
   }
 
   public interface ProcessFactory {
-    PipeliteProcess getProcess(String process_id);
+    PipeliteProcess create(String processId);
   }
 
   public interface PipeliteProcess extends Runnable {
@@ -51,11 +51,7 @@ public class PipeliteLauncher {
       throw new RuntimeException("Method must be overriden");
     }
 
-    default ResourceLocker getLocker() {
-      throw new RuntimeException("Method must be overriden");
-    }
-
-    default void setLocker(ResourceLocker locker) {
+    default ProcessInstanceLocker getLocker() {
       throw new RuntimeException("Method must be overriden");
     }
 
@@ -139,7 +135,7 @@ public class PipeliteLauncher {
       if (exit_when_empty && task_queue.isEmpty()) break;
 
       for (String process_id : task_queue) {
-        PipeliteProcess process = getProcessFactory().getProcess(process_id);
+        PipeliteProcess process = getProcessFactory().create(process_id);
         process.setExecutor(getExecutorFactory().getExecutor());
         try {
           thread_pool.execute(process);

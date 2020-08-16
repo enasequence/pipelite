@@ -11,9 +11,7 @@
 package uk.ac.ebi.ena.sra.pipeline.storage;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Properties;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import org.apache.log4j.PropertyConfigurator;
@@ -22,7 +20,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import pipelite.process.instance.ProcessInstance;
 import pipelite.task.result.resolver.TaskExecutionResultResolver;
-import uk.ac.ebi.ena.sra.pipeline.configuration.OracleHeartBeatConnection;
+import uk.ac.ebi.ena.sra.pipeline.TestConnectionFactory;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessPoolExecutor;
@@ -32,30 +30,7 @@ public class LauncherDBTest {
   static final long delay = 5 * 1000;
   static final int workers = ForkJoinPool.getCommonPoolParallelism();
 
-  public static Connection createConnection()
-      throws SQLException, ClassNotFoundException {
-    return createConnection(
-        "era",
-        "eradevt1",
-        "jdbc:oracle:thin:@ (DESCRIPTION = (ADDRESS_LIST = (ADDRESS = (PROTOCOL = TCP)(HOST = ora-dlvm5-008.ebi.ac.uk)(PORT = 1521))) (CONNECT_DATA = (SERVICE_NAME = VERADEVT) (SERVER = DEDICATED)))");
-  }
-
-  public static Connection createConnection(String user, String passwd, String url)
-      throws SQLException, ClassNotFoundException {
-
-    Properties props = new Properties();
-    props.put("user", user);
-    props.put("password", passwd);
-    props.put("SetBigStringTryClob", "true");
-
-    Class.forName("oracle.jdbc.driver.OracleDriver");
-    Connection connection = new OracleHeartBeatConnection(DriverManager.getConnection(url, props));
-    connection.setAutoCommit(false);
-
-    return connection;
-  }
-
-  @BeforeClass
+    @BeforeClass
   public static void setup() {
     PropertyConfigurator.configure("resource/test.log4j.properties");
   }
@@ -64,7 +39,7 @@ public class LauncherDBTest {
   public void main()
       throws ClassNotFoundException, SQLException,
           InterruptedException {
-    Connection connection = createConnection();
+    Connection connection = TestConnectionFactory.createConnection();
 
     OracleTaskIdSource id_src = new OracleTaskIdSource();
     id_src.setTableName("PIPELITE_STAGE");

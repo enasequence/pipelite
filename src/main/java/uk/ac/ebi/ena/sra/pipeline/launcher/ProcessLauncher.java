@@ -10,10 +10,6 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.Parameter;
-import java.lang.reflect.InvocationTargetException;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -25,7 +21,6 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.apache.log4j.net.SMTPAppender;
 import pipelite.process.instance.ProcessInstance;
-import pipelite.task.executor.AbstractTaskExecutor;
 import pipelite.task.executor.TaskExecutor;
 import pipelite.task.instance.LatestTaskExecution;
 import pipelite.task.instance.TaskInstance;
@@ -36,8 +31,7 @@ import pipelite.process.state.ProcessExecutionState;
 import pipelite.task.state.TaskExecutionState;
 import pipelite.task.result.TaskExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
-import uk.ac.ebi.ena.sra.pipeline.resource.ProcessResourceLock;
-import uk.ac.ebi.ena.sra.pipeline.resource.ResourceLocker;
+import pipelite.lock.ProcessInstanceLocker;
 import uk.ac.ebi.ena.sra.pipeline.storage.OracleStorage;
 import uk.ac.ebi.ena.sra.pipeline.storage.ProcessLogBean;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
@@ -45,7 +39,9 @@ import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
 
 public class ProcessLauncher implements PipeliteProcess {
 
+  private final String launcherId;
   private final TaskExecutionResultExceptionResolver resolver;
+  private final ProcessInstanceLocker locker;
 
   private static final String MAIL_APPENDER = "MAIL_APPENDER";
   private final Logger log;
@@ -56,13 +52,14 @@ public class ProcessLauncher implements PipeliteProcess {
   private StorageBackend storage;
   private TaskExecutor executor;
   private Stage[] stages;
-  private ResourceLocker locker;
   private String __name;
   private int max_redo_count = 1;
   private volatile boolean do_stop;
 
-  public ProcessLauncher(TaskExecutionResultExceptionResolver resolver) {
+  public ProcessLauncher(String launcherId, TaskExecutionResultExceptionResolver resolver, ProcessInstanceLocker locker) {
+    this.launcherId = launcherId;
     this.resolver = resolver;
+    this.locker = locker;
 
     PatternLayout layout = createLayout();
     log = Logger.getLogger(process_id + " " + getClass().getSimpleName());
@@ -127,7 +124,7 @@ public class ProcessLauncher implements PipeliteProcess {
         init_stages();
 
         load_state();
-        if (!lock_process()) {
+        if (!lockProcessInstance()) {
           log.error(String.format("There were problems while locking process %s.", getProcessId()));
           return;
         }
@@ -182,7 +179,7 @@ public class ProcessLauncher implements PipeliteProcess {
 
       } finally {
         //            unlock_stages();
-        unlock_process();
+        unlockProcessInstance();
         purge_stages();
       }
     }
@@ -196,13 +193,14 @@ public class ProcessLauncher implements PipeliteProcess {
     processInstance.incrementExecutionCount();
   }
 
-  private boolean lock_process() {
-    return locker.lock(new ProcessResourceLock(processInstance.getPipelineName(), processInstance.getProcessId()));
+  private boolean lockProcessInstance() {
+    return locker.lock(launcherId, processInstance);
   }
 
-  private void unlock_process() {
-    if (locker.is_locked(new ProcessResourceLock(processInstance.getPipelineName(), processInstance.getProcessId())))
-      locker.unlock(new ProcessResourceLock(processInstance.getPipelineName(), processInstance.getProcessId()));
+  private void unlockProcessInstance() {
+    if (locker.isLocked(processInstance)) {
+      locker.unlock(launcherId, processInstance);
+    }
   }
 
   // Existing statuses:
@@ -446,29 +444,6 @@ public class ProcessLauncher implements PipeliteProcess {
     return mailer;
   }
 
-  public static void main(String[] args)
-      throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException,
-          IllegalArgumentException, InvocationTargetException, NoSuchMethodException,
-          SecurityException {
-    PatternLayout layout = createLayout();
-    ConsoleAppender appender = new ConsoleAppender(layout, "System.out");
-    appender.setThreshold(Level.ALL);
-    Logger.getRootLogger().removeAllAppenders();
-    Logger.getRootLogger().addAppender(appender);
-    Logger.getRootLogger().setLevel(Level.ALL);
-
-    Parameters params = new Parameters();
-    JCommander jc = new JCommander(params);
-    try {
-      jc.parse(args);
-    } catch (Exception e) {
-      jc.usage();
-      System.exit(1);
-    }
-
-    run_list(layout, params);
-  }
-
   private static OracleStorage initStorageBackend() {
     OracleStorage os = new OracleStorage();
     os.setProcessTableName(DefaultConfiguration.currentSet().getProcessTableName());
@@ -476,60 +451,6 @@ public class ProcessLauncher implements PipeliteProcess {
     os.setPipelineName(DefaultConfiguration.currentSet().getPipelineName());
     os.setLogTableName(DefaultConfiguration.currentSet().getLogTableName());
     return os;
-  }
-
-  private static void run_list(PatternLayout layout, Parameters params)
-      throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException,
-          IllegalArgumentException, InvocationTargetException, NoSuchMethodException,
-          SecurityException {
-    Connection connection = null;
-
-    try {
-      connection = DefaultConfiguration.currentSet().createConnection();
-
-      for (String process_id : params.IDs) {
-        Appender a = Logger.getRootLogger().getAppender(MAIL_APPENDER);
-        if (null != a) Logger.getRootLogger().removeAppender(a);
-
-        if (null != params.mail_to)
-          Logger.getRootLogger()
-              .addAppender(
-                  createMailAppender(
-                      ProcessLauncher.class.getSimpleName() + " failure report: " + process_id,
-                      DefaultConfiguration.currentSet().getSMTPServer(),
-                      DefaultConfiguration.currentSet().getSMTPMailFrom(),
-                      params.mail_to,
-                      layout));
-
-        TaskExecutionResultExceptionResolver resolver = DefaultConfiguration.CURRENT.getResolver();
-
-        ProcessLauncher process = new ProcessLauncher(resolver);
-        process.setProcessID(process_id);
-        process.setStages(DefaultConfiguration.currentSet().getStages());
-        OracleStorage os = initStorageBackend();
-        os.setConnection(connection);
-        process.setStorage(os);
-        process.setLocker(os);
-        AbstractTaskExecutor executor =
-            (AbstractTaskExecutor)
-                (Class.forName(params.executor_class)
-                    .getConstructor(String.class, TaskExecutionResultExceptionResolver.class)
-                    .newInstance(
-                        "",
-                        resolver));
-
-        process.setExecutor(executor);
-        process.lifecycle();
-      }
-    } finally {
-      if (null != connection) {
-        try {
-          connection.close();
-        } catch (SQLException e) {
-          e.printStackTrace();
-        }
-      }
-    }
   }
 
   @Override
@@ -542,35 +463,14 @@ public class ProcessLauncher implements PipeliteProcess {
     return process_id;
   }
 
-  static class Parameters {
-    @Parameter(names = "--executor", description = "Executor class")
-    final
-    String executor_class = DetachedStageExecutor.class.getName();
-
-    @Parameter(required = true)
-    List<String> IDs;
-
-    @Parameter(names = "--stage", description = "Stage name to execute")
-    String stage;
-
-    @Parameter(names = "--mail-to")
-    final
-    String mail_to = DefaultConfiguration.currentSet().getDefaultMailTo();
-  }
-
   @Override
   public TaskExecutor getExecutor() {
     return this.executor;
   }
 
   @Override
-  public ResourceLocker getLocker() {
+  public ProcessInstanceLocker getLocker() {
     return locker;
-  }
-
-  @Override
-  public void setLocker(ResourceLocker locker) {
-    this.locker = locker;
   }
 
   public String getPipelineName() {

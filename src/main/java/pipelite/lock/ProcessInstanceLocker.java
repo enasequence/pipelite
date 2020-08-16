@@ -8,20 +8,18 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package uk.ac.ebi.ena.sra.pipeline.launcher;
+package pipelite.lock;
 
-public interface LauncherLockManager extends AutoCloseable {
-  boolean tryLock(String lock_id);
+import pipelite.process.instance.ProcessInstance;
 
-  boolean unlock(String lock_id);
+public interface ProcessInstanceLocker {
 
-  void purge(String allocator_name);
+  boolean lock(String launcherId, ProcessInstance processInstance);
 
-  void purgeDead() throws InterruptedException;
+  boolean unlock(String launcherId, ProcessInstance processInstance);
 
-  boolean isLocked(String lock_id);
+  boolean isLocked(ProcessInstance processInstance);
 
-  boolean terminate(String lock_id);
+  void purge(String launcherId, String processName);
 
-  boolean isBeingHeld(String lock_id);
 }
