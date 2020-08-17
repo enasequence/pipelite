@@ -18,7 +18,6 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 
 public class ProcessLogBean {
   private static final int MESSAGE_FIELD_LENGTH = 255;
@@ -31,7 +30,6 @@ public class ProcessLogBean {
   static final String EXCEPTION_FIELD_NAME = "EXCEPTION";
   static final String LSF_JOB_ID_FIELD_NAME = "JOBID";
   static final String LSF_HOST_FIELD_NAME = "HOSTS";
-  static final String DATE_FIELD_NAME = "LOG_DATE";
   static final String MESSAGE_FIELD_NAME = "MESSAGE";
 
   final Map<String, Object> data;
@@ -139,45 +137,6 @@ public class ProcessLogBean {
 
   public void setField(String name, Object value) {
     data.put(name, value);
-  }
-
-  @Deprecated
-  void persist(Connection connection) throws SQLException {
-    PreparedStatement stmt = null;
-    synchronized (data) {
-      StringBuilder sb = new StringBuilder("insert into ");
-      sb.append(DefaultConfiguration.currentSet().getLogTableName())
-          .append("( ")
-          .append(DATE_FIELD_NAME);
-
-      for (Entry<String, Object> e : data.entrySet()) sb.append(", ").append(e.getKey());
-
-      sb.append(" ) values ( ").append("sysdate");
-
-      for (@SuppressWarnings("unused") Entry<String, Object> e : data.entrySet()) sb.append(", ?");
-
-      sb.append(" )");
-
-      try {
-        stmt = connection.prepareStatement(sb.toString());
-
-        int index = 0;
-
-        for (Entry<String, Object> e : data.entrySet()) stmt.setObject(++index, e.getValue());
-
-        if (1 != stmt.executeUpdate())
-          throw new SQLException(
-              String.format("Unable to insert row: %s, values: %s", sb.toString(), data));
-
-      } finally {
-        if (null != stmt)
-          try {
-            stmt.close();
-          } catch (SQLException e) {
-            e.printStackTrace();
-          }
-      }
-    }
   }
 
   public String toString() {

@@ -11,26 +11,30 @@
 package uk.ac.ebi.ena.sra.pipeline.configuration;
 
 import pipelite.configuration.LSFTaskExecutorConfiguration;
+import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskExecutorConfiguration;
-import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
+import pipelite.resolver.ExceptionResolver;
 import uk.ac.ebi.ena.sra.pipeline.launcher.LSFStageExecutor;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.StageExecutorFactory;
 import pipelite.task.executor.TaskExecutor;
 
 public class LSFExecutorFactory implements StageExecutorFactory {
   private final String pipeline_name;
-  private final TaskExecutionResultExceptionResolver resolver;
+  private final ExceptionResolver resolver;
+  private final ProcessConfiguration processConfiguration;
   private final TaskExecutorConfiguration taskExecutorConfiguration;
   private final LSFTaskExecutorConfiguration lsfTaskExecutorConfiguration;
 
   public LSFExecutorFactory(
       String pipeline_name,
-      TaskExecutionResultExceptionResolver resolver,
+      ExceptionResolver resolver,
+      ProcessConfiguration processConfiguration,
       TaskExecutorConfiguration taskExecutorConfiguration,
       LSFTaskExecutorConfiguration lsfTaskExecutorConfiguration) {
 
     this.pipeline_name = pipeline_name;
     this.resolver = resolver;
+    this.processConfiguration = processConfiguration;
     this.taskExecutorConfiguration = taskExecutorConfiguration;
     this.lsfTaskExecutorConfiguration = lsfTaskExecutorConfiguration;
   }
@@ -40,6 +44,7 @@ public class LSFExecutorFactory implements StageExecutorFactory {
         new LSFStageExecutor(
             pipeline_name,
             resolver,
+            processConfiguration,
             taskExecutorConfiguration,
             lsfTaskExecutorConfiguration);
 

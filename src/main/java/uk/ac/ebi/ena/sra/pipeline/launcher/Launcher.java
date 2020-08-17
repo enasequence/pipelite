@@ -13,12 +13,10 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.concurrent.CountDownLatch;
+
 import pipelite.ApplicationConfiguration;
 import pipelite.lock.LauncherInstanceLocker;
 import pipelite.lock.LauncherInstanceOraclePackageLocker;
-import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
-import pipelite.task.result.resolver.TaskExecutionResultResolver;
-import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.configuration.LSFExecutorFactory;
 import uk.ac.ebi.ena.sra.pipeline.configuration.PipeliteProcessFactory;
 import pipelite.lock.ProcessInstanceOraclePackageLocker;
@@ -33,16 +31,17 @@ import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
 public class Launcher {
 
   private final ApplicationConfiguration applicationConfiguration;
+  private final Connection connection;
 
-  public Launcher(ApplicationConfiguration applicationConfiguration) {
+  public Launcher(ApplicationConfiguration applicationConfiguration, Connection connection) {
     this.applicationConfiguration = applicationConfiguration;
+    this.connection = connection;
   }
 
   private static final int DEFAULT_ERROR_EXIT = 1;
   private static final int NORMAL_EXIT = 0;
 
-  private static ProcessPoolExecutor init(
-      int workers, StorageBackend storage, ProcessInstanceLocker locker) {
+  private static ProcessPoolExecutor init(int workers, StorageBackend storage) {
     return new ProcessPoolExecutor(workers) {
       public void unwind(PipeliteProcess process) {
         StorageBackend storage = process.getStorage();
@@ -60,29 +59,18 @@ public class Launcher {
     };
   }
 
-  private OracleStorage initStorageBackend() throws ClassNotFoundException, SQLException {
+  private OracleStorage initStorageBackend() {
     OracleStorage os = new OracleStorage();
-
-    Connection connection = DefaultConfiguration.currentSet().createConnection();
-    connection.setAutoCommit(false);
-
     os.setConnection(connection);
-    os.setProcessTableName(DefaultConfiguration.currentSet().getProcessTableName());
-    os.setStageTableName(DefaultConfiguration.currentSet().getStageTableName());
     os.setPipelineName(applicationConfiguration.launcherConfiguration.getProcessName());
-    os.setLogTableName(DefaultConfiguration.currentSet().getLogTableName());
     return os;
   }
 
-  private TaskIdSource initTaskIdSource(TaskExecutionResultExceptionResolver resolver)
-      throws ClassNotFoundException, SQLException {
+  private TaskIdSource initTaskIdSource() throws SQLException {
     OracleProcessIdSource ts = new OracleProcessIdSource();
-
-    ts.setConnection(DefaultConfiguration.currentSet().createConnection());
-    ts.setTableName(DefaultConfiguration.currentSet().getProcessTableName());
+    ts.setConnection(connection);
     ts.setPipelineName(applicationConfiguration.launcherConfiguration.getProcessName());
     ts.setRedoCount(applicationConfiguration.taskExecutorConfiguration.getRetries());
-    ts.setExecutionResultArray(resolver.resultsArray());
     ts.init();
 
     return ts;
@@ -98,10 +86,6 @@ public class Launcher {
 
   private int _run() {
 
-    // TODO: get this from property
-    TaskExecutionResultExceptionResolver resolver =
-        TaskExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER;
-
     TaskIdSource task_id_source = null;
     PipeliteLauncher launcher = new PipeliteLauncher();
     OracleStorage storage = null;
@@ -110,7 +94,7 @@ public class Launcher {
     String launcherName = applicationConfiguration.launcherConfiguration.getLauncherName();
     String processName = applicationConfiguration.launcherConfiguration.getProcessName();
 
-    try (Connection connection = DefaultConfiguration.currentSet().createConnection()) {
+    try {
       LauncherInstanceLocker launcherInstanceLocker =
           new LauncherInstanceOraclePackageLocker(connection);
       ProcessInstanceLocker processInstanceLocker =
@@ -119,25 +103,23 @@ public class Launcher {
         storage = initStorageBackend();
 
         if (launcherInstanceLocker.lock(launcherName, processName)) {
-          task_id_source = initTaskIdSource(resolver);
+          task_id_source = initTaskIdSource();
 
           launcher.setTaskIdSource(task_id_source);
           launcher.setProcessFactory(
               new PipeliteProcessFactory(
-                  launcherName, applicationConfiguration, resolver, processInstanceLocker));
+                  launcherName, applicationConfiguration, processInstanceLocker));
           launcher.setExecutorFactory(
               new LSFExecutorFactory(
                   processName,
-                  resolver,
+                  applicationConfiguration.processConfiguration.createResolver(),
+                  applicationConfiguration.processConfiguration,
                   applicationConfiguration.taskExecutorConfiguration,
                   applicationConfiguration.lsfTaskExecutorConfiguration));
 
           launcher.setSourceReadTimeout(120 * 1000);
           launcher.setProcessPool(
-              init(
-                  applicationConfiguration.launcherConfiguration.getWorkers(),
-                  storage,
-                  processInstanceLocker));
+              init(applicationConfiguration.launcherConfiguration.getWorkers(), storage));
 
           // TODO remove
           Runtime.getRuntime()

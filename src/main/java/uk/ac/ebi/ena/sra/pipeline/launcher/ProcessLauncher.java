@@ -24,12 +24,12 @@ import pipelite.process.instance.ProcessInstance;
 import pipelite.task.executor.TaskExecutor;
 import pipelite.task.instance.LatestTaskExecution;
 import pipelite.task.instance.TaskInstance;
-import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
+import pipelite.resolver.ExceptionResolver;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import pipelite.process.state.ProcessExecutionState;
 import pipelite.task.state.TaskExecutionState;
 import pipelite.task.result.TaskExecutionResult;
-import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
+import pipelite.stage.Stage;
 import pipelite.lock.ProcessInstanceLocker;
 import uk.ac.ebi.ena.sra.pipeline.storage.ProcessLogBean;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
@@ -38,7 +38,7 @@ import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
 public class ProcessLauncher implements PipeliteProcess {
 
   private final String launcherName;
-  private final TaskExecutionResultExceptionResolver resolver;
+  private final ExceptionResolver resolver;
   private final ProcessInstanceLocker locker;
 
   private static final String MAIL_APPENDER = "MAIL_APPENDER";
@@ -54,7 +54,7 @@ public class ProcessLauncher implements PipeliteProcess {
   private int max_redo_count = 1;
   private volatile boolean do_stop;
 
-  public ProcessLauncher(String launcherName, TaskExecutionResultExceptionResolver resolver, ProcessInstanceLocker locker) {
+  public ProcessLauncher(String launcherName, ExceptionResolver resolver, ProcessInstanceLocker locker) {
     this.launcherName = launcherName;
     this.resolver = resolver;
     this.locker = locker;
@@ -280,8 +280,8 @@ public class ProcessLauncher implements PipeliteProcess {
       instance.setProcessId(process_id);
       instance.setProcessName(pipeline_name);
       instance.setDependsOn(null == stage.getDependsOn() ? null : stage.getDependsOn().toString());
-      instance.setMemory(stage.getMemoryLimit());
-      instance.setCores(stage.getCPUCores());
+      instance.setMemory(stage.getMemory());
+      instance.setCores(stage.getCores());
       instance.setJavaSystemProperties(stage.getPropertiesPass());
 
       instances[i] = instance;

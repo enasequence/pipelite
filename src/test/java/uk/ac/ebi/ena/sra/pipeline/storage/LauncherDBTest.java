@@ -24,7 +24,7 @@ import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.TestConfiguration;
 import pipelite.process.instance.ProcessInstance;
-import pipelite.task.result.resolver.TaskExecutionResultResolver;
+import pipelite.resolver.TaskExecutionResultResolver;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessPoolExecutor;
@@ -57,8 +57,6 @@ public class LauncherDBTest {
 
     OracleTaskIdSource id_src = new OracleTaskIdSource();
     id_src.setTableName("PIPELITE_STAGE");
-    id_src.setExecutionResultArray(
-        TaskExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER.resultsArray());
     id_src.setRedoCount(Integer.MAX_VALUE);
     id_src.setConnection(connection);
     id_src.init();

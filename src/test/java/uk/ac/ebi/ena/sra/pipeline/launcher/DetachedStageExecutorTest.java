@@ -12,19 +12,19 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
+import pipelite.resolver.DefaultExceptionResolver;
+import pipelite.resolver.ExceptionResolver;
 import pipelite.task.instance.TaskInstance;
-import pipelite.task.result.resolver.TaskExecutionResultResolver;
+import pipelite.resolver.TaskExecutionResultResolver;
 
 public class DetachedStageExecutorTest {
+
+  private static ExceptionResolver resolver = new DefaultExceptionResolver();
+
   @Test
   public void javaMemory() {
     DetachedStageExecutor se =
-        new DetachedStageExecutor(
-            "TEST",
-            TaskExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER,
-            "NOFILE",
-            "NOPATH",
-            new String[] {});
+        new DetachedStageExecutor("TEST", resolver, "NOFILE", "NOPATH", new String[] {});
 
     se.execute(
         new TaskInstance() {
@@ -42,12 +42,7 @@ public class DetachedStageExecutorTest {
   @Test
   public void javaMemoryNotSet() {
     DetachedStageExecutor se =
-        new DetachedStageExecutor(
-            "TEST",
-            TaskExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER,
-            "NOFILE",
-            "NOPATH",
-            new String[] {});
+        new DetachedStageExecutor("TEST", resolver, "NOFILE", "NOPATH", new String[] {});
 
     se.execute(
         new TaskInstance() {
@@ -58,7 +53,7 @@ public class DetachedStageExecutorTest {
         });
 
     String cmdl = se.get_info().getCommandline();
-      assertFalse(cmdl.contains(" -Xmx2000M"));
+    assertFalse(cmdl.contains(" -Xmx2000M"));
   }
 
   @Test
@@ -66,12 +61,7 @@ public class DetachedStageExecutorTest {
     String prefix = "NOFILE";
     String source = "NOPATH";
     DetachedStageExecutor se =
-        new DetachedStageExecutor(
-            "TEST",
-            TaskExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER,
-            prefix,
-            source,
-            new String[] {});
+        new DetachedStageExecutor("TEST", resolver, prefix, source, new String[] {});
 
     se.execute(
         new TaskInstance() {
@@ -90,12 +80,7 @@ public class DetachedStageExecutorTest {
     String prefix = "NOFILE";
     String source = "NOPATH";
     DetachedStageExecutor se =
-        new DetachedStageExecutor(
-            "TEST",
-            TaskExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER,
-            prefix,
-            source,
-            new String[] {"user.dir"});
+        new DetachedStageExecutor("TEST", resolver, prefix, source, new String[] {"user.dir"});
 
     se.execute(
         new TaskInstance() {

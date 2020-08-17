@@ -1,4 +1,4 @@
-package pipelite.task.result.resolver;
+package pipelite.resolver;
 
 import lombok.Value;
 import org.slf4j.Logger;
@@ -8,10 +8,9 @@ import pipelite.task.result.TaskExecutionResult;
 import java.util.*;
 
 @Value
-public class TaskExecutionResultExceptionResolver extends TaskExecutionResultResolver<Throwable> {
+public class ConcreteExceptionResolver extends AbstractResolver<Throwable> implements ExceptionResolver {
 
-  private static final Logger logger =
-      LoggerFactory.getLogger(TaskExecutionResultExceptionResolver.class);
+  private static final Logger logger = LoggerFactory.getLogger(ExceptionResolver.class);
 
   private static final TaskExecutionResult success = TaskExecutionResult.success();
   private static final TaskExecutionResult internalError = TaskExecutionResult.internalError();
@@ -71,9 +70,9 @@ public class TaskExecutionResultExceptionResolver extends TaskExecutionResultRes
       return this;
     }
 
-    public TaskExecutionResultExceptionResolver build() {
+    public ConcreteExceptionResolver build() {
       list.add(internalError);
-      return new TaskExecutionResultExceptionResolver(map, list);
+      return new ConcreteExceptionResolver(map, list);
     }
   }
 }

@@ -28,19 +28,10 @@ public class OracleTaskIdSource implements OracleCommons, TaskIdSource {
   private String pipeline_name;
   private int redo_count;
   private Connection connection;
-  private TaskExecutionResult[] execution_result_array;
 
   private String prepareQuery() {
     StringBuilder redo = new StringBuilder();
     StringBuilder terminal = new StringBuilder();
-
-    for (TaskExecutionResult cs : execution_result_array) {
-      if (cs.isTransientError())
-        redo.append("'").append(cs.toString()).append("', ");
-
-      if (cs.isPermanentError())
-        terminal.append("'").append(cs.toString()).append("', ");
-    }
 
     if (redo.length() <= 2) redo.delete(0, redo.length()).append("''");
     else redo.setLength(redo.length() - 2);
@@ -102,14 +93,6 @@ public class OracleTaskIdSource implements OracleCommons, TaskIdSource {
       while (rs.next()) result.add(rs.getString(1));
     }
     return result;
-  }
-
-  public void setExecutionResultArray(TaskExecutionResult[] execution_result_array) {
-    this.execution_result_array = execution_result_array;
-  }
-
-  public TaskExecutionResult[] getExecutionResultArray() {
-    return execution_result_array;
   }
 
   public String getTableName() {

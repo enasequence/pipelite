@@ -14,20 +14,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.dbutils.DbUtils;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -35,12 +29,11 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.TestConfiguration;
-import pipelite.task.result.resolver.TaskExecutionResultResolver;
-import uk.ac.ebi.ena.sra.pipeline.configuration.OracleHeartBeatConnection;
+import pipelite.resolver.TaskExecutionResultResolver;
 import pipelite.process.instance.ProcessInstance;
 import pipelite.process.state.ProcessExecutionState;
 import pipelite.task.instance.TaskInstance;
-import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
+import pipelite.stage.Stage;
 
 import javax.sql.DataSource;
 import javax.transaction.Transactional;
@@ -60,9 +53,6 @@ public class OracleStorageTest {
     Connection connection = DataSourceUtils.getConnection(dataSource);
 
     OracleProcessIdSource ps = new OracleProcessIdSource();
-    ps.setTableName("PIPELITE_PROCESS");
-    ps.setExecutionResultArray(
-        TaskExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER.resultsArray());
     ps.setRedoCount(Integer.MAX_VALUE);
     ps.setConnection(connection);
     ps.setPipelineName(PIPELINE_NAME);
@@ -70,8 +60,6 @@ public class OracleStorageTest {
 
     OracleStorage os = new OracleStorage();
     os.setPipelineName(PIPELINE_NAME);
-    os.setProcessTableName("PIPELITE_PROCESS");
-    os.setStageTableName("PIPELITE_STAGE");
     os.setConnection(connection);
 
     List<String> ids = Stream.of("PROCESS_ID1", "PROCESS_ID2").collect(Collectors.toList());

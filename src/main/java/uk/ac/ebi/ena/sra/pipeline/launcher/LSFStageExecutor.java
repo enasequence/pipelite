@@ -15,17 +15,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 import pipelite.configuration.LSFTaskExecutorConfiguration;
+import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskExecutorConfiguration;
 import pipelite.task.executor.AbstractTaskExecutor;
 import pipelite.task.instance.LatestTaskExecution;
 import pipelite.task.instance.TaskInstance;
-import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
+import pipelite.resolver.ExceptionResolver;
 import pipelite.task.state.TaskExecutionState;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCall;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall;
-import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
 import pipelite.task.result.TaskExecutionResult;
+
 
 public class LSFStageExecutor extends AbstractTaskExecutor {
   public static final int LSF_JVM_MEMORY_DELTA_MB = 1500;
@@ -33,42 +34,20 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
   public static final int LSF_JVM_MEMORY_RESERVATION_TIMEOUT_DEFAULT_MINUTES = 60;
 
   ExecutionInfo info;
-  private final String config_prefix_name;
-  private final String config_source_name;
   private final TaskExecutionResult internalError;
-  private final String[] javaSystemProperties;
+  private final ProcessConfiguration processConfiguration;
   private final TaskExecutorConfiguration taskExecutorConfiguration;
   private final LSFTaskExecutorConfiguration lsfTaskExecutorConfiguration;
 
   public LSFStageExecutor(
       String pipeline_name,
-      TaskExecutionResultExceptionResolver resolver,
-      TaskExecutorConfiguration taskExecutorConfiguration,
-      LSFTaskExecutorConfiguration lsfTaskExecutorConfiguration) {
-    this(
-        pipeline_name,
-        resolver,
-        DefaultConfiguration.CURRENT.getConfigPrefixName(),
-        DefaultConfiguration.CURRENT.getConfigSourceName(),
-        DefaultConfiguration.CURRENT.getPropertiesPass(),
-        taskExecutorConfiguration,
-        lsfTaskExecutorConfiguration);
-  }
-
-  LSFStageExecutor(
-      String pipeline_name,
-      TaskExecutionResultExceptionResolver resolver,
-      String config_prefix_name,
-      String config_source_name,
-      String[] javaSystemProperties,
+      ExceptionResolver resolver,
+      ProcessConfiguration processConfiguration,
       TaskExecutorConfiguration taskExecutorConfiguration,
       LSFTaskExecutorConfiguration lsfTaskExecutorConfiguration) {
     super(pipeline_name, resolver);
     this.internalError = resolver.internalError();
-    this.config_prefix_name = config_prefix_name;
-    this.config_source_name = config_source_name;
-    this.javaSystemProperties = javaSystemProperties;
-
+    this.processConfiguration = processConfiguration;
     this.taskExecutorConfiguration = taskExecutorConfiguration;
     this.lsfTaskExecutorConfiguration = lsfTaskExecutorConfiguration;
   }
@@ -78,7 +57,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
   }
 
   public String[] getJavaSystemProperties() {
-    return javaSystemProperties;
+    return processConfiguration.getJavaProperties();
   }
 
   private List<String> constructArgs(TaskInstance instance, boolean commit) {
@@ -101,8 +80,6 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
     } else {
       p_args.add(String.format("-Xmx%dM", java_memory_limit));
     }
-
-    p_args.add(String.format("-D%s=%s", config_prefix_name, config_source_name));
 
     String[] prop_pass = mergeJavaSystemProperties(getJavaSystemProperties(), instance.getJavaSystemProperties());
     addJavaSystemProperties(p_args, prop_pass);

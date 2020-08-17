@@ -10,21 +10,24 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
+import pipelite.configuration.ProcessConfiguration;
 import pipelite.task.executor.AbstractTaskExecutor;
 import pipelite.task.instance.LatestTaskExecution;
 import pipelite.task.instance.TaskInstance;
-import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
+import pipelite.resolver.ExceptionResolver;
 import pipelite.task.state.TaskExecutionState;
-import uk.ac.ebi.ena.sra.pipeline.configuration.DefaultConfiguration;
-import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
-import uk.ac.ebi.ena.sra.pipeline.launcher.iface.StageTask;
+import pipelite.task.Task;
 
 public class InternalStageExecutor extends AbstractTaskExecutor {
-  private ExecutionInfo info;
-  private StageTask task = null;
 
-  public InternalStageExecutor(TaskExecutionResultExceptionResolver resolver) {
-    super("", resolver);
+  private final ProcessConfiguration processConfiguration;
+
+  private ExecutionInfo info;
+  private Task task = null;
+
+  public InternalStageExecutor(ProcessConfiguration processConfiguration) {
+    super("", processConfiguration.createResolver());
+    this.processConfiguration = processConfiguration;
   }
 
   @Override
@@ -37,17 +40,11 @@ public class InternalStageExecutor extends AbstractTaskExecutor {
 
     if (TaskExecutionState.ACTIVE == getTaskExecutionState(instance)) {
       try {
-        if (null != DefaultConfiguration.currentSet().getPropertyPrefixName()) {
-          System.setProperty(
-              DefaultConfiguration.currentSet().getPropertyPrefixName(),
-              DefaultConfiguration.currentSet().getPropertySourceName());
-        }
 
-        Class<? extends StageTask> klass =
-            DefaultConfiguration.currentSet().getStage(instance.getTaskName()).getTaskClass();
-        task = klass.getConstructor((Class[]) null).newInstance((Object[]) null);
-        task.init(instance.getProcessId());
-        task.execute();
+
+        Class<? extends Task> taskClass = processConfiguration.getStage(instance.getTaskName()).getTaskClass();
+        task = taskClass.newInstance();
+        task.run();
 
       } catch (Throwable e) {
         e.printStackTrace();
@@ -56,8 +53,6 @@ public class InternalStageExecutor extends AbstractTaskExecutor {
         info = new ExecutionInfo();
         info.setThrowable(exception);
         info.setExitCode(Integer.valueOf(resolver.exitCodeSerializer().serialize(resolver.resolveError(exception))));
-
-        if (null != task) task.unwind();
       }
     }
   }

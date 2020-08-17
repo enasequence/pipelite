@@ -17,7 +17,7 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 import pipelite.task.result.TaskExecutionResultType;
-import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
+import pipelite.resolver.ExceptionResolver;
 import pipelite.task.state.TaskExecutionState;
 import pipelite.task.instance.LatestTaskExecution;
 import pipelite.task.instance.TaskInstance;
@@ -25,9 +25,9 @@ import pipelite.task.instance.TaskInstance;
 public abstract class AbstractTaskExecutor implements TaskExecutor {
   protected final Logger log = Logger.getLogger(this.getClass());
   protected final String PIPELINE_NAME;
-  protected final TaskExecutionResultExceptionResolver resolver;
+  protected final ExceptionResolver resolver;
 
-  public AbstractTaskExecutor(String pipeline_name, TaskExecutionResultExceptionResolver resolver) {
+  public AbstractTaskExecutor(String pipeline_name, ExceptionResolver resolver) {
     this.PIPELINE_NAME = pipeline_name;
     this.resolver = resolver;
   }

@@ -34,8 +34,6 @@ public class OracleStorage implements OracleCommons, StorageBackend {
 
   private Connection connection;
   private String pipeline_name;
-  private String stage_table_name;
-  private String process_table_name;
 
   public OracleStorage() {}
 
@@ -61,7 +59,7 @@ public class OracleStorage implements OracleCommons, StorageBackend {
                 /*3*/ PROCESS_PRIORITY_COLUMN_NAME,
                 /*4*/ PROCESS_STATE_COLUMN_NAME,
                 /*5*/ PROCESS_COMMENT_COLUMN_NAME,
-                /*6*/ process_table_name,
+                /*6*/ PIPELINE_PROCESS_TABLE_NAME,
                 /*7*/ ATTEMPT_COLUMN_NAME,
                 /*8*/ do_lock ? LOCK_EXPRESSION : ""))) {
       ps.setString(1, pipeline_name);
@@ -117,7 +115,7 @@ public class OracleStorage implements OracleCommons, StorageBackend {
                       + " ) T1 on ( T0.%2$s = T1.%2$s and T0.%3$s = T1.%3$s ) "
                       + " when matched then update set  %4$s = T1.%4$s, %5$s = T1.%5$s, %6$s = T1.%6$s, %7$s = T1.%7$s "
                       + " when not matched then insert ( %2$s, %3$s, %4$s, %5$s, %6$s, %7$s ) values ( T1.%2$s, T1.%3$s, T1.%4$s, T1.%5$s, T1.%6$s, T1.%7$s )",
-                  process_table_name,
+                  PIPELINE_PROCESS_TABLE_NAME,
                   PIPELINE_COLUMN_NAME,
                   PROCESS_COLUMN_NAME,
                   PROCESS_PRIORITY_COLUMN_NAME,
@@ -167,7 +165,7 @@ public class OracleStorage implements OracleCommons, StorageBackend {
                   EXEC_STDERR_COLUMN_NAME,
                   EXEC_STDOUT_COLUMN_NAME,
                   EXEC_CMDLINE_COLUMN_NAME,
-                  stage_table_name,
+                  PIPELINE_STAGE_TABLE_NAME,
                   EXEC_ID_COLUMN_NAME));
 
       ps.setObject(1, instance.getExecutionId());
@@ -230,7 +228,7 @@ public class OracleStorage implements OracleCommons, StorageBackend {
                   ATTEMPT_COLUMN_NAME,
                   ENABLED_COLUMN_NAME,
                   EXEC_ID_COLUMN_NAME,
-                  stage_table_name,
+                  PIPELINE_STAGE_TABLE_NAME,
                   PIPELINE_COLUMN_NAME,
                   PROCESS_COLUMN_NAME,
                   STAGE_NAME_COLUMN_NAME,
@@ -290,39 +288,40 @@ public class OracleStorage implements OracleCommons, StorageBackend {
     List<Clob> clob_list = new ArrayList<>();
     PreparedStatement ps = null;
     try {
-      ps =
-          connection.prepareStatement(
-              String.format(
-                  " merge into %14$s T0 "
-                      + " using ( select ? %1$s, ? %2$s, ? %3$s, ? %4$s, ? %5$s, ? %6$s, ? %7$s, ? %8$s, ? %9$s, ? %10$s, ? %11$s, ? %12$s, ? %13$s from dual ) T1 "
-                      + " on ( T0.%1$s = T1.%1$s and T0.%2$s = T1.%2$s and T0.%3$s = T1.%3$s ) "
-                      + " when matched then update set "
-                      + "  %4$s = T1.%4$s, "
-                      + "  %5$s = T1.%5$s, "
-                      + "  %6$s = T1.%6$s, "
-                      + "  %7$s = T1.%7$s, "
-                      + "  %8$s = T1.%8$s, "
-                      + "  %9$s = T1.%9$s, "
-                      + "  %10$s = T1.%10$s, "
-                      + "  %11$s = T1.%11$s, "
-                      + "  %12$s = T1.%12$s, "
-                      + "  %13$s = T1.%13$s "
-                      + " when not matched then insert( %1$s, %2$s, %3$s, %4$s, %5$s, %6$s, %7$s, %8$s, %9$s, %10$s, %11$s, %12$s, %13$s ) "
-                      + "                       values( T1.%1$s, T1.%2$s, T1.%3$s, T1.%4$s, T1.%5$s, T1.%6$s, T1.%7$s, T1.%8$s, T1.%9$s, T1.%10$s, T1.%11$s, T1.%12$s, T1.%13$s ) ",
-                  /* 1 */ PIPELINE_COLUMN_NAME,
-                  /* 2 */ PROCESS_COLUMN_NAME,
-                  /* 3 */ STAGE_NAME_COLUMN_NAME,
-                  /* 4 */ ATTEMPT_COLUMN_NAME,
-                  /* 5 */ EXEC_ID_COLUMN_NAME,
-                  /* 6 */ ENABLED_COLUMN_NAME,
-                  /* 7 */ EXEC_START_COLUMN_NAME,
-                  /* 8 */ EXEC_DATE_COLUMN_NAME,
-                  /* 9 */ EXEC_RESULT_TYPE_COLUMN_NAME,
-                  /* 10 */ EXEC_RESULT_COLUMN_NAME,
-                  /* 11 */ EXEC_STDOUT_COLUMN_NAME,
-                  /* 12 */ EXEC_STDERR_COLUMN_NAME,
-                  /* 13 */ EXEC_CMDLINE_COLUMN_NAME,
-                  /* 14 */ getTableName()));
+      String sql =
+          String.format(
+              " merge into %14$s T0 "
+                  + " using ( select ? %1$s, ? %2$s, ? %3$s, ? %4$s, ? %5$s, ? %6$s, ? %7$s, ? %8$s, ? %9$s, ? %10$s, ? %11$s, ? %12$s, ? %13$s from dual ) T1 "
+                  + " on ( T0.%1$s = T1.%1$s and T0.%2$s = T1.%2$s and T0.%3$s = T1.%3$s ) "
+                  + " when matched then update set "
+                  + "  %4$s = T1.%4$s, "
+                  + "  %5$s = T1.%5$s, "
+                  + "  %6$s = T1.%6$s, "
+                  + "  %7$s = T1.%7$s, "
+                  + "  %8$s = T1.%8$s, "
+                  + "  %9$s = T1.%9$s, "
+                  + "  %10$s = T1.%10$s, "
+                  + "  %11$s = T1.%11$s, "
+                  + "  %12$s = T1.%12$s, "
+                  + "  %13$s = T1.%13$s "
+                  + " when not matched then insert( %1$s, %2$s, %3$s, %4$s, %5$s, %6$s, %7$s, %8$s, %9$s, %10$s, %11$s, %12$s, %13$s ) "
+                  + "                       values( T1.%1$s, T1.%2$s, T1.%3$s, T1.%4$s, T1.%5$s, T1.%6$s, T1.%7$s, T1.%8$s, T1.%9$s, T1.%10$s, T1.%11$s, T1.%12$s, T1.%13$s ) ",
+              /* 1 */ PIPELINE_COLUMN_NAME,
+              /* 2 */ PROCESS_COLUMN_NAME,
+              /* 3 */ STAGE_NAME_COLUMN_NAME,
+              /* 4 */ ATTEMPT_COLUMN_NAME,
+              /* 5 */ EXEC_ID_COLUMN_NAME,
+              /* 6 */ ENABLED_COLUMN_NAME,
+              /* 7 */ EXEC_START_COLUMN_NAME,
+              /* 8 */ EXEC_DATE_COLUMN_NAME,
+              /* 9 */ EXEC_RESULT_TYPE_COLUMN_NAME,
+              /* 10 */ EXEC_RESULT_COLUMN_NAME,
+              /* 11 */ EXEC_STDOUT_COLUMN_NAME,
+              /* 12 */ EXEC_STDERR_COLUMN_NAME,
+              /* 13 */ EXEC_CMDLINE_COLUMN_NAME,
+              /* 14 */ PIPELINE_STAGE_TABLE_NAME);
+
+      ps = connection.prepareStatement(sql);
 
       ps.setObject(1, pipeline_name);
       ps.setObject(2, instance.getProcessId());
@@ -509,32 +508,6 @@ public class OracleStorage implements OracleCommons, StorageBackend {
     this.pipeline_name = pipeline_name;
   }
 
-  public String getTableName() {
-    return stage_table_name;
-  }
-
-  public void setStageTableName(String stage_table_name) {
-    this.stage_table_name = stage_table_name;
-  }
-
-  @Deprecated
-  public String getLogTableName() {
-    return log_table_name;
-  }
-
-  @Deprecated
-  public void setLogTableName(String log_table_name) {
-    this.log_table_name = log_table_name;
-  }
-
-  public String getStateTableName() {
-    return process_table_name;
-  }
-
-  public void setProcessTableName(String state_table_name) {
-    this.process_table_name = state_table_name;
-  }
-
   @Override
   public void save(LatestTaskExecution instance) throws StorageException {
     List<Clob> clob_list = new ArrayList<>();
@@ -547,7 +520,7 @@ public class OracleStorage implements OracleCommons, StorageBackend {
                       + "   set %s = ?, %s = ?, %s = ?, "
                       + "       %s = ?, %s = ?, %s = ?, %s = ? "
                       + " where %s = ?",
-                  stage_table_name,
+                  PIPELINE_STAGE_TABLE_NAME,
                   EXEC_START_COLUMN_NAME,
                   EXEC_DATE_COLUMN_NAME,
                   EXEC_RESULT_TYPE_COLUMN_NAME,

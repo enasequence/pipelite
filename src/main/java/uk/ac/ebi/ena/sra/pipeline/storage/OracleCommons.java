@@ -11,6 +11,9 @@
 package uk.ac.ebi.ena.sra.pipeline.storage;
 
 public interface OracleCommons {
+  String PIPELINE_PROCESS_TABLE_NAME = "PIPELITE_PROCESS";
+  String PIPELINE_STAGE_TABLE_NAME = "PIPELITE_STAGE";
+
   String PIPELINE_COLUMN_NAME = "PIPELINE_NAME";
   String PROCESS_COLUMN_NAME = "PROCESS_ID";
   String STAGE_NAME_COLUMN_NAME = "STAGE_NAME";

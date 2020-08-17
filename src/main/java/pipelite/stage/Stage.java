@@ -8,22 +8,22 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package uk.ac.ebi.ena.sra.pipeline.launcher.iface;
+package pipelite.stage;
 
+import pipelite.task.Task;
 import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
 
 public interface Stage {
-  Class<? extends StageTask> getTaskClass();
+
+  Class<? extends Task> getTaskClass();
 
   Stage getDependsOn();
 
-  String getDescription();
-
-  default int getMemoryLimit() {
+  default int getMemory() {
     return -1;
   }
 
-  default int getCPUCores() {
+  default int getCores() {
     return 1;
   }
 

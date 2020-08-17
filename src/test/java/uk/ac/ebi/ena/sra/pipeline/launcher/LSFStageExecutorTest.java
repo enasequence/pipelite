@@ -15,17 +15,22 @@ import java.nio.file.Files;
 
 import org.junit.jupiter.api.Test;
 import pipelite.configuration.LSFTaskExecutorConfiguration;
+import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskExecutorConfiguration;
+import pipelite.resolver.DefaultExceptionResolver;
 import pipelite.task.instance.TaskInstance;
-import pipelite.task.result.resolver.TaskExecutionResultExceptionResolver;
-import pipelite.task.result.resolver.TaskExecutionResultResolver;
+import pipelite.resolver.ExceptionResolver;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static uk.ac.ebi.ena.sra.pipeline.launcher.LSFStageExecutor.LSF_JVM_MEMORY_DELTA_MB;
 
 public class LSFStageExecutorTest {
-  private TaskExecutionResultExceptionResolver resolver() {
-    return TaskExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER;
+  private ExceptionResolver resolver() {
+    return new DefaultExceptionResolver();
+  }
+
+  private ProcessConfiguration defaultProcessConfiguration() {
+    return ProcessConfiguration.builder().build();
   }
 
   private TaskExecutorConfiguration defaultTaskExecutorConfiguration() {
@@ -54,13 +59,18 @@ public class LSFStageExecutorTest {
 
   @Test
   public void testDefaultConfiguration() {
+    ProcessConfiguration processConfiguration = defaultProcessConfiguration();
     TaskExecutorConfiguration taskExecutorConfiguration = defaultTaskExecutorConfiguration();
     LSFTaskExecutorConfiguration lsfTaskExecutorConfiguration =
         defaultLSFTaskExecutorConfiguration();
 
     LSFStageExecutor se =
         new LSFStageExecutor(
-            "TEST", resolver(), taskExecutorConfiguration, lsfTaskExecutorConfiguration);
+            "TEST",
+            resolver(),
+            processConfiguration,
+            taskExecutorConfiguration,
+            lsfTaskExecutorConfiguration);
 
     se.execute(makeDefaultStageInstance());
 
@@ -74,6 +84,7 @@ public class LSFStageExecutorTest {
 
   @Test
   public void testNoTmpDir() {
+    ProcessConfiguration processConfiguration = defaultProcessConfiguration();
     TaskExecutorConfiguration taskExecutorConfiguration = defaultTaskExecutorConfiguration();
     taskExecutorConfiguration.setTempDir(null);
     LSFTaskExecutorConfiguration lsfTaskExecutorConfiguration =
@@ -81,7 +92,11 @@ public class LSFStageExecutorTest {
 
     LSFStageExecutor se =
         new LSFStageExecutor(
-            "TEST", resolver(), taskExecutorConfiguration, lsfTaskExecutorConfiguration);
+            "TEST",
+            resolver(),
+            processConfiguration,
+            taskExecutorConfiguration,
+            lsfTaskExecutorConfiguration);
 
     se.execute(makeDefaultStageInstance());
 
@@ -93,7 +108,7 @@ public class LSFStageExecutorTest {
 
   @Test
   public void testNoQueue() {
-
+    ProcessConfiguration processConfiguration = defaultProcessConfiguration();
     TaskExecutorConfiguration taskExecutorConfiguration = defaultTaskExecutorConfiguration();
     LSFTaskExecutorConfiguration lsfTaskExecutorConfiguration =
         defaultLSFTaskExecutorConfiguration();
@@ -101,7 +116,11 @@ public class LSFStageExecutorTest {
 
     LSFStageExecutor se =
         new LSFStageExecutor(
-            "TEST", resolver(), taskExecutorConfiguration, lsfTaskExecutorConfiguration);
+            "TEST",
+            resolver(),
+            processConfiguration,
+            taskExecutorConfiguration,
+            lsfTaskExecutorConfiguration);
 
     se.execute(makeDefaultStageInstance());
     assertFalse(se.get_info().getCommandline().contains("-q "));
@@ -109,6 +128,7 @@ public class LSFStageExecutorTest {
 
   @Test
   public void testQueue() {
+    ProcessConfiguration processConfiguration = defaultProcessConfiguration();
     TaskExecutorConfiguration taskExecutorConfiguration = defaultTaskExecutorConfiguration();
     LSFTaskExecutorConfiguration lsfTaskExecutorConfiguration =
         defaultLSFTaskExecutorConfiguration();
@@ -116,7 +136,11 @@ public class LSFStageExecutorTest {
 
     LSFStageExecutor se =
         new LSFStageExecutor(
-            "TEST", resolver(), taskExecutorConfiguration, lsfTaskExecutorConfiguration);
+            "TEST",
+            resolver(),
+            processConfiguration,
+            taskExecutorConfiguration,
+            lsfTaskExecutorConfiguration);
 
     se.execute(makeDefaultStageInstance());
     assertTrue(se.get_info().getCommandline().contains("-q queue"));
@@ -124,13 +148,18 @@ public class LSFStageExecutorTest {
 
   @Test
   public void testTaskSpecificMemoryAndCores() {
+    ProcessConfiguration processConfiguration = defaultProcessConfiguration();
     TaskExecutorConfiguration taskExecutorConfiguration = defaultTaskExecutorConfiguration();
     LSFTaskExecutorConfiguration lsfTaskExecutorConfiguration =
         defaultLSFTaskExecutorConfiguration();
 
     LSFStageExecutor se =
         new LSFStageExecutor(
-            "TEST", resolver(), taskExecutorConfiguration, lsfTaskExecutorConfiguration);
+            "TEST",
+            resolver(),
+            processConfiguration,
+            taskExecutorConfiguration,
+            lsfTaskExecutorConfiguration);
 
     se.execute(
         new TaskInstance() {
@@ -151,13 +180,18 @@ public class LSFStageExecutorTest {
 
   @Test
   public void testTaskWithJavaXmxMemory() {
+    ProcessConfiguration processConfiguration = defaultProcessConfiguration();
     TaskExecutorConfiguration taskExecutorConfiguration = defaultTaskExecutorConfiguration();
     LSFTaskExecutorConfiguration lsfTaskExecutorConfiguration =
         defaultLSFTaskExecutorConfiguration();
 
     LSFStageExecutor se =
         new LSFStageExecutor(
-            "TEST", resolver(), taskExecutorConfiguration, lsfTaskExecutorConfiguration);
+            "TEST",
+            resolver(),
+            processConfiguration,
+            taskExecutorConfiguration,
+            lsfTaskExecutorConfiguration);
 
     se.execute(
         new TaskInstance() {
@@ -174,13 +208,18 @@ public class LSFStageExecutorTest {
 
   @Test
   public void testTaskWithoutJavaXmxMemory() {
+    ProcessConfiguration processConfiguration = defaultProcessConfiguration();
     TaskExecutorConfiguration taskExecutorConfiguration = defaultTaskExecutorConfiguration();
     LSFTaskExecutorConfiguration lsfTaskExecutorConfiguration =
         defaultLSFTaskExecutorConfiguration();
 
     LSFStageExecutor se =
         new LSFStageExecutor(
-            "TEST", resolver(), taskExecutorConfiguration, lsfTaskExecutorConfiguration);
+            "TEST",
+            resolver(),
+            processConfiguration,
+            taskExecutorConfiguration,
+            lsfTaskExecutorConfiguration);
 
     se.execute(
         new TaskInstance() {
@@ -198,13 +237,18 @@ public class LSFStageExecutorTest {
 
   @Test
   public void testTaskSpecificJavaProperties() {
+    ProcessConfiguration processConfiguration = defaultProcessConfiguration();
     TaskExecutorConfiguration taskExecutorConfiguration = defaultTaskExecutorConfiguration();
     LSFTaskExecutorConfiguration lsfTaskExecutorConfiguration =
         defaultLSFTaskExecutorConfiguration();
 
     LSFStageExecutor se =
         new LSFStageExecutor(
-            "TEST", resolver(), taskExecutorConfiguration, lsfTaskExecutorConfiguration);
+            "TEST",
+            resolver(),
+            processConfiguration,
+            taskExecutorConfiguration,
+            lsfTaskExecutorConfiguration);
 
     try {
       System.setProperty("PIPELITE_TEST_JAVA_PROPERTY", "VALUE");

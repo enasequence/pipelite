@@ -24,11 +24,9 @@ import pipelite.task.result.TaskExecutionResult;
 public class OracleProcessIdSource implements OracleCommons, TaskIdSource {
   final Logger log = Logger.getLogger(this.getClass());
   private PreparedStatement selectPS;
-  private String table_name;
   private String pipeline_name;
   private int redo_count;
   private Connection connection;
-  private TaskExecutionResult[] execution_result_array;
   private int window = 2000;
 
   private String prepareQuery() {
@@ -47,7 +45,7 @@ public class OracleProcessIdSource implements OracleCommons, TaskIdSource {
             + " order by %5$s desc nulls first, "
             + "          %4$s "
             + " ) where rownum < ?",
-        /* 1 */ getTableName(),
+        /* 1 */ PIPELINE_PROCESS_TABLE_NAME,
         /* 2 */ PIPELINE_COLUMN_NAME,
         /* 3 */ getPipelineName(),
         /* 4 */ PROCESS_COLUMN_NAME,
@@ -78,22 +76,6 @@ public class OracleProcessIdSource implements OracleCommons, TaskIdSource {
     return result;
   }
 
-  public void setExecutionResultArray(TaskExecutionResult[] execution_result_array) {
-    this.execution_result_array = execution_result_array;
-  }
-
-  public TaskExecutionResult[] getExecutionResultArray() {
-    return execution_result_array;
-  }
-
-  public String getTableName() {
-    return table_name;
-  }
-
-  public void setTableName(String table_name) {
-    this.table_name = table_name;
-  }
-
   public String getPipelineName() {
     return pipeline_name;
   }
@@ -116,13 +98,5 @@ public class OracleProcessIdSource implements OracleCommons, TaskIdSource {
 
   public void setConnection(Connection connection) {
     this.connection = connection;
-  }
-
-  public int getWindow() {
-    return window;
-  }
-
-  public void setWindow(int window) {
-    this.window = window;
   }
 }
