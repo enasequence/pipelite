@@ -11,18 +11,34 @@
 package pipelite.lock;
 
 import org.junit.jupiter.api.Test;
-import uk.ac.ebi.ena.sra.pipeline.TestConnectionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.test.annotation.Rollback;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.TestConfiguration;
+
+import javax.sql.DataSource;
+import javax.transaction.Transactional;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@SpringBootTest(classes = TestConfiguration.class)
+@ActiveProfiles("test")
 public class LauncherInstanceOracleDatabaseTest {
 
-  static final private String processName = "TEST";
+  private static final String processName = "TEST";
+
+  @Autowired DataSource dataSource;
 
   @Test
+  @Transactional
+  @Rollback
   public void test() {
-    LauncherInstanceOraclePackageLocker locker = new LauncherInstanceOraclePackageLocker(TestConnectionFactory.createConnection());
+
+    LauncherInstanceOraclePackageLocker locker =
+        new LauncherInstanceOraclePackageLocker(DataSourceUtils.getConnection(dataSource));
 
     String launcherName1 = "TEST1";
     String launcherName2 = "TEST2";

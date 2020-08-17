@@ -17,34 +17,48 @@ import java.util.concurrent.TimeUnit;
 import org.apache.log4j.PropertyConfigurator;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.test.annotation.Rollback;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.TestConfiguration;
 import pipelite.process.instance.ProcessInstance;
 import pipelite.task.result.resolver.TaskExecutionResultResolver;
-import uk.ac.ebi.ena.sra.pipeline.TestConnectionFactory;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessPoolExecutor;
 import pipelite.task.executor.TaskExecutor;
 
+import javax.sql.DataSource;
+import javax.transaction.Transactional;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@SpringBootTest(classes = TestConfiguration.class)
+@ActiveProfiles("test")
 public class LauncherDBTest {
+
+  @Autowired DataSource dataSource;
+
   static final long delay = 5 * 1000;
   static final int workers = ForkJoinPool.getCommonPoolParallelism();
 
-    @BeforeAll
+  @BeforeAll
   public static void setup() {
     PropertyConfigurator.configure("resource/test.log4j.properties");
   }
 
   @Test
-  public void test()
-      throws SQLException,
-          InterruptedException {
-    Connection connection = TestConnectionFactory.createConnection();
+  @Transactional
+  @Rollback
+  public void test() throws SQLException, InterruptedException {
+    Connection connection = DataSourceUtils.getConnection(dataSource);
 
     OracleTaskIdSource id_src = new OracleTaskIdSource();
     id_src.setTableName("PIPELITE_STAGE");
-    id_src.setExecutionResultArray(TaskExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER.resultsArray());
+    id_src.setExecutionResultArray(
+        TaskExecutionResultResolver.DEFAULT_EXCEPTION_RESOLVER.resultsArray());
     id_src.setRedoCount(Integer.MAX_VALUE);
     id_src.setConnection(connection);
     id_src.init();

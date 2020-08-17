@@ -11,19 +11,34 @@
 package pipelite.lock;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.test.annotation.Rollback;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.TestConfiguration;
 import pipelite.process.instance.ProcessInstance;
-import uk.ac.ebi.ena.sra.pipeline.TestConnectionFactory;
+
+import javax.sql.DataSource;
+import javax.transaction.Transactional;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@SpringBootTest(classes = TestConfiguration.class)
+@ActiveProfiles("test")
 public class ProcessInstanceOraclePackageLockerTest {
 
-  static final private String processName = "TEST";
+  private static final String processName = "TEST";
+
+  @Autowired DataSource dataSource;
 
   @Test
+  @Transactional
+  @Rollback
   public void test() {
-    ProcessInstanceOraclePackageLocker locker = new ProcessInstanceOraclePackageLocker(TestConnectionFactory.createConnection());
+    ProcessInstanceOraclePackageLocker locker =
+        new ProcessInstanceOraclePackageLocker(DataSourceUtils.getConnection(dataSource));
 
     String launcherName1 = "TEST1";
     String launcherName2 = "TEST2";
@@ -41,7 +56,6 @@ public class ProcessInstanceOraclePackageLockerTest {
     assertTrue(locker.unlock(launcherName1, getProcessInstance("1")));
     assertFalse(locker.isLocked(getProcessInstance("1")));
     assertTrue(locker.isLocked(getProcessInstance("2")));
-
 
     assertTrue(locker.lock(launcherName2, getProcessInstance("3")));
     assertFalse(locker.isLocked(getProcessInstance("1")));
