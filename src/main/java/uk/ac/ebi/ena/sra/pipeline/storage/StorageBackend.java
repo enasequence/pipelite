@@ -16,13 +16,6 @@ import pipelite.task.instance.TaskInstance;
 
 public interface StorageBackend {
   class StorageException extends Exception {
-    public StorageException() {
-      super();
-    }
-
-    public StorageException(String arg0, Throwable arg1) {
-      super(arg0, arg1);
-    }
 
     public StorageException(String arg0) {
       super(arg0);
@@ -39,9 +32,11 @@ public interface StorageBackend {
 
   void save(TaskInstance si) throws StorageException;
 
+
   void load(ProcessInstance ps) throws StorageException;
 
   void save(ProcessInstance ps) throws StorageException;
+
 
   String getExecutionId() throws StorageException;
 
