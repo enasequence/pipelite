@@ -17,10 +17,11 @@ import java.util.concurrent.CountDownLatch;
 import pipelite.ApplicationConfiguration;
 import pipelite.lock.LauncherInstanceLocker;
 import pipelite.lock.LauncherInstanceOraclePackageLocker;
+import pipelite.repository.PipeliteProcessRepository;
 import uk.ac.ebi.ena.sra.pipeline.configuration.LSFExecutorFactory;
 import uk.ac.ebi.ena.sra.pipeline.configuration.PipeliteProcessFactory;
 import pipelite.lock.ProcessInstanceOraclePackageLocker;
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
+import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.TaskIdSource;
 import pipelite.lock.ProcessInstanceLocker;
 import uk.ac.ebi.ena.sra.pipeline.storage.OracleProcessIdSource;
@@ -31,10 +32,15 @@ import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
 public class Launcher {
 
   private final ApplicationConfiguration applicationConfiguration;
+  private final PipeliteProcessRepository pipeliteProcessRepository;
   private final Connection connection;
 
-  public Launcher(ApplicationConfiguration applicationConfiguration, Connection connection) {
+  public Launcher(
+      ApplicationConfiguration applicationConfiguration,
+      PipeliteProcessRepository pipeliteProcessRepository,
+      Connection connection) {
     this.applicationConfiguration = applicationConfiguration;
+    this.pipeliteProcessRepository = pipeliteProcessRepository;
     this.connection = connection;
   }
 
@@ -43,7 +49,7 @@ public class Launcher {
 
   private static ProcessPoolExecutor init(int workers, StorageBackend storage) {
     return new ProcessPoolExecutor(workers) {
-      public void unwind(PipeliteProcess process) {
+      public void unwind(ProcessLauncherInterface process) {
         StorageBackend storage = process.getStorage();
         try {
           storage.flush();
@@ -53,7 +59,7 @@ public class Launcher {
         }
       }
 
-      public void init(PipeliteProcess process) {
+      public void init(ProcessLauncherInterface process) {
         process.setStorage(storage);
       }
     };
@@ -108,7 +114,10 @@ public class Launcher {
           launcher.setTaskIdSource(task_id_source);
           launcher.setProcessFactory(
               new PipeliteProcessFactory(
-                  launcherName, applicationConfiguration, processInstanceLocker));
+                  launcherName,
+                  applicationConfiguration,
+                  processInstanceLocker,
+                  pipeliteProcessRepository));
           launcher.setExecutorFactory(
               new LSFExecutorFactory(
                   processName,

@@ -17,7 +17,7 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.TestConfiguration;
-import pipelite.process.instance.ProcessInstance;
+import pipelite.entity.PipeliteProcess;
 
 import javax.sql.DataSource;
 import javax.transaction.Transactional;
@@ -89,10 +89,10 @@ public class ProcessInstanceOraclePackageLockerTest {
     assertFalse(locker.isLocked(getProcessInstance("4")));
   }
 
-  private static ProcessInstance getProcessInstance(String processId) {
-    ProcessInstance processInstance = new ProcessInstance();
-    processInstance.setPipelineName(processName);
-    processInstance.setProcessId(processId);
-    return processInstance;
+  private static PipeliteProcess getProcessInstance(String processId) {
+    PipeliteProcess pipeliteProcess = new PipeliteProcess();
+    pipeliteProcess.setProcessName(processName);
+    pipeliteProcess.setProcessId(processId);
+    return pipeliteProcess;
   }
 }

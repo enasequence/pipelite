@@ -18,14 +18,16 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import pipelite.process.state.ProcessExecutionState;
+import pipelite.repository.PipeliteProcessRepository;
 import pipelite.task.result.TaskExecutionResult;
 import pipelite.task.instance.LatestTaskExecution;
-import pipelite.process.instance.ProcessInstance;
 import pipelite.task.instance.TaskInstance;
 import pipelite.task.result.TaskExecutionResultType;
 
 public class OracleStorage implements OracleCommons, StorageBackend {
+
   private static final String LOCK_EXPRESSION = "for update nowait";
 
   @Deprecated private String log_table_name;
@@ -35,116 +37,9 @@ public class OracleStorage implements OracleCommons, StorageBackend {
   private Connection connection;
   private String pipeline_name;
 
-  public OracleStorage() {}
-
-  @Override
-  public void load(ProcessInstance state) throws StorageException {
-    load(state, false);
+  public OracleStorage() {
   }
 
-  @Deprecated
-  public void load(ProcessInstance state, boolean do_lock) throws StorageException {
-    if (null != state.getPipelineName() && !pipeline_name.equals(state.getPipelineName())) {
-      throw new StorageException("state object pipeline name incorrect");
-    }
-
-    try (PreparedStatement ps =
-        connection.prepareStatement(
-            String.format(
-                "select %1$s, %2$s, %3$s, %4$s, %5$s, %7$s "
-                    + "  from %6$s "
-                    + " where %1$s = ? and %2$s = ? %8$s",
-                /*1*/ PIPELINE_COLUMN_NAME,
-                /*2*/ PROCESS_COLUMN_NAME,
-                /*3*/ PROCESS_PRIORITY_COLUMN_NAME,
-                /*4*/ PROCESS_STATE_COLUMN_NAME,
-                /*5*/ PROCESS_COMMENT_COLUMN_NAME,
-                /*6*/ PIPELINE_PROCESS_TABLE_NAME,
-                /*7*/ ATTEMPT_COLUMN_NAME,
-                /*8*/ do_lock ? LOCK_EXPRESSION : ""))) {
-      ps.setString(1, pipeline_name);
-      ps.setString(2, state.getProcessId());
-
-      ps.execute();
-      try (ResultSet rows = ps.getResultSet()) {
-        int rownum = 0;
-        while (rows.next()) {
-          state.setPipelineName(rows.getString(PIPELINE_COLUMN_NAME));
-          state.setProcessId(rows.getString(PROCESS_COLUMN_NAME));
-          state.setPriority((int) rows.getLong(PROCESS_PRIORITY_COLUMN_NAME));
-          state.setExecutionCount((int) rows.getLong(ATTEMPT_COLUMN_NAME));
-          String st = rows.getString(PROCESS_STATE_COLUMN_NAME);
-          state.setState(
-              null == state || 0 == st.trim().length()
-                  ? ProcessExecutionState.ACTIVE
-                  : ProcessExecutionState.valueOf(st));
-          state.setProcessComment(rows.getString(PROCESS_COMMENT_COLUMN_NAME));
-
-          ++rownum;
-        }
-        if (1 != rownum)
-          throw new StorageException(
-              String.format(
-                  "Failed to load state for process [%s] of [%s] pipeline",
-                  state.getProcessId(), pipeline_name));
-      }
-    } catch (SQLException sqle) {
-      throw new StorageException(sqle);
-    }
-  }
-
-  @Override
-  public void save(ProcessInstance state) throws StorageException {
-    if (null != state.getPipelineName() && !pipeline_name.equals(state.getPipelineName())) {
-      throw new StorageException("state object pipeline name incorrect");
-    }
-
-    if (null == state.getProcessId() || 0 == state.getProcessId().trim().length()) {
-      throw new StorageException("state object pipeline process id incorrect");
-    }
-
-    PreparedStatement ps = null;
-    try {
-      ps =
-          connection.prepareStatement(
-              String.format(
-                  " merge into %1$s T0 "
-                      + " using "
-                      + " ( "
-                      + "  select ? %2$s, ? %3$s, ? %4$s, ? %5$s, ? %6$s, ? %7$s from dual "
-                      + " ) T1 on ( T0.%2$s = T1.%2$s and T0.%3$s = T1.%3$s ) "
-                      + " when matched then update set  %4$s = T1.%4$s, %5$s = T1.%5$s, %6$s = T1.%6$s, %7$s = T1.%7$s "
-                      + " when not matched then insert ( %2$s, %3$s, %4$s, %5$s, %6$s, %7$s ) values ( T1.%2$s, T1.%3$s, T1.%4$s, T1.%5$s, T1.%6$s, T1.%7$s )",
-                  PIPELINE_PROCESS_TABLE_NAME,
-                  PIPELINE_COLUMN_NAME,
-                  PROCESS_COLUMN_NAME,
-                  PROCESS_PRIORITY_COLUMN_NAME,
-                  PROCESS_STATE_COLUMN_NAME,
-                  PROCESS_COMMENT_COLUMN_NAME,
-                  ATTEMPT_COLUMN_NAME));
-
-      ps.setObject(1, pipeline_name);
-      ps.setObject(2, state.getProcessId());
-
-      ps.setObject(3, state.getPriority());
-      ps.setString(4, state.getState().toString());
-      ps.setObject(5, state.getProcessComment());
-      ps.setObject(6, state.getExecutionCount());
-
-      int rows = ps.executeUpdate();
-      if (1 != rows) throw new StorageException("Can't update exactly 1 row!");
-    } catch (SQLException e) {
-      throw new StorageException(e);
-
-    } finally {
-      if (null != ps) {
-        try {
-          ps.close();
-        } catch (SQLException e) {
-        }
-      }
-    }
-  }
 
   @Override
   public void load(LatestTaskExecution instance) throws StorageException {

@@ -10,15 +10,15 @@
  */
 package pipelite.lock;
 
-import pipelite.process.instance.ProcessInstance;
+import pipelite.entity.PipeliteProcess;
 
 public interface ProcessInstanceLocker {
 
-  boolean lock(String launcherName, ProcessInstance processInstance);
+  boolean lock(String launcherName, PipeliteProcess pipeliteProcess);
 
-  boolean unlock(String launcherName, ProcessInstance processInstance);
+  boolean unlock(String launcherName, PipeliteProcess pipeliteProcess);
 
-  boolean isLocked(ProcessInstance processInstance);
+  boolean isLocked(PipeliteProcess pipeliteProcess);
 
   void purge(String launcherName, String processName);
 

@@ -11,7 +11,7 @@
 package pipelite.lock;
 
 import lombok.Value;
-import pipelite.process.instance.ProcessInstance;
+import pipelite.entity.PipeliteProcess;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,47 +35,47 @@ public class ProcessInstanceMemoryLocker implements ProcessInstanceLocker {
   private final Set<LocalLock> localLocks = ConcurrentHashMap.newKeySet();
 
   @Override
-  public boolean lock(String launcherName, ProcessInstance processInstance) {
-    if (globalLocks.add(getGlobalLock(processInstance))) {
-      localLocks.add(getLocalLock(launcherName, processInstance));
+  public boolean lock(String launcherName, PipeliteProcess pipeliteProcess) {
+    if (globalLocks.add(getGlobalLock(pipeliteProcess))) {
+      localLocks.add(getLocalLock(launcherName, pipeliteProcess));
       return true;
     }
     return false;
   }
 
   @Override
-  public boolean unlock(String launcherName, ProcessInstance processInstance) {
-    if (localLocks.remove(getLocalLock(launcherName, processInstance))) {
-      globalLocks.remove(getGlobalLock(processInstance));
+  public boolean unlock(String launcherName, PipeliteProcess pipeliteProcess) {
+    if (localLocks.remove(getLocalLock(launcherName, pipeliteProcess))) {
+      globalLocks.remove(getGlobalLock(pipeliteProcess));
       return true;
     }
     return false;
   }
 
   @Override
-  public boolean isLocked(ProcessInstance processInstance) {
-    return globalLocks.contains(getGlobalLock(processInstance));
+  public boolean isLocked(PipeliteProcess pipeliteProcess) {
+    return globalLocks.contains(getGlobalLock(pipeliteProcess));
   }
 
   @Override
   public void purge(String launcherName, String processName) {
     for (LocalLock localLock : localLocks) {
       if (localLock.getLauncherName().equals(launcherName)
-              && localLock.getProcessName().equals(processName)) {
+          && localLock.getProcessName().equals(processName)) {
         GlobalLock globalLock =
-                new GlobalLock(localLock.getProcessName(), localLock.getProcessId());
+            new GlobalLock(localLock.getProcessName(), localLock.getProcessId());
         localLocks.remove(localLock);
         globalLocks.remove(globalLock);
       }
     }
   }
 
-  private static LocalLock getLocalLock(String launcherName, ProcessInstance processInstance) {
+  private static LocalLock getLocalLock(String launcherName, PipeliteProcess pipeliteProcess) {
     return new LocalLock(
-            launcherName, processInstance.getPipelineName(), processInstance.getProcessId());
+        launcherName, pipeliteProcess.getProcessName(), pipeliteProcess.getProcessId());
   }
 
-  private static GlobalLock getGlobalLock(ProcessInstance processInstance) {
-    return new GlobalLock(processInstance.getPipelineName(), processInstance.getProcessId());
+  private static GlobalLock getGlobalLock(PipeliteProcess pipeliteProcess) {
+    return new GlobalLock(pipeliteProcess.getProcessName(), pipeliteProcess.getProcessId());
   }
 }

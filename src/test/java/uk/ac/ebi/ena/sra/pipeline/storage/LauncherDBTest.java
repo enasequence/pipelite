@@ -23,9 +23,9 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.TestConfiguration;
-import pipelite.process.instance.ProcessInstance;
+import pipelite.entity.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher;
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
+import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessPoolExecutor;
 import pipelite.task.executor.TaskExecutor;
 
@@ -62,7 +62,7 @@ public class LauncherDBTest {
 
     PipeliteLauncher.ProcessFactory pr_src =
         process_id ->
-            new PipeliteProcess() {
+            new ProcessLauncherInterface() {
               @Override
               public void run() {
                 System.out.println("EXECUTING " + process_id);
@@ -88,18 +88,18 @@ public class LauncherDBTest {
               }
 
               @Override
-              public ProcessInstance getProcessInstance() {
+              public PipeliteProcess getPipeliteProcess() {
                 return null;
               }
             };
 
     ProcessPoolExecutor pool =
         new ProcessPoolExecutor(workers) {
-          public void unwind(PipeliteProcess process) {
+          public void unwind(ProcessLauncherInterface process) {
             System.out.println("FINISHED " + process.getProcessId());
           }
 
-          public void init(PipeliteProcess process) {
+          public void init(ProcessLauncherInterface process) {
             System.out.println("INIT     " + process.getProcessId());
           }
         };

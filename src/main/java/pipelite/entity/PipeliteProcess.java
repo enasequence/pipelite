@@ -3,7 +3,7 @@ package pipelite.entity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import pipelite.task.state.TaskExecutionState;
+import pipelite.process.state.ProcessExecutionState;
 
 import javax.persistence.*;
 
@@ -26,11 +26,15 @@ public class PipeliteProcess {
 
   @Enumerated(EnumType.STRING)
   @Column(name = "STATE", length = 15)
-  private TaskExecutionState state = TaskExecutionState.ACTIVE;
+  private ProcessExecutionState state = ProcessExecutionState.ACTIVE;
 
   @Column(name = "EXEC_CNT")
-  private Integer execCnt = 0;
+  private Integer executionCount = 0;
 
   @Column(name = "PRIORITY")
   private Integer priority;
+
+  public void incrementExecutionCount() {
+    ++executionCount;
+  }
 }

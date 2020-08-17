@@ -16,7 +16,7 @@ import java.sql.SQLException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import pipelite.process.instance.ProcessInstance;
+import pipelite.entity.PipeliteProcess;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -25,11 +25,11 @@ public class ProcessInstanceOraclePackageLocker implements ProcessInstanceLocker
   private final Connection connection;
 
   @Override
-  public boolean lock(String launcherName, ProcessInstance processInstance) {
+  public boolean lock(String launcherName, PipeliteProcess pipeliteProcess) {
     try (PreparedStatement ps =
         connection.prepareStatement("{ call pipelite_lock_pkg.try_lock( ?, ?, ? ) }")) {
-      ps.setString(1, processInstance.getPipelineName());
-      ps.setString(2, processInstance.getProcessId());
+      ps.setString(1, pipeliteProcess.getProcessName());
+      ps.setString(2, pipeliteProcess.getProcessId());
       ps.setString(3, launcherName);
       ps.execute();
       return true;
@@ -40,11 +40,11 @@ public class ProcessInstanceOraclePackageLocker implements ProcessInstanceLocker
   }
 
   @Override
-  public boolean isLocked(ProcessInstance processInstance) {
+  public boolean isLocked(PipeliteProcess pipeliteProcess) {
     try (PreparedStatement ps =
         connection.prepareStatement("{ call pipelite_lock_pkg.is_locked( ?, ? ) }")) {
-      ps.setString(1, processInstance.getPipelineName());
-      ps.setString(2, processInstance.getProcessId());
+      ps.setString(1, pipeliteProcess.getProcessName());
+      ps.setString(2, pipeliteProcess.getProcessId());
       ps.execute();
       return true;
     } catch (SQLException e) {
@@ -54,11 +54,11 @@ public class ProcessInstanceOraclePackageLocker implements ProcessInstanceLocker
   }
 
   @Override
-  public boolean unlock(String launcherName, ProcessInstance processInstance) {
+  public boolean unlock(String launcherName, PipeliteProcess pipeliteProcess) {
     try (PreparedStatement ps =
         connection.prepareStatement("{ call pipelite_lock_pkg.unlock( ?, ?, ? ) }")) {
-      ps.setString(1, processInstance.getPipelineName());
-      ps.setString(2, processInstance.getProcessId());
+      ps.setString(1, pipeliteProcess.getProcessName());
+      ps.setString(2, pipeliteProcess.getProcessId());
       ps.setString(3, launcherName);
       ps.execute();
       return true;

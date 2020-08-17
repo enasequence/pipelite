@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
-import pipelite.process.instance.ProcessInstance;
+import pipelite.entity.PipeliteProcess;
 import pipelite.task.executor.TaskExecutor;
 import pipelite.lock.ProcessInstanceLocker;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
@@ -29,10 +29,10 @@ public class PipeliteLauncher {
   }
 
   public interface ProcessFactory {
-    PipeliteProcess create(String processId);
+    ProcessLauncherInterface create(String processId);
   }
 
-  public interface PipeliteProcess extends Runnable {
+  public interface ProcessLauncherInterface extends Runnable {
     String getProcessId();
 
     TaskExecutor getExecutor();
@@ -41,7 +41,7 @@ public class PipeliteLauncher {
       throw new RuntimeException("Method must be overriden");
     }
 
-    ProcessInstance getProcessInstance();
+    PipeliteProcess getPipeliteProcess();
 
     default StorageBackend getStorage() {
       throw new RuntimeException("Method must be overriden");
@@ -135,7 +135,7 @@ public class PipeliteLauncher {
       if (exit_when_empty && task_queue.isEmpty()) break;
 
       for (String process_id : task_queue) {
-        PipeliteProcess process = getProcessFactory().create(process_id);
+        ProcessLauncherInterface process = getProcessFactory().create(process_id);
         process.setExecutor(getExecutorFactory().create());
         try {
           thread_pool.execute(process);

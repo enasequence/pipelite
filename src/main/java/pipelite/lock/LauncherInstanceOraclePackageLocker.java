@@ -11,7 +11,7 @@
 package pipelite.lock;
 
 import lombok.Value;
-import pipelite.process.instance.ProcessInstance;
+import pipelite.entity.PipeliteProcess;
 
 import java.sql.Connection;
 
@@ -26,25 +26,25 @@ public class LauncherInstanceOraclePackageLocker implements LauncherInstanceLock
 
   @Override
   public boolean lock(String launcherName, String processName) {
-    ProcessInstance launcherInstance = new ProcessInstance();
-    launcherInstance.setPipelineName(processName);
-    launcherInstance.setProcessId(launcherName);
-    return locker.lock(launcherName, launcherInstance);
+    PipeliteProcess pipeliteProcess = new PipeliteProcess();
+    pipeliteProcess.setProcessName(processName);
+    pipeliteProcess.setProcessId(launcherName);
+    return locker.lock(launcherName, pipeliteProcess);
   }
 
   @Override
   public boolean isLocked(String launcherName, String processName) {
-    ProcessInstance launcherInstance = new ProcessInstance();
-    launcherInstance.setPipelineName(processName);
-    launcherInstance.setProcessId(launcherName);
-    return locker.isLocked(launcherInstance);
+    PipeliteProcess pipeliteProcess = new PipeliteProcess();
+    pipeliteProcess.setProcessName(processName);
+    pipeliteProcess.setProcessId(launcherName);
+    return locker.isLocked(pipeliteProcess);
   }
 
   @Override
   public boolean unlock(String launcherName, String processName) {
-    ProcessInstance launcherInstance = new ProcessInstance();
-    launcherInstance.setPipelineName(processName);
-    launcherInstance.setProcessId(launcherName);
-    return locker.unlock(launcherName, launcherInstance);
+    PipeliteProcess pipeliteProcess = new PipeliteProcess();
+    pipeliteProcess.setProcessName(processName);
+    pipeliteProcess.setProcessId(launcherName);
+    return locker.unlock(launcherName, pipeliteProcess);
   }
 }

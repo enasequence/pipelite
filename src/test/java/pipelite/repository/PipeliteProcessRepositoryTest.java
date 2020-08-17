@@ -9,7 +9,7 @@ import pipelite.RandomStringGenerator;
 import pipelite.TestConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteProcessId;
-import pipelite.task.state.TaskExecutionState;
+import pipelite.process.state.ProcessExecutionState;
 
 import javax.transaction.Transactional;
 import java.util.Optional;
@@ -29,22 +29,40 @@ class PipeliteProcessRepositoryTest {
 
     String processId = RandomStringGenerator.randomProcessId();
     String processName = RandomStringGenerator.randomProcessName();
-    TaskExecutionState state = TaskExecutionState.COMPLETED;
+    ProcessExecutionState state = ProcessExecutionState.ACTIVE;
     Integer execCnt = 3;
     Integer priority = null;
 
-    PipeliteProcess e1 = new PipeliteProcess(processId, processName, state, execCnt, priority);
+    PipeliteProcess entity = new PipeliteProcess(processId, processName, state, execCnt, priority);
 
-    repository.save(e1);
+    repository.save(entity);
 
-    Optional<PipeliteProcess> e2 =
+    Optional<PipeliteProcess> savedEntity =
         repository.findById(new PipeliteProcessId(processId, processName));
+    assertThat(savedEntity.isPresent()).isTrue();
+    assertThat(savedEntity.get().getProcessId()).isEqualTo(entity.getProcessId());
+    assertThat(savedEntity.get().getProcessName()).isEqualTo(entity.getProcessName());
+    assertThat(savedEntity.get().getState()).isEqualTo(entity.getState());
+    assertThat(savedEntity.get().getExecutionCount()).isEqualTo(entity.getExecutionCount());
+    assertThat(savedEntity.get().getPriority()).isNull();
 
-    assertThat(e2.isPresent()).isTrue();
-    assertThat(e2.get().getProcessId()).isEqualTo(processId);
-    assertThat(e2.get().getProcessName()).isEqualTo(processName);
-    assertThat(e2.get().getState()).isEqualTo(state);
-    assertThat(e2.get().getExecCnt()).isEqualTo(3);
-    assertThat(e2.get().getPriority()).isNull();
+    entity.setState(ProcessExecutionState.COMPLETED);
+    entity.setExecutionCount(4);
+    entity.setPriority(9);
+
+    repository.save(entity);
+
+    savedEntity = repository.findById(new PipeliteProcessId(processId, processName));
+    assertThat(savedEntity.isPresent()).isTrue();
+    assertThat(savedEntity.get().getProcessId()).isEqualTo(entity.getProcessId());
+    assertThat(savedEntity.get().getProcessName()).isEqualTo(entity.getProcessName());
+    assertThat(savedEntity.get().getState()).isEqualTo(entity.getState());
+    assertThat(savedEntity.get().getExecutionCount()).isEqualTo(entity.getExecutionCount());
+    assertThat(savedEntity.get().getPriority()).isEqualTo(9);
+
+    repository.delete(entity);
+
+    savedEntity = repository.findById(new PipeliteProcessId(processId, processName));
+    assertThat(savedEntity.isPresent()).isFalse();
   }
 }

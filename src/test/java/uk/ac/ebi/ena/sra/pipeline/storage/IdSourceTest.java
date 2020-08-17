@@ -13,6 +13,7 @@ package uk.ac.ebi.ena.sra.pipeline.storage;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -25,8 +26,10 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.TestConfiguration;
+import pipelite.entity.PipeliteProcess;
+import pipelite.entity.PipeliteProcessId;
+import pipelite.repository.PipeliteProcessRepository;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.TaskIdSource;
-import pipelite.process.instance.ProcessInstance;
 import pipelite.process.state.ProcessExecutionState;
 import pipelite.task.instance.TaskInstance;
 
@@ -38,6 +41,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @SpringBootTest(classes = TestConfiguration.class)
 @ActiveProfiles("test")
 public class IdSourceTest {
+
+  @Autowired PipeliteProcessRepository pipeliteProcessRepository;
 
   @Autowired DataSource dataSource;
 
@@ -78,7 +83,12 @@ public class IdSourceTest {
           }
         });
 
-    List<ProcessInstance> saved = saveTasks(os, PIPELINE_NAME, ids);
+    List<PipeliteProcess> saved = saveTasks(os, PIPELINE_NAME, ids);
+
+    Optional<PipeliteProcess> test1 =
+        pipeliteProcessRepository.findById(new PipeliteProcessId("PROCESS_ID1", PIPELINE_NAME));
+    Optional<PipeliteProcess> test2 =
+        pipeliteProcessRepository.findById(new PipeliteProcessId("PROCESS_ID2", PIPELINE_NAME));
 
     AtomicInteger cnt = new AtomicInteger(ids.size());
 
@@ -86,13 +96,23 @@ public class IdSourceTest {
     saved.forEach(
         e -> {
           try {
-            os.save(e);
+            pipeliteProcessRepository.save(e);
           } catch (Exception e1) {
             throw new RuntimeException(e1);
           }
         });
 
-    List<String> stored = id_src.getTaskQueue();
+      Optional<PipeliteProcess> test3 =
+              pipeliteProcessRepository.findById(new PipeliteProcessId("PROCESS_ID1", PIPELINE_NAME));
+      Optional<PipeliteProcess> test4 =
+              pipeliteProcessRepository.findById(new PipeliteProcessId("PROCESS_ID2", PIPELINE_NAME));
+
+      // TODO: for some reason the task queue does not see the rows added above ->
+
+      List<String> stored = id_src.getTaskQueue();
+
+      // <- TODO: for some reason the task queue does not see the rows added above
+
     ids.forEach(
         i ->
             stored.stream()
@@ -107,7 +127,7 @@ public class IdSourceTest {
     saved.forEach(
         e -> {
           try {
-            os.save(e);
+            pipeliteProcessRepository.save(e);
           } catch (Exception e1) {
             throw new RuntimeException(e1);
           }
@@ -116,18 +136,18 @@ public class IdSourceTest {
     assertEquals(stored.get(stored.size() - 1), id_src.getTaskQueue().get(0));
   }
 
-  private List<ProcessInstance> saveTasks(OracleStorage os, String pipeline_name, List<String> ids) {
+  private List<PipeliteProcess> saveTasks(
+      OracleStorage os, String pipeline_name, List<String> ids) {
     return ids.stream()
         .map(
             id -> {
-              ProcessInstance result;
+              PipeliteProcess result;
               try {
-                result = new ProcessInstance();
-                result.setPipelineName(pipeline_name);
+                result = new PipeliteProcess();
+                result.setProcessName(pipeline_name);
                 result.setProcessId(id);
-                result.setProcessComment("PROCESS_COMMENT");
                 result.setState(ProcessExecutionState.ACTIVE);
-                os.save(result);
+                pipeliteProcessRepository.save(result);
 
                 log.info(result);
 

@@ -29,8 +29,10 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.TestConfiguration;
-import pipelite.process.instance.ProcessInstance;
+import pipelite.entity.PipeliteProcess;
+import pipelite.entity.PipeliteProcessId;
 import pipelite.process.state.ProcessExecutionState;
+import pipelite.repository.PipeliteProcessRepository;
 import pipelite.task.instance.TaskInstance;
 import pipelite.stage.Stage;
 
@@ -40,6 +42,9 @@ import javax.transaction.Transactional;
 @SpringBootTest(classes = TestConfiguration.class)
 @ActiveProfiles("test")
 public class OracleStorageTest {
+
+  // TODO: remove PipeliteProcessRepository related tests
+  @Autowired PipeliteProcessRepository pipeliteProcessRepository;
 
   @Autowired DataSource dataSource;
 
@@ -74,11 +79,11 @@ public class OracleStorageTest {
         });
     assertEquals(2, cnt1.get());
 
-    List<ProcessInstance> saved = saveTasks(os, PIPELINE_NAME, ids);
-    List<ProcessInstance> loaded = loadTasks(os, PIPELINE_NAME, ids);
+    List<PipeliteProcess> saved = saveTasks(os, PIPELINE_NAME, ids);
+    List<PipeliteProcess> loaded = loadTasks(os, PIPELINE_NAME, ids);
     assertArrayEquals(
-        saved.toArray(new ProcessInstance[saved.size()]),
-        loaded.toArray(new ProcessInstance[loaded.size()]));
+        saved.toArray(new PipeliteProcess[saved.size()]),
+        loaded.toArray(new PipeliteProcess[loaded.size()]));
 
     Stage[] stages =
         new Stage[] {mock(Stage.class), mock(Stage.class), mock(Stage.class), mock(Stage.class)};
@@ -128,7 +133,8 @@ public class OracleStorageTest {
     return stages;
   }
 
-  private List<TaskInstance> saveStages(OracleStorage os, String pipeline_name, String process_id, Stage... stages) {
+  private List<TaskInstance> saveStages(
+      OracleStorage os, String pipeline_name, String process_id, Stage... stages) {
     List<TaskInstance> result = new ArrayList<>();
 
     Stream.of(stages)
@@ -150,7 +156,8 @@ public class OracleStorageTest {
     return result;
   }
 
-  private List<TaskInstance> loadStages(OracleStorage os, String pipeline_name, String process_id, Stage... stages) {
+  private List<TaskInstance> loadStages(
+      OracleStorage os, String pipeline_name, String process_id, Stage... stages) {
     List<TaskInstance> result = new ArrayList<>();
 
     Stream.of(stages)
@@ -173,16 +180,15 @@ public class OracleStorageTest {
     return result;
   }
 
-  private List<ProcessInstance> loadTasks(OracleStorage os, String pipeline_name, List<String> ids) {
+  private List<PipeliteProcess> loadTasks(
+      OracleStorage os, String pipeline_name, List<String> ids) {
     return ids.stream()
         .map(
             id -> {
-              ProcessInstance result;
+              PipeliteProcess result;
               try {
-                result = new ProcessInstance();
-                result.setPipelineName(pipeline_name);
-                result.setProcessId(id);
-                os.load(result);
+                result =
+                    pipeliteProcessRepository.findById(new PipeliteProcessId(id, pipeline_name)).get();
               } catch (Exception e) {
                 throw new RuntimeException(e);
               }
@@ -191,18 +197,18 @@ public class OracleStorageTest {
         .collect(Collectors.toList());
   }
 
-  private List<ProcessInstance> saveTasks(OracleStorage os, String pipeline_name, List<String> ids) {
+  private List<PipeliteProcess> saveTasks(
+      OracleStorage os, String pipeline_name, List<String> ids) {
     return ids.stream()
         .map(
             id -> {
-              ProcessInstance result;
+              PipeliteProcess result;
               try {
-                result = new ProcessInstance();
-                result.setPipelineName(pipeline_name);
+                result = new PipeliteProcess();
+                result.setProcessName(pipeline_name);
                 result.setProcessId(id);
-                result.setProcessComment("PROCESS_COMMENT");
                 result.setState(ProcessExecutionState.ACTIVE);
-                os.save(result);
+                pipeliteProcessRepository.save(result);
               } catch (Exception e) {
                 throw new RuntimeException(e);
               }

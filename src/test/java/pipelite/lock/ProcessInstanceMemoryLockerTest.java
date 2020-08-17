@@ -11,14 +11,14 @@
 package pipelite.lock;
 
 import org.junit.jupiter.api.Test;
-import pipelite.process.instance.ProcessInstance;
+import pipelite.entity.PipeliteProcess;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ProcessInstanceMemoryLockerTest {
 
-  static final private String processName = "TEST";
+  private static final String processName = "TEST";
 
   @Test
   public void test() {
@@ -37,7 +37,6 @@ public class ProcessInstanceMemoryLockerTest {
     assertTrue(locker.unlock(launcherName1, getProcessInstance("1")));
     assertFalse(locker.isLocked(getProcessInstance("1")));
     assertTrue(locker.isLocked(getProcessInstance("2")));
-
 
     assertTrue(locker.lock(launcherName2, getProcessInstance("3")));
     assertFalse(locker.isLocked(getProcessInstance("1")));
@@ -71,10 +70,10 @@ public class ProcessInstanceMemoryLockerTest {
     assertFalse(locker.isLocked(getProcessInstance("4")));
   }
 
-  private static ProcessInstance getProcessInstance(String processId) {
-    ProcessInstance processInstance = new ProcessInstance();
-    processInstance.setPipelineName(processName);
-    processInstance.setProcessId(processId);
-    return processInstance;
+  private static PipeliteProcess getProcessInstance(String processId) {
+    PipeliteProcess pipeliteProcess = new PipeliteProcess();
+    pipeliteProcess.setProcessName(processName);
+    pipeliteProcess.setProcessId(processId);
+    return pipeliteProcess;
   }
 }

@@ -11,7 +11,6 @@
 package uk.ac.ebi.ena.sra.pipeline.storage;
 
 import pipelite.task.instance.LatestTaskExecution;
-import pipelite.process.instance.ProcessInstance;
 import pipelite.task.instance.TaskInstance;
 
 public interface StorageBackend {
@@ -31,12 +30,6 @@ public interface StorageBackend {
   void load(TaskInstance si) throws StorageException;
 
   void save(TaskInstance si) throws StorageException;
-
-
-  void load(ProcessInstance ps) throws StorageException;
-
-  void save(ProcessInstance ps) throws StorageException;
-
 
   String getExecutionId() throws StorageException;
 

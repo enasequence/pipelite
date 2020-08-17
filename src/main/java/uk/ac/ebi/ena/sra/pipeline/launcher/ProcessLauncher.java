@@ -14,18 +14,23 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
 import org.apache.log4j.Appender;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.apache.log4j.net.SMTPAppender;
-import pipelite.process.instance.ProcessInstance;
+import org.springframework.beans.factory.annotation.Autowired;
+import pipelite.entity.PipeliteProcess;
+import pipelite.entity.PipeliteProcessId;
+import pipelite.repository.PipeliteProcessRepository;
 import pipelite.task.executor.TaskExecutor;
 import pipelite.task.instance.LatestTaskExecution;
 import pipelite.task.instance.TaskInstance;
 import pipelite.resolver.ExceptionResolver;
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
+import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
 import pipelite.process.state.ProcessExecutionState;
 import pipelite.task.state.TaskExecutionState;
 import pipelite.task.result.TaskExecutionResult;
@@ -35,17 +40,18 @@ import uk.ac.ebi.ena.sra.pipeline.storage.ProcessLogBean;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
 
-public class ProcessLauncher implements PipeliteProcess {
+public class ProcessLauncher implements ProcessLauncherInterface {
 
   private final String launcherName;
   private final ExceptionResolver resolver;
   private final ProcessInstanceLocker locker;
+  private final PipeliteProcessRepository pipeliteProcessRepository;
 
   private static final String MAIL_APPENDER = "MAIL_APPENDER";
   private final Logger log;
   private String process_id;
   private String pipeline_name;
-  private ProcessInstance processInstance;
+  private PipeliteProcess pipeliteProcess;
   private TaskInstance[] instances;
   private StorageBackend storage;
   private TaskExecutor executor;
@@ -54,10 +60,15 @@ public class ProcessLauncher implements PipeliteProcess {
   private int max_redo_count = 1;
   private volatile boolean do_stop;
 
-  public ProcessLauncher(String launcherName, ExceptionResolver resolver, ProcessInstanceLocker locker) {
+  public ProcessLauncher(
+      String launcherName,
+      ExceptionResolver resolver,
+      ProcessInstanceLocker locker,
+      @Autowired PipeliteProcessRepository pipeliteProcessRepository) {
     this.launcherName = launcherName;
     this.resolver = resolver;
     this.locker = locker;
+    this.pipeliteProcessRepository = pipeliteProcessRepository;
 
     PatternLayout layout = createLayout();
     log = Logger.getLogger(process_id + " " + getClass().getSimpleName());
@@ -75,8 +86,8 @@ public class ProcessLauncher implements PipeliteProcess {
   }
 
   @Override
-  public ProcessInstance getProcessInstance() {
-    return processInstance;
+  public PipeliteProcess getPipeliteProcess() {
+    return pipeliteProcess;
   }
 
   @Override
@@ -130,11 +141,12 @@ public class ProcessLauncher implements PipeliteProcess {
         load_state();
         save_state(); // this is to check permissions
 
-        if (ProcessExecutionState.ACTIVE != processInstance.getState()) {
+        if (ProcessExecutionState.ACTIVE != pipeliteProcess.getState()) {
           log.warn(
               String.format(
-                  "Invoked for process %s with state %s.", getProcessId(), processInstance.getState()));
-          processInstance.setState(ProcessExecutionState.ACTIVE);
+                  "Invoked for process %s with state %s.",
+                  getProcessId(), pipeliteProcess.getState()));
+          pipeliteProcess.setState(ProcessExecutionState.ACTIVE);
         }
 
         if (!load_stages()) {
@@ -161,14 +173,15 @@ public class ProcessLauncher implements PipeliteProcess {
         save_stages(); // this is to check database permissions
 
         if (!eval_process()) {
-          log.warn(String.format("Terminal state reached for %s", processInstance));
+          log.warn(String.format("Terminal state reached for %s", pipeliteProcess));
         } else {
           increment_process_counter();
           execute_stages();
           save_stages();
           if (eval_process()) {
-            if (0 < processInstance.getExecutionCount() && 0 == processInstance.getExecutionCount() % max_redo_count)
-              processInstance.setState(ProcessExecutionState.FAILED);
+            if (0 < pipeliteProcess.getExecutionCount()
+                && 0 == pipeliteProcess.getExecutionCount() % max_redo_count)
+              pipeliteProcess.setState(ProcessExecutionState.FAILED);
           }
         }
         save_state();
@@ -188,16 +201,16 @@ public class ProcessLauncher implements PipeliteProcess {
   }
 
   private void increment_process_counter() {
-    processInstance.incrementExecutionCount();
+    pipeliteProcess.incrementExecutionCount();
   }
 
   private boolean lockProcessInstance() {
-    return locker.lock(launcherName, processInstance);
+    return locker.lock(launcherName, pipeliteProcess);
   }
 
   private void unlockProcessInstance() {
-    if (locker.isLocked(processInstance)) {
-      locker.unlock(launcherName, processInstance);
+    if (locker.isLocked(pipeliteProcess)) {
+      locker.unlock(launcherName, pipeliteProcess);
     }
   }
 
@@ -214,13 +227,13 @@ public class ProcessLauncher implements PipeliteProcess {
 
     for (TaskInstance instance : instances) {
       log.info(
-              String.format(
-                      "Stage [%s], enabled [%b] result [%s] of type [%s], count [%d]",
-                      instance.getTaskName(),
-                      instance.isEnabled(),
-                      instance.getLatestTaskExecution().getResultName(),
-                      executor.getTaskExecutionState(instance),
-                      instance.getExecutionCount()));
+          String.format(
+              "Stage [%s], enabled [%b] result [%s] of type [%s], count [%d]",
+              instance.getTaskName(),
+              instance.isEnabled(),
+              instance.getLatestTaskExecution().getResultName(),
+              executor.getTaskExecutionState(instance),
+              instance.getExecutionCount()));
       switch (executor.getTaskExecutionState(instance)) {
         case ACTIVE:
           break;
@@ -232,40 +245,43 @@ public class ProcessLauncher implements PipeliteProcess {
         case COMPLETED:
           // to_process -= to_process;
           LatestTaskExecution ei = instance.getLatestTaskExecution();
-          processInstance.setState(
-                  null != ei && ei.getResultType().isError() ? ProcessExecutionState.FAILED : ProcessExecutionState.COMPLETED);
+          pipeliteProcess.setState(
+              null != ei && ei.getResultType().isError()
+                  ? ProcessExecutionState.FAILED
+                  : ProcessExecutionState.COMPLETED);
           return false;
       }
     }
 
     // no stages to process
     if (0 >= to_process) {
-      processInstance.setState(ProcessExecutionState.COMPLETED);
+      pipeliteProcess.setState(ProcessExecutionState.COMPLETED);
       return false;
     }
     return true;
   }
 
   private void init_state() {
-    processInstance = new ProcessInstance();
-    processInstance.setPipelineName(pipeline_name);
-    processInstance.setProcessId(process_id);
+    pipeliteProcess = new PipeliteProcess();
+    pipeliteProcess.setProcessName(pipeline_name);
+    pipeliteProcess.setProcessId(process_id);
   }
 
   private void load_state() {
-    try {
-      storage.load(processInstance);
-    } catch (StorageException e) {
-      log.error(e.getMessage(), e);
+    PipeliteProcessId id =
+        new PipeliteProcessId(pipeliteProcess.getProcessId(), pipeliteProcess.getProcessName());
+
+    Optional<PipeliteProcess> pipeliteProcessSaved = pipeliteProcessRepository.findById(id);
+
+    if (pipeliteProcessSaved.isPresent()) {
+      this.pipeliteProcess = pipeliteProcessSaved.get();
+    } else {
+      throw new RuntimeException("Failed to load processing state for " + id);
     }
   }
 
   private void save_state() {
-    try {
-      storage.save(processInstance);
-    } catch (StorageException e) {
-      log.error(e.getMessage(), e);
-    }
+    pipeliteProcessRepository.save(pipeliteProcess);
   }
 
   private void init_stages() {
@@ -408,7 +424,7 @@ public class ProcessLauncher implements PipeliteProcess {
   }
 
   private void invalidate_dependands(
-          TaskInstance from_instance, boolean reset, List<TaskInstance> touched) {
+      TaskInstance from_instance, boolean reset, List<TaskInstance> touched) {
     for (TaskInstance i : instances) {
       if (i.equals(from_instance)) continue;
 

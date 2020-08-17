@@ -20,9 +20,9 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import pipelite.process.instance.ProcessInstance;
+import pipelite.entity.PipeliteProcess;
 import pipelite.task.executor.TaskExecutor;
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
+import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.StageExecutorFactory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -59,7 +59,7 @@ public class LauncherTest {
 
     PipeliteLauncher.ProcessFactory pr_src =
         process_id ->
-            new PipeliteProcess() {
+            new ProcessLauncherInterface() {
               @Override
               public void run() {
                 System.out.println("EXECUTING " + process_id);
@@ -85,18 +85,18 @@ public class LauncherTest {
               }
 
               @Override
-              public ProcessInstance getProcessInstance() {
+              public PipeliteProcess getPipeliteProcess() {
                 return null;
               }
             };
 
     ProcessPoolExecutor pool =
         new ProcessPoolExecutor(workers) {
-          public void unwind(PipeliteProcess process) {
+          public void unwind(ProcessLauncherInterface process) {
             System.out.println("FINISHED " + process.getProcessId());
           }
 
-          public void init(PipeliteProcess process) {
+          public void init(ProcessLauncherInterface process) {
             System.out.println("INIT     " + process.getProcessId());
           }
         };

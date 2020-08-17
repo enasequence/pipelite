@@ -5,6 +5,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.jdbc.datasource.DataSourceUtils;
+import pipelite.repository.PipeliteProcessRepository;
 import uk.ac.ebi.ena.sra.pipeline.launcher.Launcher;
 
 import javax.sql.DataSource;
@@ -13,11 +14,11 @@ import javax.transaction.Transactional;
 @SpringBootApplication
 public class Application implements CommandLineRunner {
 
-    @Autowired
-    ApplicationConfiguration applicationConfiguration;
+  @Autowired ApplicationConfiguration applicationConfiguration;
 
-    @Autowired
-    DataSource dataSource;
+  @Autowired PipeliteProcessRepository pipeliteProcessRepository;
+
+  @Autowired DataSource dataSource;
 
   public static void main(String[] args) {
     SpringApplication.run(Application.class, args);
@@ -26,7 +27,11 @@ public class Application implements CommandLineRunner {
   @Override
   @Transactional
   public void run(String... args) {
-    Launcher launcher = new Launcher(applicationConfiguration, DataSourceUtils.getConnection(dataSource));
+    Launcher launcher =
+        new Launcher(
+            applicationConfiguration,
+            pipeliteProcessRepository,
+            DataSourceUtils.getConnection(dataSource));
     launcher.run(args);
   }
 }

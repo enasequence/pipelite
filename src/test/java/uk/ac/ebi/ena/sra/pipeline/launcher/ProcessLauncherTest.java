@@ -10,18 +10,21 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 import java.sql.Timestamp;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import pipelite.configuration.ProcessConfiguration;
+import pipelite.entity.PipeliteProcess;
 import pipelite.lock.ProcessInstanceLocker;
-import pipelite.process.instance.ProcessInstance;
+import pipelite.repository.PipeliteProcessRepository;
 import pipelite.resolver.ConcreteExceptionResolver;
 import pipelite.task.executor.TaskExecutor;
 import pipelite.task.instance.TaskInstance;
@@ -72,17 +75,26 @@ public class ProcessLauncherTest {
     return resolver.exitCodeSerializer().serialize(resolver.resolveError(new PermanentException()));
   }
 
-  private StorageBackend initStorage(
+  private static class MockStorage {
+    public StorageBackend storageBackend = mock(StorageBackend.class);
+    public PipeliteProcessRepository pipeliteProcessRepository =
+        mock(PipeliteProcessRepository.class);
+  }
+
+  private MockStorage mockStorage(
       final String[] names, final TaskExecutionResult[] init_results, final boolean[] enabled)
-      throws StorageException {
-    StorageBackend mockedStorage = mock(StorageBackend.class);
-    final ProcessInstance stored_state = new ProcessInstance();
-    stored_state.setPipelineName(MOCKED_PIPELINE);
+      throws StorageBackend.StorageException {
+
+    MockStorage mockStorage = new MockStorage();
+    StorageBackend storageBackend = mockStorage.storageBackend;
+    PipeliteProcessRepository pipeliteProcessRepository = mockStorage.pipeliteProcessRepository;
+
+    final PipeliteProcess stored_state = new PipeliteProcess();
+    stored_state.setProcessName(MOCKED_PIPELINE);
     stored_state.setProcessId("YOBA-PROCESS");
     stored_state.setState(ProcessExecutionState.ACTIVE);
     stored_state.setExecutionCount(0);
     stored_state.setPriority(1);
-    stored_state.setProcessComment("PSHPSH! ALO YOBA ETO TY?");
 
     doAnswer(
             new Answer<Object>() {
@@ -107,51 +119,48 @@ public class ProcessLauncherTest {
                 return null;
               }
             })
-        .when(mockedStorage)
+        .when(storageBackend)
         .load(any(TaskInstance.class));
 
     doAnswer(
             (Answer<Object>)
                 invocation -> {
-                  ProcessInstance si = (ProcessInstance) invocation.getArguments()[0];
-                  si.setPipelineName(stored_state.getPipelineName());
-                  si.setProcessId(stored_state.getProcessId());
-                  si.setState(stored_state.getState());
-                  si.setPriority(stored_state.getPriority());
-                  si.setExecutionCount(stored_state.getExecutionCount());
-                  si.setProcessComment(stored_state.getProcessComment());
-                  return null;
+                  PipeliteProcess pipeliteProcess = new PipeliteProcess();
+                  pipeliteProcess.setProcessName(stored_state.getProcessName());
+                  pipeliteProcess.setProcessId(stored_state.getProcessId());
+                  pipeliteProcess.setState(stored_state.getState());
+                  pipeliteProcess.setPriority(stored_state.getPriority());
+                  pipeliteProcess.setExecutionCount(stored_state.getExecutionCount());
+                  return Optional.of(pipeliteProcess);
                 })
-        .when(mockedStorage)
-        .load(any(ProcessInstance.class));
+        .when(pipeliteProcessRepository)
+        .findById(any());
 
     doAnswer(
             (Answer<Object>)
                 invocation -> {
-                  ProcessInstance si = (ProcessInstance) invocation.getArguments()[0];
-
-                  stored_state.setPipelineName(si.getPipelineName());
+                  PipeliteProcess si = (PipeliteProcess) invocation.getArguments()[0];
+                  stored_state.setProcessName(si.getProcessName());
                   stored_state.setProcessId(si.getProcessId());
                   stored_state.setState(si.getState());
                   stored_state.setPriority(si.getPriority());
                   stored_state.setExecutionCount(si.getExecutionCount());
-                  stored_state.setProcessComment(si.getProcessComment());
-
                   return null;
                 })
-        .when(mockedStorage)
-        .save(any(ProcessInstance.class));
+        .when(pipeliteProcessRepository)
+        .save(any());
 
-    return mockedStorage;
+    return mockStorage;
   }
 
   private ProcessLauncher initProcessLauncher(
-      ProcessConfiguration processConfiguration, StorageBackend storage, TaskExecutor executor) {
+      ProcessConfiguration processConfiguration, MockStorage mockStorage, TaskExecutor executor) {
     String launcherName = "TEST";
     ProcessInstanceLocker locker = new ProcessInstanceMemoryLocker();
-    ProcessLauncher process = spy(new ProcessLauncher(launcherName, resolver, locker));
+    ProcessLauncher process =
+        spy(new ProcessLauncher(launcherName, resolver, locker, mockStorage.pipeliteProcessRepository));
     process.setProcessID("TEST_PROCESS");
-    process.setStorage(storage);
+    process.setStorage(mockStorage.storageBackend);
     process.setExecutor(executor);
     process.setStages(processConfiguration.getStageArray());
     return process;
@@ -202,13 +211,15 @@ public class ProcessLauncherTest {
     doReturn(resolver).when(processConfiguration).createResolver();
 
     {
-      StorageBackend mockedStorage =
-          initStorage(
+      MockStorage mockStorage =
+          mockStorage(
               new String[] {
                 "1: SOVSE MALI YOBA", "2: MALI YOBA", "3: BOLSHE YOBA", "4: OCHE BOLSHE YOBA"
               },
               new TaskExecutionResult[] {success(), success(), transientError(), success()},
               new boolean[] {false, true, true, true});
+
+      StorageBackend mockedStorage = mockStorage.storageBackend;
 
       TaskExecutor spiedExecutor =
           initExecutor(
@@ -217,34 +228,36 @@ public class ProcessLauncherTest {
               transientErrorExitCode(),
               successExitCode(),
               transientErrorExitCode());
-      ProcessLauncher pl = initProcessLauncher(processConfiguration, mockedStorage, spiedExecutor);
+      ProcessLauncher pl = initProcessLauncher(processConfiguration, mockStorage, spiedExecutor);
       pl.setRedoCount(2);
       pl.lifecycle();
 
       verify(pl, times(1)).lifecycle();
       verify(spiedExecutor, times(2)).execute(any(TaskInstance.class));
 
-      assertEquals(ProcessExecutionState.ACTIVE, pl.getProcessInstance().getState());
-      assertEquals(1, pl.getProcessInstance().getExecutionCount());
+      assertEquals(ProcessExecutionState.ACTIVE, pl.getPipeliteProcess().getState());
+      assertThat(pl.getPipeliteProcess().getExecutionCount()).isEqualTo(1);
 
       // Re-run
       pl.lifecycle();
 
       verify(pl, times(2)).lifecycle();
       verify(spiedExecutor, times(4)).execute(any(TaskInstance.class));
-      assertEquals(ProcessExecutionState.FAILED, pl.getProcessInstance().getState());
-      assertEquals(2, pl.getProcessInstance().getExecutionCount());
+      assertEquals(ProcessExecutionState.FAILED, pl.getPipeliteProcess().getState());
+      assertThat(pl.getPipeliteProcess().getExecutionCount()).isEqualTo(2);
     }
 
     {
-      StorageBackend mockedStorage =
-          initStorage(
+      MockStorage mockStorage =
+          mockStorage(
               new String[] {"SOVSE MALI YOBA", "MALI YOBA", "BOLSHE YOBA", "OCHE BOLSHE YOBA"},
               new TaskExecutionResult[] {permanentError(), success(), transientError(), success()},
               new boolean[] {false, false, true, true});
 
+      StorageBackend mockedStorage = mockStorage.storageBackend;
+
       TaskExecutor spiedExecutor = initExecutor(processConfiguration);
-      ProcessLauncher pl = initProcessLauncher(processConfiguration, mockedStorage, spiedExecutor);
+      ProcessLauncher pl = initProcessLauncher(processConfiguration, mockStorage, spiedExecutor);
       pl.lifecycle();
 
       verify(pl, times(1)).lifecycle();
@@ -252,14 +265,16 @@ public class ProcessLauncherTest {
     }
 
     {
-      StorageBackend mockedStorage =
-          initStorage(
+      MockStorage mockStorage =
+          mockStorage(
               new String[] {"SOVSE MALI YOBA", "MALI YOBA", "BOLSHE YOBA", "OCHE BOLSHE YOBA"},
               new TaskExecutionResult[] {success(), success(), transientError(), success()},
               new boolean[] {false, true, true, true});
 
+      StorageBackend mockedStorage = mockStorage.storageBackend;
+
       TaskExecutor spiedExecutor = initExecutor(processConfiguration);
-      ProcessLauncher pl = initProcessLauncher(processConfiguration, mockedStorage, spiedExecutor);
+      ProcessLauncher pl = initProcessLauncher(processConfiguration, mockStorage, spiedExecutor);
       pl.lifecycle();
 
       verify(pl, times(1)).lifecycle();
@@ -267,37 +282,41 @@ public class ProcessLauncherTest {
     }
 
     {
-      StorageBackend mockedStorage =
-          initStorage(
+      MockStorage mockStorage =
+          mockStorage(
               new String[] {"SOVSE MALI YOBA", "MALI YOBA", "BOLSHE YOBA", "OCHE BOLSHE YOBA"},
               new TaskExecutionResult[] {permanentError(), success(), transientError(), success()},
               new boolean[] {true, true, true, true});
 
+      StorageBackend mockedStorage = mockStorage.storageBackend;
+
       TaskExecutor spiedExecutor = initExecutor(processConfiguration);
-      ProcessLauncher pl = initProcessLauncher(processConfiguration, mockedStorage, spiedExecutor);
+      ProcessLauncher pl = initProcessLauncher(processConfiguration, mockStorage, spiedExecutor);
       pl.lifecycle();
 
       verify(pl, times(1)).lifecycle();
       verify(spiedExecutor, times(0)).execute(any(TaskInstance.class));
 
-      assertEquals(ProcessExecutionState.FAILED, pl.getProcessInstance().getState());
+      assertEquals(ProcessExecutionState.FAILED, pl.getPipeliteProcess().getState());
     }
 
     {
-      StorageBackend mockedStorage =
-          initStorage(
+      MockStorage mockStorage =
+          mockStorage(
               new String[] {"SOVSE MALI YOBA", "MALI YOBA", "BOLSHE YOBA", "OCHE BOLSHE YOBA"},
               new TaskExecutionResult[] {transientError(), success(), transientError(), success()},
               new boolean[] {true, true, true, true});
 
+      StorageBackend mockedStorage = mockStorage.storageBackend;
+
       TaskExecutor spiedExecutor = initExecutor(processConfiguration);
-      ProcessLauncher pl = initProcessLauncher(processConfiguration, mockedStorage, spiedExecutor);
+      ProcessLauncher pl = initProcessLauncher(processConfiguration, mockStorage, spiedExecutor);
       pl.lifecycle();
 
       verify(pl, times(1)).lifecycle();
       verify(spiedExecutor, times(4)).execute(any(TaskInstance.class));
 
-      assertEquals(ProcessExecutionState.COMPLETED, pl.getProcessInstance().getState());
+      assertEquals(ProcessExecutionState.COMPLETED, pl.getPipeliteProcess().getState());
     }
   }
 }
