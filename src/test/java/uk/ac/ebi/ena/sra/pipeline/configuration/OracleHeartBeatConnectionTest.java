@@ -12,10 +12,8 @@ package uk.ac.ebi.ena.sra.pipeline.configuration;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Properties;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

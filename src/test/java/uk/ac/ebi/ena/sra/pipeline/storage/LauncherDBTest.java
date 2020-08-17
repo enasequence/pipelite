@@ -24,7 +24,6 @@ import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.TestConfiguration;
 import pipelite.process.instance.ProcessInstance;
-import pipelite.resolver.TaskExecutionResultResolver;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.PipeliteProcess;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessPoolExecutor;

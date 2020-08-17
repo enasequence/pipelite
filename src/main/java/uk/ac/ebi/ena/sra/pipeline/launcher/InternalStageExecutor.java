@@ -14,7 +14,6 @@ import pipelite.configuration.ProcessConfiguration;
 import pipelite.task.executor.AbstractTaskExecutor;
 import pipelite.task.instance.LatestTaskExecution;
 import pipelite.task.instance.TaskInstance;
-import pipelite.resolver.ExceptionResolver;
 import pipelite.task.state.TaskExecutionState;
 import pipelite.task.Task;
 

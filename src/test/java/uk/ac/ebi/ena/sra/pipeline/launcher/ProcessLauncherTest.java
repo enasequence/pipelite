@@ -11,16 +11,12 @@
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 import java.sql.Timestamp;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import pipelite.configuration.ProcessConfiguration;

@@ -29,7 +29,6 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.TestConfiguration;
-import pipelite.resolver.TaskExecutionResultResolver;
 import pipelite.process.instance.ProcessInstance;
 import pipelite.process.state.ProcessExecutionState;
 import pipelite.task.instance.TaskInstance;

@@ -19,7 +19,6 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.TaskIdSource;
-import pipelite.task.result.TaskExecutionResult;
 
 public class OracleTaskIdSource implements OracleCommons, TaskIdSource {
   final Logger log = Logger.getLogger(this.getClass());

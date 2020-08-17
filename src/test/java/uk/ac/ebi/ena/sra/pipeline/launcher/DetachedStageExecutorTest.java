@@ -15,11 +15,10 @@ import org.junit.jupiter.api.Test;
 import pipelite.resolver.DefaultExceptionResolver;
 import pipelite.resolver.ExceptionResolver;
 import pipelite.task.instance.TaskInstance;
-import pipelite.resolver.TaskExecutionResultResolver;
 
 public class DetachedStageExecutorTest {
 
-  private static ExceptionResolver resolver = new DefaultExceptionResolver();
+  private static final ExceptionResolver resolver = new DefaultExceptionResolver();
 
   @Test
   public void javaMemory() {

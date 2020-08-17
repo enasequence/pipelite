@@ -12,12 +12,8 @@ package uk.ac.ebi.ena.sra.pipeline.storage;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 
 public class ProcessLogBean {
   private static final int MESSAGE_FIELD_LENGTH = 255;
