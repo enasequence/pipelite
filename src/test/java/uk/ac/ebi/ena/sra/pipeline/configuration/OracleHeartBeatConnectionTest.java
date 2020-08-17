@@ -17,42 +17,30 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.test.annotation.Rollback;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.TestConfiguration;
 
+import javax.sql.DataSource;
+import javax.transaction.Transactional;
+
+@SpringBootTest(classes = TestConfiguration.class)
+@ActiveProfiles("test")
 public class OracleHeartBeatConnectionTest {
+
+  @Autowired DataSource dataSource;
+
   @Test
-  public void test() throws ClassNotFoundException, SQLException {
-    Properties p = new Properties();
-    p.put("user", "era_reader");
-    p.put("password", "reader");
-    p.put("SetBigStringTryClob", "true");
+  @Transactional
+  @Rollback
+  public void test() throws SQLException {
 
-    Class.forName("oracle.jdbc.driver.OracleDriver");
-
-    Connection connection =
-        DriverManager.getConnection(
-            "jdbc:oracle:thin:@(DESCRIPTION ="
-                + "(ADDRESS_LIST = "
-                + "(ADDRESS = "
-                + "(PROTOCOL = TCP)"
-                + "(HOST = ora-dlvm5-008.ebi.ac.uk)"
-                + "(PORT = 1521)"
-                + ")"
-                + ")"
-                + "(CONNECT_DATA = "
-                + "(SERVICE_NAME = VERADEVT)"
-                + "(SERVER = SHARED)"
-                + ")"
-                + ")",
-            p);
-
-    connection.setAutoCommit(false);
-
-    OracleHeartBeatConnection hc = new OracleHeartBeatConnection(connection, 4000);
+    OracleHeartBeatConnection hc =
+        new OracleHeartBeatConnection(DataSourceUtils.getConnection(dataSource), 4000);
 
     assertTrue(hc.isValid(0));
-
-    hc.rollback();
-
-    hc.close();
   }
 }

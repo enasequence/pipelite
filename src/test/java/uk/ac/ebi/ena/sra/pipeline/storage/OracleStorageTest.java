@@ -29,6 +29,12 @@ import org.apache.log4j.PropertyConfigurator;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.test.annotation.Rollback;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.TestConfiguration;
 import pipelite.task.result.resolver.TaskExecutionResultResolver;
 import uk.ac.ebi.ena.sra.pipeline.configuration.OracleHeartBeatConnection;
 import pipelite.process.instance.ProcessInstance;
@@ -36,39 +42,22 @@ import pipelite.process.state.ProcessExecutionState;
 import pipelite.task.instance.TaskInstance;
 import uk.ac.ebi.ena.sra.pipeline.launcher.iface.Stage;
 
+import javax.sql.DataSource;
+import javax.transaction.Transactional;
+
+@SpringBootTest(classes = TestConfiguration.class)
+@ActiveProfiles("test")
 public class OracleStorageTest {
-  static StorageBackend db_backend;
-  static Logger log = Logger.getLogger(OracleStorageTest.class);
+
+  @Autowired DataSource dataSource;
+
   static final String PIPELINE_NAME = "RUN_PROCESS";
-  static Connection connection;
 
-  public static Connection createConnection() throws SQLException, ClassNotFoundException {
-    return createConnection(
-        "era",
-        "eradevt1",
-        "jdbc:oracle:thin:@ (DESCRIPTION = (ADDRESS_LIST = (ADDRESS = (PROTOCOL = TCP)(HOST = ora-dlvm5-008.ebi.ac.uk)(PORT = 1521))) (CONNECT_DATA = (SERVICE_NAME = VERADEVT) (SERVER = DEDICATED)))");
-  }
-
-  public static Connection createConnection(String user, String passwd, String url)
-      throws SQLException, ClassNotFoundException {
-
-    Properties props = new Properties();
-    props.put("user", user);
-    props.put("password", passwd);
-    props.put("SetBigStringTryClob", "true");
-
-    Class.forName("oracle.jdbc.driver.OracleDriver");
-    Connection connection = new OracleHeartBeatConnection(DriverManager.getConnection(url, props));
-    connection.setAutoCommit(false);
-
-    return connection;
-  }
-
-  @BeforeAll
-  public static void setup() throws ClassNotFoundException, SQLException {
-    PropertyConfigurator.configure("resource/test.log4j.properties");
-
-    connection = createConnection();
+  @Test
+  @Transactional
+  @Rollback
+  public void test() throws SQLException {
+    Connection connection = DataSourceUtils.getConnection(dataSource);
 
     OracleProcessIdSource ps = new OracleProcessIdSource();
     ps.setTableName("PIPELITE_PROCESS");
@@ -84,32 +73,22 @@ public class OracleStorageTest {
     os.setProcessTableName("PIPELITE_PROCESS");
     os.setStageTableName("PIPELITE_STAGE");
     os.setConnection(connection);
-    db_backend = os;
-  }
 
-  @AfterAll
-  public static void whack() {
-    // DbUtils.commitAndCloseQuietly( connection );
-    DbUtils.rollbackAndCloseQuietly(connection);
-  }
-
-  @Test
-  public void test() {
     List<String> ids = Stream.of("PROCESS_ID1", "PROCESS_ID2").collect(Collectors.toList());
     AtomicInteger cnt1 = new AtomicInteger(ids.size());
 
     ids.forEach(
         i -> {
           try {
-            loadTasks(PIPELINE_NAME, Arrays.asList(i));
+            loadTasks(os, PIPELINE_NAME, Arrays.asList(i));
           } catch (RuntimeException e) {
             cnt1.decrementAndGet();
           }
         });
-    assertEquals(0, cnt1.get());
+    assertEquals(2, cnt1.get());
 
-    List<ProcessInstance> saved = saveTasks(PIPELINE_NAME, ids);
-    List<ProcessInstance> loaded = loadTasks(PIPELINE_NAME, ids);
+    List<ProcessInstance> saved = saveTasks(os, PIPELINE_NAME, ids);
+    List<ProcessInstance> loaded = loadTasks(os, PIPELINE_NAME, ids);
     assertArrayEquals(
         saved.toArray(new ProcessInstance[saved.size()]),
         loaded.toArray(new ProcessInstance[loaded.size()]));
@@ -123,15 +102,15 @@ public class OracleStorageTest {
         .forEach(
             s -> {
               try {
-                loadStages(PIPELINE_NAME, ids.get(0), s);
+                loadStages(os, PIPELINE_NAME, ids.get(0), s);
               } catch (RuntimeException e) {
                 cnt.decrementAndGet();
               }
             });
     assertEquals(0, cnt.get());
 
-    List<TaskInstance> si = saveStages(PIPELINE_NAME, ids.get(0), stages);
-    List<TaskInstance> li = loadStages(PIPELINE_NAME, ids.get(0), stages);
+    List<TaskInstance> si = saveStages(os, PIPELINE_NAME, ids.get(0), stages);
+    List<TaskInstance> li = loadStages(os, PIPELINE_NAME, ids.get(0), stages);
     assertArrayEquals(si.toArray(), li.toArray());
 
     List<TaskInstance> ui =
@@ -145,16 +124,16 @@ public class OracleStorageTest {
             .collect(Collectors.toList());
     assertNotEquals(li, ui);
 
-    List<TaskInstance> sui = saveStages(ui);
-    List<TaskInstance> lui = loadStages(PIPELINE_NAME, ids.get(0), stages);
+    List<TaskInstance> sui = saveStages(os, ui);
+    List<TaskInstance> lui = loadStages(os, PIPELINE_NAME, ids.get(0), stages);
     assertEquals(sui, lui);
   }
 
-  private List<TaskInstance> saveStages(List<TaskInstance> stages) {
+  private List<TaskInstance> saveStages(OracleStorage os, List<TaskInstance> stages) {
     stages.forEach(
         s -> {
           try {
-            db_backend.save(s);
+            os.save(s);
           } catch (Exception e) {
             throw new RuntimeException(e);
           }
@@ -162,7 +141,7 @@ public class OracleStorageTest {
     return stages;
   }
 
-  private List<TaskInstance> saveStages(String pipeline_name, String process_id, Stage... stages) {
+  private List<TaskInstance> saveStages(OracleStorage os, String pipeline_name, String process_id, Stage... stages) {
     List<TaskInstance> result = new ArrayList<>();
 
     Stream.of(stages)
@@ -175,7 +154,7 @@ public class OracleStorageTest {
               si.setTaskName(s.toString());
               result.add(si);
               try {
-                db_backend.save(si);
+                os.save(si);
               } catch (Exception e) {
                 throw new RuntimeException(e);
               }
@@ -184,7 +163,7 @@ public class OracleStorageTest {
     return result;
   }
 
-  private List<TaskInstance> loadStages(String pipeline_name, String process_id, Stage... stages) {
+  private List<TaskInstance> loadStages(OracleStorage os, String pipeline_name, String process_id, Stage... stages) {
     List<TaskInstance> result = new ArrayList<>();
 
     Stream.of(stages)
@@ -198,7 +177,7 @@ public class OracleStorageTest {
               result.add(si);
 
               try {
-                db_backend.load(si);
+                os.load(si);
               } catch (Exception e) {
                 throw new RuntimeException(e);
               }
@@ -207,7 +186,7 @@ public class OracleStorageTest {
     return result;
   }
 
-  private List<ProcessInstance> loadTasks(String pipeline_name, List<String> ids) {
+  private List<ProcessInstance> loadTasks(OracleStorage os, String pipeline_name, List<String> ids) {
     return ids.stream()
         .map(
             id -> {
@@ -216,7 +195,7 @@ public class OracleStorageTest {
                 result = new ProcessInstance();
                 result.setPipelineName(pipeline_name);
                 result.setProcessId(id);
-                db_backend.load(result);
+                os.load(result);
               } catch (Exception e) {
                 throw new RuntimeException(e);
               }
@@ -225,7 +204,7 @@ public class OracleStorageTest {
         .collect(Collectors.toList());
   }
 
-  private List<ProcessInstance> saveTasks(String pipeline_name, List<String> ids) {
+  private List<ProcessInstance> saveTasks(OracleStorage os, String pipeline_name, List<String> ids) {
     return ids.stream()
         .map(
             id -> {
@@ -236,7 +215,7 @@ public class OracleStorageTest {
                 result.setProcessId(id);
                 result.setProcessComment("PROCESS_COMMENT");
                 result.setState(ProcessExecutionState.ACTIVE);
-                db_backend.save(result);
+                os.save(result);
               } catch (Exception e) {
                 throw new RuntimeException(e);
               }
