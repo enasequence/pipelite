@@ -14,6 +14,14 @@ public class RandomStringGenerator {
         return random(10);
     }
 
+    public static String randomStageName() {
+        return random(10);
+    }
+
+    public static String randomExecutionId() {
+        return random(10);
+    }
+
     private static String random(int length) {
         int leftLimit = 48; // numeral '0'
         int rightLimit = 122; // letter 'z'

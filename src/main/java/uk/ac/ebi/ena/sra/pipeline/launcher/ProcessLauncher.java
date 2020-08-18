@@ -271,7 +271,7 @@ public class ProcessLauncher implements ProcessLauncherInterface {
     pipeliteProcessRepository.save(pipeliteProcess);
   }
 
-  private void init_stages() {
+  private void init_stages() throws StorageException {
     Stage[] stages = getStages();
     instances = new TaskInstance[stages.length];
 
@@ -279,7 +279,7 @@ public class ProcessLauncher implements ProcessLauncherInterface {
       Stage stage = stages[i];
       TaskInstance instance = new TaskInstance(stage);
       instance.setPipeliteStage(
-          PipeliteStage.newExecution(processName, processId, stage.toString()));
+          PipeliteStage.newExecution(processId, processName, stage.toString(), storage.getExecutionId()));
       instance.setTaskExecutorConfig(stage.getExecutorConfig());
       instance.setMemory(stage.getMemory());
       instance.setCores(stage.getCores());

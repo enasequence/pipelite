@@ -70,11 +70,12 @@ public class PipeliteStage {
   @Convert(converter = BooleanConverter.class)
   private Boolean enabled = true;
 
-  public static PipeliteStage newExecution(String processName, String processId, String stageName) {
+  public static PipeliteStage newExecution(String processId, String processName, String stageName, String executionId) {
     PipeliteStage pipeliteStage = new PipeliteStage();
-    pipeliteStage.setProcessName(processName);
     pipeliteStage.setProcessId(processId);
+    pipeliteStage.setProcessName(processName);
     pipeliteStage.setStageName(stageName);
+    pipeliteStage.setExecutionId(executionId);
     return pipeliteStage;
   }
 
