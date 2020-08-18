@@ -37,7 +37,6 @@ import pipelite.process.state.ProcessExecutionState;
 import pipelite.task.result.TaskExecutionResult;
 import pipelite.stage.Stage;
 import pipelite.lock.ProcessInstanceMemoryLocker;
-import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
 
 public class ProcessLauncherTest {
 
@@ -81,7 +80,6 @@ public class ProcessLauncherTest {
   }
 
   private static class MockStorage {
-    public StorageBackend storageBackend = mock(StorageBackend.class);
     public PipeliteProcessRepository pipeliteProcessRepository =
         mock(PipeliteProcessRepository.class);
     public PipeliteStageRepository pipeliteStageRepository = mock(PipeliteStageRepository.class);
@@ -175,7 +173,6 @@ public class ProcessLauncherTest {
                 locker,
                 mockStorage.pipeliteProcessRepository,
                 mockStorage.pipeliteStageRepository));
-    process.setStorage(mockStorage.storageBackend);
     process.setExecutor(executor);
     process.setStages(processConfiguration.getStageArray());
     return process;
@@ -312,8 +309,6 @@ public class ProcessLauncherTest {
               new TaskExecutionResult[] {permanentError(), success(), transientError(), success()},
               new boolean[] {false, false, true, true});
 
-      StorageBackend mockedStorage = mockStorage.storageBackend;
-
       TaskExecutor spiedExecutor = initExecutor(processConfiguration);
       ProcessLauncher pl = initProcessLauncher(processConfiguration, mockStorage, spiedExecutor);
       pl.lifecycle();
@@ -344,8 +339,6 @@ public class ProcessLauncherTest {
               new TaskExecutionResult[] {permanentError(), success(), transientError(), success()},
               new boolean[] {true, true, true, true});
 
-      StorageBackend mockedStorage = mockStorage.storageBackend;
-
       TaskExecutor spiedExecutor = initExecutor(processConfiguration);
       ProcessLauncher pl = initProcessLauncher(processConfiguration, mockStorage, spiedExecutor);
       pl.lifecycle();
@@ -362,8 +355,6 @@ public class ProcessLauncherTest {
               names,
               new TaskExecutionResult[] {transientError(), success(), transientError(), success()},
               new boolean[] {true, true, true, true});
-
-      StorageBackend mockedStorage = mockStorage.storageBackend;
 
       TaskExecutor spiedExecutor = initExecutor(processConfiguration);
       ProcessLauncher pl = initProcessLauncher(processConfiguration, mockStorage, spiedExecutor);

@@ -13,7 +13,6 @@ package uk.ac.ebi.ena.sra.pipeline.storage;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -24,7 +23,6 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.TestConfiguration;
@@ -37,7 +35,6 @@ import pipelite.repository.PipeliteStageRepository;
 import pipelite.task.instance.TaskInstance;
 import pipelite.stage.Stage;
 
-import javax.sql.DataSource;
 import javax.transaction.Transactional;
 
 @SpringBootTest(classes = TestConfiguration.class)
@@ -50,19 +47,12 @@ public class OracleStorageTest {
   // TODO: remove PipeliteStageRepository related tests
   @Autowired PipeliteStageRepository pipeliteStageRepository;
 
-  @Autowired DataSource dataSource;
-
   static final String PIPELINE_NAME = "RUN_PROCESS";
 
   @Test
   @Transactional
   @Rollback
   public void test() {
-    Connection connection = DataSourceUtils.getConnection(dataSource);
-
-    OracleStorage os = new OracleStorage();
-    os.setPipelineName(PIPELINE_NAME);
-    os.setConnection(connection);
 
     List<String> ids = Stream.of("PROCESS_ID1", "PROCESS_ID2").collect(Collectors.toList());
     AtomicInteger cnt1 = new AtomicInteger(ids.size());
@@ -70,15 +60,15 @@ public class OracleStorageTest {
     ids.forEach(
         i -> {
           try {
-            loadTasks(os, PIPELINE_NAME, Arrays.asList(i));
+            loadTasks(PIPELINE_NAME, Arrays.asList(i));
           } catch (RuntimeException e) {
             cnt1.decrementAndGet();
           }
         });
     assertEquals(2, cnt1.get());
 
-    List<PipeliteProcess> saved = saveTasks(os, PIPELINE_NAME, ids);
-    List<PipeliteProcess> loaded = loadTasks(os, PIPELINE_NAME, ids);
+    List<PipeliteProcess> saved = saveTasks(PIPELINE_NAME, ids);
+    List<PipeliteProcess> loaded = loadTasks(PIPELINE_NAME, ids);
     assertArrayEquals(
         saved.toArray(new PipeliteProcess[saved.size()]),
         loaded.toArray(new PipeliteProcess[loaded.size()]));
@@ -92,20 +82,20 @@ public class OracleStorageTest {
         .forEach(
             s -> {
               try {
-                loadStages(os, PIPELINE_NAME, ids.get(0), s);
+                loadStages(PIPELINE_NAME, ids.get(0), s);
               } catch (RuntimeException e) {
                 cnt.decrementAndGet();
               }
             });
     assertEquals(0, cnt.get());
 
-    List<TaskInstance> si = saveStages(os, PIPELINE_NAME, ids.get(0), stages);
-    List<TaskInstance> li = loadStages(os, PIPELINE_NAME, ids.get(0), stages);
+    List<TaskInstance> si = saveStages(PIPELINE_NAME, ids.get(0), stages);
+    List<TaskInstance> li = loadStages(PIPELINE_NAME, ids.get(0), stages);
     assertArrayEquals(si.toArray(), li.toArray());
   }
 
   private List<TaskInstance> saveStages(
-      OracleStorage os, String pipeline_name, String process_id, Stage... stages) {
+          String pipeline_name, String process_id, Stage... stages) {
     List<TaskInstance> result = new ArrayList<>();
 
     Stream.of(stages)
@@ -127,7 +117,7 @@ public class OracleStorageTest {
   }
 
   private List<TaskInstance> loadStages(
-      OracleStorage os, String pipeline_name, String process_id, Stage... stages) {
+          String pipeline_name, String process_id, Stage... stages) {
     List<TaskInstance> result = new ArrayList<>();
 
     Stream.of(stages)
@@ -145,7 +135,7 @@ public class OracleStorageTest {
   }
 
   private List<PipeliteProcess> loadTasks(
-      OracleStorage os, String pipeline_name, List<String> ids) {
+          String pipeline_name, List<String> ids) {
     return ids.stream()
         .map(
             id -> {
@@ -164,7 +154,7 @@ public class OracleStorageTest {
   }
 
   private List<PipeliteProcess> saveTasks(
-      OracleStorage os, String pipeline_name, List<String> ids) {
+          String pipeline_name, List<String> ids) {
     return ids.stream()
         .map(
             id -> {

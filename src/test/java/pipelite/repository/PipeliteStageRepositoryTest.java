@@ -29,20 +29,11 @@ class PipeliteStageRepositoryTest {
     String processId = RandomStringGenerator.randomProcessId();
     String processName = RandomStringGenerator.randomProcessName();
     String stageName = RandomStringGenerator.randomStageName();
-    String executionId = RandomStringGenerator.randomExecutionId();
 
     PipeliteStageId id = new PipeliteStageId(processId, processName, stageName);
 
     PipeliteStage stage =
-        PipeliteStage.newExecution(processId, processName, stageName, executionId);
-
-    repository.save(stage);
-
-    assertThat(repository.findById(id).get()).isEqualTo(stage);
-
-    executionId = RandomStringGenerator.randomExecutionId();
-
-    stage.retryExecution(executionId);
+        PipeliteStage.newExecution(processId, processName, stageName);
 
     repository.save(stage);
 
