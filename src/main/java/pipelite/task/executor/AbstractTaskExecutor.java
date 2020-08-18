@@ -19,7 +19,6 @@ import org.apache.log4j.Logger;
 import pipelite.task.result.TaskExecutionResultType;
 import pipelite.resolver.ExceptionResolver;
 import pipelite.task.state.TaskExecutionState;
-import pipelite.task.instance.LatestTaskExecution;
 import pipelite.task.instance.TaskInstance;
 
 public abstract class AbstractTaskExecutor implements TaskExecutor {
@@ -55,19 +54,16 @@ public abstract class AbstractTaskExecutor implements TaskExecutor {
   }
 
   public TaskExecutionState getTaskExecutionState(TaskInstance instance) {
-    if (!instance.isEnabled()) {
+    if (!instance.getPipeliteStage().getEnabled()) {
       return TaskExecutionState.DISABLED;
     }
-
-    LatestTaskExecution ei = instance.getLatestTaskExecution();
-
-    // check permanent errors
-    if (null != ei && null != ei.getEndTime() && null != ei.getResultType()) {
-      switch (ei.getResultType()) {
+    TaskExecutionResultType resultType = instance.getPipeliteStage().getResultType();
+    if (resultType != null) {
+      switch (resultType) {
         case PERMANENT_ERROR:
           return TaskExecutionState.COMPLETED;
         default:
-          return ei.getResultType() == TaskExecutionResultType.TRANSIENT_ERROR
+          return resultType == TaskExecutionResultType.TRANSIENT_ERROR
               ? TaskExecutionState.ACTIVE
               : TaskExecutionState.DISABLED;
       }

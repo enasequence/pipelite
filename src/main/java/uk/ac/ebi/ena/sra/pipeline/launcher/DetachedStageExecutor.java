@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import pipelite.task.executor.AbstractTaskExecutor;
-import pipelite.task.instance.LatestTaskExecution;
 import pipelite.task.instance.TaskInstance;
 import pipelite.resolver.ExceptionResolver;
 import pipelite.task.state.TaskExecutionState;
@@ -41,7 +40,7 @@ public class DetachedStageExecutor extends AbstractTaskExecutor {
   }
 
   public void reset(TaskInstance instance) {
-    instance.setLatestTaskExecution(new LatestTaskExecution());
+    instance.getPipeliteStage().resetExecution();
   }
 
   private List<String> constructArgs(TaskInstance instance, boolean commit) {
@@ -64,10 +63,10 @@ public class DetachedStageExecutor extends AbstractTaskExecutor {
     p_args.add(StageLauncher.class.getName());
 
     p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.StageLauncher.PARAMETERS_NAME_ID);
-    p_args.add(instance.getProcessId());
+    p_args.add(instance.getPipeliteStage().getProcessId());
 
     p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.StageLauncher.PARAMETERS_NAME_STAGE);
-    p_args.add(instance.getTaskName());
+    p_args.add(instance.getPipeliteStage().getStageName());
 
     if (commit)
       p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.StageLauncher.PARAMETERS_NAME_FORCE_COMMIT);
@@ -80,7 +79,8 @@ public class DetachedStageExecutor extends AbstractTaskExecutor {
       log.info(
           String.format(
               "%sxecuting stage %s",
-              0 == instance.getExecutionCount() ? "E" : "Re-e", instance.getTaskName()));
+              0 == instance.getPipeliteStage().getExecutionCount() ? "E" : "Re-e",
+              instance.getPipeliteStage().getStageName()));
 
       boolean do_commit = true;
       List<String> p_args = constructArgs(instance, do_commit);
@@ -89,8 +89,8 @@ public class DetachedStageExecutor extends AbstractTaskExecutor {
               String.format(
                   "%s~%s~%s",
                   PIPELINE_NAME, // TODO: get from instance
-                  instance.getProcessId(),
-                  instance.getTaskName()),
+                  instance.getPipeliteStage().getProcessId(),
+                  instance.getPipeliteStage().getStageName()),
               "java",
               p_args.toArray(new String[p_args.size()]));
 
@@ -103,7 +103,7 @@ public class DetachedStageExecutor extends AbstractTaskExecutor {
       String print_msg =
           String.format(
               "Finished execution of stage %s\n%s",
-              instance.getTaskName(), new ExternalCallException(ec).toString());
+              instance.getPipeliteStage().getStageName(), new ExternalCallException(ec).toString());
 
       log.info(print_msg);
     }

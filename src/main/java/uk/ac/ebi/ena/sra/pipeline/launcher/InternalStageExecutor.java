@@ -12,7 +12,6 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.task.executor.AbstractTaskExecutor;
-import pipelite.task.instance.LatestTaskExecution;
 import pipelite.task.instance.TaskInstance;
 import pipelite.task.state.TaskExecutionState;
 import pipelite.task.Task;
@@ -31,7 +30,7 @@ public class InternalStageExecutor extends AbstractTaskExecutor {
 
   @Override
   public void reset(TaskInstance instance) {
-    instance.setLatestTaskExecution(new LatestTaskExecution());
+    instance.getPipeliteStage().resetExecution();
   }
 
   public void execute(TaskInstance instance) {
@@ -40,8 +39,10 @@ public class InternalStageExecutor extends AbstractTaskExecutor {
     if (TaskExecutionState.ACTIVE == getTaskExecutionState(instance)) {
       try {
 
-
-        Class<? extends Task> taskClass = processConfiguration.getStage(instance.getTaskName()).getTaskClass();
+        Class<? extends Task> taskClass =
+            processConfiguration
+                .getStage(instance.getPipeliteStage().getStageName())
+                .getTaskClass();
         task = taskClass.newInstance();
         task.run();
 
@@ -51,7 +52,9 @@ public class InternalStageExecutor extends AbstractTaskExecutor {
       } finally {
         info = new ExecutionInfo();
         info.setThrowable(exception);
-        info.setExitCode(Integer.valueOf(resolver.exitCodeSerializer().serialize(resolver.resolveError(exception))));
+        info.setExitCode(
+            Integer.valueOf(
+                resolver.exitCodeSerializer().serialize(resolver.resolveError(exception))));
       }
     }
   }

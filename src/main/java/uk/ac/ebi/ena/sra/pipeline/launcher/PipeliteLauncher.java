@@ -37,10 +37,6 @@ public class PipeliteLauncher {
 
     TaskExecutor getExecutor();
 
-    default void setProcessID(String process_id) {
-      throw new RuntimeException("Method must be overriden");
-    }
-
     PipeliteProcess getPipeliteProcess();
 
     default StorageBackend getStorage() {
@@ -122,8 +118,7 @@ public class PipeliteLauncher {
     return this.do_stop;
   }
 
-  public void execute()
-      throws SQLException {
+  public void execute() throws SQLException {
     List<String> task_queue;
     main:
     while (!do_stop

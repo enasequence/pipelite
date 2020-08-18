@@ -15,8 +15,11 @@ import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
 
 public interface Stage {
 
+  String getStageName();
+
   Class<? extends Task> getTaskClass();
 
+  // TODO: multiple stage dependencies
   Stage getDependsOn();
 
   default int getMemory() {

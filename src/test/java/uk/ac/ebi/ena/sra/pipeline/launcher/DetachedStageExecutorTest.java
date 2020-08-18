@@ -11,9 +11,12 @@
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+
 import org.junit.jupiter.api.Test;
 import pipelite.resolver.DefaultExceptionResolver;
 import pipelite.resolver.ExceptionResolver;
+import pipelite.stage.Stage;
 import pipelite.task.instance.TaskInstance;
 
 public class DetachedStageExecutorTest {
@@ -26,9 +29,8 @@ public class DetachedStageExecutorTest {
         new DetachedStageExecutor("TEST", resolver, "NOFILE", "NOPATH", new String[] {});
 
     se.execute(
-        new TaskInstance() {
+        new TaskInstance(mock(Stage.class)) {
           {
-            setEnabled(true);
             setJavaSystemProperties(new String[] {});
             setMemory(2000);
           }
@@ -44,9 +46,8 @@ public class DetachedStageExecutorTest {
         new DetachedStageExecutor("TEST", resolver, "NOFILE", "NOPATH", new String[] {});
 
     se.execute(
-        new TaskInstance() {
+        new TaskInstance(mock(Stage.class)) {
           {
-            setEnabled(true);
             setJavaSystemProperties(new String[] {});
           }
         });
@@ -63,9 +64,8 @@ public class DetachedStageExecutorTest {
         new DetachedStageExecutor("TEST", resolver, prefix, source, new String[] {});
 
     se.execute(
-        new TaskInstance() {
+        new TaskInstance(mock(Stage.class)) {
           {
-            setEnabled(true);
             setJavaSystemProperties(new String[] {});
           }
         });
@@ -82,9 +82,8 @@ public class DetachedStageExecutorTest {
         new DetachedStageExecutor("TEST", resolver, prefix, source, new String[] {"user.dir"});
 
     se.execute(
-        new TaskInstance() {
+        new TaskInstance(mock(Stage.class)) {
           {
-            setEnabled(true);
             setJavaSystemProperties(new String[] {});
             setJavaSystemProperties(new String[] {"user.country"});
           }

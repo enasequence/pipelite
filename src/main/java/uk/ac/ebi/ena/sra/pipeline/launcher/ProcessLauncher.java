@@ -10,26 +10,24 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
-import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.apache.log4j.Appender;
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
-import org.apache.log4j.net.SMTPAppender;
+import com.google.common.base.Verify;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteProcessId;
+import pipelite.entity.PipeliteStage;
+import pipelite.entity.PipeliteStageId;
 import pipelite.repository.PipeliteProcessRepository;
+import pipelite.repository.PipeliteStageRepository;
 import pipelite.task.executor.TaskExecutor;
-import pipelite.task.instance.LatestTaskExecution;
 import pipelite.task.instance.TaskInstance;
 import pipelite.resolver.ExceptionResolver;
+import pipelite.task.result.TaskExecutionResultType;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
 import pipelite.process.state.ProcessExecutionState;
 import pipelite.task.state.TaskExecutionState;
@@ -40,17 +38,18 @@ import uk.ac.ebi.ena.sra.pipeline.storage.ProcessLogBean;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
 
+@Slf4j
 public class ProcessLauncher implements ProcessLauncherInterface {
 
   private final String launcherName;
+  private final String processName;
+  private final String processId;
+
   private final ExceptionResolver resolver;
   private final ProcessInstanceLocker locker;
   private final PipeliteProcessRepository pipeliteProcessRepository;
+  private final PipeliteStageRepository pipeliteStageRepository;
 
-  private static final String MAIL_APPENDER = "MAIL_APPENDER";
-  private final Logger log;
-  private String process_id;
-  private String pipeline_name;
   private PipeliteProcess pipeliteProcess;
   private TaskInstance[] instances;
   private StorageBackend storage;
@@ -62,22 +61,24 @@ public class ProcessLauncher implements ProcessLauncherInterface {
 
   public ProcessLauncher(
       String launcherName,
+      String processName,
+      String processId,
       ExceptionResolver resolver,
       ProcessInstanceLocker locker,
-      @Autowired PipeliteProcessRepository pipeliteProcessRepository) {
+      @Autowired PipeliteProcessRepository pipeliteProcessRepository,
+      @Autowired PipeliteStageRepository pipeliteStageRepository) {
+
+    Verify.verifyNotNull(launcherName);
+    Verify.verifyNotNull(processName);
+    Verify.verifyNotNull(processName);
+
     this.launcherName = launcherName;
+    this.processName = processName;
+    this.processId = processId;
     this.resolver = resolver;
     this.locker = locker;
     this.pipeliteProcessRepository = pipeliteProcessRepository;
-
-    PatternLayout layout = createLayout();
-    log = Logger.getLogger(process_id + " " + getClass().getSimpleName());
-    log.removeAllAppenders();
-    log.addAppender(new ConsoleAppender(layout));
-  }
-
-  private static PatternLayout createLayout() {
-    return new PatternLayout("%d{ISO8601} %-5p [%t] %c{1}:%L - %m%n");
+    this.pipeliteStageRepository = pipeliteStageRepository;
   }
 
   @Override
@@ -133,13 +134,14 @@ public class ProcessLauncher implements ProcessLauncherInterface {
         init_stages();
 
         load_state();
+
         if (!lockProcessInstance()) {
           log.error(String.format("There were problems while locking process %s.", getProcessId()));
           return;
         }
 
-        load_state();
-        save_state(); // this is to check permissions
+        // load_state();
+        // save_state(); // this is to check permissions
 
         if (ProcessExecutionState.ACTIVE != pipeliteProcess.getState()) {
           log.warn(
@@ -156,21 +158,7 @@ public class ProcessLauncher implements ProcessLauncherInterface {
           return;
         }
 
-        //            if( !lock_stages() )
-        //            {
-        //                log.error( String.format( "There were problems while locking process or
-        // stages for process %s.", getProcessId() ) );
-        //                return;
-        //            }
-
-        if (!load_stages()) {
-          log.error(
-              String.format(
-                  "There were problems while loading stages for process %s.", getProcessId()));
-          return;
-        }
-
-        save_stages(); // this is to check database permissions
+        // save_stages(); // this is to check database permissions
 
         if (!eval_process()) {
           log.warn(String.format("Terminal state reached for %s", pipeliteProcess));
@@ -229,11 +217,11 @@ public class ProcessLauncher implements ProcessLauncherInterface {
       log.info(
           String.format(
               "Stage [%s], enabled [%b] result [%s] of type [%s], count [%d]",
-              instance.getTaskName(),
-              instance.isEnabled(),
-              instance.getLatestTaskExecution().getResultName(),
+              instance.getPipeliteStage().getStageName(),
+              instance.getPipeliteStage().getEnabled(),
+              instance.getPipeliteStage().getResult(),
               executor.getTaskExecutionState(instance),
-              instance.getExecutionCount()));
+              instance.getPipeliteStage().getExecutionCount()));
       switch (executor.getTaskExecutionState(instance)) {
         case ACTIVE:
           break;
@@ -243,10 +231,9 @@ public class ProcessLauncher implements ProcessLauncherInterface {
           break;
 
         case COMPLETED:
-          // to_process -= to_process;
-          LatestTaskExecution ei = instance.getLatestTaskExecution();
+          TaskExecutionResultType resultType = instance.getPipeliteStage().getResultType();
           pipeliteProcess.setState(
-              null != ei && ei.getResultType().isError()
+              null != resultType && resultType.isError()
                   ? ProcessExecutionState.FAILED
                   : ProcessExecutionState.COMPLETED);
           return false;
@@ -263,8 +250,8 @@ public class ProcessLauncher implements ProcessLauncherInterface {
 
   private void init_state() {
     pipeliteProcess = new PipeliteProcess();
-    pipeliteProcess.setProcessName(pipeline_name);
-    pipeliteProcess.setProcessId(process_id);
+    pipeliteProcess.setProcessName(processName);
+    pipeliteProcess.setProcessId(processId);
   }
 
   private void load_state() {
@@ -290,60 +277,48 @@ public class ProcessLauncher implements ProcessLauncherInterface {
 
     for (int i = 0; i < instances.length; ++i) {
       Stage stage = stages[i];
-      TaskInstance instance = new TaskInstance();
+      TaskInstance instance = new TaskInstance(stage);
+      instance.setPipeliteStage(
+          PipeliteStage.newExecution(processName, processId, stage.toString()));
       instance.setTaskExecutorConfig(stage.getExecutorConfig());
-      instance.setTaskName(stage.toString());
-      instance.setProcessId(process_id);
-      instance.setProcessName(pipeline_name);
-      instance.setDependsOn(null == stage.getDependsOn() ? null : stage.getDependsOn().toString());
       instance.setMemory(stage.getMemory());
       instance.setCores(stage.getCores());
       instance.setJavaSystemProperties(stage.getPropertiesPass());
-
       instances[i] = instance;
     }
   }
 
   private boolean load_stages() {
-    boolean result = true;
     for (TaskInstance instance : instances) {
-      try {
-        storage.load(instance);
-      } catch (StorageException se) {
-        result = false;
-        Throwable t = se.getCause();
-        String bean_message = "Unable to load stage";
-        if (t instanceof SQLException && 54 == ((SQLException) t).getErrorCode()) {
-          // LOCKED: code is 54 //state 61000
-          log.info(((SQLException) t).getSQLState());
-          bean_message = "Unable to lock process";
-        }
-
+      Optional<PipeliteStage> pipeliteStageSaved =
+          pipeliteStageRepository.findById(
+              new PipeliteStageId(
+                  instance.getPipeliteStage().getProcessId(),
+                  instance.getPipeliteStage().getProcessName(),
+                  instance.getPipeliteStage().getStageName()));
+      if (!pipeliteStageSaved.isPresent()) {
         ProcessLogBean bean = new ProcessLogBean();
         bean.setPipelineName(getPipelineName());
         bean.setProcessID(getProcessId());
-        bean.setStage(instance.getTaskName());
-        bean.setThrowable(se);
-        bean.setMessage(bean_message);
-        bean.setLSFJobID(null);
-        bean.setLSFHosts(null);
-        bean.setExecutionId(
-            (null == instance.getLatestTaskExecution()
-                ? null
-                : instance.getLatestTaskExecution().getExecutionId()));
+        bean.setStage(instance.getPipeliteStage().getStageName());
+        bean.setMessage("Unable to load stage");
+        bean.setExecutionId(instance.getPipeliteStage().getExecutionId());
         try {
           storage.save(bean);
         } catch (StorageException se1) {
           log.error(se1.getMessage(), se1);
         }
+        return false;
       }
+      instance.setPipeliteStage(pipeliteStageSaved.get());
     }
-
-    return result;
+    return true;
   }
 
-  private void save_stages() throws StorageException {
-    for (TaskInstance instance : instances) storage.save(instance);
+  private void save_stages() {
+    for (TaskInstance instance : instances) {
+      pipeliteStageRepository.save(instance.getPipeliteStage());
+    }
   }
 
   private void execute_stages() throws StorageException {
@@ -354,22 +329,12 @@ public class ProcessLauncher implements ProcessLauncherInterface {
 
       if (TaskExecutionState.ACTIVE == executor.getTaskExecutionState(instance)) {
 
-        LatestTaskExecution ei = instance.getLatestTaskExecution();
-        ei.setStartTime(new Timestamp(System.currentTimeMillis()));
-        // todo set id
-        ei.setExecutionId(storage.getExecutionId());
-        storage.save(instance);
+        instance.getPipeliteStage().retryExecution(storage.getExecutionId());
+        pipeliteStageRepository.save(instance.getPipeliteStage());
 
         executor.execute(instance);
 
-        ei.setEndTime(new Timestamp(System.currentTimeMillis()));
         ExecutionInfo info = executor.get_info();
-
-        instance.setExecutionCount(instance.getExecutionCount() + 1);
-        storage.save(instance);
-
-        List<TaskInstance> dependend = invalidate_dependands(instance);
-        for (TaskInstance si : dependend) storage.save(si);
 
         // Translate execution result to exec status
         TaskExecutionResult result;
@@ -379,12 +344,16 @@ public class ProcessLauncher implements ProcessLauncherInterface {
           result = resolver.exitCodeSerializer().deserialize(info.getExitCode());
         }
 
-        ei.setTaskExecutionResult(result);
-        ei.setStderr(info.getStderr());
-        ei.setStdout(info.getStdout());
-        ei.setCmd(info.getCommandline());
+        instance
+            .getPipeliteStage()
+            .endExecution(result, info.getCommandline(), info.getStdout(), info.getStderr());
+        pipeliteStageRepository.save(instance.getPipeliteStage());
 
-        storage.save(ei);
+        List<TaskInstance> dependend = invalidate_dependands(instance);
+        for (TaskInstance si : dependend) {
+          pipeliteStageRepository.save(si.getPipeliteStage());
+        }
+
         storage.flush();
 
         if (result.isError()) {
@@ -397,19 +366,15 @@ public class ProcessLauncher implements ProcessLauncherInterface {
 
   private void emit_log(TaskInstance instance, ExecutionInfo info) {
     ProcessLogBean bean = new ProcessLogBean();
-    // TODO: eval usage of Throwable, ExceptionText and Message
     bean.setThrowable(info.getThrowable());
     bean.setExceptionText(info.getLogMessage());
-    bean.setMessage(instance.getLatestTaskExecution().getResultName());
+    bean.setMessage(instance.getPipeliteStage().getResult());
     bean.setLSFHosts(info.getHost());
     bean.setLSFJobID(null != info.getPID() ? info.getPID().longValue() : null);
-    bean.setProcessID(instance.getProcessId());
-    bean.setStage(instance.getTaskName());
-    bean.setPipelineName(instance.getProcessName());
-    bean.setExecutionId(
-        (null == instance.getLatestTaskExecution()
-            ? null
-            : instance.getLatestTaskExecution().getExecutionId()));
+    bean.setProcessID(instance.getPipeliteStage().getProcessId());
+    bean.setStage(instance.getPipeliteStage().getStageName());
+    bean.setPipelineName(instance.getPipeliteStage().getProcessName());
+    bean.setExecutionId(instance.getPipeliteStage().getExecutionId());
     try {
       storage.save(bean);
     } catch (StorageException e) {
@@ -425,13 +390,16 @@ public class ProcessLauncher implements ProcessLauncherInterface {
 
   private void invalidate_dependands(
       TaskInstance from_instance, boolean reset, List<TaskInstance> touched) {
-    for (TaskInstance i : instances) {
-      if (i.equals(from_instance)) continue;
+    for (TaskInstance taskInstance : instances) {
+      if (taskInstance.equals(from_instance)) {
+        continue;
+      }
 
-      if (null == i.getDependsOn()) continue;
-
-      if (i.getDependsOn().equals(from_instance.getTaskName()))
-        invalidate_dependands(i, true, touched);
+      Stage stageDependsOn = taskInstance.getStage().getDependsOn();
+      if (stageDependsOn != null
+          && stageDependsOn.getStageName().equals(from_instance.getStage().getStageName())) {
+        invalidate_dependands(taskInstance, true, touched);
+      }
     }
 
     if (reset) {
@@ -440,30 +408,9 @@ public class ProcessLauncher implements ProcessLauncherInterface {
     }
   }
 
-  protected static Appender createMailAppender(
-      String subj, String smtp_host, String from_address, String send_to, PatternLayout layout) {
-
-    SMTPAppender mailer = new SMTPAppender();
-    mailer.setBufferSize(1);
-    mailer.setLayout(layout);
-    mailer.setTo(send_to);
-    mailer.setFrom(from_address);
-    mailer.setSubject(subj);
-    mailer.setSMTPHost(smtp_host);
-    mailer.setThreshold(Level.ERROR);
-    mailer.activateOptions();
-    mailer.setName(MAIL_APPENDER);
-    return mailer;
-  }
-
-  @Override
-  public void setProcessID(String process_id) {
-    this.process_id = process_id;
-  }
-
   @Override
   public String getProcessId() {
-    return process_id;
+    return processId;
   }
 
   @Override
@@ -477,11 +424,7 @@ public class ProcessLauncher implements ProcessLauncherInterface {
   }
 
   public String getPipelineName() {
-    return pipeline_name;
-  }
-
-  public void setPipelineName(String pipeline_name) {
-    this.pipeline_name = pipeline_name;
+    return processName;
   }
 
   public void setRedoCount(int max_redo_count) {

@@ -10,40 +10,27 @@
  */
 package pipelite.task.instance;
 
+import com.google.common.base.Verify;
 import lombok.Data;
+import pipelite.entity.PipeliteStage;
+import pipelite.stage.Stage;
 import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
 
 @Data
 public class TaskInstance {
-  private int executionCount;
-  private String processId;
-  private String taskName;
-  private String processName;
-  private String dependsOn;
-  private boolean enabled;
+
+  private final Stage stage;
+
+  public TaskInstance(Stage stage) {
+    Verify.verifyNotNull(stage);
+    this.stage = stage;
+  }
+
+  private PipeliteStage pipeliteStage = new PipeliteStage();
+
   private int memory;
   private int cores;
+
   private String[] javaSystemProperties;
   private ExecutorConfig[] taskExecutorConfig;
-  private LatestTaskExecution latestTaskExecution = new LatestTaskExecution();
-
-  public TaskInstance() {}
-
-  public TaskInstance(TaskInstance other) {
-    this.executionCount = other.executionCount;
-    this.processId = other.processId;
-    this.taskName = other.taskName;
-    this.processName = other.processName;
-    this.dependsOn = other.dependsOn;
-    this.enabled = other.enabled;
-    this.memory = other.memory;
-    this.cores = other.cores;
-    this.javaSystemProperties = other.javaSystemProperties;
-    this.taskExecutorConfig = other.taskExecutorConfig;
-    this.latestTaskExecution = other.latestTaskExecution;
-  }
-
-  public void setTaskExecutorConfig(ExecutorConfig... taskExecutorConfig) {
-    this.taskExecutorConfig = taskExecutorConfig;
-  }
 }

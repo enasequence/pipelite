@@ -18,7 +18,6 @@ import pipelite.configuration.LSFTaskExecutorConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskExecutorConfiguration;
 import pipelite.task.executor.AbstractTaskExecutor;
-import pipelite.task.instance.LatestTaskExecution;
 import pipelite.task.instance.TaskInstance;
 import pipelite.resolver.ExceptionResolver;
 import pipelite.task.state.TaskExecutionState;
@@ -26,7 +25,6 @@ import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCall;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall;
 import pipelite.task.result.TaskExecutionResult;
-
 
 public class LSFStageExecutor extends AbstractTaskExecutor {
   public static final int LSF_JVM_MEMORY_DELTA_MB = 1500;
@@ -53,7 +51,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
   }
 
   public void reset(TaskInstance instance) {
-    instance.setLatestTaskExecution(new LatestTaskExecution());
+    instance.getPipeliteStage().resetExecution();
   }
 
   public String[] getJavaSystemProperties() {
@@ -81,7 +79,8 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
       p_args.add(String.format("-Xmx%dM", java_memory_limit));
     }
 
-    String[] prop_pass = mergeJavaSystemProperties(getJavaSystemProperties(), instance.getJavaSystemProperties());
+    String[] prop_pass =
+        mergeJavaSystemProperties(getJavaSystemProperties(), instance.getJavaSystemProperties());
     addJavaSystemProperties(p_args, prop_pass);
 
     p_args.add("-cp");
@@ -89,19 +88,19 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
     p_args.add(StageLauncher.class.getName());
 
     p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.StageLauncher.PARAMETERS_NAME_ID);
-    p_args.add(instance.getProcessId());
+    p_args.add(instance.getPipeliteStage().getProcessId());
 
     p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.StageLauncher.PARAMETERS_NAME_STAGE);
-    p_args.add(instance.getTaskName());
+    p_args.add(instance.getPipeliteStage().getStageName());
 
     if (commit)
       p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.StageLauncher.PARAMETERS_NAME_FORCE_COMMIT);
 
     p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.StageLauncher.PARAMETERS_NAME_ENABLED);
-    p_args.add(Boolean.toString(instance.isEnabled()).toLowerCase());
+    p_args.add(Boolean.toString(instance.getPipeliteStage().getEnabled()).toLowerCase());
 
     p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.StageLauncher.PARAMETERS_NAME_EXEC_COUNT);
-    p_args.add(Long.toString(instance.getExecutionCount()));
+    p_args.add(Long.toString(instance.getPipeliteStage().getExecutionCount()));
 
     return p_args;
   }
@@ -149,7 +148,8 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
       log.info(
           String.format(
               "%sxecuting stage %s",
-              instance.getExecutionCount() > 0 ? "E" : "Re-e", instance.getTaskName()));
+              instance.getPipeliteStage().getExecutionCount() > 0 ? "E" : "Re-e",
+              instance.getPipeliteStage().getStageName()));
 
       boolean do_commit = true;
       List<String> p_args = constructArgs(instance, do_commit);
@@ -160,7 +160,9 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
           back_end.new_call_instance(
               String.format(
                   "%s--%s--%s",
-                  instance.getProcessName(), instance.getProcessId(), instance.getTaskName()),
+                  instance.getPipeliteStage().getProcessName(),
+                  instance.getPipeliteStage().getProcessId(),
+                  instance.getPipeliteStage().getStageName()),
               "java",
               p_args.toArray(new String[p_args.size()]));
 
@@ -176,7 +178,8 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
         String print_msg =
             String.format(
                 "Finished execution of stage %s\n%s",
-                instance.getTaskName(), new ExternalCallException(call).toString());
+                instance.getPipeliteStage().getStageName(),
+                new ExternalCallException(call).toString());
 
         log.info(print_msg);
       }

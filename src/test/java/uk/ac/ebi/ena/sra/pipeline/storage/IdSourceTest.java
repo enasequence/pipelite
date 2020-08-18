@@ -29,6 +29,8 @@ import pipelite.TestConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteProcessId;
 import pipelite.repository.PipeliteProcessRepository;
+import pipelite.repository.PipeliteStageRepository;
+import pipelite.stage.Stage;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.TaskIdSource;
 import pipelite.process.state.ProcessExecutionState;
 import pipelite.task.instance.TaskInstance;
@@ -37,12 +39,14 @@ import javax.sql.DataSource;
 import javax.transaction.Transactional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
 
 @SpringBootTest(classes = TestConfiguration.class)
 @ActiveProfiles("test")
 public class IdSourceTest {
 
   @Autowired PipeliteProcessRepository pipeliteProcessRepository;
+  @Autowired PipeliteStageRepository pipeliteStageRepository;
 
   @Autowired DataSource dataSource;
 
@@ -72,12 +76,12 @@ public class IdSourceTest {
     List<String> ids = Stream.of("PROCESS_ID1", "PROCESS_ID2").collect(Collectors.toList());
     ids.forEach(
         i -> {
-          TaskInstance si = new TaskInstance();
-          si.setProcessName(PIPELINE_NAME);
-          si.setTaskName("STAGE");
-          si.setProcessId(i);
+          TaskInstance si = new TaskInstance(mock(Stage.class));
+          si.getPipeliteStage().setProcessName(PIPELINE_NAME);
+          si.getPipeliteStage().setStageName("STAGE");
+          si.getPipeliteStage().setProcessId(i);
           try {
-            os.save(si);
+            pipeliteStageRepository.save(si.getPipeliteStage());
           } catch (Exception e) {
             throw new RuntimeException(e);
           }
@@ -102,16 +106,16 @@ public class IdSourceTest {
           }
         });
 
-      Optional<PipeliteProcess> test3 =
-              pipeliteProcessRepository.findById(new PipeliteProcessId("PROCESS_ID1", PIPELINE_NAME));
-      Optional<PipeliteProcess> test4 =
-              pipeliteProcessRepository.findById(new PipeliteProcessId("PROCESS_ID2", PIPELINE_NAME));
+    Optional<PipeliteProcess> test3 =
+        pipeliteProcessRepository.findById(new PipeliteProcessId("PROCESS_ID1", PIPELINE_NAME));
+    Optional<PipeliteProcess> test4 =
+        pipeliteProcessRepository.findById(new PipeliteProcessId("PROCESS_ID2", PIPELINE_NAME));
 
-      // TODO: for some reason the task queue does not see the rows added above ->
+    // TODO: for some reason the task queue does not see the rows added above ->
 
-      List<String> stored = id_src.getTaskQueue();
+    List<String> stored = id_src.getTaskQueue();
 
-      // <- TODO: for some reason the task queue does not see the rows added above
+    // <- TODO: for some reason the task queue does not see the rows added above
 
     ids.forEach(
         i ->

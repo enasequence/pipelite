@@ -6,7 +6,7 @@ import lombok.Value;
 @Value
 public class TaskExecutionResult {
 
-  @NonNull private final String resultName;
+  @NonNull private final String result;
   @NonNull private final TaskExecutionResultType resultType;
 
   public boolean isSuccess() {

@@ -25,10 +25,16 @@ public enum DefaultStages implements Stage {
   private final int cores;
 
   @Override
+  public String getStageName() {
+    return this.name();
+  }
+
+  @Override
   public Class<? extends Task> getTaskClass() {
     return taskClass;
   }
 
+  @Override
   public DefaultStages getDependsOn() {
     return dependsOn;
   }

@@ -43,11 +43,6 @@ public class LauncherDBTest {
   static final long delay = 5 * 1000;
   static final int workers = ForkJoinPool.getCommonPoolParallelism();
 
-  @BeforeAll
-  public static void setup() {
-    PropertyConfigurator.configure("resource/test.log4j.properties");
-  }
-
   @Test
   @Transactional
   @Rollback

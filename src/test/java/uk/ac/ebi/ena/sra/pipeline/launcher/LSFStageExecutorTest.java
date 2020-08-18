@@ -17,11 +17,14 @@ import org.junit.jupiter.api.Test;
 import pipelite.configuration.LSFTaskExecutorConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskExecutorConfiguration;
+import pipelite.entity.PipeliteStage;
 import pipelite.resolver.DefaultExceptionResolver;
+import pipelite.stage.Stage;
 import pipelite.task.instance.TaskInstance;
 import pipelite.resolver.ExceptionResolver;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 import static uk.ac.ebi.ena.sra.pipeline.launcher.LSFStageExecutor.LSF_JVM_MEMORY_DELTA_MB;
 
 public class LSFStageExecutorTest {
@@ -50,11 +53,9 @@ public class LSFStageExecutorTest {
   }
 
   private TaskInstance makeDefaultStageInstance() {
-    return new TaskInstance() {
-      {
-        setEnabled(true);
-      }
-    };
+    TaskInstance taskInstance = new TaskInstance(mock(Stage.class));
+    taskInstance.setPipeliteStage(new PipeliteStage());
+    return taskInstance;
   }
 
   @Test
@@ -162,9 +163,8 @@ public class LSFStageExecutorTest {
             lsfTaskExecutorConfiguration);
 
     se.execute(
-        new TaskInstance() {
+        new TaskInstance(mock(Stage.class)) {
           {
-            setEnabled(true);
             setMemory(2000);
             setCores(12);
           }
@@ -194,9 +194,8 @@ public class LSFStageExecutorTest {
             lsfTaskExecutorConfiguration);
 
     se.execute(
-        new TaskInstance() {
+        new TaskInstance(mock(Stage.class)) {
           {
-            setEnabled(true);
             setMemory(2000);
           }
         });
@@ -222,9 +221,8 @@ public class LSFStageExecutorTest {
             lsfTaskExecutorConfiguration);
 
     se.execute(
-        new TaskInstance() {
+        new TaskInstance(mock(Stage.class)) {
           {
-            setEnabled(true);
             setMemory(1500);
           }
         });
@@ -254,9 +252,8 @@ public class LSFStageExecutorTest {
       System.setProperty("PIPELITE_TEST_JAVA_PROPERTY", "VALUE");
 
       se.execute(
-          new TaskInstance() {
+          new TaskInstance(mock(Stage.class)) {
             {
-              setEnabled(true);
               setJavaSystemProperties(new String[] {"PIPELITE_TEST_JAVA_PROPERTY"});
             }
           });

@@ -6,6 +6,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import pipelite.repository.PipeliteProcessRepository;
+import pipelite.repository.PipeliteStageRepository;
 import uk.ac.ebi.ena.sra.pipeline.launcher.Launcher;
 
 import javax.sql.DataSource;
@@ -17,6 +18,7 @@ public class Application implements CommandLineRunner {
   @Autowired ApplicationConfiguration applicationConfiguration;
 
   @Autowired PipeliteProcessRepository pipeliteProcessRepository;
+  @Autowired PipeliteStageRepository pipeliteStageRepository;
 
   @Autowired DataSource dataSource;
 
@@ -31,6 +33,7 @@ public class Application implements CommandLineRunner {
         new Launcher(
             applicationConfiguration,
             pipeliteProcessRepository,
+            pipeliteStageRepository,
             DataSourceUtils.getConnection(dataSource));
     launcher.run(args);
   }

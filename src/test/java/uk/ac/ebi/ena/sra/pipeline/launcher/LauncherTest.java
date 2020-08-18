@@ -33,11 +33,6 @@ public class LauncherTest {
   static final int workers = ForkJoinPool.getCommonPoolParallelism();
   static final Logger log = Logger.getLogger(LauncherTest.class);
 
-  @BeforeAll
-  public static void setup() {
-    PropertyConfigurator.configure("resource/test.log4j.properties");
-  }
-
   @Test
   public void main() throws SQLException, InterruptedException {
     PipeliteLauncher.TaskIdSource id_src =

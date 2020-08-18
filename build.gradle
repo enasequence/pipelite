@@ -59,6 +59,8 @@ dependencies {
 		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
 	}
 
+	implementation group: 'com.google.guava', name: 'guava', version: '29.0-jre'
+
 	testImplementation group: 'org.assertj', name: 'assertj-core', version: '3.16.1'
 
 	testImplementation 'org.junit.jupiter:junit-jupiter-api:5.3.1'

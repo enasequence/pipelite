@@ -31,8 +31,10 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.TestConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteProcessId;
+import pipelite.entity.PipeliteStageId;
 import pipelite.process.state.ProcessExecutionState;
 import pipelite.repository.PipeliteProcessRepository;
+import pipelite.repository.PipeliteStageRepository;
 import pipelite.task.instance.TaskInstance;
 import pipelite.stage.Stage;
 
@@ -45,6 +47,9 @@ public class OracleStorageTest {
 
   // TODO: remove PipeliteProcessRepository related tests
   @Autowired PipeliteProcessRepository pipeliteProcessRepository;
+
+  // TODO: remove PipeliteStageRepository related tests
+  @Autowired PipeliteStageRepository pipeliteStageRepository;
 
   @Autowired DataSource dataSource;
 
@@ -104,33 +109,6 @@ public class OracleStorageTest {
     List<TaskInstance> si = saveStages(os, PIPELINE_NAME, ids.get(0), stages);
     List<TaskInstance> li = loadStages(os, PIPELINE_NAME, ids.get(0), stages);
     assertArrayEquals(si.toArray(), li.toArray());
-
-    List<TaskInstance> ui =
-        li.stream()
-            .map(
-                e -> {
-                  TaskInstance r = new TaskInstance(e);
-                  r.setExecutionCount(r.getExecutionCount() + 1);
-                  return r;
-                })
-            .collect(Collectors.toList());
-    assertNotEquals(li, ui);
-
-    List<TaskInstance> sui = saveStages(os, ui);
-    List<TaskInstance> lui = loadStages(os, PIPELINE_NAME, ids.get(0), stages);
-    assertEquals(sui, lui);
-  }
-
-  private List<TaskInstance> saveStages(OracleStorage os, List<TaskInstance> stages) {
-    stages.forEach(
-        s -> {
-          try {
-            os.save(s);
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          }
-        });
-    return stages;
   }
 
   private List<TaskInstance> saveStages(
@@ -140,14 +118,13 @@ public class OracleStorageTest {
     Stream.of(stages)
         .forEach(
             s -> {
-              TaskInstance si = new TaskInstance();
-              si.setProcessName(pipeline_name);
-              si.setEnabled(true);
-              si.setProcessId(process_id);
-              si.setTaskName(s.toString());
+              TaskInstance si = new TaskInstance(s);
+              si.getPipeliteStage().setProcessName(pipeline_name);
+              si.getPipeliteStage().setProcessId(process_id);
+              si.getPipeliteStage().setStageName(s.toString());
               result.add(si);
               try {
-                os.save(si);
+                pipeliteStageRepository.save(si.getPipeliteStage());
               } catch (Exception e) {
                 throw new RuntimeException(e);
               }
@@ -163,18 +140,12 @@ public class OracleStorageTest {
     Stream.of(stages)
         .forEach(
             s -> {
-              TaskInstance si = new TaskInstance();
-              si.setProcessName(pipeline_name);
-              si.setEnabled(true);
-              si.setProcessId(process_id);
-              si.setTaskName(s.toString());
+              TaskInstance si = new TaskInstance(s);
+              si.setPipeliteStage(
+                  pipeliteStageRepository
+                      .findById(new PipeliteStageId(process_id, pipeline_name, s.toString()))
+                      .get());
               result.add(si);
-
-              try {
-                os.load(si);
-              } catch (Exception e) {
-                throw new RuntimeException(e);
-              }
             });
 
     return result;
@@ -188,7 +159,9 @@ public class OracleStorageTest {
               PipeliteProcess result;
               try {
                 result =
-                    pipeliteProcessRepository.findById(new PipeliteProcessId(id, pipeline_name)).get();
+                    pipeliteProcessRepository
+                        .findById(new PipeliteProcessId(id, pipeline_name))
+                        .get();
               } catch (Exception e) {
                 throw new RuntimeException(e);
               }

@@ -18,6 +18,7 @@ import pipelite.ApplicationConfiguration;
 import pipelite.lock.LauncherInstanceLocker;
 import pipelite.lock.LauncherInstanceOraclePackageLocker;
 import pipelite.repository.PipeliteProcessRepository;
+import pipelite.repository.PipeliteStageRepository;
 import uk.ac.ebi.ena.sra.pipeline.configuration.LSFExecutorFactory;
 import uk.ac.ebi.ena.sra.pipeline.configuration.PipeliteProcessFactory;
 import pipelite.lock.ProcessInstanceOraclePackageLocker;
@@ -33,14 +34,17 @@ public class Launcher {
 
   private final ApplicationConfiguration applicationConfiguration;
   private final PipeliteProcessRepository pipeliteProcessRepository;
+  private final PipeliteStageRepository pipeliteStageRepository;
   private final Connection connection;
 
   public Launcher(
       ApplicationConfiguration applicationConfiguration,
       PipeliteProcessRepository pipeliteProcessRepository,
+      PipeliteStageRepository pipeliteStageRepository,
       Connection connection) {
     this.applicationConfiguration = applicationConfiguration;
     this.pipeliteProcessRepository = pipeliteProcessRepository;
+    this.pipeliteStageRepository = pipeliteStageRepository;
     this.connection = connection;
   }
 
@@ -117,7 +121,8 @@ public class Launcher {
                   launcherName,
                   applicationConfiguration,
                   processInstanceLocker,
-                  pipeliteProcessRepository));
+                  pipeliteProcessRepository,
+                  pipeliteStageRepository));
           launcher.setExecutorFactory(
               new LSFExecutorFactory(
                   processName,
