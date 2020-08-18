@@ -61,12 +61,6 @@ public class OracleStorageTest {
   public void test() throws SQLException {
     Connection connection = DataSourceUtils.getConnection(dataSource);
 
-    OracleProcessIdSource ps = new OracleProcessIdSource();
-    ps.setRedoCount(Integer.MAX_VALUE);
-    ps.setConnection(connection);
-    ps.setPipelineName(PIPELINE_NAME);
-    ps.init();
-
     OracleStorage os = new OracleStorage();
     os.setPipelineName(PIPELINE_NAME);
     os.setConnection(connection);

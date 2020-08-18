@@ -11,7 +11,6 @@
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.concurrent.CountDownLatch;
 
 import pipelite.ApplicationConfiguration;
@@ -23,9 +22,7 @@ import uk.ac.ebi.ena.sra.pipeline.configuration.LSFExecutorFactory;
 import uk.ac.ebi.ena.sra.pipeline.configuration.PipeliteProcessFactory;
 import pipelite.lock.ProcessInstanceOraclePackageLocker;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.TaskIdSource;
 import pipelite.lock.ProcessInstanceLocker;
-import uk.ac.ebi.ena.sra.pipeline.storage.OracleProcessIdSource;
 import uk.ac.ebi.ena.sra.pipeline.storage.OracleStorage;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
@@ -76,16 +73,6 @@ public class Launcher {
     return os;
   }
 
-  private TaskIdSource initTaskIdSource() throws SQLException {
-    OracleProcessIdSource ts = new OracleProcessIdSource();
-    ts.setConnection(connection);
-    ts.setPipelineName(applicationConfiguration.launcherConfiguration.getProcessName());
-    ts.setRedoCount(applicationConfiguration.taskExecutorConfiguration.getRetries());
-    ts.init();
-
-    return ts;
-  }
-
   public void run(String... args) {
     try {
       System.exit(_run());
@@ -96,13 +83,13 @@ public class Launcher {
 
   private int _run() {
 
-    TaskIdSource task_id_source = null;
-    PipeliteLauncher launcher = new PipeliteLauncher();
     OracleStorage storage = null;
     CountDownLatch latch = new CountDownLatch(1);
 
     String launcherName = applicationConfiguration.launcherConfiguration.getLauncherName();
     String processName = applicationConfiguration.launcherConfiguration.getProcessName();
+
+    PipeliteLauncher launcher = new PipeliteLauncher(processName, pipeliteProcessRepository);
 
     try {
       LauncherInstanceLocker launcherInstanceLocker =
@@ -113,9 +100,7 @@ public class Launcher {
         storage = initStorageBackend();
 
         if (launcherInstanceLocker.lock(launcherName, processName)) {
-          task_id_source = initTaskIdSource();
 
-          launcher.setTaskIdSource(task_id_source);
           launcher.setProcessFactory(
               new PipeliteProcessFactory(
                   launcherName,
@@ -178,13 +163,6 @@ public class Launcher {
       } finally {
         try {
           launcher.shutdown();
-        } catch (Throwable t) {
-          t.printStackTrace();
-        }
-
-        try {
-          if (task_id_source instanceof OracleProcessIdSource)
-            ((OracleProcessIdSource) task_id_source).done();
         } catch (Throwable t) {
           t.printStackTrace();
         }

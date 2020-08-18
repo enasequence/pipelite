@@ -22,14 +22,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
+import pipelite.RandomStringGenerator;
 import pipelite.TestConfiguration;
 import pipelite.entity.PipeliteProcess;
+import pipelite.repository.PipeliteProcessRepository;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessPoolExecutor;
 import pipelite.task.executor.TaskExecutor;
 
-import javax.sql.DataSource;
 import javax.transaction.Transactional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @ActiveProfiles("test")
 public class LauncherDBTest {
 
-  @Autowired DataSource dataSource;
+  @Autowired PipeliteProcessRepository pipeliteProcessRepository;
 
   static final long delay = 5 * 1000;
   static final int workers = ForkJoinPool.getCommonPoolParallelism();
@@ -47,34 +48,24 @@ public class LauncherDBTest {
   @Transactional
   @Rollback
   public void test() throws SQLException, InterruptedException {
-    Connection connection = DataSourceUtils.getConnection(dataSource);
-
-    OracleTaskIdSource id_src = new OracleTaskIdSource();
-    id_src.setTableName("PIPELITE_STAGE");
-    id_src.setRedoCount(Integer.MAX_VALUE);
-    id_src.setConnection(connection);
-    id_src.init();
 
     PipeliteLauncher.ProcessFactory pr_src =
-        process_id ->
+        pipeliteProcess ->
             new ProcessLauncherInterface() {
               @Override
               public void run() {
-                System.out.println("EXECUTING " + process_id);
+                System.out.println("EXECUTING " + pipeliteProcess.getProcessId());
                 try {
                   Thread.sleep(delay);
                 } catch (InterruptedException e) {
                   Thread.currentThread().interrupt();
                 }
-                //                        if( ThreadLocalRandom.current().nextDouble() > 0.5 )
-                //                            throw new RuntimeException();
-                //                        else
                 throw new Error();
               }
 
               @Override
               public String getProcessId() {
-                return process_id;
+                return pipeliteProcess.getProcessId();
               }
 
               @Override
@@ -99,8 +90,8 @@ public class LauncherDBTest {
           }
         };
 
-    PipeliteLauncher l = new PipeliteLauncher();
-    l.setTaskIdSource(id_src);
+    PipeliteLauncher l =
+        new PipeliteLauncher(RandomStringGenerator.randomProcessName(), pipeliteProcessRepository);
     l.setSourceReadTimeout(1);
     l.setProcessFactory(pr_src);
     l.setProcessPool(pool);

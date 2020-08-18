@@ -42,15 +42,13 @@ import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
 public class ProcessLauncher implements ProcessLauncherInterface {
 
   private final String launcherName;
-  private final String processName;
-  private final String processId;
 
+  private final PipeliteProcess pipeliteProcess;
   private final ExceptionResolver resolver;
   private final ProcessInstanceLocker locker;
   private final PipeliteProcessRepository pipeliteProcessRepository;
   private final PipeliteStageRepository pipeliteStageRepository;
 
-  private PipeliteProcess pipeliteProcess;
   private TaskInstance[] instances;
   private StorageBackend storage;
   private TaskExecutor executor;
@@ -61,20 +59,17 @@ public class ProcessLauncher implements ProcessLauncherInterface {
 
   public ProcessLauncher(
       String launcherName,
-      String processName,
-      String processId,
+      PipeliteProcess pipeliteProcess,
       ExceptionResolver resolver,
       ProcessInstanceLocker locker,
       @Autowired PipeliteProcessRepository pipeliteProcessRepository,
       @Autowired PipeliteStageRepository pipeliteStageRepository) {
 
     Verify.verifyNotNull(launcherName);
-    Verify.verifyNotNull(processName);
-    Verify.verifyNotNull(processName);
+    Verify.verifyNotNull(pipeliteProcess);
 
     this.launcherName = launcherName;
-    this.processName = processName;
-    this.processId = processId;
+    this.pipeliteProcess = pipeliteProcess;
     this.resolver = resolver;
     this.locker = locker;
     this.pipeliteProcessRepository = pipeliteProcessRepository;
@@ -130,18 +125,12 @@ public class ProcessLauncher implements ProcessLauncherInterface {
   void lifecycle() {
     if (!do_stop) {
       try {
-        init_state();
         init_stages();
-
-        load_state();
 
         if (!lockProcessInstance()) {
           log.error(String.format("There were problems while locking process %s.", getProcessId()));
           return;
         }
-
-        // load_state();
-        // save_state(); // this is to check permissions
 
         if (ProcessExecutionState.ACTIVE != pipeliteProcess.getState()) {
           log.warn(
@@ -248,25 +237,6 @@ public class ProcessLauncher implements ProcessLauncherInterface {
     return true;
   }
 
-  private void init_state() {
-    pipeliteProcess = new PipeliteProcess();
-    pipeliteProcess.setProcessName(processName);
-    pipeliteProcess.setProcessId(processId);
-  }
-
-  private void load_state() {
-    PipeliteProcessId id =
-        new PipeliteProcessId(pipeliteProcess.getProcessId(), pipeliteProcess.getProcessName());
-
-    Optional<PipeliteProcess> pipeliteProcessSaved = pipeliteProcessRepository.findById(id);
-
-    if (pipeliteProcessSaved.isPresent()) {
-      this.pipeliteProcess = pipeliteProcessSaved.get();
-    } else {
-      throw new RuntimeException("Failed to load processing state for " + id);
-    }
-  }
-
   private void save_state() {
     pipeliteProcessRepository.save(pipeliteProcess);
   }
@@ -279,7 +249,11 @@ public class ProcessLauncher implements ProcessLauncherInterface {
       Stage stage = stages[i];
       TaskInstance instance = new TaskInstance(stage);
       instance.setPipeliteStage(
-          PipeliteStage.newExecution(processId, processName, stage.toString(), storage.getExecutionId()));
+          PipeliteStage.newExecution(
+              pipeliteProcess.getProcessId(),
+              pipeliteProcess.getProcessName(),
+              stage.toString(),
+              storage.getExecutionId()));
       instance.setTaskExecutorConfig(stage.getExecutorConfig());
       instance.setMemory(stage.getMemory());
       instance.setCores(stage.getCores());
@@ -410,7 +384,7 @@ public class ProcessLauncher implements ProcessLauncherInterface {
 
   @Override
   public String getProcessId() {
-    return processId;
+    return pipeliteProcess.getProcessId();
   }
 
   @Override
@@ -424,7 +398,7 @@ public class ProcessLauncher implements ProcessLauncherInterface {
   }
 
   public String getPipelineName() {
-    return processName;
+    return pipeliteProcess.getProcessName();
   }
 
   public void setRedoCount(int max_redo_count) {

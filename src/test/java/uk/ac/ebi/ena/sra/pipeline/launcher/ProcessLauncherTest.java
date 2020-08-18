@@ -163,12 +163,14 @@ public class ProcessLauncherTest {
       ProcessConfiguration processConfiguration, MockStorage mockStorage, TaskExecutor executor) {
     String launcherName = "TEST_LAUNCHER";
     ProcessInstanceLocker locker = new ProcessInstanceMemoryLocker();
+    PipeliteProcess pipeliteProcess = new PipeliteProcess();
+    pipeliteProcess.setProcessId(PROCESS_ID);
+    pipeliteProcess.setProcessName(PROCESS_NAME);
     ProcessLauncher process =
         spy(
             new ProcessLauncher(
                 launcherName,
-                PROCESS_NAME,
-                PROCESS_ID,
+                pipeliteProcess,
                 resolver,
                 locker,
                 mockStorage.pipeliteProcessRepository,
@@ -224,9 +226,7 @@ public class ProcessLauncherTest {
       public void run() {}
     }
 
-    TestStages(
-        Class<? extends TestStages.TestTask> taskClass,
-        TestStages dependsOn) {
+    TestStages(Class<? extends TestStages.TestTask> taskClass, TestStages dependsOn) {
       this.taskClass = taskClass;
       this.dependsOn = dependsOn;
     }
@@ -264,7 +264,8 @@ public class ProcessLauncherTest {
   public void Test() {
 
     Stage[] stages = TestStages.values();
-    String[] names = Arrays.stream(TestStages.class.getEnumConstants()).map(Enum::name).toArray(String[]::new);
+    String[] names =
+        Arrays.stream(TestStages.class.getEnumConstants()).map(Enum::name).toArray(String[]::new);
 
     ProcessConfiguration processConfiguration = mock(ProcessConfiguration.class);
     doReturn(stages).when(processConfiguration).getStageArray();
@@ -327,8 +328,6 @@ public class ProcessLauncherTest {
               names,
               new TaskExecutionResult[] {success(), success(), transientError(), success()},
               new boolean[] {false, true, true, true});
-
-      StorageBackend mockedStorage = mockStorage.storageBackend;
 
       TaskExecutor spiedExecutor = initExecutor(processConfiguration);
       ProcessLauncher pl = initProcessLauncher(processConfiguration, mockStorage, spiedExecutor);

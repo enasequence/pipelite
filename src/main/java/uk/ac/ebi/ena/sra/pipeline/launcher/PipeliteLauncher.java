@@ -17,19 +17,24 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 import pipelite.entity.PipeliteProcess;
+import pipelite.process.state.ProcessExecutionState;
+import pipelite.repository.PipeliteProcessRepository;
 import pipelite.task.executor.TaskExecutor;
 import pipelite.lock.ProcessInstanceLocker;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
 
 public class PipeliteLauncher {
-  // Contract for TaskIdSource: user is responsible for checking whether task was completed by
-  // pipeline or not
-  public interface TaskIdSource {
-    List<String> getTaskQueue() throws SQLException;
+
+  private final String processName;
+  private final PipeliteProcessRepository pipeliteProcessRepository;
+
+  public PipeliteLauncher(String processName, PipeliteProcessRepository pipeliteProcessRepository) {
+    this.processName = processName;
+    this.pipeliteProcessRepository = pipeliteProcessRepository;
   }
 
   public interface ProcessFactory {
-    ProcessLauncherInterface create(String processId);
+    ProcessLauncherInterface create(PipeliteProcess pipeliteProcess);
   }
 
   public interface ProcessLauncherInterface extends Runnable {
@@ -66,8 +71,6 @@ public class PipeliteLauncher {
 
   TaggedPoolExecutor thread_pool;
 
-  static final int MEMORY_LIMIT = 15000;
-  TaskIdSource task_id_source;
   private ProcessFactory process_factory;
   private int source_read_timeout = 60 * 1000;
   private boolean exit_when_empty;
@@ -77,14 +80,6 @@ public class PipeliteLauncher {
 
   public void setProcessFactory(ProcessFactory process_factory) {
     this.process_factory = process_factory;
-  }
-
-  public void setTaskIdSource(TaskIdSource task_id_source) {
-    this.task_id_source = task_id_source;
-  }
-
-  public TaskIdSource getTaskIdSource() {
-    return this.task_id_source;
   }
 
   public void setProcessPool(ProcessPoolExecutor thread_pool) {
@@ -118,19 +113,20 @@ public class PipeliteLauncher {
     return this.do_stop;
   }
 
-  public void execute() throws SQLException {
-    List<String> task_queue;
+  public void execute() {
+    List<PipeliteProcess> pipeliteProcessQueue;
     main:
     while (!do_stop
         && null
-            != (task_queue =
+            != (pipeliteProcessQueue =
                 (thread_pool.getCorePoolSize() - thread_pool.getActiveCount()) > 0
-                    ? getTaskIdSource().getTaskQueue()
+                    ? pipeliteProcessRepository.findAllByProcessNameAndStateOrderByPriorityDesc(
+                        processName, ProcessExecutionState.ACTIVE)
                     : Collections.emptyList())) {
-      if (exit_when_empty && task_queue.isEmpty()) break;
+      if (exit_when_empty && pipeliteProcessQueue.isEmpty()) break;
 
-      for (String process_id : task_queue) {
-        ProcessLauncherInterface process = getProcessFactory().create(process_id);
+      for (PipeliteProcess pipeliteProcess : pipeliteProcessQueue) {
+        ProcessLauncherInterface process = getProcessFactory().create(pipeliteProcess);
         process.setExecutor(getExecutorFactory().create());
         try {
           thread_pool.execute(process);
@@ -143,7 +139,7 @@ public class PipeliteLauncher {
       while (until > System.currentTimeMillis()) {
         try {
           Thread.sleep(1000);
-          if (0 == thread_pool.getActiveCount() && !task_queue.isEmpty()) break;
+          if (0 == thread_pool.getActiveCount() && !pipeliteProcessQueue.isEmpty()) break;
         } catch (InterruptedException e) {
           Thread.currentThread().interrupt();
           break main;

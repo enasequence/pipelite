@@ -12,6 +12,7 @@ package uk.ac.ebi.ena.sra.pipeline.configuration;
 
 import lombok.Value;
 import pipelite.ApplicationConfiguration;
+import pipelite.entity.PipeliteProcess;
 import pipelite.lock.ProcessInstanceLocker;
 import pipelite.repository.PipeliteProcessRepository;
 import pipelite.repository.PipeliteStageRepository;
@@ -30,14 +31,13 @@ public class PipeliteProcessFactory implements ProcessFactory {
   private final PipeliteStageRepository pipeliteStageRepository;
 
   @Override
-  public ProcessLauncherInterface create(String processId) {
+  public ProcessLauncherInterface create(PipeliteProcess pipeliteProcess) {
     ExceptionResolver resolver = applicationConfiguration.processConfiguration.createResolver();
 
     ProcessLauncher process =
         new ProcessLauncher(
             launcherName,
-            applicationConfiguration.launcherConfiguration.getProcessName(),
-            processId,
+            pipeliteProcess,
             resolver,
             locker,
             pipeliteProcessRepository,
