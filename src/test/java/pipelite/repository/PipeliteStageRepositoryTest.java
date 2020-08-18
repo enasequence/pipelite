@@ -24,7 +24,7 @@ class PipeliteStageRepositoryTest {
   @Test
   @Transactional
   @Rollback
-  public void test() {
+  public void testCrud() {
 
     String processId = RandomStringGenerator.randomProcessId();
     String processName = RandomStringGenerator.randomProcessName();
