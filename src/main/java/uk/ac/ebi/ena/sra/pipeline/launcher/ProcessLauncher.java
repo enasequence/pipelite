@@ -33,7 +33,6 @@ import pipelite.task.state.TaskExecutionState;
 import pipelite.task.result.TaskExecutionResult;
 import pipelite.stage.Stage;
 import pipelite.lock.ProcessInstanceLocker;
-import uk.ac.ebi.ena.sra.pipeline.storage.ProcessLogBean;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
 import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
 
@@ -263,24 +262,15 @@ public class ProcessLauncher implements ProcessLauncherInterface {
 
   private boolean load_stages() {
     for (TaskInstance instance : instances) {
+      String processId = instance.getPipeliteStage().getProcessId();
+      String processName = instance.getPipeliteStage().getProcessName();
+      String stageName = instance.getPipeliteStage().getStageName();
+
       Optional<PipeliteStage> pipeliteStageSaved =
-          pipeliteStageRepository.findById(
-              new PipeliteStageId(
-                  instance.getPipeliteStage().getProcessId(),
-                  instance.getPipeliteStage().getProcessName(),
-                  instance.getPipeliteStage().getStageName()));
+          pipeliteStageRepository.findById(new PipeliteStageId(processId, processName, stageName));
       if (!pipeliteStageSaved.isPresent()) {
-        ProcessLogBean bean = new ProcessLogBean();
-        bean.setPipelineName(getPipelineName());
-        bean.setProcessID(getProcessId());
-        bean.setStage(instance.getPipeliteStage().getStageName());
-        bean.setMessage("Unable to load stage");
-        bean.setExecutionId(instance.getPipeliteStage().getExecutionId());
-        try {
-          storage.save(bean);
-        } catch (StorageException se1) {
-          log.error(se1.getMessage(), se1);
-        }
+        log.error(
+            "Unable to load process {} stage {} for process {}", processName, stageName, processId);
         return false;
       }
       instance.setPipeliteStage(pipeliteStageSaved.get());
@@ -289,23 +279,23 @@ public class ProcessLauncher implements ProcessLauncherInterface {
   }
 
   private void save_stages() {
-    for (TaskInstance instance : instances) {
-      pipeliteStageRepository.save(instance.getPipeliteStage());
+    for (TaskInstance taskInstance : instances) {
+      pipeliteStageRepository.save(taskInstance.getPipeliteStage());
     }
   }
 
   private void execute_stages() throws StorageException {
-    for (TaskInstance instance :
+    for (TaskInstance taskInstance :
         instances) // TODO: replace with eval.next() and whole process re-evaluation
     {
       if (do_stop) break;
 
-      if (TaskExecutionState.ACTIVE == executor.getTaskExecutionState(instance)) {
+      if (TaskExecutionState.ACTIVE == executor.getTaskExecutionState(taskInstance)) {
 
-        instance.getPipeliteStage().retryExecution(storage.getExecutionId());
-        pipeliteStageRepository.save(instance.getPipeliteStage());
+        taskInstance.getPipeliteStage().retryExecution(storage.getExecutionId());
+        pipeliteStageRepository.save(taskInstance.getPipeliteStage());
 
-        executor.execute(instance);
+        executor.execute(taskInstance);
 
         ExecutionInfo info = executor.get_info();
 
@@ -317,12 +307,12 @@ public class ProcessLauncher implements ProcessLauncherInterface {
           result = resolver.exitCodeSerializer().deserialize(info.getExitCode());
         }
 
-        instance
+        taskInstance
             .getPipeliteStage()
             .endExecution(result, info.getCommandline(), info.getStdout(), info.getStderr());
-        pipeliteStageRepository.save(instance.getPipeliteStage());
+        pipeliteStageRepository.save(taskInstance.getPipeliteStage());
 
-        List<TaskInstance> dependend = invalidate_dependands(instance);
+        List<TaskInstance> dependend = invalidate_dependands(taskInstance);
         for (TaskInstance si : dependend) {
           pipeliteStageRepository.save(si.getPipeliteStage());
         }
@@ -330,28 +320,14 @@ public class ProcessLauncher implements ProcessLauncherInterface {
         storage.flush();
 
         if (result.isError()) {
-          emit_log(instance, info);
+          log.error(
+              "Error executing Unable to load process {} stage {} for process {}",
+              pipeliteProcess.getProcessName(),
+              taskInstance.getStage().getStageName(),
+              pipeliteProcess.getProcessId());
           break;
         }
       }
-    }
-  }
-
-  private void emit_log(TaskInstance instance, ExecutionInfo info) {
-    ProcessLogBean bean = new ProcessLogBean();
-    bean.setThrowable(info.getThrowable());
-    bean.setExceptionText(info.getLogMessage());
-    bean.setMessage(instance.getPipeliteStage().getResult());
-    bean.setLSFHosts(info.getHost());
-    bean.setLSFJobID(null != info.getPID() ? info.getPID().longValue() : null);
-    bean.setProcessID(instance.getPipeliteStage().getProcessId());
-    bean.setStage(instance.getPipeliteStage().getStageName());
-    bean.setPipelineName(instance.getPipeliteStage().getProcessName());
-    bean.setExecutionId(instance.getPipeliteStage().getExecutionId());
-    try {
-      storage.save(bean);
-    } catch (StorageException e) {
-      log.error(e.getMessage(), e);
     }
   }
 

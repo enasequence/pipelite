@@ -10,7 +10,6 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.storage;
 
-import java.sql.SQLException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 

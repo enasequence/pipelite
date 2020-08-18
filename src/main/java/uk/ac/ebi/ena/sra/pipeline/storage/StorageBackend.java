@@ -26,9 +26,6 @@ public interface StorageBackend {
 
   String getExecutionId() throws StorageException;
 
-  //   void load( OracleProcessLogBean bean ) throws StorageException;
-  void save(ProcessLogBean bean) throws StorageException;
-
   void flush() throws StorageException;
 
   void close() throws StorageException;
