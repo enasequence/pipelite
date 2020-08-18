@@ -40,10 +40,6 @@ public class PipeliteStage {
   @Column(name = "EXEC_CNT")
   private Integer executionCount = 0;
 
-  // TODO: change column type to Integer
-  @Column(name = "EXEC_ID")
-  private String executionId;
-
   @Column(name = "EXEC_START")
   private LocalDateTime startTime;
 
@@ -70,19 +66,17 @@ public class PipeliteStage {
   @Convert(converter = BooleanConverter.class)
   private Boolean enabled = true;
 
-  public static PipeliteStage newExecution(String processId, String processName, String stageName, String executionId) {
+  public static PipeliteStage newExecution(String processId, String processName, String stageName) {
     PipeliteStage pipeliteStage = new PipeliteStage();
     pipeliteStage.setProcessId(processId);
     pipeliteStage.setProcessName(processName);
     pipeliteStage.setStageName(stageName);
-    pipeliteStage.setExecutionId(executionId);
     return pipeliteStage;
   }
 
   public void resetExecution() {
     this.resultType = null;
     this.result = null;
-    this.executionId = null;
     this.startTime = null;
     this.endTime = null;
     this.executionCmd = null;
@@ -91,10 +85,9 @@ public class PipeliteStage {
     this.executionCount = 0;
   }
 
-  public void retryExecution(String executionId) {
+  public void retryExecution() {
     this.resultType = null;
     this.result = null;
-    this.executionId = executionId;
     this.startTime = LocalDateTime.now();
     this.endTime = null;
     this.executionCmd = null;

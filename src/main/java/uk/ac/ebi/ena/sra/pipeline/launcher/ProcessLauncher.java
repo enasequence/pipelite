@@ -33,8 +33,6 @@ import pipelite.task.state.TaskExecutionState;
 import pipelite.task.result.TaskExecutionResult;
 import pipelite.stage.Stage;
 import pipelite.lock.ProcessInstanceLocker;
-import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
-import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
 
 @Slf4j
 public class ProcessLauncher implements ProcessLauncherInterface {
@@ -48,7 +46,6 @@ public class ProcessLauncher implements ProcessLauncherInterface {
   private final PipeliteStageRepository pipeliteStageRepository;
 
   private TaskInstance[] instances;
-  private StorageBackend storage;
   private TaskExecutor executor;
   private Stage[] stages;
   private String __name;
@@ -82,16 +79,6 @@ public class ProcessLauncher implements ProcessLauncherInterface {
   @Override
   public PipeliteProcess getPipeliteProcess() {
     return pipeliteProcess;
-  }
-
-  @Override
-  public void setStorage(StorageBackend storage) {
-    this.storage = storage;
-  }
-
-  @Override
-  public StorageBackend getStorage() {
-    return this.storage;
   }
 
   public void setStages(Stage[] stages) {
@@ -145,8 +132,6 @@ public class ProcessLauncher implements ProcessLauncherInterface {
           return;
         }
 
-        // save_stages(); // this is to check database permissions
-
         if (!eval_process()) {
           log.warn(String.format("Terminal state reached for %s", pipeliteProcess));
         } else {
@@ -160,11 +145,7 @@ public class ProcessLauncher implements ProcessLauncherInterface {
           }
         }
         save_state();
-      } catch (StorageException e) {
-        log.error(e.getMessage(), e);
-
       } finally {
-        //            unlock_stages();
         unlockProcessInstance();
         purge_stages();
       }
@@ -239,7 +220,7 @@ public class ProcessLauncher implements ProcessLauncherInterface {
     pipeliteProcessRepository.save(pipeliteProcess);
   }
 
-  private void init_stages() throws StorageException {
+  private void init_stages()  {
     Stage[] stages = getStages();
     instances = new TaskInstance[stages.length];
 
@@ -250,8 +231,7 @@ public class ProcessLauncher implements ProcessLauncherInterface {
           PipeliteStage.newExecution(
               pipeliteProcess.getProcessId(),
               pipeliteProcess.getProcessName(),
-              stage.toString(),
-              storage.getExecutionId()));
+              stage.toString()));
       instance.setTaskExecutorConfig(stage.getExecutorConfig());
       instance.setMemory(stage.getMemory());
       instance.setCores(stage.getCores());
@@ -284,7 +264,7 @@ public class ProcessLauncher implements ProcessLauncherInterface {
     }
   }
 
-  private void execute_stages() throws StorageException {
+  private void execute_stages()  {
     for (TaskInstance taskInstance :
         instances) // TODO: replace with eval.next() and whole process re-evaluation
     {
@@ -292,7 +272,7 @@ public class ProcessLauncher implements ProcessLauncherInterface {
 
       if (TaskExecutionState.ACTIVE == executor.getTaskExecutionState(taskInstance)) {
 
-        taskInstance.getPipeliteStage().retryExecution(storage.getExecutionId());
+        taskInstance.getPipeliteStage().retryExecution();
         pipeliteStageRepository.save(taskInstance.getPipeliteStage());
 
         executor.execute(taskInstance);
@@ -316,8 +296,6 @@ public class ProcessLauncher implements ProcessLauncherInterface {
         for (TaskInstance si : dependend) {
           pipeliteStageRepository.save(si.getPipeliteStage());
         }
-
-        storage.flush();
 
         if (result.isError()) {
           log.error(

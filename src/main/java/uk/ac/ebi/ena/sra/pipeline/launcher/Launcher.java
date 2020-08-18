@@ -23,9 +23,6 @@ import uk.ac.ebi.ena.sra.pipeline.configuration.PipeliteProcessFactory;
 import pipelite.lock.ProcessInstanceOraclePackageLocker;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
 import pipelite.lock.ProcessInstanceLocker;
-import uk.ac.ebi.ena.sra.pipeline.storage.OracleStorage;
-import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
-import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend.StorageException;
 
 public class Launcher {
 
@@ -48,29 +45,12 @@ public class Launcher {
   private static final int DEFAULT_ERROR_EXIT = 1;
   private static final int NORMAL_EXIT = 0;
 
-  private static ProcessPoolExecutor init(int workers, StorageBackend storage) {
+  private static ProcessPoolExecutor init(int workers) {
     return new ProcessPoolExecutor(workers) {
-      public void unwind(ProcessLauncherInterface process) {
-        StorageBackend storage = process.getStorage();
-        try {
-          storage.flush();
-        } catch (StorageException e) {
-          // TODO Auto-generated catch block
-          e.printStackTrace();
-        }
-      }
+      public void unwind(ProcessLauncherInterface process) {}
 
-      public void init(ProcessLauncherInterface process) {
-        process.setStorage(storage);
-      }
+      public void init(ProcessLauncherInterface process) {}
     };
-  }
-
-  private OracleStorage initStorageBackend() {
-    OracleStorage os = new OracleStorage();
-    os.setConnection(connection);
-    os.setPipelineName(applicationConfiguration.launcherConfiguration.getProcessName());
-    return os;
   }
 
   public void run(String... args) {
@@ -83,7 +63,6 @@ public class Launcher {
 
   private int _run() {
 
-    OracleStorage storage = null;
     CountDownLatch latch = new CountDownLatch(1);
 
     String launcherName = applicationConfiguration.launcherConfiguration.getLauncherName();
@@ -97,7 +76,6 @@ public class Launcher {
       ProcessInstanceLocker processInstanceLocker =
           new ProcessInstanceOraclePackageLocker(connection);
       try {
-        storage = initStorageBackend();
 
         if (launcherInstanceLocker.lock(launcherName, processName)) {
 
@@ -118,7 +96,7 @@ public class Launcher {
 
           launcher.setSourceReadTimeout(120 * 1000);
           launcher.setProcessPool(
-              init(applicationConfiguration.launcherConfiguration.getWorkers(), storage));
+              init(applicationConfiguration.launcherConfiguration.getWorkers()));
 
           // TODO remove
           Runtime.getRuntime()
@@ -165,18 +143,6 @@ public class Launcher {
           launcher.shutdown();
         } catch (Throwable t) {
           t.printStackTrace();
-        }
-
-        try {
-          storage.flush();
-        } catch (StorageException e) {
-          e.printStackTrace();
-        }
-
-        try {
-          storage.close();
-        } catch (StorageException e) {
-          e.printStackTrace();
         }
 
         latch.countDown();

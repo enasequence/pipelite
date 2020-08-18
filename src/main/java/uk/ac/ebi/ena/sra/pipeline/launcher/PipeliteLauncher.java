@@ -20,7 +20,6 @@ import pipelite.process.state.ProcessExecutionState;
 import pipelite.repository.PipeliteProcessRepository;
 import pipelite.task.executor.TaskExecutor;
 import pipelite.lock.ProcessInstanceLocker;
-import uk.ac.ebi.ena.sra.pipeline.storage.StorageBackend;
 
 public class PipeliteLauncher {
 
@@ -42,14 +41,6 @@ public class PipeliteLauncher {
     TaskExecutor getExecutor();
 
     PipeliteProcess getPipeliteProcess();
-
-    default StorageBackend getStorage() {
-      throw new RuntimeException("Method must be overriden");
-    }
-
-    default void setStorage(StorageBackend storage) {
-      throw new RuntimeException("Method must be overriden");
-    }
 
     default ProcessInstanceLocker getLocker() {
       throw new RuntimeException("Method must be overriden");
