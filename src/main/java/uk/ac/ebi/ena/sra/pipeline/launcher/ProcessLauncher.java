@@ -19,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import pipelite.entity.PipeliteProcess;
-import pipelite.entity.PipeliteProcessId;
 import pipelite.entity.PipeliteStage;
 import pipelite.entity.PipeliteStageId;
 import pipelite.repository.PipeliteProcessRepository;

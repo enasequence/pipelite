@@ -10,7 +10,6 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;

@@ -58,7 +58,7 @@ public class OracleStorageTest {
   @Test
   @Transactional
   @Rollback
-  public void test() throws SQLException {
+  public void test() {
     Connection connection = DataSourceUtils.getConnection(dataSource);
 
     OracleStorage os = new OracleStorage();

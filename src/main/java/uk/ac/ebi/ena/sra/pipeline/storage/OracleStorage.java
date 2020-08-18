@@ -10,12 +10,10 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.storage;
 
-import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
 
 public class OracleStorage implements OracleCommons, StorageBackend {
 

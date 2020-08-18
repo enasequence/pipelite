@@ -10,16 +10,13 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.storage;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
-import org.apache.log4j.PropertyConfigurator;
-import org.junit.jupiter.api.BeforeAll;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.RandomStringGenerator;
@@ -47,7 +44,7 @@ public class LauncherDBTest {
   @Test
   @Transactional
   @Rollback
-  public void test() throws SQLException, InterruptedException {
+  public void test() throws InterruptedException {
 
     PipeliteLauncher.ProcessFactory pr_src =
         pipeliteProcess ->
