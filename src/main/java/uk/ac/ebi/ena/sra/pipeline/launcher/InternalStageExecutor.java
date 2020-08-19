@@ -21,7 +21,6 @@ public class InternalStageExecutor extends AbstractTaskExecutor {
   private final ProcessConfiguration processConfiguration;
 
   private ExecutionInfo info;
-  private Task task = null;
 
   public InternalStageExecutor(ProcessConfiguration processConfiguration) {
     super("", processConfiguration.createResolver());
@@ -43,7 +42,7 @@ public class InternalStageExecutor extends AbstractTaskExecutor {
             processConfiguration
                 .getStage(instance.getPipeliteStage().getStageName())
                 .getTaskClass();
-        task = taskClass.newInstance();
+        Task task = taskClass.newInstance();
         task.run();
 
       } catch (Throwable e) {
@@ -53,8 +52,7 @@ public class InternalStageExecutor extends AbstractTaskExecutor {
         info = new ExecutionInfo();
         info.setThrowable(exception);
         info.setExitCode(
-            Integer.valueOf(
-                resolver.exitCodeSerializer().serialize(resolver.resolveError(exception))));
+                resolver.exitCodeSerializer().serialize(resolver.resolveError(exception)));
       }
     }
   }

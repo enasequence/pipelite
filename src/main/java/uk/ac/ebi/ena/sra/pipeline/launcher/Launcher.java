@@ -10,7 +10,6 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
-import java.sql.Connection;
 import java.util.concurrent.CountDownLatch;
 
 import lombok.AllArgsConstructor;

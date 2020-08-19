@@ -41,7 +41,7 @@ public abstract class AbstractTaskExecutor implements TaskExecutor {
     Set<String> set1 = new HashSet<>(Arrays.asList(pp1));
     Set<String> set2 = new HashSet<>(Arrays.asList(pp2));
     set1.addAll(set2);
-    return set1.toArray(new String[set1.size()]);
+    return set1.toArray(new String[0]);
   }
 
   protected final void addJavaSystemProperties(List<String> p_args, String... properties) {

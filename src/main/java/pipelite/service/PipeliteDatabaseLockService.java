@@ -102,7 +102,7 @@ public class PipeliteDatabaseLockService implements PipeliteLockService {
     }
     repository.save(pipeliteLock);
     return true;
-  };
+  }
 
   private boolean isLocked(String processName, String lockId) {
     return repository.findByProcessNameAndLockId(processName, lockId).isPresent();

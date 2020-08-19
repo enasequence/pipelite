@@ -164,7 +164,7 @@ public class LSFStageExecutor extends AbstractTaskExecutor {
                   instance.getPipeliteStage().getProcessId(),
                   instance.getPipeliteStage().getStageName()),
               "java",
-              p_args.toArray(new String[p_args.size()]));
+              p_args.toArray(new String[0]));
 
       call.setTaskLostExitCode(resolver.exitCodeSerializer().serialize(internalError));
 

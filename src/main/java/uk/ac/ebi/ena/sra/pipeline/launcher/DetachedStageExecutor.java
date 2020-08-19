@@ -92,7 +92,7 @@ public class DetachedStageExecutor extends AbstractTaskExecutor {
                   instance.getPipeliteStage().getProcessId(),
                   instance.getPipeliteStage().getStageName()),
               "java",
-              p_args.toArray(new String[p_args.size()]));
+              p_args.toArray(new String[0]));
 
       log.info(ec.getCommandLine());
 
