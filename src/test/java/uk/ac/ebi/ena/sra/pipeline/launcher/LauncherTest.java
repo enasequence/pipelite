@@ -21,7 +21,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import pipelite.RandomStringGenerator;
 import pipelite.entity.PipeliteProcess;
-import pipelite.repository.PipeliteProcessRepository;
+import pipelite.service.PipeliteProcessService;
 import pipelite.task.executor.TaskExecutor;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.StageExecutorFactory;
@@ -44,7 +44,7 @@ public class LauncherTest {
   @Test
   public void test() throws InterruptedException {
 
-    PipeliteProcessRepository pipeliteProcessRepository = mock(PipeliteProcessRepository.class);
+    PipeliteProcessService pipeliteProcessService = mock(PipeliteProcessService.class);
 
     doAnswer(
             new Answer<Object>() {
@@ -66,8 +66,7 @@ public class LauncherTest {
                 return null;
               }
             })
-        .when(pipeliteProcessRepository)
-        .findAllByProcessNameAndStateOrderByPriorityDesc(any(), any());
+        .when(pipeliteProcessService).getActiveProcesses(any());
 
     StageExecutorFactory e_src = () -> null;
 
@@ -112,7 +111,7 @@ public class LauncherTest {
           }
         };
 
-    PipeliteLauncher l = new PipeliteLauncher(PROCESS_NAME, pipeliteProcessRepository);
+    PipeliteLauncher l = new PipeliteLauncher(PROCESS_NAME, pipeliteProcessService);
     l.setSourceReadTimeout(1);
     l.setProcessFactory(pr_src);
     l.setExecutorFactory(e_src);

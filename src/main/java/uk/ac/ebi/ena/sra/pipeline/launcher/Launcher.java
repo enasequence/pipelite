@@ -15,8 +15,8 @@ import java.util.concurrent.CountDownLatch;
 
 import lombok.AllArgsConstructor;
 import pipelite.ApplicationConfiguration;
-import pipelite.repository.PipeliteProcessRepository;
-import pipelite.repository.PipeliteStageRepository;
+import pipelite.service.PipeliteProcessService;
+import pipelite.service.PipeliteStageService;
 import pipelite.service.PipeliteLockService;
 import uk.ac.ebi.ena.sra.pipeline.configuration.LSFExecutorFactory;
 import uk.ac.ebi.ena.sra.pipeline.configuration.PipeliteProcessFactory;
@@ -26,8 +26,8 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInter
 public class Launcher {
 
   private final ApplicationConfiguration applicationConfiguration;
-  private final PipeliteProcessRepository pipeliteProcessRepository;
-  private final PipeliteStageRepository pipeliteStageRepository;
+  private final PipeliteProcessService pipeliteProcessService;
+  private final PipeliteStageService pipeliteStageService;
   private final PipeliteLockService locker;
 
   private static final int DEFAULT_ERROR_EXIT = 1;
@@ -56,7 +56,7 @@ public class Launcher {
     String launcherName = applicationConfiguration.launcherConfiguration.getLauncherName();
     String processName = applicationConfiguration.launcherConfiguration.getProcessName();
 
-    PipeliteLauncher launcher = new PipeliteLauncher(processName, pipeliteProcessRepository);
+    PipeliteLauncher launcher = new PipeliteLauncher(processName, pipeliteProcessService);
 
     try {
       if (locker.lockLauncher(launcherName, processName)) {
@@ -66,8 +66,8 @@ public class Launcher {
                 launcherName,
                 applicationConfiguration,
                 locker,
-                pipeliteProcessRepository,
-                pipeliteStageRepository));
+                pipeliteProcessService,
+                pipeliteStageService));
         launcher.setExecutorFactory(
             new LSFExecutorFactory(
                 processName,

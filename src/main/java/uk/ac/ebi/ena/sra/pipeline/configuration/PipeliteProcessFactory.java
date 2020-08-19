@@ -13,8 +13,8 @@ package uk.ac.ebi.ena.sra.pipeline.configuration;
 import lombok.Value;
 import pipelite.ApplicationConfiguration;
 import pipelite.entity.PipeliteProcess;
-import pipelite.repository.PipeliteProcessRepository;
-import pipelite.repository.PipeliteStageRepository;
+import pipelite.service.PipeliteProcessService;
+import pipelite.service.PipeliteStageService;
 import pipelite.resolver.ExceptionResolver;
 import pipelite.service.PipeliteLockService;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
@@ -27,8 +27,8 @@ public class PipeliteProcessFactory implements ProcessFactory {
   private final String launcherName;
   private final ApplicationConfiguration applicationConfiguration;
   private final PipeliteLockService locker;
-  private final PipeliteProcessRepository pipeliteProcessRepository;
-  private final PipeliteStageRepository pipeliteStageRepository;
+  private final PipeliteProcessService pipeliteProcessService;
+  private final PipeliteStageService pipeliteStageService;
 
   @Override
   public ProcessLauncherInterface create(PipeliteProcess pipeliteProcess) {
@@ -40,8 +40,8 @@ public class PipeliteProcessFactory implements ProcessFactory {
             pipeliteProcess,
             resolver,
             locker,
-            pipeliteProcessRepository,
-            pipeliteStageRepository);
+            pipeliteProcessService,
+            pipeliteStageService);
     process.setRedoCount(applicationConfiguration.taskExecutorConfiguration.getRetries());
     process.setStages(applicationConfiguration.processConfiguration.getStageArray());
     return process;

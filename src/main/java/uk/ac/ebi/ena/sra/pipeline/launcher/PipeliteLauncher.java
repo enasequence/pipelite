@@ -16,18 +16,17 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 import pipelite.entity.PipeliteProcess;
-import pipelite.process.state.ProcessExecutionState;
-import pipelite.repository.PipeliteProcessRepository;
+import pipelite.service.PipeliteProcessService;
 import pipelite.task.executor.TaskExecutor;
 
 public class PipeliteLauncher {
 
   private final String processName;
-  private final PipeliteProcessRepository pipeliteProcessRepository;
+  private final PipeliteProcessService pipeliteProcessService;
 
-  public PipeliteLauncher(String processName, PipeliteProcessRepository pipeliteProcessRepository) {
+  public PipeliteLauncher(String processName, PipeliteProcessService pipeliteProcessService) {
     this.processName = processName;
-    this.pipeliteProcessRepository = pipeliteProcessRepository;
+    this.pipeliteProcessService = pipeliteProcessService;
   }
 
   public interface ProcessFactory {
@@ -105,8 +104,7 @@ public class PipeliteLauncher {
         && null
             != (pipeliteProcessQueue =
                 (thread_pool.getCorePoolSize() - thread_pool.getActiveCount()) > 0
-                    ? pipeliteProcessRepository.findAllByProcessNameAndStateOrderByPriorityDesc(
-                        processName, ProcessExecutionState.ACTIVE)
+                    ? pipeliteProcessService.getActiveProcesses(processName)
                     : Collections.emptyList())) {
       if (exit_when_empty && pipeliteProcessQueue.isEmpty()) break;
 

@@ -21,7 +21,7 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.RandomStringGenerator;
 import pipelite.TestConfiguration;
 import pipelite.entity.PipeliteProcess;
-import pipelite.repository.PipeliteProcessRepository;
+import pipelite.service.PipeliteProcessService;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessPoolExecutor;
@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @ActiveProfiles("test")
 public class LauncherDBTest {
 
-  @Autowired PipeliteProcessRepository pipeliteProcessRepository;
+  @Autowired PipeliteProcessService pipeliteProcessService;
 
   static final long delay = 5 * 1000;
   static final int workers = ForkJoinPool.getCommonPoolParallelism();
@@ -87,7 +87,7 @@ public class LauncherDBTest {
         };
 
     PipeliteLauncher l =
-        new PipeliteLauncher(RandomStringGenerator.randomProcessName(), pipeliteProcessRepository);
+        new PipeliteLauncher(RandomStringGenerator.randomProcessName(), pipeliteProcessService);
     l.setSourceReadTimeout(1);
     l.setProcessFactory(pr_src);
     l.setProcessPool(pool);

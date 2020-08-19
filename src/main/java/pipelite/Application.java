@@ -4,8 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import pipelite.repository.PipeliteProcessRepository;
-import pipelite.repository.PipeliteStageRepository;
+import pipelite.service.PipeliteProcessService;
+import pipelite.service.PipeliteStageService;
 import pipelite.service.PipeliteLockService;
 import uk.ac.ebi.ena.sra.pipeline.launcher.Launcher;
 
@@ -16,8 +16,8 @@ public class Application implements CommandLineRunner {
 
   @Autowired ApplicationConfiguration applicationConfiguration;
 
-  @Autowired PipeliteProcessRepository pipeliteProcessRepository;
-  @Autowired PipeliteStageRepository pipeliteStageRepository;
+  @Autowired PipeliteProcessService pipeliteProcessService;
+  @Autowired PipeliteStageService pipeliteStageService;
 
   @Autowired PipeliteLockService locker;
 
@@ -30,7 +30,7 @@ public class Application implements CommandLineRunner {
   public void run(String... args) {
     Launcher launcher =
         new Launcher(
-            applicationConfiguration, pipeliteProcessRepository, pipeliteStageRepository, locker);
+            applicationConfiguration, pipeliteProcessService, pipeliteStageService, locker);
     launcher.run(args);
   }
 }

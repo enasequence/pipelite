@@ -20,9 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
-import pipelite.entity.PipeliteStageId;
-import pipelite.repository.PipeliteProcessRepository;
-import pipelite.repository.PipeliteStageRepository;
+import pipelite.service.PipeliteProcessService;
+import pipelite.service.PipeliteStageService;
 import pipelite.service.PipeliteLockService;
 import pipelite.task.executor.TaskExecutor;
 import pipelite.task.instance.TaskInstance;
@@ -42,8 +41,8 @@ public class ProcessLauncher implements ProcessLauncherInterface {
   private final PipeliteProcess pipeliteProcess;
   private final ExceptionResolver resolver;
   private final PipeliteLockService locker;
-  private final PipeliteProcessRepository pipeliteProcessRepository;
-  private final PipeliteStageRepository pipeliteStageRepository;
+  private final PipeliteProcessService pipeliteProcessService;
+  private final PipeliteStageService pipeliteStageService;
 
   private TaskInstance[] instances;
   private TaskExecutor executor;
@@ -57,8 +56,8 @@ public class ProcessLauncher implements ProcessLauncherInterface {
       PipeliteProcess pipeliteProcess,
       ExceptionResolver resolver,
       PipeliteLockService locker,
-      @Autowired PipeliteProcessRepository pipeliteProcessRepository,
-      @Autowired PipeliteStageRepository pipeliteStageRepository) {
+      @Autowired PipeliteProcessService pipeliteProcessService,
+      @Autowired PipeliteStageService pipeliteStageService) {
 
     Verify.verifyNotNull(launcherName);
     Verify.verifyNotNull(pipeliteProcess);
@@ -67,8 +66,8 @@ public class ProcessLauncher implements ProcessLauncherInterface {
     this.pipeliteProcess = pipeliteProcess;
     this.resolver = resolver;
     this.locker = locker;
-    this.pipeliteProcessRepository = pipeliteProcessRepository;
-    this.pipeliteStageRepository = pipeliteStageRepository;
+    this.pipeliteProcessService = pipeliteProcessService;
+    this.pipeliteStageService = pipeliteStageService;
   }
 
   @Override
@@ -217,10 +216,10 @@ public class ProcessLauncher implements ProcessLauncherInterface {
   }
 
   private void save_state() {
-    pipeliteProcessRepository.save(pipeliteProcess);
+    pipeliteProcessService.saveProcess(pipeliteProcess);
   }
 
-  private void init_stages()  {
+  private void init_stages() {
     Stage[] stages = getStages();
     instances = new TaskInstance[stages.length];
 
@@ -229,9 +228,7 @@ public class ProcessLauncher implements ProcessLauncherInterface {
       TaskInstance instance = new TaskInstance(stage);
       instance.setPipeliteStage(
           PipeliteStage.newExecution(
-              pipeliteProcess.getProcessId(),
-              pipeliteProcess.getProcessName(),
-              stage.toString()));
+              pipeliteProcess.getProcessId(), pipeliteProcess.getProcessName(), stage.toString()));
       instance.setTaskExecutorConfig(stage.getExecutorConfig());
       instance.setMemory(stage.getMemory());
       instance.setCores(stage.getCores());
@@ -247,7 +244,7 @@ public class ProcessLauncher implements ProcessLauncherInterface {
       String stageName = instance.getPipeliteStage().getStageName();
 
       Optional<PipeliteStage> pipeliteStageSaved =
-          pipeliteStageRepository.findById(new PipeliteStageId(processId, processName, stageName));
+          pipeliteStageService.getSavedStage(processName, processId, stageName);
       if (!pipeliteStageSaved.isPresent()) {
         log.error(
             "Unable to load process {} stage {} for process {}", processName, stageName, processId);
@@ -260,11 +257,11 @@ public class ProcessLauncher implements ProcessLauncherInterface {
 
   private void save_stages() {
     for (TaskInstance taskInstance : instances) {
-      pipeliteStageRepository.save(taskInstance.getPipeliteStage());
+      pipeliteStageService.saveStage(taskInstance.getPipeliteStage());
     }
   }
 
-  private void execute_stages()  {
+  private void execute_stages() {
     for (TaskInstance taskInstance :
         instances) // TODO: replace with eval.next() and whole process re-evaluation
     {
@@ -273,7 +270,7 @@ public class ProcessLauncher implements ProcessLauncherInterface {
       if (TaskExecutionState.ACTIVE == executor.getTaskExecutionState(taskInstance)) {
 
         taskInstance.getPipeliteStage().retryExecution();
-        pipeliteStageRepository.save(taskInstance.getPipeliteStage());
+        pipeliteStageService.saveStage(taskInstance.getPipeliteStage());
 
         executor.execute(taskInstance);
 
@@ -290,11 +287,11 @@ public class ProcessLauncher implements ProcessLauncherInterface {
         taskInstance
             .getPipeliteStage()
             .endExecution(result, info.getCommandline(), info.getStdout(), info.getStderr());
-        pipeliteStageRepository.save(taskInstance.getPipeliteStage());
+        pipeliteStageService.saveStage(taskInstance.getPipeliteStage());
 
         List<TaskInstance> dependend = invalidate_dependands(taskInstance);
         for (TaskInstance si : dependend) {
-          pipeliteStageRepository.save(si.getPipeliteStage());
+          pipeliteStageService.saveStage(si.getPipeliteStage());
         }
 
         if (result.isError()) {

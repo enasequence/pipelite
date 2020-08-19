@@ -1,4 +1,4 @@
-package pipelite.repository;
+package pipelite.service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,7 +8,6 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.RandomStringGenerator;
 import pipelite.TestConfiguration;
 import pipelite.entity.PipeliteStage;
-import pipelite.entity.PipeliteStageId;
 import pipelite.task.result.TaskExecutionResult;
 
 import javax.transaction.Transactional;
@@ -17,9 +16,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = TestConfiguration.class)
 @ActiveProfiles("test")
-class PipeliteStageRepositoryTest {
+class PipeliteDatabaseStageServiceTest {
 
-  @Autowired PipeliteStageRepository repository;
+  @Autowired PipeliteDatabaseStageService service;
 
   @Test
   @Transactional
@@ -30,23 +29,20 @@ class PipeliteStageRepositoryTest {
     String processName = RandomStringGenerator.randomProcessName();
     String stageName = RandomStringGenerator.randomStageName();
 
-    PipeliteStageId id = new PipeliteStageId(processId, processName, stageName);
+    PipeliteStage stage = PipeliteStage.newExecution(processId, processName, stageName);
 
-    PipeliteStage stage =
-        PipeliteStage.newExecution(processId, processName, stageName);
+    service.saveStage(stage);
 
-    repository.save(stage);
-
-    assertThat(repository.findById(id).get()).isEqualTo(stage);
+    assertThat(service.getSavedStage(processName, processId, stageName).get()).isEqualTo(stage);
 
     stage.endExecution(TaskExecutionResult.success(), "executionCmd", "stdOut", "stdErr");
 
-    repository.save(stage);
+    service.saveStage(stage);
 
-    assertThat(repository.findById(id).get()).isEqualTo(stage);
+    assertThat(service.getSavedStage(processName, processId, stageName).get()).isEqualTo(stage);
 
-    repository.delete(stage);
+    service.delete(stage);
 
-    assertThat(repository.findById(id).isPresent()).isFalse();
+    assertThat(service.getSavedStage(processName, processId, stageName).isPresent()).isFalse();
   }
 }

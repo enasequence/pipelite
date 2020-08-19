@@ -25,8 +25,8 @@ import org.mockito.stubbing.Answer;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
-import pipelite.repository.PipeliteProcessRepository;
-import pipelite.repository.PipeliteStageRepository;
+import pipelite.service.PipeliteProcessService;
+import pipelite.service.PipeliteStageService;
 import pipelite.resolver.ConcreteExceptionResolver;
 import pipelite.service.PipeliteLockService;
 import pipelite.task.Task;
@@ -80,17 +80,16 @@ public class ProcessLauncherTest {
   }
 
   private static class MockStorage {
-    public PipeliteProcessRepository pipeliteProcessRepository =
-        mock(PipeliteProcessRepository.class);
-    public PipeliteStageRepository pipeliteStageRepository = mock(PipeliteStageRepository.class);
+    public PipeliteProcessService pipeliteProcessService = mock(PipeliteProcessService.class);
+    public PipeliteStageService pipeliteStageService = mock(PipeliteStageService.class);
   }
 
   private MockStorage mockStorage(
       final String[] names, final TaskExecutionResult[] init_results, final boolean[] enabled) {
 
     MockStorage mockStorage = new MockStorage();
-    PipeliteProcessRepository pipeliteProcessRepository = mockStorage.pipeliteProcessRepository;
-    PipeliteStageRepository pipeliteStageRepository = mockStorage.pipeliteStageRepository;
+    PipeliteProcessService pipeliteProcessService = mockStorage.pipeliteProcessService;
+    PipeliteStageService pipeliteStageService = mockStorage.pipeliteStageService;
 
     final PipeliteProcess stored_state = new PipeliteProcess();
     stored_state.setProcessName(PROCESS_NAME);
@@ -113,8 +112,6 @@ public class ProcessLauncherTest {
                 pipeliteStage.setResultType(init_results[counter.get() - 1].getResultType());
                 pipeliteStage.setResult(init_results[counter.get() - 1].getResult());
 
-                // si.setDependsOn(1 == counter.get() ? null : names[counter.get() - 2]);
-
                 pipeliteStage.setEnabled(enabled[counter.get() - 1]);
                 if (counter.get() >= names.length) {
                   counter.set(0);
@@ -123,8 +120,8 @@ public class ProcessLauncherTest {
                 return Optional.of(pipeliteStage);
               }
             })
-        .when(pipeliteStageRepository)
-        .findById(any());
+        .when(pipeliteStageService)
+        .getSavedStage(any(), any(), any());
 
     doAnswer(
             (Answer<Object>)
@@ -137,8 +134,8 @@ public class ProcessLauncherTest {
                   pipeliteProcess.setExecutionCount(stored_state.getExecutionCount());
                   return Optional.of(pipeliteProcess);
                 })
-        .when(pipeliteProcessRepository)
-        .findById(any());
+        .when(pipeliteProcessService)
+        .getSavedProcess(any(), any());
 
     doAnswer(
             (Answer<Object>)
@@ -151,8 +148,8 @@ public class ProcessLauncherTest {
                   stored_state.setExecutionCount(si.getExecutionCount());
                   return null;
                 })
-        .when(pipeliteProcessRepository)
-        .save(any());
+        .when(pipeliteProcessService)
+        .saveProcess(any());
 
     return mockStorage;
   }
@@ -171,8 +168,8 @@ public class ProcessLauncherTest {
                 pipeliteProcess,
                 resolver,
                 locker,
-                mockStorage.pipeliteProcessRepository,
-                mockStorage.pipeliteStageRepository));
+                mockStorage.pipeliteProcessService,
+                mockStorage.pipeliteStageService));
     process.setExecutor(executor);
     process.setStages(processConfiguration.getStageArray());
     return process;
