@@ -14,11 +14,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import org.apache.log4j.Logger;
+
+import lombok.extern.slf4j.Slf4j;
 import pipelite.entity.PipeliteProcess;
 import pipelite.service.PipeliteProcessService;
 import pipelite.task.executor.TaskExecutor;
 
+@Slf4j
 public class PipeliteLauncher {
 
   private final String processName;
@@ -60,7 +62,6 @@ public class PipeliteLauncher {
   private boolean exit_when_empty;
   private StageExecutorFactory executor_factory;
   private volatile boolean do_stop;
-  private final Logger log = Logger.getLogger(this.getClass());
 
   public void setProcessFactory(ProcessFactory process_factory) {
     this.process_factory = process_factory;

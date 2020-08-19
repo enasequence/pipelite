@@ -15,14 +15,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import pipelite.task.result.TaskExecutionResultType;
 import pipelite.resolver.ExceptionResolver;
 import pipelite.task.state.TaskExecutionState;
 import pipelite.task.instance.TaskInstance;
 
+@Slf4j
 public abstract class AbstractTaskExecutor implements TaskExecutor {
-  protected final Logger log = Logger.getLogger(this.getClass());
   protected final String PIPELINE_NAME;
   protected final ExceptionResolver resolver;
 

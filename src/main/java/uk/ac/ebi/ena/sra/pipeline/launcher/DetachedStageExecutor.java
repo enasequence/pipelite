@@ -13,6 +13,7 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.extern.slf4j.Slf4j;
 import pipelite.task.executor.AbstractTaskExecutor;
 import pipelite.task.instance.TaskInstance;
 import pipelite.resolver.ExceptionResolver;
@@ -20,6 +21,7 @@ import pipelite.task.state.TaskExecutionState;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCall;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
 
+@Slf4j
 public class DetachedStageExecutor extends AbstractTaskExecutor {
   private final String config_prefix_name;
   private final String config_source_name;

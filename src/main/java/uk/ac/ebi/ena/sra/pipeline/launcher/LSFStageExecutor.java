@@ -14,6 +14,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.extern.slf4j.Slf4j;
 import pipelite.configuration.LSFTaskExecutorConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskExecutorConfiguration;
@@ -26,6 +27,7 @@ import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall;
 import pipelite.task.result.TaskExecutionResult;
 
+@Slf4j
 public class LSFStageExecutor extends AbstractTaskExecutor {
   public static final int LSF_JVM_MEMORY_DELTA_MB = 1500;
   public static final int LSF_JVM_MEMORY_OVERHEAD_MB = 200;

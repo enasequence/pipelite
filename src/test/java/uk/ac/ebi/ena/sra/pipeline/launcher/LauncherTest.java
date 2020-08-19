@@ -15,7 +15,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -32,7 +31,6 @@ import static org.mockito.Mockito.*;
 public class LauncherTest {
   static final long delay = 60;
   static final int workers = ForkJoinPool.getCommonPoolParallelism();
-  static final Logger log = Logger.getLogger(LauncherTest.class);
 
   static final int PIPELITE_PROCESS_LIST_COUNT = 10;
   static final int PIPELITE_PROCESS_LIST_SIZE = 100;

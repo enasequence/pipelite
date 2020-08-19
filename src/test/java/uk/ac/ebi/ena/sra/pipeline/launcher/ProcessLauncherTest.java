@@ -18,7 +18,8 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.log4j.Logger;
+
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -38,12 +39,11 @@ import pipelite.task.result.TaskExecutionResult;
 import pipelite.stage.Stage;
 import pipelite.service.PipeliteInMemoryLockService;
 
+@Slf4j
 public class ProcessLauncherTest {
 
   private static final String PROCESS_NAME = "TEST_PROCESS";
   private static final String PROCESS_ID = "TEST_PROCESS_ID";
-
-  static final Logger log = Logger.getLogger(ProcessLauncherTest.class);
 
   private static final class TransientException extends RuntimeException {}
 
