@@ -23,6 +23,7 @@ import pipelite.entity.PipeliteStage;
 import pipelite.entity.PipeliteStageId;
 import pipelite.repository.PipeliteProcessRepository;
 import pipelite.repository.PipeliteStageRepository;
+import pipelite.service.PipeliteLockService;
 import pipelite.task.executor.TaskExecutor;
 import pipelite.task.instance.TaskInstance;
 import pipelite.resolver.ExceptionResolver;
@@ -32,7 +33,6 @@ import pipelite.process.state.ProcessExecutionState;
 import pipelite.task.state.TaskExecutionState;
 import pipelite.task.result.TaskExecutionResult;
 import pipelite.stage.Stage;
-import pipelite.lock.ProcessInstanceLocker;
 
 @Slf4j
 public class ProcessLauncher implements ProcessLauncherInterface {
@@ -41,7 +41,7 @@ public class ProcessLauncher implements ProcessLauncherInterface {
 
   private final PipeliteProcess pipeliteProcess;
   private final ExceptionResolver resolver;
-  private final ProcessInstanceLocker locker;
+  private final PipeliteLockService locker;
   private final PipeliteProcessRepository pipeliteProcessRepository;
   private final PipeliteStageRepository pipeliteStageRepository;
 
@@ -56,7 +56,7 @@ public class ProcessLauncher implements ProcessLauncherInterface {
       String launcherName,
       PipeliteProcess pipeliteProcess,
       ExceptionResolver resolver,
-      ProcessInstanceLocker locker,
+      PipeliteLockService locker,
       @Autowired PipeliteProcessRepository pipeliteProcessRepository,
       @Autowired PipeliteStageRepository pipeliteStageRepository) {
 
@@ -161,12 +161,12 @@ public class ProcessLauncher implements ProcessLauncherInterface {
   }
 
   private boolean lockProcessInstance() {
-    return locker.lock(launcherName, pipeliteProcess);
+    return locker.lockProcess(launcherName, pipeliteProcess);
   }
 
   private void unlockProcessInstance() {
-    if (locker.isLocked(pipeliteProcess)) {
-      locker.unlock(launcherName, pipeliteProcess);
+    if (locker.isProcessLocked(pipeliteProcess)) {
+      locker.unlockProcess(launcherName, pipeliteProcess);
     }
   }
 
@@ -343,11 +343,6 @@ public class ProcessLauncher implements ProcessLauncherInterface {
   @Override
   public TaskExecutor getExecutor() {
     return this.executor;
-  }
-
-  @Override
-  public ProcessInstanceLocker getLocker() {
-    return locker;
   }
 
   public String getPipelineName() {

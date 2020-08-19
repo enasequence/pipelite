@@ -13,34 +13,22 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 import java.sql.Connection;
 import java.util.concurrent.CountDownLatch;
 
+import lombok.AllArgsConstructor;
 import pipelite.ApplicationConfiguration;
-import pipelite.lock.LauncherInstanceLocker;
-import pipelite.lock.LauncherInstanceOraclePackageLocker;
 import pipelite.repository.PipeliteProcessRepository;
 import pipelite.repository.PipeliteStageRepository;
+import pipelite.service.PipeliteLockService;
 import uk.ac.ebi.ena.sra.pipeline.configuration.LSFExecutorFactory;
 import uk.ac.ebi.ena.sra.pipeline.configuration.PipeliteProcessFactory;
-import pipelite.lock.ProcessInstanceOraclePackageLocker;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
-import pipelite.lock.ProcessInstanceLocker;
 
+@AllArgsConstructor
 public class Launcher {
 
   private final ApplicationConfiguration applicationConfiguration;
   private final PipeliteProcessRepository pipeliteProcessRepository;
   private final PipeliteStageRepository pipeliteStageRepository;
-  private final Connection connection;
-
-  public Launcher(
-      ApplicationConfiguration applicationConfiguration,
-      PipeliteProcessRepository pipeliteProcessRepository,
-      PipeliteStageRepository pipeliteStageRepository,
-      Connection connection) {
-    this.applicationConfiguration = applicationConfiguration;
-    this.pipeliteProcessRepository = pipeliteProcessRepository;
-    this.pipeliteStageRepository = pipeliteStageRepository;
-    this.connection = connection;
-  }
+  private final PipeliteLockService locker;
 
   private static final int DEFAULT_ERROR_EXIT = 1;
   private static final int NORMAL_EXIT = 0;
@@ -71,86 +59,72 @@ public class Launcher {
     PipeliteLauncher launcher = new PipeliteLauncher(processName, pipeliteProcessRepository);
 
     try {
-      LauncherInstanceLocker launcherInstanceLocker =
-          new LauncherInstanceOraclePackageLocker(connection);
-      ProcessInstanceLocker processInstanceLocker =
-          new ProcessInstanceOraclePackageLocker(connection);
-      try {
+      if (locker.lockLauncher(launcherName, processName)) {
 
-        if (launcherInstanceLocker.lock(launcherName, processName)) {
+        launcher.setProcessFactory(
+            new PipeliteProcessFactory(
+                launcherName,
+                applicationConfiguration,
+                locker,
+                pipeliteProcessRepository,
+                pipeliteStageRepository));
+        launcher.setExecutorFactory(
+            new LSFExecutorFactory(
+                processName,
+                applicationConfiguration.processConfiguration.createResolver(),
+                applicationConfiguration.processConfiguration,
+                applicationConfiguration.taskExecutorConfiguration,
+                applicationConfiguration.lsfTaskExecutorConfiguration));
 
-          launcher.setProcessFactory(
-              new PipeliteProcessFactory(
-                  launcherName,
-                  applicationConfiguration,
-                  processInstanceLocker,
-                  pipeliteProcessRepository,
-                  pipeliteStageRepository));
-          launcher.setExecutorFactory(
-              new LSFExecutorFactory(
-                  processName,
-                  applicationConfiguration.processConfiguration.createResolver(),
-                  applicationConfiguration.processConfiguration,
-                  applicationConfiguration.taskExecutorConfiguration,
-                  applicationConfiguration.lsfTaskExecutorConfiguration));
+        launcher.setSourceReadTimeout(120 * 1000);
+        launcher.setProcessPool(init(applicationConfiguration.launcherConfiguration.getWorkers()));
 
-          launcher.setSourceReadTimeout(120 * 1000);
-          launcher.setProcessPool(
-              init(applicationConfiguration.launcherConfiguration.getWorkers()));
+        // TODO remove
+        Runtime.getRuntime()
+            .addShutdownHook(
+                new Thread(
+                    new Runnable() {
+                      final Thread t = Thread.currentThread();
 
-          // TODO remove
-          Runtime.getRuntime()
-              .addShutdownHook(
-                  new Thread(
-                      new Runnable() {
-                        final Thread t = Thread.currentThread();
-
-                        @Override
-                        public void run() {
-                          launcher.stop();
-                          System.out.println(
-                              t.getName()
-                                  + " Stop requested from "
-                                  + Thread.currentThread().getName());
-                          try {
-                            latch.await();
-                            t.interrupt();
-                            System.out.println(t.getName() + " exited");
-                          } catch (InterruptedException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                          }
+                      @Override
+                      public void run() {
+                        launcher.stop();
+                        System.out.println(
+                            t.getName()
+                                + " Stop requested from "
+                                + Thread.currentThread().getName());
+                        try {
+                          latch.await();
+                          t.interrupt();
+                          System.out.println(t.getName() + " exited");
+                        } catch (InterruptedException e) {
+                          // TODO Auto-generated catch block
+                          e.printStackTrace();
                         }
-                      }));
+                      }
+                    }));
 
-          launcher.execute();
-          launcherInstanceLocker.unlock(launcherName, processName);
+        launcher.execute();
+        locker.unlockLauncher(launcherName, processName);
 
-        } else {
-          System.out.println(
-              String.format(
-                  "Launcher %s is already locked for process %s.:", launcherName, processName));
-          return DEFAULT_ERROR_EXIT;
-        }
-
-        return NORMAL_EXIT;
-      } catch (Throwable e) {
-        e.printStackTrace();
+      } else {
+        System.out.println(
+            String.format(
+                "Launcher %s is already locked for process %s.:", launcherName, processName));
         return DEFAULT_ERROR_EXIT;
-
-      } finally {
-        try {
-          launcher.shutdown();
-        } catch (Throwable t) {
-          t.printStackTrace();
-        }
-
-        latch.countDown();
       }
 
+      return NORMAL_EXIT;
     } catch (Throwable e) {
       e.printStackTrace();
       return DEFAULT_ERROR_EXIT;
+    } finally {
+      try {
+        launcher.shutdown();
+      } catch (Throwable t) {
+        t.printStackTrace();
+      }
+      latch.countDown();
     }
   }
 }

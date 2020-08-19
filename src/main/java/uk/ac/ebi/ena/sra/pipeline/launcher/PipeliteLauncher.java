@@ -19,7 +19,6 @@ import pipelite.entity.PipeliteProcess;
 import pipelite.process.state.ProcessExecutionState;
 import pipelite.repository.PipeliteProcessRepository;
 import pipelite.task.executor.TaskExecutor;
-import pipelite.lock.ProcessInstanceLocker;
 
 public class PipeliteLauncher {
 
@@ -41,10 +40,6 @@ public class PipeliteLauncher {
     TaskExecutor getExecutor();
 
     PipeliteProcess getPipeliteProcess();
-
-    default ProcessInstanceLocker getLocker() {
-      throw new RuntimeException("Method must be overriden");
-    }
 
     default void setExecutor(TaskExecutor executor) {}
 

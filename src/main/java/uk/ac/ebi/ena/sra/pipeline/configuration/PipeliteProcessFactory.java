@@ -13,10 +13,10 @@ package uk.ac.ebi.ena.sra.pipeline.configuration;
 import lombok.Value;
 import pipelite.ApplicationConfiguration;
 import pipelite.entity.PipeliteProcess;
-import pipelite.lock.ProcessInstanceLocker;
 import pipelite.repository.PipeliteProcessRepository;
 import pipelite.repository.PipeliteStageRepository;
 import pipelite.resolver.ExceptionResolver;
+import pipelite.service.PipeliteLockService;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessFactory;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessLauncher;
@@ -26,7 +26,7 @@ public class PipeliteProcessFactory implements ProcessFactory {
 
   private final String launcherName;
   private final ApplicationConfiguration applicationConfiguration;
-  private final ProcessInstanceLocker locker;
+  private final PipeliteLockService locker;
   private final PipeliteProcessRepository pipeliteProcessRepository;
   private final PipeliteStageRepository pipeliteStageRepository;
 

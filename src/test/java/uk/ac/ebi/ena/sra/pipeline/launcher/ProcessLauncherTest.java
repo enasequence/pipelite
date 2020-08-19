@@ -25,10 +25,10 @@ import org.mockito.stubbing.Answer;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
-import pipelite.lock.ProcessInstanceLocker;
 import pipelite.repository.PipeliteProcessRepository;
 import pipelite.repository.PipeliteStageRepository;
 import pipelite.resolver.ConcreteExceptionResolver;
+import pipelite.service.PipeliteLockService;
 import pipelite.task.Task;
 import pipelite.task.executor.TaskExecutor;
 import pipelite.task.instance.TaskInstance;
@@ -36,7 +36,7 @@ import pipelite.resolver.ExceptionResolver;
 import pipelite.process.state.ProcessExecutionState;
 import pipelite.task.result.TaskExecutionResult;
 import pipelite.stage.Stage;
-import pipelite.lock.ProcessInstanceMemoryLocker;
+import pipelite.service.PipeliteInMemoryLockService;
 
 public class ProcessLauncherTest {
 
@@ -160,7 +160,7 @@ public class ProcessLauncherTest {
   private ProcessLauncher initProcessLauncher(
       ProcessConfiguration processConfiguration, MockStorage mockStorage, TaskExecutor executor) {
     String launcherName = "TEST_LAUNCHER";
-    ProcessInstanceLocker locker = new ProcessInstanceMemoryLocker();
+    PipeliteLockService locker = new PipeliteInMemoryLockService();
     PipeliteProcess pipeliteProcess = new PipeliteProcess();
     pipeliteProcess.setProcessId(PROCESS_ID);
     pipeliteProcess.setProcessName(PROCESS_NAME);
