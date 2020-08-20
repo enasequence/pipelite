@@ -14,6 +14,7 @@ import java.util.concurrent.CountDownLatch;
 
 import lombok.AllArgsConstructor;
 import pipelite.ApplicationConfiguration;
+import pipelite.executor.TaskExecutorFactory;
 import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
 import pipelite.service.PipeliteLockService;
@@ -27,7 +28,7 @@ public class Launcher {
   private final ApplicationConfiguration applicationConfiguration;
   private final PipeliteProcessService pipeliteProcessService;
   private final PipeliteStageService pipeliteStageService;
-  private final PipeliteLockService locker;
+  private final PipeliteLockService pipeliteLockService;
 
   private static final int DEFAULT_ERROR_EXIT = 1;
   private static final int NORMAL_EXIT = 0;
@@ -55,25 +56,29 @@ public class Launcher {
     String launcherName = applicationConfiguration.launcherConfiguration.getLauncherName();
     String processName = applicationConfiguration.processConfiguration.getProcessName();
 
-    PipeliteLauncher launcher = new PipeliteLauncher(processName, pipeliteProcessService);
+    PipeliteLauncher.ProcessFactory processFactory =
+        new PipeliteProcessFactory(
+            launcherName,
+            applicationConfiguration,
+            pipeliteLockService,
+            pipeliteProcessService,
+            pipeliteStageService);
+
+    TaskExecutorFactory taskExecutorFactory =
+        new LsfTaskExecutorFactory(
+            applicationConfiguration.processConfiguration,
+            applicationConfiguration.taskConfiguration);
+
+    PipeliteLauncher pipeliteLauncher =
+        new PipeliteLauncher(
+            processName, pipeliteProcessService, processFactory, taskExecutorFactory);
 
     try {
-      if (locker.lockLauncher(launcherName, processName)) {
+      if (pipeliteLockService.lockLauncher(launcherName, processName)) {
 
-        launcher.setProcessFactory(
-            new PipeliteProcessFactory(
-                launcherName,
-                applicationConfiguration,
-                locker,
-                pipeliteProcessService,
-                pipeliteStageService));
-        launcher.setExecutorFactory(
-            new LsfTaskExecutorFactory(
-                applicationConfiguration.processConfiguration,
-                applicationConfiguration.taskConfiguration));
-
-        launcher.setSourceReadTimeout(120 * 1000);
-        launcher.setProcessPool(init(applicationConfiguration.launcherConfiguration.getWorkers()));
+        pipeliteLauncher.setSourceReadTimeout(120 * 1000);
+        pipeliteLauncher.setProcessPool(
+            init(applicationConfiguration.launcherConfiguration.getWorkers()));
 
         // TODO remove
         Runtime.getRuntime()
@@ -84,7 +89,7 @@ public class Launcher {
 
                       @Override
                       public void run() {
-                        launcher.stop();
+                        pipeliteLauncher.stop();
                         System.out.println(
                             t.getName()
                                 + " Stop requested from "
@@ -100,8 +105,8 @@ public class Launcher {
                       }
                     }));
 
-        launcher.execute();
-        locker.unlockLauncher(launcherName, processName);
+        pipeliteLauncher.execute();
+        pipeliteLockService.unlockLauncher(launcherName, processName);
 
       } else {
         System.out.println(
@@ -116,7 +121,7 @@ public class Launcher {
       return DEFAULT_ERROR_EXIT;
     } finally {
       try {
-        launcher.shutdown();
+        pipeliteLauncher.shutdown();
       } catch (Throwable t) {
         t.printStackTrace();
       }
