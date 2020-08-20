@@ -10,8 +10,8 @@
  */
 package pipelite.stage;
 
+import pipelite.configuration.TaskConfiguration;
 import pipelite.task.Task;
-import uk.ac.ebi.ena.sra.pipeline.executors.ExecutorConfig;
 
 public interface Stage {
 
@@ -22,19 +22,5 @@ public interface Stage {
   // TODO: multiple stage dependencies
   Stage getDependsOn();
 
-  default int getMemory() {
-    return -1;
-  }
-
-  default int getCores() {
-    return 1;
-  }
-
-  default String[] getPropertiesPass() {
-    return new String[] {};
-  }
-
-  default ExecutorConfig[] getExecutorConfig() {
-    return new ExecutorConfig[] {};
-  }
+  TaskConfiguration getTaskConfiguration();
 }

@@ -20,10 +20,10 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import pipelite.RandomStringGenerator;
 import pipelite.entity.PipeliteProcess;
+import pipelite.executor.TaskExecutorFactory;
 import pipelite.service.PipeliteProcessService;
-import pipelite.task.executor.TaskExecutor;
+import pipelite.executor.TaskExecutor;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.StageExecutorFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -66,7 +66,7 @@ public class LauncherTest {
             })
         .when(pipeliteProcessService).getActiveProcesses(any());
 
-    StageExecutorFactory e_src = () -> null;
+    TaskExecutorFactory e_src = () -> null;
 
     PipeliteLauncher.ProcessFactory pr_src =
         pipeliteProcess ->

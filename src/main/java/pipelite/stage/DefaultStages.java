@@ -1,5 +1,7 @@
 package pipelite.stage;
 
+import pipelite.configuration.TaskConfiguration;
+
 public enum DefaultStages implements Stage {
   STAGE_1(Task.class, null, 1, 1),
   STAGE_2(Task.class, STAGE_1, 1, 1);
@@ -15,14 +17,14 @@ public enum DefaultStages implements Stage {
   DefaultStages(Class<? extends Task> taskClass, DefaultStages dependsOn, int memory, int cores) {
     this.taskClass = taskClass;
     this.dependsOn = dependsOn;
-    this.memory = memory;
-    this.cores = cores;
+    taskConfiguration = new TaskConfiguration();
+    taskConfiguration.setMemory(memory);
+    taskConfiguration.setCores(cores);
   }
 
   private final Class<? extends Task> taskClass;
   private final DefaultStages dependsOn;
-  private final int memory;
-  private final int cores;
+  private final TaskConfiguration taskConfiguration;
 
   @Override
   public String getStageName() {
@@ -40,12 +42,7 @@ public enum DefaultStages implements Stage {
   }
 
   @Override
-  public int getMemory() {
-    return memory;
-  }
-
-  @Override
-  public int getCores() {
-    return cores;
+  public TaskConfiguration getTaskConfiguration() {
+    return taskConfiguration;
   }
 }

@@ -17,8 +17,9 @@ import java.util.concurrent.TimeUnit;
 
 import lombok.extern.slf4j.Slf4j;
 import pipelite.entity.PipeliteProcess;
+import pipelite.executor.TaskExecutorFactory;
 import pipelite.service.PipeliteProcessService;
-import pipelite.task.executor.TaskExecutor;
+import pipelite.executor.TaskExecutor;
 
 @Slf4j
 public class PipeliteLauncher {
@@ -51,16 +52,12 @@ public class PipeliteLauncher {
     }
   }
 
-  public interface StageExecutorFactory {
-    TaskExecutor create();
-  }
-
   TaggedPoolExecutor thread_pool;
 
   private ProcessFactory process_factory;
   private int source_read_timeout = 60 * 1000;
   private boolean exit_when_empty;
-  private StageExecutorFactory executor_factory;
+  private TaskExecutorFactory executor_factory;
   private volatile boolean do_stop;
 
   public void setProcessFactory(ProcessFactory process_factory) {
@@ -148,11 +145,11 @@ public class PipeliteLauncher {
     this.exit_when_empty = exit_when_empty;
   }
 
-  public void setExecutorFactory(StageExecutorFactory executor_factory) {
+  public void setExecutorFactory(TaskExecutorFactory executor_factory) {
     this.executor_factory = executor_factory;
   }
 
-  public StageExecutorFactory getExecutorFactory() {
+  public TaskExecutorFactory getExecutorFactory() {
     return this.executor_factory;
   }
 }

@@ -8,6 +8,23 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package uk.ac.ebi.ena.sra.pipeline.executors;
+package pipelite.executor;
 
-public class DetachedExecutorConfig implements ExecutorConfig {}
+import lombok.Value;
+import pipelite.configuration.ProcessConfiguration;
+import pipelite.configuration.TaskConfiguration;
+import pipelite.resolver.ExceptionResolver;
+import uk.ac.ebi.ena.sra.pipeline.launcher.LSFTaskExecutor;
+
+@Value
+public class LsfTaskExecutorFactory implements TaskExecutorFactory {
+  private final ProcessConfiguration processConfiguration;
+  private final TaskConfiguration taskConfiguration;
+
+  @Override
+  public TaskExecutor create() {
+    TaskExecutor executor = new LSFTaskExecutor(processConfiguration, taskConfiguration);
+
+    return executor;
+  }
+}

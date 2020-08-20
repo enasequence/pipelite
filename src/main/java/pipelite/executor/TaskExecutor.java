@@ -8,11 +8,11 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.task.executor;
+package pipelite.executor;
 
 import pipelite.task.state.TaskExecutionState;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInfo;
-import pipelite.task.instance.TaskInstance;
+import pipelite.instance.TaskInstance;
 
 public interface TaskExecutor {
 

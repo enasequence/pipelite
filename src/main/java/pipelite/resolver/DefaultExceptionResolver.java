@@ -7,6 +7,8 @@ import java.util.List;
 
 public class DefaultExceptionResolver implements ExceptionResolver {
 
+  public final static String NAME = "pipelite.resolver.DefaultExceptionResolver";
+
   private final ConcreteExceptionResolver resolver;
 
   public DefaultExceptionResolver() {

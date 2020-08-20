@@ -15,14 +15,14 @@ public class ProcessConfiguration {
 
   public ProcessConfiguration() {}
 
+  /** Name of the process begin executed. */
+  private String processName;
+
   /** Name of the class that resolves results. */
   private String resolver;
 
   /** Stages defined as an enumeration. */
   private String stages;
-
-  /** Java properties to pass to task executor. */
-  private String[] javaProperties;
 
   public ExceptionResolver createResolver() {
     try {

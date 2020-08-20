@@ -25,7 +25,7 @@ import pipelite.service.PipeliteProcessService;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessPoolExecutor;
-import pipelite.task.executor.TaskExecutor;
+import pipelite.executor.TaskExecutor;
 
 import javax.transaction.Transactional;
 

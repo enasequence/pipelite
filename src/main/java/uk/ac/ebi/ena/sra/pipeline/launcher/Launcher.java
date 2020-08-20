@@ -17,7 +17,7 @@ import pipelite.ApplicationConfiguration;
 import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
 import pipelite.service.PipeliteLockService;
-import uk.ac.ebi.ena.sra.pipeline.configuration.LSFExecutorFactory;
+import pipelite.executor.LsfTaskExecutorFactory;
 import uk.ac.ebi.ena.sra.pipeline.configuration.PipeliteProcessFactory;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
 
@@ -53,7 +53,7 @@ public class Launcher {
     CountDownLatch latch = new CountDownLatch(1);
 
     String launcherName = applicationConfiguration.launcherConfiguration.getLauncherName();
-    String processName = applicationConfiguration.launcherConfiguration.getProcessName();
+    String processName = applicationConfiguration.processConfiguration.getProcessName();
 
     PipeliteLauncher launcher = new PipeliteLauncher(processName, pipeliteProcessService);
 
@@ -68,12 +68,9 @@ public class Launcher {
                 pipeliteProcessService,
                 pipeliteStageService));
         launcher.setExecutorFactory(
-            new LSFExecutorFactory(
-                processName,
-                applicationConfiguration.processConfiguration.createResolver(),
+            new LsfTaskExecutorFactory(
                 applicationConfiguration.processConfiguration,
-                applicationConfiguration.taskExecutorConfiguration,
-                applicationConfiguration.lsfTaskExecutorConfiguration));
+                applicationConfiguration.taskConfiguration));
 
         launcher.setSourceReadTimeout(120 * 1000);
         launcher.setProcessPool(init(applicationConfiguration.launcherConfiguration.getWorkers()));

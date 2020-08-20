@@ -8,49 +8,32 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.task.executor;
+package pipelite.executor;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import lombok.extern.slf4j.Slf4j;
-import pipelite.task.result.TaskExecutionResultType;
+import pipelite.configuration.ProcessConfiguration;
+import pipelite.configuration.TaskConfiguration;
 import pipelite.resolver.ExceptionResolver;
+import pipelite.task.result.TaskExecutionResult;
+import pipelite.task.result.TaskExecutionResultType;
 import pipelite.task.state.TaskExecutionState;
-import pipelite.task.instance.TaskInstance;
+import pipelite.instance.TaskInstance;
 
 @Slf4j
 public abstract class AbstractTaskExecutor implements TaskExecutor {
-  protected final String PIPELINE_NAME;
+  protected final ProcessConfiguration processConfiguration;
+  protected final TaskConfiguration taskConfiguration;
   protected final ExceptionResolver resolver;
+  protected final TaskExecutionResult internalError;
 
-  public AbstractTaskExecutor(String pipeline_name, ExceptionResolver resolver) {
-    this.PIPELINE_NAME = pipeline_name;
-    this.resolver = resolver;
-  }
-
-  protected final String[] mergeJavaSystemProperties(String[] pp1, String[] pp2) {
-    if (pp1 == null) {
-      pp1 = new String[0];
-    }
-    if (pp2 == null) {
-      pp2 = new String[0];
-    }
-    Set<String> set1 = new HashSet<>(Arrays.asList(pp1));
-    Set<String> set2 = new HashSet<>(Arrays.asList(pp2));
-    set1.addAll(set2);
-    return set1.toArray(new String[0]);
-  }
-
-  protected final void addJavaSystemProperties(List<String> p_args, String... properties) {
-    for (String property : properties) {
-      String value = System.getProperty(property);
-      if (value != null) {
-        p_args.add(String.format("-D%s=%s", property, value));
-      }
-    }
+  public AbstractTaskExecutor(
+      ProcessConfiguration processConfiguration, TaskConfiguration taskConfiguration) {
+    this.processConfiguration = processConfiguration;
+    this.taskConfiguration = taskConfiguration;
+    this.resolver = processConfiguration.createResolver();
+    this.internalError = resolver.internalError();
   }
 
   public TaskExecutionState getTaskExecutionState(TaskInstance instance) {
@@ -70,5 +53,18 @@ public abstract class AbstractTaskExecutor implements TaskExecutor {
     }
 
     return TaskExecutionState.ACTIVE;
+  }
+
+  public List<String> getEnvAsJavaSystemPropertyOptions() {
+    List<String> options = new ArrayList<>();
+    if (taskConfiguration.getEnv() != null) {
+      for (String property : taskConfiguration.getEnv()) {
+        String value = System.getProperty(property);
+        if (value != null) {
+          options.add(String.format("-D%s=%s", property, value));
+        }
+      }
+    }
+    return options;
   }
 }

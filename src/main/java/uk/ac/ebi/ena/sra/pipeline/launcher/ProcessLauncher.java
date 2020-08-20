@@ -18,13 +18,14 @@ import com.google.common.base.Verify;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import pipelite.configuration.TaskConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
 import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
 import pipelite.service.PipeliteLockService;
-import pipelite.task.executor.TaskExecutor;
-import pipelite.task.instance.TaskInstance;
+import pipelite.executor.TaskExecutor;
+import pipelite.instance.TaskInstance;
 import pipelite.resolver.ExceptionResolver;
 import pipelite.task.result.TaskExecutionResultType;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
@@ -43,6 +44,7 @@ public class ProcessLauncher implements ProcessLauncherInterface {
   private final PipeliteLockService locker;
   private final PipeliteProcessService pipeliteProcessService;
   private final PipeliteStageService pipeliteStageService;
+  private final TaskConfiguration taskConfiguration;
 
   private TaskInstance[] instances;
   private TaskExecutor executor;
@@ -57,7 +59,8 @@ public class ProcessLauncher implements ProcessLauncherInterface {
       ExceptionResolver resolver,
       PipeliteLockService locker,
       @Autowired PipeliteProcessService pipeliteProcessService,
-      @Autowired PipeliteStageService pipeliteStageService) {
+      @Autowired PipeliteStageService pipeliteStageService,
+      TaskConfiguration taskConfiguration) {
 
     Verify.verifyNotNull(launcherName);
     Verify.verifyNotNull(pipeliteProcess);
@@ -68,6 +71,7 @@ public class ProcessLauncher implements ProcessLauncherInterface {
     this.locker = locker;
     this.pipeliteProcessService = pipeliteProcessService;
     this.pipeliteStageService = pipeliteStageService;
+    this.taskConfiguration = taskConfiguration;
   }
 
   @Override
@@ -109,7 +113,7 @@ public class ProcessLauncher implements ProcessLauncherInterface {
   void lifecycle() {
     if (!do_stop) {
       try {
-        init_stages();
+        initStages();
 
         if (!lockProcessInstance()) {
           log.error(String.format("There were problems while locking process %s.", getProcessId()));
@@ -122,13 +126,6 @@ public class ProcessLauncher implements ProcessLauncherInterface {
                   "Invoked for process %s with state %s.",
                   getProcessId(), pipeliteProcess.getState()));
           pipeliteProcess.setState(ProcessExecutionState.ACTIVE);
-        }
-
-        if (!load_stages()) {
-          log.error(
-              String.format(
-                  "There were problems while loading stages for process %s.", getProcessId()));
-          return;
         }
 
         if (!eval_process()) {
@@ -219,40 +216,33 @@ public class ProcessLauncher implements ProcessLauncherInterface {
     pipeliteProcessService.saveProcess(pipeliteProcess);
   }
 
-  private void init_stages() {
+  private void initStages() {
     Stage[] stages = getStages();
     instances = new TaskInstance[stages.length];
 
     for (int i = 0; i < instances.length; ++i) {
       Stage stage = stages[i];
-      TaskInstance instance = new TaskInstance(stage);
-      instance.setPipeliteStage(
-          PipeliteStage.newExecution(
-              pipeliteProcess.getProcessId(), pipeliteProcess.getProcessName(), stage.toString()));
-      instance.setTaskExecutorConfig(stage.getExecutorConfig());
-      instance.setMemory(stage.getMemory());
-      instance.setCores(stage.getCores());
-      instance.setJavaSystemProperties(stage.getPropertiesPass());
+      String processId = pipeliteProcess.getProcessId();
+      String processName = pipeliteProcess.getProcessName();
+      String stageName = stage.toString();
+      // Load stage it if already exists.
+      Optional<PipeliteStage> pipeliteStage =
+          pipeliteStageService.getSavedStage(processName, processId, stageName);
+      if (!pipeliteStage.isPresent()) {
+        // Create stage it if does not already exist.
+        pipeliteStage =
+            Optional.of(
+                PipeliteStage.newExecution(
+                    pipeliteProcess.getProcessId(),
+                    pipeliteProcess.getProcessName(),
+                    stage.toString()));
+        // Save created stage.
+        pipeliteStageService.saveStage(pipeliteStage.get());
+      }
+      TaskInstance instance =
+          new TaskInstance(pipeliteProcess, pipeliteStage.get(), taskConfiguration, stage);
       instances[i] = instance;
     }
-  }
-
-  private boolean load_stages() {
-    for (TaskInstance instance : instances) {
-      String processId = instance.getPipeliteStage().getProcessId();
-      String processName = instance.getPipeliteStage().getProcessName();
-      String stageName = instance.getPipeliteStage().getStageName();
-
-      Optional<PipeliteStage> pipeliteStageSaved =
-          pipeliteStageService.getSavedStage(processName, processId, stageName);
-      if (!pipeliteStageSaved.isPresent()) {
-        log.error(
-            "Unable to load process {} stage {} for process {}", processName, stageName, processId);
-        return false;
-      }
-      instance.setPipeliteStage(pipeliteStageSaved.get());
-    }
-    return true;
   }
 
   private void save_stages() {

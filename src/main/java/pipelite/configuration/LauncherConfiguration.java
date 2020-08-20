@@ -11,21 +11,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "pipelite.launcher")
 public class LauncherConfiguration {
 
-    public LauncherConfiguration() {
-    }
+  public LauncherConfiguration() {}
 
-    /**
-     * Name of the launcher begin executed.
-     */
-    private String launcherName;
+  /** Name of the launcher begin executed. */
+  private String launcherName;
 
-    /**
-     * Name of the process begin executed.
-     */
-    private String processName;
-
-    /**
-     * Number of parallel task executions.
-     */
-    private int workers;
+  /** Number of parallel task executions. */
+  private int workers;
 }

@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import pipelite.configuration.ProcessConfiguration;
+import pipelite.configuration.TaskConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
 import pipelite.service.PipeliteProcessService;
@@ -31,8 +32,8 @@ import pipelite.service.PipeliteStageService;
 import pipelite.resolver.ConcreteExceptionResolver;
 import pipelite.service.PipeliteLockService;
 import pipelite.task.Task;
-import pipelite.task.executor.TaskExecutor;
-import pipelite.task.instance.TaskInstance;
+import pipelite.executor.TaskExecutor;
+import pipelite.instance.TaskInstance;
 import pipelite.resolver.ExceptionResolver;
 import pipelite.process.state.ProcessExecutionState;
 import pipelite.task.result.TaskExecutionResult;
@@ -169,7 +170,8 @@ public class ProcessLauncherTest {
                 resolver,
                 locker,
                 mockStorage.pipeliteProcessService,
-                mockStorage.pipeliteStageService));
+                mockStorage.pipeliteStageService,
+                mock(TaskConfiguration.class)));
     process.setExecutor(executor);
     process.setStages(processConfiguration.getStageArray());
     return process;
@@ -177,7 +179,8 @@ public class ProcessLauncherTest {
 
   private TaskExecutor initExecutor(
       ProcessConfiguration processConfiguration, int... invocation_exit_code) {
-    TaskExecutor spiedExecutor = spy(new InternalStageExecutor(processConfiguration));
+    TaskExecutor spiedExecutor =
+        spy(new InternalTaskExecutor(processConfiguration, mock(TaskConfiguration.class)));
     final AtomicInteger inv_cnt = new AtomicInteger(0);
     doAnswer(
             (Answer<Object>)
@@ -244,13 +247,8 @@ public class ProcessLauncherTest {
     }
 
     @Override
-    public int getMemory() {
-      return 1;
-    }
-
-    @Override
-    public int getCores() {
-      return 1;
+    public TaskConfiguration getTaskConfiguration() {
+      return new TaskConfiguration();
     }
   }
 

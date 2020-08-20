@@ -12,6 +12,7 @@ package uk.ac.ebi.ena.sra.pipeline.configuration;
 
 import lombok.Value;
 import pipelite.ApplicationConfiguration;
+import pipelite.configuration.TaskConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
@@ -41,8 +42,10 @@ public class PipeliteProcessFactory implements ProcessFactory {
             resolver,
             locker,
             pipeliteProcessService,
-            pipeliteStageService);
-    process.setRedoCount(applicationConfiguration.taskExecutorConfiguration.getRetries());
+            pipeliteStageService,
+            applicationConfiguration.taskConfiguration);
+    // TODO: redo should be retrieved from the taskInstance
+    process.setRedoCount(applicationConfiguration.taskConfiguration.getRetries());
     process.setStages(applicationConfiguration.processConfiguration.getStageArray());
     return process;
   }

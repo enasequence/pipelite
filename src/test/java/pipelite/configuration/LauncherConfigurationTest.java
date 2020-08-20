@@ -18,7 +18,6 @@ public class LauncherConfigurationTest {
     @Test
     public void test() {
         assertThat(config.getLauncherName()).isEqualTo("TEST");
-        assertThat(config.getProcessName()).isEqualTo("TEST");
         assertThat(config.getWorkers()).isEqualTo(1);
     }
 }

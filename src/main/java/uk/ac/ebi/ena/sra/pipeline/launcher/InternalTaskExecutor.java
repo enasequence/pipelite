@@ -11,20 +11,20 @@
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import pipelite.configuration.ProcessConfiguration;
-import pipelite.task.executor.AbstractTaskExecutor;
-import pipelite.task.instance.TaskInstance;
+import pipelite.configuration.TaskConfiguration;
+import pipelite.executor.AbstractTaskExecutor;
+import pipelite.instance.TaskInstance;
+import pipelite.resolver.ExceptionResolver;
 import pipelite.task.state.TaskExecutionState;
 import pipelite.task.Task;
 
-public class InternalStageExecutor extends AbstractTaskExecutor {
-
-  private final ProcessConfiguration processConfiguration;
+public class InternalTaskExecutor extends AbstractTaskExecutor {
 
   private ExecutionInfo info;
 
-  public InternalStageExecutor(ProcessConfiguration processConfiguration) {
-    super("", processConfiguration.createResolver());
-    this.processConfiguration = processConfiguration;
+  public InternalTaskExecutor(
+      ProcessConfiguration processConfiguration, TaskConfiguration taskConfiguration) {
+    super(processConfiguration, taskConfiguration);
   }
 
   @Override
@@ -35,25 +35,20 @@ public class InternalStageExecutor extends AbstractTaskExecutor {
   public void execute(TaskInstance instance) {
     Throwable exception = null;
 
-    if (TaskExecutionState.ACTIVE == getTaskExecutionState(instance)) {
-      try {
+    try {
 
-        Class<? extends Task> taskClass =
-            processConfiguration
-                .getStage(instance.getPipeliteStage().getStageName())
-                .getTaskClass();
-        Task task = taskClass.newInstance();
-        task.run();
+      Class<? extends Task> taskClass =
+          processConfiguration.getStage(instance.getPipeliteStage().getStageName()).getTaskClass();
+      Task task = taskClass.newInstance();
+      task.run();
 
-      } catch (Throwable e) {
-        e.printStackTrace();
-        exception = e;
-      } finally {
-        info = new ExecutionInfo();
-        info.setThrowable(exception);
-        info.setExitCode(
-                resolver.exitCodeSerializer().serialize(resolver.resolveError(exception)));
-      }
+    } catch (Throwable e) {
+      e.printStackTrace();
+      exception = e;
+    } finally {
+      info = new ExecutionInfo();
+      info.setThrowable(exception);
+      info.setExitCode(resolver.exitCodeSerializer().serialize(resolver.resolveError(exception)));
     }
   }
 
