@@ -26,10 +26,18 @@ public class PipeliteLauncher {
 
   private final String processName;
   private final PipeliteProcessService pipeliteProcessService;
+  private final ProcessFactory processFactory;
+  private final TaskExecutorFactory taskExecutorFactory;
 
-  public PipeliteLauncher(String processName, PipeliteProcessService pipeliteProcessService) {
+  public PipeliteLauncher(
+      String processName,
+      PipeliteProcessService pipeliteProcessService,
+      ProcessFactory processFactory,
+      TaskExecutorFactory taskExecutorFactory) {
     this.processName = processName;
     this.pipeliteProcessService = pipeliteProcessService;
+    this.processFactory = processFactory;
+    this.taskExecutorFactory = taskExecutorFactory;
   }
 
   public interface ProcessFactory {
@@ -54,15 +62,9 @@ public class PipeliteLauncher {
 
   TaggedPoolExecutor thread_pool;
 
-  private ProcessFactory process_factory;
   private int source_read_timeout = 60 * 1000;
   private boolean exit_when_empty;
-  private TaskExecutorFactory executor_factory;
   private volatile boolean do_stop;
-
-  public void setProcessFactory(ProcessFactory process_factory) {
-    this.process_factory = process_factory;
-  }
 
   public void setProcessPool(ProcessPoolExecutor thread_pool) {
     this.thread_pool = thread_pool;
@@ -107,8 +109,8 @@ public class PipeliteLauncher {
       if (exit_when_empty && pipeliteProcessQueue.isEmpty()) break;
 
       for (PipeliteProcess pipeliteProcess : pipeliteProcessQueue) {
-        ProcessLauncherInterface process = getProcessFactory().create(pipeliteProcess);
-        process.setExecutor(getExecutorFactory().create());
+        ProcessLauncherInterface process = processFactory.create(pipeliteProcess);
+        process.setExecutor(taskExecutorFactory.create());
         try {
           thread_pool.execute(process);
         } catch (RejectedExecutionException ree) {
@@ -137,19 +139,7 @@ public class PipeliteLauncher {
     this.source_read_timeout = source_read_timeout_ms;
   }
 
-  ProcessFactory getProcessFactory() {
-    return process_factory;
-  }
-
   public void setExitWhenNoTasks(boolean exit_when_empty) {
     this.exit_when_empty = exit_when_empty;
-  }
-
-  public void setExecutorFactory(TaskExecutorFactory executor_factory) {
-    this.executor_factory = executor_factory;
-  }
-
-  public TaskExecutorFactory getExecutorFactory() {
-    return this.executor_factory;
   }
 }

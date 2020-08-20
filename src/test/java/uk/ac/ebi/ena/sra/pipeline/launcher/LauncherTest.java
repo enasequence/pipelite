@@ -64,11 +64,12 @@ public class LauncherTest {
                 return null;
               }
             })
-        .when(pipeliteProcessService).getActiveProcesses(any());
+        .when(pipeliteProcessService)
+        .getActiveProcesses(any());
 
-    TaskExecutorFactory e_src = () -> null;
+    TaskExecutorFactory taskExecutorFactory = () -> null;
 
-    PipeliteLauncher.ProcessFactory pr_src =
+    PipeliteLauncher.ProcessFactory processFactory =
         pipeliteProcess ->
             new ProcessLauncherInterface() {
               @Override
@@ -109,14 +110,13 @@ public class LauncherTest {
           }
         };
 
-    PipeliteLauncher l = new PipeliteLauncher(PROCESS_NAME, pipeliteProcessService);
-    l.setSourceReadTimeout(1);
-    l.setProcessFactory(pr_src);
-    l.setExecutorFactory(e_src);
+    PipeliteLauncher pipeliteLauncher =
+        new PipeliteLauncher(
+            PROCESS_NAME, pipeliteProcessService, processFactory, taskExecutorFactory);
+    pipeliteLauncher.setSourceReadTimeout(1);
+    pipeliteLauncher.setProcessPool(pool);
 
-    l.setProcessPool(pool);
-
-    l.execute();
+    pipeliteLauncher.execute();
 
     pool.shutdown();
     pool.awaitTermination(1, TimeUnit.MINUTES);

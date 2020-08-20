@@ -21,6 +21,7 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.RandomStringGenerator;
 import pipelite.TestConfiguration;
 import pipelite.entity.PipeliteProcess;
+import pipelite.executor.TaskExecutorFactory;
 import pipelite.service.PipeliteProcessService;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
@@ -30,6 +31,7 @@ import pipelite.executor.TaskExecutor;
 import javax.transaction.Transactional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
 
 @SpringBootTest(classes = TestConfiguration.class)
 @ActiveProfiles("test")
@@ -45,7 +47,7 @@ public class LauncherDBTest {
   @Rollback
   public void test() throws InterruptedException {
 
-    PipeliteLauncher.ProcessFactory pr_src =
+    PipeliteLauncher.ProcessFactory processFactory =
         pipeliteProcess ->
             new ProcessLauncherInterface() {
               @Override
@@ -87,9 +89,12 @@ public class LauncherDBTest {
         };
 
     PipeliteLauncher l =
-        new PipeliteLauncher(RandomStringGenerator.randomProcessName(), pipeliteProcessService);
+        new PipeliteLauncher(
+            RandomStringGenerator.randomProcessName(),
+            pipeliteProcessService,
+            processFactory,
+            mock(TaskExecutorFactory.class));
     l.setSourceReadTimeout(1);
-    l.setProcessFactory(pr_src);
     l.setProcessPool(pool);
     l.setExitWhenNoTasks(true);
 
