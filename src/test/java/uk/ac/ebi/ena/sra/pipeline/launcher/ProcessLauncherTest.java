@@ -81,8 +81,8 @@ public class ProcessLauncherTest {
   }
 
   private static class MockStorage {
-    public PipeliteProcessService pipeliteProcessService = mock(PipeliteProcessService.class);
-    public PipeliteStageService pipeliteStageService = mock(PipeliteStageService.class);
+    public final PipeliteProcessService pipeliteProcessService = mock(PipeliteProcessService.class);
+    public final PipeliteStageService pipeliteStageService = mock(PipeliteStageService.class);
   }
 
   private MockStorage mockStorage(

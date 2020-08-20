@@ -12,7 +12,6 @@ package uk.ac.ebi.ena.sra.pipeline.configuration;
 
 import lombok.Value;
 import pipelite.ApplicationConfiguration;
-import pipelite.configuration.TaskConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;

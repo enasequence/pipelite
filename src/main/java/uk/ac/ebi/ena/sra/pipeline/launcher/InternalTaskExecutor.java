@@ -14,8 +14,6 @@ import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.executor.AbstractTaskExecutor;
 import pipelite.instance.TaskInstance;
-import pipelite.resolver.ExceptionResolver;
-import pipelite.task.state.TaskExecutionState;
 import pipelite.task.Task;
 
 public class InternalTaskExecutor extends AbstractTaskExecutor {

@@ -13,7 +13,6 @@ package pipelite.executor;
 import lombok.Value;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
-import pipelite.resolver.ExceptionResolver;
 import uk.ac.ebi.ena.sra.pipeline.launcher.LSFTaskExecutor;
 
 @Value
