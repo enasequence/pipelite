@@ -16,53 +16,40 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import lombok.extern.slf4j.Slf4j;
+import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.entity.PipeliteProcess;
-import pipelite.executor.TaskExecutorFactory;
+import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteProcessService;
-import pipelite.executor.TaskExecutor;
+import pipelite.service.PipeliteStageService;
 
 @Slf4j
 public class PipeliteLauncher {
 
+  private final LauncherConfiguration launcherConfiguration;
   private final ProcessConfiguration processConfiguration;
   private final TaskConfiguration taskConfiguration;
   private final PipeliteProcessService pipeliteProcessService;
-  private final ProcessFactory processFactory;
-  private final TaskExecutorFactory taskExecutorFactory;
+  private final PipeliteStageService pipeliteStageService;
+  private final PipeliteLockService pipeliteLockService;
+  private final ProcessLauncherFactory processLauncherFactory;
 
   public PipeliteLauncher(
+      LauncherConfiguration launcherConfiguration,
       ProcessConfiguration processConfiguration,
       TaskConfiguration taskConfiguration,
       PipeliteProcessService pipeliteProcessService,
-      ProcessFactory processFactory,
-      TaskExecutorFactory taskExecutorFactory) {
+      PipeliteStageService pipeliteStageService,
+      PipeliteLockService pipeliteLockService,
+      ProcessLauncherFactory processLauncherFactory) {
+    this.launcherConfiguration = launcherConfiguration;
     this.processConfiguration = processConfiguration;
     this.taskConfiguration = taskConfiguration;
     this.pipeliteProcessService = pipeliteProcessService;
-    this.processFactory = processFactory;
-    this.taskExecutorFactory = taskExecutorFactory;
-  }
-
-  public interface ProcessFactory {
-    ProcessLauncherInterface create(PipeliteProcess pipeliteProcess);
-  }
-
-  public interface ProcessLauncherInterface extends Runnable {
-    String getProcessId();
-
-    TaskExecutor getExecutor();
-
-    PipeliteProcess getPipeliteProcess();
-
-    default void setExecutor(TaskExecutor executor) {}
-
-    default void stop() {}
-
-    default boolean isStopped() {
-      return false;
-    }
+    this.pipeliteStageService = pipeliteStageService;
+    this.pipeliteLockService = pipeliteLockService;
+    this.processLauncherFactory = processLauncherFactory;
   }
 
   TaggedPoolExecutor thread_pool;
@@ -115,10 +102,9 @@ public class PipeliteLauncher {
       if (exit_when_empty && pipeliteProcessQueue.isEmpty()) break;
 
       for (PipeliteProcess pipeliteProcess : pipeliteProcessQueue) {
-        ProcessLauncherInterface process = processFactory.create(pipeliteProcess);
-        process.setExecutor(taskExecutorFactory.create(processConfiguration, taskConfiguration));
+        ProcessLauncher processLauncher = processLauncherFactory.create(pipeliteProcess);
         try {
-          thread_pool.execute(process);
+          thread_pool.execute(processLauncher);
         } catch (RejectedExecutionException ree) {
           break;
         }

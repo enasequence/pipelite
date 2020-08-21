@@ -70,7 +70,7 @@ public class TaskInstance implements TaskParameters {
   }
 
   @Override
-  public int getRetries() {
+  public Integer getRetries() {
     return getValue(stage.getTaskConfiguration()::getRetries, taskConfiguration::getRetries);
   }
 

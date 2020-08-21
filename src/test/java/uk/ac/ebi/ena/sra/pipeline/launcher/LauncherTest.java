@@ -19,14 +19,15 @@ import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import pipelite.RandomStringGenerator;
+import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.entity.PipeliteProcess;
-import pipelite.executor.TaskExecutorFactory;
 import pipelite.resolver.DefaultExceptionResolver;
+import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteProcessService;
 import pipelite.executor.TaskExecutor;
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
+import pipelite.service.PipeliteStageService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -39,6 +40,10 @@ public class LauncherTest {
   static final int PIPELITE_PROCESS_LIST_SIZE = 100;
 
   static int pipeliteProcessExecutionCount = 0;
+
+  private LauncherConfiguration defaultLauncherConfiguration() {
+    return LauncherConfiguration.builder().build();
+  }
 
   private ProcessConfiguration defaultProcessConfiguration() {
     return ProcessConfiguration.builder()
@@ -54,10 +59,13 @@ public class LauncherTest {
   @Test
   public void test() throws InterruptedException {
 
+    LauncherConfiguration launcherConfiguration = defaultLauncherConfiguration();
     ProcessConfiguration processConfiguration = defaultProcessConfiguration();
     TaskConfiguration taskConfiguration = defaultTaskConfiguration();
 
     PipeliteProcessService pipeliteProcessService = mock(PipeliteProcessService.class);
+    PipeliteStageService pipeliteStageService = mock(PipeliteStageService.class);
+    PipeliteLockService pipeliteLockService = mock(PipeliteLockService.class);
 
     doAnswer(
             new Answer<Object>() {
@@ -82,11 +90,14 @@ public class LauncherTest {
         .when(pipeliteProcessService)
         .getActiveProcesses(any());
 
-    TaskExecutorFactory taskExecutorFactory = (a, b) -> null;
-
-    PipeliteLauncher.ProcessFactory processFactory =
+    ProcessLauncherFactory processLauncherFactory =
         pipeliteProcess ->
-            new ProcessLauncherInterface() {
+            new ProcessLauncher() {
+              @Override
+              public String getProcessId() {
+                return pipeliteProcess.getProcessId();
+              }
+
               @Override
               public void run() {
                 System.out.println("EXECUTING " + pipeliteProcess.getProcessId());
@@ -99,39 +110,26 @@ public class LauncherTest {
               }
 
               @Override
-              public String getProcessId() {
-                return pipeliteProcess.getProcessId();
-              }
-
-              @Override
-              public TaskExecutor getExecutor() {
-                return null;
-              }
-
-              @Override
-              public PipeliteProcess getPipeliteProcess() {
-                return null;
-              }
+              public void stop() {}
             };
 
     ProcessPoolExecutor pool =
         new ProcessPoolExecutor(workers) {
-          public void unwind(ProcessLauncherInterface process) {
-            System.out.println("FINISHED " + process.getProcessId());
-          }
+          public void unwind(ProcessLauncher process) {}
 
-          public void init(ProcessLauncherInterface process) {
-            System.out.println("INIT     " + process.getProcessId());
-          }
+          public void init(ProcessLauncher process) {}
         };
 
     PipeliteLauncher pipeliteLauncher =
         new PipeliteLauncher(
+            launcherConfiguration,
             processConfiguration,
             taskConfiguration,
             pipeliteProcessService,
-            processFactory,
-            taskExecutorFactory);
+            pipeliteStageService,
+            pipeliteLockService,
+            processLauncherFactory);
+
     pipeliteLauncher.setSourceReadTimeout(1);
     pipeliteLauncher.setProcessPool(pool);
 

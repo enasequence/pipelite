@@ -20,14 +20,18 @@ import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.RandomStringGenerator;
 import pipelite.TestConfiguration;
+import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.executor.TaskExecutorFactory;
 import pipelite.resolver.DefaultExceptionResolver;
+import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteProcessService;
+import pipelite.service.PipeliteStageService;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher;
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
+import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessLauncher;
+import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessLauncherFactory;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessPoolExecutor;
 import pipelite.executor.TaskExecutor;
 
@@ -41,9 +45,15 @@ import static org.mockito.Mockito.mock;
 public class LauncherDBTest {
 
   @Autowired PipeliteProcessService pipeliteProcessService;
+  @Autowired PipeliteStageService pipeliteStageService;
+  @Autowired PipeliteLockService pipeliteLockService;
 
   static final long delay = 5 * 1000;
   static final int workers = ForkJoinPool.getCommonPoolParallelism();
+
+  private LauncherConfiguration defaultLauncherConfiguration() {
+    return LauncherConfiguration.builder().launcherName("TEST_LAUNCHER").build();
+  }
 
   private ProcessConfiguration defaultProcessConfiguration() {
     return ProcessConfiguration.builder()
@@ -61,12 +71,18 @@ public class LauncherDBTest {
   @Rollback
   public void test() throws InterruptedException {
 
-      ProcessConfiguration processConfiguration = defaultProcessConfiguration();
-      TaskConfiguration taskConfiguration = defaultTaskConfiguration();
+    LauncherConfiguration launcherConfiguration = defaultLauncherConfiguration();
+    ProcessConfiguration processConfiguration = defaultProcessConfiguration();
+    TaskConfiguration taskConfiguration = defaultTaskConfiguration();
 
-    PipeliteLauncher.ProcessFactory processFactory =
+    ProcessLauncherFactory processLauncherFactory =
         pipeliteProcess ->
-            new ProcessLauncherInterface() {
+            new ProcessLauncher() {
+              @Override
+              public String getProcessId() {
+                return pipeliteProcess.getProcessId();
+              }
+
               @Override
               public void run() {
                 System.out.println("EXECUTING " + pipeliteProcess.getProcessId());
@@ -79,45 +95,31 @@ public class LauncherDBTest {
               }
 
               @Override
-              public String getProcessId() {
-                return pipeliteProcess.getProcessId();
-              }
-
-              @Override
-              public TaskExecutor getExecutor() {
-                return null;
-              }
-
-              @Override
-              public PipeliteProcess getPipeliteProcess() {
-                return null;
-              }
+              public void stop() {}
             };
 
     ProcessPoolExecutor pool =
         new ProcessPoolExecutor(workers) {
-          public void unwind(ProcessLauncherInterface process) {
-            System.out.println("FINISHED " + process.getProcessId());
-          }
+          public void unwind(ProcessLauncher process) {}
 
-          public void init(ProcessLauncherInterface process) {
-            System.out.println("INIT     " + process.getProcessId());
-          }
+          public void init(ProcessLauncher process) {}
         };
 
-    PipeliteLauncher l =
+    PipeliteLauncher pipeliteLauncher =
         new PipeliteLauncher(
+            launcherConfiguration,
             processConfiguration,
             taskConfiguration,
             pipeliteProcessService,
-            processFactory,
-            mock(TaskExecutorFactory.class));
-    l.setSourceReadTimeout(1);
-    l.setProcessPool(pool);
-    l.setExitWhenNoTasks(true);
+            pipeliteStageService,
+            pipeliteLockService,
+            processLauncherFactory);
+    pipeliteLauncher.setSourceReadTimeout(1);
+    pipeliteLauncher.setProcessPool(pool);
+    pipeliteLauncher.setExitWhenNoTasks(true);
 
     long start = System.currentTimeMillis();
-    l.execute();
+    pipeliteLauncher.execute();
 
     pool.shutdown();
     pool.awaitTermination(1, TimeUnit.MINUTES);

@@ -38,7 +38,7 @@ public class PipeliteStage {
   private String result;
 
   @Column(name = "EXEC_CNT")
-  private Integer executionCount = 0;
+  private Integer executionCount;
 
   @Column(name = "EXEC_START")
   private LocalDateTime startTime;
@@ -71,6 +71,7 @@ public class PipeliteStage {
     pipeliteStage.setProcessId(processId);
     pipeliteStage.setProcessName(processName);
     pipeliteStage.setStageName(stageName);
+    pipeliteStage.setExecutionCount(0);
     return pipeliteStage;
   }
 

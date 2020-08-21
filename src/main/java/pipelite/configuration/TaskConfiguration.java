@@ -27,7 +27,7 @@ public class TaskConfiguration implements TaskParameters {
   public String queue;
 
   /** Number of retries. */
-  public int retries;
+  public Integer retries;
 
   /** Temporary directory. */
   public String tempDir;

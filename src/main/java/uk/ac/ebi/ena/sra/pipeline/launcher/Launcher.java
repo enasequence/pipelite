@@ -13,19 +13,19 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 import java.util.concurrent.CountDownLatch;
 
 import lombok.AllArgsConstructor;
-import pipelite.ApplicationConfiguration;
-import pipelite.executor.TaskExecutorFactory;
+import pipelite.configuration.LauncherConfiguration;
+import pipelite.configuration.ProcessConfiguration;
+import pipelite.configuration.TaskConfiguration;
 import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
 import pipelite.service.PipeliteLockService;
-import pipelite.executor.LsfTaskExecutorFactory;
-import uk.ac.ebi.ena.sra.pipeline.configuration.PipeliteProcessFactory;
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
 
 @AllArgsConstructor
 public class Launcher {
 
-  private final ApplicationConfiguration applicationConfiguration;
+  private final LauncherConfiguration launcherConfiguration;
+  private final ProcessConfiguration processConfiguration;
+  private final TaskConfiguration taskConfiguration;
   private final PipeliteProcessService pipeliteProcessService;
   private final PipeliteStageService pipeliteStageService;
   private final PipeliteLockService pipeliteLockService;
@@ -35,9 +35,9 @@ public class Launcher {
 
   private static ProcessPoolExecutor init(int workers) {
     return new ProcessPoolExecutor(workers) {
-      public void unwind(ProcessLauncherInterface process) {}
+      public void unwind(ProcessLauncher process) {}
 
-      public void init(ProcessLauncherInterface process) {}
+      public void init(ProcessLauncher process) {}
     };
   }
 
@@ -53,34 +53,33 @@ public class Launcher {
 
     CountDownLatch latch = new CountDownLatch(1);
 
-    String launcherName = applicationConfiguration.launcherConfiguration.getLauncherName();
-    String processName = applicationConfiguration.processConfiguration.getProcessName();
+    String launcherName = launcherConfiguration.getLauncherName();
+    String processName = processConfiguration.getProcessName();
 
-    PipeliteLauncher.ProcessFactory processFactory =
-        new PipeliteProcessFactory(
-            launcherName,
-            applicationConfiguration,
-            pipeliteLockService,
+    DefaultProcessLauncherFactory processLauncherFactory =
+        new DefaultProcessLauncherFactory(
+            launcherConfiguration,
+            processConfiguration,
+            taskConfiguration,
             pipeliteProcessService,
-            pipeliteStageService);
-
-    TaskExecutorFactory taskExecutorFactory =
-        applicationConfiguration.processConfiguration.createExecutorFactory();
+            pipeliteStageService,
+            pipeliteLockService);
 
     PipeliteLauncher pipeliteLauncher =
         new PipeliteLauncher(
-            applicationConfiguration.processConfiguration,
-            applicationConfiguration.taskConfiguration,
+            launcherConfiguration,
+            processConfiguration,
+            taskConfiguration,
             pipeliteProcessService,
-            processFactory,
-            taskExecutorFactory);
+            pipeliteStageService,
+            pipeliteLockService,
+            processLauncherFactory);
 
     try {
       if (pipeliteLockService.lockLauncher(launcherName, processName)) {
 
         pipeliteLauncher.setSourceReadTimeout(120 * 1000);
-        pipeliteLauncher.setProcessPool(
-            init(applicationConfiguration.launcherConfiguration.getWorkers()));
+        pipeliteLauncher.setProcessPool(init(launcherConfiguration.getWorkers()));
 
         // TODO remove
         Runtime.getRuntime()

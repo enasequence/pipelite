@@ -36,22 +36,26 @@ public abstract class AbstractTaskExecutor implements TaskExecutor {
     this.internalError = resolver.internalError();
   }
 
-  public TaskExecutionState getTaskExecutionState(TaskInstance instance) {
-    if (!instance.getPipeliteStage().getEnabled()) {
-      return TaskExecutionState.DISABLED;
+  public TaskExecutionState getTaskExecutionState(TaskInstance taskInstance) {
+    if (!taskInstance.getPipeliteStage().getEnabled()) {
+      return TaskExecutionState.COMPLETED;
     }
-    TaskExecutionResultType resultType = instance.getPipeliteStage().getResultType();
+    TaskExecutionResultType resultType = taskInstance.getPipeliteStage().getResultType();
     if (resultType != null) {
       switch (resultType) {
-        case PERMANENT_ERROR:
+        case SUCCESS:
           return TaskExecutionState.COMPLETED;
+        case PERMANENT_ERROR:
+        case INTERNAL_ERROR:
+          return TaskExecutionState.FAILED;
+        case TRANSIENT_ERROR:
+          if (taskInstance.getPipeliteStage().getExecutionCount() >= taskInstance.getRetries()) {
+            return TaskExecutionState.FAILED;
+          }
         default:
-          return resultType == TaskExecutionResultType.TRANSIENT_ERROR
-              ? TaskExecutionState.ACTIVE
-              : TaskExecutionState.DISABLED;
+          return TaskExecutionState.ACTIVE;
       }
     }
-
     return TaskExecutionState.ACTIVE;
   }
 

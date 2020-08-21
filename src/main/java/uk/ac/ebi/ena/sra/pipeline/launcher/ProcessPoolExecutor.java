@@ -10,8 +10,6 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
-
 public abstract class ProcessPoolExecutor extends TaggedPoolExecutor {
   public ProcessPoolExecutor(int corePoolSize) {
     super(corePoolSize);
@@ -25,22 +23,22 @@ public abstract class ProcessPoolExecutor extends TaggedPoolExecutor {
 
   @Override
   public void execute(Runnable process) {
-    execute(((ProcessLauncherInterface) process).getProcessId(), process);
+    execute(((ProcessLauncher) process).getProcessId(), process);
   }
 
-  public abstract void unwind(ProcessLauncherInterface process);
+  public abstract void unwind(ProcessLauncher process);
 
-  public abstract void init(ProcessLauncherInterface r);
+  public abstract void init(ProcessLauncher r);
 
   @Override
   protected void afterExecute(Runnable r, Throwable t) {
-    unwind((ProcessLauncherInterface) r);
+    unwind((ProcessLauncher) r);
     super.afterExecute(r, t);
   }
 
   @Override
   protected void beforeExecute(Thread t, Runnable r) {
     super.beforeExecute(t, r);
-    init((ProcessLauncherInterface) r);
+    init((ProcessLauncher) r);
   }
 }

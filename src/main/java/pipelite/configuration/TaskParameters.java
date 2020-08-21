@@ -10,7 +10,7 @@ public interface TaskParameters {
 
   String getQueue();
 
-  int getRetries();
+  Integer getRetries();
 
   String getTempDir();
 
