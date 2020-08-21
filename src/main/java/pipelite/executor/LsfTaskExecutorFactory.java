@@ -10,20 +10,15 @@
  */
 package pipelite.executor;
 
-import lombok.Value;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.launcher.LSFTaskExecutor;
 
-@Value
 public class LsfTaskExecutorFactory implements TaskExecutorFactory {
-  private final ProcessConfiguration processConfiguration;
-  private final TaskConfiguration taskConfiguration;
 
   @Override
-  public TaskExecutor create() {
-    TaskExecutor executor = new LSFTaskExecutor(processConfiguration, taskConfiguration);
-
-    return executor;
+  public TaskExecutor create(
+      ProcessConfiguration processConfiguration, TaskConfiguration taskConfiguration) {
+    return new LSFTaskExecutor(processConfiguration, taskConfiguration);
   }
 }

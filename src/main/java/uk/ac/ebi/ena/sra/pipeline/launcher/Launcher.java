@@ -65,13 +65,15 @@ public class Launcher {
             pipeliteStageService);
 
     TaskExecutorFactory taskExecutorFactory =
-        new LsfTaskExecutorFactory(
-            applicationConfiguration.processConfiguration,
-            applicationConfiguration.taskConfiguration);
+        applicationConfiguration.processConfiguration.createExecutorFactory();
 
     PipeliteLauncher pipeliteLauncher =
         new PipeliteLauncher(
-            processName, pipeliteProcessService, processFactory, taskExecutorFactory);
+            applicationConfiguration.processConfiguration,
+            applicationConfiguration.taskConfiguration,
+            pipeliteProcessService,
+            processFactory,
+            taskExecutorFactory);
 
     try {
       if (pipeliteLockService.lockLauncher(launcherName, processName)) {

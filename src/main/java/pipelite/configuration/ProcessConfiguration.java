@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import pipelite.executor.TaskExecutor;
+import pipelite.executor.TaskExecutorFactory;
 import pipelite.resolver.ExceptionResolver;
 import pipelite.stage.Stage;
 
@@ -18,11 +20,22 @@ public class ProcessConfiguration {
   /** Name of the process begin executed. */
   private String processName;
 
-  /** Name of the class that resolves results. */
+  /** Name of the factory class that creates task executors. */
+  private String executor;
+
+  /** Name of the resolver class for task execution results. */
   private String resolver;
 
   /** Stages defined as an enumeration. */
   private String stages;
+
+  public TaskExecutorFactory createExecutorFactory() {
+    try {
+      return ((TaskExecutorFactory) Class.forName(executor).newInstance());
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
+  }
 
   public ExceptionResolver createResolver() {
     try {

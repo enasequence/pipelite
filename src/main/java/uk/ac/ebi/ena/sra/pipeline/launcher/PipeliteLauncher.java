@@ -16,6 +16,8 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import lombok.extern.slf4j.Slf4j;
+import pipelite.configuration.ProcessConfiguration;
+import pipelite.configuration.TaskConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.executor.TaskExecutorFactory;
 import pipelite.service.PipeliteProcessService;
@@ -24,17 +26,20 @@ import pipelite.executor.TaskExecutor;
 @Slf4j
 public class PipeliteLauncher {
 
-  private final String processName;
+  private final ProcessConfiguration processConfiguration;
+  private final TaskConfiguration taskConfiguration;
   private final PipeliteProcessService pipeliteProcessService;
   private final ProcessFactory processFactory;
   private final TaskExecutorFactory taskExecutorFactory;
 
   public PipeliteLauncher(
-      String processName,
+      ProcessConfiguration processConfiguration,
+      TaskConfiguration taskConfiguration,
       PipeliteProcessService pipeliteProcessService,
       ProcessFactory processFactory,
       TaskExecutorFactory taskExecutorFactory) {
-    this.processName = processName;
+    this.processConfiguration = processConfiguration;
+    this.taskConfiguration = taskConfiguration;
     this.pipeliteProcessService = pipeliteProcessService;
     this.processFactory = processFactory;
     this.taskExecutorFactory = taskExecutorFactory;
@@ -104,13 +109,14 @@ public class PipeliteLauncher {
         && null
             != (pipeliteProcessQueue =
                 (thread_pool.getCorePoolSize() - thread_pool.getActiveCount()) > 0
-                    ? pipeliteProcessService.getActiveProcesses(processName)
+                    ? pipeliteProcessService.getActiveProcesses(
+                        processConfiguration.getProcessName())
                     : Collections.emptyList())) {
       if (exit_when_empty && pipeliteProcessQueue.isEmpty()) break;
 
       for (PipeliteProcess pipeliteProcess : pipeliteProcessQueue) {
         ProcessLauncherInterface process = processFactory.create(pipeliteProcess);
-        process.setExecutor(taskExecutorFactory.create());
+        process.setExecutor(taskExecutorFactory.create(processConfiguration, taskConfiguration));
         try {
           thread_pool.execute(process);
         } catch (RejectedExecutionException ree) {
