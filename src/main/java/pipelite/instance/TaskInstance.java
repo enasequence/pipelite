@@ -18,6 +18,8 @@ import pipelite.configuration.TaskParameters;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
 import pipelite.stage.Stage;
+import pipelite.task.result.TaskExecutionResultType;
+import pipelite.task.state.TaskExecutionState;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -46,6 +48,29 @@ public class TaskInstance implements TaskParameters {
     this.pipeliteStage = pipeliteStage;
     this.stage = stage;
     this.taskConfiguration = taskConfiguration;
+  }
+
+  public TaskExecutionState evaluateTaskExecutionState() {
+    if (!getPipeliteStage().getEnabled()) {
+      return TaskExecutionState.COMPLETED;
+    }
+    TaskExecutionResultType resultType = getPipeliteStage().getResultType();
+    if (resultType != null) {
+      switch (resultType) {
+        case SUCCESS:
+          return TaskExecutionState.COMPLETED;
+        case PERMANENT_ERROR:
+        case INTERNAL_ERROR:
+          return TaskExecutionState.FAILED;
+        case TRANSIENT_ERROR:
+          if (getPipeliteStage().getExecutionCount() >= getRetries()) {
+            return TaskExecutionState.FAILED;
+          }
+        default:
+          return TaskExecutionState.ACTIVE;
+      }
+    }
+    return TaskExecutionState.ACTIVE;
   }
 
   @Override

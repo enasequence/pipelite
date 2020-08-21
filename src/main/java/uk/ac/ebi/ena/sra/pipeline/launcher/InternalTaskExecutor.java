@@ -25,11 +25,6 @@ public class InternalTaskExecutor extends AbstractTaskExecutor {
     super(processConfiguration, taskConfiguration);
   }
 
-  @Override
-  public void reset(TaskInstance instance) {
-    instance.getPipeliteStage().resetExecution();
-  }
-
   public void execute(TaskInstance instance) {
     Throwable exception = null;
 

@@ -17,9 +17,6 @@ import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.resolver.ExceptionResolver;
 import pipelite.task.result.TaskExecutionResult;
-import pipelite.task.result.TaskExecutionResultType;
-import pipelite.task.state.TaskExecutionState;
-import pipelite.instance.TaskInstance;
 
 @Slf4j
 public abstract class AbstractTaskExecutor implements TaskExecutor {
@@ -34,29 +31,6 @@ public abstract class AbstractTaskExecutor implements TaskExecutor {
     this.taskConfiguration = taskConfiguration;
     this.resolver = processConfiguration.createResolver();
     this.internalError = resolver.internalError();
-  }
-
-  public TaskExecutionState getTaskExecutionState(TaskInstance taskInstance) {
-    if (!taskInstance.getPipeliteStage().getEnabled()) {
-      return TaskExecutionState.COMPLETED;
-    }
-    TaskExecutionResultType resultType = taskInstance.getPipeliteStage().getResultType();
-    if (resultType != null) {
-      switch (resultType) {
-        case SUCCESS:
-          return TaskExecutionState.COMPLETED;
-        case PERMANENT_ERROR:
-        case INTERNAL_ERROR:
-          return TaskExecutionState.FAILED;
-        case TRANSIENT_ERROR:
-          if (taskInstance.getPipeliteStage().getExecutionCount() >= taskInstance.getRetries()) {
-            return TaskExecutionState.FAILED;
-          }
-        default:
-          return TaskExecutionState.ACTIVE;
-      }
-    }
-    return TaskExecutionState.ACTIVE;
   }
 
   public List<String> getEnvAsJavaSystemPropertyOptions() {

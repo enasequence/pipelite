@@ -16,11 +16,7 @@ import pipelite.instance.TaskInstance;
 
 public interface TaskExecutor {
 
-  void reset(TaskInstance instance);
-
   void execute(TaskInstance instance);
-
-  TaskExecutionState getTaskExecutionState(TaskInstance instance);
 
   ExecutionInfo get_info();
 }

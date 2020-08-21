@@ -10,8 +10,6 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 import com.google.common.base.Verify;
@@ -47,9 +45,7 @@ public class DefaultProcessLauncher implements ProcessLauncher {
   private final TaskExecutor executor;
   private final ExceptionResolver resolver;
 
-  private String __name;
-
-  private volatile boolean do_stop;
+  private boolean stop;
 
   public DefaultProcessLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
@@ -82,83 +78,97 @@ public class DefaultProcessLauncher implements ProcessLauncher {
     this.resolver = processConfiguration.createResolver();
   }
 
-  public PipeliteProcess getPipeliteProcess() {
-    return pipeliteProcess;
-  }
-
   @Override
   public void run() {
-    decorateThreadName();
-    lifecycle();
-    undecorateThreadName();
-  }
-
-  public void decorateThreadName() {
-    __name = Thread.currentThread().getName();
-    Thread.currentThread()
-        .setName(Thread.currentThread().getName() + "@" + getProcessName() + "/" + getProcessId());
-  }
-
-  public void undecorateThreadName() {
-    Thread.currentThread().setName(__name);
-  }
-
-  void lifecycle() {
-    if (!do_stop) {
-      TaskInstance[] taskInstances = createTaskInstances();
-
-      ProcessExecutionState state = pipeliteProcess.getState();
-
-      if (state == null) {
-        state = ProcessExecutionState.ACTIVE;
-      }
-
-      if (state != getProcessExecutionState(taskInstances)) {
-        log.warn(
-            "Process name {} process {} state {} changed to {}",
-            getProcessName(),
-            getProcessId(),
-            state,
-            getProcessExecutionState(taskInstances));
-        saveProcess(getProcessExecutionState(taskInstances));
-      }
-
-      if (state != ProcessExecutionState.ACTIVE) {
-        log.warn(
-            "Process name {} process {} state {} is not active",
-            getProcessName(),
-            getProcessId(),
-            state);
-        return;
-      }
-
-      if (!lockProcessInstance()) {
-        log.warn(
-            "Process name {} process {} could not be locked", getProcessName(), getProcessId());
-        return;
-      }
-      try {
-        execute(taskInstances);
-
-        incrementProcessExecutionCount();
-
-        saveProcess(getProcessExecutionState(taskInstances));
-
-      } finally {
-        unlockProcessInstance();
-      }
+    String threadName = Thread.currentThread().getName();
+    ;
+    try {
+      Thread.currentThread()
+          .setName(
+              "ProcessLauncher: "
+                  + getLauncherName()
+                  + "/"
+                  + getProcessName()
+                  + "/"
+                  + getProcessId());
+      _run();
+    } finally {
+      Thread.currentThread().setName(threadName);
     }
   }
 
-  private void incrementProcessExecutionCount() {
-    pipeliteProcess.incrementExecutionCount();
+  private void _run() {
+    if (stop) {
+      return;
+    }
+
+    ProcessExecutionState state = pipeliteProcess.getState();
+
+    if (state == null) {
+      state = ProcessExecutionState.ACTIVE;
+    }
+
+    // Get a list of process tasks. If task A depends on task B then
+    // task A will appear before task B.
+
+    TaskInstance[] taskInstances = getTaskInstances();
+
+    // Get process execution state from the tasks. If it is different from the
+    // process execution state then update the project execution state to match.
+
+    if (state != getProcessExecutionState(taskInstances)) {
+      log.warn(
+          "Process name {} process {} state {} changed to {}",
+          getProcessName(),
+          getProcessId(),
+          state,
+          getProcessExecutionState(taskInstances));
+
+      pipeliteProcess.setState(getProcessExecutionState(taskInstances));
+      pipeliteProcessService.saveProcess(pipeliteProcess);
+    }
+
+    if (state != ProcessExecutionState.ACTIVE) {
+      log.warn(
+          "Process name {} process {} state {} is not active",
+          getProcessName(),
+          getProcessId(),
+          state);
+
+      // The process needs to be active to be executed.
+      return;
+    }
+
+    // Lock the process for execution.
+
+    if (!lockProcess()) {
+      log.warn("Process name {} process {} could not be locked", getProcessName(), getProcessId());
+      return;
+    }
+    try {
+
+      // Execute tasks and save their states.
+
+      execute(taskInstances);
+
+      // Update and save the process state.
+
+      pipeliteProcess.incrementExecutionCount();
+      pipeliteProcess.setState(getProcessExecutionState(taskInstances));
+      pipeliteProcessService.saveProcess(pipeliteProcess);
+
+    } finally {
+      // Unlock the process.
+
+      unlockProcess();
+    }
   }
 
-  private boolean lockProcessInstance() {
+  private boolean lockProcess() {
     return pipeliteLockService.lockProcess(getLauncherName(), pipeliteProcess);
   }
 
-  private void unlockProcessInstance() {
+  private void unlockProcess() {
     if (pipeliteLockService.isProcessLocked(pipeliteProcess)) {
       pipeliteLockService.unlockProcess(getLauncherName(), pipeliteProcess);
     }
@@ -166,17 +176,7 @@ public class DefaultProcessLauncher implements ProcessLauncher {
 
   private ProcessExecutionState getProcessExecutionState(TaskInstance[] taskInstances) {
     for (TaskInstance taskInstance : taskInstances) {
-      TaskExecutionState taskExecutionState = executor.getTaskExecutionState(taskInstance);
-
-      log.info(
-          "Process name {} process {} stage {} result {} state {} execution count {}",
-          getProcessName(),
-          getProcessId(),
-          taskInstance.getPipeliteStage().getStageName(),
-          taskInstance.getPipeliteStage().getResultType(),
-          taskExecutionState,
-          taskInstance.getPipeliteStage().getExecutionCount());
-      switch (executor.getTaskExecutionState(taskInstance)) {
+      switch (taskInstance.evaluateTaskExecutionState()) {
         case ACTIVE:
           return ProcessExecutionState.ACTIVE;
         case FAILED:
@@ -186,12 +186,7 @@ public class DefaultProcessLauncher implements ProcessLauncher {
     return ProcessExecutionState.COMPLETED;
   }
 
-  private void saveProcess(ProcessExecutionState processExecutionState) {
-    pipeliteProcess.setState(processExecutionState);
-    pipeliteProcessService.saveProcess(pipeliteProcess);
-  }
-
-  private TaskInstance[] createTaskInstances() {
+  private TaskInstance[] getTaskInstances() {
     Stage[] stages = getStages();
     TaskInstance[] taskInstances = new TaskInstance[stages.length];
 
@@ -200,50 +195,70 @@ public class DefaultProcessLauncher implements ProcessLauncher {
       String processId = pipeliteProcess.getProcessId();
       String processName = pipeliteProcess.getProcessName();
       String stageName = stage.toString();
-      // Load stage it if already exists.
+
       Optional<PipeliteStage> pipeliteStage =
           pipeliteStageService.getSavedStage(processName, processId, stageName);
+
+      // Create and save the task it if does not already exist.
+
       if (!pipeliteStage.isPresent()) {
-        // Create stage it if does not already exist.
         pipeliteStage =
             Optional.of(
                 PipeliteStage.newExecution(
                     pipeliteProcess.getProcessId(),
                     pipeliteProcess.getProcessName(),
                     stage.toString()));
-        // Save created stage.
+
         pipeliteStageService.saveStage(pipeliteStage.get());
       }
-      TaskInstance instance =
+
+      taskInstances[i] =
           new TaskInstance(pipeliteProcess, pipeliteStage.get(), taskConfiguration, stage);
-      taskInstances[i] = instance;
     }
+
     return taskInstances;
   }
 
   private void execute(TaskInstance[] taskInstances) {
     for (TaskInstance taskInstance : taskInstances) {
-      if (do_stop) {
-        break;
-      }
-
-      if (TaskExecutionState.COMPLETED == executor.getTaskExecutionState(taskInstance)) {
-        continue;
-      }
-
-      if (TaskExecutionState.FAILED == executor.getTaskExecutionState(taskInstance)) {
-        // TODO: re-start from failed state
+      if (stop) {
         return;
       }
 
+      // Do not execute task if it is already completed.
+
+      if (TaskExecutionState.COMPLETED == taskInstance.evaluateTaskExecutionState()) {
+        continue;
+      }
+
+      // Do not execute failed tasks or any tasks that depend on it.
+
+      if (TaskExecutionState.FAILED == taskInstance.evaluateTaskExecutionState()) {
+        return;
+      }
+
+      log.info(
+          "Starting task execution. Process name {} process {} stage {} result type {} result {} execution count {}",
+          getProcessName(),
+          getProcessId(),
+          taskInstance.getPipeliteStage().getStageName(),
+          taskInstance.getPipeliteStage().getResultType(),
+          taskInstance.getPipeliteStage().getResult(),
+          taskInstance.getPipeliteStage().getExecutionCount());
+
+      // Update the task state before execution.
+
       taskInstance.getPipeliteStage().retryExecution();
       pipeliteStageService.saveStage(taskInstance.getPipeliteStage());
+
+      // Execute the task.
 
       executor.execute(taskInstance);
 
       ExecutionInfo info = executor.get_info();
 
-      // Translate execution result to exec status
+      // Translate execution result.
+
       TaskExecutionResult result;
       if (null != info.getThrowable()) {
         result = resolver.resolveError(info.getThrowable());
@@ -251,55 +266,51 @@ public class DefaultProcessLauncher implements ProcessLauncher {
         result = resolver.exitCodeSerializer().deserialize(info.getExitCode());
       }
 
+      // Update the task state after execution.
+
       taskInstance
           .getPipeliteStage()
           .endExecution(result, info.getCommandline(), info.getStdout(), info.getStderr());
-
       pipeliteStageService.saveStage(taskInstance.getPipeliteStage());
 
-      List<TaskInstance> dependend = invalidate_dependands(taskInstances, taskInstance);
-      for (TaskInstance si : dependend) {
-        pipeliteStageService.saveStage(si.getPipeliteStage());
-      }
+      // Reset dependent tasks if they are not active.
+
+      resetDependentTasks(taskInstances, taskInstance, false);
 
       if (result.isError()) {
+
+        // Do not continue execution if task execution fails.
+
         log.error(
-            "Error executing Unable to load process {} stage {} for process {}",
-            pipeliteProcess.getProcessName(),
-            taskInstance.getStage().getStageName(),
-            pipeliteProcess.getProcessId());
+            "Failed task execution. Process name {} process {} stage {} result type {} result {} execution count {}",
+            getProcessName(),
+            getProcessId(),
+            taskInstance.getPipeliteStage().getStageName(),
+            taskInstance.getPipeliteStage().getResultType(),
+            taskInstance.getPipeliteStage().getResult(),
+            taskInstance.getPipeliteStage().getExecutionCount());
         break;
       }
     }
   }
 
-  private List<TaskInstance> invalidate_dependands(
-      TaskInstance[] taskInstances, TaskInstance fromTaskInstance) {
-    List<TaskInstance> result = new ArrayList<>(getStages().length);
-    invalidate_dependands(taskInstances, fromTaskInstance, false, result);
-    return result;
-  }
-
-  private void invalidate_dependands(
-      TaskInstance[] taskInstances,
-      TaskInstance fromTaskInstance,
-      boolean reset,
-      List<TaskInstance> touched) {
+  private void resetDependentTasks(
+      TaskInstance[] taskInstances, TaskInstance resetTaskInstance, boolean reset) {
     for (TaskInstance taskInstance : taskInstances) {
-      if (taskInstance.equals(fromTaskInstance)) {
+      if (taskInstance.equals(resetTaskInstance)) {
         continue;
       }
 
       Stage stageDependsOn = taskInstance.getStage().getDependsOn();
       if (stageDependsOn != null
-          && stageDependsOn.getStageName().equals(fromTaskInstance.getStage().getStageName())) {
-        invalidate_dependands(taskInstances, taskInstance, true, touched);
+          && stageDependsOn.getStageName().equals(resetTaskInstance.getStage().getStageName())) {
+        resetDependentTasks(taskInstances, taskInstance, true);
       }
     }
 
-    if (reset) {
-      executor.reset(fromTaskInstance);
-      touched.add(fromTaskInstance);
+    if (reset && resetTaskInstance.evaluateTaskExecutionState() != TaskExecutionState.ACTIVE) {
+      resetTaskInstance.getPipeliteStage().resetExecution();
+      pipeliteStageService.saveStage(resetTaskInstance.getPipeliteStage());
     }
   }
 
@@ -319,7 +330,15 @@ public class DefaultProcessLauncher implements ProcessLauncher {
     return processConfiguration.getStageArray();
   }
 
+  public ProcessExecutionState getState() {
+    return pipeliteProcess.getState();
+  }
+
+  public Integer getExecutionCount() {
+    return pipeliteProcess.getExecutionCount();
+  }
+
   public void stop() {
-    this.do_stop = true;
+    this.stop = true;
   }
 }

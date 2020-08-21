@@ -306,23 +306,23 @@ public class DefaultProcessLauncherTest {
 
       // Run first time
 
-      processLauncher.lifecycle();
+      processLauncher.run();
 
-      verify(processLauncher, times(1)).lifecycle();
+      verify(processLauncher, times(1)).run();
       verify(taskExecutor, times(2)).execute(any(TaskInstance.class));
 
-      assertEquals(ProcessExecutionState.ACTIVE, processLauncher.getPipeliteProcess().getState());
-      assertThat(processLauncher.getPipeliteProcess().getExecutionCount()).isEqualTo(1);
+      assertEquals(ProcessExecutionState.ACTIVE, processLauncher.getState());
+      assertThat(processLauncher.getExecutionCount()).isEqualTo(1);
 
       // Run second time
 
-      processLauncher.lifecycle();
+      processLauncher.run();
 
-      verify(processLauncher, times(2)).lifecycle();
+      verify(processLauncher, times(2)).run();
       verify(taskExecutor, times(4)).execute(any(TaskInstance.class));
 
       //assertEquals(ProcessExecutionState.FAILED, processLauncher.getPipeliteProcess().getState());
-      assertThat(processLauncher.getPipeliteProcess().getExecutionCount()).isEqualTo(2);
+      assertThat(processLauncher.getExecutionCount()).isEqualTo(2);
     }
 
     {
@@ -338,10 +338,10 @@ public class DefaultProcessLauncherTest {
           (processConfiguration1, taskConfiguration) -> taskExecutor;
       doReturn(taskExecutorFactory).when(processConfiguration).createExecutorFactory();
 
-      DefaultProcessLauncher pl = initProcessLauncher(processConfiguration, mockStorage);
-      pl.lifecycle();
+      DefaultProcessLauncher processLauncher = initProcessLauncher(processConfiguration, mockStorage);
+      processLauncher.run();
 
-      verify(pl, times(1)).lifecycle();
+      verify(processLauncher, times(1)).run();
       verify(taskExecutor, times(2)).execute(any(TaskInstance.class));
     }
 
@@ -358,10 +358,10 @@ public class DefaultProcessLauncherTest {
           (processConfiguration1, taskConfiguration) -> taskExecutor;
       doReturn(taskExecutorFactory).when(processConfiguration).createExecutorFactory();
 
-      DefaultProcessLauncher pl = initProcessLauncher(processConfiguration, mockStorage);
-      pl.lifecycle();
+      DefaultProcessLauncher processLauncher = initProcessLauncher(processConfiguration, mockStorage);
+      processLauncher.run();
 
-      verify(pl, times(1)).lifecycle();
+      verify(processLauncher, times(1)).run();
       verify(taskExecutor, times(2)).execute(any(TaskInstance.class));
     }
 
@@ -378,13 +378,13 @@ public class DefaultProcessLauncherTest {
           (processConfiguration1, taskConfiguration) -> taskExecutor;
       doReturn(taskExecutorFactory).when(processConfiguration).createExecutorFactory();
 
-      DefaultProcessLauncher pl = initProcessLauncher(processConfiguration, mockStorage);
-      pl.lifecycle();
+      DefaultProcessLauncher processLauncher = initProcessLauncher(processConfiguration, mockStorage);
+      processLauncher.run();
 
-      verify(pl, times(1)).lifecycle();
+      verify(processLauncher, times(1)).run();
       verify(taskExecutor, times(0)).execute(any(TaskInstance.class));
 
-      assertEquals(ProcessExecutionState.FAILED, pl.getPipeliteProcess().getState());
+      assertEquals(ProcessExecutionState.FAILED, processLauncher.getState());
     }
 
     {
@@ -400,13 +400,13 @@ public class DefaultProcessLauncherTest {
           (processConfiguration1, taskConfiguration) -> taskExecutor;
       doReturn(taskExecutorFactory).when(processConfiguration).createExecutorFactory();
 
-      DefaultProcessLauncher pl = initProcessLauncher(processConfiguration, mockStorage);
-      pl.lifecycle();
+      DefaultProcessLauncher processLauncher = initProcessLauncher(processConfiguration, mockStorage);
+      processLauncher.run();
 
-      verify(pl, times(1)).lifecycle();
+      verify(processLauncher, times(1)).run();
       verify(taskExecutor, times(4)).execute(any(TaskInstance.class));
 
-      assertEquals(ProcessExecutionState.COMPLETED, pl.getPipeliteProcess().getState());
+      assertEquals(ProcessExecutionState.COMPLETED, processLauncher.getState());
     }
   }
 }

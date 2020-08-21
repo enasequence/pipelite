@@ -37,10 +37,6 @@ public class LSFTaskExecutor extends AbstractTaskExecutor {
 
   ExecutionInfo info;
 
-  public void reset(TaskInstance instance) {
-    instance.getPipeliteStage().resetExecution();
-  }
-
   private List<String> constructArgs(TaskInstance instance, boolean commit) {
     List<String> p_args = new ArrayList<>();
 
