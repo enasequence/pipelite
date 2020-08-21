@@ -20,8 +20,11 @@ import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.RandomStringGenerator;
 import pipelite.TestConfiguration;
+import pipelite.configuration.ProcessConfiguration;
+import pipelite.configuration.TaskConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.executor.TaskExecutorFactory;
+import pipelite.resolver.DefaultExceptionResolver;
 import pipelite.service.PipeliteProcessService;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
@@ -42,10 +45,24 @@ public class LauncherDBTest {
   static final long delay = 5 * 1000;
   static final int workers = ForkJoinPool.getCommonPoolParallelism();
 
+  private ProcessConfiguration defaultProcessConfiguration() {
+    return ProcessConfiguration.builder()
+        .processName(RandomStringGenerator.randomProcessName())
+        .resolver(DefaultExceptionResolver.NAME)
+        .build();
+  }
+
+  private TaskConfiguration defaultTaskConfiguration() {
+    return TaskConfiguration.builder().build();
+  }
+
   @Test
   @Transactional
   @Rollback
   public void test() throws InterruptedException {
+
+      ProcessConfiguration processConfiguration = defaultProcessConfiguration();
+      TaskConfiguration taskConfiguration = defaultTaskConfiguration();
 
     PipeliteLauncher.ProcessFactory processFactory =
         pipeliteProcess ->
@@ -90,7 +107,8 @@ public class LauncherDBTest {
 
     PipeliteLauncher l =
         new PipeliteLauncher(
-            RandomStringGenerator.randomProcessName(),
+            processConfiguration,
+            taskConfiguration,
             pipeliteProcessService,
             processFactory,
             mock(TaskExecutorFactory.class));

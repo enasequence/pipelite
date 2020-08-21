@@ -19,8 +19,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import pipelite.RandomStringGenerator;
+import pipelite.configuration.ProcessConfiguration;
+import pipelite.configuration.TaskConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.executor.TaskExecutorFactory;
+import pipelite.resolver.DefaultExceptionResolver;
 import pipelite.service.PipeliteProcessService;
 import pipelite.executor.TaskExecutor;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher.ProcessLauncherInterface;
@@ -35,12 +38,24 @@ public class LauncherTest {
   static final int PIPELITE_PROCESS_LIST_COUNT = 10;
   static final int PIPELITE_PROCESS_LIST_SIZE = 100;
 
-  static final String PROCESS_NAME = RandomStringGenerator.randomProcessName();
-
   static int pipeliteProcessExecutionCount = 0;
+
+  private ProcessConfiguration defaultProcessConfiguration() {
+    return ProcessConfiguration.builder()
+        .processName(RandomStringGenerator.randomProcessName())
+        .resolver(DefaultExceptionResolver.NAME)
+        .build();
+  }
+
+  private TaskConfiguration defaultTaskConfiguration() {
+    return TaskConfiguration.builder().build();
+  }
 
   @Test
   public void test() throws InterruptedException {
+
+    ProcessConfiguration processConfiguration = defaultProcessConfiguration();
+    TaskConfiguration taskConfiguration = defaultTaskConfiguration();
 
     PipeliteProcessService pipeliteProcessService = mock(PipeliteProcessService.class);
 
@@ -56,7 +71,7 @@ public class LauncherTest {
                           i -> {
                             PipeliteProcess pipeliteProcess = new PipeliteProcess();
                             pipeliteProcess.setProcessId(RandomStringGenerator.randomProcessId());
-                            pipeliteProcess.setProcessName(PROCESS_NAME);
+                            pipeliteProcess.setProcessName(processConfiguration.getProcessName());
                             return pipeliteProcess;
                           })
                       .collect(Collectors.toList());
@@ -67,7 +82,7 @@ public class LauncherTest {
         .when(pipeliteProcessService)
         .getActiveProcesses(any());
 
-    TaskExecutorFactory taskExecutorFactory = () -> null;
+    TaskExecutorFactory taskExecutorFactory = (a, b) -> null;
 
     PipeliteLauncher.ProcessFactory processFactory =
         pipeliteProcess ->
@@ -112,7 +127,11 @@ public class LauncherTest {
 
     PipeliteLauncher pipeliteLauncher =
         new PipeliteLauncher(
-            PROCESS_NAME, pipeliteProcessService, processFactory, taskExecutorFactory);
+            processConfiguration,
+            taskConfiguration,
+            pipeliteProcessService,
+            processFactory,
+            taskExecutorFactory);
     pipeliteLauncher.setSourceReadTimeout(1);
     pipeliteLauncher.setProcessPool(pool);
 
