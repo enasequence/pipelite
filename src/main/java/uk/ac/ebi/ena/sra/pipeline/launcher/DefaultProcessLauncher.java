@@ -45,7 +45,7 @@ public class DefaultProcessLauncher implements ProcessLauncher {
   private final TaskExecutor executor;
   private final ExceptionResolver resolver;
 
-  private boolean stop;
+  private volatile boolean stop;
 
   public DefaultProcessLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
@@ -81,7 +81,7 @@ public class DefaultProcessLauncher implements ProcessLauncher {
   @Override
   public void run() {
     String threadName = Thread.currentThread().getName();
-    ;
+
     try {
       Thread.currentThread()
           .setName(
