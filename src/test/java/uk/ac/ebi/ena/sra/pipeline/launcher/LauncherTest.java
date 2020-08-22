@@ -10,36 +10,34 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.TimeUnit;
+import java.util.Collections;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import pipelite.RandomStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
-import pipelite.configuration.TaskConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.resolver.DefaultExceptionResolver;
-import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteProcessService;
-import pipelite.executor.TaskExecutor;
-import pipelite.service.PipeliteStageService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
+@Slf4j
 public class LauncherTest {
   static final long delay = 60;
-  static final int workers = ForkJoinPool.getCommonPoolParallelism();
 
   static final int PIPELITE_PROCESS_LIST_COUNT = 10;
   static final int PIPELITE_PROCESS_LIST_SIZE = 100;
 
-  static int pipeliteProcessExecutionCount = 0;
+  static int pipeliteProcessCreationCount = 0;
+  static AtomicInteger pipeliteProcessExecutionCount = new AtomicInteger(0);
 
   private LauncherConfiguration defaultLauncherConfiguration() {
     return LauncherConfiguration.builder().build();
@@ -52,20 +50,13 @@ public class LauncherTest {
         .build();
   }
 
-  private TaskConfiguration defaultTaskConfiguration() {
-    return TaskConfiguration.builder().build();
-  }
-
   @Test
-  public void test() throws InterruptedException {
+  public void test() {
 
     LauncherConfiguration launcherConfiguration = defaultLauncherConfiguration();
     ProcessConfiguration processConfiguration = defaultProcessConfiguration();
-    TaskConfiguration taskConfiguration = defaultTaskConfiguration();
 
     PipeliteProcessService pipeliteProcessService = mock(PipeliteProcessService.class);
-    PipeliteStageService pipeliteStageService = mock(PipeliteStageService.class);
-    PipeliteLockService pipeliteLockService = mock(PipeliteLockService.class);
 
     doAnswer(
             new Answer<Object>() {
@@ -78,13 +69,14 @@ public class LauncherTest {
                       .mapToObj(
                           i -> {
                             PipeliteProcess pipeliteProcess = new PipeliteProcess();
-                            pipeliteProcess.setProcessId(RandomStringGenerator.randomProcessId());
+                            pipeliteProcess.setProcessId(
+                                "Process" + pipeliteProcessCreationCount++);
                             pipeliteProcess.setProcessName(processConfiguration.getProcessName());
                             return pipeliteProcess;
                           })
                       .collect(Collectors.toList());
                 }
-                return null;
+                return Collections.emptyList();
               }
             })
         .when(pipeliteProcessService)
@@ -100,8 +92,8 @@ public class LauncherTest {
 
               @Override
               public void run() {
-                System.out.println("EXECUTING " + pipeliteProcess.getProcessId());
-                pipeliteProcessExecutionCount++;
+                pipeliteProcessExecutionCount.incrementAndGet();
+                log.debug("Launching process {}", pipeliteProcess.getProcessId());
                 try {
                   Thread.sleep(delay);
                 } catch (InterruptedException e) {
@@ -113,47 +105,21 @@ public class LauncherTest {
               public void stop() {}
             };
 
-    ProcessPoolExecutor pool =
-        new ProcessPoolExecutor(workers) {
-          public void unwind(ProcessLauncher process) {}
-
-          public void init(ProcessLauncher process) {}
-        };
-
     PipeliteLauncher pipeliteLauncher =
         new PipeliteLauncher(
             launcherConfiguration,
             processConfiguration,
-            taskConfiguration,
             pipeliteProcessService,
-            pipeliteStageService,
-            pipeliteLockService,
             processLauncherFactory);
-
-    pipeliteLauncher.setSourceReadTimeout(1);
-    pipeliteLauncher.setProcessPool(pool);
-
+    pipeliteLauncher.stopIfEmpty();
     pipeliteLauncher.execute();
 
-    pool.shutdown();
-    pool.awaitTermination(1, TimeUnit.MINUTES);
-
-    long finish = System.currentTimeMillis();
-
-    // TODO: only PIPELITE_PROCESS_LIST_COUNT * workers tasks are completed
-
-    /*
-    assertThat(pipeliteProcessExecutionCount)
+    assertThat(pipeliteProcessExecutionCount.get())
         .isEqualTo(PIPELITE_PROCESS_LIST_COUNT * PIPELITE_PROCESS_LIST_SIZE);
 
-    assertThat(pool.getTaskCount())
+    assertThat(pipeliteLauncher.getSubmittedProcessCount())
         .isEqualTo(PIPELITE_PROCESS_LIST_COUNT * PIPELITE_PROCESS_LIST_SIZE);
 
-    assertThat(pool.getCompletedTaskCount())
-        .isEqualTo(PIPELITE_PROCESS_LIST_COUNT * PIPELITE_PROCESS_LIST_SIZE);
-    */
-
-    assertThat(pool.getActiveCount()).isEqualTo(0); // Threads should properly react to interrupt
-    pool.shutdownNow();
+    assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
   }
 }

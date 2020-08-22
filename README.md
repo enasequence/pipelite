@@ -241,7 +241,7 @@ Command line parameters are:
 Note: `memory-limit, cpu-cores-limit, queue, lsf-mem-timeout` will only apply if not implemented in stage.
 
 
-### uk.ac.ebi.ena.sra.pipeline.launcher.DefaultProcessLauncher
+### pipelite.process.launcher.DefaultProcessLauncher
 Launches execution for process ID, also interacts with data base. Locks corresponding process' and
 stage' table rows.
 

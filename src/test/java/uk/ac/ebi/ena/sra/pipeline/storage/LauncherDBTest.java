@@ -23,8 +23,6 @@ import pipelite.TestConfiguration;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
-import pipelite.entity.PipeliteProcess;
-import pipelite.executor.TaskExecutorFactory;
 import pipelite.resolver.DefaultExceptionResolver;
 import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteProcessService;
@@ -32,8 +30,6 @@ import pipelite.service.PipeliteStageService;
 import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessLauncher;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessLauncherFactory;
-import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessPoolExecutor;
-import pipelite.executor.TaskExecutor;
 
 import javax.transaction.Transactional;
 
@@ -45,8 +41,6 @@ import static org.mockito.Mockito.mock;
 public class LauncherDBTest {
 
   @Autowired PipeliteProcessService pipeliteProcessService;
-  @Autowired PipeliteStageService pipeliteStageService;
-  @Autowired PipeliteLockService pipeliteLockService;
 
   static final long delay = 5 * 1000;
   static final int workers = ForkJoinPool.getCommonPoolParallelism();
@@ -62,18 +56,13 @@ public class LauncherDBTest {
         .build();
   }
 
-  private TaskConfiguration defaultTaskConfiguration() {
-    return TaskConfiguration.builder().build();
-  }
-
   @Test
   @Transactional
   @Rollback
-  public void test() throws InterruptedException {
+  public void test() {
 
     LauncherConfiguration launcherConfiguration = defaultLauncherConfiguration();
     ProcessConfiguration processConfiguration = defaultProcessConfiguration();
-    TaskConfiguration taskConfiguration = defaultTaskConfiguration();
 
     ProcessLauncherFactory processLauncherFactory =
         pipeliteProcess ->
@@ -98,37 +87,24 @@ public class LauncherDBTest {
               public void stop() {}
             };
 
-    ProcessPoolExecutor pool =
-        new ProcessPoolExecutor(workers) {
-          public void unwind(ProcessLauncher process) {}
-
-          public void init(ProcessLauncher process) {}
-        };
-
     PipeliteLauncher pipeliteLauncher =
         new PipeliteLauncher(
             launcherConfiguration,
             processConfiguration,
-            taskConfiguration,
             pipeliteProcessService,
-            pipeliteStageService,
-            pipeliteLockService,
             processLauncherFactory);
-    pipeliteLauncher.setSourceReadTimeout(1);
-    pipeliteLauncher.setProcessPool(pool);
-    pipeliteLauncher.setExitWhenNoTasks(true);
+
+    pipeliteLauncher.stopIfEmpty();
 
     long start = System.currentTimeMillis();
-    pipeliteLauncher.execute();
 
-    pool.shutdown();
-    pool.awaitTermination(1, TimeUnit.MINUTES);
+    pipeliteLauncher.execute();
 
     long finish = System.currentTimeMillis();
 
     System.out.println(
         "Completed: "
-            + pool.getCompletedTaskCount()
+            + pipeliteLauncher.getCompletedProcessCount()
             + " for "
             + (finish - start)
             + " mS using "
@@ -137,7 +113,7 @@ public class LauncherDBTest {
     System.out.println("CPU count: " + Runtime.getRuntime().availableProcessors());
     System.out.println("Available parallelism: " + ForkJoinPool.getCommonPoolParallelism());
 
-    assertEquals(0, pool.getActiveCount()); // Threads should properly react to interrupt
-    pool.shutdownNow();
+    assertEquals(
+        0, pipeliteLauncher.getActiveProcessCount());
   }
 }

@@ -10,128 +10,141 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import lombok.extern.slf4j.Slf4j;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
-import pipelite.configuration.TaskConfiguration;
 import pipelite.entity.PipeliteProcess;
-import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteProcessService;
-import pipelite.service.PipeliteStageService;
 
 @Slf4j
 public class PipeliteLauncher {
 
   private final LauncherConfiguration launcherConfiguration;
   private final ProcessConfiguration processConfiguration;
-  private final TaskConfiguration taskConfiguration;
   private final PipeliteProcessService pipeliteProcessService;
-  private final PipeliteStageService pipeliteStageService;
-  private final PipeliteLockService pipeliteLockService;
   private final ProcessLauncherFactory processLauncherFactory;
+  private final ExecutorService executorService;
+  private AtomicInteger submittedProcessCount = new AtomicInteger(0);
+  private AtomicInteger completedProcessCount = new AtomicInteger(0);
+  private final Map<String, ProcessLauncher> activeProcesses = new ConcurrentHashMap<>();
+
+  private static final int ACTIVE_PROCESS_QUEUE_TIMEOUT_HOURS = 1;
 
   public PipeliteLauncher(
       LauncherConfiguration launcherConfiguration,
       ProcessConfiguration processConfiguration,
-      TaskConfiguration taskConfiguration,
       PipeliteProcessService pipeliteProcessService,
-      PipeliteStageService pipeliteStageService,
-      PipeliteLockService pipeliteLockService,
       ProcessLauncherFactory processLauncherFactory) {
     this.launcherConfiguration = launcherConfiguration;
     this.processConfiguration = processConfiguration;
-    this.taskConfiguration = taskConfiguration;
     this.pipeliteProcessService = pipeliteProcessService;
-    this.pipeliteStageService = pipeliteStageService;
-    this.pipeliteLockService = pipeliteLockService;
     this.processLauncherFactory = processLauncherFactory;
+    this.executorService = Executors.newFixedThreadPool(launcherConfiguration.getWorkers());
   }
 
-  TaggedPoolExecutor thread_pool;
+  private volatile boolean stop;
+  private boolean stopIfEmpty;
 
-  private int source_read_timeout = 60 * 1000;
-  private boolean exit_when_empty;
-  private volatile boolean do_stop;
-
-  public void setProcessPool(ProcessPoolExecutor thread_pool) {
-    this.thread_pool = thread_pool;
-  }
-
-  void shutdown() {
-    if (null != thread_pool) {
-      thread_pool.shutdown();
-      thread_pool.running.forEach(
-          (p, r) -> {
-            log.info("Sending stop to " + p);
-            ((ProcessLauncher) r).stop();
-          });
-
-      try {
-        while (!thread_pool.awaitTermination(30, TimeUnit.SECONDS)) {
-          log.info("Awaiting for completion of " + thread_pool.getActiveCount() + " threads ");
-        }
-      } catch (InterruptedException ie) {
-        Thread.currentThread().interrupt();
-      }
+  public void stop() {
+    this.stop = true;
+    executorService.shutdown();
+    for (ProcessLauncher processLauncher : activeProcesses.values()) {
+      processLauncher.stop();
+    }
+    try {
+      executorService.awaitTermination(1, TimeUnit.SECONDS);
+    } catch (InterruptedException ex) {
+      executorService.shutdownNow();
+      Thread.currentThread().interrupt();
     }
   }
 
-  public void stop() {
-    this.do_stop = true;
-  }
-
-  public boolean isStopped() {
-    return this.do_stop;
+  public void stopIfEmpty() {
+    this.stopIfEmpty = true;
   }
 
   public void execute() {
-    List<PipeliteProcess> pipeliteProcessQueue;
-    main:
-    while (!do_stop
-        && null
-            != (pipeliteProcessQueue =
-                (thread_pool.getCorePoolSize() - thread_pool.getActiveCount()) > 0
-                    ? pipeliteProcessService.getActiveProcesses(
-                        processConfiguration.getProcessName())
-                    : Collections.emptyList())) {
-      if (exit_when_empty && pipeliteProcessQueue.isEmpty()) break;
+    List<PipeliteProcess> activeProcessQueue = Collections.emptyList();
+    int activeProcessQueueIndex = 0;
+    LocalDateTime activeProcessQueueTimeout = LocalDateTime.now();
 
-      for (PipeliteProcess pipeliteProcess : pipeliteProcessQueue) {
-        ProcessLauncher processLauncher = processLauncherFactory.create(pipeliteProcess);
-        try {
-          thread_pool.execute(processLauncher);
-        } catch (RejectedExecutionException ree) {
-          break;
-        }
+    while (!stop) {
+
+      if (activeProcessQueueIndex == activeProcessQueue.size()
+          || activeProcessQueueTimeout.isBefore(LocalDateTime.now())) {
+        activeProcessQueue =
+            pipeliteProcessService.getActiveProcesses(processConfiguration.getProcessName());
+        activeProcessQueueIndex = 0;
+        activeProcessQueueTimeout =
+            LocalDateTime.now().plusHours(ACTIVE_PROCESS_QUEUE_TIMEOUT_HOURS);
       }
 
-      long until = System.currentTimeMillis() + getSourceReadTimout();
-      while (until > System.currentTimeMillis()) {
-        try {
-          Thread.sleep(1000);
-          if (0 == thread_pool.getActiveCount() && !pipeliteProcessQueue.isEmpty()) break;
-        } catch (InterruptedException e) {
-          Thread.currentThread().interrupt();
-          break main;
+      if (activeProcessQueueIndex == activeProcessQueue.size() && stopIfEmpty) {
+        while (submittedProcessCount.get() > completedProcessCount.get()) {
+          sleepOneSecond();
         }
+        log.info(
+            "Stopping launcher {} for process {} as there are no more tasks",
+            launcherConfiguration.getLauncherName(),
+            processConfiguration.getProcessName());
+        stop();
+        return;
       }
+
+      while (activeProcessQueueIndex < activeProcessQueue.size()
+          && activeProcesses.size() < launcherConfiguration.getWorkers()) {
+        ProcessLauncher processLauncher =
+            processLauncherFactory.create(activeProcessQueue.get(activeProcessQueueIndex++));
+        submittedProcessCount.incrementAndGet();
+        executorService.execute(
+            () -> {
+              String processId = processLauncher.getProcessId();
+              activeProcesses.put(processId, processLauncher);
+              try {
+                processLauncher.run();
+              } catch (Exception ex) {
+                log.error(
+                    "Exception from launcher {} for process {}",
+                    launcherConfiguration.getLauncherName(),
+                    processLauncher.getProcessId(),
+                    ex);
+                throw ex;
+              } finally {
+                activeProcesses.remove(processId);
+                completedProcessCount.incrementAndGet();
+              }
+            });
+      }
+
+      sleepOneSecond();
     }
   }
 
-  public int getSourceReadTimout() {
-    return source_read_timeout;
+  private void sleepOneSecond() {
+    try {
+      Thread.sleep(1000);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
   }
 
-  public void setSourceReadTimeout(int source_read_timeout_ms) {
-    this.source_read_timeout = source_read_timeout_ms;
+  public int getActiveProcessCount() {
+    return activeProcesses.size();
   }
 
-  public void setExitWhenNoTasks(boolean exit_when_empty) {
-    this.exit_when_empty = exit_when_empty;
+  public int getSubmittedProcessCount() {
+    return submittedProcessCount.get();
+  }
+
+  public int getCompletedProcessCount() {
+    return completedProcessCount.get();
   }
 }

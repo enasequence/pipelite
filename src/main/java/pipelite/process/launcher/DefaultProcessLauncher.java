@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package uk.ac.ebi.ena.sra.pipeline.launcher;
+package pipelite.process.launcher;
 
 import java.util.Optional;
 
@@ -31,6 +31,8 @@ import pipelite.process.state.ProcessExecutionState;
 import pipelite.task.state.TaskExecutionState;
 import pipelite.task.result.TaskExecutionResult;
 import pipelite.stage.Stage;
+import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInfo;
+import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessLauncher;
 
 @Slf4j
 public class DefaultProcessLauncher implements ProcessLauncher {

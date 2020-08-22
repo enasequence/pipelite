@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.concurrent.ForkJoinPool;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -17,5 +19,6 @@ public class LauncherConfiguration {
   private String launcherName;
 
   /** Number of parallel task executions. */
-  private int workers;
+  @Builder.Default
+  private int workers = ForkJoinPool.getCommonPoolParallelism();
 }

@@ -8,16 +8,19 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package uk.ac.ebi.ena.sra.pipeline.launcher;
+package pipelite.process.launcher;
 
 import lombok.AllArgsConstructor;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.entity.PipeliteProcess;
+import pipelite.process.launcher.DefaultProcessLauncher;
 import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
+import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessLauncher;
+import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessLauncherFactory;
 
 @AllArgsConstructor
 public class DefaultProcessLauncherFactory implements ProcessLauncherFactory {

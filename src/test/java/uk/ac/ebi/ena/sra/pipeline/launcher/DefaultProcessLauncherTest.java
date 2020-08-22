@@ -29,6 +29,7 @@ import pipelite.configuration.TaskConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
 import pipelite.executor.TaskExecutorFactory;
+import pipelite.process.launcher.DefaultProcessLauncher;
 import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
 import pipelite.resolver.ConcreteExceptionResolver;
