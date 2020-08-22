@@ -11,7 +11,6 @@
 package uk.ac.ebi.ena.sra.pipeline.storage;
 
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,14 +21,11 @@ import pipelite.RandomStringGenerator;
 import pipelite.TestConfiguration;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
-import pipelite.configuration.TaskConfiguration;
 import pipelite.resolver.DefaultExceptionResolver;
-import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteProcessService;
-import pipelite.service.PipeliteStageService;
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher;
-import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessLauncher;
-import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessLauncherFactory;
+import pipelite.launcher.PipeliteLauncher;
+import pipelite.process.launcher.ProcessLauncher;
+import pipelite.process.launcher.ProcessLauncherFactory;
 
 import javax.transaction.Transactional;
 

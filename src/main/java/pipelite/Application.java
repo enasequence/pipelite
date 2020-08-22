@@ -12,7 +12,7 @@ import pipelite.process.launcher.DefaultProcessLauncherFactory;
 import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
 import pipelite.service.PipeliteLockService;
-import uk.ac.ebi.ena.sra.pipeline.launcher.PipeliteLauncher;
+import pipelite.launcher.PipeliteLauncher;
 
 import javax.transaction.Transactional;
 
@@ -73,7 +73,7 @@ public class Application implements CommandLineRunner {
                         pipeliteLauncher.stop();
                       } catch (RuntimeException ex) {
                         log.error(
-                            "Error shutting down launcher {} for process {}",
+                            "Error shutting down pipelite.launcher {} for process {}",
                             launcherName,
                             processName,
                             ex);

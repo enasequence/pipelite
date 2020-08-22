@@ -10,12 +10,12 @@ import java.util.concurrent.ForkJoinPool;
 @Data
 @Builder
 @AllArgsConstructor
-@ConfigurationProperties(prefix = "pipelite.launcher")
+@ConfigurationProperties(prefix = "pipelite.pipelite.launcher")
 public class LauncherConfiguration {
 
   public LauncherConfiguration() {}
 
-  /** Name of the launcher begin executed. */
+  /** Name of the pipelite.launcher begin executed. */
   private String launcherName;
 
   /** Number of parallel task executions. */

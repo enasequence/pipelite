@@ -32,7 +32,6 @@ import pipelite.task.state.TaskExecutionState;
 import pipelite.task.result.TaskExecutionResult;
 import pipelite.stage.Stage;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInfo;
-import uk.ac.ebi.ena.sra.pipeline.launcher.ProcessLauncher;
 
 @Slf4j
 public class DefaultProcessLauncher implements ProcessLauncher {

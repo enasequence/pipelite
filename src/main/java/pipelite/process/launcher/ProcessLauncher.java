@@ -1,4 +1,4 @@
-package uk.ac.ebi.ena.sra.pipeline.launcher;
+package pipelite.process.launcher;
 
 public interface ProcessLauncher extends Runnable {
 

@@ -130,7 +130,7 @@ Pipelite structure and endpoints overview is presented below
 
 Inner interfaces and classes (file submission pipeline is used as an example):
 
-* Launcher: initializes pipelite components (pipelite launcher, storage, task source)
+* Launcher: initializes pipelite components (pipelite pipelite.launcher, storage, task source)
 * PipeliteLauncher: executes processes in a thread pool
 * PipeliteProcess (ProcessLauncher): provides stage instances to a stage executor
 * ResourceLocker (DBLockManager, MemoryLocker, OracleStorage): manages locking for prevention of process overlapping
@@ -225,23 +225,23 @@ needs database structure for particular process instance be  present in data bas
 (e.g, for each process id that user wants to process there should be row in `<process>` table with
 id and row(s) in `<stage>` table with corresponding prosess ids and names of the stages)
 
-### uk.ac.ebi.ena.sra.pipeline.launcher.Launcher
+### uk.ac.ebi.ena.sra.pipeline.pipelite.launcher.Launcher
 Launches supervisory program which interact with database and spawns sub-processes
 (currently only LSF back-end supported). Does not do any database locking itself, all locking
 done by calling ProcessLauncher class. Creates file lock to prevent occasional execution of copy.
 Command line parameters are:
 * --workers \<number> - number of simultaneously working processes. default value is: `2`;
-* --lock \<path> - lock file path, default is `/var/tmp/.launcher.lock`;
+* --lock \<path> - lock file path, default is `/var/tmp/.pipelite.launcher.lock`;
 * --memory-limit \<number> -  memory requested for each lsf job (in megs), if <= 0 will be set to default 1700;
 * --cpu-cores-limit \<number> - number of cores available for a process, if <= 0 will be set to default 1;
 * --queue \<queue_name> - LSF queue name;
-* --log-file \<path> - log file, default is `/var/tmp/launcher.log`;
+* --log-file \<path> - log file, default is `/var/tmp/pipelite.launcher.log`;
 * --lsf-mem-timeout \<number> - memory timeout for single LSF job (minutes), if <= 0 will be set to default 60.
 
 Note: `memory-limit, cpu-cores-limit, queue, lsf-mem-timeout` will only apply if not implemented in stage.
 
 
-### pipelite.process.launcher.DefaultProcessLauncher
+### pipelite.process.pipelite.launcher.DefaultProcessLauncher
 Launches execution for process ID, also interacts with data base. Locks corresponding process' and
 stage' table rows.
 
@@ -249,7 +249,7 @@ stage' table rows.
 * --stage \<stage_name> - stage name to execute
 * --mail-to \<list> - comma-separated list of mail addresses, default is: `pipelite.default.mail-to` value
 
-### uk.ac.ebi.ena.sra.pipeline.launcher.StageLauncher
+### uk.ac.ebi.ena.sra.pipeline.pipelite.launcher.StageLauncher
 Launches class for supplied stage. It does not lock process and stage tables but current version can
 insert log records to log table.
 *	--id  \<process_table_id> - process instance id to execute

@@ -8,13 +8,12 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package uk.ac.ebi.ena.sra.pipeline.launcher;
+package pipelite.launcher;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -23,6 +22,8 @@ import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.service.PipeliteProcessService;
+import pipelite.process.launcher.ProcessLauncher;
+import pipelite.process.launcher.ProcessLauncherFactory;
 
 @Slf4j
 public class PipeliteLauncher {
@@ -92,7 +93,7 @@ public class PipeliteLauncher {
           sleepOneSecond();
         }
         log.info(
-            "Stopping launcher {} for process {} as there are no more tasks",
+            "Stopping pipelite.launcher {} for process {} as there are no more tasks",
             launcherConfiguration.getLauncherName(),
             processConfiguration.getProcessName());
         stop();
@@ -112,7 +113,7 @@ public class PipeliteLauncher {
                 processLauncher.run();
               } catch (Exception ex) {
                 log.error(
-                    "Exception from launcher {} for process {}",
+                    "Exception from pipelite.launcher {} for process {}",
                     launcherConfiguration.getLauncherName(),
                     processLauncher.getProcessId(),
                     ex);

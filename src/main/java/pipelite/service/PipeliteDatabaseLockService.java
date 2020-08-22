@@ -10,7 +10,7 @@ import pipelite.repository.PipeliteLockRepository;
 import javax.transaction.Transactional;
 import java.util.Optional;
 
-// TODO: launcher lock is stored as a process lock and there is a possibility of lock name conflicr
+// TODO: pipelite.launcher lock is stored as a process lock and there is a possibility of lock name conflicr
 
 @Service
 @Slf4j
@@ -27,7 +27,7 @@ public class PipeliteDatabaseLockService implements PipeliteLockService {
     try {
       return lock(getLauncherLock(launcherName, processName));
     } catch (Exception ex) {
-      log.error("Failed to lock launcher {} process {}", launcherName, processName);
+      log.error("Failed to lock pipelite.launcher {} process {}", launcherName, processName);
       return false;
     }
   }
@@ -42,7 +42,7 @@ public class PipeliteDatabaseLockService implements PipeliteLockService {
     try {
       return unlock(getLauncherLock(launcherName, processName));
     } catch (Exception ex) {
-      log.error("Failed to unlock launcher {} process {}", launcherName, processName);
+      log.error("Failed to unlock pipelite.launcher {} process {}", launcherName, processName);
       return false;
     }
   }
@@ -59,7 +59,7 @@ public class PipeliteDatabaseLockService implements PipeliteLockService {
       return lock(getProcessLock(launcherName, pipeliteProcess));
     } catch (Exception ex) {
       log.error(
-          "Failed to lock launcher {} process {} instance {}",
+          "Failed to lock pipelite.launcher {} process {} instance {}",
           launcherName,
           pipeliteProcess.getProcessName(),
           pipeliteProcess.getProcessId());
@@ -73,7 +73,7 @@ public class PipeliteDatabaseLockService implements PipeliteLockService {
       return unlock(getProcessLock(launcherName, pipeliteProcess));
     } catch (Exception ex) {
       log.error(
-          "Failed to unlock launcher {}  process {} instance {}",
+          "Failed to unlock pipelite.launcher {}  process {} instance {}",
           launcherName,
           pipeliteProcess.getProcessName(),
           pipeliteProcess.getProcessId());
@@ -116,7 +116,7 @@ public class PipeliteDatabaseLockService implements PipeliteLockService {
     if (activeLock.isPresent()) {
       if (!activeLock.get().getLauncherName().equals(pipeliteLock.getLauncherName())) {
         log.error(
-            "Failed to unlock launcher {} process {} lock {}. Lock owned by different launcher {}.",
+            "Failed to unlock pipelite.launcher {} process {} lock {}. Lock owned by different pipelite.launcher {}.",
             pipeliteLock.getLauncherName(),
             pipeliteLock.getProcessName(),
             pipeliteLock.getLockId(),

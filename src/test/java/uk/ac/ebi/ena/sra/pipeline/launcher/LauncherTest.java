@@ -23,6 +23,9 @@ import pipelite.RandomStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.entity.PipeliteProcess;
+import pipelite.launcher.PipeliteLauncher;
+import pipelite.process.launcher.ProcessLauncher;
+import pipelite.process.launcher.ProcessLauncherFactory;
 import pipelite.resolver.DefaultExceptionResolver;
 import pipelite.service.PipeliteProcessService;
 
