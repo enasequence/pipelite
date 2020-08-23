@@ -8,6 +8,7 @@ import pipelite.executor.TaskExecutor;
 import pipelite.executor.TaskExecutorFactory;
 import pipelite.resolver.ExceptionResolver;
 import pipelite.stage.Stage;
+import pipelite.stage.StageFactory;
 
 @Data
 @Builder
@@ -26,7 +27,7 @@ public class ProcessConfiguration {
   /** Name of the resolver class for task execution results. */
   private String resolver;
 
-  /** Stages defined as an enumeration. */
+  /** Name of the stages declaration. */
   private String stages;
 
   public TaskExecutorFactory createExecutorFactory() {
@@ -46,21 +47,28 @@ public class ProcessConfiguration {
   }
 
   public Stage[] getStageArray() {
-    return (Stage[]) loadEnum(stages).getEnumConstants();
-  }
-
-  private Class<? extends Enum<?>> loadEnum(String name) {
+    Class cls;
     try {
-      return ((Class<? extends Enum<?>>) Class.forName(name));
-    } catch (ClassNotFoundException ex) {
+      cls = Class.forName(stages);
+      if (StageFactory.class.isAssignableFrom(cls)) {
+        StageFactory stageFactory = ((StageFactory) cls.newInstance());
+        return stageFactory.create();
+      } else {
+        return (Stage[]) loadEnum(stages).getEnumConstants();
+      }
+    } catch (Exception ex) {
       throw new RuntimeException(ex);
     }
+  }
+
+  private Class<? extends Enum<?>> loadEnum(String name) throws ClassNotFoundException {
+    return ((Class<? extends Enum<?>>) Class.forName(name));
   }
 
   public Stage getStage(String name) {
     Stage[] stages = getStageArray();
     for (Stage stage : stages) {
-      if (name.equals(stage.toString())) {
+      if (name.equals(stage.getStageName())) {
         return stage;
       }
     }

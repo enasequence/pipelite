@@ -21,9 +21,9 @@ import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
+import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
-import pipelite.service.PipeliteLockService;
 import pipelite.executor.TaskExecutor;
 import pipelite.instance.TaskInstance;
 import pipelite.resolver.ExceptionResolver;
@@ -80,7 +80,7 @@ public class DefaultProcessLauncher implements ProcessLauncher {
   }
 
   @Override
-  public void run() {
+  public Boolean call() {
     String threadName = Thread.currentThread().getName();
 
     try {
@@ -92,15 +92,15 @@ public class DefaultProcessLauncher implements ProcessLauncher {
                   + getProcessName()
                   + "/"
                   + getProcessId());
-      _run();
+      return _run();
     } finally {
       Thread.currentThread().setName(threadName);
     }
   }
 
-  private void _run() {
+  private boolean _run() {
     if (stop) {
-      return;
+      return false;
     }
 
     ProcessExecutionState state = pipeliteProcess.getState();
@@ -131,38 +131,38 @@ public class DefaultProcessLauncher implements ProcessLauncher {
 
     if (state != ProcessExecutionState.ACTIVE) {
       log.warn(
-          "Process name {} process {} state {} is not active",
+          "Declined process {} with id {} execution as process state is {}",
           getProcessName(),
           getProcessId(),
           state);
 
       // The process needs to be active to be executed.
-      return;
+      return false;
     }
-
     // Lock the process for execution.
 
     if (!lockProcess()) {
-      log.warn("Process name {} process {} could not be locked", getProcessName(), getProcessId());
-      return;
+      log.warn("Declined process {} with id {} execution as process could not be locked", getProcessName(), getProcessId());
+      return false;
     }
     try {
 
-      // Execute tasks and save their states.
+    // Execute tasks and save their states.
 
-      execute(taskInstances);
+    execute(taskInstances);
 
-      // Update and save the process state.
+    // Update and save the process state.
 
-      pipeliteProcess.incrementExecutionCount();
-      pipeliteProcess.setState(getProcessExecutionState(taskInstances));
-      pipeliteProcessService.saveProcess(pipeliteProcess);
-
+    pipeliteProcess.incrementExecutionCount();
+    pipeliteProcess.setState(getProcessExecutionState(taskInstances));
+    pipeliteProcessService.saveProcess(pipeliteProcess);
     } finally {
       // Unlock the process.
 
       unlockProcess();
     }
+
+    return true;
   }
 
   private boolean lockProcess() {
@@ -195,7 +195,7 @@ public class DefaultProcessLauncher implements ProcessLauncher {
       Stage stage = stages[i];
       String processId = pipeliteProcess.getProcessId();
       String processName = pipeliteProcess.getProcessName();
-      String stageName = stage.toString();
+      String stageName = stage.getStageName();
 
       Optional<PipeliteStage> pipeliteStage =
           pipeliteStageService.getSavedStage(processName, processId, stageName);
@@ -203,12 +203,7 @@ public class DefaultProcessLauncher implements ProcessLauncher {
       // Create and save the task it if does not already exist.
 
       if (!pipeliteStage.isPresent()) {
-        pipeliteStage =
-            Optional.of(
-                PipeliteStage.newExecution(
-                    pipeliteProcess.getProcessId(),
-                    pipeliteProcess.getProcessName(),
-                    stage.toString()));
+        pipeliteStage = Optional.of(PipeliteStage.newExecution(processId, processName, stageName));
 
         pipeliteStageService.saveStage(pipeliteStage.get());
       }
@@ -239,7 +234,7 @@ public class DefaultProcessLauncher implements ProcessLauncher {
       }
 
       log.info(
-          "Starting task execution. Process name {} process {} stage {} result type {} result {} execution count {}",
+          "Executing task for process {} with id {} stage {} result type {} result {} execution count {}",
           getProcessName(),
           getProcessId(),
           taskInstance.getPipeliteStage().getStageName(),
@@ -266,6 +261,15 @@ public class DefaultProcessLauncher implements ProcessLauncher {
       } else {
         result = resolver.exitCodeSerializer().deserialize(info.getExitCode());
       }
+
+      log.info(
+              "Finished task execution for process {} with id {} stage {} result type {} result {} execution count {}",
+              getProcessName(),
+              getProcessId(),
+              taskInstance.getPipeliteStage().getStageName(),
+              taskInstance.getPipeliteStage().getResultType(),
+              taskInstance.getPipeliteStage().getResult(),
+              taskInstance.getPipeliteStage().getExecutionCount());
 
       // Update the task state after execution.
 

@@ -1,6 +1,8 @@
 package pipelite.process.launcher;
 
-public interface ProcessLauncher extends Runnable {
+import java.util.concurrent.Callable;
+
+public interface ProcessLauncher extends Callable<Boolean> {
 
     String getProcessId();
 

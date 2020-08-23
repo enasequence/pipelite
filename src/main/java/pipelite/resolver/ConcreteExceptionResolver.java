@@ -30,6 +30,9 @@ public class ConcreteExceptionResolver extends AbstractResolver<Throwable> imple
 
   @Override
   public TaskExecutionResult resolveError(Throwable cause) {
+    if (cause == null) {
+      return success();
+    }
     for (Map.Entry<Class<? extends Throwable>, TaskExecutionResult> entry : map.entrySet()) {
       if (entry.getKey().isInstance(cause)) {
         return entry.getValue();

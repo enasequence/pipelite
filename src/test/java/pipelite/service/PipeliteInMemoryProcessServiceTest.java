@@ -3,6 +3,7 @@ package pipelite.service;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.RandomStringGenerator;
@@ -11,22 +12,20 @@ import pipelite.entity.PipeliteProcess;
 import pipelite.process.state.ProcessExecutionState;
 
 import javax.transaction.Transactional;
-
 import java.util.Comparator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = TestConfiguration.class)
 @ActiveProfiles("test")
-class PipeliteDatabaseProcessServiceTest {
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+class PipeliteInMemoryProcessServiceTest {
 
-  @Autowired PipeliteDatabaseProcessService service;
+  @Autowired PipeliteInMemoryProcessService service;
 
   private static final String PROCESS_NAME = RandomStringGenerator.randomProcessName();
 
   @Test
-  @Transactional
-  @Rollback
   public void testCrud() {
 
     String processId = RandomStringGenerator.randomProcessId();
@@ -55,8 +54,6 @@ class PipeliteDatabaseProcessServiceTest {
   }
 
   @Test
-  @Transactional
-  @Rollback
   public void testReportsSamePriority() {
     service.saveProcess(createPipeliteProcess(ProcessExecutionState.ACTIVE, 1));
     service.saveProcess(createPipeliteProcess(ProcessExecutionState.ACTIVE, 1));
@@ -74,8 +71,6 @@ class PipeliteDatabaseProcessServiceTest {
   }
 
   @Test
-  @Transactional
-  @Rollback
   public void testReportsDifferentPriority() {
     service.saveProcess(createPipeliteProcess(ProcessExecutionState.ACTIVE, 1));
     service.saveProcess(createPipeliteProcess(ProcessExecutionState.ACTIVE, 2));
@@ -92,9 +87,9 @@ class PipeliteDatabaseProcessServiceTest {
     assertThat(service.getFailedProcesses(PROCESS_NAME)).hasSize(4);
 
     assertThat(service.getActiveProcesses(PROCESS_NAME))
-        .isSortedAccordingTo(Comparator.comparingInt(PipeliteProcess::getPriority).reversed());
+            .isSortedAccordingTo(Comparator.comparingInt(PipeliteProcess::getPriority).reversed());
     assertThat(service.getFailedProcesses(PROCESS_NAME))
-        .isSortedAccordingTo(Comparator.comparingInt(PipeliteProcess::getPriority).reversed());
+            .isSortedAccordingTo(Comparator.comparingInt(PipeliteProcess::getPriority).reversed());
   }
 
   private static PipeliteProcess createPipeliteProcess(ProcessExecutionState state, int priority) {

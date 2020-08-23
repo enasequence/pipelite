@@ -29,7 +29,7 @@ public class PipeliteDatabaseProcessService implements PipeliteProcessService {
   }
 
   public List<PipeliteProcess> getCompletedProcesses(String processName) {
-    return repository.findAllByProcessNameAndStateOrderByPriorityDesc(
+    return repository.findAllByProcessNameAndState(
         processName, ProcessExecutionState.COMPLETED);
   }
 

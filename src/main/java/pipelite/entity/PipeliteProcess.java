@@ -32,7 +32,7 @@ public class PipeliteProcess {
   private Integer executionCount = 0;
 
   @Column(name = "PRIORITY")
-  private Integer priority;
+  private Integer priority = 0;
 
   public void incrementExecutionCount() {
     ++executionCount;

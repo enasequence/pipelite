@@ -11,11 +11,13 @@
 package pipelite.service;
 
 import lombok.Value;
+import org.springframework.stereotype.Service;
 import pipelite.entity.PipeliteProcess;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Service
 public class PipeliteInMemoryLockService implements PipeliteLockService {
 
   @Value

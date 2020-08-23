@@ -7,11 +7,12 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.TestConfiguration;
 import pipelite.executor.LsfTaskExecutorFactory;
 import pipelite.resolver.DefaultExceptionResolver;
-import pipelite.stage.DefaultStages;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(classes = TestConfiguration.class)
+@SpringBootTest(
+    classes = TestConfiguration.class,
+    properties = {})
 @ActiveProfiles("test")
 public class ProcessConfigurationTest {
 
@@ -24,9 +25,5 @@ public class ProcessConfigurationTest {
     assertThat(config.createExecutorFactory()).isInstanceOf(LsfTaskExecutorFactory.class);
     assertThat(config.getResolver()).isEqualTo("pipelite.resolver.DefaultExceptionResolver");
     assertThat(config.createResolver()).isInstanceOf(DefaultExceptionResolver.class);
-    assertThat(config.getStages()).isEqualTo("pipelite.stage.DefaultStages");
-    assertThat(config.getStageArray().length).isEqualTo(2);
-    assertThat(config.getStage(DefaultStages.STAGE_1.name())).isEqualTo(DefaultStages.STAGE_1);
-    assertThat(config.getStage(DefaultStages.STAGE_2.name())).isEqualTo(DefaultStages.STAGE_2);
   }
 }

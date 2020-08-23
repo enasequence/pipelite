@@ -33,11 +33,14 @@ public class PipeliteLauncher {
   private final PipeliteProcessService pipeliteProcessService;
   private final ProcessLauncherFactory processLauncherFactory;
   private final ExecutorService executorService;
-  private AtomicInteger submittedProcessCount = new AtomicInteger(0);
+  private AtomicInteger launchedProcessCount = new AtomicInteger(0);
+  private AtomicInteger declinedProcessCount = new AtomicInteger(0);
   private AtomicInteger completedProcessCount = new AtomicInteger(0);
   private final Map<String, ProcessLauncher> activeProcesses = new ConcurrentHashMap<>();
 
-  private static final int ACTIVE_PROCESS_QUEUE_TIMEOUT_HOURS = 1;
+  private int refreshTimeoutHours = 1;
+  private int launchTimeoutMilliseconds = 15 * 1000;
+  private int stopIfEmptyTimeoutMilliseconds = 1000;
 
   public PipeliteLauncher(
       LauncherConfiguration launcherConfiguration,
@@ -77,47 +80,65 @@ public class PipeliteLauncher {
     int activeProcessQueueIndex = 0;
     LocalDateTime activeProcessQueueTimeout = LocalDateTime.now();
 
+    String launcherName = launcherConfiguration.getLauncherName();
+    String processName = processConfiguration.getProcessName();
+
     while (!stop) {
 
       if (activeProcessQueueIndex == activeProcessQueue.size()
           || activeProcessQueueTimeout.isBefore(LocalDateTime.now())) {
-        activeProcessQueue =
-            pipeliteProcessService.getActiveProcesses(processConfiguration.getProcessName());
+
+        log.info(
+            "Launcher {} for process {} is getting new active processes",
+            launcherName,
+            processName);
+        activeProcessQueue = pipeliteProcessService.getActiveProcesses(processName);
         activeProcessQueueIndex = 0;
-        activeProcessQueueTimeout =
-            LocalDateTime.now().plusHours(ACTIVE_PROCESS_QUEUE_TIMEOUT_HOURS);
+        activeProcessQueueTimeout = LocalDateTime.now().plusHours(refreshTimeoutHours);
       }
 
       if (activeProcessQueueIndex == activeProcessQueue.size() && stopIfEmpty) {
-        while (submittedProcessCount.get() > completedProcessCount.get()) {
-          sleepOneSecond();
-        }
         log.info(
-            "Stopping pipelite.launcher {} for process {} as there are no more tasks",
-            launcherConfiguration.getLauncherName(),
-            processConfiguration.getProcessName());
+            "Launcher {} for process {} is stopping as there are no new active processes",
+            launcherName,
+            processName);
+        while (launchedProcessCount.get() > completedProcessCount.get()) {
+          sleep(stopIfEmptyTimeoutMilliseconds);
+        }
         stop();
         return;
       }
 
       while (activeProcessQueueIndex < activeProcessQueue.size()
           && activeProcesses.size() < launcherConfiguration.getWorkers()) {
-        ProcessLauncher processLauncher =
-            processLauncherFactory.create(activeProcessQueue.get(activeProcessQueueIndex++));
-        submittedProcessCount.incrementAndGet();
+
+        PipeliteProcess pipeliteProcess = activeProcessQueue.get(activeProcessQueueIndex++);
+        String processId = pipeliteProcess.getProcessId();
+
+        ProcessLauncher processLauncher = processLauncherFactory.create(pipeliteProcess);
+
+        log.info(
+            "Launcher {} for process {} is launching process id {}",
+            launcherName,
+            processName,
+            processId);
+
+        launchedProcessCount.incrementAndGet();
+
         executorService.execute(
             () -> {
-              String processId = processLauncher.getProcessId();
               activeProcesses.put(processId, processLauncher);
               try {
-                processLauncher.run();
+                if (!processLauncher.call()) {
+                  declinedProcessCount.incrementAndGet();
+                }
               } catch (Exception ex) {
                 log.error(
-                    "Exception from pipelite.launcher {} for process {}",
-                    launcherConfiguration.getLauncherName(),
-                    processLauncher.getProcessId(),
+                    "Exception thrown by launcher {} process {} process id {}",
+                    launcherName,
+                    processName,
+                    processId,
                     ex);
-                throw ex;
               } finally {
                 activeProcesses.remove(processId);
                 completedProcessCount.incrementAndGet();
@@ -125,13 +146,19 @@ public class PipeliteLauncher {
             });
       }
 
-      sleepOneSecond();
+      log.info(
+          "Launcher {} for process {} has now {} active process executions",
+          launcherName,
+          processName,
+          activeProcesses.size());
+
+      sleep(launchTimeoutMilliseconds);
     }
   }
 
-  private void sleepOneSecond() {
+  private void sleep(int miliseconds) {
     try {
-      Thread.sleep(1000);
+      Thread.sleep(miliseconds);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     }
@@ -141,11 +168,39 @@ public class PipeliteLauncher {
     return activeProcesses.size();
   }
 
-  public int getSubmittedProcessCount() {
-    return submittedProcessCount.get();
+  public int getLaunchedProcessCount() {
+    return launchedProcessCount.get();
+  }
+
+  public int getDeclinedProcessCount() {
+    return declinedProcessCount.get();
   }
 
   public int getCompletedProcessCount() {
     return completedProcessCount.get();
+  }
+
+  public int getRefreshTimeoutHours() {
+    return refreshTimeoutHours;
+  }
+
+  public void setRefreshTimeoutHours(int hours) {
+    this.refreshTimeoutHours = hours;
+  }
+
+  public int getLaunchTimeoutMilliseconds() {
+    return launchTimeoutMilliseconds;
+  }
+
+  public void setLaunchTimeoutMilliseconds(int milliseconds) {
+    this.launchTimeoutMilliseconds = milliseconds;
+  }
+
+  public int getStopIfEmptyTimeoutMilliseconds() {
+    return stopIfEmptyTimeoutMilliseconds;
+  }
+
+  public void setStopIfEmptyTimeoutMilliseconds(int stopIfEmptyTimeoutMilliseconds) {
+    this.stopIfEmptyTimeoutMilliseconds = stopIfEmptyTimeoutMilliseconds;
   }
 }

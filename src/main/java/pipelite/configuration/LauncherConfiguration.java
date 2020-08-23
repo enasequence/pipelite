@@ -10,7 +10,7 @@ import java.util.concurrent.ForkJoinPool;
 @Data
 @Builder
 @AllArgsConstructor
-@ConfigurationProperties(prefix = "pipelite.pipelite.launcher")
+@ConfigurationProperties(prefix = "pipelite.launcher")
 public class LauncherConfiguration {
 
   public LauncherConfiguration() {}
