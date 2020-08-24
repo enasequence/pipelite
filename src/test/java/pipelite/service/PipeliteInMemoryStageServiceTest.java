@@ -1,27 +1,18 @@
 package pipelite.service;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.Rollback;
-import org.springframework.test.context.ActiveProfiles;
 import pipelite.RandomStringGenerator;
-import pipelite.TestConfiguration;
 import pipelite.entity.PipeliteStage;
 import pipelite.task.result.TaskExecutionResult;
 
-import javax.transaction.Transactional;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(classes = TestConfiguration.class)
-@ActiveProfiles("test")
 class PipeliteInMemoryStageServiceTest {
-
-  @Autowired PipeliteInMemoryStageService service;
 
   @Test
   public void testCrud() {
+
+    PipeliteInMemoryStageService service = new PipeliteInMemoryStageService();
 
     String processId = RandomStringGenerator.randomProcessId();
     String processName = RandomStringGenerator.randomProcessName();

@@ -10,5 +10,9 @@
  */
 package pipelite.task;
 
-public interface Task extends Runnable {
+import pipelite.instance.TaskInstance;
+
+public interface Task {
+
+    void execute(TaskInstance taskInstance);
 }

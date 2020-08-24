@@ -1,5 +1,6 @@
 package pipelite;
 
+import lombok.extern.flogger.Flogger;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -8,15 +9,15 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
-import pipelite.process.launcher.DefaultProcessLauncherFactory;
+import pipelite.log.LogKey;
 import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
 import pipelite.service.PipeliteLockService;
 import pipelite.launcher.PipeliteLauncher;
 
-import javax.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 
-@Slf4j
+@Flogger
 @SpringBootApplication
 public class Application implements CommandLineRunner {
 
@@ -26,6 +27,8 @@ public class Application implements CommandLineRunner {
   @Autowired private PipeliteProcessService pipeliteProcessService;
   @Autowired private PipeliteStageService pipeliteStageService;
   @Autowired private PipeliteLockService pipeliteLockService;
+
+  @Autowired PipeliteLauncher pipeliteLauncher;
 
   public static void main(String[] args) {
     SpringApplication.run(Application.class, args);
@@ -37,7 +40,7 @@ public class Application implements CommandLineRunner {
     try {
       _run(args);
     } catch (Exception ex) {
-      log.error("Exception", ex);
+      log.atSevere().withCause(ex).log("Uncaught exception");
       throw ex;
     }
   }
@@ -45,22 +48,6 @@ public class Application implements CommandLineRunner {
   private void _run(String... args) {
     String launcherName = launcherConfiguration.getLauncherName();
     String processName = processConfiguration.getProcessName();
-
-    DefaultProcessLauncherFactory processLauncherFactory =
-        new DefaultProcessLauncherFactory(
-            launcherConfiguration,
-            processConfiguration,
-            taskConfiguration,
-            pipeliteProcessService,
-            pipeliteStageService,
-            pipeliteLockService);
-
-    PipeliteLauncher pipeliteLauncher =
-        new PipeliteLauncher(
-            launcherConfiguration,
-            processConfiguration,
-            pipeliteProcessService,
-            processLauncherFactory);
 
     if (pipeliteLockService.lockLauncher(launcherName, processName)) {
 
@@ -72,11 +59,11 @@ public class Application implements CommandLineRunner {
                       try {
                         pipeliteLauncher.stop();
                       } catch (RuntimeException ex) {
-                        log.error(
-                            "Error shutting down pipelite.launcher {} for process {}",
-                            launcherName,
-                            processName,
-                            ex);
+                        log.atSevere()
+                            .with(LogKey.LAUNCHER_NAME, launcherName)
+                            .with(LogKey.PROCESS_NAME, processName)
+                            .withCause(ex)
+                            .log("Error stopping launcher");
                       }
                     }));
 

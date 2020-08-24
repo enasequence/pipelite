@@ -6,18 +6,18 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.RandomStringGenerator;
-import pipelite.TestConfiguration;
+import pipelite.FullTestConfiguration;
 import pipelite.entity.PipeliteProcess;
-import pipelite.process.state.ProcessExecutionState;
+import pipelite.process.ProcessExecutionState;
 
-import javax.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(classes = TestConfiguration.class)
-@ActiveProfiles("test")
+@SpringBootTest(classes = FullTestConfiguration.class)
+@ActiveProfiles(value = {"database", "database-oracle-test"})
 class PipeliteDatabaseProcessServiceTest {
 
   @Autowired PipeliteDatabaseProcessService service;

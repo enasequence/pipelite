@@ -1,15 +1,17 @@
 package pipelite.service;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteProcessId;
-import pipelite.process.state.ProcessExecutionState;
+import pipelite.process.ProcessExecutionState;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
+@Profile("memory")
 public class PipeliteInMemoryProcessService implements PipeliteProcessService {
 
   private final Map<PipeliteProcessId, PipeliteProcess> pipeliteProcesses =

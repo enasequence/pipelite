@@ -1,16 +1,18 @@
 package pipelite.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteProcessId;
-import pipelite.process.state.ProcessExecutionState;
+import pipelite.process.ProcessExecutionState;
 import pipelite.repository.PipeliteProcessRepository;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@Profile("database")
 public class PipeliteDatabaseProcessService implements PipeliteProcessService {
 
   private final PipeliteProcessRepository repository;

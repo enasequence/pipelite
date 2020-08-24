@@ -11,6 +11,7 @@
 package pipelite.service;
 
 import lombok.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import pipelite.entity.PipeliteProcess;
 
@@ -18,6 +19,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
+@Profile("memory")
 public class PipeliteInMemoryLockService implements PipeliteLockService {
 
   @Value
@@ -75,39 +77,38 @@ public class PipeliteInMemoryLockService implements PipeliteLockService {
   }
 
   @Override
-  public boolean lockProcess(String launcherName, PipeliteProcess pipeliteProcess) {
-    if (globalProcessLocks.add(getGlobalLock(pipeliteProcess))) {
-      launcherProcessLocks.add(getLocalLock(launcherName, pipeliteProcess));
+  public boolean lockProcess(String launcherName, String processName, String processId) {
+    if (globalProcessLocks.add(getGlobalProcessLock(processName, processId))) {
+      launcherProcessLocks.add(getLocalProcessLock(launcherName, processName, processId));
       return true;
     }
     return false;
   }
 
   @Override
-  public boolean unlockProcess(String launcherName, PipeliteProcess pipeliteProcess) {
-    if (launcherProcessLocks.remove(getLocalLock(launcherName, pipeliteProcess))) {
-      globalProcessLocks.remove(getGlobalLock(pipeliteProcess));
+  public boolean unlockProcess(String launcherName, String processName, String processId) {
+    if (launcherProcessLocks.remove(getLocalProcessLock(launcherName, processName, processId))) {
+      globalProcessLocks.remove(getGlobalProcessLock(processName, processId));
       return true;
     }
     return false;
   }
 
   @Override
-  public boolean isProcessLocked(PipeliteProcess pipeliteProcess) {
-    return globalProcessLocks.contains(getGlobalLock(pipeliteProcess));
+  public boolean isProcessLocked(String processName, String processId) {
+    return globalProcessLocks.contains(getGlobalProcessLock(processName, processId));
   }
 
   private static LauncherLock getLauncherLock(String launcherName, String processName) {
     return new LauncherLock(launcherName, processName);
   }
 
-  private static LauncherProcessLock getLocalLock(
-      String launcherName, PipeliteProcess pipeliteProcess) {
-    return new LauncherProcessLock(
-        launcherName, pipeliteProcess.getProcessName(), pipeliteProcess.getProcessId());
+  private static LauncherProcessLock getLocalProcessLock(
+      String launcherName, String processName, String processId) {
+    return new LauncherProcessLock(launcherName, processName, processId);
   }
 
-  private static GlobalProcessLock getGlobalLock(PipeliteProcess pipeliteProcess) {
-    return new GlobalProcessLock(pipeliteProcess.getProcessName(), pipeliteProcess.getProcessId());
+  private static GlobalProcessLock getGlobalProcessLock(String processName, String processId) {
+    return new GlobalProcessLock(processName, processId);
   }
 }

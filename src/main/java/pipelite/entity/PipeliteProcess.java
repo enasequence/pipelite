@@ -3,7 +3,7 @@ package pipelite.entity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import pipelite.process.state.ProcessExecutionState;
+import pipelite.process.ProcessExecutionState;
 
 import javax.persistence.*;
 

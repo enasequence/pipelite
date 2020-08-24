@@ -1,6 +1,7 @@
 package pipelite.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import pipelite.entity.PipeliteStage;
 import pipelite.entity.PipeliteStageId;
@@ -9,6 +10,7 @@ import pipelite.repository.PipeliteStageRepository;
 import java.util.Optional;
 
 @Service
+@Profile("database")
 public class PipeliteDatabaseStageService implements PipeliteStageService {
 
   private final PipeliteStageRepository repository;

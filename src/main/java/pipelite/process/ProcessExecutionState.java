@@ -1,4 +1,4 @@
-package pipelite.process.state;
+package pipelite.process;
 
 public enum ProcessExecutionState {
   ACTIVE,

@@ -1,19 +1,24 @@
 package pipelite.service;
 
+import lombok.extern.flogger.Flogger;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import pipelite.entity.PipeliteLock;
 import pipelite.entity.PipeliteProcess;
+import pipelite.log.LogKey;
 import pipelite.repository.PipeliteLockRepository;
 
-import javax.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
-// TODO: pipelite.launcher lock is stored as a process lock and there is a possibility of lock name conflicr
+// TODO: pipelite.launcher lock is stored as a process lock and there is a possibility of lock name
+// conflict
 
 @Service
-@Slf4j
+@Profile("database")
+@Flogger
 public class PipeliteDatabaseLockService implements PipeliteLockService {
 
   private final PipeliteLockRepository repository;
@@ -27,7 +32,11 @@ public class PipeliteDatabaseLockService implements PipeliteLockService {
     try {
       return lock(getLauncherLock(launcherName, processName));
     } catch (Exception ex) {
-      log.error("Failed to lock pipelite.launcher {} process {}", launcherName, processName);
+      log.atSevere()
+          .with(LogKey.LAUNCHER_NAME, launcherName)
+          .with(LogKey.PROCESS_NAME, processName)
+          .withCause(ex)
+          .log("Failed to lock launcher");
       return false;
     }
   }
@@ -42,7 +51,11 @@ public class PipeliteDatabaseLockService implements PipeliteLockService {
     try {
       return unlock(getLauncherLock(launcherName, processName));
     } catch (Exception ex) {
-      log.error("Failed to unlock pipelite.launcher {} process {}", launcherName, processName);
+      log.atSevere()
+          .with(LogKey.LAUNCHER_NAME, launcherName)
+          .with(LogKey.PROCESS_NAME, processName)
+          .withCause(ex)
+          .log("Failed to unlock launcher");
       return false;
     }
   }
@@ -54,45 +67,47 @@ public class PipeliteDatabaseLockService implements PipeliteLockService {
   }
 
   @Override
-  public boolean lockProcess(String launcherName, PipeliteProcess pipeliteProcess) {
+  public boolean lockProcess(String launcherName, String processName, String processId) {
     try {
-      return lock(getProcessLock(launcherName, pipeliteProcess));
+      return lock(getProcessLock(launcherName, processName, processId));
     } catch (Exception ex) {
-      log.error(
-          "Failed to lock pipelite.launcher {} process {} instance {}",
-          launcherName,
-          pipeliteProcess.getProcessName(),
-          pipeliteProcess.getProcessId());
+      log.atSevere()
+          .with(LogKey.LAUNCHER_NAME, launcherName)
+          .with(LogKey.PROCESS_NAME, processName)
+          .with(LogKey.PROCESS_ID, processId)
+          .withCause(ex)
+          .log("Failed to lock process launcher");
       return false;
     }
   }
 
   @Override
-  public boolean unlockProcess(String launcherName, PipeliteProcess pipeliteProcess) {
+  public boolean unlockProcess(String launcherName, String processName, String processId) {
     try {
-      return unlock(getProcessLock(launcherName, pipeliteProcess));
+      return unlock(getProcessLock(launcherName, processName, processId));
     } catch (Exception ex) {
-      log.error(
-          "Failed to unlock pipelite.launcher {}  process {} instance {}",
-          launcherName,
-          pipeliteProcess.getProcessName(),
-          pipeliteProcess.getProcessId());
+      log.atSevere()
+          .with(LogKey.LAUNCHER_NAME, launcherName)
+          .with(LogKey.PROCESS_NAME, processName)
+          .with(LogKey.PROCESS_ID, processId)
+          .withCause(ex)
+          .log("Failed to unlock process launcher");
       return false;
     }
   }
 
   @Override
-  public boolean isProcessLocked(PipeliteProcess pipeliteProcess) {
-    return isLocked(pipeliteProcess.getProcessName(), pipeliteProcess.getProcessId());
+  public boolean isProcessLocked(String processName, String processId) {
+    return isLocked(processName, processId);
   }
 
   private static PipeliteLock getLauncherLock(String launcherName, String processName) {
     return new PipeliteLock(launcherName, processName, launcherName);
   }
 
-  private static PipeliteLock getProcessLock(String launcherName, PipeliteProcess pipeliteProcess) {
-    return new PipeliteLock(
-        launcherName, pipeliteProcess.getProcessName(), pipeliteProcess.getProcessId());
+  private static PipeliteLock getProcessLock(
+      String launcherName, String processName, String processId) {
+    return new PipeliteLock(launcherName, processName, processId);
   }
 
   @Transactional
@@ -115,12 +130,13 @@ public class PipeliteDatabaseLockService implements PipeliteLockService {
             pipeliteLock.getProcessName(), pipeliteLock.getLockId());
     if (activeLock.isPresent()) {
       if (!activeLock.get().getLauncherName().equals(pipeliteLock.getLauncherName())) {
-        log.error(
-            "Failed to unlock pipelite.launcher {} process {} lock {}. Lock owned by different pipelite.launcher {}.",
-            pipeliteLock.getLauncherName(),
-            pipeliteLock.getProcessName(),
-            pipeliteLock.getLockId(),
-            activeLock.get().getLauncherName());
+        log.atSevere()
+            .with(LogKey.LAUNCHER_NAME, pipeliteLock.getLauncherName())
+            .with(LogKey.PROCESS_NAME, pipeliteLock.getProcessName())
+            .with(LogKey.PROCESS_ID, pipeliteLock.getLockId())
+            .log(
+                "Failed to unlock lock. Lock held by different launcher %s",
+                activeLock.get().getLauncherName());
         return false;
       }
       repository.delete(pipeliteLock);

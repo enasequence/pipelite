@@ -20,5 +20,5 @@ public class LauncherConfiguration {
 
   /** Number of parallel task executions. */
   @Builder.Default
-  private int workers = ForkJoinPool.getCommonPoolParallelism();
+  private Integer workers;
 }

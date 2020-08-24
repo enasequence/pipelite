@@ -25,15 +25,14 @@ public class InternalTaskExecutor extends AbstractTaskExecutor {
     super(processConfiguration, taskConfiguration);
   }
 
-  public void execute(TaskInstance instance) {
+  public void execute(TaskInstance taskInstance) {
     Throwable exception = null;
 
     try {
-
-      Class<? extends Task> taskClass =
-          processConfiguration.getStage(instance.getPipeliteStage().getStageName()).getTaskClass();
+      String stageName = taskInstance.getPipeliteStage().getStageName();
+      Class<? extends Task> taskClass = processConfiguration.getStage(stageName).getTaskClass();
       Task task = taskClass.newInstance();
-      task.run();
+      task.execute(taskInstance);
 
     } catch (Throwable e) {
       e.printStackTrace();

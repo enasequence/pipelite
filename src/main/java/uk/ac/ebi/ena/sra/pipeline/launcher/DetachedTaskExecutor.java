@@ -13,7 +13,7 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 import java.util.ArrayList;
 import java.util.List;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.flogger.Flogger;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.executor.AbstractTaskExecutor;
@@ -21,7 +21,7 @@ import pipelite.instance.TaskInstance;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCall;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
 
-@Slf4j
+@Flogger
 public class DetachedTaskExecutor extends AbstractTaskExecutor {
   ExecutionInfo info;
   protected final ExternalCallBackEnd back_end = new SimpleBackEnd();
@@ -59,11 +59,6 @@ public class DetachedTaskExecutor extends AbstractTaskExecutor {
   }
 
   public void execute(TaskInstance taskInstance) {
-    log.info(
-        String.format(
-            "%sxecuting stage %s",
-            0 == taskInstance.getPipeliteStage().getExecutionCount() ? "E" : "Re-e",
-            taskInstance.getPipeliteStage().getStageName()));
 
     boolean do_commit = true;
     List<String> p_args = constructArgs(taskInstance, do_commit);
@@ -77,19 +72,11 @@ public class DetachedTaskExecutor extends AbstractTaskExecutor {
             "java",
             p_args.toArray(new String[0]));
 
-    log.info(ec.getCommandLine());
+    log.atInfo().log(ec.getCommandLine());
 
     ec.execute();
 
     fillExecutionInfo(ec);
-
-    String print_msg =
-        String.format(
-            "Finished execution of stage %s\n%s",
-            taskInstance.getPipeliteStage().getStageName(),
-            new ExternalCallException(ec).toString());
-
-    log.info(print_msg);
   }
 
   private void fillExecutionInfo(ExternalCall ec) {

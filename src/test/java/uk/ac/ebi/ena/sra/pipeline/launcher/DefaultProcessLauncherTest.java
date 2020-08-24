@@ -19,17 +19,21 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import lombok.extern.flogger.Flogger;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.FullTestConfiguration;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
 import pipelite.executor.TaskExecutorFactory;
-import pipelite.process.launcher.DefaultProcessLauncher;
+import pipelite.launcher.DefaultProcessLauncher;
 import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
 import pipelite.resolver.ConcreteExceptionResolver;
@@ -38,12 +42,14 @@ import pipelite.task.Task;
 import pipelite.executor.TaskExecutor;
 import pipelite.instance.TaskInstance;
 import pipelite.resolver.ExceptionResolver;
-import pipelite.process.state.ProcessExecutionState;
+import pipelite.process.ProcessExecutionState;
 import pipelite.task.result.TaskExecutionResult;
 import pipelite.stage.Stage;
 import pipelite.service.PipeliteInMemoryLockService;
 
-@Slf4j
+@Flogger
+@SpringBootTest(classes = FullTestConfiguration.class)
+@ActiveProfiles("test")
 public class DefaultProcessLauncherTest {
 
   private static final String PROCESS_NAME = "TEST_PROCESS";
@@ -191,8 +197,8 @@ public class DefaultProcessLauncherTest {
                 defaultTaskConfiguration(),
                 mockStorage.pipeliteProcessService,
                 mockStorage.pipeliteStageService,
-                mockStorage.pipeliteLockService,
-                pipeliteProcess));
+                mockStorage.pipeliteLockService));
+    process.init(PROCESS_ID);
     return process;
   }
 
@@ -205,7 +211,8 @@ public class DefaultProcessLauncherTest {
             (Answer<Object>)
                 i -> {
                   TaskInstance si = (TaskInstance) i.getArguments()[0];
-                  log.info("Calling execute on \"" + si.getPipeliteStage().getStageName() + "\"");
+                  log.atInfo().log(
+                      "Calling execute on \"" + si.getPipeliteStage().getStageName() + "\"");
                   return null;
                 })
         .when(spiedExecutor)
@@ -239,7 +246,7 @@ public class DefaultProcessLauncherTest {
 
     public static class TestTask implements Task {
       @Override
-      public void run() {}
+      public void execute(TaskInstance taskInstance) {}
     }
 
     TestStages(Class<? extends TestStages.TestTask> taskClass, TestStages dependsOn) {
@@ -307,9 +314,9 @@ public class DefaultProcessLauncherTest {
 
       // Run first time
 
-      processLauncher.call();
+      processLauncher.execute();
 
-      verify(processLauncher, times(1)).call();
+      verify(processLauncher, times(1)).execute();
       verify(taskExecutor, times(2)).execute(any(TaskInstance.class));
 
       assertEquals(ProcessExecutionState.ACTIVE, processLauncher.getState());
@@ -317,12 +324,13 @@ public class DefaultProcessLauncherTest {
 
       // Run second time
 
-      processLauncher.call();
+      processLauncher.execute();
 
-      verify(processLauncher, times(2)).call();
+      verify(processLauncher, times(2)).execute();
       verify(taskExecutor, times(4)).execute(any(TaskInstance.class));
 
-      //assertEquals(ProcessExecutionState.FAILED, processLauncher.getPipeliteProcess().getState());
+      // assertEquals(ProcessExecutionState.FAILED,
+      // processLauncher.getPipeliteProcess().getState());
       assertThat(processLauncher.getExecutionCount()).isEqualTo(2);
     }
 
@@ -339,10 +347,11 @@ public class DefaultProcessLauncherTest {
           (processConfiguration1, taskConfiguration) -> taskExecutor;
       doReturn(taskExecutorFactory).when(processConfiguration).createExecutorFactory();
 
-      DefaultProcessLauncher processLauncher = initProcessLauncher(processConfiguration, mockStorage);
-      processLauncher.call();
+      DefaultProcessLauncher processLauncher =
+          initProcessLauncher(processConfiguration, mockStorage);
+      processLauncher.execute();
 
-      verify(processLauncher, times(1)).call();
+      verify(processLauncher, times(1)).execute();
       verify(taskExecutor, times(2)).execute(any(TaskInstance.class));
     }
 
@@ -359,10 +368,11 @@ public class DefaultProcessLauncherTest {
           (processConfiguration1, taskConfiguration) -> taskExecutor;
       doReturn(taskExecutorFactory).when(processConfiguration).createExecutorFactory();
 
-      DefaultProcessLauncher processLauncher = initProcessLauncher(processConfiguration, mockStorage);
-      processLauncher.call();
+      DefaultProcessLauncher processLauncher =
+          initProcessLauncher(processConfiguration, mockStorage);
+      processLauncher.execute();
 
-      verify(processLauncher, times(1)).call();
+      verify(processLauncher, times(1)).execute();
       verify(taskExecutor, times(2)).execute(any(TaskInstance.class));
     }
 
@@ -379,10 +389,11 @@ public class DefaultProcessLauncherTest {
           (processConfiguration1, taskConfiguration) -> taskExecutor;
       doReturn(taskExecutorFactory).when(processConfiguration).createExecutorFactory();
 
-      DefaultProcessLauncher processLauncher = initProcessLauncher(processConfiguration, mockStorage);
-      processLauncher.call();
+      DefaultProcessLauncher processLauncher =
+          initProcessLauncher(processConfiguration, mockStorage);
+      processLauncher.execute();
 
-      verify(processLauncher, times(1)).call();
+      verify(processLauncher, times(1)).execute();
       verify(taskExecutor, times(0)).execute(any(TaskInstance.class));
 
       assertEquals(ProcessExecutionState.FAILED, processLauncher.getState());
@@ -401,10 +412,11 @@ public class DefaultProcessLauncherTest {
           (processConfiguration1, taskConfiguration) -> taskExecutor;
       doReturn(taskExecutorFactory).when(processConfiguration).createExecutorFactory();
 
-      DefaultProcessLauncher processLauncher = initProcessLauncher(processConfiguration, mockStorage);
-      processLauncher.call();
+      DefaultProcessLauncher processLauncher =
+          initProcessLauncher(processConfiguration, mockStorage);
+      processLauncher.execute();
 
-      verify(processLauncher, times(1)).call();
+      verify(processLauncher, times(1)).execute();
       verify(taskExecutor, times(4)).execute(any(TaskInstance.class));
 
       assertEquals(ProcessExecutionState.COMPLETED, processLauncher.getState());

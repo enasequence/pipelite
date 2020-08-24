@@ -12,10 +12,10 @@ public interface PipeliteLockService {
 
     void purgeLauncherLocks(String launcherName, String processName);
 
-    boolean lockProcess(String launcherName, PipeliteProcess pipeliteProcess);
+    boolean lockProcess(String launcherName, String processName, String processId);
 
-    boolean unlockProcess(String launcherName, PipeliteProcess pipeliteProcess);
+    boolean unlockProcess(String launcherName, String processName, String processId);
 
-    boolean isProcessLocked(PipeliteProcess pipeliteProcess);
+    boolean isProcessLocked(String processName, String processId);
 
 }

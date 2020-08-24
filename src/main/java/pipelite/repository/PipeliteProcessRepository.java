@@ -4,7 +4,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteProcessId;
-import pipelite.process.state.ProcessExecutionState;
+import pipelite.process.ProcessExecutionState;
 
 import java.util.List;
 

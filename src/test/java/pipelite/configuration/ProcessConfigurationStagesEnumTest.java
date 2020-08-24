@@ -2,20 +2,21 @@ package pipelite.configuration;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import pipelite.TestConfiguration;
+import pipelite.EmptyTestConfiguration;
+import pipelite.instance.TaskInstance;
 import pipelite.stage.Stage;
 import pipelite.task.Task;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
-    classes = TestConfiguration.class,
+    classes = EmptyTestConfiguration.class,
     properties = {
       "pipelite.process.stages=pipelite.configuration.ProcessConfigurationStagesEnumTest$TestStages"
     })
-@ActiveProfiles("test")
+@EnableConfigurationProperties(value = {ProcessConfiguration.class})
 public class ProcessConfigurationStagesEnumTest {
 
   @Autowired ProcessConfiguration config;
@@ -54,9 +55,7 @@ public class ProcessConfigurationStagesEnumTest {
   public static class TestTask implements Task {
 
     @Override
-    public void run() {
-      System.out.println("Test");
-    }
+    public void execute(TaskInstance taskInstance) {}
   }
 
   @Test

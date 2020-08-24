@@ -1,18 +1,16 @@
 package pipelite.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
-import pipelite.entity.PipeliteProcess;
-import pipelite.entity.PipeliteProcessId;
 import pipelite.entity.PipeliteStage;
 import pipelite.entity.PipeliteStageId;
-import pipelite.repository.PipeliteStageRepository;
 
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
+@Profile("memory")
 public class PipeliteInMemoryStageService implements PipeliteStageService {
 
   private final Map<PipeliteStageId, PipeliteStage> pipeliteStages = new ConcurrentHashMap<>();

@@ -14,7 +14,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.flogger.Flogger;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.executor.AbstractTaskExecutor;
@@ -23,7 +23,7 @@ import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCall;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall;
 
-@Slf4j
+@Flogger
 public class LSFTaskExecutor extends AbstractTaskExecutor {
 
   public static final int LSF_JVM_MEMORY_DELTA_MB = 1500;
@@ -50,7 +50,7 @@ public class LSFTaskExecutor extends AbstractTaskExecutor {
     int java_memory_limit = lsf_memory_limit - LSF_JVM_MEMORY_DELTA_MB;
 
     if (0 >= java_memory_limit) {
-      log.warn(
+      log.atWarning().log(
           "LSF memory is lower than "
               + LSF_JVM_MEMORY_DELTA_MB
               + "MB. Java memory limit will not be set.");
@@ -89,19 +89,19 @@ public class LSFTaskExecutor extends AbstractTaskExecutor {
     Integer memory = taskInstance.getMemory();
     if (memory == null) {
       memory = LSF_JVM_MEMORY_DELTA_MB + LSF_JVM_MEMORY_OVERHEAD_MB;
-      log.warn("Using default memory: " + memory);
+      log.atWarning().log("Using default memory: " + memory);
     }
 
     Integer memoryTimeout = taskInstance.getMemoryTimeout();
     if (memoryTimeout == null) {
       memoryTimeout = LSF_JVM_MEMORY_RESERVATION_TIMEOUT_DEFAULT_MINUTES;
-      log.warn("Using default memory reservation timeout: " + memoryTimeout);
+      log.atWarning().log("Using default memory reservation timeout: " + memoryTimeout);
     }
 
     Integer cores = taskInstance.getCores();
     if (cores == null) {
       cores = 1;
-      log.warn("Using default number of cores: " + cores);
+      log.atWarning().log("Using default number of cores: " + cores);
     }
 
     LSFBackEnd back_end = new LSFBackEnd(queue, memory, memoryTimeout, cores);
@@ -112,11 +112,6 @@ public class LSFTaskExecutor extends AbstractTaskExecutor {
   }
 
   public void execute(TaskInstance instance) {
-    log.info(
-        String.format(
-            "%sxecuting stage %s",
-            instance.getPipeliteStage().getExecutionCount() > 0 ? "E" : "Re-e",
-            instance.getPipeliteStage().getStageName()));
 
     boolean do_commit = true;
     List<String> p_args = constructArgs(instance, do_commit);
@@ -135,21 +130,10 @@ public class LSFTaskExecutor extends AbstractTaskExecutor {
 
     call.setTaskLostExitCode(resolver.exitCodeSerializer().serialize(internalError));
 
-    log.info(call.getCommandLine());
+    log.atInfo().log(call.getCommandLine());
 
     call.execute();
     fillExecutionInfo(call);
-
-    // Critical section to avoid constructing large strings multiple times
-    synchronized (LSFTaskExecutor.class) {
-      String print_msg =
-          String.format(
-              "Finished execution of stage %s\n%s",
-              instance.getPipeliteStage().getStageName(),
-              new ExternalCallException(call).toString());
-
-      log.info(print_msg);
-    }
   }
 
   private void fillExecutionInfo(ExternalCall ec) {

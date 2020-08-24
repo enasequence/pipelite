@@ -18,7 +18,6 @@ import pipelite.configuration.TaskConfiguration;
 import pipelite.resolver.ExceptionResolver;
 import pipelite.task.result.TaskExecutionResult;
 
-@Slf4j
 public abstract class AbstractTaskExecutor implements TaskExecutor {
   protected final ProcessConfiguration processConfiguration;
   protected final TaskConfiguration taskConfiguration;

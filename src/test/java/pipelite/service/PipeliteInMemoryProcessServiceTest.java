@@ -1,32 +1,22 @@
 package pipelite.service;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.annotation.Rollback;
-import org.springframework.test.context.ActiveProfiles;
 import pipelite.RandomStringGenerator;
-import pipelite.TestConfiguration;
 import pipelite.entity.PipeliteProcess;
-import pipelite.process.state.ProcessExecutionState;
+import pipelite.process.ProcessExecutionState;
 
-import javax.transaction.Transactional;
 import java.util.Comparator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(classes = TestConfiguration.class)
-@ActiveProfiles("test")
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class PipeliteInMemoryProcessServiceTest {
-
-  @Autowired PipeliteInMemoryProcessService service;
 
   private static final String PROCESS_NAME = RandomStringGenerator.randomProcessName();
 
   @Test
   public void testCrud() {
+
+    PipeliteInMemoryProcessService service = new PipeliteInMemoryProcessService();
 
     String processId = RandomStringGenerator.randomProcessId();
     ProcessExecutionState state = ProcessExecutionState.ACTIVE;
@@ -55,6 +45,9 @@ class PipeliteInMemoryProcessServiceTest {
 
   @Test
   public void testReportsSamePriority() {
+
+    PipeliteInMemoryProcessService service = new PipeliteInMemoryProcessService();
+
     service.saveProcess(createPipeliteProcess(ProcessExecutionState.ACTIVE, 1));
     service.saveProcess(createPipeliteProcess(ProcessExecutionState.ACTIVE, 1));
     service.saveProcess(createPipeliteProcess(ProcessExecutionState.COMPLETED, 1));
@@ -72,6 +65,9 @@ class PipeliteInMemoryProcessServiceTest {
 
   @Test
   public void testReportsDifferentPriority() {
+
+    PipeliteInMemoryProcessService service = new PipeliteInMemoryProcessService();
+
     service.saveProcess(createPipeliteProcess(ProcessExecutionState.ACTIVE, 1));
     service.saveProcess(createPipeliteProcess(ProcessExecutionState.ACTIVE, 2));
     service.saveProcess(createPipeliteProcess(ProcessExecutionState.COMPLETED, 1));
