@@ -1,12 +1,7 @@
 package pipelite.launcher;
 
-public interface PipeliteLauncher {
+import com.google.common.util.concurrent.Service;
 
-  boolean init();
-
-  void execute();
-
-  void stop();
-
-  void setStopIfEmpty();
+public interface PipeliteLauncher extends Service {
+  String serviceName();
 }

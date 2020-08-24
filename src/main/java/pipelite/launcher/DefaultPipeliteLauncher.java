@@ -10,6 +10,7 @@
  */
 package pipelite.launcher;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -18,6 +19,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import com.google.common.util.concurrent.AbstractScheduledService;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +32,7 @@ import pipelite.service.PipeliteProcessService;
 
 @Flogger
 @Component
-public class DefaultPipeliteLauncher implements PipeliteLauncher {
+public class DefaultPipeliteLauncher extends AbstractScheduledService implements PipeliteLauncher {
 
   private final LauncherConfiguration launcherConfiguration;
   private final ProcessConfiguration processConfiguration;
@@ -38,9 +40,16 @@ public class DefaultPipeliteLauncher implements PipeliteLauncher {
   private final PipeliteLockService pipeliteLockService;
   private final ExecutorService executorService;
 
-  private boolean lock;
-  private volatile boolean stop;
-  private boolean stopIfEmpty;
+  public enum ShutdownPolicy {
+    SHUTDOWN_IF_IDLE,
+    WAIT_IF_IDLE
+  };
+
+  private ShutdownPolicy shutdownPolicy = ShutdownPolicy.WAIT_IF_IDLE;
+
+  private List<String> activeProcessQueue = Collections.emptyList();
+  private int activeProcessQueueIndex = 0;
+  private LocalDateTime activeProcessQueueTimeout = LocalDateTime.now();
 
   private final AtomicInteger initProcessCount = new AtomicInteger(0);
   private AtomicInteger declinedProcessCount = new AtomicInteger(0);
@@ -48,9 +57,10 @@ public class DefaultPipeliteLauncher implements PipeliteLauncher {
   private final Map<String, ProcessLauncher> initProcesses = new ConcurrentHashMap<>();
   private final Map<String, ProcessLauncher> activeProcesses = new ConcurrentHashMap<>();
 
+  private int schedulerDelayMillis = 15 * 1000;
+  private int stopDelayMillis = 1000;
+
   private int refreshTimeoutHours = 1;
-  private int launchTimeoutMilliseconds = 15 * 1000;
-  private int stopIfEmptyTimeoutMilliseconds = 1000;
 
   @Autowired private ObjectProvider<ProcessLauncher> processLauncherObjectProvider;
 
@@ -71,173 +81,139 @@ public class DefaultPipeliteLauncher implements PipeliteLauncher {
     this.executorService = Executors.newFixedThreadPool(workers);
   }
 
-  public boolean init() {
-    log.atInfo()
-        .with(LogKey.LAUNCHER_NAME, getLauncherName())
-        .with(LogKey.PROCESS_NAME, getProcessName())
-        .log("Initialising launcher");
-
-    return lockLauncher();
+  @Override
+  public String serviceName() {
+    return getLauncherName() + "/" + getProcessName();
   }
 
-  public void execute() {
+  @Override
+  protected void startUp() {
     log.atInfo()
         .with(LogKey.LAUNCHER_NAME, getLauncherName())
         .with(LogKey.PROCESS_NAME, getProcessName())
-        .log("Executing launcher");
+        .log("Starting up launcher");
 
-    List<String> activeProcessQueue = Collections.emptyList();
-    int activeProcessQueueIndex = 0;
-    LocalDateTime activeProcessQueueTimeout = LocalDateTime.now();
+    if (!lockLauncher()) {
+      throw new RuntimeException("Could not start process launcher");
+    }
+
+    log.atInfo()
+        .with(LogKey.LAUNCHER_NAME, getLauncherName())
+        .with(LogKey.PROCESS_NAME, getProcessName())
+        .log("Launcher has been started up");
+  }
+
+  @Override
+  protected Scheduler scheduler() {
+    return Scheduler.newFixedDelaySchedule(Duration.ZERO, Duration.ofMillis(schedulerDelayMillis));
+  }
+
+  @Override
+  protected void runOneIteration() throws Exception {
+    log.atInfo()
+        .with(LogKey.LAUNCHER_NAME, getLauncherName())
+        .with(LogKey.PROCESS_NAME, getProcessName())
+        .log("Running launcher");
 
     String launcherName = getLauncherName();
     String processName = getProcessName();
 
-    while (!stop) {
+    if (activeProcessQueueIndex == activeProcessQueue.size()
+        || activeProcessQueueTimeout.isBefore(LocalDateTime.now())) {
 
-      if (activeProcessQueueIndex == activeProcessQueue.size()
-          || activeProcessQueueTimeout.isBefore(LocalDateTime.now())) {
-
-        log.atInfo()
-            .with(LogKey.LAUNCHER_NAME, launcherName)
-            .with(LogKey.PROCESS_NAME, processName)
-            .log("Retrieving active processes to launch");
-
-        activeProcessQueue =
-            pipeliteProcessService.getActiveProcesses(processName).stream()
-                .map(pipeliteProcess -> pipeliteProcess.getProcessId())
-                .collect(Collectors.toList());
-        activeProcessQueueIndex = 0;
-        activeProcessQueueTimeout = LocalDateTime.now().plusHours(refreshTimeoutHours);
-      }
-
-      if (activeProcessQueueIndex == activeProcessQueue.size() && stopIfEmpty) {
-        log.atInfo()
-            .with(LogKey.LAUNCHER_NAME, launcherName)
-            .with(LogKey.PROCESS_NAME, processName)
-            .log("No new active processes to launch");
-
-        while (initProcessCount.get() > completedProcessCount.get()) {
-          sleep(stopIfEmptyTimeoutMilliseconds);
-        }
-        stop();
-        return;
-      }
-
-      while (activeProcessQueueIndex < activeProcessQueue.size()
-          && activeProcesses.size() < launcherConfiguration.getWorkers()) {
-
-        // Launch new process execution
-
-        String processId = activeProcessQueue.get(activeProcessQueueIndex++);
-
-        log.atInfo()
-            .with(LogKey.LAUNCHER_NAME, launcherName)
-            .with(LogKey.PROCESS_NAME, processName)
-            .with(LogKey.PROCESS_ID, processId)
-            .log("Creating process launcher");
-
-        ProcessLauncher processLauncher = processLauncherObjectProvider.getObject();
-
-        if (!processLauncher.init(processId)) {
-          log.atWarning()
-              .with(LogKey.LAUNCHER_NAME, launcherName)
-              .with(LogKey.PROCESS_NAME, processName)
-              .with(LogKey.PROCESS_ID, processId)
-              .log("Failed to initialise process launcher");
-
-          declinedProcessCount.incrementAndGet();
-          continue;
-        } else {
-          initProcesses.put(processId, processLauncher);
-          initProcessCount.incrementAndGet();
-        }
-
-        log.atInfo()
-            .with(LogKey.LAUNCHER_NAME, launcherName)
-            .with(LogKey.PROCESS_NAME, processName)
-            .with(LogKey.PROCESS_ID, processId)
-            .log("Executing process launcher");
-
-        executorService.execute(
-            () -> {
-              activeProcesses.put(processId, processLauncher);
-              try {
-                processLauncher.execute();
-              } catch (Exception ex) {
-                log.atSevere()
-                    .with(LogKey.LAUNCHER_NAME, launcherName)
-                    .with(LogKey.PROCESS_NAME, processName)
-                    .with(LogKey.PROCESS_ID, processId)
-                    .withCause(ex);
-              } finally {
-                processLauncher.close();
-                initProcesses.remove(processId);
-                activeProcesses.remove(processId);
-                completedProcessCount.incrementAndGet();
-              }
-            });
-      }
-
-      sleep(launchTimeoutMilliseconds);
-    }
-  }
-
-  private boolean lockLauncher() {
-    log.atInfo()
-        .with(LogKey.LAUNCHER_NAME, getLauncherName())
-        .with(LogKey.PROCESS_NAME, getProcessName())
-        .log("Attempting to lock launcher");
-
-    if (pipeliteLockService.lockLauncher(getLauncherName(), getProcessName())) {
-      lock = true;
       log.atInfo()
-          .with(LogKey.LAUNCHER_NAME, getLauncherName())
-          .with(LogKey.PROCESS_NAME, getProcessName())
-          .log("Locked launcher");
-      return true;
-    }
-    log.atWarning()
-        .with(LogKey.LAUNCHER_NAME, getLauncherName())
-        .with(LogKey.PROCESS_NAME, getProcessName())
-        .log("Failed to lock launcher");
-    return false;
-  }
+          .with(LogKey.LAUNCHER_NAME, launcherName)
+          .with(LogKey.PROCESS_NAME, processName)
+          .log("Finding active processes to launch");
 
-  private void unlockLauncher() {
-    if (!lock) {
+      activeProcessQueue =
+          pipeliteProcessService.getActiveProcesses(processName).stream()
+              .map(pipeliteProcess -> pipeliteProcess.getProcessId())
+              .collect(Collectors.toList());
+      activeProcessQueueIndex = 0;
+      activeProcessQueueTimeout = LocalDateTime.now().plusHours(refreshTimeoutHours);
+    }
+
+    if (activeProcessQueueIndex == activeProcessQueue.size()
+        && ShutdownPolicy.SHUTDOWN_IF_IDLE.equals(shutdownPolicy)) {
+      log.atInfo()
+          .with(LogKey.LAUNCHER_NAME, launcherName)
+          .with(LogKey.PROCESS_NAME, processName)
+          .log("Shutting down no new active processes to launch");
+
+      while (initProcessCount.get() > completedProcessCount.get()) {
+        try {
+          Thread.sleep(stopDelayMillis);
+        } catch (InterruptedException ex) {
+          throw ex;
+        }
+      }
+      stopAsync();
       return;
     }
-    log.atInfo()
-        .with(LogKey.LAUNCHER_NAME, getLauncherName())
-        .with(LogKey.PROCESS_NAME, getProcessName())
-        .log("Attempting to unlock launcher");
 
-    if (pipeliteLockService.unlockLauncher(getLauncherName(), getProcessName())) {
+    while (activeProcessQueueIndex < activeProcessQueue.size()
+        && activeProcesses.size() < launcherConfiguration.getWorkers()) {
+
+      // Launch new process execution
+
+      String processId = activeProcessQueue.get(activeProcessQueueIndex++);
+
       log.atInfo()
-          .with(LogKey.LAUNCHER_NAME, getLauncherName())
-          .with(LogKey.PROCESS_NAME, getProcessName())
-          .log("Unlocked launcher");
-      lock = false;
-    } else {
+          .with(LogKey.LAUNCHER_NAME, launcherName)
+          .with(LogKey.PROCESS_NAME, processName)
+          .with(LogKey.PROCESS_ID, processId)
+          .log("Creating process launcher");
+
+      ProcessLauncher processLauncher = processLauncherObjectProvider.getObject();
+
+      if (!processLauncher.init(processId)) {
+        log.atWarning()
+            .with(LogKey.LAUNCHER_NAME, launcherName)
+            .with(LogKey.PROCESS_NAME, processName)
+            .with(LogKey.PROCESS_ID, processId)
+            .log("Failed to initialise process launcher");
+
+        declinedProcessCount.incrementAndGet();
+        continue;
+      } else {
+        initProcesses.put(processId, processLauncher);
+        initProcessCount.incrementAndGet();
+      }
+
       log.atInfo()
-          .with(LogKey.LAUNCHER_NAME, getLauncherName())
-          .with(LogKey.PROCESS_NAME, getProcessName())
-          .log("Failed to unlocked launcher");
+          .with(LogKey.LAUNCHER_NAME, launcherName)
+          .with(LogKey.PROCESS_NAME, processName)
+          .with(LogKey.PROCESS_ID, processId)
+          .log("Executing process launcher");
+
+      executorService.execute(
+          () -> {
+            activeProcesses.put(processId, processLauncher);
+            try {
+              processLauncher.execute();
+            } catch (Exception ex) {
+              log.atSevere()
+                  .with(LogKey.LAUNCHER_NAME, launcherName)
+                  .with(LogKey.PROCESS_NAME, processName)
+                  .with(LogKey.PROCESS_ID, processId)
+                  .withCause(ex);
+            } finally {
+              processLauncher.close();
+              initProcesses.remove(processId);
+              activeProcesses.remove(processId);
+              completedProcessCount.incrementAndGet();
+            }
+          });
     }
   }
 
   @Override
-  public void stop() {
-    if (!stop) {
-      return;
-    }
-    this.stop = true;
-
+  protected void shutDown() {
     log.atInfo()
         .with(LogKey.LAUNCHER_NAME, getLauncherName())
         .with(LogKey.PROCESS_NAME, getProcessName())
-        .log("Stopping launcher");
+        .log("Shutting down launcher");
 
     executorService.shutdown();
     for (ProcessLauncher processLauncher : initProcesses.values()) {
@@ -254,24 +230,46 @@ public class DefaultPipeliteLauncher implements PipeliteLauncher {
       log.atInfo()
           .with(LogKey.LAUNCHER_NAME, getLauncherName())
           .with(LogKey.PROCESS_NAME, getProcessName())
-          .log("Launcher stopped");
+          .log("Launcher has been shut down");
     }
   }
 
-  @Override
-  public void setStopIfEmpty() {
-    this.stopIfEmpty = true;
-  }
-
-  private void sleep(int miliseconds) {
+  private boolean lockLauncher() {
     log.atInfo()
         .with(LogKey.LAUNCHER_NAME, getLauncherName())
         .with(LogKey.PROCESS_NAME, getProcessName())
-        .log("Launcher sleeping for %s milliseconds", miliseconds);
-    try {
-      Thread.sleep(miliseconds);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
+        .log("Attempting to lock launcher");
+
+    if (pipeliteLockService.lockLauncher(getLauncherName(), getProcessName())) {
+      log.atInfo()
+          .with(LogKey.LAUNCHER_NAME, getLauncherName())
+          .with(LogKey.PROCESS_NAME, getProcessName())
+          .log("Locked launcher");
+      return true;
+    }
+    log.atWarning()
+        .with(LogKey.LAUNCHER_NAME, getLauncherName())
+        .with(LogKey.PROCESS_NAME, getProcessName())
+        .log("Failed to lock launcher");
+    return false;
+  }
+
+  private void unlockLauncher() {
+    log.atInfo()
+        .with(LogKey.LAUNCHER_NAME, getLauncherName())
+        .with(LogKey.PROCESS_NAME, getProcessName())
+        .log("Attempting to unlock launcher");
+
+    if (pipeliteLockService.unlockLauncher(getLauncherName(), getProcessName())) {
+      log.atInfo()
+          .with(LogKey.LAUNCHER_NAME, getLauncherName())
+          .with(LogKey.PROCESS_NAME, getProcessName())
+          .log("Unlocked launcher");
+    } else {
+      log.atInfo()
+          .with(LogKey.LAUNCHER_NAME, getLauncherName())
+          .with(LogKey.PROCESS_NAME, getProcessName())
+          .log("Failed to unlocked launcher");
     }
   }
 
@@ -307,19 +305,19 @@ public class DefaultPipeliteLauncher implements PipeliteLauncher {
     this.refreshTimeoutHours = hours;
   }
 
-  public int getLaunchTimeoutMilliseconds() {
-    return launchTimeoutMilliseconds;
+  public int getSchedulerDelayMillis() {
+    return schedulerDelayMillis;
   }
 
-  public void setLaunchTimeoutMilliseconds(int milliseconds) {
-    this.launchTimeoutMilliseconds = milliseconds;
+  public void setSchedulerDelayMillis(int milliseconds) {
+    this.schedulerDelayMillis = milliseconds;
   }
 
-  public int getStopIfEmptyTimeoutMilliseconds() {
-    return stopIfEmptyTimeoutMilliseconds;
+  public ShutdownPolicy getShutdownPolicy() {
+    return shutdownPolicy;
   }
 
-  public void setStopIfEmptyTimeoutMilliseconds(int stopIfEmptyTimeoutMilliseconds) {
-    this.stopIfEmptyTimeoutMilliseconds = stopIfEmptyTimeoutMilliseconds;
+  public void setShutdownPolicy(ShutdownPolicy shutdownPolicy) {
+    this.shutdownPolicy = shutdownPolicy;
   }
 }

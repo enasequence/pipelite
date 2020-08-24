@@ -65,22 +65,16 @@ public class DefaultPipeliteLauncherTester {
     return pipeliteProcesses;
   }
 
-
   public void test() {
     processExecutionCount.set(0);
     processExecutionSet.clear();
     processExcessExecutionSet.clear();
 
-    defaultPipeliteLauncher.setStopIfEmpty();
-    defaultPipeliteLauncher.setLaunchTimeoutMilliseconds(10);
+    defaultPipeliteLauncher.setShutdownPolicy(
+        DefaultPipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    defaultPipeliteLauncher.setSchedulerDelayMillis(10);
 
-    assertThat(defaultPipeliteLauncher.init()).isTrue();
-
-    try {
-      defaultPipeliteLauncher.execute();
-    } finally {
-      defaultPipeliteLauncher.stop();
-    }
+    PipeliteLauncherServiceManager.run(defaultPipeliteLauncher);
 
     // Because of the eventual guarantee of process execution status propagation
     // it is possible that an active process will be selected again for potential
