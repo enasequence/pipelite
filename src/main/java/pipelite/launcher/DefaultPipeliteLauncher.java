@@ -22,7 +22,6 @@ import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.log.LogKey;
@@ -31,22 +30,22 @@ import pipelite.service.PipeliteProcessService;
 
 @Flogger
 @Component
-public class DefaultPipeliteLauncher implements PipeliteLauncher, AutoCloseable {
+public class DefaultPipeliteLauncher implements PipeliteLauncher {
 
   private final LauncherConfiguration launcherConfiguration;
   private final ProcessConfiguration processConfiguration;
   private final PipeliteProcessService pipeliteProcessService;
   private final PipeliteLockService pipeliteLockService;
-
   private final ExecutorService executorService;
 
   private boolean lock;
   private volatile boolean stop;
   private boolean stopIfEmpty;
 
-  private AtomicInteger launchedProcessCount = new AtomicInteger(0);
+  private AtomicInteger initProcessCount = new AtomicInteger(0);
   private AtomicInteger declinedProcessCount = new AtomicInteger(0);
   private AtomicInteger completedProcessCount = new AtomicInteger(0);
+  private final Map<String, ProcessLauncher> initProcesses = new ConcurrentHashMap<>();
   private final Map<String, ProcessLauncher> activeProcesses = new ConcurrentHashMap<>();
 
   private int refreshTimeoutHours = 1;
@@ -72,7 +71,6 @@ public class DefaultPipeliteLauncher implements PipeliteLauncher, AutoCloseable 
     this.executorService = Executors.newFixedThreadPool(workers);
   }
 
-  @Transactional
   public boolean init() {
     log.atInfo()
         .with(LogKey.LAUNCHER_NAME, getLauncherName())
@@ -82,7 +80,6 @@ public class DefaultPipeliteLauncher implements PipeliteLauncher, AutoCloseable 
     return lockLauncher();
   }
 
-  @Transactional(readOnly = true)
   public void execute() {
     log.atInfo()
         .with(LogKey.LAUNCHER_NAME, getLauncherName())
@@ -120,7 +117,7 @@ public class DefaultPipeliteLauncher implements PipeliteLauncher, AutoCloseable 
             .with(LogKey.PROCESS_NAME, processName)
             .log("No new active processes to launch");
 
-        while (launchedProcessCount.get() > completedProcessCount.get()) {
+        while (initProcessCount.get() > completedProcessCount.get()) {
           sleep(stopIfEmptyTimeoutMilliseconds);
         }
         stop();
@@ -130,51 +127,56 @@ public class DefaultPipeliteLauncher implements PipeliteLauncher, AutoCloseable 
       while (activeProcessQueueIndex < activeProcessQueue.size()
           && activeProcesses.size() < launcherConfiguration.getWorkers()) {
 
+        // Launch new process execution
+
         String processId = activeProcessQueue.get(activeProcessQueueIndex++);
 
-        try (ProcessLauncher processLauncher = processLauncherObjectProvider.getObject()) {
-          log.atInfo()
+        log.atInfo()
+            .with(LogKey.LAUNCHER_NAME, launcherName)
+            .with(LogKey.PROCESS_NAME, processName)
+            .with(LogKey.PROCESS_ID, processId)
+            .log("Creating process launcher");
+
+        ProcessLauncher processLauncher = processLauncherObjectProvider.getObject();
+
+        if (!processLauncher.init(processId)) {
+          log.atWarning()
               .with(LogKey.LAUNCHER_NAME, launcherName)
               .with(LogKey.PROCESS_NAME, processName)
               .with(LogKey.PROCESS_ID, processId)
-              .log("Preparing process for execution");
+              .log("Failed to initialise process launcher");
 
-          if (!processLauncher.init(processId)) {
-            log.atWarning()
-                .with(LogKey.LAUNCHER_NAME, launcherName)
-                .with(LogKey.PROCESS_NAME, processName)
-                .with(LogKey.PROCESS_ID, processId)
-                .log("Failed to initialise process for execution");
-
-            declinedProcessCount.incrementAndGet();
-            continue;
-          } else {
-            launchedProcessCount.incrementAndGet();
-          }
-
-          log.atInfo()
-              .with(LogKey.LAUNCHER_NAME, launcherName)
-              .with(LogKey.PROCESS_NAME, processName)
-              .with(LogKey.PROCESS_ID, processId)
-              .log("Launching process for execution");
-
-          executorService.execute(
-              () -> {
-                activeProcesses.put(processId, processLauncher);
-                try {
-                  processLauncher.execute();
-                } catch (Exception ex) {
-                  log.atSevere()
-                      .with(LogKey.LAUNCHER_NAME, launcherName)
-                      .with(LogKey.PROCESS_NAME, processName)
-                      .with(LogKey.PROCESS_ID, processId)
-                      .withCause(ex);
-                } finally {
-                  activeProcesses.remove(processId);
-                  completedProcessCount.incrementAndGet();
-                }
-              });
+          declinedProcessCount.incrementAndGet();
+          continue;
+        } else {
+          initProcesses.put(processId, processLauncher);
+          initProcessCount.incrementAndGet();
         }
+
+        log.atInfo()
+            .with(LogKey.LAUNCHER_NAME, launcherName)
+            .with(LogKey.PROCESS_NAME, processName)
+            .with(LogKey.PROCESS_ID, processId)
+            .log("Executing process launcher");
+
+        executorService.execute(
+            () -> {
+              activeProcesses.put(processId, processLauncher);
+              try {
+                processLauncher.execute();
+              } catch (Exception ex) {
+                log.atSevere()
+                    .with(LogKey.LAUNCHER_NAME, launcherName)
+                    .with(LogKey.PROCESS_NAME, processName)
+                    .with(LogKey.PROCESS_ID, processId)
+                    .withCause(ex);
+              } finally {
+                processLauncher.close();
+                initProcesses.remove(processId);
+                activeProcesses.remove(processId);
+                completedProcessCount.incrementAndGet();
+              }
+            });
       }
 
       sleep(launchTimeoutMilliseconds);
@@ -211,21 +213,18 @@ public class DefaultPipeliteLauncher implements PipeliteLauncher, AutoCloseable 
         .with(LogKey.PROCESS_NAME, getProcessName())
         .log("Attempting to unlock launcher");
 
-    if (pipeliteLockService.isLauncherLocked(getLauncherName(), getProcessName())) {
+    if (pipeliteLockService.unlockLauncher(getLauncherName(), getProcessName())) {
       log.atInfo()
           .with(LogKey.LAUNCHER_NAME, getLauncherName())
           .with(LogKey.PROCESS_NAME, getProcessName())
           .log("Unlocked launcher");
-
-      pipeliteLockService.unlockLauncher(getLauncherName(), getProcessName());
       lock = false;
+    } else {
+      log.atInfo()
+          .with(LogKey.LAUNCHER_NAME, getLauncherName())
+          .with(LogKey.PROCESS_NAME, getProcessName())
+          .log("Failed to unlocked launcher");
     }
-  }
-
-  @Override
-  @Transactional
-  public void close() {
-    unlockLauncher();
   }
 
   @Override
@@ -241,7 +240,7 @@ public class DefaultPipeliteLauncher implements PipeliteLauncher, AutoCloseable 
         .log("Stopping launcher");
 
     executorService.shutdown();
-    for (ProcessLauncher processLauncher : activeProcesses.values()) {
+    for (ProcessLauncher processLauncher : initProcesses.values()) {
       processLauncher.stop();
     }
     try {
@@ -250,6 +249,8 @@ public class DefaultPipeliteLauncher implements PipeliteLauncher, AutoCloseable 
       executorService.shutdownNow();
       Thread.currentThread().interrupt();
     } finally {
+      unlockLauncher();
+
       log.atInfo()
           .with(LogKey.LAUNCHER_NAME, getLauncherName())
           .with(LogKey.PROCESS_NAME, getProcessName())
@@ -286,8 +287,8 @@ public class DefaultPipeliteLauncher implements PipeliteLauncher, AutoCloseable 
     return activeProcesses.size();
   }
 
-  public int getLaunchedProcessCount() {
-    return launchedProcessCount.get();
+  public int getInitProcessCount() {
+    return initProcessCount.get();
   }
 
   public int getDeclinedProcessCount() {

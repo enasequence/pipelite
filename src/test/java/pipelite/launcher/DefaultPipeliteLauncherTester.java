@@ -1,4 +1,4 @@
-package uk.ac.ebi.ena.sra.pipeline.launcher;
+package pipelite.launcher;
 
 import lombok.AllArgsConstructor;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -11,6 +11,8 @@ import pipelite.stage.Stage;
 import pipelite.stage.StageFactory;
 import pipelite.task.Task;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,8 +23,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class DefaultPipeliteLauncherTester {
 
   private final DefaultPipeliteLauncher defaultPipeliteLauncher;
-  private final PipeliteProcessService pipeliteProcessService;
-  private final TransactionTemplate transactionTemplate;
 
   private static final AtomicInteger processExecutionCount = new AtomicInteger();
   private static final Set<String> processExecutionSet = ConcurrentHashMap.newKeySet();
@@ -46,35 +46,42 @@ public class DefaultPipeliteLauncherTester {
       processExecutionCount.incrementAndGet();
       if (processExecutionSet.contains(processId)) {
         processExcessExecutionSet.add(processId);
-      }
-      else {
+      } else {
         processExecutionSet.add(processId);
       }
-        try {
-          Thread.sleep(TASK_EXECUTION_TIME);
-        } catch (InterruptedException e) {
-          Thread.currentThread().interrupt();
-        }
+      try {
+        Thread.sleep(TASK_EXECUTION_TIME);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
     }
   }
+
+  public List<PipeliteProcess> pipeliteProcesses() {
+    List<PipeliteProcess> pipeliteProcesses = new ArrayList<>();
+    for (int i = 0; i < PROCESS_COUNT; ++i) {
+      PipeliteProcess pipeliteProcess = new PipeliteProcess();
+      pipeliteProcess.setProcessId("Process" + i);
+      pipeliteProcess.setProcessName(defaultPipeliteLauncher.getProcessName());
+      pipeliteProcesses.add(pipeliteProcess);
+    }
+    return pipeliteProcesses;
+  }
+
 
   public void test() {
     processExecutionCount.set(0);
 
-    transactionTemplate.execute(
-        status -> {
-          for (int i = 0; i < PROCESS_COUNT; ++i) {
-            PipeliteProcess pipeliteProcess = new PipeliteProcess();
-            pipeliteProcess.setProcessId("Process" + i);
-            pipeliteProcess.setProcessName(defaultPipeliteLauncher.getProcessName());
-            pipeliteProcessService.saveProcess(pipeliteProcess);
-          }
-          return true;
-        });
-
     defaultPipeliteLauncher.setStopIfEmpty();
     defaultPipeliteLauncher.setLaunchTimeoutMilliseconds(10);
-    defaultPipeliteLauncher.execute();
+
+    assertThat(defaultPipeliteLauncher.init()).isTrue();
+
+    try {
+      defaultPipeliteLauncher.execute();
+    } finally {
+      defaultPipeliteLauncher.stop();
+    }
 
     // Because of the eventual guarantee of process execution status propagation
     // it is possible that an active process will be selected again for potential
@@ -86,7 +93,7 @@ public class DefaultPipeliteLauncherTester {
     assertThat(processExecutionCount.get()).isEqualTo(PROCESS_COUNT);
 
     assertThat(processExecutionCount.get())
-        .isEqualTo(defaultPipeliteLauncher.getLaunchedProcessCount());
+        .isEqualTo(defaultPipeliteLauncher.getInitProcessCount());
 
     assertThat(processExecutionCount.get())
         .isEqualTo(defaultPipeliteLauncher.getCompletedProcessCount());

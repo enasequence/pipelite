@@ -3,6 +3,8 @@ package pipelite.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteProcessId;
 import pipelite.process.ProcessExecutionState;
@@ -13,6 +15,7 @@ import java.util.Optional;
 
 @Service
 @Profile("database")
+@Transactional(propagation = Propagation.REQUIRES_NEW)
 public class PipeliteDatabaseProcessService implements PipeliteProcessService {
 
   private final PipeliteProcessRepository repository;

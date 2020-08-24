@@ -1,23 +1,22 @@
 package pipelite.service;
 
 import lombok.extern.flogger.Flogger;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import pipelite.entity.PipeliteLock;
-import pipelite.entity.PipeliteProcess;
 import pipelite.log.LogKey;
 import pipelite.repository.PipeliteLockRepository;
 
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
-// TODO: pipelite.launcher lock is stored as a process lock and there is a possibility of lock name
-// conflict
+// TODO: launcher lock is stored as a process lock and there is a possibility of lock name conflict
 
 @Service
 @Profile("database")
+@Transactional(propagation = Propagation.REQUIRES_NEW)
 @Flogger
 public class PipeliteDatabaseLockService implements PipeliteLockService {
 
@@ -61,7 +60,6 @@ public class PipeliteDatabaseLockService implements PipeliteLockService {
   }
 
   @Override
-  @Transactional
   public void purgeLauncherLocks(String launcherName, String processName) {
     repository.deleteByLauncherNameAndProcessName(launcherName, processName);
   }
@@ -110,7 +108,6 @@ public class PipeliteDatabaseLockService implements PipeliteLockService {
     return new PipeliteLock(launcherName, processName, processId);
   }
 
-  @Transactional
   private boolean lock(PipeliteLock pipeliteLock) {
     if (isLocked(pipeliteLock.getProcessName(), pipeliteLock.getLockId())) {
       return false;
@@ -123,7 +120,6 @@ public class PipeliteDatabaseLockService implements PipeliteLockService {
     return repository.findByProcessNameAndLockId(processName, lockId).isPresent();
   }
 
-  @Transactional
   private boolean unlock(PipeliteLock pipeliteLock) {
     Optional<PipeliteLock> activeLock =
         repository.findByProcessNameAndLockId(

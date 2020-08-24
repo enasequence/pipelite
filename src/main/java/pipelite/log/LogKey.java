@@ -4,7 +4,11 @@ import com.google.common.flogger.MetadataKey;
 import pipelite.process.ProcessExecutionState;
 import pipelite.task.result.TaskExecutionResultType;
 
-public abstract class LogKey {
+public class LogKey {
+
+  // Suppresses default constructor, ensuring non-instantiability.
+  private LogKey() {}
+
   public static final MetadataKey<String> LAUNCHER_NAME =
       MetadataKey.single("launcher_name", String.class);
 

@@ -18,7 +18,6 @@ import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 import pipelite.configuration.LauncherConfiguration;
@@ -39,14 +38,10 @@ import pipelite.task.result.TaskExecutionResult;
 import pipelite.stage.Stage;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInfo;
 
-import org.springframework.transaction.annotation.Transactional;
-
 @Flogger
 @Component()
 @Scope("prototype")
 public class DefaultProcessLauncher implements ProcessLauncher {
-
-  @Autowired private PlatformTransactionManager transactionManager;
 
   private final LauncherConfiguration launcherConfiguration;
   private final ProcessConfiguration processConfiguration;
@@ -92,7 +87,6 @@ public class DefaultProcessLauncher implements ProcessLauncher {
   }
 
   @Override
-  @Transactional
   public boolean init(String processId) {
     String processName = getProcessName();
 
@@ -173,7 +167,6 @@ public class DefaultProcessLauncher implements ProcessLauncher {
   }
 
   @Override
-  @Transactional
   public void execute() {
     if (stop) {
       return;
@@ -258,7 +251,6 @@ public class DefaultProcessLauncher implements ProcessLauncher {
   }
 
   @Override
-  @Transactional
   public void close() {
     if (pipeliteProcess != null) {
       unlockProcess(pipeliteProcess.getProcessId());
@@ -306,11 +298,8 @@ public class DefaultProcessLauncher implements ProcessLauncher {
   }
 
   private void executeTasks() {
-    TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
-    transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-
     for (TaskInstance taskInstance : taskInstances) {
-      if (!transactionTemplate.execute(status -> executeTask(taskInstance))) {
+      if (!executeTask(taskInstance)) {
         break;
       }
     }

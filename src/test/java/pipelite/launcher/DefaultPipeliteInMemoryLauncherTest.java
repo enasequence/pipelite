@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package uk.ac.ebi.ena.sra.pipeline.launcher;
+package pipelite.launcher;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,11 +18,9 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 import pipelite.RandomStringGenerator;
 import pipelite.FullTestConfiguration;
-import pipelite.launcher.DefaultPipeliteLauncher;
+import pipelite.entity.PipeliteProcess;
 import pipelite.service.PipeliteProcessService;
 
 @SpringBootTest(
@@ -31,16 +29,19 @@ import pipelite.service.PipeliteProcessService;
       "pipelite.launcher.workers=5",
       "pipelite.process.executor=pipelite.executor.InternalTaskExecutorFactory",
       "pipelite.process.resolver=pipelite.resolver.DefaultExceptionResolver",
-      "pipelite.process.stages=uk.ac.ebi.ena.sra.pipeline.launcher.DefaultPipeliteLauncherTester$TestStages"
+      "pipelite.process.stages=pipelite.launcher.DefaultPipeliteLauncherTester$TestStages",
+      "spring.autoconfigure.exclude="
+          + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
+          + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
+          + "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration"
     })
 @ContextConfiguration(
-    initializers = DefaultPipeliteDatabaseLauncherTest.TestContextInitializer.class)
-@ActiveProfiles(value = {"database", "database-oracle-test"})
-public class DefaultPipeliteDatabaseLauncherTest {
+    initializers = DefaultPipeliteInMemoryLauncherTest.TestContextInitializer.class)
+@ActiveProfiles(value = {"test", "memory"})
+public class DefaultPipeliteInMemoryLauncherTest {
 
   @Autowired private DefaultPipeliteLauncher defaultPipeliteLauncher;
   @Autowired private PipeliteProcessService pipeliteProcessService;
-  @Autowired private PlatformTransactionManager transactionManager;
 
   public static class TestContextInitializer
       implements ApplicationContextInitializer<ConfigurableApplicationContext> {
@@ -55,11 +56,14 @@ public class DefaultPipeliteDatabaseLauncherTest {
 
   @Test
   public void test() {
+
     DefaultPipeliteLauncherTester tester =
-        new DefaultPipeliteLauncherTester(
-            defaultPipeliteLauncher,
-            pipeliteProcessService,
-            new TransactionTemplate(transactionManager));
+        new DefaultPipeliteLauncherTester(defaultPipeliteLauncher);
+
+    for (PipeliteProcess pipeliteProcess : tester.pipeliteProcesses()) {
+      pipeliteProcessService.saveProcess(pipeliteProcess);
+    }
+
     tester.test();
   }
 }

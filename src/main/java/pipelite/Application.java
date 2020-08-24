@@ -23,11 +23,6 @@ public class Application implements CommandLineRunner {
 
   @Autowired private LauncherConfiguration launcherConfiguration;
   @Autowired private ProcessConfiguration processConfiguration;
-  @Autowired private TaskConfiguration taskConfiguration;
-  @Autowired private PipeliteProcessService pipeliteProcessService;
-  @Autowired private PipeliteStageService pipeliteStageService;
-  @Autowired private PipeliteLockService pipeliteLockService;
-
   @Autowired PipeliteLauncher pipeliteLauncher;
 
   public static void main(String[] args) {
@@ -49,32 +44,28 @@ public class Application implements CommandLineRunner {
     String launcherName = launcherConfiguration.getLauncherName();
     String processName = processConfiguration.getProcessName();
 
-    if (pipeliteLockService.lockLauncher(launcherName, processName)) {
+    Runtime.getRuntime()
+        .addShutdownHook(
+            new Thread(
+                () -> {
+                  try {
+                    pipeliteLauncher.stop();
+                  } catch (RuntimeException ex) {
+                    log.atSevere()
+                        .with(LogKey.LAUNCHER_NAME, launcherName)
+                        .with(LogKey.PROCESS_NAME, processName)
+                        .withCause(ex)
+                        .log("Error stopping launcher");
+                  }
+                }));
 
-      try {
-        Runtime.getRuntime()
-            .addShutdownHook(
-                new Thread(
-                    () -> {
-                      try {
-                        pipeliteLauncher.stop();
-                      } catch (RuntimeException ex) {
-                        log.atSevere()
-                            .with(LogKey.LAUNCHER_NAME, launcherName)
-                            .with(LogKey.PROCESS_NAME, processName)
-                            .withCause(ex)
-                            .log("Error stopping launcher");
-                      }
-                    }));
-
-        pipeliteLauncher.execute();
-
-      } finally {
-        pipeliteLockService.unlockLauncher(launcherName, processName);
-      }
-    } else {
-      throw new RuntimeException(
-          "Launcher " + launcherName + " is already locked for process " + processName);
+    if (!pipeliteLauncher.init()) {
+      throw new RuntimeException("Launcher " + launcherName + " could not be started");
+    }
+    try {
+      pipeliteLauncher.execute();
+    } finally {
+      pipeliteLauncher.stop();
     }
   }
 }
