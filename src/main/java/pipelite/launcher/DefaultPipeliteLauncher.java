@@ -42,7 +42,7 @@ public class DefaultPipeliteLauncher implements PipeliteLauncher {
   private volatile boolean stop;
   private boolean stopIfEmpty;
 
-  private AtomicInteger initProcessCount = new AtomicInteger(0);
+  private final AtomicInteger initProcessCount = new AtomicInteger(0);
   private AtomicInteger declinedProcessCount = new AtomicInteger(0);
   private AtomicInteger completedProcessCount = new AtomicInteger(0);
   private final Map<String, ProcessLauncher> initProcesses = new ConcurrentHashMap<>();

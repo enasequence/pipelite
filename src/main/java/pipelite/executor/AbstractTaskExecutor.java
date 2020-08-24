@@ -12,7 +12,6 @@ package pipelite.executor;
 
 import java.util.*;
 
-import lombok.extern.slf4j.Slf4j;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.resolver.ExceptionResolver;

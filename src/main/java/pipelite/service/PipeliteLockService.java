@@ -1,7 +1,5 @@
 package pipelite.service;
 
-import pipelite.entity.PipeliteProcess;
-
 public interface PipeliteLockService {
 
     boolean lockLauncher(String launcherName, String processName);

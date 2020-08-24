@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import pipelite.executor.TaskExecutor;
 import pipelite.executor.TaskExecutorFactory;
 import pipelite.resolver.ExceptionResolver;
 import pipelite.stage.Stage;

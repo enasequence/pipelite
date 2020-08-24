@@ -13,7 +13,6 @@ package pipelite.executor;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
 import uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor;
-import uk.ac.ebi.ena.sra.pipeline.launcher.LSFTaskExecutor;
 
 public class InternalTaskExecutorFactory implements TaskExecutorFactory {
 

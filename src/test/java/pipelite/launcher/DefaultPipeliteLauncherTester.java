@@ -1,11 +1,8 @@
 package pipelite.launcher;
 
 import lombok.AllArgsConstructor;
-import org.springframework.transaction.support.TransactionTemplate;
 import pipelite.entity.PipeliteProcess;
 import pipelite.instance.TaskInstance;
-import pipelite.launcher.DefaultPipeliteLauncher;
-import pipelite.service.*;
 import pipelite.stage.DefaultStage;
 import pipelite.stage.Stage;
 import pipelite.stage.StageFactory;
@@ -71,6 +68,8 @@ public class DefaultPipeliteLauncherTester {
 
   public void test() {
     processExecutionCount.set(0);
+    processExecutionSet.clear();
+    processExcessExecutionSet.clear();
 
     defaultPipeliteLauncher.setStopIfEmpty();
     defaultPipeliteLauncher.setLaunchTimeoutMilliseconds(10);

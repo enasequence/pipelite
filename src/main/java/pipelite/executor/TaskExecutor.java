@@ -10,7 +10,6 @@
  */
 package pipelite.executor;
 
-import pipelite.task.state.TaskExecutionState;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInfo;
 import pipelite.instance.TaskInstance;
 
