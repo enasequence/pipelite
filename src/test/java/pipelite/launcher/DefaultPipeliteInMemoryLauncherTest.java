@@ -18,7 +18,7 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import pipelite.RandomStringGenerator;
+import pipelite.UniqueStringGenerator;
 import pipelite.FullTestConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.service.PipeliteProcessService;
@@ -48,8 +48,8 @@ public class DefaultPipeliteInMemoryLauncherTest {
     @Override
     public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
       TestPropertyValues.of(
-              "pipelite.launcher.launcherName=" + RandomStringGenerator.randomLauncherName(),
-              "pipelite.process.processName=" + RandomStringGenerator.randomProcessName())
+              "pipelite.launcher.launcherName=" + UniqueStringGenerator.randomLauncherName(),
+              "pipelite.process.processName=" + UniqueStringGenerator.randomProcessName())
           .applyTo(configurableApplicationContext.getEnvironment());
     }
   }

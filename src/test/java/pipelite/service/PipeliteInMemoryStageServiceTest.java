@@ -1,7 +1,7 @@
 package pipelite.service;
 
 import org.junit.jupiter.api.Test;
-import pipelite.RandomStringGenerator;
+import pipelite.UniqueStringGenerator;
 import pipelite.entity.PipeliteStage;
 import pipelite.task.result.TaskExecutionResult;
 
@@ -14,9 +14,9 @@ class PipeliteInMemoryStageServiceTest {
 
     PipeliteInMemoryStageService service = new PipeliteInMemoryStageService();
 
-    String processId = RandomStringGenerator.randomProcessId();
-    String processName = RandomStringGenerator.randomProcessName();
-    String stageName = RandomStringGenerator.randomStageName();
+    String processId = UniqueStringGenerator.randomProcessId();
+    String processName = UniqueStringGenerator.randomProcessName();
+    String stageName = UniqueStringGenerator.randomStageName();
 
     PipeliteStage stage = PipeliteStage.newExecution(processId, processName, stageName);
 

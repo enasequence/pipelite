@@ -1,7 +1,7 @@
 package pipelite.service;
 
 import org.junit.jupiter.api.Test;
-import pipelite.RandomStringGenerator;
+import pipelite.UniqueStringGenerator;
 import pipelite.entity.PipeliteProcess;
 import pipelite.process.ProcessExecutionState;
 
@@ -11,14 +11,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class PipeliteInMemoryProcessServiceTest {
 
-  private static final String PROCESS_NAME = RandomStringGenerator.randomProcessName();
+  private static final String PROCESS_NAME = UniqueStringGenerator.randomProcessName();
 
   @Test
   public void testCrud() {
 
     PipeliteInMemoryProcessService service = new PipeliteInMemoryProcessService();
 
-    String processId = RandomStringGenerator.randomProcessId();
+    String processId = UniqueStringGenerator.randomProcessId();
     ProcessExecutionState state = ProcessExecutionState.ACTIVE;
     Integer execCnt = 3;
     Integer priority = null;
@@ -90,6 +90,6 @@ class PipeliteInMemoryProcessServiceTest {
 
   private static PipeliteProcess createPipeliteProcess(ProcessExecutionState state, int priority) {
     return new PipeliteProcess(
-        RandomStringGenerator.randomProcessId(), PROCESS_NAME, state, 0, priority);
+        UniqueStringGenerator.randomProcessId(), PROCESS_NAME, state, 0, priority);
   }
 }

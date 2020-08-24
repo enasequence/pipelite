@@ -11,17 +11,16 @@
 package pipelite.service;
 
 import org.junit.jupiter.api.Test;
-import pipelite.RandomStringGenerator;
-import pipelite.entity.PipeliteProcess;
+import pipelite.UniqueStringGenerator;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PipeliteInMemoryLockServiceTest {
 
-  private static final String processName = RandomStringGenerator.randomProcessName();
-  private static final String launcherName1 = RandomStringGenerator.randomLauncherName();
-  private static final String launcherName2 = RandomStringGenerator.randomLauncherName();
+  private static final String processName = UniqueStringGenerator.randomProcessName();
+  private static final String launcherName1 = UniqueStringGenerator.randomLauncherName();
+  private static final String launcherName2 = UniqueStringGenerator.randomLauncherName();
 
   @Test
   public void testLauncherLocks() {

@@ -20,7 +20,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
-import pipelite.RandomStringGenerator;
+import pipelite.UniqueStringGenerator;
 import pipelite.FullTestConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.service.PipeliteProcessService;
@@ -47,8 +47,8 @@ public class DefaultPipeliteDatabaseLauncherTest {
     @Override
     public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
       TestPropertyValues.of(
-              "pipelite.launcher.launcherName=" + RandomStringGenerator.randomLauncherName(),
-              "pipelite.process.processName=" + RandomStringGenerator.randomProcessName())
+              "pipelite.launcher.launcherName=" + UniqueStringGenerator.randomLauncherName(),
+              "pipelite.process.processName=" + UniqueStringGenerator.randomProcessName())
           .applyTo(configurableApplicationContext.getEnvironment());
     }
   }
