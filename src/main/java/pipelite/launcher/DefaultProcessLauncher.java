@@ -54,6 +54,10 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
   private PipeliteProcess pipeliteProcess;
   private TaskInstance[] taskInstances;
 
+  private int taskFailedCount = 0;
+  private int taskSkippedCount = 0;
+  private int taskCompletedCount = 0;
+
   public DefaultProcessLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
       @Autowired ProcessConfiguration processConfiguration,
@@ -325,6 +329,7 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
           .with(LogKey.PROCESS_ID, processId)
           .with(LogKey.STAGE_NAME, stageName)
           .log("Task will not be executed because it has already completed");
+      ++taskSkippedCount;
       return true; // Continue execution.
     }
 
@@ -336,6 +341,7 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
           .with(LogKey.PROCESS_ID, processId)
           .with(LogKey.STAGE_NAME, stageName)
           .log("Task will not be executed because it has already failed");
+      ++taskFailedCount;
       return false; // Do not continue execution;.
     }
 
@@ -396,7 +402,7 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
           .log("Task execution failed");
 
       // Do not continue execution if task execution fails.
-
+      ++taskFailedCount;
       return false; // Do not continue execution.
     }
 
@@ -408,6 +414,7 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
 
     invalidateTaskDepedencies(taskInstances, taskInstance, false);
 
+    ++taskCompletedCount;
     return true; // Continue execution.
   }
 
@@ -461,5 +468,17 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
     } else {
       return null;
     }
+  }
+
+  public int getTaskFailedCount() {
+    return taskFailedCount;
+  }
+
+  public int getTaskSkippedCount() {
+    return taskSkippedCount;
+  }
+
+  public int getTaskCompletedCount() {
+    return taskCompletedCount;
   }
 }

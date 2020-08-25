@@ -31,7 +31,7 @@ public class DefaultPipeliteLauncherTester {
   public static class TestStages implements StageFactory {
     @Override
     public Stage[] create() {
-      Stage[] stages = {new DefaultStage("STAGE_1", TestTask.class)};
+      Stage[] stages = {new DefaultStage("STAGE_1", () -> new TestTask())};
       return stages;
     }
   }

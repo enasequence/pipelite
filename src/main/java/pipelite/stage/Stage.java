@@ -12,12 +12,13 @@ package pipelite.stage;
 
 import pipelite.configuration.TaskConfiguration;
 import pipelite.task.Task;
+import pipelite.task.TaskFactory;
 
-public interface Stage {
+public interface Stage<T extends Task> {
 
   String getStageName();
 
-  Class<? extends Task> getTaskClass();
+  TaskFactory<T> getTaskFactory();
 
   // TODO: multiple stage dependencies
   Stage getDependsOn();

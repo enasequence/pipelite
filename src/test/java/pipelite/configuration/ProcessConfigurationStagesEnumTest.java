@@ -8,6 +8,8 @@ import pipelite.EmptyTestConfiguration;
 import pipelite.instance.TaskInstance;
 import pipelite.stage.Stage;
 import pipelite.task.Task;
+import pipelite.task.TaskFactory;
+import uk.ac.ebi.ena.sra.pipeline.launcher.DefaultProcessLauncherTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,14 +24,10 @@ public class ProcessConfigurationStagesEnumTest {
   @Autowired ProcessConfiguration config;
 
   public enum TestStages implements Stage {
-    STAGE_1(TestTask.class),
-    STAGE_2(TestTask.class);
+    STAGE_1,
+    STAGE_2;
 
-    TestStages(Class<? extends TestTask> taskClass) {
-      this.taskClass = taskClass;
-    }
-
-    private final Class<? extends TestTask> taskClass;
+    TestStages() {}
 
     @Override
     public String getStageName() {
@@ -37,8 +35,8 @@ public class ProcessConfigurationStagesEnumTest {
     }
 
     @Override
-    public Class<? extends TestTask> getTaskClass() {
-      return taskClass;
+    public TaskFactory getTaskFactory() {
+      return () -> new TestTask();
     }
 
     @Override

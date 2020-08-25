@@ -28,7 +28,8 @@ public class ProcessConfigurationStagesFactoryTest {
     @Override
     public Stage[] create() {
       Stage[] stages = {
-        new DefaultStage("STAGE_1", TestTask.class), new DefaultStage("STAGE_2", TestTask.class)
+        new DefaultStage("STAGE_1", () -> new TestTask()),
+        new DefaultStage("STAGE_2", () -> new TestTask())
       };
       return stages;
     }

@@ -45,6 +45,10 @@ public class DefaultPipeliteLauncher extends AbstractScheduledService implements
   private final AtomicInteger processRejectCount = new AtomicInteger(0);
   private final AtomicInteger processRunFailureCount = new AtomicInteger(0);
   private final AtomicInteger processCompletedCount = new AtomicInteger(0);
+  private final AtomicInteger taskFailedCount = new AtomicInteger(0);
+  private final AtomicInteger taskSkippedCount = new AtomicInteger(0);
+  private final AtomicInteger taskCompletedCount = new AtomicInteger(0);
+
   private final Map<String, ProcessLauncher> initProcesses = new ConcurrentHashMap<>();
   private final Map<String, ProcessLauncher> activeProcesses = new ConcurrentHashMap<>();
 
@@ -213,6 +217,9 @@ public class DefaultPipeliteLauncher extends AbstractScheduledService implements
             } finally {
               activeProcesses.remove(processId);
               initProcesses.remove(processId);
+              taskCompletedCount.addAndGet(processLauncher.getTaskCompletedCount());
+              taskSkippedCount.addAndGet(processLauncher.getTaskSkippedCount());
+              taskFailedCount.addAndGet(processLauncher.getTaskFailedCount());
             }
           });
     }
@@ -311,6 +318,18 @@ public class DefaultPipeliteLauncher extends AbstractScheduledService implements
 
   public int getProcessCompletedCount() {
     return processCompletedCount.get();
+  }
+
+  public int getTaskFailedCount() {
+    return taskFailedCount.get();
+  }
+
+  public int getTaskSkippedCount() {
+    return taskSkippedCount.get();
+  }
+
+  public int getTaskCompletedCount() {
+    return taskCompletedCount.get();
   }
 
   public int getActiveProcessQueueValidHours() {

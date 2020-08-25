@@ -42,13 +42,14 @@ import pipelite.executor.TaskExecutor;
 import pipelite.instance.TaskInstance;
 import pipelite.resolver.ExceptionResolver;
 import pipelite.process.ProcessExecutionState;
+import pipelite.task.TaskFactory;
 import pipelite.task.result.TaskExecutionResult;
 import pipelite.stage.Stage;
 import pipelite.service.PipeliteInMemoryLockService;
 
 @Flogger
 @SpringBootTest(classes = FullTestConfiguration.class)
-@ActiveProfiles("test")
+@ActiveProfiles(value = {"database", "database-oracle-test"})
 public class DefaultProcessLauncherTest {
 
   private static final String PROCESS_NAME = "TEST_PROCESS";
@@ -238,23 +239,21 @@ public class DefaultProcessLauncherTest {
   }
 
   private enum TestStages implements Stage {
-    STAGE_1(TestTask.class, null),
-    STAGE_2(TestTask.class, STAGE_1),
-    STAGE_3(TestTask.class, STAGE_2),
-    STAGE_4(TestTask.class, STAGE_3);
+    STAGE_1(null),
+    STAGE_2(STAGE_1),
+    STAGE_3(STAGE_2),
+    STAGE_4(STAGE_3);
+
+    private final TestStages dependsOn;
 
     public static class TestTask implements Task {
       @Override
       public void execute(TaskInstance taskInstance) {}
     }
 
-    TestStages(Class<? extends TestStages.TestTask> taskClass, TestStages dependsOn) {
-      this.taskClass = taskClass;
+    TestStages(TestStages dependsOn) {
       this.dependsOn = dependsOn;
     }
-
-    private final Class<? extends TestStages.TestTask> taskClass;
-    private final TestStages dependsOn;
 
     @Override
     public String getStageName() {
@@ -262,8 +261,8 @@ public class DefaultProcessLauncherTest {
     }
 
     @Override
-    public Class<? extends TestStages.TestTask> getTaskClass() {
-      return taskClass;
+    public TaskFactory getTaskFactory() {
+      return () -> new TestTask();
     }
 
     @Override
