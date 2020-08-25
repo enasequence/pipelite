@@ -12,8 +12,7 @@ package pipelite.launcher;
 
 import java.util.Optional;
 
-import com.google.common.base.Verify;
-
+import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -39,7 +38,8 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInfo;
 @Flogger
 @Component()
 @Scope("prototype")
-public class DefaultProcessLauncher implements ProcessLauncher {
+public class DefaultProcessLauncher extends AbstractExecutionThreadService
+    implements ProcessLauncher {
 
   private final LauncherConfiguration launcherConfiguration;
   private final ProcessConfiguration processConfiguration;
@@ -50,11 +50,9 @@ public class DefaultProcessLauncher implements ProcessLauncher {
   private final TaskExecutor executor;
   private final ExceptionResolver resolver;
 
+  private String processId;
   private PipeliteProcess pipeliteProcess;
   private TaskInstance[] taskInstances;
-
-  private boolean lock;
-  private volatile boolean stop;
 
   public DefaultProcessLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
@@ -63,13 +61,6 @@ public class DefaultProcessLauncher implements ProcessLauncher {
       @Autowired PipeliteProcessService pipeliteProcessService,
       @Autowired PipeliteStageService pipeliteStageService,
       @Autowired PipeliteLockService pipeliteLockService) {
-
-    Verify.verifyNotNull(launcherConfiguration);
-    Verify.verifyNotNull(processConfiguration);
-    Verify.verifyNotNull(taskConfiguration);
-    Verify.verifyNotNull(pipeliteProcessService);
-    Verify.verifyNotNull(pipeliteStageService);
-    Verify.verifyNotNull(pipeliteLockService);
 
     this.launcherConfiguration = launcherConfiguration;
     this.processConfiguration = processConfiguration;
@@ -84,8 +75,29 @@ public class DefaultProcessLauncher implements ProcessLauncher {
     this.resolver = processConfiguration.createResolver();
   }
 
+  public static class ProcessNotExecutableException extends RuntimeException {
+    private final String processName;
+    private final String processId;
+
+    public ProcessNotExecutableException(String message, String processName, String processId) {
+      super("Process can't be executed: " + message);
+      this.processName = processName;
+      this.processId = processId;
+    }
+  }
+
   @Override
-  public boolean init(String processId) {
+  public void init(String processId) {
+    this.processId = processId;
+  }
+
+  @Override
+  public String serviceName() {
+    return getProcessName();
+  }
+
+  @Override
+  protected void startUp() {
     String processName = getProcessName();
 
     log.atInfo()
@@ -100,7 +112,8 @@ public class DefaultProcessLauncher implements ProcessLauncher {
           .with(LogKey.PROCESS_NAME, processName)
           .with(LogKey.PROCESS_ID, processId)
           .log("Process can't be executed because it could not be locked");
-      return false;
+      throw new ProcessNotExecutableException(
+          "process could not be locked", processName, processId);
     }
 
     Optional<PipeliteProcess> savedPipeliteProcess =
@@ -110,7 +123,8 @@ public class DefaultProcessLauncher implements ProcessLauncher {
           .with(LogKey.PROCESS_NAME, processName)
           .with(LogKey.PROCESS_ID, processId)
           .log("Process can't be executed because it could not be retrieved");
-      return false;
+      throw new ProcessNotExecutableException(
+          "process could not be retrieved", processName, processId);
     }
 
     this.pipeliteProcess = savedPipeliteProcess.get();
@@ -118,9 +132,11 @@ public class DefaultProcessLauncher implements ProcessLauncher {
     ProcessExecutionState state = pipeliteProcess.getState();
 
     if (state == null) {
-      log.atInfo()
+      log.atWarning()
           .with(LogKey.PROCESS_NAME, getProcessName())
           .with(LogKey.PROCESS_ID, processId)
+          .with(LogKey.PROCESS_STATE, state)
+          .with(LogKey.NEW_PROCESS_STATE, ProcessExecutionState.ACTIVE)
           .log("Changing process state from nothing to active");
 
       state = ProcessExecutionState.ACTIVE;
@@ -158,53 +174,47 @@ public class DefaultProcessLauncher implements ProcessLauncher {
           .with(LogKey.PROCESS_ID, processId)
           .with(LogKey.PROCESS_STATE, state)
           .log("Process can't be executed because process state is not active");
-      return false;
+      throw new ProcessNotExecutableException(
+          "process state is not active", processName, processId);
     }
-
-    return true;
   }
 
   @Override
-  public void execute() {
-    if (stop) {
+  public void run() {
+    if (!isRunning()) {
       return;
     }
-    String threadName = Thread.currentThread().getName();
 
     String processName = getProcessName();
     String processId = pipeliteProcess.getProcessId();
 
-    try {
-      Thread.currentThread().setName(getLauncherName() + "/" + processName + "/" + processId);
+    log.atInfo()
+        .with(LogKey.PROCESS_NAME, processName)
+        .with(LogKey.PROCESS_ID, processId)
+        .log("Executing process");
 
-      log.atInfo()
-          .with(LogKey.PROCESS_NAME, processName)
-          .with(LogKey.PROCESS_ID, processId)
-          .log("Executing process");
+    // Execute tasks and save their states.
+    executeTasks();
 
-      // Execute tasks and save their states.
-      executeTasks();
+    // Update and save the process state.
 
-      // Update and save the process state.
+    pipeliteProcess.setState(getProcessExecutionState(taskInstances));
+    pipeliteProcess.incrementExecutionCount();
 
-      pipeliteProcess.setState(getProcessExecutionState(taskInstances));
-      pipeliteProcess.incrementExecutionCount();
+    log.atInfo()
+        .with(LogKey.PROCESS_NAME, processName)
+        .with(LogKey.PROCESS_ID, processId)
+        .with(LogKey.PROCESS_STATE, pipeliteProcess.getState())
+        .with(LogKey.PROCESS_EXECUTION_COUNT, pipeliteProcess.getExecutionCount())
+        .log("Update process state");
 
-      log.atInfo()
-          .with(LogKey.PROCESS_NAME, processName)
-          .with(LogKey.PROCESS_ID, processId)
-          .with(LogKey.PROCESS_STATE, pipeliteProcess.getState())
-          .with(LogKey.PROCESS_EXECUTION_COUNT, pipeliteProcess.getExecutionCount())
-          .log("Update process state");
+    pipeliteProcessService.saveProcess(pipeliteProcess);
+  }
 
-      pipeliteProcessService.saveProcess(pipeliteProcess);
-
-    } finally {
-      // Unlock the process.
-      unlockProcess(processId);
-
-      Thread.currentThread().setName(threadName);
-    }
+  @Override
+  protected void shutDown() {
+    // Unlock the process.
+    unlockProcess(processId);
   }
 
   private boolean lockProcess(String processId) {
@@ -214,7 +224,6 @@ public class DefaultProcessLauncher implements ProcessLauncher {
         .log("Attempting to lock process");
 
     if (pipeliteLockService.lockProcess(getLauncherName(), getProcessName(), processId)) {
-      lock = true;
       log.atInfo()
           .with(LogKey.PROCESS_NAME, getProcessName())
           .with(LogKey.PROCESS_ID, processId)
@@ -229,9 +238,6 @@ public class DefaultProcessLauncher implements ProcessLauncher {
   }
 
   private void unlockProcess(String processId) {
-    if (!lock) {
-      return;
-    }
     log.atInfo()
         .with(LogKey.PROCESS_NAME, getProcessName())
         .with(LogKey.PROCESS_ID, processId)
@@ -244,14 +250,6 @@ public class DefaultProcessLauncher implements ProcessLauncher {
           .with(LogKey.PROCESS_ID, processId)
           .log("Unlocked process");
       pipeliteLockService.unlockProcess(getLauncherName(), getProcessName(), processId);
-      lock = false;
-    }
-  }
-
-  @Override
-  public void close() {
-    if (pipeliteProcess != null) {
-      unlockProcess(pipeliteProcess.getProcessId());
     }
   }
 
@@ -283,9 +281,10 @@ public class DefaultProcessLauncher implements ProcessLauncher {
       // Create and save the task it if does not already exist.
 
       if (!pipeliteStage.isPresent()) {
-        pipeliteStage = Optional.of(PipeliteStage.newExecution(processId, processName, stageName));
-
-        pipeliteStageService.saveStage(pipeliteStage.get());
+        pipeliteStage =
+            Optional.of(
+                pipeliteStageService.saveStage(
+                    PipeliteStage.newExecution(processId, processName, stageName)));
       }
 
       taskInstances[i] =
@@ -304,8 +303,8 @@ public class DefaultProcessLauncher implements ProcessLauncher {
   }
 
   private boolean executeTask(TaskInstance taskInstance) {
-    if (stop) {
-      return false; // Do not continue execution.
+    if (!isRunning()) {
+      return false;
     }
 
     String processName = getProcessName();
@@ -440,6 +439,10 @@ public class DefaultProcessLauncher implements ProcessLauncher {
     return processConfiguration.getProcessName();
   }
 
+  public String getProcessId() {
+    return processId;
+  }
+
   public Stage[] getStages() {
     return processConfiguration.getStageArray();
   }
@@ -458,9 +461,5 @@ public class DefaultProcessLauncher implements ProcessLauncher {
     } else {
       return null;
     }
-  }
-
-  public void stop() {
-    this.stop = true;
   }
 }

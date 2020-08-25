@@ -20,7 +20,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import lombok.extern.flogger.Flogger;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -309,29 +308,11 @@ public class DefaultProcessLauncherTest {
 
       DefaultProcessLauncher processLauncher =
           initProcessLauncher(processConfiguration, mockStorage);
+      processLauncher.startAsync().awaitTerminated();
 
-      // Test excepts two retries.
-
-      // Run first time
-
-      processLauncher.execute();
-
-      verify(processLauncher, times(1)).execute();
       verify(taskExecutor, times(2)).execute(any(TaskInstance.class));
-
       assertEquals(ProcessExecutionState.ACTIVE, processLauncher.getState());
       assertThat(processLauncher.getExecutionCount()).isEqualTo(1);
-
-      // Run second time
-
-      processLauncher.execute();
-
-      verify(processLauncher, times(2)).execute();
-      verify(taskExecutor, times(4)).execute(any(TaskInstance.class));
-
-      // assertEquals(ProcessExecutionState.FAILED,
-      // processLauncher.getPipeliteProcess().getState());
-      assertThat(processLauncher.getExecutionCount()).isEqualTo(2);
     }
 
     {
@@ -349,9 +330,8 @@ public class DefaultProcessLauncherTest {
 
       DefaultProcessLauncher processLauncher =
           initProcessLauncher(processConfiguration, mockStorage);
-      processLauncher.execute();
+      processLauncher.startAsync().awaitTerminated();
 
-      verify(processLauncher, times(1)).execute();
       verify(taskExecutor, times(2)).execute(any(TaskInstance.class));
     }
 
@@ -370,9 +350,8 @@ public class DefaultProcessLauncherTest {
 
       DefaultProcessLauncher processLauncher =
           initProcessLauncher(processConfiguration, mockStorage);
-      processLauncher.execute();
+      processLauncher.startAsync().awaitTerminated();
 
-      verify(processLauncher, times(1)).execute();
       verify(taskExecutor, times(2)).execute(any(TaskInstance.class));
     }
 
@@ -391,11 +370,9 @@ public class DefaultProcessLauncherTest {
 
       DefaultProcessLauncher processLauncher =
           initProcessLauncher(processConfiguration, mockStorage);
-      processLauncher.execute();
+      processLauncher.startAsync().awaitTerminated();
 
-      verify(processLauncher, times(1)).execute();
       verify(taskExecutor, times(0)).execute(any(TaskInstance.class));
-
       assertEquals(ProcessExecutionState.FAILED, processLauncher.getState());
     }
 
@@ -414,11 +391,9 @@ public class DefaultProcessLauncherTest {
 
       DefaultProcessLauncher processLauncher =
           initProcessLauncher(processConfiguration, mockStorage);
-      processLauncher.execute();
+      processLauncher.startAsync().awaitTerminated();
 
-      verify(processLauncher, times(1)).execute();
       verify(taskExecutor, times(4)).execute(any(TaskInstance.class));
-
       assertEquals(ProcessExecutionState.COMPLETED, processLauncher.getState());
     }
   }

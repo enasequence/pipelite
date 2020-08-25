@@ -82,15 +82,9 @@ public class DefaultPipeliteLauncherTester {
     // process executions will be safely declined.
 
     assertThat(processExcessExecutionSet).isEmpty();
-
     assertThat(processExecutionCount.get()).isEqualTo(PROCESS_COUNT);
-
     assertThat(processExecutionCount.get())
-        .isEqualTo(defaultPipeliteLauncher.getInitProcessCount());
-
-    assertThat(processExecutionCount.get())
-        .isEqualTo(defaultPipeliteLauncher.getCompletedProcessCount());
-
+        .isEqualTo(defaultPipeliteLauncher.getProcessCompletedCount());
     assertThat(defaultPipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
   }
 }

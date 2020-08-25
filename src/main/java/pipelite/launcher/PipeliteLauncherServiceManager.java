@@ -16,7 +16,7 @@ public class PipeliteLauncherServiceManager {
   // Suppresses default constructor, ensuring non-instantiability.
   private PipeliteLauncherServiceManager() {}
 
-  private static final int FORCE_STOP_WAIT_SECONDS = 5;
+  public static final int FORCE_STOP_WAIT_SECONDS = 5;
 
   private static void forceStop(ServiceManager manager, PipeliteLauncher pipeliteLauncher) {
     log.atInfo()
@@ -39,6 +39,7 @@ public class PipeliteLauncherServiceManager {
           public void failure(Service service) {
             log.atSevere()
                 .with(LogKey.LAUNCHER_NAME, pipeliteLauncher.serviceName())
+                .withCause(service.failureCause())
                 .log("Pipelite launcher has failed");
             forceStop(manager, pipeliteLauncher);
           }

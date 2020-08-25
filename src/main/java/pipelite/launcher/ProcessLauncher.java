@@ -1,13 +1,9 @@
 package pipelite.launcher;
 
-public interface ProcessLauncher extends AutoCloseable {
+import com.google.common.util.concurrent.Service;
 
-  boolean init(String processId);
+public interface ProcessLauncher extends Service {
+  String serviceName();
 
-  void execute();
-
-  void stop();
-
-  @Override
-  void close();
+  void init(String processId);
 }
