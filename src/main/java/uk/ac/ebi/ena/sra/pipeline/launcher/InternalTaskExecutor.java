@@ -18,14 +18,12 @@ import pipelite.task.Task;
 
 public class InternalTaskExecutor extends AbstractTaskExecutor {
 
-  private ExecutionInfo info;
-
   public InternalTaskExecutor(
       ProcessConfiguration processConfiguration, TaskConfiguration taskConfiguration) {
     super(processConfiguration, taskConfiguration);
   }
 
-  public void execute(TaskInstance taskInstance) {
+  public ExecutionInfo execute(TaskInstance taskInstance) {
     Throwable exception = null;
 
     try {
@@ -37,14 +35,10 @@ public class InternalTaskExecutor extends AbstractTaskExecutor {
       e.printStackTrace();
       exception = e;
     } finally {
-      info = new ExecutionInfo();
+      ExecutionInfo info = new ExecutionInfo();
       info.setThrowable(exception);
       info.setExitCode(resolver.exitCodeSerializer().serialize(resolver.resolveError(exception)));
+      return info;
     }
-  }
-
-  @Override
-  public ExecutionInfo get_info() {
-    return info;
   }
 }

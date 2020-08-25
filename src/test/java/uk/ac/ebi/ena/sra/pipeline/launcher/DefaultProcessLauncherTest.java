@@ -213,14 +213,6 @@ public class DefaultProcessLauncherTest {
                   TaskInstance si = (TaskInstance) i.getArguments()[0];
                   log.atInfo().log(
                       "Calling execute on \"" + si.getPipeliteStage().getStageName() + "\"");
-                  return null;
-                })
-        .when(spiedExecutor)
-        .execute(any(TaskInstance.class));
-
-    doAnswer(
-            (Answer<Object>)
-                i -> {
                   ExecutionInfo info = new ExecutionInfo();
                   info.setExitCode(
                       invocation_exit_code.length > inv_cnt.get()
@@ -233,7 +225,7 @@ public class DefaultProcessLauncherTest {
                   return info;
                 })
         .when(spiedExecutor)
-        .get_info();
+        .execute(any(TaskInstance.class));
 
     return spiedExecutor;
   }

@@ -14,8 +14,5 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInfo;
 import pipelite.instance.TaskInstance;
 
 public interface TaskExecutor {
-
-  void execute(TaskInstance instance);
-
-  ExecutionInfo get_info();
+  ExecutionInfo execute(TaskInstance instance);
 }

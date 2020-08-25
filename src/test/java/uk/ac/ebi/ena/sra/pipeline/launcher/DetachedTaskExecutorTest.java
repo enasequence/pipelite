@@ -38,10 +38,7 @@ public class DetachedTaskExecutorTest {
     doReturn(taskConfiguration).when(stage).getTaskConfiguration();
     TaskInstance taskInstance =
         new TaskInstance(
-            mock(PipeliteProcess.class),
-            mock(PipeliteStage.class),
-            taskConfiguration,
-            stage);
+            mock(PipeliteProcess.class), mock(PipeliteStage.class), taskConfiguration, stage);
     return taskInstance;
   }
 
@@ -54,10 +51,8 @@ public class DetachedTaskExecutorTest {
     taskConfiguration.setMemory(2000);
 
     DetachedTaskExecutor se = new DetachedTaskExecutor(processConfiguration, taskConfiguration);
-    se.execute(taskInstance);
-
-    String cmdl = se.get_info().getCommandline();
-    assertTrue(cmdl.contains(" -Xmx2000M"));
+    String cmd = se.execute(taskInstance).getCommandline();
+    assertTrue(cmd.contains(" -Xmx2000M"));
   }
 
   @Test
@@ -67,10 +62,8 @@ public class DetachedTaskExecutorTest {
     TaskInstance taskInstance = defaultTaskInstance(taskConfiguration);
 
     DetachedTaskExecutor se = new DetachedTaskExecutor(processConfiguration, taskConfiguration);
-    se.execute(taskInstance);
-
-    String cmdl = se.get_info().getCommandline();
-    assertFalse(cmdl.contains(" -Xmx2000M"));
+    String cmd = se.execute(taskInstance).getCommandline();
+    assertFalse(cmd.contains(" -Xmx2000M"));
   }
 
   @Test
@@ -85,9 +78,7 @@ public class DetachedTaskExecutorTest {
       System.setProperty("PIPELITE_TEST_JAVA_PROPERTY", "VALUE");
 
       DetachedTaskExecutor se = new DetachedTaskExecutor(processConfiguration, taskConfiguration);
-      se.execute(taskInstance);
-
-      String cmd = se.get_info().getCommandline();
+      String cmd = se.execute(taskInstance).getCommandline();
       assertTrue(cmd.contains(" -DPIPELITE_TEST_JAVA_PROPERTY=VALUE"));
     } finally {
       System.clearProperty("PIPELITE_TEST_JAVA_PROPERTY");

@@ -361,9 +361,7 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
         .with(LogKey.TASK_EXECUTION_COUNT, taskInstance.getPipeliteStage().getExecutionCount())
         .log("Executing task");
 
-    executor.execute(taskInstance);
-
-    ExecutionInfo info = executor.get_info();
+    ExecutionInfo info = executor.execute(taskInstance);
 
     // Translate execution result.
 

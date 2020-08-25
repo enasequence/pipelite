@@ -23,7 +23,7 @@ import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
 
 @Flogger
 public class DetachedTaskExecutor extends AbstractTaskExecutor {
-  ExecutionInfo info;
+
   protected final ExternalCallBackEnd back_end = new SimpleBackEnd();
 
   public DetachedTaskExecutor(
@@ -58,7 +58,7 @@ public class DetachedTaskExecutor extends AbstractTaskExecutor {
     return p_args;
   }
 
-  public void execute(TaskInstance taskInstance) {
+  public ExecutionInfo execute(TaskInstance taskInstance) {
 
     boolean do_commit = true;
     List<String> p_args = constructArgs(taskInstance, do_commit);
@@ -76,11 +76,7 @@ public class DetachedTaskExecutor extends AbstractTaskExecutor {
 
     ec.execute();
 
-    fillExecutionInfo(ec);
-  }
-
-  private void fillExecutionInfo(ExternalCall ec) {
-    info = new ExecutionInfo();
+    ExecutionInfo info = new ExecutionInfo();
     info.setCommandline(ec.getCommandLine());
     info.setStdout(ec.getStdout());
     info.setStderr(ec.getStderr());
@@ -88,10 +84,6 @@ public class DetachedTaskExecutor extends AbstractTaskExecutor {
     info.setHost(ec.getHost());
     info.setPID(ec.getPID());
     info.setThrowable(new ExternalCallException(ec));
-  }
-
-  @Override
-  public ExecutionInfo get_info() {
     return info;
   }
 }

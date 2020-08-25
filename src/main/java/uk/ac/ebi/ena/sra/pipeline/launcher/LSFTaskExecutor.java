@@ -19,7 +19,6 @@ import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.executor.AbstractTaskExecutor;
 import pipelite.instance.TaskInstance;
-import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCall;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall;
 
@@ -34,8 +33,6 @@ public class LSFTaskExecutor extends AbstractTaskExecutor {
       ProcessConfiguration processConfiguration, TaskConfiguration taskConfiguration) {
     super(processConfiguration, taskConfiguration);
   }
-
-  ExecutionInfo info;
 
   private List<String> constructArgs(TaskInstance instance, boolean commit) {
     List<String> p_args = new ArrayList<>();
@@ -111,7 +108,7 @@ public class LSFTaskExecutor extends AbstractTaskExecutor {
     return back_end;
   }
 
-  public void execute(TaskInstance instance) {
+  public ExecutionInfo execute(TaskInstance instance) {
 
     boolean do_commit = true;
     List<String> p_args = constructArgs(instance, do_commit);
@@ -133,22 +130,16 @@ public class LSFTaskExecutor extends AbstractTaskExecutor {
     log.atInfo().log(call.getCommandLine());
 
     call.execute();
-    fillExecutionInfo(call);
-  }
 
-  private void fillExecutionInfo(ExternalCall ec) {
-    info = new ExecutionInfo();
-    info.setCommandline(ec.getCommandLine());
-    info.setStdout(ec.getStdout());
-    info.setStderr(ec.getStderr());
-    info.setExitCode(ec.getExitCode());
-    info.setHost(ec.getHost());
-    info.setPID(ec.getPID());
+    ExecutionInfo info = new ExecutionInfo();
+    info.setCommandline(call.getCommandLine());
+    info.setStdout(call.getStdout());
+    info.setStderr(call.getStderr());
+    info.setExitCode(call.getExitCode());
+    info.setHost(call.getHost());
+    info.setPID(call.getPID());
     info.setThrowable(null);
-    info.setLogMessage(new ExternalCallException(ec).toString());
-  }
-
-  public ExecutionInfo get_info() {
+    info.setLogMessage(new ExternalCallException(call).toString());
     return info;
   }
 }
