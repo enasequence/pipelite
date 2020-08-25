@@ -13,10 +13,22 @@ import java.util.concurrent.TimeoutException;
 @Flogger
 public class PipeliteLauncherServiceManager {
 
-    // Suppresses default constructor, ensuring non-instantiability.
-    private PipeliteLauncherServiceManager() {}
+  // Suppresses default constructor, ensuring non-instantiability.
+  private PipeliteLauncherServiceManager() {}
 
-    public static void run(PipeliteLauncher pipeliteLauncher) {
+  private static final int FORCE_STOP_WAIT_SECONDS = 5;
+
+  private static void forceStop(ServiceManager manager, PipeliteLauncher pipeliteLauncher) {
+    log.atInfo()
+        .with(LogKey.LAUNCHER_NAME, pipeliteLauncher.serviceName())
+        .log("Stopping pipelite launcher");
+    try {
+      manager.stopAsync().awaitStopped(FORCE_STOP_WAIT_SECONDS, TimeUnit.SECONDS);
+    } catch (TimeoutException timeout) {
+    }
+  }
+
+  public static void run(PipeliteLauncher pipeliteLauncher) {
     ServiceManager manager = new ServiceManager(Collections.singleton(pipeliteLauncher));
     manager.addListener(
         new ServiceManager.Listener() {
@@ -28,7 +40,7 @@ public class PipeliteLauncherServiceManager {
             log.atSevere()
                 .with(LogKey.LAUNCHER_NAME, pipeliteLauncher.serviceName())
                 .log("Pipelite launcher has failed");
-            System.exit(1);
+            forceStop(manager, pipeliteLauncher);
           }
         },
         MoreExecutors.directExecutor());
@@ -37,13 +49,17 @@ public class PipeliteLauncherServiceManager {
         .addShutdownHook(
             new Thread(
                 () -> {
-                  try {
-                    manager.stopAsync().awaitStopped(5, TimeUnit.SECONDS);
-                  } catch (TimeoutException timeout) {
-                  }
+                  forceStop(manager, pipeliteLauncher);
                 }));
-    manager.startAsync();
 
-    manager.awaitStopped();
+    log.atInfo()
+        .with(LogKey.LAUNCHER_NAME, pipeliteLauncher.serviceName())
+        .log("Starting pipelite launcher");
+
+    manager.startAsync().awaitStopped();
+
+    log.atInfo()
+        .with(LogKey.LAUNCHER_NAME, pipeliteLauncher.serviceName())
+        .log("Pipelite launcher has stopped");
   }
 }
