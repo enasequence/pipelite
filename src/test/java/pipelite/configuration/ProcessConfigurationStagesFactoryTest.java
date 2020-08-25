@@ -6,11 +6,13 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest;
 
 import pipelite.EmptyTestConfiguration;
+import pipelite.executor.TaskExecutor;
+import pipelite.executor.TaskExecutorFactory;
 import pipelite.instance.TaskInstance;
 import pipelite.stage.DefaultStage;
 import pipelite.stage.Stage;
 import pipelite.stage.StageFactory;
-import pipelite.task.Task;
+import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInfo;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,16 +30,20 @@ public class ProcessConfigurationStagesFactoryTest {
     @Override
     public Stage[] create() {
       Stage[] stages = {
-        new DefaultStage("STAGE_1", () -> new TestTask()),
-        new DefaultStage("STAGE_2", () -> new TestTask())
+        new DefaultStage(
+            "STAGE_1", (processConfiguration, taskConfiguration) -> new TestTaskExecutor()),
+        new DefaultStage(
+            "STAGE_2", (processConfiguration, taskConfiguration) -> new TestTaskExecutor())
       };
       return stages;
     }
   }
 
-  public static class TestTask implements Task {
+  public static class TestTaskExecutor implements TaskExecutor {
     @Override
-    public void execute(TaskInstance taskInstance) {}
+    public ExecutionInfo execute(TaskInstance instance) {
+      return new ExecutionInfo();
+    }
   }
 
   @Test

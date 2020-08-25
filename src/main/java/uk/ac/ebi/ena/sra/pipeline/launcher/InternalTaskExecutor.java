@@ -13,8 +13,8 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.executor.AbstractTaskExecutor;
+import pipelite.executor.TaskExecutor;
 import pipelite.instance.TaskInstance;
-import pipelite.task.Task;
 
 public class InternalTaskExecutor extends AbstractTaskExecutor {
 
@@ -28,8 +28,12 @@ public class InternalTaskExecutor extends AbstractTaskExecutor {
 
     try {
       String stageName = taskInstance.getPipeliteStage().getStageName();
-      Task task = processConfiguration.getStage(stageName).getTaskFactory().createTask();
-      task.execute(taskInstance);
+      TaskExecutor taskExecutor =
+          processConfiguration
+              .getStage(stageName)
+              .getTaskExecutorFactory()
+              .createTaskExecutor(processConfiguration, taskConfiguration);
+      taskExecutor.execute(taskInstance);
 
     } catch (Throwable e) {
       e.printStackTrace();

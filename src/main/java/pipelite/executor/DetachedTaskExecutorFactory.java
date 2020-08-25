@@ -17,7 +17,7 @@ import uk.ac.ebi.ena.sra.pipeline.launcher.DetachedTaskExecutor;
 public class DetachedTaskExecutorFactory implements TaskExecutorFactory {
 
   @Override
-  public TaskExecutor create(
+  public TaskExecutor createTaskExecutor(
       ProcessConfiguration processConfiguration, TaskConfiguration taskConfiguration) {
     return new DetachedTaskExecutor(processConfiguration, taskConfiguration);
   }

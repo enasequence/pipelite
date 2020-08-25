@@ -37,12 +37,10 @@ import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
 import pipelite.resolver.ConcreteExceptionResolver;
 import pipelite.service.PipeliteLockService;
-import pipelite.task.Task;
 import pipelite.executor.TaskExecutor;
 import pipelite.instance.TaskInstance;
 import pipelite.resolver.ExceptionResolver;
 import pipelite.process.ProcessExecutionState;
-import pipelite.task.TaskFactory;
 import pipelite.task.result.TaskExecutionResult;
 import pipelite.stage.Stage;
 import pipelite.service.PipeliteInMemoryLockService;
@@ -52,6 +50,7 @@ import pipelite.service.PipeliteInMemoryLockService;
 @ActiveProfiles(value = {"database", "database-oracle-test"})
 public class DefaultProcessLauncherTest {
 
+  /*
   private static final String PROCESS_NAME = "TEST_PROCESS";
   private static final String PROCESS_ID = "TEST_PROCESS_ID";
 
@@ -253,7 +252,7 @@ public class DefaultProcessLauncherTest {
     }
 
     @Override
-    public TaskFactory getTaskFactory() {
+    public TaskFactory getTaskExecutorFactory() {
       return () -> new TestTask();
     }
 
@@ -388,4 +387,5 @@ public class DefaultProcessLauncherTest {
       assertEquals(ProcessExecutionState.COMPLETED, processLauncher.getState());
     }
   }
+  */
 }

@@ -75,7 +75,7 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
     this.executor =
         processConfiguration
             .createExecutorFactory()
-            .create(processConfiguration, taskConfiguration);
+            .createTaskExecutor(processConfiguration, taskConfiguration);
     this.resolver = processConfiguration.createResolver();
   }
 

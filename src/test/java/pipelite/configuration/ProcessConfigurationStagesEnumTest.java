@@ -5,11 +5,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import pipelite.EmptyTestConfiguration;
+import pipelite.executor.TaskExecutor;
+import pipelite.executor.TaskExecutorFactory;
 import pipelite.instance.TaskInstance;
 import pipelite.stage.Stage;
-import pipelite.task.Task;
-import pipelite.task.TaskFactory;
-import uk.ac.ebi.ena.sra.pipeline.launcher.DefaultProcessLauncherTest;
+import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInfo;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,8 +35,8 @@ public class ProcessConfigurationStagesEnumTest {
     }
 
     @Override
-    public TaskFactory getTaskFactory() {
-      return () -> new TestTask();
+    public TaskExecutorFactory getTaskExecutorFactory() {
+      return (processConfiguration, taskConfiguration) -> new TestTaskExecutor();
     }
 
     @Override
@@ -50,10 +50,11 @@ public class ProcessConfigurationStagesEnumTest {
     }
   }
 
-  public static class TestTask implements Task {
-
+  public static class TestTaskExecutor implements TaskExecutor {
     @Override
-    public void execute(TaskInstance taskInstance) {}
+    public ExecutionInfo execute(TaskInstance taskInstance) {
+      return new ExecutionInfo();
+    }
   }
 
   @Test

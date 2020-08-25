@@ -3,6 +3,6 @@ package pipelite.executor;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
 
-public interface TaskExecutorFactory {
-  TaskExecutor create(ProcessConfiguration processConfiguration, TaskConfiguration taskConfiguration);
+public interface TaskExecutorFactory<T extends TaskExecutor> {
+  T createTaskExecutor(ProcessConfiguration processConfiguration, TaskConfiguration taskConfiguration);
 }

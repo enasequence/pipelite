@@ -1,12 +1,14 @@
 package pipelite.launcher;
 
 import lombok.AllArgsConstructor;
+import pipelite.configuration.ProcessConfigurationStagesFactoryTest;
 import pipelite.entity.PipeliteProcess;
+import pipelite.executor.TaskExecutor;
 import pipelite.instance.TaskInstance;
 import pipelite.stage.DefaultStage;
 import pipelite.stage.Stage;
 import pipelite.stage.StageFactory;
-import pipelite.task.Task;
+import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,14 +33,17 @@ public class DefaultPipeliteLauncherTester {
   public static class TestStages implements StageFactory {
     @Override
     public Stage[] create() {
-      Stage[] stages = {new DefaultStage("STAGE_1", () -> new TestTask())};
+      Stage[] stages = {
+        new DefaultStage(
+            "STAGE_1", (processConfiguration, taskConfiguration) -> new TestTaskExecutor())
+      };
       return stages;
     }
   }
 
-  public static class TestTask implements Task {
+  public static class TestTaskExecutor implements TaskExecutor {
     @Override
-    public void execute(TaskInstance taskInstance) {
+    public ExecutionInfo execute(TaskInstance taskInstance) {
       String processId = taskInstance.getPipeliteProcess().getProcessId();
       processExecutionCount.incrementAndGet();
       if (processExecutionSet.contains(processId)) {
@@ -51,6 +56,7 @@ public class DefaultPipeliteLauncherTester {
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
+      return new ExecutionInfo();
     }
   }
 
