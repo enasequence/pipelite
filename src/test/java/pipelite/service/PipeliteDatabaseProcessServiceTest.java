@@ -32,7 +32,7 @@ class PipeliteDatabaseProcessServiceTest {
     String processId = UniqueStringGenerator.randomProcessId();
     ProcessExecutionState state = ProcessExecutionState.ACTIVE;
     Integer execCnt = 3;
-    Integer priority = null;
+    Integer priority = 0;
 
     PipeliteProcess process = new PipeliteProcess(processId, processName, state, execCnt, priority);
 

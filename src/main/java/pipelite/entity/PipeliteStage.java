@@ -8,6 +8,8 @@ import pipelite.task.result.TaskExecutionResultType;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 
 @Entity
 @Table(name = "PIPELITE_STAGE")
@@ -89,7 +91,7 @@ public class PipeliteStage {
   public void retryExecution() {
     this.resultType = null;
     this.result = null;
-    this.startTime = LocalDateTime.now();
+    this.startTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.endTime = null;
     this.executionCmd = null;
     this.stdOut = null;
@@ -100,7 +102,7 @@ public class PipeliteStage {
       TaskExecutionResult result, String executionCmd, String stdOut, String stdErr) {
     this.resultType = result.getResultType();
     this.result = result.getResult();
-    this.endTime = LocalDateTime.now();
+    this.endTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.executionCmd = executionCmd;
     this.stdOut = stdOut;
     this.stdErr = stdErr;
