@@ -63,7 +63,7 @@ public class LSFTaskExecutor extends AbstractTaskExecutor {
     p_args.add(taskInstance.getProcessId());
 
     p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.PARAMETERS_NAME_STAGE);
-    p_args.add(taskInstance.getStage().getStageName());
+    p_args.add(taskInstance.getTaskName());
 
     return p_args;
   }
@@ -110,7 +110,7 @@ public class LSFTaskExecutor extends AbstractTaskExecutor {
                 "%s--%s--%s",
                 instance.getProcessName(),
                 instance.getProcessId(),
-                instance.getStage().getStageName()),
+                instance.getTaskName()),
             "java",
             p_args.toArray(new String[0]));
 

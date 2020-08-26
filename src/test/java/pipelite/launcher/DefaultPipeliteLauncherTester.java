@@ -9,7 +9,6 @@ import pipelite.configuration.TaskConfiguration;
 import pipelite.configuration.TaskConfigurationEx;
 import pipelite.instance.ProcessInstance;
 import pipelite.instance.TaskInstance;
-import pipelite.stage.Stage;
 import pipelite.task.Task;
 import pipelite.task.TaskFactory;
 import pipelite.task.TaskInfo;
@@ -61,17 +60,12 @@ public class DefaultPipeliteLauncherTester {
       String processName = defaultPipeliteLauncher.getProcessName();
       String processId = "Process" + i;
 
-      Stage stage1 =
-          Stage.builder()
-              .stageName(UniqueStringGenerator.randomStageName())
-              .taskFactory(taskFactory)
-              .build();
-
       TaskInstance taskInstance1 =
           TaskInstance.builder()
               .processName(processName)
               .processId(processId)
-              .stage(stage1)
+              .taskName(UniqueStringGenerator.randomTaskName())
+              .taskFactory(taskFactory)
               .taskParameters(taskConfiguration)
               .build();
 

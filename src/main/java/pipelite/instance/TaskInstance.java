@@ -13,13 +13,15 @@ package pipelite.instance;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
-import pipelite.stage.Stage;
+import pipelite.task.TaskFactory;
 
 @Value
 @Builder
 public class TaskInstance {
   private final String processName;
   private final String processId;
-  private final Stage stage;
+  private final String taskName;
+  @EqualsAndHashCode.Exclude private final TaskFactory taskFactory;
+  @EqualsAndHashCode.Exclude private final TaskInstance dependsOn;
   @EqualsAndHashCode.Exclude private final TaskParameters taskParameters;
 }

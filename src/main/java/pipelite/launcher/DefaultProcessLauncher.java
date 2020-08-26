@@ -38,7 +38,6 @@ import pipelite.process.ProcessExecutionState;
 import pipelite.task.result.TaskExecutionResultType;
 import pipelite.task.state.TaskExecutionState;
 import pipelite.task.result.TaskExecutionResult;
-import pipelite.stage.Stage;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInfo;
 
 @Flogger
@@ -324,7 +323,7 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
 
       String processId = processInstance.getProcessId();
       String processName = processInstance.getProcessName();
-      String stageName = taskInstance.getStage().getStageName();
+      String stageName = taskInstance.getTaskName();
 
       Optional<PipeliteStage> pipeliteStage =
           pipeliteStageService.getSavedStage(processName, processId, stageName);
@@ -365,7 +364,7 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
     PipeliteStage pipeliteStage = pipeliteTaskInstance.getPipeliteStage();
     String processName = getProcessName();
     String processId = getProcessId();
-    String stageName = taskInstance.getStage().getStageName();
+    String stageName = taskInstance.getTaskName();
 
     log.atInfo()
         .with(LogKey.PROCESS_NAME, processName)
@@ -472,11 +471,8 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
         continue;
       }
 
-      Stage stageDependsOn = task.getTaskInstance().getStage().getDependsOn();
-      if (stageDependsOn != null
-          && stageDependsOn
-              .getStageName()
-              .equals(from.getTaskInstance().getStage().getStageName())) {
+      TaskInstance dependsOn = task.getTaskInstance().getDependsOn();
+      if (dependsOn != null && dependsOn.equals(from.getTaskInstance().getTaskName())) {
         invalidateTaskDepedencies(task, true);
       }
     }

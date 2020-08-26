@@ -48,7 +48,7 @@ public class DetachedTaskExecutor extends AbstractTaskExecutor {
     p_args.add(instance.getProcessId());
 
     p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.PARAMETERS_NAME_STAGE);
-    p_args.add(instance.getStage().getStageName());
+    p_args.add(instance.getTaskName());
 
     return p_args;
   }
@@ -63,7 +63,7 @@ public class DetachedTaskExecutor extends AbstractTaskExecutor {
                 "%s~%s~%s",
                 taskInstance.getProcessName(),
                 taskInstance.getProcessId(),
-                taskInstance.getStage().getStageName()),
+                taskInstance.getTaskName()),
             "java",
             p_args.toArray(new String[0]));
 

@@ -11,7 +11,6 @@ import pipelite.UniqueStringGenerator;
 import pipelite.instance.ProcessInstance;
 import pipelite.instance.ProcessInstanceFactory;
 import pipelite.instance.TaskInstance;
-import pipelite.stage.Stage;
 import pipelite.task.Task;
 import pipelite.task.TaskFactory;
 import pipelite.task.TaskInfo;
@@ -50,24 +49,12 @@ public class ProcessConfigurationProcessFactoryTest {
       TaskFactory taskFactory = new TestTaskFactory();
       TaskConfigurationEx taskConfiguration = new TaskConfigurationEx(new TaskConfiguration());
 
-      Stage stage1 =
-          Stage.builder()
-              .stageName(UniqueStringGenerator.randomStageName())
-              .taskFactory(taskFactory)
-              .build();
-
-      Stage stage2 =
-          Stage.builder()
-              .stageName(UniqueStringGenerator.randomStageName())
-              .taskFactory(taskFactory)
-              .dependsOn(stage1)
-              .build();
-
       TaskInstance taskInstance1 =
           TaskInstance.builder()
               .processName(PROCESS_NAME)
               .processId(PROCESS_ID)
-              .stage(stage1)
+              .taskName(UniqueStringGenerator.randomTaskName())
+              .taskFactory(taskFactory)
               .taskParameters(taskConfiguration)
               .build();
 
@@ -75,7 +62,9 @@ public class ProcessConfigurationProcessFactoryTest {
           TaskInstance.builder()
               .processName(PROCESS_NAME)
               .processId(PROCESS_ID)
-              .stage(stage2)
+              .taskName(UniqueStringGenerator.randomTaskName())
+              .taskFactory(taskFactory)
+              .dependsOn(taskInstance1)
               .taskParameters(taskConfiguration)
               .build();
 

@@ -16,7 +16,7 @@ public class UniqueStringGenerator {
     return id();
   }
 
-  public static String randomStageName() {
+  public static String randomTaskName() {
     return id();
   }
 

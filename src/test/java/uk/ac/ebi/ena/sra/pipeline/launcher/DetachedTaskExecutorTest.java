@@ -18,10 +18,7 @@ import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.configuration.TaskConfigurationEx;
-import pipelite.entity.PipeliteProcess;
-import pipelite.entity.PipeliteStage;
 import pipelite.resolver.DefaultExceptionResolver;
-import pipelite.stage.Stage;
 import pipelite.instance.TaskInstance;
 
 public class DetachedTaskExecutorTest {
@@ -36,7 +33,6 @@ public class DetachedTaskExecutorTest {
     return TaskInstance.builder()
         .processName(UniqueStringGenerator.randomProcessName())
         .processId(UniqueStringGenerator.randomProcessId())
-        .stage(mock(Stage.class))
         .taskParameters(taskConfiguration)
         .build();
   }

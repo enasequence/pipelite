@@ -28,12 +28,9 @@ public class InternalTaskExecutor extends AbstractTaskExecutor {
     try {
       String processName = taskInstance.getProcessName();
       String processId = taskInstance.getProcessId();
-      String stageName = taskInstance.getStage().getStageName();
+      String stageName = taskInstance.getTaskName();
       Task task =
-          taskInstance
-              .getStage()
-              .getTaskFactory()
-              .createTask(new TaskInfo(processName, processId, stageName));
+          taskInstance.getTaskFactory().createTask(new TaskInfo(processName, processId, stageName));
       task.execute(taskInstance);
 
     } catch (Throwable e) {

@@ -16,7 +16,7 @@ class PipeliteInMemoryStageServiceTest {
 
     String processId = UniqueStringGenerator.randomProcessId();
     String processName = UniqueStringGenerator.randomProcessName();
-    String stageName = UniqueStringGenerator.randomStageName();
+    String stageName = UniqueStringGenerator.randomTaskName();
 
     PipeliteStage stage = PipeliteStage.newExecution(processId, processName, stageName);
 
