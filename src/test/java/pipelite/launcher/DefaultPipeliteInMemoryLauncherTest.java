@@ -21,8 +21,6 @@ import org.springframework.test.context.ContextConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.FullTestConfiguration;
 import pipelite.configuration.ProcessConfigurationEx;
-import pipelite.configuration.TaskConfigurationEx;
-import pipelite.service.PipeliteProcessService;
 
 @SpringBootTest(
     classes = FullTestConfiguration.class,
@@ -42,8 +40,6 @@ public class DefaultPipeliteInMemoryLauncherTest {
 
   @Autowired private DefaultPipeliteLauncher defaultPipeliteLauncher;
   @Autowired private ProcessConfigurationEx processConfiguration;
-  @Autowired private TaskConfigurationEx taskConfiguration;
-  @Autowired private PipeliteProcessService pipeliteProcessService;
 
   public static class TestContextInitializer
       implements ApplicationContextInitializer<ConfigurableApplicationContext> {
@@ -59,11 +55,7 @@ public class DefaultPipeliteInMemoryLauncherTest {
   @Test
   public void test() {
     DefaultPipeliteLauncherTester tester =
-        new DefaultPipeliteLauncherTester(
-            defaultPipeliteLauncher,
-            processConfiguration,
-            taskConfiguration,
-            pipeliteProcessService);
+        new DefaultPipeliteLauncherTester(defaultPipeliteLauncher, processConfiguration);
     tester.test();
   }
 }

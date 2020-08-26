@@ -5,9 +5,6 @@ import pipelite.UniqueStringGenerator;
 import pipelite.entity.PipeliteProcess;
 import pipelite.executor.TaskExecutor;
 import pipelite.instance.TaskInstance;
-import pipelite.stage.DefaultStage;
-import pipelite.stage.Stage;
-import pipelite.stage.StageFactory;
 import pipelite.task.Task;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInfo;
 
@@ -21,6 +18,7 @@ public class TODO_DefaultPipeliteLauncherTaskExecutionTester {
 
   private final DefaultPipeliteLauncher defaultPipeliteLauncher;
 
+  /*
   public class TestStagesLastFails implements StageFactory {
     @Override
     public Stage[] create() {
@@ -32,6 +30,7 @@ public class TODO_DefaultPipeliteLauncherTaskExecutionTester {
       return stages;
     }
   }
+  */
 
   private class TestTask implements Task {
     @Override

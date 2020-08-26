@@ -15,6 +15,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 import org.junit.jupiter.api.Test;
+import pipelite.UniqueStringGenerator;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.configuration.TaskConfigurationEx;
 import pipelite.entity.PipeliteProcess;
@@ -32,12 +33,12 @@ public class DetachedTaskExecutorTest {
   }
 
   private TaskInstance taskInstance(TaskConfigurationEx taskConfiguration) {
-    Stage stage = mock(Stage.class);
-    doReturn(taskConfiguration).when(stage).getTaskConfiguration();
-    TaskInstance taskInstance =
-        new TaskInstance(
-            taskConfiguration, mock(PipeliteProcess.class), mock(PipeliteStage.class), stage);
-    return taskInstance;
+    return TaskInstance.builder()
+        .processName(UniqueStringGenerator.randomProcessName())
+        .processId(UniqueStringGenerator.randomProcessId())
+        .stage(mock(Stage.class))
+        .taskParameters(taskConfiguration)
+        .build();
   }
 
   @Test

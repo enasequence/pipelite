@@ -14,10 +14,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 import org.junit.jupiter.api.Test;
+import pipelite.UniqueStringGenerator;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.configuration.TaskConfigurationEx;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
+import pipelite.instance.TaskParameters;
 import pipelite.resolver.DefaultExceptionResolver;
 import pipelite.stage.Stage;
 import pipelite.instance.TaskInstance;
@@ -31,14 +33,15 @@ public class LSFTaskExecutorTest {
 
   private TaskConfigurationEx taskConfiguration() {
     try {
-      TaskConfiguration taskConfiguration = TaskConfiguration.builder()
-          .tempDir(Files.createTempDirectory("TEMP").toString())
-          .cores(1)
-          .memory(1)
-          .memoryTimeout(1)
-          .queue("defaultQueue")
-          .resolver(DefaultExceptionResolver.NAME)
-          .build();
+      TaskConfiguration taskConfiguration =
+          TaskConfiguration.builder()
+              .tempDir(Files.createTempDirectory("TEMP").toString())
+              .cores(1)
+              .memory(1)
+              .memoryTimeout(1)
+              .queue("defaultQueue")
+              .resolver(DefaultExceptionResolver.NAME)
+              .build();
       return new TaskConfigurationEx(taskConfiguration);
     } catch (IOException ex) {
       throw new RuntimeException(ex);
@@ -46,12 +49,12 @@ public class LSFTaskExecutorTest {
   }
 
   private TaskInstance taskInstance(TaskConfigurationEx taskConfiguration) {
-    Stage stage = mock(Stage.class);
-    doReturn(taskConfiguration).when(stage).getTaskConfiguration();
-    TaskInstance taskInstance =
-        new TaskInstance(
-                taskConfiguration, mock(PipeliteProcess.class), mock(PipeliteStage.class), stage);
-    return taskInstance;
+    return TaskInstance.builder()
+        .processName(UniqueStringGenerator.randomProcessName())
+        .processId(UniqueStringGenerator.randomProcessId())
+        .stage(mock(Stage.class))
+        .taskParameters(taskConfiguration)
+        .build();
   }
 
   @Test
