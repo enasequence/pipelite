@@ -9,13 +9,12 @@ import org.springframework.context.annotation.ComponentScan;
 import pipelite.EmptyTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.instance.ProcessInstance;
+import pipelite.instance.ProcessInstanceBuilder;
 import pipelite.instance.ProcessInstanceFactory;
-import pipelite.instance.TaskInstance;
 import pipelite.task.Task;
 import pipelite.task.TaskFactory;
 import pipelite.task.TaskInfo;
 
-import java.util.Arrays;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,32 +46,10 @@ public class ProcessConfigurationProcessFactoryTest {
     @Override
     public ProcessInstance receive() {
       TaskFactory taskFactory = new TestTaskFactory();
-      TaskConfigurationEx taskConfiguration = new TaskConfigurationEx(new TaskConfiguration());
 
-      TaskInstance taskInstance1 =
-          TaskInstance.builder()
-              .processName(PROCESS_NAME)
-              .processId(PROCESS_ID)
-              .taskName(UniqueStringGenerator.randomTaskName())
-              .taskFactory(taskFactory)
-              .taskParameters(taskConfiguration)
-              .build();
-
-      TaskInstance taskInstance2 =
-          TaskInstance.builder()
-              .processName(PROCESS_NAME)
-              .processId(PROCESS_ID)
-              .taskName(UniqueStringGenerator.randomTaskName())
-              .taskFactory(taskFactory)
-              .dependsOn(taskInstance1)
-              .taskParameters(taskConfiguration)
-              .build();
-
-      return ProcessInstance.builder()
-          .processName(PROCESS_NAME)
-          .processId(PROCESS_ID)
-          .priority(9)
-          .tasks(Arrays.asList(taskInstance1, taskInstance2))
+      return new ProcessInstanceBuilder(PROCESS_NAME, PROCESS_ID, 9)
+          .task(UniqueStringGenerator.randomTaskName(), taskFactory)
+          .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName(), taskFactory)
           .build();
     }
 

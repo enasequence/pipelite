@@ -5,10 +5,8 @@ import lombok.AllArgsConstructor;
 import pipelite.TestInMemoryProcessFactory;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfigurationEx;
-import pipelite.configuration.TaskConfiguration;
-import pipelite.configuration.TaskConfigurationEx;
 import pipelite.instance.ProcessInstance;
-import pipelite.instance.TaskInstance;
+import pipelite.instance.ProcessInstanceBuilder;
 import pipelite.task.Task;
 import pipelite.task.TaskFactory;
 import pipelite.task.TaskInfo;
@@ -53,28 +51,14 @@ public class DefaultPipeliteLauncherTester {
 
   private List<ProcessInstance> createProcessInstances() {
     TaskFactory taskFactory = new TestTaskFactory();
-    TaskConfigurationEx taskConfiguration = new TaskConfigurationEx(new TaskConfiguration());
 
     List<ProcessInstance> processInstances = new ArrayList<>();
     for (int i = 0; i < PROCESS_COUNT; ++i) {
       String processName = defaultPipeliteLauncher.getProcessName();
       String processId = "Process" + i;
-
-      TaskInstance taskInstance1 =
-          TaskInstance.builder()
-              .processName(processName)
-              .processId(processId)
-              .taskName(UniqueStringGenerator.randomTaskName())
-              .taskFactory(taskFactory)
-              .taskParameters(taskConfiguration)
-              .build();
-
       processInstances.add(
-          ProcessInstance.builder()
-              .processName(processName)
-              .processId(processId)
-              .priority(9)
-              .tasks(Arrays.asList(taskInstance1))
+          new ProcessInstanceBuilder(processName, processId, 9)
+              .task(UniqueStringGenerator.randomTaskName(), taskFactory)
               .build());
     }
     return processInstances;
