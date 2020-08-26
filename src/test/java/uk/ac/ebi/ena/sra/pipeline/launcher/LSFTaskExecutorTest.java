@@ -14,8 +14,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 import org.junit.jupiter.api.Test;
-import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
+import pipelite.configuration.TaskConfigurationEx;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
 import pipelite.resolver.DefaultExceptionResolver;
@@ -29,40 +29,37 @@ import static uk.ac.ebi.ena.sra.pipeline.launcher.LSFTaskExecutor.LSF_JVM_MEMORY
 
 public class LSFTaskExecutorTest {
 
-  private ProcessConfiguration defaultProcessConfiguration() {
-    return ProcessConfiguration.builder().resolver(DefaultExceptionResolver.NAME).build();
-  }
-
-  private TaskConfiguration defaultTaskConfiguration() {
+  private TaskConfigurationEx taskConfiguration() {
     try {
-      return TaskConfiguration.builder()
+      TaskConfiguration taskConfiguration = TaskConfiguration.builder()
           .tempDir(Files.createTempDirectory("TEMP").toString())
           .cores(1)
           .memory(1)
           .memoryTimeout(1)
           .queue("defaultQueue")
+          .resolver(DefaultExceptionResolver.NAME)
           .build();
+      return new TaskConfigurationEx(taskConfiguration);
     } catch (IOException ex) {
       throw new RuntimeException(ex);
     }
   }
 
-  private TaskInstance defaultTaskInstance(TaskConfiguration taskConfiguration) {
+  private TaskInstance taskInstance(TaskConfigurationEx taskConfiguration) {
     Stage stage = mock(Stage.class);
     doReturn(taskConfiguration).when(stage).getTaskConfiguration();
     TaskInstance taskInstance =
         new TaskInstance(
-            mock(PipeliteProcess.class), mock(PipeliteStage.class), taskConfiguration, stage);
+                taskConfiguration, mock(PipeliteProcess.class), mock(PipeliteStage.class), stage);
     return taskInstance;
   }
 
   @Test
   public void test() {
-    ProcessConfiguration processConfiguration = defaultProcessConfiguration();
-    TaskConfiguration taskConfiguration = defaultTaskConfiguration();
+    TaskConfigurationEx taskConfiguration = taskConfiguration();
 
-    LSFTaskExecutor se = new LSFTaskExecutor(processConfiguration, taskConfiguration);
-    String cmd = se.execute(defaultTaskInstance(taskConfiguration)).getCommandline();
+    LSFTaskExecutor se = new LSFTaskExecutor(taskConfiguration);
+    String cmd = se.execute(taskInstance(taskConfiguration)).getCommandline();
     assertTrue(cmd.contains(" -M 1 -R rusage[mem=1:duration=1]"));
     assertTrue(cmd.contains(" -n 1"));
     assertTrue(cmd.contains(" -q defaultQueue"));
@@ -72,12 +69,11 @@ public class LSFTaskExecutorTest {
 
   @Test
   public void testNoTmpDir() {
-    ProcessConfiguration processConfiguration = defaultProcessConfiguration();
-    TaskConfiguration taskConfiguration = defaultTaskConfiguration();
+    TaskConfigurationEx taskConfiguration = taskConfiguration();
     taskConfiguration.setTempDir(null);
 
-    LSFTaskExecutor se = new LSFTaskExecutor(processConfiguration, taskConfiguration);
-    String cmd = se.execute(defaultTaskInstance(taskConfiguration)).getCommandline();
+    LSFTaskExecutor se = new LSFTaskExecutor(taskConfiguration);
+    String cmd = se.execute(taskInstance(taskConfiguration)).getCommandline();
     // Default temporary directory is used.
     assertTrue(cmd.contains(" -oo "));
     assertTrue(cmd.contains(" -eo "));
@@ -85,37 +81,34 @@ public class LSFTaskExecutorTest {
 
   @Test
   public void testNoQueue() {
-    ProcessConfiguration processConfiguration = defaultProcessConfiguration();
-    TaskConfiguration taskConfiguration = defaultTaskConfiguration();
+    TaskConfigurationEx taskConfiguration = taskConfiguration();
     taskConfiguration.setQueue(null);
 
-    LSFTaskExecutor se = new LSFTaskExecutor(processConfiguration, taskConfiguration);
-    String cmd = se.execute(defaultTaskInstance(taskConfiguration)).getCommandline();
+    LSFTaskExecutor se = new LSFTaskExecutor(taskConfiguration);
+    String cmd = se.execute(taskInstance(taskConfiguration)).getCommandline();
 
     assertFalse(cmd.contains("-q "));
   }
 
   @Test
   public void testQueue() {
-    ProcessConfiguration processConfiguration = defaultProcessConfiguration();
-    TaskConfiguration taskConfiguration = defaultTaskConfiguration();
+    TaskConfigurationEx taskConfiguration = taskConfiguration();
     taskConfiguration.setQueue("queue");
 
-    LSFTaskExecutor se = new LSFTaskExecutor(processConfiguration, taskConfiguration);
+    LSFTaskExecutor se = new LSFTaskExecutor(taskConfiguration);
 
-    String cmd = se.execute(defaultTaskInstance(taskConfiguration)).getCommandline();
+    String cmd = se.execute(taskInstance(taskConfiguration)).getCommandline();
     assertTrue(cmd.contains("-q queue"));
   }
 
   @Test
   public void testTaskSpecificMemoryAndCores() {
-    ProcessConfiguration processConfiguration = defaultProcessConfiguration();
-    TaskConfiguration taskConfiguration = defaultTaskConfiguration();
+    TaskConfigurationEx taskConfiguration = taskConfiguration();
     taskConfiguration.setMemory(2000);
     taskConfiguration.setCores(12);
 
-    LSFTaskExecutor se = new LSFTaskExecutor(processConfiguration, taskConfiguration);
-    String cmd = se.execute(defaultTaskInstance(taskConfiguration)).getCommandline();
+    LSFTaskExecutor se = new LSFTaskExecutor(taskConfiguration);
+    String cmd = se.execute(taskInstance(taskConfiguration)).getCommandline();
     assertTrue(cmd.contains(" -M 2000 -R rusage[mem=2000:duration=1]"));
     assertTrue(cmd.contains(" -n 12"));
     assertTrue(cmd.contains(" -q defaultQueue"));
@@ -125,24 +118,22 @@ public class LSFTaskExecutorTest {
 
   @Test
   public void testTaskWithJavaXmxMemory() {
-    ProcessConfiguration processConfiguration = defaultProcessConfiguration();
-    TaskConfiguration taskConfiguration = defaultTaskConfiguration();
+    TaskConfigurationEx taskConfiguration = taskConfiguration();
     taskConfiguration.setMemory(2000);
 
-    LSFTaskExecutor se = new LSFTaskExecutor(processConfiguration, taskConfiguration);
-    String cmd = se.execute(defaultTaskInstance(taskConfiguration)).getCommandline();
+    LSFTaskExecutor se = new LSFTaskExecutor(taskConfiguration);
+    String cmd = se.execute(taskInstance(taskConfiguration)).getCommandline();
     assertTrue(cmd.contains(" -M 2000 -R rusage[mem=2000:duration=1]"));
     assertTrue(cmd.contains(" -Xmx" + (2000 - LSF_JVM_MEMORY_DELTA_MB) + "M"));
   }
 
   @Test
   public void testTaskWithoutJavaXmxMemory() {
-    ProcessConfiguration processConfiguration = defaultProcessConfiguration();
-    TaskConfiguration taskConfiguration = defaultTaskConfiguration();
+    TaskConfigurationEx taskConfiguration = taskConfiguration();
     taskConfiguration.setMemory(1500);
 
-    LSFTaskExecutor se = new LSFTaskExecutor(processConfiguration, taskConfiguration);
-    String cmd = se.execute(defaultTaskInstance(taskConfiguration)).getCommandline();
+    LSFTaskExecutor se = new LSFTaskExecutor(taskConfiguration);
+    String cmd = se.execute(taskInstance(taskConfiguration)).getCommandline();
     assertTrue(cmd.contains(" -M 1500 -R rusage[mem=1500:duration=1]"));
     // Not enough memory requested to create -Xmx.
     assertFalse(cmd.contains(" -Xmx"));
@@ -150,15 +141,14 @@ public class LSFTaskExecutorTest {
 
   @Test
   public void testTaskSpecificJavaProperties() {
-    ProcessConfiguration processConfiguration = defaultProcessConfiguration();
-    TaskConfiguration taskConfiguration = defaultTaskConfiguration();
+    TaskConfigurationEx taskConfiguration = taskConfiguration();
     taskConfiguration.setEnv(new String[] {"PIPELITE_TEST_JAVA_PROPERTY"});
 
     try {
       System.setProperty("PIPELITE_TEST_JAVA_PROPERTY", "VALUE");
 
-      LSFTaskExecutor se = new LSFTaskExecutor(processConfiguration, taskConfiguration);
-      String cmd = se.execute(defaultTaskInstance(taskConfiguration)).getCommandline();
+      LSFTaskExecutor se = new LSFTaskExecutor(taskConfiguration);
+      String cmd = se.execute(taskInstance(taskConfiguration)).getCommandline();
       assertTrue(cmd.contains(" -DPIPELITE_TEST_JAVA_PROPERTY=VALUE"));
     } finally {
       System.clearProperty("PIPELITE_TEST_JAVA_PROPERTY");

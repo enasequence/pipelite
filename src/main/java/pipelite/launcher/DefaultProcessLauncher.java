@@ -17,9 +17,9 @@ import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-import pipelite.configuration.LauncherConfiguration;
-import pipelite.configuration.ProcessConfiguration;
-import pipelite.configuration.TaskConfiguration;
+import pipelite.configuration.*;
+import pipelite.configuration.ProcessConfigurationEx;
+import pipelite.configuration.TaskConfigurationEx;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
 import pipelite.log.LogKey;
@@ -42,8 +42,8 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
     implements ProcessLauncher {
 
   private final LauncherConfiguration launcherConfiguration;
-  private final ProcessConfiguration processConfiguration;
-  private final TaskConfiguration taskConfiguration;
+  private final ProcessConfigurationEx processConfiguration;
+  private final TaskConfigurationEx taskConfiguration;
   private final PipeliteProcessService pipeliteProcessService;
   private final PipeliteStageService pipeliteStageService;
   private final PipeliteLockService pipeliteLockService;
@@ -60,8 +60,8 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
 
   public DefaultProcessLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
-      @Autowired ProcessConfiguration processConfiguration,
-      @Autowired TaskConfiguration taskConfiguration,
+      @Autowired ProcessConfigurationEx processConfiguration,
+      @Autowired TaskConfigurationEx taskConfiguration,
       @Autowired PipeliteProcessService pipeliteProcessService,
       @Autowired PipeliteStageService pipeliteStageService,
       @Autowired PipeliteLockService pipeliteLockService) {
@@ -74,9 +74,9 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
     this.pipeliteLockService = pipeliteLockService;
     this.executor =
         processConfiguration
-            .createExecutorFactory()
-            .createTaskExecutor(processConfiguration, taskConfiguration);
-    this.resolver = processConfiguration.createResolver();
+            .getExecutorFactory()
+            .createTaskExecutor(taskConfiguration);
+    this.resolver = taskConfiguration.getResolver();
   }
 
   public static class ProcessNotExecutableException extends RuntimeException {
@@ -292,7 +292,7 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
       }
 
       taskInstances[i] =
-          new TaskInstance(pipeliteProcess, pipeliteStage.get(), taskConfiguration, stage);
+          new TaskInstance(taskConfiguration, pipeliteProcess, pipeliteStage.get(), stage);
     }
 
     return taskInstances;
@@ -449,7 +449,7 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
   }
 
   public Stage[] getStages() {
-    return processConfiguration.getStageArray();
+    return processConfiguration.getStages();
   }
 
   public ProcessExecutionState getState() {

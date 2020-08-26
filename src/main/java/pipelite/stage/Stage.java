@@ -10,18 +10,14 @@
  */
 package pipelite.stage;
 
-import pipelite.configuration.TaskConfiguration;
-import pipelite.executor.TaskExecutor;
-import pipelite.executor.TaskExecutorFactory;
+import pipelite.configuration.TaskConfigurationEx;
 
-public interface Stage<T extends TaskExecutor> {
+public interface Stage {
 
   String getStageName();
-
-  TaskExecutorFactory<T> getTaskExecutorFactory();
 
   // TODO: multiple stage dependencies
   Stage getDependsOn();
 
-  TaskConfiguration getTaskConfiguration();
+  TaskConfigurationEx getTaskConfiguration();
 }

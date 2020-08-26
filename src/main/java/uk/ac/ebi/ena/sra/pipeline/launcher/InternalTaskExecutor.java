@@ -10,17 +10,15 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
-import pipelite.configuration.ProcessConfiguration;
-import pipelite.configuration.TaskConfiguration;
+import pipelite.configuration.TaskConfigurationEx;
 import pipelite.executor.AbstractTaskExecutor;
-import pipelite.executor.TaskExecutor;
 import pipelite.instance.TaskInstance;
+import pipelite.task.Task;
 
 public class InternalTaskExecutor extends AbstractTaskExecutor {
 
-  public InternalTaskExecutor(
-      ProcessConfiguration processConfiguration, TaskConfiguration taskConfiguration) {
-    super(processConfiguration, taskConfiguration);
+  public InternalTaskExecutor(TaskConfigurationEx taskConfiguration) {
+    super(taskConfiguration);
   }
 
   public ExecutionInfo execute(TaskInstance taskInstance) {
@@ -28,12 +26,8 @@ public class InternalTaskExecutor extends AbstractTaskExecutor {
 
     try {
       String stageName = taskInstance.getPipeliteStage().getStageName();
-      TaskExecutor taskExecutor =
-          processConfiguration
-              .getStage(stageName)
-              .getTaskExecutorFactory()
-              .createTaskExecutor(processConfiguration, taskConfiguration);
-      taskExecutor.execute(taskInstance);
+      Task task = taskConfiguration.getTaskFactory().createTask(stageName);
+      task.execute(taskInstance);
 
     } catch (Throwable e) {
       e.printStackTrace();
@@ -45,4 +39,114 @@ public class InternalTaskExecutor extends AbstractTaskExecutor {
       return info;
     }
   }
+
+  // TODO: handle call from LSFTaskExecutor and DetachedTaskExecutor
+
+  public static final String PARAMETERS_NAME_ID = "--id";
+  public static final String PARAMETERS_NAME_STAGE = "--stage";
+  public static final String PARAMETERS_NAME_FORCE_COMMIT = "--commit";
+  public static final String PARAMETERS_NAME_ENABLED = "--enabled";
+  public static final String PARAMETERS_NAME_EXEC_COUNT = "--exec-cnt";
+  /*
+
+
+    @Parameter( names = PARAMETERS_NAME_ID, description = "ID of the task", required = true )
+    String process_id;
+
+    @Parameter( names = PARAMETERS_NAME_STAGE, description = "Stage name to execute", required = true )
+    String stage_name;
+
+    @Parameter( names = PARAMETERS_NAME_FORCE_COMMIT, description = "force commit client data" )
+    boolean force;
+
+
+    //hidden
+    @Parameter( names = PARAMETERS_NAME_ENABLED, description = "stage is enabled", hidden=true, arity=1 )
+    boolean enabled = true;
+    //hidden
+    @Parameter( names = PARAMETERS_NAME_EXEC_COUNT, description = "execution counter", hidden=true )
+    int    exec_cnt = 0;
+
+
+    public static void
+    main( String[] args ) throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException
+    {
+      ConsoleAppender appender = new ConsoleAppender( layout, "System.out" );
+      appender.setThreshold( Level.INFO );
+
+      String os = System.getProperty( "os.name" );
+
+      Logger.getRootLogger().removeAllAppenders();
+      Logger.getRootLogger().addAppender( appender );
+      Logger.getRootLogger().setLevel( Level.ALL );
+
+      Logger.getRootLogger().warn( "Operating system is " + os );
+
+      StageLauncher sl = new StageLauncher();
+      JCommander jc = new JCommander( sl );
+
+      try
+      {
+        jc.parse( args );
+        System.exit( sl.execute() );
+
+      } catch( ParameterException pe )
+      {
+
+        jc.usage();
+        System.exit( 1 );
+      }
+    }
+
+
+    public int
+    execute()
+    {
+      StageExecutor executor = new InternalStageExecutor( new ResultTranslator( DefaultConfiguration.currentSet().getCommitStatus() ) )
+              .setRedoCount( DefaultConfiguration.currentSet().getStagesRedoCount() );
+
+      StageInstance instance = new StageInstance();
+      instance.setProcessID( process_id );
+      instance.setStageName( stage_name );
+      instance.setEnabled( enabled );
+      instance.setExecutionCount( exec_cnt );
+      executor.setClientCanCommit( force );
+      executor.execute( instance );
+      return executor.get_info().getExitCode();
+    }
+
+
+    public static class
+    InternalExecutionResult
+    {
+      public
+      InternalExecutionResult( int exitCode, StageTask task )
+      {
+        this.exitCode = exitCode;
+        this.task = task;
+      }
+
+
+      public final int       exitCode;
+      public final StageTask task;
+    }
+
+
+    public InternalExecutionResult
+    execute( String process_id, String stage_name, boolean force )
+    {
+      InternalStageExecutor executor = new InternalStageExecutor( new ResultTranslator( DefaultConfiguration.currentSet().getCommitStatus() ) )
+              .setRedoCount( DefaultConfiguration.currentSet().getStagesRedoCount() );
+      StageInstance instance = new StageInstance();
+      instance.setProcessID( process_id );
+      instance.setStageName( stage_name );
+      instance.setEnabled( true );
+      instance.setExecutionCount( 0 );
+      executor.setClientCanCommit( force );
+      executor.execute( instance );
+      return new InternalExecutionResult( executor.get_info().getExitCode(), executor.get_task() );
+    }
+  }
+
+     */
 }

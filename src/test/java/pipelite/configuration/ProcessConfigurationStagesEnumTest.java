@@ -4,24 +4,24 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.ComponentScan;
 import pipelite.EmptyTestConfiguration;
-import pipelite.executor.TaskExecutor;
-import pipelite.executor.TaskExecutorFactory;
-import pipelite.instance.TaskInstance;
 import pipelite.stage.Stage;
-import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInfo;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
     classes = EmptyTestConfiguration.class,
     properties = {
-      "pipelite.process.stages=pipelite.configuration.ProcessConfigurationStagesEnumTest$TestStages"
+      "pipelite.process.stagesEnumName=pipelite.configuration.ProcessConfigurationStagesEnumTest$TestStages"
     })
-@EnableConfigurationProperties(value = {ProcessConfiguration.class})
+@EnableConfigurationProperties(
+        value = {LauncherConfiguration.class, ProcessConfiguration.class, TaskConfiguration.class})
+@ComponentScan(basePackageClasses = {ProcessConfigurationEx.class})
 public class ProcessConfigurationStagesEnumTest {
 
-  @Autowired ProcessConfiguration config;
+  @Autowired
+  ProcessConfigurationEx processConfiguration;
 
   public enum TestStages implements Stage {
     STAGE_1,
@@ -35,34 +35,31 @@ public class ProcessConfigurationStagesEnumTest {
     }
 
     @Override
-    public TaskExecutorFactory getTaskExecutorFactory() {
-      return (processConfiguration, taskConfiguration) -> new TestTaskExecutor();
-    }
-
-    @Override
     public TestStages getDependsOn() {
       return null;
     }
 
     @Override
-    public TaskConfiguration getTaskConfiguration() {
-      return new TaskConfiguration();
-    }
-  }
-
-  public static class TestTaskExecutor implements TaskExecutor {
-    @Override
-    public ExecutionInfo execute(TaskInstance taskInstance) {
-      return new ExecutionInfo();
+    public TaskConfigurationEx getTaskConfiguration() {
+      return new TaskConfigurationEx(new TaskConfiguration());
     }
   }
 
   @Test
   public void test() {
-    assertThat(config.getStages())
-        .isEqualTo("pipelite.configuration.ProcessConfigurationStagesEnumTest$TestStages");
-    assertThat(config.getStageArray().length).isEqualTo(2);
-    assertThat(config.getStage(TestStages.STAGE_1.name())).isEqualTo(TestStages.STAGE_1);
-    assertThat(config.getStage(TestStages.STAGE_2.name())).isEqualTo(TestStages.STAGE_2);
+    assertThat(processConfiguration.getStages().length).isEqualTo(2);
+    assertThat(getStage(processConfiguration.getStages(), TestStages.STAGE_1.name()))
+        .isEqualTo(TestStages.STAGE_1);
+    assertThat(getStage(processConfiguration.getStages(), TestStages.STAGE_2.name()))
+        .isEqualTo(TestStages.STAGE_2);
+  }
+
+  private Stage getStage(Stage[] stages, String name) {
+    for (Stage stage : stages) {
+      if (name.equals(stage.getStageName())) {
+        return stage;
+      }
+    }
+    return null;
   }
 }

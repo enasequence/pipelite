@@ -10,15 +10,13 @@
  */
 package pipelite.executor;
 
-import pipelite.configuration.ProcessConfiguration;
-import pipelite.configuration.TaskConfiguration;
+import pipelite.configuration.TaskConfigurationEx;
 import uk.ac.ebi.ena.sra.pipeline.launcher.DetachedTaskExecutor;
 
 public class DetachedTaskExecutorFactory implements TaskExecutorFactory {
 
   @Override
-  public TaskExecutor createTaskExecutor(
-      ProcessConfiguration processConfiguration, TaskConfiguration taskConfiguration) {
-    return new DetachedTaskExecutor(processConfiguration, taskConfiguration);
+  public TaskExecutor createTaskExecutor(TaskConfigurationEx taskConfiguration) {
+    return new DetachedTaskExecutor(taskConfiguration);
   }
 }

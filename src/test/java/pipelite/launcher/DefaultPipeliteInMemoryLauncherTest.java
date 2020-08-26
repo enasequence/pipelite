@@ -20,16 +20,16 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.FullTestConfiguration;
-import pipelite.entity.PipeliteProcess;
+import pipelite.configuration.ProcessConfigurationEx;
+import pipelite.configuration.TaskConfigurationEx;
 import pipelite.service.PipeliteProcessService;
 
 @SpringBootTest(
     classes = FullTestConfiguration.class,
     properties = {
       "pipelite.launcher.workers=5",
-      "pipelite.process.executor=pipelite.executor.InternalTaskExecutorFactory",
-      "pipelite.process.resolver=pipelite.resolver.DefaultExceptionResolver",
-      "pipelite.process.stages=pipelite.launcher.DefaultPipeliteLauncherTester$TestStages",
+      "pipelite.process.executorFactoryName=pipelite.executor.InternalTaskExecutorFactory",
+      "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver",
       "spring.autoconfigure.exclude="
           + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
           + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
@@ -41,6 +41,8 @@ import pipelite.service.PipeliteProcessService;
 public class DefaultPipeliteInMemoryLauncherTest {
 
   @Autowired private DefaultPipeliteLauncher defaultPipeliteLauncher;
+  @Autowired private ProcessConfigurationEx processConfiguration;
+  @Autowired private TaskConfigurationEx taskConfiguration;
   @Autowired private PipeliteProcessService pipeliteProcessService;
 
   public static class TestContextInitializer
@@ -56,14 +58,12 @@ public class DefaultPipeliteInMemoryLauncherTest {
 
   @Test
   public void test() {
-
     DefaultPipeliteLauncherTester tester =
-        new DefaultPipeliteLauncherTester(defaultPipeliteLauncher);
-
-    for (PipeliteProcess pipeliteProcess : tester.pipeliteProcesses()) {
-      pipeliteProcessService.saveProcess(pipeliteProcess);
-    }
-
+        new DefaultPipeliteLauncherTester(
+            defaultPipeliteLauncher,
+            processConfiguration,
+            taskConfiguration,
+            pipeliteProcessService);
     tester.test();
   }
 }

@@ -4,11 +4,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import pipelite.configuration.TaskParameters;
+import pipelite.resolver.ExceptionResolver;
+import pipelite.task.TaskFactory;
 
 @Data
 @Builder
 @AllArgsConstructor
-@ConfigurationProperties(prefix = "pipelite.task")
+@ConfigurationProperties(prefix = "pipelite.task", ignoreInvalidFields = true)
 /** Some configuration parameters are supported only by specific executors. */
 public class TaskConfiguration implements TaskParameters {
 
@@ -35,4 +38,9 @@ public class TaskConfiguration implements TaskParameters {
   /** Environmental variables. */
   private String[] env;
 
+  /** Name of the resolver class for task execution results. */
+  private String resolver;
+
+  /** Allow the task factory to be defined by name. */
+  private String taskFactoryName;
 }

@@ -15,8 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import lombok.extern.flogger.Flogger;
-import pipelite.configuration.ProcessConfiguration;
-import pipelite.configuration.TaskConfiguration;
+import pipelite.configuration.TaskConfigurationEx;
 import pipelite.executor.AbstractTaskExecutor;
 import pipelite.instance.TaskInstance;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
@@ -29,9 +28,8 @@ public class LSFTaskExecutor extends AbstractTaskExecutor {
   public static final int LSF_JVM_MEMORY_OVERHEAD_MB = 200;
   public static final int LSF_JVM_MEMORY_RESERVATION_TIMEOUT_DEFAULT_MINUTES = 60;
 
-  public LSFTaskExecutor(
-      ProcessConfiguration processConfiguration, TaskConfiguration taskConfiguration) {
-    super(processConfiguration, taskConfiguration);
+  public LSFTaskExecutor(TaskConfigurationEx taskConfiguration) {
+    super(taskConfiguration);
   }
 
   private List<String> constructArgs(TaskInstance instance, boolean commit) {
@@ -59,21 +57,21 @@ public class LSFTaskExecutor extends AbstractTaskExecutor {
 
     p_args.add("-cp");
     p_args.add(System.getProperty("java.class.path"));
-    p_args.add(StageLauncher.class.getName());
+    p_args.add(InternalTaskExecutor.class.getName());
 
-    p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.StageLauncher.PARAMETERS_NAME_ID);
+    p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.PARAMETERS_NAME_ID);
     p_args.add(instance.getPipeliteStage().getProcessId());
 
-    p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.StageLauncher.PARAMETERS_NAME_STAGE);
+    p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.PARAMETERS_NAME_STAGE);
     p_args.add(instance.getPipeliteStage().getStageName());
 
     if (commit)
-      p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.StageLauncher.PARAMETERS_NAME_FORCE_COMMIT);
+      p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.PARAMETERS_NAME_FORCE_COMMIT);
 
-    p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.StageLauncher.PARAMETERS_NAME_ENABLED);
+    p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.PARAMETERS_NAME_ENABLED);
     p_args.add(Boolean.toString(instance.getPipeliteStage().getEnabled()).toLowerCase());
 
-    p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.StageLauncher.PARAMETERS_NAME_EXEC_COUNT);
+    p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.PARAMETERS_NAME_EXEC_COUNT);
     p_args.add(Long.toString(instance.getPipeliteStage().getExecutionCount()));
 
     return p_args;

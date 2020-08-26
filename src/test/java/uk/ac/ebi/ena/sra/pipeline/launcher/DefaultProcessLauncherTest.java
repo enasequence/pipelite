@@ -12,38 +12,11 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
-
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import lombok.extern.flogger.Flogger;
-import org.junit.jupiter.api.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.FullTestConfiguration;
-import pipelite.configuration.LauncherConfiguration;
-import pipelite.configuration.ProcessConfiguration;
-import pipelite.configuration.TaskConfiguration;
-import pipelite.entity.PipeliteProcess;
-import pipelite.entity.PipeliteStage;
-import pipelite.executor.TaskExecutorFactory;
-import pipelite.launcher.DefaultProcessLauncher;
-import pipelite.service.PipeliteProcessService;
-import pipelite.service.PipeliteStageService;
-import pipelite.resolver.ConcreteExceptionResolver;
-import pipelite.service.PipeliteLockService;
-import pipelite.executor.TaskExecutor;
-import pipelite.instance.TaskInstance;
-import pipelite.resolver.ExceptionResolver;
-import pipelite.process.ProcessExecutionState;
-import pipelite.task.result.TaskExecutionResult;
-import pipelite.stage.Stage;
-import pipelite.service.PipeliteInMemoryLockService;
 
 @Flogger
 @SpringBootTest(classes = FullTestConfiguration.class)

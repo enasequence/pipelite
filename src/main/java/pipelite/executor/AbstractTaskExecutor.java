@@ -12,22 +12,18 @@ package pipelite.executor;
 
 import java.util.*;
 
-import pipelite.configuration.ProcessConfiguration;
-import pipelite.configuration.TaskConfiguration;
+import pipelite.configuration.TaskConfigurationEx;
 import pipelite.resolver.ExceptionResolver;
 import pipelite.task.result.TaskExecutionResult;
 
 public abstract class AbstractTaskExecutor implements TaskExecutor {
-  protected final ProcessConfiguration processConfiguration;
-  protected final TaskConfiguration taskConfiguration;
+  protected final TaskConfigurationEx taskConfiguration;
   protected final ExceptionResolver resolver;
   protected final TaskExecutionResult internalError;
 
-  public AbstractTaskExecutor(
-      ProcessConfiguration processConfiguration, TaskConfiguration taskConfiguration) {
-    this.processConfiguration = processConfiguration;
+  public AbstractTaskExecutor(TaskConfigurationEx taskConfiguration) {
     this.taskConfiguration = taskConfiguration;
-    this.resolver = processConfiguration.createResolver();
+    this.resolver = taskConfiguration.getResolver();
     this.internalError = resolver.internalError();
   }
 

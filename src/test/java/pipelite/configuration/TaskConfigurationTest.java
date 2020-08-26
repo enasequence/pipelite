@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import pipelite.EmptyTestConfiguration;
+import pipelite.resolver.DefaultExceptionResolver;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -17,7 +18,9 @@ import static org.assertj.core.api.Assertions.assertThat;
       "pipelite.task.memoryTimeout=15",
       "pipelite.task.retries=3",
       "pipelite.task.tempdir=",
-      "pipelite.task.env=TEST1,TEST2"
+      "pipelite.task.env=TEST1,TEST2",
+      "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver",
+      "pipelite.task.executorFactoryName="
     })
 @EnableConfigurationProperties(value = {TaskConfiguration.class})
 public class TaskConfigurationTest {
@@ -35,5 +38,7 @@ public class TaskConfigurationTest {
     assertThat(config.getEnv().length).isEqualTo(2);
     assertThat(config.getEnv()[0]).isEqualTo("TEST1");
     assertThat(config.getEnv()[1]).isEqualTo("TEST2");
+    assertThat(config.getResolver()).isEqualTo("pipelite.resolver.DefaultExceptionResolver");
+    assertThat(config.getTaskFactoryName()).isBlank();
   }
 }

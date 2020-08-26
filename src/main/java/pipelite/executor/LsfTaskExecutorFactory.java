@@ -10,15 +10,13 @@
  */
 package pipelite.executor;
 
-import pipelite.configuration.ProcessConfiguration;
-import pipelite.configuration.TaskConfiguration;
+import pipelite.configuration.TaskConfigurationEx;
 import uk.ac.ebi.ena.sra.pipeline.launcher.LSFTaskExecutor;
 
 public class LsfTaskExecutorFactory implements TaskExecutorFactory {
 
   @Override
-  public TaskExecutor createTaskExecutor(
-      ProcessConfiguration processConfiguration, TaskConfiguration taskConfiguration) {
-    return new LSFTaskExecutor(processConfiguration, taskConfiguration);
+  public TaskExecutor createTaskExecutor(TaskConfigurationEx taskConfiguration) {
+    return new LSFTaskExecutor(taskConfiguration);
   }
 }

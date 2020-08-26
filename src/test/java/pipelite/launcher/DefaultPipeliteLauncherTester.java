@@ -1,17 +1,16 @@
 package pipelite.launcher;
 
 import lombok.AllArgsConstructor;
-import pipelite.configuration.ProcessConfigurationStagesFactoryTest;
+
+import pipelite.configuration.ProcessConfigurationEx;
+import pipelite.configuration.TaskConfigurationEx;
 import pipelite.entity.PipeliteProcess;
-import pipelite.executor.TaskExecutor;
 import pipelite.instance.TaskInstance;
+import pipelite.service.PipeliteProcessService;
 import pipelite.stage.DefaultStage;
 import pipelite.stage.Stage;
-import pipelite.stage.StageFactory;
-import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInfo;
+import pipelite.task.Task;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -22,28 +21,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class DefaultPipeliteLauncherTester {
 
   private final DefaultPipeliteLauncher defaultPipeliteLauncher;
+  private final ProcessConfigurationEx processConfiguration;
+  private final TaskConfigurationEx taskConfiguration;
+  private final PipeliteProcessService pipeliteProcessService;
 
-  private static final AtomicInteger processExecutionCount = new AtomicInteger();
-  private static final Set<String> processExecutionSet = ConcurrentHashMap.newKeySet();
-  private static final Set<String> processExcessExecutionSet = ConcurrentHashMap.newKeySet();
-
+  private final AtomicInteger processExecutionCount = new AtomicInteger();
+  private final Set<String> processExecutionSet = ConcurrentHashMap.newKeySet();
+  private final Set<String> processExcessExecutionSet = ConcurrentHashMap.newKeySet();
+  private static final Stage[] stages = {new DefaultStage("STAGE_1")};
   private static final int PROCESS_COUNT = 100;
   private static final int TASK_EXECUTION_TIME = 10; // ms
 
-  public static class TestStages implements StageFactory {
+  private class TestTask implements Task {
     @Override
-    public Stage[] create() {
-      Stage[] stages = {
-        new DefaultStage(
-            "STAGE_1", (processConfiguration, taskConfiguration) -> new TestTaskExecutor())
-      };
-      return stages;
-    }
-  }
-
-  public static class TestTaskExecutor implements TaskExecutor {
-    @Override
-    public ExecutionInfo execute(TaskInstance taskInstance) {
+    public void execute(TaskInstance taskInstance) {
       String processId = taskInstance.getPipeliteProcess().getProcessId();
       processExecutionCount.incrementAndGet();
       if (processExecutionSet.contains(processId)) {
@@ -56,36 +47,25 @@ public class DefaultPipeliteLauncherTester {
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
-      return new ExecutionInfo();
     }
   }
 
-  public List<PipeliteProcess> pipeliteProcesses() {
-    List<PipeliteProcess> pipeliteProcesses = new ArrayList<>();
+  public void test() {
+    processConfiguration.setStages(stages);
+    taskConfiguration.setTaskFactory(stageName -> new TestTask());
+
     for (int i = 0; i < PROCESS_COUNT; ++i) {
       PipeliteProcess pipeliteProcess = new PipeliteProcess();
       pipeliteProcess.setProcessId("Process" + i);
       pipeliteProcess.setProcessName(defaultPipeliteLauncher.getProcessName());
-      pipeliteProcesses.add(pipeliteProcess);
+      pipeliteProcessService.saveProcess(pipeliteProcess);
     }
-    return pipeliteProcesses;
-  }
-
-  public void test() {
-    processExecutionCount.set(0);
-    processExecutionSet.clear();
-    processExcessExecutionSet.clear();
 
     defaultPipeliteLauncher.setShutdownPolicy(
         DefaultPipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
     defaultPipeliteLauncher.setSchedulerDelayMillis(10);
 
     PipeliteLauncherServiceManager.run(defaultPipeliteLauncher);
-
-    // Because of the eventual guarantee of process execution status propagation
-    // it is possible that an active process will be selected again for potential
-    // execution before it has been processed by the launcher. However, these
-    // process executions will be safely declined.
 
     assertThat(processExcessExecutionSet).isEmpty();
     assertThat(processExecutionCount.get()).isEqualTo(PROCESS_COUNT);

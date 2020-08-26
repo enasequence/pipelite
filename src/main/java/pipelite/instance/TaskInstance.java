@@ -13,7 +13,7 @@ package pipelite.instance;
 import com.google.common.base.Supplier;
 import com.google.common.base.Verify;
 import lombok.Data;
-import pipelite.configuration.TaskConfiguration;
+import pipelite.configuration.TaskConfigurationEx;
 import pipelite.configuration.TaskParameters;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
@@ -28,26 +28,26 @@ import java.util.Set;
 @Data
 public class TaskInstance implements TaskParameters {
 
+  private final TaskConfigurationEx taskConfiguration;
   private final PipeliteProcess pipeliteProcess;
   private final PipeliteStage pipeliteStage;
-  private final TaskConfiguration taskConfiguration;
   private final Stage stage;
 
   public TaskInstance(
-      PipeliteProcess pipeliteProcess,
-      PipeliteStage pipeliteStage,
-      TaskConfiguration taskConfiguration,
-      Stage stage) {
+          TaskConfigurationEx taskConfiguration,
+          PipeliteProcess pipeliteProcess,
+          PipeliteStage pipeliteStage,
+          Stage stage) {
     Verify.verifyNotNull(pipeliteProcess);
     Verify.verifyNotNull(pipeliteStage);
     Verify.verifyNotNull(taskConfiguration);
     Verify.verifyNotNull(stage);
     Verify.verifyNotNull(stage.getTaskConfiguration());
 
+    this.taskConfiguration = taskConfiguration;
     this.pipeliteProcess = pipeliteProcess;
     this.pipeliteStage = pipeliteStage;
     this.stage = stage;
-    this.taskConfiguration = taskConfiguration;
   }
 
   public TaskExecutionState evaluateTaskExecutionState() {

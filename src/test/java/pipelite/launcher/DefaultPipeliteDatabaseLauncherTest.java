@@ -18,20 +18,18 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 import pipelite.UniqueStringGenerator;
 import pipelite.FullTestConfiguration;
-import pipelite.entity.PipeliteProcess;
+import pipelite.configuration.ProcessConfigurationEx;
+import pipelite.configuration.TaskConfigurationEx;
 import pipelite.service.PipeliteProcessService;
 
 @SpringBootTest(
     classes = FullTestConfiguration.class,
     properties = {
       "pipelite.launcher.workers=5",
-      "pipelite.process.executor=pipelite.executor.InternalTaskExecutorFactory",
-      "pipelite.process.resolver=pipelite.resolver.DefaultExceptionResolver",
-      "pipelite.process.stages=pipelite.launcher.DefaultPipeliteLauncherTester$TestStages"
+      "pipelite.process.executorFactoryName=pipelite.executor.InternalTaskExecutorFactory",
+      "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver",
     })
 @ContextConfiguration(
     initializers = DefaultPipeliteDatabaseLauncherTest.TestContextInitializer.class)
@@ -39,8 +37,9 @@ import pipelite.service.PipeliteProcessService;
 public class DefaultPipeliteDatabaseLauncherTest {
 
   @Autowired private DefaultPipeliteLauncher defaultPipeliteLauncher;
+  @Autowired private ProcessConfigurationEx processConfiguration;
+  @Autowired private TaskConfigurationEx taskConfiguration;
   @Autowired private PipeliteProcessService pipeliteProcessService;
-  @Autowired private PlatformTransactionManager transactionManager;
 
   public static class TestContextInitializer
       implements ApplicationContextInitializer<ConfigurableApplicationContext> {
@@ -56,17 +55,11 @@ public class DefaultPipeliteDatabaseLauncherTest {
   @Test
   public void test() {
     DefaultPipeliteLauncherTester tester =
-        new DefaultPipeliteLauncherTester(defaultPipeliteLauncher);
-
-    TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
-    transactionTemplate.execute(
-        status -> {
-          for (PipeliteProcess pipeliteProcess : tester.pipeliteProcesses()) {
-            pipeliteProcessService.saveProcess(pipeliteProcess);
-          }
-          return true;
-        });
-
+        new DefaultPipeliteLauncherTester(
+            defaultPipeliteLauncher,
+            processConfiguration,
+            taskConfiguration,
+            pipeliteProcessService);
     tester.test();
   }
 }

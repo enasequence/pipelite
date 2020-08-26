@@ -1,8 +1,7 @@
 package pipelite.executor;
 
-import pipelite.configuration.ProcessConfiguration;
-import pipelite.configuration.TaskConfiguration;
+import pipelite.configuration.TaskConfigurationEx;
 
-public interface TaskExecutorFactory<T extends TaskExecutor> {
-  T createTaskExecutor(ProcessConfiguration processConfiguration, TaskConfiguration taskConfiguration);
+public interface TaskExecutorFactory {
+  TaskExecutor createTaskExecutor(TaskConfigurationEx taskConfiguration);
 }

@@ -3,29 +3,25 @@ package pipelite.stage;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 import pipelite.configuration.TaskConfiguration;
+import pipelite.configuration.TaskConfigurationEx;
 import pipelite.executor.TaskExecutor;
-import pipelite.executor.TaskExecutorFactory;
 
 @Value
 @AllArgsConstructor
-public class DefaultStage<T extends TaskExecutor> implements Stage<T> {
+public class DefaultStage<T extends TaskExecutor> implements Stage {
   private final String stageName;
-  private final TaskExecutorFactory<T> taskExecutorFactory;
   private final Stage dependsOn;
-  private final TaskConfiguration taskConfiguration;
+  private final TaskConfigurationEx taskConfiguration;
 
-  public DefaultStage(String stageName, TaskExecutorFactory<T> taskExecutorFactory) {
+  public DefaultStage(String stageName) {
     this.stageName = stageName;
-    this.taskExecutorFactory = taskExecutorFactory;
     this.dependsOn = null;
-    this.taskConfiguration = new TaskConfiguration();
+    this.taskConfiguration = new TaskConfigurationEx(new TaskConfiguration());
   }
 
-  public DefaultStage(
-      String stageName, TaskExecutorFactory<T> taskExecutorFactory, Stage dependsOn) {
+  public DefaultStage(String stageName, Stage dependsOn) {
     this.stageName = stageName;
-    this.taskExecutorFactory = taskExecutorFactory;
     this.dependsOn = dependsOn;
-    this.taskConfiguration = new TaskConfiguration();
+    this.taskConfiguration = new TaskConfigurationEx(new TaskConfiguration());
   }
 }
