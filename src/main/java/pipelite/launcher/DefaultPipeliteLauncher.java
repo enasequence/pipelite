@@ -26,7 +26,6 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import pipelite.configuration.LauncherConfiguration;
-import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.ProcessConfigurationEx;
 import pipelite.entity.PipeliteProcess;
 import pipelite.instance.ProcessInstance;

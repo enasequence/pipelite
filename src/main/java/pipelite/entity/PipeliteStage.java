@@ -9,7 +9,6 @@ import pipelite.task.result.TaskExecutionResultType;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 
 @Entity
 @Table(name = "PIPELITE_STAGE")

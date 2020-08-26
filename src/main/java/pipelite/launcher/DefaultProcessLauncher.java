@@ -22,8 +22,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import pipelite.configuration.*;
-import pipelite.configuration.ProcessConfigurationEx;
-import pipelite.configuration.TaskConfigurationEx;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
 import pipelite.instance.ProcessInstance;
