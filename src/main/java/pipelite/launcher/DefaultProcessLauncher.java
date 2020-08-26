@@ -323,10 +323,10 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
 
       String processId = processInstance.getProcessId();
       String processName = processInstance.getProcessName();
-      String stageName = taskInstance.getTaskName();
+      String taskName = taskInstance.getTaskName();
 
       Optional<PipeliteStage> pipeliteStage =
-          pipeliteStageService.getSavedStage(processName, processId, stageName);
+          pipeliteStageService.getSavedStage(processName, processId, taskName);
 
       // Create and save the task it if does not already exist.
 
@@ -334,7 +334,7 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
         pipeliteStage =
             Optional.of(
                 pipeliteStageService.saveStage(
-                    PipeliteStage.newExecution(processId, processName, stageName)));
+                    PipeliteStage.newExecution(processId, processName, taskName)));
       }
 
       createPipeliteTaskInstance(taskInstance, pipeliteStage.get());
@@ -364,12 +364,12 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
     PipeliteStage pipeliteStage = pipeliteTaskInstance.getPipeliteStage();
     String processName = getProcessName();
     String processId = getProcessId();
-    String stageName = taskInstance.getTaskName();
+    String taskName = taskInstance.getTaskName();
 
     log.atInfo()
         .with(LogKey.PROCESS_NAME, processName)
         .with(LogKey.PROCESS_ID, processId)
-        .with(LogKey.STAGE_NAME, stageName)
+        .with(LogKey.STAGE_NAME, taskName)
         .log("Preparing to execute task");
 
     // Do not execute task if it is already completed.
@@ -378,7 +378,7 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
       log.atInfo()
           .with(LogKey.PROCESS_NAME, processName)
           .with(LogKey.PROCESS_ID, processId)
-          .with(LogKey.STAGE_NAME, stageName)
+          .with(LogKey.STAGE_NAME, taskName)
           .log("Task will not be executed because it has already completed");
       ++taskSkippedCount;
       return true; // Continue execution.
@@ -390,7 +390,7 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
       log.atInfo()
           .with(LogKey.PROCESS_NAME, processName)
           .with(LogKey.PROCESS_ID, processId)
-          .with(LogKey.STAGE_NAME, stageName)
+          .with(LogKey.STAGE_NAME, taskName)
           .log("Task will not be executed because it has already failed");
       ++taskFailedCount;
       return false; // Do not continue execution;.

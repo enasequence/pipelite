@@ -105,7 +105,7 @@ public class DefaultProcessLauncherTest {
               public Object answer(InvocationOnMock invocation) {
                 PipeliteStage pipeliteStage = new PipeliteStage();
                 pipeliteStage.setProcessId(PROCESS_ID);
-                pipeliteStage.setStageName(names[counter.getAndAdd(1)]);
+                pipeliteStage.setTaskName(names[counter.getAndAdd(1)]);
                 pipeliteStage.setProcessName(PROCESS_NAME);
                 pipeliteStage.setStartTime(LocalDateTime.now());
                 pipeliteStage.setEndTime(LocalDateTime.now());
@@ -184,7 +184,7 @@ public class DefaultProcessLauncherTest {
                 i -> {
                   TaskInstance si = (TaskInstance) i.getArguments()[0];
                   log.atInfo().log(
-                      "Calling execute on \"" + si.getPipeliteStage().getStageName() + "\"");
+                      "Calling execute on \"" + si.getPipeliteStage().getTaskName() + "\"");
                   ExecutionInfo info = new ExecutionInfo();
                   info.setExitCode(
                       invocation_exit_code.length > inv_cnt.get()
@@ -220,7 +220,7 @@ public class DefaultProcessLauncherTest {
     }
 
     @Override
-    public String getStageName() {
+    public String getTaskName() {
       return this.name();
     }
 

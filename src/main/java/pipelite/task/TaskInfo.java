@@ -6,5 +6,5 @@ import lombok.Value;
 public class TaskInfo {
   private final String processName;
   private final String processId;
-  private final String stageName;
+  private final String taskName;
 }

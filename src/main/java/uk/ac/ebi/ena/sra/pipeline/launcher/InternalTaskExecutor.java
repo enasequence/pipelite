@@ -28,9 +28,9 @@ public class InternalTaskExecutor extends AbstractTaskExecutor {
     try {
       String processName = taskInstance.getProcessName();
       String processId = taskInstance.getProcessId();
-      String stageName = taskInstance.getTaskName();
+      String taskName = taskInstance.getTaskName();
       Task task =
-          taskInstance.getTaskFactory().createTask(new TaskInfo(processName, processId, stageName));
+          taskInstance.getTaskFactory().createTask(new TaskInfo(processName, processId, taskName));
       task.execute(taskInstance);
 
     } catch (Throwable e) {
@@ -109,7 +109,7 @@ public class InternalTaskExecutor extends AbstractTaskExecutor {
 
       StageInstance instance = new StageInstance();
       instance.setProcessID( process_id );
-      instance.setStageName( stage_name );
+      instance.setTaskName( stage_name );
       instance.setEnabled( enabled );
       instance.setExecutionCount( exec_cnt );
       executor.setClientCanCommit( force );
@@ -141,7 +141,7 @@ public class InternalTaskExecutor extends AbstractTaskExecutor {
               .setRedoCount( DefaultConfiguration.currentSet().getStagesRedoCount() );
       StageInstance instance = new StageInstance();
       instance.setProcessID( process_id );
-      instance.setStageName( stage_name );
+      instance.setTaskName( stage_name );
       instance.setEnabled( true );
       instance.setExecutionCount( 0 );
       executor.setClientCanCommit( force );

@@ -1,5 +1,6 @@
 package pipelite.resolver;
 
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,15 +9,16 @@ import pipelite.task.result.TaskExecutionResult;
 import java.util.*;
 
 @Value
-public class ConcreteExceptionResolver extends AbstractResolver<Throwable> implements ExceptionResolver {
+public class ConcreteExceptionResolver extends AbstractResolver<Throwable>
+    implements ExceptionResolver {
 
   private static final Logger logger = LoggerFactory.getLogger(ExceptionResolver.class);
 
   private static final TaskExecutionResult success = TaskExecutionResult.success();
   private static final TaskExecutionResult internalError = TaskExecutionResult.internalError();
 
-  private final Map<Class<? extends Throwable>, TaskExecutionResult> map;
-  private final List<TaskExecutionResult> list;
+  @EqualsAndHashCode.Exclude private final Map<Class<? extends Throwable>, TaskExecutionResult> map;
+  @EqualsAndHashCode.Exclude private final List<TaskExecutionResult> list;
 
   @Override
   public TaskExecutionResult success() {
