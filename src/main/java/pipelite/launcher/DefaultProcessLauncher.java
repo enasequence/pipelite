@@ -10,9 +10,13 @@
  */
 package pipelite.launcher;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
+import lombok.Data;
+import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -22,6 +26,7 @@ import pipelite.configuration.ProcessConfigurationEx;
 import pipelite.configuration.TaskConfigurationEx;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
+import pipelite.instance.ProcessInstance;
 import pipelite.log.LogKey;
 import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteProcessService;
@@ -30,6 +35,7 @@ import pipelite.executor.TaskExecutor;
 import pipelite.instance.TaskInstance;
 import pipelite.resolver.ExceptionResolver;
 import pipelite.process.ProcessExecutionState;
+import pipelite.task.result.TaskExecutionResultType;
 import pipelite.task.state.TaskExecutionState;
 import pipelite.task.result.TaskExecutionResult;
 import pipelite.stage.Stage;
@@ -50,9 +56,8 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
   private final TaskExecutor executor;
   private final ExceptionResolver resolver;
 
-  private String processId;
-  private PipeliteProcess pipeliteProcess;
-  private TaskInstance[] taskInstances;
+  private PipeliteProcessInstance pipeliteProcessInstance;
+  private List<PipeliteTaskInstance> pipeliteTaskInstances = new ArrayList<>();
 
   private int taskFailedCount = 0;
   private int taskSkippedCount = 0;
@@ -72,11 +77,24 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
     this.pipeliteProcessService = pipeliteProcessService;
     this.pipeliteStageService = pipeliteStageService;
     this.pipeliteLockService = pipeliteLockService;
-    this.executor =
-        processConfiguration
-            .getExecutorFactory()
-            .createTaskExecutor(taskConfiguration);
+    this.executor = processConfiguration.getExecutorFactory().createTaskExecutor(taskConfiguration);
     this.resolver = taskConfiguration.getResolver();
+  }
+
+  @Data
+  private static class PipeliteProcessInstance {
+    private final ProcessInstance processInstance;
+    private PipeliteProcess pipeliteProcess;
+
+    public PipeliteProcessInstance(ProcessInstance processInstance) {
+      this.processInstance = processInstance;
+    }
+  }
+
+  @Value
+  private static class PipeliteTaskInstance {
+    private final TaskInstance taskInstance;
+    private final PipeliteStage pipeliteStage;
   }
 
   public static class ProcessNotExecutableException extends RuntimeException {
@@ -91,8 +109,8 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
   }
 
   @Override
-  public void init(String processId) {
-    this.processId = processId;
+  public void init(ProcessInstance processInstance) {
+    this.pipeliteProcessInstance = new PipeliteProcessInstance(processInstance);
   }
 
   @Override
@@ -103,6 +121,7 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
   @Override
   protected void startUp() {
     String processName = getProcessName();
+    String processId = getProcessId();
 
     log.atInfo()
         .with(LogKey.PROCESS_NAME, processName)
@@ -131,7 +150,8 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
           "process could not be retrieved", processName, processId);
     }
 
-    this.pipeliteProcess = savedPipeliteProcess.get();
+    PipeliteProcess pipeliteProcess = savedPipeliteProcess.get();
+    pipeliteProcessInstance.setPipeliteProcess(pipeliteProcess);
 
     ProcessExecutionState state = pipeliteProcess.getState();
 
@@ -148,15 +168,12 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
       pipeliteProcessService.saveProcess(pipeliteProcess);
     }
 
-    // Get a list of process tasks. If task A depends on task B then
-    // task A will appear before task B.
-
-    taskInstances = getTaskInstances();
+    createPipeliteTaskInstances();
 
     // Get process execution state from the tasks. If it is different from the
     // process execution state then update the project execution state to match.
 
-    ProcessExecutionState tasksState = getProcessExecutionState(taskInstances);
+    ProcessExecutionState tasksState = evaluateProcessExecutionState();
     if (state != tasksState) {
       log.atWarning()
           .with(LogKey.PROCESS_NAME, processName)
@@ -190,7 +207,8 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
     }
 
     String processName = getProcessName();
-    String processId = pipeliteProcess.getProcessId();
+    String processId = getProcessId();
+    PipeliteProcess pipeliteProcess = pipeliteProcessInstance.pipeliteProcess;
 
     log.atInfo()
         .with(LogKey.PROCESS_NAME, processName)
@@ -202,7 +220,7 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
 
     // Update and save the process state.
 
-    pipeliteProcess.setState(getProcessExecutionState(taskInstances));
+    pipeliteProcess.setState(evaluateProcessExecutionState());
     pipeliteProcess.incrementExecutionCount();
 
     log.atInfo()
@@ -218,7 +236,7 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
   @Override
   protected void shutDown() {
     // Unlock the process.
-    unlockProcess(processId);
+    unlockProcess(getProcessId());
   }
 
   private boolean lockProcess(String processId) {
@@ -257,9 +275,9 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
     }
   }
 
-  private ProcessExecutionState getProcessExecutionState(TaskInstance[] taskInstances) {
-    for (TaskInstance taskInstance : taskInstances) {
-      switch (taskInstance.evaluateTaskExecutionState()) {
+  private ProcessExecutionState evaluateProcessExecutionState() {
+    for (PipeliteTaskInstance pipeliteTaskInstance : pipeliteTaskInstances) {
+      switch (evaluateTaskExecutionState(pipeliteTaskInstance)) {
         case ACTIVE:
           return ProcessExecutionState.ACTIVE;
         case FAILED:
@@ -269,15 +287,44 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
     return ProcessExecutionState.COMPLETED;
   }
 
-  private TaskInstance[] getTaskInstances() {
-    Stage[] stages = getStages();
-    TaskInstance[] taskInstances = new TaskInstance[stages.length];
+  private TaskExecutionState evaluateTaskExecutionState(PipeliteTaskInstance pipeliteTaskInstance) {
+    TaskInstance taskInstance = pipeliteTaskInstance.getTaskInstance();
+    PipeliteStage pipeliteStage = pipeliteTaskInstance.getPipeliteStage();
 
-    for (int i = 0; i < taskInstances.length; ++i) {
-      Stage stage = stages[i];
-      String processId = pipeliteProcess.getProcessId();
-      String processName = pipeliteProcess.getProcessName();
-      String stageName = stage.getStageName();
+    if (!pipeliteStage.getEnabled()) {
+      return TaskExecutionState.COMPLETED;
+    }
+
+    TaskExecutionResultType resultType = pipeliteStage.getResultType();
+    if (resultType != null) {
+      switch (resultType) {
+        case SUCCESS:
+          return TaskExecutionState.COMPLETED;
+        case PERMANENT_ERROR:
+        case INTERNAL_ERROR:
+          return TaskExecutionState.FAILED;
+        case TRANSIENT_ERROR:
+          if (pipeliteStage.getExecutionCount() >= taskInstance.getTaskParameters().getRetries()) {
+            return TaskExecutionState.FAILED;
+          }
+        default:
+          return TaskExecutionState.ACTIVE;
+      }
+    }
+    return TaskExecutionState.ACTIVE;
+  }
+
+  private void createPipeliteTaskInstances() {
+    ProcessInstance processInstance = pipeliteProcessInstance.getProcessInstance();
+    List<TaskInstance> taskInstances = processInstance.getTasks();
+
+    // TODO: check that there are no orphaned saved tasks
+
+    for (TaskInstance taskInstance : taskInstances) {
+
+      String processId = processInstance.getProcessId();
+      String processName = processInstance.getProcessName();
+      String stageName = taskInstance.getStage().getStageName();
 
       Optional<PipeliteStage> pipeliteStage =
           pipeliteStageService.getSavedStage(processName, processId, stageName);
@@ -291,29 +338,34 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
                     PipeliteStage.newExecution(processId, processName, stageName)));
       }
 
-      taskInstances[i] =
-          new TaskInstance(taskConfiguration, pipeliteProcess, pipeliteStage.get(), stage);
+      createPipeliteTaskInstance(taskInstance, pipeliteStage.get());
     }
+  }
 
-    return taskInstances;
+  private void createPipeliteTaskInstance(TaskInstance taskInstance, PipeliteStage pipeliteStage) {
+    /** Add global task parameters. */
+    taskInstance.getTaskParameters().add(taskConfiguration);
+    pipeliteTaskInstances.add(new PipeliteTaskInstance(taskInstance, pipeliteStage));
   }
 
   private void executeTasks() {
-    for (TaskInstance taskInstance : taskInstances) {
-      if (!executeTask(taskInstance)) {
+    for (PipeliteTaskInstance pipeliteTaskInstance : pipeliteTaskInstances) {
+      if (!executeTask(pipeliteTaskInstance)) {
         break;
       }
     }
   }
 
-  private boolean executeTask(TaskInstance taskInstance) {
+  private boolean executeTask(PipeliteTaskInstance pipeliteTaskInstance) {
     if (!isRunning()) {
       return false;
     }
 
+    TaskInstance taskInstance = pipeliteTaskInstance.getTaskInstance();
+    PipeliteStage pipeliteStage = pipeliteTaskInstance.getPipeliteStage();
     String processName = getProcessName();
-    String processId = pipeliteProcess.getProcessId();
-    String stageName = taskInstance.getPipeliteStage().getStageName();
+    String processId = getProcessId();
+    String stageName = taskInstance.getStage().getStageName();
 
     log.atInfo()
         .with(LogKey.PROCESS_NAME, processName)
@@ -323,7 +375,7 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
 
     // Do not execute task if it is already completed.
 
-    if (TaskExecutionState.COMPLETED == taskInstance.evaluateTaskExecutionState()) {
+    if (TaskExecutionState.COMPLETED == evaluateTaskExecutionState(pipeliteTaskInstance)) {
       log.atInfo()
           .with(LogKey.PROCESS_NAME, processName)
           .with(LogKey.PROCESS_ID, processId)
@@ -335,7 +387,7 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
 
     // Do not execute failed tasks or any tasks that depend on it.
 
-    if (TaskExecutionState.FAILED == taskInstance.evaluateTaskExecutionState()) {
+    if (TaskExecutionState.FAILED == evaluateTaskExecutionState(pipeliteTaskInstance)) {
       log.atInfo()
           .with(LogKey.PROCESS_NAME, processName)
           .with(LogKey.PROCESS_ID, processId)
@@ -347,18 +399,18 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
 
     // Update the task state before execution.
 
-    taskInstance.getPipeliteStage().retryExecution();
-    pipeliteStageService.saveStage(taskInstance.getPipeliteStage());
+    pipeliteStage.retryExecution();
+    pipeliteStageService.saveStage(pipeliteStage);
 
     // Execute the task.
 
     log.atInfo()
         .with(LogKey.PROCESS_NAME, processName)
         .with(LogKey.PROCESS_ID, processId)
-        .with(LogKey.STAGE_NAME, taskInstance.getPipeliteStage().getStageName())
-        .with(LogKey.TASK_EXECUTION_RESULT_TYPE, taskInstance.getPipeliteStage().getResultType())
-        .with(LogKey.TASK_EXECUTION_RESULT, taskInstance.getPipeliteStage().getResult())
-        .with(LogKey.TASK_EXECUTION_COUNT, taskInstance.getPipeliteStage().getExecutionCount())
+        .with(LogKey.STAGE_NAME, pipeliteStage.getStageName())
+        .with(LogKey.TASK_EXECUTION_RESULT_TYPE, pipeliteStage.getResultType())
+        .with(LogKey.TASK_EXECUTION_RESULT, pipeliteStage.getResult())
+        .with(LogKey.TASK_EXECUTION_COUNT, pipeliteStage.getExecutionCount())
         .log("Executing task");
 
     ExecutionInfo info = executor.execute(taskInstance);
@@ -374,29 +426,27 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
 
     // Update the task state after execution.
 
-    taskInstance
-        .getPipeliteStage()
-        .endExecution(result, info.getCommandline(), info.getStdout(), info.getStderr());
+    pipeliteStage.endExecution(result, info.getCommandline(), info.getStdout(), info.getStderr());
 
     log.atInfo()
         .with(LogKey.PROCESS_NAME, processName)
         .with(LogKey.PROCESS_ID, processId)
-        .with(LogKey.STAGE_NAME, taskInstance.getPipeliteStage().getStageName())
-        .with(LogKey.TASK_EXECUTION_RESULT_TYPE, taskInstance.getPipeliteStage().getResultType())
-        .with(LogKey.TASK_EXECUTION_RESULT, taskInstance.getPipeliteStage().getResult())
-        .with(LogKey.TASK_EXECUTION_COUNT, taskInstance.getPipeliteStage().getExecutionCount())
+        .with(LogKey.STAGE_NAME, pipeliteStage.getStageName())
+        .with(LogKey.TASK_EXECUTION_RESULT_TYPE, pipeliteStage.getResultType())
+        .with(LogKey.TASK_EXECUTION_RESULT, pipeliteStage.getResult())
+        .with(LogKey.TASK_EXECUTION_COUNT, pipeliteStage.getExecutionCount())
         .log("Finished task execution");
 
-    pipeliteStageService.saveStage(taskInstance.getPipeliteStage());
+    pipeliteStageService.saveStage(pipeliteStage);
 
     if (result.isError()) {
       log.atSevere()
           .with(LogKey.PROCESS_NAME, processName)
           .with(LogKey.PROCESS_ID, processId)
-          .with(LogKey.STAGE_NAME, taskInstance.getPipeliteStage().getStageName())
-          .with(LogKey.TASK_EXECUTION_RESULT_TYPE, taskInstance.getPipeliteStage().getResultType())
-          .with(LogKey.TASK_EXECUTION_RESULT, taskInstance.getPipeliteStage().getResult())
-          .with(LogKey.TASK_EXECUTION_COUNT, taskInstance.getPipeliteStage().getExecutionCount())
+          .with(LogKey.STAGE_NAME, pipeliteStage.getStageName())
+          .with(LogKey.TASK_EXECUTION_RESULT_TYPE, pipeliteStage.getResultType())
+          .with(LogKey.TASK_EXECUTION_RESULT, pipeliteStage.getResult())
+          .with(LogKey.TASK_EXECUTION_COUNT, pipeliteStage.getExecutionCount())
           .log("Task execution failed");
 
       // Do not continue execution if task execution fails.
@@ -407,32 +457,33 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
     log.atSevere()
         .with(LogKey.PROCESS_NAME, processName)
         .with(LogKey.PROCESS_ID, processId)
-        .with(LogKey.STAGE_NAME, taskInstance.getPipeliteStage().getStageName())
+        .with(LogKey.STAGE_NAME, pipeliteStage.getStageName())
         .log("Invalidate task dependencies");
 
-    invalidateTaskDepedencies(taskInstances, taskInstance, false);
+    invalidateTaskDepedencies(pipeliteTaskInstance, false);
 
     ++taskCompletedCount;
     return true; // Continue execution.
   }
 
-  private void invalidateTaskDepedencies(
-      TaskInstance[] taskInstances, TaskInstance resetTaskInstance, boolean reset) {
-    for (TaskInstance taskInstance : taskInstances) {
-      if (taskInstance.equals(resetTaskInstance)) {
+  private void invalidateTaskDepedencies(PipeliteTaskInstance from, boolean reset) {
+    for (PipeliteTaskInstance task : pipeliteTaskInstances) {
+      if (task.getTaskInstance().equals(from)) {
         continue;
       }
 
-      Stage stageDependsOn = taskInstance.getStage().getDependsOn();
+      Stage stageDependsOn = task.getTaskInstance().getStage().getDependsOn();
       if (stageDependsOn != null
-          && stageDependsOn.getStageName().equals(resetTaskInstance.getStage().getStageName())) {
-        invalidateTaskDepedencies(taskInstances, taskInstance, true);
+          && stageDependsOn
+              .getStageName()
+              .equals(from.getTaskInstance().getStage().getStageName())) {
+        invalidateTaskDepedencies(task, true);
       }
     }
 
-    if (reset && resetTaskInstance.evaluateTaskExecutionState() != TaskExecutionState.ACTIVE) {
-      resetTaskInstance.getPipeliteStage().resetExecution();
-      pipeliteStageService.saveStage(resetTaskInstance.getPipeliteStage());
+    if (reset && evaluateTaskExecutionState(from) != TaskExecutionState.ACTIVE) {
+      from.getPipeliteStage().resetExecution();
+      pipeliteStageService.saveStage(from.getPipeliteStage());
     }
   }
 
@@ -441,31 +492,11 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
   }
 
   public String getProcessName() {
-    return processConfiguration.getProcessName();
+    return pipeliteProcessInstance.getProcessInstance().getProcessName();
   }
 
   public String getProcessId() {
-    return processId;
-  }
-
-  public Stage[] getStages() {
-    return processConfiguration.getStages();
-  }
-
-  public ProcessExecutionState getState() {
-    if (pipeliteProcess != null) {
-      return pipeliteProcess.getState();
-    } else {
-      return null;
-    }
-  }
-
-  public Integer getExecutionCount() {
-    if (pipeliteProcess != null) {
-      return pipeliteProcess.getExecutionCount();
-    } else {
-      return null;
-    }
+    return pipeliteProcessInstance.getProcessInstance().getProcessId();
   }
 
   public int getTaskFailedCount() {

@@ -37,4 +37,13 @@ public class PipeliteProcess {
   public void incrementExecutionCount() {
     ++executionCount;
   }
+
+  public static PipeliteProcess newExecution(String processId, String processName, int priority) {
+    PipeliteProcess pipeliteProcess = new PipeliteProcess();
+    pipeliteProcess.setProcessId(processId);
+    pipeliteProcess.setProcessName(processName);
+    pipeliteProcess.setPriority(priority);
+    pipeliteProcess.setExecutionCount(0);
+    return pipeliteProcess;
+  }
 }

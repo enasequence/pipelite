@@ -4,9 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import pipelite.configuration.TaskParameters;
-import pipelite.resolver.ExceptionResolver;
-import pipelite.task.TaskFactory;
+import pipelite.instance.TaskParameters;
 
 @Data
 @Builder

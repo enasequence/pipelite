@@ -26,9 +26,9 @@ public class InternalTaskExecutor extends AbstractTaskExecutor {
     Throwable exception = null;
 
     try {
-      String processName = taskInstance.getPipeliteProcess().getProcessName();
-      String processId = taskInstance.getPipeliteProcess().getProcessId();
-      String stageName = taskInstance.getPipeliteStage().getStageName();
+      String processName = taskInstance.getProcessName();
+      String processId = taskInstance.getProcessId();
+      String stageName = taskInstance.getStage().getStageName();
       Task task =
           taskInstance
               .getStage()
@@ -51,9 +51,7 @@ public class InternalTaskExecutor extends AbstractTaskExecutor {
 
   public static final String PARAMETERS_NAME_ID = "--id";
   public static final String PARAMETERS_NAME_STAGE = "--stage";
-  public static final String PARAMETERS_NAME_FORCE_COMMIT = "--commit";
-  public static final String PARAMETERS_NAME_ENABLED = "--enabled";
-  public static final String PARAMETERS_NAME_EXEC_COUNT = "--exec-cnt";
+
   /*
 
 

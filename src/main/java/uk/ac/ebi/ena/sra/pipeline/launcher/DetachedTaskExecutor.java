@@ -32,7 +32,7 @@ public class DetachedTaskExecutor extends AbstractTaskExecutor {
   private List<String> constructArgs(TaskInstance instance, boolean commit) {
     List<String> p_args = new ArrayList<>();
 
-    Integer memory = instance.getMemory();
+    Integer memory = instance.getTaskParameters().getMemory();
 
     if (memory != null && memory > 0) {
       p_args.add(String.format("-Xmx%dM", memory));
@@ -45,14 +45,10 @@ public class DetachedTaskExecutor extends AbstractTaskExecutor {
     p_args.add(InternalTaskExecutor.class.getName());
 
     p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.PARAMETERS_NAME_ID);
-    p_args.add(instance.getPipeliteStage().getProcessId());
+    p_args.add(instance.getProcessId());
 
     p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.PARAMETERS_NAME_STAGE);
-    p_args.add(instance.getPipeliteStage().getStageName());
-
-    if (commit)
-      p_args.add(
-          uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.PARAMETERS_NAME_FORCE_COMMIT);
+    p_args.add(instance.getStage().getStageName());
 
     return p_args;
   }
@@ -65,9 +61,9 @@ public class DetachedTaskExecutor extends AbstractTaskExecutor {
         back_end.new_call_instance(
             String.format(
                 "%s~%s~%s",
-                taskInstance.getPipeliteProcess().getProcessName(),
-                taskInstance.getPipeliteStage().getProcessId(),
-                taskInstance.getPipeliteStage().getStageName()),
+                taskInstance.getProcessName(),
+                taskInstance.getProcessId(),
+                taskInstance.getStage().getStageName()),
             "java",
             p_args.toArray(new String[0]));
 

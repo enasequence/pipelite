@@ -2,6 +2,7 @@ package pipelite.configuration;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import pipelite.instance.TaskParameters;
 import pipelite.resolver.ExceptionResolver;
 
 @Component

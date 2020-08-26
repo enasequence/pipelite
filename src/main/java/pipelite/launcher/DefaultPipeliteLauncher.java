@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -26,6 +27,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
+import pipelite.configuration.ProcessConfigurationEx;
+import pipelite.entity.PipeliteProcess;
+import pipelite.instance.ProcessInstance;
+import pipelite.instance.ProcessInstanceFactory;
 import pipelite.log.LogKey;
 import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteProcessService;
@@ -35,12 +40,14 @@ import pipelite.service.PipeliteProcessService;
 public class DefaultPipeliteLauncher extends AbstractScheduledService implements PipeliteLauncher {
 
   private final LauncherConfiguration launcherConfiguration;
-  private final ProcessConfiguration processConfiguration;
+  private final ProcessConfigurationEx processConfiguration;
   private final PipeliteProcessService pipeliteProcessService;
   private final PipeliteLockService pipeliteLockService;
   private final ExecutorService executorService;
+  private ProcessInstanceFactory processInstanceFactory;
 
   private final AtomicInteger processInitCount = new AtomicInteger(0);
+  private final AtomicInteger processLoadFailureCount = new AtomicInteger(0);
   private final AtomicInteger processStartFailureCount = new AtomicInteger(0);
   private final AtomicInteger processRejectCount = new AtomicInteger(0);
   private final AtomicInteger processRunFailureCount = new AtomicInteger(0);
@@ -71,7 +78,7 @@ public class DefaultPipeliteLauncher extends AbstractScheduledService implements
 
   public DefaultPipeliteLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
-      @Autowired ProcessConfiguration processConfiguration,
+      @Autowired ProcessConfigurationEx processConfiguration,
       @Autowired PipeliteProcessService pipeliteProcessService,
       @Autowired PipeliteLockService pipeliteLockService) {
     this.launcherConfiguration = launcherConfiguration;
@@ -102,6 +109,8 @@ public class DefaultPipeliteLauncher extends AbstractScheduledService implements
       throw new RuntimeException("Could not start process launcher");
     }
 
+    processInstanceFactory = processConfiguration.getProcessFactory();
+
     log.atInfo()
         .with(LogKey.LAUNCHER_NAME, getLauncherName())
         .with(LogKey.PROCESS_NAME, getProcessName())
@@ -122,6 +131,8 @@ public class DefaultPipeliteLauncher extends AbstractScheduledService implements
 
     String launcherName = getLauncherName();
     String processName = getProcessName();
+
+    receiveNewProcessInstances(launcherName, processName);
 
     if (activeProcessQueueIndex == activeProcessQueue.size()
         || activeProcessQueueValidUntil.isBefore(LocalDateTime.now())) {
@@ -171,7 +182,18 @@ public class DefaultPipeliteLauncher extends AbstractScheduledService implements
           .log("Starting process launcher");
 
       ProcessLauncher processLauncher = processLauncherObjectProvider.getObject();
-      processLauncher.init(processId);
+
+      ProcessInstance processInstance = processInstanceFactory.load(processId);
+      if (processInstance == null) {
+        log.atSevere()
+            .with(LogKey.LAUNCHER_NAME, launcherName)
+            .with(LogKey.PROCESS_NAME, processName)
+            .with(LogKey.PROCESS_ID, processId)
+            .log("Could not load existing process instance");
+        processLoadFailureCount.incrementAndGet();
+        continue;
+      }
+      processLauncher.init(processInstance);
 
       initProcesses.put(processId, processLauncher);
       processInitCount.incrementAndGet();
@@ -222,6 +244,70 @@ public class DefaultPipeliteLauncher extends AbstractScheduledService implements
               taskFailedCount.addAndGet(processLauncher.getTaskFailedCount());
             }
           });
+    }
+  }
+
+  private void receiveNewProcessInstances(String launcherName, String processName) {
+    log.atInfo()
+        .with(LogKey.LAUNCHER_NAME, launcherName)
+        .with(LogKey.PROCESS_NAME, processName)
+        .log("Finding new processes to launch");
+
+    while (true) {
+      ProcessInstance processInstance = processInstanceFactory.receive();
+      if (processInstance == null) {
+        break;
+      }
+      if (processInstance.getProcessId() == null || processInstance.getProcessId().isEmpty()) {
+        log.atSevere()
+            .with(LogKey.LAUNCHER_NAME, launcherName)
+            .with(LogKey.PROCESS_NAME, processName)
+            .with(LogKey.PROCESS_ID, processInstance.getProcessId())
+            .log("Rejected new process instance: no process id");
+      }
+      if (!getProcessName().equals(processInstance.getProcessName())) {
+        log.atSevere()
+            .with(LogKey.LAUNCHER_NAME, launcherName)
+            .with(LogKey.PROCESS_NAME, processName)
+            .with(LogKey.PROCESS_ID, processInstance.getProcessId())
+            .log("Rejected new process instance: wrong process name: " + processName);
+      }
+      if (processInstance.getTasks() == null || processInstance.getTasks().isEmpty()) {
+        log.atSevere()
+            .with(LogKey.LAUNCHER_NAME, launcherName)
+            .with(LogKey.PROCESS_NAME, processName)
+            .with(LogKey.PROCESS_ID, processInstance.getProcessId())
+            .log("Rejected new process instance: no tasks");
+      }
+
+      Optional<PipeliteProcess> savedPipeliteProcess =
+          pipeliteProcessService.getSavedProcess(getProcessName(), processInstance.getProcessId());
+
+      if (savedPipeliteProcess.isPresent()) {
+        log.atSevere()
+            .with(LogKey.LAUNCHER_NAME, launcherName)
+            .with(LogKey.PROCESS_NAME, processName)
+            .with(LogKey.PROCESS_ID, processInstance.getProcessId())
+            .log("Rejected new process instance: process id already exists");
+        processInstanceFactory.reject(processInstance);
+        continue;
+      }
+
+      PipeliteProcess pipeliteProcess =
+          PipeliteProcess.newExecution(
+              processInstance.getProcessId(), getProcessName(), processInstance.getPriority());
+
+      pipeliteProcessService.saveProcess(pipeliteProcess);
+
+      log.atInfo()
+          .with(LogKey.LAUNCHER_NAME, launcherName)
+          .with(LogKey.PROCESS_NAME, processName)
+          .with(LogKey.PROCESS_ID, processInstance.getProcessId())
+          .log("Saved new process instance");
+
+      // Tasks are saved by the process launcher.
+
+      processInstanceFactory.confirm(processInstance);
     }
   }
 
@@ -302,6 +388,10 @@ public class DefaultPipeliteLauncher extends AbstractScheduledService implements
 
   public int getProcessInitCount() {
     return processInitCount.get();
+  }
+
+  public int getProcessLoadFailureCount() {
+    return processLoadFailureCount.get();
   }
 
   public int getProcessStartFailureCount() {

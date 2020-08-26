@@ -32,12 +32,12 @@ public class LSFTaskExecutor extends AbstractTaskExecutor {
     super(taskConfiguration);
   }
 
-  private List<String> constructArgs(TaskInstance instance, boolean commit) {
+  private List<String> constructArgs(TaskInstance taskInstance, boolean commit) {
     List<String> p_args = new ArrayList<>();
 
     p_args.add("-XX:+UseSerialGC");
 
-    int lsf_memory_limit = instance.getMemory();
+    int lsf_memory_limit = taskInstance.getTaskParameters().getMemory();
     if (lsf_memory_limit <= 0) {
       lsf_memory_limit = taskConfiguration.getMemory();
     }
@@ -60,40 +60,31 @@ public class LSFTaskExecutor extends AbstractTaskExecutor {
     p_args.add(InternalTaskExecutor.class.getName());
 
     p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.PARAMETERS_NAME_ID);
-    p_args.add(instance.getPipeliteStage().getProcessId());
+    p_args.add(taskInstance.getProcessId());
 
     p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.PARAMETERS_NAME_STAGE);
-    p_args.add(instance.getPipeliteStage().getStageName());
-
-    if (commit)
-      p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.PARAMETERS_NAME_FORCE_COMMIT);
-
-    p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.PARAMETERS_NAME_ENABLED);
-    p_args.add(Boolean.toString(instance.getPipeliteStage().getEnabled()).toLowerCase());
-
-    p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.PARAMETERS_NAME_EXEC_COUNT);
-    p_args.add(Long.toString(instance.getPipeliteStage().getExecutionCount()));
+    p_args.add(taskInstance.getStage().getStageName());
 
     return p_args;
   }
 
   private LSFBackEnd configureBackend(TaskInstance taskInstance) {
 
-    String queue = taskInstance.getQueue();
+    String queue = taskInstance.getTaskParameters().getQueue();
 
-    Integer memory = taskInstance.getMemory();
+    Integer memory = taskInstance.getTaskParameters().getMemory();
     if (memory == null) {
       memory = LSF_JVM_MEMORY_DELTA_MB + LSF_JVM_MEMORY_OVERHEAD_MB;
       log.atWarning().log("Using default memory: " + memory);
     }
 
-    Integer memoryTimeout = taskInstance.getMemoryTimeout();
+    Integer memoryTimeout = taskInstance.getTaskParameters().getMemoryTimeout();
     if (memoryTimeout == null) {
       memoryTimeout = LSF_JVM_MEMORY_RESERVATION_TIMEOUT_DEFAULT_MINUTES;
       log.atWarning().log("Using default memory reservation timeout: " + memoryTimeout);
     }
 
-    Integer cores = taskInstance.getCores();
+    Integer cores = taskInstance.getTaskParameters().getCores();
     if (cores == null) {
       cores = 1;
       log.atWarning().log("Using default number of cores: " + cores);
@@ -117,9 +108,9 @@ public class LSFTaskExecutor extends AbstractTaskExecutor {
         back_end.new_call_instance(
             String.format(
                 "%s--%s--%s",
-                instance.getPipeliteStage().getProcessName(),
-                instance.getPipeliteStage().getProcessId(),
-                instance.getPipeliteStage().getStageName()),
+                instance.getProcessName(),
+                instance.getProcessId(),
+                instance.getStage().getStageName()),
             "java",
             p_args.toArray(new String[0]));
 

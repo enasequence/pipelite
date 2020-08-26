@@ -3,15 +3,14 @@ package pipelite.configuration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import pipelite.executor.TaskExecutorFactory;
-import pipelite.stage.Stage;
-import pipelite.stage.StageFactory;
+import pipelite.instance.ProcessInstanceFactory;
 
 @Component
 public class ProcessConfigurationEx {
 
   private ProcessConfiguration processConfiguration;
   private TaskExecutorFactory executorFactory;
-  private Stage[] stages;
+  private ProcessInstanceFactory processFactory;
 
   public ProcessConfigurationEx(@Autowired ProcessConfiguration processConfiguration) {
     this.processConfiguration = processConfiguration;
@@ -49,35 +48,27 @@ public class ProcessConfigurationEx {
     }
   }
 
-  public void setStages(Stage[] stages) {
-    this.stages = stages;
+  public void setProcessFactory(ProcessInstanceFactory processFactory) {
+    this.processFactory = processFactory;
   }
 
-  public Stage[] getStages() {
-    if (stages != null) {
-      return stages;
+  public ProcessInstanceFactory getProcessFactory() {
+    if (processFactory != null) {
+      return processFactory;
     }
-    String stagesEnumName = processConfiguration.getStagesEnumName();
-    String stagesFactoryName = processConfiguration.getStagesFactoryName();
-    try {
-      if (stagesEnumName != null) {
-        return (Stage[]) loadEnum(stagesEnumName).getEnumConstants();
-      }
-      if (stagesFactoryName != null) {
-        Class cls = Class.forName(stagesFactoryName);
-        if (StageFactory.class.isAssignableFrom(cls)) {
-          StageFactory stageFactory = ((StageFactory) cls.newInstance());
-          return stageFactory.create();
+    String processFactoryName = processConfiguration.getProcessFactoryName();
+    if (processFactoryName != null) {
+      try {
+        Class cls = Class.forName(processFactoryName);
+        if (ProcessInstanceFactory.class.isAssignableFrom(cls)) {
+          return ((ProcessInstanceFactory) cls.newInstance());
         }
+      } catch (Exception ex) {
+        throw new RuntimeException("Could not create process factory", ex);
       }
-    } catch (Exception ex) {
-      throw new RuntimeException("Could not retrieve process stages", ex);
     }
-    throw new RuntimeException("Could not retrieve process stages");
-  }
 
-  private Class<? extends Enum<?>> loadEnum(String name) throws ClassNotFoundException {
-    return ((Class<? extends Enum<?>>) Class.forName(name));
+    throw new RuntimeException("Could not create process factory");
   }
 
   @Override

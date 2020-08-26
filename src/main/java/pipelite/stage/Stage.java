@@ -10,17 +10,20 @@
  */
 package pipelite.stage;
 
-import pipelite.configuration.TaskConfigurationEx;
+import lombok.Builder;
+import lombok.Value;
+import lombok.experimental.NonFinal;
 import pipelite.task.TaskFactory;
 
-public interface Stage {
+@Value
+@Builder
+@NonFinal // For mocking.
+public class Stage {
 
-  String getStageName();
+  private final String stageName;
 
   // TODO: multiple stage dependencies
-  Stage getDependsOn();
+  private final Stage dependsOn;
 
-  TaskFactory getTaskFactory();
-
-  TaskConfigurationEx getTaskConfiguration();
+  private final TaskFactory taskFactory;
 }

@@ -10,123 +10,16 @@
  */
 package pipelite.instance;
 
-import com.google.common.base.Supplier;
-import com.google.common.base.Verify;
-import lombok.Data;
-import pipelite.configuration.TaskConfigurationEx;
-import pipelite.configuration.TaskParameters;
-import pipelite.entity.PipeliteProcess;
-import pipelite.entity.PipeliteStage;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Value;
 import pipelite.stage.Stage;
-import pipelite.task.result.TaskExecutionResultType;
-import pipelite.task.state.TaskExecutionState;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-
-@Data
-public class TaskInstance implements TaskParameters {
-
-  private final TaskConfigurationEx taskConfiguration;
-  private final PipeliteProcess pipeliteProcess;
-  private final PipeliteStage pipeliteStage;
+@Value
+@Builder
+public class TaskInstance {
+  private final String processName;
+  private final String processId;
   private final Stage stage;
-
-  public TaskInstance(
-          TaskConfigurationEx taskConfiguration,
-          PipeliteProcess pipeliteProcess,
-          PipeliteStage pipeliteStage,
-          Stage stage) {
-    Verify.verifyNotNull(pipeliteProcess);
-    Verify.verifyNotNull(pipeliteStage);
-    Verify.verifyNotNull(taskConfiguration);
-    Verify.verifyNotNull(stage);
-    Verify.verifyNotNull(stage.getTaskConfiguration());
-
-    this.taskConfiguration = taskConfiguration;
-    this.pipeliteProcess = pipeliteProcess;
-    this.pipeliteStage = pipeliteStage;
-    this.stage = stage;
-  }
-
-  public TaskExecutionState evaluateTaskExecutionState() {
-    if (!getPipeliteStage().getEnabled()) {
-      return TaskExecutionState.COMPLETED;
-    }
-    TaskExecutionResultType resultType = getPipeliteStage().getResultType();
-    if (resultType != null) {
-      switch (resultType) {
-        case SUCCESS:
-          return TaskExecutionState.COMPLETED;
-        case PERMANENT_ERROR:
-        case INTERNAL_ERROR:
-          return TaskExecutionState.FAILED;
-        case TRANSIENT_ERROR:
-          if (getPipeliteStage().getExecutionCount() >= getRetries()) {
-            return TaskExecutionState.FAILED;
-          }
-        default:
-          return TaskExecutionState.ACTIVE;
-      }
-    }
-    return TaskExecutionState.ACTIVE;
-  }
-
-  @Override
-  public Integer getMemory() {
-    return getValue(stage.getTaskConfiguration()::getMemory, taskConfiguration::getMemory);
-  }
-
-  @Override
-  public Integer getMemoryTimeout() {
-    return getValue(
-        stage.getTaskConfiguration()::getMemoryTimeout, taskConfiguration::getMemoryTimeout);
-  }
-
-  @Override
-  public Integer getCores() {
-    return getValue(stage.getTaskConfiguration()::getCores, taskConfiguration::getCores);
-  }
-
-  @Override
-  public String getQueue() {
-    return getValue(stage.getTaskConfiguration()::getQueue, taskConfiguration::getQueue);
-  }
-
-  @Override
-  public Integer getRetries() {
-    return getValue(stage.getTaskConfiguration()::getRetries, taskConfiguration::getRetries);
-  }
-
-  @Override
-  public String getTempDir() {
-    return getValue(stage.getTaskConfiguration()::getTempDir, taskConfiguration::getTempDir);
-  }
-
-  @Override
-  public String[] getEnv() {
-    return mergeEnv(stage.getTaskConfiguration().getEnv(), taskConfiguration.getEnv());
-  }
-
-  private <T> T getValue(Supplier<T> stage, Supplier<T> taskConfiguration) {
-    T value = stage.get();
-    if (value == null) {
-      value = taskConfiguration.get();
-    }
-    return value;
-  }
-
-  private String[] mergeEnv(String[] stage, String[] taskConfiguration) {
-    if (stage == null) {
-      stage = new String[0];
-    }
-    if (taskConfiguration == null) {
-      taskConfiguration = new String[0];
-    }
-    Set<String> set1 = new HashSet<>(Arrays.asList(stage));
-    Set<String> set2 = new HashSet<>(Arrays.asList(taskConfiguration));
-    set1.addAll(set2);
-    return set1.toArray(new String[0]);
-  }
+  @EqualsAndHashCode.Exclude private final TaskParameters taskParameters;
 }
