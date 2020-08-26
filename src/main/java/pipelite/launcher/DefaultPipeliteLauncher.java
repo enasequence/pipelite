@@ -24,6 +24,7 @@ import com.google.common.util.concurrent.AbstractScheduledService;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfigurationEx;
@@ -36,6 +37,7 @@ import pipelite.service.PipeliteProcessService;
 
 @Flogger
 @Component
+@Scope("prototype")
 public class DefaultPipeliteLauncher extends AbstractScheduledService implements PipeliteLauncher {
 
   private final LauncherConfiguration launcherConfiguration;
@@ -71,6 +73,9 @@ public class DefaultPipeliteLauncher extends AbstractScheduledService implements
   private int activeProcessQueueIndex = 0;
   private int activeProcessQueueValidHours = 1;
   private LocalDateTime activeProcessQueueValidUntil = LocalDateTime.now();
+
+  private int iterations = 0;
+  private Integer maxInterations;
 
   private int schedulerDelayMillis = 1000;
   private int stopDelayMillis = 1000;
@@ -123,6 +128,13 @@ public class DefaultPipeliteLauncher extends AbstractScheduledService implements
 
   @Override
   protected void runOneIteration() throws Exception {
+
+    if (maxInterations != null && iterations > maxInterations) {
+      stopAsync();
+      return;
+    }
+    ++iterations;
+
     log.atInfo()
         .with(LogKey.LAUNCHER_NAME, getLauncherName())
         .with(LogKey.PROCESS_NAME, getProcessName())
@@ -379,6 +391,14 @@ public class DefaultPipeliteLauncher extends AbstractScheduledService implements
 
   public String getProcessName() {
     return processConfiguration.getProcessName();
+  }
+
+  public Integer getMaxInterations() {
+    return maxInterations;
+  }
+
+  public void setMaxInterations(Integer maxInterations) {
+    this.maxInterations = maxInterations;
   }
 
   public int getActiveProcessCount() {

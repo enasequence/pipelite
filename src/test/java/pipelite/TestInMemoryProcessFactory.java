@@ -11,10 +11,13 @@ public class TestInMemoryProcessFactory implements ProcessInstanceFactory {
   private final Set<ProcessInstance> newProcessInstances = new HashSet<>();
   private final Map<String, ProcessInstance> receivedProcessInstances = new HashMap<>();
   private final Map<String, ProcessInstance> confirmedProcessInstances = new HashMap<>();
+  private final Set<ProcessInstance> rejectedProcessInstances = new HashSet<>();
 
   public TestInMemoryProcessFactory(Collection<ProcessInstance> processInstances) {
     newProcessInstances.addAll(processInstances);
   }
+
+  private boolean permanentRejection = false;
 
   private final Monitor monitor = new Monitor();
 
@@ -50,7 +53,12 @@ public class TestInMemoryProcessFactory implements ProcessInstanceFactory {
   public void reject(ProcessInstance processInstance) {
     monitor.enter();
     try {
-      newProcessInstances.add(receivedProcessInstances.remove(processInstance.getProcessId()));
+      if (permanentRejection) {
+        rejectedProcessInstances.add(
+            receivedProcessInstances.remove(processInstance.getProcessId()));
+      } else {
+        newProcessInstances.add(receivedProcessInstances.remove(processInstance.getProcessId()));
+      }
     } finally {
       monitor.leave();
     }
@@ -64,5 +72,29 @@ public class TestInMemoryProcessFactory implements ProcessInstanceFactory {
     } finally {
       monitor.leave();
     }
+  }
+
+  public boolean isPermanentRejection() {
+    return permanentRejection;
+  }
+
+  public void setPermanentRejection(boolean permanentRejection) {
+    this.permanentRejection = permanentRejection;
+  }
+
+  public int getNewProcessInstances() {
+    return newProcessInstances.size();
+  }
+
+  public int getReceivedProcessInstances() {
+    return receivedProcessInstances.size();
+  }
+
+  public int getConfirmedProcessInstances() {
+    return confirmedProcessInstances.size();
+  }
+
+  public int getRejectedProcessInstances() {
+    return rejectedProcessInstances.size();
   }
 }
