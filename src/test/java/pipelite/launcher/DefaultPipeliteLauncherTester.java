@@ -1,14 +1,13 @@
 package pipelite.launcher;
 
-import com.google.common.util.concurrent.Monitor;
 import lombok.AllArgsConstructor;
 
+import pipelite.TestInMemoryProcessFactory;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfigurationEx;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.configuration.TaskConfigurationEx;
 import pipelite.instance.ProcessInstance;
-import pipelite.instance.ProcessInstanceFactory;
 import pipelite.instance.TaskInstance;
 import pipelite.stage.Stage;
 import pipelite.task.Task;
@@ -53,25 +52,12 @@ public class DefaultPipeliteLauncherTester {
     }
   }
 
-  private class TestProcessFactory implements ProcessInstanceFactory {
+  private List<ProcessInstance> createProcessInstances() {
+    TaskFactory taskFactory = new TestTaskFactory();
+    TaskConfigurationEx taskConfiguration = new TaskConfigurationEx(new TaskConfiguration());
 
-    private final Set<ProcessInstance> newProcessInstances = new HashSet<>();
-    private final Map<String, ProcessInstance> receivedProcessInstances = new HashMap<>();
-    private final Map<String, ProcessInstance> confirmedProcessInstances = new HashMap<>();
-
-    private final TaskFactory taskFactory = new TestTaskFactory();
-    private final TaskConfigurationEx taskConfiguration =
-        new TaskConfigurationEx(new TaskConfiguration());
-
-    private final Monitor monitor = new Monitor();
-
-    public TestProcessFactory() {
-      for (int i = 0; i < PROCESS_COUNT; ++i) {
-        createProcessInstance(i);
-      }
-    }
-
-    private void createProcessInstance(int i) {
+    List<ProcessInstance> processInstances = new ArrayList<>();
+    for (int i = 0; i < PROCESS_COUNT; ++i) {
       String processName = defaultPipeliteLauncher.getProcessName();
       String processId = "Process" + i;
 
@@ -89,7 +75,7 @@ public class DefaultPipeliteLauncherTester {
               .taskParameters(taskConfiguration)
               .build();
 
-      newProcessInstances.add(
+      processInstances.add(
           ProcessInstance.builder()
               .processName(processName)
               .processId(processId)
@@ -97,59 +83,13 @@ public class DefaultPipeliteLauncherTester {
               .tasks(Arrays.asList(taskInstance1))
               .build());
     }
-
-    @Override
-    public ProcessInstance receive() {
-      monitor.enter();
-      try {
-        if (newProcessInstances.isEmpty()) {
-          return null;
-        }
-        ProcessInstance processInstance = newProcessInstances.iterator().next();
-        receivedProcessInstances.put(processInstance.getProcessId(), processInstance);
-        newProcessInstances.remove(processInstance);
-        return processInstance;
-      } finally {
-        monitor.leave();
-      }
-    }
-
-    @Override
-    public void confirm(ProcessInstance processInstance) {
-      monitor.enter();
-      try {
-        confirmedProcessInstances.put(
-            processInstance.getProcessId(),
-            receivedProcessInstances.remove(processInstance.getProcessId()));
-      } finally {
-        monitor.leave();
-      }
-    }
-
-    @Override
-    public void reject(ProcessInstance processInstance) {
-      monitor.enter();
-      try {
-        newProcessInstances.add(receivedProcessInstances.remove(processInstance.getProcessId()));
-      } finally {
-        monitor.leave();
-      }
-    }
-
-    @Override
-    public ProcessInstance load(String processId) {
-      monitor.enter();
-      try {
-        return confirmedProcessInstances.get(processId);
-      } finally {
-        monitor.leave();
-      }
-    }
+    return processInstances;
   }
 
   public void test() {
 
-    processConfiguration.setProcessFactory(new TestProcessFactory());
+    processConfiguration.setProcessFactory(
+        new TestInMemoryProcessFactory(createProcessInstances()));
 
     defaultPipeliteLauncher.setShutdownPolicy(
         DefaultPipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
