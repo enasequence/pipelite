@@ -19,17 +19,19 @@ import static org.assertj.core.api.Assertions.assertThat;
       "pipelite.process.stagesFactoryName=pipelite.configuration.ProcessConfigurationStagesFactoryTest$TestStages"
     })
 @EnableConfigurationProperties(
-        value = {LauncherConfiguration.class, ProcessConfiguration.class, TaskConfiguration.class})
+    value = {LauncherConfiguration.class, ProcessConfiguration.class, TaskConfiguration.class})
 @ComponentScan(basePackageClasses = {ProcessConfigurationEx.class})
 public class ProcessConfigurationStagesFactoryTest {
 
-  @Autowired
-  ProcessConfigurationEx processConfiguration;
+  @Autowired ProcessConfigurationEx processConfiguration;
 
   public static class TestStages implements StageFactory {
     @Override
     public Stage[] create() {
-      Stage[] stages = {new DefaultStage("STAGE_1"), new DefaultStage("STAGE_2")};
+      Stage[] stages = {
+        new DefaultStage("STAGE_1", (taskInfo) -> null),
+        new DefaultStage("STAGE_2", (taskInfo) -> null)
+      };
       return stages;
     }
   }

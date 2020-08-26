@@ -8,6 +8,7 @@ import pipelite.instance.TaskInstance;
 import pipelite.stage.DefaultStage;
 import pipelite.stage.Stage;
 import pipelite.stage.StageFactory;
+import pipelite.task.Task;
 import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInfo;
 
 import java.util.ArrayList;
@@ -16,20 +17,25 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @AllArgsConstructor
-public class DefaultPipeliteLauncherTaskExecutionTester {
+public class TODO_DefaultPipeliteLauncherTaskExecutionTester {
 
   private final DefaultPipeliteLauncher defaultPipeliteLauncher;
 
-  public static class TestStagesLastFails implements StageFactory {
+  public class TestStagesLastFails implements StageFactory {
     @Override
     public Stage[] create() {
-      Stage stage1 = new DefaultStage("STAGE_1");
-      Stage stage2 = new DefaultStage("STAGE_2", stage1);
-      Stage stage3 = new DefaultStage("STAGE_3", stage2);
-      Stage stage4 = new DefaultStage("STAGE_4", stage3);
+      Stage stage1 = new DefaultStage("STAGE_1", taskInfo -> new TestTask());
+      Stage stage2 = new DefaultStage("STAGE_2", taskInfo -> new TestTask(), stage1);
+      Stage stage3 = new DefaultStage("STAGE_3", taskInfo -> new TestTask(), stage2);
+      Stage stage4 = new DefaultStage("STAGE_4", taskInfo -> new TestTask(), stage3);
       Stage[] stages = {stage1, stage2, stage3, stage4};
       return stages;
     }
+  }
+
+  private class TestTask implements Task {
+    @Override
+    public void execute(TaskInstance taskInstance) {}
   }
 
   public static class SuccessExecutor implements TaskExecutor {

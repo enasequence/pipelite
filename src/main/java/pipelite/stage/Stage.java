@@ -11,6 +11,7 @@
 package pipelite.stage;
 
 import pipelite.configuration.TaskConfigurationEx;
+import pipelite.task.TaskFactory;
 
 public interface Stage {
 
@@ -18,6 +19,8 @@ public interface Stage {
 
   // TODO: multiple stage dependencies
   Stage getDependsOn();
+
+  TaskFactory getTaskFactory();
 
   TaskConfigurationEx getTaskConfiguration();
 }

@@ -28,7 +28,6 @@ public class DefaultPipeliteLauncherTester {
   private final AtomicInteger processExecutionCount = new AtomicInteger();
   private final Set<String> processExecutionSet = ConcurrentHashMap.newKeySet();
   private final Set<String> processExcessExecutionSet = ConcurrentHashMap.newKeySet();
-  private static final Stage[] stages = {new DefaultStage("STAGE_1")};
   private static final int PROCESS_COUNT = 100;
   private static final int TASK_EXECUTION_TIME = 10; // ms
 
@@ -51,8 +50,9 @@ public class DefaultPipeliteLauncherTester {
   }
 
   public void test() {
+
+    Stage[] stages = {new DefaultStage("STAGE_1", (taskInfo -> new TestTask()))};
     processConfiguration.setStages(stages);
-    taskConfiguration.setTaskFactory(stageName -> new TestTask());
 
     for (int i = 0; i < PROCESS_COUNT; ++i) {
       PipeliteProcess pipeliteProcess = new PipeliteProcess();

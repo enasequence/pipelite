@@ -7,6 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
 import pipelite.EmptyTestConfiguration;
 import pipelite.stage.Stage;
+import pipelite.task.TaskFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -16,12 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
       "pipelite.process.stagesEnumName=pipelite.configuration.ProcessConfigurationStagesEnumTest$TestStages"
     })
 @EnableConfigurationProperties(
-        value = {LauncherConfiguration.class, ProcessConfiguration.class, TaskConfiguration.class})
+    value = {LauncherConfiguration.class, ProcessConfiguration.class, TaskConfiguration.class})
 @ComponentScan(basePackageClasses = {ProcessConfigurationEx.class})
 public class ProcessConfigurationStagesEnumTest {
 
-  @Autowired
-  ProcessConfigurationEx processConfiguration;
+  @Autowired ProcessConfigurationEx processConfiguration;
 
   public enum TestStages implements Stage {
     STAGE_1,
@@ -37,6 +37,11 @@ public class ProcessConfigurationStagesEnumTest {
     @Override
     public TestStages getDependsOn() {
       return null;
+    }
+
+    @Override
+    public TaskFactory getTaskFactory() {
+      return (taskInfo) -> null;
     }
 
     @Override

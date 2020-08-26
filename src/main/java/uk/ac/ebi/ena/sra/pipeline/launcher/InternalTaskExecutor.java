@@ -14,6 +14,7 @@ import pipelite.configuration.TaskConfigurationEx;
 import pipelite.executor.AbstractTaskExecutor;
 import pipelite.instance.TaskInstance;
 import pipelite.task.Task;
+import pipelite.task.TaskInfo;
 
 public class InternalTaskExecutor extends AbstractTaskExecutor {
 
@@ -25,8 +26,14 @@ public class InternalTaskExecutor extends AbstractTaskExecutor {
     Throwable exception = null;
 
     try {
+      String processName = taskInstance.getPipeliteProcess().getProcessName();
+      String processId = taskInstance.getPipeliteProcess().getProcessId();
       String stageName = taskInstance.getPipeliteStage().getStageName();
-      Task task = taskConfiguration.getTaskFactory().createTask(stageName);
+      Task task =
+          taskInstance
+              .getStage()
+              .getTaskFactory()
+              .createTask(new TaskInfo(processName, processId, stageName));
       task.execute(taskInstance);
 
     } catch (Throwable e) {

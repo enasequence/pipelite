@@ -3,13 +3,11 @@ package pipelite.configuration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import pipelite.resolver.ExceptionResolver;
-import pipelite.task.TaskFactory;
 
 @Component
 public class TaskConfigurationEx implements TaskParameters {
 
   private TaskConfiguration taskConfiguration;
-  private TaskFactory taskFactory;
   private ExceptionResolver resolver;
 
   public TaskConfigurationEx(@Autowired TaskConfiguration taskConfiguration) {
@@ -78,21 +76,6 @@ public class TaskConfigurationEx implements TaskParameters {
 
   public void setEnv(String[] env) {
     taskConfiguration.setEnv(env);
-  }
-
-  public void setTaskFactory(TaskFactory taskFactory) {
-    this.taskFactory = taskFactory;
-  }
-
-  public TaskFactory getTaskFactory() {
-    if (taskFactory != null) {
-      return taskFactory;
-    }
-    try {
-      return ((TaskFactory) Class.forName(taskConfiguration.getTaskFactoryName()).newInstance());
-    } catch (Exception ex) {
-      throw new RuntimeException(ex);
-    }
   }
 
   public void setResolver(ExceptionResolver resolver) {
