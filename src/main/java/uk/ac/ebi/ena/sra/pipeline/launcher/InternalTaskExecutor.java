@@ -11,21 +11,14 @@
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import pipelite.Application;
-import pipelite.configuration.TaskConfigurationEx;
-import pipelite.executor.AbstractTaskExecutor;
+import pipelite.executor.TaskExecutor;
 import pipelite.instance.TaskInstance;
-import pipelite.task.Task;
-import pipelite.task.TaskInfo;
 import pipelite.task.result.TaskExecutionResult;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class InternalTaskExecutor extends AbstractTaskExecutor {
-
-  public InternalTaskExecutor(TaskConfigurationEx taskConfiguration) {
-    super(taskConfiguration);
-  }
+public class InternalTaskExecutor implements TaskExecutor {
 
   @Override
   public TaskExecutionResult execute(TaskInstance taskInstance) {
@@ -33,14 +26,10 @@ public class InternalTaskExecutor extends AbstractTaskExecutor {
     TaskExecutionResult result;
 
     try {
-      String processName = taskInstance.getProcessName();
-      String processId = taskInstance.getProcessId();
-      String taskName = taskInstance.getTaskName();
-      Task task =
-          taskInstance.getTaskFactory().createTask(new TaskInfo(processName, processId, taskName));
+      TaskExecutor taskExecutor = taskInstance.getTaskExecutorFactory().createTaskExecutor();
 
       try {
-        task.execute(taskInstance);
+        taskExecutor.execute(taskInstance);
         result = TaskExecutionResult.success();
       } catch (Exception ex) {
         result = taskInstance.getTaskParameters().getResolver().resolve(ex);

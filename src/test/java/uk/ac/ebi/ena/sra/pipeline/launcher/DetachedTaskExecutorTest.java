@@ -11,8 +11,6 @@
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
@@ -48,7 +46,7 @@ public class DetachedTaskExecutorTest {
 
     taskConfiguration.setMemory(2000);
 
-    DetachedTaskExecutor se = new DetachedTaskExecutor(taskConfiguration);
+    DetachedTaskExecutor se = new DetachedTaskExecutor();
     String cmd = getCommandline(se.execute(taskInstance(taskConfiguration)));
     assertTrue(cmd.contains(" -Xmx2000M"));
   }
@@ -57,7 +55,7 @@ public class DetachedTaskExecutorTest {
   public void javaMemoryNotSet() {
     TaskConfigurationEx taskConfiguration = taskConfiguration();
 
-    DetachedTaskExecutor se = new DetachedTaskExecutor(taskConfiguration);
+    DetachedTaskExecutor se = new DetachedTaskExecutor();
     String cmd = getCommandline(se.execute(taskInstance(taskConfiguration)));
     assertFalse(cmd.contains(" -Xmx2000M"));
   }
@@ -71,7 +69,7 @@ public class DetachedTaskExecutorTest {
     try {
       System.setProperty("PIPELITE_TEST_JAVA_PROPERTY", "VALUE");
 
-      DetachedTaskExecutor se = new DetachedTaskExecutor(taskConfiguration);
+      DetachedTaskExecutor se = new DetachedTaskExecutor();
       String cmd = getCommandline(se.execute(taskInstance(taskConfiguration)));
       assertTrue(cmd.contains(" -DPIPELITE_TEST_JAVA_PROPERTY=VALUE"));
     } finally {

@@ -8,13 +8,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
 import pipelite.EmptyTestConfiguration;
 import pipelite.UniqueStringGenerator;
+import pipelite.executor.TaskExecutor;
+import pipelite.executor.TaskExecutorFactory;
 import pipelite.instance.ProcessInstance;
 import pipelite.instance.ProcessInstanceBuilder;
 import pipelite.instance.ProcessInstanceFactory;
-import pipelite.instance.TaskInstance;
-import pipelite.task.Task;
-import pipelite.task.TaskFactory;
-import pipelite.task.TaskInfo;
 import pipelite.task.result.TaskExecutionResult;
 
 import java.util.stream.IntStream;
@@ -36,9 +34,9 @@ public class ProcessConfigurationProcessFactoryTest {
   private static final String PROCESS_NAME = UniqueStringGenerator.randomProcessName();
   private static final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
 
-  public static class TestTaskFactory implements TaskFactory {
+  public static class TestTaskExecutionFactory implements TaskExecutorFactory {
     @Override
-    public Task createTask(TaskInfo taskInfo) {
+    public TaskExecutor createTaskExecutor() {
       return taskInstance -> TaskExecutionResult.success();
     }
   }
@@ -47,11 +45,11 @@ public class ProcessConfigurationProcessFactoryTest {
 
     @Override
     public ProcessInstance receive() {
-      TaskFactory taskFactory = new TestTaskFactory();
+      TaskExecutorFactory taskExecutorFactory = new TestTaskExecutionFactory();
 
       return new ProcessInstanceBuilder(PROCESS_NAME, PROCESS_ID, 9)
-          .task(UniqueStringGenerator.randomTaskName(), taskFactory)
-          .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName(), taskFactory)
+          .task(UniqueStringGenerator.randomTaskName(), taskExecutorFactory)
+          .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName(), taskExecutorFactory)
           .build();
     }
 

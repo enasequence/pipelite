@@ -12,9 +12,6 @@ import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.configuration.TaskConfigurationEx;
 import pipelite.instance.TaskInstance;
-import pipelite.task.Task;
-import pipelite.task.TaskFactory;
-import pipelite.task.TaskInfo;
 import pipelite.task.result.TaskExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor;
 
@@ -51,27 +48,33 @@ public class InternalExecutorTest {
 
     AtomicInteger taskExecutionCount = new AtomicInteger();
 
-    InternalTaskExecutor internalTaskExecutor = new InternalTaskExecutor(taskConfiguration);
+    InternalTaskExecutor internalTaskExecutor = new InternalTaskExecutor();
 
     // Task specific configuration is not available when a task is being executed using internal
     // task executor.
+
+    TaskExecutorFactory testTaskExecutorFactory =
+        new TaskExecutorFactory() {
+          @Override
+          public TaskExecutor createTaskExecutor() {
+            return taskInstance1 -> {
+              taskExecutionCount.getAndIncrement();
+              return TaskExecutionResult.success();
+            };
+          }
+        };
 
     TaskInstance taskInstance =
         TaskInstance.builder()
             .processName(processName)
             .processId(processId)
             .taskName(taskName)
-            .taskFactory(
-                taskInfo ->
-                    taskInstance1 -> {
-                      taskExecutionCount.getAndIncrement();
-                      return TaskExecutionResult.success();
-                    })
+            .taskExecutorFactory(testTaskExecutorFactory)
             .taskParameters(taskConfiguration)
             .build();
 
     TaskExecutionResult result = internalTaskExecutor.execute(taskInstance);
-      assertThat(result).isEqualTo(TaskExecutionResult.success());
-      assertThat(taskExecutionCount.get()).isEqualTo(1);
+    assertThat(result).isEqualTo(TaskExecutionResult.success());
+    assertThat(taskExecutionCount.get()).isEqualTo(1);
   }
 }

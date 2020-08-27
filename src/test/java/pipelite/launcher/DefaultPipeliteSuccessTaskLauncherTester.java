@@ -5,12 +5,10 @@ import lombok.AllArgsConstructor;
 import pipelite.TestInMemoryProcessFactory;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfigurationEx;
+import pipelite.executor.TaskExecutor;
+import pipelite.executor.TaskExecutorFactory;
 import pipelite.instance.ProcessInstance;
 import pipelite.instance.ProcessInstanceBuilder;
-import pipelite.instance.TaskInstance;
-import pipelite.task.Task;
-import pipelite.task.TaskFactory;
-import pipelite.task.TaskInfo;
 import pipelite.task.result.TaskExecutionResult;
 
 import java.util.*;
@@ -31,9 +29,9 @@ public class DefaultPipeliteSuccessTaskLauncherTester {
   private static final int PROCESS_COUNT = 100;
   private static final int TASK_EXECUTION_TIME = 10; // ms
 
-  public class TestTaskFactory implements TaskFactory {
+  public class TestTaskExecutionFactory implements TaskExecutorFactory {
     @Override
-    public Task createTask(TaskInfo taskInfo) {
+    public TaskExecutor createTaskExecutor() {
       return taskInstance -> {
         String processId = taskInstance.getProcessId();
         processExecutionCount.incrementAndGet();
@@ -53,15 +51,13 @@ public class DefaultPipeliteSuccessTaskLauncherTester {
   }
 
   private List<ProcessInstance> createProcessInstances() {
-    TaskFactory taskFactory = new TestTaskFactory();
-
     List<ProcessInstance> processInstances = new ArrayList<>();
     for (int i = 0; i < PROCESS_COUNT; ++i) {
       String processName = defaultPipeliteLauncher.getProcessName();
       String processId = "Process" + i;
       processInstances.add(
           new ProcessInstanceBuilder(processName, processId, 9)
-              .task(UniqueStringGenerator.randomTaskName(), taskFactory)
+              .task(UniqueStringGenerator.randomTaskName(), new TestTaskExecutionFactory())
               .build());
     }
     return processInstances;

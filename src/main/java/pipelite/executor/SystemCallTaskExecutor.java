@@ -1,4 +1,4 @@
-package pipelite.task;
+package pipelite.executor;
 
 import lombok.extern.flogger.Flogger;
 import org.apache.commons.exec.*;
@@ -6,11 +6,10 @@ import org.apache.commons.exec.util.StringUtils;
 import pipelite.instance.TaskInstance;
 import pipelite.task.result.TaskExecutionResult;
 
-import java.io.*;
 import java.util.Collection;
 
 @Flogger
-public abstract class SystemCallTask implements Task {
+public abstract class SystemCallTaskExecutor implements TaskExecutor {
   @Override
   public TaskExecutionResult execute(TaskInstance taskInstance) {
 

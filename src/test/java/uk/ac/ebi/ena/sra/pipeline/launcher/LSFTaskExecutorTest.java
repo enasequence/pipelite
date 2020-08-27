@@ -61,7 +61,7 @@ public class LSFTaskExecutorTest {
   public void test() {
     TaskConfigurationEx taskConfiguration = taskConfiguration();
 
-    LSFTaskExecutor se = new LSFTaskExecutor(taskConfiguration);
+    LSFTaskExecutor se = new LSFTaskExecutor();
     String cmd = getCommandline(se.execute(taskInstance(taskConfiguration)));
     assertTrue(cmd.contains(" -M 1 -R rusage[mem=1:duration=1]"));
     assertTrue(cmd.contains(" -n 1"));
@@ -75,7 +75,7 @@ public class LSFTaskExecutorTest {
     TaskConfigurationEx taskConfiguration = taskConfiguration();
     taskConfiguration.setTempDir(null);
 
-    LSFTaskExecutor se = new LSFTaskExecutor(taskConfiguration);
+    LSFTaskExecutor se = new LSFTaskExecutor();
     String cmd = getCommandline(se.execute(taskInstance(taskConfiguration)));
     // Default temporary directory is used.
     assertTrue(cmd.contains(" -oo "));
@@ -87,7 +87,7 @@ public class LSFTaskExecutorTest {
     TaskConfigurationEx taskConfiguration = taskConfiguration();
     taskConfiguration.setQueue(null);
 
-    LSFTaskExecutor se = new LSFTaskExecutor(taskConfiguration);
+    LSFTaskExecutor se = new LSFTaskExecutor();
     String cmd = getCommandline(se.execute(taskInstance(taskConfiguration)));
 
     assertFalse(cmd.contains("-q "));
@@ -98,7 +98,7 @@ public class LSFTaskExecutorTest {
     TaskConfigurationEx taskConfiguration = taskConfiguration();
     taskConfiguration.setQueue("queue");
 
-    LSFTaskExecutor se = new LSFTaskExecutor(taskConfiguration);
+    LSFTaskExecutor se = new LSFTaskExecutor();
 
     String cmd = getCommandline(se.execute(taskInstance(taskConfiguration)));
     assertTrue(cmd.contains("-q queue"));
@@ -110,7 +110,7 @@ public class LSFTaskExecutorTest {
     taskConfiguration.setMemory(2000);
     taskConfiguration.setCores(12);
 
-    LSFTaskExecutor se = new LSFTaskExecutor(taskConfiguration);
+    LSFTaskExecutor se = new LSFTaskExecutor();
     String cmd = getCommandline(se.execute(taskInstance(taskConfiguration)));
     assertTrue(cmd.contains(" -M 2000 -R rusage[mem=2000:duration=1]"));
     assertTrue(cmd.contains(" -n 12"));
@@ -124,7 +124,7 @@ public class LSFTaskExecutorTest {
     TaskConfigurationEx taskConfiguration = taskConfiguration();
     taskConfiguration.setMemory(2000);
 
-    LSFTaskExecutor se = new LSFTaskExecutor(taskConfiguration);
+    LSFTaskExecutor se = new LSFTaskExecutor();
     String cmd = getCommandline(se.execute(taskInstance(taskConfiguration)));
     assertTrue(cmd.contains(" -M 2000 -R rusage[mem=2000:duration=1]"));
     assertTrue(cmd.contains(" -Xmx" + 2000 + "M"));
@@ -138,7 +138,7 @@ public class LSFTaskExecutorTest {
     try {
       System.setProperty("PIPELITE_TEST_JAVA_PROPERTY", "VALUE");
 
-      LSFTaskExecutor se = new LSFTaskExecutor(taskConfiguration);
+      LSFTaskExecutor se = new LSFTaskExecutor();
       String cmd = getCommandline(se.execute(taskInstance(taskConfiguration)));
       assertTrue(cmd.contains(" -DPIPELITE_TEST_JAVA_PROPERTY=VALUE"));
     } finally {

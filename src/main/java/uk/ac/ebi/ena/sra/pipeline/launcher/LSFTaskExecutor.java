@@ -14,24 +14,20 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import lombok.extern.flogger.Flogger;
-import pipelite.configuration.TaskConfigurationEx;
-import pipelite.executor.AbstractTaskExecutor;
+import pipelite.executor.TaskExecutor;
 import pipelite.instance.TaskInstance;
+import pipelite.instance.TaskParameters;
 import pipelite.task.result.TaskExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall;
 
 import static uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.callInternalTaskExecutor;
 
 @Flogger
-public class LSFTaskExecutor extends AbstractTaskExecutor {
+public class LSFTaskExecutor implements TaskExecutor {
 
   public static final int LSF_JVM_MEMORY_DELTA_MB = 1500;
   public static final int LSF_JVM_MEMORY_OVERHEAD_MB = 200;
   public static final int LSF_JVM_MEMORY_RESERVATION_TIMEOUT_DEFAULT_MINUTES = 60;
-
-  public LSFTaskExecutor(TaskConfigurationEx taskConfiguration) {
-    super(taskConfiguration);
-  }
 
   private LSFBackEnd configureBackend(TaskInstance taskInstance) {
 
@@ -56,8 +52,8 @@ public class LSFTaskExecutor extends AbstractTaskExecutor {
     }
 
     LSFBackEnd back_end = new LSFBackEnd(queue, memory, memoryTimeout, cores);
-    if (taskConfiguration.getTempDir() != null) {
-      back_end.setOutputFolderPath(Paths.get(taskConfiguration.getTempDir()));
+    if (taskInstance.getTaskParameters().getTempDir() != null) {
+      back_end.setOutputFolderPath(Paths.get(taskInstance.getTaskParameters().getTempDir()));
     }
     return back_end;
   }

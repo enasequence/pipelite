@@ -13,8 +13,7 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 import java.util.List;
 
 import lombok.extern.flogger.Flogger;
-import pipelite.configuration.TaskConfigurationEx;
-import pipelite.executor.AbstractTaskExecutor;
+import pipelite.executor.TaskExecutor;
 import pipelite.instance.TaskInstance;
 import pipelite.task.result.TaskExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCall;
@@ -22,13 +21,9 @@ import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCall;
 import static uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.callInternalTaskExecutor;
 
 @Flogger
-public class DetachedTaskExecutor extends AbstractTaskExecutor {
+public class DetachedTaskExecutor implements TaskExecutor {
 
   protected final ExternalCallBackEnd back_end = new SimpleBackEnd();
-
-  public DetachedTaskExecutor(TaskConfigurationEx taskConfiguration) {
-    super(taskConfiguration);
-  }
 
   public TaskExecutionResult execute(TaskInstance taskInstance) {
 

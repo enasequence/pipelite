@@ -71,7 +71,7 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
     this.pipeliteProcessService = pipeliteProcessService;
     this.pipeliteStageService = pipeliteStageService;
     this.pipeliteLockService = pipeliteLockService;
-    this.executor = processConfiguration.getExecutorFactory().createTaskExecutor(taskConfiguration);
+    this.executor = processConfiguration.getExecutorFactory().createTaskExecutor();
   }
 
   @Data
@@ -406,7 +406,15 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
         .with(LogKey.TASK_EXECUTION_COUNT, pipeliteStage.getExecutionCount())
         .log("Executing task");
 
-    TaskExecutionResult result = executor.execute(taskInstance);
+    TaskExecutionResult result;
+
+    try {
+      result = executor.execute(taskInstance);
+    }
+    catch (Exception ex) {
+      result = TaskExecutionResult.internalError();
+      result.addExceptionAttribute(ex);
+    }
 
     // Update the task state after execution.
 

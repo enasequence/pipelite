@@ -13,14 +13,15 @@ package pipelite.instance;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
-import pipelite.task.TaskFactory;
+import pipelite.executor.TaskExecutorFactory;
+
 @Value
 @Builder
 public class TaskInstance {
   private final String processName;
   private final String processId;
   private final String taskName;
-  @EqualsAndHashCode.Exclude private final TaskFactory taskFactory;
+  @EqualsAndHashCode.Exclude private final TaskExecutorFactory taskExecutorFactory;
   @EqualsAndHashCode.Exclude private final TaskInstance dependsOn;
   @EqualsAndHashCode.Exclude private final TaskParameters taskParameters;
 }

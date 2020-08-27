@@ -47,7 +47,7 @@ public class Application implements CommandLineRunner {
     String processId = args[2];
     String taskName = args[3];
 
-    InternalTaskExecutor internalTaskExecutor = new InternalTaskExecutor(taskConfiguration);
+    InternalTaskExecutor internalTaskExecutor = new InternalTaskExecutor();
 
     // Task specific configuration is not available when a task is being executed using internal
     // task executor.

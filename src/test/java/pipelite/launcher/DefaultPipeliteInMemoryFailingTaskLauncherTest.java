@@ -10,11 +10,10 @@ import pipelite.FullTestConfiguration;
 import pipelite.TestInMemoryProcessFactory;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfigurationEx;
+import pipelite.executor.TaskExecutor;
+import pipelite.executor.TaskExecutorFactory;
 import pipelite.instance.ProcessInstance;
 import pipelite.instance.ProcessInstanceBuilder;
-import pipelite.task.Task;
-import pipelite.task.TaskFactory;
-import pipelite.task.TaskInfo;
 import pipelite.task.result.TaskExecutionResult;
 
 import java.util.ArrayList;
@@ -46,19 +45,17 @@ public class DefaultPipeliteInMemoryFailingTaskLauncherTest {
   private static final String PROCESS_NAME = UniqueStringGenerator.randomProcessName();
   private static final int PROCESS_CNT = 10;
 
-  public static class SuccessTestTaskFactory implements TaskFactory {
+  public static class SuccessTaskExecutionFactory implements TaskExecutorFactory {
     @Override
-    public Task createTask(TaskInfo taskInfo) {
+    public TaskExecutor createTaskExecutor() {
       return taskInstance -> TaskExecutionResult.success();
     }
   }
 
-  public static class FailTestTaskFactory implements TaskFactory {
+  public static class FailTaskExecutionFactory implements TaskExecutorFactory {
     @Override
-    public Task createTask(TaskInfo taskInfo) {
-      return taskInstance -> {
-        throw new RuntimeException();
-      };
+    public TaskExecutor createTaskExecutor() {
+      throw new RuntimeException();
     }
   }
 
@@ -73,13 +70,13 @@ public class DefaultPipeliteInMemoryFailingTaskLauncherTest {
               processInstances.add(
                   new ProcessInstanceBuilder(
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName(), new FailTestTaskFactory())
+                      .task(UniqueStringGenerator.randomTaskName(), new FailTaskExecutionFactory())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTestTaskFactory())
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTestTaskFactory())
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTestTaskFactory())
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
                       .build());
             });
 
@@ -118,19 +115,18 @@ public class DefaultPipeliteInMemoryFailingTaskLauncherTest {
               processInstances.add(
                   new ProcessInstanceBuilder(
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTestTaskFactory())
+                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new FailTestTaskFactory())
+                          UniqueStringGenerator.randomTaskName(), new FailTaskExecutionFactory())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTestTaskFactory())
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTestTaskFactory())
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
                       .build());
             });
 
     DefaultPipeliteLauncher defaultPipeliteLauncher =
         defaultPipeliteLauncherObjectProvider.getObject();
-    defaultPipeliteLauncher.setMaxInterations(5);
 
     TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
     processConfiguration.setProcessFactory(processFactory);
@@ -164,13 +160,13 @@ public class DefaultPipeliteInMemoryFailingTaskLauncherTest {
               processInstances.add(
                   new ProcessInstanceBuilder(
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTestTaskFactory())
+                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTestTaskFactory())
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new FailTestTaskFactory())
+                          UniqueStringGenerator.randomTaskName(), new FailTaskExecutionFactory())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTestTaskFactory())
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
                       .build());
             });
 
@@ -209,13 +205,13 @@ public class DefaultPipeliteInMemoryFailingTaskLauncherTest {
               processInstances.add(
                   new ProcessInstanceBuilder(
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTestTaskFactory())
+                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTestTaskFactory())
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTestTaskFactory())
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new FailTestTaskFactory())
+                          UniqueStringGenerator.randomTaskName(), new FailTaskExecutionFactory())
                       .build());
             });
 
@@ -254,13 +250,13 @@ public class DefaultPipeliteInMemoryFailingTaskLauncherTest {
               processInstances.add(
                   new ProcessInstanceBuilder(
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTestTaskFactory())
+                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTestTaskFactory())
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTestTaskFactory())
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTestTaskFactory())
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
                       .build());
             });
 
