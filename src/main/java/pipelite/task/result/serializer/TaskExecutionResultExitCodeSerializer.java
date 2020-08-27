@@ -7,19 +7,19 @@ import pipelite.resolver.TaskExecutionResultResolver;
 import java.util.List;
 
 @Value
-public class TaskExecutionResultExitCodeSerializer<T> implements TaskExecutionResultSerializer<Integer> {
+public class TaskExecutionResultExitCodeSerializer<T> implements TaskExecutionResultSerializer<T> {
 
   private final TaskExecutionResultResolver<T> resolver;
 
   @Override
-  public Integer serialize(TaskExecutionResult result) {
+  public int serialize(TaskExecutionResult result) {
     int value = resolver.results().indexOf(result);
     checkValue(value);
     return value;
   }
 
   @Override
-  public TaskExecutionResult deserialize(Integer value) {
+  public TaskExecutionResult deserialize(int value) {
     checkValue(value);
     List<TaskExecutionResult> results = resolver.results();
     return results.get(value);

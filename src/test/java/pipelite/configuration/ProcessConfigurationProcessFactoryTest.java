@@ -11,9 +11,11 @@ import pipelite.UniqueStringGenerator;
 import pipelite.instance.ProcessInstance;
 import pipelite.instance.ProcessInstanceBuilder;
 import pipelite.instance.ProcessInstanceFactory;
+import pipelite.instance.TaskInstance;
 import pipelite.task.Task;
 import pipelite.task.TaskFactory;
 import pipelite.task.TaskInfo;
+import pipelite.task.result.TaskExecutionResult;
 
 import java.util.stream.IntStream;
 
@@ -37,7 +39,7 @@ public class ProcessConfigurationProcessFactoryTest {
   public static class TestTaskFactory implements TaskFactory {
     @Override
     public Task createTask(TaskInfo taskInfo) {
-      return instance -> {};
+      return taskInstance -> TaskExecutionResult.success();
     }
   }
 

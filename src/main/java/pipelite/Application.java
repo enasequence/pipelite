@@ -60,6 +60,10 @@ public class Application implements CommandLineRunner {
             .taskParameters(taskConfiguration)
             .build();
 
-    return internalTaskExecutor.execute(taskInstance).getExitCode();
+    return taskInstance
+        .getTaskParameters()
+        .getResolver()
+        .serializer()
+        .serialize(internalTaskExecutor.execute(taskInstance));
   }
 }

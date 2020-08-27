@@ -1,50 +1,59 @@
 package pipelite.instance;
 
+import pipelite.resolver.TaskExecutionResultResolver;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public interface TaskParameters {
 
-  Integer getMemory();
+  TaskExecutionResultResolver getResolver();
 
-  Integer getMemoryTimeout();
-
-  Integer getCores();
-
-  String getQueue();
+  void setResolver(TaskExecutionResultResolver resolver);
 
   Integer getRetries();
 
-  String getTempDir();
+  void setRetries(Integer retries);
 
   String[] getEnv();
 
-  void setMemory(Integer memory);
+  void setEnv(String[] env);
 
-  void setMemoryTimeout(Integer memoryTimeout);
-
-  void setCores(Integer cores);
-
-  void setQueue(String queue);
-
-  void setRetries(Integer retries);
+  String getTempDir();
 
   void setTempDir(String tempDir);
 
-  void setEnv(String[] env);
+  Integer getMemory();
+
+  void setMemory(Integer memory);
+
+  Integer getMemoryTimeout();
+
+  void setMemoryTimeout(Integer memoryTimeout);
+
+  Integer getCores();
+
+  void setCores(Integer cores);
+
+  String getQueue();
+
+  void setQueue(String queue);
 
   /* Add parameters. Existing values will not be replaced. */
   default void add(TaskParameters taskParameters) {
     if (taskParameters == null) {
       return;
     }
+    setResolver(TaskParametersUtils.getResolver(this, taskParameters));
+    setRetries(TaskParametersUtils.getRetries(this, taskParameters));
+    setEnv(TaskParametersUtils.getEnv(this, taskParameters));
+    setTempDir(TaskParametersUtils.getTempDir(this, taskParameters));
     setMemory(TaskParametersUtils.getMemory(this, taskParameters));
     setMemoryTimeout(TaskParametersUtils.getMemoryTimeout(this, taskParameters));
     setCores(TaskParametersUtils.getCores(this, taskParameters));
     setQueue(TaskParametersUtils.getQueue(this, taskParameters));
-    setRetries(TaskParametersUtils.getRetries(this, taskParameters));
-    setTempDir(TaskParametersUtils.getTempDir(this, taskParameters));
-    setEnv(TaskParametersUtils.getEnv(this, taskParameters));
   }
 
   default List<String> getEnvAsJavaSystemPropertyOptions() {
@@ -54,6 +63,19 @@ public interface TaskParameters {
         String value = System.getProperty(property);
         if (value != null) {
           options.add(String.format("-D%s=%s", property, value));
+        }
+      }
+    }
+    return options;
+  }
+
+  default Map<String, String> getEnvAsMap() {
+    Map<String, String> options = new HashMap();
+    if (getEnv() != null) {
+      for (String property : getEnv()) {
+        String value = System.getProperty(property);
+        if (value != null) {
+          options.put(property, value);
         }
       }
     }

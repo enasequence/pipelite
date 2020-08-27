@@ -17,7 +17,7 @@ import lombok.extern.flogger.Flogger;
 import pipelite.configuration.TaskConfigurationEx;
 import pipelite.executor.AbstractTaskExecutor;
 import pipelite.instance.TaskInstance;
-import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
+import pipelite.task.result.TaskExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall;
 
 import static uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.callInternalTaskExecutor;
@@ -62,7 +62,8 @@ public class LSFTaskExecutor extends AbstractTaskExecutor {
     return back_end;
   }
 
-  public ExecutionInfo execute(TaskInstance taskInstance) {
+  @Override
+  public TaskExecutionResult execute(TaskInstance taskInstance) {
 
     List<String> p_args = callInternalTaskExecutor(taskInstance);
 
@@ -78,21 +79,32 @@ public class LSFTaskExecutor extends AbstractTaskExecutor {
             "java",
             p_args.toArray(new String[0]));
 
-    call.setTaskLostExitCode(resolver.exitCodeSerializer().serialize(internalError));
+    call.setTaskLostExitCode(
+        taskInstance
+            .getTaskParameters()
+            .getResolver()
+            .serializer()
+            .serialize(TaskExecutionResult.internalError()));
 
     log.atInfo().log(call.getCommandLine());
 
-    call.execute();
-
-    ExecutionInfo info = new ExecutionInfo();
-    info.setCommandline(call.getCommandLine());
-    info.setStdout(call.getStdout());
-    info.setStderr(call.getStderr());
-    info.setExitCode(call.getExitCode());
-    info.setHost(call.getHost());
-    info.setPID(call.getPID());
-    info.setThrowable(null);
-    info.setLogMessage(new ExternalCallException(call).toString());
-    return info;
+    try {
+      call.execute();
+      int exitCode = call.getExitCode();
+      TaskExecutionResult result =
+          taskInstance.getTaskParameters().getResolver().serializer().deserialize(exitCode);
+      result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_HOST, call.getHost());
+      result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND, call.getCommandLine());
+      result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_EXIT_CODE, exitCode);
+      result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT, call.getStdout());
+      result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR, call.getStderr());
+      return result;
+    } catch (Exception ex) {
+      TaskExecutionResult result = TaskExecutionResult.internalError();
+      result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_HOST, call.getHost());
+      result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND, call.getCommandLine());
+      result.addExceptionAttribute(ex);
+      return result;
+    }
   }
 }

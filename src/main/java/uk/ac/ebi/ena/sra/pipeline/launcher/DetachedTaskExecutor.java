@@ -16,8 +16,8 @@ import lombok.extern.flogger.Flogger;
 import pipelite.configuration.TaskConfigurationEx;
 import pipelite.executor.AbstractTaskExecutor;
 import pipelite.instance.TaskInstance;
+import pipelite.task.result.TaskExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCall;
-import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
 
 import static uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.callInternalTaskExecutor;
 
@@ -30,10 +30,10 @@ public class DetachedTaskExecutor extends AbstractTaskExecutor {
     super(taskConfiguration);
   }
 
-  public ExecutionInfo execute(TaskInstance taskInstance) {
+  public TaskExecutionResult execute(TaskInstance taskInstance) {
 
     List<String> cmd = callInternalTaskExecutor(taskInstance);
-    ExternalCall ec =
+    ExternalCall call =
         back_end.new_call_instance(
             String.format(
                 // TODO: job name
@@ -44,18 +44,27 @@ public class DetachedTaskExecutor extends AbstractTaskExecutor {
             "java",
             cmd.toArray(new String[0]));
 
-    log.atInfo().log(ec.getCommandLine());
+    log.atInfo().log(call.getCommandLine());
 
-    ec.execute();
+    call.execute();
 
-    ExecutionInfo info = new ExecutionInfo();
-    info.setCommandline(ec.getCommandLine());
-    info.setStdout(ec.getStdout());
-    info.setStderr(ec.getStderr());
-    info.setExitCode(ec.getExitCode());
-    info.setHost(ec.getHost());
-    info.setPID(ec.getPID());
-    info.setThrowable(new ExternalCallException(ec));
-    return info;
+    try {
+      call.execute();
+      int exitCode = call.getExitCode();
+      TaskExecutionResult result =
+          taskInstance.getTaskParameters().getResolver().serializer().deserialize(exitCode);
+      result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_HOST, call.getHost());
+      result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND, call.getCommandLine());
+      result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_EXIT_CODE, exitCode);
+      result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT, call.getStdout());
+      result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR, call.getStderr());
+      return result;
+    } catch (Exception ex) {
+      TaskExecutionResult result = TaskExecutionResult.internalError();
+      result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_HOST, call.getHost());
+      result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND, call.getCommandLine());
+      result.addExceptionAttribute(ex);
+      return result;
+    }
   }
 }

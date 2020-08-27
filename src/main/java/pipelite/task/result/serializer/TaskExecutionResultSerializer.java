@@ -4,7 +4,7 @@ import pipelite.task.result.TaskExecutionResult;
 
 public interface TaskExecutionResultSerializer<T> {
 
-  T serialize(TaskExecutionResult result);
+  int serialize(TaskExecutionResult result);
 
-  TaskExecutionResult deserialize(T value);
+  TaskExecutionResult deserialize(int value);
 }

@@ -31,12 +31,10 @@ import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
 import pipelite.executor.TaskExecutor;
 import pipelite.instance.TaskInstance;
-import pipelite.resolver.ExceptionResolver;
 import pipelite.process.ProcessExecutionState;
 import pipelite.task.result.TaskExecutionResultType;
 import pipelite.task.state.TaskExecutionState;
 import pipelite.task.result.TaskExecutionResult;
-import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInfo;
 
 @Flogger
 @Component()
@@ -51,7 +49,6 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
   private final PipeliteStageService pipeliteStageService;
   private final PipeliteLockService pipeliteLockService;
   private final TaskExecutor executor;
-  private final ExceptionResolver resolver;
 
   private PipeliteProcessInstance pipeliteProcessInstance;
   private List<PipeliteTaskInstance> pipeliteTaskInstances = new ArrayList<>();
@@ -75,7 +72,6 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
     this.pipeliteStageService = pipeliteStageService;
     this.pipeliteLockService = pipeliteLockService;
     this.executor = processConfiguration.getExecutorFactory().createTaskExecutor(taskConfiguration);
-    this.resolver = taskConfiguration.getResolver();
   }
 
   @Data
@@ -410,20 +406,15 @@ public class DefaultProcessLauncher extends AbstractExecutionThreadService
         .with(LogKey.TASK_EXECUTION_COUNT, pipeliteStage.getExecutionCount())
         .log("Executing task");
 
-    ExecutionInfo info = executor.execute(taskInstance);
-
-    // Translate execution result.
-
-    TaskExecutionResult result;
-    if (null != info.getThrowable()) {
-      result = resolver.resolveError(info.getThrowable());
-    } else {
-      result = resolver.exitCodeSerializer().deserialize(info.getExitCode());
-    }
+    TaskExecutionResult result = executor.execute(taskInstance);
 
     // Update the task state after execution.
 
-    pipeliteStage.endExecution(result, info.getCommandline(), info.getStdout(), info.getStderr());
+    pipeliteStage.endExecution(
+        result,
+        result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND),
+        result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT),
+        result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR));
 
     log.atInfo()
         .with(LogKey.PROCESS_NAME, processName)

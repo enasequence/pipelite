@@ -3,16 +3,13 @@ package pipelite.configuration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import pipelite.instance.TaskParameters;
-import pipelite.resolver.ExceptionResolver;
-
-import java.util.ArrayList;
-import java.util.List;
+import pipelite.resolver.TaskExecutionResultResolver;
 
 @Component
 public class TaskConfigurationEx implements TaskParameters {
 
   private TaskConfiguration taskConfiguration;
-  private ExceptionResolver resolver;
+  private TaskExecutionResultResolver resolver;
 
   public TaskConfigurationEx(@Autowired TaskConfiguration taskConfiguration) {
     this.taskConfiguration = taskConfiguration;
@@ -82,19 +79,23 @@ public class TaskConfigurationEx implements TaskParameters {
     taskConfiguration.setEnv(env);
   }
 
-  public void setResolver(ExceptionResolver resolver) {
+  public void setResolver(TaskExecutionResultResolver resolver) {
     this.resolver = resolver;
   }
 
-  public ExceptionResolver getResolver() {
+  public TaskExecutionResultResolver getResolver() {
     if (resolver != null) {
       return resolver;
     }
-    try {
-      return (ExceptionResolver) Class.forName(taskConfiguration.getResolver()).newInstance();
-    } catch (Exception ex) {
-      throw new RuntimeException(ex);
+    if (taskConfiguration.getResolver() != null) {
+      try {
+        return (TaskExecutionResultResolver)
+            Class.forName(taskConfiguration.getResolver()).newInstance();
+      } catch (Exception ex) {
+        throw new RuntimeException(ex);
+      }
     }
+    return null;
   }
 
   @Override

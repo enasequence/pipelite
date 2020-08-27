@@ -13,6 +13,9 @@ import pipelite.configuration.TaskConfiguration;
 import pipelite.configuration.TaskConfigurationEx;
 import pipelite.instance.TaskInstance;
 import pipelite.task.Task;
+import pipelite.task.TaskFactory;
+import pipelite.task.TaskInfo;
+import pipelite.task.result.TaskExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -59,17 +62,16 @@ public class InternalExecutorTest {
             .processId(processId)
             .taskName(taskName)
             .taskFactory(
-                (taskInfo) ->
-                    new Task() {
-                      @Override
-                      public void execute(TaskInstance instance) {
-                        taskExecutionCount.getAndIncrement();
-                      }
+                taskInfo ->
+                    taskInstance1 -> {
+                      taskExecutionCount.getAndIncrement();
+                      return TaskExecutionResult.success();
                     })
             .taskParameters(taskConfiguration)
             .build();
 
-    internalTaskExecutor.execute(taskInstance).getExitCode();
-    assertThat(taskExecutionCount.get()).isEqualTo(1);
+    TaskExecutionResult result = internalTaskExecutor.execute(taskInstance);
+      assertThat(result).isEqualTo(TaskExecutionResult.success());
+      assertThat(taskExecutionCount.get()).isEqualTo(1);
   }
 }

@@ -2,6 +2,7 @@ package pipelite.instance;
 
 import com.google.common.base.Supplier;
 import lombok.Value;
+import pipelite.resolver.TaskExecutionResultResolver;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -10,23 +11,13 @@ import java.util.Set;
 @Value
 public class TaskParametersUtils {
 
-  public static Integer getMemory(TaskParameters taskParameters, TaskParameters defaultParameters) {
-    return getValue(taskParameters::getMemory, defaultParameters::getMemory);
+  public static TaskExecutionResultResolver getResolver(
+      TaskParameters taskParameters, TaskParameters defaultParameters) {
+    return getValue(taskParameters::getResolver, defaultParameters::getResolver);
   }
 
-  public static Integer getMemoryTimeout(TaskParameters taskParameters, TaskParameters defaultParameters) {
-    return getValue(taskParameters::getMemoryTimeout, defaultParameters::getMemoryTimeout);
-  }
-
-  public static Integer getCores(TaskParameters taskParameters, TaskParameters defaultParameters) {
-    return getValue(taskParameters::getCores, defaultParameters::getCores);
-  }
-
-  public static String getQueue(TaskParameters taskParameters, TaskParameters defaultParameters) {
-    return getValue(taskParameters::getQueue, defaultParameters::getQueue);
-  }
-
-  public static Integer getRetries(TaskParameters taskParameters, TaskParameters defaultParameters) {
+  public static Integer getRetries(
+      TaskParameters taskParameters, TaskParameters defaultParameters) {
     return getValue(taskParameters::getRetries, defaultParameters::getRetries);
   }
 
@@ -36,6 +27,23 @@ public class TaskParametersUtils {
 
   public static String[] getEnv(TaskParameters taskParameters, TaskParameters defaultParameters) {
     return mergeEnv(taskParameters.getEnv(), defaultParameters.getEnv());
+  }
+
+  public static Integer getMemory(TaskParameters taskParameters, TaskParameters defaultParameters) {
+    return getValue(taskParameters::getMemory, defaultParameters::getMemory);
+  }
+
+  public static Integer getMemoryTimeout(
+      TaskParameters taskParameters, TaskParameters defaultParameters) {
+    return getValue(taskParameters::getMemoryTimeout, defaultParameters::getMemoryTimeout);
+  }
+
+  public static Integer getCores(TaskParameters taskParameters, TaskParameters defaultParameters) {
+    return getValue(taskParameters::getCores, defaultParameters::getCores);
+  }
+
+  public static String getQueue(TaskParameters taskParameters, TaskParameters defaultParameters) {
+    return getValue(taskParameters::getQueue, defaultParameters::getQueue);
   }
 
   private static <T> T getValue(Supplier<T> taskInstance, Supplier<T> taskConfiguration) {

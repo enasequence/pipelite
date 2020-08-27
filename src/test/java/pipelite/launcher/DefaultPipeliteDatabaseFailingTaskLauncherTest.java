@@ -15,6 +15,7 @@ import pipelite.instance.ProcessInstanceBuilder;
 import pipelite.task.Task;
 import pipelite.task.TaskFactory;
 import pipelite.task.TaskInfo;
+import pipelite.task.result.TaskExecutionResult;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,14 +45,14 @@ public class DefaultPipeliteDatabaseFailingTaskLauncherTest {
   public static class SuccessTestTaskFactory implements TaskFactory {
     @Override
     public Task createTask(TaskInfo taskInfo) {
-      return instance -> {};
+      return taskInstance -> TaskExecutionResult.success();
     }
   }
 
   public static class FailTestTaskFactory implements TaskFactory {
     @Override
     public Task createTask(TaskInfo taskInfo) {
-      return instance -> {
+      return taskInstance -> {
         throw new RuntimeException();
       };
     }

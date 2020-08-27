@@ -20,6 +20,7 @@ import pipelite.configuration.TaskConfiguration;
 import pipelite.configuration.TaskConfigurationEx;
 import pipelite.resolver.DefaultExceptionResolver;
 import pipelite.instance.TaskInstance;
+import pipelite.task.result.TaskExecutionResult;
 
 public class DetachedTaskExecutorTest {
 
@@ -37,32 +38,33 @@ public class DetachedTaskExecutorTest {
         .build();
   }
 
+  private static String getCommandline(TaskExecutionResult result) {
+    return result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND);
+  }
+
   @Test
   public void javaMemory() {
     TaskConfigurationEx taskConfiguration = taskConfiguration();
-    TaskInstance taskInstance = taskInstance(taskConfiguration);
 
     taskConfiguration.setMemory(2000);
 
     DetachedTaskExecutor se = new DetachedTaskExecutor(taskConfiguration);
-    String cmd = se.execute(taskInstance).getCommandline();
+    String cmd = getCommandline(se.execute(taskInstance(taskConfiguration)));
     assertTrue(cmd.contains(" -Xmx2000M"));
   }
 
   @Test
   public void javaMemoryNotSet() {
     TaskConfigurationEx taskConfiguration = taskConfiguration();
-    TaskInstance taskInstance = taskInstance(taskConfiguration);
 
     DetachedTaskExecutor se = new DetachedTaskExecutor(taskConfiguration);
-    String cmd = se.execute(taskInstance).getCommandline();
+    String cmd = getCommandline(se.execute(taskInstance(taskConfiguration)));
     assertFalse(cmd.contains(" -Xmx2000M"));
   }
 
   @Test
   public void testTaskSpecificJavaProperties() {
     TaskConfigurationEx taskConfiguration = taskConfiguration();
-    TaskInstance taskInstance = taskInstance(taskConfiguration);
 
     taskConfiguration.setEnv(new String[] {"PIPELITE_TEST_JAVA_PROPERTY"});
 
@@ -70,7 +72,7 @@ public class DetachedTaskExecutorTest {
       System.setProperty("PIPELITE_TEST_JAVA_PROPERTY", "VALUE");
 
       DetachedTaskExecutor se = new DetachedTaskExecutor(taskConfiguration);
-      String cmd = se.execute(taskInstance).getCommandline();
+      String cmd = getCommandline(se.execute(taskInstance(taskConfiguration)));
       assertTrue(cmd.contains(" -DPIPELITE_TEST_JAVA_PROPERTY=VALUE"));
     } finally {
       System.clearProperty("PIPELITE_TEST_JAVA_PROPERTY");

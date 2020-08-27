@@ -11,17 +11,11 @@
 package pipelite.executor;
 
 import pipelite.configuration.TaskConfigurationEx;
-import pipelite.resolver.ExceptionResolver;
-import pipelite.task.result.TaskExecutionResult;
 
 public abstract class AbstractTaskExecutor implements TaskExecutor {
   protected final TaskConfigurationEx taskConfiguration;
-  protected final ExceptionResolver resolver;
-  protected final TaskExecutionResult internalError;
 
   public AbstractTaskExecutor(TaskConfigurationEx taskConfiguration) {
     this.taskConfiguration = taskConfiguration;
-    this.resolver = taskConfiguration.getResolver();
-    this.internalError = resolver.internalError();
   }
 }

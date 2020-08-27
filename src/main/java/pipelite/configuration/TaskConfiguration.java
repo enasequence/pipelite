@@ -11,7 +11,7 @@ import pipelite.instance.TaskParameters;
 @AllArgsConstructor
 @ConfigurationProperties(prefix = "pipelite.task", ignoreInvalidFields = true)
 /** Some configuration parameters are supported only by specific executors. */
-public class TaskConfiguration implements TaskParameters {
+public class TaskConfiguration {
 
   public TaskConfiguration() {}
 

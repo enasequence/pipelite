@@ -10,9 +10,9 @@
  */
 package pipelite.executor;
 
-import uk.ac.ebi.ena.sra.pipeline.launcher.ExecutionInfo;
 import pipelite.instance.TaskInstance;
+import pipelite.task.result.TaskExecutionResult;
 
 public interface TaskExecutor {
-  ExecutionInfo execute(TaskInstance instance);
+  TaskExecutionResult execute(TaskInstance instance);
 }

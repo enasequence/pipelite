@@ -16,6 +16,7 @@ import pipelite.executor.AbstractTaskExecutor;
 import pipelite.instance.TaskInstance;
 import pipelite.task.Task;
 import pipelite.task.TaskInfo;
+import pipelite.task.result.TaskExecutionResult;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,8 +27,10 @@ public class InternalTaskExecutor extends AbstractTaskExecutor {
     super(taskConfiguration);
   }
 
-  public ExecutionInfo execute(TaskInstance taskInstance) {
-    Throwable exception = null;
+  @Override
+  public TaskExecutionResult execute(TaskInstance taskInstance) {
+
+    TaskExecutionResult result;
 
     try {
       String processName = taskInstance.getProcessName();
@@ -35,17 +38,19 @@ public class InternalTaskExecutor extends AbstractTaskExecutor {
       String taskName = taskInstance.getTaskName();
       Task task =
           taskInstance.getTaskFactory().createTask(new TaskInfo(processName, processId, taskName));
-      task.execute(taskInstance);
 
-    } catch (Throwable e) {
-      e.printStackTrace();
-      exception = e;
-    } finally {
-      ExecutionInfo executionInfo = new ExecutionInfo();
-      executionInfo.setThrowable(exception);
-      executionInfo.setExitCode(resolver.exitCodeSerializer().serialize(resolver.resolveError(exception)));
-      return executionInfo;
+      try {
+        task.execute(taskInstance);
+        result = TaskExecutionResult.success();
+      } catch (Exception ex) {
+        result = taskInstance.getTaskParameters().getResolver().resolve(ex);
+        result.addExceptionAttribute(ex);
+      }
+    } catch (Exception ex) {
+      result = TaskExecutionResult.internalError();
+      result.addExceptionAttribute(ex);
     }
+    return result;
   }
 
   public static List<String> callInternalTaskExecutor(TaskInstance instance) {
@@ -58,7 +63,6 @@ public class InternalTaskExecutor extends AbstractTaskExecutor {
     }
 
     cmd.addAll(instance.getTaskParameters().getEnvAsJavaSystemPropertyOptions());
-
 
     // Call Application.
     /*

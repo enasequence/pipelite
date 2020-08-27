@@ -1,19 +1,16 @@
 package pipelite.resolver;
 
 import pipelite.task.result.TaskExecutionResult;
-import pipelite.task.result.serializer.TaskExecutionResultExitCodeSerializer;
+import pipelite.task.result.serializer.TaskExecutionResultSerializer;
 
 import java.util.List;
 
 public interface TaskExecutionResultResolver<T> {
 
-    TaskExecutionResult success();
+  /** Null cause resolves to success. */
+  TaskExecutionResult resolve(T cause);
 
-    TaskExecutionResult internalError();
+  List<TaskExecutionResult> results();
 
-    TaskExecutionResult resolveError(T cause);
-
-    List<TaskExecutionResult> results();
-
-    TaskExecutionResultExitCodeSerializer<T> exitCodeSerializer();
+  TaskExecutionResultSerializer<T> serializer();
 }

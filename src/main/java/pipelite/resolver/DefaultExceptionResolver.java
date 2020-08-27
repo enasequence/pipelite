@@ -1,34 +1,23 @@
 package pipelite.resolver;
 
 import pipelite.task.result.TaskExecutionResult;
-import pipelite.task.result.serializer.TaskExecutionResultExitCodeSerializer;
+import pipelite.task.result.serializer.TaskExecutionResultSerializer;
 
 import java.util.List;
 
-public class DefaultExceptionResolver implements ExceptionResolver {
+public class DefaultExceptionResolver implements TaskExecutionResultResolver<Throwable> {
 
-  public final static String NAME = "pipelite.resolver.DefaultExceptionResolver";
+  public static final String NAME = "pipelite.resolver.DefaultExceptionResolver";
 
-  private final ConcreteExceptionResolver resolver;
+  private final ExceptionResolver resolver;
 
   public DefaultExceptionResolver() {
-    resolver =
-        ConcreteExceptionResolver.builder().permanentError(Exception.class, "EXCEPTION").build();
+    resolver = ExceptionResolver.builder().permanentError(Throwable.class, "EXCEPTION").build();
   }
 
   @Override
-  public TaskExecutionResult success() {
-    return resolver.success();
-  }
-
-  @Override
-  public TaskExecutionResult internalError() {
-    return resolver.internalError();
-  }
-
-  @Override
-  public TaskExecutionResult resolveError(Throwable cause) {
-    return resolver.resolveError(cause);
+  public TaskExecutionResult resolve(Throwable cause) {
+    return resolver.resolve(cause);
   }
 
   @Override
@@ -37,7 +26,7 @@ public class DefaultExceptionResolver implements ExceptionResolver {
   }
 
   @Override
-  public TaskExecutionResultExitCodeSerializer<Throwable> exitCodeSerializer() {
-    return resolver.exitCodeSerializer();
+  public TaskExecutionResultSerializer<Throwable> serializer() {
+    return resolver.serializer();
   }
 }

@@ -5,29 +5,31 @@ import pipelite.task.result.TaskExecutionResult;
 import pipelite.task.result.serializer.TaskExecutionResultExitCodeSerializer;
 import pipelite.task.result.serializer.TaskExecutionResultSerializer;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Flogger
-public class ExceptionResolver implements TaskExecutionResultResolver<Throwable> {
+public class ExitCodeResolver implements TaskExecutionResultResolver<Integer> {
 
-  private final Map<Class<? extends Throwable>, TaskExecutionResult> map;
+  private final Map<Integer, TaskExecutionResult> map;
   private final List<TaskExecutionResult> list;
-  private final TaskExecutionResultExitCodeSerializer<Throwable> serializer;
+  private final TaskExecutionResultExitCodeSerializer<Integer> serializer;
 
-  public ExceptionResolver(
-      Map<Class<? extends Throwable>, TaskExecutionResult> map, List<TaskExecutionResult> list) {
+  public ExitCodeResolver(Map<Integer, TaskExecutionResult> map, List<TaskExecutionResult> list) {
     this.map = map;
     this.list = list;
     this.serializer = new TaskExecutionResultExitCodeSerializer(this);
   }
 
   @Override
-  public TaskExecutionResult resolve(Throwable cause) {
+  public TaskExecutionResult resolve(Integer cause) {
     if (cause == null) {
       return TaskExecutionResult.success();
     }
-    for (Map.Entry<Class<? extends Throwable>, TaskExecutionResult> entry : map.entrySet()) {
-      if (entry.getKey().isInstance(cause)) {
+    for (Map.Entry<Integer, TaskExecutionResult> entry : map.entrySet()) {
+      if (entry.getKey().equals(cause)) {
         return entry.getValue();
       }
     }
@@ -42,7 +44,7 @@ public class ExceptionResolver implements TaskExecutionResultResolver<Throwable>
   }
 
   @Override
-  public TaskExecutionResultSerializer<Throwable> serializer() {
+  public TaskExecutionResultSerializer<Integer> serializer() {
     return serializer;
   }
 
@@ -51,30 +53,37 @@ public class ExceptionResolver implements TaskExecutionResultResolver<Throwable>
   }
 
   public static class Builder {
-    private final Map<Class<? extends Throwable>, TaskExecutionResult> map = new HashMap<>();
+    private final Map<Integer, TaskExecutionResult> map = new HashMap<>();
     private final List<TaskExecutionResult> list = new ArrayList<>();
 
     public Builder() {
       list.add(TaskExecutionResult.success());
     }
 
-    public Builder transientError(Class<? extends Throwable> cause, String resultName) {
+    public Builder success(Integer cause) {
+      TaskExecutionResult result = TaskExecutionResult.success();
+      this.map.put(cause, result);
+      this.list.add(result);
+      return this;
+    }
+
+    public Builder transientError(Integer cause, String resultName) {
       TaskExecutionResult result = TaskExecutionResult.transientError(resultName);
       this.map.put(cause, result);
       this.list.add(result);
       return this;
     }
 
-    public Builder permanentError(Class<? extends Throwable> cause, String resultName) {
+    public Builder permanentError(Integer cause, String resultName) {
       TaskExecutionResult result = TaskExecutionResult.permanentError(resultName);
       this.map.put(cause, result);
       this.list.add(result);
       return this;
     }
 
-    public ExceptionResolver build() {
+    public ExitCodeResolver build() {
       list.add(TaskExecutionResult.internalError());
-      return new ExceptionResolver(map, list);
+      return new ExitCodeResolver(map, list);
     }
   }
 }
