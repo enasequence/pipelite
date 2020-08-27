@@ -7,15 +7,16 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import pipelite.configuration.TaskConfigurationEx;
 import pipelite.instance.TaskInstance;
-import pipelite.launcher.PipeliteLauncherServiceManager;
 import pipelite.launcher.PipeliteLauncher;
+import pipelite.launcher.PipeliteLauncherServiceManager;
 import uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor;
 
 @Flogger
 @SpringBootApplication
 public class Application implements CommandLineRunner {
 
-  @Autowired PipeliteLauncher pipeliteLauncher;
+  @Autowired
+  PipeliteLauncher pipeliteLauncher;
   @Autowired TaskConfigurationEx taskConfiguration;
 
   public static final String TASK_MODE = "task";

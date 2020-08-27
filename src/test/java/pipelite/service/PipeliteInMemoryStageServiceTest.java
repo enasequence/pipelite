@@ -3,7 +3,7 @@ package pipelite.service;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.PipeliteStage;
-import pipelite.task.result.TaskExecutionResult;
+import pipelite.task.TaskExecutionResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

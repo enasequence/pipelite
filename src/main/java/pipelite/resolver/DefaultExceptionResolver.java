@@ -1,7 +1,7 @@
 package pipelite.resolver;
 
-import pipelite.task.result.TaskExecutionResult;
-import pipelite.task.result.serializer.TaskExecutionResultSerializer;
+import pipelite.task.TaskExecutionResult;
+import pipelite.task.TaskExecutionResultSerializer;
 
 import java.util.List;
 

@@ -1,7 +1,6 @@
-package pipelite.task.result;
+package pipelite.task;
 
 import lombok.NonNull;
-import lombok.Singular;
 import lombok.Value;
 
 import java.io.PrintWriter;

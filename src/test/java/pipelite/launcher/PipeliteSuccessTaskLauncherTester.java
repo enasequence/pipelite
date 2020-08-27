@@ -9,7 +9,7 @@ import pipelite.executor.TaskExecutor;
 import pipelite.executor.TaskExecutorFactory;
 import pipelite.instance.ProcessInstance;
 import pipelite.instance.ProcessInstanceBuilder;
-import pipelite.task.result.TaskExecutionResult;
+import pipelite.task.TaskExecutionResult;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,9 +18,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @AllArgsConstructor
-public class DefaultPipeliteSuccessTaskLauncherTester {
+public class PipeliteSuccessTaskLauncherTester {
 
-  private final DefaultPipeliteLauncher defaultPipeliteLauncher;
+  private final PipeliteLauncher pipeliteLauncher;
   private final ProcessConfigurationEx processConfiguration;
 
   private final AtomicInteger processExecutionCount = new AtomicInteger();
@@ -53,7 +53,7 @@ public class DefaultPipeliteSuccessTaskLauncherTester {
   private List<ProcessInstance> createProcessInstances() {
     List<ProcessInstance> processInstances = new ArrayList<>();
     for (int i = 0; i < PROCESS_COUNT; ++i) {
-      String processName = defaultPipeliteLauncher.getProcessName();
+      String processName = pipeliteLauncher.getProcessName();
       String processId = "Process" + i;
       processInstances.add(
           new ProcessInstanceBuilder(processName, processId, 9)
@@ -68,16 +68,16 @@ public class DefaultPipeliteSuccessTaskLauncherTester {
     processConfiguration.setProcessFactory(
         new TestInMemoryProcessFactory(createProcessInstances()));
 
-    defaultPipeliteLauncher.setShutdownPolicy(
-        DefaultPipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
-    defaultPipeliteLauncher.setSchedulerDelayMillis(10);
+    pipeliteLauncher.setShutdownPolicy(
+        PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    pipeliteLauncher.setSchedulerDelayMillis(10);
 
-    PipeliteLauncherServiceManager.run(defaultPipeliteLauncher);
+    PipeliteLauncherServiceManager.run(pipeliteLauncher);
 
     assertThat(processExcessExecutionSet).isEmpty();
     assertThat(processExecutionCount.get()).isEqualTo(PROCESS_COUNT);
     assertThat(processExecutionCount.get())
-        .isEqualTo(defaultPipeliteLauncher.getProcessCompletedCount());
-    assertThat(defaultPipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
+        .isEqualTo(pipeliteLauncher.getProcessCompletedCount());
+    assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
   }
 }

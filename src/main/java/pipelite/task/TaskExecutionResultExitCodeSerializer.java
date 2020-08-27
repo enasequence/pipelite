@@ -1,7 +1,6 @@
-package pipelite.task.result.serializer;
+package pipelite.task;
 
 import lombok.Value;
-import pipelite.task.result.TaskExecutionResult;
 import pipelite.resolver.TaskExecutionResultResolver;
 
 import java.util.List;

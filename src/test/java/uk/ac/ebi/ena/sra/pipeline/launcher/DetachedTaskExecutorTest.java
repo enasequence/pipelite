@@ -18,7 +18,7 @@ import pipelite.configuration.TaskConfiguration;
 import pipelite.configuration.TaskConfigurationEx;
 import pipelite.resolver.DefaultExceptionResolver;
 import pipelite.instance.TaskInstance;
-import pipelite.task.result.TaskExecutionResult;
+import pipelite.task.TaskExecutionResult;
 
 public class DetachedTaskExecutorTest {
 

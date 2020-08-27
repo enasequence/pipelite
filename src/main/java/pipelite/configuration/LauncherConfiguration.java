@@ -17,6 +17,5 @@ public class LauncherConfiguration {
   private String launcherName;
 
   /** Number of parallel task executions. */
-  @Builder.Default
   private Integer workers;
 }

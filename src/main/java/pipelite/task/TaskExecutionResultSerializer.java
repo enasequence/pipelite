@@ -1,6 +1,4 @@
-package pipelite.task.result.serializer;
-
-import pipelite.task.result.TaskExecutionResult;
+package pipelite.task;
 
 public interface TaskExecutionResultSerializer<T> {
 

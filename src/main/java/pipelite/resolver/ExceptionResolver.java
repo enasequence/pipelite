@@ -1,9 +1,9 @@
 package pipelite.resolver;
 
 import lombok.extern.flogger.Flogger;
-import pipelite.task.result.TaskExecutionResult;
-import pipelite.task.result.serializer.TaskExecutionResultExitCodeSerializer;
-import pipelite.task.result.serializer.TaskExecutionResultSerializer;
+import pipelite.task.TaskExecutionResult;
+import pipelite.task.TaskExecutionResultExitCodeSerializer;
+import pipelite.task.TaskExecutionResultSerializer;
 
 import java.util.*;
 

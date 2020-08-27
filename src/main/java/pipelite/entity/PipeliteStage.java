@@ -3,8 +3,8 @@ package pipelite.entity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import pipelite.task.result.TaskExecutionResult;
-import pipelite.task.result.TaskExecutionResultType;
+import pipelite.task.TaskExecutionResult;
+import pipelite.task.TaskExecutionResultType;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;

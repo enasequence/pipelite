@@ -2,7 +2,7 @@ package pipelite.log;
 
 import com.google.common.flogger.MetadataKey;
 import pipelite.process.ProcessExecutionState;
-import pipelite.task.result.TaskExecutionResultType;
+import pipelite.task.TaskExecutionResultType;
 
 public class LogKey {
 

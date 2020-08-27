@@ -1,4 +1,4 @@
-package pipelite.task.state;
+package pipelite.task;
 
 public enum TaskExecutionState {
   ACTIVE,

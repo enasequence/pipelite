@@ -8,7 +8,7 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.UniqueStringGenerator;
 import pipelite.FullTestConfiguration;
 import pipelite.entity.PipeliteStage;
-import pipelite.task.result.TaskExecutionResult;
+import pipelite.task.TaskExecutionResult;
 
 import org.springframework.transaction.annotation.Transactional;
 

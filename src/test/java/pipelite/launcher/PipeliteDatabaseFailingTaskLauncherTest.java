@@ -14,7 +14,7 @@ import pipelite.executor.TaskExecutor;
 import pipelite.executor.TaskExecutorFactory;
 import pipelite.instance.ProcessInstance;
 import pipelite.instance.ProcessInstanceBuilder;
-import pipelite.task.result.TaskExecutionResult;
+import pipelite.task.TaskExecutionResult;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,20 +27,16 @@ import static org.assertj.core.api.Assertions.assertThat;
     properties = {
       "pipelite.launcher.workers=5",
       "pipelite.process.executorFactoryName=pipelite.executor.InternalTaskExecutorFactory",
-      "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver",
-      "spring.autoconfigure.exclude="
-          + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
-          + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
-          + "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration"
+      "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver"
     })
 @ContextConfiguration(
-    initializers = DefaultPipeliteInMemorySuccessTaskLauncherTest.TestContextInitializer.class)
-@ActiveProfiles(value = {"test", "memory"})
-public class DefaultPipeliteInMemoryFailingTaskLauncherTest {
+    initializers = PipeliteDatabaseSuccessTaskLauncherTest.TestContextInitializer.class)
+@ActiveProfiles(value = {"database", "database-oracle-test"})
+public class PipeliteDatabaseFailingTaskLauncherTest {
 
   @Autowired private ProcessConfigurationEx processConfiguration;
 
-  @Autowired private ObjectProvider<DefaultPipeliteLauncher> defaultPipeliteLauncherObjectProvider;
+  @Autowired private ObjectProvider<PipeliteLauncher> defaultPipeliteLauncherObjectProvider;
 
   private static final String PROCESS_NAME = UniqueStringGenerator.randomProcessName();
   private static final int PROCESS_CNT = 10;
@@ -80,28 +76,28 @@ public class DefaultPipeliteInMemoryFailingTaskLauncherTest {
                       .build());
             });
 
-    DefaultPipeliteLauncher defaultPipeliteLauncher =
+    PipeliteLauncher pipeliteLauncher =
         defaultPipeliteLauncherObjectProvider.getObject();
 
     TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
     processConfiguration.setProcessFactory(processFactory);
 
-    defaultPipeliteLauncher.setShutdownPolicy(
-        DefaultPipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
-    defaultPipeliteLauncher.setSchedulerDelayMillis(10);
+    pipeliteLauncher.setShutdownPolicy(
+        PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    pipeliteLauncher.setSchedulerDelayMillis(10);
 
-    PipeliteLauncherServiceManager.run(defaultPipeliteLauncher);
+    PipeliteLauncherServiceManager.run(pipeliteLauncher);
 
     assertThat(processFactory.getNewProcessInstances()).isEqualTo(0);
     assertThat(processFactory.getReceivedProcessInstances()).isEqualTo(0);
     assertThat(processFactory.getConfirmedProcessInstances()).isEqualTo(PROCESS_CNT);
     assertThat(processFactory.getRejectedProcessInstances()).isEqualTo(0);
 
-    assertThat(defaultPipeliteLauncher.getProcessCompletedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(defaultPipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
-    assertThat(defaultPipeliteLauncher.getTaskCompletedCount()).isEqualTo(0);
-    assertThat(defaultPipeliteLauncher.getTaskFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(defaultPipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getProcessCompletedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
   }
 
   @Test
@@ -115,7 +111,8 @@ public class DefaultPipeliteInMemoryFailingTaskLauncherTest {
               processInstances.add(
                   new ProcessInstanceBuilder(
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
+                      .task(
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(), new FailTaskExecutionFactory())
                       .taskDependsOnPrevious(
@@ -125,28 +122,28 @@ public class DefaultPipeliteInMemoryFailingTaskLauncherTest {
                       .build());
             });
 
-    DefaultPipeliteLauncher defaultPipeliteLauncher =
+    PipeliteLauncher pipeliteLauncher =
         defaultPipeliteLauncherObjectProvider.getObject();
 
     TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
     processConfiguration.setProcessFactory(processFactory);
 
-    defaultPipeliteLauncher.setShutdownPolicy(
-        DefaultPipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
-    defaultPipeliteLauncher.setSchedulerDelayMillis(10);
+    pipeliteLauncher.setShutdownPolicy(
+        PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    pipeliteLauncher.setSchedulerDelayMillis(10);
 
-    PipeliteLauncherServiceManager.run(defaultPipeliteLauncher);
+    PipeliteLauncherServiceManager.run(pipeliteLauncher);
 
     assertThat(processFactory.getNewProcessInstances()).isEqualTo(0);
     assertThat(processFactory.getReceivedProcessInstances()).isEqualTo(0);
     assertThat(processFactory.getConfirmedProcessInstances()).isEqualTo(PROCESS_CNT);
     assertThat(processFactory.getRejectedProcessInstances()).isEqualTo(0);
 
-    assertThat(defaultPipeliteLauncher.getProcessCompletedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(defaultPipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
-    assertThat(defaultPipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(defaultPipeliteLauncher.getTaskFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(defaultPipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getProcessCompletedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
   }
 
   @Test
@@ -160,7 +157,8 @@ public class DefaultPipeliteInMemoryFailingTaskLauncherTest {
               processInstances.add(
                   new ProcessInstanceBuilder(
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
+                      .task(
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
                       .taskDependsOnPrevious(
@@ -170,28 +168,28 @@ public class DefaultPipeliteInMemoryFailingTaskLauncherTest {
                       .build());
             });
 
-    DefaultPipeliteLauncher defaultPipeliteLauncher =
+    PipeliteLauncher pipeliteLauncher =
         defaultPipeliteLauncherObjectProvider.getObject();
 
     TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
     processConfiguration.setProcessFactory(processFactory);
 
-    defaultPipeliteLauncher.setShutdownPolicy(
-        DefaultPipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
-    defaultPipeliteLauncher.setSchedulerDelayMillis(10);
+    pipeliteLauncher.setShutdownPolicy(
+        PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    pipeliteLauncher.setSchedulerDelayMillis(10);
 
-    PipeliteLauncherServiceManager.run(defaultPipeliteLauncher);
+    PipeliteLauncherServiceManager.run(pipeliteLauncher);
 
     assertThat(processFactory.getNewProcessInstances()).isEqualTo(0);
     assertThat(processFactory.getReceivedProcessInstances()).isEqualTo(0);
     assertThat(processFactory.getConfirmedProcessInstances()).isEqualTo(PROCESS_CNT);
     assertThat(processFactory.getRejectedProcessInstances()).isEqualTo(0);
 
-    assertThat(defaultPipeliteLauncher.getProcessCompletedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(defaultPipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
-    assertThat(defaultPipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT * 2);
-    assertThat(defaultPipeliteLauncher.getTaskFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(defaultPipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getProcessCompletedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT * 2);
+    assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
   }
 
   @Test
@@ -205,7 +203,8 @@ public class DefaultPipeliteInMemoryFailingTaskLauncherTest {
               processInstances.add(
                   new ProcessInstanceBuilder(
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
+                      .task(
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
                       .taskDependsOnPrevious(
@@ -215,28 +214,28 @@ public class DefaultPipeliteInMemoryFailingTaskLauncherTest {
                       .build());
             });
 
-    DefaultPipeliteLauncher defaultPipeliteLauncher =
+    PipeliteLauncher pipeliteLauncher =
         defaultPipeliteLauncherObjectProvider.getObject();
 
     TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
     processConfiguration.setProcessFactory(processFactory);
 
-    defaultPipeliteLauncher.setShutdownPolicy(
-        DefaultPipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
-    defaultPipeliteLauncher.setSchedulerDelayMillis(10);
+    pipeliteLauncher.setShutdownPolicy(
+        PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    pipeliteLauncher.setSchedulerDelayMillis(10);
 
-    PipeliteLauncherServiceManager.run(defaultPipeliteLauncher);
+    PipeliteLauncherServiceManager.run(pipeliteLauncher);
 
     assertThat(processFactory.getNewProcessInstances()).isEqualTo(0);
     assertThat(processFactory.getReceivedProcessInstances()).isEqualTo(0);
     assertThat(processFactory.getConfirmedProcessInstances()).isEqualTo(PROCESS_CNT);
     assertThat(processFactory.getRejectedProcessInstances()).isEqualTo(0);
 
-    assertThat(defaultPipeliteLauncher.getProcessCompletedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(defaultPipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
-    assertThat(defaultPipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT * 3);
-    assertThat(defaultPipeliteLauncher.getTaskFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(defaultPipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getProcessCompletedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT * 3);
+    assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
   }
 
   @Test
@@ -250,7 +249,8 @@ public class DefaultPipeliteInMemoryFailingTaskLauncherTest {
               processInstances.add(
                   new ProcessInstanceBuilder(
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
+                      .task(
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutionFactory())
                       .taskDependsOnPrevious(
@@ -260,27 +260,27 @@ public class DefaultPipeliteInMemoryFailingTaskLauncherTest {
                       .build());
             });
 
-    DefaultPipeliteLauncher defaultPipeliteLauncher =
+    PipeliteLauncher pipeliteLauncher =
         defaultPipeliteLauncherObjectProvider.getObject();
 
     TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
     processConfiguration.setProcessFactory(processFactory);
 
-    defaultPipeliteLauncher.setShutdownPolicy(
-        DefaultPipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
-    defaultPipeliteLauncher.setSchedulerDelayMillis(10);
+    pipeliteLauncher.setShutdownPolicy(
+        PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    pipeliteLauncher.setSchedulerDelayMillis(10);
 
-    PipeliteLauncherServiceManager.run(defaultPipeliteLauncher);
+    PipeliteLauncherServiceManager.run(pipeliteLauncher);
 
     assertThat(processFactory.getNewProcessInstances()).isEqualTo(0);
     assertThat(processFactory.getReceivedProcessInstances()).isEqualTo(0);
     assertThat(processFactory.getConfirmedProcessInstances()).isEqualTo(PROCESS_CNT);
     assertThat(processFactory.getRejectedProcessInstances()).isEqualTo(0);
 
-    assertThat(defaultPipeliteLauncher.getProcessCompletedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(defaultPipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
-    assertThat(defaultPipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT * 4);
-    assertThat(defaultPipeliteLauncher.getTaskFailedCount()).isEqualTo(0);
-    assertThat(defaultPipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getProcessCompletedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT * 4);
+    assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
   }
 }

@@ -1,4 +1,4 @@
-package pipelite.task.result;
+package pipelite.task;
 
 public enum TaskExecutionResultType {
   SUCCESS(false),

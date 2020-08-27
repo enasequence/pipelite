@@ -19,12 +19,11 @@ import pipelite.configuration.TaskConfiguration;
 import pipelite.configuration.TaskConfigurationEx;
 import pipelite.resolver.DefaultExceptionResolver;
 import pipelite.instance.TaskInstance;
-import pipelite.task.result.TaskExecutionResult;
+import pipelite.task.TaskExecutionResult;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static uk.ac.ebi.ena.sra.pipeline.launcher.LSFTaskExecutor.LSF_JVM_MEMORY_DELTA_MB;
 
 public class LSFTaskExecutorTest {
 

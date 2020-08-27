@@ -11,7 +11,7 @@
 package pipelite.executor;
 
 import pipelite.instance.TaskInstance;
-import pipelite.task.result.TaskExecutionResult;
+import pipelite.task.TaskExecutionResult;
 
 public interface TaskExecutor {
   TaskExecutionResult execute(TaskInstance instance);

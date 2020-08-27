@@ -13,7 +13,7 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 import pipelite.Application;
 import pipelite.executor.TaskExecutor;
 import pipelite.instance.TaskInstance;
-import pipelite.task.result.TaskExecutionResult;
+import pipelite.task.TaskExecutionResult;
 
 import java.util.ArrayList;
 import java.util.List;

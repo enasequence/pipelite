@@ -4,7 +4,7 @@ import lombok.extern.flogger.Flogger;
 import org.apache.commons.exec.*;
 import org.apache.commons.exec.util.StringUtils;
 import pipelite.instance.TaskInstance;
-import pipelite.task.result.TaskExecutionResult;
+import pipelite.task.TaskExecutionResult;
 
 import java.util.Collection;
 

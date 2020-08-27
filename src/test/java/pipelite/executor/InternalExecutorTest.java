@@ -12,7 +12,7 @@ import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.configuration.TaskConfigurationEx;
 import pipelite.instance.TaskInstance;
-import pipelite.task.result.TaskExecutionResult;
+import pipelite.task.TaskExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor;
 
 import java.util.concurrent.atomic.AtomicInteger;

@@ -28,17 +28,13 @@ import pipelite.configuration.ProcessConfigurationEx;
       "pipelite.launcher.workers=5",
       "pipelite.process.executorFactoryName=pipelite.executor.InternalTaskExecutorFactory",
       "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver",
-      "spring.autoconfigure.exclude="
-          + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
-          + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
-          + "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration"
     })
 @ContextConfiguration(
-    initializers = DefaultPipeliteInMemorySuccessTaskLauncherTest.TestContextInitializer.class)
-@ActiveProfiles(value = {"test", "memory"})
-public class DefaultPipeliteInMemorySuccessTaskLauncherTest {
+    initializers = PipeliteDatabaseSuccessTaskLauncherTest.TestContextInitializer.class)
+@ActiveProfiles(value = {"database", "database-oracle-test"})
+public class PipeliteDatabaseSuccessTaskLauncherTest {
 
-  @Autowired private DefaultPipeliteLauncher defaultPipeliteLauncher;
+  @Autowired private PipeliteLauncher pipeliteLauncher;
   @Autowired private ProcessConfigurationEx processConfiguration;
 
   public static class TestContextInitializer
@@ -54,8 +50,8 @@ public class DefaultPipeliteInMemorySuccessTaskLauncherTest {
 
   @Test
   public void test() {
-    DefaultPipeliteSuccessTaskLauncherTester tester =
-        new DefaultPipeliteSuccessTaskLauncherTester(defaultPipeliteLauncher, processConfiguration);
+    PipeliteSuccessTaskLauncherTester tester =
+        new PipeliteSuccessTaskLauncherTester(pipeliteLauncher, processConfiguration);
     tester.test();
   }
 }
