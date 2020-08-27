@@ -14,7 +14,6 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import pipelite.task.TaskFactory;
-
 @Value
 @Builder
 public class TaskInstance {

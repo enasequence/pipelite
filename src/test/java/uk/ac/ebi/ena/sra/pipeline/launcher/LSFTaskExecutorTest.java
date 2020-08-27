@@ -122,19 +122,7 @@ public class LSFTaskExecutorTest {
     LSFTaskExecutor se = new LSFTaskExecutor(taskConfiguration);
     String cmd = se.execute(taskInstance(taskConfiguration)).getCommandline();
     assertTrue(cmd.contains(" -M 2000 -R rusage[mem=2000:duration=1]"));
-    assertTrue(cmd.contains(" -Xmx" + (2000 - LSF_JVM_MEMORY_DELTA_MB) + "M"));
-  }
-
-  @Test
-  public void testTaskWithoutJavaXmxMemory() {
-    TaskConfigurationEx taskConfiguration = taskConfiguration();
-    taskConfiguration.setMemory(1500);
-
-    LSFTaskExecutor se = new LSFTaskExecutor(taskConfiguration);
-    String cmd = se.execute(taskInstance(taskConfiguration)).getCommandline();
-    assertTrue(cmd.contains(" -M 1500 -R rusage[mem=1500:duration=1]"));
-    // Not enough memory requested to create -Xmx.
-    assertFalse(cmd.contains(" -Xmx"));
+    assertTrue(cmd.contains(" -Xmx" + 2000 + "M"));
   }
 
   @Test

@@ -1,5 +1,8 @@
 package pipelite.instance;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public interface TaskParameters {
 
   Integer getMemory();
@@ -42,5 +45,18 @@ public interface TaskParameters {
     setRetries(TaskParametersUtils.getRetries(this, taskParameters));
     setTempDir(TaskParametersUtils.getTempDir(this, taskParameters));
     setEnv(TaskParametersUtils.getEnv(this, taskParameters));
+  }
+
+  default List<String> getEnvAsJavaSystemPropertyOptions() {
+    List<String> options = new ArrayList<>();
+    if (getEnv() != null) {
+      for (String property : getEnv()) {
+        String value = System.getProperty(property);
+        if (value != null) {
+          options.add(String.format("-D%s=%s", property, value));
+        }
+      }
+    }
+    return options;
   }
 }

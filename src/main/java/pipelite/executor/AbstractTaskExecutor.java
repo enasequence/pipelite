@@ -10,8 +10,6 @@
  */
 package pipelite.executor;
 
-import java.util.*;
-
 import pipelite.configuration.TaskConfigurationEx;
 import pipelite.resolver.ExceptionResolver;
 import pipelite.task.result.TaskExecutionResult;
@@ -25,18 +23,5 @@ public abstract class AbstractTaskExecutor implements TaskExecutor {
     this.taskConfiguration = taskConfiguration;
     this.resolver = taskConfiguration.getResolver();
     this.internalError = resolver.internalError();
-  }
-
-  public List<String> getEnvAsJavaSystemPropertyOptions() {
-    List<String> options = new ArrayList<>();
-    if (taskConfiguration.getEnv() != null) {
-      for (String property : taskConfiguration.getEnv()) {
-        String value = System.getProperty(property);
-        if (value != null) {
-          options.add(String.format("-D%s=%s", property, value));
-        }
-      }
-    }
-    return options;
   }
 }

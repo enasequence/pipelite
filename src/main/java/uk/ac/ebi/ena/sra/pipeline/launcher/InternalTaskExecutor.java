@@ -10,11 +10,15 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
+import pipelite.Application;
 import pipelite.configuration.TaskConfigurationEx;
 import pipelite.executor.AbstractTaskExecutor;
 import pipelite.instance.TaskInstance;
 import pipelite.task.Task;
 import pipelite.task.TaskInfo;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class InternalTaskExecutor extends AbstractTaskExecutor {
 
@@ -37,118 +41,38 @@ public class InternalTaskExecutor extends AbstractTaskExecutor {
       e.printStackTrace();
       exception = e;
     } finally {
-      ExecutionInfo info = new ExecutionInfo();
-      info.setThrowable(exception);
-      info.setExitCode(resolver.exitCodeSerializer().serialize(resolver.resolveError(exception)));
-      return info;
+      ExecutionInfo executionInfo = new ExecutionInfo();
+      executionInfo.setThrowable(exception);
+      executionInfo.setExitCode(resolver.exitCodeSerializer().serialize(resolver.resolveError(exception)));
+      return executionInfo;
     }
   }
 
-  // TODO: handle call from LSFTaskExecutor and DetachedTaskExecutor
+  public static List<String> callInternalTaskExecutor(TaskInstance instance) {
+    List<String> cmd = new ArrayList<>();
 
-  public static final String PARAMETERS_NAME_ID = "--id";
-  public static final String PARAMETERS_NAME_STAGE = "--stage";
+    Integer memory = instance.getTaskParameters().getMemory();
 
-  /*
-
-
-    @Parameter( names = PARAMETERS_NAME_ID, description = "ID of the task", required = true )
-    String process_id;
-
-    @Parameter( names = PARAMETERS_NAME_STAGE, description = "Stage name to execute", required = true )
-    String stage_name;
-
-    @Parameter( names = PARAMETERS_NAME_FORCE_COMMIT, description = "force commit client data" )
-    boolean force;
-
-
-    //hidden
-    @Parameter( names = PARAMETERS_NAME_ENABLED, description = "stage is enabled", hidden=true, arity=1 )
-    boolean enabled = true;
-    //hidden
-    @Parameter( names = PARAMETERS_NAME_EXEC_COUNT, description = "execution counter", hidden=true )
-    int    exec_cnt = 0;
-
-
-    public static void
-    main( String[] args ) throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException
-    {
-      ConsoleAppender appender = new ConsoleAppender( layout, "System.out" );
-      appender.setThreshold( Level.INFO );
-
-      String os = System.getProperty( "os.name" );
-
-      Logger.getRootLogger().removeAllAppenders();
-      Logger.getRootLogger().addAppender( appender );
-      Logger.getRootLogger().setLevel( Level.ALL );
-
-      Logger.getRootLogger().warn( "Operating system is " + os );
-
-      StageLauncher sl = new StageLauncher();
-      JCommander jc = new JCommander( sl );
-
-      try
-      {
-        jc.parse( args );
-        System.exit( sl.execute() );
-
-      } catch( ParameterException pe )
-      {
-
-        jc.usage();
-        System.exit( 1 );
-      }
+    if (memory != null && memory > 0) {
+      cmd.add(String.format("-Xmx%dM", memory));
     }
 
-
-    public int
-    execute()
-    {
-      StageExecutor executor = new InternalStageExecutor( new ResultTranslator( DefaultConfiguration.currentSet().getCommitStatus() ) )
-              .setRedoCount( DefaultConfiguration.currentSet().getStagesRedoCount() );
-
-      StageInstance instance = new StageInstance();
-      instance.setProcessID( process_id );
-      instance.setTaskName( stage_name );
-      instance.setEnabled( enabled );
-      instance.setExecutionCount( exec_cnt );
-      executor.setClientCanCommit( force );
-      executor.execute( instance );
-      return executor.get_info().getExitCode();
-    }
+    cmd.addAll(instance.getTaskParameters().getEnvAsJavaSystemPropertyOptions());
 
 
-    public static class
-    InternalExecutionResult
-    {
-      public
-      InternalExecutionResult( int exitCode, StageTask task )
-      {
-        this.exitCode = exitCode;
-        this.task = task;
-      }
+    // Call Application.
+    /*
+    cmd.add("-cp");
+    cmd.add(System.getProperty("java.class.path"));
+    cmd.add(Application.class.getName());
+    */
 
+    // Arguments.
+    cmd.add(Application.TASK_MODE);
+    cmd.add(instance.getProcessName());
+    cmd.add(instance.getProcessId());
+    cmd.add(instance.getTaskName());
 
-      public final int       exitCode;
-      public final StageTask task;
-    }
-
-
-    public InternalExecutionResult
-    execute( String process_id, String stage_name, boolean force )
-    {
-      InternalStageExecutor executor = new InternalStageExecutor( new ResultTranslator( DefaultConfiguration.currentSet().getCommitStatus() ) )
-              .setRedoCount( DefaultConfiguration.currentSet().getStagesRedoCount() );
-      StageInstance instance = new StageInstance();
-      instance.setProcessID( process_id );
-      instance.setTaskName( stage_name );
-      instance.setEnabled( true );
-      instance.setExecutionCount( 0 );
-      executor.setClientCanCommit( force );
-      executor.execute( instance );
-      return new InternalExecutionResult( executor.get_info().getExitCode(), executor.get_task() );
-    }
+    return cmd;
   }
-
-     */
 }

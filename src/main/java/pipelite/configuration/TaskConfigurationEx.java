@@ -5,6 +5,9 @@ import org.springframework.stereotype.Component;
 import pipelite.instance.TaskParameters;
 import pipelite.resolver.ExceptionResolver;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Component
 public class TaskConfigurationEx implements TaskParameters {
 

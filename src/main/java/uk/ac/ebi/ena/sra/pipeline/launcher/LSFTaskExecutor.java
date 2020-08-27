@@ -11,7 +11,6 @@
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 
 import lombok.extern.flogger.Flogger;
@@ -20,6 +19,8 @@ import pipelite.executor.AbstractTaskExecutor;
 import pipelite.instance.TaskInstance;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall;
+
+import static uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.callInternalTaskExecutor;
 
 @Flogger
 public class LSFTaskExecutor extends AbstractTaskExecutor {
@@ -30,42 +31,6 @@ public class LSFTaskExecutor extends AbstractTaskExecutor {
 
   public LSFTaskExecutor(TaskConfigurationEx taskConfiguration) {
     super(taskConfiguration);
-  }
-
-  private List<String> constructArgs(TaskInstance taskInstance, boolean commit) {
-    List<String> p_args = new ArrayList<>();
-
-    p_args.add("-XX:+UseSerialGC");
-
-    int lsf_memory_limit = taskInstance.getTaskParameters().getMemory();
-    if (lsf_memory_limit <= 0) {
-      lsf_memory_limit = taskConfiguration.getMemory();
-    }
-
-    int java_memory_limit = lsf_memory_limit - LSF_JVM_MEMORY_DELTA_MB;
-
-    if (0 >= java_memory_limit) {
-      log.atWarning().log(
-          "LSF memory is lower than "
-              + LSF_JVM_MEMORY_DELTA_MB
-              + "MB. Java memory limit will not be set.");
-    } else {
-      p_args.add(String.format("-Xmx%dM", java_memory_limit));
-    }
-
-    p_args.addAll(getEnvAsJavaSystemPropertyOptions());
-
-    p_args.add("-cp");
-    p_args.add(System.getProperty("java.class.path"));
-    p_args.add(InternalTaskExecutor.class.getName());
-
-    p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.PARAMETERS_NAME_ID);
-    p_args.add(taskInstance.getProcessId());
-
-    p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.PARAMETERS_NAME_STAGE);
-    p_args.add(taskInstance.getTaskName());
-
-    return p_args;
   }
 
   private LSFBackEnd configureBackend(TaskInstance taskInstance) {
@@ -97,20 +62,19 @@ public class LSFTaskExecutor extends AbstractTaskExecutor {
     return back_end;
   }
 
-  public ExecutionInfo execute(TaskInstance instance) {
+  public ExecutionInfo execute(TaskInstance taskInstance) {
 
-    boolean do_commit = true;
-    List<String> p_args = constructArgs(instance, do_commit);
+    List<String> p_args = callInternalTaskExecutor(taskInstance);
 
-    LSFBackEnd back_end = configureBackend(instance);
+    LSFBackEnd back_end = configureBackend(taskInstance);
 
     LSFClusterCall call =
         back_end.new_call_instance(
             String.format(
                 "%s--%s--%s",
-                instance.getProcessName(),
-                instance.getProcessId(),
-                instance.getTaskName()),
+                taskInstance.getProcessName(),
+                taskInstance.getProcessId(),
+                taskInstance.getTaskName()),
             "java",
             p_args.toArray(new String[0]));
 

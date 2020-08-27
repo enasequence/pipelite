@@ -10,7 +10,6 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import lombok.extern.flogger.Flogger;
@@ -19,6 +18,8 @@ import pipelite.executor.AbstractTaskExecutor;
 import pipelite.instance.TaskInstance;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCall;
 import uk.ac.ebi.ena.sra.pipeline.base.external.ExternalCallException;
+
+import static uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.callInternalTaskExecutor;
 
 @Flogger
 public class DetachedTaskExecutor extends AbstractTaskExecutor {
@@ -29,43 +30,19 @@ public class DetachedTaskExecutor extends AbstractTaskExecutor {
     super(taskConfiguration);
   }
 
-  private List<String> constructArgs(TaskInstance instance, boolean commit) {
-    List<String> p_args = new ArrayList<>();
-
-    Integer memory = instance.getTaskParameters().getMemory();
-
-    if (memory != null && memory > 0) {
-      p_args.add(String.format("-Xmx%dM", memory));
-    }
-
-    p_args.addAll(getEnvAsJavaSystemPropertyOptions());
-
-    p_args.add("-cp");
-    p_args.add(System.getProperty("java.class.path"));
-    p_args.add(InternalTaskExecutor.class.getName());
-
-    p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.PARAMETERS_NAME_ID);
-    p_args.add(instance.getProcessId());
-
-    p_args.add(uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.PARAMETERS_NAME_STAGE);
-    p_args.add(instance.getTaskName());
-
-    return p_args;
-  }
-
   public ExecutionInfo execute(TaskInstance taskInstance) {
 
-    boolean do_commit = true;
-    List<String> p_args = constructArgs(taskInstance, do_commit);
+    List<String> cmd = callInternalTaskExecutor(taskInstance);
     ExternalCall ec =
         back_end.new_call_instance(
             String.format(
+                // TODO: job name
                 "%s~%s~%s",
                 taskInstance.getProcessName(),
                 taskInstance.getProcessId(),
                 taskInstance.getTaskName()),
             "java",
-            p_args.toArray(new String[0]));
+            cmd.toArray(new String[0]));
 
     log.atInfo().log(ec.getCommandLine());
 
