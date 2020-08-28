@@ -15,12 +15,13 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.executor.SuccessTaskExecutor;
+import pipelite.executor.SystemCallInternalTaskExecutor;
 import pipelite.instance.TaskParameters;
-import pipelite.resolver.DefaultExceptionResolver;
+import pipelite.resolver.DefaultInternalTaskExecutorResolver;
 import pipelite.instance.TaskInstance;
 import pipelite.task.TaskExecutionResult;
 
-public class DetachedTaskExecutorTest {
+public class SystemCallInternalTaskExecutorTest {
 
   private TaskParameters taskParameters() {
     return TaskParameters.builder().build();
@@ -31,33 +32,23 @@ public class DetachedTaskExecutorTest {
         .processName(UniqueStringGenerator.randomProcessName())
         .processId(UniqueStringGenerator.randomProcessId())
         .executor(new SuccessTaskExecutor())
-        .resolver(new DefaultExceptionResolver())
+        .resolver(new DefaultInternalTaskExecutorResolver())
         .taskParameters(taskParameters)
         .build();
   }
 
-  private static String getCommandline(TaskExecutionResult result) {
+  private static String getCommand(TaskExecutionResult result) {
     return result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND);
   }
 
   @Test
   public void javaMemory() {
     TaskParameters taskParameters = taskParameters();
-
     taskParameters.setMemory(2000);
 
-    DetachedTaskExecutor se = new DetachedTaskExecutor();
-    String cmd = getCommandline(se.execute(taskInstance(taskParameters)));
+    SystemCallInternalTaskExecutor executor = SystemCallInternalTaskExecutor.builder().build();
+    String cmd = getCommand(executor.execute(taskInstance(taskParameters)));
     assertTrue(cmd.contains(" -Xmx2000M"));
-  }
-
-  @Test
-  public void javaMemoryNotSet() {
-    TaskParameters taskParameters = taskParameters();
-
-    DetachedTaskExecutor se = new DetachedTaskExecutor();
-    String cmd = getCommandline(se.execute(taskInstance(taskParameters)));
-    assertFalse(cmd.contains(" -Xmx2000M"));
   }
 
   @Test
@@ -69,8 +60,8 @@ public class DetachedTaskExecutorTest {
     try {
       System.setProperty("PIPELITE_TEST_JAVA_PROPERTY", "VALUE");
 
-      DetachedTaskExecutor se = new DetachedTaskExecutor();
-      String cmd = getCommandline(se.execute(taskInstance(taskParameters)));
+      SystemCallInternalTaskExecutor executor = SystemCallInternalTaskExecutor.builder().build();
+      String cmd = getCommand(executor.execute(taskInstance(taskParameters)));
       assertTrue(cmd.contains(" -DPIPELITE_TEST_JAVA_PROPERTY=VALUE"));
     } finally {
       System.clearProperty("PIPELITE_TEST_JAVA_PROPERTY");

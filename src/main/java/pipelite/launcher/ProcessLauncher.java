@@ -358,7 +358,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
     log.atInfo()
         .with(LogKey.PROCESS_NAME, processName)
         .with(LogKey.PROCESS_ID, processId)
-        .with(LogKey.STAGE_NAME, taskName)
+        .with(LogKey.TASK_NAME, taskName)
         .log("Preparing to execute task");
 
     // Do not execute task if it is already completed.
@@ -367,7 +367,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
       log.atInfo()
           .with(LogKey.PROCESS_NAME, processName)
           .with(LogKey.PROCESS_ID, processId)
-          .with(LogKey.STAGE_NAME, taskName)
+          .with(LogKey.TASK_NAME, taskName)
           .log("Task will not be executed because it has already completed");
       ++taskSkippedCount;
       return true; // Continue execution.
@@ -379,7 +379,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
       log.atInfo()
           .with(LogKey.PROCESS_NAME, processName)
           .with(LogKey.PROCESS_ID, processId)
-          .with(LogKey.STAGE_NAME, taskName)
+          .with(LogKey.TASK_NAME, taskName)
           .log("Task will not be executed because it has already failed");
       ++taskFailedCount;
       return false; // Do not continue execution;.
@@ -395,7 +395,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
     log.atInfo()
         .with(LogKey.PROCESS_NAME, processName)
         .with(LogKey.PROCESS_ID, processId)
-        .with(LogKey.STAGE_NAME, pipeliteStage.getStageName())
+        .with(LogKey.TASK_NAME, pipeliteStage.getStageName())
         .with(LogKey.TASK_EXECUTION_RESULT_TYPE, pipeliteStage.getResultType())
         .with(LogKey.TASK_EXECUTION_RESULT, pipeliteStage.getResult())
         .with(LogKey.TASK_EXECUTION_COUNT, pipeliteStage.getExecutionCount())
@@ -421,7 +421,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
     log.atInfo()
         .with(LogKey.PROCESS_NAME, processName)
         .with(LogKey.PROCESS_ID, processId)
-        .with(LogKey.STAGE_NAME, pipeliteStage.getStageName())
+        .with(LogKey.TASK_NAME, pipeliteStage.getStageName())
         .with(LogKey.TASK_EXECUTION_RESULT_TYPE, pipeliteStage.getResultType())
         .with(LogKey.TASK_EXECUTION_RESULT, pipeliteStage.getResult())
         .with(LogKey.TASK_EXECUTION_COUNT, pipeliteStage.getExecutionCount())
@@ -433,7 +433,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
       log.atSevere()
           .with(LogKey.PROCESS_NAME, processName)
           .with(LogKey.PROCESS_ID, processId)
-          .with(LogKey.STAGE_NAME, pipeliteStage.getStageName())
+          .with(LogKey.TASK_NAME, pipeliteStage.getStageName())
           .with(LogKey.TASK_EXECUTION_RESULT_TYPE, pipeliteStage.getResultType())
           .with(LogKey.TASK_EXECUTION_RESULT, pipeliteStage.getResult())
           .with(LogKey.TASK_EXECUTION_COUNT, pipeliteStage.getExecutionCount())
@@ -447,7 +447,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
     log.atSevere()
         .with(LogKey.PROCESS_NAME, processName)
         .with(LogKey.PROCESS_ID, processId)
-        .with(LogKey.STAGE_NAME, pipeliteStage.getStageName())
+        .with(LogKey.TASK_NAME, pipeliteStage.getStageName())
         .log("Invalidate task dependencies");
 
     invalidateTaskDepedencies(pipeliteTaskInstance, false);

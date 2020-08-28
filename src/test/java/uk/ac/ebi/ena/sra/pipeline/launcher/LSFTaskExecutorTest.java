@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.executor.SuccessTaskExecutor;
 import pipelite.instance.TaskParameters;
-import pipelite.resolver.DefaultExceptionResolver;
+import pipelite.resolver.DefaultInternalTaskExecutorResolver;
 import pipelite.instance.TaskInstance;
 import pipelite.task.TaskExecutionResult;
 
@@ -46,7 +46,7 @@ public class LSFTaskExecutorTest {
         .processName(UniqueStringGenerator.randomProcessName())
         .processId(UniqueStringGenerator.randomProcessId())
         .executor(new SuccessTaskExecutor())
-        .resolver(new DefaultExceptionResolver())
+        .resolver(new DefaultInternalTaskExecutorResolver())
         .taskParameters(taskParameters)
         .build();
   }

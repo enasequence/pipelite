@@ -1,5 +1,8 @@
 package pipelite.executor;
 
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import org.apache.commons.exec.*;
 import org.apache.commons.exec.util.StringUtils;
@@ -12,10 +15,21 @@ import java.io.OutputStream;
 import java.util.Collection;
 
 @Flogger
-public abstract class SystemCallTaskExecutor implements TaskExecutor {
+@Value
+@Builder
+public class SystemCallTaskExecutor implements TaskExecutor {
 
   public static final int MAX_STDOUT_BYTES = 1024 * 1024;
   public static final int MAX_STDERR_BYTES = 1024 * 1024;
+
+  @NonNull private final String executable;
+  @NonNull private final Collection<String> arguments;
+  private Resolver resolver;
+  private long timeout;
+
+  public interface Resolver {
+    TaskExecutionResult resolve(TaskInstance taskInstance, int exitCode);
+  }
 
   @Override
   public TaskExecutionResult execute(TaskInstance taskInstance) {
@@ -38,10 +52,16 @@ public abstract class SystemCallTaskExecutor implements TaskExecutor {
 
       CommandLine commandLine = createCommandLine();
 
+      log.atInfo().log("Executing system call: %s", getCommand());
+
       int exitCode = executor.execute(commandLine, taskInstance.getTaskParameters().getEnvAsMap());
 
-      TaskExecutionResult result = taskInstance.getResolver().resolve(exitCode);
-
+      TaskExecutionResult result;
+      if (resolver != null) {
+        result = resolver.resolve(taskInstance, exitCode);
+      } else {
+        result = taskInstance.getResolver().resolve(exitCode);
+      }
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND, getCommand());
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_HOST, getHost());
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_EXIT_CODE, exitCode);
@@ -56,7 +76,7 @@ public abstract class SystemCallTaskExecutor implements TaskExecutor {
       return result;
 
     } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Exception during system call");
+      log.atSevere().withCause(ex).log("System call execution failed: %s", getCommand());
 
       TaskExecutionResult result = TaskExecutionResult.internalError();
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND, getCommand());
@@ -71,25 +91,12 @@ public abstract class SystemCallTaskExecutor implements TaskExecutor {
     try {
       stdoutStream.flush();
       value = stdoutStream.toString();
+      log.atInfo().log(value);
       stdoutStream.close();
     } catch (IOException e) {
     } finally {
       return value;
     }
-  }
-
-  protected abstract String getExecutable();
-
-  protected abstract Collection<String> getArguments();
-
-  private long timeout;
-
-  public long getTimeout() {
-    return timeout;
-  }
-
-  public void setTimeout(long timeout) {
-    this.timeout = timeout;
   }
 
   private CommandLine createCommandLine() {

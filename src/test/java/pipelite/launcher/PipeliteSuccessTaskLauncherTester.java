@@ -8,7 +8,7 @@ import pipelite.configuration.ProcessConfiguration;
 import pipelite.executor.TaskExecutor;
 import pipelite.instance.ProcessInstance;
 import pipelite.instance.ProcessInstanceBuilder;
-import pipelite.resolver.DefaultExceptionResolver;
+import pipelite.resolver.DefaultInternalTaskExecutorResolver;
 import pipelite.task.TaskExecutionResult;
 
 import java.util.*;
@@ -56,7 +56,7 @@ public class PipeliteSuccessTaskLauncherTester {
               .task(
                   UniqueStringGenerator.randomTaskName(),
                   createTaskExecutor(processId),
-                  new DefaultExceptionResolver())
+                  new DefaultInternalTaskExecutorResolver())
               .build());
     }
     return processInstances;

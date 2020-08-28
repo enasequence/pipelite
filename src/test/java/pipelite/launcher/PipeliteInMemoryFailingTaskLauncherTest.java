@@ -14,7 +14,7 @@ import pipelite.executor.PermanentErrorTaskExecutor;
 import pipelite.executor.SuccessTaskExecutor;
 import pipelite.instance.ProcessInstance;
 import pipelite.instance.ProcessInstanceBuilder;
-import pipelite.resolver.DefaultExceptionResolver;
+import pipelite.resolver.DefaultInternalTaskExecutorResolver;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,19 +57,19 @@ public class PipeliteInMemoryFailingTaskLauncherTest {
                       .task(
                           UniqueStringGenerator.randomTaskName(),
                           new PermanentErrorTaskExecutor(),
-                          new DefaultExceptionResolver())
+                          new DefaultInternalTaskExecutorResolver())
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
                           new SuccessTaskExecutor(),
-                          new DefaultExceptionResolver())
+                          new DefaultInternalTaskExecutorResolver())
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
                           new SuccessTaskExecutor(),
-                          new DefaultExceptionResolver())
+                          new DefaultInternalTaskExecutorResolver())
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
                           new SuccessTaskExecutor(),
-                          new DefaultExceptionResolver())
+                          new DefaultInternalTaskExecutorResolver())
                       .build());
             });
 
@@ -106,13 +106,13 @@ public class PipeliteInMemoryFailingTaskLauncherTest {
               processInstances.add(
                   new ProcessInstanceBuilder(
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultExceptionResolver())
+                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultInternalTaskExecutorResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new PermanentErrorTaskExecutor(), new DefaultExceptionResolver())
+                          UniqueStringGenerator.randomTaskName(), new PermanentErrorTaskExecutor(), new DefaultInternalTaskExecutorResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultExceptionResolver())
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultInternalTaskExecutorResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultExceptionResolver())
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultInternalTaskExecutorResolver())
                       .build());
             });
 
@@ -149,13 +149,13 @@ public class PipeliteInMemoryFailingTaskLauncherTest {
               processInstances.add(
                   new ProcessInstanceBuilder(
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultExceptionResolver())
+                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultInternalTaskExecutorResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultExceptionResolver())
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultInternalTaskExecutorResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new PermanentErrorTaskExecutor(), new DefaultExceptionResolver())
+                          UniqueStringGenerator.randomTaskName(), new PermanentErrorTaskExecutor(), new DefaultInternalTaskExecutorResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultExceptionResolver())
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultInternalTaskExecutorResolver())
                       .build());
             });
 
@@ -192,13 +192,13 @@ public class PipeliteInMemoryFailingTaskLauncherTest {
               processInstances.add(
                   new ProcessInstanceBuilder(
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultExceptionResolver())
+                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultInternalTaskExecutorResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultExceptionResolver())
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultInternalTaskExecutorResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultExceptionResolver())
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultInternalTaskExecutorResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new PermanentErrorTaskExecutor(), new DefaultExceptionResolver())
+                          UniqueStringGenerator.randomTaskName(), new PermanentErrorTaskExecutor(), new DefaultInternalTaskExecutorResolver())
                       .build());
             });
 
@@ -235,13 +235,13 @@ public class PipeliteInMemoryFailingTaskLauncherTest {
               processInstances.add(
                   new ProcessInstanceBuilder(
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultExceptionResolver())
+                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultInternalTaskExecutorResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultExceptionResolver())
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultInternalTaskExecutorResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultExceptionResolver())
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultInternalTaskExecutorResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultExceptionResolver())
+                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor(), new DefaultInternalTaskExecutorResolver())
                       .build());
             });
 

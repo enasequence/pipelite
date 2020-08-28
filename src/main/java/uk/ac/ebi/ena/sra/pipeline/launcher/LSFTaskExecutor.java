@@ -14,12 +14,11 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import lombok.extern.flogger.Flogger;
+import pipelite.executor.SystemCallInternalTaskExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.instance.TaskInstance;
 import pipelite.task.TaskExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall;
-
-import static uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor.callInternalTaskExecutor;
 
 @Flogger
 public class LSFTaskExecutor implements TaskExecutor {
@@ -60,7 +59,7 @@ public class LSFTaskExecutor implements TaskExecutor {
   @Override
   public TaskExecutionResult execute(TaskInstance taskInstance) {
 
-    List<String> p_args = callInternalTaskExecutor(taskInstance);
+    List<String> p_args = SystemCallInternalTaskExecutor.getArguments(taskInstance);
 
     LSFBackEnd back_end = configureBackend(taskInstance);
 
@@ -75,18 +74,14 @@ public class LSFTaskExecutor implements TaskExecutor {
             p_args.toArray(new String[0]));
 
     call.setTaskLostExitCode(
-        taskInstance
-            .getResolver()
-            .serializer()
-            .serialize(TaskExecutionResult.internalError()));
+        taskInstance.getResolver().serializer().serialize(TaskExecutionResult.internalError()));
 
     log.atInfo().log(call.getCommandLine());
 
     try {
       call.execute();
       int exitCode = call.getExitCode();
-      TaskExecutionResult result =
-          taskInstance.getResolver().serializer().deserialize(exitCode);
+      TaskExecutionResult result = taskInstance.getResolver().serializer().deserialize(exitCode);
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_HOST, call.getHost());
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND, call.getCommandLine());
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_EXIT_CODE, exitCode);

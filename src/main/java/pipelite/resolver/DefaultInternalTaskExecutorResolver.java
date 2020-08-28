@@ -5,13 +5,13 @@ import pipelite.task.TaskExecutionResultSerializer;
 
 import java.util.List;
 
-public class DefaultExceptionResolver implements TaskExecutionResultResolver<Throwable> {
+public class DefaultInternalTaskExecutorResolver implements TaskExecutionResultResolver<Throwable> {
 
   public static final String NAME = "pipelite.resolver.DefaultExceptionResolver";
 
   private final ExceptionResolver resolver;
 
-  public DefaultExceptionResolver() {
+  public DefaultInternalTaskExecutorResolver() {
     resolver = ExceptionResolver.builder().permanentError(Throwable.class, "EXCEPTION").build();
   }
 

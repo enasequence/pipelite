@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.instance.TaskInstance;
 import pipelite.instance.TaskParameters;
-import pipelite.resolver.DefaultExceptionResolver;
+import pipelite.resolver.DefaultInternalTaskExecutorResolver;
 import pipelite.task.TaskExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor;
 
@@ -39,7 +39,7 @@ public class InternalTaskExecutorTest {
             .processId(processId)
             .taskName(taskName)
             .executor(taskExecutor)
-            .resolver(new DefaultExceptionResolver())
+            .resolver(new DefaultInternalTaskExecutorResolver())
             .taskParameters(taskParameters)
             .build();
 

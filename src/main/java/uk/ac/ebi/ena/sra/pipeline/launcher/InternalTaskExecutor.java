@@ -10,14 +10,17 @@
  */
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
-import pipelite.Application;
+import lombok.extern.flogger.Flogger;
 import pipelite.executor.TaskExecutor;
 import pipelite.instance.TaskInstance;
+import pipelite.instance.TaskParameters;
+import pipelite.resolver.TaskExecutionResultResolver;
 import pipelite.task.TaskExecutionResult;
+import pipelite.task.TaskExecutionResultExitCodeSerializer;
 
-import java.util.ArrayList;
-import java.util.List;
+import static pipelite.log.LogKey.*;
 
+@Flogger
 public class InternalTaskExecutor implements TaskExecutor {
 
   @Override
@@ -29,8 +32,7 @@ public class InternalTaskExecutor implements TaskExecutor {
       TaskExecutor taskExecutor = taskInstance.getExecutor();
 
       try {
-        taskExecutor.execute(taskInstance);
-        result = TaskExecutionResult.success();
+        result = taskExecutor.execute(taskInstance);
       } catch (Exception ex) {
         result = taskInstance.getResolver().resolve(ex);
         result.addExceptionAttribute(ex);
@@ -42,31 +44,108 @@ public class InternalTaskExecutor implements TaskExecutor {
     return result;
   }
 
-  public static List<String> callInternalTaskExecutor(TaskInstance instance) {
-    List<String> cmd = new ArrayList<>();
+  public static void main(String[] args) {
+    String processName = args[0];
+    String processId = args[1];
+    String taskName = args[2];
+    String executorName = args[3];
+    String resolverName = args[4];
 
-    Integer memory = instance.getTaskParameters().getMemory();
+    log.atInfo()
+        .with(PROCESS_NAME, processName)
+        .with(PROCESS_ID, processId)
+        .with(TASK_NAME, taskName)
+        .with(TASK_EXECUTOR_CLASS_NAME, executorName)
+        .with(TASK_RESULT_RESOLVER_CLASS_NAME, resolverName)
+        .log("System call to internal task executor");
 
-    if (memory != null && memory > 0) {
-      cmd.add(String.format("-Xmx%dM", memory));
+    TaskExecutor executor = null;
+    try {
+      executor = (TaskExecutor) Class.forName(executorName).newInstance();
+    } catch (Exception ex) {
+      log.atSevere()
+          .with(PROCESS_NAME, processName)
+          .with(PROCESS_ID, processId)
+          .with(TASK_NAME, taskName)
+          .with(TASK_EXECUTOR_CLASS_NAME, executorName)
+          .with(TASK_RESULT_RESOLVER_CLASS_NAME, resolverName)
+          .withCause(ex)
+          .log("Exception when creating task executor for internal task executor");
+      System.exit(TaskExecutionResultExitCodeSerializer.INTERNAL_ERROR_EXIT_CODE);
     }
 
-    cmd.addAll(instance.getTaskParameters().getEnvAsJavaSystemPropertyOptions());
+    TaskExecutionResultResolver resolver = null;
+    try {
+      resolver = (TaskExecutionResultResolver) Class.forName(resolverName).newInstance();
+    } catch (Exception ex) {
+      log.atSevere()
+          .with(PROCESS_NAME, processName)
+          .with(PROCESS_ID, processId)
+          .with(TASK_NAME, taskName)
+          .with(TASK_EXECUTOR_CLASS_NAME, executorName)
+          .with(TASK_RESULT_RESOLVER_CLASS_NAME, resolverName)
+          .withCause(ex)
+          .log("Exception when creating task executor result resolver for internal task executor");
+      System.exit(TaskExecutionResultExitCodeSerializer.INTERNAL_ERROR_EXIT_CODE);
+    }
 
-    // Call Application.
-    /*
-    cmd.add("-cp");
-    cmd.add(System.getProperty("java.class.path"));
-    cmd.add(Application.class.getName());
-    */
+    TaskInstance taskInstance = null;
 
-    // Arguments.
-    cmd.add(Application.TASK_MODE);
-    cmd.add(instance.getProcessName());
-    cmd.add(instance.getProcessId());
-    cmd.add(instance.getTaskName());
-    cmd.add(instance.getExecutor().getClass().getName());
+    InternalTaskExecutor internalTaskExecutor = null;
 
-    return cmd;
+    try {
+      internalTaskExecutor = new InternalTaskExecutor();
+
+      // Task configuration is not available when a task is being executed using internal
+      // task executor through a system call.
+
+      taskInstance =
+          TaskInstance.builder()
+              .processName(processName)
+              .processId(processId)
+              .taskName(taskName)
+              .executor(executor)
+              .resolver(resolver)
+              .taskParameters(TaskParameters.builder().build())
+              .build();
+    } catch (Exception ex) {
+      log.atSevere()
+          .with(PROCESS_NAME, processName)
+          .with(PROCESS_ID, processId)
+          .with(TASK_NAME, taskName)
+          .with(TASK_EXECUTOR_CLASS_NAME, executorName)
+          .with(TASK_RESULT_RESOLVER_CLASS_NAME, resolverName)
+          .withCause(ex)
+          .log("Exception when preparing to call the internal task executor");
+      System.exit(TaskExecutionResultExitCodeSerializer.INTERNAL_ERROR_EXIT_CODE);
+    }
+
+    try {
+      TaskExecutionResult result = internalTaskExecutor.execute(taskInstance);
+      int exitCode = taskInstance.getResolver().serializer().serialize(result);
+
+      log.atInfo()
+          .with(PROCESS_NAME, processName)
+          .with(PROCESS_ID, processId)
+          .with(TASK_NAME, taskName)
+          .with(TASK_EXECUTION_RESULT, result.getResult())
+          .with(TASK_EXECUTION_RESULT_TYPE, result.getResultType())
+          .with(EXIT_CODE, exitCode)
+          .log("Internal task executor completed");
+
+      System.exit(exitCode);
+
+    } catch (Exception ex) {
+      log.atSevere()
+          .with(PROCESS_NAME, processName)
+          .with(PROCESS_ID, processId)
+          .with(TASK_NAME, taskName)
+          .with(TASK_EXECUTOR_CLASS_NAME, executorName)
+          .with(TASK_RESULT_RESOLVER_CLASS_NAME, resolverName)
+          .withCause(ex)
+          .log("Exception when executing internal task executor");
+
+      System.exit(TaskExecutionResultExitCodeSerializer.INTERNAL_ERROR_EXIT_CODE);
+    }
   }
 }
