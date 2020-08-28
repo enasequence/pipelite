@@ -68,7 +68,7 @@ public class Application implements CommandLineRunner {
             .processName(processName)
             .processId(processId)
             .taskName(taskName)
-            // Executor is InternalTaskExecutor
+            // Executor is not required by InternalTaskExecutor
             // .executor()
             .resolver(resolver)
             .taskParameters(taskParameters)

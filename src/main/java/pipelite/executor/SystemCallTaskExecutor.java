@@ -5,20 +5,31 @@ import org.apache.commons.exec.*;
 import org.apache.commons.exec.util.StringUtils;
 import pipelite.instance.TaskInstance;
 import pipelite.task.TaskExecutionResult;
+import uk.ac.ebi.ena.sra.pipeline.base.external.ConstraintedOutputStream;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Collection;
 
 @Flogger
 public abstract class SystemCallTaskExecutor implements TaskExecutor {
+
+  public static final int MAX_STDOUT_BYTES = 1024 * 1024;
+  public static final int MAX_STDERR_BYTES = 1024 * 1024;
+
   @Override
   public TaskExecutionResult execute(TaskInstance taskInstance) {
+
+    OutputStream stdoutStream = new ConstrainedByteArrayOutputStream(MAX_STDOUT_BYTES);
+    OutputStream stderrStream = new ConstraintedOutputStream(MAX_STDERR_BYTES);
 
     Executor executor = new DefaultExecutor();
 
     try {
       executor.setExitValues(null);
 
-      executor.setStreamHandler(new PumpStreamHandler(System.out, System.err));
+      executor.setStreamHandler(new PumpStreamHandler(stdoutStream, stderrStream));
+      // executor.setStreamHandler(new PumpStreamHandler(System.out, System.err));
 
       executor.setWatchdog(
           new ExecuteWatchdog(timeout > 0 ? timeout : ExecuteWatchdog.INFINITE_TIMEOUT));
@@ -35,9 +46,8 @@ public abstract class SystemCallTaskExecutor implements TaskExecutor {
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_HOST, getHost());
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_EXIT_CODE, exitCode);
 
-      // TODO: consider supporting
-      // TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR
-      // TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT
+      result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT, getStream(stdoutStream));
+      result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR, getStream(stderrStream));
 
       if (executor.getWatchdog() != null && executor.getWatchdog().killedProcess()) {
         result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_TIMEOUT, timeout);
@@ -53,6 +63,18 @@ public abstract class SystemCallTaskExecutor implements TaskExecutor {
       result.addExceptionAttribute(ex);
 
       return result;
+    }
+  }
+
+  private String getStream(OutputStream stdoutStream) {
+    String value = null;
+    try {
+      stdoutStream.flush();
+      value = stdoutStream.toString();
+      stdoutStream.close();
+    } catch (IOException e) {
+    } finally {
+      return value;
     }
   }
 
