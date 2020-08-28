@@ -10,7 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
     classes = EmptyTestConfiguration.class,
-    properties = {"pipelite.process.processName=TEST"})
+    properties = {"pipelite.process.processName=TEST", "pipelite.process.processFactoryName=TEST"})
 @EnableConfigurationProperties(value = {ProcessConfiguration.class})
 public class ProcessConfigurationTest {
 
@@ -19,5 +19,6 @@ public class ProcessConfigurationTest {
   @Test
   public void test() {
     assertThat(config.getProcessName()).isEqualTo("TEST");
+    assertThat(config.getProcessFactoryName()).isEqualTo("TEST");
   }
 }

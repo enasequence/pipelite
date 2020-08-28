@@ -27,7 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import pipelite.configuration.LauncherConfiguration;
-import pipelite.configuration.ProcessConfigurationEx;
+import pipelite.configuration.ProcessConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.instance.ProcessInstance;
 import pipelite.instance.ProcessInstanceFactory;
@@ -41,7 +41,7 @@ import pipelite.service.PipeliteProcessService;
 public class PipeliteLauncher extends AbstractScheduledService {
 
   private final LauncherConfiguration launcherConfiguration;
-  private final ProcessConfigurationEx processConfiguration;
+  private final ProcessConfiguration processConfiguration;
   private final PipeliteProcessService pipeliteProcessService;
   private final PipeliteLockService pipeliteLockService;
   private final ExecutorService executorService;
@@ -82,7 +82,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   public PipeliteLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
-      @Autowired ProcessConfigurationEx processConfiguration,
+      @Autowired ProcessConfiguration processConfiguration,
       @Autowired PipeliteProcessService pipeliteProcessService,
       @Autowired PipeliteLockService pipeliteLockService) {
     this.launcherConfiguration = launcherConfiguration;
@@ -113,7 +113,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
       throw new RuntimeException("Could not start process launcher");
     }
 
-    processInstanceFactory = processConfiguration.getProcessFactory();
+    processInstanceFactory = ProcessConfiguration.getProcessFactory(processConfiguration);
 
     log.atInfo()
         .with(LogKey.LAUNCHER_NAME, getLauncherName())

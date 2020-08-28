@@ -20,7 +20,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.FullTestConfiguration;
-import pipelite.configuration.ProcessConfigurationEx;
+import pipelite.configuration.ProcessConfiguration;
 
 @SpringBootTest(
     classes = FullTestConfiguration.class,
@@ -34,7 +34,7 @@ import pipelite.configuration.ProcessConfigurationEx;
 public class PipeliteDatabaseSuccessTaskLauncherTest {
 
   @Autowired private PipeliteLauncher pipeliteLauncher;
-  @Autowired private ProcessConfigurationEx processConfiguration;
+  @Autowired private ProcessConfiguration processConfiguration;
 
   public static class TestContextInitializer
       implements ApplicationContextInitializer<ConfigurableApplicationContext> {

@@ -9,7 +9,7 @@ import org.springframework.test.context.ContextConfiguration;
 import pipelite.FullTestConfiguration;
 import pipelite.TestInMemoryProcessFactory;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.ProcessConfigurationEx;
+import pipelite.configuration.ProcessConfiguration;
 import pipelite.executor.PermanentErrorTaskExecutor;
 import pipelite.executor.SuccessTaskExecutor;
 import pipelite.instance.ProcessInstance;
@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles(value = {"database", "database-oracle-test"})
 public class PipeliteDatabaseFailingTaskLauncherTest {
 
-  @Autowired private ProcessConfigurationEx processConfiguration;
+  @Autowired private ProcessConfiguration processConfiguration;
 
   @Autowired private ObjectProvider<PipeliteLauncher> defaultPipeliteLauncherObjectProvider;
 

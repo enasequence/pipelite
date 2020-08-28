@@ -1,34 +1,15 @@
-package pipelite.configuration;
+package pipelite.instance;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.test.context.SpringBootTest;
-
-import org.springframework.context.annotation.ComponentScan;
-import pipelite.EmptyTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.executor.SuccessTaskExecutor;
-import pipelite.instance.ProcessInstance;
-import pipelite.instance.ProcessInstanceBuilder;
-import pipelite.instance.ProcessInstanceFactory;
 import pipelite.resolver.DefaultExceptionResolver;
 
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(
-    classes = EmptyTestConfiguration.class,
-    properties = {
-      "pipelite.process.processFactoryName=pipelite.configuration.ProcessConfigurationProcessFactoryTest$TestProcessFactory"
-    })
-@EnableConfigurationProperties(
-    value = {LauncherConfiguration.class, ProcessConfiguration.class, TaskConfiguration.class})
-@ComponentScan(basePackageClasses = {ProcessConfigurationEx.class})
-public class ProcessConfigurationProcessFactoryTest {
-
-  @Autowired ProcessConfigurationEx processConfiguration;
+public class ProcessBuilderTest {
 
   private static final String PROCESS_NAME = UniqueStringGenerator.randomProcessName();
   private static final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
@@ -63,10 +44,12 @@ public class ProcessConfigurationProcessFactoryTest {
 
   @Test
   public void test() {
+    TestProcessFactory testProcessFactory = new TestProcessFactory();
+
     IntStream.range(0, 10)
         .forEach(
             i -> {
-              ProcessInstance processInstance = processConfiguration.getProcessFactory().receive();
+              ProcessInstance processInstance = testProcessFactory.receive();
               assertThat(processInstance).isNotNull();
               assertThat(processInstance.getProcessName()).isEqualTo(PROCESS_NAME);
               assertThat(processInstance.getProcessId()).isEqualTo(PROCESS_ID);

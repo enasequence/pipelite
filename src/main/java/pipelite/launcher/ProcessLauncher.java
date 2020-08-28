@@ -41,7 +41,7 @@ import pipelite.task.TaskExecutionResult;
 public class ProcessLauncher extends AbstractExecutionThreadService {
 
   private final LauncherConfiguration launcherConfiguration;
-  private final ProcessConfigurationEx processConfiguration;
+  private final ProcessConfiguration processConfiguration;
   private final TaskConfiguration taskConfiguration;
   private final PipeliteProcessService pipeliteProcessService;
   private final PipeliteStageService pipeliteStageService;
@@ -56,7 +56,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
 
   public ProcessLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
-      @Autowired ProcessConfigurationEx processConfiguration,
+      @Autowired ProcessConfiguration processConfiguration,
       @Autowired TaskConfiguration taskConfiguration,
       @Autowired PipeliteProcessService pipeliteProcessService,
       @Autowired PipeliteStageService pipeliteStageService,

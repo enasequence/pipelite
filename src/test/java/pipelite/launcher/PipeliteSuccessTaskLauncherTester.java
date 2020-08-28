@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 
 import pipelite.TestInMemoryProcessFactory;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.ProcessConfigurationEx;
+import pipelite.configuration.ProcessConfiguration;
 import pipelite.executor.TaskExecutor;
 import pipelite.instance.ProcessInstance;
 import pipelite.instance.ProcessInstanceBuilder;
@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class PipeliteSuccessTaskLauncherTester {
 
   private final PipeliteLauncher pipeliteLauncher;
-  private final ProcessConfigurationEx processConfiguration;
+  private final ProcessConfiguration processConfiguration;
 
   private final AtomicInteger processExecutionCount = new AtomicInteger();
   private final Set<String> processExecutionSet = ConcurrentHashMap.newKeySet();
