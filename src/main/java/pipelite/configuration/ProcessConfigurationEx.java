@@ -2,14 +2,12 @@ package pipelite.configuration;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import pipelite.executor.TaskExecutorFactory;
 import pipelite.instance.ProcessInstanceFactory;
 
 @Component
 public class ProcessConfigurationEx {
 
   private ProcessConfiguration processConfiguration;
-  private TaskExecutorFactory executorFactory;
   private ProcessInstanceFactory processFactory;
 
   public ProcessConfigurationEx(@Autowired ProcessConfiguration processConfiguration) {
@@ -31,23 +29,7 @@ public class ProcessConfigurationEx {
   public String getProcessName() {
     return processConfiguration.getProcessName();
   }
-
-  public void setExecutorFactory(TaskExecutorFactory executorFactory) {
-    this.executorFactory = executorFactory;
-  }
-
-  public TaskExecutorFactory getExecutorFactory() {
-    if (executorFactory != null) {
-      return executorFactory;
-    }
-    try {
-      return ((TaskExecutorFactory)
-          Class.forName(processConfiguration.getExecutorFactoryName()).newInstance());
-    } catch (Exception ex) {
-      throw new RuntimeException(ex);
-    }
-  }
-
+  
   public void setProcessFactory(ProcessInstanceFactory processFactory) {
     this.processFactory = processFactory;
   }

@@ -3,7 +3,7 @@ package pipelite.instance;
 import lombok.Value;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.configuration.TaskConfigurationEx;
-import pipelite.executor.TaskExecutorFactory;
+import pipelite.executor.TaskExecutor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,53 +16,58 @@ public class ProcessInstanceBuilder {
   private final int priority;
   private final List<TaskInstance> taskInstances = new ArrayList<>();
 
-  public ProcessInstanceBuilder task(
-      String taskName, TaskExecutorFactory taskExecutorFactory, TaskParameters taskParameters) {
+  public ProcessInstanceBuilder task(String taskName, TaskParameters taskParameters) {
     taskInstances.add(
         TaskInstance.builder()
             .processName(processName)
             .processId(processId)
             .taskName(taskName)
-            .taskExecutorFactory(taskExecutorFactory)
+            .taskExecutor(taskParameters.getTaskExecutor())
             .taskParameters(taskParameters)
             .build());
     return this;
   }
 
-  public ProcessInstanceBuilder task(String taskName, TaskExecutorFactory taskExecutorFactory) {
+  public ProcessInstanceBuilder task(String taskName, TaskExecutor taskExecutor) {
+    TaskConfigurationEx taskConfiguration = new TaskConfigurationEx(new TaskConfiguration());
+    taskConfiguration.setTaskExecutor(taskExecutor);
+
     taskInstances.add(
         TaskInstance.builder()
             .processName(processName)
             .processId(processId)
             .taskName(taskName)
-            .taskExecutorFactory(taskExecutorFactory)
-            .taskParameters(new TaskConfigurationEx(new TaskConfiguration()))
+            .taskExecutor(taskExecutor)
+            .taskParameters(taskConfiguration)
             .build());
     return this;
   }
 
   public ProcessInstanceBuilder taskDependsOnPrevious(
-      String taskName, TaskExecutorFactory taskExecutorFactory, TaskParameters taskParameters) {
+      String taskName, TaskParameters taskParameters) {
     taskInstances.add(
         TaskInstance.builder()
             .processName(processName)
             .processId(processId)
             .taskName(taskName)
-            .taskExecutorFactory(taskExecutorFactory)
+            .taskExecutor(taskParameters.getTaskExecutor())
             .taskParameters(taskParameters)
             .dependsOn(taskInstances.get(taskInstances.size() - 1))
             .build());
     return this;
   }
 
-  public ProcessInstanceBuilder taskDependsOnPrevious(String taskName, TaskExecutorFactory taskExecutorFactory) {
+  public ProcessInstanceBuilder taskDependsOnPrevious(String taskName, TaskExecutor taskExecutor) {
+    TaskConfigurationEx taskConfiguration = new TaskConfigurationEx(new TaskConfiguration());
+    taskConfiguration.setTaskExecutor(taskExecutor);
+
     taskInstances.add(
         TaskInstance.builder()
             .processName(processName)
             .processId(processId)
             .taskName(taskName)
-            .taskExecutorFactory(taskExecutorFactory)
-            .taskParameters(new TaskConfigurationEx(new TaskConfiguration()))
+            .taskExecutor(taskExecutor)
+            .taskParameters(taskConfiguration)
             .dependsOn(taskInstances.get(taskInstances.size() - 1))
             .build());
     return this;
@@ -76,4 +81,5 @@ public class ProcessInstanceBuilder {
         .tasks(taskInstances)
         .build();
   }
+
 }

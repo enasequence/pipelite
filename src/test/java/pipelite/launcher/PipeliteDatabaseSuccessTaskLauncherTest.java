@@ -26,7 +26,6 @@ import pipelite.configuration.ProcessConfigurationEx;
     classes = FullTestConfiguration.class,
     properties = {
       "pipelite.launcher.workers=5",
-      "pipelite.process.executorFactoryName=pipelite.executor.InternalTaskExecutorFactory",
       "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver",
     })
 @ContextConfiguration(

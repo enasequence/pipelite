@@ -38,7 +38,4 @@ public class TaskConfiguration {
 
   /** Name of the resolver class for task execution results. */
   private String resolver;
-
-  /** Allow the task factory to be defined by name. */
-  private String taskFactoryName;
 }

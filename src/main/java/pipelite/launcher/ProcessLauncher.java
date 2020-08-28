@@ -29,7 +29,6 @@ import pipelite.log.LogKey;
 import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
-import pipelite.executor.TaskExecutor;
 import pipelite.instance.TaskInstance;
 import pipelite.process.ProcessExecutionState;
 import pipelite.task.TaskExecutionResultType;
@@ -47,7 +46,6 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
   private final PipeliteProcessService pipeliteProcessService;
   private final PipeliteStageService pipeliteStageService;
   private final PipeliteLockService pipeliteLockService;
-  private final TaskExecutor executor;
 
   private PipeliteProcessInstance pipeliteProcessInstance;
   private List<PipeliteTaskInstance> pipeliteTaskInstances = new ArrayList<>();
@@ -70,7 +68,6 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
     this.pipeliteProcessService = pipeliteProcessService;
     this.pipeliteStageService = pipeliteStageService;
     this.pipeliteLockService = pipeliteLockService;
-    this.executor = processConfiguration.getExecutorFactory().createTaskExecutor();
   }
 
   @Data
@@ -407,7 +404,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
     TaskExecutionResult result;
 
     try {
-      result = executor.execute(taskInstance);
+      result = taskInstance.getTaskExecutor().execute(taskInstance);
     } catch (Exception ex) {
       result = TaskExecutionResult.internalError();
       result.addExceptionAttribute(ex);

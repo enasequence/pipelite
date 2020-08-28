@@ -29,8 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
       "pipelite.task.retries=3",
       "pipelite.task.tempdir=",
       "pipelite.task.env=TEST1,TEST2",
-      "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver",
-      "pipelite.task.executorFactoryName="
+      "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver"
     })
 @EnableConfigurationProperties(
     value = {LauncherConfiguration.class, ProcessConfiguration.class, TaskConfiguration.class})
@@ -53,15 +52,10 @@ public class InternalExecutorTest {
     // Task specific configuration is not available when a task is being executed using internal
     // task executor.
 
-    TaskExecutorFactory testTaskExecutorFactory =
-        new TaskExecutorFactory() {
-          @Override
-          public TaskExecutor createTaskExecutor() {
-            return taskInstance1 -> {
-              taskExecutionCount.getAndIncrement();
-              return TaskExecutionResult.success();
-            };
-          }
+    TaskExecutor taskExecutor =
+        taskInstance -> {
+          taskExecutionCount.getAndIncrement();
+          return TaskExecutionResult.success();
         };
 
     TaskInstance taskInstance =
@@ -69,7 +63,7 @@ public class InternalExecutorTest {
             .processName(processName)
             .processId(processId)
             .taskName(taskName)
-            .taskExecutorFactory(testTaskExecutorFactory)
+            .taskExecutor(taskExecutor)
             .taskParameters(taskConfiguration)
             .build();
 

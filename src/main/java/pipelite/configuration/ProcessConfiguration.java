@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import pipelite.executor.TaskExecutor;
 
 @Data
 @Builder
@@ -16,9 +17,6 @@ public class ProcessConfiguration {
   /** Name of the process begin executed. */
   private String processName;
 
-  /** Name of the process factory class. */
+  /** Name of the process executor factory class. */
   private String processFactoryName;
-
-  /** Name of the task executor factory class. */
-  private String executorFactoryName;
 }

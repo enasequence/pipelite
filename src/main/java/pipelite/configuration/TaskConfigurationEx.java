@@ -2,6 +2,7 @@ package pipelite.configuration;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import pipelite.executor.TaskExecutor;
 import pipelite.instance.TaskParameters;
 import pipelite.resolver.TaskExecutionResultResolver;
 
@@ -9,6 +10,10 @@ import pipelite.resolver.TaskExecutionResultResolver;
 public class TaskConfigurationEx implements TaskParameters {
 
   private TaskConfiguration taskConfiguration;
+
+  // TODO: split configuration from paremeters and remove
+  private TaskExecutor taskExecutor;
+
   private TaskExecutionResultResolver resolver;
 
   public TaskConfigurationEx(@Autowired TaskConfiguration taskConfiguration) {
@@ -77,6 +82,18 @@ public class TaskConfigurationEx implements TaskParameters {
 
   public void setEnv(String[] env) {
     taskConfiguration.setEnv(env);
+  }
+
+  // TODO: split configuration from paremeters and remove
+  @Override
+  public TaskExecutor getTaskExecutor() {
+    return taskExecutor;
+  }
+
+  // TODO: split configuration from paremeters and remove
+  @Override
+  public void setTaskExecutor(TaskExecutor taskExecutor) {
+    this.taskExecutor = taskExecutor;
   }
 
   public void setResolver(TaskExecutionResultResolver resolver) {

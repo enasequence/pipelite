@@ -19,8 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
       "pipelite.task.retries=3",
       "pipelite.task.tempdir=",
       "pipelite.task.env=TEST1,TEST2",
-      "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver",
-      "pipelite.task.executorFactoryName="
+      "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver"
     })
 @EnableConfigurationProperties(value = {TaskConfiguration.class})
 public class TaskConfigurationTest {
@@ -39,6 +38,5 @@ public class TaskConfigurationTest {
     assertThat(config.getEnv()[0]).isEqualTo("TEST1");
     assertThat(config.getEnv()[1]).isEqualTo("TEST2");
     assertThat(config.getResolver()).isEqualTo("pipelite.resolver.DefaultExceptionResolver");
-    assertThat(config.getTaskFactoryName()).isBlank();
   }
 }

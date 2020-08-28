@@ -8,12 +8,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
 import pipelite.EmptyTestConfiguration;
 import pipelite.UniqueStringGenerator;
-import pipelite.executor.TaskExecutor;
-import pipelite.executor.TaskExecutorFactory;
+import pipelite.executor.SuccessTaskExecutor;
 import pipelite.instance.ProcessInstance;
 import pipelite.instance.ProcessInstanceBuilder;
 import pipelite.instance.ProcessInstanceFactory;
-import pipelite.task.TaskExecutionResult;
 
 import java.util.stream.IntStream;
 
@@ -34,22 +32,13 @@ public class ProcessConfigurationProcessFactoryTest {
   private static final String PROCESS_NAME = UniqueStringGenerator.randomProcessName();
   private static final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
 
-  public static class TestTaskExecutionFactory implements TaskExecutorFactory {
-    @Override
-    public TaskExecutor createTaskExecutor() {
-      return taskInstance -> TaskExecutionResult.success();
-    }
-  }
-
   public static class TestProcessFactory implements ProcessInstanceFactory {
 
     @Override
     public ProcessInstance receive() {
-      TaskExecutorFactory taskExecutorFactory = new TestTaskExecutionFactory();
-
       return new ProcessInstanceBuilder(PROCESS_NAME, PROCESS_ID, 9)
-          .task(UniqueStringGenerator.randomTaskName(), taskExecutorFactory)
-          .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName(), taskExecutorFactory)
+          .task(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
+          .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
           .build();
     }
 

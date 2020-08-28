@@ -26,7 +26,7 @@ public class InternalTaskExecutor implements TaskExecutor {
     TaskExecutionResult result;
 
     try {
-      TaskExecutor taskExecutor = taskInstance.getTaskExecutorFactory().createTaskExecutor();
+      TaskExecutor taskExecutor = taskInstance.getTaskExecutor();
 
       try {
         taskExecutor.execute(taskInstance);

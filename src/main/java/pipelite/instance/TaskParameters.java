@@ -1,5 +1,6 @@
 package pipelite.instance;
 
+import pipelite.executor.TaskExecutor;
 import pipelite.resolver.TaskExecutionResultResolver;
 
 import java.util.ArrayList;
@@ -8,6 +9,10 @@ import java.util.List;
 import java.util.Map;
 
 public interface TaskParameters {
+
+  TaskExecutor getTaskExecutor();
+
+  void setTaskExecutor(TaskExecutor taskExecutor);
 
   TaskExecutionResultResolver getResolver();
 

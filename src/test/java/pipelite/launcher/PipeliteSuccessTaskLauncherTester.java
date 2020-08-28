@@ -6,7 +6,6 @@ import pipelite.TestInMemoryProcessFactory;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfigurationEx;
 import pipelite.executor.TaskExecutor;
-import pipelite.executor.TaskExecutorFactory;
 import pipelite.instance.ProcessInstance;
 import pipelite.instance.ProcessInstanceBuilder;
 import pipelite.task.TaskExecutionResult;
@@ -29,25 +28,21 @@ public class PipeliteSuccessTaskLauncherTester {
   private static final int PROCESS_COUNT = 100;
   private static final int TASK_EXECUTION_TIME = 10; // ms
 
-  public class TestTaskExecutionFactory implements TaskExecutorFactory {
-    @Override
-    public TaskExecutor createTaskExecutor() {
-      return taskInstance -> {
-        String processId = taskInstance.getProcessId();
-        processExecutionCount.incrementAndGet();
-        if (processExecutionSet.contains(processId)) {
-          processExcessExecutionSet.add(processId);
-        } else {
-          processExecutionSet.add(processId);
-        }
-        try {
-          Thread.sleep(TASK_EXECUTION_TIME);
-        } catch (InterruptedException e) {
-          Thread.currentThread().interrupt();
-        }
-        return TaskExecutionResult.success();
-      };
-    }
+  private TaskExecutor createTaskExecutor(String processId) {
+    return taskInstance -> {
+      processExecutionCount.incrementAndGet();
+      if (processExecutionSet.contains(processId)) {
+        processExcessExecutionSet.add(processId);
+      } else {
+        processExecutionSet.add(processId);
+      }
+      try {
+        Thread.sleep(TASK_EXECUTION_TIME);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+      return TaskExecutionResult.success();
+    };
   }
 
   private List<ProcessInstance> createProcessInstances() {
@@ -57,7 +52,7 @@ public class PipeliteSuccessTaskLauncherTester {
       String processId = "Process" + i;
       processInstances.add(
           new ProcessInstanceBuilder(processName, processId, 9)
-              .task(UniqueStringGenerator.randomTaskName(), new TestTaskExecutionFactory())
+              .task(UniqueStringGenerator.randomTaskName(), createTaskExecutor(processId))
               .build());
     }
     return processInstances;
@@ -68,16 +63,14 @@ public class PipeliteSuccessTaskLauncherTester {
     processConfiguration.setProcessFactory(
         new TestInMemoryProcessFactory(createProcessInstances()));
 
-    pipeliteLauncher.setShutdownPolicy(
-        PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    pipeliteLauncher.setShutdownPolicy(PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
     pipeliteLauncher.setSchedulerDelayMillis(10);
 
     PipeliteLauncherServiceManager.run(pipeliteLauncher);
 
     assertThat(processExcessExecutionSet).isEmpty();
     assertThat(processExecutionCount.get()).isEqualTo(PROCESS_COUNT);
-    assertThat(processExecutionCount.get())
-        .isEqualTo(pipeliteLauncher.getProcessCompletedCount());
+    assertThat(processExecutionCount.get()).isEqualTo(pipeliteLauncher.getProcessCompletedCount());
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
   }
 }
