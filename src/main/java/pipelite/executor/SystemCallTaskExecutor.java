@@ -29,7 +29,7 @@ public abstract class SystemCallTaskExecutor implements TaskExecutor {
 
       int exitCode = executor.execute(commandLine, taskInstance.getTaskParameters().getEnvAsMap());
 
-      TaskExecutionResult result = taskInstance.getTaskParameters().getResolver().resolve(exitCode);
+      TaskExecutionResult result = taskInstance.getResolver().resolve(exitCode);
 
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND, getCommand());
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_HOST, getHost());

@@ -10,23 +10,26 @@ public class TaskExecutionResultExitCodeSerializer<T> implements TaskExecutionRe
 
   private final TaskExecutionResultResolver<T> resolver;
 
+  public static final int INTERNAL_ERROR_EXIT_CODE = 255;
+
   @Override
   public int serialize(TaskExecutionResult result) {
     int value = resolver.results().indexOf(result);
-    checkValue(value);
+    if (!checkValue(value)) {
+      return INTERNAL_ERROR_EXIT_CODE;
+    }
     return value;
   }
 
   @Override
   public TaskExecutionResult deserialize(int value) {
-    checkValue(value);
-    List<TaskExecutionResult> results = resolver.results();
-    return results.get(value);
+    if (!checkValue(value) || value >= resolver.results().size()) {
+      return TaskExecutionResult.internalError();
+    }
+    return resolver.results().get(value);
   }
 
-  private static void checkValue(Integer value) {
-    if (value < 0 || value > 255) {
-      throw new IllegalArgumentException("Failed to serialize execution result");
-    }
+  private static boolean checkValue(Integer value) {
+    return !(value < 0 || value > 255);
   }
 }

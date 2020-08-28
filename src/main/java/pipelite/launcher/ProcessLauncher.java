@@ -42,7 +42,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
 
   private final LauncherConfiguration launcherConfiguration;
   private final ProcessConfigurationEx processConfiguration;
-  private final TaskConfigurationEx taskConfiguration;
+  private final TaskConfiguration taskConfiguration;
   private final PipeliteProcessService pipeliteProcessService;
   private final PipeliteStageService pipeliteStageService;
   private final PipeliteLockService pipeliteLockService;
@@ -57,7 +57,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
   public ProcessLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
       @Autowired ProcessConfigurationEx processConfiguration,
-      @Autowired TaskConfigurationEx taskConfiguration,
+      @Autowired TaskConfiguration taskConfiguration,
       @Autowired PipeliteProcessService pipeliteProcessService,
       @Autowired PipeliteStageService pipeliteStageService,
       @Autowired PipeliteLockService pipeliteLockService) {
@@ -404,7 +404,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
     TaskExecutionResult result;
 
     try {
-      result = taskInstance.getTaskExecutor().execute(taskInstance);
+      result = taskInstance.getExecutor().execute(taskInstance);
     } catch (Exception ex) {
       result = TaskExecutionResult.internalError();
       result.addExceptionAttribute(ex);

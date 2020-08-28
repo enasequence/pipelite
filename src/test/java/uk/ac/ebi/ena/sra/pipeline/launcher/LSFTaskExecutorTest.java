@@ -15,40 +15,39 @@ import java.nio.file.Files;
 
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.TaskConfiguration;
-import pipelite.configuration.TaskConfigurationEx;
+import pipelite.executor.SuccessTaskExecutor;
+import pipelite.instance.TaskParameters;
 import pipelite.resolver.DefaultExceptionResolver;
 import pipelite.instance.TaskInstance;
 import pipelite.task.TaskExecutionResult;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 
 public class LSFTaskExecutorTest {
 
-  private TaskConfigurationEx taskConfiguration() {
+  private TaskParameters taskParameters() {
     try {
-      TaskConfiguration taskConfiguration =
-          TaskConfiguration.builder()
+      TaskParameters taskParameters =
+          TaskParameters.builder()
               .tempDir(Files.createTempDirectory("TEMP").toString())
               .cores(1)
               .memory(1)
               .memoryTimeout(1)
               .queue("defaultQueue")
-              .resolver(DefaultExceptionResolver.NAME)
               .build();
-      return new TaskConfigurationEx(taskConfiguration);
+      return taskParameters;
     } catch (IOException ex) {
       throw new RuntimeException(ex);
     }
   }
 
-  private TaskInstance taskInstance(TaskConfigurationEx taskConfiguration) {
+  private TaskInstance taskInstance(TaskParameters taskParameters) {
     return TaskInstance.builder()
         .processName(UniqueStringGenerator.randomProcessName())
         .processId(UniqueStringGenerator.randomProcessId())
-        .taskParameters(taskConfiguration)
+        .executor(new SuccessTaskExecutor())
+        .resolver(new DefaultExceptionResolver())
+        .taskParameters(taskParameters)
         .build();
   }
 
@@ -58,24 +57,24 @@ public class LSFTaskExecutorTest {
 
   @Test
   public void test() {
-    TaskConfigurationEx taskConfiguration = taskConfiguration();
+    TaskParameters taskParameters = taskParameters();
 
     LSFTaskExecutor se = new LSFTaskExecutor();
-    String cmd = getCommandline(se.execute(taskInstance(taskConfiguration)));
+    String cmd = getCommandline(se.execute(taskInstance(taskParameters)));
     assertTrue(cmd.contains(" -M 1 -R rusage[mem=1:duration=1]"));
     assertTrue(cmd.contains(" -n 1"));
     assertTrue(cmd.contains(" -q defaultQueue"));
-    assertTrue(cmd.contains(" -oo " + taskConfiguration.getTempDir()));
-    assertTrue(cmd.contains(" -eo " + taskConfiguration.getTempDir()));
+    assertTrue(cmd.contains(" -oo " + taskParameters.getTempDir()));
+    assertTrue(cmd.contains(" -eo " + taskParameters.getTempDir()));
   }
 
   @Test
   public void testNoTmpDir() {
-    TaskConfigurationEx taskConfiguration = taskConfiguration();
-    taskConfiguration.setTempDir(null);
+    TaskParameters taskParameters = taskParameters();
+    taskParameters.setTempDir(null);
 
     LSFTaskExecutor se = new LSFTaskExecutor();
-    String cmd = getCommandline(se.execute(taskInstance(taskConfiguration)));
+    String cmd = getCommandline(se.execute(taskInstance(taskParameters)));
     // Default temporary directory is used.
     assertTrue(cmd.contains(" -oo "));
     assertTrue(cmd.contains(" -eo "));
@@ -83,62 +82,62 @@ public class LSFTaskExecutorTest {
 
   @Test
   public void testNoQueue() {
-    TaskConfigurationEx taskConfiguration = taskConfiguration();
-    taskConfiguration.setQueue(null);
+    TaskParameters taskParameters = taskParameters();
+    taskParameters.setQueue(null);
 
     LSFTaskExecutor se = new LSFTaskExecutor();
-    String cmd = getCommandline(se.execute(taskInstance(taskConfiguration)));
+    String cmd = getCommandline(se.execute(taskInstance(taskParameters)));
 
     assertFalse(cmd.contains("-q "));
   }
 
   @Test
   public void testQueue() {
-    TaskConfigurationEx taskConfiguration = taskConfiguration();
-    taskConfiguration.setQueue("queue");
+    TaskParameters taskParameters = taskParameters();
+    taskParameters.setQueue("queue");
 
     LSFTaskExecutor se = new LSFTaskExecutor();
 
-    String cmd = getCommandline(se.execute(taskInstance(taskConfiguration)));
+    String cmd = getCommandline(se.execute(taskInstance(taskParameters)));
     assertTrue(cmd.contains("-q queue"));
   }
 
   @Test
   public void testTaskSpecificMemoryAndCores() {
-    TaskConfigurationEx taskConfiguration = taskConfiguration();
-    taskConfiguration.setMemory(2000);
-    taskConfiguration.setCores(12);
+    TaskParameters taskParameters = taskParameters();
+    taskParameters.setMemory(2000);
+    taskParameters.setCores(12);
 
     LSFTaskExecutor se = new LSFTaskExecutor();
-    String cmd = getCommandline(se.execute(taskInstance(taskConfiguration)));
+    String cmd = getCommandline(se.execute(taskInstance(taskParameters)));
     assertTrue(cmd.contains(" -M 2000 -R rusage[mem=2000:duration=1]"));
     assertTrue(cmd.contains(" -n 12"));
     assertTrue(cmd.contains(" -q defaultQueue"));
-    assertTrue(cmd.contains(" -oo " + taskConfiguration.getTempDir()));
-    assertTrue(cmd.contains(" -eo " + taskConfiguration.getTempDir()));
+    assertTrue(cmd.contains(" -oo " + taskParameters.getTempDir()));
+    assertTrue(cmd.contains(" -eo " + taskParameters.getTempDir()));
   }
 
   @Test
   public void testTaskWithJavaXmxMemory() {
-    TaskConfigurationEx taskConfiguration = taskConfiguration();
-    taskConfiguration.setMemory(2000);
+    TaskParameters taskParameters = taskParameters();
+    taskParameters.setMemory(2000);
 
     LSFTaskExecutor se = new LSFTaskExecutor();
-    String cmd = getCommandline(se.execute(taskInstance(taskConfiguration)));
+    String cmd = getCommandline(se.execute(taskInstance(taskParameters)));
     assertTrue(cmd.contains(" -M 2000 -R rusage[mem=2000:duration=1]"));
     assertTrue(cmd.contains(" -Xmx" + 2000 + "M"));
   }
 
   @Test
   public void testTaskSpecificJavaProperties() {
-    TaskConfigurationEx taskConfiguration = taskConfiguration();
-    taskConfiguration.setEnv(new String[] {"PIPELITE_TEST_JAVA_PROPERTY"});
+    TaskParameters taskParameters = taskParameters();
+    taskParameters.setEnv(new String[] {"PIPELITE_TEST_JAVA_PROPERTY"});
 
     try {
       System.setProperty("PIPELITE_TEST_JAVA_PROPERTY", "VALUE");
 
       LSFTaskExecutor se = new LSFTaskExecutor();
-      String cmd = getCommandline(se.execute(taskInstance(taskConfiguration)));
+      String cmd = getCommandline(se.execute(taskInstance(taskParameters)));
       assertTrue(cmd.contains(" -DPIPELITE_TEST_JAVA_PROPERTY=VALUE"));
     } finally {
       System.clearProperty("PIPELITE_TEST_JAVA_PROPERTY");

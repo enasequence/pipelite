@@ -14,25 +14,25 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.TaskConfiguration;
-import pipelite.configuration.TaskConfigurationEx;
+import pipelite.executor.SuccessTaskExecutor;
+import pipelite.instance.TaskParameters;
 import pipelite.resolver.DefaultExceptionResolver;
 import pipelite.instance.TaskInstance;
 import pipelite.task.TaskExecutionResult;
 
 public class DetachedTaskExecutorTest {
 
-  private TaskConfigurationEx taskConfiguration() {
-    TaskConfiguration taskConfiguration =
-        TaskConfiguration.builder().resolver(DefaultExceptionResolver.NAME).build();
-    return new TaskConfigurationEx(taskConfiguration);
+  private TaskParameters taskParameters() {
+    return TaskParameters.builder().build();
   }
 
-  private TaskInstance taskInstance(TaskConfigurationEx taskConfiguration) {
+  private TaskInstance taskInstance(TaskParameters taskParameters) {
     return TaskInstance.builder()
         .processName(UniqueStringGenerator.randomProcessName())
         .processId(UniqueStringGenerator.randomProcessId())
-        .taskParameters(taskConfiguration)
+        .executor(new SuccessTaskExecutor())
+        .resolver(new DefaultExceptionResolver())
+        .taskParameters(taskParameters)
         .build();
   }
 
@@ -42,35 +42,35 @@ public class DetachedTaskExecutorTest {
 
   @Test
   public void javaMemory() {
-    TaskConfigurationEx taskConfiguration = taskConfiguration();
+    TaskParameters taskParameters = taskParameters();
 
-    taskConfiguration.setMemory(2000);
+    taskParameters.setMemory(2000);
 
     DetachedTaskExecutor se = new DetachedTaskExecutor();
-    String cmd = getCommandline(se.execute(taskInstance(taskConfiguration)));
+    String cmd = getCommandline(se.execute(taskInstance(taskParameters)));
     assertTrue(cmd.contains(" -Xmx2000M"));
   }
 
   @Test
   public void javaMemoryNotSet() {
-    TaskConfigurationEx taskConfiguration = taskConfiguration();
+    TaskParameters taskParameters = taskParameters();
 
     DetachedTaskExecutor se = new DetachedTaskExecutor();
-    String cmd = getCommandline(se.execute(taskInstance(taskConfiguration)));
+    String cmd = getCommandline(se.execute(taskInstance(taskParameters)));
     assertFalse(cmd.contains(" -Xmx2000M"));
   }
 
   @Test
   public void testTaskSpecificJavaProperties() {
-    TaskConfigurationEx taskConfiguration = taskConfiguration();
+    TaskParameters taskParameters = taskParameters();
 
-    taskConfiguration.setEnv(new String[] {"PIPELITE_TEST_JAVA_PROPERTY"});
+    taskParameters.setEnv(new String[] {"PIPELITE_TEST_JAVA_PROPERTY"});
 
     try {
       System.setProperty("PIPELITE_TEST_JAVA_PROPERTY", "VALUE");
 
       DetachedTaskExecutor se = new DetachedTaskExecutor();
-      String cmd = getCommandline(se.execute(taskInstance(taskConfiguration)));
+      String cmd = getCommandline(se.execute(taskInstance(taskParameters)));
       assertTrue(cmd.contains(" -DPIPELITE_TEST_JAVA_PROPERTY=VALUE"));
     } finally {
       System.clearProperty("PIPELITE_TEST_JAVA_PROPERTY");

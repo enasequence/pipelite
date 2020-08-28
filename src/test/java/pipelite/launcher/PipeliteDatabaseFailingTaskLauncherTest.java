@@ -14,6 +14,7 @@ import pipelite.executor.PermanentErrorTaskExecutor;
 import pipelite.executor.SuccessTaskExecutor;
 import pipelite.instance.ProcessInstance;
 import pipelite.instance.ProcessInstanceBuilder;
+import pipelite.resolver.DefaultExceptionResolver;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,24 +51,31 @@ public class PipeliteDatabaseFailingTaskLauncherTest {
               processInstances.add(
                   new ProcessInstanceBuilder(
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName(), new PermanentErrorTaskExecutor())
+                      .task(
+                          UniqueStringGenerator.randomTaskName(),
+                          new PermanentErrorTaskExecutor(),
+                          new DefaultExceptionResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
+                          UniqueStringGenerator.randomTaskName(),
+                          new SuccessTaskExecutor(),
+                          new DefaultExceptionResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
+                          UniqueStringGenerator.randomTaskName(),
+                          new SuccessTaskExecutor(),
+                          new DefaultExceptionResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
+                          UniqueStringGenerator.randomTaskName(),
+                          new SuccessTaskExecutor(),
+                          new DefaultExceptionResolver())
                       .build());
             });
 
-    PipeliteLauncher pipeliteLauncher =
-        defaultPipeliteLauncherObjectProvider.getObject();
+    PipeliteLauncher pipeliteLauncher = defaultPipeliteLauncherObjectProvider.getObject();
 
     TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
     processConfiguration.setProcessFactory(processFactory);
 
-    pipeliteLauncher.setShutdownPolicy(
-        PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    pipeliteLauncher.setShutdownPolicy(PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
     pipeliteLauncher.setSchedulerDelayMillis(10);
 
     PipeliteLauncherServiceManager.run(pipeliteLauncher);
@@ -96,24 +104,30 @@ public class PipeliteDatabaseFailingTaskLauncherTest {
                   new ProcessInstanceBuilder(
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
                       .task(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
+                          UniqueStringGenerator.randomTaskName(),
+                          new SuccessTaskExecutor(),
+                          new DefaultExceptionResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new PermanentErrorTaskExecutor())
+                          UniqueStringGenerator.randomTaskName(),
+                          new PermanentErrorTaskExecutor(),
+                          new DefaultExceptionResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
+                          UniqueStringGenerator.randomTaskName(),
+                          new SuccessTaskExecutor(),
+                          new DefaultExceptionResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
+                          UniqueStringGenerator.randomTaskName(),
+                          new SuccessTaskExecutor(),
+                          new DefaultExceptionResolver())
                       .build());
             });
 
-    PipeliteLauncher pipeliteLauncher =
-        defaultPipeliteLauncherObjectProvider.getObject();
+    PipeliteLauncher pipeliteLauncher = defaultPipeliteLauncherObjectProvider.getObject();
 
     TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
     processConfiguration.setProcessFactory(processFactory);
 
-    pipeliteLauncher.setShutdownPolicy(
-        PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    pipeliteLauncher.setShutdownPolicy(PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
     pipeliteLauncher.setSchedulerDelayMillis(10);
 
     PipeliteLauncherServiceManager.run(pipeliteLauncher);
@@ -142,24 +156,30 @@ public class PipeliteDatabaseFailingTaskLauncherTest {
                   new ProcessInstanceBuilder(
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
                       .task(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
+                          UniqueStringGenerator.randomTaskName(),
+                          new SuccessTaskExecutor(),
+                          new DefaultExceptionResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
+                          UniqueStringGenerator.randomTaskName(),
+                          new SuccessTaskExecutor(),
+                          new DefaultExceptionResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new PermanentErrorTaskExecutor())
+                          UniqueStringGenerator.randomTaskName(),
+                          new PermanentErrorTaskExecutor(),
+                          new DefaultExceptionResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
+                          UniqueStringGenerator.randomTaskName(),
+                          new SuccessTaskExecutor(),
+                          new DefaultExceptionResolver())
                       .build());
             });
 
-    PipeliteLauncher pipeliteLauncher =
-        defaultPipeliteLauncherObjectProvider.getObject();
+    PipeliteLauncher pipeliteLauncher = defaultPipeliteLauncherObjectProvider.getObject();
 
     TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
     processConfiguration.setProcessFactory(processFactory);
 
-    pipeliteLauncher.setShutdownPolicy(
-        PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    pipeliteLauncher.setShutdownPolicy(PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
     pipeliteLauncher.setSchedulerDelayMillis(10);
 
     PipeliteLauncherServiceManager.run(pipeliteLauncher);
@@ -188,24 +208,30 @@ public class PipeliteDatabaseFailingTaskLauncherTest {
                   new ProcessInstanceBuilder(
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
                       .task(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
+                          UniqueStringGenerator.randomTaskName(),
+                          new SuccessTaskExecutor(),
+                          new DefaultExceptionResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
+                          UniqueStringGenerator.randomTaskName(),
+                          new SuccessTaskExecutor(),
+                          new DefaultExceptionResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
+                          UniqueStringGenerator.randomTaskName(),
+                          new SuccessTaskExecutor(),
+                          new DefaultExceptionResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new PermanentErrorTaskExecutor())
+                          UniqueStringGenerator.randomTaskName(),
+                          new PermanentErrorTaskExecutor(),
+                          new DefaultExceptionResolver())
                       .build());
             });
 
-    PipeliteLauncher pipeliteLauncher =
-        defaultPipeliteLauncherObjectProvider.getObject();
+    PipeliteLauncher pipeliteLauncher = defaultPipeliteLauncherObjectProvider.getObject();
 
     TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
     processConfiguration.setProcessFactory(processFactory);
 
-    pipeliteLauncher.setShutdownPolicy(
-        PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    pipeliteLauncher.setShutdownPolicy(PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
     pipeliteLauncher.setSchedulerDelayMillis(10);
 
     PipeliteLauncherServiceManager.run(pipeliteLauncher);
@@ -234,24 +260,30 @@ public class PipeliteDatabaseFailingTaskLauncherTest {
                   new ProcessInstanceBuilder(
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
                       .task(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
+                          UniqueStringGenerator.randomTaskName(),
+                          new SuccessTaskExecutor(),
+                          new DefaultExceptionResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
+                          UniqueStringGenerator.randomTaskName(),
+                          new SuccessTaskExecutor(),
+                          new DefaultExceptionResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
+                          UniqueStringGenerator.randomTaskName(),
+                          new SuccessTaskExecutor(),
+                          new DefaultExceptionResolver())
                       .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
+                          UniqueStringGenerator.randomTaskName(),
+                          new SuccessTaskExecutor(),
+                          new DefaultExceptionResolver())
                       .build());
             });
 
-    PipeliteLauncher pipeliteLauncher =
-        defaultPipeliteLauncherObjectProvider.getObject();
+    PipeliteLauncher pipeliteLauncher = defaultPipeliteLauncherObjectProvider.getObject();
 
     TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
     processConfiguration.setProcessFactory(processFactory);
 
-    pipeliteLauncher.setShutdownPolicy(
-        PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    pipeliteLauncher.setShutdownPolicy(PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
     pipeliteLauncher.setSchedulerDelayMillis(10);
 
     PipeliteLauncherServiceManager.run(pipeliteLauncher);

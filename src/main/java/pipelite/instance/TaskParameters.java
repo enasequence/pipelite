@@ -1,5 +1,8 @@
 package pipelite.instance;
 
+import lombok.Builder;
+import lombok.Data;
+import pipelite.configuration.TaskConfiguration;
 import pipelite.executor.TaskExecutor;
 import pipelite.resolver.TaskExecutionResultResolver;
 
@@ -8,60 +11,34 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public interface TaskParameters {
+@Data
+@Builder
+public class TaskParameters {
 
-  TaskExecutor getTaskExecutor();
 
-  void setTaskExecutor(TaskExecutor taskExecutor);
-
-  TaskExecutionResultResolver getResolver();
-
-  void setResolver(TaskExecutionResultResolver resolver);
-
-  Integer getRetries();
-
-  void setRetries(Integer retries);
-
-  String[] getEnv();
-
-  void setEnv(String[] env);
-
-  String getTempDir();
-
-  void setTempDir(String tempDir);
-
-  Integer getMemory();
-
-  void setMemory(Integer memory);
-
-  Integer getMemoryTimeout();
-
-  void setMemoryTimeout(Integer memoryTimeout);
-
-  Integer getCores();
-
-  void setCores(Integer cores);
-
-  String getQueue();
-
-  void setQueue(String queue);
+  private Integer retries;
+  private String[] env;
+  private String tempDir;
+  private Integer memory;
+  private Integer memoryTimeout;
+  private Integer cores;
+  private String queue;
 
   /* Add parameters. Existing values will not be replaced. */
-  default void add(TaskParameters taskParameters) {
-    if (taskParameters == null) {
+  public void add(TaskConfiguration taskConfiguration) {
+    if (taskConfiguration == null) {
       return;
     }
-    setResolver(TaskParametersUtils.getResolver(this, taskParameters));
-    setRetries(TaskParametersUtils.getRetries(this, taskParameters));
-    setEnv(TaskParametersUtils.getEnv(this, taskParameters));
-    setTempDir(TaskParametersUtils.getTempDir(this, taskParameters));
-    setMemory(TaskParametersUtils.getMemory(this, taskParameters));
-    setMemoryTimeout(TaskParametersUtils.getMemoryTimeout(this, taskParameters));
-    setCores(TaskParametersUtils.getCores(this, taskParameters));
-    setQueue(TaskParametersUtils.getQueue(this, taskParameters));
+    setRetries(TaskParametersUtils.getRetries(this, taskConfiguration));
+    setEnv(TaskParametersUtils.getEnv(this, taskConfiguration));
+    setTempDir(TaskParametersUtils.getTempDir(this, taskConfiguration));
+    setMemory(TaskParametersUtils.getMemory(this, taskConfiguration));
+    setMemoryTimeout(TaskParametersUtils.getMemoryTimeout(this, taskConfiguration));
+    setCores(TaskParametersUtils.getCores(this, taskConfiguration));
+    setQueue(TaskParametersUtils.getQueue(this, taskConfiguration));
   }
 
-  default List<String> getEnvAsJavaSystemPropertyOptions() {
+  public List<String> getEnvAsJavaSystemPropertyOptions() {
     List<String> options = new ArrayList<>();
     if (getEnv() != null) {
       for (String property : getEnv()) {
@@ -74,7 +51,7 @@ public interface TaskParameters {
     return options;
   }
 
-  default Map<String, String> getEnvAsMap() {
+  public Map<String, String> getEnvAsMap() {
     Map<String, String> options = new HashMap();
     if (getEnv() != null) {
       for (String property : getEnv()) {

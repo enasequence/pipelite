@@ -10,8 +10,9 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
-import pipelite.configuration.TaskConfigurationEx;
 import pipelite.instance.TaskInstance;
+import pipelite.instance.TaskParameters;
+import pipelite.resolver.DefaultExceptionResolver;
 import pipelite.task.TaskExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor;
 
@@ -28,15 +29,14 @@ import static org.assertj.core.api.Assertions.assertThat;
       "pipelite.task.memoryTimeout=15",
       "pipelite.task.retries=3",
       "pipelite.task.tempdir=",
-      "pipelite.task.env=TEST1,TEST2",
-      "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver"
+      "pipelite.task.env=TEST1,TEST2"
     })
 @EnableConfigurationProperties(
     value = {LauncherConfiguration.class, ProcessConfiguration.class, TaskConfiguration.class})
-@ComponentScan(basePackageClasses = {TaskConfigurationEx.class})
+@ComponentScan(basePackageClasses = {TaskConfiguration.class})
 public class InternalExecutorTest {
 
-  @Autowired TaskConfigurationEx taskConfiguration;
+  @Autowired TaskConfiguration taskConfiguration;
 
   @Test
   public void test() {
@@ -58,13 +58,16 @@ public class InternalExecutorTest {
           return TaskExecutionResult.success();
         };
 
+    TaskParameters taskParameters = TaskParameters.builder().build();
+
     TaskInstance taskInstance =
         TaskInstance.builder()
             .processName(processName)
             .processId(processId)
             .taskName(taskName)
-            .taskExecutor(taskExecutor)
-            .taskParameters(taskConfiguration)
+            .executor(taskExecutor)
+            .resolver(new DefaultExceptionResolver())
+            .taskParameters(taskParameters)
             .build();
 
     TaskExecutionResult result = internalTaskExecutor.execute(taskInstance);

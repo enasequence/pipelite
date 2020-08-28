@@ -47,7 +47,7 @@ public class DetachedTaskExecutor implements TaskExecutor {
       call.execute();
       int exitCode = call.getExitCode();
       TaskExecutionResult result =
-          taskInstance.getTaskParameters().getResolver().serializer().deserialize(exitCode);
+          taskInstance.getResolver().serializer().deserialize(exitCode);
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_HOST, call.getHost());
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND, call.getCommandLine());
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_EXIT_CODE, exitCode);

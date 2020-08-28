@@ -26,13 +26,13 @@ public class InternalTaskExecutor implements TaskExecutor {
     TaskExecutionResult result;
 
     try {
-      TaskExecutor taskExecutor = taskInstance.getTaskExecutor();
+      TaskExecutor taskExecutor = taskInstance.getExecutor();
 
       try {
         taskExecutor.execute(taskInstance);
         result = TaskExecutionResult.success();
       } catch (Exception ex) {
-        result = taskInstance.getTaskParameters().getResolver().resolve(ex);
+        result = taskInstance.getResolver().resolve(ex);
         result.addExceptionAttribute(ex);
       }
     } catch (Exception ex) {
@@ -65,6 +65,7 @@ public class InternalTaskExecutor implements TaskExecutor {
     cmd.add(instance.getProcessName());
     cmd.add(instance.getProcessId());
     cmd.add(instance.getTaskName());
+    cmd.add(instance.getExecutor().getClass().getName());
 
     return cmd;
   }

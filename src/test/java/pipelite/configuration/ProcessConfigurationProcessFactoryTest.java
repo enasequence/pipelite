@@ -12,6 +12,7 @@ import pipelite.executor.SuccessTaskExecutor;
 import pipelite.instance.ProcessInstance;
 import pipelite.instance.ProcessInstanceBuilder;
 import pipelite.instance.ProcessInstanceFactory;
+import pipelite.resolver.DefaultExceptionResolver;
 
 import java.util.stream.IntStream;
 
@@ -37,8 +38,14 @@ public class ProcessConfigurationProcessFactoryTest {
     @Override
     public ProcessInstance receive() {
       return new ProcessInstanceBuilder(PROCESS_NAME, PROCESS_ID, 9)
-          .task(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
-          .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
+          .task(
+              UniqueStringGenerator.randomTaskName(),
+              new SuccessTaskExecutor(),
+              new DefaultExceptionResolver())
+          .taskDependsOnPrevious(
+              UniqueStringGenerator.randomTaskName(),
+              new SuccessTaskExecutor(),
+              new DefaultExceptionResolver())
           .build();
     }
 

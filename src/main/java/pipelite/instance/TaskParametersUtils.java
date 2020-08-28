@@ -2,6 +2,7 @@ package pipelite.instance;
 
 import com.google.common.base.Supplier;
 import lombok.Value;
+import pipelite.configuration.TaskConfiguration;
 import pipelite.resolver.TaskExecutionResultResolver;
 
 import java.util.Arrays;
@@ -11,39 +12,39 @@ import java.util.Set;
 @Value
 public class TaskParametersUtils {
 
-  public static TaskExecutionResultResolver getResolver(
-      TaskParameters taskParameters, TaskParameters defaultParameters) {
-    return getValue(taskParameters::getResolver, defaultParameters::getResolver);
-  }
-
   public static Integer getRetries(
-      TaskParameters taskParameters, TaskParameters defaultParameters) {
-    return getValue(taskParameters::getRetries, defaultParameters::getRetries);
+      TaskParameters taskParameters, TaskConfiguration taskConfiguration) {
+    return getValue(taskParameters::getRetries, taskConfiguration::getRetries);
   }
 
-  public static String getTempDir(TaskParameters taskParameters, TaskParameters defaultParameters) {
-    return getValue(taskParameters::getTempDir, defaultParameters::getTempDir);
+  public static String getTempDir(
+      TaskParameters taskParameters, TaskConfiguration taskConfiguration) {
+    return getValue(taskParameters::getTempDir, taskConfiguration::getTempDir);
   }
 
-  public static String[] getEnv(TaskParameters taskParameters, TaskParameters defaultParameters) {
-    return mergeEnv(taskParameters.getEnv(), defaultParameters.getEnv());
+  public static String[] getEnv(
+      TaskParameters taskParameters, TaskConfiguration taskConfiguration) {
+    return mergeEnv(taskParameters.getEnv(), taskConfiguration.getEnv());
   }
 
-  public static Integer getMemory(TaskParameters taskParameters, TaskParameters defaultParameters) {
-    return getValue(taskParameters::getMemory, defaultParameters::getMemory);
+  public static Integer getMemory(
+      TaskParameters taskParameters, TaskConfiguration taskConfiguration) {
+    return getValue(taskParameters::getMemory, taskConfiguration::getMemory);
   }
 
   public static Integer getMemoryTimeout(
-      TaskParameters taskParameters, TaskParameters defaultParameters) {
-    return getValue(taskParameters::getMemoryTimeout, defaultParameters::getMemoryTimeout);
+      TaskParameters taskParameters, TaskConfiguration taskConfiguration) {
+    return getValue(taskParameters::getMemoryTimeout, taskConfiguration::getMemoryTimeout);
   }
 
-  public static Integer getCores(TaskParameters taskParameters, TaskParameters defaultParameters) {
-    return getValue(taskParameters::getCores, defaultParameters::getCores);
+  public static Integer getCores(
+      TaskParameters taskParameters, TaskConfiguration taskConfiguration) {
+    return getValue(taskParameters::getCores, taskConfiguration::getCores);
   }
 
-  public static String getQueue(TaskParameters taskParameters, TaskParameters defaultParameters) {
-    return getValue(taskParameters::getQueue, defaultParameters::getQueue);
+  public static String getQueue(
+      TaskParameters taskParameters, TaskConfiguration taskConfiguration) {
+    return getValue(taskParameters::getQueue, taskConfiguration::getQueue);
   }
 
   private static <T> T getValue(Supplier<T> taskInstance, Supplier<T> taskConfiguration) {
