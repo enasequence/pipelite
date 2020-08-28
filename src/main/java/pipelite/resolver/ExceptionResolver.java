@@ -4,15 +4,22 @@ import lombok.extern.flogger.Flogger;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultExitCodeSerializer;
 import pipelite.task.TaskExecutionResultSerializer;
+import pipelite.task.TaskExecutionResultType;
 
 import java.util.*;
 
 @Flogger
-public class ExceptionResolver implements TaskExecutionResultResolver<Throwable> {
+public class ExceptionResolver implements ResultResolver<Throwable> {
 
   private final Map<Class<? extends Throwable>, TaskExecutionResult> map;
   private final List<TaskExecutionResult> list;
   private final TaskExecutionResultExitCodeSerializer<Throwable> serializer;
+
+  public ExceptionResolver(ExceptionResolver resolver) {
+    this.map = resolver.map;
+    this.list = resolver.list;
+    this.serializer = resolver.serializer;
+  }
 
   public ExceptionResolver(
       Map<Class<? extends Throwable>, TaskExecutionResult> map, List<TaskExecutionResult> list) {
@@ -24,7 +31,9 @@ public class ExceptionResolver implements TaskExecutionResultResolver<Throwable>
   @Override
   public TaskExecutionResult resolve(Throwable cause) {
     if (cause == null) {
-      return TaskExecutionResult.success();
+      log.atSevere().log(
+          "Returning default permanent error. No task execution result for null exception");
+      return TaskExecutionResult.defaultPermanentError();
     }
     for (Map.Entry<Class<? extends Throwable>, TaskExecutionResult> entry : map.entrySet()) {
       if (entry.getKey().isInstance(cause)) {
@@ -32,8 +41,9 @@ public class ExceptionResolver implements TaskExecutionResultResolver<Throwable>
       }
     }
     log.atSevere().log(
-        "Could not resolve task execution result for for cause: " + cause.toString());
-    return TaskExecutionResult.internalError();
+        "Returning default permanent error. No task execution result for exception: %s",
+        cause.toString());
+    return TaskExecutionResult.defaultPermanentError();
   }
 
   @Override
@@ -54,26 +64,36 @@ public class ExceptionResolver implements TaskExecutionResultResolver<Throwable>
     private final Map<Class<? extends Throwable>, TaskExecutionResult> map = new HashMap<>();
     private final List<TaskExecutionResult> list = new ArrayList<>();
 
-    public Builder() {
-      list.add(TaskExecutionResult.success());
-    }
+    public Builder() {}
 
-    public Builder transientError(Class<? extends Throwable> cause, String resultName) {
-      TaskExecutionResult result = TaskExecutionResult.transientError(resultName);
-      this.map.put(cause, result);
-      this.list.add(result);
+    public Builder success(String result, Class<? extends Throwable> cause) {
+      TaskExecutionResult taskExecutionResult =
+          new TaskExecutionResult(result, TaskExecutionResultType.SUCCESS);
+      addResult(cause, taskExecutionResult);
       return this;
     }
 
-    public Builder permanentError(Class<? extends Throwable> cause, String resultName) {
-      TaskExecutionResult result = TaskExecutionResult.permanentError(resultName);
-      this.map.put(cause, result);
-      this.list.add(result);
+    public Builder transientError(String result, Class<? extends Throwable> cause) {
+      TaskExecutionResult taskExecutionResult =
+          new TaskExecutionResult(result, TaskExecutionResultType.TRANSIENT_ERROR);
+      addResult(cause, taskExecutionResult);
       return this;
+    }
+
+    public Builder permanentError(String result, Class<? extends Throwable> cause) {
+      TaskExecutionResult taskExecutionResult =
+          new TaskExecutionResult(result, TaskExecutionResultType.PERMANENT_ERROR);
+      addResult(cause, taskExecutionResult);
+      return this;
+    }
+
+    private void addResult(
+        Class<? extends Throwable> cause, TaskExecutionResult taskExecutionResult) {
+      this.map.put(cause, taskExecutionResult);
+      this.list.add(taskExecutionResult);
     }
 
     public ExceptionResolver build() {
-      list.add(TaskExecutionResult.internalError());
       return new ExceptionResolver(map, list);
     }
   }

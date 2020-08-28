@@ -78,7 +78,7 @@ public class SystemCallTaskExecutor implements TaskExecutor {
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("System call execution failed: %s", getCommand());
 
-      TaskExecutionResult result = TaskExecutionResult.internalError();
+      TaskExecutionResult result = TaskExecutionResult.defaultInternalError();
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND, getCommand());
       result.addExceptionAttribute(ex);
 

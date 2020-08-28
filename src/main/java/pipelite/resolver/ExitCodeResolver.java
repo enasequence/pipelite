@@ -4,6 +4,7 @@ import lombok.extern.flogger.Flogger;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultExitCodeSerializer;
 import pipelite.task.TaskExecutionResultSerializer;
+import pipelite.task.TaskExecutionResultType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,11 +12,17 @@ import java.util.List;
 import java.util.Map;
 
 @Flogger
-public class ExitCodeResolver implements TaskExecutionResultResolver<Integer> {
+public class ExitCodeResolver implements ResultResolver<Integer> {
 
   private final Map<Integer, TaskExecutionResult> map;
   private final List<TaskExecutionResult> list;
   private final TaskExecutionResultExitCodeSerializer<Integer> serializer;
+
+  public ExitCodeResolver(ExitCodeResolver resolver) {
+    this.map = resolver.map;
+    this.list = resolver.list;
+    this.serializer = resolver.serializer;
+  }
 
   public ExitCodeResolver(Map<Integer, TaskExecutionResult> map, List<TaskExecutionResult> list) {
     this.map = map;
@@ -26,7 +33,9 @@ public class ExitCodeResolver implements TaskExecutionResultResolver<Integer> {
   @Override
   public TaskExecutionResult resolve(Integer cause) {
     if (cause == null) {
-      return TaskExecutionResult.success();
+      log.atSevere().log(
+          "Returning default permanent error. No task execution result for null exit code");
+      return TaskExecutionResult.defaultPermanentError();
     }
     for (Map.Entry<Integer, TaskExecutionResult> entry : map.entrySet()) {
       if (entry.getKey().equals(cause)) {
@@ -34,8 +43,9 @@ public class ExitCodeResolver implements TaskExecutionResultResolver<Integer> {
       }
     }
     log.atSevere().log(
-        "Could not resolve task execution result for for cause: " + cause.toString());
-    return TaskExecutionResult.internalError();
+        "Returning default permanent error. No task execution result for exit code: %s",
+        cause.toString());
+    return TaskExecutionResult.defaultPermanentError();
   }
 
   @Override
@@ -57,32 +67,29 @@ public class ExitCodeResolver implements TaskExecutionResultResolver<Integer> {
     private final List<TaskExecutionResult> list = new ArrayList<>();
 
     public Builder() {
-      list.add(TaskExecutionResult.success());
     }
 
-    public Builder success(Integer cause) {
-      TaskExecutionResult result = TaskExecutionResult.success();
-      this.map.put(cause, result);
-      this.list.add(result);
+    public Builder success(String result, int cause) {
+      addResult(cause, new TaskExecutionResult(result, TaskExecutionResultType.SUCCESS));
       return this;
     }
 
-    public Builder transientError(Integer cause, String resultName) {
-      TaskExecutionResult result = TaskExecutionResult.transientError(resultName);
-      this.map.put(cause, result);
-      this.list.add(result);
+    public Builder transientError(String result, int cause) {
+      addResult(cause, new TaskExecutionResult(result, TaskExecutionResultType.TRANSIENT_ERROR));
       return this;
     }
 
-    public Builder permanentError(Integer cause, String resultName) {
-      TaskExecutionResult result = TaskExecutionResult.permanentError(resultName);
-      this.map.put(cause, result);
-      this.list.add(result);
+    public Builder permanentError(String result, int cause) {
+      addResult(cause, new TaskExecutionResult(result, TaskExecutionResultType.PERMANENT_ERROR));
       return this;
+    }
+
+    private void addResult(int cause, TaskExecutionResult taskExecutionResult) {
+      this.map.put(cause, taskExecutionResult);
+      this.list.add(taskExecutionResult);
     }
 
     public ExitCodeResolver build() {
-      list.add(TaskExecutionResult.internalError());
       return new ExitCodeResolver(map, list);
     }
   }

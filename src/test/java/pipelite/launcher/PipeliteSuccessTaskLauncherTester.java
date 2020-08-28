@@ -8,7 +8,7 @@ import pipelite.configuration.ProcessConfiguration;
 import pipelite.executor.TaskExecutor;
 import pipelite.instance.ProcessInstance;
 import pipelite.instance.ProcessInstanceBuilder;
-import pipelite.resolver.DefaultInternalTaskExecutorResolver;
+import pipelite.resolver.ResultResolver;
 import pipelite.task.TaskExecutionResult;
 
 import java.util.*;
@@ -42,7 +42,7 @@ public class PipeliteSuccessTaskLauncherTester {
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
-      return TaskExecutionResult.success();
+      return TaskExecutionResult.defaultSuccess();
     };
   }
 
@@ -56,7 +56,7 @@ public class PipeliteSuccessTaskLauncherTester {
               .task(
                   UniqueStringGenerator.randomTaskName(),
                   createTaskExecutor(processId),
-                  new DefaultInternalTaskExecutorResolver())
+                  ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
               .build());
     }
     return processInstances;

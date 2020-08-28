@@ -3,8 +3,9 @@ package pipelite.executor;
 import org.junit.jupiter.api.Test;
 import pipelite.instance.TaskInstance;
 import pipelite.instance.TaskParameters;
-import pipelite.resolver.DefaultInternalTaskExecutorResolver;
+import pipelite.resolver.ResultResolver;
 import pipelite.task.TaskExecutionResult;
+import pipelite.task.TaskExecutionResultExitCodeSerializer;
 import pipelite.task.TaskExecutionResultType;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -16,7 +17,7 @@ public class SystemCallInternalTaskExecutorTest {
     public TaskExecutionResult execute(TaskInstance instance) {
       System.out.print("test stdout");
       System.err.print("test stderr");
-      return TaskExecutionResult.success();
+      return TaskExecutionResult.defaultSuccess();
     }
   }
 
@@ -25,7 +26,7 @@ public class SystemCallInternalTaskExecutorTest {
     public TaskExecutionResult execute(TaskInstance instance) {
       System.out.print("test stdout");
       System.err.print("test stderr");
-      return TaskExecutionResult.permanentError("PermanentErrorTaskExecutor");
+      return TaskExecutionResult.defaultPermanentError();
     }
   }
 
@@ -49,7 +50,7 @@ public class SystemCallInternalTaskExecutorTest {
             .processId(processId)
             .taskName(taskName)
             .executor(taskExecutor)
-            .resolver(new DefaultInternalTaskExecutorResolver())
+            .resolver(ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
             .taskParameters(taskParameters)
             .build();
 
@@ -62,7 +63,7 @@ public class SystemCallInternalTaskExecutorTest {
                 + "testProcessId "
                 + "testTaskName "
                 + "pipelite.executor.SystemCallInternalTaskExecutorTest$SuccessTaskExecutor "
-                + "pipelite.resolver.DefaultInternalTaskExecutorResolver");
+                + "pipelite.resolver.DefaultExceptionResolver");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT))
         .contains("test stdout");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR))
@@ -91,7 +92,7 @@ public class SystemCallInternalTaskExecutorTest {
             .processId(processId)
             .taskName(taskName)
             .executor(taskExecutor)
-            .resolver(new DefaultInternalTaskExecutorResolver())
+            .resolver(ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
             .taskParameters(taskParameters)
             .build();
 
@@ -104,12 +105,12 @@ public class SystemCallInternalTaskExecutorTest {
                 + "testProcessId "
                 + "testTaskName "
                 + "pipelite.executor.SystemCallInternalTaskExecutorTest$PermanentErrorTaskExecutor "
-                + "pipelite.resolver.DefaultInternalTaskExecutorResolver");
+                + "pipelite.resolver.DefaultExceptionResolver");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT))
         .contains("test stdout");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR))
         .contains("test stderr");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_EXIT_CODE))
-        .isEqualTo("1");
+        .isEqualTo(String.valueOf(TaskExecutionResultExitCodeSerializer.EXIT_CODE_DEFAULT_PERMANENT_ERROR));
   }
 }

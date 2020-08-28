@@ -74,7 +74,7 @@ public class LSFTaskExecutor implements TaskExecutor {
             p_args.toArray(new String[0]));
 
     call.setTaskLostExitCode(
-        taskInstance.getResolver().serializer().serialize(TaskExecutionResult.internalError()));
+        taskInstance.getResolver().serializer().serialize(TaskExecutionResult.defaultInternalError()));
 
     log.atInfo().log(call.getCommandLine());
 
@@ -89,7 +89,7 @@ public class LSFTaskExecutor implements TaskExecutor {
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR, call.getStderr());
       return result;
     } catch (Exception ex) {
-      TaskExecutionResult result = TaskExecutionResult.internalError();
+      TaskExecutionResult result = TaskExecutionResult.defaultInternalError();
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_HOST, call.getHost());
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND, call.getCommandLine());
       result.addExceptionAttribute(ex);

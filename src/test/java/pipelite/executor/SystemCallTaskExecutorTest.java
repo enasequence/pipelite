@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.instance.TaskInstance;
 import pipelite.instance.TaskParameters;
-import pipelite.resolver.DefaultExitCodeResolver;
+import pipelite.resolver.ResultResolver;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultType;
 
@@ -36,7 +36,7 @@ public class SystemCallTaskExecutorTest {
             .taskName(taskName)
             // Executor is not required by SystemCallTaskExecutor
             // .executor()
-            .resolver(new DefaultExitCodeResolver())
+            .resolver(ResultResolver.DEFAULT_EXIT_CODE_RESOLVER)
             .taskParameters(taskParameters)
             .build();
 

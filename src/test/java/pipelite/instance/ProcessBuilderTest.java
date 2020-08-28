@@ -2,8 +2,8 @@ package pipelite.instance;
 
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
-import pipelite.executor.SuccessTaskExecutor;
-import pipelite.resolver.DefaultInternalTaskExecutorResolver;
+import pipelite.executor.TaskExecutor;
+import pipelite.resolver.ResultResolver;
 
 import java.util.stream.IntStream;
 
@@ -21,12 +21,12 @@ public class ProcessBuilderTest {
       return new ProcessInstanceBuilder(PROCESS_NAME, PROCESS_ID, 9)
           .task(
               UniqueStringGenerator.randomTaskName(),
-              new SuccessTaskExecutor(),
-              new DefaultInternalTaskExecutorResolver())
+              TaskExecutor.DEFAULT_SUCCESS_EXECUTOR,
+              ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
           .taskDependsOnPrevious(
               UniqueStringGenerator.randomTaskName(),
-              new SuccessTaskExecutor(),
-              new DefaultInternalTaskExecutorResolver())
+              TaskExecutor.DEFAULT_SUCCESS_EXECUTOR,
+              ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
           .build();
     }
 

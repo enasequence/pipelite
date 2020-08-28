@@ -3,7 +3,6 @@ package pipelite.instance;
 import com.google.common.base.Supplier;
 import lombok.Value;
 import pipelite.configuration.TaskConfiguration;
-import pipelite.resolver.TaskExecutionResultResolver;
 
 import java.util.Arrays;
 import java.util.HashSet;

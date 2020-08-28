@@ -15,10 +15,10 @@ import java.nio.file.Files;
 
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
-import pipelite.executor.SuccessTaskExecutor;
+import pipelite.executor.TaskExecutor;
 import pipelite.instance.TaskParameters;
-import pipelite.resolver.DefaultInternalTaskExecutorResolver;
 import pipelite.instance.TaskInstance;
+import pipelite.resolver.ResultResolver;
 import pipelite.task.TaskExecutionResult;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -45,8 +45,8 @@ public class LSFTaskExecutorTest {
     return TaskInstance.builder()
         .processName(UniqueStringGenerator.randomProcessName())
         .processId(UniqueStringGenerator.randomProcessId())
-        .executor(new SuccessTaskExecutor())
-        .resolver(new DefaultInternalTaskExecutorResolver())
+        .executor(TaskExecutor.DEFAULT_SUCCESS_EXECUTOR)
+        .resolver(ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
         .taskParameters(taskParameters)
         .build();
   }

@@ -1,5 +1,6 @@
 package pipelite.task;
 
+import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.Value;
 
@@ -13,6 +14,7 @@ public class TaskExecutionResult {
 
   @NonNull private final String result;
   @NonNull private final TaskExecutionResultType resultType;
+  @EqualsAndHashCode.Exclude
   private final Map<String, String> attributes = new HashMap<>();
 
   public static final String STANDARD_ATTRIBUTE_HOST = "host";
@@ -44,19 +46,19 @@ public class TaskExecutionResult {
     return resultType == TaskExecutionResultType.INTERNAL_ERROR;
   }
 
-  public static TaskExecutionResult success() {
+  public static TaskExecutionResult defaultSuccess() {
     return new TaskExecutionResult("SUCCESS", TaskExecutionResultType.SUCCESS);
   }
 
-  public static TaskExecutionResult transientError(String resultName) {
-    return new TaskExecutionResult(resultName, TaskExecutionResultType.TRANSIENT_ERROR);
+  public static TaskExecutionResult defaultTransientError() {
+    return new TaskExecutionResult("TRANSIENT ERROR", TaskExecutionResultType.TRANSIENT_ERROR);
   }
 
-  public static TaskExecutionResult permanentError(String resultName) {
-    return new TaskExecutionResult(resultName, TaskExecutionResultType.PERMANENT_ERROR);
+  public static TaskExecutionResult defaultPermanentError() {
+    return new TaskExecutionResult("PERMANENT ERROR", TaskExecutionResultType.PERMANENT_ERROR);
   }
 
-  public static TaskExecutionResult internalError() {
+  public static TaskExecutionResult defaultInternalError() {
     return new TaskExecutionResult("INTERNAL ERROR", TaskExecutionResultType.INTERNAL_ERROR);
   }
 

@@ -406,7 +406,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
     try {
       result = taskInstance.getExecutor().execute(taskInstance);
     } catch (Exception ex) {
-      result = TaskExecutionResult.internalError();
+      result = TaskExecutionResult.defaultInternalError();
       result.addExceptionAttribute(ex);
     }
 

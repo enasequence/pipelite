@@ -14,5 +14,9 @@ import pipelite.instance.TaskInstance;
 import pipelite.task.TaskExecutionResult;
 
 public interface TaskExecutor {
+
+  TaskExecutor DEFAULT_SUCCESS_EXECUTOR = new DefaultSuccessTaskExecutor();
+  TaskExecutor DEFAULT_PERMANENT_ERROR_EXECUTOR = new DefaultPermanentErrorTaskExecutor();
+
   TaskExecutionResult execute(TaskInstance instance);
 }
