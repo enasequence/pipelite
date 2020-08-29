@@ -16,6 +16,10 @@ import pipelite.instance.TaskParameters;
 import pipelite.resolver.ResultResolver;
 import pipelite.task.TaskExecutionResult;
 
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+
 import static pipelite.log.LogKey.*;
 import static pipelite.task.TaskExecutionResultExitCodeSerializer.EXIT_CODE_DEFAULT_INTERNAL_ERROR;
 
@@ -44,11 +48,11 @@ public class InternalTaskExecutor implements TaskExecutor {
   }
 
   public static void main(String[] args) {
-    String processName = CallUtils.unquoteArgument(args[0]);
-    String processId = CallUtils.unquoteArgument(args[1]);
-    String taskName = CallUtils.unquoteArgument(args[2]);
-    String executorName = CallUtils.unquoteArgument(args[3]);
-    String resolverName = CallUtils.unquoteArgument(args[4]);
+    String processName = args[0];
+    String processId = args[1];
+    String taskName = args[2];
+    String executorName = args[3];
+    String resolverName = args[4];
 
     log.atInfo()
         .with(PROCESS_NAME, processName)
@@ -146,5 +150,38 @@ public class InternalTaskExecutor implements TaskExecutor {
 
       System.exit(EXIT_CODE_DEFAULT_INTERNAL_ERROR);
     }
+  }
+
+  public static String getInternalTaskExecutorExecutable() {
+    return Paths.get(System.getProperty("java.home"), "bin", "java").toString();
+  }
+
+  public static List<String> getInternalTaskExecutorArgs(TaskInstance taskInstance) {
+    List<String> args = new ArrayList<>();
+
+    args.addAll(taskInstance.getTaskParameters().getEnvAsJavaSystemPropertyOptions());
+
+    Integer memory = taskInstance.getTaskParameters().getMemory();
+
+    if (memory != null && memory > 0) {
+      args.add(String.format("-Xmx%dM", memory));
+    }
+
+    args.add("-cp");
+    args.add(System.getProperty("java.class.path"));
+    args.add(InternalTaskExecutor.class.getName());
+
+    args.add(taskInstance.getProcessName());
+    args.add(taskInstance.getProcessId());
+    args.add(taskInstance.getTaskName());
+    args.add(taskInstance.getExecutor().getClass().getName());
+    args.add(taskInstance.getResolver().getClass().getName());
+
+    return args;
+  }
+
+  public static TaskExecutionResult getInternalTaskExecutionResult(
+      TaskInstance taskInstance, int exitCode) {
+    return taskInstance.getResolver().serializer().deserialize(exitCode);
   }
 }

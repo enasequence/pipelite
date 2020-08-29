@@ -1,7 +1,14 @@
 package pipelite.executor;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.EmptyTestConfiguration;
 import pipelite.UniqueStringGenerator;
+import pipelite.configuration.TestConfiguration;
+import pipelite.executor.executable.SshExecutor;
 import pipelite.instance.TaskInstance;
 import pipelite.instance.TaskParameters;
 import pipelite.resolver.ResultResolver;
@@ -12,15 +19,19 @@ import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SystemCallTaskExecutorTest {
+@SpringBootTest(classes = EmptyTestConfiguration.class)
+@EnableConfigurationProperties(value = {TestConfiguration.class})
+@ActiveProfiles("test")
+public class SshExecutorTest {
+
+  @Autowired TestConfiguration testConfiguration;
 
   @Test
   public void test() {
 
-    SystemCallTaskExecutor taskExecutor =
-        SystemCallTaskExecutor.builder()
-            .executable("echo")
-            .arguments(Arrays.asList("test"))
+    SshExecutor executor =
+        SshExecutor.builder()
+            .command(taskInstance -> "echo test")
             .build();
 
     String processName = UniqueStringGenerator.randomProcessName();
@@ -28,19 +39,20 @@ public class SystemCallTaskExecutorTest {
     String taskName = UniqueStringGenerator.randomTaskName();
 
     TaskParameters taskParameters = TaskParameters.builder().build();
+    taskParameters.setHost(testConfiguration.getSsh().getHost());
 
     TaskInstance taskInstance =
         TaskInstance.builder()
             .processName(processName)
             .processId(processId)
             .taskName(taskName)
-            // Executor is not required by SystemCallTaskExecutor
+            // Executor is not required by SshCallTaskExecutor
             // .executor()
             .resolver(ResultResolver.DEFAULT_EXIT_CODE_RESOLVER)
             .taskParameters(taskParameters)
             .build();
 
-    TaskExecutionResult result = taskExecutor.execute(taskInstance);
+    TaskExecutionResult result = executor.execute(taskInstance);
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND))
         .isEqualTo("echo test");

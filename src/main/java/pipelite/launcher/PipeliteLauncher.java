@@ -74,8 +74,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private int activeProcessQueueValidHours = 1;
   private LocalDateTime activeProcessQueueValidUntil = LocalDateTime.now();
 
-  private int iterations = 0;
-  private Integer maxInterations;
+  private long iterations = 0;
+  private Long maxIterations;
 
   private int schedulerDelayMillis = 1000;
   private int stopDelayMillis = 1000;
@@ -129,7 +129,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
   @Override
   protected void runOneIteration() throws Exception {
 
-    if (maxInterations != null && iterations > maxInterations) {
+    if (maxIterations != null && iterations > maxIterations) {
       stopAsync();
       return;
     }
@@ -393,12 +393,12 @@ public class PipeliteLauncher extends AbstractScheduledService {
     return processConfiguration.getProcessName();
   }
 
-  public Integer getMaxInterations() {
-    return maxInterations;
+  public Long getMaxIterations() {
+    return maxIterations;
   }
 
-  public void setMaxInterations(Integer maxInterations) {
-    this.maxInterations = maxInterations;
+  public void setMaxIterations(Long maxIterations) {
+    this.maxIterations = maxIterations;
   }
 
   public int getActiveProcessCount() {

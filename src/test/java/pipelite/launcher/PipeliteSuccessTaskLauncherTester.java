@@ -28,6 +28,7 @@ public class PipeliteSuccessTaskLauncherTester {
   private final Set<String> processExcessExecutionSet = ConcurrentHashMap.newKeySet();
   private static final int PROCESS_COUNT = 100;
   private static final int TASK_EXECUTION_TIME = 10; // ms
+  private static final int SCHEDULER_DELAY = 100; // ms
 
   private TaskExecutor createTaskExecutor(String processId) {
     return taskInstance -> {
@@ -68,7 +69,7 @@ public class PipeliteSuccessTaskLauncherTester {
         new TestInMemoryProcessFactory(createProcessInstances()));
 
     pipeliteLauncher.setShutdownPolicy(PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
-    pipeliteLauncher.setSchedulerDelayMillis(10);
+    pipeliteLauncher.setSchedulerDelayMillis(SCHEDULER_DELAY);
 
     PipeliteLauncherServiceManager.run(pipeliteLauncher);
 
