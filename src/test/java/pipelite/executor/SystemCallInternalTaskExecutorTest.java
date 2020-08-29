@@ -30,21 +30,13 @@ public class SystemCallInternalTaskExecutorTest {
     }
   }
 
-  @Test
-  public void testSuccess() {
-
-    SystemCallInternalTaskExecutor systemCallInternalTaskExecutor =
-        SystemCallInternalTaskExecutor.builder().build();
+  private TaskInstance taskInstance(TaskExecutor taskExecutor, TaskParameters taskParameters) {
 
     String processName = "testProcess";
     String processId = "testProcessId";
     String taskName = "testTaskName";
 
-    TaskParameters taskParameters = TaskParameters.builder().build();
-
-    TaskExecutor taskExecutor = new SuccessTaskExecutor();
-
-    TaskInstance taskInstance =
+    return
         TaskInstance.builder()
             .processName(processName)
             .processId(processId)
@@ -53,6 +45,19 @@ public class SystemCallInternalTaskExecutorTest {
             .resolver(ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
             .taskParameters(taskParameters)
             .build();
+  }
+
+  @Test
+  public void testSuccess() {
+
+    SystemCallInternalTaskExecutor systemCallInternalTaskExecutor =
+        SystemCallInternalTaskExecutor.builder().build();
+
+    TaskParameters taskParameters = TaskParameters.builder().build();
+
+    TaskExecutor taskExecutor = new SuccessTaskExecutor();
+
+    TaskInstance taskInstance = taskInstance(taskExecutor, taskParameters);
 
     TaskExecutionResult result = systemCallInternalTaskExecutor.execute(taskInstance);
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
@@ -78,23 +83,11 @@ public class SystemCallInternalTaskExecutorTest {
     SystemCallInternalTaskExecutor systemCallInternalTaskExecutor =
         SystemCallInternalTaskExecutor.builder().build();
 
-    String processName = "testProcess";
-    String processId = "testProcessId";
-    String taskName = "testTaskName";
-
     TaskParameters taskParameters = TaskParameters.builder().build();
 
     TaskExecutor taskExecutor = new PermanentErrorTaskExecutor();
 
-    TaskInstance taskInstance =
-        TaskInstance.builder()
-            .processName(processName)
-            .processId(processId)
-            .taskName(taskName)
-            .executor(taskExecutor)
-            .resolver(ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
-            .taskParameters(taskParameters)
-            .build();
+    TaskInstance taskInstance = taskInstance(taskExecutor, taskParameters);
 
     TaskExecutionResult result = systemCallInternalTaskExecutor.execute(taskInstance);
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.PERMANENT_ERROR);
@@ -111,6 +104,54 @@ public class SystemCallInternalTaskExecutorTest {
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR))
         .contains("test stderr");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_EXIT_CODE))
-        .isEqualTo(String.valueOf(TaskExecutionResultExitCodeSerializer.EXIT_CODE_DEFAULT_PERMANENT_ERROR));
+        .isEqualTo(
+            String.valueOf(
+                TaskExecutionResultExitCodeSerializer.EXIT_CODE_DEFAULT_PERMANENT_ERROR));
+  }
+
+  @Test
+  public void javaMemory() {
+
+    SystemCallInternalTaskExecutor systemCallInternalTaskExecutor =
+        SystemCallInternalTaskExecutor.builder().build();
+
+    TaskParameters taskParameters = TaskParameters.builder().memory(2000).build();
+
+    TaskExecutor taskExecutor = new SuccessTaskExecutor();
+
+    TaskInstance taskInstance = taskInstance(taskExecutor, taskParameters);
+
+    TaskExecutionResult result = systemCallInternalTaskExecutor.execute(taskInstance);
+
+    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND))
+        .contains((" -Xmx2000M"));
+  }
+
+  @Test
+  public void testTaskSpecificJavaProperties() {
+
+    SystemCallInternalTaskExecutor systemCallInternalTaskExecutor =
+        SystemCallInternalTaskExecutor.builder().build();
+
+    TaskParameters taskParameters =
+        TaskParameters.builder()
+            .memory(2000)
+            .env(new String[] {"PIPELITE_TEST_JAVA_PROPERTY"})
+            .build();
+
+    TaskExecutor taskExecutor = new SuccessTaskExecutor();
+
+    TaskInstance taskInstance = taskInstance(taskExecutor, taskParameters);
+
+    TaskExecutionResult result = null;
+    try {
+      System.setProperty("PIPELITE_TEST_JAVA_PROPERTY", "VALUE");
+      result = systemCallInternalTaskExecutor.execute(taskInstance);
+    } finally {
+      System.clearProperty("PIPELITE_TEST_JAVA_PROPERTY");
+    }
+
+    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND))
+        .contains((" -DPIPELITE_TEST_JAVA_PROPERTY=VALUE"));
   }
 }

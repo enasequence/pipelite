@@ -42,30 +42,34 @@ public class SshCallInternalTaskExecutorTest {
     }
   }
 
+  private TaskInstance taskInstance(TaskExecutor taskExecutor, TaskParameters taskParameters) {
+
+    String processName = "testProcess";
+    String processId = "testProcessId";
+    String taskName = "testTaskName";
+
+    return
+            TaskInstance.builder()
+                    .processName(processName)
+                    .processId(processId)
+                    .taskName(taskName)
+                    .executor(taskExecutor)
+                    .resolver(ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
+                    .taskParameters(taskParameters)
+                    .build();
+  }
   @Test
   public void testSuccess() {
 
     SshCallInternalTaskExecutor sshCallInternalTaskExecutor =
         SshCallInternalTaskExecutor.builder().build();
 
-    String processName = "testProcess";
-    String processId = "testProcessId";
-    String taskName = "testTaskName";
-
     TaskParameters taskParameters = TaskParameters.builder().build();
     taskParameters.setHost(testConfiguration.getSsh().getHost());
 
     TaskExecutor taskExecutor = new SuccessTaskExecutor();
 
-    TaskInstance taskInstance =
-        TaskInstance.builder()
-            .processName(processName)
-            .processId(processId)
-            .taskName(taskName)
-            .executor(taskExecutor)
-            .resolver(ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
-            .taskParameters(taskParameters)
-            .build();
+    TaskInstance taskInstance = taskInstance(taskExecutor, taskParameters);
 
     TaskExecutionResult result = sshCallInternalTaskExecutor.execute(taskInstance);
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
@@ -127,5 +131,51 @@ public class SshCallInternalTaskExecutorTest {
         .contains("test stderr");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_EXIT_CODE))
         .isEqualTo(String.valueOf(TaskExecutionResultExitCodeSerializer.EXIT_CODE_DEFAULT_PERMANENT_ERROR));
+  }
+
+  @Test
+  public void javaMemory() {
+
+    SystemCallInternalTaskExecutor systemCallInternalTaskExecutor =
+            SystemCallInternalTaskExecutor.builder().build();
+
+    TaskParameters taskParameters = TaskParameters.builder().memory(2000).build();
+
+    TaskExecutor taskExecutor = new SystemCallInternalTaskExecutorTest.SuccessTaskExecutor();
+
+    TaskInstance taskInstance = taskInstance(taskExecutor, taskParameters);
+
+    TaskExecutionResult result = systemCallInternalTaskExecutor.execute(taskInstance);
+
+    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND))
+            .contains((" -Xmx2000M"));
+  }
+
+  @Test
+  public void testTaskSpecificJavaProperties() {
+
+    SystemCallInternalTaskExecutor systemCallInternalTaskExecutor =
+            SystemCallInternalTaskExecutor.builder().build();
+
+    TaskParameters taskParameters =
+            TaskParameters.builder()
+                    .memory(2000)
+                    .env(new String[] {"PIPELITE_TEST_JAVA_PROPERTY"})
+                    .build();
+
+    TaskExecutor taskExecutor = new SystemCallInternalTaskExecutorTest.SuccessTaskExecutor();
+
+    TaskInstance taskInstance = taskInstance(taskExecutor, taskParameters);
+
+    TaskExecutionResult result = null;
+    try {
+      System.setProperty("PIPELITE_TEST_JAVA_PROPERTY", "VALUE");
+      result = systemCallInternalTaskExecutor.execute(taskInstance);
+    } finally {
+      System.clearProperty("PIPELITE_TEST_JAVA_PROPERTY");
+    }
+
+    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND))
+            .contains((" -DPIPELITE_TEST_JAVA_PROPERTY=VALUE"));
   }
 }
