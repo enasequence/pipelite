@@ -6,7 +6,7 @@ import org.apache.sshd.client.channel.ClientChannel;
 import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.session.SessionHeartbeatController;
-import pipelite.executor.output.KeepOldestLimitedByteArrayOutputStream;
+import pipelite.executor.output.KeepOldestByteArrayOutputStream;
 import pipelite.instance.TaskInstance;
 import pipelite.task.TaskExecutionResult;
 
@@ -42,8 +42,8 @@ public abstract class AbstractSshExecutor implements ExecutableTaskExecutor {
 
       log.atInfo().log("Executing ssh call: %s", command);
 
-      OutputStream stdoutStream = new KeepOldestLimitedByteArrayOutputStream();
-      OutputStream stderrStream = new KeepOldestLimitedByteArrayOutputStream();
+      OutputStream stdoutStream = new KeepOldestByteArrayOutputStream();
+      OutputStream stderrStream = new KeepOldestByteArrayOutputStream();
 
       client = SshClient.setUpDefaultClient();
 

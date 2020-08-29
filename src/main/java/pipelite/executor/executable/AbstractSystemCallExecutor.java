@@ -2,7 +2,7 @@ package pipelite.executor.executable;
 
 import lombok.extern.flogger.Flogger;
 import org.apache.commons.exec.*;
-import pipelite.executor.output.KeepOldestLimitedByteArrayOutputStream;
+import pipelite.executor.output.KeepOldestByteArrayOutputStream;
 import pipelite.instance.TaskInstance;
 import pipelite.task.TaskExecutionResult;
 
@@ -29,8 +29,8 @@ public abstract class AbstractSystemCallExecutor implements ExecutableTaskExecut
       commandLine.addArguments(getArguments(taskInstance).toArray(new String[0]));
       commandLineString = getExecutable() + " " + String.join(" ", getArguments(taskInstance));
 
-      OutputStream stdoutStream = new KeepOldestLimitedByteArrayOutputStream();
-      OutputStream stderrStream = new KeepOldestLimitedByteArrayOutputStream();
+      OutputStream stdoutStream = new KeepOldestByteArrayOutputStream();
+      OutputStream stderrStream = new KeepOldestByteArrayOutputStream();
 
       Executor executor = new DefaultExecutor();
 

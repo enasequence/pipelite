@@ -2,15 +2,15 @@ package pipelite.executor.output;
 
 import java.io.ByteArrayOutputStream;
 
-public class KeepOldestLimitedByteArrayOutputStream extends ByteArrayOutputStream {
+public class KeepOldestByteArrayOutputStream extends ByteArrayOutputStream {
 
   public static final int DEFAULT_MAX_BYTES = 1024 * 1024;
 
-  public KeepOldestLimitedByteArrayOutputStream() {
+  public KeepOldestByteArrayOutputStream() {
     super(DEFAULT_MAX_BYTES);
   }
 
-  public KeepOldestLimitedByteArrayOutputStream(int maxSize) {
+  public KeepOldestByteArrayOutputStream(int maxSize) {
     super(maxSize);
   }
 
