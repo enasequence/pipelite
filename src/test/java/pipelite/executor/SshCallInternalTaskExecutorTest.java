@@ -71,12 +71,12 @@ public class SshCallInternalTaskExecutorTest {
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND))
         .endsWith(
-            "uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor "
-                + "testProcess "
-                + "testProcessId "
-                + "testTaskName "
-                + "pipelite.executor.SshCallInternalTaskExecutorTest$SuccessTaskExecutor "
-                + "pipelite.resolver.DefaultExceptionResolver");
+            "pipelite.executor.InternalTaskExecutor "
+                + "'testProcess' "
+                + "'testProcessId' "
+                + "'testTaskName' "
+                + "'pipelite.executor.SshCallInternalTaskExecutorTest$SuccessTaskExecutor' "
+                + "'pipelite.resolver.DefaultExceptionResolver'");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT))
         .contains("test stdout");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR))
@@ -111,15 +111,16 @@ public class SshCallInternalTaskExecutorTest {
             .build();
 
     TaskExecutionResult result = sshCallInternalTaskExecutor.execute(taskInstance);
+
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.PERMANENT_ERROR);
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND))
         .endsWith(
-            "uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor "
-                + "testProcess "
-                + "testProcessId "
-                + "testTaskName "
-                + "pipelite.executor.SshCallInternalTaskExecutorTest$PermanentErrorTaskExecutor "
-                + "pipelite.resolver.DefaultExceptionResolver");
+            "pipelite.executor.InternalTaskExecutor "
+                + "'testProcess' "
+                + "'testProcessId' "
+                + "'testTaskName' "
+                + "'pipelite.executor.SshCallInternalTaskExecutorTest$PermanentErrorTaskExecutor' "
+                + "'pipelite.resolver.DefaultExceptionResolver'");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT))
         .contains("test stdout");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR))

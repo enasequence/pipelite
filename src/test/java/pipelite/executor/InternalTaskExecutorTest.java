@@ -6,7 +6,6 @@ import pipelite.instance.TaskInstance;
 import pipelite.instance.TaskParameters;
 import pipelite.resolver.ResultResolver;
 import pipelite.task.TaskExecutionResult;
-import uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

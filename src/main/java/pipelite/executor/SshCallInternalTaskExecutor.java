@@ -15,11 +15,11 @@ import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import pipelite.instance.TaskInstance;
 import pipelite.task.TaskExecutionResult;
-import uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor;
 
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
+
+import static pipelite.executor.CallUtils.getInternalTaskExecutorArgs;
 
 @Flogger
 @Value
@@ -38,28 +38,7 @@ public class SshCallInternalTaskExecutor implements TaskExecutor {
     return sshCallTaskExecutor.execute(taskInstance);
   }
 
-  public static List<String> getArguments(TaskInstance instance) {
-    List<String> args = new ArrayList<>();
-
-    Integer memory = instance.getTaskParameters().getMemory();
-
-    if (memory != null && memory > 0) {
-      args.add(String.format("-Xmx%dM", memory));
-    }
-
-    args.addAll(instance.getTaskParameters().getEnvAsJavaSystemPropertyOptions());
-
-    args.add("-cp");
-    args.add(System.getProperty("java.class.path"));
-    args.add(InternalTaskExecutor.class.getName());
-
-    // Arguments.
-    args.add(instance.getProcessName());
-    args.add(instance.getProcessId());
-    args.add(instance.getTaskName());
-    args.add(instance.getExecutor().getClass().getName());
-    args.add(instance.getResolver().getClass().getName());
-
-    return args;
+  public static List<String> getArguments(TaskInstance taskInstance) {
+    return getInternalTaskExecutorArgs(taskInstance);
   }
 }
