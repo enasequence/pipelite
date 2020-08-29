@@ -15,6 +15,9 @@ public class TaskConfiguration {
 
   public TaskConfiguration() {}
 
+  /** Remote host. */
+  public String host;
+
   /** Memory reservation (MBytes). */
   public Integer memory;
 

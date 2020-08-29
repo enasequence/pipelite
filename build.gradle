@@ -10,8 +10,8 @@ plugins {
 
 group = 'pipelite'
 version = '1.0.0'
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
+sourceCompatibility = '1.11'
+targetCompatibility = '1.11'
 
 spotless {
 	java {
@@ -63,6 +63,8 @@ dependencies {
 	implementation group: 'com.google.flogger', name: 'flogger', version: '0.5.1'
 	implementation group: 'com.google.flogger', name: 'flogger-slf4j-backend', version: '0.5.1'
 
+	// https://mvnrepository.com/artifact/org.apache.sshd/sshd-core
+	compile group: 'org.apache.sshd', name: 'sshd-core', version: '2.5.1'
 
 	testImplementation group: 'org.assertj', name: 'assertj-core', version: '3.16.1'
 

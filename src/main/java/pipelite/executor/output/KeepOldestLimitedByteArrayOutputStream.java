@@ -1,10 +1,16 @@
-package pipelite.executor;
+package pipelite.executor.output;
 
 import java.io.ByteArrayOutputStream;
 
-public class ConstrainedByteArrayOutputStream extends ByteArrayOutputStream {
+public class KeepOldestLimitedByteArrayOutputStream extends ByteArrayOutputStream {
 
-  public ConstrainedByteArrayOutputStream(int maxSize) {
+  public static final int DEFAULT_MAX_BYTES = 1024 * 1024;
+
+  public KeepOldestLimitedByteArrayOutputStream() {
+    super(DEFAULT_MAX_BYTES);
+  }
+
+  public KeepOldestLimitedByteArrayOutputStream(int maxSize) {
     super(maxSize);
   }
 

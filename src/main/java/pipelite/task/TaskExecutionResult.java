@@ -24,7 +24,6 @@ public class TaskExecutionResult {
   public static final String STANDARD_ATTRIBUTE_EXCEPTION = "exception";
   public static final String STANDARD_ATTRIBUTE_COMMAND = "command";
   public static final String STANDARD_ATTRIBUTE_EXIT_CODE = "exit code";
-  public static final String STANDARD_ATTRIBUTE_TIMEOUT = "timeout";
 
   public boolean isSuccess() {
     return resultType == TaskExecutionResultType.SUCCESS;

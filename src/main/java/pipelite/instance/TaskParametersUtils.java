@@ -46,6 +46,11 @@ public class TaskParametersUtils {
     return getValue(taskParameters::getQueue, taskConfiguration::getQueue);
   }
 
+  public static String getHost(
+          TaskParameters taskParameters, TaskConfiguration taskConfiguration) {
+    return getValue(taskParameters::getHost, taskConfiguration::getHost);
+  }
+
   private static <T> T getValue(Supplier<T> taskInstance, Supplier<T> taskConfiguration) {
     T value = taskInstance.get();
     if (value == null) {

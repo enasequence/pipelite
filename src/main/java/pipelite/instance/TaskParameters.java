@@ -13,7 +13,7 @@ import java.util.Map;
 @Builder
 public class TaskParameters {
 
-
+  private String host; // Used by SshSystemCallExecutor.
   private Integer retries;
   private String[] env;
   private String tempDir;
@@ -34,6 +34,7 @@ public class TaskParameters {
     setMemoryTimeout(TaskParametersUtils.getMemoryTimeout(this, taskConfiguration));
     setCores(TaskParametersUtils.getCores(this, taskConfiguration));
     setQueue(TaskParametersUtils.getQueue(this, taskConfiguration));
+    setHost(TaskParametersUtils.getHost(this, taskConfiguration));
   }
 
   public List<String> getEnvAsJavaSystemPropertyOptions() {
