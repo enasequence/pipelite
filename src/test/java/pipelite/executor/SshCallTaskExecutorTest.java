@@ -1,7 +1,13 @@
 package pipelite.executor;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.EmptyTestConfiguration;
 import pipelite.UniqueStringGenerator;
+import pipelite.configuration.TestConfiguration;
 import pipelite.instance.TaskInstance;
 import pipelite.instance.TaskParameters;
 import pipelite.resolver.ResultResolver;
@@ -12,7 +18,12 @@ import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SpringBootTest(classes = EmptyTestConfiguration.class)
+@EnableConfigurationProperties(value = {TestConfiguration.class})
+@ActiveProfiles("test")
 public class SshCallTaskExecutorTest {
+
+  @Autowired TestConfiguration testConfiguration;
 
   @Test
   public void test() {
@@ -25,7 +36,7 @@ public class SshCallTaskExecutorTest {
     String taskName = UniqueStringGenerator.randomTaskName();
 
     TaskParameters taskParameters = TaskParameters.builder().build();
-    taskParameters.setHost("noah-login");
+    taskParameters.setHost(testConfiguration.getSsh().getHost());
 
     TaskInstance taskInstance =
         TaskInstance.builder()

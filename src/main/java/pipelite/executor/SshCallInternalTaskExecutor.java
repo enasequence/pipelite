@@ -13,7 +13,6 @@ package pipelite.executor;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
-import pipelite.Application;
 import pipelite.instance.TaskInstance;
 import pipelite.task.TaskExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.launcher.InternalTaskExecutor;
@@ -25,18 +24,18 @@ import java.util.List;
 @Flogger
 @Value
 @Builder
-public class SystemCallInternalTaskExecutor implements TaskExecutor {
+public class SshCallInternalTaskExecutor implements TaskExecutor {
 
   public TaskExecutionResult execute(TaskInstance taskInstance) {
-    SystemCallTaskExecutor systemCallTaskExecutor =
-        SystemCallTaskExecutor.builder()
+    SshCallTaskExecutor sshCallTaskExecutor =
+        SshCallTaskExecutor.builder()
             .executable(Paths.get(System.getProperty("java.home"), "bin", "java").toString())
             .arguments(getArguments(taskInstance))
             .resolver(
                 (taskInstance1, exitCode) ->
                     taskInstance1.getResolver().serializer().deserialize(exitCode))
             .build();
-    return systemCallTaskExecutor.execute(taskInstance);
+    return sshCallTaskExecutor.execute(taskInstance);
   }
 
   public static List<String> getArguments(TaskInstance instance) {
