@@ -345,31 +345,10 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
         .with(LogKey.TASK_NAME, taskName)
         .log("Executing task");
 
-    // Do not execute task if it is already completed.
-
     if (TaskExecutionState.COMPLETED == evaluateTaskExecutionState(pipeliteTaskInstance)) {
-      log.atInfo()
-          .with(LogKey.PROCESS_NAME, processName)
-          .with(LogKey.PROCESS_ID, processId)
-          .with(LogKey.TASK_NAME, taskName)
-          .log("Task skipped because it has already completed");
       ++taskSkippedCount;
-      return true; // Continue execution.
+      return true; // Continue executing the process.
     }
-
-    // Do not execute failed tasks or any tasks that depend on it.
-    // TODO:
-    if (TaskExecutionState.FAILED == evaluateTaskExecutionState(pipeliteTaskInstance)) {
-      log.atInfo()
-          .with(LogKey.PROCESS_NAME, processName)
-          .with(LogKey.PROCESS_ID, processId)
-          .with(LogKey.TASK_NAME, taskName)
-          .log("Process cannot be executed because task is an a failed state");
-      ++taskFailedCount;
-      return false; // Do not continue execution;.
-    }
-
-    // Update the task state before execution.
 
     pipeliteStage.retryExecution();
     pipeliteStageService.saveStage(pipeliteStage);
@@ -383,26 +362,27 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
       result.addExceptionAttribute(ex);
     }
 
-    // Update the task state after execution.
-
     pipeliteStage.endExecution(
         result,
         result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND),
         result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT),
         result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR));
-
-    log.atInfo()
-        .with(LogKey.PROCESS_NAME, processName)
-        .with(LogKey.PROCESS_ID, processId)
-        .with(LogKey.TASK_NAME, pipeliteStage.getStageName())
-        .with(LogKey.TASK_EXECUTION_RESULT_TYPE, pipeliteStage.getResultType())
-        .with(LogKey.TASK_EXECUTION_RESULT, pipeliteStage.getResult())
-        .with(LogKey.TASK_EXECUTION_COUNT, pipeliteStage.getExecutionCount())
-        .log("Finished task execution");
-
     pipeliteStageService.saveStage(pipeliteStage);
 
-    if (result.isError()) {
+    if (result.isSuccess()) {
+      ++taskCompletedCount;
+      log.atInfo()
+          .with(LogKey.PROCESS_NAME, processName)
+          .with(LogKey.PROCESS_ID, processId)
+          .with(LogKey.TASK_NAME, pipeliteStage.getStageName())
+          .with(LogKey.TASK_EXECUTION_RESULT_TYPE, pipeliteStage.getResultType())
+          .with(LogKey.TASK_EXECUTION_RESULT, pipeliteStage.getResult())
+          .with(LogKey.TASK_EXECUTION_COUNT, pipeliteStage.getExecutionCount())
+          .log("Task executed successfully.");
+      invalidateTaskDepedencies(pipeliteTaskInstance, false);
+      return true; // Continue process execution.
+    } else {
+      ++taskFailedCount;
       log.atSevere()
           .with(LogKey.PROCESS_NAME, processName)
           .with(LogKey.PROCESS_ID, processId)
@@ -411,22 +391,8 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
           .with(LogKey.TASK_EXECUTION_RESULT, pipeliteStage.getResult())
           .with(LogKey.TASK_EXECUTION_COUNT, pipeliteStage.getExecutionCount())
           .log("Task execution failed");
-
-      // Do not continue execution if task execution fails.
-      ++taskFailedCount;
-      return false; // Do not continue execution.
+      return false; // Do not continue executing the process.
     }
-
-    log.atSevere()
-        .with(LogKey.PROCESS_NAME, processName)
-        .with(LogKey.PROCESS_ID, processId)
-        .with(LogKey.TASK_NAME, pipeliteStage.getStageName())
-        .log("Invalidate task dependencies");
-
-    invalidateTaskDepedencies(pipeliteTaskInstance, false);
-
-    ++taskCompletedCount;
-    return true; // Continue execution.
   }
 
   private void invalidateTaskDepedencies(PipeliteTaskInstance from, boolean reset) {
