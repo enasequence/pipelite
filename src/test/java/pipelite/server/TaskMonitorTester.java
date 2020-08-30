@@ -37,7 +37,7 @@ public class TaskMonitorTester {
   private TaskMonitor taskMonitor(
       Duration schedulerDelay, Duration maxRunDuration, Duration maxLostDuration) {
     TaskMonitor taskMonitor = taskMonitorProvider.getObject();
-    taskMonitor.setShutdownPolicy(TaskMonitor.ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    taskMonitor.setShutdownPolicy(ShutdownPolicy.SHUTDOWN_IF_IDLE);
     taskMonitor.setSchedulerDelay(schedulerDelay);
     taskMonitor.setMaxRunDuration(maxRunDuration);
     taskMonitor.setMaxLostDuration(maxLostDuration);

@@ -79,7 +79,7 @@ public class InMemoryFailingPipeliteLauncherTest {
     TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
     processConfiguration.setProcessFactory(processFactory);
 
-    pipeliteLauncher.setShutdownPolicy(PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    pipeliteLauncher.setShutdownPolicy(ShutdownPolicy.SHUTDOWN_IF_IDLE);
     pipeliteLauncher.setSchedulerDelay(SCHEDULER_DELAY);
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
@@ -130,7 +130,7 @@ public class InMemoryFailingPipeliteLauncherTest {
     TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
     processConfiguration.setProcessFactory(processFactory);
 
-    pipeliteLauncher.setShutdownPolicy(PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    pipeliteLauncher.setShutdownPolicy(ShutdownPolicy.SHUTDOWN_IF_IDLE);
     pipeliteLauncher.setSchedulerDelay(SCHEDULER_DELAY);
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
@@ -182,7 +182,7 @@ public class InMemoryFailingPipeliteLauncherTest {
     TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
     processConfiguration.setProcessFactory(processFactory);
 
-    pipeliteLauncher.setShutdownPolicy(PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    pipeliteLauncher.setShutdownPolicy(ShutdownPolicy.SHUTDOWN_IF_IDLE);
     pipeliteLauncher.setSchedulerDelay(SCHEDULER_DELAY);
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
@@ -233,7 +233,7 @@ public class InMemoryFailingPipeliteLauncherTest {
     TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
     processConfiguration.setProcessFactory(processFactory);
 
-    pipeliteLauncher.setShutdownPolicy(PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    pipeliteLauncher.setShutdownPolicy(ShutdownPolicy.SHUTDOWN_IF_IDLE);
     pipeliteLauncher.setSchedulerDelay(SCHEDULER_DELAY);
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
@@ -284,7 +284,7 @@ public class InMemoryFailingPipeliteLauncherTest {
     TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
     processConfiguration.setProcessFactory(processFactory);
 
-    pipeliteLauncher.setShutdownPolicy(PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    pipeliteLauncher.setShutdownPolicy(ShutdownPolicy.SHUTDOWN_IF_IDLE);
     pipeliteLauncher.setSchedulerDelay(SCHEDULER_DELAY);
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 

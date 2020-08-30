@@ -69,7 +69,7 @@ public class SuccessPipeliteLauncherTester {
     processConfiguration.setProcessFactory(
         new TestInMemoryProcessFactory(createProcessInstances()));
 
-    pipeliteLauncher.setShutdownPolicy(PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    pipeliteLauncher.setShutdownPolicy(ShutdownPolicy.SHUTDOWN_IF_IDLE);
     pipeliteLauncher.setSchedulerDelay(SCHEDULER_DELAY);
 
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());

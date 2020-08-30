@@ -54,11 +54,6 @@ public class TaskMonitor extends AbstractScheduledService {
     public boolean lock; // Monitor recovered and locked by task monitor.
   }
 
-  public enum ShutdownPolicy {
-    SHUTDOWN_IF_IDLE,
-    WAIT_IF_IDLE
-  };
-
   private ShutdownPolicy shutdownPolicy = ShutdownPolicy.WAIT_IF_IDLE;
   private Duration schedulerDelay = Duration.ofSeconds(10);
   private Duration maxLostDuration = Duration.ofHours(1);
