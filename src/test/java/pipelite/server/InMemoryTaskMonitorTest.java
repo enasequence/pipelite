@@ -58,4 +58,28 @@ public class InMemoryTaskMonitorTest {
             taskMonitorProvider, pipeliteMonitorService, processConfiguration.getProcessName());
     tester.testSuccess();
   }
+
+  @Test
+  public void testPermanentError() {
+    TaskMonitorTester tester =
+            new TaskMonitorTester(
+                    taskMonitorProvider, pipeliteMonitorService, processConfiguration.getProcessName());
+    tester.testPermanentError();
+  }
+
+  @Test
+  public void testRuntimeExceeded() {
+    TaskMonitorTester tester =
+            new TaskMonitorTester(
+                    taskMonitorProvider, pipeliteMonitorService, processConfiguration.getProcessName());
+    tester.testRuntimeExceeded();
+  }
+
+  @Test
+  public void testLost() {
+    TaskMonitorTester tester =
+            new TaskMonitorTester(
+                    taskMonitorProvider, pipeliteMonitorService, processConfiguration.getProcessName());
+    tester.testLost();
+  }
 }
