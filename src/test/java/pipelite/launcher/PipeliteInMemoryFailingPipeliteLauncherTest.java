@@ -25,12 +25,15 @@ import static org.assertj.core.api.Assertions.assertThat;
     classes = FullTestConfiguration.class,
     properties = {
       "pipelite.launcher.workers=5",
-      "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver"
+      "spring.autoconfigure.exclude="
+          + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
+          + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
+          + "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration"
     })
 @ContextConfiguration(
-    initializers = PipeliteDatabaseSuccessTaskLauncherTest.TestContextInitializer.class)
-@ActiveProfiles(value = {"database", "database-oracle-test"})
-public class PipeliteDatabaseFailingTaskLauncherTest {
+    initializers = PipeliteInMemorySuccessPipeliteLauncherTest.TestContextInitializer.class)
+@ActiveProfiles(value = {"test", "memory"})
+public class PipeliteInMemoryFailingPipeliteLauncherTest {
 
   @Autowired private ProcessConfiguration processConfiguration;
 

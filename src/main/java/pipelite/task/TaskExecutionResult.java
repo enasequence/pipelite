@@ -53,8 +53,16 @@ public class TaskExecutionResult {
     return new TaskExecutionResult("TRANSIENT ERROR", TaskExecutionResultType.TRANSIENT_ERROR);
   }
 
+  public static TaskExecutionResult lostTaskTransientError() {
+    return new TaskExecutionResult("LOST TASK", TaskExecutionResultType.TRANSIENT_ERROR);
+  }
+
   public static TaskExecutionResult defaultPermanentError() {
     return new TaskExecutionResult("PERMANENT ERROR", TaskExecutionResultType.PERMANENT_ERROR);
+  }
+
+  public static TaskExecutionResult runtimeExceededPermanentError() {
+    return new TaskExecutionResult("RUN TIME EXCEEDED", TaskExecutionResultType.PERMANENT_ERROR);
   }
 
   public static TaskExecutionResult defaultInternalError() {
