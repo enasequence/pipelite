@@ -20,7 +20,7 @@ public class PipeliteInMemoryMonitorService implements PipeliteMonitorService {
 
   public List<PipeliteMonitor> getActiveMonitors(String processName) {
     return pipeliteMonitors.values().stream()
-        .filter(p -> p.getMonitorName().equals(processName))
+        .filter(p -> p.getProcessName().equals(processName))
         .collect(Collectors.toList());
   }
 

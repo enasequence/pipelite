@@ -1,6 +1,7 @@
 package pipelite.executor.executable;
 
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.Value;
 import pipelite.instance.TaskInstance;
@@ -10,6 +11,7 @@ import java.util.List;
 
 @Value
 @Builder
+@EqualsAndHashCode(callSuper=true)
 public class SystemCallExecutor extends AbstractSystemCallExecutor {
 
   @NonNull private final String executable;

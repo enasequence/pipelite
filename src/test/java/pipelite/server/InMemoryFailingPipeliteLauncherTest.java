@@ -1,4 +1,4 @@
-package pipelite.launcher;
+package pipelite.server;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
@@ -15,6 +15,7 @@ import pipelite.instance.ProcessInstance;
 import pipelite.instance.ProcessInstanceBuilder;
 import pipelite.resolver.ResultResolver;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -25,12 +26,15 @@ import static org.assertj.core.api.Assertions.assertThat;
     classes = FullTestConfiguration.class,
     properties = {
       "pipelite.launcher.workers=5",
-      "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver"
+      "spring.autoconfigure.exclude="
+          + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
+          + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
+          + "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration"
     })
 @ContextConfiguration(
-    initializers = DatabaseSuccessPipeliteLauncherTest.TestContextInitializer.class)
-@ActiveProfiles(value = {"database", "database-oracle-test"})
-public class DatabaseFailingPipeliteLauncherTest {
+    initializers = InMemorySuccessPipeliteLauncherTest.TestContextInitializer.class)
+@ActiveProfiles(value = {"test", "memory"})
+public class InMemoryFailingPipeliteLauncherTest {
 
   @Autowired private ProcessConfiguration processConfiguration;
 
@@ -38,6 +42,7 @@ public class DatabaseFailingPipeliteLauncherTest {
 
   private static final String PROCESS_NAME = UniqueStringGenerator.randomProcessName();
   private static final int PROCESS_CNT = 10;
+  private static final Duration SCHEDULER_DELAY = Duration.ofMillis(10);
 
   @Test
   public void testFirstTaskFails() {
@@ -75,9 +80,8 @@ public class DatabaseFailingPipeliteLauncherTest {
     processConfiguration.setProcessFactory(processFactory);
 
     pipeliteLauncher.setShutdownPolicy(PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
-    pipeliteLauncher.setSchedulerDelayMillis(10);
-
-    PipeliteLauncherServiceManager.run(pipeliteLauncher);
+    pipeliteLauncher.setSchedulerDelay(SCHEDULER_DELAY);
+    ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     assertThat(processFactory.getNewProcessInstances()).isEqualTo(0);
     assertThat(processFactory.getReceivedProcessInstances()).isEqualTo(0);
@@ -127,9 +131,9 @@ public class DatabaseFailingPipeliteLauncherTest {
     processConfiguration.setProcessFactory(processFactory);
 
     pipeliteLauncher.setShutdownPolicy(PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
-    pipeliteLauncher.setSchedulerDelayMillis(10);
+    pipeliteLauncher.setSchedulerDelay(SCHEDULER_DELAY);
+    ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    PipeliteLauncherServiceManager.run(pipeliteLauncher);
 
     assertThat(processFactory.getNewProcessInstances()).isEqualTo(0);
     assertThat(processFactory.getReceivedProcessInstances()).isEqualTo(0);
@@ -179,9 +183,8 @@ public class DatabaseFailingPipeliteLauncherTest {
     processConfiguration.setProcessFactory(processFactory);
 
     pipeliteLauncher.setShutdownPolicy(PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
-    pipeliteLauncher.setSchedulerDelayMillis(10);
-
-    PipeliteLauncherServiceManager.run(pipeliteLauncher);
+    pipeliteLauncher.setSchedulerDelay(SCHEDULER_DELAY);
+    ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     assertThat(processFactory.getNewProcessInstances()).isEqualTo(0);
     assertThat(processFactory.getReceivedProcessInstances()).isEqualTo(0);
@@ -231,9 +234,8 @@ public class DatabaseFailingPipeliteLauncherTest {
     processConfiguration.setProcessFactory(processFactory);
 
     pipeliteLauncher.setShutdownPolicy(PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
-    pipeliteLauncher.setSchedulerDelayMillis(10);
-
-    PipeliteLauncherServiceManager.run(pipeliteLauncher);
+    pipeliteLauncher.setSchedulerDelay(SCHEDULER_DELAY);
+    ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     assertThat(processFactory.getNewProcessInstances()).isEqualTo(0);
     assertThat(processFactory.getReceivedProcessInstances()).isEqualTo(0);
@@ -283,9 +285,8 @@ public class DatabaseFailingPipeliteLauncherTest {
     processConfiguration.setProcessFactory(processFactory);
 
     pipeliteLauncher.setShutdownPolicy(PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
-    pipeliteLauncher.setSchedulerDelayMillis(10);
-
-    PipeliteLauncherServiceManager.run(pipeliteLauncher);
+    pipeliteLauncher.setSchedulerDelay(SCHEDULER_DELAY);
+    ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     assertThat(processFactory.getNewProcessInstances()).isEqualTo(0);
     assertThat(processFactory.getReceivedProcessInstances()).isEqualTo(0);

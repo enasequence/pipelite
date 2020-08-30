@@ -5,8 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import pipelite.launcher.PipeliteLauncher;
-import pipelite.launcher.PipeliteLauncherServiceManager;
+import pipelite.server.PipeliteLauncher;
+import pipelite.server.ServerManager;
 
 @Flogger
 @SpringBootApplication
@@ -29,6 +29,6 @@ public class Application implements CommandLineRunner {
   }
 
   private void launcher() {
-    PipeliteLauncherServiceManager.run(pipeliteLauncher);
+    ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
   }
 }

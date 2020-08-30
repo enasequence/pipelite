@@ -8,9 +8,8 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.monitor;
+package pipelite.server;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.AbstractScheduledService;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +19,8 @@ import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.entity.PipeliteMonitor;
 import pipelite.log.LogKey;
+import pipelite.monitor.MonitoredTaskExecutionResult;
+import pipelite.monitor.TaskExecutionMonitor;
 import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteMonitorService;
 import pipelite.service.PipeliteProcessService;
@@ -41,8 +42,6 @@ public class TaskMonitor extends AbstractScheduledService {
   private final PipeliteMonitorService pipeliteMonitorService;
   private final PipeliteLockService pipeliteLockService;
 
-  private final ObjectMapper objectMapper = new ObjectMapper();
-
   private class MonitorStatus {
     public String processName;
     public String processId;
@@ -61,11 +60,9 @@ public class TaskMonitor extends AbstractScheduledService {
   };
 
   private ShutdownPolicy shutdownPolicy = ShutdownPolicy.WAIT_IF_IDLE;
-
-  private int schedulerDelayMillis = 1000;
-
-  private Duration maxLostTime = Duration.ofHours(1);
-  private Duration maxRunTime = Duration.ofDays(7);
+  private Duration schedulerDelay = Duration.ofSeconds(10);
+  private Duration maxLostDuration = Duration.ofHours(1);
+  private Duration maxRunDuration = Duration.ofDays(7);
   private boolean failInvalidMonitorData = false;
 
   private Map<TaskExecutionMonitor, MonitorStatus> monitors = new ConcurrentHashMap<>();
@@ -111,11 +108,12 @@ public class TaskMonitor extends AbstractScheduledService {
 
       try {
         monitor =
-            new ObjectMapper()
-                .readValue(pipeliteMonitor.getMonitorData(), TaskExecutionMonitor.class);
+            TaskExecutionMonitor.deserialize(
+                pipeliteMonitor.getMonitorName(), pipeliteMonitor.getMonitorData());
+
       } catch (Exception ex) {
         if (failInvalidMonitorData) {
-          throw new RuntimeException("Failed to deserialize monitor data.");
+          throw new RuntimeException("Failed to deserialize monitor data.", ex);
         } else {
           log.atWarning()
               .with(LogKey.PROCESS_NAME, processName)
@@ -147,25 +145,41 @@ public class TaskMonitor extends AbstractScheduledService {
 
   @Override
   protected Scheduler scheduler() {
-    return Scheduler.newFixedDelaySchedule(Duration.ZERO, Duration.ofMillis(schedulerDelayMillis));
+    return Scheduler.newFixedDelaySchedule(Duration.ZERO, schedulerDelay);
   }
 
   @Override
   protected void runOneIteration() {
-    while (isRunning()) {
+    if (!isRunning()) {
+      return;
+    }
 
-      monitors.forEach((monitor, monitorStatus) -> monitor(monitor, monitorStatus));
+    monitors.forEach(
+        (monitor, monitorStatus) -> {
+          monitorTask(monitor, monitorStatus);
+        });
 
-      monitors.forEach(
-          (monitor, monitorStatus) -> {
-            if (monitorStatus.kill || monitorStatus.done) {
-              monitors.remove(monitor);
-            }
-          });
+    monitors.forEach(
+        (monitor, monitorStatus) -> {
+          if (monitorStatus.kill || monitorStatus.done) {
+            monitors.remove(monitor);
+          }
+        });
+
+    stopIfIdle();
+  }
+
+  private void stopIfIdle() {
+    if (monitors.isEmpty() && ShutdownPolicy.SHUTDOWN_IF_IDLE.equals(shutdownPolicy)) {
+      log.atInfo()
+          .with(LogKey.LAUNCHER_NAME, launcherConfiguration.getLauncherName())
+          .with(LogKey.PROCESS_NAME, processConfiguration.getProcessName())
+          .log("Shutting down inactive task monitor.");
+      stopAsync();
     }
   }
 
-  private void monitor(TaskExecutionMonitor monitor, MonitorStatus monitorStatus) {
+  private void monitorTask(TaskExecutionMonitor monitor, MonitorStatus monitorStatus) {
     monitorStatus.monitorTime = LocalDateTime.now();
 
     String processName = monitorStatus.processName;
@@ -176,7 +190,7 @@ public class TaskMonitor extends AbstractScheduledService {
 
     switch (result.getTaskExecutionState()) {
       case ACTIVE:
-        if (monitorStatus.startTime.plus(maxRunTime).isBefore(LocalDateTime.now())) {
+        if (monitorStatus.startTime.plus(maxRunDuration).isBefore(LocalDateTime.now())) {
           log.atSevere()
               .with(LogKey.PROCESS_NAME, processName)
               .with(LogKey.PROCESS_ID, processId)
@@ -192,8 +206,8 @@ public class TaskMonitor extends AbstractScheduledService {
 
       case LOST:
         if (monitorStatus.activeTime == null
-                && monitorStatus.startTime.plus(maxLostTime).isBefore(LocalDateTime.now())
-            || monitorStatus.activeTime.plus(maxLostTime).isBefore(LocalDateTime.now())) {
+                && monitorStatus.startTime.plus(maxLostDuration).isBefore(LocalDateTime.now())
+            || monitorStatus.activeTime.plus(maxLostDuration).isBefore(LocalDateTime.now())) {
           log.atSevere()
               .with(LogKey.PROCESS_NAME, processName)
               .with(LogKey.PROCESS_ID, processId)
@@ -239,7 +253,7 @@ public class TaskMonitor extends AbstractScheduledService {
     pipeliteMonitor.setMonitorTime(monitorStatus.monitorTime);
     pipeliteMonitor.setMonitorName(monitor.getClass().getName());
     try {
-      pipeliteMonitor.setMonitorData(objectMapper.writeValueAsString(monitor));
+      pipeliteMonitor.setMonitorData(TaskExecutionMonitor.serialize(monitor));
     } catch (Exception ex) {
       log.atSevere()
           .withCause(ex)
@@ -248,7 +262,7 @@ public class TaskMonitor extends AbstractScheduledService {
           .with(LogKey.TASK_NAME, monitorStatus.taskName)
           .log("Failed to serialize monitor data.");
       if (failInvalidMonitorData) {
-        throw new RuntimeException("Failed to serialize monitor data.");
+        throw new RuntimeException("Failed to serialize monitor data.", ex);
       }
     }
     return pipeliteMonitor;
@@ -291,12 +305,28 @@ public class TaskMonitor extends AbstractScheduledService {
     return taskCompletedCount;
   }
 
-  public int getSchedulerDelayMillis() {
-    return schedulerDelayMillis;
+  public Duration getSchedulerDelay() {
+    return schedulerDelay;
   }
 
-  public void setSchedulerDelayMillis(int milliseconds) {
-    this.schedulerDelayMillis = milliseconds;
+  public void setSchedulerDelay(Duration schedulerDelay) {
+    this.schedulerDelay = schedulerDelay;
+  }
+
+  public Duration getMaxLostDuration() {
+    return maxLostDuration;
+  }
+
+  public void setMaxLostDuration(Duration maxLostDuration) {
+    this.maxLostDuration = maxLostDuration;
+  }
+
+  public Duration getMaxRunDuration() {
+    return maxRunDuration;
+  }
+
+  public void setMaxRunDuration(Duration maxRunDuration) {
+    this.maxRunDuration = maxRunDuration;
   }
 
   public ShutdownPolicy getShutdownPolicy() {

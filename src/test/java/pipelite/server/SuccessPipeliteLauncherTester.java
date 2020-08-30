@@ -1,4 +1,4 @@
-package pipelite.launcher;
+package pipelite.server;
 
 import lombok.AllArgsConstructor;
 
@@ -11,6 +11,7 @@ import pipelite.instance.ProcessInstanceBuilder;
 import pipelite.resolver.ResultResolver;
 import pipelite.task.TaskExecutionResult;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,8 +28,8 @@ public class SuccessPipeliteLauncherTester {
   private final Set<String> processExecutionSet = ConcurrentHashMap.newKeySet();
   private final Set<String> processExcessExecutionSet = ConcurrentHashMap.newKeySet();
   private static final int PROCESS_COUNT = 100;
-  private static final int TASK_EXECUTION_TIME = 10; // ms
-  private static final int SCHEDULER_DELAY = 100; // ms
+  private static final Duration SCHEDULER_DELAY = Duration.ofMillis(100);
+  private static final Duration TASK_EXECUTION_TIME =  Duration.ofMillis(10);
 
   private TaskExecutor createTaskExecutor(String processId) {
     return taskInstance -> {
@@ -39,7 +40,7 @@ public class SuccessPipeliteLauncherTester {
         processExecutionSet.add(processId);
       }
       try {
-        Thread.sleep(TASK_EXECUTION_TIME);
+        Thread.sleep(TASK_EXECUTION_TIME.toMillis());
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
@@ -69,9 +70,9 @@ public class SuccessPipeliteLauncherTester {
         new TestInMemoryProcessFactory(createProcessInstances()));
 
     pipeliteLauncher.setShutdownPolicy(PipeliteLauncher.ShutdownPolicy.SHUTDOWN_IF_IDLE);
-    pipeliteLauncher.setSchedulerDelayMillis(SCHEDULER_DELAY);
+    pipeliteLauncher.setSchedulerDelay(SCHEDULER_DELAY);
 
-    PipeliteLauncherServiceManager.run(pipeliteLauncher);
+    ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     assertThat(processExcessExecutionSet).isEmpty();
     assertThat(processExecutionCount.get()).isEqualTo(PROCESS_COUNT);

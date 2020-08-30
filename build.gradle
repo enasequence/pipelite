@@ -32,6 +32,10 @@ spotless {
 	}
 }
 
+lombok {
+	config['lombok.anyConstructor.addConstructorProperties'] = 'true'
+}
+
 repositories {
 	mavenLocal()
 	maven {

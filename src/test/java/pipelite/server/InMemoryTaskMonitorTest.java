@@ -8,9 +8,10 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.server;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.util.TestPropertyValues;
@@ -18,27 +19,26 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import pipelite.UniqueStringGenerator;
 import pipelite.FullTestConfiguration;
+import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfiguration;
+import pipelite.service.PipeliteMonitorService;
 
 @SpringBootTest(
     classes = FullTestConfiguration.class,
     properties = {
-      "pipelite.launcher.workers=5",
-      "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver",
       "spring.autoconfigure.exclude="
           + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
           + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
           + "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration"
     })
-@ContextConfiguration(
-    initializers = InMemorySuccessPipeliteLauncherTest.TestContextInitializer.class)
+@ContextConfiguration(initializers = InMemoryTaskMonitorTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"test", "memory"})
-public class InMemorySuccessPipeliteLauncherTest {
+public class InMemoryTaskMonitorTest {
 
-  @Autowired private PipeliteLauncher pipeliteLauncher;
   @Autowired private ProcessConfiguration processConfiguration;
+  @Autowired private ObjectProvider<TaskMonitor> taskMonitorProvider;
+  @Autowired private PipeliteMonitorService pipeliteMonitorService;
 
   public static class TestContextInitializer
       implements ApplicationContextInitializer<ConfigurableApplicationContext> {
@@ -52,9 +52,10 @@ public class InMemorySuccessPipeliteLauncherTest {
   }
 
   @Test
-  public void test() {
-    SuccessPipeliteLauncherTester tester =
-        new SuccessPipeliteLauncherTester(pipeliteLauncher, processConfiguration);
-    tester.test();
+  public void testSuccess() {
+    TaskMonitorTester tester =
+        new TaskMonitorTester(
+            taskMonitorProvider, pipeliteMonitorService, processConfiguration.getProcessName());
+    tester.testSuccess();
   }
 }

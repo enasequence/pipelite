@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.server;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -77,8 +77,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private long iterations = 0;
   private Long maxIterations;
 
-  private int schedulerDelayMillis = 1000;
-  private int stopDelayMillis = 1000;
+  private Duration schedulerDelay = Duration.ofSeconds(10);
+  private final Duration stopDelay = Duration.ofSeconds(1);
 
   public PipeliteLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
@@ -123,17 +123,14 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   @Override
   protected Scheduler scheduler() {
-    return Scheduler.newFixedDelaySchedule(Duration.ZERO, Duration.ofMillis(schedulerDelayMillis));
+    return Scheduler.newFixedDelaySchedule(Duration.ZERO, schedulerDelay);
   }
 
   @Override
   protected void runOneIteration() throws Exception {
-
-    if (maxIterations != null && iterations > maxIterations) {
-      stopAsync();
+    if (!isRunning()) {
       return;
     }
-    ++iterations;
 
     log.atInfo()
         .with(LogKey.LAUNCHER_NAME, getLauncherName())
@@ -159,24 +156,6 @@ public class PipeliteLauncher extends AbstractScheduledService {
               .collect(Collectors.toList());
       activeProcessQueueIndex = 0;
       activeProcessQueueValidUntil = LocalDateTime.now().plusHours(activeProcessQueueValidHours);
-    }
-
-    if (activeProcessQueueIndex == activeProcessQueue.size()
-        && ShutdownPolicy.SHUTDOWN_IF_IDLE.equals(shutdownPolicy)) {
-      log.atInfo()
-          .with(LogKey.LAUNCHER_NAME, launcherName)
-          .with(LogKey.PROCESS_NAME, processName)
-          .log("Shutting down no new active processes to launch");
-
-      while (!initProcesses.isEmpty()) {
-        try {
-          Thread.sleep(stopDelayMillis);
-        } catch (InterruptedException ex) {
-          throw ex;
-        }
-      }
-      stopAsync();
-      return;
     }
 
     while (activeProcessQueueIndex < activeProcessQueue.size()
@@ -256,6 +235,34 @@ public class PipeliteLauncher extends AbstractScheduledService {
             }
           });
     }
+
+    stopIfMaxIterations();
+    stopIfIdle();
+  }
+
+  private void stopIfMaxIterations() {
+    if (maxIterations != null && ++iterations > maxIterations) {
+      stopAsync();
+    }
+  }
+
+  private void stopIfIdle() throws InterruptedException {
+    if (activeProcessQueueIndex == activeProcessQueue.size()
+        && ShutdownPolicy.SHUTDOWN_IF_IDLE.equals(shutdownPolicy)) {
+      log.atInfo()
+          .with(LogKey.LAUNCHER_NAME, getLauncherName())
+          .with(LogKey.PROCESS_NAME, getProcessName())
+          .log("Shutting down no new active processes to launch");
+
+      while (!initProcesses.isEmpty()) {
+        try {
+          Thread.sleep(stopDelay.toMillis());
+        } catch (InterruptedException ex) {
+          throw ex;
+        }
+      }
+      stopAsync();
+    }
   }
 
   private void receiveNewProcessInstances(String launcherName, String processName) {
@@ -331,8 +338,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
     executorService.shutdown();
     try {
-      executorService.awaitTermination(
-          PipeliteLauncherServiceManager.FORCE_STOP_WAIT_SECONDS - 1, TimeUnit.SECONDS);
+      executorService.awaitTermination(ServerManager.FORCE_STOP_WAIT_SECONDS - 1, TimeUnit.SECONDS);
     } catch (InterruptedException ex) {
       executorService.shutdownNow();
       throw ex;
@@ -449,12 +455,12 @@ public class PipeliteLauncher extends AbstractScheduledService {
     this.activeProcessQueueValidHours = hours;
   }
 
-  public int getSchedulerDelayMillis() {
-    return schedulerDelayMillis;
+  public Duration getSchedulerDelay() {
+    return schedulerDelay;
   }
 
-  public void setSchedulerDelayMillis(int milliseconds) {
-    this.schedulerDelayMillis = milliseconds;
+  public void setSchedulerDelay(Duration schedulerDelay) {
+    this.schedulerDelay = schedulerDelay;
   }
 
   public ShutdownPolicy getShutdownPolicy() {

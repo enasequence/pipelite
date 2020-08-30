@@ -1,4 +1,4 @@
-package pipelite.launcher;
+package pipelite.server;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Service;
@@ -11,25 +11,23 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 @Flogger
-public class PipeliteLauncherServiceManager {
+public class ServerManager {
 
   // Suppresses default constructor, ensuring non-instantiability.
-  private PipeliteLauncherServiceManager() {}
+  private ServerManager() {}
 
-  public static final int FORCE_STOP_WAIT_SECONDS = 5;
+  public static final int FORCE_STOP_WAIT_SECONDS = 30;
 
-  private static void forceStop(ServiceManager manager, PipeliteLauncher pipeliteLauncher) {
-    log.atInfo()
-        .with(LogKey.LAUNCHER_NAME, pipeliteLauncher.serviceName())
-        .log("Stopping pipelite launcher");
+  private static void forceStop(ServiceManager manager, Service service, String serviceName) {
+    log.atInfo().with(LogKey.SERVICE_NAME, serviceName).log("Stopping service");
     try {
       manager.stopAsync().awaitStopped(FORCE_STOP_WAIT_SECONDS, TimeUnit.SECONDS);
     } catch (TimeoutException timeout) {
     }
   }
 
-  public static void run(PipeliteLauncher pipeliteLauncher) {
-    ServiceManager manager = new ServiceManager(Collections.singleton(pipeliteLauncher));
+  public static void run(Service service, String serviceName) {
+    ServiceManager manager = new ServiceManager(Collections.singleton(service));
     manager.addListener(
         new ServiceManager.Listener() {
           public void stopped() {}
@@ -38,10 +36,10 @@ public class PipeliteLauncherServiceManager {
 
           public void failure(Service service) {
             log.atSevere()
-                .with(LogKey.LAUNCHER_NAME, pipeliteLauncher.serviceName())
+                .with(LogKey.SERVICE_NAME, serviceName)
                 .withCause(service.failureCause())
-                .log("Pipelite launcher has failed");
-            forceStop(manager, pipeliteLauncher);
+                .log("Service has failed");
+            forceStop(manager, service, serviceName);
           }
         },
         MoreExecutors.directExecutor());
@@ -50,17 +48,13 @@ public class PipeliteLauncherServiceManager {
         .addShutdownHook(
             new Thread(
                 () -> {
-                  forceStop(manager, pipeliteLauncher);
+                  forceStop(manager, service, serviceName);
                 }));
 
-    log.atInfo()
-        .with(LogKey.LAUNCHER_NAME, pipeliteLauncher.serviceName())
-        .log("Starting pipelite launcher");
+    log.atInfo().with(LogKey.SERVICE_NAME, serviceName).log("Starting service");
 
     manager.startAsync().awaitStopped();
 
-    log.atInfo()
-        .with(LogKey.LAUNCHER_NAME, pipeliteLauncher.serviceName())
-        .log("Pipelite launcher has stopped");
+    log.atInfo().with(LogKey.SERVICE_NAME, serviceName).log("Service has stopped");
   }
 }

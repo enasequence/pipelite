@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.server;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,11 +27,15 @@ import pipelite.configuration.ProcessConfiguration;
     properties = {
       "pipelite.launcher.workers=5",
       "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver",
+      "spring.autoconfigure.exclude="
+          + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
+          + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
+          + "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration"
     })
 @ContextConfiguration(
-    initializers = DatabaseSuccessPipeliteLauncherTest.TestContextInitializer.class)
-@ActiveProfiles(value = {"database", "database-oracle-test"})
-public class DatabaseSuccessPipeliteLauncherTest {
+    initializers = InMemorySuccessPipeliteLauncherTest.TestContextInitializer.class)
+@ActiveProfiles(value = {"test", "memory"})
+public class InMemorySuccessPipeliteLauncherTest {
 
   @Autowired private PipeliteLauncher pipeliteLauncher;
   @Autowired private ProcessConfiguration processConfiguration;
