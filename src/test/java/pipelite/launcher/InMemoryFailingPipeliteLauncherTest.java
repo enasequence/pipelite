@@ -31,9 +31,9 @@ import static org.assertj.core.api.Assertions.assertThat;
           + "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration"
     })
 @ContextConfiguration(
-    initializers = PipeliteInMemorySuccessPipeliteLauncherTest.TestContextInitializer.class)
+    initializers = InMemorySuccessPipeliteLauncherTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"test", "memory"})
-public class PipeliteInMemoryFailingPipeliteLauncherTest {
+public class InMemoryFailingPipeliteLauncherTest {
 
   @Autowired private ProcessConfiguration processConfiguration;
 

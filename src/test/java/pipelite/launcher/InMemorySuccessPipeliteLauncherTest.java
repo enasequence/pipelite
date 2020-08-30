@@ -33,9 +33,9 @@ import pipelite.configuration.ProcessConfiguration;
           + "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration"
     })
 @ContextConfiguration(
-    initializers = PipeliteInMemorySuccessPipeliteLauncherTest.TestContextInitializer.class)
+    initializers = InMemorySuccessPipeliteLauncherTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"test", "memory"})
-public class PipeliteInMemorySuccessPipeliteLauncherTest {
+public class InMemorySuccessPipeliteLauncherTest {
 
   @Autowired private PipeliteLauncher pipeliteLauncher;
   @Autowired private ProcessConfiguration processConfiguration;
@@ -53,8 +53,8 @@ public class PipeliteInMemorySuccessPipeliteLauncherTest {
 
   @Test
   public void test() {
-    PipeliteSuccessPipeliteLauncherTester tester =
-        new PipeliteSuccessPipeliteLauncherTester(pipeliteLauncher, processConfiguration);
+    SuccessPipeliteLauncherTester tester =
+        new SuccessPipeliteLauncherTester(pipeliteLauncher, processConfiguration);
     tester.test();
   }
 }

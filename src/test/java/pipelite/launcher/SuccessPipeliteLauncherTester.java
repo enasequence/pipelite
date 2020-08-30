@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @AllArgsConstructor
-public class PipeliteSuccessPipeliteLauncherTester {
+public class SuccessPipeliteLauncherTester {
 
   private final PipeliteLauncher pipeliteLauncher;
   private final ProcessConfiguration processConfiguration;

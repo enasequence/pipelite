@@ -28,9 +28,9 @@ import static org.assertj.core.api.Assertions.assertThat;
       "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver"
     })
 @ContextConfiguration(
-    initializers = PipeliteDatabaseSuccessPipeliteLauncherTest.TestContextInitializer.class)
+    initializers = DatabaseSuccessPipeliteLauncherTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"database", "database-oracle-test"})
-public class PipeliteDatabaseFailingPipeliteLauncherTest {
+public class DatabaseFailingPipeliteLauncherTest {
 
   @Autowired private ProcessConfiguration processConfiguration;
 

@@ -29,9 +29,9 @@ import pipelite.configuration.ProcessConfiguration;
       "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver",
     })
 @ContextConfiguration(
-    initializers = PipeliteDatabaseSuccessPipeliteLauncherTest.TestContextInitializer.class)
+    initializers = DatabaseSuccessPipeliteLauncherTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"database", "database-oracle-test"})
-public class PipeliteDatabaseSuccessPipeliteLauncherTest {
+public class DatabaseSuccessPipeliteLauncherTest {
 
   @Autowired private PipeliteLauncher pipeliteLauncher;
   @Autowired private ProcessConfiguration processConfiguration;
@@ -49,8 +49,8 @@ public class PipeliteDatabaseSuccessPipeliteLauncherTest {
 
   @Test
   public void test() {
-    PipeliteSuccessPipeliteLauncherTester tester =
-        new PipeliteSuccessPipeliteLauncherTester(pipeliteLauncher, processConfiguration);
+    SuccessPipeliteLauncherTester tester =
+        new SuccessPipeliteLauncherTester(pipeliteLauncher, processConfiguration);
     tester.test();
   }
 }
