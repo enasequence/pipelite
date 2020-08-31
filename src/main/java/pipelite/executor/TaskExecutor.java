@@ -12,7 +12,7 @@ package pipelite.executor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import pipelite.instance.TaskInstance;
+import pipelite.task.TaskInstance;
 import pipelite.task.TaskExecutionResult;
 
 public interface TaskExecutor {

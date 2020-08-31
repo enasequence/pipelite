@@ -1,21 +1,23 @@
-package pipelite.instance;
+package pipelite.process;
 
 import lombok.Value;
 import pipelite.executor.TaskExecutor;
+import pipelite.task.TaskInstance;
+import pipelite.task.TaskParameters;
 import pipelite.resolver.ResultResolver;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Value
-public class ProcessInstanceBuilder {
+public class ProcessBuilder {
 
   private final String processName;
   private final String processId;
   private final int priority;
   private final List<TaskInstance> taskInstances = new ArrayList<>();
 
-  public ProcessInstanceBuilder task(
+  public ProcessBuilder task(
       String taskName, TaskExecutor executor, ResultResolver resolver) {
 
     taskInstances.add(
@@ -30,7 +32,7 @@ public class ProcessInstanceBuilder {
     return this;
   }
 
-  public ProcessInstanceBuilder taskDependsOnPrevious(
+  public ProcessBuilder taskDependsOnPrevious(
       String taskName, TaskExecutor executor, ResultResolver resolver) {
 
     taskInstances.add(

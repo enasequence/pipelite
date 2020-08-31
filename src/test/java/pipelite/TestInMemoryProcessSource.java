@@ -1,12 +1,12 @@
 package pipelite;
 
 import com.google.common.util.concurrent.Monitor;
-import pipelite.instance.ProcessInstance;
-import pipelite.instance.ProcessInstanceSource;
+import pipelite.process.ProcessInstance;
+import pipelite.process.ProcessSource;
 
 import java.util.*;
 
-public class TestInMemoryProcessSource implements ProcessInstanceSource {
+public class TestInMemoryProcessSource implements ProcessSource {
 
   private final Set<ProcessInstance> newProcessInstances = new HashSet<>();
   private final Map<String, ProcessInstance> returnedProcessInstances = new HashMap<>();

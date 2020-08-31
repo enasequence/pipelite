@@ -1,11 +1,11 @@
 package pipelite;
 
-import pipelite.instance.ProcessInstance;
-import pipelite.instance.ProcessInstanceFactory;
+import pipelite.process.ProcessInstance;
+import pipelite.process.ProcessFactory;
 
 import java.util.*;
 
-public class TestInMemoryProcessFactory implements ProcessInstanceFactory {
+public class TestInMemoryProcessFactory implements ProcessFactory {
 
   private final Map<String, ProcessInstance> processInstances = new HashMap<>();
 

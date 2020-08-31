@@ -11,7 +11,7 @@
 package pipelite.executor.executable;
 
 import pipelite.executor.InternalTaskExecutor;
-import pipelite.instance.TaskInstance;
+import pipelite.task.TaskInstance;
 import pipelite.task.TaskExecutionResult;
 
 public class SshInternalExecutor extends AbstractSshExecutor {

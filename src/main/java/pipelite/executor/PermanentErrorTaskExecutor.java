@@ -1,7 +1,7 @@
 package pipelite.executor;
 
 import lombok.extern.flogger.Flogger;
-import pipelite.instance.TaskInstance;
+import pipelite.task.TaskInstance;
 import pipelite.task.TaskExecutionResult;
 
 @Flogger

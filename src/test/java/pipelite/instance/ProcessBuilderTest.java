@@ -3,22 +3,25 @@ package pipelite.instance;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.executor.TaskExecutor;
+import pipelite.process.ProcessBuilder;
+import pipelite.process.ProcessInstance;
+import pipelite.process.ProcessSource;
 import pipelite.resolver.ResultResolver;
 
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ProcessInstanceBuilderTest {
+public class ProcessBuilderTest {
 
   private static final String PROCESS_NAME = UniqueStringGenerator.randomProcessName();
   private static final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
 
-  public static class TestProcessSource implements ProcessInstanceSource {
+  public static class TestProcessSource implements ProcessSource {
 
     @Override
     public ProcessInstance next() {
-      return new ProcessInstanceBuilder(PROCESS_NAME, PROCESS_ID, 9)
+      return new ProcessBuilder(PROCESS_NAME, PROCESS_ID, 9)
           .task(
               UniqueStringGenerator.randomTaskName(),
               TaskExecutor.SUCCESS_EXECUTOR,

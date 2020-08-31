@@ -15,7 +15,7 @@ import java.util.List;
 
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.TaskExecutor;
-import pipelite.instance.TaskInstance;
+import pipelite.task.TaskInstance;
 import pipelite.task.TaskExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall;
 

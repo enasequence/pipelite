@@ -3,7 +3,7 @@ package pipelite.executor.executable;
 import lombok.extern.flogger.Flogger;
 import org.apache.commons.exec.*;
 import pipelite.executor.output.KeepOldestByteArrayOutputStream;
-import pipelite.instance.TaskInstance;
+import pipelite.task.TaskInstance;
 import pipelite.task.TaskExecutionResult;
 
 import java.io.IOException;

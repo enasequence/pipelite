@@ -11,8 +11,8 @@
 package pipelite.executor;
 
 import lombok.extern.flogger.Flogger;
-import pipelite.instance.TaskInstance;
-import pipelite.instance.TaskParameters;
+import pipelite.task.TaskInstance;
+import pipelite.task.TaskParameters;
 import pipelite.resolver.ResultResolver;
 import pipelite.task.TaskExecutionResult;
 

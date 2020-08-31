@@ -1,6 +1,6 @@
-package pipelite.instance;
+package pipelite.process;
 
-public interface ProcessInstanceSource {
+public interface ProcessSource {
   /** Returns the next new process instance to be executed. */
   ProcessInstance next();
 

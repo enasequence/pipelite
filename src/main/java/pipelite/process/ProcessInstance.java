@@ -1,8 +1,9 @@
-package pipelite.instance;
+package pipelite.process;
 
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
+import pipelite.task.TaskInstance;
 
 import java.util.List;
 

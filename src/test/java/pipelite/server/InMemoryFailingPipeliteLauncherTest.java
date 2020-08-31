@@ -12,8 +12,9 @@ import pipelite.TestInMemoryProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.executor.TaskExecutor;
-import pipelite.instance.ProcessInstance;
-import pipelite.instance.ProcessInstanceBuilder;
+import pipelite.process.ProcessInstance;
+import pipelite.process.ProcessBuilder;
+import pipelite.process.ProcessSource;
 import pipelite.resolver.ResultResolver;
 
 import java.time.Duration;
@@ -45,6 +46,16 @@ public class InMemoryFailingPipeliteLauncherTest {
   private static final int PROCESS_CNT = 10;
   private static final Duration SCHEDULER_DELAY = Duration.ofMillis(10);
 
+  private PipeliteLauncher init(List<ProcessInstance> processInstances, ProcessSource processSource) {
+    PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
+    TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
+    processConfiguration.setProcessFactory(processFactory);
+    processConfiguration.setProcessSource(processSource);
+    pipeliteLauncher.setShutdownPolicy(ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    pipeliteLauncher.setSchedulerDelay(SCHEDULER_DELAY);
+    return pipeliteLauncher;
+  }
+
   @Test
   public void testFirstTaskFails() {
     processConfiguration.setProcessName(PROCESS_NAME);
@@ -54,7 +65,7 @@ public class InMemoryFailingPipeliteLauncherTest {
         .forEach(
             i -> {
               processInstances.add(
-                  new ProcessInstanceBuilder(
+                  new ProcessBuilder(
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
                       .task(
                           UniqueStringGenerator.randomTaskName(),
@@ -75,15 +86,8 @@ public class InMemoryFailingPipeliteLauncherTest {
                       .build());
             });
 
-    PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
-
-    TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
     TestInMemoryProcessSource processSource = new TestInMemoryProcessSource(processInstances);
-    processConfiguration.setProcessFactory(processFactory);
-    processConfiguration.setProcessSource(processSource);
-
-    pipeliteLauncher.setShutdownPolicy(ShutdownPolicy.SHUTDOWN_IF_IDLE);
-    pipeliteLauncher.setSchedulerDelay(SCHEDULER_DELAY);
+    PipeliteLauncher pipeliteLauncher = init(processInstances, processSource);
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     assertThat(processSource.getNewProcessInstances()).isEqualTo(0);
@@ -107,7 +111,7 @@ public class InMemoryFailingPipeliteLauncherTest {
         .forEach(
             i -> {
               processInstances.add(
-                  new ProcessInstanceBuilder(
+                  new ProcessBuilder(
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
                       .task(
                           UniqueStringGenerator.randomTaskName(),
@@ -128,15 +132,8 @@ public class InMemoryFailingPipeliteLauncherTest {
                       .build());
             });
 
-    PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
-
-    TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
     TestInMemoryProcessSource processSource = new TestInMemoryProcessSource(processInstances);
-    processConfiguration.setProcessFactory(processFactory);
-    processConfiguration.setProcessSource(processSource);
-
-    pipeliteLauncher.setShutdownPolicy(ShutdownPolicy.SHUTDOWN_IF_IDLE);
-    pipeliteLauncher.setSchedulerDelay(SCHEDULER_DELAY);
+    PipeliteLauncher pipeliteLauncher = init(processInstances, processSource);
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     assertThat(processSource.getNewProcessInstances()).isEqualTo(0);
@@ -160,7 +157,7 @@ public class InMemoryFailingPipeliteLauncherTest {
         .forEach(
             i -> {
               processInstances.add(
-                  new ProcessInstanceBuilder(
+                  new ProcessBuilder(
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
                       .task(
                           UniqueStringGenerator.randomTaskName(),
@@ -181,15 +178,8 @@ public class InMemoryFailingPipeliteLauncherTest {
                       .build());
             });
 
-    PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
-
-    TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
     TestInMemoryProcessSource processSource = new TestInMemoryProcessSource(processInstances);
-    processConfiguration.setProcessFactory(processFactory);
-    processConfiguration.setProcessSource(processSource);
-
-    pipeliteLauncher.setShutdownPolicy(ShutdownPolicy.SHUTDOWN_IF_IDLE);
-    pipeliteLauncher.setSchedulerDelay(SCHEDULER_DELAY);
+    PipeliteLauncher pipeliteLauncher = init(processInstances, processSource);
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     assertThat(processSource.getNewProcessInstances()).isEqualTo(0);
@@ -213,7 +203,7 @@ public class InMemoryFailingPipeliteLauncherTest {
         .forEach(
             i -> {
               processInstances.add(
-                  new ProcessInstanceBuilder(
+                  new ProcessBuilder(
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
                       .task(
                           UniqueStringGenerator.randomTaskName(),
@@ -234,15 +224,8 @@ public class InMemoryFailingPipeliteLauncherTest {
                       .build());
             });
 
-    PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
-
-    TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
     TestInMemoryProcessSource processSource = new TestInMemoryProcessSource(processInstances);
-    processConfiguration.setProcessFactory(processFactory);
-    processConfiguration.setProcessSource(processSource);
-
-    pipeliteLauncher.setShutdownPolicy(ShutdownPolicy.SHUTDOWN_IF_IDLE);
-    pipeliteLauncher.setSchedulerDelay(SCHEDULER_DELAY);
+    PipeliteLauncher pipeliteLauncher = init(processInstances, processSource);
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     assertThat(processSource.getNewProcessInstances()).isEqualTo(0);
@@ -266,7 +249,7 @@ public class InMemoryFailingPipeliteLauncherTest {
         .forEach(
             i -> {
               processInstances.add(
-                  new ProcessInstanceBuilder(
+                  new ProcessBuilder(
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
                       .task(
                           UniqueStringGenerator.randomTaskName(),
@@ -287,15 +270,8 @@ public class InMemoryFailingPipeliteLauncherTest {
                       .build());
             });
 
-    PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
-
-    TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
     TestInMemoryProcessSource processSource = new TestInMemoryProcessSource(processInstances);
-    processConfiguration.setProcessFactory(processFactory);
-    processConfiguration.setProcessSource(processSource);
-
-    pipeliteLauncher.setShutdownPolicy(ShutdownPolicy.SHUTDOWN_IF_IDLE);
-    pipeliteLauncher.setSchedulerDelay(SCHEDULER_DELAY);
+    PipeliteLauncher pipeliteLauncher = init(processInstances, processSource);
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     assertThat(processSource.getNewProcessInstances()).isEqualTo(0);

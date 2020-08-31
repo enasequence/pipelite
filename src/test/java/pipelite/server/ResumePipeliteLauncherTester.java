@@ -10,9 +10,9 @@ import pipelite.configuration.ProcessConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
 import pipelite.executor.TaskExecutor;
-import pipelite.instance.ProcessInstance;
-import pipelite.instance.ProcessInstanceBuilder;
-import pipelite.instance.TaskInstance;
+import pipelite.process.ProcessInstance;
+import pipelite.process.ProcessBuilder;
+import pipelite.task.TaskInstance;
 import pipelite.process.ProcessExecutionState;
 import pipelite.resolver.ResultResolver;
 import pipelite.service.PipeliteProcessService;
@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @AllArgsConstructor
-public class ResumeProcessLauncherTester {
+public class ResumePipeliteLauncherTester {
 
   private final LauncherConfiguration launcherConfiguration;
   private final ProcessConfiguration processConfiguration;
@@ -137,7 +137,7 @@ public class ResumeProcessLauncherTester {
       pipeliteStageService.saveStage(pipeliteStage);
 
       processInstances.add(
-          new ProcessInstanceBuilder(processName, processId, 9)
+          new ProcessBuilder(processName, processId, 9)
               .task(taskName, taskExecutor, ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
               .build());
     }

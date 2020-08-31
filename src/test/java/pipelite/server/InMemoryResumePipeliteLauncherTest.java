@@ -29,13 +29,14 @@ import pipelite.service.PipeliteStageService;
 @SpringBootTest(
     classes = FullTestConfiguration.class,
     properties = {
-      "pipelite.launcher.workers=5",
-      "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver",
+      "spring.autoconfigure.exclude="
+          + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
+          + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
+          + "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration"
     })
-@ContextConfiguration(
-    initializers = DatabaseSuccessPipeliteLauncherTest.TestContextInitializer.class)
-@ActiveProfiles(value = {"database", "database-oracle-test"})
-public class DatabaseResumeProcessLauncherTest {
+@ContextConfiguration(initializers = InMemoryResumePipeliteLauncherTest.TestContextInitializer.class)
+@ActiveProfiles(value = {"test", "memory"})
+public class InMemoryResumePipeliteLauncherTest {
 
   @Autowired private LauncherConfiguration launcherConfiguration;
   @Autowired private ProcessConfiguration processConfiguration;
@@ -56,8 +57,8 @@ public class DatabaseResumeProcessLauncherTest {
 
   @Test
   public void testSuccess() {
-    ResumeProcessLauncherTester tester =
-        new ResumeProcessLauncherTester(
+    ResumePipeliteLauncherTester tester =
+        new ResumePipeliteLauncherTester(
             launcherConfiguration,
             processConfiguration,
             pipeliteLauncherObjectProvider,
@@ -68,8 +69,8 @@ public class DatabaseResumeProcessLauncherTest {
 
   @Test
   public void testPermanentError() {
-    ResumeProcessLauncherTester tester =
-        new ResumeProcessLauncherTester(
+    ResumePipeliteLauncherTester tester =
+        new ResumePipeliteLauncherTester(
             launcherConfiguration,
             processConfiguration,
             pipeliteLauncherObjectProvider,
@@ -80,8 +81,8 @@ public class DatabaseResumeProcessLauncherTest {
 
   @Test
   public void testTransientError() {
-    ResumeProcessLauncherTester tester =
-        new ResumeProcessLauncherTester(
+    ResumePipeliteLauncherTester tester =
+        new ResumePipeliteLauncherTester(
             launcherConfiguration,
             processConfiguration,
             pipeliteLauncherObjectProvider,
@@ -92,8 +93,8 @@ public class DatabaseResumeProcessLauncherTest {
 
   @Test
   public void testException() {
-    ResumeProcessLauncherTester tester =
-        new ResumeProcessLauncherTester(
+    ResumePipeliteLauncherTester tester =
+        new ResumePipeliteLauncherTester(
             launcherConfiguration,
             processConfiguration,
             pipeliteLauncherObjectProvider,

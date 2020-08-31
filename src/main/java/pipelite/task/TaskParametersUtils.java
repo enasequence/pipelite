@@ -1,4 +1,4 @@
-package pipelite.instance;
+package pipelite.task;
 
 import com.google.common.base.Supplier;
 import lombok.Value;

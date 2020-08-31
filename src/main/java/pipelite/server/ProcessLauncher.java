@@ -25,13 +25,13 @@ import pipelite.configuration.*;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
 import pipelite.executor.TaskExecutor;
-import pipelite.instance.ProcessInstance;
+import pipelite.process.ProcessInstance;
 import pipelite.log.LogKey;
 import pipelite.process.ProcessExecutionState;
 import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
-import pipelite.instance.TaskInstance;
+import pipelite.task.TaskInstance;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultType;
 

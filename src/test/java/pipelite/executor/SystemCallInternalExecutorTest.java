@@ -2,8 +2,8 @@ package pipelite.executor;
 
 import org.junit.jupiter.api.Test;
 import pipelite.executor.executable.SystemCallInternalExecutor;
-import pipelite.instance.TaskInstance;
-import pipelite.instance.TaskParameters;
+import pipelite.task.TaskInstance;
+import pipelite.task.TaskParameters;
 import pipelite.resolver.ResultResolver;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultExitCodeSerializer;

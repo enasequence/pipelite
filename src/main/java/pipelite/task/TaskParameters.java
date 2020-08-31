@@ -1,4 +1,4 @@
-package pipelite.instance;
+package pipelite.task;
 
 import lombok.Builder;
 import lombok.Data;

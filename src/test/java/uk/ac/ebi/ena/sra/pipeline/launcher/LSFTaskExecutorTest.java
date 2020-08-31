@@ -16,8 +16,8 @@ import java.nio.file.Files;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.executor.TaskExecutor;
-import pipelite.instance.TaskParameters;
-import pipelite.instance.TaskInstance;
+import pipelite.task.TaskParameters;
+import pipelite.task.TaskInstance;
 import pipelite.resolver.ResultResolver;
 import pipelite.task.TaskExecutionResult;
 

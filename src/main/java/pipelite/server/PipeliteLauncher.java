@@ -26,9 +26,9 @@ import org.springframework.stereotype.Component;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.entity.PipeliteProcess;
-import pipelite.instance.ProcessInstance;
-import pipelite.instance.ProcessInstanceFactory;
-import pipelite.instance.ProcessInstanceSource;
+import pipelite.process.ProcessInstance;
+import pipelite.process.ProcessFactory;
+import pipelite.process.ProcessSource;
 import pipelite.log.LogKey;
 import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteProcessService;
@@ -43,8 +43,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private final PipeliteProcessService pipeliteProcessService;
   private final PipeliteLockService pipeliteLockService;
   private final ExecutorService executorService;
-  private ProcessInstanceFactory processFactory;
-  private ProcessInstanceSource processSource;
+  private ProcessFactory processFactory;
+  private ProcessSource processSource;
 
   private final AtomicInteger processInitCount = new AtomicInteger(0);
   private final AtomicInteger processLoadFailureCount = new AtomicInteger(0);

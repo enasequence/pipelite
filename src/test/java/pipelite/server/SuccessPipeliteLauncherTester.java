@@ -7,8 +7,8 @@ import pipelite.TestInMemoryProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.executor.TaskExecutor;
-import pipelite.instance.ProcessInstance;
-import pipelite.instance.ProcessInstanceBuilder;
+import pipelite.process.ProcessInstance;
+import pipelite.process.ProcessBuilder;
 import pipelite.resolver.ResultResolver;
 import pipelite.task.TaskExecutionResult;
 
@@ -55,7 +55,7 @@ public class SuccessPipeliteLauncherTester {
       String processName = pipeliteLauncher.getProcessName();
       String processId = "Process" + i;
       processInstances.add(
-          new ProcessInstanceBuilder(processName, processId, 9)
+          new ProcessBuilder(processName, processId, 9)
               .task(
                   UniqueStringGenerator.randomTaskName(),
                   createTaskExecutor(processId),

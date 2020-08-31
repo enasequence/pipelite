@@ -9,13 +9,11 @@ import pipelite.EmptyTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.TestConfiguration;
 import pipelite.executor.executable.SshExecutor;
-import pipelite.instance.TaskInstance;
-import pipelite.instance.TaskParameters;
+import pipelite.task.TaskInstance;
+import pipelite.task.TaskParameters;
 import pipelite.resolver.ResultResolver;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultType;
-
-import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

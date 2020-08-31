@@ -4,9 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import pipelite.executor.TaskExecutor;
-import pipelite.instance.ProcessInstanceFactory;
-import pipelite.instance.ProcessInstanceSource;
+import pipelite.process.ProcessFactory;
+import pipelite.process.ProcessSource;
 
 @Data
 @Builder
@@ -23,19 +22,19 @@ public class ProcessConfiguration {
 
   private String processSourceName;
 
-  private ProcessInstanceFactory processFactory;
+  private ProcessFactory processFactory;
 
-  private ProcessInstanceFactory getProcessFactory() {
+  private ProcessFactory getProcessFactory() {
     return processFactory;
   }
 
-  private ProcessInstanceSource processSource;
+  private ProcessSource processSource;
 
-  private ProcessInstanceSource getProcessSource() {
+  private ProcessSource getProcessSource() {
     return processSource;
   }
 
-  public static ProcessInstanceFactory getProcessFactory(
+  public static ProcessFactory getProcessFactory(
       ProcessConfiguration processConfiguration) {
     if (processConfiguration.getProcessFactory() != null) {
       return processConfiguration.getProcessFactory();
@@ -43,8 +42,8 @@ public class ProcessConfiguration {
     if (processConfiguration.getProcessFactoryName() != null) {
       try {
         Class cls = Class.forName(processConfiguration.getProcessFactoryName());
-        if (ProcessInstanceFactory.class.isAssignableFrom(cls)) {
-          ProcessInstanceFactory factory = ((ProcessInstanceFactory) cls.newInstance());
+        if (ProcessFactory.class.isAssignableFrom(cls)) {
+          ProcessFactory factory = ((ProcessFactory) cls.newInstance());
           processConfiguration.setProcessFactory(factory);
           return factory;
         }
@@ -55,15 +54,15 @@ public class ProcessConfiguration {
     throw new RuntimeException("Could not create process factory");
   }
 
-  public static ProcessInstanceSource getProcessSource(ProcessConfiguration processConfiguration) {
+  public static ProcessSource getProcessSource(ProcessConfiguration processConfiguration) {
     if (processConfiguration.getProcessSource() != null) {
       return processConfiguration.getProcessSource();
     }
     if (processConfiguration.getProcessSourceName() != null) {
       try {
         Class cls = Class.forName(processConfiguration.getProcessSourceName());
-        if (ProcessInstanceSource.class.isAssignableFrom(cls)) {
-          ProcessInstanceSource source = ((ProcessInstanceSource) cls.newInstance());
+        if (ProcessSource.class.isAssignableFrom(cls)) {
+          ProcessSource source = ((ProcessSource) cls.newInstance());
           processConfiguration.setProcessSource(source);
           return source;
         }
