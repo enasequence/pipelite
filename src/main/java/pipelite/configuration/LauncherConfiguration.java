@@ -17,5 +17,5 @@ public class LauncherConfiguration {
   private String launcherName;
 
   /** Number of parallel task executions. */
-  private Integer workers;
+  private int workers;
 }

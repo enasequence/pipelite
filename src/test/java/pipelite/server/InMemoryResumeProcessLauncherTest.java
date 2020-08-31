@@ -21,8 +21,10 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import pipelite.FullTestConfiguration;
 import pipelite.UniqueStringGenerator;
+import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
-import pipelite.service.PipeliteMonitorService;
+import pipelite.service.PipeliteProcessService;
+import pipelite.service.PipeliteStageService;
 
 @SpringBootTest(
     classes = FullTestConfiguration.class,
@@ -32,13 +34,15 @@ import pipelite.service.PipeliteMonitorService;
           + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
           + "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration"
     })
-@ContextConfiguration(initializers = InMemoryTaskMonitorTest.TestContextInitializer.class)
+@ContextConfiguration(initializers = InMemoryResumeProcessLauncherTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"test", "memory"})
-public class InMemoryTaskMonitorTest {
+public class InMemoryResumeProcessLauncherTest {
 
+  @Autowired private LauncherConfiguration launcherConfiguration;
   @Autowired private ProcessConfiguration processConfiguration;
-  @Autowired private ObjectProvider<TaskMonitor> taskMonitorProvider;
-  @Autowired private PipeliteMonitorService pipeliteMonitorService;
+  @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
+  @Autowired private PipeliteProcessService pipeliteProcessService;
+  @Autowired private PipeliteStageService pipeliteStageService;
 
   public static class TestContextInitializer
       implements ApplicationContextInitializer<ConfigurableApplicationContext> {
@@ -53,33 +57,50 @@ public class InMemoryTaskMonitorTest {
 
   @Test
   public void testSuccess() {
-    TaskMonitorTester tester =
-        new TaskMonitorTester(
-            taskMonitorProvider, pipeliteMonitorService, processConfiguration.getProcessName());
+    ResumeProcessLauncherTester tester =
+        new ResumeProcessLauncherTester(
+            launcherConfiguration,
+            processConfiguration,
+            pipeliteLauncherObjectProvider,
+            pipeliteProcessService,
+            pipeliteStageService);
     tester.testSuccess();
   }
 
   @Test
   public void testPermanentError() {
-    TaskMonitorTester tester =
-            new TaskMonitorTester(
-                    taskMonitorProvider, pipeliteMonitorService, processConfiguration.getProcessName());
+    ResumeProcessLauncherTester tester =
+        new ResumeProcessLauncherTester(
+            launcherConfiguration,
+            processConfiguration,
+            pipeliteLauncherObjectProvider,
+            pipeliteProcessService,
+            pipeliteStageService);
     tester.testPermanentError();
   }
 
   @Test
-  public void testRuntimeExceeded() {
-    TaskMonitorTester tester =
-            new TaskMonitorTester(
-                    taskMonitorProvider, pipeliteMonitorService, processConfiguration.getProcessName());
-    tester.testRuntimeExceeded();
+  public void testTransientError() {
+    ResumeProcessLauncherTester tester =
+        new ResumeProcessLauncherTester(
+            launcherConfiguration,
+            processConfiguration,
+            pipeliteLauncherObjectProvider,
+            pipeliteProcessService,
+            pipeliteStageService);
+    tester.testTransientError();
   }
 
   @Test
-  public void testLost() {
-    TaskMonitorTester tester =
-            new TaskMonitorTester(
-                    taskMonitorProvider, pipeliteMonitorService, processConfiguration.getProcessName());
-    tester.testLost();
+  public void testException() {
+    ResumeProcessLauncherTester tester =
+        new ResumeProcessLauncherTester(
+            launcherConfiguration,
+            processConfiguration,
+            pipeliteLauncherObjectProvider,
+            pipeliteProcessService,
+            pipeliteStageService);
+
+    tester.testException();
   }
 }

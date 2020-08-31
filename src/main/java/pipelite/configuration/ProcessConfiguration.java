@@ -6,6 +6,7 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import pipelite.executor.TaskExecutor;
 import pipelite.instance.ProcessInstanceFactory;
+import pipelite.instance.ProcessInstanceSource;
 
 @Data
 @Builder
@@ -18,13 +19,20 @@ public class ProcessConfiguration {
   /** Name of the process begin executed. */
   private String processName;
 
-  /** Name of the process executor factory class. */
   private String processFactoryName;
+
+  private String processSourceName;
 
   private ProcessInstanceFactory processFactory;
 
   private ProcessInstanceFactory getProcessFactory() {
     return processFactory;
+  }
+
+  private ProcessInstanceSource processSource;
+
+  private ProcessInstanceSource getProcessSource() {
+    return processSource;
   }
 
   public static ProcessInstanceFactory getProcessFactory(
@@ -45,5 +53,28 @@ public class ProcessConfiguration {
       }
     }
     throw new RuntimeException("Could not create process factory");
+  }
+
+  public static ProcessInstanceSource getProcessSource(ProcessConfiguration processConfiguration) {
+    if (processConfiguration.getProcessSource() != null) {
+      return processConfiguration.getProcessSource();
+    }
+    if (processConfiguration.getProcessSourceName() != null) {
+      try {
+        Class cls = Class.forName(processConfiguration.getProcessSourceName());
+        if (ProcessInstanceSource.class.isAssignableFrom(cls)) {
+          ProcessInstanceSource source = ((ProcessInstanceSource) cls.newInstance());
+          processConfiguration.setProcessSource(source);
+          return source;
+        }
+      } catch (Exception ex) {
+        throw new RuntimeException("Could not create process source", ex);
+      }
+    }
+    throw new RuntimeException("Could not create process source");
+  }
+
+  public boolean isProcessSource() {
+    return processSourceName != null || processSource != null;
   }
 }

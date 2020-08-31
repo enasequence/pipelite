@@ -3,6 +3,7 @@ package pipelite.server;
 import lombok.AllArgsConstructor;
 
 import pipelite.TestInMemoryProcessFactory;
+import pipelite.TestInMemoryProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.executor.TaskExecutor;
@@ -29,7 +30,7 @@ public class SuccessPipeliteLauncherTester {
   private final Set<String> processExcessExecutionSet = ConcurrentHashMap.newKeySet();
   private static final int PROCESS_COUNT = 100;
   private static final Duration SCHEDULER_DELAY = Duration.ofMillis(100);
-  private static final Duration TASK_EXECUTION_TIME =  Duration.ofMillis(10);
+  private static final Duration TASK_EXECUTION_TIME = Duration.ofMillis(10);
 
   private TaskExecutor createTaskExecutor(String processId) {
     return taskInstance -> {
@@ -66,8 +67,9 @@ public class SuccessPipeliteLauncherTester {
 
   public void test() {
 
-    processConfiguration.setProcessFactory(
-        new TestInMemoryProcessFactory(createProcessInstances()));
+    List<ProcessInstance> processInstances = createProcessInstances();
+    processConfiguration.setProcessFactory(new TestInMemoryProcessFactory(processInstances));
+    processConfiguration.setProcessSource(new TestInMemoryProcessSource(processInstances));
 
     pipeliteLauncher.setShutdownPolicy(ShutdownPolicy.SHUTDOWN_IF_IDLE);
     pipeliteLauncher.setSchedulerDelay(SCHEDULER_DELAY);

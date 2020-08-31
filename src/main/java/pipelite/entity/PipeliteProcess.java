@@ -26,7 +26,7 @@ public class PipeliteProcess {
 
   @Enumerated(EnumType.STRING)
   @Column(name = "STATE", length = 15)
-  private ProcessExecutionState state = ProcessExecutionState.ACTIVE;
+  private ProcessExecutionState state;
 
   @Column(name = "EXEC_CNT")
   private Integer executionCount = 0;
@@ -44,6 +44,7 @@ public class PipeliteProcess {
     pipeliteProcess.setProcessName(processName);
     pipeliteProcess.setPriority(priority);
     pipeliteProcess.setExecutionCount(0);
+    pipeliteProcess.setState(ProcessExecutionState.NEW);
     return pipeliteProcess;
   }
 }

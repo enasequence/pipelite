@@ -14,8 +14,7 @@ public class TaskExecutionResult {
 
   @NonNull private final String result;
   @NonNull private final TaskExecutionResultType resultType;
-  @EqualsAndHashCode.Exclude
-  private final Map<String, String> attributes = new HashMap<>();
+  @EqualsAndHashCode.Exclude private final Map<String, String> attributes = new HashMap<>();
 
   public static final String STANDARD_ATTRIBUTE_HOST = "host";
   public static final String STANDARD_ATTRIBUTE_STDOUT = "stdout";
@@ -53,20 +52,16 @@ public class TaskExecutionResult {
     return new TaskExecutionResult("TRANSIENT ERROR", TaskExecutionResultType.TRANSIENT_ERROR);
   }
 
-  public static TaskExecutionResult lostTaskTransientError() {
-    return new TaskExecutionResult("LOST TASK", TaskExecutionResultType.TRANSIENT_ERROR);
-  }
-
   public static TaskExecutionResult defaultPermanentError() {
     return new TaskExecutionResult("PERMANENT ERROR", TaskExecutionResultType.PERMANENT_ERROR);
   }
 
-  public static TaskExecutionResult runtimeExceededPermanentError() {
-    return new TaskExecutionResult("RUN TIME EXCEEDED", TaskExecutionResultType.PERMANENT_ERROR);
-  }
-
   public static TaskExecutionResult defaultInternalError() {
     return new TaskExecutionResult("INTERNAL ERROR", TaskExecutionResultType.INTERNAL_ERROR);
+  }
+
+  public static TaskExecutionResult resumeTransientError() {
+    return new TaskExecutionResult("RESUME ERROR", TaskExecutionResultType.TRANSIENT_ERROR);
   }
 
   public String getAttribute(String value) {

@@ -5,9 +5,14 @@ import pipelite.instance.TaskInstance;
 import pipelite.task.TaskExecutionResult;
 
 @Flogger
-public class DefaultPermanentErrorTaskExecutor implements TaskExecutor {
+public class PermanentErrorTaskExecutor implements TaskExecutor {
   @Override
   public TaskExecutionResult execute(TaskInstance taskInstance) {
+    return TaskExecutionResult.defaultPermanentError();
+  }
+
+  @Override
+  public TaskExecutionResult resume(TaskInstance instance) {
     return TaskExecutionResult.defaultPermanentError();
   }
 }

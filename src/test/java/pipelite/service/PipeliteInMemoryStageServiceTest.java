@@ -3,6 +3,7 @@ package pipelite.service;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.PipeliteStage;
+import pipelite.executor.TaskExecutor;
 import pipelite.task.TaskExecutionResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,7 +19,9 @@ class PipeliteInMemoryStageServiceTest {
     String processName = UniqueStringGenerator.randomProcessName();
     String stageName = UniqueStringGenerator.randomTaskName();
 
-    PipeliteStage stage = PipeliteStage.newExecution(processId, processName, stageName);
+    PipeliteStage stage =
+        PipeliteStage.newExecution(
+            processId, processName, stageName, TaskExecutor.SUCCESS_EXECUTOR);
 
     service.saveStage(stage);
 

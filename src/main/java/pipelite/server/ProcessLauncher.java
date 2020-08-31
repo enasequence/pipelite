@@ -24,6 +24,7 @@ import org.springframework.stereotype.Component;
 import pipelite.configuration.*;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
+import pipelite.executor.TaskExecutor;
 import pipelite.instance.ProcessInstance;
 import pipelite.log.LogKey;
 import pipelite.process.ProcessExecutionState;
@@ -31,9 +32,10 @@ import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
 import pipelite.instance.TaskInstance;
-import pipelite.task.TaskExecutionResultType;
-import pipelite.task.TaskExecutionState;
 import pipelite.task.TaskExecutionResult;
+import pipelite.task.TaskExecutionResultType;
+
+import static pipelite.task.TaskExecutionResultType.*;
 
 @Flogger
 @Component()
@@ -53,6 +55,8 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
   private int taskFailedCount = 0;
   private int taskSkippedCount = 0;
   private int taskCompletedCount = 0;
+  private int taskRecoverCount = 0;
+  private int taskRecoverFailedCount = 0;
 
   public ProcessLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
@@ -208,7 +212,8 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
         pipeliteStage =
             Optional.of(
                 pipeliteStageService.saveStage(
-                    PipeliteStage.newExecution(processId, processName, taskName)));
+                    PipeliteStage.newExecution(
+                        processId, processName, taskName, taskInstance.getExecutor())));
       }
 
       createPipeliteTaskInstance(taskInstance, pipeliteStage.get());
@@ -259,42 +264,36 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
   }
 
   private ProcessExecutionState evaluateProcessExecutionState() {
+    int successCount = 0;
     for (PipeliteTaskInstance pipeliteTaskInstance : pipeliteTaskInstances) {
-      switch (evaluateTaskExecutionState(pipeliteTaskInstance)) {
-        case ACTIVE:
-          return ProcessExecutionState.ACTIVE;
-        case FAILED:
-          return ProcessExecutionState.FAILED;
+
+      TaskExecutionResultType resultType = pipeliteTaskInstance.getPipeliteStage().getResultType();
+
+      if (resultType == null || resultType == ACTIVE || resultType == INTERNAL_ERROR) {
+        return ProcessExecutionState.ACTIVE;
+      }
+
+      Integer executionCount = pipeliteTaskInstance.getPipeliteStage().getExecutionCount();
+      Integer retries = pipeliteTaskInstance.getTaskInstance().getTaskParameters().getRetries();
+
+      if (resultType == PERMANENT_ERROR
+          || (resultType == TRANSIENT_ERROR
+              && executionCount != null
+              && retries != null
+              && executionCount >= retries)) {
+        return ProcessExecutionState.FAILED;
+      }
+
+      if (resultType == SUCCESS) {
+        successCount++;
       }
     }
-    return ProcessExecutionState.COMPLETED;
-  }
 
-  private TaskExecutionState evaluateTaskExecutionState(PipeliteTaskInstance pipeliteTaskInstance) {
-    TaskInstance taskInstance = pipeliteTaskInstance.getTaskInstance();
-    PipeliteStage pipeliteStage = pipeliteTaskInstance.getPipeliteStage();
-
-    if (!pipeliteStage.getEnabled()) {
-      return TaskExecutionState.COMPLETED;
+    if (successCount == pipeliteTaskInstances.size()) {
+      return ProcessExecutionState.COMPLETED;
     }
 
-    TaskExecutionResultType resultType = pipeliteStage.getResultType();
-    if (resultType != null) {
-      switch (resultType) {
-        case SUCCESS:
-          return TaskExecutionState.COMPLETED;
-        case PERMANENT_ERROR:
-        case INTERNAL_ERROR:
-          return TaskExecutionState.FAILED;
-        case TRANSIENT_ERROR:
-          if (pipeliteStage.getExecutionCount() >= taskInstance.getTaskParameters().getRetries()) {
-            return TaskExecutionState.FAILED;
-          }
-        default:
-          return TaskExecutionState.ACTIVE;
-      }
-    }
-    return TaskExecutionState.ACTIVE;
+    return ProcessExecutionState.ACTIVE;
   }
 
   private void createPipeliteTaskInstance(TaskInstance taskInstance, PipeliteStage pipeliteStage) {
@@ -345,21 +344,63 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
         .with(LogKey.TASK_NAME, taskName)
         .log("Executing task");
 
-    if (TaskExecutionState.COMPLETED == evaluateTaskExecutionState(pipeliteTaskInstance)) {
+    if (pipeliteStage.getResultType() == SUCCESS) {
+      // Continue executing the process.
       ++taskSkippedCount;
-      return true; // Continue executing the process.
+      return true;
     }
 
-    pipeliteStage.retryExecution();
-    pipeliteStageService.saveStage(pipeliteStage);
+    TaskExecutionResult result = null;
+    TaskExecutor executor = null;
 
-    TaskExecutionResult result;
+    // Resume task execution.
 
-    try {
-      result = taskInstance.getExecutor().execute(taskInstance);
-    } catch (Exception ex) {
-      result = TaskExecutionResult.defaultInternalError();
-      result.addExceptionAttribute(ex);
+    if (pipeliteStage.getResultType() == ACTIVE
+        && pipeliteStage.getExecutorName() != null
+        && pipeliteStage.getExecutorData() != null) {
+      try {
+        executor =
+            TaskExecutor.deserialize(
+                pipeliteStage.getExecutorName(), pipeliteStage.getExecutorData());
+      } catch (Exception ex) {
+        ++taskRecoverFailedCount;
+        log.atSevere()
+            .with(LogKey.PROCESS_NAME, processName)
+            .with(LogKey.PROCESS_ID, processId)
+            .with(LogKey.TASK_NAME, taskName)
+            .withCause(ex)
+            .log("Failed to resume task execution: %s", pipeliteStage.getExecutorName());
+      }
+
+      if (executor != null) {
+        try {
+          result = executor.resume(taskInstance);
+          ++taskRecoverCount;
+        } catch (Exception ex) {
+          ++taskRecoverFailedCount;
+          log.atSevere()
+              .with(LogKey.PROCESS_NAME, processName)
+              .with(LogKey.PROCESS_ID, processId)
+              .with(LogKey.TASK_NAME, taskName)
+              .withCause(ex)
+              .log("Failed to resume task execution: %s", pipeliteStage.getExecutorName());
+        }
+      }
+    }
+
+    if (result == null || !result.isPermanentError()) {
+
+      // Execute the task.
+
+      pipeliteStage.retryExecution(taskInstance.getExecutor());
+      pipeliteStageService.saveStage(pipeliteStage);
+
+      try {
+        result = taskInstance.getExecutor().execute(taskInstance);
+      } catch (Exception ex) {
+        result = TaskExecutionResult.defaultInternalError();
+        result.addExceptionAttribute(ex);
+      }
     }
 
     pipeliteStage.endExecution(
@@ -407,7 +448,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
       }
     }
 
-    if (reset && evaluateTaskExecutionState(from) != TaskExecutionState.ACTIVE) {
+    if (reset) {
       from.getPipeliteStage().resetExecution();
       pipeliteStageService.saveStage(from.getPipeliteStage());
     }
@@ -435,5 +476,13 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
 
   public int getTaskCompletedCount() {
     return taskCompletedCount;
+  }
+
+  public int getTaskRecoverCount() {
+    return taskRecoverCount;
+  }
+
+  public int getTaskRecoverFailedCount() {
+    return taskRecoverFailedCount;
   }
 }

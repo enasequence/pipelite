@@ -9,6 +9,8 @@ public interface PipeliteProcessService {
 
   Optional<PipeliteProcess> getSavedProcess(String processName, String processId);
 
+  List<PipeliteProcess> getNewProcesses(String processName);
+
   List<PipeliteProcess> getActiveProcesses(String processName);
 
   PipeliteProcess saveProcess(PipeliteProcess pipeliteProcess);

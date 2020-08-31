@@ -45,7 +45,7 @@ public class LSFTaskExecutorTest {
     return TaskInstance.builder()
         .processName(UniqueStringGenerator.randomProcessName())
         .processId(UniqueStringGenerator.randomProcessId())
-        .executor(TaskExecutor.DEFAULT_SUCCESS_EXECUTOR)
+        .executor(TaskExecutor.SUCCESS_EXECUTOR)
         .resolver(ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
         .taskParameters(taskParameters)
         .build();

@@ -18,7 +18,18 @@ public class PipeliteInMemoryProcessService implements PipeliteProcessService {
       new ConcurrentHashMap<>();
 
   public Optional<PipeliteProcess> getSavedProcess(String processName, String processId) {
-    return Optional.ofNullable(pipeliteProcesses.get(new PipeliteProcessId(processId, processName)));
+    return Optional.ofNullable(
+        pipeliteProcesses.get(new PipeliteProcessId(processId, processName)));
+  }
+
+  public List<PipeliteProcess> getNewProcesses(String processName) {
+    return pipeliteProcesses.values().stream()
+        .filter(
+            p ->
+                p.getProcessName().equals(processName)
+                    && p.getState().equals(ProcessExecutionState.NEW))
+        .sorted(Comparator.comparing(PipeliteProcess::getPriority).reversed())
+        .collect(Collectors.toList());
   }
 
   public List<PipeliteProcess> getActiveProcesses(String processName) {

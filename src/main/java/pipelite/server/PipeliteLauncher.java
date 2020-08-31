@@ -12,10 +12,7 @@ package pipelite.server;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -31,6 +28,7 @@ import pipelite.configuration.ProcessConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.instance.ProcessInstance;
 import pipelite.instance.ProcessInstanceFactory;
+import pipelite.instance.ProcessInstanceSource;
 import pipelite.log.LogKey;
 import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteProcessService;
@@ -45,7 +43,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private final PipeliteProcessService pipeliteProcessService;
   private final PipeliteLockService pipeliteLockService;
   private final ExecutorService executorService;
-  private ProcessInstanceFactory processInstanceFactory;
+  private ProcessInstanceFactory processFactory;
+  private ProcessInstanceSource processSource;
 
   private final AtomicInteger processInitCount = new AtomicInteger(0);
   private final AtomicInteger processLoadFailureCount = new AtomicInteger(0);
@@ -56,6 +55,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private final AtomicInteger taskFailedCount = new AtomicInteger(0);
   private final AtomicInteger taskSkippedCount = new AtomicInteger(0);
   private final AtomicInteger taskCompletedCount = new AtomicInteger(0);
+  private final AtomicInteger taskRecoverCount = new AtomicInteger(0);
+  private final AtomicInteger taskRecoverFailedCount = new AtomicInteger(0);
 
   private final Map<String, ProcessLauncher> initProcesses = new ConcurrentHashMap<>();
   private final Map<String, ProcessLauncher> activeProcesses = new ConcurrentHashMap<>();
@@ -64,10 +65,10 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   private ShutdownPolicy shutdownPolicy = ShutdownPolicy.WAIT_IF_IDLE;
 
-  private List<String> activeProcessQueue = Collections.emptyList();
-  private int activeProcessQueueIndex = 0;
-  private Duration activeProcessQueueValidDuration = Duration.ofHours(1);
-  private LocalDateTime activeProcessQueueValidUntil = LocalDateTime.now();
+  private final ArrayList<String> processQueue = new ArrayList<>();
+  private int processQueueIndex = 0;
+  private Duration processQueueValidDuration = Duration.ofHours(1);
+  private LocalDateTime processQueueValidUntil = LocalDateTime.now();
 
   private long iterations = 0;
   private Long maxIterations;
@@ -108,7 +109,10 @@ public class PipeliteLauncher extends AbstractScheduledService {
       throw new RuntimeException("Could not start process launcher");
     }
 
-    processInstanceFactory = ProcessConfiguration.getProcessFactory(processConfiguration);
+    processFactory = ProcessConfiguration.getProcessFactory(processConfiguration);
+    if (processConfiguration.isProcessSource()) {
+      processSource = ProcessConfiguration.getProcessSource(processConfiguration);
+    }
   }
 
   @Override
@@ -127,16 +131,18 @@ public class PipeliteLauncher extends AbstractScheduledService {
         .with(LogKey.PROCESS_NAME, getProcessName())
         .log("Running launcher");
 
-    registerNewProcessInstances();
-
-    if (activeProcessQueueIndex == activeProcessQueue.size()
-        || activeProcessQueueValidUntil.isBefore(LocalDateTime.now())) {
-      prepareNewProcessInstances();
+    if (processConfiguration.isProcessSource()) {
+      registerNewProcesses();
     }
 
-    while (activeProcessQueueIndex < activeProcessQueue.size()
+    if (processQueueIndex == processQueue.size()
+        || processQueueValidUntil.isBefore(LocalDateTime.now())) {
+      queueProcesses();
+    }
+
+    while (processQueueIndex < processQueue.size()
         && initProcesses.size() < launcherConfiguration.getWorkers()) {
-      launchNewProcessInstances();
+      launchProcess();
     }
 
     stopIfMaxIterations();
@@ -150,7 +156,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
   }
 
   private void stopIfIdle() throws InterruptedException {
-    if (activeProcessQueueIndex == activeProcessQueue.size()
+    if (processQueueIndex == processQueue.size()
         && ShutdownPolicy.SHUTDOWN_IF_IDLE.equals(shutdownPolicy)) {
       log.atInfo()
           .with(LogKey.LAUNCHER_NAME, getLauncherName())
@@ -168,102 +174,97 @@ public class PipeliteLauncher extends AbstractScheduledService {
     }
   }
 
-  private void registerNewProcessInstances() {
-    String launcherName = getLauncherName();
-    String processName = getProcessName();
+  private void registerNewProcesses() {
 
     log.atInfo()
-        .with(LogKey.LAUNCHER_NAME, launcherName)
-        .with(LogKey.PROCESS_NAME, processName)
+        .with(LogKey.LAUNCHER_NAME, getLauncherName())
+        .with(LogKey.PROCESS_NAME, getProcessName())
         .log("Registering new process instances");
 
     while (true) {
-      ProcessInstance processInstance = processInstanceFactory.receive();
+      ProcessInstance processInstance = processSource.next();
       if (processInstance == null) {
         break;
       }
+
+      String rejectMessage = null;
       if (processInstance.getProcessId() == null || processInstance.getProcessId().isEmpty()) {
-        log.atSevere()
-            .with(LogKey.LAUNCHER_NAME, launcherName)
-            .with(LogKey.PROCESS_NAME, processName)
-            .with(LogKey.PROCESS_ID, processInstance.getProcessId())
-            .log("Rejected new process instance: no process id");
+        rejectMessage = "no process id";
       }
       if (!getProcessName().equals(processInstance.getProcessName())) {
-        log.atSevere()
-            .with(LogKey.LAUNCHER_NAME, launcherName)
-            .with(LogKey.PROCESS_NAME, processName)
-            .with(LogKey.PROCESS_ID, processInstance.getProcessId())
-            .log("Rejected new process instance: wrong process name: " + processName);
+        rejectMessage = "wrong process name";
       }
       if (processInstance.getTasks() == null || processInstance.getTasks().isEmpty()) {
-        log.atSevere()
-            .with(LogKey.LAUNCHER_NAME, launcherName)
-            .with(LogKey.PROCESS_NAME, processName)
-            .with(LogKey.PROCESS_ID, processInstance.getProcessId())
-            .log("Rejected new process instance: no tasks");
+        rejectMessage = "no tasks";
       }
 
       Optional<PipeliteProcess> savedPipeliteProcess =
           pipeliteProcessService.getSavedProcess(getProcessName(), processInstance.getProcessId());
 
       if (savedPipeliteProcess.isPresent()) {
+        rejectMessage = "process id already exists";
+      }
+
+      if (rejectMessage != null) {
         log.atSevere()
-            .with(LogKey.LAUNCHER_NAME, launcherName)
-            .with(LogKey.PROCESS_NAME, processName)
+            .with(LogKey.LAUNCHER_NAME, getLauncherName())
+            .with(LogKey.PROCESS_NAME, getProcessName())
             .with(LogKey.PROCESS_ID, processInstance.getProcessId())
-            .log("Rejected new process instance: process id already exists");
-        processInstanceFactory.reject(processInstance);
+            .log("Failed to register new project: " + rejectMessage);
+        processSource.reject(processInstance);
         continue;
       }
 
-      PipeliteProcess pipeliteProcess =
+      pipeliteProcessService.saveProcess(
           PipeliteProcess.newExecution(
-              processInstance.getProcessId(), getProcessName(), processInstance.getPriority());
-
-      pipeliteProcessService.saveProcess(pipeliteProcess);
-
-      log.atInfo()
-          .with(LogKey.LAUNCHER_NAME, launcherName)
-          .with(LogKey.PROCESS_NAME, processName)
-          .with(LogKey.PROCESS_ID, processInstance.getProcessId())
-          .log("Saved new process instance");
-
-      // Tasks are saved by the process launcher.
-
-      processInstanceFactory.confirm(processInstance);
+              processInstance.getProcessId(),
+              processInstance.getProcessName(),
+              processInstance.getPriority()));
+      processSource.accept(processInstance);
     }
   }
 
-  private void prepareNewProcessInstances() {
+  private void queueProcesses() {
+
     log.atInfo()
         .with(LogKey.LAUNCHER_NAME, getLauncherName())
         .with(LogKey.PROCESS_NAME, getProcessName())
-        .log("Preparing to launch new process instances");
+        .log("Queuing process instances");
 
-    activeProcessQueue =
+    // Replace remaining queue.
+    processQueue.subList(processQueueIndex, processQueue.size()).clear();
+
+    // First add active processes in case we can recover them.
+    processQueue.addAll(
         pipeliteProcessService.getActiveProcesses(getProcessName()).stream()
             .map(pipeliteProcess -> pipeliteProcess.getProcessId())
-            .collect(Collectors.toList());
-    activeProcessQueueIndex = 0;
-    activeProcessQueueValidUntil = LocalDateTime.now().plus(activeProcessQueueValidDuration);
+            .filter(processId -> !activeProcesses.containsKey(processId))
+            .collect(Collectors.toList()));
+
+    // Then add new processes.
+    processQueue.addAll(
+        pipeliteProcessService.getNewProcesses(getProcessName()).stream()
+            .map(pipeliteProcess -> pipeliteProcess.getProcessId())
+            .filter(processId -> !activeProcesses.containsKey(processId))
+            .collect(Collectors.toList()));
+    processQueueValidUntil = LocalDateTime.now().plus(processQueueValidDuration);
   }
 
-  private void launchNewProcessInstances() {
+  private void launchProcess() {
     String launcherName = getLauncherName();
     String processName = getProcessName();
 
-    String processId = activeProcessQueue.get(activeProcessQueueIndex++);
+    String processId = processQueue.get(processQueueIndex++);
 
     log.atInfo()
         .with(LogKey.LAUNCHER_NAME, launcherName)
         .with(LogKey.PROCESS_NAME, processName)
         .with(LogKey.PROCESS_ID, processId)
-        .log("Launching new process instances");
+        .log("Launching process instances");
 
     ProcessLauncher processLauncher = processLauncherObjectProvider.getObject();
 
-    ProcessInstance processInstance = processInstanceFactory.load(processId);
+    ProcessInstance processInstance = processFactory.create(processId);
     if (processInstance == null) {
       log.atSevere()
           .with(LogKey.LAUNCHER_NAME, launcherName)
@@ -322,6 +323,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
             taskCompletedCount.addAndGet(processLauncher.getTaskCompletedCount());
             taskSkippedCount.addAndGet(processLauncher.getTaskSkippedCount());
             taskFailedCount.addAndGet(processLauncher.getTaskFailedCount());
+            taskRecoverCount.addAndGet(processLauncher.getTaskRecoverCount());
+            taskRecoverFailedCount.addAndGet(processLauncher.getTaskRecoverFailedCount());
           }
         });
   }
@@ -444,12 +447,20 @@ public class PipeliteLauncher extends AbstractScheduledService {
     return taskCompletedCount.get();
   }
 
-  public Duration getActiveProcessQueueValidDuration() {
-    return activeProcessQueueValidDuration;
+  public int getTaskRecoverCount() {
+    return taskRecoverCount.get();
   }
 
-  public void setActiveProcessQueueValidDuration(Duration duration) {
-    this.activeProcessQueueValidDuration = duration;
+  public int getTaskRecoverFailedCount() {
+    return taskRecoverFailedCount.get();
+  }
+
+  public Duration getProcessQueueValidDuration() {
+    return processQueueValidDuration;
+  }
+
+  public void setProcessQueueValidDuration(Duration duration) {
+    this.processQueueValidDuration = duration;
   }
 
   public Duration getSchedulerDelay() {

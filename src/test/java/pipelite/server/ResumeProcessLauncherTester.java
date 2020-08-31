@@ -1,0 +1,183 @@
+package pipelite.server;
+
+import lombok.AllArgsConstructor;
+import lombok.Value;
+import org.springframework.beans.factory.ObjectProvider;
+import pipelite.TestInMemoryProcessFactory;
+import pipelite.UniqueStringGenerator;
+import pipelite.configuration.LauncherConfiguration;
+import pipelite.configuration.ProcessConfiguration;
+import pipelite.entity.PipeliteProcess;
+import pipelite.entity.PipeliteStage;
+import pipelite.executor.TaskExecutor;
+import pipelite.instance.ProcessInstance;
+import pipelite.instance.ProcessInstanceBuilder;
+import pipelite.instance.TaskInstance;
+import pipelite.process.ProcessExecutionState;
+import pipelite.resolver.ResultResolver;
+import pipelite.service.PipeliteProcessService;
+import pipelite.service.PipeliteStageService;
+import pipelite.task.TaskExecutionResult;
+import pipelite.task.TaskExecutionResultType;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@AllArgsConstructor
+public class ResumeProcessLauncherTester {
+
+  private final LauncherConfiguration launcherConfiguration;
+  private final ProcessConfiguration processConfiguration;
+  private final ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
+  private final PipeliteProcessService pipeliteProcessService;
+  private final PipeliteStageService pipeliteStageService;
+
+  private static final int WORKERS_CNT = 10;
+  private static final int PROCESS_CNT = 100;
+
+  private static final Duration DELAY_DURATION = Duration.ofMillis(10);
+  private static final AtomicInteger successResumeCount = new AtomicInteger();
+  private static final AtomicInteger successExecuteCount = new AtomicInteger();
+  private static final AtomicInteger permanentErrorResumeCount = new AtomicInteger();
+  private static final AtomicInteger permanentErrorExecuteCount = new AtomicInteger();
+  private static final AtomicInteger transientErrorResumeCount = new AtomicInteger();
+  private static final AtomicInteger transientErrorExecuteCount = new AtomicInteger();
+  private static final AtomicInteger exceptionResumeCount = new AtomicInteger();
+  private static final AtomicInteger exceptionExecuteCount = new AtomicInteger();
+  private static final AtomicInteger readyResumeCount = new AtomicInteger();
+  private static final AtomicInteger readyExecuteCount = new AtomicInteger();
+
+  private PipeliteLauncher pipeliteLauncher() {
+    PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
+    pipeliteLauncher.setShutdownPolicy(ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    pipeliteLauncher.setSchedulerDelay(DELAY_DURATION);
+    return pipeliteLauncher;
+  }
+
+  @Value
+  public static class SuccessTaskExecutor implements TaskExecutor {
+    @Override
+    public TaskExecutionResult execute(TaskInstance taskInstance) {
+      successExecuteCount.incrementAndGet();
+      return TaskExecutionResult.defaultSuccess();
+    }
+
+    @Override
+    public TaskExecutionResult resume(TaskInstance taskInstance) {
+      successResumeCount.incrementAndGet();
+      return TaskExecutionResult.defaultSuccess();
+    }
+  }
+
+  @Value
+  public static class PermanentErrorTaskExecutor implements TaskExecutor {
+    @Override
+    public TaskExecutionResult execute(TaskInstance taskInstance) {
+      permanentErrorExecuteCount.incrementAndGet();
+      return TaskExecutionResult.defaultSuccess();
+    }
+
+    @Override
+    public TaskExecutionResult resume(TaskInstance taskInstance) {
+      permanentErrorResumeCount.incrementAndGet();
+      return TaskExecutionResult.defaultPermanentError();
+    }
+  }
+
+  @Value
+  public static class TransientErrorTaskExecutor implements TaskExecutor {
+    @Override
+    public TaskExecutionResult execute(TaskInstance taskInstance) {
+      transientErrorExecuteCount.incrementAndGet();
+      return TaskExecutionResult.defaultSuccess();
+    }
+
+    @Override
+    public TaskExecutionResult resume(TaskInstance taskInstance) {
+      transientErrorResumeCount.incrementAndGet();
+      return TaskExecutionResult.defaultTransientError();
+    }
+  }
+
+  @Value
+  public static class ExceptionTaskExecutor implements TaskExecutor {
+    @Override
+    public TaskExecutionResult execute(TaskInstance taskInstance) {
+      exceptionExecuteCount.incrementAndGet();
+      return TaskExecutionResult.defaultSuccess();
+    }
+
+    @Override
+    public TaskExecutionResult resume(TaskInstance taskInstance) {
+      exceptionResumeCount.incrementAndGet();
+      throw new RuntimeException();
+    }
+  }
+
+  @Value
+  public static class ReadyTaskExecutor implements TaskExecutor {
+    @Override
+    public TaskExecutionResult execute(TaskInstance taskInstance) {
+      readyExecuteCount.incrementAndGet();
+      return TaskExecutionResult.defaultSuccess();
+    }
+
+    @Override
+    public TaskExecutionResult resume(TaskInstance taskInstance) {
+      readyResumeCount.incrementAndGet();
+      return TaskExecutionResult.defaultSuccess();
+    }
+  }
+
+  public void testSuccess() {
+    launcherConfiguration.setWorkers(WORKERS_CNT);
+
+    List<ProcessInstance> processInstances = new ArrayList<>();
+
+    for (int i = 0; i < PROCESS_CNT; ++i) {
+      String processName = processConfiguration.getProcessName();
+      String processId = UniqueStringGenerator.randomProcessId();
+      String taskName = UniqueStringGenerator.randomTaskName();
+      PipeliteProcess pipeliteProcess = PipeliteProcess.newExecution(processId, processName, 1);
+      pipeliteProcess.setState(ProcessExecutionState.ACTIVE);
+      pipeliteProcessService.saveProcess(pipeliteProcess);
+
+      PipeliteStage pipeliteStage =
+          PipeliteStage.newExecution(processId, processName, taskName, new SuccessTaskExecutor());
+      pipeliteStage.setResultType(TaskExecutionResultType.ACTIVE);
+      pipeliteStageService.saveStage(pipeliteStage);
+
+      processInstances.add(
+          new ProcessInstanceBuilder(processName, processId, 9)
+              .task(taskName, new SuccessTaskExecutor(), ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
+              .build());
+    }
+
+    TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
+    processConfiguration.setProcessFactory(processFactory);
+
+    PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
+
+    ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
+
+    assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getTaskRecoverCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getTaskRecoverFailedCount()).isEqualTo(0);
+    assertThat(successResumeCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(successExecuteCount.get()).isEqualTo(PROCESS_CNT);
+  }
+
+  public void testPermanentError() {}
+
+  public void testTransientError() {}
+
+  public void testException() {}
+
+  public void testReady() {}
+}

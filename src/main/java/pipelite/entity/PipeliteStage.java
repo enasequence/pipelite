@@ -3,6 +3,7 @@ package pipelite.entity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import pipelite.executor.TaskExecutor;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultType;
 
@@ -48,36 +49,53 @@ public class PipeliteStage {
   @Column(name = "EXEC_DATE")
   private LocalDateTime endTime;
 
-  // TODO: lazy or better to move to another table
+  // TODO: consider if we should have this column
   @Column(name = "EXEC_CMD_LINE")
   @Lob
   private String executionCmd;
 
-  // TODO: lazy or better to move to another table
   @Column(name = "EXEC_STDOUT")
   @Lob
   private String stdOut;
 
-  // TODO: lazy or better to move to another table
   @Column(name = "EXEC_STDERR")
   @Lob
   private String stdErr;
 
-  @Column(name = "ENABLED")
-  @Convert(converter = BooleanConverter.class)
-  private Boolean enabled = true;
+  @Column(name = "EXEC_NAME")
+  private String executorName;
 
-  public static PipeliteStage newExecution(String processId, String processName, String stageName) {
+  @Column(name = "EXEC_DATA")
+  @Lob
+  private String executorData;
+
+  public static PipeliteStage newExecution(
+      String processId, String processName, String stageName, TaskExecutor taskExecutor) {
     PipeliteStage pipeliteStage = new PipeliteStage();
     pipeliteStage.setProcessId(processId);
     pipeliteStage.setProcessName(processName);
     pipeliteStage.setStageName(stageName);
+    pipeliteStage.setResultType(TaskExecutionResultType.NEW);
     pipeliteStage.setExecutionCount(0);
+    pipeliteStage.setExecutorName(taskExecutor.getClass().getName());
+    pipeliteStage.setExecutorData(TaskExecutor.serialize(taskExecutor));
     return pipeliteStage;
   }
 
+  public void retryExecution(TaskExecutor taskExecutor) {
+    this.resultType = TaskExecutionResultType.ACTIVE;
+    this.result = null;
+    this.startTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    this.endTime = null;
+    this.executionCmd = null;
+    this.stdOut = null;
+    this.stdErr = null;
+    this.executorName = taskExecutor.getClass().getName();
+    this.executorData = TaskExecutor.serialize(taskExecutor);
+  }
+
   public void resetExecution() {
-    this.resultType = null;
+    this.resultType = TaskExecutionResultType.NEW;
     this.result = null;
     this.startTime = null;
     this.endTime = null;
@@ -85,16 +103,8 @@ public class PipeliteStage {
     this.stdOut = null;
     this.stdErr = null;
     this.executionCount = 0;
-  }
-
-  public void retryExecution() {
-    this.resultType = null;
-    this.result = null;
-    this.startTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
-    this.endTime = null;
-    this.executionCmd = null;
-    this.stdOut = null;
-    this.stdErr = null;
+    this.executorName = null;
+    this.executorData = null;
   }
 
   public void endExecution(

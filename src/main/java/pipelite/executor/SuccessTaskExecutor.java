@@ -9,9 +9,14 @@ import pipelite.task.TaskExecutionResult;
 import java.util.Collection;
 
 @Flogger
-public class DefaultSuccessTaskExecutor implements TaskExecutor {
+public class SuccessTaskExecutor implements TaskExecutor {
   @Override
   public TaskExecutionResult execute(TaskInstance taskInstance) {
+    return TaskExecutionResult.defaultSuccess();
+  }
+
+  @Override
+  public TaskExecutionResult resume(TaskInstance instance) {
     return TaskExecutionResult.defaultSuccess();
   }
 }

@@ -8,6 +8,7 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.UniqueStringGenerator;
 import pipelite.FullTestConfiguration;
 import pipelite.entity.PipeliteStage;
+import pipelite.executor.TaskExecutor;
 import pipelite.task.TaskExecutionResult;
 
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +30,9 @@ class PipeliteDatabaseStageServiceTest {
     String processName = UniqueStringGenerator.randomProcessName();
     String stageName = UniqueStringGenerator.randomTaskName();
 
-    PipeliteStage stage = PipeliteStage.newExecution(processId, processName, stageName);
+    PipeliteStage stage =
+        PipeliteStage.newExecution(
+            processId, processName, stageName, TaskExecutor.SUCCESS_EXECUTOR);
 
     service.saveStage(stage);
 

@@ -28,6 +28,11 @@ public class PipeliteDatabaseProcessService implements PipeliteProcessService {
     return repository.findById(new PipeliteProcessId(processId, processName));
   }
 
+  public List<PipeliteProcess> getNewProcesses(String processName) {
+    return repository.findAllByProcessNameAndStateOrderByPriorityDesc(
+            processName, ProcessExecutionState.NEW);
+  }
+
   public List<PipeliteProcess> getActiveProcesses(String processName) {
     return repository.findAllByProcessNameAndStateOrderByPriorityDesc(
         processName, ProcessExecutionState.ACTIVE);

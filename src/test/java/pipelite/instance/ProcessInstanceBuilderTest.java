@@ -9,47 +9,42 @@ import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ProcessBuilderTest {
+public class ProcessInstanceBuilderTest {
 
   private static final String PROCESS_NAME = UniqueStringGenerator.randomProcessName();
   private static final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
 
-  public static class TestProcessFactory implements ProcessInstanceFactory {
+  public static class TestProcessSource implements ProcessInstanceSource {
 
     @Override
-    public ProcessInstance receive() {
+    public ProcessInstance next() {
       return new ProcessInstanceBuilder(PROCESS_NAME, PROCESS_ID, 9)
           .task(
               UniqueStringGenerator.randomTaskName(),
-              TaskExecutor.DEFAULT_SUCCESS_EXECUTOR,
+              TaskExecutor.SUCCESS_EXECUTOR,
               ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
           .taskDependsOnPrevious(
               UniqueStringGenerator.randomTaskName(),
-              TaskExecutor.DEFAULT_SUCCESS_EXECUTOR,
+              TaskExecutor.SUCCESS_EXECUTOR,
               ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
           .build();
     }
 
     @Override
-    public void confirm(ProcessInstance processInstance) {}
+    public void accept(ProcessInstance processInstance) {}
 
     @Override
     public void reject(ProcessInstance processInstance) {}
-
-    @Override
-    public ProcessInstance load(String processId) {
-      return null;
-    }
   }
 
   @Test
   public void test() {
-    TestProcessFactory testProcessFactory = new TestProcessFactory();
+    TestProcessSource testProcessSource = new TestProcessSource();
 
     IntStream.range(0, 10)
         .forEach(
             i -> {
-              ProcessInstance processInstance = testProcessFactory.receive();
+              ProcessInstance processInstance = testProcessSource.next();
               assertThat(processInstance).isNotNull();
               assertThat(processInstance.getProcessName()).isEqualTo(PROCESS_NAME);
               assertThat(processInstance.getProcessId()).isEqualTo(PROCESS_ID);

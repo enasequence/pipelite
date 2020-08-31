@@ -10,13 +10,39 @@
  */
 package pipelite.executor;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import pipelite.instance.TaskInstance;
 import pipelite.task.TaskExecutionResult;
 
 public interface TaskExecutor {
 
-  TaskExecutor DEFAULT_SUCCESS_EXECUTOR = new DefaultSuccessTaskExecutor();
-  TaskExecutor DEFAULT_PERMANENT_ERROR_EXECUTOR = new DefaultPermanentErrorTaskExecutor();
+  TaskExecutor SUCCESS_EXECUTOR = new SuccessTaskExecutor();
+  TaskExecutor PERMANENT_ERROR_EXECUTOR = new PermanentErrorTaskExecutor();
 
   TaskExecutionResult execute(TaskInstance instance);
+
+  default TaskExecutionResult resume(TaskInstance instance) {
+    return TaskExecutionResult.resumeTransientError();
+  }
+
+  static String serialize(TaskExecutor executor) {
+    ObjectMapper objectMapper = new ObjectMapper();
+    objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+    try {
+      return objectMapper.writeValueAsString(executor);
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
+  }
+
+  static TaskExecutor deserialize(String className, String data) {
+    ObjectMapper objectMapper = new ObjectMapper();
+    objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+    try {
+      return (TaskExecutor) objectMapper.readValue(data, Class.forName(className));
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
+  }
 }
