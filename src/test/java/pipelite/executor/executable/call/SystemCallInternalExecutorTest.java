@@ -1,7 +1,8 @@
-package pipelite.executor;
+package pipelite.executor.executable.call;
 
 import org.junit.jupiter.api.Test;
-import pipelite.executor.executable.SystemCallInternalExecutor;
+import pipelite.executor.TaskExecutor;
+import pipelite.executor.executable.call.SystemCallInternalExecutor;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskParameters;
 import pipelite.resolver.ResultResolver;
@@ -66,7 +67,7 @@ public class SystemCallInternalExecutorTest {
                 + "testProcess "
                 + "testProcessId "
                 + "testTaskName "
-                + "pipelite.executor.SystemCallInternalExecutorTest$SuccessTaskExecutor "
+                + "pipelite.executor.executable.call.SystemCallInternalExecutorTest$SuccessTaskExecutor "
                 + "pipelite.resolver.DefaultExceptionResolver");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT))
         .contains("test stdout");
@@ -95,7 +96,7 @@ public class SystemCallInternalExecutorTest {
                 + "testProcess "
                 + "testProcessId "
                 + "testTaskName "
-                + "pipelite.executor.SystemCallInternalExecutorTest$PermanentErrorTaskExecutor "
+                + "pipelite.executor.executable.call.SystemCallInternalExecutorTest$PermanentErrorTaskExecutor "
                 + "pipelite.resolver.DefaultExceptionResolver");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT))
         .contains("test stdout");

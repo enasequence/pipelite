@@ -1,4 +1,4 @@
-package pipelite.instance;
+package pipelite.process;
 
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;

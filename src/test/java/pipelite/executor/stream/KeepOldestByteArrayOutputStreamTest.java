@@ -1,4 +1,4 @@
-package pipelite.executor.output;
+package pipelite.executor.stream;
 
 import org.junit.jupiter.api.Test;
 

@@ -1,4 +1,4 @@
-package pipelite.executor;
+package pipelite.executor.executable.ssh;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,8 +7,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.EmptyTestConfiguration;
 import pipelite.configuration.TestConfiguration;
-import pipelite.executor.executable.SshInternalExecutor;
-import pipelite.executor.executable.SystemCallInternalExecutor;
+import pipelite.executor.executable.call.SystemCallInternalExecutorTest;
+import pipelite.executor.TaskExecutor;
+import pipelite.executor.executable.call.SystemCallInternalExecutor;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskParameters;
 import pipelite.resolver.ResultResolver;
@@ -79,7 +80,7 @@ public class SshInternalExecutorTest {
                 + "'testProcess' "
                 + "'testProcessId' "
                 + "'testTaskName' "
-                + "'pipelite.executor.SshInternalExecutorTest$SuccessTaskExecutor' "
+                + "'pipelite.executor.executable.ssh.SshInternalExecutorTest$SuccessTaskExecutor' "
                 + "'pipelite.resolver.DefaultExceptionResolver'");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT))
         .contains("test stdout");
@@ -122,7 +123,7 @@ public class SshInternalExecutorTest {
                 + "'testProcess' "
                 + "'testProcessId' "
                 + "'testTaskName' "
-                + "'pipelite.executor.SshInternalExecutorTest$PermanentErrorTaskExecutor' "
+                + "'pipelite.executor.executable.ssh.SshInternalExecutorTest$PermanentErrorTaskExecutor' "
                 + "'pipelite.resolver.DefaultExceptionResolver'");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT))
         .contains("test stdout");

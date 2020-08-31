@@ -1,9 +1,10 @@
-package pipelite.executor.executable;
+package pipelite.executor.executable.ssh;
 
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.Value;
+import pipelite.executor.executable.ssh.AbstractSshExecutor;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskExecutionResult;
 

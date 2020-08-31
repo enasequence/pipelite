@@ -1,4 +1,4 @@
-package pipelite.executor.executable;
+package pipelite.executor.executable.ssh;
 
 import lombok.extern.flogger.Flogger;
 import org.apache.sshd.client.SshClient;
@@ -6,7 +6,8 @@ import org.apache.sshd.client.channel.ClientChannel;
 import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.session.SessionHeartbeatController;
-import pipelite.executor.output.KeepOldestByteArrayOutputStream;
+import pipelite.executor.executable.ExecutableTaskExecutor;
+import pipelite.executor.stream.KeepOldestByteArrayOutputStream;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskExecutionResult;
 
