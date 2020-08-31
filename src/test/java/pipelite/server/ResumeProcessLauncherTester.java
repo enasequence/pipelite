@@ -38,8 +38,8 @@ public class ResumeProcessLauncherTester {
 
   private static final int WORKERS_CNT = 2;
   private static final int PROCESS_CNT = 10;
+  private static final Duration DELAY_DURATION = Duration.ofMillis(100);
 
-  private static final Duration DELAY_DURATION = Duration.ofMillis(10);
   private static final AtomicInteger successResumeCount = new AtomicInteger();
   private static final AtomicInteger successExecuteCount = new AtomicInteger();
   private static final AtomicInteger permanentErrorResumeCount = new AtomicInteger();
