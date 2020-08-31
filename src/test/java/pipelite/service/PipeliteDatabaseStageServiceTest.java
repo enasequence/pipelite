@@ -8,6 +8,7 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.UniqueStringGenerator;
 import pipelite.FullTestConfiguration;
 import pipelite.entity.PipeliteStage;
+import pipelite.executor.SuccessTaskExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.task.TaskExecutionResult;
 
@@ -32,7 +33,7 @@ class PipeliteDatabaseStageServiceTest {
 
     PipeliteStage stage =
         PipeliteStage.newExecution(
-            processId, processName, stageName, TaskExecutor.SUCCESS_EXECUTOR);
+            processId, processName, stageName, new SuccessTaskExecutor());
 
     service.saveStage(stage);
 

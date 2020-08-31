@@ -100,7 +100,6 @@ public class InMemoryResumePipeliteLauncherTest {
             pipeliteLauncherObjectProvider,
             pipeliteProcessService,
             pipeliteStageService);
-
     tester.testException();
   }
 }

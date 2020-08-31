@@ -3,6 +3,7 @@ package pipelite.service;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.PipeliteStage;
+import pipelite.executor.SuccessTaskExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.task.TaskExecutionResult;
 
@@ -21,7 +22,7 @@ class PipeliteInMemoryStageServiceTest {
 
     PipeliteStage stage =
         PipeliteStage.newExecution(
-            processId, processName, stageName, TaskExecutor.SUCCESS_EXECUTOR);
+            processId, processName, stageName, new SuccessTaskExecutor());
 
     service.saveStage(stage);
 

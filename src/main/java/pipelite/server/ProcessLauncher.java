@@ -24,6 +24,8 @@ import org.springframework.stereotype.Component;
 import pipelite.configuration.*;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
+import pipelite.executor.ResumableTaskExecutor;
+import pipelite.executor.SerializableTaskExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.process.ProcessInstance;
 import pipelite.log.LogKey;
@@ -360,8 +362,11 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
         && pipeliteStage.getExecutorData() != null) {
       try {
         executor =
-            TaskExecutor.deserialize(
+            SerializableTaskExecutor.deserialize(
                 pipeliteStage.getExecutorName(), pipeliteStage.getExecutorData());
+        if (!(executor instanceof ResumableTaskExecutor)) {
+          executor = null;
+        }
       } catch (Exception ex) {
         ++taskRecoverFailedCount;
         log.atSevere()
@@ -374,7 +379,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
 
       if (executor != null) {
         try {
-          result = executor.resume(taskInstance);
+          result = ((ResumableTaskExecutor) executor).resume(taskInstance);
           ++taskRecoverCount;
         } catch (Exception ex) {
           ++taskRecoverFailedCount;

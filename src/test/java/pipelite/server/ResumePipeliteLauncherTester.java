@@ -9,6 +9,7 @@ import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
+import pipelite.executor.ResumableTaskExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.process.ProcessInstance;
 import pipelite.process.ProcessBuilder;
@@ -59,7 +60,7 @@ public class ResumePipeliteLauncherTester {
   }
 
   @Value
-  public static class SuccessTaskExecutor implements TaskExecutor {
+  public static class SuccessTaskExecutor implements ResumableTaskExecutor {
     @Override
     public TaskExecutionResult execute(TaskInstance taskInstance) {
       successExecuteCount.incrementAndGet();
@@ -74,7 +75,7 @@ public class ResumePipeliteLauncherTester {
   }
 
   @Value
-  public static class PermanentErrorTaskExecutor implements TaskExecutor {
+  public static class PermanentErrorTaskExecutor implements ResumableTaskExecutor {
     @Override
     public TaskExecutionResult execute(TaskInstance taskInstance) {
       permanentErrorExecuteCount.incrementAndGet();
@@ -89,7 +90,7 @@ public class ResumePipeliteLauncherTester {
   }
 
   @Value
-  public static class TransientErrorTaskExecutor implements TaskExecutor {
+  public static class TransientErrorTaskExecutor implements ResumableTaskExecutor {
     @Override
     public TaskExecutionResult execute(TaskInstance taskInstance) {
       transientErrorExecuteCount.incrementAndGet();
@@ -104,7 +105,7 @@ public class ResumePipeliteLauncherTester {
   }
 
   @Value
-  public static class ExceptionTaskExecutor implements TaskExecutor {
+  public static class ExceptionTaskExecutor implements ResumableTaskExecutor {
     @Override
     public TaskExecutionResult execute(TaskInstance taskInstance) {
       exceptionExecuteCount.incrementAndGet();

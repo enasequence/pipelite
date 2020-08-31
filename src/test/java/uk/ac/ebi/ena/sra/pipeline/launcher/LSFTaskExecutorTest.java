@@ -15,6 +15,7 @@ import java.nio.file.Files;
 
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
+import pipelite.executor.SuccessTaskExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.task.TaskParameters;
 import pipelite.task.TaskInstance;
@@ -45,7 +46,7 @@ public class LSFTaskExecutorTest {
     return TaskInstance.builder()
         .processName(UniqueStringGenerator.randomProcessName())
         .processId(UniqueStringGenerator.randomProcessId())
-        .executor(TaskExecutor.SUCCESS_EXECUTOR)
+        .executor(new SuccessTaskExecutor())
         .resolver(ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
         .taskParameters(taskParameters)
         .build();

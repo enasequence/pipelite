@@ -2,6 +2,7 @@ package pipelite.process;
 
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
+import pipelite.executor.SuccessTaskExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.process.ProcessBuilder;
 import pipelite.process.ProcessInstance;
@@ -24,11 +25,11 @@ public class ProcessBuilderTest {
       return new ProcessBuilder(PROCESS_NAME, PROCESS_ID, 9)
           .task(
               UniqueStringGenerator.randomTaskName(),
-              TaskExecutor.SUCCESS_EXECUTOR,
+              new SuccessTaskExecutor(),
               ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
           .taskDependsOnPrevious(
               UniqueStringGenerator.randomTaskName(),
-              TaskExecutor.SUCCESS_EXECUTOR,
+              new SuccessTaskExecutor(),
               ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
           .build();
     }

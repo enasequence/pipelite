@@ -11,6 +11,8 @@ import pipelite.TestInMemoryProcessFactory;
 import pipelite.TestInMemoryProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfiguration;
+import pipelite.executor.PermanentErrorTaskExecutor;
+import pipelite.executor.SuccessTaskExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.process.ProcessInstance;
 import pipelite.process.ProcessBuilder;
@@ -65,19 +67,19 @@ public class DatabaseFailingPipeliteLauncherTest {
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
                       .task(
                           UniqueStringGenerator.randomTaskName(),
-                          TaskExecutor.PERMANENT_ERROR_EXECUTOR,
+                          new PermanentErrorTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
-                          TaskExecutor.SUCCESS_EXECUTOR,
+                          new SuccessTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
-                          TaskExecutor.SUCCESS_EXECUTOR,
+                          new SuccessTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
-                          TaskExecutor.SUCCESS_EXECUTOR,
+                          new SuccessTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .build());
             });
@@ -111,19 +113,19 @@ public class DatabaseFailingPipeliteLauncherTest {
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
                       .task(
                           UniqueStringGenerator.randomTaskName(),
-                          TaskExecutor.SUCCESS_EXECUTOR,
+                          new SuccessTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
-                          TaskExecutor.PERMANENT_ERROR_EXECUTOR,
+                          new PermanentErrorTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
-                          TaskExecutor.SUCCESS_EXECUTOR,
+                          new SuccessTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
-                          TaskExecutor.SUCCESS_EXECUTOR,
+                          new SuccessTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .build());
             });
@@ -157,19 +159,19 @@ public class DatabaseFailingPipeliteLauncherTest {
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
                       .task(
                           UniqueStringGenerator.randomTaskName(),
-                          TaskExecutor.SUCCESS_EXECUTOR,
+                          new SuccessTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
-                          TaskExecutor.SUCCESS_EXECUTOR,
+                          new SuccessTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
-                          TaskExecutor.PERMANENT_ERROR_EXECUTOR,
+                          new PermanentErrorTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
-                          TaskExecutor.SUCCESS_EXECUTOR,
+                          new SuccessTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .build());
             });
@@ -203,19 +205,19 @@ public class DatabaseFailingPipeliteLauncherTest {
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
                       .task(
                           UniqueStringGenerator.randomTaskName(),
-                          TaskExecutor.SUCCESS_EXECUTOR,
+                          new SuccessTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
-                          TaskExecutor.SUCCESS_EXECUTOR,
+                          new SuccessTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
-                          TaskExecutor.SUCCESS_EXECUTOR,
+                          new SuccessTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
-                          TaskExecutor.PERMANENT_ERROR_EXECUTOR,
+                          new PermanentErrorTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .build());
             });
@@ -249,19 +251,19 @@ public class DatabaseFailingPipeliteLauncherTest {
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
                       .task(
                           UniqueStringGenerator.randomTaskName(),
-                          TaskExecutor.SUCCESS_EXECUTOR,
+                          new SuccessTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
-                          TaskExecutor.SUCCESS_EXECUTOR,
+                          new SuccessTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
-                          TaskExecutor.SUCCESS_EXECUTOR,
+                          new SuccessTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
-                          TaskExecutor.SUCCESS_EXECUTOR,
+                          new SuccessTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .build());
             });
