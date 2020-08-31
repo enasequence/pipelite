@@ -388,7 +388,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
       }
     }
 
-    if (result == null || !result.isPermanentError()) {
+    if (result == null || result.isTransientError() || result.isInternalError()) {
 
       // Execute the task.
 

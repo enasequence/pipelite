@@ -36,8 +36,8 @@ public class ResumeProcessLauncherTester {
   private final PipeliteProcessService pipeliteProcessService;
   private final PipeliteStageService pipeliteStageService;
 
-  private static final int WORKERS_CNT = 10;
-  private static final int PROCESS_CNT = 100;
+  private static final int WORKERS_CNT = 2;
+  private static final int PROCESS_CNT = 10;
 
   private static final Duration DELAY_DURATION = Duration.ofMillis(10);
   private static final AtomicInteger successResumeCount = new AtomicInteger();
@@ -48,8 +48,8 @@ public class ResumeProcessLauncherTester {
   private static final AtomicInteger transientErrorExecuteCount = new AtomicInteger();
   private static final AtomicInteger exceptionResumeCount = new AtomicInteger();
   private static final AtomicInteger exceptionExecuteCount = new AtomicInteger();
-  private static final AtomicInteger readyResumeCount = new AtomicInteger();
-  private static final AtomicInteger readyExecuteCount = new AtomicInteger();
+  private static final AtomicInteger newProcessResumeCount = new AtomicInteger();
+  private static final AtomicInteger newProcessExecuteCount = new AtomicInteger();
 
   private PipeliteLauncher pipeliteLauncher() {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
@@ -118,22 +118,7 @@ public class ResumeProcessLauncherTester {
     }
   }
 
-  @Value
-  public static class ReadyTaskExecutor implements TaskExecutor {
-    @Override
-    public TaskExecutionResult execute(TaskInstance taskInstance) {
-      readyExecuteCount.incrementAndGet();
-      return TaskExecutionResult.defaultSuccess();
-    }
-
-    @Override
-    public TaskExecutionResult resume(TaskInstance taskInstance) {
-      readyResumeCount.incrementAndGet();
-      return TaskExecutionResult.defaultSuccess();
-    }
-  }
-
-  public void testSuccess() {
+  private void init(ProcessExecutionState processExecutionState, TaskExecutor taskExecutor) {
     launcherConfiguration.setWorkers(WORKERS_CNT);
 
     List<ProcessInstance> processInstances = new ArrayList<>();
@@ -143,25 +128,28 @@ public class ResumeProcessLauncherTester {
       String processId = UniqueStringGenerator.randomProcessId();
       String taskName = UniqueStringGenerator.randomTaskName();
       PipeliteProcess pipeliteProcess = PipeliteProcess.newExecution(processId, processName, 1);
-      pipeliteProcess.setState(ProcessExecutionState.ACTIVE);
+      pipeliteProcess.setState(processExecutionState);
       pipeliteProcessService.saveProcess(pipeliteProcess);
 
       PipeliteStage pipeliteStage =
-          PipeliteStage.newExecution(processId, processName, taskName, new SuccessTaskExecutor());
+          PipeliteStage.newExecution(processId, processName, taskName, taskExecutor);
       pipeliteStage.setResultType(TaskExecutionResultType.ACTIVE);
       pipeliteStageService.saveStage(pipeliteStage);
 
       processInstances.add(
           new ProcessInstanceBuilder(processName, processId, 9)
-              .task(taskName, new SuccessTaskExecutor(), ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
+              .task(taskName, taskExecutor, ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
               .build());
     }
 
     TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
     processConfiguration.setProcessFactory(processFactory);
+  }
+
+  public void testSuccess() {
+    init(ProcessExecutionState.ACTIVE, new SuccessTaskExecutor());
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
-
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(0);
@@ -170,14 +158,51 @@ public class ResumeProcessLauncherTester {
     assertThat(pipeliteLauncher.getTaskRecoverCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getTaskRecoverFailedCount()).isEqualTo(0);
     assertThat(successResumeCount.get()).isEqualTo(PROCESS_CNT);
-    assertThat(successExecuteCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(successExecuteCount.get()).isEqualTo(0);
   }
 
-  public void testPermanentError() {}
+  public void testPermanentError() {
+    init(ProcessExecutionState.ACTIVE, new PermanentErrorTaskExecutor());
 
-  public void testTransientError() {}
+    PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
+    ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-  public void testException() {}
+    assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getTaskRecoverCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getTaskRecoverFailedCount()).isEqualTo(0);
+    assertThat(permanentErrorResumeCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(permanentErrorExecuteCount.get()).isEqualTo(0);
+  }
 
-  public void testReady() {}
+  public void testTransientError() {
+    init(ProcessExecutionState.ACTIVE, new TransientErrorTaskExecutor());
+
+    PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
+    ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
+
+    assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getTaskRecoverCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getTaskRecoverFailedCount()).isEqualTo(0);
+    assertThat(transientErrorResumeCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(transientErrorExecuteCount.get()).isEqualTo(PROCESS_CNT);
+  }
+
+  public void testException() {
+    init(ProcessExecutionState.ACTIVE, new ExceptionTaskExecutor());
+
+    PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
+    ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
+
+    assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getTaskRecoverCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getTaskRecoverFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(exceptionResumeCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(exceptionExecuteCount.get()).isEqualTo(PROCESS_CNT);
+  }
 }
