@@ -1,4 +1,4 @@
-package pipelite.executor.executable.ssh;
+package pipelite.executor.call;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,9 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.EmptyTestConfiguration;
 import pipelite.configuration.TestConfiguration;
-import pipelite.executor.executable.call.SystemCallInternalExecutorTest;
 import pipelite.executor.TaskExecutor;
-import pipelite.executor.executable.call.SystemCallInternalExecutor;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskParameters;
 import pipelite.resolver.ResultResolver;
@@ -22,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(classes = EmptyTestConfiguration.class)
 @EnableConfigurationProperties(value = {TestConfiguration.class})
 @ActiveProfiles("test")
-public class SshInternalExecutorTest {
+public class SshCallInternalExecutorTest {
 
   @Autowired TestConfiguration testConfiguration;
 
@@ -63,7 +61,7 @@ public class SshInternalExecutorTest {
   @Test
   public void testSuccess() {
 
-    SshInternalExecutor executor = new SshInternalExecutor();
+    SshCallInternalExecutor executor = new SshCallInternalExecutor();
 
     TaskParameters taskParameters = TaskParameters.builder().build();
     taskParameters.setHost(testConfiguration.getSsh().getHost());
@@ -76,11 +74,11 @@ public class SshInternalExecutorTest {
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND))
         .endsWith(
-            "'pipelite.executor.InternalTaskExecutor' "
+            "'pipelite.executor.InternalExecutor' "
                 + "'testProcess' "
                 + "'testProcessId' "
                 + "'testTaskName' "
-                + "'pipelite.executor.executable.ssh.SshInternalExecutorTest$SuccessTaskExecutor' "
+                + "'pipelite.executor.call.SshCallInternalExecutorTest$SuccessTaskExecutor' "
                 + "'pipelite.resolver.DefaultExceptionResolver'");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT))
         .contains("test stdout");
@@ -93,7 +91,7 @@ public class SshInternalExecutorTest {
   @Test
   public void testPermanentError() {
 
-    SshInternalExecutor executor = new SshInternalExecutor();
+    SshCallInternalExecutor executor = new SshCallInternalExecutor();
 
     String processName = "testProcess";
     String processId = "testProcessId";
@@ -119,11 +117,11 @@ public class SshInternalExecutorTest {
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.PERMANENT_ERROR);
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND))
         .endsWith(
-            "'pipelite.executor.InternalTaskExecutor' "
+            "'pipelite.executor.InternalExecutor' "
                 + "'testProcess' "
                 + "'testProcessId' "
                 + "'testTaskName' "
-                + "'pipelite.executor.executable.ssh.SshInternalExecutorTest$PermanentErrorTaskExecutor' "
+                + "'pipelite.executor.call.SshCallInternalExecutorTest$PermanentErrorTaskExecutor' "
                 + "'pipelite.resolver.DefaultExceptionResolver'");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT))
         .contains("test stdout");
@@ -138,7 +136,7 @@ public class SshInternalExecutorTest {
   @Test
   public void javaMemory() {
 
-    SystemCallInternalExecutor systemCallInternalExecutor = new SystemCallInternalExecutor();
+    SshCallInternalExecutor executor = new SshCallInternalExecutor();
 
     TaskParameters taskParameters = TaskParameters.builder().memory(2000).build();
 
@@ -146,7 +144,7 @@ public class SshInternalExecutorTest {
 
     TaskInstance taskInstance = taskInstance(taskExecutor, taskParameters);
 
-    TaskExecutionResult result = systemCallInternalExecutor.execute(taskInstance);
+    TaskExecutionResult result = executor.execute(taskInstance);
 
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND))
         .contains(("-Xmx2000M"));
@@ -155,7 +153,7 @@ public class SshInternalExecutorTest {
   @Test
   public void testTaskSpecificJavaProperties() {
 
-    SystemCallInternalExecutor systemCallInternalExecutor = new SystemCallInternalExecutor();
+    SshCallInternalExecutor executor = new SshCallInternalExecutor();
 
     TaskParameters taskParameters =
         TaskParameters.builder()
@@ -170,7 +168,7 @@ public class SshInternalExecutorTest {
     TaskExecutionResult result = null;
     try {
       System.setProperty("PIPELITE_TEST_JAVA_PROPERTY", "VALUE");
-      result = systemCallInternalExecutor.execute(taskInstance);
+      result = executor.execute(taskInstance);
     } finally {
       System.clearProperty("PIPELITE_TEST_JAVA_PROPERTY");
     }

@@ -1,8 +1,7 @@
-package pipelite.executor.executable.call;
+package pipelite.executor.call;
 
 import org.junit.jupiter.api.Test;
 import pipelite.executor.TaskExecutor;
-import pipelite.executor.executable.call.SystemCallInternalExecutor;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskParameters;
 import pipelite.resolver.ResultResolver;
@@ -63,12 +62,12 @@ public class SystemCallInternalExecutorTest {
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND))
         .endsWith(
-            "pipelite.executor.InternalTaskExecutor "
-                + "testProcess "
-                + "testProcessId "
-                + "testTaskName "
-                + "pipelite.executor.executable.call.SystemCallInternalExecutorTest$SuccessTaskExecutor "
-                + "pipelite.resolver.DefaultExceptionResolver");
+            "'pipelite.executor.InternalExecutor' "
+                + "'testProcess' "
+                + "'testProcessId' "
+                + "'testTaskName' "
+                + "'pipelite.executor.call.SystemCallInternalExecutorTest$SuccessTaskExecutor' "
+                + "'pipelite.resolver.DefaultExceptionResolver'");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT))
         .contains("test stdout");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR))
@@ -92,12 +91,12 @@ public class SystemCallInternalExecutorTest {
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.PERMANENT_ERROR);
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND))
         .endsWith(
-            "pipelite.executor.InternalTaskExecutor "
-                + "testProcess "
-                + "testProcessId "
-                + "testTaskName "
-                + "pipelite.executor.executable.call.SystemCallInternalExecutorTest$PermanentErrorTaskExecutor "
-                + "pipelite.resolver.DefaultExceptionResolver");
+            "'pipelite.executor.InternalExecutor' "
+                + "'testProcess' "
+                + "'testProcessId' "
+                + "'testTaskName' "
+                + "'pipelite.executor.call.SystemCallInternalExecutorTest$PermanentErrorTaskExecutor' "
+                + "'pipelite.resolver.DefaultExceptionResolver'");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT))
         .contains("test stdout");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR))

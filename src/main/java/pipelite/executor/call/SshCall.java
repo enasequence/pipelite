@@ -1,4 +1,4 @@
-package pipelite.executor.executable.ssh;
+package pipelite.executor.call;
 
 import lombok.extern.flogger.Flogger;
 import org.apache.sshd.client.SshClient;
@@ -6,42 +6,38 @@ import org.apache.sshd.client.channel.ClientChannel;
 import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.session.SessionHeartbeatController;
-import pipelite.executor.executable.ExecutableTaskExecutor;
+import pipelite.executor.call.CallExecutor;
 import pipelite.executor.stream.KeepOldestByteArrayOutputStream;
-import pipelite.task.TaskInstance;
-import pipelite.task.TaskExecutionResult;
+import pipelite.task.TaskParameters;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.Duration;
 import java.util.EnumSet;
-
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static pipelite.task.TaskExecutionResultExitCodeSerializer.EXIT_CODE_DEFAULT_INTERNAL_ERROR;
+import static pipelite.task.TaskExecutionResultExitCodeSerializer.EXIT_CODE_DEFAULT_PERMANENT_ERROR;
+
 @Flogger
-public abstract class AbstractSshExecutor implements ExecutableTaskExecutor {
+public class SshCall implements CallExecutor.Call {
 
   public static final int SSH_PORT = 22;
   public static final int SSH_TIMEOUT_SECONDS = 60;
   public static final int SSH_HEARTBEAT_SECONDS = 10;
 
-  public abstract String getCommand(TaskInstance taskInstance);
-
   @Override
-  public TaskExecutionResult execute(TaskInstance taskInstance) {
+  public CallExecutor.CallResult call(String cmd, TaskParameters taskParameters) {
+    if (cmd == null) {
+      return new CallExecutor.CallResult(EXIT_CODE_DEFAULT_PERMANENT_ERROR, null, null);
+    }
 
-    String command = null;
-    String host = null;
     SshClient client = null;
 
     try {
-      command = getCommand(taskInstance);
-      host = taskInstance.getTaskParameters().getHost();
       String user = System.getProperty("user.name");
-      Map<String, String> env = taskInstance.getTaskParameters().getEnvAsMap();
 
-      log.atInfo().log("Executing ssh call: %s", command);
+      log.atInfo().log("Executing ssh call: %s", cmd);
 
       OutputStream stdoutStream = new KeepOldestByteArrayOutputStream();
       OutputStream stderrStream = new KeepOldestByteArrayOutputStream();
@@ -52,7 +48,7 @@ public abstract class AbstractSshExecutor implements ExecutableTaskExecutor {
 
       try (ClientSession session =
           client
-              .connect(user, host, SSH_PORT)
+              .connect(user, taskParameters.getHost(), SSH_PORT)
               .verify(SSH_TIMEOUT_SECONDS, TimeUnit.SECONDS)
               .getSession()) {
 
@@ -62,31 +58,20 @@ public abstract class AbstractSshExecutor implements ExecutableTaskExecutor {
             SessionHeartbeatController.HeartbeatType.IGNORE,
             Duration.ofSeconds(SSH_HEARTBEAT_SECONDS));
 
-        ClientChannel channel = session.createExecChannel(command, null, env);
+        ClientChannel channel = session.createExecChannel(cmd, null, taskParameters.getEnvAsMap());
         channel.setOut(stdoutStream);
         channel.setErr(stderrStream);
 
         channel.open().verify(SSH_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
-        channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), 0L);
+        channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), taskParameters.getTimeout());
 
         int exitCode = channel.getExitStatus();
-
-        TaskExecutionResult result = resolve(taskInstance, exitCode);
-        result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND, command);
-        result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_HOST, host);
-        result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_EXIT_CODE, exitCode);
-        result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT, getStream(stdoutStream));
-        result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR, getStream(stderrStream));
-        return result;
+        return new CallExecutor.CallResult(exitCode, getStream(stdoutStream), getStream(stderrStream));
       }
     } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Failed ssh call: %s", command);
-      TaskExecutionResult result = TaskExecutionResult.defaultInternalError();
-      result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND, command);
-      result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_HOST, host);
-      result.addExceptionAttribute(ex);
-      return result;
+      log.atSevere().withCause(ex).log("Failed ssh call: %s", cmd);
+      return new CallExecutor.CallResult(EXIT_CODE_DEFAULT_INTERNAL_ERROR, null, null);
     } finally {
       if (client != null) {
         client.stop();

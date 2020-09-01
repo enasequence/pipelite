@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 import pipelite.configuration.TaskConfiguration;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,11 +15,12 @@ import java.util.Map;
 public class TaskParameters {
 
   private String host; // Used by SshSystemCallExecutor.
+  private Duration timeout;
   private Integer retries;
   private String[] env;
   private String tempDir;
   private Integer memory;
-  private Integer memoryTimeout;
+  private Duration memoryTimeout;
   private Integer cores;
   private String queue;
 
@@ -27,6 +29,8 @@ public class TaskParameters {
     if (taskConfiguration == null) {
       return;
     }
+    setHost(TaskParametersUtils.getHost(this, taskConfiguration));
+    setTimeout(TaskParametersUtils.getTimeout(this, taskConfiguration));
     setRetries(TaskParametersUtils.getRetries(this, taskConfiguration));
     setEnv(TaskParametersUtils.getEnv(this, taskConfiguration));
     setTempDir(TaskParametersUtils.getTempDir(this, taskConfiguration));
@@ -34,7 +38,6 @@ public class TaskParameters {
     setMemoryTimeout(TaskParametersUtils.getMemoryTimeout(this, taskConfiguration));
     setCores(TaskParametersUtils.getCores(this, taskConfiguration));
     setQueue(TaskParametersUtils.getQueue(this, taskConfiguration));
-    setHost(TaskParametersUtils.getHost(this, taskConfiguration));
   }
 
   public List<String> getEnvAsJavaSystemPropertyOptions() {

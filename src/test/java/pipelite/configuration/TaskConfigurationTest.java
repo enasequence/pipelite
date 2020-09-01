@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
       "pipelite.task.memory=1",
       "pipelite.task.cores=1",
       "pipelite.task.queue=TEST",
-      "pipelite.task.memoryTimeout=15",
+      "pipelite.task.memoryTimeout=15s",
       "pipelite.task.retries=3",
       "pipelite.task.tempdir=",
       "pipelite.task.env=TEST1,TEST2",
@@ -30,7 +30,7 @@ public class TaskConfigurationTest {
     assertThat(config.getMemory()).isEqualTo(1);
     assertThat(config.getCores()).isEqualTo(1);
     assertThat(config.getQueue()).isEqualTo("TEST");
-    assertThat(config.getMemoryTimeout()).isEqualTo(15);
+    assertThat(config.getMemoryTimeout().toSeconds()).isEqualTo(15);
     assertThat(config.getRetries()).isEqualTo(3);
     assertThat(config.getTempDir()).isBlank();
     assertThat(config.getEnv().length).isEqualTo(2);

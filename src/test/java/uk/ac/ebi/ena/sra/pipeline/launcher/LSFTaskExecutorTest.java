@@ -12,6 +12,7 @@ package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Duration;
 
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
@@ -33,7 +34,7 @@ public class LSFTaskExecutorTest {
               .tempDir(Files.createTempDirectory("TEMP").toString())
               .cores(1)
               .memory(1)
-              .memoryTimeout(1)
+              .memoryTimeout(Duration.ofMinutes(1))
               .queue("defaultQueue")
               .build();
       return taskParameters;
@@ -46,6 +47,7 @@ public class LSFTaskExecutorTest {
     return TaskInstance.builder()
         .processName(UniqueStringGenerator.randomProcessName())
         .processId(UniqueStringGenerator.randomProcessId())
+        .taskName(UniqueStringGenerator.randomTaskName())
         .executor(new SuccessTaskExecutor())
         .resolver(ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
         .taskParameters(taskParameters)

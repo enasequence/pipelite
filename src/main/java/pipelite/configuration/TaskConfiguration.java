@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.time.Duration;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -17,11 +19,14 @@ public class TaskConfiguration {
   /** Remote host. */
   public String host;
 
+  /** Execution timeout. */
+  public Duration timeout;
+
   /** Memory reservation (MBytes). */
   public Integer memory;
 
   /** Memory reservation timeout (minutes). */
-  public Integer memoryTimeout;
+  public Duration memoryTimeout;
 
   /** Core reservation. */
   public Integer cores;

@@ -4,12 +4,23 @@ import com.google.common.base.Supplier;
 import lombok.Value;
 import pipelite.configuration.TaskConfiguration;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
 @Value
 public class TaskParametersUtils {
+
+  public static String getHost(
+          TaskParameters taskParameters, TaskConfiguration taskConfiguration) {
+    return getValue(taskParameters::getHost, taskConfiguration::getHost);
+  }
+
+  public static Duration getTimeout(
+          TaskParameters taskParameters, TaskConfiguration taskConfiguration) {
+    return getValue(taskParameters::getTimeout, taskConfiguration::getTimeout);
+  }
 
   public static Integer getRetries(
       TaskParameters taskParameters, TaskConfiguration taskConfiguration) {
@@ -31,7 +42,7 @@ public class TaskParametersUtils {
     return getValue(taskParameters::getMemory, taskConfiguration::getMemory);
   }
 
-  public static Integer getMemoryTimeout(
+  public static Duration getMemoryTimeout(
       TaskParameters taskParameters, TaskConfiguration taskConfiguration) {
     return getValue(taskParameters::getMemoryTimeout, taskConfiguration::getMemoryTimeout);
   }
@@ -44,11 +55,6 @@ public class TaskParametersUtils {
   public static String getQueue(
       TaskParameters taskParameters, TaskConfiguration taskConfiguration) {
     return getValue(taskParameters::getQueue, taskConfiguration::getQueue);
-  }
-
-  public static String getHost(
-          TaskParameters taskParameters, TaskConfiguration taskConfiguration) {
-    return getValue(taskParameters::getHost, taskConfiguration::getHost);
   }
 
   private static <T> T getValue(Supplier<T> taskInstance, Supplier<T> taskConfiguration) {

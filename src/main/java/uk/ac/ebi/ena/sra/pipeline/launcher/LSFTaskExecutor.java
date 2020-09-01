@@ -11,15 +11,18 @@
 package uk.ac.ebi.ena.sra.pipeline.launcher;
 
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.List;
 
 import lombok.extern.flogger.Flogger;
+import org.apache.commons.text.StringTokenizer;
+import org.apache.commons.text.matcher.StringMatcher;
+import org.apache.commons.text.matcher.StringMatcherFactory;
+import pipelite.executor.InternalExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskExecutionResult;
 import uk.ac.ebi.ena.sra.pipeline.base.external.LSFClusterCall;
-
-import static pipelite.executor.InternalTaskExecutor.getInternalTaskExecutorArgs;
 
 @Flogger
 public class LSFTaskExecutor implements TaskExecutor {
@@ -38,9 +41,9 @@ public class LSFTaskExecutor implements TaskExecutor {
       log.atWarning().log("Using default memory: " + memory);
     }
 
-    Integer memoryTimeout = taskInstance.getTaskParameters().getMemoryTimeout();
+    Duration memoryTimeout = taskInstance.getTaskParameters().getMemoryTimeout();
     if (memoryTimeout == null) {
-      memoryTimeout = LSF_JVM_MEMORY_RESERVATION_TIMEOUT_DEFAULT_MINUTES;
+      memoryTimeout = Duration.ofMinutes(LSF_JVM_MEMORY_RESERVATION_TIMEOUT_DEFAULT_MINUTES);
       log.atWarning().log("Using default memory reservation timeout: " + memoryTimeout);
     }
 
@@ -50,7 +53,7 @@ public class LSFTaskExecutor implements TaskExecutor {
       log.atWarning().log("Using default number of cores: " + cores);
     }
 
-    LSFBackEnd back_end = new LSFBackEnd(queue, memory, memoryTimeout, cores);
+    LSFBackEnd back_end = new LSFBackEnd(queue, memory, (int) memoryTimeout.toMinutes(), cores);
     if (taskInstance.getTaskParameters().getTempDir() != null) {
       back_end.setOutputFolderPath(Paths.get(taskInstance.getTaskParameters().getTempDir()));
     }
@@ -60,7 +63,10 @@ public class LSFTaskExecutor implements TaskExecutor {
   @Override
   public TaskExecutionResult execute(TaskInstance taskInstance) {
 
-    List<String> p_args = getInternalTaskExecutorArgs(taskInstance);
+    StringTokenizer st = new StringTokenizer(InternalExecutor.getCmd(taskInstance));
+    StringMatcher sm = StringMatcherFactory.INSTANCE.quoteMatcher();
+    st.setQuoteMatcher(sm);
+    List<String> p_args = st.getTokenList();
 
     LSFBackEnd back_end = configureBackend(taskInstance);
 

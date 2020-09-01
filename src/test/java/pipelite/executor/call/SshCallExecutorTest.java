@@ -1,41 +1,47 @@
-package pipelite.executor.executable.call;
+package pipelite.executor.call;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.EmptyTestConfiguration;
 import pipelite.UniqueStringGenerator;
-import pipelite.executor.executable.call.SystemCallExecutor;
+import pipelite.configuration.TestConfiguration;
+import pipelite.executor.call.SshCallExecutor;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskParameters;
 import pipelite.resolver.ResultResolver;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultType;
 
-import java.util.Arrays;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SystemCallExecutorTest {
+@SpringBootTest(classes = EmptyTestConfiguration.class)
+@EnableConfigurationProperties(value = {TestConfiguration.class})
+@ActiveProfiles("test")
+public class SshCallExecutorTest {
+
+  @Autowired TestConfiguration testConfiguration;
 
   @Test
   public void test() {
 
-    SystemCallExecutor executor =
-        SystemCallExecutor.builder()
-            .executable("echo")
-            .arguments(taskInstance -> Arrays.asList("test"))
-            .build();
+    SshCallExecutor executor = SshCallExecutor.builder().cmd(taskInstance -> "echo test").build();
 
     String processName = UniqueStringGenerator.randomProcessName();
     String processId = UniqueStringGenerator.randomProcessId();
     String taskName = UniqueStringGenerator.randomTaskName();
 
     TaskParameters taskParameters = TaskParameters.builder().build();
+    taskParameters.setHost(testConfiguration.getSsh().getHost());
 
     TaskInstance taskInstance =
         TaskInstance.builder()
             .processName(processName)
             .processId(processId)
             .taskName(taskName)
-            // Executor is not required by SystemCallTaskExecutor
+            // Executor is not required by SshCallTaskExecutor
             // .executor()
             .resolver(ResultResolver.DEFAULT_EXIT_CODE_RESOLVER)
             .taskParameters(taskParameters)

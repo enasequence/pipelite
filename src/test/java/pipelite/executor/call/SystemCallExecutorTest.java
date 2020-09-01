@@ -1,14 +1,8 @@
-package pipelite.executor.executable.ssh;
+package pipelite.executor.call;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import pipelite.EmptyTestConfiguration;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.TestConfiguration;
-import pipelite.executor.executable.ssh.SshExecutor;
+import pipelite.executor.call.SystemCallExecutor;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskParameters;
 import pipelite.resolver.ResultResolver;
@@ -17,34 +11,26 @@ import pipelite.task.TaskExecutionResultType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(classes = EmptyTestConfiguration.class)
-@EnableConfigurationProperties(value = {TestConfiguration.class})
-@ActiveProfiles("test")
-public class SshExecutorTest {
-
-  @Autowired TestConfiguration testConfiguration;
+public class SystemCallExecutorTest {
 
   @Test
   public void test() {
 
-    SshExecutor executor =
-        SshExecutor.builder()
-            .command(taskInstance -> "echo test")
-            .build();
+    SystemCallExecutor executor =
+        SystemCallExecutor.builder().cmd(taskInstance -> "echo test").build();
 
     String processName = UniqueStringGenerator.randomProcessName();
     String processId = UniqueStringGenerator.randomProcessId();
     String taskName = UniqueStringGenerator.randomTaskName();
 
     TaskParameters taskParameters = TaskParameters.builder().build();
-    taskParameters.setHost(testConfiguration.getSsh().getHost());
 
     TaskInstance taskInstance =
         TaskInstance.builder()
             .processName(processName)
             .processId(processId)
             .taskName(taskName)
-            // Executor is not required by SshCallTaskExecutor
+            // Executor is not required by SystemCallTaskExecutor
             // .executor()
             .resolver(ResultResolver.DEFAULT_EXIT_CODE_RESOLVER)
             .taskParameters(taskParameters)

@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class InternalTaskExecutorTest {
+public class InternalExecutorTest {
 
   @Test
   public void test() {
@@ -22,7 +22,7 @@ public class InternalTaskExecutorTest {
 
     AtomicInteger taskExecutionCount = new AtomicInteger();
 
-    InternalTaskExecutor internalTaskExecutor = new InternalTaskExecutor();
+    InternalExecutor internalExecutor = new InternalExecutor();
 
     TaskExecutor taskExecutor =
         taskInstance -> {
@@ -42,7 +42,7 @@ public class InternalTaskExecutorTest {
             .taskParameters(taskParameters)
             .build();
 
-    TaskExecutionResult result = internalTaskExecutor.execute(taskInstance);
+    TaskExecutionResult result = internalExecutor.execute(taskInstance);
     assertThat(result).isEqualTo(TaskExecutionResult.defaultSuccess());
     assertThat(taskExecutionCount.get()).isEqualTo(1);
   }

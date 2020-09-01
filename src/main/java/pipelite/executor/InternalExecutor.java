@@ -11,6 +11,7 @@
 package pipelite.executor;
 
 import lombok.extern.flogger.Flogger;
+import pipelite.executor.call.utils.QuoteUtils;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskParameters;
 import pipelite.resolver.ResultResolver;
@@ -19,12 +20,13 @@ import pipelite.task.TaskExecutionResult;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static pipelite.log.LogKey.*;
 import static pipelite.task.TaskExecutionResultExitCodeSerializer.EXIT_CODE_DEFAULT_INTERNAL_ERROR;
 
 @Flogger
-public class InternalTaskExecutor implements TaskExecutor {
+public class InternalExecutor implements TaskExecutor {
 
   @Override
   public TaskExecutionResult execute(TaskInstance taskInstance) {
@@ -94,10 +96,10 @@ public class InternalTaskExecutor implements TaskExecutor {
 
     TaskInstance taskInstance = null;
 
-    InternalTaskExecutor internalTaskExecutor = null;
+    InternalExecutor internalExecutor = null;
 
     try {
-      internalTaskExecutor = new InternalTaskExecutor();
+      internalExecutor = new InternalExecutor();
 
       // Task configuration is not available when a task is being executed using internal
       // task executor through a system call.
@@ -124,7 +126,7 @@ public class InternalTaskExecutor implements TaskExecutor {
     }
 
     try {
-      TaskExecutionResult result = internalTaskExecutor.execute(taskInstance);
+      TaskExecutionResult result = internalExecutor.execute(taskInstance);
       int exitCode = taskInstance.getResolver().serializer().serialize(result);
 
       log.atInfo()
@@ -152,11 +154,7 @@ public class InternalTaskExecutor implements TaskExecutor {
     }
   }
 
-  public static String getInternalTaskExecutorExecutable() {
-    return Paths.get(System.getProperty("java.home"), "bin", "java").toString();
-  }
-
-  public static List<String> getInternalTaskExecutorArgs(TaskInstance taskInstance) {
+  public static String getCmd(TaskInstance taskInstance) {
     List<String> args = new ArrayList<>();
 
     args.addAll(taskInstance.getTaskParameters().getEnvAsJavaSystemPropertyOptions());
@@ -169,18 +167,20 @@ public class InternalTaskExecutor implements TaskExecutor {
 
     args.add("-cp");
     args.add(System.getProperty("java.class.path"));
-    args.add(InternalTaskExecutor.class.getName());
+    args.add(QuoteUtils.quoteArgument(InternalExecutor.class.getName()));
 
-    args.add(taskInstance.getProcessName());
-    args.add(taskInstance.getProcessId());
-    args.add(taskInstance.getTaskName());
-    args.add(taskInstance.getExecutor().getClass().getName());
-    args.add(taskInstance.getResolver().getClass().getName());
+    args.add(QuoteUtils.quoteArgument(taskInstance.getProcessName()));
+    args.add(QuoteUtils.quoteArgument(taskInstance.getProcessId()));
+    args.add(QuoteUtils.quoteArgument(taskInstance.getTaskName()));
+    args.add(QuoteUtils.quoteArgument(taskInstance.getExecutor().getClass().getName()));
+    args.add(QuoteUtils.quoteArgument(taskInstance.getResolver().getClass().getName()));
 
-    return args;
+    return Paths.get(System.getProperty("java.home"), "bin", "java").toString()
+        + " "
+        + args.stream().collect(Collectors.joining(" "));
   }
 
-  public static TaskExecutionResult getInternalTaskExecutionResult(
+  public static TaskExecutionResult getResult(
       TaskInstance taskInstance, int exitCode) {
     return taskInstance.getResolver().serializer().deserialize(exitCode);
   }
