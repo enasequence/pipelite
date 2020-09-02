@@ -29,7 +29,7 @@ public abstract class AbstractLsfExecutor extends AbstractCallExecutor
   private static final Pattern EXIT_CODE_PATTERN = Pattern.compile("Exited with exit code (\\d+)");
 
   @Override
-  public String getDispatchCmd(TaskInstance taskInstance) {
+  public final String getDispatchCmd(TaskInstance taskInstance) {
     StringBuilder cmd = new StringBuilder();
     cmd.append("bsub");
 
@@ -79,14 +79,14 @@ public abstract class AbstractLsfExecutor extends AbstractCallExecutor
   }
 
   @Override
-  public void extractDispatchJobId(TaskExecutionResult taskExecutionResult) {
+  public final void extractDispatchJobId(TaskExecutionResult taskExecutionResult) {
     jobId =
         extractJobIdSubmitted(
             taskExecutionResult.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT));
   }
 
   @Override
-  public TaskExecutionResult execute(TaskInstance taskInstance) {
+  public final TaskExecutionResult execute(TaskInstance taskInstance) {
 
     TaskExecutionResult result = super.execute(taskInstance);
 
@@ -105,7 +105,7 @@ public abstract class AbstractLsfExecutor extends AbstractCallExecutor
   }
 
   @Override
-  public TaskExecutionResult poll(TaskInstance taskinstance) {
+  public final TaskExecutionResult poll(TaskInstance taskinstance) {
 
     while (true) {
       Duration timeout = taskinstance.getTaskParameters().getTimeout();

@@ -20,12 +20,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(classes = EmptyTestConfiguration.class)
 @EnableConfigurationProperties(value = {TestConfiguration.class})
 @ActiveProfiles("test")
-public class SshLsfExecutorTest {
+public class SshCallLsfExecutorTest {
 
   @Test
   public void test() {
 
-    SshLsfExecutor executor = SshLsfExecutor.builder().cmd(taskInstance -> "echo test").build();
+    SshCallLsfExecutor executor = SshCallLsfExecutor.builder().cmd(taskInstance -> "echo test").build();
 
     String processName = UniqueStringGenerator.randomProcessName();
     String processId = UniqueStringGenerator.randomProcessId();

@@ -12,7 +12,7 @@ import pipelite.task.TaskInstance;
 @Flogger
 @Value
 @Builder
-public final class SshLsfExecutor extends AbstractLsfExecutor {
+public final class SshCallLsfExecutor extends AbstractLsfExecutor {
   private final Cmd cmd;
 
   public interface Cmd {
