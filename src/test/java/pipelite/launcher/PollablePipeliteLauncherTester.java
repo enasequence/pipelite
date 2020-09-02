@@ -1,18 +1,19 @@
-package pipelite.server;
+package pipelite.launcher;
 
 import lombok.AllArgsConstructor;
 import lombok.Value;
-import org.springframework.beans.factory.ObjectProvider;
 import pipelite.TestInMemoryProcessFactory;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
+import pipelite.configuration.TaskConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
 import pipelite.executor.PollableExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.process.ProcessInstance;
 import pipelite.process.ProcessBuilder;
+import pipelite.service.PipeliteLockService;
 import pipelite.task.TaskInstance;
 import pipelite.process.ProcessExecutionState;
 import pipelite.resolver.ResultResolver;
@@ -33,27 +34,34 @@ public class PollablePipeliteLauncherTester {
 
   private final LauncherConfiguration launcherConfiguration;
   private final ProcessConfiguration processConfiguration;
-  private final ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
+  private final TaskConfiguration taskConfiguration;
   private final PipeliteProcessService pipeliteProcessService;
   private final PipeliteStageService pipeliteStageService;
+  private final PipeliteLockService pipeliteLockService;
 
   private static final int WORKERS_CNT = 2;
   private static final int PROCESS_CNT = 10;
   private static final Duration DELAY_DURATION = Duration.ofMillis(100);
 
-  private static final AtomicInteger successResumeCount = new AtomicInteger();
+  private static final AtomicInteger successPollCount = new AtomicInteger();
   private static final AtomicInteger successExecuteCount = new AtomicInteger();
-  private static final AtomicInteger permanentErrorResumeCount = new AtomicInteger();
+  private static final AtomicInteger permanentErrorPollCount = new AtomicInteger();
   private static final AtomicInteger permanentErrorExecuteCount = new AtomicInteger();
-  private static final AtomicInteger transientErrorResumeCount = new AtomicInteger();
+  private static final AtomicInteger transientErrorPollCount = new AtomicInteger();
   private static final AtomicInteger transientErrorExecuteCount = new AtomicInteger();
-  private static final AtomicInteger exceptionResumeCount = new AtomicInteger();
+  private static final AtomicInteger exceptionPollCount = new AtomicInteger();
   private static final AtomicInteger exceptionExecuteCount = new AtomicInteger();
-  private static final AtomicInteger newProcessResumeCount = new AtomicInteger();
-  private static final AtomicInteger newProcessExecuteCount = new AtomicInteger();
 
   private PipeliteLauncher pipeliteLauncher() {
-    PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
+    PipeliteLauncher pipeliteLauncher =
+        new PipeliteLauncher(
+            launcherConfiguration,
+            processConfiguration,
+            taskConfiguration,
+            pipeliteProcessService,
+            pipeliteStageService,
+            pipeliteLockService);
+
     pipeliteLauncher.setShutdownPolicy(ShutdownPolicy.SHUTDOWN_IF_IDLE);
     pipeliteLauncher.setSchedulerDelay(DELAY_DURATION);
     return pipeliteLauncher;
@@ -69,7 +77,7 @@ public class PollablePipeliteLauncherTester {
 
     @Override
     public TaskExecutionResult poll(TaskInstance taskInstance) {
-      successResumeCount.incrementAndGet();
+      successPollCount.incrementAndGet();
       return TaskExecutionResult.success();
     }
   }
@@ -84,7 +92,7 @@ public class PollablePipeliteLauncherTester {
 
     @Override
     public TaskExecutionResult poll(TaskInstance taskInstance) {
-      permanentErrorResumeCount.incrementAndGet();
+      permanentErrorPollCount.incrementAndGet();
       return TaskExecutionResult.permanentError();
     }
   }
@@ -99,7 +107,7 @@ public class PollablePipeliteLauncherTester {
 
     @Override
     public TaskExecutionResult poll(TaskInstance taskInstance) {
-      transientErrorResumeCount.incrementAndGet();
+      transientErrorPollCount.incrementAndGet();
       return TaskExecutionResult.transientError();
     }
   }
@@ -114,7 +122,7 @@ public class PollablePipeliteLauncherTester {
 
     @Override
     public TaskExecutionResult poll(TaskInstance taskInstance) {
-      exceptionResumeCount.incrementAndGet();
+      exceptionPollCount.incrementAndGet();
       throw new RuntimeException();
     }
   }
@@ -158,7 +166,7 @@ public class PollablePipeliteLauncherTester {
     assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getTaskRecoverCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getTaskRecoverFailedCount()).isEqualTo(0);
-    assertThat(successResumeCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(successPollCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(successExecuteCount.get()).isEqualTo(0);
   }
 
@@ -173,7 +181,7 @@ public class PollablePipeliteLauncherTester {
     assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getTaskRecoverCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getTaskRecoverFailedCount()).isEqualTo(0);
-    assertThat(permanentErrorResumeCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(permanentErrorPollCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(permanentErrorExecuteCount.get()).isEqualTo(0);
   }
 
@@ -188,7 +196,7 @@ public class PollablePipeliteLauncherTester {
     assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getTaskRecoverCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getTaskRecoverFailedCount()).isEqualTo(0);
-    assertThat(transientErrorResumeCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(transientErrorPollCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(transientErrorExecuteCount.get()).isEqualTo(PROCESS_CNT);
   }
 
@@ -203,7 +211,7 @@ public class PollablePipeliteLauncherTester {
     assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getTaskRecoverCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getTaskRecoverFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(exceptionResumeCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(exceptionPollCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(exceptionExecuteCount.get()).isEqualTo(PROCESS_CNT);
   }
 }

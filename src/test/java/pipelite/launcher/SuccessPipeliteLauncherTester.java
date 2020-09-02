@@ -1,4 +1,4 @@
-package pipelite.server;
+package pipelite.launcher;
 
 import lombok.AllArgsConstructor;
 

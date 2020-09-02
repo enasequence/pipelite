@@ -8,10 +8,9 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.server;
+package pipelite.launcher;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.util.TestPropertyValues;
@@ -23,25 +22,25 @@ import pipelite.FullTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
-import pipelite.service.PipeliteProcessService;
-import pipelite.service.PipeliteStageService;
+import pipelite.configuration.TaskConfiguration;
+import pipelite.service.*;
 
 @SpringBootTest(
     classes = FullTestConfiguration.class,
     properties = {
-      "pipelite.launcher.workers=5",
-      "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver",
+      "spring.autoconfigure.exclude="
+          + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
+          + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
+          + "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration"
     })
 @ContextConfiguration(
-    initializers = DatabaseSuccessPipeliteLauncherTest.TestContextInitializer.class)
-@ActiveProfiles(value = {"database", "database-oracle-test"})
-public class DatabaseResumePipeliteLauncherTest {
+    initializers = InMemoryPollablePipeliteLauncherTest.TestContextInitializer.class)
+@ActiveProfiles(value = {"test", "memory"})
+public class InMemoryPollablePipeliteLauncherTest {
 
   @Autowired private LauncherConfiguration launcherConfiguration;
   @Autowired private ProcessConfiguration processConfiguration;
-  @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
-  @Autowired private PipeliteProcessService pipeliteProcessService;
-  @Autowired private PipeliteStageService pipeliteStageService;
+  @Autowired private TaskConfiguration taskConfiguration;
 
   public static class TestContextInitializer
       implements ApplicationContextInitializer<ConfigurableApplicationContext> {
@@ -60,9 +59,10 @@ public class DatabaseResumePipeliteLauncherTest {
         new PollablePipeliteLauncherTester(
             launcherConfiguration,
             processConfiguration,
-            pipeliteLauncherObjectProvider,
-            pipeliteProcessService,
-            pipeliteStageService);
+            taskConfiguration,
+            new PipeliteInMemoryProcessService(),
+            new PipeliteInMemoryStageService(),
+            new PipeliteInMemoryLockService());
     tester.testSuccess();
   }
 
@@ -72,9 +72,10 @@ public class DatabaseResumePipeliteLauncherTest {
         new PollablePipeliteLauncherTester(
             launcherConfiguration,
             processConfiguration,
-            pipeliteLauncherObjectProvider,
-            pipeliteProcessService,
-            pipeliteStageService);
+            taskConfiguration,
+            new PipeliteInMemoryProcessService(),
+            new PipeliteInMemoryStageService(),
+            new PipeliteInMemoryLockService());
     tester.testPermanentError();
   }
 
@@ -84,9 +85,10 @@ public class DatabaseResumePipeliteLauncherTest {
         new PollablePipeliteLauncherTester(
             launcherConfiguration,
             processConfiguration,
-            pipeliteLauncherObjectProvider,
-            pipeliteProcessService,
-            pipeliteStageService);
+            taskConfiguration,
+            new PipeliteInMemoryProcessService(),
+            new PipeliteInMemoryStageService(),
+            new PipeliteInMemoryLockService());
     tester.testTransientError();
   }
 
@@ -96,10 +98,10 @@ public class DatabaseResumePipeliteLauncherTest {
         new PollablePipeliteLauncherTester(
             launcherConfiguration,
             processConfiguration,
-            pipeliteLauncherObjectProvider,
-            pipeliteProcessService,
-            pipeliteStageService);
-
+            taskConfiguration,
+            new PipeliteInMemoryProcessService(),
+            new PipeliteInMemoryStageService(),
+            new PipeliteInMemoryLockService());
     tester.testException();
   }
 }

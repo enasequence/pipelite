@@ -1,4 +1,4 @@
-package pipelite.server;
+package pipelite.launcher;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
@@ -13,7 +13,6 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.executor.PermanentErrorTaskExecutor;
 import pipelite.executor.SuccessTaskExecutor;
-import pipelite.executor.TaskExecutor;
 import pipelite.process.ProcessInstance;
 import pipelite.process.ProcessBuilder;
 import pipelite.process.ProcessSource;

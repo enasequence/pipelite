@@ -10,5 +10,11 @@ import pipelite.configuration.TaskConfiguration;
 @EnableAutoConfiguration
 @EnableConfigurationProperties(
     value = {LauncherConfiguration.class, ProcessConfiguration.class, TaskConfiguration.class})
-@ComponentScan(basePackages = {"pipelite.service", "pipelite.server", "pipelite.repository", "pipelite.configuration"})
+@ComponentScan(
+    basePackages = {
+      "pipelite.service",
+      "pipelite.launcher",
+      "pipelite.repository",
+      "pipelite.configuration"
+    })
 public class FullTestConfiguration {}

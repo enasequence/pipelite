@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.server;
+package pipelite.launcher;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -19,12 +19,12 @@ import java.util.stream.Collectors;
 
 import com.google.common.util.concurrent.AbstractScheduledService;
 import lombok.extern.flogger.Flogger;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
+import pipelite.configuration.TaskConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.process.ProcessInstance;
 import pipelite.process.ProcessFactory;
@@ -32,6 +32,7 @@ import pipelite.process.ProcessSource;
 import pipelite.log.LogKey;
 import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteProcessService;
+import pipelite.service.PipeliteStageService;
 
 @Flogger
 @Component
@@ -40,7 +41,9 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   private final LauncherConfiguration launcherConfiguration;
   private final ProcessConfiguration processConfiguration;
+  private final TaskConfiguration taskConfiguration;
   private final PipeliteProcessService pipeliteProcessService;
+  private final PipeliteStageService pipeliteStageService;
   private final PipeliteLockService pipeliteLockService;
   private final ExecutorService executorService;
   private ProcessFactory processFactory;
@@ -61,8 +64,6 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private final Map<String, ProcessLauncher> initProcesses = new ConcurrentHashMap<>();
   private final Map<String, ProcessLauncher> activeProcesses = new ConcurrentHashMap<>();
 
-  @Autowired private ObjectProvider<ProcessLauncher> processLauncherObjectProvider;
-
   private ShutdownPolicy shutdownPolicy = ShutdownPolicy.WAIT_IF_IDLE;
 
   private final ArrayList<String> processQueue = new ArrayList<>();
@@ -79,11 +80,15 @@ public class PipeliteLauncher extends AbstractScheduledService {
   public PipeliteLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
       @Autowired ProcessConfiguration processConfiguration,
+      @Autowired TaskConfiguration taskConfiguration,
       @Autowired PipeliteProcessService pipeliteProcessService,
+      @Autowired PipeliteStageService pipeliteStageService,
       @Autowired PipeliteLockService pipeliteLockService) {
     this.launcherConfiguration = launcherConfiguration;
     this.processConfiguration = processConfiguration;
+    this.taskConfiguration = taskConfiguration;
     this.pipeliteProcessService = pipeliteProcessService;
+    this.pipeliteStageService = pipeliteStageService;
     this.pipeliteLockService = pipeliteLockService;
 
     Integer workers = launcherConfiguration.getWorkers();
@@ -262,7 +267,14 @@ public class PipeliteLauncher extends AbstractScheduledService {
         .with(LogKey.PROCESS_ID, processId)
         .log("Launching process instances");
 
-    ProcessLauncher processLauncher = processLauncherObjectProvider.getObject();
+    ProcessLauncher processLauncher =
+        new ProcessLauncher(
+            launcherConfiguration,
+            processConfiguration,
+            taskConfiguration,
+            pipeliteProcessService,
+            pipeliteStageService,
+            pipeliteLockService);
 
     ProcessInstance processInstance = processFactory.create(processId);
     if (processInstance == null) {

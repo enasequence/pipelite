@@ -8,10 +8,9 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.server;
+package pipelite.launcher;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.util.TestPropertyValues;
@@ -19,30 +18,27 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import pipelite.FullTestConfiguration;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.LauncherConfiguration;
+import pipelite.FullTestConfiguration;
 import pipelite.configuration.ProcessConfiguration;
-import pipelite.service.PipeliteProcessService;
-import pipelite.service.PipeliteStageService;
 
 @SpringBootTest(
     classes = FullTestConfiguration.class,
     properties = {
+      "pipelite.launcher.workers=5",
+      "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver",
       "spring.autoconfigure.exclude="
           + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
           + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
           + "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration"
     })
-@ContextConfiguration(initializers = InMemoryResumePipeliteLauncherTest.TestContextInitializer.class)
+@ContextConfiguration(
+    initializers = InMemorySuccessPipeliteLauncherTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"test", "memory"})
-public class InMemoryResumePipeliteLauncherTest {
+public class InMemorySuccessPipeliteLauncherTest {
 
-  @Autowired private LauncherConfiguration launcherConfiguration;
+  @Autowired private PipeliteLauncher pipeliteLauncher;
   @Autowired private ProcessConfiguration processConfiguration;
-  @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
-  @Autowired private PipeliteProcessService pipeliteProcessService;
-  @Autowired private PipeliteStageService pipeliteStageService;
 
   public static class TestContextInitializer
       implements ApplicationContextInitializer<ConfigurableApplicationContext> {
@@ -56,50 +52,9 @@ public class InMemoryResumePipeliteLauncherTest {
   }
 
   @Test
-  public void testSuccess() {
-    PollablePipeliteLauncherTester tester =
-        new PollablePipeliteLauncherTester(
-            launcherConfiguration,
-            processConfiguration,
-            pipeliteLauncherObjectProvider,
-            pipeliteProcessService,
-            pipeliteStageService);
-    tester.testSuccess();
-  }
-
-  @Test
-  public void testPermanentError() {
-    PollablePipeliteLauncherTester tester =
-        new PollablePipeliteLauncherTester(
-            launcherConfiguration,
-            processConfiguration,
-            pipeliteLauncherObjectProvider,
-            pipeliteProcessService,
-            pipeliteStageService);
-    tester.testPermanentError();
-  }
-
-  @Test
-  public void testTransientError() {
-    PollablePipeliteLauncherTester tester =
-        new PollablePipeliteLauncherTester(
-            launcherConfiguration,
-            processConfiguration,
-            pipeliteLauncherObjectProvider,
-            pipeliteProcessService,
-            pipeliteStageService);
-    tester.testTransientError();
-  }
-
-  @Test
-  public void testException() {
-    PollablePipeliteLauncherTester tester =
-        new PollablePipeliteLauncherTester(
-            launcherConfiguration,
-            processConfiguration,
-            pipeliteLauncherObjectProvider,
-            pipeliteProcessService,
-            pipeliteStageService);
-    tester.testException();
+  public void test() {
+    SuccessPipeliteLauncherTester tester =
+        new SuccessPipeliteLauncherTester(pipeliteLauncher, processConfiguration);
+    tester.test();
   }
 }

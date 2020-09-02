@@ -1,4 +1,4 @@
-package pipelite.server;
+package pipelite.launcher;
 
 public enum ShutdownPolicy {
   SHUTDOWN_IF_IDLE,
