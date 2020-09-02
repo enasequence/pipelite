@@ -40,8 +40,8 @@ public class DatabaseFailingPipeliteLauncherTest {
   @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
 
   private static final String PROCESS_NAME = UniqueStringGenerator.randomProcessName();
-  private static final int PROCESS_CNT = 10;
-  private static final Duration SCHEDULER_DELAY = Duration.ofMillis(100);
+  private static final int PROCESS_CNT = 5;
+  private static final Duration SCHEDULER_DELAY = Duration.ofMillis(250);
 
   private PipeliteLauncher init(List<ProcessInstance> processInstances, ProcessSource processSource) {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();

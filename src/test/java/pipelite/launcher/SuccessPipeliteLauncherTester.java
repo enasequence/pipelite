@@ -28,8 +28,8 @@ public class SuccessPipeliteLauncherTester {
   private final AtomicInteger processExecutionCount = new AtomicInteger();
   private final Set<String> processExecutionSet = ConcurrentHashMap.newKeySet();
   private final Set<String> processExcessExecutionSet = ConcurrentHashMap.newKeySet();
-  private static final int PROCESS_COUNT = 100;
-  private static final Duration SCHEDULER_DELAY = Duration.ofMillis(100);
+  private static final int PROCESS_COUNT = 10;
+  private static final Duration SCHEDULER_DELAY = Duration.ofMillis(250);
   private static final Duration TASK_EXECUTION_TIME = Duration.ofMillis(10);
 
   private TaskExecutor createTaskExecutor(String processId) {

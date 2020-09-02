@@ -63,8 +63,8 @@ public class PollablePipeliteLauncherTester {
   }
 
   private static final int WORKERS_CNT = 2;
-  private static final int PROCESS_CNT = 10;
-  private static final Duration DELAY_DURATION = Duration.ofMillis(100);
+  private static final int PROCESS_CNT = 4;
+  private static final Duration SCHEDULER_DELAY = Duration.ofMillis(250);
 
   private static AtomicInteger successPollCount;
   private static AtomicInteger successExecuteCount;
@@ -86,7 +86,7 @@ public class PollablePipeliteLauncherTester {
             pipeliteLockService);
 
     pipeliteLauncher.setShutdownPolicy(ShutdownPolicy.SHUTDOWN_IF_IDLE);
-    pipeliteLauncher.setSchedulerDelay(DELAY_DURATION);
+    pipeliteLauncher.setSchedulerDelay(SCHEDULER_DELAY);
     return pipeliteLauncher;
   }
 
