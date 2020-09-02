@@ -24,8 +24,8 @@ import org.springframework.stereotype.Component;
 import pipelite.configuration.*;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
-import pipelite.executor.PollableTaskExecutor;
-import pipelite.executor.SerializableTaskExecutor;
+import pipelite.executor.PollableExecutor;
+import pipelite.executor.SerializableExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.process.ProcessInstance;
 import pipelite.log.LogKey;
@@ -362,9 +362,9 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
         && pipeliteStage.getExecutorData() != null) {
       try {
         executor =
-            SerializableTaskExecutor.deserialize(
+            SerializableExecutor.deserialize(
                 pipeliteStage.getExecutorName(), pipeliteStage.getExecutorData());
-        if (!(executor instanceof PollableTaskExecutor)) {
+        if (!(executor instanceof PollableExecutor)) {
           executor = null;
         }
       } catch (Exception ex) {
@@ -379,7 +379,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
 
       if (executor != null) {
         try {
-          result = ((PollableTaskExecutor) executor).poll(taskInstance);
+          result = ((PollableExecutor) executor).poll(taskInstance);
           ++taskRecoverCount;
         } catch (Exception ex) {
           ++taskRecoverFailedCount;
@@ -408,10 +408,10 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
       }
     }
 
-    if (result.isActive() && executor instanceof PollableTaskExecutor) {
+    if (result.isActive() && executor instanceof PollableExecutor) {
       // Save the task executor details required for polling.
       pipeliteStageService.saveStage(pipeliteStage);
-      result = ((PollableTaskExecutor) executor).poll(taskInstance);
+      result = ((PollableExecutor) executor).poll(taskInstance);
     }
 
     pipeliteStage.endExecution(

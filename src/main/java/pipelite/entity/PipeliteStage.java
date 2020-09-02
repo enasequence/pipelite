@@ -3,7 +3,7 @@ package pipelite.entity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import pipelite.executor.SerializableTaskExecutor;
+import pipelite.executor.SerializableExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultType;
@@ -78,9 +78,9 @@ public class PipeliteStage {
     pipeliteStage.setStageName(stageName);
     pipeliteStage.setResultType(TaskExecutionResultType.NEW);
     pipeliteStage.setExecutionCount(0);
-    if (taskExecutor instanceof SerializableTaskExecutor) {
+    if (taskExecutor instanceof SerializableExecutor) {
       pipeliteStage.setExecutorName(taskExecutor.getClass().getName());
-      pipeliteStage.setExecutorData(((SerializableTaskExecutor) taskExecutor).serialize());
+      pipeliteStage.setExecutorData(((SerializableExecutor) taskExecutor).serialize());
     }
     return pipeliteStage;
   }
@@ -93,9 +93,9 @@ public class PipeliteStage {
     this.executionCmd = null;
     this.stdOut = null;
     this.stdErr = null;
-    if (taskExecutor instanceof SerializableTaskExecutor) {
+    if (taskExecutor instanceof SerializableExecutor) {
       this.executorName = taskExecutor.getClass().getName();
-      this.executorData = ((SerializableTaskExecutor) taskExecutor).serialize();
+      this.executorData = ((SerializableExecutor) taskExecutor).serialize();
     }
   }
 

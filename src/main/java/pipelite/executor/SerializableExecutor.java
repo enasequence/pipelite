@@ -3,7 +3,7 @@ package pipelite.executor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
-public interface SerializableTaskExecutor extends TaskExecutor {
+public interface SerializableExecutor extends TaskExecutor {
 
   default String serialize() {
     ObjectMapper objectMapper = new ObjectMapper();

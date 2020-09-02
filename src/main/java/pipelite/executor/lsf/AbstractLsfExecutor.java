@@ -1,7 +1,7 @@
 package pipelite.executor.lsf;
 
 import lombok.extern.flogger.Flogger;
-import pipelite.executor.PollableTaskExecutor;
+import pipelite.executor.PollableExecutor;
 import pipelite.executor.call.AbstractCallExecutor;
 import pipelite.log.LogKey;
 import pipelite.task.TaskExecutionResult;
@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 
 @Flogger
 public abstract class AbstractLsfExecutor extends AbstractCallExecutor
-    implements PollableTaskExecutor {
+    implements PollableExecutor {
 
   private String jobId;
   private String stdoutFile;

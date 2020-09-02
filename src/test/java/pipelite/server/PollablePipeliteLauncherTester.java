@@ -9,7 +9,7 @@ import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
-import pipelite.executor.PollableTaskExecutor;
+import pipelite.executor.PollableExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.process.ProcessInstance;
 import pipelite.process.ProcessBuilder;
@@ -60,7 +60,7 @@ public class PollablePipeliteLauncherTester {
   }
 
   @Value
-  public static class SuccessTaskExecutor implements PollableTaskExecutor {
+  public static class SuccessTaskExecutor implements PollableExecutor {
     @Override
     public TaskExecutionResult execute(TaskInstance taskInstance) {
       successExecuteCount.incrementAndGet();
@@ -75,7 +75,7 @@ public class PollablePipeliteLauncherTester {
   }
 
   @Value
-  public static class PermanentErrorTaskExecutor implements PollableTaskExecutor {
+  public static class PermanentErrorTaskExecutor implements PollableExecutor {
     @Override
     public TaskExecutionResult execute(TaskInstance taskInstance) {
       permanentErrorExecuteCount.incrementAndGet();
@@ -90,7 +90,7 @@ public class PollablePipeliteLauncherTester {
   }
 
   @Value
-  public static class TransientErrorTaskExecutor implements PollableTaskExecutor {
+  public static class TransientErrorTaskExecutor implements PollableExecutor {
     @Override
     public TaskExecutionResult execute(TaskInstance taskInstance) {
       transientErrorExecuteCount.incrementAndGet();
@@ -105,7 +105,7 @@ public class PollablePipeliteLauncherTester {
   }
 
   @Value
-  public static class ExceptionTaskExecutor implements PollableTaskExecutor {
+  public static class ExceptionTaskExecutor implements PollableExecutor {
     @Override
     public TaskExecutionResult execute(TaskInstance taskInstance) {
       exceptionExecuteCount.incrementAndGet();

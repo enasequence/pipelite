@@ -1,6 +1,7 @@
 package pipelite.executor.lsf;
 
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.call.AbstractSshCallExecutor;
@@ -12,6 +13,7 @@ import pipelite.task.TaskInstance;
 @Flogger
 @Value
 @Builder
+@EqualsAndHashCode(callSuper=true)
 public final class SshCallLsfExecutor extends AbstractLsfExecutor {
   private final Cmd cmd;
 

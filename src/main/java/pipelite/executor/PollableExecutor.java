@@ -5,7 +5,7 @@ import pipelite.task.TaskInstance;
 
 import java.time.Duration;
 
-public interface PollableTaskExecutor extends SerializableTaskExecutor {
+public interface PollableExecutor extends SerializableExecutor {
 
   TaskExecutionResult poll(TaskInstance taskinstance);
 

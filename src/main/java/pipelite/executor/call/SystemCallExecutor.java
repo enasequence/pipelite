@@ -1,6 +1,7 @@
 package pipelite.executor.call;
 
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import pipelite.task.TaskInstance;
@@ -8,6 +9,7 @@ import pipelite.task.TaskInstance;
 @Flogger
 @Value
 @Builder
+@EqualsAndHashCode(callSuper=true)
 public final class SystemCallExecutor extends AbstractSystemCallExecutor {
   private final Cmd cmd;
 
