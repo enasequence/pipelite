@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@AllArgsConstructor
 public class PollablePipeliteLauncherTester {
 
   private final LauncherConfiguration launcherConfiguration;
@@ -39,18 +38,42 @@ public class PollablePipeliteLauncherTester {
   private final PipeliteStageService pipeliteStageService;
   private final PipeliteLockService pipeliteLockService;
 
+  public PollablePipeliteLauncherTester(
+      LauncherConfiguration launcherConfiguration,
+      ProcessConfiguration processConfiguration,
+      TaskConfiguration taskConfiguration,
+      PipeliteProcessService pipeliteProcessService,
+      PipeliteStageService pipeliteStageService,
+      PipeliteLockService pipeliteLockService) {
+    this.launcherConfiguration = launcherConfiguration;
+    this.processConfiguration = processConfiguration;
+    this.taskConfiguration = taskConfiguration;
+    this.pipeliteProcessService = pipeliteProcessService;
+    this.pipeliteStageService = pipeliteStageService;
+    this.pipeliteLockService = pipeliteLockService;
+
+    successPollCount = new AtomicInteger();
+    successExecuteCount = new AtomicInteger();
+    permanentErrorPollCount = new AtomicInteger();
+    permanentErrorExecuteCount = new AtomicInteger();
+    transientErrorPollCount = new AtomicInteger();
+    transientErrorExecuteCount = new AtomicInteger();
+    exceptionPollCount = new AtomicInteger();
+    exceptionExecuteCount = new AtomicInteger();
+  }
+
   private static final int WORKERS_CNT = 2;
   private static final int PROCESS_CNT = 10;
   private static final Duration DELAY_DURATION = Duration.ofMillis(100);
 
-  private static final AtomicInteger successPollCount = new AtomicInteger();
-  private static final AtomicInteger successExecuteCount = new AtomicInteger();
-  private static final AtomicInteger permanentErrorPollCount = new AtomicInteger();
-  private static final AtomicInteger permanentErrorExecuteCount = new AtomicInteger();
-  private static final AtomicInteger transientErrorPollCount = new AtomicInteger();
-  private static final AtomicInteger transientErrorExecuteCount = new AtomicInteger();
-  private static final AtomicInteger exceptionPollCount = new AtomicInteger();
-  private static final AtomicInteger exceptionExecuteCount = new AtomicInteger();
+  private static AtomicInteger successPollCount;
+  private static AtomicInteger successExecuteCount;
+  private static AtomicInteger permanentErrorPollCount;
+  private static AtomicInteger permanentErrorExecuteCount;
+  private static AtomicInteger transientErrorPollCount;
+  private static AtomicInteger transientErrorExecuteCount;
+  private static AtomicInteger exceptionPollCount;
+  private static AtomicInteger exceptionExecuteCount;
 
   private PipeliteLauncher pipeliteLauncher() {
     PipeliteLauncher pipeliteLauncher =
