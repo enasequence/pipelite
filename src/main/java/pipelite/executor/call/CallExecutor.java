@@ -28,4 +28,30 @@ public interface CallExecutor extends TaskExecutor {
   }
 
   Resolver getResolver();
+
+  default String getWorkDir(TaskInstance taskInstance) {
+    if (taskInstance.getTaskParameters().getWorkDir() != null) {
+      return taskInstance.getTaskParameters().getWorkDir();
+    } else {
+      return "";
+    }
+  }
+
+  default String getWorkFile(TaskInstance taskInstance, String prefix, String suffix) {
+    String workDir = getWorkDir(taskInstance);
+    if (!workDir.isEmpty() && !workDir.endsWith("/")) {
+      workDir += "/";
+    }
+    return workDir
+        + "pipelite-"
+        + prefix
+        + "-"
+        + taskInstance.getProcessName()
+        + "_"
+        + taskInstance.getProcessId()
+        + "_"
+        + taskInstance.getTaskName()
+        + "."
+        + suffix;
+  }
 }

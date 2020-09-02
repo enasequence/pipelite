@@ -57,8 +57,8 @@ public class InMemoryResumePipeliteLauncherTest {
 
   @Test
   public void testSuccess() {
-    ResumePipeliteLauncherTester tester =
-        new ResumePipeliteLauncherTester(
+    PollablePipeliteLauncherTester tester =
+        new PollablePipeliteLauncherTester(
             launcherConfiguration,
             processConfiguration,
             pipeliteLauncherObjectProvider,
@@ -69,8 +69,8 @@ public class InMemoryResumePipeliteLauncherTest {
 
   @Test
   public void testPermanentError() {
-    ResumePipeliteLauncherTester tester =
-        new ResumePipeliteLauncherTester(
+    PollablePipeliteLauncherTester tester =
+        new PollablePipeliteLauncherTester(
             launcherConfiguration,
             processConfiguration,
             pipeliteLauncherObjectProvider,
@@ -81,8 +81,8 @@ public class InMemoryResumePipeliteLauncherTest {
 
   @Test
   public void testTransientError() {
-    ResumePipeliteLauncherTester tester =
-        new ResumePipeliteLauncherTester(
+    PollablePipeliteLauncherTester tester =
+        new PollablePipeliteLauncherTester(
             launcherConfiguration,
             processConfiguration,
             pipeliteLauncherObjectProvider,
@@ -93,8 +93,8 @@ public class InMemoryResumePipeliteLauncherTest {
 
   @Test
   public void testException() {
-    ResumePipeliteLauncherTester tester =
-        new ResumePipeliteLauncherTester(
+    PollablePipeliteLauncherTester tester =
+        new PollablePipeliteLauncherTester(
             launcherConfiguration,
             processConfiguration,
             pipeliteLauncherObjectProvider,

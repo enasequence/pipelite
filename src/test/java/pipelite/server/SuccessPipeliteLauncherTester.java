@@ -45,7 +45,7 @@ public class SuccessPipeliteLauncherTester {
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
-      return TaskExecutionResult.defaultSuccess();
+      return TaskExecutionResult.success();
     };
   }
 

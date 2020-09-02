@@ -29,7 +29,7 @@ public class TaskParametersUtils {
 
   public static String getTempDir(
       TaskParameters taskParameters, TaskConfiguration taskConfiguration) {
-    return getValue(taskParameters::getTempDir, taskConfiguration::getTempDir);
+    return getValue(taskParameters::getWorkDir, taskConfiguration::getWorkDir);
   }
 
   public static String[] getEnv(
@@ -55,6 +55,11 @@ public class TaskParametersUtils {
   public static String getQueue(
       TaskParameters taskParameters, TaskConfiguration taskConfiguration) {
     return getValue(taskParameters::getQueue, taskConfiguration::getQueue);
+  }
+
+  public static Duration getPollFrequency(
+          TaskParameters taskParameters, TaskConfiguration taskConfiguration) {
+    return getValue(taskParameters::getPollFrequency, taskConfiguration::getPollFrequency);
   }
 
   private static <T> T getValue(Supplier<T> taskInstance, Supplier<T> taskConfiguration) {

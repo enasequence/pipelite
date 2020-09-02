@@ -26,19 +26,19 @@ public class SshCallInternalExecutorTest {
 
   public static class SuccessTaskExecutor implements TaskExecutor {
     @Override
-    public TaskExecutionResult execute(TaskInstance instance) {
+    public TaskExecutionResult execute(TaskInstance taskInstance) {
       System.out.print("test stdout");
       System.err.print("test stderr");
-      return TaskExecutionResult.defaultSuccess();
+      return TaskExecutionResult.success();
     }
   }
 
   public static class PermanentErrorTaskExecutor implements TaskExecutor {
     @Override
-    public TaskExecutionResult execute(TaskInstance instance) {
+    public TaskExecutionResult execute(TaskInstance taskInstance) {
       System.out.print("test stdout");
       System.err.print("test stderr");
-      return TaskExecutionResult.defaultPermanentError();
+      return TaskExecutionResult.permanentError();
     }
   }
 

@@ -27,7 +27,7 @@ public class InternalExecutorTest {
     TaskExecutor taskExecutor =
         taskInstance -> {
           taskExecutionCount.getAndIncrement();
-          return TaskExecutionResult.defaultSuccess();
+          return TaskExecutionResult.success();
         };
 
     TaskParameters taskParameters = TaskParameters.builder().build();
@@ -43,7 +43,7 @@ public class InternalExecutorTest {
             .build();
 
     TaskExecutionResult result = internalExecutor.execute(taskInstance);
-    assertThat(result).isEqualTo(TaskExecutionResult.defaultSuccess());
+    assertThat(result).isEqualTo(TaskExecutionResult.success());
     assertThat(taskExecutionCount.get()).isEqualTo(1);
   }
 }

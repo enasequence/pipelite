@@ -54,8 +54,8 @@ public class LSFTaskExecutor implements TaskExecutor {
     }
 
     LSFBackEnd back_end = new LSFBackEnd(queue, memory, (int) memoryTimeout.toMinutes(), cores);
-    if (taskInstance.getTaskParameters().getTempDir() != null) {
-      back_end.setOutputFolderPath(Paths.get(taskInstance.getTaskParameters().getTempDir()));
+    if (taskInstance.getTaskParameters().getWorkDir() != null) {
+      back_end.setOutputFolderPath(Paths.get(taskInstance.getTaskParameters().getWorkDir()));
     }
     return back_end;
   }
@@ -84,7 +84,7 @@ public class LSFTaskExecutor implements TaskExecutor {
         taskInstance
             .getResolver()
             .serializer()
-            .serialize(TaskExecutionResult.defaultInternalError()));
+            .serialize(TaskExecutionResult.internalError()));
 
     log.atInfo().log(call.getCommandLine());
 
@@ -99,7 +99,7 @@ public class LSFTaskExecutor implements TaskExecutor {
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR, call.getStderr());
       return result;
     } catch (Exception ex) {
-      TaskExecutionResult result = TaskExecutionResult.defaultInternalError();
+      TaskExecutionResult result = TaskExecutionResult.internalError();
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_HOST, call.getHost());
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND, call.getCommandLine());
       result.addExceptionAttribute(ex);

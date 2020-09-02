@@ -1,19 +1,18 @@
 package pipelite.task;
 
-import lombok.EqualsAndHashCode;
-import lombok.NonNull;
-import lombok.Value;
+import lombok.*;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
-@Value
+@Data
+@AllArgsConstructor
 public class TaskExecutionResult {
 
-  @NonNull private final String result;
-  @NonNull private final TaskExecutionResultType resultType;
+  @NonNull private String result;
+  @NonNull private TaskExecutionResultType resultType;
   @EqualsAndHashCode.Exclude private final Map<String, String> attributes = new HashMap<>();
 
   public static final String STANDARD_ATTRIBUTE_HOST = "host";
@@ -23,6 +22,10 @@ public class TaskExecutionResult {
   public static final String STANDARD_ATTRIBUTE_EXCEPTION = "exception";
   public static final String STANDARD_ATTRIBUTE_COMMAND = "command";
   public static final String STANDARD_ATTRIBUTE_EXIT_CODE = "exit code";
+
+  public boolean isActive() {
+    return resultType == TaskExecutionResultType.ACTIVE;
+  }
 
   public boolean isSuccess() {
     return resultType == TaskExecutionResultType.SUCCESS;
@@ -44,24 +47,24 @@ public class TaskExecutionResult {
     return resultType == TaskExecutionResultType.INTERNAL_ERROR;
   }
 
-  public static TaskExecutionResult defaultSuccess() {
+  public static TaskExecutionResult active() {
+    return new TaskExecutionResult("ACTIVE", TaskExecutionResultType.ACTIVE);
+  }
+
+  public static TaskExecutionResult success() {
     return new TaskExecutionResult("SUCCESS", TaskExecutionResultType.SUCCESS);
   }
 
-  public static TaskExecutionResult defaultTransientError() {
+  public static TaskExecutionResult transientError() {
     return new TaskExecutionResult("TRANSIENT ERROR", TaskExecutionResultType.TRANSIENT_ERROR);
   }
 
-  public static TaskExecutionResult defaultPermanentError() {
+  public static TaskExecutionResult permanentError() {
     return new TaskExecutionResult("PERMANENT ERROR", TaskExecutionResultType.PERMANENT_ERROR);
   }
 
-  public static TaskExecutionResult defaultInternalError() {
+  public static TaskExecutionResult internalError() {
     return new TaskExecutionResult("INTERNAL ERROR", TaskExecutionResultType.INTERNAL_ERROR);
-  }
-
-  public static TaskExecutionResult resumeTransientError() {
-    return new TaskExecutionResult("RESUME ERROR", TaskExecutionResultType.TRANSIENT_ERROR);
   }
 
   public String getAttribute(String value) {

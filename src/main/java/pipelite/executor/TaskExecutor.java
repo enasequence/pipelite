@@ -14,5 +14,5 @@ import pipelite.task.TaskInstance;
 import pipelite.task.TaskExecutionResult;
 
 public interface TaskExecutor {
-  TaskExecutionResult execute(TaskInstance instance);
+  TaskExecutionResult execute(TaskInstance taskInstance);
 }

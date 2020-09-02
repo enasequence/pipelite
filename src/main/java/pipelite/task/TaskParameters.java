@@ -18,11 +18,12 @@ public class TaskParameters {
   private Duration timeout;
   private Integer retries;
   private String[] env;
-  private String tempDir;
+  private String workDir;
   private Integer memory;
   private Duration memoryTimeout;
   private Integer cores;
   private String queue;
+  private Duration pollFrequency;
 
   /* Add parameters. Existing values will not be replaced. */
   public void add(TaskConfiguration taskConfiguration) {
@@ -33,11 +34,12 @@ public class TaskParameters {
     setTimeout(TaskParametersUtils.getTimeout(this, taskConfiguration));
     setRetries(TaskParametersUtils.getRetries(this, taskConfiguration));
     setEnv(TaskParametersUtils.getEnv(this, taskConfiguration));
-    setTempDir(TaskParametersUtils.getTempDir(this, taskConfiguration));
+    setWorkDir(TaskParametersUtils.getTempDir(this, taskConfiguration));
     setMemory(TaskParametersUtils.getMemory(this, taskConfiguration));
     setMemoryTimeout(TaskParametersUtils.getMemoryTimeout(this, taskConfiguration));
     setCores(TaskParametersUtils.getCores(this, taskConfiguration));
     setQueue(TaskParametersUtils.getQueue(this, taskConfiguration));
+    setPollFrequency(TaskParametersUtils.getPollFrequency(this, taskConfiguration));
   }
 
   public List<String> getEnvAsJavaSystemPropertyOptions() {

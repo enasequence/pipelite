@@ -3,7 +3,6 @@ package pipelite.entity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import pipelite.executor.ResumableTaskExecutor;
 import pipelite.executor.SerializableTaskExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.task.TaskExecutionResult;

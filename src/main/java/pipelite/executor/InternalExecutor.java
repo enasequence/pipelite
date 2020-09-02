@@ -43,7 +43,7 @@ public class InternalExecutor implements TaskExecutor {
         result.addExceptionAttribute(ex);
       }
     } catch (Exception ex) {
-      result = TaskExecutionResult.defaultInternalError();
+      result = TaskExecutionResult.internalError();
       result.addExceptionAttribute(ex);
     }
     return result;

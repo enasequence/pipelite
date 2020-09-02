@@ -9,7 +9,7 @@ public class DefaultExitCodeResolver extends ExitCodeResolver {
     super(
         ExitCodeResolver.builder()
             .success(
-                TaskExecutionResult.defaultSuccess().getResult(),
+                TaskExecutionResult.success().getResult(),
                 TaskExecutionResultExitCodeSerializer.EXIT_CODE_DEFAULT_SUCCESS)
             .build());
   }

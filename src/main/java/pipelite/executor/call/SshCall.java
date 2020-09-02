@@ -6,7 +6,6 @@ import org.apache.sshd.client.channel.ClientChannel;
 import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.session.SessionHeartbeatController;
-import pipelite.executor.call.CallExecutor;
 import pipelite.executor.stream.KeepOldestByteArrayOutputStream;
 import pipelite.task.TaskParameters;
 

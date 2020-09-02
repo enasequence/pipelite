@@ -17,32 +17,34 @@ public class TaskConfiguration {
   public TaskConfiguration() {}
 
   /** Remote host. */
-  public String host;
+  private String host;
 
   /** Execution timeout. */
-  public Duration timeout;
+  private Duration timeout;
 
   /** Memory reservation (MBytes). */
-  public Integer memory;
+  private Integer memory;
 
   /** Memory reservation timeout (minutes). */
-  public Duration memoryTimeout;
+  private Duration memoryTimeout;
 
   /** Core reservation. */
-  public Integer cores;
+  private Integer cores;
 
   /** Queue name. */
-  public String queue;
+  private String queue;
 
   /** Number of retries. */
-  public Integer retries;
+  private Integer retries;
 
-  /** Temporary directory. */
-  public String tempDir;
+  /** Work directory. */
+  private String workDir;
 
   /** Environmental variables. */
   private String[] env;
 
   /** Name of the resolver class for task execution results. */
   private String resolver;
+
+  private Duration pollFrequency;
 }

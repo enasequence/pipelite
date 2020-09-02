@@ -56,8 +56,8 @@ public class DatabaseResumePipeliteLauncherTest {
 
   @Test
   public void testSuccess() {
-    ResumePipeliteLauncherTester tester =
-        new ResumePipeliteLauncherTester(
+    PollablePipeliteLauncherTester tester =
+        new PollablePipeliteLauncherTester(
             launcherConfiguration,
             processConfiguration,
             pipeliteLauncherObjectProvider,
@@ -68,8 +68,8 @@ public class DatabaseResumePipeliteLauncherTest {
 
   @Test
   public void testPermanentError() {
-    ResumePipeliteLauncherTester tester =
-        new ResumePipeliteLauncherTester(
+    PollablePipeliteLauncherTester tester =
+        new PollablePipeliteLauncherTester(
             launcherConfiguration,
             processConfiguration,
             pipeliteLauncherObjectProvider,
@@ -80,8 +80,8 @@ public class DatabaseResumePipeliteLauncherTest {
 
   @Test
   public void testTransientError() {
-    ResumePipeliteLauncherTester tester =
-        new ResumePipeliteLauncherTester(
+    PollablePipeliteLauncherTester tester =
+        new PollablePipeliteLauncherTester(
             launcherConfiguration,
             processConfiguration,
             pipeliteLauncherObjectProvider,
@@ -92,8 +92,8 @@ public class DatabaseResumePipeliteLauncherTest {
 
   @Test
   public void testException() {
-    ResumePipeliteLauncherTester tester =
-        new ResumePipeliteLauncherTester(
+    PollablePipeliteLauncherTester tester =
+        new PollablePipeliteLauncherTester(
             launcherConfiguration,
             processConfiguration,
             pipeliteLauncherObjectProvider,

@@ -35,7 +35,7 @@ public class ExitCodeResolver implements ResultResolver<Integer> {
     if (cause == null) {
       log.atSevere().log(
           "Returning default permanent error. No task execution result for null exit code");
-      return TaskExecutionResult.defaultPermanentError();
+      return TaskExecutionResult.permanentError();
     }
     for (Map.Entry<Integer, TaskExecutionResult> entry : map.entrySet()) {
       if (entry.getKey().equals(cause)) {
@@ -45,7 +45,7 @@ public class ExitCodeResolver implements ResultResolver<Integer> {
     log.atSevere().log(
         "Returning default permanent error. No task execution result for exit code: %s",
         cause.toString());
-    return TaskExecutionResult.defaultPermanentError();
+    return TaskExecutionResult.permanentError();
   }
 
   @Override

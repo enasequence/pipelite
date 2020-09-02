@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.PipeliteStage;
 import pipelite.executor.SuccessTaskExecutor;
-import pipelite.executor.TaskExecutor;
 import pipelite.task.TaskExecutionResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,7 +27,7 @@ class PipeliteInMemoryStageServiceTest {
 
     assertThat(service.getSavedStage(processName, processId, stageName).get()).isEqualTo(stage);
 
-    stage.endExecution(TaskExecutionResult.defaultSuccess(), "executionCmd", "stdOut", "stdErr");
+    stage.endExecution(TaskExecutionResult.success(), "executionCmd", "stdOut", "stdErr");
 
     service.saveStage(stage);
 

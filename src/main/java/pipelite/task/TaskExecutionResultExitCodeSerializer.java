@@ -7,9 +7,9 @@ import pipelite.resolver.ResultResolver;
 public class TaskExecutionResultExitCodeSerializer<T> implements TaskExecutionResultSerializer<T> {
 
   public static final int EXIT_CODE_DEFAULT_SUCCESS = 0;
-  public static final int EXIT_CODE_DEFAULT_TRANSIENT_ERROR = 253;
-  public static final int EXIT_CODE_DEFAULT_PERMANENT_ERROR = 254;
-  public static final int EXIT_CODE_DEFAULT_INTERNAL_ERROR = 255;
+  public static final int EXIT_CODE_DEFAULT_TRANSIENT_ERROR = 53;
+  public static final int EXIT_CODE_DEFAULT_PERMANENT_ERROR = 54;
+  public static final int EXIT_CODE_DEFAULT_INTERNAL_ERROR = 55;
 
   private final ResultResolver<T> resolver;
 
@@ -46,13 +46,13 @@ public class TaskExecutionResultExitCodeSerializer<T> implements TaskExecutionRe
     // Unknown result.
     switch (value) {
       case EXIT_CODE_DEFAULT_SUCCESS:
-        return TaskExecutionResult.defaultSuccess();
+        return TaskExecutionResult.success();
       case EXIT_CODE_DEFAULT_INTERNAL_ERROR:
-        return TaskExecutionResult.defaultInternalError();
+        return TaskExecutionResult.internalError();
       case EXIT_CODE_DEFAULT_TRANSIENT_ERROR:
-        return TaskExecutionResult.defaultTransientError();
+        return TaskExecutionResult.transientError();
       default:
-        return TaskExecutionResult.defaultPermanentError();
+        return TaskExecutionResult.permanentError();
     }
   }
 

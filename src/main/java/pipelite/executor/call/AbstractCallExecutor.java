@@ -7,9 +7,19 @@ import pipelite.task.TaskInstance;
 @Flogger
 public abstract class AbstractCallExecutor implements CallExecutor {
 
+  public String getDispatchCmd(TaskInstance taskInstance) {
+    return null;
+  }
+
+  public void extractDispatchJobId(TaskExecutionResult taskExecutionResult) {}
+
   @Override
   public TaskExecutionResult execute(TaskInstance taskInstance) {
     String cmd = getCmd(taskInstance);
+    String dispatchCommand = getDispatchCmd(taskInstance);
+    if (dispatchCommand != null) {
+      cmd = dispatchCommand + " " + cmd;
+    }
 
     try {
       CallResult callResult = getCall().call(cmd, taskInstance.getTaskParameters());
@@ -26,9 +36,10 @@ public abstract class AbstractCallExecutor implements CallExecutor {
 
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Failed call: %s", cmd);
-      TaskExecutionResult result = TaskExecutionResult.defaultInternalError();
+      TaskExecutionResult result = TaskExecutionResult.internalError();
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND, cmd);
       result.addExceptionAttribute(ex);
+      extractDispatchJobId(result);
       return result;
     }
   }

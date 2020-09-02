@@ -9,7 +9,7 @@ import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
-import pipelite.executor.ResumableTaskExecutor;
+import pipelite.executor.PollableTaskExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.process.ProcessInstance;
 import pipelite.process.ProcessBuilder;
@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @AllArgsConstructor
-public class ResumePipeliteLauncherTester {
+public class PollablePipeliteLauncherTester {
 
   private final LauncherConfiguration launcherConfiguration;
   private final ProcessConfiguration processConfiguration;
@@ -60,60 +60,60 @@ public class ResumePipeliteLauncherTester {
   }
 
   @Value
-  public static class SuccessTaskExecutor implements ResumableTaskExecutor {
+  public static class SuccessTaskExecutor implements PollableTaskExecutor {
     @Override
     public TaskExecutionResult execute(TaskInstance taskInstance) {
       successExecuteCount.incrementAndGet();
-      return TaskExecutionResult.defaultSuccess();
+      return TaskExecutionResult.success();
     }
 
     @Override
-    public TaskExecutionResult resume(TaskInstance taskInstance) {
+    public TaskExecutionResult poll(TaskInstance taskInstance) {
       successResumeCount.incrementAndGet();
-      return TaskExecutionResult.defaultSuccess();
+      return TaskExecutionResult.success();
     }
   }
 
   @Value
-  public static class PermanentErrorTaskExecutor implements ResumableTaskExecutor {
+  public static class PermanentErrorTaskExecutor implements PollableTaskExecutor {
     @Override
     public TaskExecutionResult execute(TaskInstance taskInstance) {
       permanentErrorExecuteCount.incrementAndGet();
-      return TaskExecutionResult.defaultSuccess();
+      return TaskExecutionResult.success();
     }
 
     @Override
-    public TaskExecutionResult resume(TaskInstance taskInstance) {
+    public TaskExecutionResult poll(TaskInstance taskInstance) {
       permanentErrorResumeCount.incrementAndGet();
-      return TaskExecutionResult.defaultPermanentError();
+      return TaskExecutionResult.permanentError();
     }
   }
 
   @Value
-  public static class TransientErrorTaskExecutor implements ResumableTaskExecutor {
+  public static class TransientErrorTaskExecutor implements PollableTaskExecutor {
     @Override
     public TaskExecutionResult execute(TaskInstance taskInstance) {
       transientErrorExecuteCount.incrementAndGet();
-      return TaskExecutionResult.defaultSuccess();
+      return TaskExecutionResult.success();
     }
 
     @Override
-    public TaskExecutionResult resume(TaskInstance taskInstance) {
+    public TaskExecutionResult poll(TaskInstance taskInstance) {
       transientErrorResumeCount.incrementAndGet();
-      return TaskExecutionResult.defaultTransientError();
+      return TaskExecutionResult.transientError();
     }
   }
 
   @Value
-  public static class ExceptionTaskExecutor implements ResumableTaskExecutor {
+  public static class ExceptionTaskExecutor implements PollableTaskExecutor {
     @Override
     public TaskExecutionResult execute(TaskInstance taskInstance) {
       exceptionExecuteCount.incrementAndGet();
-      return TaskExecutionResult.defaultSuccess();
+      return TaskExecutionResult.success();
     }
 
     @Override
-    public TaskExecutionResult resume(TaskInstance taskInstance) {
+    public TaskExecutionResult poll(TaskInstance taskInstance) {
       exceptionResumeCount.incrementAndGet();
       throw new RuntimeException();
     }

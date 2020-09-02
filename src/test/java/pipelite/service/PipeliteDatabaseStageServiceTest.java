@@ -9,7 +9,6 @@ import pipelite.UniqueStringGenerator;
 import pipelite.FullTestConfiguration;
 import pipelite.entity.PipeliteStage;
 import pipelite.executor.SuccessTaskExecutor;
-import pipelite.executor.TaskExecutor;
 import pipelite.task.TaskExecutionResult;
 
 import org.springframework.transaction.annotation.Transactional;
@@ -39,7 +38,7 @@ class PipeliteDatabaseStageServiceTest {
 
     assertThat(service.getSavedStage(processName, processId, stageName).get()).isEqualTo(stage);
 
-    stage.endExecution(TaskExecutionResult.defaultSuccess(), "executionCmd", "stdOut", "stdErr");
+    stage.endExecution(TaskExecutionResult.success(), "executionCmd", "stdOut", "stdErr");
 
     service.saveStage(stage);
 

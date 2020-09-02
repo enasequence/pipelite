@@ -33,7 +33,7 @@ public class ExceptionResolver implements ResultResolver<Throwable> {
     if (cause == null) {
       log.atSevere().log(
           "Returning default permanent error. No task execution result for null exception");
-      return TaskExecutionResult.defaultPermanentError();
+      return TaskExecutionResult.permanentError();
     }
     for (Map.Entry<Class<? extends Throwable>, TaskExecutionResult> entry : map.entrySet()) {
       if (entry.getKey().isInstance(cause)) {
@@ -43,7 +43,7 @@ public class ExceptionResolver implements ResultResolver<Throwable> {
     log.atSevere().log(
         "Returning default permanent error. No task execution result for exception: %s",
         cause.toString());
-    return TaskExecutionResult.defaultPermanentError();
+    return TaskExecutionResult.permanentError();
   }
 
   @Override

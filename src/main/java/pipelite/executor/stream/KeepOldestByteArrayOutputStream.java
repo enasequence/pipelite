@@ -24,7 +24,7 @@ public class KeepOldestByteArrayOutputStream extends ByteArrayOutputStream {
   @Override
   public synchronized void write(byte[] b, int off, int len) {
     if (count < buf.length) {
-      super.write(b, off, buf.length - count > len ? len : buf.length - count);
+      super.write(b, off, Math.min(buf.length - count, len));
     }
   }
 }

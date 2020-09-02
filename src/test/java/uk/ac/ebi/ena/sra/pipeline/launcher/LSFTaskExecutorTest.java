@@ -17,7 +17,6 @@ import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.executor.SuccessTaskExecutor;
-import pipelite.executor.TaskExecutor;
 import pipelite.task.TaskParameters;
 import pipelite.task.TaskInstance;
 import pipelite.resolver.ResultResolver;
@@ -31,7 +30,7 @@ public class LSFTaskExecutorTest {
     try {
       TaskParameters taskParameters =
           TaskParameters.builder()
-              .tempDir(Files.createTempDirectory("TEMP").toString())
+              .workDir(Files.createTempDirectory("TEMP").toString())
               .cores(1)
               .memory(1)
               .memoryTimeout(Duration.ofMinutes(1))
@@ -67,14 +66,14 @@ public class LSFTaskExecutorTest {
     assertTrue(cmd.contains(" -M 1 -R rusage[mem=1:duration=1]"));
     assertTrue(cmd.contains(" -n 1"));
     assertTrue(cmd.contains(" -q defaultQueue"));
-    assertTrue(cmd.contains(" -oo " + taskParameters.getTempDir()));
-    assertTrue(cmd.contains(" -eo " + taskParameters.getTempDir()));
+    assertTrue(cmd.contains(" -oo " + taskParameters.getWorkDir()));
+    assertTrue(cmd.contains(" -eo " + taskParameters.getWorkDir()));
   }
 
   @Test
   public void testNoTmpDir() {
     TaskParameters taskParameters = taskParameters();
-    taskParameters.setTempDir(null);
+    taskParameters.setWorkDir(null);
 
     LSFTaskExecutor se = new LSFTaskExecutor();
     String cmd = getCommandline(se.execute(taskInstance(taskParameters)));
@@ -116,8 +115,8 @@ public class LSFTaskExecutorTest {
     assertTrue(cmd.contains(" -M 2000 -R rusage[mem=2000:duration=1]"));
     assertTrue(cmd.contains(" -n 12"));
     assertTrue(cmd.contains(" -q defaultQueue"));
-    assertTrue(cmd.contains(" -oo " + taskParameters.getTempDir()));
-    assertTrue(cmd.contains(" -eo " + taskParameters.getTempDir()));
+    assertTrue(cmd.contains(" -oo " + taskParameters.getWorkDir()));
+    assertTrue(cmd.contains(" -eo " + taskParameters.getWorkDir()));
   }
 
   @Test
