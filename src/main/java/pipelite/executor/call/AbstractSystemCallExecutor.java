@@ -9,9 +9,4 @@ public abstract class AbstractSystemCallExecutor extends AbstractCallExecutor {
   public final Call getCall() {
     return new SystemCall();
   }
-
-  @Override
-  public Resolver getResolver() {
-    return (taskInstance, exitCode) -> taskInstance.getResolver().resolve(exitCode);
-  }
 }

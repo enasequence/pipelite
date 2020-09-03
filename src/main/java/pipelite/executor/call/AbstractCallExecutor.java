@@ -1,6 +1,7 @@
 package pipelite.executor.call;
 
 import lombok.extern.flogger.Flogger;
+import pipelite.task.TaskExecutionResultExitCode;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskInstance;
 
@@ -24,7 +25,8 @@ public abstract class AbstractCallExecutor implements CallExecutor {
     try {
       CallResult callResult = getCall().call(cmd, taskInstance.getTaskParameters());
 
-      TaskExecutionResult result = getResolver().resolve(taskInstance, callResult.getExitCode());
+      TaskExecutionResult result =
+          TaskExecutionResultExitCode.resolve(callResult.getExitCode());
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND, cmd);
       result.addAttribute(
           TaskExecutionResult.STANDARD_ATTRIBUTE_HOST, taskInstance.getTaskParameters().getHost());

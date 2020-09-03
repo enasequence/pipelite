@@ -43,8 +43,5 @@ public class TaskConfiguration {
   /** Environmental variables. */
   private String[] env;
 
-  /** Name of the resolver class for task execution results. */
-  private String resolver;
-
   private Duration pollFrequency;
 }

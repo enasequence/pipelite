@@ -8,10 +8,8 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.EmptyTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.TestConfiguration;
-import pipelite.executor.call.SshCallExecutor;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskParameters;
-import pipelite.resolver.ResultResolver;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultType;
 
@@ -43,7 +41,6 @@ public class SshCallExecutorTest {
             .taskName(taskName)
             // Executor is not required by SshCallTaskExecutor
             // .executor()
-            .resolver(ResultResolver.DEFAULT_EXIT_CODE_RESOLVER)
             .taskParameters(taskParameters)
             .build();
 

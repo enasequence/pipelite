@@ -32,9 +32,6 @@ public class LogKey {
   public static final MetadataKey<TaskExecutionResultType> TASK_EXECUTION_RESULT_TYPE =
       MetadataKey.single("task_execution_result_type", TaskExecutionResultType.class);
 
-  public static final MetadataKey<String> TASK_EXECUTION_RESULT =
-      MetadataKey.single("task_execution_result", String.class);
-
   public static final MetadataKey<Integer> PROCESS_EXECUTION_COUNT =
       MetadataKey.single("process_execution_count", Integer.class);
 
@@ -43,9 +40,6 @@ public class LogKey {
 
   public static final MetadataKey<String> TASK_EXECUTOR_CLASS_NAME =
       MetadataKey.single("task_executor_class_name", String.class);
-
-  public static final MetadataKey<String> TASK_RESULT_RESOLVER_CLASS_NAME =
-      MetadataKey.single("task_result_resolver_class_name", String.class);
 
   public static final MetadataKey<Integer> EXIT_CODE =
       MetadataKey.single("exit_code", Integer.class);

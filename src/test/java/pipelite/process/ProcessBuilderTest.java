@@ -3,11 +3,6 @@ package pipelite.process;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.executor.SuccessTaskExecutor;
-import pipelite.executor.TaskExecutor;
-import pipelite.process.ProcessBuilder;
-import pipelite.process.ProcessInstance;
-import pipelite.process.ProcessSource;
-import pipelite.resolver.ResultResolver;
 
 import java.util.stream.IntStream;
 
@@ -25,12 +20,12 @@ public class ProcessBuilderTest {
       return new ProcessBuilder(PROCESS_NAME, PROCESS_ID, 9)
           .task(
               UniqueStringGenerator.randomTaskName(),
-              new SuccessTaskExecutor(),
-              ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
+              new SuccessTaskExecutor()
+          )
           .taskDependsOnPrevious(
               UniqueStringGenerator.randomTaskName(),
-              new SuccessTaskExecutor(),
-              ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
+              new SuccessTaskExecutor()
+          )
           .build();
     }
 

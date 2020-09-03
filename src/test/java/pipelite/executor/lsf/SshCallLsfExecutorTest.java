@@ -7,7 +7,6 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.EmptyTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.TestConfiguration;
-import pipelite.resolver.ResultResolver;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultType;
 import pipelite.task.TaskInstance;
@@ -39,7 +38,6 @@ public class SshCallLsfExecutorTest {
             .processName(processName)
             .processId(processId)
             .taskName(taskName)
-            .resolver(ResultResolver.DEFAULT_EXIT_CODE_RESOLVER)
             .taskParameters(taskParameters)
             .build();
 

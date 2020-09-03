@@ -3,8 +3,6 @@ package pipelite.executor.lsf;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.executor.SuccessTaskExecutor;
-import pipelite.resolver.DefaultExitCodeResolver;
-import pipelite.resolver.ResultResolver;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskParameters;
@@ -41,7 +39,6 @@ public class AbstractLsfExecutorTest {
         .processId(UniqueStringGenerator.randomProcessId())
         .taskName(UniqueStringGenerator.randomTaskName())
         .executor(new SuccessTaskExecutor())
-        .resolver(ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
         .taskParameters(taskParameters)
         .build();
   }
@@ -60,11 +57,6 @@ public class AbstractLsfExecutorTest {
         @Override
         public String getCmd(TaskInstance taskInstance) {
           return "echo test";
-        }
-
-        @Override
-        public Resolver getResolver() {
-          return (taskInstance, exitCode) -> new DefaultExitCodeResolver().resolve(exitCode);
         }
       };
 

@@ -14,7 +14,6 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import pipelite.executor.TaskExecutor;
-import pipelite.resolver.ResultResolver;
 
 @Value
 @Builder
@@ -23,7 +22,6 @@ public class TaskInstance {
   private final String processId;
   private final String taskName;
   @EqualsAndHashCode.Exclude private final TaskExecutor executor;
-  @EqualsAndHashCode.Exclude private ResultResolver resolver;
   @EqualsAndHashCode.Exclude private final TaskInstance dependsOn;
   @EqualsAndHashCode.Exclude private final TaskParameters taskParameters;
 }

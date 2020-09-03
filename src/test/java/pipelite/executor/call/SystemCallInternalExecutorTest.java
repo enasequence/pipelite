@@ -4,9 +4,8 @@ import org.junit.jupiter.api.Test;
 import pipelite.executor.TaskExecutor;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskParameters;
-import pipelite.resolver.ResultResolver;
+import pipelite.task.TaskExecutionResultExitCode;
 import pipelite.task.TaskExecutionResult;
-import pipelite.task.TaskExecutionResultExitCodeSerializer;
 import pipelite.task.TaskExecutionResultType;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,7 +41,6 @@ public class SystemCallInternalExecutorTest {
         .processId(processId)
         .taskName(taskName)
         .executor(taskExecutor)
-        .resolver(ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
         .taskParameters(taskParameters)
         .build();
   }
@@ -66,8 +64,7 @@ public class SystemCallInternalExecutorTest {
                 + "'testProcess' "
                 + "'testProcessId' "
                 + "'testTaskName' "
-                + "'pipelite.executor.call.SystemCallInternalExecutorTest$SuccessTaskExecutor' "
-                + "'pipelite.resolver.DefaultExceptionResolver'");
+                + "'pipelite.executor.call.SystemCallInternalExecutorTest$SuccessTaskExecutor'");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT))
         .contains("test stdout");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR))
@@ -95,16 +92,13 @@ public class SystemCallInternalExecutorTest {
                 + "'testProcess' "
                 + "'testProcessId' "
                 + "'testTaskName' "
-                + "'pipelite.executor.call.SystemCallInternalExecutorTest$ErrorTaskExecutor' "
-                + "'pipelite.resolver.DefaultExceptionResolver'");
+                + "'pipelite.executor.call.SystemCallInternalExecutorTest$ErrorTaskExecutor'");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT))
         .contains("test stdout");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR))
         .contains("test stderr");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_EXIT_CODE))
-        .isEqualTo(
-            String.valueOf(
-                TaskExecutionResultExitCodeSerializer.EXIT_CODE_ERROR));
+        .isEqualTo(String.valueOf(TaskExecutionResultExitCode.EXIT_CODE_ERROR));
   }
 
   @Test

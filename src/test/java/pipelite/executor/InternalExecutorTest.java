@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskParameters;
-import pipelite.resolver.ResultResolver;
 import pipelite.task.TaskExecutionResult;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -38,7 +37,6 @@ public class InternalExecutorTest {
             .processId(processId)
             .taskName(taskName)
             .executor(taskExecutor)
-            .resolver(ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
             .taskParameters(taskParameters)
             .build();
 

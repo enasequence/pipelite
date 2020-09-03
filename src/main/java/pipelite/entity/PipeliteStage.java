@@ -1,5 +1,7 @@
 package pipelite.entity;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -33,12 +35,14 @@ public class PipeliteStage {
   @Column(name = "STAGE_NAME")
   private String stageName;
 
+  // TODO: change column name to EXEC_RESULT
   @Enumerated(EnumType.STRING)
   @Column(name = "EXEC_RESULT_TYPE", length = 15)
   private TaskExecutionResultType resultType;
 
-  @Column(name = "EXEC_RESULT")
-  private String result;
+  @Column(name = "EXEC_RESULT_MAP")
+  @Lob
+  private String resultMap;
 
   @Column(name = "EXEC_CNT")
   private Integer executionCount;
@@ -49,11 +53,6 @@ public class PipeliteStage {
   // TODO: change column name to EXEC_END
   @Column(name = "EXEC_DATE")
   private LocalDateTime endTime;
-
-  // TODO: consider if we should have this column
-  @Column(name = "EXEC_CMD_LINE")
-  @Lob
-  private String executionCmd;
 
   @Column(name = "EXEC_STDOUT")
   @Lob
@@ -87,10 +86,9 @@ public class PipeliteStage {
 
   public void retryExecution(TaskExecutor taskExecutor) {
     this.resultType = TaskExecutionResultType.ACTIVE;
-    this.result = null;
+    this.resultMap = null;
     this.startTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.endTime = null;
-    this.executionCmd = null;
     this.stdOut = null;
     this.stdErr = null;
     if (taskExecutor instanceof SerializableExecutor) {
@@ -101,10 +99,9 @@ public class PipeliteStage {
 
   public void resetExecution() {
     this.resultType = TaskExecutionResultType.NEW;
-    this.result = null;
+    this.resultMap = null;
     this.startTime = null;
     this.endTime = null;
-    this.executionCmd = null;
     this.stdOut = null;
     this.stdErr = null;
     this.executionCount = 0;
@@ -112,14 +109,19 @@ public class PipeliteStage {
     this.executorData = null;
   }
 
-  public void endExecution(
-      TaskExecutionResult result, String executionCmd, String stdOut, String stdErr) {
+  public void endExecution(TaskExecutionResult result) {
     this.resultType = result.getResultType();
-    this.result = result.getResult();
+    if (result.getAttributes() != null) {
+      try {
+        ObjectMapper mapper = new ObjectMapper();
+        this.resultMap =
+            mapper.writerWithDefaultPrettyPrinter().writeValueAsString(result.getAttributes());
+      } catch (JsonProcessingException ex) {
+      }
+    }
     this.endTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
-    this.executionCmd = executionCmd;
-    this.stdOut = stdOut;
-    this.stdErr = stdErr;
+    this.stdOut = result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT);
+    this.stdErr = result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR);
     this.executionCount++;
   }
 }

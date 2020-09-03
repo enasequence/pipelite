@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 
-import static pipelite.task.TaskExecutionResultExitCodeSerializer.EXIT_CODE_ERROR;
+import static pipelite.task.TaskExecutionResultExitCode.EXIT_CODE_ERROR;
 
 @Flogger
 public class SystemCall implements CallExecutor.Call {

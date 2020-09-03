@@ -14,7 +14,7 @@ import lombok.extern.flogger.Flogger;
 import pipelite.executor.call.utils.QuoteUtils;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskParameters;
-import pipelite.resolver.ResultResolver;
+import pipelite.task.TaskExecutionResultExitCode;
 import pipelite.task.TaskExecutionResult;
 
 import java.nio.file.Paths;
@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static pipelite.log.LogKey.*;
-import static pipelite.task.TaskExecutionResultExitCodeSerializer.EXIT_CODE_ERROR;
+import static pipelite.task.TaskExecutionResultExitCode.EXIT_CODE_ERROR;
 
 @Flogger
 public class InternalExecutor implements TaskExecutor {
@@ -35,13 +35,7 @@ public class InternalExecutor implements TaskExecutor {
 
     try {
       TaskExecutor taskExecutor = taskInstance.getExecutor();
-
-      try {
-        result = taskExecutor.execute(taskInstance);
-      } catch (Exception ex) {
-        result = taskInstance.getResolver().resolve(ex);
-        result.addExceptionAttribute(ex);
-      }
+      result = taskExecutor.execute(taskInstance);
     } catch (Exception ex) {
       result = TaskExecutionResult.error();
       result.addExceptionAttribute(ex);
@@ -54,14 +48,12 @@ public class InternalExecutor implements TaskExecutor {
     String processId = args[1];
     String taskName = args[2];
     String executorName = args[3];
-    String resolverName = args[4];
 
     log.atInfo()
         .with(PROCESS_NAME, processName)
         .with(PROCESS_ID, processId)
         .with(TASK_NAME, taskName)
         .with(TASK_EXECUTOR_CLASS_NAME, executorName)
-        .with(TASK_RESULT_RESOLVER_CLASS_NAME, resolverName)
         .log("System call to internal task executor");
 
     TaskExecutor executor = null;
@@ -73,24 +65,8 @@ public class InternalExecutor implements TaskExecutor {
           .with(PROCESS_ID, processId)
           .with(TASK_NAME, taskName)
           .with(TASK_EXECUTOR_CLASS_NAME, executorName)
-          .with(TASK_RESULT_RESOLVER_CLASS_NAME, resolverName)
           .withCause(ex)
           .log("Exception when creating task executor");
-      System.exit(EXIT_CODE_ERROR);
-    }
-
-    ResultResolver resolver = null;
-    try {
-      resolver = (ResultResolver) Class.forName(resolverName).newInstance();
-    } catch (Exception ex) {
-      log.atSevere()
-          .with(PROCESS_NAME, processName)
-          .with(PROCESS_ID, processId)
-          .with(TASK_NAME, taskName)
-          .with(TASK_EXECUTOR_CLASS_NAME, executorName)
-          .with(TASK_RESULT_RESOLVER_CLASS_NAME, resolverName)
-          .withCause(ex)
-          .log("Exception when creating result resolver");
       System.exit(EXIT_CODE_ERROR);
     }
 
@@ -110,7 +86,6 @@ public class InternalExecutor implements TaskExecutor {
               .processId(processId)
               .taskName(taskName)
               .executor(executor)
-              .resolver(resolver)
               .taskParameters(TaskParameters.builder().build())
               .build();
     } catch (Exception ex) {
@@ -119,7 +94,6 @@ public class InternalExecutor implements TaskExecutor {
           .with(PROCESS_ID, processId)
           .with(TASK_NAME, taskName)
           .with(TASK_EXECUTOR_CLASS_NAME, executorName)
-          .with(TASK_RESULT_RESOLVER_CLASS_NAME, resolverName)
           .withCause(ex)
           .log("Exception when preparing to call internal task executor");
       System.exit(EXIT_CODE_ERROR);
@@ -127,13 +101,12 @@ public class InternalExecutor implements TaskExecutor {
 
     try {
       TaskExecutionResult result = internalExecutor.execute(taskInstance);
-      int exitCode = taskInstance.getResolver().serializer().serialize(result);
+      int exitCode = TaskExecutionResultExitCode.serialize(result);
 
       log.atInfo()
           .with(PROCESS_NAME, processName)
           .with(PROCESS_ID, processId)
           .with(TASK_NAME, taskName)
-          .with(TASK_EXECUTION_RESULT, result.getResult())
           .with(TASK_EXECUTION_RESULT_TYPE, result.getResultType())
           .with(EXIT_CODE, exitCode)
           .log("Internal task executor completed");
@@ -146,7 +119,6 @@ public class InternalExecutor implements TaskExecutor {
           .with(PROCESS_ID, processId)
           .with(TASK_NAME, taskName)
           .with(TASK_EXECUTOR_CLASS_NAME, executorName)
-          .with(TASK_RESULT_RESOLVER_CLASS_NAME, resolverName)
           .withCause(ex)
           .log("Exception when calling internal task executor");
 
@@ -173,14 +145,9 @@ public class InternalExecutor implements TaskExecutor {
     args.add(QuoteUtils.quoteArgument(taskInstance.getProcessId()));
     args.add(QuoteUtils.quoteArgument(taskInstance.getTaskName()));
     args.add(QuoteUtils.quoteArgument(taskInstance.getExecutor().getClass().getName()));
-    args.add(QuoteUtils.quoteArgument(taskInstance.getResolver().getClass().getName()));
 
     return Paths.get(System.getProperty("java.home"), "bin", "java").toString()
         + " "
         + args.stream().collect(Collectors.joining(" "));
-  }
-
-  public static TaskExecutionResult getResult(TaskInstance taskInstance, int exitCode) {
-    return taskInstance.getResolver().serializer().deserialize(exitCode);
   }
 }

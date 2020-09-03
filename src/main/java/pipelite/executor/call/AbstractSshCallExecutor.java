@@ -9,9 +9,4 @@ public abstract class AbstractSshCallExecutor extends AbstractCallExecutor {
   public final Call getCall() {
     return new SshCall();
   }
-
-  @Override
-  public Resolver getResolver() {
-    return (taskInstance, exitCode) -> taskInstance.getResolver().resolve(exitCode);
-  }
 }

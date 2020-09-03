@@ -4,7 +4,6 @@ import lombok.Value;
 import pipelite.executor.TaskExecutor;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskParameters;
-import pipelite.resolver.ResultResolver;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,8 +16,7 @@ public class ProcessBuilder {
   private final int priority;
   private final List<TaskInstance> taskInstances = new ArrayList<>();
 
-  public ProcessBuilder task(
-      String taskName, TaskExecutor executor, ResultResolver resolver) {
+  public ProcessBuilder task(String taskName, TaskExecutor executor) {
 
     taskInstances.add(
         TaskInstance.builder()
@@ -26,14 +24,12 @@ public class ProcessBuilder {
             .processId(processId)
             .taskName(taskName)
             .executor(executor)
-            .resolver(resolver)
             .taskParameters(TaskParameters.builder().build())
             .build());
     return this;
   }
 
-  public ProcessBuilder taskDependsOnPrevious(
-      String taskName, TaskExecutor executor, ResultResolver resolver) {
+  public ProcessBuilder taskDependsOnPrevious(String taskName, TaskExecutor executor) {
 
     taskInstances.add(
         TaskInstance.builder()
@@ -41,7 +37,6 @@ public class ProcessBuilder {
             .processId(processId)
             .taskName(taskName)
             .executor(executor)
-            .resolver(resolver)
             .taskParameters(TaskParameters.builder().build())
             .dependsOn(taskInstances.get(taskInstances.size() - 1))
             .build());

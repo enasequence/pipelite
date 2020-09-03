@@ -15,7 +15,6 @@ import pipelite.process.ProcessBuilder;
 import pipelite.service.PipeliteLockService;
 import pipelite.task.TaskInstance;
 import pipelite.process.ProcessExecutionState;
-import pipelite.resolver.ResultResolver;
 import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
 import pipelite.task.TaskExecutionResult;
@@ -175,7 +174,7 @@ public class PollablePipeliteLauncherTester {
 
       processInstances.add(
           new ProcessBuilder(processName, processId, 9)
-              .task(taskName, taskExecutor, ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
+              .task(taskName, taskExecutor)
               .build());
     }
 

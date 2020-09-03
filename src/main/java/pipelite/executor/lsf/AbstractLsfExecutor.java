@@ -4,6 +4,7 @@ import lombok.extern.flogger.Flogger;
 import pipelite.executor.PollableExecutor;
 import pipelite.executor.call.AbstractCallExecutor;
 import pipelite.log.LogKey;
+import pipelite.task.TaskExecutionResultExitCode;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultType;
 import pipelite.task.TaskInstance;
@@ -128,7 +129,7 @@ public abstract class AbstractLsfExecutor extends AbstractCallExecutor implement
       CallResult bjobsCallResult =
           getCall().call("bjobs -l " + jobId, taskinstance.getTaskParameters());
 
-      TaskExecutionResult result = getResult(taskinstance, bjobsCallResult.getStdout());
+      TaskExecutionResult result = getResult(bjobsCallResult.getStdout());
 
       if (result == null && extractJobIdNotFound(bjobsCallResult.getStdout())) {
         log.atInfo()
@@ -140,7 +141,7 @@ public abstract class AbstractLsfExecutor extends AbstractCallExecutor implement
         CallResult bhistCallResult =
             getCall().call("bhist -l " + jobId, taskinstance.getTaskParameters());
 
-        result = getResult(taskinstance, bhistCallResult.getStdout());
+        result = getResult(bhistCallResult.getStdout());
       }
 
       if (result != null) {
@@ -202,7 +203,7 @@ public abstract class AbstractLsfExecutor extends AbstractCallExecutor implement
     return m.group(1);
   }
 
-  private static TaskExecutionResult getResult(TaskInstance taskInstance, String str) {
+  private static TaskExecutionResult getResult(String str) {
     if (str.contains("Done successfully")) {
       TaskExecutionResult result = TaskExecutionResult.success();
       result.getAttributes().put(TaskExecutionResult.STANDARD_ATTRIBUTE_EXIT_CODE, "0");
@@ -211,7 +212,7 @@ public abstract class AbstractLsfExecutor extends AbstractCallExecutor implement
 
     if (str.contains("Completed <exit>")) {
       int exitCode = Integer.valueOf(extractExitCode(str));
-      TaskExecutionResult result = taskInstance.getResolver().serializer().deserialize(exitCode);
+      TaskExecutionResult result = TaskExecutionResultExitCode.deserialize(exitCode);
       result
           .getAttributes()
           .put(TaskExecutionResult.STANDARD_ATTRIBUTE_EXIT_CODE, String.valueOf(exitCode));

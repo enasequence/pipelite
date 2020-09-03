@@ -9,6 +9,10 @@ alter table pipelite_stage modify (
 );
 
 alter table pipelite_stage add (
+  exec_result_map clob
+);
+
+alter table pipelite_stage add (
   exec_name varchar2(4000),
   exec_data clob
 );

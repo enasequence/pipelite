@@ -23,12 +23,6 @@ public interface CallExecutor extends TaskExecutor {
 
   String getCmd(TaskInstance taskInstance);
 
-  interface Resolver {
-    TaskExecutionResult resolve(TaskInstance taskInstance, int exitCode);
-  }
-
-  Resolver getResolver();
-
   default String getWorkDir(TaskInstance taskInstance) {
     if (taskInstance.getTaskParameters().getWorkDir() != null) {
       return taskInstance.getTaskParameters().getWorkDir();

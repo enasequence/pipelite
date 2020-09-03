@@ -5,13 +5,12 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.call.SystemCall;
-import pipelite.resolver.DefaultExitCodeResolver;
 import pipelite.task.TaskInstance;
 
 @Flogger
 @Value
 @Builder
-@EqualsAndHashCode(callSuper=true)
+@EqualsAndHashCode(callSuper = true)
 public final class SystemCallLsfExecutor extends AbstractLsfExecutor {
   private final Cmd cmd;
 
@@ -27,10 +26,5 @@ public final class SystemCallLsfExecutor extends AbstractLsfExecutor {
   @Override
   public Call getCall() {
     return new SystemCall();
-  }
-
-  @Override
-  public Resolver getResolver() {
-    return (taskInstance, exitCode) -> (new DefaultExitCodeResolver()).resolve(exitCode);
   }
 }

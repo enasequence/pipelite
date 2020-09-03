@@ -38,7 +38,7 @@ class PipeliteDatabaseStageServiceTest {
 
     assertThat(service.getSavedStage(processName, processId, stageName).get()).isEqualTo(stage);
 
-    stage.endExecution(TaskExecutionResult.success(), "executionCmd", "stdOut", "stdErr");
+    stage.endExecution(TaskExecutionResult.success());
 
     service.saveStage(stage);
 

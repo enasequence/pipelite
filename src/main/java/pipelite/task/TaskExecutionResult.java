@@ -11,7 +11,6 @@ import java.util.Map;
 @AllArgsConstructor
 public class TaskExecutionResult {
 
-  @NonNull private String result;
   @NonNull private TaskExecutionResultType resultType;
   @EqualsAndHashCode.Exclude private final Map<String, String> attributes = new HashMap<>();
 
@@ -36,15 +35,15 @@ public class TaskExecutionResult {
   }
 
   public static TaskExecutionResult active() {
-    return new TaskExecutionResult("ACTIVE", TaskExecutionResultType.ACTIVE);
+    return new TaskExecutionResult(TaskExecutionResultType.ACTIVE);
   }
 
   public static TaskExecutionResult success() {
-    return new TaskExecutionResult("SUCCESS", TaskExecutionResultType.SUCCESS);
+    return new TaskExecutionResult(TaskExecutionResultType.SUCCESS);
   }
 
   public static TaskExecutionResult error() {
-    return new TaskExecutionResult("TRANSIENT ERROR", TaskExecutionResultType.ERROR);
+    return new TaskExecutionResult(TaskExecutionResultType.ERROR);
   }
 
   public String getAttribute(String value) {

@@ -10,9 +10,8 @@ import pipelite.configuration.TestConfiguration;
 import pipelite.executor.TaskExecutor;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskParameters;
-import pipelite.resolver.ResultResolver;
+import pipelite.task.TaskExecutionResultExitCode;
 import pipelite.task.TaskExecutionResult;
-import pipelite.task.TaskExecutionResultExitCodeSerializer;
 import pipelite.task.TaskExecutionResultType;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,7 +52,6 @@ public class SshCallInternalExecutorTest {
         .processId(processId)
         .taskName(taskName)
         .executor(taskExecutor)
-        .resolver(ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
         .taskParameters(taskParameters)
         .build();
   }
@@ -78,8 +76,7 @@ public class SshCallInternalExecutorTest {
                 + "'testProcess' "
                 + "'testProcessId' "
                 + "'testTaskName' "
-                + "'pipelite.executor.call.SshCallInternalExecutorTest$SuccessTaskExecutor' "
-                + "'pipelite.resolver.DefaultExceptionResolver'");
+                + "'pipelite.executor.call.SshCallInternalExecutorTest$SuccessTaskExecutor'");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT))
         .contains("test stdout");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR))
@@ -108,7 +105,6 @@ public class SshCallInternalExecutorTest {
             .processId(processId)
             .taskName(taskName)
             .executor(taskExecutor)
-            .resolver(ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
             .taskParameters(taskParameters)
             .build();
 
@@ -121,14 +117,13 @@ public class SshCallInternalExecutorTest {
                 + "'testProcess' "
                 + "'testProcessId' "
                 + "'testTaskName' "
-                + "'pipelite.executor.call.SshCallInternalExecutorTest$ErrorTaskExecutor' "
-                + "'pipelite.resolver.DefaultExceptionResolver'");
+                + "'pipelite.executor.call.SshCallInternalExecutorTest$ErrorTaskExecutor'");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT))
         .contains("test stdout");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR))
         .contains("test stderr");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_EXIT_CODE))
-        .isEqualTo(String.valueOf(TaskExecutionResultExitCodeSerializer.EXIT_CODE_ERROR));
+        .isEqualTo(String.valueOf(TaskExecutionResultExitCode.EXIT_CODE_ERROR));
   }
 
   @Test

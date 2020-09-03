@@ -406,11 +406,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
       result = ((PollableExecutor) executor).poll(taskInstance);
     }
 
-    pipeliteStage.endExecution(
-        result,
-        result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND),
-        result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT),
-        result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR));
+    pipeliteStage.endExecution(result);
     pipeliteStageService.saveStage(pipeliteStage);
 
     if (result.isSuccess()) {
@@ -420,7 +416,6 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
           .with(LogKey.PROCESS_ID, processId)
           .with(LogKey.TASK_NAME, pipeliteStage.getStageName())
           .with(LogKey.TASK_EXECUTION_RESULT_TYPE, pipeliteStage.getResultType())
-          .with(LogKey.TASK_EXECUTION_RESULT, pipeliteStage.getResult())
           .with(LogKey.TASK_EXECUTION_COUNT, pipeliteStage.getExecutionCount())
           .log("Task executed successfully.");
       invalidateTaskDepedencies(pipeliteTaskInstance, false);
@@ -432,7 +427,6 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
           .with(LogKey.PROCESS_ID, processId)
           .with(LogKey.TASK_NAME, pipeliteStage.getStageName())
           .with(LogKey.TASK_EXECUTION_RESULT_TYPE, pipeliteStage.getResultType())
-          .with(LogKey.TASK_EXECUTION_RESULT, pipeliteStage.getResult())
           .with(LogKey.TASK_EXECUTION_COUNT, pipeliteStage.getExecutionCount())
           .log("Task execution failed");
       return false; // Do not continue executing the process.

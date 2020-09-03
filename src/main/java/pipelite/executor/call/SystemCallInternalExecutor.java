@@ -11,10 +11,4 @@ public final class SystemCallInternalExecutor extends AbstractSystemCallExecutor
   public String getCmd(TaskInstance taskInstance) {
     return InternalExecutor.getCmd(taskInstance);
   }
-
-  @Override
-  public Resolver getResolver() {
-    return (taskInstance, exitCode) ->
-        InternalExecutor.getResult(taskInstance, exitCode);
-  }
 }

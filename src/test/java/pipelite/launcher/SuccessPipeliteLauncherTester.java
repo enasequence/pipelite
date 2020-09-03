@@ -9,7 +9,6 @@ import pipelite.configuration.ProcessConfiguration;
 import pipelite.executor.TaskExecutor;
 import pipelite.process.ProcessInstance;
 import pipelite.process.ProcessBuilder;
-import pipelite.resolver.ResultResolver;
 import pipelite.task.TaskExecutionResult;
 
 import java.time.Duration;
@@ -58,8 +57,8 @@ public class SuccessPipeliteLauncherTester {
           new ProcessBuilder(processName, processId, 9)
               .task(
                   UniqueStringGenerator.randomTaskName(),
-                  createTaskExecutor(processId),
-                  ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
+                  createTaskExecutor(processId)
+              )
               .build());
     }
     return processInstances;

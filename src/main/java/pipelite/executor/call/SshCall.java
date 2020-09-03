@@ -15,7 +15,7 @@ import java.time.Duration;
 import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
 
-import static pipelite.task.TaskExecutionResultExitCodeSerializer.EXIT_CODE_ERROR;
+import static pipelite.task.TaskExecutionResultExitCode.EXIT_CODE_ERROR;
 
 @Flogger
 public class SshCall implements CallExecutor.Call {
