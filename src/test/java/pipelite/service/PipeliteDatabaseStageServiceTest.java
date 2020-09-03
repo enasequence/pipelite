@@ -12,6 +12,7 @@ import pipelite.executor.SuccessTaskExecutor;
 import pipelite.task.TaskExecutionResult;
 
 import org.springframework.transaction.annotation.Transactional;
+import pipelite.task.TaskInstance;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,24 +29,29 @@ class PipeliteDatabaseStageServiceTest {
 
     String processId = UniqueStringGenerator.randomProcessId();
     String processName = UniqueStringGenerator.randomProcessName();
-    String stageName = UniqueStringGenerator.randomTaskName();
+    String taskName = UniqueStringGenerator.randomTaskName();
 
-    PipeliteStage stage =
-        PipeliteStage.newExecution(
-            processId, processName, stageName, new SuccessTaskExecutor());
+    TaskInstance taskInstance =
+        TaskInstance.builder()
+            .processName(processName)
+            .processId(processId)
+            .taskName(taskName)
+            .build();
+
+    PipeliteStage stage = PipeliteStage.createExecution(taskInstance);
 
     service.saveStage(stage);
 
-    assertThat(service.getSavedStage(processName, processId, stageName).get()).isEqualTo(stage);
+    assertThat(service.getSavedStage(processName, processId, taskName).get()).isEqualTo(stage);
 
     stage.endExecution(TaskExecutionResult.success());
 
     service.saveStage(stage);
 
-    assertThat(service.getSavedStage(processName, processId, stageName).get()).isEqualTo(stage);
+    assertThat(service.getSavedStage(processName, processId, taskName).get()).isEqualTo(stage);
 
     service.delete(stage);
 
-    assertThat(service.getSavedStage(processName, processId, stageName).isPresent()).isFalse();
+    assertThat(service.getSavedStage(processName, processId, taskName).isPresent()).isFalse();
   }
 }

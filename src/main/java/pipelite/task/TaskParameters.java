@@ -2,7 +2,9 @@ package pipelite.task;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.flogger.Flogger;
 import pipelite.configuration.TaskConfiguration;
+import pipelite.json.Json;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -12,6 +14,7 @@ import java.util.Map;
 
 @Data
 @Builder
+@Flogger
 public class TaskParameters {
 
   private String host; // Used by SshSystemCallExecutor.
@@ -66,5 +69,9 @@ public class TaskParameters {
       }
     }
     return options;
+  }
+
+  public String json() {
+    return Json.serializeNullIfError(this);
   }
 }

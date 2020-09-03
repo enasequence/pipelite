@@ -1,14 +1,14 @@
 package pipelite.entity;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.flogger.Flogger;
 import pipelite.executor.SerializableExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultType;
+import pipelite.task.TaskInstance;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -20,6 +20,7 @@ import java.time.temporal.ChronoUnit;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Flogger
 public class PipeliteStage {
 
   @Id
@@ -34,15 +35,6 @@ public class PipeliteStage {
   @Id
   @Column(name = "STAGE_NAME")
   private String stageName;
-
-  // TODO: change column name to EXEC_RESULT
-  @Enumerated(EnumType.STRING)
-  @Column(name = "EXEC_RESULT_TYPE", length = 15)
-  private TaskExecutionResultType resultType;
-
-  @Column(name = "EXEC_RESULT_MAP")
-  @Lob
-  private String resultMap;
 
   @Column(name = "EXEC_CNT")
   private Integer executionCount;
@@ -69,24 +61,36 @@ public class PipeliteStage {
   @Lob
   private String executorData;
 
-  public static PipeliteStage newExecution(
-      String processId, String processName, String stageName, TaskExecutor taskExecutor) {
+  @Column(name = "EXEC_PARAMS")
+  @Lob
+  private String executorParams;
+
+  // TODO: change column name to EXEC_RESULT
+  @Enumerated(EnumType.STRING)
+  @Column(name = "EXEC_RESULT_TYPE", length = 15)
+  private TaskExecutionResultType resultType;
+
+  @Column(name = "EXEC_RESULT_PARAMS")
+  @Lob
+  private String resultParams;
+
+  public static PipeliteStage createExecution(TaskInstance taskInstance) {
+    String processId = taskInstance.getProcessId();
+    String processName = taskInstance.getProcessName();
+    String taskName = taskInstance.getTaskName();
     PipeliteStage pipeliteStage = new PipeliteStage();
     pipeliteStage.setProcessId(processId);
     pipeliteStage.setProcessName(processName);
-    pipeliteStage.setStageName(stageName);
+    pipeliteStage.setStageName(taskName);
     pipeliteStage.setResultType(TaskExecutionResultType.NEW);
     pipeliteStage.setExecutionCount(0);
-    if (taskExecutor instanceof SerializableExecutor) {
-      pipeliteStage.setExecutorName(taskExecutor.getClass().getName());
-      pipeliteStage.setExecutorData(((SerializableExecutor) taskExecutor).serialize());
-    }
     return pipeliteStage;
   }
 
-  public void retryExecution(TaskExecutor taskExecutor) {
+  public void startExecution(TaskInstance taskInstance) {
+    TaskExecutor taskExecutor = taskInstance.getExecutor();
     this.resultType = TaskExecutionResultType.ACTIVE;
-    this.resultMap = null;
+    this.resultParams = null;
     this.startTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.endTime = null;
     this.stdOut = null;
@@ -95,11 +99,23 @@ public class PipeliteStage {
       this.executorName = taskExecutor.getClass().getName();
       this.executorData = ((SerializableExecutor) taskExecutor).serialize();
     }
+    if (taskInstance.getTaskParameters() != null) {
+      this.executorParams = taskInstance.getTaskParameters().json();
+    }
+  }
+
+  public void endExecution(TaskExecutionResult result) {
+    this.resultType = result.getResultType();
+    this.resultParams = result.attributesJson();
+    this.endTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    this.stdOut = result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT);
+    this.stdErr = result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR);
+    this.executionCount++;
   }
 
   public void resetExecution() {
     this.resultType = TaskExecutionResultType.NEW;
-    this.resultMap = null;
+    this.resultParams = null;
     this.startTime = null;
     this.endTime = null;
     this.stdOut = null;
@@ -107,21 +123,6 @@ public class PipeliteStage {
     this.executionCount = 0;
     this.executorName = null;
     this.executorData = null;
-  }
-
-  public void endExecution(TaskExecutionResult result) {
-    this.resultType = result.getResultType();
-    if (result.getAttributes() != null) {
-      try {
-        ObjectMapper mapper = new ObjectMapper();
-        this.resultMap =
-            mapper.writerWithDefaultPrettyPrinter().writeValueAsString(result.getAttributes());
-      } catch (JsonProcessingException ex) {
-      }
-    }
-    this.endTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
-    this.stdOut = result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT);
-    this.stdErr = result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR);
-    this.executionCount++;
+    this.executorParams = null;
   }
 }

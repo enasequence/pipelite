@@ -1,6 +1,9 @@
 package pipelite.task;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.*;
+import lombok.extern.flogger.Flogger;
+import pipelite.json.Json;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -9,6 +12,7 @@ import java.util.Map;
 
 @Data
 @AllArgsConstructor
+@Flogger
 public class TaskExecutionResult {
 
   @NonNull private TaskExecutionResultType resultType;
@@ -64,5 +68,12 @@ public class TaskExecutionResult {
     PrintWriter pw = new PrintWriter(new StringWriter());
     value.printStackTrace(pw);
     addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_EXCEPTION, pw.toString());
+  }
+
+  public String attributesJson() {
+    if (attributes.isEmpty()) {
+      return null;
+    }
+    return Json.serializeNullIfError(attributes);
   }
 }

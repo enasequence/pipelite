@@ -9,7 +9,8 @@ alter table pipelite_stage modify (
 );
 
 alter table pipelite_stage add (
-  exec_result_map clob
+  EXEC_PARAMS clob,
+  EXEC_RESULT_PARAMS clob
 );
 
 alter table pipelite_stage add (

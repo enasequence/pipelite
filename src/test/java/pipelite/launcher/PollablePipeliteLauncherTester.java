@@ -9,6 +9,7 @@ import pipelite.configuration.TaskConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
 import pipelite.executor.PollableExecutor;
+import pipelite.executor.SuccessTaskExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.process.ProcessInstance;
 import pipelite.process.ProcessBuilder;
@@ -18,7 +19,6 @@ import pipelite.process.ProcessExecutionState;
 import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
 import pipelite.task.TaskExecutionResult;
-import pipelite.task.TaskExecutionResultType;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -154,6 +154,7 @@ public class PollablePipeliteLauncherTester {
       throw new RuntimeException();
     }
   }
+
   private void init(ProcessExecutionState processExecutionState, TaskExecutor taskExecutor) {
     launcherConfiguration.setWorkers(WORKERS_CNT);
 
@@ -167,15 +168,14 @@ public class PollablePipeliteLauncherTester {
       pipeliteProcess.setState(processExecutionState);
       pipeliteProcessService.saveProcess(pipeliteProcess);
 
-      PipeliteStage pipeliteStage =
-          PipeliteStage.newExecution(processId, processName, taskName, taskExecutor);
-      pipeliteStage.setResultType(TaskExecutionResultType.ACTIVE);
-      pipeliteStageService.saveStage(pipeliteStage);
+      ProcessInstance processInstance =
+          new ProcessBuilder(processName, processId, 9).task(taskName, taskExecutor).build();
+      processInstances.add(processInstance);
 
-      processInstances.add(
-          new ProcessBuilder(processName, processId, 9)
-              .task(taskName, taskExecutor)
-              .build());
+      TaskInstance taskInstance = processInstance.getTasks().get(0);
+      PipeliteStage pipeliteStage = PipeliteStage.createExecution(taskInstance);
+      pipeliteStage.startExecution(taskInstance);
+      pipeliteStageService.saveStage(pipeliteStage);
     }
 
     TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);

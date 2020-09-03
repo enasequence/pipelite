@@ -211,9 +211,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
       if (!pipeliteStage.isPresent()) {
         pipeliteStage =
             Optional.of(
-                pipeliteStageService.saveStage(
-                    PipeliteStage.newExecution(
-                        processId, processName, taskName, taskInstance.getExecutor())));
+                pipeliteStageService.saveStage(PipeliteStage.createExecution(taskInstance)));
       }
 
       createPipeliteTaskInstance(taskInstance, pipeliteStage.get());
@@ -389,7 +387,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
 
       // Execute the task.
 
-      pipeliteStage.retryExecution(taskInstance.getExecutor());
+      pipeliteStage.startExecution(taskInstance);
       pipeliteStageService.saveStage(pipeliteStage);
 
       try {
