@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static pipelite.log.LogKey.*;
-import static pipelite.task.TaskExecutionResultExitCodeSerializer.EXIT_CODE_DEFAULT_INTERNAL_ERROR;
+import static pipelite.task.TaskExecutionResultExitCodeSerializer.EXIT_CODE_ERROR;
 
 @Flogger
 public class InternalExecutor implements TaskExecutor {
@@ -43,7 +43,7 @@ public class InternalExecutor implements TaskExecutor {
         result.addExceptionAttribute(ex);
       }
     } catch (Exception ex) {
-      result = TaskExecutionResult.internalError();
+      result = TaskExecutionResult.error();
       result.addExceptionAttribute(ex);
     }
     return result;
@@ -76,7 +76,7 @@ public class InternalExecutor implements TaskExecutor {
           .with(TASK_RESULT_RESOLVER_CLASS_NAME, resolverName)
           .withCause(ex)
           .log("Exception when creating task executor");
-      System.exit(EXIT_CODE_DEFAULT_INTERNAL_ERROR);
+      System.exit(EXIT_CODE_ERROR);
     }
 
     ResultResolver resolver = null;
@@ -91,7 +91,7 @@ public class InternalExecutor implements TaskExecutor {
           .with(TASK_RESULT_RESOLVER_CLASS_NAME, resolverName)
           .withCause(ex)
           .log("Exception when creating result resolver");
-      System.exit(EXIT_CODE_DEFAULT_INTERNAL_ERROR);
+      System.exit(EXIT_CODE_ERROR);
     }
 
     TaskInstance taskInstance = null;
@@ -122,7 +122,7 @@ public class InternalExecutor implements TaskExecutor {
           .with(TASK_RESULT_RESOLVER_CLASS_NAME, resolverName)
           .withCause(ex)
           .log("Exception when preparing to call internal task executor");
-      System.exit(EXIT_CODE_DEFAULT_INTERNAL_ERROR);
+      System.exit(EXIT_CODE_ERROR);
     }
 
     try {
@@ -150,7 +150,7 @@ public class InternalExecutor implements TaskExecutor {
           .withCause(ex)
           .log("Exception when calling internal task executor");
 
-      System.exit(EXIT_CODE_DEFAULT_INTERNAL_ERROR);
+      System.exit(EXIT_CODE_ERROR);
     }
   }
 
@@ -180,8 +180,7 @@ public class InternalExecutor implements TaskExecutor {
         + args.stream().collect(Collectors.joining(" "));
   }
 
-  public static TaskExecutionResult getResult(
-      TaskInstance taskInstance, int exitCode) {
+  public static TaskExecutionResult getResult(TaskInstance taskInstance, int exitCode) {
     return taskInstance.getResolver().serializer().deserialize(exitCode);
   }
 }

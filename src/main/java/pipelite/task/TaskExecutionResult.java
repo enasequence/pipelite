@@ -35,18 +35,6 @@ public class TaskExecutionResult {
     return resultType.isError();
   }
 
-  public boolean isTransientError() {
-    return resultType == TaskExecutionResultType.TRANSIENT_ERROR;
-  }
-
-  public boolean isPermanentError() {
-    return resultType == TaskExecutionResultType.PERMANENT_ERROR;
-  }
-
-  public boolean isInternalError() {
-    return resultType == TaskExecutionResultType.INTERNAL_ERROR;
-  }
-
   public static TaskExecutionResult active() {
     return new TaskExecutionResult("ACTIVE", TaskExecutionResultType.ACTIVE);
   }
@@ -55,16 +43,8 @@ public class TaskExecutionResult {
     return new TaskExecutionResult("SUCCESS", TaskExecutionResultType.SUCCESS);
   }
 
-  public static TaskExecutionResult transientError() {
-    return new TaskExecutionResult("TRANSIENT ERROR", TaskExecutionResultType.TRANSIENT_ERROR);
-  }
-
-  public static TaskExecutionResult permanentError() {
-    return new TaskExecutionResult("PERMANENT ERROR", TaskExecutionResultType.PERMANENT_ERROR);
-  }
-
-  public static TaskExecutionResult internalError() {
-    return new TaskExecutionResult("INTERNAL ERROR", TaskExecutionResultType.INTERNAL_ERROR);
+  public static TaskExecutionResult error() {
+    return new TaskExecutionResult("TRANSIENT ERROR", TaskExecutionResultType.ERROR);
   }
 
   public String getAttribute(String value) {

@@ -11,7 +11,7 @@ import pipelite.TestInMemoryProcessFactory;
 import pipelite.TestInMemoryProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfiguration;
-import pipelite.executor.PermanentErrorTaskExecutor;
+import pipelite.executor.ErrorTaskExecutor;
 import pipelite.executor.SuccessTaskExecutor;
 import pipelite.process.ProcessInstance;
 import pipelite.process.ProcessBuilder;
@@ -66,7 +66,7 @@ public class DatabaseFailingPipeliteLauncherTest {
                           PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
                       .task(
                           UniqueStringGenerator.randomTaskName(),
-                          new PermanentErrorTaskExecutor(),
+                          new ErrorTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
@@ -116,7 +116,7 @@ public class DatabaseFailingPipeliteLauncherTest {
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
-                          new PermanentErrorTaskExecutor(),
+                          new ErrorTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
@@ -166,7 +166,7 @@ public class DatabaseFailingPipeliteLauncherTest {
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
-                          new PermanentErrorTaskExecutor(),
+                          new ErrorTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
@@ -216,7 +216,7 @@ public class DatabaseFailingPipeliteLauncherTest {
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .taskDependsOnPrevious(
                           UniqueStringGenerator.randomTaskName(),
-                          new PermanentErrorTaskExecutor(),
+                          new ErrorTaskExecutor(),
                           ResultResolver.DEFAULT_EXCEPTION_RESOLVER)
                       .build());
             });

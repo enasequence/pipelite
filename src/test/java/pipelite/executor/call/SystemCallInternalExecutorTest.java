@@ -22,12 +22,12 @@ public class SystemCallInternalExecutorTest {
     }
   }
 
-  public static class PermanentErrorTaskExecutor implements TaskExecutor {
+  public static class ErrorTaskExecutor implements TaskExecutor {
     @Override
     public TaskExecutionResult execute(TaskInstance taskInstance) {
       System.out.print("test stdout");
       System.err.print("test stderr");
-      return TaskExecutionResult.permanentError();
+      return TaskExecutionResult.error();
     }
   }
 
@@ -77,25 +77,25 @@ public class SystemCallInternalExecutorTest {
   }
 
   @Test
-  public void testPermanentError() {
+  public void testError() {
 
     SystemCallInternalExecutor executor = new SystemCallInternalExecutor();
 
     TaskParameters taskParameters = TaskParameters.builder().build();
 
-    TaskExecutor taskExecutor = new PermanentErrorTaskExecutor();
+    TaskExecutor taskExecutor = new ErrorTaskExecutor();
 
     TaskInstance taskInstance = taskInstance(taskExecutor, taskParameters);
 
     TaskExecutionResult result = executor.execute(taskInstance);
-    assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.PERMANENT_ERROR);
+    assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.ERROR);
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND))
         .endsWith(
             "'pipelite.executor.InternalExecutor' "
                 + "'testProcess' "
                 + "'testProcessId' "
                 + "'testTaskName' "
-                + "'pipelite.executor.call.SystemCallInternalExecutorTest$PermanentErrorTaskExecutor' "
+                + "'pipelite.executor.call.SystemCallInternalExecutorTest$ErrorTaskExecutor' "
                 + "'pipelite.resolver.DefaultExceptionResolver'");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT))
         .contains("test stdout");
@@ -104,7 +104,7 @@ public class SystemCallInternalExecutorTest {
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_EXIT_CODE))
         .isEqualTo(
             String.valueOf(
-                TaskExecutionResultExitCodeSerializer.EXIT_CODE_DEFAULT_PERMANENT_ERROR));
+                TaskExecutionResultExitCodeSerializer.EXIT_CODE_ERROR));
   }
 
   @Test

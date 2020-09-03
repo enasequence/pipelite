@@ -17,9 +17,8 @@ alter table pipelite_stage drop constraint CK_PIPELITE_STAGE_3;
 
 alter table pipelite_stage add constraint CK_PIPELITE_STAGE_3 check
 (
-  exec_result_type is null or exec_result_type in ( 'NEW', 'ACTIVE', 'SUCCESS', 'SKIPPED', 'TRANSIENT_ERROR', 'PERMANENT_ERROR', 'INTERNAL_ERROR' )
+  exec_result_type is null or exec_result_type in ( 'NEW', 'ACTIVE', 'SUCCESS', 'SKIPPED', 'TRANSIENT_ERROR', 'PERMANENT_ERROR', 'ERROR' )
 );
-
 
 alter table pipelite_process drop constraint CK_PIPELITE_PROCESS_1;
 

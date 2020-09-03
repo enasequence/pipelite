@@ -33,19 +33,16 @@ public class ExitCodeResolver implements ResultResolver<Integer> {
   @Override
   public TaskExecutionResult resolve(Integer cause) {
     if (cause == null) {
-      log.atSevere().log(
-          "Returning default permanent error. No task execution result for null exit code");
-      return TaskExecutionResult.permanentError();
+      log.atSevere().log(" No task execution result for null exit code");
+      return TaskExecutionResult.error();
     }
     for (Map.Entry<Integer, TaskExecutionResult> entry : map.entrySet()) {
       if (entry.getKey().equals(cause)) {
         return entry.getValue();
       }
     }
-    log.atSevere().log(
-        "Returning default permanent error. No task execution result for exit code: %s",
-        cause.toString());
-    return TaskExecutionResult.permanentError();
+    log.atSevere().log("No task execution result for exit code: %s", cause.toString());
+    return TaskExecutionResult.error();
   }
 
   @Override
@@ -66,21 +63,15 @@ public class ExitCodeResolver implements ResultResolver<Integer> {
     private final Map<Integer, TaskExecutionResult> map = new HashMap<>();
     private final List<TaskExecutionResult> list = new ArrayList<>();
 
-    public Builder() {
-    }
+    public Builder() {}
 
     public Builder success(String result, int cause) {
       addResult(cause, new TaskExecutionResult(result, TaskExecutionResultType.SUCCESS));
       return this;
     }
 
-    public Builder transientError(String result, int cause) {
-      addResult(cause, new TaskExecutionResult(result, TaskExecutionResultType.TRANSIENT_ERROR));
-      return this;
-    }
-
-    public Builder permanentError(String result, int cause) {
-      addResult(cause, new TaskExecutionResult(result, TaskExecutionResultType.PERMANENT_ERROR));
+    public Builder error(String result, int cause) {
+      addResult(cause, new TaskExecutionResult(result, TaskExecutionResultType.ERROR));
       return this;
     }
 

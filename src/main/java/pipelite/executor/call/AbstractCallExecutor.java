@@ -36,7 +36,7 @@ public abstract class AbstractCallExecutor implements CallExecutor {
 
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Failed call: %s", cmd);
-      TaskExecutionResult result = TaskExecutionResult.internalError();
+      TaskExecutionResult result = TaskExecutionResult.error();
       result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND, cmd);
       result.addExceptionAttribute(ex);
       extractDispatchJobId(result);

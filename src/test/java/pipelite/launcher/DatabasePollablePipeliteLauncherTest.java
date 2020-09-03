@@ -61,7 +61,7 @@ public class DatabasePollablePipeliteLauncherTest {
   }
 
   @Test
-  public void testSuccess() {
+  public void testPollSuccessExecuteSuccess() {
     PollablePipeliteLauncherTester tester =
         new PollablePipeliteLauncherTester(
             launcherConfiguration,
@@ -70,11 +70,11 @@ public class DatabasePollablePipeliteLauncherTest {
             pipeliteProcessService,
             pipeliteStageService,
             pipeliteLockService);
-    tester.testSuccess();
+    tester.testPollSuccessExecuteSuccess();
   }
 
   @Test
-  public void testPermanentError() {
+  public void testPollErrorExecuteSuccess() {
     PollablePipeliteLauncherTester tester =
         new PollablePipeliteLauncherTester(
             launcherConfiguration,
@@ -83,11 +83,11 @@ public class DatabasePollablePipeliteLauncherTest {
             pipeliteProcessService,
             pipeliteStageService,
             pipeliteLockService);
-    tester.testPermanentError();
+    tester.testPollErrorExecuteSuccess();
   }
 
   @Test
-  public void testTransientError() {
+  public void testPollErrorExecuteError() {
     PollablePipeliteLauncherTester tester =
         new PollablePipeliteLauncherTester(
             launcherConfiguration,
@@ -96,11 +96,11 @@ public class DatabasePollablePipeliteLauncherTest {
             pipeliteProcessService,
             pipeliteStageService,
             pipeliteLockService);
-    tester.testTransientError();
+    tester.testPollErrorExecuteSuccess();
   }
 
   @Test
-  public void testException() {
+  public void testPollExceptionExecuteSuccess() {
     PollablePipeliteLauncherTester tester =
         new PollablePipeliteLauncherTester(
             launcherConfiguration,
@@ -110,6 +110,20 @@ public class DatabasePollablePipeliteLauncherTest {
             pipeliteStageService,
             pipeliteLockService);
 
-    tester.testException();
+    tester.testPollExceptionExecuteSuccess();
+  }
+
+  @Test
+  public void testPollExceptionExecuteError() {
+    PollablePipeliteLauncherTester tester =
+        new PollablePipeliteLauncherTester(
+            launcherConfiguration,
+            processConfiguration,
+            taskConfiguration,
+            pipeliteProcessService,
+            pipeliteStageService,
+            pipeliteLockService);
+
+    tester.testPollExceptionExecuteError();
   }
 }

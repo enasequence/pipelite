@@ -57,8 +57,6 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
   private int taskFailedCount = 0;
   private int taskSkippedCount = 0;
   private int taskCompletedCount = 0;
-  private int taskRecoverCount = 0;
-  private int taskRecoverFailedCount = 0;
 
   public ProcessLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
@@ -271,23 +269,20 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
 
       TaskExecutionResultType resultType = pipeliteTaskInstance.getPipeliteStage().getResultType();
 
-      if (resultType == null || resultType == ACTIVE || resultType == INTERNAL_ERROR) {
-        return ProcessExecutionState.ACTIVE;
-      }
-
-      Integer executionCount = pipeliteTaskInstance.getPipeliteStage().getExecutionCount();
-      Integer retries = pipeliteTaskInstance.getTaskInstance().getTaskParameters().getRetries();
-
-      if (resultType == PERMANENT_ERROR
-          || (resultType == TRANSIENT_ERROR
-              && executionCount != null
-              && retries != null
-              && executionCount >= retries)) {
-        return ProcessExecutionState.FAILED;
-      }
-
       if (resultType == SUCCESS) {
         successCount++;
+      } else if (resultType == null || resultType == ACTIVE) {
+        return ProcessExecutionState.ACTIVE;
+      } else {
+        Integer executionCount = pipeliteTaskInstance.getPipeliteStage().getExecutionCount();
+        Integer retries = pipeliteTaskInstance.getTaskInstance().getTaskParameters().getRetries();
+
+        if (resultType == ERROR
+            && executionCount != null
+            && retries != null
+            && executionCount >= retries) {
+          return ProcessExecutionState.FAILED;
+        }
       }
     }
 
@@ -368,7 +363,6 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
           executor = null;
         }
       } catch (Exception ex) {
-        ++taskRecoverFailedCount;
         log.atSevere()
             .with(LogKey.PROCESS_NAME, processName)
             .with(LogKey.PROCESS_ID, processId)
@@ -380,9 +374,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
       if (executor != null) {
         try {
           result = ((PollableExecutor) executor).poll(taskInstance);
-          ++taskRecoverCount;
         } catch (Exception ex) {
-          ++taskRecoverFailedCount;
           log.atSevere()
               .with(LogKey.PROCESS_NAME, processName)
               .with(LogKey.PROCESS_ID, processId)
@@ -393,7 +385,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
       }
     }
 
-    if (result == null || result.isTransientError() || result.isInternalError()) {
+    if (result == null || result.isError()) {
 
       // Execute the task.
 
@@ -403,7 +395,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
       try {
         result = taskInstance.getExecutor().execute(taskInstance);
       } catch (Exception ex) {
-        result = TaskExecutionResult.internalError();
+        result = TaskExecutionResult.error();
         result.addExceptionAttribute(ex);
       }
     }
@@ -487,13 +479,5 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
 
   public int getTaskCompletedCount() {
     return taskCompletedCount;
-  }
-
-  public int getTaskRecoverCount() {
-    return taskRecoverCount;
-  }
-
-  public int getTaskRecoverFailedCount() {
-    return taskRecoverFailedCount;
   }
 }

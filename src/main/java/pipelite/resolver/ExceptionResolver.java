@@ -31,19 +31,16 @@ public class ExceptionResolver implements ResultResolver<Throwable> {
   @Override
   public TaskExecutionResult resolve(Throwable cause) {
     if (cause == null) {
-      log.atSevere().log(
-          "Returning default permanent error. No task execution result for null exception");
-      return TaskExecutionResult.permanentError();
+      log.atSevere().log("No task execution result for null exception");
+      return TaskExecutionResult.error();
     }
     for (Map.Entry<Class<? extends Throwable>, TaskExecutionResult> entry : map.entrySet()) {
       if (entry.getKey().isInstance(cause)) {
         return entry.getValue();
       }
     }
-    log.atSevere().log(
-        "Returning default permanent error. No task execution result for exception: %s",
-        cause.toString());
-    return TaskExecutionResult.permanentError();
+    log.atSevere().log("No task execution result for exception: %s", cause.toString());
+    return TaskExecutionResult.error();
   }
 
   @Override
@@ -73,16 +70,9 @@ public class ExceptionResolver implements ResultResolver<Throwable> {
       return this;
     }
 
-    public Builder transientError(String result, Class<? extends Throwable> cause) {
+    public Builder error(String result, Class<? extends Throwable> cause) {
       TaskExecutionResult taskExecutionResult =
-          new TaskExecutionResult(result, TaskExecutionResultType.TRANSIENT_ERROR);
-      addResult(cause, taskExecutionResult);
-      return this;
-    }
-
-    public Builder permanentError(String result, Class<? extends Throwable> cause) {
-      TaskExecutionResult taskExecutionResult =
-          new TaskExecutionResult(result, TaskExecutionResultType.PERMANENT_ERROR);
+          new TaskExecutionResult(result, TaskExecutionResultType.ERROR);
       addResult(cause, taskExecutionResult);
       return this;
     }

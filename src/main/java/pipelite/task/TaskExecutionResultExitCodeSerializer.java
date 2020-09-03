@@ -6,10 +6,8 @@ import pipelite.resolver.ResultResolver;
 @Value
 public class TaskExecutionResultExitCodeSerializer<T> implements TaskExecutionResultSerializer<T> {
 
-  public static final int EXIT_CODE_DEFAULT_SUCCESS = 0;
-  public static final int EXIT_CODE_DEFAULT_TRANSIENT_ERROR = 53;
-  public static final int EXIT_CODE_DEFAULT_PERMANENT_ERROR = 54;
-  public static final int EXIT_CODE_DEFAULT_INTERNAL_ERROR = 55;
+  public static final int EXIT_CODE_SUCCESS = 0;
+  public static final int EXIT_CODE_ERROR = 1;
 
   private final ResultResolver<T> resolver;
 
@@ -23,19 +21,9 @@ public class TaskExecutionResultExitCodeSerializer<T> implements TaskExecutionRe
     // Unknown result.
     if (result.isSuccess()) {
       // Unknown success.
-      return EXIT_CODE_DEFAULT_SUCCESS;
+      return EXIT_CODE_SUCCESS;
     }
-    if (result.isInternalError()) {
-      // Unknown internal error.
-      return EXIT_CODE_DEFAULT_INTERNAL_ERROR;
-    }
-    if (result.isTransientError()) {
-      // Unknown transient error.
-      return EXIT_CODE_DEFAULT_TRANSIENT_ERROR;
-    } else {
-      // Unknown permanent error.
-      return EXIT_CODE_DEFAULT_PERMANENT_ERROR;
-    }
+    return EXIT_CODE_ERROR;
   }
 
   @Override
@@ -45,14 +33,10 @@ public class TaskExecutionResultExitCodeSerializer<T> implements TaskExecutionRe
     }
     // Unknown result.
     switch (value) {
-      case EXIT_CODE_DEFAULT_SUCCESS:
+      case EXIT_CODE_SUCCESS:
         return TaskExecutionResult.success();
-      case EXIT_CODE_DEFAULT_INTERNAL_ERROR:
-        return TaskExecutionResult.internalError();
-      case EXIT_CODE_DEFAULT_TRANSIENT_ERROR:
-        return TaskExecutionResult.transientError();
       default:
-        return TaskExecutionResult.permanentError();
+        return TaskExecutionResult.error();
     }
   }
 

@@ -1,6 +1,5 @@
 package pipelite.launcher;
 
-import lombok.AllArgsConstructor;
 import lombok.Value;
 import pipelite.TestInMemoryProcessFactory;
 import pipelite.UniqueStringGenerator;
@@ -52,28 +51,20 @@ public class PollablePipeliteLauncherTester {
     this.pipeliteStageService = pipeliteStageService;
     this.pipeliteLockService = pipeliteLockService;
 
-    successPollCount = new AtomicInteger();
-    successExecuteCount = new AtomicInteger();
-    permanentErrorPollCount = new AtomicInteger();
-    permanentErrorExecuteCount = new AtomicInteger();
-    transientErrorPollCount = new AtomicInteger();
-    transientErrorExecuteCount = new AtomicInteger();
-    exceptionPollCount = new AtomicInteger();
-    exceptionExecuteCount = new AtomicInteger();
+    pollCount = new AtomicInteger();
+    executeCount = new AtomicInteger();
+    pollCount = new AtomicInteger();
+    executeCount = new AtomicInteger();
+    pollCount = new AtomicInteger();
+    executeCount = new AtomicInteger();
   }
 
   private static final int WORKERS_CNT = 2;
   private static final int PROCESS_CNT = 4;
   private static final Duration SCHEDULER_DELAY = Duration.ofMillis(250);
 
-  private static AtomicInteger successPollCount;
-  private static AtomicInteger successExecuteCount;
-  private static AtomicInteger permanentErrorPollCount;
-  private static AtomicInteger permanentErrorExecuteCount;
-  private static AtomicInteger transientErrorPollCount;
-  private static AtomicInteger transientErrorExecuteCount;
-  private static AtomicInteger exceptionPollCount;
-  private static AtomicInteger exceptionExecuteCount;
+  private static AtomicInteger pollCount;
+  private static AtomicInteger executeCount;
 
   private PipeliteLauncher pipeliteLauncher() {
     PipeliteLauncher pipeliteLauncher =
@@ -91,65 +82,79 @@ public class PollablePipeliteLauncherTester {
   }
 
   @Value
-  public static class SuccessTaskExecutor implements PollableExecutor {
+  public static class PollSuccessExecuteSuccessTaskExecutor implements PollableExecutor {
     @Override
     public TaskExecutionResult execute(TaskInstance taskInstance) {
-      successExecuteCount.incrementAndGet();
+      executeCount.incrementAndGet();
       return TaskExecutionResult.success();
     }
 
     @Override
     public TaskExecutionResult poll(TaskInstance taskInstance) {
-      successPollCount.incrementAndGet();
+      pollCount.incrementAndGet();
       return TaskExecutionResult.success();
     }
   }
 
   @Value
-  public static class PermanentErrorTaskExecutor implements PollableExecutor {
+  public static class PollErrorExecuteSuccessTaskExecutor implements PollableExecutor {
     @Override
     public TaskExecutionResult execute(TaskInstance taskInstance) {
-      permanentErrorExecuteCount.incrementAndGet();
+      executeCount.incrementAndGet();
       return TaskExecutionResult.success();
     }
 
     @Override
     public TaskExecutionResult poll(TaskInstance taskInstance) {
-      permanentErrorPollCount.incrementAndGet();
-      return TaskExecutionResult.permanentError();
+      pollCount.incrementAndGet();
+      return TaskExecutionResult.error();
     }
   }
 
   @Value
-  public static class TransientErrorTaskExecutor implements PollableExecutor {
+  public static class PollErrorExecuteErrorTaskExecutor implements PollableExecutor {
     @Override
     public TaskExecutionResult execute(TaskInstance taskInstance) {
-      transientErrorExecuteCount.incrementAndGet();
-      return TaskExecutionResult.success();
+      executeCount.incrementAndGet();
+      return TaskExecutionResult.error();
     }
 
     @Override
     public TaskExecutionResult poll(TaskInstance taskInstance) {
-      transientErrorPollCount.incrementAndGet();
-      return TaskExecutionResult.transientError();
+      pollCount.incrementAndGet();
+      return TaskExecutionResult.error();
     }
   }
 
   @Value
-  public static class ExceptionTaskExecutor implements PollableExecutor {
+  public static class PollExceptionExecuteSuccessTaskExecutor implements PollableExecutor {
     @Override
     public TaskExecutionResult execute(TaskInstance taskInstance) {
-      exceptionExecuteCount.incrementAndGet();
+      executeCount.incrementAndGet();
       return TaskExecutionResult.success();
     }
 
     @Override
     public TaskExecutionResult poll(TaskInstance taskInstance) {
-      exceptionPollCount.incrementAndGet();
+      pollCount.incrementAndGet();
       throw new RuntimeException();
     }
   }
 
+  @Value
+  public static class PollExceptionExecuteErrorTaskExecutor implements PollableExecutor {
+    @Override
+    public TaskExecutionResult execute(TaskInstance taskInstance) {
+      executeCount.incrementAndGet();
+      return TaskExecutionResult.error();
+    }
+
+    @Override
+    public TaskExecutionResult poll(TaskInstance taskInstance) {
+      pollCount.incrementAndGet();
+      throw new RuntimeException();
+    }
+  }
   private void init(ProcessExecutionState processExecutionState, TaskExecutor taskExecutor) {
     launcherConfiguration.setWorkers(WORKERS_CNT);
 
@@ -178,8 +183,8 @@ public class PollablePipeliteLauncherTester {
     processConfiguration.setProcessFactory(processFactory);
   }
 
-  public void testSuccess() {
-    init(ProcessExecutionState.ACTIVE, new SuccessTaskExecutor());
+  public void testPollSuccessExecuteSuccess() {
+    init(ProcessExecutionState.ACTIVE, new PollSuccessExecuteSuccessTaskExecutor());
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
@@ -187,14 +192,25 @@ public class PollablePipeliteLauncherTester {
     assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getTaskRecoverCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getTaskRecoverFailedCount()).isEqualTo(0);
-    assertThat(successPollCount.get()).isEqualTo(PROCESS_CNT);
-    assertThat(successExecuteCount.get()).isEqualTo(0);
+    assertThat(pollCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(executeCount.get()).isEqualTo(0);
   }
 
-  public void testPermanentError() {
-    init(ProcessExecutionState.ACTIVE, new PermanentErrorTaskExecutor());
+  public void testPollErrorExecuteSuccess() {
+    init(ProcessExecutionState.ACTIVE, new PollErrorExecuteSuccessTaskExecutor());
+
+    PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
+    ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
+
+    assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pollCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(executeCount.get()).isEqualTo(PROCESS_CNT);
+  }
+
+  public void testPollErrorExecuteError() {
+    init(ProcessExecutionState.ACTIVE, new PollErrorExecuteErrorTaskExecutor());
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
@@ -202,14 +218,12 @@ public class PollablePipeliteLauncherTester {
     assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getTaskRecoverCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getTaskRecoverFailedCount()).isEqualTo(0);
-    assertThat(permanentErrorPollCount.get()).isEqualTo(PROCESS_CNT);
-    assertThat(permanentErrorExecuteCount.get()).isEqualTo(0);
+    assertThat(pollCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(executeCount.get()).isEqualTo(PROCESS_CNT);
   }
 
-  public void testTransientError() {
-    init(ProcessExecutionState.ACTIVE, new TransientErrorTaskExecutor());
+  public void testPollExceptionExecuteSuccess() {
+    init(ProcessExecutionState.ACTIVE, new PollExceptionExecuteSuccessTaskExecutor());
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
@@ -217,24 +231,20 @@ public class PollablePipeliteLauncherTester {
     assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getTaskRecoverCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getTaskRecoverFailedCount()).isEqualTo(0);
-    assertThat(transientErrorPollCount.get()).isEqualTo(PROCESS_CNT);
-    assertThat(transientErrorExecuteCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(pollCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(executeCount.get()).isEqualTo(PROCESS_CNT);
   }
 
-  public void testException() {
-    init(ProcessExecutionState.ACTIVE, new ExceptionTaskExecutor());
+  public void testPollExceptionExecuteError() {
+    init(ProcessExecutionState.ACTIVE, new PollExceptionExecuteErrorTaskExecutor());
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getTaskRecoverCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getTaskRecoverFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(exceptionPollCount.get()).isEqualTo(PROCESS_CNT);
-    assertThat(exceptionExecuteCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(0);
+    assertThat(pollCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(executeCount.get()).isEqualTo(PROCESS_CNT);
   }
 }

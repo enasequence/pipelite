@@ -14,8 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Flogger
-public abstract class AbstractLsfExecutor extends AbstractCallExecutor
-    implements PollableExecutor {
+public abstract class AbstractLsfExecutor extends AbstractCallExecutor implements PollableExecutor {
 
   private String jobId;
   private String stdoutFile;
@@ -97,7 +96,7 @@ public abstract class AbstractLsfExecutor extends AbstractCallExecutor
       jobId = extractJobIdSubmitted(stderr);
     }
     if (jobId == null) {
-      result.setResultType(TaskExecutionResultType.INTERNAL_ERROR);
+      result.setResultType(TaskExecutionResultType.ERROR);
     } else {
       result.setResultType(TaskExecutionResultType.ACTIVE);
     }
@@ -117,7 +116,7 @@ public abstract class AbstractLsfExecutor extends AbstractCallExecutor
             .log("Maximum run time exceeded. Killing LSF job.");
 
         getCall().call("bkill " + jobId, taskinstance.getTaskParameters());
-        return TaskExecutionResult.transientError();
+        return TaskExecutionResult.error();
       }
 
       log.atInfo()

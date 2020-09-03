@@ -12,8 +12,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 
-import static pipelite.task.TaskExecutionResultExitCodeSerializer.EXIT_CODE_DEFAULT_INTERNAL_ERROR;
-import static pipelite.task.TaskExecutionResultExitCodeSerializer.EXIT_CODE_DEFAULT_PERMANENT_ERROR;
+import static pipelite.task.TaskExecutionResultExitCodeSerializer.EXIT_CODE_ERROR;
 
 @Flogger
 public class SystemCall implements CallExecutor.Call {
@@ -21,7 +20,7 @@ public class SystemCall implements CallExecutor.Call {
   @Override
   public CallExecutor.CallResult call(String cmd, TaskParameters taskParameters) {
     if (cmd == null) {
-      return new CallExecutor.CallResult(EXIT_CODE_DEFAULT_PERMANENT_ERROR, null, null);
+      return new CallExecutor.CallResult(EXIT_CODE_ERROR, null, null);
     }
 
     StringTokenizer st = new StringTokenizer(cmd);
@@ -29,7 +28,7 @@ public class SystemCall implements CallExecutor.Call {
     st.setQuoteMatcher(sm);
     List<String> args = st.getTokenList();
     if (args.isEmpty()) {
-      return new CallExecutor.CallResult(EXIT_CODE_DEFAULT_PERMANENT_ERROR, null, null);
+      return new CallExecutor.CallResult(EXIT_CODE_ERROR, null, null);
     }
 
     try {
@@ -56,11 +55,12 @@ public class SystemCall implements CallExecutor.Call {
       log.atInfo().log("Executing system call: %s" + cmd);
 
       int exitCode = executor.execute(commandLine, taskParameters.getEnvAsMap());
-      return new CallExecutor.CallResult(exitCode, getStream(stdoutStream), getStream(stderrStream));
+      return new CallExecutor.CallResult(
+          exitCode, getStream(stdoutStream), getStream(stderrStream));
 
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Failed system call: %s", cmd);
-      return new CallExecutor.CallResult(EXIT_CODE_DEFAULT_INTERNAL_ERROR, null, null);
+      return new CallExecutor.CallResult(EXIT_CODE_ERROR, null, null);
     }
   }
 

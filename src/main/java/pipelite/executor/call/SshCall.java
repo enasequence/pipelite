@@ -15,8 +15,7 @@ import java.time.Duration;
 import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
 
-import static pipelite.task.TaskExecutionResultExitCodeSerializer.EXIT_CODE_DEFAULT_INTERNAL_ERROR;
-import static pipelite.task.TaskExecutionResultExitCodeSerializer.EXIT_CODE_DEFAULT_PERMANENT_ERROR;
+import static pipelite.task.TaskExecutionResultExitCodeSerializer.EXIT_CODE_ERROR;
 
 @Flogger
 public class SshCall implements CallExecutor.Call {
@@ -28,7 +27,7 @@ public class SshCall implements CallExecutor.Call {
   @Override
   public CallExecutor.CallResult call(String cmd, TaskParameters taskParameters) {
     if (cmd == null) {
-      return new CallExecutor.CallResult(EXIT_CODE_DEFAULT_PERMANENT_ERROR, null, null);
+      return new CallExecutor.CallResult(EXIT_CODE_ERROR, null, null);
     }
 
     SshClient client = null;
@@ -66,11 +65,12 @@ public class SshCall implements CallExecutor.Call {
         channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), taskParameters.getTimeout());
 
         int exitCode = channel.getExitStatus();
-        return new CallExecutor.CallResult(exitCode, getStream(stdoutStream), getStream(stderrStream));
+        return new CallExecutor.CallResult(
+            exitCode, getStream(stdoutStream), getStream(stderrStream));
       }
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Failed ssh call: %s", cmd);
-      return new CallExecutor.CallResult(EXIT_CODE_DEFAULT_INTERNAL_ERROR, null, null);
+      return new CallExecutor.CallResult(EXIT_CODE_ERROR, null, null);
     } finally {
       if (client != null) {
         client.stop();

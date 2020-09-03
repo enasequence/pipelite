@@ -33,12 +33,12 @@ public class SshCallInternalExecutorTest {
     }
   }
 
-  public static class PermanentErrorTaskExecutor implements TaskExecutor {
+  public static class ErrorTaskExecutor implements TaskExecutor {
     @Override
     public TaskExecutionResult execute(TaskInstance taskInstance) {
       System.out.print("test stdout");
       System.err.print("test stderr");
-      return TaskExecutionResult.permanentError();
+      return TaskExecutionResult.error();
     }
   }
 
@@ -89,7 +89,7 @@ public class SshCallInternalExecutorTest {
   }
 
   @Test
-  public void testPermanentError() {
+  public void testError() {
 
     SshCallInternalExecutor executor = new SshCallInternalExecutor();
 
@@ -100,7 +100,7 @@ public class SshCallInternalExecutorTest {
     TaskParameters taskParameters = TaskParameters.builder().build();
     taskParameters.setHost(testConfiguration.getSsh().getHost());
 
-    TaskExecutor taskExecutor = new PermanentErrorTaskExecutor();
+    TaskExecutor taskExecutor = new ErrorTaskExecutor();
 
     TaskInstance taskInstance =
         TaskInstance.builder()
@@ -114,23 +114,21 @@ public class SshCallInternalExecutorTest {
 
     TaskExecutionResult result = executor.execute(taskInstance);
 
-    assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.PERMANENT_ERROR);
+    assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.ERROR);
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND))
         .endsWith(
             "'pipelite.executor.InternalExecutor' "
                 + "'testProcess' "
                 + "'testProcessId' "
                 + "'testTaskName' "
-                + "'pipelite.executor.call.SshCallInternalExecutorTest$PermanentErrorTaskExecutor' "
+                + "'pipelite.executor.call.SshCallInternalExecutorTest$ErrorTaskExecutor' "
                 + "'pipelite.resolver.DefaultExceptionResolver'");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT))
         .contains("test stdout");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR))
         .contains("test stderr");
     assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_EXIT_CODE))
-        .isEqualTo(
-            String.valueOf(
-                TaskExecutionResultExitCodeSerializer.EXIT_CODE_DEFAULT_PERMANENT_ERROR));
+        .isEqualTo(String.valueOf(TaskExecutionResultExitCodeSerializer.EXIT_CODE_ERROR));
   }
 
   @Test

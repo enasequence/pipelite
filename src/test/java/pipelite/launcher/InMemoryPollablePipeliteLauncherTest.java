@@ -54,7 +54,7 @@ public class InMemoryPollablePipeliteLauncherTest {
   }
 
   @Test
-  public void testSuccess() {
+  public void testPollSuccessExecuteSuccess() {
     PollablePipeliteLauncherTester tester =
         new PollablePipeliteLauncherTester(
             launcherConfiguration,
@@ -63,11 +63,11 @@ public class InMemoryPollablePipeliteLauncherTest {
             new PipeliteInMemoryProcessService(),
             new PipeliteInMemoryStageService(),
             new PipeliteInMemoryLockService());
-    tester.testSuccess();
+    tester.testPollSuccessExecuteSuccess();
   }
 
   @Test
-  public void testPermanentError() {
+  public void testPollErrorExecuteSuccess() {
     PollablePipeliteLauncherTester tester =
         new PollablePipeliteLauncherTester(
             launcherConfiguration,
@@ -76,11 +76,11 @@ public class InMemoryPollablePipeliteLauncherTest {
             new PipeliteInMemoryProcessService(),
             new PipeliteInMemoryStageService(),
             new PipeliteInMemoryLockService());
-    tester.testPermanentError();
+    tester.testPollErrorExecuteSuccess();
   }
 
   @Test
-  public void testTransientError() {
+  public void testPollErrorExecuteError() {
     PollablePipeliteLauncherTester tester =
         new PollablePipeliteLauncherTester(
             launcherConfiguration,
@@ -89,11 +89,11 @@ public class InMemoryPollablePipeliteLauncherTest {
             new PipeliteInMemoryProcessService(),
             new PipeliteInMemoryStageService(),
             new PipeliteInMemoryLockService());
-    tester.testTransientError();
+    tester.testPollErrorExecuteError();
   }
 
   @Test
-  public void testException() {
+  public void testPollExceptionExecuteSuccess() {
     PollablePipeliteLauncherTester tester =
         new PollablePipeliteLauncherTester(
             launcherConfiguration,
@@ -102,6 +102,19 @@ public class InMemoryPollablePipeliteLauncherTest {
             new PipeliteInMemoryProcessService(),
             new PipeliteInMemoryStageService(),
             new PipeliteInMemoryLockService());
-    tester.testException();
+    tester.testPollExceptionExecuteSuccess();
+  }
+
+  @Test
+  public void testPollExceptionExecuteError() {
+    PollablePipeliteLauncherTester tester =
+        new PollablePipeliteLauncherTester(
+            launcherConfiguration,
+            processConfiguration,
+            taskConfiguration,
+            new PipeliteInMemoryProcessService(),
+            new PipeliteInMemoryStageService(),
+            new PipeliteInMemoryLockService());
+    tester.testPollExceptionExecuteError();
   }
 }
