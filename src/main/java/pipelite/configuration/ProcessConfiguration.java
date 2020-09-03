@@ -34,16 +34,15 @@ public class ProcessConfiguration {
     return processSource;
   }
 
-  public static ProcessFactory getProcessFactory(
-      ProcessConfiguration processConfiguration) {
+  public static ProcessFactory getProcessFactory(ProcessConfiguration processConfiguration) {
     if (processConfiguration.getProcessFactory() != null) {
       return processConfiguration.getProcessFactory();
     }
     if (processConfiguration.getProcessFactoryName() != null) {
       try {
-        Class cls = Class.forName(processConfiguration.getProcessFactoryName());
+        Class<?> cls = Class.forName(processConfiguration.getProcessFactoryName());
         if (ProcessFactory.class.isAssignableFrom(cls)) {
-          ProcessFactory factory = ((ProcessFactory) cls.newInstance());
+          ProcessFactory factory = ((ProcessFactory) cls.getDeclaredConstructor().newInstance());
           processConfiguration.setProcessFactory(factory);
           return factory;
         }
@@ -60,9 +59,9 @@ public class ProcessConfiguration {
     }
     if (processConfiguration.getProcessSourceName() != null) {
       try {
-        Class cls = Class.forName(processConfiguration.getProcessSourceName());
+        Class<?> cls = Class.forName(processConfiguration.getProcessSourceName());
         if (ProcessSource.class.isAssignableFrom(cls)) {
-          ProcessSource source = ((ProcessSource) cls.newInstance());
+          ProcessSource source = ((ProcessSource) cls.getDeclaredConstructor().newInstance());
           processConfiguration.setProcessSource(source);
           return source;
         }

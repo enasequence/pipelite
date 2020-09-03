@@ -35,11 +35,11 @@ public class SystemCallExecutorTest {
 
     TaskExecutionResult result = executor.execute(taskInstance);
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
-    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND))
+    assertThat(result.getAttribute(TaskExecutionResult.COMMAND))
         .isEqualTo("echo test");
-    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_EXIT_CODE))
+    assertThat(result.getAttribute(TaskExecutionResult.EXIT_CODE))
         .isEqualTo("0");
-    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT))
+    assertThat(result.getStdout())
         .isEqualTo("test\n");
   }
 }

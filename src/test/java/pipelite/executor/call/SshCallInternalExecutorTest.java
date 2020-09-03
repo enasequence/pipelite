@@ -70,18 +70,18 @@ public class SshCallInternalExecutorTest {
 
     TaskExecutionResult result = executor.execute(taskInstance);
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
-    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND))
+    assertThat(result.getAttribute(TaskExecutionResult.COMMAND))
         .endsWith(
             "'pipelite.executor.InternalExecutor' "
                 + "'testProcess' "
                 + "'testProcessId' "
                 + "'testTaskName' "
                 + "'pipelite.executor.call.SshCallInternalExecutorTest$SuccessTaskExecutor'");
-    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT))
+    assertThat(result.getStdout())
         .contains("test stdout");
-    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR))
+    assertThat(result.getStderr())
         .contains("test stderr");
-    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_EXIT_CODE))
+    assertThat(result.getAttribute(TaskExecutionResult.EXIT_CODE))
         .isEqualTo("0");
   }
 
@@ -111,18 +111,18 @@ public class SshCallInternalExecutorTest {
     TaskExecutionResult result = executor.execute(taskInstance);
 
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.ERROR);
-    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND))
+    assertThat(result.getAttribute(TaskExecutionResult.COMMAND))
         .endsWith(
             "'pipelite.executor.InternalExecutor' "
                 + "'testProcess' "
                 + "'testProcessId' "
                 + "'testTaskName' "
                 + "'pipelite.executor.call.SshCallInternalExecutorTest$ErrorTaskExecutor'");
-    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT))
+    assertThat(result.getStdout())
         .contains("test stdout");
-    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR))
+    assertThat(result.getStderr())
         .contains("test stderr");
-    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_EXIT_CODE))
+    assertThat(result.getAttribute(TaskExecutionResult.EXIT_CODE))
         .isEqualTo(String.valueOf(TaskExecutionResultExitCode.EXIT_CODE_ERROR));
   }
 
@@ -139,7 +139,7 @@ public class SshCallInternalExecutorTest {
 
     TaskExecutionResult result = executor.execute(taskInstance);
 
-    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND))
+    assertThat(result.getAttribute(TaskExecutionResult.COMMAND))
         .contains(("-Xmx2000M"));
   }
 
@@ -166,7 +166,7 @@ public class SshCallInternalExecutorTest {
       System.clearProperty("PIPELITE_TEST_JAVA_PROPERTY");
     }
 
-    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND))
+    assertThat(result.getAttribute(TaskExecutionResult.COMMAND))
         .contains(("-DPIPELITE_TEST_JAVA_PROPERTY=VALUE"));
   }
 }

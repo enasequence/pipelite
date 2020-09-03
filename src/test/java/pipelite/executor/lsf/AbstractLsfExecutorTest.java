@@ -44,7 +44,7 @@ public class AbstractLsfExecutorTest {
   }
 
   private static String getCommandline(TaskExecutionResult result) {
-    return result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND);
+    return result.getAttribute(TaskExecutionResult.COMMAND);
   }
 
   private AbstractLsfExecutor executor =

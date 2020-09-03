@@ -10,20 +10,24 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Data
-@AllArgsConstructor
 @Flogger
 public class TaskExecutionResult {
 
-  @NonNull private TaskExecutionResultType resultType;
+  private TaskExecutionResultType resultType;
+  private String stdout;
+  private String stderr;
+
+  public TaskExecutionResult(@NonNull TaskExecutionResultType resultType) {
+    this.resultType = resultType;
+  }
+
   @EqualsAndHashCode.Exclude private final Map<String, String> attributes = new HashMap<>();
 
-  public static final String STANDARD_ATTRIBUTE_HOST = "host";
-  public static final String STANDARD_ATTRIBUTE_STDOUT = "stdout";
-  public static final String STANDARD_ATTRIBUTE_STDERR = "stderr";
-  public static final String STANDARD_ATTRIBUTE_MESSAGE = "message";
-  public static final String STANDARD_ATTRIBUTE_EXCEPTION = "exception";
-  public static final String STANDARD_ATTRIBUTE_COMMAND = "command";
-  public static final String STANDARD_ATTRIBUTE_EXIT_CODE = "exit code";
+  public static final String HOST = "host";
+  public static final String MESSAGE = "message";
+  public static final String EXCEPTION = "exception";
+  public static final String COMMAND = "command";
+  public static final String EXIT_CODE = "exit code";
 
   public boolean isActive() {
     return resultType == TaskExecutionResultType.ACTIVE;
@@ -66,7 +70,7 @@ public class TaskExecutionResult {
     }
     PrintWriter pw = new PrintWriter(new StringWriter());
     value.printStackTrace(pw);
-    addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_EXCEPTION, pw.toString());
+    addAttribute(TaskExecutionResult.EXCEPTION, pw.toString());
   }
 
   public String attributesJson() {

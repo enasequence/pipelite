@@ -108,8 +108,8 @@ public class PipeliteStage {
     this.resultType = result.getResultType();
     this.resultParams = result.attributesJson();
     this.endTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
-    this.stdOut = result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT);
-    this.stdErr = result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR);
+    this.stdOut = result.getStdout();
+    this.stdErr = result.getStderr();
     this.executionCount++;
   }
 

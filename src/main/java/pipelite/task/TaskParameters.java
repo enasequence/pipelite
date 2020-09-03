@@ -59,7 +59,7 @@ public class TaskParameters {
   }
 
   public Map<String, String> getEnvAsMap() {
-    Map<String, String> options = new HashMap();
+    Map<String, String> options = new HashMap<>();
     if (getEnv() != null) {
       for (String property : getEnv()) {
         String value = System.getProperty(property);

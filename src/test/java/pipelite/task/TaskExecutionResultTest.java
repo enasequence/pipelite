@@ -9,7 +9,7 @@ public class TaskExecutionResultTest {
   @Test
   public void getAttributesAsJson() {
     TaskExecutionResult result = TaskExecutionResult.success();
-    result.addAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_HOST, "test");
+    result.addAttribute(TaskExecutionResult.HOST, "test");
     assertThat(result.attributesJson()).isEqualTo("{\n" + "  \"host\" : \"test\"\n" + "}");
   }
 }

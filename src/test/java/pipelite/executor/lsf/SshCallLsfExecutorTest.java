@@ -43,21 +43,21 @@ public class SshCallLsfExecutorTest {
 
     TaskExecutionResult result = executor.execute(taskInstance);
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.ACTIVE);
-    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND))
+    assertThat(result.getAttribute(TaskExecutionResult.COMMAND))
         .startsWith("bsub");
-    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND))
+    assertThat(result.getAttribute(TaskExecutionResult.COMMAND))
         .endsWith("echo test");
-    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_EXIT_CODE))
+    assertThat(result.getAttribute(TaskExecutionResult.EXIT_CODE))
         .isEqualTo("0");
-    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT))
+    assertThat(result.getStdout())
         .contains("is submitted to default queue");
 
     result = executor.poll(taskInstance);
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
-    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_COMMAND)).isBlank();
-    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_EXIT_CODE))
+    assertThat(result.getAttribute(TaskExecutionResult.COMMAND)).isBlank();
+    assertThat(result.getAttribute(TaskExecutionResult.EXIT_CODE))
         .isEqualTo("0");
-    assertThat(result.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT))
+    assertThat(result.getStdout())
         .contains("test\n");
   }
 }

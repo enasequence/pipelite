@@ -80,9 +80,7 @@ public abstract class AbstractLsfExecutor extends AbstractCallExecutor implement
 
   @Override
   public final void extractDispatchJobId(TaskExecutionResult taskExecutionResult) {
-    jobId =
-        extractJobIdSubmitted(
-            taskExecutionResult.getAttribute(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT));
+    jobId = extractJobIdSubmitted(taskExecutionResult.getStdout());
   }
 
   @Override
@@ -90,8 +88,8 @@ public abstract class AbstractLsfExecutor extends AbstractCallExecutor implement
 
     TaskExecutionResult result = super.execute(taskInstance);
 
-    String stdout = result.getAttributes().get(TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT);
-    String stderr = result.getAttributes().get(TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR);
+    String stdout = result.getStdout();
+    String stderr = result.getStderr();
     jobId = extractJobIdSubmitted(stdout);
     if (jobId == null) {
       jobId = extractJobIdSubmitted(stderr);
@@ -154,8 +152,7 @@ public abstract class AbstractLsfExecutor extends AbstractCallExecutor implement
         try {
           CallResult stdoutCallResult =
               getCall().call("cat " + stdoutFile, taskinstance.getTaskParameters());
-          result.addAttribute(
-              TaskExecutionResult.STANDARD_ATTRIBUTE_STDOUT, stdoutCallResult.getStdout());
+          result.setStdout(stdoutCallResult.getStdout());
         } catch (Exception ex) {
           log.atSevere().withCause(ex).log("Failed to read stdout file: %s", stdoutFile);
         }
@@ -169,8 +166,7 @@ public abstract class AbstractLsfExecutor extends AbstractCallExecutor implement
         try {
           CallResult stderrCallResult =
               getCall().call("cat " + stderrFile + " 1>&2", taskinstance.getTaskParameters());
-          result.addAttribute(
-              TaskExecutionResult.STANDARD_ATTRIBUTE_STDERR, stderrCallResult.getStderr());
+          result.setStderr(stderrCallResult.getStderr());
         } catch (Exception ex) {
           log.atSevere().withCause(ex).log("Failed to read stderr file: %s", stderrFile);
         }
@@ -206,16 +202,14 @@ public abstract class AbstractLsfExecutor extends AbstractCallExecutor implement
   private static TaskExecutionResult getResult(String str) {
     if (str.contains("Done successfully")) {
       TaskExecutionResult result = TaskExecutionResult.success();
-      result.getAttributes().put(TaskExecutionResult.STANDARD_ATTRIBUTE_EXIT_CODE, "0");
+      result.getAttributes().put(TaskExecutionResult.EXIT_CODE, "0");
       return result;
     }
 
     if (str.contains("Completed <exit>")) {
       int exitCode = Integer.valueOf(extractExitCode(str));
       TaskExecutionResult result = TaskExecutionResultExitCode.deserialize(exitCode);
-      result
-          .getAttributes()
-          .put(TaskExecutionResult.STANDARD_ATTRIBUTE_EXIT_CODE, String.valueOf(exitCode));
+      result.getAttributes().put(TaskExecutionResult.EXIT_CODE, String.valueOf(exitCode));
       return result;
     }
     return null;

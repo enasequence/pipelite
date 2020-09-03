@@ -58,7 +58,7 @@ public class InternalExecutor implements TaskExecutor {
 
     TaskExecutor executor = null;
     try {
-      executor = (TaskExecutor) Class.forName(executorName).newInstance();
+      executor = (TaskExecutor) Class.forName(executorName).getDeclaredConstructor().newInstance();
     } catch (Exception ex) {
       log.atSevere()
           .with(PROCESS_NAME, processName)
