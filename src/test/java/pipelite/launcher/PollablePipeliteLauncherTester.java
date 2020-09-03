@@ -9,7 +9,6 @@ import pipelite.configuration.TaskConfiguration;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
 import pipelite.executor.PollableExecutor;
-import pipelite.executor.SuccessTaskExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.process.ProcessInstance;
 import pipelite.process.ProcessBuilder;

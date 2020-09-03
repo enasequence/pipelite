@@ -72,6 +72,6 @@ public class TaskParameters {
   }
 
   public String json() {
-    return Json.serializeNullIfError(this);
+    return Json.serializeNullIfErrorOrEmpty(this);
   }
 }

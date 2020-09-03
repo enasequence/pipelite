@@ -1,6 +1,5 @@
 package pipelite.task;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.*;
 import lombok.extern.flogger.Flogger;
 import pipelite.json.Json;
@@ -74,6 +73,6 @@ public class TaskExecutionResult {
     if (attributes.isEmpty()) {
       return null;
     }
-    return Json.serializeNullIfError(attributes);
+    return Json.serializeNullIfErrorOrEmpty(attributes);
   }
 }
