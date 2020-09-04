@@ -1,4 +1,4 @@
-package pipelite.executor.call;
+package pipelite.executor.runner;
 
 import lombok.extern.flogger.Flogger;
 import org.apache.commons.exec.*;
@@ -15,12 +15,12 @@ import java.util.List;
 import static pipelite.task.TaskExecutionResultExitCode.EXIT_CODE_ERROR;
 
 @Flogger
-public class SystemCall implements CallExecutor.Call {
+public class LocalRunner implements CommandRunner {
 
   @Override
-  public CallExecutor.CallResult call(String cmd, TaskParameters taskParameters) {
+  public CommandRunnerResult execute(String cmd, TaskParameters taskParameters) {
     if (cmd == null) {
-      return new CallExecutor.CallResult(EXIT_CODE_ERROR, null, null);
+      return new CommandRunnerResult(EXIT_CODE_ERROR, null, null);
     }
 
     StringTokenizer st = new StringTokenizer(cmd);
@@ -28,7 +28,7 @@ public class SystemCall implements CallExecutor.Call {
     st.setQuoteMatcher(sm);
     List<String> args = st.getTokenList();
     if (args.isEmpty()) {
-      return new CallExecutor.CallResult(EXIT_CODE_ERROR, null, null);
+      return new CommandRunnerResult(EXIT_CODE_ERROR, null, null);
     }
 
     try {
@@ -55,12 +55,12 @@ public class SystemCall implements CallExecutor.Call {
       log.atInfo().log("Executing system call: %s" + cmd);
 
       int exitCode = executor.execute(commandLine, taskParameters.getEnvAsMap());
-      return new CallExecutor.CallResult(
+      return new CommandRunnerResult(
           exitCode, getStream(stdoutStream), getStream(stderrStream));
 
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Failed system call: %s", cmd);
-      return new CallExecutor.CallResult(EXIT_CODE_ERROR, null, null);
+      return new CommandRunnerResult(EXIT_CODE_ERROR, null, null);
     }
   }
 

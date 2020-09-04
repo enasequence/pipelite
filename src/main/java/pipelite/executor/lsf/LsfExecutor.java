@@ -2,7 +2,8 @@ package pipelite.executor.lsf;
 
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.PollableExecutor;
-import pipelite.executor.call.AbstractCallExecutor;
+import pipelite.executor.CommandExecutor;
+import pipelite.executor.runner.CommandRunnerResult;
 import pipelite.log.LogKey;
 import pipelite.task.TaskExecutionResultExitCode;
 import pipelite.task.TaskExecutionResult;
@@ -15,7 +16,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Flogger
-public abstract class AbstractLsfExecutor extends AbstractCallExecutor implements PollableExecutor {
+public abstract class LsfExecutor extends CommandExecutor implements PollableExecutor {
 
   private String jobId;
   private String stdoutFile;
@@ -29,7 +30,7 @@ public abstract class AbstractLsfExecutor extends AbstractCallExecutor implement
   private static final Pattern EXIT_CODE_PATTERN = Pattern.compile("Exited with exit code (\\d+)");
 
   @Override
-  public final String getDispatchCmd(TaskInstance taskInstance) {
+  public final String getDispatcherCmd(TaskInstance taskInstance) {
     StringBuilder cmd = new StringBuilder();
     cmd.append("bsub");
 
@@ -79,7 +80,7 @@ public abstract class AbstractLsfExecutor extends AbstractCallExecutor implement
   }
 
   @Override
-  public final void extractDispatchJobId(TaskExecutionResult taskExecutionResult) {
+  public final void getDispatcherJobId(TaskExecutionResult taskExecutionResult) {
     jobId = extractJobIdSubmitted(taskExecutionResult.getStdout());
   }
 
@@ -114,7 +115,7 @@ public abstract class AbstractLsfExecutor extends AbstractCallExecutor implement
             .with(LogKey.TASK_NAME, taskinstance.getTaskName())
             .log("Maximum run time exceeded. Killing LSF job.");
 
-        getCall().call("bkill " + jobId, taskinstance.getTaskParameters());
+        getCmdRunner().execute("bkill " + jobId, taskinstance.getTaskParameters());
         return TaskExecutionResult.error();
       }
 
@@ -124,22 +125,22 @@ public abstract class AbstractLsfExecutor extends AbstractCallExecutor implement
           .with(LogKey.TASK_NAME, taskinstance.getTaskName())
           .log("Checking LSF job result using bjobs.");
 
-      CallResult bjobsCallResult =
-          getCall().call("bjobs -l " + jobId, taskinstance.getTaskParameters());
+      CommandRunnerResult bjobsCommandRunnerResult =
+          getCmdRunner().execute("bjobs -l " + jobId, taskinstance.getTaskParameters());
 
-      TaskExecutionResult result = getResult(bjobsCallResult.getStdout());
+      TaskExecutionResult result = getResult(bjobsCommandRunnerResult.getStdout());
 
-      if (result == null && extractJobIdNotFound(bjobsCallResult.getStdout())) {
+      if (result == null && extractJobIdNotFound(bjobsCommandRunnerResult.getStdout())) {
         log.atInfo()
             .with(LogKey.PROCESS_NAME, taskinstance.getProcessName())
             .with(LogKey.PROCESS_ID, taskinstance.getProcessId())
             .with(LogKey.TASK_NAME, taskinstance.getTaskName())
             .log("Checking LSF job result using bhist.");
 
-        CallResult bhistCallResult =
-            getCall().call("bhist -l " + jobId, taskinstance.getTaskParameters());
+        CommandRunnerResult bhistCommandRunnerResult =
+            getCmdRunner().execute("bhist -l " + jobId, taskinstance.getTaskParameters());
 
-        result = getResult(bhistCallResult.getStdout());
+        result = getResult(bhistCommandRunnerResult.getStdout());
       }
 
       if (result != null) {
@@ -150,9 +151,9 @@ public abstract class AbstractLsfExecutor extends AbstractCallExecutor implement
             .log("Reading stdout file: %s", stdoutFile);
 
         try {
-          CallResult stdoutCallResult =
-              getCall().call("cat " + stdoutFile, taskinstance.getTaskParameters());
-          result.setStdout(stdoutCallResult.getStdout());
+          CommandRunnerResult stdoutCommandRunnerResult =
+              getCmdRunner().execute("cat " + stdoutFile, taskinstance.getTaskParameters());
+          result.setStdout(stdoutCommandRunnerResult.getStdout());
         } catch (Exception ex) {
           log.atSevere().withCause(ex).log("Failed to read stdout file: %s", stdoutFile);
         }
@@ -164,9 +165,10 @@ public abstract class AbstractLsfExecutor extends AbstractCallExecutor implement
             .log("Reading stderr file: %s", stderrFile);
 
         try {
-          CallResult stderrCallResult =
-              getCall().call("cat " + stderrFile + " 1>&2", taskinstance.getTaskParameters());
-          result.setStderr(stderrCallResult.getStderr());
+          CommandRunnerResult stderrCommandRunnerResult =
+              getCmdRunner()
+                  .execute("cat " + stderrFile + " 1>&2", taskinstance.getTaskParameters());
+          result.setStderr(stderrCommandRunnerResult.getStderr());
         } catch (Exception ex) {
           log.atSevere().withCause(ex).log("Failed to read stderr file: %s", stderrFile);
         }

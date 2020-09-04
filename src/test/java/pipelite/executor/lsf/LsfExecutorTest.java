@@ -3,6 +3,8 @@ package pipelite.executor.lsf;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.executor.SuccessTaskExecutor;
+import pipelite.executor.runner.CommandRunner;
+import pipelite.executor.runner.CommandRunnerResult;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskParameters;
@@ -15,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class AbstractLsfExecutorTest {
+public class LsfExecutorTest {
 
   private TaskParameters taskParameters() {
     try {
@@ -47,11 +49,11 @@ public class AbstractLsfExecutorTest {
     return result.getAttribute(TaskExecutionResult.COMMAND);
   }
 
-  private AbstractLsfExecutor executor =
-      new AbstractLsfExecutor() {
+  private LsfExecutor executor =
+      new LsfExecutor() {
         @Override
-        public Call getCall() {
-          return (cmd, taskParameters) -> new CallResult(0, "Job <13454> is submitted", "");
+        public CommandRunner getCmdRunner() {
+          return (cmd, taskParameters) -> new CommandRunnerResult(0, "Job <13454> is submitted", "");
         }
 
         @Override
@@ -107,24 +109,24 @@ public class AbstractLsfExecutorTest {
   @Test
   public void testExtractJobIdSubmitted() {
     assertThat(
-            AbstractLsfExecutor.extractJobIdSubmitted(
+            LsfExecutor.extractJobIdSubmitted(
                 "Job <2848143> is submitted to default queue <research-rh74>."))
         .isEqualTo("2848143");
 
-    assertThat(AbstractLsfExecutor.extractJobIdSubmitted("Job <2848143> is submitted "))
+    assertThat(LsfExecutor.extractJobIdSubmitted("Job <2848143> is submitted "))
         .isEqualTo("2848143");
   }
 
   @Test
   public void testExtractJobIdNotFound() {
-    assertThat(AbstractLsfExecutor.extractJobIdNotFound("Job <345654> is not found.")).isTrue();
-    assertThat(AbstractLsfExecutor.extractJobIdNotFound("Job <345654> is not found")).isTrue();
-    assertThat(AbstractLsfExecutor.extractJobIdNotFound("Job <345654> is ")).isFalse();
+    assertThat(LsfExecutor.extractJobIdNotFound("Job <345654> is not found.")).isTrue();
+    assertThat(LsfExecutor.extractJobIdNotFound("Job <345654> is not found")).isTrue();
+    assertThat(LsfExecutor.extractJobIdNotFound("Job <345654> is ")).isFalse();
   }
 
   @Test
   public void testExtractExitCode() {
-    assertThat(AbstractLsfExecutor.extractExitCode("Exited with exit code 1")).isEqualTo("1");
-    assertThat(AbstractLsfExecutor.extractExitCode("Exited with exit code 3.")).isEqualTo("3");
+    assertThat(LsfExecutor.extractExitCode("Exited with exit code 1")).isEqualTo("1");
+    assertThat(LsfExecutor.extractExitCode("Exited with exit code 3.")).isEqualTo("3");
   }
 }

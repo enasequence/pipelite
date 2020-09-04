@@ -1,4 +1,4 @@
-package pipelite.executor.call;
+package pipelite.executor.command;
 
 import org.junit.jupiter.api.Test;
 import pipelite.executor.TaskExecutor;
@@ -10,7 +10,7 @@ import pipelite.task.TaskExecutionResultType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SystemCallInternalExecutorTest {
+public class LocalInternalExecutorTest {
 
   public static class SuccessTaskExecutor implements TaskExecutor {
     @Override
@@ -48,7 +48,7 @@ public class SystemCallInternalExecutorTest {
   @Test
   public void testSuccess() {
 
-    SystemCallInternalExecutor executor = new SystemCallInternalExecutor();
+    LocalInternalExecutor executor = new LocalInternalExecutor();
 
     TaskParameters taskParameters = TaskParameters.builder().build();
 
@@ -64,7 +64,7 @@ public class SystemCallInternalExecutorTest {
                 + "'testProcess' "
                 + "'testProcessId' "
                 + "'testTaskName' "
-                + "'pipelite.executor.call.SystemCallInternalExecutorTest$SuccessTaskExecutor'");
+                + "'pipelite.executor.command.LocalInternalExecutorTest$SuccessTaskExecutor'");
     assertThat(result.getStdout())
         .contains("test stdout");
     assertThat(result.getStderr())
@@ -76,7 +76,7 @@ public class SystemCallInternalExecutorTest {
   @Test
   public void testError() {
 
-    SystemCallInternalExecutor executor = new SystemCallInternalExecutor();
+    LocalInternalExecutor executor = new LocalInternalExecutor();
 
     TaskParameters taskParameters = TaskParameters.builder().build();
 
@@ -92,7 +92,7 @@ public class SystemCallInternalExecutorTest {
                 + "'testProcess' "
                 + "'testProcessId' "
                 + "'testTaskName' "
-                + "'pipelite.executor.call.SystemCallInternalExecutorTest$ErrorTaskExecutor'");
+                + "'pipelite.executor.command.LocalInternalExecutorTest$ErrorTaskExecutor'");
     assertThat(result.getStdout())
         .contains("test stdout");
     assertThat(result.getStderr())
@@ -104,7 +104,7 @@ public class SystemCallInternalExecutorTest {
   @Test
   public void javaMemory() {
 
-    SystemCallInternalExecutor executor = new SystemCallInternalExecutor();
+    LocalInternalExecutor executor = new LocalInternalExecutor();
 
     TaskParameters taskParameters = TaskParameters.builder().memory(2000).build();
 
@@ -121,7 +121,7 @@ public class SystemCallInternalExecutorTest {
   @Test
   public void testTaskSpecificJavaProperties() {
 
-    SystemCallInternalExecutor executor = new SystemCallInternalExecutor();
+    LocalInternalExecutor executor = new LocalInternalExecutor();
 
     TaskParameters taskParameters =
         TaskParameters.builder()

@@ -1,4 +1,4 @@
-package pipelite.executor.call;
+package pipelite.executor.command;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(classes = EmptyTestConfiguration.class)
 @EnableConfigurationProperties(value = {TestConfiguration.class})
 @ActiveProfiles("test")
-public class SshCallInternalExecutorTest {
+public class SshInternalExecutorTest {
 
   @Autowired TestConfiguration testConfiguration;
 
@@ -59,7 +59,7 @@ public class SshCallInternalExecutorTest {
   @Test
   public void testSuccess() {
 
-    SshCallInternalExecutor executor = new SshCallInternalExecutor();
+    SshInternalExecutor executor = new SshInternalExecutor();
 
     TaskParameters taskParameters = TaskParameters.builder().build();
     taskParameters.setHost(testConfiguration.getSsh().getHost());
@@ -76,7 +76,7 @@ public class SshCallInternalExecutorTest {
                 + "'testProcess' "
                 + "'testProcessId' "
                 + "'testTaskName' "
-                + "'pipelite.executor.call.SshCallInternalExecutorTest$SuccessTaskExecutor'");
+                + "'pipelite.executor.command.SshInternalExecutorTest$SuccessTaskExecutor'");
     assertThat(result.getStdout())
         .contains("test stdout");
     assertThat(result.getStderr())
@@ -88,7 +88,7 @@ public class SshCallInternalExecutorTest {
   @Test
   public void testError() {
 
-    SshCallInternalExecutor executor = new SshCallInternalExecutor();
+    SshInternalExecutor executor = new SshInternalExecutor();
 
     String processName = "testProcess";
     String processId = "testProcessId";
@@ -117,7 +117,7 @@ public class SshCallInternalExecutorTest {
                 + "'testProcess' "
                 + "'testProcessId' "
                 + "'testTaskName' "
-                + "'pipelite.executor.call.SshCallInternalExecutorTest$ErrorTaskExecutor'");
+                + "'pipelite.executor.command.SshInternalExecutorTest$ErrorTaskExecutor'");
     assertThat(result.getStdout())
         .contains("test stdout");
     assertThat(result.getStderr())
@@ -129,11 +129,11 @@ public class SshCallInternalExecutorTest {
   @Test
   public void javaMemory() {
 
-    SshCallInternalExecutor executor = new SshCallInternalExecutor();
+    SshInternalExecutor executor = new SshInternalExecutor();
 
     TaskParameters taskParameters = TaskParameters.builder().memory(2000).build();
 
-    TaskExecutor taskExecutor = new SystemCallInternalExecutorTest.SuccessTaskExecutor();
+    TaskExecutor taskExecutor = new LocalInternalExecutorTest.SuccessTaskExecutor();
 
     TaskInstance taskInstance = taskInstance(taskExecutor, taskParameters);
 
@@ -146,7 +146,7 @@ public class SshCallInternalExecutorTest {
   @Test
   public void testTaskSpecificJavaProperties() {
 
-    SshCallInternalExecutor executor = new SshCallInternalExecutor();
+    SshInternalExecutor executor = new SshInternalExecutor();
 
     TaskParameters taskParameters =
         TaskParameters.builder()
@@ -154,7 +154,7 @@ public class SshCallInternalExecutorTest {
             .env(new String[] {"PIPELITE_TEST_JAVA_PROPERTY"})
             .build();
 
-    TaskExecutor taskExecutor = new SystemCallInternalExecutorTest.SuccessTaskExecutor();
+    TaskExecutor taskExecutor = new LocalInternalExecutorTest.SuccessTaskExecutor();
 
     TaskInstance taskInstance = taskInstance(taskExecutor, taskParameters);
 

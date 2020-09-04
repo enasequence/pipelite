@@ -1,4 +1,4 @@
-package pipelite.executor.call;
+package pipelite.executor.runner;
 
 import lombok.extern.flogger.Flogger;
 import org.apache.sshd.client.SshClient;
@@ -18,16 +18,16 @@ import java.util.concurrent.TimeUnit;
 import static pipelite.task.TaskExecutionResultExitCode.EXIT_CODE_ERROR;
 
 @Flogger
-public class SshCall implements CallExecutor.Call {
+public class SshRunner implements CommandRunner {
 
   public static final int SSH_PORT = 22;
   public static final int SSH_TIMEOUT_SECONDS = 60;
   public static final int SSH_HEARTBEAT_SECONDS = 10;
 
   @Override
-  public CallExecutor.CallResult call(String cmd, TaskParameters taskParameters) {
+  public CommandRunnerResult execute(String cmd, TaskParameters taskParameters) {
     if (cmd == null) {
-      return new CallExecutor.CallResult(EXIT_CODE_ERROR, null, null);
+      return new CommandRunnerResult(EXIT_CODE_ERROR, null, null);
     }
 
     SshClient client = null;
@@ -65,12 +65,12 @@ public class SshCall implements CallExecutor.Call {
         channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), taskParameters.getTimeout());
 
         int exitCode = channel.getExitStatus();
-        return new CallExecutor.CallResult(
+        return new CommandRunnerResult(
             exitCode, getStream(stdoutStream), getStream(stderrStream));
       }
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Failed ssh call: %s", cmd);
-      return new CallExecutor.CallResult(EXIT_CODE_ERROR, null, null);
+      return new CommandRunnerResult(EXIT_CODE_ERROR, null, null);
     } finally {
       if (client != null) {
         client.stop();

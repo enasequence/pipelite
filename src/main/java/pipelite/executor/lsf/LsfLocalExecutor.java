@@ -4,14 +4,21 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
-import pipelite.executor.call.SshCall;
+import pipelite.executor.runner.CommandRunner;
+import pipelite.executor.runner.LocalRunner;
 import pipelite.task.TaskInstance;
 
 @Flogger
 @Value
 @Builder
 @EqualsAndHashCode(callSuper = true)
-public final class SshCallLsfExecutor extends AbstractLsfExecutor {
+public final class LsfLocalExecutor extends LsfExecutor {
+
+  @Override
+  public CommandRunner getCmdRunner() {
+    return new LocalRunner();
+  }
+
   private final Cmd cmd;
 
   public interface Cmd {
@@ -21,10 +28,5 @@ public final class SshCallLsfExecutor extends AbstractLsfExecutor {
   @Override
   public String getCmd(TaskInstance taskInstance) {
     return cmd.getCmd(taskInstance);
-  }
-
-  @Override
-  public Call getCall() {
-    return new SshCall();
   }
 }

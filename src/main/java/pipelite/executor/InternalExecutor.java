@@ -11,7 +11,7 @@
 package pipelite.executor;
 
 import lombok.extern.flogger.Flogger;
-import pipelite.executor.call.utils.QuoteUtils;
+import pipelite.executor.runner.CommandRunnerUtils;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskParameters;
 import pipelite.task.TaskExecutionResultExitCode;
@@ -139,12 +139,12 @@ public class InternalExecutor implements TaskExecutor {
 
     args.add("-cp");
     args.add(System.getProperty("java.class.path"));
-    args.add(QuoteUtils.quoteArgument(InternalExecutor.class.getName()));
+    args.add(CommandRunnerUtils.quoteArgument(InternalExecutor.class.getName()));
 
-    args.add(QuoteUtils.quoteArgument(taskInstance.getProcessName()));
-    args.add(QuoteUtils.quoteArgument(taskInstance.getProcessId()));
-    args.add(QuoteUtils.quoteArgument(taskInstance.getTaskName()));
-    args.add(QuoteUtils.quoteArgument(taskInstance.getExecutor().getClass().getName()));
+    args.add(CommandRunnerUtils.quoteArgument(taskInstance.getProcessName()));
+    args.add(CommandRunnerUtils.quoteArgument(taskInstance.getProcessId()));
+    args.add(CommandRunnerUtils.quoteArgument(taskInstance.getTaskName()));
+    args.add(CommandRunnerUtils.quoteArgument(taskInstance.getExecutor().getClass().getName()));
 
     return Paths.get(System.getProperty("java.home"), "bin", "java").toString()
         + " "
