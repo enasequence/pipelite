@@ -98,6 +98,11 @@ public class PipeliteInMemoryLockService implements PipeliteLockService {
     return globalProcessLocks.contains(getGlobalProcessLock(processName, processId));
   }
 
+  @Override
+  public boolean isProcessLocked(String launcherName, String processName, String processId) {
+    return globalProcessLocks.contains(getLocalProcessLock(launcherName, processName, processId));
+  }
+
   private static LauncherLock getLauncherLock(String launcherName, String processName) {
     return new LauncherLock(launcherName, processName);
   }

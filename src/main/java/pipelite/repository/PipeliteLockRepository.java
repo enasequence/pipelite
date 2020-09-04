@@ -9,7 +9,10 @@ import java.util.Optional;
 
 @Repository
 public interface PipeliteLockRepository extends CrudRepository<PipeliteLock, PipeliteLockId> {
-    Optional<PipeliteLock> findByProcessNameAndLockId(String processName, String lockId);
+  Optional<PipeliteLock> findByProcessNameAndLockId(String processName, String lockId);
 
-    void deleteByLauncherNameAndProcessName(String launcherName, String processName);
+  Optional<PipeliteLock> findByLauncherNameAndProcessNameAndLockId(
+      String launcherName, String processName, String lockId);
+
+  void deleteByLauncherNameAndProcessName(String launcherName, String processName);
 }

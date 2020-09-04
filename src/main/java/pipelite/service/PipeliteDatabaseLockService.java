@@ -99,6 +99,11 @@ public class PipeliteDatabaseLockService implements PipeliteLockService {
     return isLocked(processName, processId);
   }
 
+  @Override
+  public boolean isProcessLocked(String launcherName, String processName, String processId) {
+    return isLocked(launcherName, processName, processId);
+  }
+
   private static PipeliteLock getLauncherLock(String launcherName, String processName) {
     return new PipeliteLock(launcherName, processName, launcherName);
   }
@@ -118,6 +123,10 @@ public class PipeliteDatabaseLockService implements PipeliteLockService {
 
   private boolean isLocked(String processName, String lockId) {
     return repository.findByProcessNameAndLockId(processName, lockId).isPresent();
+  }
+
+  private boolean isLocked(String launcherName, String processName, String lockId) {
+    return repository.findByLauncherNameAndProcessNameAndLockId(launcherName, processName, lockId).isPresent();
   }
 
   private boolean unlock(PipeliteLock pipeliteLock) {

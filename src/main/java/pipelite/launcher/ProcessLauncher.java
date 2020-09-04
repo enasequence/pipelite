@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.google.common.util.concurrent.AbstractExecutionThreadService;
+import com.google.common.flogger.FluentLogger;
 import lombok.Data;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
@@ -42,7 +42,7 @@ import static pipelite.task.TaskExecutionResultType.*;
 @Flogger
 @Component()
 @Scope("prototype")
-public class ProcessLauncher extends AbstractExecutionThreadService {
+public class ProcessLauncher implements Runnable {
 
   private final LauncherConfiguration launcherConfiguration;
   private final ProcessConfiguration processConfiguration;
@@ -77,11 +77,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
   @Data
   private static class PipeliteProcessInstance {
     private final ProcessInstance processInstance;
-    private PipeliteProcess pipeliteProcess;
-
-    public PipeliteProcessInstance(ProcessInstance processInstance) {
-      this.processInstance = processInstance;
-    }
+    private final PipeliteProcess pipeliteProcess;
   }
 
   @Value
@@ -90,170 +86,40 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
     private final PipeliteStage pipeliteStage;
   }
 
-  public static class ProcessNotExecutableException extends Exception {
-
-    private static String getMessage(String reason) {
-      return "Process could not be executed because it " + reason;
-    }
-
-    public ProcessNotExecutableException(String reason) {
-      super(getMessage(reason));
-    }
-  }
-
-  public void init(ProcessInstance processInstance) {
-    this.pipeliteProcessInstance = new PipeliteProcessInstance(processInstance);
-  }
-
-  @Override
-  public String serviceName() {
-    return getProcessName();
-  }
-
-  @Override
-  protected void startUp() throws ProcessNotExecutableException {
-
-    lockProcess();
-
-    loadProcess();
-
-    activateProcess();
-
-    createTasks();
-
-    evaluateProcessState();
+  public void init(ProcessInstance processInstance, PipeliteProcess pipeliteProcess) {
+    this.pipeliteProcessInstance = new PipeliteProcessInstance(processInstance, pipeliteProcess);
   }
 
   @Override
   public void run() {
-    if (!isRunning()) {
-      return;
-    }
-
-    log.atInfo()
-        .with(LogKey.PROCESS_NAME, getProcessName())
-        .with(LogKey.PROCESS_ID, getProcessId())
-        .log("Executing process instance");
-
+    logContext(log.atInfo()).log("Running process launcher");
+    createTasks();
     executeTasks();
-
     saveProcess();
   }
 
-  @Override
-  protected void shutDown() {
-    unlockProcess();
-  }
-
-  private void lockProcess() throws ProcessNotExecutableException {
-    log.atInfo()
-        .with(LogKey.PROCESS_NAME, getProcessName())
-        .with(LogKey.PROCESS_ID, getProcessId())
-        .log("Locking process instance for execution");
-
-    if (!pipeliteLockService.lockProcess(getLauncherName(), getProcessName(), getProcessId())) {
-      log.atWarning()
-          .with(LogKey.PROCESS_NAME, getProcessName())
-          .with(LogKey.PROCESS_ID, getProcessId())
-          .log(ProcessNotExecutableException.getMessage("could not be locked"));
-      throw new ProcessNotExecutableException("could not be locked");
-    }
-  }
-
-  private void loadProcess() throws ProcessNotExecutableException {
-
-    Optional<PipeliteProcess> pipeliteProcess =
-        pipeliteProcessService.getSavedProcess(getProcessName(), getProcessId());
-    if (!pipeliteProcess.isPresent()) {
-      log.atWarning()
-          .with(LogKey.PROCESS_NAME, getProcessName())
-          .with(LogKey.PROCESS_ID, getProcessId())
-          .log(ProcessNotExecutableException.getMessage("could not be retrieved from database"));
-      throw new ProcessNotExecutableException("could not be retrieved from database");
-    }
-    pipeliteProcessInstance.setPipeliteProcess(pipeliteProcess.get());
-  }
-
-  private void activateProcess() {
-    PipeliteProcess pipeliteProcess = pipeliteProcessInstance.getPipeliteProcess();
-
-    if (pipeliteProcess.getState() == null) {
-      log.atWarning()
-          .with(LogKey.PROCESS_NAME, getProcessName())
-          .with(LogKey.PROCESS_ID, getProcessId())
-          .log("Activating process");
-      pipeliteProcess.setState(ProcessExecutionState.ACTIVE);
-      pipeliteProcessService.saveProcess(pipeliteProcess);
-    }
-  }
-
+  // TODO: orphaned saved tasks
   private void createTasks() {
     ProcessInstance processInstance = pipeliteProcessInstance.getProcessInstance();
     List<TaskInstance> taskInstances = processInstance.getTasks();
 
-    // TODO: check that there are no orphaned saved tasks
-
     for (TaskInstance taskInstance : taskInstances) {
-
-      String processId = processInstance.getProcessId();
-      String processName = processInstance.getProcessName();
-      String taskName = taskInstance.getTaskName();
+      taskInstance.getTaskParameters().add(taskConfiguration);
 
       Optional<PipeliteStage> pipeliteStage =
-          pipeliteStageService.getSavedStage(processName, processId, taskName);
+          pipeliteStageService.getSavedStage(
+              processInstance.getProcessName(),
+              processInstance.getProcessId(),
+              taskInstance.getTaskName());
 
-      // Create and save the task it if does not already exist.
-
+      // Create the task in database if it does not already exist.
       if (!pipeliteStage.isPresent()) {
         pipeliteStage =
             Optional.of(
                 pipeliteStageService.saveStage(PipeliteStage.createExecution(taskInstance)));
       }
 
-      createPipeliteTaskInstance(taskInstance, pipeliteStage.get());
-    }
-  }
-
-  private void evaluateProcessState() throws ProcessNotExecutableException {
-    PipeliteProcess pipeliteProcess = pipeliteProcessInstance.getPipeliteProcess();
-
-    // Get process execution state from the tasks. If it is different from the
-    // process execution state then update the project execution state.
-
-    ProcessExecutionState tasksState = evaluateProcessExecutionState();
-    if (pipeliteProcess.getState() != tasksState) {
-      log.atWarning()
-          .with(LogKey.PROCESS_NAME, getProcessName())
-          .with(LogKey.PROCESS_ID, getProcessId())
-          .with(LogKey.PROCESS_STATE, pipeliteProcess.getState())
-          .with(LogKey.NEW_PROCESS_STATE, tasksState)
-          .log("Changing process state to match state from tasks");
-
-      pipeliteProcess.setState(tasksState);
-      pipeliteProcessService.saveProcess(pipeliteProcess);
-    }
-
-    // The process needs to be active to be executed.
-
-    if (pipeliteProcess.getState() != ProcessExecutionState.ACTIVE) {
-      log.atWarning()
-          .with(LogKey.PROCESS_NAME, getProcessName())
-          .with(LogKey.PROCESS_ID, getProcessId())
-          .with(LogKey.PROCESS_STATE, pipeliteProcess.getState())
-          .log(ProcessNotExecutableException.getMessage("is not active"));
-      throw new ProcessNotExecutableException("is not active");
-    }
-  }
-
-  private void unlockProcess() {
-    log.atInfo()
-        .with(LogKey.PROCESS_NAME, getProcessName())
-        .with(LogKey.PROCESS_ID, getProcessId())
-        .log("Unlocking process");
-
-    // TODO: check that the process is locked by this launcher
-    if (pipeliteLockService.isProcessLocked(getProcessName(), getProcessId())) {
-      pipeliteLockService.unlockProcess(getLauncherName(), getProcessName(), getProcessId());
+      pipeliteTaskInstances.add(new PipeliteTaskInstance(taskInstance, pipeliteStage.get()));
     }
   }
 
@@ -287,14 +153,11 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
     return ProcessExecutionState.ACTIVE;
   }
 
-  private void createPipeliteTaskInstance(TaskInstance taskInstance, PipeliteStage pipeliteStage) {
-    /** Add global task parameters. */
-    taskInstance.getTaskParameters().add(taskConfiguration);
-    pipeliteTaskInstances.add(new PipeliteTaskInstance(taskInstance, pipeliteStage));
-  }
-
   private void executeTasks() {
     for (PipeliteTaskInstance pipeliteTaskInstance : pipeliteTaskInstances) {
+      if (Thread.currentThread().isInterrupted()) {
+        break;
+      }
       if (!executeTask(pipeliteTaskInstance)) {
         break;
       }
@@ -305,12 +168,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
 
     PipeliteProcess pipeliteProcess = pipeliteProcessInstance.getPipeliteProcess();
 
-    log.atInfo()
-        .with(LogKey.PROCESS_NAME, getProcessName())
-        .with(LogKey.PROCESS_ID, getProcessId())
-        .with(LogKey.PROCESS_STATE, pipeliteProcess.getState())
-        .with(LogKey.PROCESS_EXECUTION_COUNT, pipeliteProcess.getExecutionCount())
-        .log("Saving process state");
+    logContext(log.atInfo()).log("Saving process");
 
     pipeliteProcess.setState(evaluateProcessExecutionState());
     pipeliteProcess.incrementExecutionCount();
@@ -319,21 +177,11 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
   }
 
   private boolean executeTask(PipeliteTaskInstance pipeliteTaskInstance) {
-    if (!isRunning()) {
-      return false;
-    }
-
     TaskInstance taskInstance = pipeliteTaskInstance.getTaskInstance();
     PipeliteStage pipeliteStage = pipeliteTaskInstance.getPipeliteStage();
-    String processName = getProcessName();
-    String processId = getProcessId();
     String taskName = taskInstance.getTaskName();
 
-    log.atInfo()
-        .with(LogKey.PROCESS_NAME, processName)
-        .with(LogKey.PROCESS_ID, processId)
-        .with(LogKey.TASK_NAME, taskName)
-        .log("Executing task");
+    logContext(log.atInfo(), taskName).log("Executing task");
 
     if (pipeliteStage.getResultType() == SUCCESS) {
       // Continue executing the process.
@@ -357,10 +205,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
           executor = null;
         }
       } catch (Exception ex) {
-        log.atSevere()
-            .with(LogKey.PROCESS_NAME, processName)
-            .with(LogKey.PROCESS_ID, processId)
-            .with(LogKey.TASK_NAME, taskName)
+        logContext(log.atSevere(), taskName)
             .withCause(ex)
             .log("Failed to resume task execution: %s", pipeliteStage.getExecutorName());
       }
@@ -369,10 +214,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
         try {
           result = ((PollableExecutor) executor).poll(taskInstance);
         } catch (Exception ex) {
-          log.atSevere()
-              .with(LogKey.PROCESS_NAME, processName)
-              .with(LogKey.PROCESS_ID, processId)
-              .with(LogKey.TASK_NAME, taskName)
+          logContext(log.atSevere(), taskName)
               .withCause(ex)
               .log("Failed to resume task execution: %s", pipeliteStage.getExecutorName());
         }
@@ -380,9 +222,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
     }
 
     if (result == null || result.isError()) {
-
       // Execute the task.
-
       pipeliteStage.startExecution(taskInstance);
       pipeliteStageService.saveStage(pipeliteStage);
 
@@ -405,10 +245,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
 
     if (result.isSuccess()) {
       ++taskCompletedCount;
-      log.atInfo()
-          .with(LogKey.PROCESS_NAME, processName)
-          .with(LogKey.PROCESS_ID, processId)
-          .with(LogKey.TASK_NAME, pipeliteStage.getStageName())
+      logContext(log.atInfo(), pipeliteStage.getStageName())
           .with(LogKey.TASK_EXECUTION_RESULT_TYPE, pipeliteStage.getResultType())
           .with(LogKey.TASK_EXECUTION_COUNT, pipeliteStage.getExecutionCount())
           .log("Task executed successfully.");
@@ -416,10 +253,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
       return true; // Continue process execution.
     } else {
       ++taskFailedCount;
-      log.atSevere()
-          .with(LogKey.PROCESS_NAME, processName)
-          .with(LogKey.PROCESS_ID, processId)
-          .with(LogKey.TASK_NAME, pipeliteStage.getStageName())
+      logContext(log.atSevere(), pipeliteStage.getStageName())
           .with(LogKey.TASK_EXECUTION_RESULT_TYPE, pipeliteStage.getResultType())
           .with(LogKey.TASK_EXECUTION_COUNT, pipeliteStage.getExecutionCount())
           .log("Task execution failed");
@@ -467,5 +301,18 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
 
   public int getTaskCompletedCount() {
     return taskCompletedCount;
+  }
+
+  private FluentLogger.Api logContext(FluentLogger.Api log) {
+    return log.with(LogKey.LAUNCHER_NAME, getLauncherName())
+        .with(LogKey.PROCESS_NAME, getProcessName())
+        .with(LogKey.PROCESS_ID, getProcessId());
+  }
+
+  private FluentLogger.Api logContext(FluentLogger.Api log, String taskName) {
+    return log.with(LogKey.LAUNCHER_NAME, getLauncherName())
+        .with(LogKey.PROCESS_NAME, getProcessName())
+        .with(LogKey.PROCESS_ID, getProcessId())
+        .with(LogKey.TASK_NAME, taskName);
   }
 }

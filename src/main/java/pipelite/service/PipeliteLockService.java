@@ -16,4 +16,5 @@ public interface PipeliteLockService {
 
     boolean isProcessLocked(String processName, String processId);
 
+    boolean isProcessLocked(String launcherName, String processName, String processId);
 }

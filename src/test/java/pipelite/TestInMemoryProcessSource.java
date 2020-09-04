@@ -22,7 +22,7 @@ public class TestInMemoryProcessSource implements ProcessSource {
   private final Monitor monitor = new Monitor();
 
   @Override
-  public ProcessInstance next() {
+  public NewProcess next() {
     monitor.enter();
     try {
       if (newProcessInstances.isEmpty()) {
@@ -31,33 +31,30 @@ public class TestInMemoryProcessSource implements ProcessSource {
       ProcessInstance processInstance = newProcessInstances.iterator().next();
       returnedProcessInstances.put(processInstance.getProcessId(), processInstance);
       newProcessInstances.remove(processInstance);
-      return processInstance;
+      return new NewProcess(processInstance.getProcessId(), 9);
     } finally {
       monitor.leave();
     }
   }
 
   @Override
-  public void accept(ProcessInstance processInstance) {
+  public void accept(String processId) {
     monitor.enter();
     try {
-      acceptedProcessInstances.put(
-          processInstance.getProcessId(),
-          returnedProcessInstances.remove(processInstance.getProcessId()));
+      acceptedProcessInstances.put(processId, returnedProcessInstances.remove(processId));
     } finally {
       monitor.leave();
     }
   }
 
   @Override
-  public void reject(ProcessInstance processInstance) {
+  public void reject(String processId) {
     monitor.enter();
     try {
       if (permanentRejection) {
-        rejectedProcessInstances.add(
-            returnedProcessInstances.remove(processInstance.getProcessId()));
+        rejectedProcessInstances.add(returnedProcessInstances.remove(processId));
       } else {
-        newProcessInstances.add(returnedProcessInstances.remove(processInstance.getProcessId()));
+        newProcessInstances.add(returnedProcessInstances.remove(processId));
       }
     } finally {
       monitor.leave();

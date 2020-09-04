@@ -1,12 +1,21 @@
 package pipelite.process;
 
+import lombok.Value;
+
 public interface ProcessSource {
-  /** Returns the next new process instance to be executed. */
-  ProcessInstance next();
 
-  /** Confirm that the new process instance has been accepted. */
-  void accept(ProcessInstance processInstance);
+  @Value
+  class NewProcess {
+    private final String processId;
+    private final int priority;
+  }
 
-  /** Confirm that the new process instance has been rejected. */
-  void reject(ProcessInstance processInstance);
+  /** Returns the next new process to be executed. */
+  NewProcess next();
+
+  /** Confirms that the new process has been accepted. */
+  void accept(String processId);
+
+  /** Confirms that the new process has been rejected. */
+  void reject(String processId);
 }
