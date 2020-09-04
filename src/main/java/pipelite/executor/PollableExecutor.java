@@ -9,12 +9,12 @@ public interface PollableExecutor extends SerializableExecutor {
 
   TaskExecutionResult poll(TaskInstance taskinstance);
 
-  public static Duration DEFAULT_POLL_FREQUENCY = Duration.ofMinutes(1);
+  Duration DEFAULT_POLL_DELAY = Duration.ofMinutes(1);
 
   default Duration getPollFrequency(TaskInstance taskInstance) {
     if (taskInstance.getTaskParameters().getPollDelay() != null) {
       return taskInstance.getTaskParameters().getPollDelay();
     }
-    return DEFAULT_POLL_FREQUENCY;
+    return DEFAULT_POLL_DELAY;
   }
 }

@@ -17,16 +17,16 @@ import java.util.Map;
 @Flogger
 public class TaskParameters {
 
-  private String host; // S
-  private Duration timeout;
-  private Integer retries;
-  private String[] env;
-  private String workDir;
-  private Integer memory;
-  private Duration memoryTimeout;
-  private Integer cores;
-  private String queue;
-  private Duration pollDelay;
+  private String host; // Executors: SSH
+  private Duration timeout; // Executors: all
+  private Integer retries; // Executors: all
+  private String[] env; // Executors: all
+  private String workDir; // Executors: LSF
+  private Integer memory; // Executors: LSF
+  private Duration memoryTimeout; // Executors: LSF
+  private Integer cores; // Executors: LSF
+  private String queue; // Executors: LSF
+  private Duration pollDelay; // Executors: LSF
 
   /* Add parameters. Existing values will not be replaced. */
   public void add(TaskConfiguration taskConfiguration) {

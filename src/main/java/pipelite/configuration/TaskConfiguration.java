@@ -7,6 +7,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
 
+import static pipelite.executor.PollableExecutor.DEFAULT_POLL_DELAY;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -44,5 +46,5 @@ public class TaskConfiguration {
   private String[] env;
 
   /** Delay between task polls. */
-  private Duration pollDelay;
+  private Duration pollDelay = DEFAULT_POLL_DELAY;
 }
