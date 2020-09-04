@@ -90,18 +90,14 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
     private final PipeliteStage pipeliteStage;
   }
 
-  public static class ProcessNotExecutableException extends RuntimeException {
-    private final String processName;
-    private final String processId;
+  public static class ProcessNotExecutableException extends Exception {
 
     private static String getMessage(String reason) {
-      return "Process could not be executed because it could not be " + reason;
+      return "Process could not be executed because it " + reason;
     }
 
-    public ProcessNotExecutableException(String reason, String processName, String processId) {
+    public ProcessNotExecutableException(String reason) {
       super(getMessage(reason));
-      this.processName = processName;
-      this.processId = processId;
     }
   }
 
@@ -115,7 +111,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
   }
 
   @Override
-  protected void startUp() {
+  protected void startUp() throws ProcessNotExecutableException {
 
     lockProcess();
 
@@ -159,8 +155,8 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
       log.atWarning()
           .with(LogKey.PROCESS_NAME, getProcessName())
           .with(LogKey.PROCESS_ID, getProcessId())
-          .log(ProcessNotExecutableException.getMessage("locked"));
-      throw new ProcessNotExecutableException("locked", getProcessName(), getProcessId());
+          .log(ProcessNotExecutableException.getMessage("could not be locked"));
+      throw new ProcessNotExecutableException("could not be locked");
     }
   }
 
@@ -172,8 +168,8 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
       log.atWarning()
           .with(LogKey.PROCESS_NAME, getProcessName())
           .with(LogKey.PROCESS_ID, getProcessId())
-          .log(ProcessNotExecutableException.getMessage("retrieved"));
-      throw new ProcessNotExecutableException("retrieved", getProcessName(), getProcessId());
+          .log(ProcessNotExecutableException.getMessage("could not be retrieved from database"));
+      throw new ProcessNotExecutableException("could not be retrieved from database");
     }
     pipeliteProcessInstance.setPipeliteProcess(pipeliteProcess.get());
   }
@@ -218,7 +214,7 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
     }
   }
 
-  private void evaluateProcessState() {
+  private void evaluateProcessState() throws ProcessNotExecutableException {
     PipeliteProcess pipeliteProcess = pipeliteProcessInstance.getPipeliteProcess();
 
     // Get process execution state from the tasks. If it is different from the
@@ -244,8 +240,8 @@ public class ProcessLauncher extends AbstractExecutionThreadService {
           .with(LogKey.PROCESS_NAME, getProcessName())
           .with(LogKey.PROCESS_ID, getProcessId())
           .with(LogKey.PROCESS_STATE, pipeliteProcess.getState())
-          .log(ProcessNotExecutableException.getMessage("active"));
-      throw new ProcessNotExecutableException("active", getProcessName(), getProcessId());
+          .log(ProcessNotExecutableException.getMessage("is not active"));
+      throw new ProcessNotExecutableException("is not active");
     }
   }
 

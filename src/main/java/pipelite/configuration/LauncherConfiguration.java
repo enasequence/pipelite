@@ -21,11 +21,14 @@ public class LauncherConfiguration {
   private String launcherName;
 
   /** Number of parallel task executions. */
-  private int workers;
+  @Builder.Default private int workers = PipeliteLauncher.DEFAULT_WORKERS;
 
   /** Delay between launcher runs. */
-  private Duration runDelay = PipeliteLauncher.DEFAULT_RUN_DELAY;
+  @Builder.Default private Duration runDelay = PipeliteLauncher.DEFAULT_RUN_DELAY;
 
   /** Delay before launcher stops. */
-  private Duration stopDelay = PipeliteLauncher.DEFAULT_STOP_DELAY;
+  @Builder.Default private Duration stopDelay = PipeliteLauncher.DEFAULT_STOP_DELAY;
+
+  /** Delay before launcher allows new high priority tasks to take precedence. */
+  @Builder.Default private Duration priorityDelay = PipeliteLauncher.DEFAULT_PRIORITY_DELAY;
 }

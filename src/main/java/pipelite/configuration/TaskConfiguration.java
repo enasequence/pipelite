@@ -46,5 +46,5 @@ public class TaskConfiguration {
   private String[] env;
 
   /** Delay between task polls. */
-  private Duration pollDelay = DEFAULT_POLL_DELAY;
+  @Builder.Default private Duration pollDelay = DEFAULT_POLL_DELAY;
 }

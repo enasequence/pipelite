@@ -10,11 +10,15 @@
  */
 package pipelite.task;
 
+import com.google.common.flogger.FluentLogger;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
+import lombok.extern.flogger.Flogger;
 import pipelite.executor.TaskExecutor;
+import pipelite.log.LogKey;
 
+@Flogger
 @Value
 @Builder
 public class TaskInstance {
@@ -24,4 +28,35 @@ public class TaskInstance {
   @EqualsAndHashCode.Exclude private final TaskExecutor executor;
   @EqualsAndHashCode.Exclude private final TaskInstance dependsOn;
   @EqualsAndHashCode.Exclude private final TaskParameters taskParameters;
+
+  public boolean validate() {
+    boolean isSuccess = true;
+    if (processName == null || processName.isEmpty()) {
+      logContext(log.atSevere()).log("Process name is missing");
+      isSuccess = false;
+    }
+    if (processId == null || processId.isEmpty()) {
+      logContext(log.atSevere()).log("Process id is missing");
+      isSuccess = false;
+    }
+    if (taskName == null || taskName.isEmpty()) {
+      logContext(log.atSevere()).log("Task name is missing");
+      isSuccess = false;
+    }
+    if (executor == null) {
+      logContext(log.atSevere()).log("Executor is missing");
+      isSuccess = false;
+    }
+    if (taskParameters == null) {
+      logContext(log.atSevere()).log("Task parameters are missing");
+      isSuccess = false;
+    }
+    return isSuccess;
+  }
+
+  public FluentLogger.Api logContext(FluentLogger.Api log) {
+    return log.with(LogKey.PROCESS_NAME, processName)
+        .with(LogKey.PROCESS_ID, processId)
+        .with(LogKey.TASK_NAME, taskName);
+  }
 }
