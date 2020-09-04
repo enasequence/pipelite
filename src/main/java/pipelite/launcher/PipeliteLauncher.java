@@ -72,8 +72,10 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private long iterations = 0;
   private Long maxIterations;
 
-  private Duration schedulerDelay = Duration.ofSeconds(10);
-  private final Duration stopDelay = Duration.ofSeconds(1);
+  public static final Duration DEFAULT_RUN_DELAY = Duration.ofMinutes(1);
+  public static final Duration DEFAULT_STOP_DELAY = Duration.ofSeconds(1);
+  private final Duration runDelay;
+  private final Duration stopDelay;
 
   public PipeliteLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
@@ -94,6 +96,18 @@ public class PipeliteLauncher extends AbstractScheduledService {
       workers = ForkJoinPool.getCommonPoolParallelism();
     }
     this.executorService = Executors.newFixedThreadPool(workers);
+
+    if (launcherConfiguration.getRunDelay() != null) {
+      this.runDelay = launcherConfiguration.getRunDelay();
+    } else {
+      this.runDelay = DEFAULT_RUN_DELAY;
+    }
+
+    if (launcherConfiguration.getStopDelay() != null) {
+      this.stopDelay = launcherConfiguration.getRunDelay();
+    } else {
+      this.stopDelay = DEFAULT_STOP_DELAY;
+    }
   }
 
   @Override
@@ -120,7 +134,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   @Override
   protected Scheduler scheduler() {
-    return Scheduler.newFixedDelaySchedule(Duration.ZERO, schedulerDelay);
+    return Scheduler.newFixedDelaySchedule(Duration.ZERO, runDelay);
   }
 
   @Override
@@ -461,14 +475,6 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   public void setProcessQueueValidDuration(Duration duration) {
     this.processQueueValidDuration = duration;
-  }
-
-  public Duration getSchedulerDelay() {
-    return schedulerDelay;
-  }
-
-  public void setSchedulerDelay(Duration schedulerDelay) {
-    this.schedulerDelay = schedulerDelay;
   }
 
   public ShutdownPolicy getShutdownPolicy() {

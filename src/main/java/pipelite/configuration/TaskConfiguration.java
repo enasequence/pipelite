@@ -43,5 +43,6 @@ public class TaskConfiguration {
   /** Environmental variables. */
   private String[] env;
 
-  private Duration pollFrequency;
+  /** Delay between task polls. */
+  private Duration pollDelay;
 }

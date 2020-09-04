@@ -5,7 +5,6 @@ public enum TaskExecutionResultType {
   ACTIVE(false),
   SUCCESS(false),
   ERROR(true);
-//  INTERNAL_ERROR(true),
 
   TaskExecutionResultType(boolean isError) {
     this.isError = isError;

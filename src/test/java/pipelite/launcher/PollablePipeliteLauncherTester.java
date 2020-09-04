@@ -19,7 +19,6 @@ import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
 import pipelite.task.TaskExecutionResult;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -57,9 +56,7 @@ public class PollablePipeliteLauncherTester {
     executeCount = new AtomicInteger();
   }
 
-  private static final int WORKERS_CNT = 2;
   private static final int PROCESS_CNT = 4;
-  private static final Duration SCHEDULER_DELAY = Duration.ofMillis(250);
 
   private static AtomicInteger pollCount;
   private static AtomicInteger executeCount;
@@ -73,9 +70,7 @@ public class PollablePipeliteLauncherTester {
             pipeliteProcessService,
             pipeliteStageService,
             pipeliteLockService);
-
     pipeliteLauncher.setShutdownPolicy(ShutdownPolicy.SHUTDOWN_IF_IDLE);
-    pipeliteLauncher.setSchedulerDelay(SCHEDULER_DELAY);
     return pipeliteLauncher;
   }
 
@@ -155,8 +150,6 @@ public class PollablePipeliteLauncherTester {
   }
 
   private void init(ProcessExecutionState processExecutionState, TaskExecutor taskExecutor) {
-    launcherConfiguration.setWorkers(WORKERS_CNT);
-
     List<ProcessInstance> processInstances = new ArrayList<>();
 
     for (int i = 0; i < PROCESS_CNT; ++i) {

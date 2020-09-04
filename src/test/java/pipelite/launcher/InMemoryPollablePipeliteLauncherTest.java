@@ -28,6 +28,8 @@ import pipelite.service.*;
 @SpringBootTest(
     classes = FullTestConfiguration.class,
     properties = {
+      "pipelite.launcher.workers=2",
+      "pipelite.launcher.runDelay=250ms",
       "spring.autoconfigure.exclude="
           + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
           + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"

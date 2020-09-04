@@ -57,9 +57,9 @@ public class TaskParametersUtils {
     return getValue(taskParameters::getQueue, taskConfiguration::getQueue);
   }
 
-  public static Duration getPollFrequency(
+  public static Duration getPollDelay(
           TaskParameters taskParameters, TaskConfiguration taskConfiguration) {
-    return getValue(taskParameters::getPollFrequency, taskConfiguration::getPollFrequency);
+    return getValue(taskParameters::getPollDelay, taskConfiguration::getPollDelay);
   }
 
   private static <T> T getValue(Supplier<T> taskInstance, Supplier<T> taskConfiguration) {

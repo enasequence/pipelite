@@ -31,7 +31,7 @@ public class SshCallLsfExecutorTest {
     String taskName = UniqueStringGenerator.randomTaskName();
 
     TaskParameters taskParameters =
-        TaskParameters.builder().host("noah-login").pollFrequency(Duration.ofSeconds(5)).build();
+        TaskParameters.builder().host("noah-login").pollDelay(Duration.ofSeconds(5)).build();
 
     TaskInstance taskInstance =
         TaskInstance.builder()

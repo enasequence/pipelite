@@ -17,7 +17,7 @@ import java.util.Map;
 @Flogger
 public class TaskParameters {
 
-  private String host; // Used by SshSystemCallExecutor.
+  private String host; // S
   private Duration timeout;
   private Integer retries;
   private String[] env;
@@ -26,7 +26,7 @@ public class TaskParameters {
   private Duration memoryTimeout;
   private Integer cores;
   private String queue;
-  private Duration pollFrequency;
+  private Duration pollDelay;
 
   /* Add parameters. Existing values will not be replaced. */
   public void add(TaskConfiguration taskConfiguration) {
@@ -42,7 +42,7 @@ public class TaskParameters {
     setMemoryTimeout(TaskParametersUtils.getMemoryTimeout(this, taskConfiguration));
     setCores(TaskParametersUtils.getCores(this, taskConfiguration));
     setQueue(TaskParametersUtils.getQueue(this, taskConfiguration));
-    setPollFrequency(TaskParametersUtils.getPollFrequency(this, taskConfiguration));
+    setPollDelay(TaskParametersUtils.getPollDelay(this, taskConfiguration));
   }
 
   public List<String> getEnvAsJavaSystemPropertyOptions() {

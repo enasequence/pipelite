@@ -31,7 +31,8 @@ import pipelite.service.PipeliteStageService;
 @SpringBootTest(
     classes = FullTestConfiguration.class,
     properties = {
-      "pipelite.launcher.workers=5",
+      "pipelite.launcher.workers=2",
+      "pipelite.launcher.runDelay=250ms",
       "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver",
     })
 @ContextConfiguration(

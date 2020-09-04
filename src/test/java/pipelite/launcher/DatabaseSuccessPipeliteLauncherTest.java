@@ -26,6 +26,7 @@ import pipelite.configuration.ProcessConfiguration;
     classes = FullTestConfiguration.class,
     properties = {
       "pipelite.launcher.workers=5",
+      "pipelite.launcher.runDelay=250ms",
       "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver",
     })
 @ContextConfiguration(
