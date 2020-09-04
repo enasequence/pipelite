@@ -1,6 +1,7 @@
 package pipelite.executor.lsf;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -19,7 +20,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(classes = EmptyTestConfiguration.class)
 @EnableConfigurationProperties(value = {TestConfiguration.class})
 @ActiveProfiles("test")
-public class LsfSshInternalExecutorTest {
+public class LsfSshExecutorTest {
+
+  @Autowired
+  TestConfiguration testConfiguration;
 
   @Test
   public void test() {
@@ -31,7 +35,7 @@ public class LsfSshInternalExecutorTest {
     String taskName = UniqueStringGenerator.randomTaskName();
 
     TaskParameters taskParameters =
-        TaskParameters.builder().host("noah-login").pollDelay(Duration.ofSeconds(5)).build();
+        TaskParameters.builder().host(testConfiguration.getLsf().getHost()).pollDelay(Duration.ofSeconds(5)).build();
 
     TaskInstance taskInstance =
         TaskInstance.builder()
