@@ -17,6 +17,11 @@ public class ProcessBuilder {
   private final List<TaskInstance> taskInstances = new ArrayList<>();
 
   public ProcessBuilder task(String taskName, TaskExecutor executor) {
+    return task(taskName, executor, TaskParameters.builder().build());
+  }
+
+  public ProcessBuilder task(
+      String taskName, TaskExecutor executor, TaskParameters taskParameters) {
 
     taskInstances.add(
         TaskInstance.builder()
@@ -24,12 +29,17 @@ public class ProcessBuilder {
             .processId(processId)
             .taskName(taskName)
             .executor(executor)
-            .taskParameters(TaskParameters.builder().build())
+            .taskParameters(taskParameters)
             .build());
     return this;
   }
 
   public ProcessBuilder taskDependsOnPrevious(String taskName, TaskExecutor executor) {
+    return taskDependsOnPrevious(taskName, executor, TaskParameters.builder().build());
+  }
+
+  public ProcessBuilder taskDependsOnPrevious(
+      String taskName, TaskExecutor executor, TaskParameters taskParameters) {
 
     taskInstances.add(
         TaskInstance.builder()
@@ -37,7 +47,7 @@ public class ProcessBuilder {
             .processId(processId)
             .taskName(taskName)
             .executor(executor)
-            .taskParameters(TaskParameters.builder().build())
+            .taskParameters(taskParameters)
             .dependsOn(taskInstances.get(taskInstances.size() - 1))
             .build());
     return this;
