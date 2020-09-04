@@ -15,13 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
-import pipelite.UniqueStringGenerator;
 import pipelite.FullTestConfiguration;
 
 import org.springframework.transaction.annotation.Transactional;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(classes = FullTestConfiguration.class)
 @ActiveProfiles(value = {"database", "database-oracle-test"})
@@ -29,82 +25,17 @@ public class PipeliteDatabaseLockServiceTest {
 
   @Autowired PipeliteDatabaseLockService service;
 
-  private static final String processName = UniqueStringGenerator.randomProcessName();
-  private static final String launcherName1 = UniqueStringGenerator.randomLauncherName();
-  private static final String launcherName2 = UniqueStringGenerator.randomLauncherName();
-
   @Test
   @Transactional
   @Rollback
   public void test() {
-
-    service.unlockLauncher(launcherName1, processName);
-    service.unlockLauncher(launcherName2, processName);
-
-    assertTrue(service.lockLauncher(launcherName1, processName));
-    assertTrue(service.isLauncherLocked(launcherName1, processName));
-
-    assertTrue(service.lockLauncher(launcherName2, processName));
-    assertTrue(service.isLauncherLocked(launcherName1, processName));
-    assertTrue(service.isLauncherLocked(launcherName2, processName));
-
-    assertTrue(service.unlockLauncher(launcherName1, processName));
-    assertFalse(service.isLauncherLocked(launcherName1, processName));
-    assertTrue(service.isLauncherLocked(launcherName2, processName));
-
-    assertTrue(service.unlockLauncher(launcherName2, processName));
-    assertFalse(service.isLauncherLocked(launcherName1, processName));
-    assertFalse(service.isLauncherLocked(launcherName2, processName));
+    PipeliteLockServiceTester.testLaucherLocks(service);
   }
 
   @Test
   @Transactional
   @Rollback
   public void testProcessLocks() {
-
-    service.purgeLauncherLocks(launcherName1, processName);
-    service.purgeLauncherLocks(launcherName2, processName);
-
-    assertTrue(service.lockProcess(launcherName1, processName, "PROCESSID1"));
-    assertTrue(service.isProcessLocked(processName, "PROCESSID1"));
-
-    assertTrue(service.lockProcess(launcherName1, processName, "PROCESSID2"));
-    assertTrue(service.isProcessLocked(processName, "PROCESSID1"));
-    assertTrue(service.isProcessLocked(processName, "PROCESSID2"));
-
-    assertTrue(service.unlockProcess(launcherName1, processName, "PROCESSID1"));
-    assertFalse(service.isProcessLocked(processName, "PROCESSID1"));
-    assertTrue(service.isProcessLocked(processName, "PROCESSID2"));
-
-    assertTrue(service.lockProcess(launcherName2, processName, "PROCESSID3"));
-    assertFalse(service.isProcessLocked(processName, "PROCESSID1"));
-    assertTrue(service.isProcessLocked(processName, "PROCESSID2"));
-    assertTrue(service.isProcessLocked(processName, "PROCESSID3"));
-
-    assertTrue(service.lockProcess(launcherName2, processName, "PROCESSID4"));
-    assertFalse(service.isProcessLocked(processName, "PROCESSID1"));
-    assertTrue(service.isProcessLocked(processName, "PROCESSID2"));
-    assertTrue(service.isProcessLocked(processName, "PROCESSID3"));
-    assertTrue(service.isProcessLocked(processName, "PROCESSID4"));
-
-    assertTrue(service.unlockProcess(launcherName2, processName, "PROCESSID4"));
-    assertFalse(service.isProcessLocked(processName, "PROCESSID1"));
-    assertTrue(service.isProcessLocked(processName, "PROCESSID2"));
-    assertTrue(service.isProcessLocked(processName, "PROCESSID3"));
-    assertFalse(service.isProcessLocked(processName, "PROCESSID4"));
-
-    service.purgeLauncherLocks(launcherName1, processName);
-
-    assertFalse(service.isProcessLocked(processName, "PROCESSID1"));
-    assertFalse(service.isProcessLocked(processName, "PROCESSID2"));
-    assertTrue(service.isProcessLocked(processName, "PROCESSID3"));
-    assertFalse(service.isProcessLocked(processName, "PROCESSID4"));
-
-    service.purgeLauncherLocks(launcherName2, processName);
-
-    assertFalse(service.isProcessLocked(processName, "PROCESSID1"));
-    assertFalse(service.isProcessLocked(processName, "PROCESSID2"));
-    assertFalse(service.isProcessLocked(processName, "PROCESSID3"));
-    assertFalse(service.isProcessLocked(processName, "PROCESSID4"));
+    PipeliteLockServiceTester.testProcessLocks(service);
   }
 }
