@@ -1,14 +1,24 @@
 package pipelite.executor.lsf;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.EmptyTestConfiguration;
 import pipelite.UniqueStringGenerator;
+import pipelite.configuration.TestConfiguration;
 import pipelite.executor.SuccessTaskExecutor;
+import pipelite.executor.command.LocalExecutor;
+import pipelite.executor.command.SshExecutor;
 import pipelite.executor.runner.CommandRunner;
 import pipelite.executor.runner.CommandRunnerResult;
 import pipelite.task.TaskExecutionResult;
+import pipelite.task.TaskExecutionResultType;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskParameters;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
@@ -17,7 +27,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@SpringBootTest(classes = EmptyTestConfiguration.class)
+@EnableConfigurationProperties(value = {TestConfiguration.class})
+@ActiveProfiles("test")
 public class LsfExecutorTest {
+
+  @Autowired private TestConfiguration testConfiguration;
 
   private TaskParameters taskParameters() {
     try {
@@ -53,7 +68,8 @@ public class LsfExecutorTest {
       new LsfExecutor() {
         @Override
         public CommandRunner getCmdRunner() {
-          return (cmd, taskParameters) -> new CommandRunnerResult(0, "Job <13454> is submitted", "");
+          return (cmd, taskParameters) ->
+              new CommandRunnerResult(0, "Job <13454> is submitted", "");
         }
 
         @Override
@@ -63,7 +79,85 @@ public class LsfExecutorTest {
       };
 
   @Test
-  public void testCmd() {
+  public void testStdoutWithLocalExecutor() throws IOException {
+    TaskInstance taskInstance = TaskInstance.builder().build();
+
+    File file = File.createTempFile("pipellite-test", "");
+    file.createNewFile();
+
+    LocalExecutor executor =
+        LocalExecutor.builder()
+            .cmd(taskInstance1 -> "sh -c 'echo test > " + file.getAbsolutePath() + "'")
+            .build();
+    TaskExecutionResult result = executor.execute(taskInstance);
+    assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
+    CommandRunnerResult runnerResult =
+        LsfExecutor.writeFileToStdout(
+            executor.getCmdRunner(), file.getAbsolutePath(), taskInstance);
+    assertThat(runnerResult.getStdout()).isEqualTo("test\n");
+  }
+
+  @Test
+  public void testStderrWithLocalExecutor() throws IOException {
+    TaskInstance taskInstance = TaskInstance.builder().build();
+
+    File file = File.createTempFile("pipellite-test", "");
+    file.createNewFile();
+
+    LocalExecutor executor =
+        LocalExecutor.builder()
+            .cmd(taskInstance1 -> "sh -c 'echo test > " + file.getAbsolutePath() + "'")
+            .build();
+    TaskExecutionResult result = executor.execute(taskInstance);
+    assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
+    CommandRunnerResult runnerResult =
+        LsfExecutor.writeFileToStderr(
+            executor.getCmdRunner(), file.getAbsolutePath(), taskInstance);
+    assertThat(runnerResult.getStderr()).isEqualTo("test\n");
+  }
+
+  @Test
+  public void testStdoutWithSshExecutor() throws IOException {
+    TaskInstance taskInstance = TaskInstance.builder().build();
+    taskInstance.getTaskParameters().setHost(testConfiguration.getSsh().getHost());
+
+    File file = File.createTempFile("pipellite-test", "");
+    file.createNewFile();
+
+    SshExecutor executor =
+        SshExecutor.builder()
+            .cmd(taskInstance1 -> "sh -c 'echo test > " + file.getAbsolutePath() + "'")
+            .build();
+    TaskExecutionResult result = executor.execute(taskInstance);
+    assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
+    CommandRunnerResult runnerResult =
+        LsfExecutor.writeFileToStdout(
+            executor.getCmdRunner(), file.getAbsolutePath(), taskInstance);
+    assertThat(runnerResult.getStdout()).isEqualTo("test\n");
+  }
+
+  @Test
+  public void testStderrWithSshExecutor() throws IOException {
+    TaskInstance taskInstance = TaskInstance.builder().build();
+    taskInstance.getTaskParameters().setHost(testConfiguration.getSsh().getHost());
+
+    File file = File.createTempFile("pipellite-test", "");
+    file.createNewFile();
+
+    SshExecutor executor =
+        SshExecutor.builder()
+            .cmd(taskInstance1 -> "sh -c 'echo test > " + file.getAbsolutePath() + "'")
+            .build();
+    TaskExecutionResult result = executor.execute(taskInstance);
+    assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
+    CommandRunnerResult runnerResult =
+        LsfExecutor.writeFileToStderr(
+            executor.getCmdRunner(), file.getAbsolutePath(), taskInstance);
+    assertThat(runnerResult.getStderr()).isEqualTo("test\n");
+  }
+
+  @Test
+  public void testCmdArguments() {
     TaskParameters taskParameters = taskParameters();
 
     String cmd = getCommandline(executor.execute(taskInstance(taskParameters)));
@@ -75,7 +169,7 @@ public class LsfExecutorTest {
   }
 
   @Test
-  public void testCmdNoQueue() {
+  public void testNoQueueCmdArgument() {
     TaskParameters taskParameters = taskParameters();
     taskParameters.setQueue(null);
 
@@ -84,7 +178,7 @@ public class LsfExecutorTest {
   }
 
   @Test
-  public void testCmdQueue() {
+  public void testQueueCmdArgument() {
     TaskParameters taskParameters = taskParameters();
     taskParameters.setQueue("queue");
 
@@ -93,7 +187,7 @@ public class LsfExecutorTest {
   }
 
   @Test
-  public void testCmdMemoryAndCores() {
+  public void testMemoryAndCoresCmdArgument() {
     TaskParameters taskParameters = taskParameters();
     taskParameters.setMemory(2000);
     taskParameters.setCores(12);

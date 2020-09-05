@@ -29,6 +29,25 @@ public class TaskInstance {
   @EqualsAndHashCode.Exclude private final TaskInstance dependsOn;
   @EqualsAndHashCode.Exclude private final TaskParameters taskParameters;
 
+  public TaskInstance(
+      String processName,
+      String processId,
+      String taskName,
+      TaskExecutor executor,
+      TaskInstance dependsOn,
+      TaskParameters taskParameters) {
+    this.processName = processName;
+    this.processId = processId;
+    this.taskName = taskName;
+    this.executor = executor;
+    this.dependsOn = dependsOn;
+    if (taskParameters != null) {
+      this.taskParameters = taskParameters;
+    } else {
+      this.taskParameters = TaskParameters.builder().build();
+    }
+  }
+
   public boolean validate() {
     boolean isSuccess = true;
     if (processName == null || processName.isEmpty()) {

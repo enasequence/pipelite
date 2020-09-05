@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import pipelite.executor.TaskExecutor;
 
 import java.time.Duration;
 
@@ -22,7 +23,7 @@ public class TaskConfiguration {
   private String host;
 
   /** Execution timeout. */
-  private Duration timeout;
+  @Builder.Default private Duration timeout = TaskExecutor.DEFAULT_TIMEOUT;
 
   /** Memory reservation (MBytes). */
   private Integer memory;

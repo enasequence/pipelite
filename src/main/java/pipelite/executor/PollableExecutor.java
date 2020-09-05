@@ -7,7 +7,7 @@ import java.time.Duration;
 
 public interface PollableExecutor extends SerializableExecutor {
 
-  TaskExecutionResult poll(TaskInstance taskinstance);
+  TaskExecutionResult poll(TaskInstance taskInstance);
 
   Duration DEFAULT_POLL_DELAY = Duration.ofMinutes(1);
 

@@ -10,6 +10,7 @@ import pipelite.task.TaskParameters;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.time.Duration;
 import java.util.List;
 
 import static pipelite.task.TaskExecutionResultExitCode.EXIT_CODE_ERROR;
@@ -34,29 +35,31 @@ public class LocalRunner implements CommandRunner {
     try {
       CommandLine commandLine = new CommandLine(args.get(0));
       if (args.size() > 1) {
-        commandLine.addArguments(args.subList(1, args.size()).toArray(new String[0]));
+        commandLine.addArguments(args.subList(1, args.size()).toArray(new String[0]), false);
       }
       OutputStream stdoutStream = new KeepOldestByteArrayOutputStream();
       OutputStream stderrStream = new KeepOldestByteArrayOutputStream();
 
-      Executor executor = new DefaultExecutor();
+      Executor apacheExecutor = new DefaultExecutor();
 
-      executor.setExitValues(null);
+      apacheExecutor.setExitValues(null);
 
-      executor.setStreamHandler(new PumpStreamHandler(stdoutStream, stderrStream));
+      apacheExecutor.setStreamHandler(new PumpStreamHandler(stdoutStream, stderrStream));
       // executor.setStreamHandler(new PumpStreamHandler(System.out, System.err));
 
-      executor.setWatchdog(
-          new ExecuteWatchdog(
-              taskParameters.getTimeout() != null
-                  ? taskParameters.getTimeout().toMillis()
-                  : ExecuteWatchdog.INFINITE_TIMEOUT));
+      Duration timeout = taskParameters.getTimeout();
+      if (timeout != null) {
+        apacheExecutor.setWatchdog(
+            new ExecuteWatchdog(
+                taskParameters.getTimeout() != null
+                    ? taskParameters.getTimeout().toMillis()
+                    : ExecuteWatchdog.INFINITE_TIMEOUT));
+      }
 
-      log.atInfo().log("Executing system call: %s" + cmd);
+      log.atInfo().log("Executing system call: %s", cmd);
 
-      int exitCode = executor.execute(commandLine, taskParameters.getEnvAsMap());
-      return new CommandRunnerResult(
-          exitCode, getStream(stdoutStream), getStream(stderrStream));
+      int exitCode = apacheExecutor.execute(commandLine, taskParameters.getEnvAsMap());
+      return new CommandRunnerResult(exitCode, getStream(stdoutStream), getStream(stderrStream));
 
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Failed system call: %s", cmd);
