@@ -7,7 +7,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.EmptyTestConfiguration;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.TestConfiguration;
+import pipelite.configuration.LsfTestConfiguration;
+import pipelite.configuration.SshTestConfiguration;
 import pipelite.executor.SuccessTaskExecutor;
 import pipelite.executor.command.LocalExecutor;
 import pipelite.executor.command.SshExecutor;
@@ -28,11 +29,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(classes = EmptyTestConfiguration.class)
-@EnableConfigurationProperties(value = {TestConfiguration.class})
-@ActiveProfiles("test")
+@EnableConfigurationProperties(value = {SshTestConfiguration.class})
+@ActiveProfiles("ssh-test")
 public class LsfExecutorTest {
 
-  @Autowired private TestConfiguration testConfiguration;
+  @Autowired private SshTestConfiguration testConfiguration;
 
   private TaskParameters taskParameters() {
     try {
@@ -119,7 +120,7 @@ public class LsfExecutorTest {
   @Test
   public void testStdoutWithSshExecutor() throws IOException {
     TaskInstance taskInstance = TaskInstance.builder().build();
-    taskInstance.getTaskParameters().setHost(testConfiguration.getSsh().getHost());
+    taskInstance.getTaskParameters().setHost(testConfiguration.getHost());
 
     File file = File.createTempFile("pipellite-test", "");
     file.createNewFile();
@@ -139,7 +140,7 @@ public class LsfExecutorTest {
   @Test
   public void testStderrWithSshExecutor() throws IOException {
     TaskInstance taskInstance = TaskInstance.builder().build();
-    taskInstance.getTaskParameters().setHost(testConfiguration.getSsh().getHost());
+    taskInstance.getTaskParameters().setHost(testConfiguration.getHost());
 
     File file = File.createTempFile("pipellite-test", "");
     file.createNewFile();

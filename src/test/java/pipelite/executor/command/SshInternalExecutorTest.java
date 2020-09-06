@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.EmptyTestConfiguration;
-import pipelite.configuration.TestConfiguration;
+import pipelite.configuration.SshTestConfiguration;
 import pipelite.executor.TaskExecutor;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskParameters;
@@ -17,11 +17,12 @@ import pipelite.task.TaskExecutionResultType;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = EmptyTestConfiguration.class)
-@EnableConfigurationProperties(value = {TestConfiguration.class})
-@ActiveProfiles("test")
+@EnableConfigurationProperties(value = {SshTestConfiguration.class})
+@ActiveProfiles("ssh-test")
 public class SshInternalExecutorTest {
 
-  @Autowired TestConfiguration testConfiguration;
+  @Autowired
+  SshTestConfiguration testConfiguration;
 
   public static class SuccessTaskExecutor implements TaskExecutor {
     @Override
@@ -62,7 +63,7 @@ public class SshInternalExecutorTest {
     SshInternalExecutor executor = new SshInternalExecutor();
 
     TaskParameters taskParameters = TaskParameters.builder().build();
-    taskParameters.setHost(testConfiguration.getSsh().getHost());
+    taskParameters.setHost(testConfiguration.getHost());
 
     TaskExecutor taskExecutor = new SuccessTaskExecutor();
 
@@ -95,7 +96,7 @@ public class SshInternalExecutorTest {
     String taskName = "testTaskName";
 
     TaskParameters taskParameters = TaskParameters.builder().build();
-    taskParameters.setHost(testConfiguration.getSsh().getHost());
+    taskParameters.setHost(testConfiguration.getHost());
 
     TaskExecutor taskExecutor = new ErrorTaskExecutor();
 

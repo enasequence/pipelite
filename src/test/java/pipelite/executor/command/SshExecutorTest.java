@@ -7,7 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.EmptyTestConfiguration;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.TestConfiguration;
+import pipelite.configuration.SshTestConfiguration;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskParameters;
 import pipelite.task.TaskExecutionResult;
@@ -16,11 +16,11 @@ import pipelite.task.TaskExecutionResultType;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = EmptyTestConfiguration.class)
-@EnableConfigurationProperties(value = {TestConfiguration.class})
-@ActiveProfiles("test")
+@EnableConfigurationProperties(value = {SshTestConfiguration.class})
+@ActiveProfiles("ssh-test")
 public class SshExecutorTest {
 
-  @Autowired TestConfiguration testConfiguration;
+  @Autowired SshTestConfiguration testConfiguration;
 
   @Test
   public void test() {
@@ -32,7 +32,7 @@ public class SshExecutorTest {
     String taskName = UniqueStringGenerator.randomTaskName();
 
     TaskParameters taskParameters = TaskParameters.builder().build();
-    taskParameters.setHost(testConfiguration.getSsh().getHost());
+    taskParameters.setHost(testConfiguration.getHost());
 
     TaskInstance taskInstance =
         TaskInstance.builder()
@@ -46,11 +46,8 @@ public class SshExecutorTest {
 
     TaskExecutionResult result = executor.execute(taskInstance);
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
-    assertThat(result.getAttribute(TaskExecutionResult.COMMAND))
-        .isEqualTo("echo test");
-    assertThat(result.getAttribute(TaskExecutionResult.EXIT_CODE))
-        .isEqualTo("0");
-    assertThat(result.getStdout())
-        .isEqualTo("test\n");
+    assertThat(result.getAttribute(TaskExecutionResult.COMMAND)).isEqualTo("echo test");
+    assertThat(result.getAttribute(TaskExecutionResult.EXIT_CODE)).isEqualTo("0");
+    assertThat(result.getStdout()).isEqualTo("test\n");
   }
 }

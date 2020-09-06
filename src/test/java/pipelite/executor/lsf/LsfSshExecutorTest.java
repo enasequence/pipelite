@@ -7,7 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.EmptyTestConfiguration;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.TestConfiguration;
+import pipelite.configuration.LsfTestConfiguration;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultType;
 import pipelite.task.TaskInstance;
@@ -18,12 +18,11 @@ import java.time.Duration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = EmptyTestConfiguration.class)
-@EnableConfigurationProperties(value = {TestConfiguration.class})
-@ActiveProfiles("test")
+@EnableConfigurationProperties(value = {LsfTestConfiguration.class})
+@ActiveProfiles("lsf-test")
 public class LsfSshExecutorTest {
 
-  @Autowired
-  TestConfiguration testConfiguration;
+  @Autowired LsfTestConfiguration testConfiguration;
 
   @Test
   public void test() {
@@ -35,7 +34,10 @@ public class LsfSshExecutorTest {
     String taskName = UniqueStringGenerator.randomTaskName();
 
     TaskParameters taskParameters =
-        TaskParameters.builder().host(testConfiguration.getLsf().getHost()).pollDelay(Duration.ofSeconds(5)).build();
+        TaskParameters.builder()
+            .host(testConfiguration.getHost())
+            .pollDelay(Duration.ofSeconds(5))
+            .build();
 
     TaskInstance taskInstance =
         TaskInstance.builder()
@@ -47,21 +49,15 @@ public class LsfSshExecutorTest {
 
     TaskExecutionResult result = executor.execute(taskInstance);
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.ACTIVE);
-    assertThat(result.getAttribute(TaskExecutionResult.COMMAND))
-        .startsWith("bsub");
-    assertThat(result.getAttribute(TaskExecutionResult.COMMAND))
-        .endsWith("echo test");
-    assertThat(result.getAttribute(TaskExecutionResult.EXIT_CODE))
-        .isEqualTo("0");
-    assertThat(result.getStdout())
-        .contains("is submitted to default queue");
+    assertThat(result.getAttribute(TaskExecutionResult.COMMAND)).startsWith("bsub");
+    assertThat(result.getAttribute(TaskExecutionResult.COMMAND)).endsWith("echo test");
+    assertThat(result.getAttribute(TaskExecutionResult.EXIT_CODE)).isEqualTo("0");
+    assertThat(result.getStdout()).contains("is submitted to default queue");
 
     result = executor.poll(taskInstance);
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
     assertThat(result.getAttribute(TaskExecutionResult.COMMAND)).isBlank();
-    assertThat(result.getAttribute(TaskExecutionResult.EXIT_CODE))
-        .isEqualTo("0");
-    assertThat(result.getStdout())
-        .contains("test\n");
+    assertThat(result.getAttribute(TaskExecutionResult.EXIT_CODE)).isEqualTo("0");
+    assertThat(result.getStdout()).contains("test\n");
   }
 }
