@@ -13,8 +13,8 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.executor.ErrorTaskExecutor;
 import pipelite.executor.SuccessTaskExecutor;
-import pipelite.process.ProcessInstance;
 import pipelite.process.ProcessBuilder;
+import pipelite.process.ProcessInstance;
 import pipelite.process.ProcessSource;
 
 import java.time.Duration;
@@ -31,10 +31,9 @@ import static org.assertj.core.api.Assertions.assertThat;
       "pipelite.launcher.runDelay=250ms",
       "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver"
     })
-@ContextConfiguration(
-    initializers = DatabaseSuccessPipeliteLauncherTest.TestContextInitializer.class)
-@ActiveProfiles(value = {"database", "database-oracle-test"})
-public class DatabaseFailingPipeliteLauncherTest {
+@ContextConfiguration(initializers = HSqlSuccessPipeliteLauncherTest.TestContextInitializer.class)
+@ActiveProfiles(value = {"hsql-test"})
+public class HSqlFailingPipeliteLauncherTest {
 
   @Autowired private ProcessConfiguration processConfiguration;
   @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;

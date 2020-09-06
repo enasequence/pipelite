@@ -18,8 +18,8 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import pipelite.UniqueStringGenerator;
 import pipelite.FullTestConfiguration;
+import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfiguration;
 
 @SpringBootTest(
@@ -29,10 +29,9 @@ import pipelite.configuration.ProcessConfiguration;
       "pipelite.launcher.runDelay=250ms",
       "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver",
     })
-@ContextConfiguration(
-    initializers = DatabaseSuccessPipeliteLauncherTest.TestContextInitializer.class)
-@ActiveProfiles(value = {"database", "database-oracle-test"})
-public class DatabaseSuccessPipeliteLauncherTest {
+@ContextConfiguration(initializers = HSqlSuccessPipeliteLauncherTest.TestContextInitializer.class)
+@ActiveProfiles(value = {"hsql-test"})
+public class HSqlSuccessPipeliteLauncherTest {
 
   @Autowired private PipeliteLauncher pipeliteLauncher;
   @Autowired private ProcessConfiguration processConfiguration;

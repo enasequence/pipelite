@@ -13,10 +13,10 @@ import pipelite.executor.TaskExecutor;
 import pipelite.process.ProcessInstance;
 import pipelite.process.ProcessBuilder;
 import pipelite.service.PipeliteLockService;
-import pipelite.task.TaskInstance;
-import pipelite.process.ProcessExecutionState;
 import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
+import pipelite.task.TaskInstance;
+import pipelite.process.ProcessExecutionState;
 import pipelite.task.TaskExecutionResult;
 
 import java.util.ArrayList;

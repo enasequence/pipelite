@@ -20,10 +20,11 @@ import pipelite.FullTestConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest(classes = FullTestConfiguration.class)
-@ActiveProfiles(value = {"database", "database-oracle-test"})
-public class PipeliteDatabaseLockServiceTest {
+@ActiveProfiles(value = {"oracle-test"})
+public class OraclePipeliteLockServiceTest {
 
-  @Autowired PipeliteDatabaseLockService service;
+  @Autowired
+  PipeliteLockService service;
 
   @Test
   @Transactional

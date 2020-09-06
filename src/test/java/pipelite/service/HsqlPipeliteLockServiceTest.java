@@ -11,18 +11,30 @@
 package pipelite.service;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.Rollback;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
+import pipelite.FullTestConfiguration;
 
-public class PipeliteInMemoryLockServiceTest {
+@SpringBootTest(classes = FullTestConfiguration.class)
+@ActiveProfiles(value = {"hsql-test"})
+public class HsqlPipeliteLockServiceTest {
+
+  @Autowired PipeliteLockService service;
 
   @Test
-  public void testLauncherLocks() {
-    PipeliteInMemoryLockService service = new PipeliteInMemoryLockService();
+  @Transactional
+  @Rollback
+  public void test() {
     PipeliteLockServiceTester.testLaucherLocks(service);
   }
 
   @Test
+  @Transactional
+  @Rollback
   public void testProcessLocks() {
-    PipeliteInMemoryLockService locker = new PipeliteInMemoryLockService();
-    PipeliteLockServiceTester.testProcessLocks(locker);
+    PipeliteLockServiceTester.testProcessLocks(service);
   }
 }

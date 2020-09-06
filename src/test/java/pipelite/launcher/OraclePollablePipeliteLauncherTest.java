@@ -36,9 +36,9 @@ import pipelite.service.PipeliteStageService;
       "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver",
     })
 @ContextConfiguration(
-    initializers = DatabaseSuccessPipeliteLauncherTest.TestContextInitializer.class)
-@ActiveProfiles(value = {"database", "database-oracle-test"})
-public class DatabasePollablePipeliteLauncherTest {
+    initializers = OracleSuccessPipeliteLauncherTest.TestContextInitializer.class)
+@ActiveProfiles(value = {"oracle-test"})
+public class OraclePollablePipeliteLauncherTest {
 
   @Autowired private LauncherConfiguration launcherConfiguration;
   @Autowired private ProcessConfiguration processConfiguration;
@@ -48,7 +48,7 @@ public class DatabasePollablePipeliteLauncherTest {
   @Autowired private PipeliteStageService pipeliteStageService;
   @Autowired private PipeliteLockService pipeliteLockService;
 
-  public DatabasePollablePipeliteLauncherTest() {}
+  public OraclePollablePipeliteLauncherTest() {}
 
   public static class TestContextInitializer
       implements ApplicationContextInitializer<ConfigurableApplicationContext> {

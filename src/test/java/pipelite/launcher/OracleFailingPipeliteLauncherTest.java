@@ -29,22 +29,19 @@ import static org.assertj.core.api.Assertions.assertThat;
     properties = {
       "pipelite.launcher.workers=5",
       "pipelite.launcher.runDelay=250ms",
-      "spring.autoconfigure.exclude="
-          + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
-          + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
-          + "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration"
+      "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver"
     })
 @ContextConfiguration(
-    initializers = InMemorySuccessPipeliteLauncherTest.TestContextInitializer.class)
-@ActiveProfiles(value = {"test", "memory"})
-public class InMemoryFailingPipeliteLauncherTest {
+    initializers = OracleSuccessPipeliteLauncherTest.TestContextInitializer.class)
+@ActiveProfiles(value = {"oracle-test"})
+public class OracleFailingPipeliteLauncherTest {
 
   @Autowired private ProcessConfiguration processConfiguration;
-
   @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
 
   private static final String PROCESS_NAME = UniqueStringGenerator.randomProcessName();
   private static final int PROCESS_CNT = 5;
+  private static final Duration SCHEDULER_DELAY = Duration.ofMillis(250);
 
   private PipeliteLauncher init(
       List<ProcessInstance> processInstances, ProcessSource processSource) {

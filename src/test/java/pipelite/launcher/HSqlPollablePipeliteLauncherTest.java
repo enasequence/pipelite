@@ -11,6 +11,7 @@
 package pipelite.launcher;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.util.TestPropertyValues;
@@ -23,26 +24,30 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
-import pipelite.service.*;
+import pipelite.service.PipeliteLockService;
+import pipelite.service.PipeliteProcessService;
+import pipelite.service.PipeliteStageService;
 
 @SpringBootTest(
     classes = FullTestConfiguration.class,
     properties = {
       "pipelite.launcher.workers=2",
       "pipelite.launcher.runDelay=250ms",
-      "spring.autoconfigure.exclude="
-          + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
-          + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
-          + "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration"
+      "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver",
     })
-@ContextConfiguration(
-    initializers = InMemoryPollablePipeliteLauncherTest.TestContextInitializer.class)
-@ActiveProfiles(value = {"test", "memory"})
-public class InMemoryPollablePipeliteLauncherTest {
+@ContextConfiguration(initializers = HSqlSuccessPipeliteLauncherTest.TestContextInitializer.class)
+@ActiveProfiles(value = {"hsql-test"})
+public class HSqlPollablePipeliteLauncherTest {
 
   @Autowired private LauncherConfiguration launcherConfiguration;
   @Autowired private ProcessConfiguration processConfiguration;
   @Autowired private TaskConfiguration taskConfiguration;
+  @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
+  @Autowired private PipeliteProcessService pipeliteProcessService;
+  @Autowired private PipeliteStageService pipeliteStageService;
+  @Autowired private PipeliteLockService pipeliteLockService;
+
+  public HSqlPollablePipeliteLauncherTest() {}
 
   public static class TestContextInitializer
       implements ApplicationContextInitializer<ConfigurableApplicationContext> {
@@ -62,9 +67,9 @@ public class InMemoryPollablePipeliteLauncherTest {
             launcherConfiguration,
             processConfiguration,
             taskConfiguration,
-            new PipeliteInMemoryProcessService(),
-            new PipeliteInMemoryStageService(),
-            new PipeliteInMemoryLockService());
+            pipeliteProcessService,
+            pipeliteStageService,
+            pipeliteLockService);
     tester.testPollSuccessExecuteSuccess();
   }
 
@@ -75,9 +80,9 @@ public class InMemoryPollablePipeliteLauncherTest {
             launcherConfiguration,
             processConfiguration,
             taskConfiguration,
-            new PipeliteInMemoryProcessService(),
-            new PipeliteInMemoryStageService(),
-            new PipeliteInMemoryLockService());
+            pipeliteProcessService,
+            pipeliteStageService,
+            pipeliteLockService);
     tester.testPollErrorExecuteSuccess();
   }
 
@@ -88,10 +93,10 @@ public class InMemoryPollablePipeliteLauncherTest {
             launcherConfiguration,
             processConfiguration,
             taskConfiguration,
-            new PipeliteInMemoryProcessService(),
-            new PipeliteInMemoryStageService(),
-            new PipeliteInMemoryLockService());
-    tester.testPollErrorExecuteError();
+            pipeliteProcessService,
+            pipeliteStageService,
+            pipeliteLockService);
+    tester.testPollErrorExecuteSuccess();
   }
 
   @Test
@@ -101,9 +106,10 @@ public class InMemoryPollablePipeliteLauncherTest {
             launcherConfiguration,
             processConfiguration,
             taskConfiguration,
-            new PipeliteInMemoryProcessService(),
-            new PipeliteInMemoryStageService(),
-            new PipeliteInMemoryLockService());
+            pipeliteProcessService,
+            pipeliteStageService,
+            pipeliteLockService);
+
     tester.testPollExceptionExecuteSuccess();
   }
 
@@ -114,9 +120,10 @@ public class InMemoryPollablePipeliteLauncherTest {
             launcherConfiguration,
             processConfiguration,
             taskConfiguration,
-            new PipeliteInMemoryProcessService(),
-            new PipeliteInMemoryStageService(),
-            new PipeliteInMemoryLockService());
+            pipeliteProcessService,
+            pipeliteStageService,
+            pipeliteLockService);
+
     tester.testPollExceptionExecuteError();
   }
 }

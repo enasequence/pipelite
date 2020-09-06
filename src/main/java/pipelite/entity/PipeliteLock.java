@@ -7,9 +7,7 @@ import lombok.NoArgsConstructor;
 import javax.persistence.*;
 
 @Entity
-@Table(
-    name = "PIPELITE_LOCK",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"PIPELINE_NAME", "ALLOCATOR_NAME"}))
+@Table(name = "PIPELITE_LOCK")
 @IdClass(PipeliteLockId.class)
 @Data
 @NoArgsConstructor

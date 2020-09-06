@@ -28,15 +28,11 @@ import pipelite.configuration.ProcessConfiguration;
       "pipelite.launcher.workers=5",
       "pipelite.launcher.runDelay=250ms",
       "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver",
-      "spring.autoconfigure.exclude="
-          + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
-          + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
-          + "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration"
     })
 @ContextConfiguration(
-    initializers = InMemorySuccessPipeliteLauncherTest.TestContextInitializer.class)
-@ActiveProfiles(value = {"test", "memory"})
-public class InMemorySuccessPipeliteLauncherTest {
+    initializers = OracleSuccessPipeliteLauncherTest.TestContextInitializer.class)
+@ActiveProfiles(value = {"oracle-test"})
+public class OracleSuccessPipeliteLauncherTest {
 
   @Autowired private PipeliteLauncher pipeliteLauncher;
   @Autowired private ProcessConfiguration processConfiguration;

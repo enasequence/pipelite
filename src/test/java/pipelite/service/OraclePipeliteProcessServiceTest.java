@@ -13,15 +13,15 @@ import pipelite.process.ProcessExecutionState;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = FullTestConfiguration.class)
-@ActiveProfiles(value = {"database", "database-oracle-test"})
-class PipeliteDatabaseProcessServiceTest {
+@ActiveProfiles(value = {"oracle-test"})
+class OraclePipeliteProcessServiceTest {
 
-  @Autowired PipeliteDatabaseProcessService service;
+  @Autowired
+  PipeliteProcessService service;
 
   @Test
   @Transactional

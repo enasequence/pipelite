@@ -8,7 +8,6 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.UniqueStringGenerator;
 import pipelite.FullTestConfiguration;
 import pipelite.entity.PipeliteStage;
-import pipelite.executor.SuccessTaskExecutor;
 import pipelite.task.TaskExecutionResult;
 
 import org.springframework.transaction.annotation.Transactional;
@@ -17,10 +16,11 @@ import pipelite.task.TaskInstance;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = FullTestConfiguration.class)
-@ActiveProfiles(value = {"database", "database-oracle-test"})
-class PipeliteDatabaseStageServiceTest {
+@ActiveProfiles(value = {"oracle-test"})
+class OraclePipeliteStageServiceTest {
 
-  @Autowired PipeliteDatabaseStageService service;
+  @Autowired
+  PipeliteStageService service;
 
   @Test
   @Transactional
