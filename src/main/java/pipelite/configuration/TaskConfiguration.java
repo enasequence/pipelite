@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import pipelite.executor.TaskExecutor;
+import pipelite.task.ConfigurableTaskParameters;
 
 import java.time.Duration;
 
@@ -15,7 +16,7 @@ import static pipelite.executor.PollableExecutor.DEFAULT_POLL_DELAY;
 @AllArgsConstructor
 @ConfigurationProperties(prefix = "pipelite.task", ignoreInvalidFields = true)
 /** Some configuration parameters are supported only by specific executors. */
-public class TaskConfiguration {
+public class TaskConfiguration implements ConfigurableTaskParameters {
 
   public TaskConfiguration() {}
 

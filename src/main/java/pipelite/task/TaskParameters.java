@@ -15,7 +15,7 @@ import java.util.Map;
 @Data
 @Builder
 @Flogger
-public class TaskParameters {
+public class TaskParameters implements ConfigurableTaskParameters {
 
   private String host; // Executors: SSH
   private Duration timeout; // Executors: all
