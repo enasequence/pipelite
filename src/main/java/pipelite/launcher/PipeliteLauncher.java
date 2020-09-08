@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 EMBL - European Bioinformatics Institute
+ * Copyright 2020 EMBL - European Bioinformatics Institute
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
  * file except in compliance with the License. You may obtain a copy of the License at
  * http://www.apache.org/licenses/LICENSE-2.0
@@ -10,15 +10,14 @@
  */
 package pipelite.launcher;
 
+import com.google.common.flogger.FluentLogger;
+import com.google.common.util.concurrent.AbstractScheduledService;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-
-import com.google.common.flogger.FluentLogger;
-import com.google.common.util.concurrent.AbstractScheduledService;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -27,10 +26,10 @@ import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.entity.PipeliteProcess;
-import pipelite.process.ProcessInstance;
-import pipelite.process.ProcessFactory;
-import pipelite.process.ProcessSource;
 import pipelite.log.LogKey;
+import pipelite.process.ProcessFactory;
+import pipelite.process.ProcessInstance;
+import pipelite.process.ProcessSource;
 import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 EMBL - European Bioinformatics Institute
+ * Copyright 2020 EMBL - European Bioinformatics Institute
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
  * file except in compliance with the License. You may obtain a copy of the License at
  * http://www.apache.org/licenses/LICENSE-2.0
@@ -15,16 +15,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
-import pipelite.FullTestConfiguration;
-
 import org.springframework.transaction.annotation.Transactional;
+import pipelite.FullTestConfiguration;
 
 @SpringBootTest(classes = FullTestConfiguration.class)
 @ActiveProfiles(value = {"oracle-test"})
 public class OraclePipeliteLockServiceTest {
 
-  @Autowired
-  PipeliteLockService service;
+  @Autowired PipeliteLockService service;
 
   @Test
   @Transactional

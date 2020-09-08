@@ -1,22 +1,30 @@
+/*
+ * Copyright 2020 EMBL - European Bioinformatics Institute
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
+ * file except in compliance with the License. You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
 package pipelite.launcher;
 
-import lombok.AllArgsConstructor;
-
-import pipelite.TestInMemoryProcessFactory;
-import pipelite.TestInMemoryProcessSource;
-import pipelite.UniqueStringGenerator;
-import pipelite.configuration.ProcessConfiguration;
-import pipelite.executor.TaskExecutor;
-import pipelite.process.ProcessInstance;
-import pipelite.process.ProcessBuilder;
-import pipelite.task.TaskExecutionResult;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import lombok.AllArgsConstructor;
+import pipelite.TestInMemoryProcessFactory;
+import pipelite.TestInMemoryProcessSource;
+import pipelite.UniqueStringGenerator;
+import pipelite.configuration.ProcessConfiguration;
+import pipelite.executor.TaskExecutor;
+import pipelite.process.ProcessBuilder;
+import pipelite.process.ProcessInstance;
+import pipelite.task.TaskExecutionResult;
 
 @AllArgsConstructor
 public class SuccessPipeliteLauncherTester {
@@ -54,10 +62,7 @@ public class SuccessPipeliteLauncherTester {
       String processId = "Process" + i;
       processInstances.add(
           new ProcessBuilder(processName, processId, 9)
-              .task(
-                  UniqueStringGenerator.randomTaskName(),
-                  createTaskExecutor(processId)
-              )
+              .task(UniqueStringGenerator.randomTaskName(), createTaskExecutor(processId))
               .build());
     }
     return processInstances;

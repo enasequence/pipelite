@@ -1,21 +1,29 @@
+/*
+ * Copyright 2020 EMBL - European Bioinformatics Institute
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
+ * file except in compliance with the License. You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
 package pipelite.executor.lsf;
-
-import lombok.extern.flogger.Flogger;
-import pipelite.executor.PollableExecutor;
-import pipelite.executor.CommandExecutor;
-import pipelite.executor.runner.CommandRunner;
-import pipelite.executor.runner.CommandRunnerResult;
-import pipelite.executor.runner.LocalRunner;
-import pipelite.log.LogKey;
-import pipelite.task.TaskExecutionResultExitCode;
-import pipelite.task.TaskExecutionResult;
-import pipelite.task.TaskExecutionResultType;
-import pipelite.task.TaskInstance;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import lombok.extern.flogger.Flogger;
+import pipelite.executor.CommandExecutor;
+import pipelite.executor.PollableExecutor;
+import pipelite.executor.runner.CommandRunner;
+import pipelite.executor.runner.CommandRunnerResult;
+import pipelite.log.LogKey;
+import pipelite.task.TaskExecutionResult;
+import pipelite.task.TaskExecutionResultExitCode;
+import pipelite.task.TaskExecutionResultType;
+import pipelite.task.TaskInstance;
 
 @Flogger
 public abstract class LsfExecutor extends CommandExecutor implements PollableExecutor {

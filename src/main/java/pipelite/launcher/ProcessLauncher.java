@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 EMBL - European Bioinformatics Institute
+ * Copyright 2020 EMBL - European Bioinformatics Institute
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
  * file except in compliance with the License. You may obtain a copy of the License at
  * http://www.apache.org/licenses/LICENSE-2.0
@@ -10,11 +10,12 @@
  */
 package pipelite.launcher;
 
+import static pipelite.task.TaskExecutionResultType.*;
+
+import com.google.common.flogger.FluentLogger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
-import com.google.common.flogger.FluentLogger;
 import lombok.Data;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
@@ -27,17 +28,15 @@ import pipelite.entity.PipeliteStage;
 import pipelite.executor.PollableExecutor;
 import pipelite.executor.SerializableExecutor;
 import pipelite.executor.TaskExecutor;
-import pipelite.process.ProcessInstance;
 import pipelite.log.LogKey;
 import pipelite.process.ProcessExecutionState;
+import pipelite.process.ProcessInstance;
 import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
-import pipelite.task.TaskInstance;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultType;
-
-import static pipelite.task.TaskExecutionResultType.*;
+import pipelite.task.TaskInstance;
 
 @Flogger
 @Component()

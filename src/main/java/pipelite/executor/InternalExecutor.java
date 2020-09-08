@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 EMBL - European Bioinformatics Institute
+ * Copyright 2020 EMBL - European Bioinformatics Institute
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
  * file except in compliance with the License. You may obtain a copy of the License at
  * http://www.apache.org/licenses/LICENSE-2.0
@@ -10,20 +10,19 @@
  */
 package pipelite.executor;
 
-import lombok.extern.flogger.Flogger;
-import pipelite.executor.runner.CommandRunnerUtils;
-import pipelite.task.TaskInstance;
-import pipelite.task.TaskParameters;
-import pipelite.task.TaskExecutionResultExitCode;
-import pipelite.task.TaskExecutionResult;
+import static pipelite.log.LogKey.*;
+import static pipelite.task.TaskExecutionResultExitCode.EXIT_CODE_ERROR;
 
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static pipelite.log.LogKey.*;
-import static pipelite.task.TaskExecutionResultExitCode.EXIT_CODE_ERROR;
+import lombok.extern.flogger.Flogger;
+import pipelite.executor.runner.CommandRunnerUtils;
+import pipelite.task.TaskExecutionResult;
+import pipelite.task.TaskExecutionResultExitCode;
+import pipelite.task.TaskInstance;
+import pipelite.task.TaskParameters;
 
 @Flogger
 public class InternalExecutor implements TaskExecutor {

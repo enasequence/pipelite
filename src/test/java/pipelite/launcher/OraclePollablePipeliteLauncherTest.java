@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 EMBL - European Bioinformatics Institute
+ * Copyright 2020 EMBL - European Bioinformatics Institute
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
  * file except in compliance with the License. You may obtain a copy of the License at
  * http://www.apache.org/licenses/LICENSE-2.0
@@ -35,8 +35,7 @@ import pipelite.service.PipeliteStageService;
       "pipelite.launcher.runDelay=250ms",
       "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver",
     })
-@ContextConfiguration(
-    initializers = OracleSuccessPipeliteLauncherTest.TestContextInitializer.class)
+@ContextConfiguration(initializers = OracleSuccessPipeliteLauncherTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"oracle-test"})
 public class OraclePollablePipeliteLauncherTest {
 
