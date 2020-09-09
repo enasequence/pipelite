@@ -31,7 +31,6 @@ import pipelite.executor.TaskExecutor;
 import pipelite.log.LogKey;
 import pipelite.process.ProcessExecutionState;
 import pipelite.process.ProcessInstance;
-import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
 import pipelite.task.TaskExecutionResult;
@@ -48,7 +47,6 @@ public class ProcessLauncher implements Runnable {
   private final TaskConfiguration taskConfiguration;
   private final PipeliteProcessService pipeliteProcessService;
   private final PipeliteStageService pipeliteStageService;
-  private final PipeliteLockService pipeliteLockService;
 
   private PipeliteProcessInstance pipeliteProcessInstance;
   private List<PipeliteTaskInstance> pipeliteTaskInstances = new ArrayList<>();
@@ -62,15 +60,13 @@ public class ProcessLauncher implements Runnable {
       @Autowired ProcessConfiguration processConfiguration,
       @Autowired TaskConfiguration taskConfiguration,
       @Autowired PipeliteProcessService pipeliteProcessService,
-      @Autowired PipeliteStageService pipeliteStageService,
-      @Autowired PipeliteLockService pipeliteLockService) {
+      @Autowired PipeliteStageService pipeliteStageService) {
 
     this.launcherConfiguration = launcherConfiguration;
     this.processConfiguration = processConfiguration;
     this.taskConfiguration = taskConfiguration;
     this.pipeliteProcessService = pipeliteProcessService;
     this.pipeliteStageService = pipeliteStageService;
-    this.pipeliteLockService = pipeliteLockService;
   }
 
   @Data

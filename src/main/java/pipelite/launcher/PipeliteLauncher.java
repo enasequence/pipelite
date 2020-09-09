@@ -269,8 +269,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
             processConfiguration,
             taskConfiguration,
             pipeliteProcessService,
-            pipeliteStageService,
-            pipeliteLockService);
+            pipeliteStageService);
 
     ProcessInstance processInstance = processFactory.create(processId);
 
