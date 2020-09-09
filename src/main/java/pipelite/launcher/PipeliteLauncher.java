@@ -46,6 +46,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private final PipeliteStageService pipeliteStageService;
   private final PipeliteLockService pipeliteLockService;
   private final ExecutorService executorService;
+  private final int workers;
   private ProcessFactory processFactory;
   private ProcessSource processSource;
 
@@ -74,7 +75,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
   public static final Duration DEFAULT_STOP_DELAY = Duration.ofSeconds(1);
   public static final Duration DEFAULT_PRIORITY_DELAY = Duration.ofHours(1);
   private final Duration runDelay;
-  private final Duration stopDelay;
+  private final Duration stopDelay = DEFAULT_STOP_DELAY;
   private final Duration priorityDelay;
 
   public PipeliteLauncher(
@@ -90,23 +91,16 @@ public class PipeliteLauncher extends AbstractScheduledService {
     this.pipeliteProcessService = pipeliteProcessService;
     this.pipeliteStageService = pipeliteStageService;
     this.pipeliteLockService = pipeliteLockService;
-
-    int workers = launcherConfiguration.getWorkers();
-    if (workers == 0) {
-      workers = DEFAULT_WORKERS;
-    }
+    this.workers =
+        launcherConfiguration.getWorkers() > 0
+            ? launcherConfiguration.getWorkers()
+            : DEFAULT_WORKERS;
     this.executorService = Executors.newFixedThreadPool(workers);
 
     if (launcherConfiguration.getRunDelay() != null) {
       this.runDelay = launcherConfiguration.getRunDelay();
     } else {
       this.runDelay = DEFAULT_RUN_DELAY;
-    }
-
-    if (launcherConfiguration.getStopDelay() != null) {
-      this.stopDelay = launcherConfiguration.getRunDelay();
-    } else {
-      this.stopDelay = DEFAULT_STOP_DELAY;
     }
 
     if (launcherConfiguration.getPriorityDelay() != null) {
@@ -148,17 +142,15 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
     logContext(log.atInfo()).log("Running launcher");
 
-    if (processConfiguration.isProcessSource()) {
-      createNewProcesses();
-    }
-
-    if (processQueueIndex == processQueue.size()
+    if (processQueueIndex >= processQueue.size()
         || processQueueValidUntil.isBefore(LocalDateTime.now())) {
+      if (processConfiguration.isProcessSource()) {
+        createNewProcesses();
+      }
       queueProcesses();
     }
 
-    while (processQueueIndex < processQueue.size()
-        && initProcesses.size() < launcherConfiguration.getWorkers()) {
+    while (processQueueIndex < processQueue.size() && initProcesses.size() < workers) {
       launchProcess();
     }
 
