@@ -28,6 +28,10 @@ public class ProcessConfiguration {
   /** Name of the process begin executed. */
   private String processName;
 
+  /**
+   * Name of the the class that creates process instances. Must implement the ProjectFactory
+   * interface.
+   */
   private String processFactoryName;
 
   private String processSourceName;
@@ -49,15 +53,11 @@ public class ProcessConfiguration {
       return processConfiguration.getProcessFactory();
     }
     if (processConfiguration.getProcessFactoryName() != null) {
-      try {
-        Class<?> cls = Class.forName(processConfiguration.getProcessFactoryName());
-        if (ProcessFactory.class.isAssignableFrom(cls)) {
-          ProcessFactory factory = ((ProcessFactory) cls.getDeclaredConstructor().newInstance());
-          processConfiguration.setProcessFactory(factory);
-          return factory;
-        }
-      } catch (Exception ex) {
-        throw new RuntimeException("Could not create process factory", ex);
+      ProcessFactory factory =
+          ProcessFactory.getProcessFactory(processConfiguration.getProcessFactoryName());
+      if (factory != null) {
+        processConfiguration.setProcessFactory(factory);
+        return factory;
       }
     }
     throw new RuntimeException("Could not create process factory");

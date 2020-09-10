@@ -43,7 +43,6 @@ import pipelite.task.TaskInstance;
 public class ProcessLauncher implements Runnable {
 
   private final LauncherConfiguration launcherConfiguration;
-  private final ProcessConfiguration processConfiguration;
   private final TaskConfiguration taskConfiguration;
   private final PipeliteProcessService pipeliteProcessService;
   private final PipeliteStageService pipeliteStageService;
@@ -57,13 +56,11 @@ public class ProcessLauncher implements Runnable {
 
   public ProcessLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
-      @Autowired ProcessConfiguration processConfiguration,
       @Autowired TaskConfiguration taskConfiguration,
       @Autowired PipeliteProcessService pipeliteProcessService,
       @Autowired PipeliteStageService pipeliteStageService) {
 
     this.launcherConfiguration = launcherConfiguration;
-    this.processConfiguration = processConfiguration;
     this.taskConfiguration = taskConfiguration;
     this.pipeliteProcessService = pipeliteProcessService;
     this.pipeliteStageService = pipeliteStageService;

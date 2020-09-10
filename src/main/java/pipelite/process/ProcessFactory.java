@@ -12,4 +12,17 @@ package pipelite.process;
 
 public interface ProcessFactory {
   ProcessInstance create(String processId);
+
+  static ProcessFactory getProcessFactory(String processFactoryName) {
+    try {
+      Class<?> cls = Class.forName(processFactoryName);
+      if (ProcessFactory.class.isAssignableFrom(cls)) {
+        ProcessFactory factory = ((ProcessFactory) cls.getDeclaredConstructor().newInstance());
+        return factory;
+      }
+    } catch (Exception ex) {
+      throw new RuntimeException("Could not create process factory", ex);
+    }
+    return null;
+  }
 }

@@ -35,5 +35,5 @@ public class LauncherConfiguration {
   @Builder.Default private Duration runDelay = PipeliteLauncher.DEFAULT_RUN_DELAY;
 
   /** Delay between the launcher re-creating and re-prioritising the process queue. */
-  @Builder.Default private Duration priorityDelay = PipeliteLauncher.DEFAULT_PRIORITY_DELAY;
+  @Builder.Default private Duration refreshDelay = PipeliteLauncher.DEFAULT_REFRESH_DELAY;
 }

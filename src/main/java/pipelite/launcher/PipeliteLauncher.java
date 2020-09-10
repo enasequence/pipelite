@@ -73,10 +73,10 @@ public class PipeliteLauncher extends AbstractScheduledService {
   public static final int DEFAULT_WORKERS = ForkJoinPool.getCommonPoolParallelism();
   public static final Duration DEFAULT_RUN_DELAY = Duration.ofMinutes(1);
   public static final Duration DEFAULT_STOP_DELAY = Duration.ofSeconds(1);
-  public static final Duration DEFAULT_PRIORITY_DELAY = Duration.ofHours(1);
+  public static final Duration DEFAULT_REFRESH_DELAY = Duration.ofHours(1);
   private final Duration runDelay;
   private final Duration stopDelay = DEFAULT_STOP_DELAY;
-  private final Duration priorityDelay;
+  private final Duration refreshDelay;
 
   public PipeliteLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
@@ -103,10 +103,10 @@ public class PipeliteLauncher extends AbstractScheduledService {
       this.runDelay = DEFAULT_RUN_DELAY;
     }
 
-    if (launcherConfiguration.getPriorityDelay() != null) {
-      this.priorityDelay = launcherConfiguration.getPriorityDelay();
+    if (launcherConfiguration.getRefreshDelay() != null) {
+      this.refreshDelay = launcherConfiguration.getRefreshDelay();
     } else {
-      this.priorityDelay = DEFAULT_PRIORITY_DELAY;
+      this.refreshDelay = DEFAULT_REFRESH_DELAY;
     }
   }
 
@@ -246,7 +246,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
         pipeliteProcessService.getNewProcesses(getProcessName()).stream()
             .filter(pipeliteProcess -> !activeProcesses.containsKey(pipeliteProcess.getProcessId()))
             .collect(Collectors.toList()));
-    processQueueValidUntil = LocalDateTime.now().plus(priorityDelay);
+    processQueueValidUntil = LocalDateTime.now().plus(refreshDelay);
   }
 
   private void launchProcess() {
@@ -258,7 +258,6 @@ public class PipeliteLauncher extends AbstractScheduledService {
     ProcessLauncher processLauncher =
         new ProcessLauncher(
             launcherConfiguration,
-            processConfiguration,
             taskConfiguration,
             pipeliteProcessService,
             pipeliteStageService);

@@ -46,12 +46,11 @@ public class PipeliteStage {
   private String stageName;
 
   @Column(name = "EXEC_CNT")
-  private Integer executionCount;
+  private int executionCount = 0;
 
   @Column(name = "EXEC_START")
   private LocalDateTime startTime;
 
-  // TODO: change column name to EXEC_END
   @Column(name = "EXEC_DATE")
   private LocalDateTime endTime;
 
