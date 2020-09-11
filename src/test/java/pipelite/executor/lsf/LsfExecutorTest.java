@@ -27,8 +27,8 @@ import pipelite.EmptyTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.SshTestConfiguration;
 import pipelite.executor.SuccessTaskExecutor;
-import pipelite.executor.command.LocalExecutor;
-import pipelite.executor.command.SshExecutor;
+import pipelite.executor.command.LocalCommandExecutor;
+import pipelite.executor.command.SshCommandExecutor;
 import pipelite.executor.runner.CommandRunner;
 import pipelite.executor.runner.CommandRunnerResult;
 import pipelite.task.TaskExecutionResult;
@@ -94,10 +94,8 @@ public class LsfExecutorTest {
     File file = File.createTempFile("pipellite-test", "");
     file.createNewFile();
 
-    LocalExecutor executor =
-        LocalExecutor.builder()
-            .cmd(taskInstance1 -> "sh -c 'echo test > " + file.getAbsolutePath() + "'")
-            .build();
+    LocalCommandExecutor executor =
+        new LocalCommandExecutor("sh -c 'echo test > " + file.getAbsolutePath() + "'");
     TaskExecutionResult result = executor.execute(taskInstance);
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
     CommandRunnerResult runnerResult =
@@ -113,10 +111,8 @@ public class LsfExecutorTest {
     File file = File.createTempFile("pipellite-test", "");
     file.createNewFile();
 
-    LocalExecutor executor =
-        LocalExecutor.builder()
-            .cmd(taskInstance1 -> "sh -c 'echo test > " + file.getAbsolutePath() + "'")
-            .build();
+    LocalCommandExecutor executor =
+        new LocalCommandExecutor("sh -c 'echo test > " + file.getAbsolutePath() + "'");
     TaskExecutionResult result = executor.execute(taskInstance);
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
     CommandRunnerResult runnerResult =
@@ -133,10 +129,8 @@ public class LsfExecutorTest {
     File file = File.createTempFile("pipellite-test", "");
     file.createNewFile();
 
-    SshExecutor executor =
-        SshExecutor.builder()
-            .cmd(taskInstance1 -> "sh -c 'echo test > " + file.getAbsolutePath() + "'")
-            .build();
+    SshCommandExecutor executor =
+        new SshCommandExecutor("sh -c 'echo test > " + file.getAbsolutePath() + "'");
     TaskExecutionResult result = executor.execute(taskInstance);
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
     CommandRunnerResult runnerResult =
@@ -153,10 +147,9 @@ public class LsfExecutorTest {
     File file = File.createTempFile("pipellite-test", "");
     file.createNewFile();
 
-    SshExecutor executor =
-        SshExecutor.builder()
-            .cmd(taskInstance1 -> "sh -c 'echo test > " + file.getAbsolutePath() + "'")
-            .build();
+    SshCommandExecutor executor =
+        new SshCommandExecutor("sh -c 'echo test > " + file.getAbsolutePath() + "'");
+
     TaskExecutionResult result = executor.execute(taskInstance);
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
     CommandRunnerResult runnerResult =

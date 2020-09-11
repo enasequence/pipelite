@@ -73,6 +73,10 @@ public class TaskInstance {
     return isSuccess;
   }
 
+  public TaskExecutionResult execute() {
+    return executor.execute(this);
+  }
+
   public FluentLogger.Api logContext(FluentLogger.Api log) {
     return log.with(LogKey.PROCESS_NAME, processName)
         .with(LogKey.PROCESS_ID, processId)

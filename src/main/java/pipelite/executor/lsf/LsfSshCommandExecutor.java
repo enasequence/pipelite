@@ -8,25 +8,32 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.executor.command;
+package pipelite.executor.lsf;
 
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Value;
 import lombok.extern.flogger.Flogger;
-import pipelite.executor.CommandExecutor;
-import pipelite.executor.InternalExecutor;
 import pipelite.executor.runner.CommandRunner;
 import pipelite.executor.runner.SshRunner;
 import pipelite.task.TaskInstance;
 
 @Flogger
-public final class SshInternalExecutor extends CommandExecutor {
+@Value
+@Builder
+@EqualsAndHashCode(callSuper = true)
+public final class LsfSshCommandExecutor extends LsfExecutor {
+
+  /** The actual command string to be executed. */
+  private final String cmd;
 
   @Override
-  public final CommandRunner getCmdRunner() {
+  public CommandRunner getCmdRunner() {
     return new SshRunner();
   }
 
   @Override
   public String getCmd(TaskInstance taskInstance) {
-    return InternalExecutor.getCmd(taskInstance);
+    return cmd;
   }
 }

@@ -13,6 +13,12 @@ package pipelite.executor.command;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.EmptyTestConfiguration;
+import pipelite.configuration.SshTestConfiguration;
 import pipelite.executor.TaskExecutor;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultExitCode;
@@ -20,7 +26,12 @@ import pipelite.task.TaskExecutionResultType;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskParameters;
 
-public class LocalInternalExecutorTest {
+@SpringBootTest(classes = EmptyTestConfiguration.class)
+@EnableConfigurationProperties(value = {SshTestConfiguration.class})
+@ActiveProfiles("ssh-test")
+public class SshTaskExecutorTest {
+
+  @Autowired SshTestConfiguration testConfiguration;
 
   public static class SuccessTaskExecutor implements TaskExecutor {
     @Override
@@ -40,7 +51,7 @@ public class LocalInternalExecutorTest {
     }
   }
 
-  private TaskInstance taskInstance(TaskExecutor taskExecutor, TaskParameters taskParameters) {
+  private TaskInstance taskInstance(TaskExecutor executor, TaskParameters taskParameters) {
 
     String processName = "testProcess";
     String processId = "testProcessId";
@@ -50,7 +61,7 @@ public class LocalInternalExecutorTest {
         .processName(processName)
         .processId(processId)
         .taskName(taskName)
-        .executor(taskExecutor)
+        .executor(executor)
         .taskParameters(taskParameters)
         .build();
   }
@@ -58,15 +69,13 @@ public class LocalInternalExecutorTest {
   @Test
   public void testSuccess() {
 
-    LocalInternalExecutor executor = new LocalInternalExecutor();
-
     TaskParameters taskParameters = TaskParameters.builder().build();
+    taskParameters.setHost(testConfiguration.getHost());
 
-    TaskExecutor taskExecutor = new SuccessTaskExecutor();
+    TaskInstance taskInstance =
+        taskInstance(new SshTaskExecutor(new SuccessTaskExecutor()), taskParameters);
 
-    TaskInstance taskInstance = taskInstance(taskExecutor, taskParameters);
-
-    TaskExecutionResult result = executor.execute(taskInstance);
+    TaskExecutionResult result = taskInstance.execute();
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
     assertThat(result.getAttribute(TaskExecutionResult.COMMAND))
         .endsWith(
@@ -74,7 +83,7 @@ public class LocalInternalExecutorTest {
                 + "'testProcess' "
                 + "'testProcessId' "
                 + "'testTaskName' "
-                + "'pipelite.executor.command.LocalInternalExecutorTest$SuccessTaskExecutor'");
+                + "'pipelite.executor.command.SshTaskExecutorTest$SuccessTaskExecutor'");
     assertThat(result.getStdout()).contains("test stdout");
     assertThat(result.getStderr()).contains("test stderr");
     assertThat(result.getAttribute(TaskExecutionResult.EXIT_CODE)).isEqualTo("0");
@@ -83,15 +92,24 @@ public class LocalInternalExecutorTest {
   @Test
   public void testError() {
 
-    LocalInternalExecutor executor = new LocalInternalExecutor();
+    String processName = "testProcess";
+    String processId = "testProcessId";
+    String taskName = "testTaskName";
 
     TaskParameters taskParameters = TaskParameters.builder().build();
+    taskParameters.setHost(testConfiguration.getHost());
 
-    TaskExecutor taskExecutor = new ErrorTaskExecutor();
+    TaskInstance taskInstance =
+        TaskInstance.builder()
+            .processName(processName)
+            .processId(processId)
+            .taskName(taskName)
+            .executor(new SshTaskExecutor(new ErrorTaskExecutor()))
+            .taskParameters(taskParameters)
+            .build();
 
-    TaskInstance taskInstance = taskInstance(taskExecutor, taskParameters);
+    TaskExecutionResult result = taskInstance.execute();
 
-    TaskExecutionResult result = executor.execute(taskInstance);
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.ERROR);
     assertThat(result.getAttribute(TaskExecutionResult.COMMAND))
         .endsWith(
@@ -99,7 +117,7 @@ public class LocalInternalExecutorTest {
                 + "'testProcess' "
                 + "'testProcessId' "
                 + "'testTaskName' "
-                + "'pipelite.executor.command.LocalInternalExecutorTest$ErrorTaskExecutor'");
+                + "'pipelite.executor.command.SshTaskExecutorTest$ErrorTaskExecutor'");
     assertThat(result.getStdout()).contains("test stdout");
     assertThat(result.getStderr()).contains("test stderr");
     assertThat(result.getAttribute(TaskExecutionResult.EXIT_CODE))
@@ -109,13 +127,11 @@ public class LocalInternalExecutorTest {
   @Test
   public void javaMemory() {
 
-    LocalInternalExecutor executor = new LocalInternalExecutor();
+    SshTaskExecutor executor = new SshTaskExecutor(new SuccessTaskExecutor());
 
     TaskParameters taskParameters = TaskParameters.builder().memory(2000).build();
 
-    TaskExecutor taskExecutor = new SuccessTaskExecutor();
-
-    TaskInstance taskInstance = taskInstance(taskExecutor, taskParameters);
+    TaskInstance taskInstance = taskInstance(executor, taskParameters);
 
     TaskExecutionResult result = executor.execute(taskInstance);
 
@@ -125,7 +141,7 @@ public class LocalInternalExecutorTest {
   @Test
   public void testTaskSpecificJavaProperties() {
 
-    LocalInternalExecutor executor = new LocalInternalExecutor();
+    SshTaskExecutor executor = new SshTaskExecutor(new SuccessTaskExecutor());
 
     TaskParameters taskParameters =
         TaskParameters.builder()
@@ -133,9 +149,7 @@ public class LocalInternalExecutorTest {
             .env(new String[] {"PIPELITE_TEST_JAVA_PROPERTY"})
             .build();
 
-    TaskExecutor taskExecutor = new SuccessTaskExecutor();
-
-    TaskInstance taskInstance = taskInstance(taskExecutor, taskParameters);
+    TaskInstance taskInstance = taskInstance(executor, taskParameters);
 
     TaskExecutionResult result = null;
     try {

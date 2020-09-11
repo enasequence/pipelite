@@ -28,14 +28,12 @@ import pipelite.task.TaskParameters;
 @SpringBootTest(classes = EmptyTestConfiguration.class)
 @EnableConfigurationProperties(value = {SshTestConfiguration.class})
 @ActiveProfiles("ssh-test")
-public class SshExecutorTest {
+public class SshCommandExecutorTest {
 
   @Autowired SshTestConfiguration testConfiguration;
 
   @Test
   public void test() {
-
-    SshExecutor executor = SshExecutor.builder().cmd(taskInstance -> "echo test").build();
 
     String processName = UniqueStringGenerator.randomProcessName();
     String processId = UniqueStringGenerator.randomProcessId();
@@ -49,12 +47,11 @@ public class SshExecutorTest {
             .processName(processName)
             .processId(processId)
             .taskName(taskName)
-            // Executor is not required by SshCallTaskExecutor
-            // .executor()
+            .executor(new SshCommandExecutor("echo test"))
             .taskParameters(taskParameters)
             .build();
 
-    TaskExecutionResult result = executor.execute(taskInstance);
+    TaskExecutionResult result = taskInstance.execute();
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
     assertThat(result.getAttribute(TaskExecutionResult.COMMAND)).isEqualTo("echo test");
     assertThat(result.getAttribute(TaskExecutionResult.EXIT_CODE)).isEqualTo("0");

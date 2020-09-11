@@ -10,34 +10,27 @@
  */
 package pipelite.executor.command;
 
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Value;
-import lombok.extern.flogger.Flogger;
 import pipelite.executor.CommandExecutor;
 import pipelite.executor.runner.CommandRunner;
-import pipelite.executor.runner.LocalRunner;
+import pipelite.executor.runner.SshRunner;
 import pipelite.task.TaskInstance;
 
-@Flogger
-@Value
-@Builder
-@EqualsAndHashCode(callSuper = true)
-public final class LocalExecutor extends CommandExecutor {
+public final class SshCommandExecutor extends CommandExecutor {
+
+  /** The actual command string to be executed. */
+  private final String cmd;
+
+  public SshCommandExecutor(String cmd) {
+    this.cmd = cmd;
+  }
 
   @Override
   public final CommandRunner getCmdRunner() {
-    return new LocalRunner();
-  }
-
-  private final Cmd cmd;
-
-  public interface Cmd {
-    String getCmd(TaskInstance taskInstance);
+    return new SshRunner();
   }
 
   @Override
   public String getCmd(TaskInstance taskInstance) {
-    return cmd.getCmd(taskInstance);
+    return cmd;
   }
 }

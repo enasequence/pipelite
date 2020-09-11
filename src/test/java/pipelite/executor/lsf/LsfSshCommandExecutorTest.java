@@ -29,14 +29,14 @@ import pipelite.task.TaskParameters;
 @SpringBootTest(classes = EmptyTestConfiguration.class)
 @EnableConfigurationProperties(value = {LsfTestConfiguration.class})
 @ActiveProfiles("lsf-test")
-public class LsfSshExecutorTest {
+public class LsfSshCommandExecutorTest {
 
   @Autowired LsfTestConfiguration testConfiguration;
 
   @Test
   public void test() {
 
-    LsfSshExecutor executor = LsfSshExecutor.builder().cmd(taskInstance -> "echo test").build();
+    LsfSshCommandExecutor executor = new LsfSshCommandExecutor("echo test");
 
     String processName = UniqueStringGenerator.randomProcessName();
     String processId = UniqueStringGenerator.randomProcessId();
@@ -53,6 +53,7 @@ public class LsfSshExecutorTest {
             .processName(processName)
             .processId(processId)
             .taskName(taskName)
+            .executor(executor)
             .taskParameters(taskParameters)
             .build();
 

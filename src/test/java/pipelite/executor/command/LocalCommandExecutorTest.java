@@ -19,12 +19,10 @@ import pipelite.task.TaskExecutionResultType;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskParameters;
 
-public class LocalExecutorTest {
+public class LocalCommandExecutorTest {
 
   @Test
   public void test() {
-
-    LocalExecutor executor = LocalExecutor.builder().cmd(taskInstance -> "echo test").build();
 
     String processName = UniqueStringGenerator.randomProcessName();
     String processId = UniqueStringGenerator.randomProcessId();
@@ -37,12 +35,11 @@ public class LocalExecutorTest {
             .processName(processName)
             .processId(processId)
             .taskName(taskName)
-            // Executor is not required by SystemCallTaskExecutor
-            // .executor()
+            .executor(new LocalCommandExecutor("echo test"))
             .taskParameters(taskParameters)
             .build();
 
-    TaskExecutionResult result = executor.execute(taskInstance);
+    TaskExecutionResult result = taskInstance.execute();
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
     assertThat(result.getAttribute(TaskExecutionResult.COMMAND)).isEqualTo("echo test");
     assertThat(result.getAttribute(TaskExecutionResult.EXIT_CODE)).isEqualTo("0");

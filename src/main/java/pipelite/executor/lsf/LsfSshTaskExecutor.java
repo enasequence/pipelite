@@ -15,23 +15,28 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.InternalExecutor;
+import pipelite.executor.TaskExecutor;
 import pipelite.executor.runner.CommandRunner;
-import pipelite.executor.runner.LocalRunner;
+import pipelite.executor.runner.SshRunner;
 import pipelite.task.TaskInstance;
 
 @Flogger
-@Value
-@Builder
-@EqualsAndHashCode(callSuper = true)
-public final class LsfLocalInternalExecutor extends LsfExecutor {
+public final class LsfSshTaskExecutor extends LsfExecutor {
+
+  /** The actual TaskExecutor to be used. */
+  private final TaskExecutor taskExecutor;
+
+  public LsfSshTaskExecutor(TaskExecutor taskExecutor) {
+    this.taskExecutor = taskExecutor;
+  }
 
   @Override
   public CommandRunner getCmdRunner() {
-    return new LocalRunner();
+    return new SshRunner();
   }
 
   @Override
   public String getCmd(TaskInstance taskInstance) {
-    return InternalExecutor.getCmd(taskInstance);
+    return InternalExecutor.getCmd(taskInstance, taskExecutor);
   }
 }

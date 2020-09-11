@@ -125,7 +125,7 @@ public class InternalExecutor implements TaskExecutor {
     }
   }
 
-  public static String getCmd(TaskInstance taskInstance) {
+  public static String getCmd(TaskInstance taskInstance, TaskExecutor taskExecutor) {
     List<String> args = new ArrayList<>();
 
     args.addAll(taskInstance.getTaskParameters().getEnvAsJavaSystemPropertyOptions());
@@ -143,7 +143,7 @@ public class InternalExecutor implements TaskExecutor {
     args.add(CommandRunnerUtils.quoteArgument(taskInstance.getProcessName()));
     args.add(CommandRunnerUtils.quoteArgument(taskInstance.getProcessId()));
     args.add(CommandRunnerUtils.quoteArgument(taskInstance.getTaskName()));
-    args.add(CommandRunnerUtils.quoteArgument(taskInstance.getExecutor().getClass().getName()));
+    args.add(CommandRunnerUtils.quoteArgument(taskExecutor.getClass().getName()));
 
     return Paths.get(System.getProperty("java.home"), "bin", "java").toString()
         + " "
