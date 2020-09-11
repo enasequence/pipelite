@@ -10,11 +10,10 @@
  */
 package pipelite.repository;
 
+import java.util.List;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import pipelite.entity.PipeliteSchedule;
-
-import java.util.List;
 
 @Repository
 public interface PipeliteScheduleRepository extends CrudRepository<PipeliteSchedule, String> {

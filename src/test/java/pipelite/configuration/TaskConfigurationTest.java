@@ -39,7 +39,7 @@ public class TaskConfigurationTest {
     assertThat(config.getMemory()).isEqualTo(1);
     assertThat(config.getCores()).isEqualTo(1);
     assertThat(config.getQueue()).isEqualTo("TEST");
-    assertThat(config.getMemoryTimeout().toSeconds()).isEqualTo(15);
+    assertThat(config.getMemoryTimeout().toMillis() / 1000L).isEqualTo(15);
     assertThat(config.getRetries()).isEqualTo(3);
     assertThat(config.getWorkDir()).isBlank();
     assertThat(config.getEnv().length).isEqualTo(2);
