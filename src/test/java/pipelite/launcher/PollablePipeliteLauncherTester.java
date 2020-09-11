@@ -25,7 +25,7 @@ import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
 import pipelite.executor.PollableExecutor;
 import pipelite.executor.TaskExecutor;
-import pipelite.process.ProcessBuilder;
+import pipelite.process.builder.ProcessBuilder;
 import pipelite.process.ProcessExecutionState;
 import pipelite.process.ProcessInstance;
 import pipelite.service.PipeliteLockService;

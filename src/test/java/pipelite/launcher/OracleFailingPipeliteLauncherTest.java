@@ -29,7 +29,7 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.executor.ErrorTaskExecutor;
 import pipelite.executor.SuccessTaskExecutor;
-import pipelite.process.ProcessBuilder;
+import pipelite.process.builder.ProcessBuilder;
 import pipelite.process.ProcessInstance;
 import pipelite.process.ProcessSource;
 

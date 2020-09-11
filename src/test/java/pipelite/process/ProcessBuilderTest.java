@@ -16,6 +16,7 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.executor.SuccessTaskExecutor;
+import pipelite.process.builder.ProcessBuilder;
 
 public class ProcessBuilderTest {
 
