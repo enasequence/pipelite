@@ -71,12 +71,10 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private Long maxIterations;
 
   public static final int DEFAULT_WORKERS = ForkJoinPool.getCommonPoolParallelism();
-  public static final Duration DEFAULT_RUN_DELAY = Duration.ofMinutes(1);
-  public static final Duration DEFAULT_STOP_DELAY = Duration.ofSeconds(1);
-  public static final Duration DEFAULT_PRIORITIZATION_DELAY = Duration.ofHours(1);
-  private final Duration runDelay;
-  private final Duration stopDelay = DEFAULT_STOP_DELAY;
-  private final Duration prioritizationDelay;
+  public static final Duration DEFAULT_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
+  public static final Duration DEFAULT_PRIORITIZATION_FREQUENCY = Duration.ofHours(1);
+  private final Duration launchFrequency;
+  private final Duration prioritizationFrequency;
 
   public PipeliteLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
@@ -99,16 +97,16 @@ public class PipeliteLauncher extends AbstractScheduledService {
             : DEFAULT_WORKERS;
     this.executorService = Executors.newFixedThreadPool(workers);
 
-    if (launcherConfiguration.getRunDelay() != null) {
-      this.runDelay = launcherConfiguration.getRunDelay();
+    if (launcherConfiguration.getLaunchFrequency() != null) {
+      this.launchFrequency = launcherConfiguration.getLaunchFrequency();
     } else {
-      this.runDelay = DEFAULT_RUN_DELAY;
+      this.launchFrequency = DEFAULT_LAUNCH_FREQUENCY;
     }
 
-    if (launcherConfiguration.getPrioritizationDelay() != null) {
-      this.prioritizationDelay = launcherConfiguration.getPrioritizationDelay();
+    if (launcherConfiguration.getPrioritizationFrequency() != null) {
+      this.prioritizationFrequency = launcherConfiguration.getPrioritizationFrequency();
     } else {
-      this.prioritizationDelay = DEFAULT_PRIORITIZATION_DELAY;
+      this.prioritizationFrequency = DEFAULT_PRIORITIZATION_FREQUENCY;
     }
   }
 
@@ -133,7 +131,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   @Override
   protected Scheduler scheduler() {
-    return Scheduler.newFixedDelaySchedule(Duration.ZERO, runDelay);
+    return Scheduler.newFixedDelaySchedule(Duration.ZERO, launchFrequency);
   }
 
   @Override
@@ -172,7 +170,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
       while (!initProcesses.isEmpty()) {
         try {
-          Thread.sleep(stopDelay.toMillis());
+          Thread.sleep(Duration.ofSeconds(1).toMillis());
         } catch (InterruptedException ex) {
           throw ex;
         }
@@ -247,7 +245,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
         pipeliteProcessService.getNewProcesses(getProcessName()).stream()
             .filter(pipeliteProcess -> !activeProcesses.containsKey(pipeliteProcess.getProcessId()))
             .collect(Collectors.toList()));
-    processQueueValidUntil = LocalDateTime.now().plus(prioritizationDelay);
+    processQueueValidUntil = LocalDateTime.now().plus(prioritizationFrequency);
   }
 
   private void launchProcess() {

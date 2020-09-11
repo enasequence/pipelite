@@ -16,6 +16,7 @@ import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import pipelite.launcher.PipeliteLauncher;
+import pipelite.launcher.ScheduleLauncher;
 
 @Data
 @Builder
@@ -31,13 +32,14 @@ public class LauncherConfiguration {
   /** Number of maximum parallel process executions in PipeliteLauncher and ScheduleLauncher. */
   @Builder.Default private int workers = PipeliteLauncher.DEFAULT_WORKERS;
 
-  /**
-   * Delay between assigning all workers with processes to execute in PipeliteLauncher and
-   * ScheduleLauncher.
-   */
-  @Builder.Default private Duration runDelay = PipeliteLauncher.DEFAULT_RUN_DELAY;
+  /** Frequency of assigning processes to workers in PipeliteLauncher. */
+  @Builder.Default private Duration launchFrequency = PipeliteLauncher.DEFAULT_LAUNCH_FREQUENCY;
 
   /** Delay between re-prioritising process executions in PipeliteLauncher. */
   @Builder.Default
-  private Duration prioritizationDelay = PipeliteLauncher.DEFAULT_PRIORITIZATION_DELAY;
+  private Duration prioritizationFrequency = PipeliteLauncher.DEFAULT_PRIORITIZATION_FREQUENCY;
+
+  /** Frequency of scheduling processes to execute in ScheduleLauncher. */
+  @Builder.Default
+  private Duration schedulingFrequency = ScheduleLauncher.DEFAULT_SCHEDULING_FREQUENCY;
 }

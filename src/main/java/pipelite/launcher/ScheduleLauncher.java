@@ -57,7 +57,6 @@ public class ScheduleLauncher extends AbstractScheduledService {
   private final AtomicInteger taskSkippedCount = new AtomicInteger(0);
   private final AtomicInteger taskCompletedCount = new AtomicInteger(0);
 
-  private final Map<String, Schedule> initProcesses = new ConcurrentHashMap<>();
   private final Map<String, Schedule> activeProcesses = new ConcurrentHashMap<>();
 
   @Data
@@ -74,8 +73,8 @@ public class ScheduleLauncher extends AbstractScheduledService {
   private long iterations = 0;
   private Long maxIterations;
 
-  public static final Duration DEFAULT_RUN_DELAY = Duration.ofMinutes(1);
-  private final Duration runDelay;
+  public static final Duration DEFAULT_SCHEDULING_FREQUENCY = Duration.ofMinutes(5);
+  private final Duration schedulingFrequency;
 
   public ScheduleLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
@@ -98,10 +97,10 @@ public class ScheduleLauncher extends AbstractScheduledService {
             : PipeliteLauncher.DEFAULT_WORKERS;
     this.executorService = Executors.newFixedThreadPool(workers);
 
-    if (launcherConfiguration.getRunDelay() != null) {
-      this.runDelay = launcherConfiguration.getRunDelay();
+    if (launcherConfiguration.getLaunchFrequency() != null) {
+      this.schedulingFrequency = launcherConfiguration.getSchedulingFrequency();
     } else {
-      this.runDelay = DEFAULT_RUN_DELAY;
+      this.schedulingFrequency = DEFAULT_SCHEDULING_FREQUENCY;
     }
   }
 
@@ -120,7 +119,7 @@ public class ScheduleLauncher extends AbstractScheduledService {
 
   @Override
   protected Scheduler scheduler() {
-    return Scheduler.newFixedDelaySchedule(Duration.ZERO, runDelay);
+    return Scheduler.newFixedDelaySchedule(Duration.ZERO, schedulingFrequency);
   }
 
   @Override
@@ -234,7 +233,6 @@ public class ScheduleLauncher extends AbstractScheduledService {
             launcherConfiguration, taskConfiguration, pipeliteProcessService, pipeliteStageService);
 
     processLauncher.init(processInstance, pipeliteProcess);
-    initProcesses.put(processId, schedule);
 
     executorService.execute(
         () -> {
@@ -255,7 +253,6 @@ public class ScheduleLauncher extends AbstractScheduledService {
             pipeliteScheduleService.saveProcessSchedule(schedule.getPipeliteSchedule());
             launcherLocker.unlockProcess(schedule.getPipeliteSchedule().getProcessName(), processId);
             activeProcesses.remove(processId);
-            initProcesses.remove(processId);
             taskCompletedCount.addAndGet(processLauncher.getTaskCompletedCount());
             taskSkippedCount.addAndGet(processLauncher.getTaskSkippedCount());
             taskFailedCount.addAndGet(processLauncher.getTaskFailedCount());
