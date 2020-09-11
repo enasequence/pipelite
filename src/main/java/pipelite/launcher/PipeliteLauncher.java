@@ -52,10 +52,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private ProcessFactory processFactory;
   private ProcessSource processSource;
 
-  private final AtomicInteger processSourceFailedCount = new AtomicInteger(0);
-  private final AtomicInteger processFactoryFailedCount = new AtomicInteger(0);
-  private final AtomicInteger processStartFailedCount = new AtomicInteger(0);
-  private final AtomicInteger processFailedCount = new AtomicInteger(0);
+  private final AtomicInteger processFailedToCreateCount = new AtomicInteger(0);
+  private final AtomicInteger processFailedToExecuteCount = new AtomicInteger(0);
   private final AtomicInteger processCompletedCount = new AtomicInteger(0);
   private final AtomicInteger taskFailedCount = new AtomicInteger(0);
   private final AtomicInteger taskSkippedCount = new AtomicInteger(0);
@@ -209,8 +207,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private boolean validateNewProcess(ProcessSource.NewProcess newProcess) {
     String processId = newProcess.getProcessId();
     if (processId == null || processId.trim().isEmpty()) {
-      logContext(log.atWarning()).log("Ignored new process instance. Process id was missing.");
-      processSourceFailedCount.incrementAndGet();
+      logContext(log.atWarning()).log("Could not create process instance without a process id");
+      processFailedToCreateCount.incrementAndGet();
       return false;
     }
 
@@ -221,8 +219,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
     if (savedPipeliteProcess.isPresent()) {
       logContext(log.atSevere(), processId)
-          .log("Rejected new process instance. Process id already exists.");
-      processSourceFailedCount.incrementAndGet();
+          .log("Could not create process instance with a process id that already exists");
+      processFailedToCreateCount.incrementAndGet();
       processSource.reject(processId);
       return false;
     }
@@ -264,9 +262,15 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
     ProcessInstance processInstance = processFactory.create(processId);
 
-    if (processInstance == null || !validateProcess(processInstance)) {
-      logContext(log.atSevere(), processId).log("Invalid process instance");
-      processFactoryFailedCount.incrementAndGet();
+    if (processInstance == null) {
+      logContext(log.atSevere(), processId).log("Could not create process instance");
+      processFailedToCreateCount.incrementAndGet();
+      return;
+    }
+
+    if (!validateProcess(processInstance)) {
+      logContext(log.atSevere(), processId).log("Failed to validate process instance");
+      processFailedToCreateCount.incrementAndGet();
       return;
     }
 
@@ -283,7 +287,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
             processLauncher.run();
             processCompletedCount.incrementAndGet();
           } catch (Exception ex) {
-            processFailedCount.incrementAndGet();
+            processFailedToExecuteCount.incrementAndGet();
             logContext(log.atSevere(), processId).withCause(ex).log("Failed to execute process");
           } finally {
             launcherLocker.unlockProcess(getProcessName(), processId);
@@ -338,20 +342,12 @@ public class PipeliteLauncher extends AbstractScheduledService {
     return activeProcesses.size();
   }
 
-  public int getProcessSourceFailedCount() {
-    return processSourceFailedCount.get();
+  public int getProcessFailedToCreateCount() {
+    return processFailedToCreateCount.get();
   }
 
-  public int getProcessFactoryFailedCount() {
-    return processFactoryFailedCount.get();
-  }
-
-  public int getProcessStartFailedCount() {
-    return processStartFailedCount.get();
-  }
-
-  public int getProcessFailedCount() {
-    return processFailedCount.get();
+  public int getProcessFailedToExecuteCount() {
+    return processFailedToExecuteCount.get();
   }
 
   public int getProcessCompletedCount() {

@@ -50,9 +50,8 @@ public class ScheduleLauncher extends AbstractScheduledService {
   private final ExecutorService executorService;
   private final int workers;
 
-  private final AtomicInteger processCreateFailedCount = new AtomicInteger(0);
-  private final AtomicInteger processStartFailedCount = new AtomicInteger(0);
-  private final AtomicInteger processFailedCount = new AtomicInteger(0);
+  private final AtomicInteger processFailedToCreateCount = new AtomicInteger(0);
+  private final AtomicInteger processFailedToExecuteCount = new AtomicInteger(0);
   private final AtomicInteger processCompletedCount = new AtomicInteger(0);
   private final AtomicInteger taskFailedCount = new AtomicInteger(0);
   private final AtomicInteger taskSkippedCount = new AtomicInteger(0);
@@ -76,7 +75,6 @@ public class ScheduleLauncher extends AbstractScheduledService {
   private Long maxIterations;
 
   public static final Duration DEFAULT_RUN_DELAY = Duration.ofMinutes(1);
-  public static final Duration DEFAULT_REFRESH_DELAY = Duration.ofHours(1);
   private final Duration runDelay;
 
   public ScheduleLauncher(
@@ -191,13 +189,13 @@ public class ScheduleLauncher extends AbstractScheduledService {
 
     if (processInstance == null) {
       logContext(log.atSevere(), processName, processId).log("Could not create process instance");
-      processCreateFailedCount.incrementAndGet();
+      processFailedToCreateCount.incrementAndGet();
       return false;
     }
 
     if (!validateProcess(schedule, processInstance)) {
       logContext(log.atSevere(), processName, processId).log("Failed to validate process instance");
-      processCreateFailedCount.incrementAndGet();
+      processFailedToCreateCount.incrementAndGet();
       return false;
     }
 
@@ -207,7 +205,7 @@ public class ScheduleLauncher extends AbstractScheduledService {
     if (savedPipeliteProcess.isPresent()) {
       logContext(log.atSevere(), processName, processId)
           .log("Could not create process instance because process id already exists");
-      processCreateFailedCount.incrementAndGet();
+      processFailedToCreateCount.incrementAndGet();
       return false;
     }
 
@@ -248,7 +246,7 @@ public class ScheduleLauncher extends AbstractScheduledService {
             processLauncher.run();
             processCompletedCount.incrementAndGet();
           } catch (Exception ex) {
-            processFailedCount.incrementAndGet();
+            processFailedToExecuteCount.incrementAndGet();
             logContext(log.atSevere(), processName, processId)
                 .withCause(ex)
                 .log("Failed to execute process");
@@ -305,16 +303,12 @@ public class ScheduleLauncher extends AbstractScheduledService {
     return activeProcesses.size();
   }
 
-  public int getProcessCreateFailedCount() {
-    return processCreateFailedCount.get();
+  public int getProcessFailedToCreateCount() {
+    return processFailedToCreateCount.get();
   }
 
-  public int getProcessStartFailedCount() {
-    return processStartFailedCount.get();
-  }
-
-  public int getProcessFailedCount() {
-    return processFailedCount.get();
+  public int getProcessFailedToExecuteCount() {
+    return processFailedToExecuteCount.get();
   }
 
   public int getProcessCompletedCount() {
