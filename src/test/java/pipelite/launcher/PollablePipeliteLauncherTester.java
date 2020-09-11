@@ -79,7 +79,7 @@ public class PollablePipeliteLauncherTester {
             pipeliteProcessService,
             pipeliteStageService,
             pipeliteLockService);
-    pipeliteLauncher.setShutdownPolicy(ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    pipeliteLauncher.setShutdownIfIdle(true);
     return pipeliteLauncher;
   }
 

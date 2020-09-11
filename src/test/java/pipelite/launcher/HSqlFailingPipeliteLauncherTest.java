@@ -57,7 +57,7 @@ public class HSqlFailingPipeliteLauncherTest {
     TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
     processConfiguration.setProcessFactory(processFactory);
     processConfiguration.setProcessSource(processSource);
-    pipeliteLauncher.setShutdownPolicy(ShutdownPolicy.SHUTDOWN_IF_IDLE);
+    pipeliteLauncher.setShutdownIfIdle(true);
     return pipeliteLauncher;
   }
 

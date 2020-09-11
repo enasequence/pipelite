@@ -1,4 +1,4 @@
-package pipelite.launcher.lock;
+package pipelite.launcher;
 
 import com.google.common.flogger.FluentLogger;
 import lombok.Value;

@@ -28,12 +28,16 @@ public class LauncherConfiguration {
   /** Unique launcher name. */
   private String launcherName;
 
-  /** The number of workers and parallel process executions. */
+  /** Number of maximum parallel process executions in PipeliteLauncher and ScheduleLauncher. */
   @Builder.Default private int workers = PipeliteLauncher.DEFAULT_WORKERS;
 
-  /** Delay between the launcher executing new processes. */
+  /**
+   * Delay between assigning all workers with processes to execute in PipeliteLauncher and
+   * ScheduleLauncher.
+   */
   @Builder.Default private Duration runDelay = PipeliteLauncher.DEFAULT_RUN_DELAY;
 
-  /** Delay between the launcher re-creating and re-prioritising the process queue. */
-  @Builder.Default private Duration refreshDelay = PipeliteLauncher.DEFAULT_REFRESH_DELAY;
+  /** Delay between re-prioritising process executions in PipeliteLauncher. */
+  @Builder.Default
+  private Duration prioritizationDelay = PipeliteLauncher.DEFAULT_PRIORITIZATION_DELAY;
 }

@@ -21,7 +21,6 @@ import pipelite.configuration.TaskConfiguration;
 import pipelite.cron.CronUtils;
 import pipelite.entity.PipeliteSchedule;
 import pipelite.entity.PipeliteProcess;
-import pipelite.launcher.lock.LauncherLocker;
 import pipelite.log.LogKey;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessInstance;
@@ -76,11 +75,9 @@ public class ScheduleLauncher extends AbstractScheduledService {
   private long iterations = 0;
   private Long maxIterations;
 
-  public static final int DEFAULT_WORKERS = ForkJoinPool.getCommonPoolParallelism();
   public static final Duration DEFAULT_RUN_DELAY = Duration.ofMinutes(1);
   public static final Duration DEFAULT_REFRESH_DELAY = Duration.ofHours(1);
   private final Duration runDelay;
-  private final Duration refreshDelay;
 
   public ScheduleLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
@@ -100,19 +97,13 @@ public class ScheduleLauncher extends AbstractScheduledService {
     this.workers =
         launcherConfiguration.getWorkers() > 0
             ? launcherConfiguration.getWorkers()
-            : DEFAULT_WORKERS;
+            : PipeliteLauncher.DEFAULT_WORKERS;
     this.executorService = Executors.newFixedThreadPool(workers);
 
     if (launcherConfiguration.getRunDelay() != null) {
       this.runDelay = launcherConfiguration.getRunDelay();
     } else {
       this.runDelay = DEFAULT_RUN_DELAY;
-    }
-
-    if (launcherConfiguration.getRefreshDelay() != null) {
-      this.refreshDelay = launcherConfiguration.getRefreshDelay();
-    } else {
-      this.refreshDelay = DEFAULT_REFRESH_DELAY;
     }
   }
 
