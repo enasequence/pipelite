@@ -12,6 +12,11 @@ package pipelite.launcher;
 
 import com.google.common.flogger.FluentLogger;
 import com.google.common.util.concurrent.AbstractScheduledService;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,21 +24,15 @@ import org.springframework.stereotype.Component;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.cron.CronUtils;
-import pipelite.entity.PipeliteSchedule;
 import pipelite.entity.PipeliteProcess;
+import pipelite.entity.PipeliteSchedule;
 import pipelite.log.LogKey;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessInstance;
-import pipelite.service.PipeliteScheduleService;
 import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteProcessService;
+import pipelite.service.PipeliteScheduleService;
 import pipelite.service.PipeliteStageService;
-
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Flogger
 @Component
@@ -157,7 +156,8 @@ public class ScheduleLauncher extends AbstractScheduledService {
     logContext(log.atInfo()).log("Scheduling processes");
 
     schedules.clear();
-    for (PipeliteSchedule pipeliteSchedule : pipeliteScheduleService.getAllProcessSchedules(launcherName)) {
+    for (PipeliteSchedule pipeliteSchedule :
+        pipeliteScheduleService.getAllProcessSchedules(launcherName)) {
 
       String scheduleDescription = "invalid cron expression";
       if (CronUtils.validate(pipeliteSchedule.getSchedule())) {
@@ -238,7 +238,8 @@ public class ScheduleLauncher extends AbstractScheduledService {
         () -> {
           activeProcesses.put(processId, schedule);
           try {
-            if (!launcherLocker.lockProcess(schedule.pipeliteSchedule.getProcessName(), processId)) {
+            if (!launcherLocker.lockProcess(
+                schedule.pipeliteSchedule.getProcessName(), processId)) {
               return;
             }
             processLauncher.run();
@@ -251,7 +252,8 @@ public class ScheduleLauncher extends AbstractScheduledService {
           } finally {
             schedule.getPipeliteSchedule().endExecution();
             pipeliteScheduleService.saveProcessSchedule(schedule.getPipeliteSchedule());
-            launcherLocker.unlockProcess(schedule.getPipeliteSchedule().getProcessName(), processId);
+            launcherLocker.unlockProcess(
+                schedule.getPipeliteSchedule().getProcessName(), processId);
             activeProcesses.remove(processId);
             taskCompletedCount.addAndGet(processLauncher.getTaskCompletedCount());
             taskSkippedCount.addAndGet(processLauncher.getTaskSkippedCount());

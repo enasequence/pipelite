@@ -10,13 +10,12 @@
  */
 package pipelite.entity;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import javax.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import javax.persistence.*;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 
 @Entity
 @Table(name = "PIPELITE_SCHEDULE")

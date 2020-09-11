@@ -72,7 +72,7 @@ public class PipeliteStage {
   @Column(name = "EXEC_PARAMS")
   @Lob
   private String executorParams;
-  
+
   @Enumerated(EnumType.STRING)
   @Column(name = "EXEC_RESULT_TYPE", length = 15)
   private TaskExecutionResultType resultType;
