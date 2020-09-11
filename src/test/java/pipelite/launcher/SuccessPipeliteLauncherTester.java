@@ -62,7 +62,8 @@ public class SuccessPipeliteLauncherTester {
       String processId = "Process" + i;
       processInstances.add(
           new ProcessBuilder(processName, processId, 9)
-              .task(UniqueStringGenerator.randomTaskName(), createTaskExecutor(processId))
+              .task(UniqueStringGenerator.randomTaskName())
+              .executor(createTaskExecutor(processId))
               .build());
     }
     return processInstances;

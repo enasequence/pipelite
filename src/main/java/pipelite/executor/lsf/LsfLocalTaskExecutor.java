@@ -10,14 +10,12 @@
  */
 package pipelite.executor.lsf;
 
-import lombok.extern.flogger.Flogger;
 import pipelite.executor.InternalExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.executor.runner.CommandRunner;
 import pipelite.executor.runner.LocalRunner;
 import pipelite.task.TaskInstance;
 
-@Flogger
 public final class LsfLocalTaskExecutor extends LsfExecutor {
 
   /** The actual TaskExecutor to be used. */

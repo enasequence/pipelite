@@ -12,8 +12,18 @@ package pipelite.process;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 import pipelite.executor.TaskExecutor;
+import pipelite.executor.command.LocalCommandExecutor;
+import pipelite.executor.command.LocalTaskExecutor;
+import pipelite.executor.command.SshCommandExecutor;
+import pipelite.executor.command.SshTaskExecutor;
+import pipelite.executor.lsf.LsfLocalCommandExecutor;
+import pipelite.executor.lsf.LsfLocalTaskExecutor;
+import pipelite.executor.lsf.LsfSshCommandExecutor;
+import pipelite.executor.lsf.LsfSshTaskExecutor;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskParameters;
 
@@ -25,41 +35,77 @@ public class ProcessBuilder {
   private final int priority;
   private final List<TaskInstance> taskInstances = new ArrayList<>();
 
-  public ProcessBuilder task(String taskName, TaskExecutor executor) {
-    return task(taskName, executor, TaskParameters.builder().build());
+  @Value
+  public class TaskInstanceBuilder {
+    private final ProcessBuilder processBuilder;
+    private final String taskName;
+    private final TaskInstance dependsOn;
+    private final TaskParameters taskParameters;
+
+    public ProcessBuilder executor(TaskExecutor executor) {
+      return addTaskInstance(executor);
+    }
+
+    public ProcessBuilder localCommandExecutor(String cmd) {
+      return addTaskInstance(new LocalCommandExecutor(cmd));
+    }
+
+    public ProcessBuilder localTaskExecutor(TaskExecutor executor) {
+      return addTaskInstance(new LocalTaskExecutor(executor));
+    }
+
+    public ProcessBuilder sshCommandExecutor(String cmd) {
+      return addTaskInstance(new SshCommandExecutor(cmd));
+    }
+
+    public ProcessBuilder sshTaskExecutor(TaskExecutor executor) {
+      return addTaskInstance(new SshTaskExecutor(executor));
+    }
+
+    public ProcessBuilder lsfLocalCommandExecutor(String cmd) {
+      return addTaskInstance(new LsfLocalCommandExecutor(cmd));
+    }
+
+    public ProcessBuilder lsfLocalTaskExecutor(TaskExecutor executor) {
+      return addTaskInstance(new LsfLocalTaskExecutor(executor));
+    }
+
+    public ProcessBuilder lsfSshCommandExecutor(String cmd) {
+      return addTaskInstance(new LsfSshCommandExecutor(cmd));
+    }
+
+    public ProcessBuilder lsfSshTaskExecutor(TaskExecutor executor) {
+      return addTaskInstance(new LsfSshTaskExecutor(executor));
+    }
+
+    private ProcessBuilder addTaskInstance(TaskExecutor executor) {
+      taskInstances.add(
+          TaskInstance.builder()
+              .processName(processName)
+              .processId(processId)
+              .taskName(taskName)
+              .executor(executor)
+              .taskParameters(taskParameters)
+              .build());
+      return processBuilder;
+    }
+  };
+
+  public TaskInstanceBuilder task(String taskName) {
+    return new TaskInstanceBuilder(this, taskName, null, TaskParameters.builder().build());
   }
 
-  public ProcessBuilder task(
+  public TaskInstanceBuilder task(String taskName, TaskParameters taskParameters) {
+    return new TaskInstanceBuilder(this, taskName, null, taskParameters);
+  }
+
+  public TaskInstanceBuilder taskDependsOnPrevious(String taskName) {
+    return new TaskInstanceBuilder(this, taskName, lastTask(), TaskParameters.builder().build());
+  }
+
+  public TaskInstanceBuilder taskDependsOnPrevious(
       String taskName, TaskExecutor executor, TaskParameters taskParameters) {
-
-    taskInstances.add(
-        TaskInstance.builder()
-            .processName(processName)
-            .processId(processId)
-            .taskName(taskName)
-            .executor(executor)
-            .taskParameters(taskParameters)
-            .build());
-    return this;
-  }
-
-  public ProcessBuilder taskDependsOnPrevious(String taskName, TaskExecutor executor) {
-    return taskDependsOnPrevious(taskName, executor, TaskParameters.builder().build());
-  }
-
-  public ProcessBuilder taskDependsOnPrevious(
-      String taskName, TaskExecutor executor, TaskParameters taskParameters) {
-
-    taskInstances.add(
-        TaskInstance.builder()
-            .processName(processName)
-            .processId(processId)
-            .taskName(taskName)
-            .executor(executor)
-            .taskParameters(taskParameters)
-            .dependsOn(taskInstances.get(taskInstances.size() - 1))
-            .build());
-    return this;
+    return new TaskInstanceBuilder(this, taskName, lastTask(), taskParameters);
   }
 
   public ProcessInstance build() {
@@ -69,5 +115,9 @@ public class ProcessBuilder {
         .priority(priority)
         .tasks(taskInstances)
         .build();
+  }
+
+  private TaskInstance lastTask() {
+    return taskInstances.get(taskInstances.size() - 1);
   }
 }

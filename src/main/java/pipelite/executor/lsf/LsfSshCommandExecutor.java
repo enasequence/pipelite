@@ -10,22 +10,18 @@
  */
 package pipelite.executor.lsf;
 
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Value;
-import lombok.extern.flogger.Flogger;
 import pipelite.executor.runner.CommandRunner;
 import pipelite.executor.runner.SshRunner;
 import pipelite.task.TaskInstance;
 
-@Flogger
-@Value
-@Builder
-@EqualsAndHashCode(callSuper = true)
 public final class LsfSshCommandExecutor extends LsfExecutor {
 
   /** The actual command string to be executed. */
   private final String cmd;
+
+  public LsfSshCommandExecutor(String cmd) {
+    this.cmd = cmd;
+  }
 
   @Override
   public CommandRunner getCmdRunner() {

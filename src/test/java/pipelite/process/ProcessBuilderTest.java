@@ -30,9 +30,10 @@ public class ProcessBuilderTest {
             i -> {
               ProcessInstance processInstance =
                   new ProcessBuilder(PROCESS_NAME, PROCESS_ID, 9)
-                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
+                      .task(UniqueStringGenerator.randomTaskName())
+                      .executor(new SuccessTaskExecutor())
+                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .executor(new SuccessTaskExecutor())
                       .build();
 
               assertThat(processInstance).isNotNull();

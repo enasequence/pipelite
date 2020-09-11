@@ -71,13 +71,14 @@ public class OracleFailingPipeliteLauncherTest {
             i -> {
               processInstances.add(
                   new ProcessBuilder(PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName(), new ErrorTaskExecutor())
-                      .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
+                      .task(UniqueStringGenerator.randomTaskName())
+                      .executor(new ErrorTaskExecutor())
+                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .executor(new SuccessTaskExecutor())
+                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .executor(new SuccessTaskExecutor())
+                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .executor(new SuccessTaskExecutor())
                       .build());
             });
 
@@ -107,13 +108,14 @@ public class OracleFailingPipeliteLauncherTest {
             i -> {
               processInstances.add(
                   new ProcessBuilder(PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new ErrorTaskExecutor())
-                      .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
+                      .task(UniqueStringGenerator.randomTaskName())
+                      .executor(new SuccessTaskExecutor())
+                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .executor(new ErrorTaskExecutor())
+                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .executor(new SuccessTaskExecutor())
+                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .executor(new SuccessTaskExecutor())
                       .build());
             });
 
@@ -143,13 +145,14 @@ public class OracleFailingPipeliteLauncherTest {
             i -> {
               processInstances.add(
                   new ProcessBuilder(PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new ErrorTaskExecutor())
-                      .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
+                      .task(UniqueStringGenerator.randomTaskName())
+                      .executor(new SuccessTaskExecutor())
+                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .executor(new SuccessTaskExecutor())
+                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .executor(new ErrorTaskExecutor())
+                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .executor(new SuccessTaskExecutor())
                       .build());
             });
 
@@ -179,13 +182,14 @@ public class OracleFailingPipeliteLauncherTest {
             i -> {
               processInstances.add(
                   new ProcessBuilder(PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new ErrorTaskExecutor())
+                      .task(UniqueStringGenerator.randomTaskName())
+                      .executor(new SuccessTaskExecutor())
+                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .executor(new SuccessTaskExecutor())
+                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .executor(new SuccessTaskExecutor())
+                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .executor(new ErrorTaskExecutor())
                       .build());
             });
 
@@ -215,13 +219,14 @@ public class OracleFailingPipeliteLauncherTest {
             i -> {
               processInstances.add(
                   new ProcessBuilder(PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(
-                          UniqueStringGenerator.randomTaskName(), new SuccessTaskExecutor())
+                      .task(UniqueStringGenerator.randomTaskName())
+                      .executor(new SuccessTaskExecutor())
+                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .executor(new SuccessTaskExecutor())
+                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .executor(new SuccessTaskExecutor())
+                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .executor(new SuccessTaskExecutor())
                       .build());
             });
 

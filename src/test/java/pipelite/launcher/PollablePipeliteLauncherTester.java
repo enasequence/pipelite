@@ -170,7 +170,10 @@ public class PollablePipeliteLauncherTester {
       pipeliteProcessService.saveProcess(pipeliteProcess);
 
       ProcessInstance processInstance =
-          new ProcessBuilder(processName, processId, 9).task(taskName, taskExecutor).build();
+          new ProcessBuilder(processName, processId, 9)
+              .task(taskName)
+              .executor(taskExecutor)
+              .build();
       processInstances.add(processInstance);
 
       TaskInstance taskInstance = processInstance.getTasks().get(0);

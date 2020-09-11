@@ -10,17 +10,12 @@
  */
 package pipelite.executor.lsf;
 
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Value;
-import lombok.extern.flogger.Flogger;
 import pipelite.executor.InternalExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.executor.runner.CommandRunner;
 import pipelite.executor.runner.SshRunner;
 import pipelite.task.TaskInstance;
 
-@Flogger
 public final class LsfSshTaskExecutor extends LsfExecutor {
 
   /** The actual TaskExecutor to be used. */
