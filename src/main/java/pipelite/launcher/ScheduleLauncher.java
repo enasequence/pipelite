@@ -179,8 +179,8 @@ public class ScheduleLauncher extends AbstractScheduledService {
         schedules.add(schedule);
         scheduleDescription = CronUtils.describe(pipeliteSchedule.getSchedule());
       }
-      if (!scheduleDescription.equals(pipeliteSchedule.getScheduleDescription())) {
-        pipeliteSchedule.setScheduleDescription(scheduleDescription);
+      if (!scheduleDescription.equals(pipeliteSchedule.getDescription())) {
+        pipeliteSchedule.setDescription(scheduleDescription);
         pipeliteScheduleService.saveProcessSchedule(pipeliteSchedule);
       }
     }

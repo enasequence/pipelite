@@ -45,7 +45,7 @@ public class PipeliteStage {
   @Column(name = "STAGE_NAME")
   private String stageName;
 
-  @Column(name = "EXEC_CNT")
+  @Column(name = "EXEC_CNT", nullable = false)
   private int executionCount = 0;
 
   @Column(name = "EXEC_START")
@@ -72,8 +72,7 @@ public class PipeliteStage {
   @Column(name = "EXEC_PARAMS")
   @Lob
   private String executorParams;
-
-  // TODO: change column name to EXEC_RESULT
+  
   @Enumerated(EnumType.STRING)
   @Column(name = "EXEC_RESULT_TYPE", length = 15)
   private TaskExecutionResultType resultType;

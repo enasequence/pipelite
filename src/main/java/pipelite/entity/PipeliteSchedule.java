@@ -29,17 +29,17 @@ public class PipeliteSchedule {
   @Column(name = "PROCESS_NAME")
   private String processName;
 
-  @Column(name = "LAUNCHER_NAME")
+  @Column(name = "LAUNCHER_NAME", nullable = false)
   private String launcherName;
 
-  @Column(name = "PROCESS_FACTORY_NAME")
+  @Column(name = "PROCESS_FACTORY_NAME", nullable = false)
   private String processFactoryName;
 
-  @Column(name = "SCHEDULE")
+  @Column(name = "SCHEDULE", nullable = false)
   private String schedule;
 
-  @Column(name = "SCHEDULE_DESC")
-  private String scheduleDescription;
+  @Column(name = "DESCRIPTION")
+  private String description;
 
   @Column(name = "EXEC_START")
   private LocalDateTime startTime;
@@ -47,7 +47,7 @@ public class PipeliteSchedule {
   @Column(name = "EXEC_DATE")
   private LocalDateTime endTime;
 
-  @Column(name = "EXEC_CNT")
+  @Column(name = "EXEC_CNT", nullable = false)
   private int executionCount = 0;
 
   public void startExecution() {

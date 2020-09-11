@@ -34,10 +34,10 @@ public class PipeliteProcess {
   private String processName;
 
   @Enumerated(EnumType.STRING)
-  @Column(name = "STATE", length = 15)
+  @Column(name = "STATE", length = 15, nullable = false)
   private ProcessExecutionState state;
 
-  @Column(name = "EXEC_CNT")
+  @Column(name = "EXEC_CNT", nullable = false)
   private Integer executionCount = 0;
 
   @Column(name = "PRIORITY")
