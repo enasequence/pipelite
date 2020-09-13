@@ -45,7 +45,7 @@ public class TaskConfiguration implements ConfigurableTaskParameters {
   private String queue;
 
   /** Number of retries. */
-  private Integer retries = DEFAULT_RETRIES;
+  @Builder.Default private Integer retries = DEFAULT_RETRIES;
 
   /** Work directory. */
   private String workDir;

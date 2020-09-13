@@ -72,9 +72,9 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private Long maxIterations;
 
   public static final int DEFAULT_WORKERS = ForkJoinPool.getCommonPoolParallelism();
-  public static final Duration DEFAULT_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
+  public static final Duration DEFAULT_PROCESS_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
   public static final Duration DEFAULT_PRIORITIZATION_FREQUENCY = Duration.ofHours(1);
-  private final Duration launchFrequency;
+  private final Duration processLaunchFrequency;
   private final Duration prioritizationFrequency;
 
   public PipeliteLauncher(
@@ -98,10 +98,10 @@ public class PipeliteLauncher extends AbstractScheduledService {
             : DEFAULT_WORKERS;
     this.executorService = Executors.newFixedThreadPool(workers);
 
-    if (launcherConfiguration.getLaunchFrequency() != null) {
-      this.launchFrequency = launcherConfiguration.getLaunchFrequency();
+    if (launcherConfiguration.getProcessLaunchFrequency() != null) {
+      this.processLaunchFrequency = launcherConfiguration.getProcessLaunchFrequency();
     } else {
-      this.launchFrequency = DEFAULT_LAUNCH_FREQUENCY;
+      this.processLaunchFrequency = DEFAULT_PROCESS_LAUNCH_FREQUENCY;
     }
 
     if (launcherConfiguration.getPrioritizationFrequency() != null) {
@@ -132,7 +132,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   @Override
   protected Scheduler scheduler() {
-    return Scheduler.newFixedDelaySchedule(Duration.ZERO, launchFrequency);
+    return Scheduler.newFixedDelaySchedule(Duration.ZERO, processLaunchFrequency);
   }
 
   @Override

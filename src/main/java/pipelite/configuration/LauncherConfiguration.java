@@ -16,7 +16,8 @@ import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import pipelite.launcher.pipelite.PipeliteLauncher;
-import pipelite.launcher.ScheduleLauncher;
+import pipelite.launcher.process.ProcessLauncher;
+import pipelite.launcher.schedule.ScheduleLauncher;
 
 @Data
 @Builder
@@ -33,7 +34,10 @@ public class LauncherConfiguration {
   @Builder.Default private int workers = PipeliteLauncher.DEFAULT_WORKERS;
 
   /** Frequency of assigning processes to workers in PipeliteLauncher. */
-  @Builder.Default private Duration launchFrequency = PipeliteLauncher.DEFAULT_LAUNCH_FREQUENCY;
+  @Builder.Default private Duration processLaunchFrequency = PipeliteLauncher.DEFAULT_PROCESS_LAUNCH_FREQUENCY;
+
+  /** Frequency of assigning tasks to workers in ProcessLauncher. */
+  @Builder.Default private Duration taskLaunchFrequency = ProcessLauncher.DEFAULT_TASK_LAUNCH_FREQUENCY;
 
   /** Delay between re-prioritising process executions in PipeliteLauncher. */
   @Builder.Default

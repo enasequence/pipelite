@@ -38,7 +38,8 @@ import pipelite.process.ProcessSource;
     classes = FullTestConfiguration.class,
     properties = {
       "pipelite.launcher.workers=5",
-      "pipelite.launcher.launchFrequency=250ms",
+      "pipelite.launcher.processLaunchFrequency=250ms",
+      "pipelite.launcher.taskLaunchFrequency=250ms",
       "pipelite.task.retries=1"
     })
 @ContextConfiguration(initializers = HSqlSuccessPipeliteLauncherTest.TestContextInitializer.class)

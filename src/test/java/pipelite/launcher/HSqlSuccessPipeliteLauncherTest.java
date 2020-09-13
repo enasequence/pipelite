@@ -25,7 +25,11 @@ import pipelite.launcher.pipelite.PipeliteLauncher;
 
 @SpringBootTest(
     classes = FullTestConfiguration.class,
-    properties = {"pipelite.launcher.workers=5", "pipelite.launcher.launchFrequency=250ms"})
+    properties = {
+      "pipelite.launcher.workers=5",
+      "pipelite.launcher.processLaunchFrequency=250ms",
+      "pipelite.launcher.taskLaunchFrequency=250ms"
+    })
 @ContextConfiguration(initializers = HSqlSuccessPipeliteLauncherTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"hsql-test"})
 public class HSqlSuccessPipeliteLauncherTest {

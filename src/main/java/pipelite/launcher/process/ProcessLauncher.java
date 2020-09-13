@@ -53,6 +53,9 @@ public class ProcessLauncher implements Runnable {
   private final DependencyResolver dependencyResolver;
   private final ExecutorService executorService;
   private final Set<PipeliteTaskInstance> activeTasks = ConcurrentHashMap.newKeySet();
+  private final Duration taskLaunchFrequency;
+
+  public static final Duration DEFAULT_TASK_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
 
   private PipeliteProcessInstance pipeliteProcessInstance;
 
@@ -72,6 +75,12 @@ public class ProcessLauncher implements Runnable {
     this.pipeliteTaskInstances = new ArrayList<>();
     this.dependencyResolver = new DependencyResolver(pipeliteTaskInstances);
     this.executorService = Executors.newCachedThreadPool();
+
+    if (launcherConfiguration.getTaskLaunchFrequency() != null) {
+      this.taskLaunchFrequency = launcherConfiguration.getTaskLaunchFrequency();
+    } else {
+      this.taskLaunchFrequency = DEFAULT_TASK_LAUNCH_FREQUENCY;
+    }
   }
 
   private static class PipeliteProcessInstance {
@@ -211,7 +220,7 @@ public class ProcessLauncher implements Runnable {
       }
 
       try {
-        Thread.sleep(Duration.ofSeconds(1).toMillis());
+        Thread.sleep(taskLaunchFrequency.toMillis());
       } catch (InterruptedException ex) {
         executorService.shutdownNow();
         Thread.currentThread().interrupt();

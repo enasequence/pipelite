@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.launcher.schedule;
 
 import com.google.common.flogger.FluentLogger;
 import com.google.common.util.concurrent.AbstractScheduledService;
@@ -26,6 +26,7 @@ import pipelite.configuration.TaskConfiguration;
 import pipelite.cron.CronUtils;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteSchedule;
+import pipelite.launcher.ServerManager;
 import pipelite.launcher.pipelite.PipeliteLauncher;
 import pipelite.launcher.pipelite.Locker;
 import pipelite.launcher.process.ProcessLauncher;
@@ -98,7 +99,7 @@ public class ScheduleLauncher extends AbstractScheduledService {
             : PipeliteLauncher.DEFAULT_WORKERS;
     this.executorService = Executors.newFixedThreadPool(workers);
 
-    if (launcherConfiguration.getLaunchFrequency() != null) {
+    if (launcherConfiguration.getProcessLaunchFrequency() != null) {
       this.schedulingFrequency = launcherConfiguration.getSchedulingFrequency();
     } else {
       this.schedulingFrequency = DEFAULT_SCHEDULING_FREQUENCY;
