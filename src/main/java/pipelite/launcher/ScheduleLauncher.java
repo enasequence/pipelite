@@ -26,6 +26,9 @@ import pipelite.configuration.TaskConfiguration;
 import pipelite.cron.CronUtils;
 import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteSchedule;
+import pipelite.launcher.pipelite.PipeliteLauncher;
+import pipelite.launcher.pipelite.Locker;
+import pipelite.launcher.process.ProcessLauncher;
 import pipelite.log.LogKey;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessInstance;
@@ -45,7 +48,7 @@ public class ScheduleLauncher extends AbstractScheduledService {
   private final PipeliteStageService pipeliteStageService;
   private final PipeliteLockService pipeliteLockService;
   private final String launcherName;
-  private final LauncherLocker launcherLocker;
+  private final Locker locker;
   private final ExecutorService executorService;
   private final int workers;
 
@@ -53,7 +56,6 @@ public class ScheduleLauncher extends AbstractScheduledService {
   private final AtomicInteger processFailedToExecuteCount = new AtomicInteger(0);
   private final AtomicInteger processCompletedCount = new AtomicInteger(0);
   private final AtomicInteger taskFailedCount = new AtomicInteger(0);
-  private final AtomicInteger taskSkippedCount = new AtomicInteger(0);
   private final AtomicInteger taskCompletedCount = new AtomicInteger(0);
 
   private final Map<String, Schedule> activeProcesses = new ConcurrentHashMap<>();
@@ -89,7 +91,7 @@ public class ScheduleLauncher extends AbstractScheduledService {
     this.pipeliteStageService = pipeliteStageService;
     this.pipeliteLockService = pipeliteLockService;
     this.launcherName = launcherConfiguration.getLauncherName();
-    this.launcherLocker = new LauncherLocker(launcherName, pipeliteLockService);
+    this.locker = new Locker(launcherName, pipeliteLockService);
     this.workers =
         launcherConfiguration.getWorkers() > 0
             ? launcherConfiguration.getWorkers()
@@ -111,7 +113,7 @@ public class ScheduleLauncher extends AbstractScheduledService {
   @Override
   protected void startUp() {
     logContext(log.atInfo()).log("Starting up launcher");
-    if (!launcherLocker.lockLauncher()) {
+    if (!locker.lockLauncher()) {
       throw new RuntimeException("Could not start launcher");
     }
   }
@@ -238,7 +240,7 @@ public class ScheduleLauncher extends AbstractScheduledService {
         () -> {
           activeProcesses.put(processId, schedule);
           try {
-            if (!launcherLocker.lockProcess(
+            if (!locker.lockProcess(
                 schedule.pipeliteSchedule.getProcessName(), processId)) {
               return;
             }
@@ -252,11 +254,10 @@ public class ScheduleLauncher extends AbstractScheduledService {
           } finally {
             schedule.getPipeliteSchedule().endExecution();
             pipeliteScheduleService.saveProcessSchedule(schedule.getPipeliteSchedule());
-            launcherLocker.unlockProcess(
+            locker.unlockProcess(
                 schedule.getPipeliteSchedule().getProcessName(), processId);
             activeProcesses.remove(processId);
             taskCompletedCount.addAndGet(processLauncher.getTaskCompletedCount());
-            taskSkippedCount.addAndGet(processLauncher.getTaskSkippedCount());
             taskFailedCount.addAndGet(processLauncher.getTaskFailedCount());
           }
         });
@@ -292,7 +293,7 @@ public class ScheduleLauncher extends AbstractScheduledService {
       executorService.shutdownNow();
       throw ex;
     } finally {
-      launcherLocker.unlockLauncher();
+      locker.unlockLauncher();
 
       logContext(log.atInfo()).log("Launcher has been shut down");
     }
@@ -316,10 +317,6 @@ public class ScheduleLauncher extends AbstractScheduledService {
 
   public int getTaskFailedCount() {
     return taskFailedCount.get();
-  }
-
-  public int getTaskSkippedCount() {
-    return taskSkippedCount.get();
   }
 
   public int getTaskCompletedCount() {

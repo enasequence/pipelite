@@ -10,14 +10,11 @@
  */
 package pipelite.configuration;
 
-import static pipelite.executor.PollableExecutor.DEFAULT_POLL_DELAY;
-
 import java.time.Duration;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import pipelite.executor.TaskExecutor;
 import pipelite.task.ConfigurableTaskParameters;
 
 @Data
@@ -33,7 +30,7 @@ public class TaskConfiguration implements ConfigurableTaskParameters {
   private String host;
 
   /** Execution timeout. */
-  @Builder.Default private Duration timeout = TaskExecutor.DEFAULT_TIMEOUT;
+  @Builder.Default private Duration timeout = DEFAULT_TIMEOUT;
 
   /** Memory reservation (MBytes). */
   private Integer memory;
@@ -48,7 +45,7 @@ public class TaskConfiguration implements ConfigurableTaskParameters {
   private String queue;
 
   /** Number of retries. */
-  private Integer retries;
+  private Integer retries = DEFAULT_RETRIES;
 
   /** Work directory. */
   private String workDir;

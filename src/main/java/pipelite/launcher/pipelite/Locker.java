@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.launcher.pipelite;
 
 import com.google.common.flogger.FluentLogger;
 import lombok.Value;
@@ -18,7 +18,7 @@ import pipelite.service.PipeliteLockService;
 
 @Value
 @Flogger
-public class LauncherLocker {
+public class Locker {
 
   private final String launcherName;
   private final PipeliteLockService pipeliteLockService;

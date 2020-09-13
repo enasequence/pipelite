@@ -22,6 +22,7 @@ import pipelite.TestInMemoryProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.executor.TaskExecutor;
+import pipelite.launcher.pipelite.PipeliteLauncher;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.process.ProcessInstance;
 import pipelite.task.TaskExecutionResult;

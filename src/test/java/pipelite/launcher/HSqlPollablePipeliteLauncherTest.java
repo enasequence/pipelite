@@ -24,6 +24,7 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
+import pipelite.launcher.pipelite.PipeliteLauncher;
 import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
@@ -33,7 +34,7 @@ import pipelite.service.PipeliteStageService;
     properties = {
       "pipelite.launcher.workers=2",
       "pipelite.launcher.launchFrequency=250ms",
-      "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver",
+      "pipelite.task.retries=1"
     })
 @ContextConfiguration(initializers = HSqlSuccessPipeliteLauncherTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"hsql-test"})

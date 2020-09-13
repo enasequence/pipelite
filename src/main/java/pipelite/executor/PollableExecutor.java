@@ -11,6 +11,8 @@
 package pipelite.executor;
 
 import java.time.Duration;
+
+import pipelite.task.ConfigurableTaskParameters;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskInstance;
 
@@ -18,12 +20,10 @@ public interface PollableExecutor extends SerializableExecutor {
 
   TaskExecutionResult poll(TaskInstance taskInstance);
 
-  Duration DEFAULT_POLL_DELAY = Duration.ofMinutes(1);
-
   default Duration getPollFrequency(TaskInstance taskInstance) {
     if (taskInstance.getTaskParameters().getPollDelay() != null) {
       return taskInstance.getTaskParameters().getPollDelay();
     }
-    return DEFAULT_POLL_DELAY;
+    return ConfigurableTaskParameters.DEFAULT_POLL_DELAY;
   }
 }

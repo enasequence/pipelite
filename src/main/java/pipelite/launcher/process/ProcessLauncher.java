@@ -8,16 +8,19 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.launcher.process;
 
 import static pipelite.task.TaskExecutionResultType.*;
 
 import com.google.common.flogger.FluentLogger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import lombok.Data;
-import lombok.Value;
+
+import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -46,13 +49,15 @@ public class ProcessLauncher implements Runnable {
   private final TaskConfiguration taskConfiguration;
   private final PipeliteProcessService pipeliteProcessService;
   private final PipeliteStageService pipeliteStageService;
+  private final List<PipeliteTaskInstance> pipeliteTaskInstances;
+  private final DependencyResolver dependencyResolver;
+  private final ExecutorService executorService;
+  private final Set<PipeliteTaskInstance> activeTasks = ConcurrentHashMap.newKeySet();
 
   private PipeliteProcessInstance pipeliteProcessInstance;
-  private List<PipeliteTaskInstance> pipeliteTaskInstances = new ArrayList<>();
 
-  private int taskFailedCount = 0;
-  private int taskSkippedCount = 0;
-  private int taskCompletedCount = 0;
+  private final AtomicInteger taskFailedCount = new AtomicInteger(0);
+  private final AtomicInteger taskCompletedCount = new AtomicInteger(0);
 
   public ProcessLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
@@ -64,18 +69,46 @@ public class ProcessLauncher implements Runnable {
     this.taskConfiguration = taskConfiguration;
     this.pipeliteProcessService = pipeliteProcessService;
     this.pipeliteStageService = pipeliteStageService;
+    this.pipeliteTaskInstances = new ArrayList<>();
+    this.dependencyResolver = new DependencyResolver(pipeliteTaskInstances);
+    this.executorService = Executors.newCachedThreadPool();
   }
 
-  @Data
   private static class PipeliteProcessInstance {
     private final ProcessInstance processInstance;
     private final PipeliteProcess pipeliteProcess;
+
+    public PipeliteProcessInstance(
+        ProcessInstance processInstance, PipeliteProcess pipeliteProcess) {
+      this.processInstance = processInstance;
+      this.pipeliteProcess = pipeliteProcess;
+    }
+
+    public ProcessInstance getProcessInstance() {
+      return processInstance;
+    }
+
+    public PipeliteProcess getPipeliteProcess() {
+      return pipeliteProcess;
+    }
   }
 
-  @Value
-  private static class PipeliteTaskInstance {
+  public static class PipeliteTaskInstance {
     private final TaskInstance taskInstance;
     private final PipeliteStage pipeliteStage;
+
+    public PipeliteTaskInstance(TaskInstance taskInstance, PipeliteStage pipeliteStage) {
+      this.taskInstance = taskInstance;
+      this.pipeliteStage = pipeliteStage;
+    }
+
+    public TaskInstance getTaskInstance() {
+      return taskInstance;
+    }
+
+    public PipeliteStage getPipeliteStage() {
+      return pipeliteStage;
+    }
   }
 
   public void init(ProcessInstance processInstance, PipeliteProcess pipeliteProcess) {
@@ -146,12 +179,43 @@ public class ProcessLauncher implements Runnable {
   }
 
   private void executeTasks() {
-    for (PipeliteTaskInstance pipeliteTaskInstance : pipeliteTaskInstances) {
+    while (true) {
       if (Thread.currentThread().isInterrupted()) {
-        break;
+        executorService.shutdownNow();
+        return;
       }
-      if (!executeTask(pipeliteTaskInstance)) {
-        break;
+
+      List<PipeliteTaskInstance> runnableTasks = dependencyResolver.getRunnableTasks();
+      if (runnableTasks.isEmpty()) {
+        return;
+      }
+      for (PipeliteTaskInstance pipeliteTaskInstance : runnableTasks) {
+        if (activeTasks.contains(pipeliteTaskInstance)) {
+          // Task is already being executed.
+          continue;
+        }
+
+        activeTasks.add(pipeliteTaskInstance);
+        executorService.execute(
+            () -> {
+              try {
+                executeTask(pipeliteTaskInstance);
+              } catch (Exception ex) {
+                logContext(log.atSevere())
+                    .withCause(ex)
+                    .log("Unexpected exception when executing task");
+              } finally {
+                activeTasks.remove(pipeliteTaskInstance);
+              }
+            });
+      }
+
+      try {
+        Thread.sleep(Duration.ofSeconds(1).toMillis());
+      } catch (InterruptedException ex) {
+        executorService.shutdownNow();
+        Thread.currentThread().interrupt();
+        return;
       }
     }
   }
@@ -168,18 +232,12 @@ public class ProcessLauncher implements Runnable {
     pipeliteProcessService.saveProcess(pipeliteProcess);
   }
 
-  private boolean executeTask(PipeliteTaskInstance pipeliteTaskInstance) {
+  private void executeTask(PipeliteTaskInstance pipeliteTaskInstance) {
     TaskInstance taskInstance = pipeliteTaskInstance.getTaskInstance();
     PipeliteStage pipeliteStage = pipeliteTaskInstance.getPipeliteStage();
     String taskName = taskInstance.getTaskName();
 
     logContext(log.atInfo(), taskName).log("Executing task");
-
-    if (pipeliteStage.getResultType() == SUCCESS) {
-      // Continue executing the process.
-      ++taskSkippedCount;
-      return true;
-    }
 
     TaskExecutionResult result = null;
     TaskExecutor executor = null;
@@ -236,38 +294,25 @@ public class ProcessLauncher implements Runnable {
     pipeliteStageService.saveStage(pipeliteStage);
 
     if (result.isSuccess()) {
-      ++taskCompletedCount;
+      taskCompletedCount.incrementAndGet();
       logContext(log.atInfo(), pipeliteStage.getStageName())
           .with(LogKey.TASK_EXECUTION_RESULT_TYPE, pipeliteStage.getResultType())
           .with(LogKey.TASK_EXECUTION_COUNT, pipeliteStage.getExecutionCount())
           .log("Task executed successfully.");
-      invalidateTaskDepedencies(pipeliteTaskInstance, false);
-      return true; // Continue process execution.
+      invalidateDependentTasks(pipeliteTaskInstance);
     } else {
-      ++taskFailedCount;
+      taskFailedCount.incrementAndGet();
       logContext(log.atSevere(), pipeliteStage.getStageName())
           .with(LogKey.TASK_EXECUTION_RESULT_TYPE, pipeliteStage.getResultType())
           .with(LogKey.TASK_EXECUTION_COUNT, pipeliteStage.getExecutionCount())
           .log("Task execution failed");
-      return false; // Do not continue executing the process.
     }
   }
 
-  private void invalidateTaskDepedencies(PipeliteTaskInstance from, boolean reset) {
-    for (PipeliteTaskInstance task : pipeliteTaskInstances) {
-      if (task.getTaskInstance().equals(from)) {
-        continue;
-      }
-
-      TaskInstance dependsOn = task.getTaskInstance().getDependsOn();
-      if (dependsOn != null && dependsOn.equals(from.getTaskInstance().getTaskName())) {
-        invalidateTaskDepedencies(task, true);
-      }
-    }
-
-    if (reset) {
-      from.getPipeliteStage().resetExecution();
-      pipeliteStageService.saveStage(from.getPipeliteStage());
+  private void invalidateDependentTasks(PipeliteTaskInstance from) {
+    for (PipeliteTaskInstance pipeliteTaskInstance : dependencyResolver.getDependentTasks(from)) {
+      pipeliteTaskInstance.getPipeliteStage().resetExecution();
+      pipeliteStageService.saveStage(pipeliteTaskInstance.getPipeliteStage());
     }
   }
 
@@ -284,15 +329,11 @@ public class ProcessLauncher implements Runnable {
   }
 
   public int getTaskFailedCount() {
-    return taskFailedCount;
-  }
-
-  public int getTaskSkippedCount() {
-    return taskSkippedCount;
+    return taskFailedCount.get();
   }
 
   public int getTaskCompletedCount() {
-    return taskCompletedCount;
+    return taskCompletedCount.get();
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {

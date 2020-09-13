@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.launcher.pipelite;
 
 import com.google.common.flogger.FluentLogger;
 import com.google.common.util.concurrent.AbstractScheduledService;
@@ -26,6 +26,8 @@ import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.entity.PipeliteProcess;
+import pipelite.launcher.process.ProcessLauncher;
+import pipelite.launcher.ServerManager;
 import pipelite.log.LogKey;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessInstance;
@@ -46,7 +48,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private final PipeliteStageService pipeliteStageService;
   private final PipeliteLockService pipeliteLockService;
   private final String launcherName;
-  private final LauncherLocker launcherLocker;
+  private final Locker locker;
   private final ExecutorService executorService;
   private final int workers;
   private ProcessFactory processFactory;
@@ -56,7 +58,6 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private final AtomicInteger processFailedToExecuteCount = new AtomicInteger(0);
   private final AtomicInteger processCompletedCount = new AtomicInteger(0);
   private final AtomicInteger taskFailedCount = new AtomicInteger(0);
-  private final AtomicInteger taskSkippedCount = new AtomicInteger(0);
   private final AtomicInteger taskCompletedCount = new AtomicInteger(0);
 
   private final Map<String, ProcessLauncher> initProcesses = new ConcurrentHashMap<>();
@@ -90,7 +91,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
     this.pipeliteStageService = pipeliteStageService;
     this.pipeliteLockService = pipeliteLockService;
     this.launcherName = launcherConfiguration.getLauncherName();
-    this.launcherLocker = new LauncherLocker(launcherName, pipeliteLockService);
+    this.locker = new Locker(launcherName, pipeliteLockService);
     this.workers =
         launcherConfiguration.getWorkers() > 0
             ? launcherConfiguration.getWorkers()
@@ -119,7 +120,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
   protected void startUp() {
     logContext(log.atInfo()).log("Starting up launcher");
 
-    if (!launcherLocker.lockLauncher()) {
+    if (!locker.lockLauncher()) {
       throw new RuntimeException("Could not start launcher");
     }
 
@@ -279,7 +280,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
         () -> {
           activeProcesses.put(processId, processLauncher);
           try {
-            if (!launcherLocker.lockProcess(getProcessName(), processId)) {
+            if (!locker.lockProcess(getProcessName(), processId)) {
               return;
             }
             processLauncher.run();
@@ -288,11 +289,10 @@ public class PipeliteLauncher extends AbstractScheduledService {
             processFailedToExecuteCount.incrementAndGet();
             logContext(log.atSevere(), processId).withCause(ex).log("Failed to execute process");
           } finally {
-            launcherLocker.unlockProcess(getProcessName(), processId);
+            locker.unlockProcess(getProcessName(), processId);
             activeProcesses.remove(processId);
             initProcesses.remove(processId);
             taskCompletedCount.addAndGet(processLauncher.getTaskCompletedCount());
-            taskSkippedCount.addAndGet(processLauncher.getTaskSkippedCount());
             taskFailedCount.addAndGet(processLauncher.getTaskFailedCount());
           }
         });
@@ -326,7 +326,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
       executorService.shutdownNow();
       throw ex;
     } finally {
-      launcherLocker.unlockLauncher();
+      locker.unlockLauncher();
 
       logContext(log.atInfo()).log("Launcher has been shut down");
     }
@@ -354,10 +354,6 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   public int getTaskFailedCount() {
     return taskFailedCount.get();
-  }
-
-  public int getTaskSkippedCount() {
-    return taskSkippedCount.get();
   }
 
   public int getTaskCompletedCount() {

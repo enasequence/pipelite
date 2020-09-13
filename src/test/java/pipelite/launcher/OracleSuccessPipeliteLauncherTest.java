@@ -21,14 +21,11 @@ import org.springframework.test.context.ContextConfiguration;
 import pipelite.FullTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfiguration;
+import pipelite.launcher.pipelite.PipeliteLauncher;
 
 @SpringBootTest(
     classes = FullTestConfiguration.class,
-    properties = {
-      "pipelite.launcher.workers=5",
-      "pipelite.launcher.launchFrequency=250ms",
-      "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver",
-    })
+    properties = {"pipelite.launcher.workers=5", "pipelite.launcher.launchFrequency=250ms"})
 @ContextConfiguration(initializers = OracleSuccessPipeliteLauncherTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"oracle-test"})
 public class OracleSuccessPipeliteLauncherTest {

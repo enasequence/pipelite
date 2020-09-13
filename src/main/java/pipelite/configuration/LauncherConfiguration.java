@@ -15,7 +15,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import pipelite.launcher.PipeliteLauncher;
+import pipelite.launcher.pipelite.PipeliteLauncher;
 import pipelite.launcher.ScheduleLauncher;
 
 @Data

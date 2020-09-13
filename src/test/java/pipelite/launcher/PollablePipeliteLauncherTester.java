@@ -25,6 +25,7 @@ import pipelite.entity.PipeliteProcess;
 import pipelite.entity.PipeliteStage;
 import pipelite.executor.PollableExecutor;
 import pipelite.executor.TaskExecutor;
+import pipelite.launcher.pipelite.PipeliteLauncher;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.process.ProcessExecutionState;
 import pipelite.process.ProcessInstance;
@@ -193,7 +194,6 @@ public class PollablePipeliteLauncherTester {
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pollCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(executeCount.get()).isEqualTo(0);
@@ -206,7 +206,6 @@ public class PollablePipeliteLauncherTester {
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pollCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(executeCount.get()).isEqualTo(PROCESS_CNT);
@@ -219,7 +218,6 @@ public class PollablePipeliteLauncherTester {
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(0);
     assertThat(pollCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(executeCount.get()).isEqualTo(PROCESS_CNT);
@@ -232,7 +230,6 @@ public class PollablePipeliteLauncherTester {
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pollCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(executeCount.get()).isEqualTo(PROCESS_CNT);
@@ -245,7 +242,6 @@ public class PollablePipeliteLauncherTester {
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(0);
     assertThat(pollCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(executeCount.get()).isEqualTo(PROCESS_CNT);

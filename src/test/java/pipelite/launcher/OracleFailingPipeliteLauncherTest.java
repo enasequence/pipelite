@@ -29,6 +29,7 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.executor.ErrorTaskExecutor;
 import pipelite.executor.SuccessTaskExecutor;
+import pipelite.launcher.pipelite.PipeliteLauncher;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.process.ProcessInstance;
 import pipelite.process.ProcessSource;
@@ -38,7 +39,7 @@ import pipelite.process.ProcessSource;
     properties = {
       "pipelite.launcher.workers=5",
       "pipelite.launcher.launchFrequency=250ms",
-      "pipelite.task.resolver=pipelite.resolver.DefaultExceptionResolver"
+      "pipelite.task.retries=1"
     })
 @ContextConfiguration(initializers = OracleSuccessPipeliteLauncherTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"oracle-test"})
@@ -49,13 +50,11 @@ public class OracleFailingPipeliteLauncherTest {
 
   private static final String PROCESS_NAME = UniqueStringGenerator.randomProcessName();
   private static final int PROCESS_CNT = 5;
-  private static final Duration SCHEDULER_DELAY = Duration.ofMillis(250);
 
   private PipeliteLauncher init(
       List<ProcessInstance> processInstances, ProcessSource processSource) {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
-    TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
-    processConfiguration.setProcessFactory(processFactory);
+    processConfiguration.setProcessFactory(new TestInMemoryProcessFactory(processInstances));
     processConfiguration.setProcessSource(processSource);
     pipeliteLauncher.setShutdownIfIdle(true);
     return pipeliteLauncher;
@@ -95,7 +94,6 @@ public class OracleFailingPipeliteLauncherTest {
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
   }
 
   @Test
@@ -132,7 +130,6 @@ public class OracleFailingPipeliteLauncherTest {
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
   }
 
   @Test
@@ -169,7 +166,6 @@ public class OracleFailingPipeliteLauncherTest {
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT * 2);
     assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
   }
 
   @Test
@@ -206,7 +202,6 @@ public class OracleFailingPipeliteLauncherTest {
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT * 3);
     assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
   }
 
   @Test
@@ -243,6 +238,5 @@ public class OracleFailingPipeliteLauncherTest {
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getTaskCompletedCount()).isEqualTo(PROCESS_CNT * 4);
     assertThat(pipeliteLauncher.getTaskFailedCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getTaskSkippedCount()).isEqualTo(0);
   }
 }

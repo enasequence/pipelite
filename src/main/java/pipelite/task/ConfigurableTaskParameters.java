@@ -18,6 +18,10 @@ import java.time.Duration;
  */
 public interface ConfigurableTaskParameters {
 
+  Duration DEFAULT_TIMEOUT = Duration.ofDays(7);
+  int DEFAULT_RETRIES = 3;
+  Duration DEFAULT_POLL_DELAY = Duration.ofMinutes(1);
+
   String getHost();
 
   Duration getTimeout();

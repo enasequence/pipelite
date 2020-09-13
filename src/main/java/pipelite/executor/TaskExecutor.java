@@ -10,7 +10,6 @@
  */
 package pipelite.executor;
 
-import java.time.Duration;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskInstance;
 
@@ -18,5 +17,4 @@ public interface TaskExecutor {
 
   TaskExecutionResult execute(TaskInstance taskInstance);
 
-  Duration DEFAULT_TIMEOUT = Duration.ofDays(7);
 }
