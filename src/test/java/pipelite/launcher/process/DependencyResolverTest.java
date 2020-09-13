@@ -197,4 +197,92 @@ public class DependencyResolverTest {
     assertThat(runnableTasks.size()).isOne();
     assertThat(runnableTasks.get(0).getTaskInstance().getTaskName()).isEqualTo("TASK1");
   }
+
+  @Test
+  public void testGetDependentTasksAllDependOnPrevious() {
+    List<ProcessLauncher.PipeliteTaskInstance> pipeliteTaskInstances = new ArrayList();
+
+    ProcessBuilder builder =
+        new ProcessBuilder(
+            UniqueStringGenerator.randomProcessName(), UniqueStringGenerator.randomProcessId());
+    ProcessInstance processInstance =
+        builder
+            .task("TASK1")
+            .executor(new SuccessTaskExecutor())
+            .taskDependsOnPrevious("TASK2")
+            .executor(new SuccessTaskExecutor())
+            .taskDependsOnPrevious("TASK3")
+            .executor(new SuccessTaskExecutor())
+            .taskDependsOnPrevious("TASK4")
+            .executor(new SuccessTaskExecutor())
+            .build();
+
+    for (TaskInstance taskInstance : processInstance.getTasks()) {
+      PipeliteStage pipeliteStage = new PipeliteStage();
+      pipeliteTaskInstances.add(
+          new ProcessLauncher.PipeliteTaskInstance(taskInstance, pipeliteStage));
+    }
+
+    DependencyResolver dependencyResolver = new DependencyResolver(pipeliteTaskInstances);
+
+    List<ProcessLauncher.PipeliteTaskInstance> dependentTasks =
+        dependencyResolver.getDependentTasks(pipeliteTaskInstances.get(0));
+    assertThat(dependentTasks.size()).isEqualTo(3);
+    assertThat(dependentTasks.get(0).getTaskInstance().getTaskName()).isEqualTo("TASK4");
+    assertThat(dependentTasks.get(1).getTaskInstance().getTaskName()).isEqualTo("TASK3");
+    assertThat(dependentTasks.get(2).getTaskInstance().getTaskName()).isEqualTo("TASK2");
+
+    dependentTasks = dependencyResolver.getDependentTasks(pipeliteTaskInstances.get(1));
+    assertThat(dependentTasks.size()).isEqualTo(2);
+    assertThat(dependentTasks.get(0).getTaskInstance().getTaskName()).isEqualTo("TASK4");
+    assertThat(dependentTasks.get(1).getTaskInstance().getTaskName()).isEqualTo("TASK3");
+
+    dependentTasks = dependencyResolver.getDependentTasks(pipeliteTaskInstances.get(2));
+    assertThat(dependentTasks.size()).isEqualTo(1);
+    assertThat(dependentTasks.get(0).getTaskInstance().getTaskName()).isEqualTo("TASK4");
+  }
+
+  @Test
+  public void testGetDependentTasksAllDependOnFirst() {
+    List<ProcessLauncher.PipeliteTaskInstance> pipeliteTaskInstances = new ArrayList();
+
+    ProcessBuilder builder =
+        new ProcessBuilder(
+            UniqueStringGenerator.randomProcessName(), UniqueStringGenerator.randomProcessId());
+    ProcessInstance processInstance =
+        builder
+            .task("TASK1")
+            .executor(new SuccessTaskExecutor())
+            .taskDependsOn("TASK2", "TASK1")
+            .executor(new SuccessTaskExecutor())
+            .taskDependsOn("TASK3", "TASK1")
+            .executor(new SuccessTaskExecutor())
+            .taskDependsOn("TASK4", "TASK1")
+            .executor(new SuccessTaskExecutor())
+            .build();
+
+    for (TaskInstance taskInstance : processInstance.getTasks()) {
+      PipeliteStage pipeliteStage = new PipeliteStage();
+      pipeliteTaskInstances.add(
+          new ProcessLauncher.PipeliteTaskInstance(taskInstance, pipeliteStage));
+    }
+
+    DependencyResolver dependencyResolver = new DependencyResolver(pipeliteTaskInstances);
+
+    List<ProcessLauncher.PipeliteTaskInstance> dependentTasks =
+        dependencyResolver.getDependentTasks(pipeliteTaskInstances.get(0));
+    assertThat(dependentTasks.size()).isEqualTo(3);
+    assertThat(dependentTasks.get(0).getTaskInstance().getTaskName()).isEqualTo("TASK2");
+    assertThat(dependentTasks.get(1).getTaskInstance().getTaskName()).isEqualTo("TASK3");
+    assertThat(dependentTasks.get(2).getTaskInstance().getTaskName()).isEqualTo("TASK4");
+
+    dependentTasks = dependencyResolver.getDependentTasks(pipeliteTaskInstances.get(1));
+    assertThat(dependentTasks.size()).isEqualTo(0);
+
+    dependentTasks = dependencyResolver.getDependentTasks(pipeliteTaskInstances.get(2));
+    assertThat(dependentTasks.size()).isEqualTo(0);
+
+    dependentTasks = dependencyResolver.getDependentTasks(pipeliteTaskInstances.get(3));
+    assertThat(dependentTasks.size()).isEqualTo(0);
+  }
 }

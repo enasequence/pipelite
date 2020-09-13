@@ -34,7 +34,8 @@ public class DependencyResolver {
       }
 
       TaskInstance dependsOn = task.getTaskInstance().getDependsOn();
-      if (dependsOn != null && dependsOn.equals(from.getTaskInstance().getTaskName())) {
+      if (dependsOn != null
+          && dependsOn.getTaskName().equals(from.getTaskInstance().getTaskName())) {
         getDependentTasks(dependentTasks, task, true);
       }
     }

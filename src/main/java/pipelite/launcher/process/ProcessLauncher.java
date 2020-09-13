@@ -52,7 +52,7 @@ public class ProcessLauncher implements Runnable {
   private final List<PipeliteTaskInstance> pipeliteTaskInstances;
   private final DependencyResolver dependencyResolver;
   private final ExecutorService executorService;
-  private final Set<PipeliteTaskInstance> activeTasks = ConcurrentHashMap.newKeySet();
+  private final Set<String> activeTasks = ConcurrentHashMap.newKeySet();
   private final Duration taskLaunchFrequency;
 
   public static final Duration DEFAULT_TASK_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
@@ -194,17 +194,28 @@ public class ProcessLauncher implements Runnable {
         return;
       }
 
+      logContext(log.atFine()).log("Executing tasks");
+
       List<PipeliteTaskInstance> runnableTasks = dependencyResolver.getRunnableTasks();
       if (runnableTasks.isEmpty()) {
         return;
       }
+
       for (PipeliteTaskInstance pipeliteTaskInstance : runnableTasks) {
-        if (activeTasks.contains(pipeliteTaskInstance)) {
-          // Task is already being executed.
+        String taskName = pipeliteTaskInstance.getTaskInstance().getTaskName();
+        if (activeTasks.contains(taskName)) {
           continue;
         }
 
-        activeTasks.add(pipeliteTaskInstance);
+        if (pipeliteTaskInstance.getTaskInstance().getDependsOn() != null) {
+          String dependsOnTaskName =
+              pipeliteTaskInstance.getTaskInstance().getDependsOn().getTaskName();
+          if (dependsOnTaskName != null && activeTasks.contains(dependsOnTaskName)) {
+            continue;
+          }
+        }
+
+        activeTasks.add(taskName);
         executorService.execute(
             () -> {
               try {
@@ -214,7 +225,7 @@ public class ProcessLauncher implements Runnable {
                     .withCause(ex)
                     .log("Unexpected exception when executing task");
               } finally {
-                activeTasks.remove(pipeliteTaskInstance);
+                activeTasks.remove(taskName);
               }
             });
       }

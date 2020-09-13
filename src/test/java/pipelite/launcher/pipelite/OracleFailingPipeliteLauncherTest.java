@@ -70,13 +70,13 @@ public class OracleFailingPipeliteLauncherTest {
             i -> {
               processInstances.add(
                   new ProcessBuilder(PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName())
+                      .task("TASK1")
                       .executor(new ErrorTaskExecutor())
-                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .taskDependsOnPrevious("TASK2")
                       .executor(new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .taskDependsOnPrevious("TASK3")
                       .executor(new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .taskDependsOnPrevious("TASK4")
                       .executor(new SuccessTaskExecutor())
                       .build());
             });
@@ -106,13 +106,13 @@ public class OracleFailingPipeliteLauncherTest {
             i -> {
               processInstances.add(
                   new ProcessBuilder(PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName())
+                      .task("TASK1")
                       .executor(new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .taskDependsOnPrevious("TASK2")
                       .executor(new ErrorTaskExecutor())
-                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .taskDependsOnPrevious("TASK3")
                       .executor(new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .taskDependsOnPrevious("TASK4")
                       .executor(new SuccessTaskExecutor())
                       .build());
             });
@@ -142,13 +142,13 @@ public class OracleFailingPipeliteLauncherTest {
             i -> {
               processInstances.add(
                   new ProcessBuilder(PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName())
+                      .task("TASK1")
                       .executor(new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .taskDependsOnPrevious("TASK2")
                       .executor(new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .taskDependsOnPrevious("TASK3")
                       .executor(new ErrorTaskExecutor())
-                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .taskDependsOnPrevious("TASK4")
                       .executor(new SuccessTaskExecutor())
                       .build());
             });
@@ -178,13 +178,13 @@ public class OracleFailingPipeliteLauncherTest {
             i -> {
               processInstances.add(
                   new ProcessBuilder(PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName())
+                      .task("TASK1")
                       .executor(new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .taskDependsOnPrevious("TASK2")
                       .executor(new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .taskDependsOnPrevious("TASK3")
                       .executor(new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .taskDependsOnPrevious("TASK4")
                       .executor(new ErrorTaskExecutor())
                       .build());
             });
@@ -214,13 +214,13 @@ public class OracleFailingPipeliteLauncherTest {
             i -> {
               processInstances.add(
                   new ProcessBuilder(PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
-                      .task(UniqueStringGenerator.randomTaskName())
+                      .task("TASK1")
                       .executor(new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .taskDependsOnPrevious("TASK2")
                       .executor(new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .taskDependsOnPrevious("TASK3")
                       .executor(new SuccessTaskExecutor())
-                      .taskDependsOnPrevious(UniqueStringGenerator.randomTaskName())
+                      .taskDependsOnPrevious("TASK4")
                       .executor(new SuccessTaskExecutor())
                       .build());
             });
