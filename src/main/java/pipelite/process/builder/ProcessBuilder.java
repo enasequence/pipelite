@@ -23,10 +23,12 @@ public class ProcessBuilder {
   final int priority;
   final List<TaskInstance> taskInstances = new ArrayList<>();
 
+  public static final int DEFAULT_PRIORITY = 0;
+
   public ProcessBuilder(String processName, String processId) {
     this.processName = processName;
     this.processId = processId;
-    this.priority = 0;
+    this.priority = DEFAULT_PRIORITY;
   }
 
   public ProcessBuilder(String processName, String processId, int priority) {

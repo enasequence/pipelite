@@ -41,9 +41,9 @@ public class LauncherConfiguration {
 
   /** Delay between re-prioritising process executions in PipeliteLauncher. */
   @Builder.Default
-  private Duration prioritizationFrequency = PipeliteLauncher.DEFAULT_PRIORITIZATION_FREQUENCY;
+  private Duration processPrioritizationFrequency = PipeliteLauncher.DEFAULT_PROCESS_PRIORITIZATION_FREQUENCY;
 
   /** Frequency of scheduling processes to execute in ScheduleLauncher. */
   @Builder.Default
-  private Duration schedulingFrequency = ScheduleLauncher.DEFAULT_SCHEDULING_FREQUENCY;
+  private Duration processSchedulingFrequency = ScheduleLauncher.DEFAULT_PROCESS_SCHEDULING_FREQUENCY;
 }

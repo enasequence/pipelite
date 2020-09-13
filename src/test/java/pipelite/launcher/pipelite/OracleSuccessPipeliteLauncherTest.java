@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.launcher.pipelite;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,6 @@ import org.springframework.test.context.ContextConfiguration;
 import pipelite.FullTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfiguration;
-import pipelite.launcher.pipelite.PipeliteLauncher;
 
 @SpringBootTest(
     classes = FullTestConfiguration.class,
@@ -30,9 +29,9 @@ import pipelite.launcher.pipelite.PipeliteLauncher;
       "pipelite.launcher.processLaunchFrequency=250ms",
       "pipelite.launcher.taskLaunchFrequency=250ms"
     })
-@ContextConfiguration(initializers = HSqlSuccessPipeliteLauncherTest.TestContextInitializer.class)
-@ActiveProfiles(value = {"hsql-test"})
-public class HSqlSuccessPipeliteLauncherTest {
+@ContextConfiguration(initializers = OracleSuccessPipeliteLauncherTest.TestContextInitializer.class)
+@ActiveProfiles(value = {"oracle-test"})
+public class OracleSuccessPipeliteLauncherTest {
 
   @Autowired private PipeliteLauncher pipeliteLauncher;
   @Autowired private ProcessConfiguration processConfiguration;

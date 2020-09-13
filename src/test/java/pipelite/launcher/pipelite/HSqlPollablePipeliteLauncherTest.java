@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.launcher.pipelite;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
@@ -24,7 +24,6 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
-import pipelite.launcher.pipelite.PipeliteLauncher;
 import pipelite.service.PipeliteLockService;
 import pipelite.service.PipeliteProcessService;
 import pipelite.service.PipeliteStageService;
@@ -37,9 +36,9 @@ import pipelite.service.PipeliteStageService;
       "pipelite.launcher.taskLaunchFrequency=250ms",
       "pipelite.task.retries=1"
     })
-@ContextConfiguration(initializers = OracleSuccessPipeliteLauncherTest.TestContextInitializer.class)
-@ActiveProfiles(value = {"oracle-test"})
-public class OraclePollablePipeliteLauncherTest {
+@ContextConfiguration(initializers = HSqlSuccessPipeliteLauncherTest.TestContextInitializer.class)
+@ActiveProfiles(value = {"hsql-test"})
+public class HSqlPollablePipeliteLauncherTest {
 
   @Autowired private LauncherConfiguration launcherConfiguration;
   @Autowired private ProcessConfiguration processConfiguration;
@@ -49,7 +48,7 @@ public class OraclePollablePipeliteLauncherTest {
   @Autowired private PipeliteStageService pipeliteStageService;
   @Autowired private PipeliteLockService pipeliteLockService;
 
-  public OraclePollablePipeliteLauncherTest() {}
+  public HSqlPollablePipeliteLauncherTest() {}
 
   public static class TestContextInitializer
       implements ApplicationContextInitializer<ConfigurableApplicationContext> {

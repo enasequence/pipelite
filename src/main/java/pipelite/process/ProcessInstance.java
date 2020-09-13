@@ -26,7 +26,7 @@ import pipelite.task.TaskInstance;
 public class ProcessInstance {
   private final String processName;
   private final String processId;
-  @EqualsAndHashCode.Exclude private final Integer priority;
+  @EqualsAndHashCode.Exclude private final int priority;
   @EqualsAndHashCode.Exclude private final List<TaskInstance> tasks;
 
   public enum ValidateMode {

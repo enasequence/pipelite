@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.launcher.pipelite;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,6 +22,7 @@ import pipelite.TestInMemoryProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.executor.TaskExecutor;
+import pipelite.launcher.ServerManager;
 import pipelite.launcher.pipelite.PipeliteLauncher;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.process.ProcessInstance;

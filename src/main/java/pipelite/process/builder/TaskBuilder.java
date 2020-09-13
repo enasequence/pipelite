@@ -1,6 +1,5 @@
 package pipelite.process.builder;
 
-import lombok.Value;
 import pipelite.executor.TaskExecutor;
 import pipelite.executor.command.LocalCommandExecutor;
 import pipelite.executor.command.LocalTaskExecutor;
@@ -15,12 +14,18 @@ import pipelite.task.TaskParameters;
 
 import java.util.Optional;
 
-@Value
 public class TaskBuilder {
   private final ProcessBuilder processBuilder;
   private final String taskName;
   private final String dependsOnTaskName;
   private final TaskParameters taskParameters;
+
+  public TaskBuilder(ProcessBuilder processBuilder, String taskName, String dependsOnTaskName, TaskParameters taskParameters) {
+    this.processBuilder = processBuilder;
+    this.taskName = taskName;
+    this.dependsOnTaskName = dependsOnTaskName;
+    this.taskParameters = taskParameters;
+  }
 
   public ProcessBuilderDependsOn executor(TaskExecutor executor) {
     return addTaskInstance(executor);

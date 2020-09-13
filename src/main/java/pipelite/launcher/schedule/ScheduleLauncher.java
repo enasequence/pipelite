@@ -75,8 +75,8 @@ public class ScheduleLauncher extends AbstractScheduledService {
   private long iterations = 0;
   private Long maxIterations;
 
-  public static final Duration DEFAULT_SCHEDULING_FREQUENCY = Duration.ofMinutes(5);
-  private final Duration schedulingFrequency;
+  public static final Duration DEFAULT_PROCESS_SCHEDULING_FREQUENCY = Duration.ofMinutes(5);
+  private final Duration processSchedulingFrequency;
 
   public ScheduleLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
@@ -100,9 +100,9 @@ public class ScheduleLauncher extends AbstractScheduledService {
     this.executorService = Executors.newFixedThreadPool(workers);
 
     if (launcherConfiguration.getProcessLaunchFrequency() != null) {
-      this.schedulingFrequency = launcherConfiguration.getSchedulingFrequency();
+      this.processSchedulingFrequency = launcherConfiguration.getProcessSchedulingFrequency();
     } else {
-      this.schedulingFrequency = DEFAULT_SCHEDULING_FREQUENCY;
+      this.processSchedulingFrequency = DEFAULT_PROCESS_SCHEDULING_FREQUENCY;
     }
   }
 
@@ -121,7 +121,7 @@ public class ScheduleLauncher extends AbstractScheduledService {
 
   @Override
   protected Scheduler scheduler() {
-    return Scheduler.newFixedDelaySchedule(Duration.ZERO, schedulingFrequency);
+    return Scheduler.newFixedDelaySchedule(Duration.ZERO, processSchedulingFrequency);
   }
 
   @Override

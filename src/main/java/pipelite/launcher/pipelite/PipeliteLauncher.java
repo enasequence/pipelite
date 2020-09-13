@@ -73,9 +73,9 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   public static final int DEFAULT_WORKERS = ForkJoinPool.getCommonPoolParallelism();
   public static final Duration DEFAULT_PROCESS_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
-  public static final Duration DEFAULT_PRIORITIZATION_FREQUENCY = Duration.ofHours(1);
+  public static final Duration DEFAULT_PROCESS_PRIORITIZATION_FREQUENCY = Duration.ofHours(1);
   private final Duration processLaunchFrequency;
-  private final Duration prioritizationFrequency;
+  private final Duration processPrioritizationFrequency;
 
   public PipeliteLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
@@ -104,10 +104,11 @@ public class PipeliteLauncher extends AbstractScheduledService {
       this.processLaunchFrequency = DEFAULT_PROCESS_LAUNCH_FREQUENCY;
     }
 
-    if (launcherConfiguration.getPrioritizationFrequency() != null) {
-      this.prioritizationFrequency = launcherConfiguration.getPrioritizationFrequency();
+    if (launcherConfiguration.getProcessPrioritizationFrequency() != null) {
+      this.processPrioritizationFrequency =
+          launcherConfiguration.getProcessPrioritizationFrequency();
     } else {
-      this.prioritizationFrequency = DEFAULT_PRIORITIZATION_FREQUENCY;
+      this.processPrioritizationFrequency = DEFAULT_PROCESS_PRIORITIZATION_FREQUENCY;
     }
   }
 
@@ -246,7 +247,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
         pipeliteProcessService.getNewProcesses(getProcessName()).stream()
             .filter(pipeliteProcess -> !activeProcesses.containsKey(pipeliteProcess.getProcessId()))
             .collect(Collectors.toList()));
-    processQueueValidUntil = LocalDateTime.now().plus(prioritizationFrequency);
+    processQueueValidUntil = LocalDateTime.now().plus(processPrioritizationFrequency);
   }
 
   private void launchProcess() {

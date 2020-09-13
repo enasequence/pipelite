@@ -10,15 +10,17 @@
  */
 package pipelite.process.builder;
 
-import lombok.Value;
 import pipelite.process.ProcessInstance;
 import pipelite.task.TaskInstance;
 import pipelite.task.TaskParameters;
 
-@Value
 public class ProcessBuilderDependsOn {
 
   private final ProcessBuilder processBuilder;
+
+  public ProcessBuilderDependsOn(ProcessBuilder processBuilder) {
+    this.processBuilder = processBuilder;
+  }
 
   public TaskBuilder taskDependsOn(String taskName, String dependsOnTaskName) {
     return new TaskBuilder(
