@@ -28,8 +28,7 @@ import pipelite.process.ProcessExecutionState;
 @ActiveProfiles(value = {"hsql-test"})
 class HsqlProcessServiceTest {
 
-  @Autowired
-  ProcessService service;
+  @Autowired ProcessService service;
 
   @Test
   @Transactional

@@ -11,8 +11,8 @@
 package pipelite;
 
 import java.util.*;
-import pipelite.process.ProcessFactory;
 import pipelite.process.Process;
+import pipelite.process.ProcessFactory;
 
 public class TestInMemoryProcessFactory implements ProcessFactory {
 

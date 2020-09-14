@@ -20,10 +20,10 @@ import pipelite.executor.PollableExecutor;
 import pipelite.executor.runner.CommandRunner;
 import pipelite.executor.runner.CommandRunnerResult;
 import pipelite.log.LogKey;
+import pipelite.task.Task;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultExitCode;
 import pipelite.task.TaskExecutionResultType;
-import pipelite.task.Task;
 
 @Flogger
 public abstract class LsfExecutor extends CommandExecutor implements PollableExecutor {
@@ -201,8 +201,7 @@ public abstract class LsfExecutor extends CommandExecutor implements PollableExe
   public static CommandRunnerResult writeFileToStderr(
       CommandRunner cmdRunner, String stderrFile, Task task) {
     // Execute through sh required by LocalRunner to direct output to stdout/err.
-    return cmdRunner.execute(
-        "sh -c 'cat " + stderrFile + " 1>&2'", task.getTaskParameters());
+    return cmdRunner.execute("sh -c 'cat " + stderrFile + " 1>&2'", task.getTaskParameters());
   }
 
   public static String extractJobIdSubmitted(String str) {

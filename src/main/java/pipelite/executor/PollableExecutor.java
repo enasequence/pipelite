@@ -11,10 +11,9 @@
 package pipelite.executor;
 
 import java.time.Duration;
-
 import pipelite.task.ConfigurableTaskParameters;
-import pipelite.task.TaskExecutionResult;
 import pipelite.task.Task;
+import pipelite.task.TaskExecutionResult;
 
 public interface PollableExecutor extends SerializableExecutor {
 

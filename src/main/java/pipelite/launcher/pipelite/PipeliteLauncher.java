@@ -26,11 +26,11 @@ import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
 import pipelite.entity.ProcessEntity;
-import pipelite.launcher.process.ProcessLauncher;
 import pipelite.launcher.ServerManager;
+import pipelite.launcher.process.ProcessLauncher;
 import pipelite.log.LogKey;
-import pipelite.process.ProcessFactory;
 import pipelite.process.Process;
+import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
 import pipelite.service.LockService;
 import pipelite.service.ProcessService;
@@ -257,8 +257,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
     logContext(log.atInfo(), processId).log("Launching process instances");
 
     ProcessLauncher processLauncher =
-        new ProcessLauncher(
-            launcherConfiguration, taskConfiguration, processService, taskService);
+        new ProcessLauncher(launcherConfiguration, taskConfiguration, processService, taskService);
 
     Process process = processFactory.create(processId);
 

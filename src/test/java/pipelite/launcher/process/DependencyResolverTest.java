@@ -1,18 +1,27 @@
+/*
+ * Copyright 2020 EMBL - European Bioinformatics Institute
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
+ * file except in compliance with the License. You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
 package pipelite.launcher.process;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.TaskEntity;
 import pipelite.executor.SuccessTaskExecutor;
 import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.task.TaskExecutionResult;
 import pipelite.task.Task;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import pipelite.task.TaskExecutionResult;
 
 public class DependencyResolverTest {
 
@@ -36,14 +45,12 @@ public class DependencyResolverTest {
     for (Task task : process.getTasks()) {
       TaskEntity taskEntity = new TaskEntity();
       taskEntity.startExecution(task);
-      taskAndTaskEntities.add(
-          new ProcessLauncher.TaskAndTaskEntity(task, taskEntity));
+      taskAndTaskEntities.add(new ProcessLauncher.TaskAndTaskEntity(task, taskEntity));
     }
 
     DependencyResolver dependencyResolver = new DependencyResolver(taskAndTaskEntities);
 
-    List<ProcessLauncher.TaskAndTaskEntity> runnableTasks =
-        dependencyResolver.getRunnableTasks();
+    List<ProcessLauncher.TaskAndTaskEntity> runnableTasks = dependencyResolver.getRunnableTasks();
 
     assertThat(runnableTasks.size()).isOne();
     assertThat(runnableTasks.get(0).getTask().getTaskName()).isEqualTo("TASK1");
@@ -69,14 +76,12 @@ public class DependencyResolverTest {
     for (Task task : process.getTasks()) {
       TaskEntity taskEntity = new TaskEntity();
       taskEntity.startExecution(task);
-      taskAndTaskEntities.add(
-          new ProcessLauncher.TaskAndTaskEntity(task, taskEntity));
+      taskAndTaskEntities.add(new ProcessLauncher.TaskAndTaskEntity(task, taskEntity));
     }
 
     DependencyResolver dependencyResolver = new DependencyResolver(taskAndTaskEntities);
 
-    List<ProcessLauncher.TaskAndTaskEntity> runnableTasks =
-        dependencyResolver.getRunnableTasks();
+    List<ProcessLauncher.TaskAndTaskEntity> runnableTasks = dependencyResolver.getRunnableTasks();
 
     assertThat(runnableTasks.size()).isOne();
     assertThat(runnableTasks.get(0).getTask().getTaskName()).isEqualTo("TASK1");
@@ -107,14 +112,12 @@ public class DependencyResolverTest {
         taskEntity.endExecution(TaskExecutionResult.success());
       }
       taskNumber++;
-      taskAndTaskEntities.add(
-          new ProcessLauncher.TaskAndTaskEntity(task, taskEntity));
+      taskAndTaskEntities.add(new ProcessLauncher.TaskAndTaskEntity(task, taskEntity));
     }
 
     DependencyResolver dependencyResolver = new DependencyResolver(taskAndTaskEntities);
 
-    List<ProcessLauncher.TaskAndTaskEntity> runnableTasks =
-        dependencyResolver.getRunnableTasks();
+    List<ProcessLauncher.TaskAndTaskEntity> runnableTasks = dependencyResolver.getRunnableTasks();
 
     assertThat(runnableTasks.size()).isEqualTo(2);
     assertThat(runnableTasks.get(0).getTask().getTaskName()).isEqualTo("TASK2");
@@ -147,14 +150,12 @@ public class DependencyResolverTest {
         task.getTaskParameters().setRetries(1);
       }
       taskNumber++;
-      taskAndTaskEntities.add(
-          new ProcessLauncher.TaskAndTaskEntity(task, taskEntity));
+      taskAndTaskEntities.add(new ProcessLauncher.TaskAndTaskEntity(task, taskEntity));
     }
 
     DependencyResolver dependencyResolver = new DependencyResolver(taskAndTaskEntities);
 
-    List<ProcessLauncher.TaskAndTaskEntity> runnableTasks =
-        dependencyResolver.getRunnableTasks();
+    List<ProcessLauncher.TaskAndTaskEntity> runnableTasks = dependencyResolver.getRunnableTasks();
 
     assertThat(runnableTasks.size()).isEqualTo(0);
   }
@@ -185,14 +186,12 @@ public class DependencyResolverTest {
         task.getTaskParameters().setRetries(3);
       }
       taskNumber++;
-      taskAndTaskEntities.add(
-          new ProcessLauncher.TaskAndTaskEntity(task, taskEntity));
+      taskAndTaskEntities.add(new ProcessLauncher.TaskAndTaskEntity(task, taskEntity));
     }
 
     DependencyResolver dependencyResolver = new DependencyResolver(taskAndTaskEntities);
 
-    List<ProcessLauncher.TaskAndTaskEntity> runnableTasks =
-        dependencyResolver.getRunnableTasks();
+    List<ProcessLauncher.TaskAndTaskEntity> runnableTasks = dependencyResolver.getRunnableTasks();
 
     assertThat(runnableTasks.size()).isOne();
     assertThat(runnableTasks.get(0).getTask().getTaskName()).isEqualTo("TASK1");
@@ -219,8 +218,7 @@ public class DependencyResolverTest {
 
     for (Task task : process.getTasks()) {
       TaskEntity taskEntity = new TaskEntity();
-      taskAndTaskEntities.add(
-          new ProcessLauncher.TaskAndTaskEntity(task, taskEntity));
+      taskAndTaskEntities.add(new ProcessLauncher.TaskAndTaskEntity(task, taskEntity));
     }
 
     DependencyResolver dependencyResolver = new DependencyResolver(taskAndTaskEntities);
@@ -263,8 +261,7 @@ public class DependencyResolverTest {
 
     for (Task task : process.getTasks()) {
       TaskEntity taskEntity = new TaskEntity();
-      taskAndTaskEntities.add(
-          new ProcessLauncher.TaskAndTaskEntity(task, taskEntity));
+      taskAndTaskEntities.add(new ProcessLauncher.TaskAndTaskEntity(task, taskEntity));
     }
 
     DependencyResolver dependencyResolver = new DependencyResolver(taskAndTaskEntities);

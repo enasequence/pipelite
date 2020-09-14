@@ -22,8 +22,7 @@ import pipelite.FullTestConfiguration;
 @ActiveProfiles(value = {"oracle-test"})
 public class OracleLockServiceTest {
 
-  @Autowired
-  LockService service;
+  @Autowired LockService service;
 
   @Test
   @Transactional

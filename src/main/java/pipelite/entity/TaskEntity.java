@@ -19,9 +19,9 @@ import lombok.NoArgsConstructor;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.SerializableExecutor;
 import pipelite.executor.TaskExecutor;
+import pipelite.task.Task;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultType;
-import pipelite.task.Task;
 
 @Entity
 @Table(name = "PIPELITE_STAGE")

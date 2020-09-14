@@ -14,10 +14,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import pipelite.executor.TaskExecutor;
+import pipelite.task.Task;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultExitCode;
 import pipelite.task.TaskExecutionResultType;
-import pipelite.task.Task;
 import pipelite.task.TaskParameters;
 
 public class LocalTaskExecutorTest {
@@ -60,8 +60,7 @@ public class LocalTaskExecutorTest {
 
     TaskParameters taskParameters = TaskParameters.builder().build();
 
-    Task task =
-        task(new LocalTaskExecutor(new SuccessTaskExecutor()), taskParameters);
+    Task task = task(new LocalTaskExecutor(new SuccessTaskExecutor()), taskParameters);
 
     TaskExecutionResult result = task.execute();
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
@@ -82,8 +81,7 @@ public class LocalTaskExecutorTest {
 
     TaskParameters taskParameters = TaskParameters.builder().build();
 
-    Task task =
-        task(new LocalTaskExecutor(new ErrorTaskExecutor()), taskParameters);
+    Task task = task(new LocalTaskExecutor(new ErrorTaskExecutor()), taskParameters);
 
     TaskExecutionResult result = task.execute();
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.ERROR);
@@ -105,8 +103,7 @@ public class LocalTaskExecutorTest {
 
     TaskParameters taskParameters = TaskParameters.builder().memory(2000).build();
 
-    Task task =
-        task(new LocalTaskExecutor(new SuccessTaskExecutor()), taskParameters);
+    Task task = task(new LocalTaskExecutor(new SuccessTaskExecutor()), taskParameters);
 
     TaskExecutionResult result = task.execute();
 

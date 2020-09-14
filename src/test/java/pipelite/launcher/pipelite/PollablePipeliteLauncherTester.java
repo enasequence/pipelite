@@ -26,14 +26,14 @@ import pipelite.entity.TaskEntity;
 import pipelite.executor.PollableExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.launcher.ServerManager;
-import pipelite.process.builder.ProcessBuilder;
-import pipelite.process.ProcessExecutionState;
 import pipelite.process.Process;
+import pipelite.process.ProcessExecutionState;
+import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.LockService;
 import pipelite.service.ProcessService;
 import pipelite.service.TaskService;
-import pipelite.task.TaskExecutionResult;
 import pipelite.task.Task;
+import pipelite.task.TaskExecutionResult;
 
 public class PollablePipeliteLauncherTester {
 
@@ -77,9 +77,9 @@ public class PollablePipeliteLauncherTester {
             launcherConfiguration,
             processConfiguration,
             taskConfiguration,
-                processService,
-                taskService,
-                lockService);
+            processService,
+            taskService,
+            lockService);
     pipeliteLauncher.setShutdownIfIdle(true);
     return pipeliteLauncher;
   }

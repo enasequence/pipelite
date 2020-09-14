@@ -29,9 +29,9 @@ import pipelite.configuration.ProcessConfiguration;
 import pipelite.executor.ErrorTaskExecutor;
 import pipelite.executor.SuccessTaskExecutor;
 import pipelite.launcher.ServerManager;
-import pipelite.process.builder.ProcessBuilder;
 import pipelite.process.Process;
 import pipelite.process.ProcessSource;
+import pipelite.process.builder.ProcessBuilder;
 
 @SpringBootTest(
     classes = FullTestConfiguration.class,
@@ -51,8 +51,7 @@ public class HSqlFailingPipeliteLauncherTest {
   private static final String PROCESS_NAME = UniqueStringGenerator.randomProcessName();
   private static final int PROCESS_CNT = 5;
 
-  private PipeliteLauncher init(
-          List<Process> processes, ProcessSource processSource) {
+  private PipeliteLauncher init(List<Process> processes, ProcessSource processSource) {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
     TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processes);
     processConfiguration.setProcessFactory(processFactory);

@@ -13,9 +13,9 @@ package pipelite.executor;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.runner.CommandRunner;
 import pipelite.executor.runner.CommandRunnerResult;
+import pipelite.task.Task;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultExitCode;
-import pipelite.task.Task;
 
 @Flogger
 public abstract class CommandExecutor implements TaskExecutor {

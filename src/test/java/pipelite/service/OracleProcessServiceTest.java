@@ -28,8 +28,7 @@ import pipelite.process.ProcessExecutionState;
 @ActiveProfiles(value = {"oracle-test"})
 class OracleProcessServiceTest {
 
-  @Autowired
-  ProcessService service;
+  @Autowired ProcessService service;
 
   @Test
   @Transactional

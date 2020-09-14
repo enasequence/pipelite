@@ -12,7 +12,6 @@ package pipelite.process.builder;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import pipelite.task.Task;
 import pipelite.task.TaskParameters;
 

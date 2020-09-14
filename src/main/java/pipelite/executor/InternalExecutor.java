@@ -19,9 +19,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.runner.CommandRunnerUtils;
+import pipelite.task.Task;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultExitCode;
-import pipelite.task.Task;
 import pipelite.task.TaskParameters;
 
 @Flogger

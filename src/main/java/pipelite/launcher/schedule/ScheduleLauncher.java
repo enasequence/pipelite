@@ -27,12 +27,12 @@ import pipelite.cron.CronUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.launcher.ServerManager;
-import pipelite.launcher.pipelite.PipeliteLauncher;
 import pipelite.launcher.pipelite.Locker;
+import pipelite.launcher.pipelite.PipeliteLauncher;
 import pipelite.launcher.process.ProcessLauncher;
 import pipelite.log.LogKey;
-import pipelite.process.ProcessFactory;
 import pipelite.process.Process;
+import pipelite.process.ProcessFactory;
 import pipelite.service.LockService;
 import pipelite.service.ProcessService;
 import pipelite.service.ScheduleService;
@@ -159,8 +159,7 @@ public class ScheduleLauncher extends AbstractScheduledService {
     logContext(log.atInfo()).log("Scheduling processes");
 
     schedules.clear();
-    for (ScheduleEntity scheduleEntity :
-        scheduleService.getAllProcessSchedules(launcherName)) {
+    for (ScheduleEntity scheduleEntity : scheduleService.getAllProcessSchedules(launcherName)) {
 
       String scheduleDescription = "invalid cron expression";
       if (CronUtils.validate(scheduleEntity.getSchedule())) {
@@ -232,8 +231,7 @@ public class ScheduleLauncher extends AbstractScheduledService {
     logContext(log.atInfo(), processName, processId).log("Launching process");
 
     ProcessLauncher processLauncher =
-        new ProcessLauncher(
-            launcherConfiguration, taskConfiguration, processService, taskService);
+        new ProcessLauncher(launcherConfiguration, taskConfiguration, processService, taskService);
 
     processLauncher.init(process, processEntity);
 
@@ -241,8 +239,7 @@ public class ScheduleLauncher extends AbstractScheduledService {
         () -> {
           activeProcesses.put(processId, schedule);
           try {
-            if (!locker.lockProcess(
-                schedule.scheduleEntity.getProcessName(), processId)) {
+            if (!locker.lockProcess(schedule.scheduleEntity.getProcessName(), processId)) {
               return;
             }
             processLauncher.run();
@@ -255,8 +252,7 @@ public class ScheduleLauncher extends AbstractScheduledService {
           } finally {
             schedule.getScheduleEntity().endExecution();
             scheduleService.saveProcessSchedule(schedule.getScheduleEntity());
-            locker.unlockProcess(
-                schedule.getScheduleEntity().getProcessName(), processId);
+            locker.unlockProcess(schedule.getScheduleEntity().getProcessName(), processId);
             activeProcesses.remove(processId);
             taskCompletedCount.addAndGet(processLauncher.getTaskCompletedCount());
             taskFailedCount.addAndGet(processLauncher.getTaskFailedCount());

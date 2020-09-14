@@ -13,14 +13,12 @@ package pipelite.launcher.process;
 import static pipelite.task.TaskExecutionResultType.*;
 
 import com.google.common.flogger.FluentLogger;
-
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -32,13 +30,13 @@ import pipelite.executor.PollableExecutor;
 import pipelite.executor.SerializableExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.log.LogKey;
-import pipelite.process.ProcessExecutionState;
 import pipelite.process.Process;
+import pipelite.process.ProcessExecutionState;
 import pipelite.service.ProcessService;
 import pipelite.service.TaskService;
+import pipelite.task.Task;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultType;
-import pipelite.task.Task;
 
 @Flogger
 @Component()
@@ -87,8 +85,7 @@ public class ProcessLauncher implements Runnable {
     private final Process process;
     private final ProcessEntity processEntity;
 
-    public ProcessAndProcessEntity(
-            Process process, ProcessEntity processEntity) {
+    public ProcessAndProcessEntity(Process process, ProcessEntity processEntity) {
       this.process = process;
       this.processEntity = processEntity;
     }
@@ -142,15 +139,11 @@ public class ProcessLauncher implements Runnable {
 
       Optional<TaskEntity> processEntity =
           taskService.getSavedTask(
-              process.getProcessName(),
-              process.getProcessId(),
-              task.getTaskName());
+              process.getProcessName(), process.getProcessId(), task.getTaskName());
 
       // Create the task in database if it does not already exist.
       if (!processEntity.isPresent()) {
-        processEntity =
-            Optional.of(
-                taskService.saveTask(TaskEntity.createExecution(task)));
+        processEntity = Optional.of(taskService.saveTask(TaskEntity.createExecution(task)));
       }
 
       taskAndTaskEntities.add(new TaskAndTaskEntity(task, processEntity.get()));
@@ -208,8 +201,7 @@ public class ProcessLauncher implements Runnable {
         }
 
         if (taskAndTaskEntity.getTask().getDependsOn() != null) {
-          String dependsOnTaskName =
-              taskAndTaskEntity.getTask().getDependsOn().getTaskName();
+          String dependsOnTaskName = taskAndTaskEntity.getTask().getDependsOn().getTaskName();
           if (dependsOnTaskName != null && activeTasks.contains(dependsOnTaskName)) {
             continue;
           }

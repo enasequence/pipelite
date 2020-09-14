@@ -31,9 +31,9 @@ import pipelite.executor.command.LocalCommandExecutor;
 import pipelite.executor.command.SshCommandExecutor;
 import pipelite.executor.runner.CommandRunner;
 import pipelite.executor.runner.CommandRunnerResult;
+import pipelite.task.Task;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultType;
-import pipelite.task.Task;
 import pipelite.task.TaskParameters;
 
 @SpringBootTest(classes = EmptyTestConfiguration.class)
@@ -99,8 +99,7 @@ public class LsfExecutorTest {
     TaskExecutionResult result = executor.execute(task);
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
     CommandRunnerResult runnerResult =
-        LsfExecutor.writeFileToStdout(
-            executor.getCmdRunner(), file.getAbsolutePath(), task);
+        LsfExecutor.writeFileToStdout(executor.getCmdRunner(), file.getAbsolutePath(), task);
     assertThat(runnerResult.getStdout()).isEqualTo("test\n");
   }
 
@@ -116,8 +115,7 @@ public class LsfExecutorTest {
     TaskExecutionResult result = executor.execute(task);
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
     CommandRunnerResult runnerResult =
-        LsfExecutor.writeFileToStderr(
-            executor.getCmdRunner(), file.getAbsolutePath(), task);
+        LsfExecutor.writeFileToStderr(executor.getCmdRunner(), file.getAbsolutePath(), task);
     assertThat(runnerResult.getStderr()).isEqualTo("test\n");
   }
 
@@ -134,8 +132,7 @@ public class LsfExecutorTest {
     TaskExecutionResult result = executor.execute(task);
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
     CommandRunnerResult runnerResult =
-        LsfExecutor.writeFileToStdout(
-            executor.getCmdRunner(), file.getAbsolutePath(), task);
+        LsfExecutor.writeFileToStdout(executor.getCmdRunner(), file.getAbsolutePath(), task);
     assertThat(runnerResult.getStdout()).isEqualTo("test\n");
   }
 
@@ -153,8 +150,7 @@ public class LsfExecutorTest {
     TaskExecutionResult result = executor.execute(task);
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
     CommandRunnerResult runnerResult =
-        LsfExecutor.writeFileToStderr(
-            executor.getCmdRunner(), file.getAbsolutePath(), task);
+        LsfExecutor.writeFileToStderr(executor.getCmdRunner(), file.getAbsolutePath(), task);
     assertThat(runnerResult.getStderr()).isEqualTo("test\n");
   }
 

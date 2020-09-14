@@ -14,9 +14,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
+import pipelite.task.Task;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultType;
-import pipelite.task.Task;
 import pipelite.task.TaskParameters;
 
 public class LocalCommandExecutorTest {

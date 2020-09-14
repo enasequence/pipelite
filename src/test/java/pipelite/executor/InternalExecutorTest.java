@@ -15,8 +15,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
-import pipelite.task.TaskExecutionResult;
 import pipelite.task.Task;
+import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskParameters;
 
 public class InternalExecutorTest {

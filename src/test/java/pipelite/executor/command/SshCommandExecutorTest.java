@@ -20,9 +20,9 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.EmptyTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.SshTestConfiguration;
+import pipelite.task.Task;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultType;
-import pipelite.task.Task;
 import pipelite.task.TaskParameters;
 
 @SpringBootTest(classes = EmptyTestConfiguration.class)

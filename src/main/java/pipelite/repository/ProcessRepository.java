@@ -18,11 +18,9 @@ import pipelite.entity.ProcessEntityId;
 import pipelite.process.ProcessExecutionState;
 
 @Repository
-public interface ProcessRepository
-    extends CrudRepository<ProcessEntity, ProcessEntityId> {
+public interface ProcessRepository extends CrudRepository<ProcessEntity, ProcessEntityId> {
 
-  List<ProcessEntity> findAllByProcessNameAndState(
-      String processName, ProcessExecutionState state);
+  List<ProcessEntity> findAllByProcessNameAndState(String processName, ProcessExecutionState state);
 
   List<ProcessEntity> findAllByProcessNameAndStateOrderByPriorityDesc(
       String processName, ProcessExecutionState state);

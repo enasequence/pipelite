@@ -132,8 +132,7 @@ public class LockService {
 
   private boolean unlock(LockEntity lockEntity) {
     Optional<LockEntity> activeLock =
-        repository.findByProcessNameAndLockId(
-            lockEntity.getProcessName(), lockEntity.getLockId());
+        repository.findByProcessNameAndLockId(lockEntity.getProcessName(), lockEntity.getLockId());
     if (activeLock.isPresent()) {
       if (!activeLock.get().getLauncherName().equals(lockEntity.getLauncherName())) {
         log.atSevere()

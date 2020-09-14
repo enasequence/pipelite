@@ -10,11 +10,10 @@
  */
 package pipelite.executor;
 
-import pipelite.task.TaskExecutionResult;
 import pipelite.task.Task;
+import pipelite.task.TaskExecutionResult;
 
 public interface TaskExecutor {
 
   TaskExecutionResult execute(Task task);
-
 }

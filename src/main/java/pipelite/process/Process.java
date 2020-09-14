@@ -69,9 +69,7 @@ public class Process {
         }
         if (task.getTaskName() != null) {
           if (taskNames.contains(task.getTaskName())) {
-            task
-                .logContext(log.atSevere())
-                .log("Duplicate task name: %s", task.getTaskName());
+            task.logContext(log.atSevere()).log("Duplicate task name: %s", task.getTaskName());
             isSuccess = false;
           }
           taskNames.add(task.getTaskName());

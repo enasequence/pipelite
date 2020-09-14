@@ -21,15 +21,14 @@ import org.springframework.transaction.annotation.Transactional;
 import pipelite.FullTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.TaskEntity;
-import pipelite.task.TaskExecutionResult;
 import pipelite.task.Task;
+import pipelite.task.TaskExecutionResult;
 
 @SpringBootTest(classes = FullTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test"})
 class HsqlTaskServiceTest {
 
-  @Autowired
-  TaskService service;
+  @Autowired TaskService service;
 
   @Test
   @Transactional
@@ -41,11 +40,7 @@ class HsqlTaskServiceTest {
     String taskName = UniqueStringGenerator.randomTaskName();
 
     Task task =
-        Task.builder()
-            .processName(processName)
-            .processId(processId)
-            .taskName(taskName)
-            .build();
+        Task.builder().processName(processName).processId(processId).taskName(taskName).build();
 
     TaskEntity taskEntity = TaskEntity.createExecution(task);
 

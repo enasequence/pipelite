@@ -34,16 +34,20 @@ public class LauncherConfiguration {
   @Builder.Default private int workers = PipeliteLauncher.DEFAULT_WORKERS;
 
   /** Frequency of assigning processes to workers in PipeliteLauncher. */
-  @Builder.Default private Duration processLaunchFrequency = PipeliteLauncher.DEFAULT_PROCESS_LAUNCH_FREQUENCY;
+  @Builder.Default
+  private Duration processLaunchFrequency = PipeliteLauncher.DEFAULT_PROCESS_LAUNCH_FREQUENCY;
 
   /** Frequency of assigning tasks to workers in ProcessLauncher. */
-  @Builder.Default private Duration taskLaunchFrequency = ProcessLauncher.DEFAULT_TASK_LAUNCH_FREQUENCY;
+  @Builder.Default
+  private Duration taskLaunchFrequency = ProcessLauncher.DEFAULT_TASK_LAUNCH_FREQUENCY;
 
   /** Delay between re-prioritising process executions in PipeliteLauncher. */
   @Builder.Default
-  private Duration processPrioritizationFrequency = PipeliteLauncher.DEFAULT_PROCESS_PRIORITIZATION_FREQUENCY;
+  private Duration processPrioritizationFrequency =
+      PipeliteLauncher.DEFAULT_PROCESS_PRIORITIZATION_FREQUENCY;
 
   /** Frequency of scheduling processes to execute in ScheduleLauncher. */
   @Builder.Default
-  private Duration processSchedulingFrequency = ScheduleLauncher.DEFAULT_PROCESS_SCHEDULING_FREQUENCY;
+  private Duration processSchedulingFrequency =
+      ScheduleLauncher.DEFAULT_PROCESS_SCHEDULING_FREQUENCY;
 }

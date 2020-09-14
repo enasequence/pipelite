@@ -11,8 +11,8 @@
 package pipelite.executor;
 
 import lombok.extern.flogger.Flogger;
-import pipelite.task.TaskExecutionResult;
 import pipelite.task.Task;
+import pipelite.task.TaskExecutionResult;
 
 @Flogger
 public class ErrorTaskExecutor implements TaskExecutor {

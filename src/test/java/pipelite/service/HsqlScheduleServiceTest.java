@@ -28,8 +28,7 @@ import pipelite.entity.ScheduleEntity;
 @ActiveProfiles(value = {"hsql-test"})
 class HsqlScheduleServiceTest {
 
-  @Autowired
-  ScheduleService service;
+  @Autowired ScheduleService service;
 
   @Test
   @Transactional

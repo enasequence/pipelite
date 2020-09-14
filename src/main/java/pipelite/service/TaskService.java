@@ -29,8 +29,7 @@ public class TaskService {
     this.repository = repository;
   }
 
-  public Optional<TaskEntity> getSavedTask(
-      String processName, String processId, String taskName) {
+  public Optional<TaskEntity> getSavedTask(String processName, String processId, String taskName) {
     return repository.findById(new TaskEntityId(processId, processName, taskName));
   }
 

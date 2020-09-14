@@ -23,8 +23,8 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.executor.TaskExecutor;
 import pipelite.launcher.ServerManager;
-import pipelite.process.builder.ProcessBuilder;
 import pipelite.process.Process;
+import pipelite.process.builder.ProcessBuilder;
 import pipelite.task.TaskExecutionResult;
 
 @AllArgsConstructor

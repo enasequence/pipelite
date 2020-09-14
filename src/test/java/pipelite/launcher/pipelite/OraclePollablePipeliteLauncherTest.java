@@ -68,9 +68,9 @@ public class OraclePollablePipeliteLauncherTest {
             launcherConfiguration,
             processConfiguration,
             taskConfiguration,
-                processService,
-                taskService,
-                lockService);
+            processService,
+            taskService,
+            lockService);
     tester.testPollSuccessExecuteSuccess();
   }
 
@@ -81,9 +81,9 @@ public class OraclePollablePipeliteLauncherTest {
             launcherConfiguration,
             processConfiguration,
             taskConfiguration,
-                processService,
-                taskService,
-                lockService);
+            processService,
+            taskService,
+            lockService);
     tester.testPollErrorExecuteSuccess();
   }
 
@@ -94,9 +94,9 @@ public class OraclePollablePipeliteLauncherTest {
             launcherConfiguration,
             processConfiguration,
             taskConfiguration,
-                processService,
-                taskService,
-                lockService);
+            processService,
+            taskService,
+            lockService);
     tester.testPollErrorExecuteSuccess();
   }
 
@@ -107,9 +107,9 @@ public class OraclePollablePipeliteLauncherTest {
             launcherConfiguration,
             processConfiguration,
             taskConfiguration,
-                processService,
-                taskService,
-                lockService);
+            processService,
+            taskService,
+            lockService);
 
     tester.testPollExceptionExecuteSuccess();
   }
@@ -121,9 +121,9 @@ public class OraclePollablePipeliteLauncherTest {
             launcherConfiguration,
             processConfiguration,
             taskConfiguration,
-                processService,
-                taskService,
-                lockService);
+            processService,
+            taskService,
+            lockService);
 
     tester.testPollExceptionExecuteError();
   }

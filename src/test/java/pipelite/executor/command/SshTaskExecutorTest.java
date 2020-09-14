@@ -20,10 +20,10 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.EmptyTestConfiguration;
 import pipelite.configuration.SshTestConfiguration;
 import pipelite.executor.TaskExecutor;
+import pipelite.task.Task;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultExitCode;
 import pipelite.task.TaskExecutionResultType;
-import pipelite.task.Task;
 import pipelite.task.TaskParameters;
 
 @SpringBootTest(classes = EmptyTestConfiguration.class)
@@ -72,8 +72,7 @@ public class SshTaskExecutorTest {
     TaskParameters taskParameters = TaskParameters.builder().build();
     taskParameters.setHost(testConfiguration.getHost());
 
-    Task task =
-        taskInstance(new SshTaskExecutor(new SuccessTaskExecutor()), taskParameters);
+    Task task = taskInstance(new SshTaskExecutor(new SuccessTaskExecutor()), taskParameters);
 
     TaskExecutionResult result = task.execute();
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);

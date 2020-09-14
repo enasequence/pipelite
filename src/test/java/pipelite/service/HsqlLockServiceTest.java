@@ -22,8 +22,7 @@ import pipelite.FullTestConfiguration;
 @ActiveProfiles(value = {"hsql-test"})
 public class HsqlLockServiceTest {
 
-  @Autowired
-  LockService service;
+  @Autowired LockService service;
 
   @Test
   @Transactional
