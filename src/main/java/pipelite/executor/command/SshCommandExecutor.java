@@ -13,7 +13,7 @@ package pipelite.executor.command;
 import pipelite.executor.CommandExecutor;
 import pipelite.executor.runner.CommandRunner;
 import pipelite.executor.runner.SshRunner;
-import pipelite.task.TaskInstance;
+import pipelite.task.Task;
 
 public final class SshCommandExecutor extends CommandExecutor {
 
@@ -30,7 +30,7 @@ public final class SshCommandExecutor extends CommandExecutor {
   }
 
   @Override
-  public String getCmd(TaskInstance taskInstance) {
+  public String getCmd(Task task) {
     return cmd;
   }
 }

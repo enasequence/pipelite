@@ -16,49 +16,49 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import pipelite.entity.PipeliteProcess;
-import pipelite.entity.PipeliteProcessId;
+import pipelite.entity.ProcessEntity;
+import pipelite.entity.ProcessEntityId;
 import pipelite.process.ProcessExecutionState;
-import pipelite.repository.PipeliteProcessRepository;
+import pipelite.repository.ProcessRepository;
 
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
-public class PipeliteProcessService {
+public class ProcessService {
 
-  private final PipeliteProcessRepository repository;
+  private final ProcessRepository repository;
 
-  public PipeliteProcessService(@Autowired PipeliteProcessRepository repository) {
+  public ProcessService(@Autowired ProcessRepository repository) {
     this.repository = repository;
   }
 
-  public Optional<PipeliteProcess> getSavedProcess(String processName, String processId) {
-    return repository.findById(new PipeliteProcessId(processId, processName));
+  public Optional<ProcessEntity> getSavedProcess(String processName, String processId) {
+    return repository.findById(new ProcessEntityId(processId, processName));
   }
 
-  public List<PipeliteProcess> getNewProcesses(String processName) {
+  public List<ProcessEntity> getNewProcesses(String processName) {
     return repository.findAllByProcessNameAndStateOrderByPriorityDesc(
         processName, ProcessExecutionState.NEW);
   }
 
-  public List<PipeliteProcess> getActiveProcesses(String processName) {
+  public List<ProcessEntity> getActiveProcesses(String processName) {
     return repository.findAllByProcessNameAndStateOrderByPriorityDesc(
         processName, ProcessExecutionState.ACTIVE);
   }
 
-  public List<PipeliteProcess> getCompletedProcesses(String processName) {
+  public List<ProcessEntity> getCompletedProcesses(String processName) {
     return repository.findAllByProcessNameAndState(processName, ProcessExecutionState.COMPLETED);
   }
 
-  public List<PipeliteProcess> getFailedProcesses(String processName) {
+  public List<ProcessEntity> getFailedProcesses(String processName) {
     return repository.findAllByProcessNameAndStateOrderByPriorityDesc(
         processName, ProcessExecutionState.FAILED);
   }
 
-  public PipeliteProcess saveProcess(PipeliteProcess pipeliteProcess) {
-    return repository.save(pipeliteProcess);
+  public ProcessEntity saveProcess(ProcessEntity processEntity) {
+    return repository.save(processEntity);
   }
 
-  public void delete(PipeliteProcess pipeliteProcess) {
-    repository.delete(pipeliteProcess);
+  public void delete(ProcessEntity processEntity) {
+    repository.delete(processEntity);
   }
 }

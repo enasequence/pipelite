@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PipeliteSchedule {
+public class ScheduleEntity {
 
   @Id
   @Column(name = "PROCESS_NAME")

@@ -12,7 +12,7 @@ package pipelite.executor.lsf;
 
 import pipelite.executor.runner.CommandRunner;
 import pipelite.executor.runner.LocalRunner;
-import pipelite.task.TaskInstance;
+import pipelite.task.Task;
 
 public final class LsfLocalCommandExecutor extends LsfExecutor {
 
@@ -29,7 +29,7 @@ public final class LsfLocalCommandExecutor extends LsfExecutor {
   }
 
   @Override
-  public String getCmd(TaskInstance taskInstance) {
+  public String getCmd(Task task) {
     return cmd;
   }
 }

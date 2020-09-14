@@ -29,7 +29,7 @@ public class ProcessBuilderTest {
     String taskName3 = UniqueStringGenerator.randomTaskName();
     String taskName4 = UniqueStringGenerator.randomTaskName();
 
-    ProcessInstance processInstance =
+    Process process =
         new ProcessBuilder(PROCESS_NAME, PROCESS_ID, 9)
             .task(taskName1)
             .executor(new SuccessTaskExecutor())
@@ -41,18 +41,18 @@ public class ProcessBuilderTest {
             .executor(new SuccessTaskExecutor())
             .build();
 
-    assertThat(processInstance).isNotNull();
-    assertThat(processInstance.getProcessName()).isEqualTo(PROCESS_NAME);
-    assertThat(processInstance.getProcessId()).isEqualTo(PROCESS_ID);
-    assertThat(processInstance.getPriority()).isEqualTo(9);
-    assertThat(processInstance.getTasks().get(0).getProcessName()).isEqualTo(PROCESS_NAME);
-    assertThat(processInstance.getTasks().get(1).getProcessName()).isEqualTo(PROCESS_NAME);
-    assertThat(processInstance.getTasks().get(0).getProcessId()).isEqualTo(PROCESS_ID);
-    assertThat(processInstance.getTasks().get(1).getProcessId()).isEqualTo(PROCESS_ID);
-    assertThat(processInstance.getTasks().get(0).getDependsOn()).isNull();
-    assertThat(processInstance.getTasks().get(1).getDependsOn().getTaskName()).isEqualTo(taskName1);
-    assertThat(processInstance.getTasks().get(2).getDependsOn().getTaskName()).isEqualTo(taskName2);
-    assertThat(processInstance.getTasks().get(3).getDependsOn().getTaskName()).isEqualTo(taskName1);
-    assertThat(processInstance.getTasks()).hasSize(4);
+    assertThat(process).isNotNull();
+    assertThat(process.getProcessName()).isEqualTo(PROCESS_NAME);
+    assertThat(process.getProcessId()).isEqualTo(PROCESS_ID);
+    assertThat(process.getPriority()).isEqualTo(9);
+    assertThat(process.getTasks().get(0).getProcessName()).isEqualTo(PROCESS_NAME);
+    assertThat(process.getTasks().get(1).getProcessName()).isEqualTo(PROCESS_NAME);
+    assertThat(process.getTasks().get(0).getProcessId()).isEqualTo(PROCESS_ID);
+    assertThat(process.getTasks().get(1).getProcessId()).isEqualTo(PROCESS_ID);
+    assertThat(process.getTasks().get(0).getDependsOn()).isNull();
+    assertThat(process.getTasks().get(1).getDependsOn().getTaskName()).isEqualTo(taskName1);
+    assertThat(process.getTasks().get(2).getDependsOn().getTaskName()).isEqualTo(taskName2);
+    assertThat(process.getTasks().get(3).getDependsOn().getTaskName()).isEqualTo(taskName1);
+    assertThat(process.getTasks()).hasSize(4);
   }
 }

@@ -9,7 +9,7 @@ import pipelite.executor.lsf.LsfLocalCommandExecutor;
 import pipelite.executor.lsf.LsfLocalTaskExecutor;
 import pipelite.executor.lsf.LsfSshCommandExecutor;
 import pipelite.executor.lsf.LsfSshTaskExecutor;
-import pipelite.task.TaskInstance;
+import pipelite.task.Task;
 import pipelite.task.TaskParameters;
 
 import java.util.Optional;
@@ -28,46 +28,46 @@ public class TaskBuilder {
   }
 
   public ProcessBuilderDependsOn executor(TaskExecutor executor) {
-    return addTaskInstance(executor);
+    return addTask(executor);
   }
 
   public ProcessBuilderDependsOn localCommandExecutor(String cmd) {
-    return addTaskInstance(new LocalCommandExecutor(cmd));
+    return addTask(new LocalCommandExecutor(cmd));
   }
 
   public ProcessBuilderDependsOn localTaskExecutor(TaskExecutor executor) {
-    return addTaskInstance(new LocalTaskExecutor(executor));
+    return addTask(new LocalTaskExecutor(executor));
   }
 
   public ProcessBuilderDependsOn sshCommandExecutor(String cmd) {
-    return addTaskInstance(new SshCommandExecutor(cmd));
+    return addTask(new SshCommandExecutor(cmd));
   }
 
   public ProcessBuilderDependsOn sshTaskExecutor(TaskExecutor executor) {
-    return addTaskInstance(new SshTaskExecutor(executor));
+    return addTask(new SshTaskExecutor(executor));
   }
 
   public ProcessBuilderDependsOn lsfLocalCommandExecutor(String cmd) {
-    return addTaskInstance(new LsfLocalCommandExecutor(cmd));
+    return addTask(new LsfLocalCommandExecutor(cmd));
   }
 
   public ProcessBuilderDependsOn lsfLocalTaskExecutor(TaskExecutor executor) {
-    return addTaskInstance(new LsfLocalTaskExecutor(executor));
+    return addTask(new LsfLocalTaskExecutor(executor));
   }
 
   public ProcessBuilderDependsOn lsfSshCommandExecutor(String cmd) {
-    return addTaskInstance(new LsfSshCommandExecutor(cmd));
+    return addTask(new LsfSshCommandExecutor(cmd));
   }
 
   public ProcessBuilderDependsOn lsfSshTaskExecutor(TaskExecutor executor) {
-    return addTaskInstance(new LsfSshTaskExecutor(executor));
+    return addTask(new LsfSshTaskExecutor(executor));
   }
 
-  private ProcessBuilderDependsOn addTaskInstance(TaskExecutor executor) {
-    TaskInstance dependsOn = null;
+  private ProcessBuilderDependsOn addTask(TaskExecutor executor) {
+    Task dependsOn = null;
     if (dependsOnTaskName != null) {
-      Optional<TaskInstance> dependsOnOptional =
-          processBuilder.taskInstances.stream()
+      Optional<Task> dependsOnOptional =
+          processBuilder.tasks.stream()
               .filter(taskInstance -> taskInstance.getTaskName().equals(dependsOnTaskName))
               .findFirst();
 
@@ -77,8 +77,8 @@ public class TaskBuilder {
       dependsOn = dependsOnOptional.get();
     }
 
-    processBuilder.taskInstances.add(
-        TaskInstance.builder()
+    processBuilder.tasks.add(
+        Task.builder()
             .processName(processBuilder.processName)
             .processId(processBuilder.processId)
             .taskName(taskName)

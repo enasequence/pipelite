@@ -21,43 +21,42 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
-import pipelite.entity.PipeliteProcess;
-import pipelite.entity.PipeliteStage;
+import pipelite.entity.ProcessEntity;
+import pipelite.entity.TaskEntity;
 import pipelite.executor.PollableExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.launcher.ServerManager;
-import pipelite.launcher.pipelite.PipeliteLauncher;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.process.ProcessExecutionState;
-import pipelite.process.ProcessInstance;
-import pipelite.service.PipeliteLockService;
-import pipelite.service.PipeliteProcessService;
-import pipelite.service.PipeliteStageService;
+import pipelite.process.Process;
+import pipelite.service.LockService;
+import pipelite.service.ProcessService;
+import pipelite.service.TaskService;
 import pipelite.task.TaskExecutionResult;
-import pipelite.task.TaskInstance;
+import pipelite.task.Task;
 
 public class PollablePipeliteLauncherTester {
 
   private final LauncherConfiguration launcherConfiguration;
   private final ProcessConfiguration processConfiguration;
   private final TaskConfiguration taskConfiguration;
-  private final PipeliteProcessService pipeliteProcessService;
-  private final PipeliteStageService pipeliteStageService;
-  private final PipeliteLockService pipeliteLockService;
+  private final ProcessService processService;
+  private final TaskService taskService;
+  private final LockService lockService;
 
   public PollablePipeliteLauncherTester(
       LauncherConfiguration launcherConfiguration,
       ProcessConfiguration processConfiguration,
       TaskConfiguration taskConfiguration,
-      PipeliteProcessService pipeliteProcessService,
-      PipeliteStageService pipeliteStageService,
-      PipeliteLockService pipeliteLockService) {
+      ProcessService processService,
+      TaskService taskService,
+      LockService lockService) {
     this.launcherConfiguration = launcherConfiguration;
     this.processConfiguration = processConfiguration;
     this.taskConfiguration = taskConfiguration;
-    this.pipeliteProcessService = pipeliteProcessService;
-    this.pipeliteStageService = pipeliteStageService;
-    this.pipeliteLockService = pipeliteLockService;
+    this.processService = processService;
+    this.taskService = taskService;
+    this.lockService = lockService;
 
     pollCount = new AtomicInteger();
     executeCount = new AtomicInteger();
@@ -78,9 +77,9 @@ public class PollablePipeliteLauncherTester {
             launcherConfiguration,
             processConfiguration,
             taskConfiguration,
-            pipeliteProcessService,
-            pipeliteStageService,
-            pipeliteLockService);
+                processService,
+                taskService,
+                lockService);
     pipeliteLauncher.setShutdownIfIdle(true);
     return pipeliteLauncher;
   }
@@ -88,13 +87,13 @@ public class PollablePipeliteLauncherTester {
   @Value
   public static class PollSuccessExecuteSuccessTaskExecutor implements PollableExecutor {
     @Override
-    public TaskExecutionResult execute(TaskInstance taskInstance) {
+    public TaskExecutionResult execute(Task task) {
       executeCount.incrementAndGet();
       return TaskExecutionResult.success();
     }
 
     @Override
-    public TaskExecutionResult poll(TaskInstance taskInstance) {
+    public TaskExecutionResult poll(Task task) {
       pollCount.incrementAndGet();
       return TaskExecutionResult.success();
     }
@@ -103,13 +102,13 @@ public class PollablePipeliteLauncherTester {
   @Value
   public static class PollErrorExecuteSuccessTaskExecutor implements PollableExecutor {
     @Override
-    public TaskExecutionResult execute(TaskInstance taskInstance) {
+    public TaskExecutionResult execute(Task task) {
       executeCount.incrementAndGet();
       return TaskExecutionResult.success();
     }
 
     @Override
-    public TaskExecutionResult poll(TaskInstance taskInstance) {
+    public TaskExecutionResult poll(Task task) {
       pollCount.incrementAndGet();
       return TaskExecutionResult.error();
     }
@@ -118,13 +117,13 @@ public class PollablePipeliteLauncherTester {
   @Value
   public static class PollErrorExecuteErrorTaskExecutor implements PollableExecutor {
     @Override
-    public TaskExecutionResult execute(TaskInstance taskInstance) {
+    public TaskExecutionResult execute(Task task) {
       executeCount.incrementAndGet();
       return TaskExecutionResult.error();
     }
 
     @Override
-    public TaskExecutionResult poll(TaskInstance taskInstance) {
+    public TaskExecutionResult poll(Task task) {
       pollCount.incrementAndGet();
       return TaskExecutionResult.error();
     }
@@ -133,13 +132,13 @@ public class PollablePipeliteLauncherTester {
   @Value
   public static class PollExceptionExecuteSuccessTaskExecutor implements PollableExecutor {
     @Override
-    public TaskExecutionResult execute(TaskInstance taskInstance) {
+    public TaskExecutionResult execute(Task task) {
       executeCount.incrementAndGet();
       return TaskExecutionResult.success();
     }
 
     @Override
-    public TaskExecutionResult poll(TaskInstance taskInstance) {
+    public TaskExecutionResult poll(Task task) {
       pollCount.incrementAndGet();
       throw new RuntimeException();
     }
@@ -148,43 +147,43 @@ public class PollablePipeliteLauncherTester {
   @Value
   public static class PollExceptionExecuteErrorTaskExecutor implements PollableExecutor {
     @Override
-    public TaskExecutionResult execute(TaskInstance taskInstance) {
+    public TaskExecutionResult execute(Task task) {
       executeCount.incrementAndGet();
       return TaskExecutionResult.error();
     }
 
     @Override
-    public TaskExecutionResult poll(TaskInstance taskInstance) {
+    public TaskExecutionResult poll(Task task) {
       pollCount.incrementAndGet();
       throw new RuntimeException();
     }
   }
 
   private void init(ProcessExecutionState processExecutionState, TaskExecutor taskExecutor) {
-    List<ProcessInstance> processInstances = new ArrayList<>();
+    List<Process> processes = new ArrayList<>();
 
     for (int i = 0; i < PROCESS_CNT; ++i) {
       String processName = processConfiguration.getProcessName();
       String processId = UniqueStringGenerator.randomProcessId();
       String taskName = UniqueStringGenerator.randomTaskName();
-      PipeliteProcess pipeliteProcess = PipeliteProcess.newExecution(processId, processName, 1);
-      pipeliteProcess.setState(processExecutionState);
-      pipeliteProcessService.saveProcess(pipeliteProcess);
+      ProcessEntity processEntity = ProcessEntity.newExecution(processId, processName, 1);
+      processEntity.setState(processExecutionState);
+      processService.saveProcess(processEntity);
 
-      ProcessInstance processInstance =
+      Process process =
           new ProcessBuilder(processName, processId, 9)
               .task(taskName)
               .executor(taskExecutor)
               .build();
-      processInstances.add(processInstance);
+      processes.add(process);
 
-      TaskInstance taskInstance = processInstance.getTasks().get(0);
-      PipeliteStage pipeliteStage = PipeliteStage.createExecution(taskInstance);
-      pipeliteStage.startExecution(taskInstance);
-      pipeliteStageService.saveStage(pipeliteStage);
+      Task task = process.getTasks().get(0);
+      TaskEntity taskEntity = TaskEntity.createExecution(task);
+      taskEntity.startExecution(task);
+      taskService.saveTask(taskEntity);
     }
 
-    TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processInstances);
+    TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processes);
     processConfiguration.setProcessFactory(processFactory);
   }
 

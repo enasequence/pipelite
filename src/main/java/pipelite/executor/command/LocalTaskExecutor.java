@@ -15,7 +15,7 @@ import pipelite.executor.InternalExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.executor.runner.CommandRunner;
 import pipelite.executor.runner.LocalRunner;
-import pipelite.task.TaskInstance;
+import pipelite.task.Task;
 
 public final class LocalTaskExecutor extends CommandExecutor {
 
@@ -32,7 +32,7 @@ public final class LocalTaskExecutor extends CommandExecutor {
   }
 
   @Override
-  public String getCmd(TaskInstance taskInstance) {
-    return InternalExecutor.getCmd(taskInstance, taskExecutor);
+  public String getCmd(Task task) {
+    return InternalExecutor.getCmd(task, taskExecutor);
   }
 }

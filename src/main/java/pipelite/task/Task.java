@@ -21,20 +21,20 @@ import pipelite.log.LogKey;
 @Flogger
 @Value
 @Builder
-public class TaskInstance {
+public class Task {
   private final String processName;
   private final String processId;
   private final String taskName;
   @EqualsAndHashCode.Exclude private final TaskExecutor executor;
-  @EqualsAndHashCode.Exclude private final TaskInstance dependsOn;
+  @EqualsAndHashCode.Exclude private final Task dependsOn;
   @EqualsAndHashCode.Exclude private final TaskParameters taskParameters;
 
-  public TaskInstance(
+  public Task(
       String processName,
       String processId,
       String taskName,
       TaskExecutor executor,
-      TaskInstance dependsOn,
+      Task dependsOn,
       TaskParameters taskParameters) {
     this.processName = processName;
     this.processId = processId;

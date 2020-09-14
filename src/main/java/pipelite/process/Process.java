@@ -18,16 +18,16 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import pipelite.log.LogKey;
-import pipelite.task.TaskInstance;
+import pipelite.task.Task;
 
 @Flogger
 @Value
 @Builder
-public class ProcessInstance {
+public class Process {
   private final String processName;
   private final String processId;
   @EqualsAndHashCode.Exclude private final int priority;
-  @EqualsAndHashCode.Exclude private final List<TaskInstance> tasks;
+  @EqualsAndHashCode.Exclude private final List<Task> tasks;
 
   public enum ValidateMode {
     WITH_TASKS,
@@ -56,25 +56,25 @@ public class ProcessInstance {
     } else {
       HashSet<String> taskNames = new HashSet<>();
 
-      for (TaskInstance taskInstance : tasks) {
-        if (!taskInstance.validate()) {
+      for (Task task : tasks) {
+        if (!task.validate()) {
           isSuccess = false;
         }
-        if (taskInstance.getProcessName() != null) {
-          if (!taskInstance.getProcessName().equals(processName)) {
+        if (task.getProcessName() != null) {
+          if (!task.getProcessName().equals(processName)) {
             logContext(log.atSevere())
-                .log("Conflicting process name in task %s", taskInstance.getProcessName());
+                .log("Conflicting process name in task %s", task.getProcessName());
             isSuccess = false;
           }
         }
-        if (taskInstance.getTaskName() != null) {
-          if (taskNames.contains(taskInstance.getTaskName())) {
-            taskInstance
+        if (task.getTaskName() != null) {
+          if (taskNames.contains(task.getTaskName())) {
+            task
                 .logContext(log.atSevere())
-                .log("Duplicate task name: %s", taskInstance.getTaskName());
+                .log("Duplicate task name: %s", task.getTaskName());
             isSuccess = false;
           }
-          taskNames.add(taskInstance.getTaskName());
+          taskNames.add(task.getTaskName());
         }
       }
     }

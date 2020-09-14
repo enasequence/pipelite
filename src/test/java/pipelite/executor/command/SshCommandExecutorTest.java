@@ -22,7 +22,7 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.SshTestConfiguration;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultType;
-import pipelite.task.TaskInstance;
+import pipelite.task.Task;
 import pipelite.task.TaskParameters;
 
 @SpringBootTest(classes = EmptyTestConfiguration.class)
@@ -42,8 +42,8 @@ public class SshCommandExecutorTest {
     TaskParameters taskParameters = TaskParameters.builder().build();
     taskParameters.setHost(testConfiguration.getHost());
 
-    TaskInstance taskInstance =
-        TaskInstance.builder()
+    Task task =
+        Task.builder()
             .processName(processName)
             .processId(processId)
             .taskName(taskName)
@@ -51,7 +51,7 @@ public class SshCommandExecutorTest {
             .taskParameters(taskParameters)
             .build();
 
-    TaskExecutionResult result = taskInstance.execute();
+    TaskExecutionResult result = task.execute();
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
     assertThat(result.getAttribute(TaskExecutionResult.COMMAND)).isEqualTo("echo test");
     assertThat(result.getAttribute(TaskExecutionResult.EXIT_CODE)).isEqualTo("0");

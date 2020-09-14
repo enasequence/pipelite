@@ -18,11 +18,11 @@ import pipelite.process.ProcessExecutionState;
 
 @Entity
 @Table(name = "PIPELITE_PROCESS")
-@IdClass(PipeliteProcessId.class)
+@IdClass(ProcessEntityId.class)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PipeliteProcess {
+public class ProcessEntity {
 
   @Id
   @Column(name = "PROCESS_ID")
@@ -47,13 +47,13 @@ public class PipeliteProcess {
     ++executionCount;
   }
 
-  public static PipeliteProcess newExecution(String processId, String processName, int priority) {
-    PipeliteProcess pipeliteProcess = new PipeliteProcess();
-    pipeliteProcess.setProcessId(processId);
-    pipeliteProcess.setProcessName(processName);
-    pipeliteProcess.setPriority(priority);
-    pipeliteProcess.setExecutionCount(0);
-    pipeliteProcess.setState(ProcessExecutionState.NEW);
-    return pipeliteProcess;
+  public static ProcessEntity newExecution(String processId, String processName, int priority) {
+    ProcessEntity processEntity = new ProcessEntity();
+    processEntity.setProcessId(processId);
+    processEntity.setProcessName(processName);
+    processEntity.setPriority(priority);
+    processEntity.setExecutionCount(0);
+    processEntity.setState(ProcessExecutionState.NEW);
+    return processEntity;
   }
 }

@@ -14,19 +14,19 @@ import com.google.common.flogger.FluentLogger;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import pipelite.log.LogKey;
-import pipelite.service.PipeliteLockService;
+import pipelite.service.LockService;
 
 @Value
 @Flogger
 public class Locker {
 
   private final String launcherName;
-  private final PipeliteLockService pipeliteLockService;
+  private final LockService lockService;
 
   public boolean lockLauncher() {
     logContext(log.atInfo()).log("Attempting to lock launcher");
 
-    if (pipeliteLockService.lockLauncher(launcherName, launcherName)) {
+    if (lockService.lockLauncher(launcherName, launcherName)) {
       logContext(log.atInfo()).log("Locked launcher");
       return true;
     }
@@ -37,7 +37,7 @@ public class Locker {
   public void unlockLauncher() {
     logContext(log.atInfo()).log("Attempting to unlock launcher");
 
-    if (pipeliteLockService.unlockLauncher(launcherName, launcherName)) {
+    if (lockService.unlockLauncher(launcherName, launcherName)) {
       logContext(log.atInfo()).log("Unlocked launcher");
     } else {
       logContext(log.atInfo()).log("Failed to unlock launcher");
@@ -47,11 +47,11 @@ public class Locker {
   public boolean lockProcess(String processName, String processId) {
     logContext(log.atInfo(), processName, processId).log("Attempting to lock process");
 
-    if (pipeliteLockService.lockProcess(launcherName, processName, processId)) {
+    if (lockService.lockProcess(launcherName, processName, processId)) {
       logContext(log.atInfo(), processName, processId).log("Locked process");
       return true;
     } else {
-      if (pipeliteLockService.isProcessLocked(launcherName, processName, processId)) {
+      if (lockService.isProcessLocked(launcherName, processName, processId)) {
         logContext(log.atInfo(), processName, processId).log("Process already locked");
         return true;
       }
@@ -63,7 +63,7 @@ public class Locker {
 
   public void unlockProcess(String processName, String processId) {
     logContext(log.atInfo(), processName, processId).log("Attempting to unlock process launcher");
-    if (pipeliteLockService.unlockProcess(launcherName, processName, processId)) {
+    if (lockService.unlockProcess(launcherName, processName, processId)) {
       logContext(log.atInfo(), processName, processId).log("Unlocked process launcher");
     } else {
       logContext(log.atInfo(), processName, processId).log("Failed to unlock process launcher");

@@ -21,20 +21,20 @@ import lombok.extern.flogger.Flogger;
 import pipelite.executor.runner.CommandRunnerUtils;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultExitCode;
-import pipelite.task.TaskInstance;
+import pipelite.task.Task;
 import pipelite.task.TaskParameters;
 
 @Flogger
 public class InternalExecutor implements TaskExecutor {
 
   @Override
-  public TaskExecutionResult execute(TaskInstance taskInstance) {
+  public TaskExecutionResult execute(Task task) {
 
     TaskExecutionResult result;
 
     try {
-      TaskExecutor taskExecutor = taskInstance.getExecutor();
-      result = taskExecutor.execute(taskInstance);
+      TaskExecutor taskExecutor = task.getExecutor();
+      result = taskExecutor.execute(task);
     } catch (Exception ex) {
       result = TaskExecutionResult.error();
       result.addExceptionAttribute(ex);
@@ -69,7 +69,7 @@ public class InternalExecutor implements TaskExecutor {
       System.exit(EXIT_CODE_ERROR);
     }
 
-    TaskInstance taskInstance = null;
+    Task task = null;
 
     InternalExecutor internalExecutor = null;
 
@@ -79,8 +79,8 @@ public class InternalExecutor implements TaskExecutor {
       // Task configuration is not available when a task is being executed using internal
       // task executor through a system call.
 
-      taskInstance =
-          TaskInstance.builder()
+      task =
+          Task.builder()
               .processName(processName)
               .processId(processId)
               .taskName(taskName)
@@ -99,7 +99,7 @@ public class InternalExecutor implements TaskExecutor {
     }
 
     try {
-      TaskExecutionResult result = internalExecutor.execute(taskInstance);
+      TaskExecutionResult result = internalExecutor.execute(task);
       int exitCode = TaskExecutionResultExitCode.serialize(result);
 
       log.atInfo()
@@ -125,12 +125,12 @@ public class InternalExecutor implements TaskExecutor {
     }
   }
 
-  public static String getCmd(TaskInstance taskInstance, TaskExecutor taskExecutor) {
+  public static String getCmd(Task task, TaskExecutor taskExecutor) {
     List<String> args = new ArrayList<>();
 
-    args.addAll(taskInstance.getTaskParameters().getEnvAsJavaSystemPropertyOptions());
+    args.addAll(task.getTaskParameters().getEnvAsJavaSystemPropertyOptions());
 
-    Integer memory = taskInstance.getTaskParameters().getMemory();
+    Integer memory = task.getTaskParameters().getMemory();
 
     if (memory != null && memory > 0) {
       args.add(String.format("-Xmx%dM", memory));
@@ -140,9 +140,9 @@ public class InternalExecutor implements TaskExecutor {
     args.add(System.getProperty("java.class.path"));
     args.add(CommandRunnerUtils.quoteArgument(InternalExecutor.class.getName()));
 
-    args.add(CommandRunnerUtils.quoteArgument(taskInstance.getProcessName()));
-    args.add(CommandRunnerUtils.quoteArgument(taskInstance.getProcessId()));
-    args.add(CommandRunnerUtils.quoteArgument(taskInstance.getTaskName()));
+    args.add(CommandRunnerUtils.quoteArgument(task.getProcessName()));
+    args.add(CommandRunnerUtils.quoteArgument(task.getProcessId()));
+    args.add(CommandRunnerUtils.quoteArgument(task.getTaskName()));
     args.add(CommandRunnerUtils.quoteArgument(taskExecutor.getClass().getName()));
 
     return Paths.get(System.getProperty("java.home"), "bin", "java").toString()

@@ -24,9 +24,9 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
-import pipelite.service.PipeliteLockService;
-import pipelite.service.PipeliteProcessService;
-import pipelite.service.PipeliteStageService;
+import pipelite.service.LockService;
+import pipelite.service.ProcessService;
+import pipelite.service.TaskService;
 
 @SpringBootTest(
     classes = FullTestConfiguration.class,
@@ -44,9 +44,9 @@ public class OraclePollablePipeliteLauncherTest {
   @Autowired private ProcessConfiguration processConfiguration;
   @Autowired private TaskConfiguration taskConfiguration;
   @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
-  @Autowired private PipeliteProcessService pipeliteProcessService;
-  @Autowired private PipeliteStageService pipeliteStageService;
-  @Autowired private PipeliteLockService pipeliteLockService;
+  @Autowired private ProcessService processService;
+  @Autowired private TaskService taskService;
+  @Autowired private LockService lockService;
 
   public OraclePollablePipeliteLauncherTest() {}
 
@@ -68,9 +68,9 @@ public class OraclePollablePipeliteLauncherTest {
             launcherConfiguration,
             processConfiguration,
             taskConfiguration,
-            pipeliteProcessService,
-            pipeliteStageService,
-            pipeliteLockService);
+                processService,
+                taskService,
+                lockService);
     tester.testPollSuccessExecuteSuccess();
   }
 
@@ -81,9 +81,9 @@ public class OraclePollablePipeliteLauncherTest {
             launcherConfiguration,
             processConfiguration,
             taskConfiguration,
-            pipeliteProcessService,
-            pipeliteStageService,
-            pipeliteLockService);
+                processService,
+                taskService,
+                lockService);
     tester.testPollErrorExecuteSuccess();
   }
 
@@ -94,9 +94,9 @@ public class OraclePollablePipeliteLauncherTest {
             launcherConfiguration,
             processConfiguration,
             taskConfiguration,
-            pipeliteProcessService,
-            pipeliteStageService,
-            pipeliteLockService);
+                processService,
+                taskService,
+                lockService);
     tester.testPollErrorExecuteSuccess();
   }
 
@@ -107,9 +107,9 @@ public class OraclePollablePipeliteLauncherTest {
             launcherConfiguration,
             processConfiguration,
             taskConfiguration,
-            pipeliteProcessService,
-            pipeliteStageService,
-            pipeliteLockService);
+                processService,
+                taskService,
+                lockService);
 
     tester.testPollExceptionExecuteSuccess();
   }
@@ -121,9 +121,9 @@ public class OraclePollablePipeliteLauncherTest {
             launcherConfiguration,
             processConfiguration,
             taskConfiguration,
-            pipeliteProcessService,
-            pipeliteStageService,
-            pipeliteLockService);
+                processService,
+                taskService,
+                lockService);
 
     tester.testPollExceptionExecuteError();
   }

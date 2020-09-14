@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PipeliteLockId implements Serializable {
+public class LockEntityId implements Serializable {
   private String processName;
   private String lockId;
 }

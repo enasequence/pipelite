@@ -26,19 +26,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import pipelite.configuration.*;
-import pipelite.entity.PipeliteProcess;
-import pipelite.entity.PipeliteStage;
+import pipelite.entity.ProcessEntity;
+import pipelite.entity.TaskEntity;
 import pipelite.executor.PollableExecutor;
 import pipelite.executor.SerializableExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.log.LogKey;
 import pipelite.process.ProcessExecutionState;
-import pipelite.process.ProcessInstance;
-import pipelite.service.PipeliteProcessService;
-import pipelite.service.PipeliteStageService;
+import pipelite.process.Process;
+import pipelite.service.ProcessService;
+import pipelite.service.TaskService;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultType;
-import pipelite.task.TaskInstance;
+import pipelite.task.Task;
 
 @Flogger
 @Component()
@@ -47,9 +47,9 @@ public class ProcessLauncher implements Runnable {
 
   private final LauncherConfiguration launcherConfiguration;
   private final TaskConfiguration taskConfiguration;
-  private final PipeliteProcessService pipeliteProcessService;
-  private final PipeliteStageService pipeliteStageService;
-  private final List<PipeliteTaskInstance> pipeliteTaskInstances;
+  private final ProcessService processService;
+  private final TaskService taskService;
+  private final List<TaskAndTaskEntity> taskAndTaskEntities;
   private final DependencyResolver dependencyResolver;
   private final ExecutorService executorService;
   private final Set<String> activeTasks = ConcurrentHashMap.newKeySet();
@@ -57,7 +57,7 @@ public class ProcessLauncher implements Runnable {
 
   public static final Duration DEFAULT_TASK_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
 
-  private PipeliteProcessInstance pipeliteProcessInstance;
+  private ProcessAndProcessEntity processAndProcessEntity;
 
   private final AtomicInteger taskFailedCount = new AtomicInteger(0);
   private final AtomicInteger taskCompletedCount = new AtomicInteger(0);
@@ -65,15 +65,15 @@ public class ProcessLauncher implements Runnable {
   public ProcessLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
       @Autowired TaskConfiguration taskConfiguration,
-      @Autowired PipeliteProcessService pipeliteProcessService,
-      @Autowired PipeliteStageService pipeliteStageService) {
+      @Autowired ProcessService processService,
+      @Autowired TaskService taskService) {
 
     this.launcherConfiguration = launcherConfiguration;
     this.taskConfiguration = taskConfiguration;
-    this.pipeliteProcessService = pipeliteProcessService;
-    this.pipeliteStageService = pipeliteStageService;
-    this.pipeliteTaskInstances = new ArrayList<>();
-    this.dependencyResolver = new DependencyResolver(pipeliteTaskInstances);
+    this.processService = processService;
+    this.taskService = taskService;
+    this.taskAndTaskEntities = new ArrayList<>();
+    this.dependencyResolver = new DependencyResolver(taskAndTaskEntities);
     this.executorService = Executors.newCachedThreadPool();
 
     if (launcherConfiguration.getTaskLaunchFrequency() != null) {
@@ -83,45 +83,45 @@ public class ProcessLauncher implements Runnable {
     }
   }
 
-  private static class PipeliteProcessInstance {
-    private final ProcessInstance processInstance;
-    private final PipeliteProcess pipeliteProcess;
+  private static class ProcessAndProcessEntity {
+    private final Process process;
+    private final ProcessEntity processEntity;
 
-    public PipeliteProcessInstance(
-        ProcessInstance processInstance, PipeliteProcess pipeliteProcess) {
-      this.processInstance = processInstance;
-      this.pipeliteProcess = pipeliteProcess;
+    public ProcessAndProcessEntity(
+            Process process, ProcessEntity processEntity) {
+      this.process = process;
+      this.processEntity = processEntity;
     }
 
-    public ProcessInstance getProcessInstance() {
-      return processInstance;
+    public Process getProcess() {
+      return process;
     }
 
-    public PipeliteProcess getPipeliteProcess() {
-      return pipeliteProcess;
-    }
-  }
-
-  public static class PipeliteTaskInstance {
-    private final TaskInstance taskInstance;
-    private final PipeliteStage pipeliteStage;
-
-    public PipeliteTaskInstance(TaskInstance taskInstance, PipeliteStage pipeliteStage) {
-      this.taskInstance = taskInstance;
-      this.pipeliteStage = pipeliteStage;
-    }
-
-    public TaskInstance getTaskInstance() {
-      return taskInstance;
-    }
-
-    public PipeliteStage getPipeliteStage() {
-      return pipeliteStage;
+    public ProcessEntity getProcessEntity() {
+      return processEntity;
     }
   }
 
-  public void init(ProcessInstance processInstance, PipeliteProcess pipeliteProcess) {
-    this.pipeliteProcessInstance = new PipeliteProcessInstance(processInstance, pipeliteProcess);
+  public static class TaskAndTaskEntity {
+    private final Task task;
+    private final TaskEntity taskEntity;
+
+    public TaskAndTaskEntity(Task task, TaskEntity taskEntity) {
+      this.task = task;
+      this.taskEntity = taskEntity;
+    }
+
+    public Task getTask() {
+      return task;
+    }
+
+    public TaskEntity getTaskEntity() {
+      return taskEntity;
+    }
+  }
+
+  public void init(Process process, ProcessEntity processEntity) {
+    this.processAndProcessEntity = new ProcessAndProcessEntity(process, processEntity);
   }
 
   @Override
@@ -134,42 +134,42 @@ public class ProcessLauncher implements Runnable {
 
   // TODO: orphaned saved tasks
   private void createTasks() {
-    ProcessInstance processInstance = pipeliteProcessInstance.getProcessInstance();
-    List<TaskInstance> taskInstances = processInstance.getTasks();
+    Process process = processAndProcessEntity.getProcess();
+    List<Task> tasks = process.getTasks();
 
-    for (TaskInstance taskInstance : taskInstances) {
-      taskInstance.getTaskParameters().add(taskConfiguration);
+    for (Task task : tasks) {
+      task.getTaskParameters().add(taskConfiguration);
 
-      Optional<PipeliteStage> pipeliteStage =
-          pipeliteStageService.getSavedStage(
-              processInstance.getProcessName(),
-              processInstance.getProcessId(),
-              taskInstance.getTaskName());
+      Optional<TaskEntity> processEntity =
+          taskService.getSavedTask(
+              process.getProcessName(),
+              process.getProcessId(),
+              task.getTaskName());
 
       // Create the task in database if it does not already exist.
-      if (!pipeliteStage.isPresent()) {
-        pipeliteStage =
+      if (!processEntity.isPresent()) {
+        processEntity =
             Optional.of(
-                pipeliteStageService.saveStage(PipeliteStage.createExecution(taskInstance)));
+                taskService.saveTask(TaskEntity.createExecution(task)));
       }
 
-      pipeliteTaskInstances.add(new PipeliteTaskInstance(taskInstance, pipeliteStage.get()));
+      taskAndTaskEntities.add(new TaskAndTaskEntity(task, processEntity.get()));
     }
   }
 
   private ProcessExecutionState evaluateProcessExecutionState() {
     int successCount = 0;
-    for (PipeliteTaskInstance pipeliteTaskInstance : pipeliteTaskInstances) {
+    for (TaskAndTaskEntity taskAndTaskEntity : taskAndTaskEntities) {
 
-      TaskExecutionResultType resultType = pipeliteTaskInstance.getPipeliteStage().getResultType();
+      TaskExecutionResultType resultType = taskAndTaskEntity.getTaskEntity().getResultType();
 
       if (resultType == SUCCESS) {
         successCount++;
       } else if (resultType == null || resultType == ACTIVE) {
         return ProcessExecutionState.ACTIVE;
       } else {
-        Integer executionCount = pipeliteTaskInstance.getPipeliteStage().getExecutionCount();
-        Integer retries = pipeliteTaskInstance.getTaskInstance().getTaskParameters().getRetries();
+        Integer executionCount = taskAndTaskEntity.getTaskEntity().getExecutionCount();
+        Integer retries = taskAndTaskEntity.getTask().getTaskParameters().getRetries();
 
         if (resultType == ERROR
             && executionCount != null
@@ -180,7 +180,7 @@ public class ProcessLauncher implements Runnable {
       }
     }
 
-    if (successCount == pipeliteTaskInstances.size()) {
+    if (successCount == taskAndTaskEntities.size()) {
       return ProcessExecutionState.COMPLETED;
     }
 
@@ -196,20 +196,20 @@ public class ProcessLauncher implements Runnable {
 
       logContext(log.atFine()).log("Executing tasks");
 
-      List<PipeliteTaskInstance> runnableTasks = dependencyResolver.getRunnableTasks();
+      List<TaskAndTaskEntity> runnableTasks = dependencyResolver.getRunnableTasks();
       if (runnableTasks.isEmpty()) {
         return;
       }
 
-      for (PipeliteTaskInstance pipeliteTaskInstance : runnableTasks) {
-        String taskName = pipeliteTaskInstance.getTaskInstance().getTaskName();
+      for (TaskAndTaskEntity taskAndTaskEntity : runnableTasks) {
+        String taskName = taskAndTaskEntity.getTask().getTaskName();
         if (activeTasks.contains(taskName)) {
           continue;
         }
 
-        if (pipeliteTaskInstance.getTaskInstance().getDependsOn() != null) {
+        if (taskAndTaskEntity.getTask().getDependsOn() != null) {
           String dependsOnTaskName =
-              pipeliteTaskInstance.getTaskInstance().getDependsOn().getTaskName();
+              taskAndTaskEntity.getTask().getDependsOn().getTaskName();
           if (dependsOnTaskName != null && activeTasks.contains(dependsOnTaskName)) {
             continue;
           }
@@ -219,7 +219,7 @@ public class ProcessLauncher implements Runnable {
         executorService.execute(
             () -> {
               try {
-                executeTask(pipeliteTaskInstance);
+                executeTask(taskAndTaskEntity);
               } catch (Exception ex) {
                 logContext(log.atSevere())
                     .withCause(ex)
@@ -242,20 +242,20 @@ public class ProcessLauncher implements Runnable {
 
   private void saveProcess() {
 
-    PipeliteProcess pipeliteProcess = pipeliteProcessInstance.getPipeliteProcess();
+    ProcessEntity processEntity = processAndProcessEntity.getProcessEntity();
 
     logContext(log.atInfo()).log("Saving process");
 
-    pipeliteProcess.setState(evaluateProcessExecutionState());
-    pipeliteProcess.incrementExecutionCount();
+    processEntity.setState(evaluateProcessExecutionState());
+    processEntity.incrementExecutionCount();
 
-    pipeliteProcessService.saveProcess(pipeliteProcess);
+    processService.saveProcess(processEntity);
   }
 
-  private void executeTask(PipeliteTaskInstance pipeliteTaskInstance) {
-    TaskInstance taskInstance = pipeliteTaskInstance.getTaskInstance();
-    PipeliteStage pipeliteStage = pipeliteTaskInstance.getPipeliteStage();
-    String taskName = taskInstance.getTaskName();
+  private void executeTask(TaskAndTaskEntity taskAndTaskEntity) {
+    Task task = taskAndTaskEntity.getTask();
+    TaskEntity taskEntity = taskAndTaskEntity.getTaskEntity();
+    String taskName = task.getTaskName();
 
     logContext(log.atInfo(), taskName).log("Executing task");
 
@@ -264,40 +264,40 @@ public class ProcessLauncher implements Runnable {
 
     // Resume task execution.
 
-    if (pipeliteStage.getResultType() == ACTIVE
-        && pipeliteStage.getExecutorName() != null
-        && pipeliteStage.getExecutorData() != null) {
+    if (taskEntity.getResultType() == ACTIVE
+        && taskEntity.getExecutorName() != null
+        && taskEntity.getExecutorData() != null) {
       try {
         executor =
             SerializableExecutor.deserialize(
-                pipeliteStage.getExecutorName(), pipeliteStage.getExecutorData());
+                taskEntity.getExecutorName(), taskEntity.getExecutorData());
         if (!(executor instanceof PollableExecutor)) {
           executor = null;
         }
       } catch (Exception ex) {
         logContext(log.atSevere(), taskName)
             .withCause(ex)
-            .log("Failed to resume task execution: %s", pipeliteStage.getExecutorName());
+            .log("Failed to resume task execution: %s", taskEntity.getExecutorName());
       }
 
       if (executor != null) {
         try {
-          result = ((PollableExecutor) executor).poll(taskInstance);
+          result = ((PollableExecutor) executor).poll(task);
         } catch (Exception ex) {
           logContext(log.atSevere(), taskName)
               .withCause(ex)
-              .log("Failed to resume task execution: %s", pipeliteStage.getExecutorName());
+              .log("Failed to resume task execution: %s", taskEntity.getExecutorName());
         }
       }
     }
 
     if (result == null || result.isError()) {
       // Execute the task.
-      pipeliteStage.startExecution(taskInstance);
-      pipeliteStageService.saveStage(pipeliteStage);
+      taskEntity.startExecution(task);
+      taskService.saveTask(taskEntity);
 
       try {
-        result = taskInstance.getExecutor().execute(taskInstance);
+        result = task.getExecutor().execute(task);
       } catch (Exception ex) {
         result = TaskExecutionResult.error();
         result.addExceptionAttribute(ex);
@@ -306,33 +306,33 @@ public class ProcessLauncher implements Runnable {
 
     if (result.isActive() && executor instanceof PollableExecutor) {
       // Save the task executor details required for polling.
-      pipeliteStageService.saveStage(pipeliteStage);
-      result = ((PollableExecutor) executor).poll(taskInstance);
+      taskService.saveTask(taskEntity);
+      result = ((PollableExecutor) executor).poll(task);
     }
 
-    pipeliteStage.endExecution(result);
-    pipeliteStageService.saveStage(pipeliteStage);
+    taskEntity.endExecution(result);
+    taskService.saveTask(taskEntity);
 
     if (result.isSuccess()) {
       taskCompletedCount.incrementAndGet();
-      logContext(log.atInfo(), pipeliteStage.getStageName())
-          .with(LogKey.TASK_EXECUTION_RESULT_TYPE, pipeliteStage.getResultType())
-          .with(LogKey.TASK_EXECUTION_COUNT, pipeliteStage.getExecutionCount())
+      logContext(log.atInfo(), taskEntity.getTaskName())
+          .with(LogKey.TASK_EXECUTION_RESULT_TYPE, taskEntity.getResultType())
+          .with(LogKey.TASK_EXECUTION_COUNT, taskEntity.getExecutionCount())
           .log("Task executed successfully.");
-      invalidateDependentTasks(pipeliteTaskInstance);
+      invalidateDependentTasks(taskAndTaskEntity);
     } else {
       taskFailedCount.incrementAndGet();
-      logContext(log.atSevere(), pipeliteStage.getStageName())
-          .with(LogKey.TASK_EXECUTION_RESULT_TYPE, pipeliteStage.getResultType())
-          .with(LogKey.TASK_EXECUTION_COUNT, pipeliteStage.getExecutionCount())
+      logContext(log.atSevere(), taskEntity.getTaskName())
+          .with(LogKey.TASK_EXECUTION_RESULT_TYPE, taskEntity.getResultType())
+          .with(LogKey.TASK_EXECUTION_COUNT, taskEntity.getExecutionCount())
           .log("Task execution failed");
     }
   }
 
-  private void invalidateDependentTasks(PipeliteTaskInstance from) {
-    for (PipeliteTaskInstance pipeliteTaskInstance : dependencyResolver.getDependentTasks(from)) {
-      pipeliteTaskInstance.getPipeliteStage().resetExecution();
-      pipeliteStageService.saveStage(pipeliteTaskInstance.getPipeliteStage());
+  private void invalidateDependentTasks(TaskAndTaskEntity from) {
+    for (TaskAndTaskEntity taskAndTaskEntity : dependencyResolver.getDependentTasks(from)) {
+      taskAndTaskEntity.getTaskEntity().resetExecution();
+      taskService.saveTask(taskAndTaskEntity.getTaskEntity());
     }
   }
 
@@ -341,11 +341,11 @@ public class ProcessLauncher implements Runnable {
   }
 
   public String getProcessName() {
-    return pipeliteProcessInstance.getProcessInstance().getProcessName();
+    return processAndProcessEntity.getProcess().getProcessName();
   }
 
   public String getProcessId() {
-    return pipeliteProcessInstance.getProcessInstance().getProcessId();
+    return processAndProcessEntity.getProcess().getProcessId();
   }
 
   public int getTaskFailedCount() {

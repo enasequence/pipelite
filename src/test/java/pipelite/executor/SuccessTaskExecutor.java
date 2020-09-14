@@ -12,17 +12,17 @@ package pipelite.executor;
 
 import lombok.extern.flogger.Flogger;
 import pipelite.task.TaskExecutionResult;
-import pipelite.task.TaskInstance;
+import pipelite.task.Task;
 
 @Flogger
 public class SuccessTaskExecutor implements TaskExecutor, PollableExecutor {
   @Override
-  public TaskExecutionResult execute(TaskInstance taskInstance) {
+  public TaskExecutionResult execute(Task task) {
     return TaskExecutionResult.success();
   }
 
   @Override
-  public TaskExecutionResult poll(TaskInstance taskinstance) {
+  public TaskExecutionResult poll(Task taskinstance) {
     return TaskExecutionResult.success();
   }
 }

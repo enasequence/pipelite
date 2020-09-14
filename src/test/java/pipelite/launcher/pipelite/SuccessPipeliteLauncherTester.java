@@ -23,9 +23,8 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.executor.TaskExecutor;
 import pipelite.launcher.ServerManager;
-import pipelite.launcher.pipelite.PipeliteLauncher;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.process.ProcessInstance;
+import pipelite.process.Process;
 import pipelite.task.TaskExecutionResult;
 
 @AllArgsConstructor
@@ -41,7 +40,7 @@ public class SuccessPipeliteLauncherTester {
   private static final Duration TASK_EXECUTION_TIME = Duration.ofMillis(10);
 
   private TaskExecutor createTaskExecutor(String processId) {
-    return taskInstance -> {
+    return task -> {
       processExecutionCount.incrementAndGet();
       if (processExecutionSet.contains(processId)) {
         processExcessExecutionSet.add(processId);
@@ -57,25 +56,25 @@ public class SuccessPipeliteLauncherTester {
     };
   }
 
-  private List<ProcessInstance> createProcessInstances() {
-    List<ProcessInstance> processInstances = new ArrayList<>();
+  private List<Process> createProcesses() {
+    List<Process> processes = new ArrayList<>();
     for (int i = 0; i < PROCESS_COUNT; ++i) {
       String processName = pipeliteLauncher.getProcessName();
       String processId = "Process" + i;
-      processInstances.add(
+      processes.add(
           new ProcessBuilder(processName, processId, 9)
               .task(UniqueStringGenerator.randomTaskName())
               .executor(createTaskExecutor(processId))
               .build());
     }
-    return processInstances;
+    return processes;
   }
 
   public void test() {
 
-    List<ProcessInstance> processInstances = createProcessInstances();
-    processConfiguration.setProcessFactory(new TestInMemoryProcessFactory(processInstances));
-    processConfiguration.setProcessSource(new TestInMemoryProcessSource(processInstances));
+    List<Process> processes = createProcesses();
+    processConfiguration.setProcessFactory(new TestInMemoryProcessFactory(processes));
+    processConfiguration.setProcessSource(new TestInMemoryProcessSource(processes));
 
     pipeliteLauncher.setShutdownIfIdle(true);
 

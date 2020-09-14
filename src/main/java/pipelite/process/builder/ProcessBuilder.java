@@ -13,7 +13,7 @@ package pipelite.process.builder;
 import java.util.ArrayList;
 import java.util.List;
 
-import pipelite.task.TaskInstance;
+import pipelite.task.Task;
 import pipelite.task.TaskParameters;
 
 public class ProcessBuilder {
@@ -21,7 +21,7 @@ public class ProcessBuilder {
   final String processName;
   final String processId;
   final int priority;
-  final List<TaskInstance> taskInstances = new ArrayList<>();
+  final List<Task> tasks = new ArrayList<>();
 
   public static final int DEFAULT_PRIORITY = 0;
 

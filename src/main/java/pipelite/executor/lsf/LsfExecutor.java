@@ -23,7 +23,7 @@ import pipelite.log.LogKey;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultExitCode;
 import pipelite.task.TaskExecutionResultType;
-import pipelite.task.TaskInstance;
+import pipelite.task.Task;
 
 @Flogger
 public abstract class LsfExecutor extends CommandExecutor implements PollableExecutor {
@@ -40,26 +40,26 @@ public abstract class LsfExecutor extends CommandExecutor implements PollableExe
   private static final Pattern EXIT_CODE_PATTERN = Pattern.compile("Exited with exit code (\\d+)");
 
   @Override
-  public final String getDispatcherCmd(TaskInstance taskInstance) {
+  public final String getDispatcherCmd(Task task) {
     StringBuilder cmd = new StringBuilder();
     cmd.append("bsub");
 
-    stdoutFile = getWorkFile(taskInstance, "lsf", "stdout");
-    stderrFile = getWorkFile(taskInstance, "lsf", "stderr");
+    stdoutFile = getWorkFile(task, "lsf", "stdout");
+    stderrFile = getWorkFile(task, "lsf", "stderr");
 
     addArgument(cmd, "-oo");
     addArgument(cmd, stdoutFile);
     addArgument(cmd, "-eo");
     addArgument(cmd, stderrFile);
 
-    Integer cores = taskInstance.getTaskParameters().getCores();
+    Integer cores = task.getTaskParameters().getCores();
     if (cores != null && cores > 0) {
       addArgument(cmd, "-n");
       addArgument(cmd, Integer.toString(cores));
     }
 
-    Integer memory = taskInstance.getTaskParameters().getMemory();
-    Duration memoryTimeout = taskInstance.getTaskParameters().getMemoryTimeout();
+    Integer memory = task.getTaskParameters().getMemory();
+    Duration memoryTimeout = task.getTaskParameters().getMemoryTimeout();
     if (memory != null && memory > 0) {
       addArgument(cmd, "-M");
       addArgument(cmd, Integer.toString(memory));
@@ -74,13 +74,13 @@ public abstract class LsfExecutor extends CommandExecutor implements PollableExe
               + "]");
     }
 
-    Duration timeout = taskInstance.getTaskParameters().getTimeout();
+    Duration timeout = task.getTaskParameters().getTimeout();
     if (timeout != null) {
       addArgument(cmd, "-W");
       addArgument(cmd, String.valueOf(timeout.toMinutes()));
     }
 
-    String queue = taskInstance.getTaskParameters().getQueue();
+    String queue = task.getTaskParameters().getQueue();
     if (queue != null) {
       addArgument(cmd, "-q");
       addArgument(cmd, queue);
@@ -95,9 +95,9 @@ public abstract class LsfExecutor extends CommandExecutor implements PollableExe
   }
 
   @Override
-  public final TaskExecutionResult execute(TaskInstance taskInstance) {
+  public final TaskExecutionResult execute(Task task) {
 
-    TaskExecutionResult result = super.execute(taskInstance);
+    TaskExecutionResult result = super.execute(task);
 
     String stdout = result.getStdout();
     String stderr = result.getStderr();
@@ -114,68 +114,68 @@ public abstract class LsfExecutor extends CommandExecutor implements PollableExe
   }
 
   @Override
-  public final TaskExecutionResult poll(TaskInstance taskInstance) {
-    Duration timeout = taskInstance.getTaskParameters().getTimeout();
+  public final TaskExecutionResult poll(Task task) {
+    Duration timeout = task.getTaskParameters().getTimeout();
     while (true) {
       if (timeout != null && LocalDateTime.now().isAfter(startTime.plus(timeout))) {
         log.atSevere()
-            .with(LogKey.PROCESS_NAME, taskInstance.getProcessName())
-            .with(LogKey.PROCESS_ID, taskInstance.getProcessId())
-            .with(LogKey.TASK_NAME, taskInstance.getTaskName())
+            .with(LogKey.PROCESS_NAME, task.getProcessName())
+            .with(LogKey.PROCESS_ID, task.getProcessId())
+            .with(LogKey.TASK_NAME, task.getTaskName())
             .log("Maximum run time exceeded. Killing LSF job.");
 
-        getCmdRunner().execute("bkill " + jobId, taskInstance.getTaskParameters());
+        getCmdRunner().execute("bkill " + jobId, task.getTaskParameters());
         return TaskExecutionResult.error();
       }
 
       log.atInfo()
-          .with(LogKey.PROCESS_NAME, taskInstance.getProcessName())
-          .with(LogKey.PROCESS_ID, taskInstance.getProcessId())
-          .with(LogKey.TASK_NAME, taskInstance.getTaskName())
+          .with(LogKey.PROCESS_NAME, task.getProcessName())
+          .with(LogKey.PROCESS_ID, task.getProcessId())
+          .with(LogKey.TASK_NAME, task.getTaskName())
           .log("Checking LSF job result using bjobs.");
 
       CommandRunnerResult bjobsCommandRunnerResult =
-          getCmdRunner().execute("bjobs -l " + jobId, taskInstance.getTaskParameters());
+          getCmdRunner().execute("bjobs -l " + jobId, task.getTaskParameters());
 
       TaskExecutionResult result = getResult(bjobsCommandRunnerResult.getStdout());
 
       if (result == null && extractJobIdNotFound(bjobsCommandRunnerResult.getStdout())) {
         log.atInfo()
-            .with(LogKey.PROCESS_NAME, taskInstance.getProcessName())
-            .with(LogKey.PROCESS_ID, taskInstance.getProcessId())
-            .with(LogKey.TASK_NAME, taskInstance.getTaskName())
+            .with(LogKey.PROCESS_NAME, task.getProcessName())
+            .with(LogKey.PROCESS_ID, task.getProcessId())
+            .with(LogKey.TASK_NAME, task.getTaskName())
             .log("Checking LSF job result using bhist.");
 
         CommandRunnerResult bhistCommandRunnerResult =
-            getCmdRunner().execute("bhist -l " + jobId, taskInstance.getTaskParameters());
+            getCmdRunner().execute("bhist -l " + jobId, task.getTaskParameters());
 
         result = getResult(bhistCommandRunnerResult.getStdout());
       }
 
       if (result != null) {
         log.atInfo()
-            .with(LogKey.PROCESS_NAME, taskInstance.getProcessName())
-            .with(LogKey.PROCESS_ID, taskInstance.getProcessId())
-            .with(LogKey.TASK_NAME, taskInstance.getTaskName())
+            .with(LogKey.PROCESS_NAME, task.getProcessName())
+            .with(LogKey.PROCESS_ID, task.getProcessId())
+            .with(LogKey.TASK_NAME, task.getTaskName())
             .log("Reading stdout file: %s", stdoutFile);
 
         try {
           CommandRunnerResult stdoutCommandRunnerResult =
-              writeFileToStdout(getCmdRunner(), stdoutFile, taskInstance);
+              writeFileToStdout(getCmdRunner(), stdoutFile, task);
           result.setStdout(stdoutCommandRunnerResult.getStdout());
         } catch (Exception ex) {
           log.atSevere().withCause(ex).log("Failed to read stdout file: %s", stdoutFile);
         }
 
         log.atInfo()
-            .with(LogKey.PROCESS_NAME, taskInstance.getProcessName())
-            .with(LogKey.PROCESS_ID, taskInstance.getProcessId())
-            .with(LogKey.TASK_NAME, taskInstance.getTaskName())
+            .with(LogKey.PROCESS_NAME, task.getProcessName())
+            .with(LogKey.PROCESS_ID, task.getProcessId())
+            .with(LogKey.TASK_NAME, task.getTaskName())
             .log("Reading stderr file: %s", stderrFile);
 
         try {
           CommandRunnerResult stderrCommandRunnerResult =
-              writeFileToStderr(getCmdRunner(), stderrFile, taskInstance);
+              writeFileToStderr(getCmdRunner(), stderrFile, task);
           result.setStderr(stderrCommandRunnerResult.getStderr());
         } catch (Exception ex) {
           log.atSevere().withCause(ex).log("Failed to read stderr file: %s", stderrFile);
@@ -185,7 +185,7 @@ public abstract class LsfExecutor extends CommandExecutor implements PollableExe
       }
 
       try {
-        Thread.sleep(getPollFrequency(taskInstance).toMillis());
+        Thread.sleep(getPollFrequency(task).toMillis());
       } catch (InterruptedException ex) {
         Thread.currentThread().interrupt();
       }
@@ -193,16 +193,16 @@ public abstract class LsfExecutor extends CommandExecutor implements PollableExe
   }
 
   public static CommandRunnerResult writeFileToStdout(
-      CommandRunner cmdRunner, String stdoutFile, TaskInstance taskInstance) {
+      CommandRunner cmdRunner, String stdoutFile, Task task) {
     // Execute through sh required by LocalRunner to direct output to stdout/err.
-    return cmdRunner.execute("sh -c 'cat " + stdoutFile + "'", taskInstance.getTaskParameters());
+    return cmdRunner.execute("sh -c 'cat " + stdoutFile + "'", task.getTaskParameters());
   }
 
   public static CommandRunnerResult writeFileToStderr(
-      CommandRunner cmdRunner, String stderrFile, TaskInstance taskInstance) {
+      CommandRunner cmdRunner, String stderrFile, Task task) {
     // Execute through sh required by LocalRunner to direct output to stdout/err.
     return cmdRunner.execute(
-        "sh -c 'cat " + stderrFile + " 1>&2'", taskInstance.getTaskParameters());
+        "sh -c 'cat " + stderrFile + " 1>&2'", task.getTaskParameters());
   }
 
   public static String extractJobIdSubmitted(String str) {

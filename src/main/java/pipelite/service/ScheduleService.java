@@ -10,31 +10,29 @@
  */
 package pipelite.service;
 
-import org.junit.jupiter.api.Test;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.Rollback;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import pipelite.FullTestConfiguration;
+import pipelite.entity.ScheduleEntity;
+import pipelite.repository.ScheduleRepository;
 
-@SpringBootTest(classes = FullTestConfiguration.class)
-@ActiveProfiles(value = {"hsql-test"})
-public class HsqlPipeliteLockServiceTest {
+@Service
+@Transactional(propagation = Propagation.REQUIRES_NEW)
+public class ScheduleService {
 
-  @Autowired PipeliteLockService service;
+  private final ScheduleRepository repository;
 
-  @Test
-  @Transactional
-  @Rollback
-  public void test() {
-    PipeliteLockServiceTester.testLaucherLocks(service);
+  public ScheduleService(@Autowired ScheduleRepository repository) {
+    this.repository = repository;
   }
 
-  @Test
-  @Transactional
-  @Rollback
-  public void testProcessLocks() {
-    PipeliteLockServiceTester.testProcessLocks(service);
+  public List<ScheduleEntity> getAllProcessSchedules(String launcherName) {
+    return repository.findByLauncherName(launcherName);
+  }
+
+  public ScheduleEntity saveProcessSchedule(ScheduleEntity scheduleEntity) {
+    return repository.save(scheduleEntity);
   }
 }

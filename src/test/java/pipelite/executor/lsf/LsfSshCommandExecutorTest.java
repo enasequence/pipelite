@@ -23,7 +23,7 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LsfTestConfiguration;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultType;
-import pipelite.task.TaskInstance;
+import pipelite.task.Task;
 import pipelite.task.TaskParameters;
 
 @SpringBootTest(classes = EmptyTestConfiguration.class)
@@ -48,8 +48,8 @@ public class LsfSshCommandExecutorTest {
             .pollDelay(Duration.ofSeconds(5))
             .build();
 
-    TaskInstance taskInstance =
-        TaskInstance.builder()
+    Task task =
+        Task.builder()
             .processName(processName)
             .processId(processId)
             .taskName(taskName)
@@ -57,14 +57,14 @@ public class LsfSshCommandExecutorTest {
             .taskParameters(taskParameters)
             .build();
 
-    TaskExecutionResult result = executor.execute(taskInstance);
+    TaskExecutionResult result = executor.execute(task);
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.ACTIVE);
     assertThat(result.getAttribute(TaskExecutionResult.COMMAND)).startsWith("bsub");
     assertThat(result.getAttribute(TaskExecutionResult.COMMAND)).endsWith("echo test");
     assertThat(result.getAttribute(TaskExecutionResult.EXIT_CODE)).isEqualTo("0");
     assertThat(result.getStdout()).contains("is submitted to default queue");
 
-    result = executor.poll(taskInstance);
+    result = executor.poll(task);
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
     assertThat(result.getAttribute(TaskExecutionResult.COMMAND)).isBlank();
     assertThat(result.getAttribute(TaskExecutionResult.EXIT_CODE)).isEqualTo("0");

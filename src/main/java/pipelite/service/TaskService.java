@@ -10,29 +10,35 @@
  */
 package pipelite.service;
 
-import java.util.List;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import pipelite.entity.PipeliteSchedule;
-import pipelite.repository.PipeliteScheduleRepository;
+import pipelite.entity.TaskEntity;
+import pipelite.entity.TaskEntityId;
+import pipelite.repository.TaskRepository;
 
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
-public class PipeliteScheduleService {
+public class TaskService {
 
-  private final PipeliteScheduleRepository repository;
+  private final TaskRepository repository;
 
-  public PipeliteScheduleService(@Autowired PipeliteScheduleRepository repository) {
+  public TaskService(@Autowired TaskRepository repository) {
     this.repository = repository;
   }
 
-  public List<PipeliteSchedule> getAllProcessSchedules(String launcherName) {
-    return repository.findByLauncherName(launcherName);
+  public Optional<TaskEntity> getSavedTask(
+      String processName, String processId, String taskName) {
+    return repository.findById(new TaskEntityId(processId, processName, taskName));
   }
 
-  public PipeliteSchedule saveProcessSchedule(PipeliteSchedule pipeliteSchedule) {
-    return repository.save(pipeliteSchedule);
+  public TaskEntity saveTask(TaskEntity taskEntity) {
+    return repository.save(taskEntity);
+  }
+
+  public void delete(TaskEntity taskEntity) {
+    repository.delete(taskEntity);
   }
 }

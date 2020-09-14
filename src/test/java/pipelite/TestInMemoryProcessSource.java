@@ -12,18 +12,18 @@ package pipelite;
 
 import com.google.common.util.concurrent.Monitor;
 import java.util.*;
-import pipelite.process.ProcessInstance;
+import pipelite.process.Process;
 import pipelite.process.ProcessSource;
 
 public class TestInMemoryProcessSource implements ProcessSource {
 
-  private final Set<ProcessInstance> newProcessInstances = new HashSet<>();
-  private final Map<String, ProcessInstance> returnedProcessInstances = new HashMap<>();
-  private final Map<String, ProcessInstance> acceptedProcessInstances = new HashMap<>();
-  private final Set<ProcessInstance> rejectedProcessInstances = new HashSet<>();
+  private final Set<Process> newProcesses = new HashSet<>();
+  private final Map<String, Process> returnedProcesses = new HashMap<>();
+  private final Map<String, Process> acceptedProcesses = new HashMap<>();
+  private final Set<Process> rejectedProcesses = new HashSet<>();
 
-  public TestInMemoryProcessSource(Collection<ProcessInstance> processInstances) {
-    newProcessInstances.addAll(processInstances);
+  public TestInMemoryProcessSource(Collection<Process> processes) {
+    newProcesses.addAll(processes);
   }
 
   private boolean permanentRejection = false;
@@ -34,13 +34,13 @@ public class TestInMemoryProcessSource implements ProcessSource {
   public NewProcess next() {
     monitor.enter();
     try {
-      if (newProcessInstances.isEmpty()) {
+      if (newProcesses.isEmpty()) {
         return null;
       }
-      ProcessInstance processInstance = newProcessInstances.iterator().next();
-      returnedProcessInstances.put(processInstance.getProcessId(), processInstance);
-      newProcessInstances.remove(processInstance);
-      return new NewProcess(processInstance.getProcessId(), 9);
+      Process process = newProcesses.iterator().next();
+      returnedProcesses.put(process.getProcessId(), process);
+      newProcesses.remove(process);
+      return new NewProcess(process.getProcessId(), 9);
     } finally {
       monitor.leave();
     }
@@ -50,7 +50,7 @@ public class TestInMemoryProcessSource implements ProcessSource {
   public void accept(String processId) {
     monitor.enter();
     try {
-      acceptedProcessInstances.put(processId, returnedProcessInstances.remove(processId));
+      acceptedProcesses.put(processId, returnedProcesses.remove(processId));
     } finally {
       monitor.leave();
     }
@@ -61,9 +61,9 @@ public class TestInMemoryProcessSource implements ProcessSource {
     monitor.enter();
     try {
       if (permanentRejection) {
-        rejectedProcessInstances.add(returnedProcessInstances.remove(processId));
+        rejectedProcesses.add(returnedProcesses.remove(processId));
       } else {
-        newProcessInstances.add(returnedProcessInstances.remove(processId));
+        newProcesses.add(returnedProcesses.remove(processId));
       }
     } finally {
       monitor.leave();
@@ -78,19 +78,19 @@ public class TestInMemoryProcessSource implements ProcessSource {
     this.permanentRejection = permanentRejection;
   }
 
-  public int getNewProcessInstances() {
-    return newProcessInstances.size();
+  public int getNewProcesses() {
+    return newProcesses.size();
   }
 
-  public int getReturnedProcessInstances() {
-    return returnedProcessInstances.size();
+  public int getReturnedProcesses() {
+    return returnedProcesses.size();
   }
 
-  public int getAcceptedProcessInstances() {
-    return acceptedProcessInstances.size();
+  public int getAcceptedProcesses() {
+    return acceptedProcesses.size();
   }
 
-  public int getRejectedProcessInstances() {
-    return rejectedProcessInstances.size();
+  public int getRejectedProcesses() {
+    return rejectedProcesses.size();
   }
 }

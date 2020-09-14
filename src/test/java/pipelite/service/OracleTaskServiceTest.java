@@ -20,15 +20,16 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import pipelite.FullTestConfiguration;
 import pipelite.UniqueStringGenerator;
-import pipelite.entity.PipeliteStage;
+import pipelite.entity.TaskEntity;
 import pipelite.task.TaskExecutionResult;
-import pipelite.task.TaskInstance;
+import pipelite.task.Task;
 
 @SpringBootTest(classes = FullTestConfiguration.class)
 @ActiveProfiles(value = {"oracle-test"})
-class OraclePipeliteStageServiceTest {
+class OracleTaskServiceTest {
 
-  @Autowired PipeliteStageService service;
+  @Autowired
+  TaskService service;
 
   @Test
   @Transactional
@@ -39,27 +40,27 @@ class OraclePipeliteStageServiceTest {
     String processName = UniqueStringGenerator.randomProcessName();
     String taskName = UniqueStringGenerator.randomTaskName();
 
-    TaskInstance taskInstance =
-        TaskInstance.builder()
+    Task task =
+        Task.builder()
             .processName(processName)
             .processId(processId)
             .taskName(taskName)
             .build();
 
-    PipeliteStage stage = PipeliteStage.createExecution(taskInstance);
+    TaskEntity taskEntity = TaskEntity.createExecution(task);
 
-    service.saveStage(stage);
+    service.saveTask(taskEntity);
 
-    assertThat(service.getSavedStage(processName, processId, taskName).get()).isEqualTo(stage);
+    assertThat(service.getSavedTask(processName, processId, taskName).get()).isEqualTo(taskEntity);
 
-    stage.endExecution(TaskExecutionResult.success());
+    taskEntity.endExecution(TaskExecutionResult.success());
 
-    service.saveStage(stage);
+    service.saveTask(taskEntity);
 
-    assertThat(service.getSavedStage(processName, processId, taskName).get()).isEqualTo(stage);
+    assertThat(service.getSavedTask(processName, processId, taskName).get()).isEqualTo(taskEntity);
 
-    service.delete(stage);
+    service.delete(taskEntity);
 
-    assertThat(service.getSavedStage(processName, processId, taskName).isPresent()).isFalse();
+    assertThat(service.getSavedTask(processName, processId, taskName).isPresent()).isFalse();
   }
 }

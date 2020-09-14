@@ -8,19 +8,15 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.entity;
+package pipelite.repository;
 
-import java.io.Serializable;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.util.List;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
+import pipelite.entity.ScheduleEntity;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class PipeliteStageId implements Serializable {
+@Repository
+public interface ScheduleRepository extends CrudRepository<ScheduleEntity, String> {
 
-  private String processId;
-  private String processName;
-  private String stageName;
+  List<ScheduleEntity> findByLauncherName(String launcherName);
 }

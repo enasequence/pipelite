@@ -15,36 +15,36 @@ import pipelite.executor.runner.CommandRunner;
 import pipelite.executor.runner.CommandRunnerResult;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultExitCode;
-import pipelite.task.TaskInstance;
+import pipelite.task.Task;
 
 @Flogger
 public abstract class CommandExecutor implements TaskExecutor {
 
   public abstract CommandRunner getCmdRunner();
 
-  public abstract String getCmd(TaskInstance taskInstance);
+  public abstract String getCmd(Task task);
 
-  public String getDispatcherCmd(TaskInstance taskInstance) {
+  public String getDispatcherCmd(Task task) {
     return null;
   }
 
   public void getDispatcherJobId(TaskExecutionResult taskExecutionResult) {}
 
-  public TaskExecutionResult execute(TaskInstance taskInstance) {
-    String cmd = getCmd(taskInstance);
-    String dispatchCommand = getDispatcherCmd(taskInstance);
+  public TaskExecutionResult execute(Task task) {
+    String cmd = getCmd(task);
+    String dispatchCommand = getDispatcherCmd(task);
     if (dispatchCommand != null) {
       cmd = dispatchCommand + " " + cmd;
     }
 
     try {
       CommandRunnerResult commandRunnerResult =
-          getCmdRunner().execute(cmd, taskInstance.getTaskParameters());
+          getCmdRunner().execute(cmd, task.getTaskParameters());
 
       TaskExecutionResult result =
           TaskExecutionResultExitCode.resolve(commandRunnerResult.getExitCode());
       result.addAttribute(TaskExecutionResult.COMMAND, cmd);
-      result.addAttribute(TaskExecutionResult.HOST, taskInstance.getTaskParameters().getHost());
+      result.addAttribute(TaskExecutionResult.HOST, task.getTaskParameters().getHost());
       result.addAttribute(TaskExecutionResult.EXIT_CODE, commandRunnerResult.getExitCode());
       result.setStdout(commandRunnerResult.getStdout());
       result.setStderr(commandRunnerResult.getStderr());
@@ -60,16 +60,16 @@ public abstract class CommandExecutor implements TaskExecutor {
     }
   }
 
-  public String getWorkDir(TaskInstance taskInstance) {
-    if (taskInstance.getTaskParameters().getWorkDir() != null) {
-      return taskInstance.getTaskParameters().getWorkDir();
+  public String getWorkDir(Task task) {
+    if (task.getTaskParameters().getWorkDir() != null) {
+      return task.getTaskParameters().getWorkDir();
     } else {
       return "";
     }
   }
 
-  public String getWorkFile(TaskInstance taskInstance, String prefix, String suffix) {
-    String workDir = getWorkDir(taskInstance);
+  public String getWorkFile(Task task, String prefix, String suffix) {
+    String workDir = getWorkDir(task);
     if (!workDir.isEmpty() && !workDir.endsWith("/")) {
       workDir += "/";
     }
@@ -77,11 +77,11 @@ public abstract class CommandExecutor implements TaskExecutor {
         + "pipelite-"
         + prefix
         + "-"
-        + taskInstance.getProcessName()
+        + task.getProcessName()
         + "_"
-        + taskInstance.getProcessId()
+        + task.getProcessId()
         + "_"
-        + taskInstance.getTaskName()
+        + task.getTaskName()
         + "."
         + suffix;
   }

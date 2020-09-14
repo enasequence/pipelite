@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.task.TaskExecutionResult;
-import pipelite.task.TaskInstance;
+import pipelite.task.Task;
 import pipelite.task.TaskParameters;
 
 public class InternalExecutorTest {
@@ -40,8 +40,8 @@ public class InternalExecutorTest {
 
     TaskParameters taskParameters = TaskParameters.builder().build();
 
-    TaskInstance taskInstance =
-        TaskInstance.builder()
+    Task task =
+        Task.builder()
             .processName(processName)
             .processId(processId)
             .taskName(taskName)
@@ -49,7 +49,7 @@ public class InternalExecutorTest {
             .taskParameters(taskParameters)
             .build();
 
-    TaskExecutionResult result = internalExecutor.execute(taskInstance);
+    TaskExecutionResult result = internalExecutor.execute(task);
     assertThat(result).isEqualTo(TaskExecutionResult.success());
     assertThat(taskExecutionCount.get()).isEqualTo(1);
   }

@@ -12,12 +12,12 @@ package pipelite.executor;
 
 import lombok.extern.flogger.Flogger;
 import pipelite.task.TaskExecutionResult;
-import pipelite.task.TaskInstance;
+import pipelite.task.Task;
 
 @Flogger
 public class ErrorTaskExecutor implements TaskExecutor {
   @Override
-  public TaskExecutionResult execute(TaskInstance taskInstance) {
+  public TaskExecutionResult execute(Task task) {
     return TaskExecutionResult.error();
   }
 }

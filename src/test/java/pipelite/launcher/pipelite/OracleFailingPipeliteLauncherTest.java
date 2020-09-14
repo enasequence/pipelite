@@ -30,7 +30,7 @@ import pipelite.executor.ErrorTaskExecutor;
 import pipelite.executor.SuccessTaskExecutor;
 import pipelite.launcher.ServerManager;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.process.ProcessInstance;
+import pipelite.process.Process;
 import pipelite.process.ProcessSource;
 
 @SpringBootTest(
@@ -52,9 +52,9 @@ public class OracleFailingPipeliteLauncherTest {
   private static final int PROCESS_CNT = 5;
 
   private PipeliteLauncher init(
-      List<ProcessInstance> processInstances, ProcessSource processSource) {
+          List<Process> processes, ProcessSource processSource) {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
-    processConfiguration.setProcessFactory(new TestInMemoryProcessFactory(processInstances));
+    processConfiguration.setProcessFactory(new TestInMemoryProcessFactory(processes));
     processConfiguration.setProcessSource(processSource);
     pipeliteLauncher.setShutdownIfIdle(true);
     return pipeliteLauncher;
@@ -64,11 +64,11 @@ public class OracleFailingPipeliteLauncherTest {
   public void testFirstTaskFails() {
     processConfiguration.setProcessName(PROCESS_NAME);
 
-    List<ProcessInstance> processInstances = new ArrayList<>();
+    List<Process> processes = new ArrayList<>();
     IntStream.range(0, PROCESS_CNT)
         .forEach(
             i -> {
-              processInstances.add(
+              processes.add(
                   new ProcessBuilder(PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
                       .task("TASK1")
                       .executor(new ErrorTaskExecutor())
@@ -81,14 +81,14 @@ public class OracleFailingPipeliteLauncherTest {
                       .build());
             });
 
-    TestInMemoryProcessSource processSource = new TestInMemoryProcessSource(processInstances);
-    PipeliteLauncher pipeliteLauncher = init(processInstances, processSource);
+    TestInMemoryProcessSource processSource = new TestInMemoryProcessSource(processes);
+    PipeliteLauncher pipeliteLauncher = init(processes, processSource);
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    assertThat(processSource.getNewProcessInstances()).isEqualTo(0);
-    assertThat(processSource.getReturnedProcessInstances()).isEqualTo(0);
-    assertThat(processSource.getAcceptedProcessInstances()).isEqualTo(PROCESS_CNT);
-    assertThat(processSource.getRejectedProcessInstances()).isEqualTo(0);
+    assertThat(processSource.getNewProcesses()).isEqualTo(0);
+    assertThat(processSource.getReturnedProcesses()).isEqualTo(0);
+    assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
+    assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
 
     assertThat(pipeliteLauncher.getProcessCompletedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
@@ -100,11 +100,11 @@ public class OracleFailingPipeliteLauncherTest {
   public void testSecondTaskFails() {
     processConfiguration.setProcessName(PROCESS_NAME);
 
-    List<ProcessInstance> processInstances = new ArrayList<>();
+    List<Process> processes = new ArrayList<>();
     IntStream.range(0, PROCESS_CNT)
         .forEach(
             i -> {
-              processInstances.add(
+              processes.add(
                   new ProcessBuilder(PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
                       .task("TASK1")
                       .executor(new SuccessTaskExecutor())
@@ -117,14 +117,14 @@ public class OracleFailingPipeliteLauncherTest {
                       .build());
             });
 
-    TestInMemoryProcessSource processSource = new TestInMemoryProcessSource(processInstances);
-    PipeliteLauncher pipeliteLauncher = init(processInstances, processSource);
+    TestInMemoryProcessSource processSource = new TestInMemoryProcessSource(processes);
+    PipeliteLauncher pipeliteLauncher = init(processes, processSource);
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    assertThat(processSource.getNewProcessInstances()).isEqualTo(0);
-    assertThat(processSource.getReturnedProcessInstances()).isEqualTo(0);
-    assertThat(processSource.getAcceptedProcessInstances()).isEqualTo(PROCESS_CNT);
-    assertThat(processSource.getRejectedProcessInstances()).isEqualTo(0);
+    assertThat(processSource.getNewProcesses()).isEqualTo(0);
+    assertThat(processSource.getReturnedProcesses()).isEqualTo(0);
+    assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
+    assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
 
     assertThat(pipeliteLauncher.getProcessCompletedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
@@ -136,11 +136,11 @@ public class OracleFailingPipeliteLauncherTest {
   public void testThirdTaskFails() {
     processConfiguration.setProcessName(PROCESS_NAME);
 
-    List<ProcessInstance> processInstances = new ArrayList<>();
+    List<Process> processes = new ArrayList<>();
     IntStream.range(0, PROCESS_CNT)
         .forEach(
             i -> {
-              processInstances.add(
+              processes.add(
                   new ProcessBuilder(PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
                       .task("TASK1")
                       .executor(new SuccessTaskExecutor())
@@ -153,14 +153,14 @@ public class OracleFailingPipeliteLauncherTest {
                       .build());
             });
 
-    TestInMemoryProcessSource processSource = new TestInMemoryProcessSource(processInstances);
-    PipeliteLauncher pipeliteLauncher = init(processInstances, processSource);
+    TestInMemoryProcessSource processSource = new TestInMemoryProcessSource(processes);
+    PipeliteLauncher pipeliteLauncher = init(processes, processSource);
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    assertThat(processSource.getNewProcessInstances()).isEqualTo(0);
-    assertThat(processSource.getReturnedProcessInstances()).isEqualTo(0);
-    assertThat(processSource.getAcceptedProcessInstances()).isEqualTo(PROCESS_CNT);
-    assertThat(processSource.getRejectedProcessInstances()).isEqualTo(0);
+    assertThat(processSource.getNewProcesses()).isEqualTo(0);
+    assertThat(processSource.getReturnedProcesses()).isEqualTo(0);
+    assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
+    assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
 
     assertThat(pipeliteLauncher.getProcessCompletedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
@@ -172,11 +172,11 @@ public class OracleFailingPipeliteLauncherTest {
   public void testFourthTaskFails() {
     processConfiguration.setProcessName(PROCESS_NAME);
 
-    List<ProcessInstance> processInstances = new ArrayList<>();
+    List<Process> processes = new ArrayList<>();
     IntStream.range(0, PROCESS_CNT)
         .forEach(
             i -> {
-              processInstances.add(
+              processes.add(
                   new ProcessBuilder(PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
                       .task("TASK1")
                       .executor(new SuccessTaskExecutor())
@@ -189,14 +189,14 @@ public class OracleFailingPipeliteLauncherTest {
                       .build());
             });
 
-    TestInMemoryProcessSource processSource = new TestInMemoryProcessSource(processInstances);
-    PipeliteLauncher pipeliteLauncher = init(processInstances, processSource);
+    TestInMemoryProcessSource processSource = new TestInMemoryProcessSource(processes);
+    PipeliteLauncher pipeliteLauncher = init(processes, processSource);
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    assertThat(processSource.getNewProcessInstances()).isEqualTo(0);
-    assertThat(processSource.getReturnedProcessInstances()).isEqualTo(0);
-    assertThat(processSource.getAcceptedProcessInstances()).isEqualTo(PROCESS_CNT);
-    assertThat(processSource.getRejectedProcessInstances()).isEqualTo(0);
+    assertThat(processSource.getNewProcesses()).isEqualTo(0);
+    assertThat(processSource.getReturnedProcesses()).isEqualTo(0);
+    assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
+    assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
 
     assertThat(pipeliteLauncher.getProcessCompletedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
@@ -208,11 +208,11 @@ public class OracleFailingPipeliteLauncherTest {
   public void testNoTaskFails() {
     processConfiguration.setProcessName(PROCESS_NAME);
 
-    List<ProcessInstance> processInstances = new ArrayList<>();
+    List<Process> processes = new ArrayList<>();
     IntStream.range(0, PROCESS_CNT)
         .forEach(
             i -> {
-              processInstances.add(
+              processes.add(
                   new ProcessBuilder(PROCESS_NAME, UniqueStringGenerator.randomProcessId(), 9)
                       .task("TASK1")
                       .executor(new SuccessTaskExecutor())
@@ -225,14 +225,14 @@ public class OracleFailingPipeliteLauncherTest {
                       .build());
             });
 
-    TestInMemoryProcessSource processSource = new TestInMemoryProcessSource(processInstances);
-    PipeliteLauncher pipeliteLauncher = init(processInstances, processSource);
+    TestInMemoryProcessSource processSource = new TestInMemoryProcessSource(processes);
+    PipeliteLauncher pipeliteLauncher = init(processes, processSource);
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    assertThat(processSource.getNewProcessInstances()).isEqualTo(0);
-    assertThat(processSource.getReturnedProcessInstances()).isEqualTo(0);
-    assertThat(processSource.getAcceptedProcessInstances()).isEqualTo(PROCESS_CNT);
-    assertThat(processSource.getRejectedProcessInstances()).isEqualTo(0);
+    assertThat(processSource.getNewProcesses()).isEqualTo(0);
+    assertThat(processSource.getReturnedProcesses()).isEqualTo(0);
+    assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
+    assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
 
     assertThat(pipeliteLauncher.getProcessCompletedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);

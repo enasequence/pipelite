@@ -1,41 +1,41 @@
 package pipelite.launcher.process;
 
-import pipelite.entity.PipeliteStage;
+import pipelite.entity.TaskEntity;
 import pipelite.task.ConfigurableTaskParameters;
 import pipelite.task.TaskExecutionResultType;
-import pipelite.task.TaskInstance;
+import pipelite.task.Task;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class DependencyResolver {
 
-  private final List<ProcessLauncher.PipeliteTaskInstance> pipeliteTaskInstances;
+  private final List<ProcessLauncher.TaskAndTaskEntity> taskAndTaskEntities;
 
-  public DependencyResolver(List<ProcessLauncher.PipeliteTaskInstance> pipeliteTaskInstances) {
-    this.pipeliteTaskInstances = pipeliteTaskInstances;
+  public DependencyResolver(List<ProcessLauncher.TaskAndTaskEntity> taskAndTaskEntities) {
+    this.taskAndTaskEntities = taskAndTaskEntities;
   }
 
-  public List<ProcessLauncher.PipeliteTaskInstance> getDependentTasks(
-      ProcessLauncher.PipeliteTaskInstance from) {
-    List<ProcessLauncher.PipeliteTaskInstance> dependentTasks = new ArrayList<>();
+  public List<ProcessLauncher.TaskAndTaskEntity> getDependentTasks(
+      ProcessLauncher.TaskAndTaskEntity from) {
+    List<ProcessLauncher.TaskAndTaskEntity> dependentTasks = new ArrayList<>();
     getDependentTasks(dependentTasks, from, false);
     return dependentTasks;
   }
 
   private void getDependentTasks(
-      List<ProcessLauncher.PipeliteTaskInstance> dependentTasks,
-      ProcessLauncher.PipeliteTaskInstance from,
+      List<ProcessLauncher.TaskAndTaskEntity> dependentTasks,
+      ProcessLauncher.TaskAndTaskEntity from,
       boolean include) {
 
-    for (ProcessLauncher.PipeliteTaskInstance task : pipeliteTaskInstances) {
-      if (task.getTaskInstance().equals(from)) {
+    for (ProcessLauncher.TaskAndTaskEntity task : taskAndTaskEntities) {
+      if (task.getTask().equals(from)) {
         continue;
       }
 
-      TaskInstance dependsOn = task.getTaskInstance().getDependsOn();
+      Task dependsOn = task.getTask().getDependsOn();
       if (dependsOn != null
-          && dependsOn.getTaskName().equals(from.getTaskInstance().getTaskName())) {
+          && dependsOn.getTaskName().equals(from.getTask().getTaskName())) {
         getDependentTasks(dependentTasks, task, true);
       }
     }
@@ -45,29 +45,29 @@ public class DependencyResolver {
     }
   }
 
-  public List<ProcessLauncher.PipeliteTaskInstance> getRunnableTasks() {
-    List<ProcessLauncher.PipeliteTaskInstance> runnableTasks = new ArrayList<>();
-    for (ProcessLauncher.PipeliteTaskInstance pipeliteTaskInstance : pipeliteTaskInstances) {
-      TaskInstance taskInstance = pipeliteTaskInstance.getTaskInstance();
-      PipeliteStage pipeliteStage = pipeliteTaskInstance.getPipeliteStage();
+  public List<ProcessLauncher.TaskAndTaskEntity> getRunnableTasks() {
+    List<ProcessLauncher.TaskAndTaskEntity> runnableTasks = new ArrayList<>();
+    for (ProcessLauncher.TaskAndTaskEntity taskAndTaskEntity : taskAndTaskEntities) {
+      Task task = taskAndTaskEntity.getTask();
+      TaskEntity taskEntity = taskAndTaskEntity.getTaskEntity();
 
-      if (isDependsOnTaskCompleted(taskInstance)) {
-        switch (pipeliteStage.getResultType()) {
+      if (isDependsOnTaskCompleted(task)) {
+        switch (taskEntity.getResultType()) {
           case NEW:
           case ACTIVE:
-            runnableTasks.add(pipeliteTaskInstance);
+            runnableTasks.add(taskAndTaskEntity);
             break;
           case SUCCESS:
             break;
           case ERROR:
             {
-              Integer executionCount = pipeliteStage.getExecutionCount();
-              Integer retries = taskInstance.getTaskParameters().getRetries();
+              Integer executionCount = taskEntity.getExecutionCount();
+              Integer retries = task.getTaskParameters().getRetries();
               if (retries == null) {
                 retries = ConfigurableTaskParameters.DEFAULT_RETRIES;
               }
               if (executionCount < retries) {
-                runnableTasks.add(pipeliteTaskInstance);
+                runnableTasks.add(taskAndTaskEntity);
               }
             }
         }
@@ -77,17 +77,17 @@ public class DependencyResolver {
     return runnableTasks;
   }
 
-  private boolean isDependsOnTaskCompleted(TaskInstance taskInstance) {
-    TaskInstance dependsOnTaskInstance = taskInstance.getDependsOn();
-    if (dependsOnTaskInstance == null) {
+  private boolean isDependsOnTaskCompleted(Task task) {
+    Task dependsOnTask = task.getDependsOn();
+    if (dependsOnTask == null) {
       return true;
     }
 
-    return pipeliteTaskInstances.stream()
-            .filter(a -> a.getTaskInstance().equals(dependsOnTaskInstance))
+    return taskAndTaskEntities.stream()
+            .filter(a -> a.getTask().equals(dependsOnTask))
             .findFirst()
             .get()
-            .getPipeliteStage()
+            .getTaskEntity()
             .getResultType()
         == TaskExecutionResultType.SUCCESS;
   }

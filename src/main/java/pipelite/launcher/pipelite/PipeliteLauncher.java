@@ -25,16 +25,16 @@ import org.springframework.stereotype.Component;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.TaskConfiguration;
-import pipelite.entity.PipeliteProcess;
+import pipelite.entity.ProcessEntity;
 import pipelite.launcher.process.ProcessLauncher;
 import pipelite.launcher.ServerManager;
 import pipelite.log.LogKey;
 import pipelite.process.ProcessFactory;
-import pipelite.process.ProcessInstance;
+import pipelite.process.Process;
 import pipelite.process.ProcessSource;
-import pipelite.service.PipeliteLockService;
-import pipelite.service.PipeliteProcessService;
-import pipelite.service.PipeliteStageService;
+import pipelite.service.LockService;
+import pipelite.service.ProcessService;
+import pipelite.service.TaskService;
 
 @Flogger
 @Component
@@ -44,9 +44,9 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private final LauncherConfiguration launcherConfiguration;
   private final ProcessConfiguration processConfiguration;
   private final TaskConfiguration taskConfiguration;
-  private final PipeliteProcessService pipeliteProcessService;
-  private final PipeliteStageService pipeliteStageService;
-  private final PipeliteLockService pipeliteLockService;
+  private final ProcessService processService;
+  private final TaskService taskService;
+  private final LockService lockService;
   private final String launcherName;
   private final Locker locker;
   private final ExecutorService executorService;
@@ -63,7 +63,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private final Map<String, ProcessLauncher> initProcesses = new ConcurrentHashMap<>();
   private final Map<String, ProcessLauncher> activeProcesses = new ConcurrentHashMap<>();
 
-  private final ArrayList<PipeliteProcess> processQueue = new ArrayList<>();
+  private final ArrayList<ProcessEntity> processQueue = new ArrayList<>();
   private int processQueueIndex = 0;
   private LocalDateTime processQueueValidUntil = LocalDateTime.now();
 
@@ -81,17 +81,17 @@ public class PipeliteLauncher extends AbstractScheduledService {
       @Autowired LauncherConfiguration launcherConfiguration,
       @Autowired ProcessConfiguration processConfiguration,
       @Autowired TaskConfiguration taskConfiguration,
-      @Autowired PipeliteProcessService pipeliteProcessService,
-      @Autowired PipeliteStageService pipeliteStageService,
-      @Autowired PipeliteLockService pipeliteLockService) {
+      @Autowired ProcessService processService,
+      @Autowired TaskService taskService,
+      @Autowired LockService lockService) {
     this.launcherConfiguration = launcherConfiguration;
     this.processConfiguration = processConfiguration;
     this.taskConfiguration = taskConfiguration;
-    this.pipeliteProcessService = pipeliteProcessService;
-    this.pipeliteStageService = pipeliteStageService;
-    this.pipeliteLockService = pipeliteLockService;
+    this.processService = processService;
+    this.taskService = taskService;
+    this.lockService = lockService;
     this.launcherName = launcherConfiguration.getLauncherName();
-    this.locker = new Locker(launcherName, pipeliteLockService);
+    this.locker = new Locker(launcherName, lockService);
     this.workers =
         launcherConfiguration.getWorkers() > 0
             ? launcherConfiguration.getWorkers()
@@ -194,11 +194,11 @@ public class PipeliteLauncher extends AbstractScheduledService {
         continue;
       }
 
-      PipeliteProcess newPipeliteProcess =
-          PipeliteProcess.newExecution(
+      ProcessEntity newProcessEntity =
+          ProcessEntity.newExecution(
               newProcess.getProcessId().trim(), getProcessName(), newProcess.getPriority());
 
-      pipeliteProcessService.saveProcess(newPipeliteProcess);
+      processService.saveProcess(newProcessEntity);
 
       processSource.accept(newProcess.getProcessId());
     }
@@ -214,10 +214,10 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
     processId = processId.trim();
 
-    Optional<PipeliteProcess> savedPipeliteProcess =
-        pipeliteProcessService.getSavedProcess(getProcessName(), processId);
+    Optional<ProcessEntity> savedProcessEntity =
+        processService.getSavedProcess(getProcessName(), processId);
 
-    if (savedPipeliteProcess.isPresent()) {
+    if (savedProcessEntity.isPresent()) {
       logContext(log.atSevere(), processId)
           .log("Could not create process instance with a process id that already exists");
       processFailedToCreateCount.incrementAndGet();
@@ -238,43 +238,43 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
     // First add active processes in case we can recover them.
     processQueue.addAll(
-        pipeliteProcessService.getActiveProcesses(getProcessName()).stream()
-            .filter(pipeliteProcess -> !activeProcesses.containsKey(pipeliteProcess.getProcessId()))
+        processService.getActiveProcesses(getProcessName()).stream()
+            .filter(processEntity -> !activeProcesses.containsKey(processEntity.getProcessId()))
             .collect(Collectors.toList()));
 
     // Then add new processes.
     processQueue.addAll(
-        pipeliteProcessService.getNewProcesses(getProcessName()).stream()
-            .filter(pipeliteProcess -> !activeProcesses.containsKey(pipeliteProcess.getProcessId()))
+        processService.getNewProcesses(getProcessName()).stream()
+            .filter(processEntity -> !activeProcesses.containsKey(processEntity.getProcessId()))
             .collect(Collectors.toList()));
     processQueueValidUntil = LocalDateTime.now().plus(processPrioritizationFrequency);
   }
 
   private void launchProcess() {
-    PipeliteProcess pipeliteProcess = processQueue.get(processQueueIndex++);
-    String processId = pipeliteProcess.getProcessId();
+    ProcessEntity processEntity = processQueue.get(processQueueIndex++);
+    String processId = processEntity.getProcessId();
 
     logContext(log.atInfo(), processId).log("Launching process instances");
 
     ProcessLauncher processLauncher =
         new ProcessLauncher(
-            launcherConfiguration, taskConfiguration, pipeliteProcessService, pipeliteStageService);
+            launcherConfiguration, taskConfiguration, processService, taskService);
 
-    ProcessInstance processInstance = processFactory.create(processId);
+    Process process = processFactory.create(processId);
 
-    if (processInstance == null) {
+    if (process == null) {
       logContext(log.atSevere(), processId).log("Could not create process instance");
       processFailedToCreateCount.incrementAndGet();
       return;
     }
 
-    if (!validateProcess(processInstance)) {
+    if (!validateProcess(process)) {
       logContext(log.atSevere(), processId).log("Failed to validate process instance");
       processFailedToCreateCount.incrementAndGet();
       return;
     }
 
-    processLauncher.init(processInstance, pipeliteProcess);
+    processLauncher.init(process, processEntity);
     initProcesses.put(processId, processLauncher);
 
     executorService.execute(
@@ -299,15 +299,15 @@ public class PipeliteLauncher extends AbstractScheduledService {
         });
   }
 
-  private boolean validateProcess(ProcessInstance processInstance) {
-    if (processInstance == null) {
+  private boolean validateProcess(Process process) {
+    if (process == null) {
       return false;
     }
 
-    boolean isSuccess = processInstance.validate(ProcessInstance.ValidateMode.WITHOUT_TASKS);
+    boolean isSuccess = process.validate(Process.ValidateMode.WITHOUT_TASKS);
 
-    if (!getProcessName().equals(processInstance.getProcessName())) {
-      processInstance
+    if (!getProcessName().equals(process.getProcessName())) {
+      process
           .logContext(log.atSevere())
           .log("Process name is different from launcher process name: %s", getProcessName());
       isSuccess = false;

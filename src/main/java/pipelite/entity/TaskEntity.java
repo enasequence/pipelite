@@ -21,16 +21,16 @@ import pipelite.executor.SerializableExecutor;
 import pipelite.executor.TaskExecutor;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultType;
-import pipelite.task.TaskInstance;
+import pipelite.task.Task;
 
 @Entity
 @Table(name = "PIPELITE_STAGE")
-@IdClass(PipeliteStageId.class)
+@IdClass(TaskEntityId.class)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Flogger
-public class PipeliteStage {
+public class TaskEntity {
 
   @Id
   @Column(name = "PROCESS_ID")
@@ -43,7 +43,7 @@ public class PipeliteStage {
 
   @Id
   @Column(name = "STAGE_NAME")
-  private String stageName;
+  private String taskName;
 
   @Column(name = "EXEC_CNT", nullable = false)
   private int executionCount = 0;
@@ -81,21 +81,21 @@ public class PipeliteStage {
   @Lob
   private String resultParams;
 
-  public static PipeliteStage createExecution(TaskInstance taskInstance) {
-    String processId = taskInstance.getProcessId();
-    String processName = taskInstance.getProcessName();
-    String taskName = taskInstance.getTaskName();
-    PipeliteStage pipeliteStage = new PipeliteStage();
-    pipeliteStage.setProcessId(processId);
-    pipeliteStage.setProcessName(processName);
-    pipeliteStage.setStageName(taskName);
-    pipeliteStage.setResultType(TaskExecutionResultType.NEW);
-    pipeliteStage.setExecutionCount(0);
-    return pipeliteStage;
+  public static TaskEntity createExecution(Task task) {
+    String processId = task.getProcessId();
+    String processName = task.getProcessName();
+    String taskName = task.getTaskName();
+    TaskEntity taskEntity = new TaskEntity();
+    taskEntity.setProcessId(processId);
+    taskEntity.setProcessName(processName);
+    taskEntity.setTaskName(taskName);
+    taskEntity.setResultType(TaskExecutionResultType.NEW);
+    taskEntity.setExecutionCount(0);
+    return taskEntity;
   }
 
-  public void startExecution(TaskInstance taskInstance) {
-    TaskExecutor taskExecutor = taskInstance.getExecutor();
+  public void startExecution(Task task) {
+    TaskExecutor taskExecutor = task.getExecutor();
     this.resultType = TaskExecutionResultType.ACTIVE;
     this.resultParams = null;
     this.startTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
@@ -106,8 +106,8 @@ public class PipeliteStage {
       this.executorName = taskExecutor.getClass().getName();
       this.executorData = ((SerializableExecutor) taskExecutor).serialize();
     }
-    if (taskInstance.getTaskParameters() != null) {
-      this.executorParams = taskInstance.getTaskParameters().json();
+    if (task.getTaskParameters() != null) {
+      this.executorParams = task.getTaskParameters().json();
     }
   }
 

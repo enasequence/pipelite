@@ -10,13 +10,10 @@
  */
 package pipelite.repository;
 
-import java.util.List;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
-import pipelite.entity.PipeliteSchedule;
+import pipelite.entity.TaskEntity;
+import pipelite.entity.TaskEntityId;
 
 @Repository
-public interface PipeliteScheduleRepository extends CrudRepository<PipeliteSchedule, String> {
-
-  List<PipeliteSchedule> findByLauncherName(String launcherName);
-}
+public interface TaskRepository extends CrudRepository<TaskEntity, TaskEntityId> {}

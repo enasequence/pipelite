@@ -23,7 +23,7 @@ import pipelite.executor.TaskExecutor;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultExitCode;
 import pipelite.task.TaskExecutionResultType;
-import pipelite.task.TaskInstance;
+import pipelite.task.Task;
 import pipelite.task.TaskParameters;
 
 @SpringBootTest(classes = EmptyTestConfiguration.class)
@@ -35,7 +35,7 @@ public class SshTaskExecutorTest {
 
   public static class SuccessTaskExecutor implements TaskExecutor {
     @Override
-    public TaskExecutionResult execute(TaskInstance taskInstance) {
+    public TaskExecutionResult execute(Task task) {
       System.out.print("test stdout");
       System.err.print("test stderr");
       return TaskExecutionResult.success();
@@ -44,20 +44,20 @@ public class SshTaskExecutorTest {
 
   public static class ErrorTaskExecutor implements TaskExecutor {
     @Override
-    public TaskExecutionResult execute(TaskInstance taskInstance) {
+    public TaskExecutionResult execute(Task task) {
       System.out.print("test stdout");
       System.err.print("test stderr");
       return TaskExecutionResult.error();
     }
   }
 
-  private TaskInstance taskInstance(TaskExecutor executor, TaskParameters taskParameters) {
+  private Task taskInstance(TaskExecutor executor, TaskParameters taskParameters) {
 
     String processName = "testProcess";
     String processId = "testProcessId";
     String taskName = "testTaskName";
 
-    return TaskInstance.builder()
+    return Task.builder()
         .processName(processName)
         .processId(processId)
         .taskName(taskName)
@@ -72,10 +72,10 @@ public class SshTaskExecutorTest {
     TaskParameters taskParameters = TaskParameters.builder().build();
     taskParameters.setHost(testConfiguration.getHost());
 
-    TaskInstance taskInstance =
+    Task task =
         taskInstance(new SshTaskExecutor(new SuccessTaskExecutor()), taskParameters);
 
-    TaskExecutionResult result = taskInstance.execute();
+    TaskExecutionResult result = task.execute();
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
     assertThat(result.getAttribute(TaskExecutionResult.COMMAND))
         .endsWith(
@@ -99,8 +99,8 @@ public class SshTaskExecutorTest {
     TaskParameters taskParameters = TaskParameters.builder().build();
     taskParameters.setHost(testConfiguration.getHost());
 
-    TaskInstance taskInstance =
-        TaskInstance.builder()
+    Task task =
+        Task.builder()
             .processName(processName)
             .processId(processId)
             .taskName(taskName)
@@ -108,7 +108,7 @@ public class SshTaskExecutorTest {
             .taskParameters(taskParameters)
             .build();
 
-    TaskExecutionResult result = taskInstance.execute();
+    TaskExecutionResult result = task.execute();
 
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.ERROR);
     assertThat(result.getAttribute(TaskExecutionResult.COMMAND))
@@ -131,9 +131,9 @@ public class SshTaskExecutorTest {
 
     TaskParameters taskParameters = TaskParameters.builder().memory(2000).build();
 
-    TaskInstance taskInstance = taskInstance(executor, taskParameters);
+    Task task = taskInstance(executor, taskParameters);
 
-    TaskExecutionResult result = executor.execute(taskInstance);
+    TaskExecutionResult result = executor.execute(task);
 
     assertThat(result.getAttribute(TaskExecutionResult.COMMAND)).contains(("-Xmx2000M"));
   }
@@ -149,12 +149,12 @@ public class SshTaskExecutorTest {
             .env(new String[] {"PIPELITE_TEST_JAVA_PROPERTY"})
             .build();
 
-    TaskInstance taskInstance = taskInstance(executor, taskParameters);
+    Task task = taskInstance(executor, taskParameters);
 
     TaskExecutionResult result = null;
     try {
       System.setProperty("PIPELITE_TEST_JAVA_PROPERTY", "VALUE");
-      result = executor.execute(taskInstance);
+      result = executor.execute(task);
     } finally {
       System.clearProperty("PIPELITE_TEST_JAVA_PROPERTY");
     }

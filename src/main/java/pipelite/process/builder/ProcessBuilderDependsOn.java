@@ -10,8 +10,8 @@
  */
 package pipelite.process.builder;
 
-import pipelite.process.ProcessInstance;
-import pipelite.task.TaskInstance;
+import pipelite.process.Process;
+import pipelite.task.Task;
 import pipelite.task.TaskParameters;
 
 public class ProcessBuilderDependsOn {
@@ -50,20 +50,20 @@ public class ProcessBuilderDependsOn {
     return new TaskBuilder(processBuilder, taskName, firstTask().getTaskName(), taskParameters);
   }
 
-  public ProcessInstance build() {
-    return ProcessInstance.builder()
+  public Process build() {
+    return Process.builder()
         .processName(processBuilder.processName)
         .processId(processBuilder.processId)
         .priority(processBuilder.priority)
-        .tasks(processBuilder.taskInstances)
+        .tasks(processBuilder.tasks)
         .build();
   }
 
-  private TaskInstance lastTask() {
-    return processBuilder.taskInstances.get(processBuilder.taskInstances.size() - 1);
+  private Task lastTask() {
+    return processBuilder.tasks.get(processBuilder.tasks.size() - 1);
   }
 
-  private TaskInstance firstTask() {
-    return processBuilder.taskInstances.get(0);
+  private Task firstTask() {
+    return processBuilder.tasks.get(0);
   }
 }

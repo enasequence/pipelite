@@ -17,14 +17,14 @@ import pipelite.executor.TaskExecutor;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultExitCode;
 import pipelite.task.TaskExecutionResultType;
-import pipelite.task.TaskInstance;
+import pipelite.task.Task;
 import pipelite.task.TaskParameters;
 
 public class LocalTaskExecutorTest {
 
   public static class SuccessTaskExecutor implements TaskExecutor {
     @Override
-    public TaskExecutionResult execute(TaskInstance taskInstance) {
+    public TaskExecutionResult execute(Task task) {
       System.out.print("test stdout");
       System.err.print("test stderr");
       return TaskExecutionResult.success();
@@ -33,20 +33,20 @@ public class LocalTaskExecutorTest {
 
   public static class ErrorTaskExecutor implements TaskExecutor {
     @Override
-    public TaskExecutionResult execute(TaskInstance taskInstance) {
+    public TaskExecutionResult execute(Task task) {
       System.out.print("test stdout");
       System.err.print("test stderr");
       return TaskExecutionResult.error();
     }
   }
 
-  private TaskInstance taskInstance(TaskExecutor executor, TaskParameters taskParameters) {
+  private Task task(TaskExecutor executor, TaskParameters taskParameters) {
 
     String processName = "testProcess";
     String processId = "testProcessId";
     String taskName = "testTaskName";
 
-    return TaskInstance.builder()
+    return Task.builder()
         .processName(processName)
         .processId(processId)
         .taskName(taskName)
@@ -60,10 +60,10 @@ public class LocalTaskExecutorTest {
 
     TaskParameters taskParameters = TaskParameters.builder().build();
 
-    TaskInstance taskInstance =
-        taskInstance(new LocalTaskExecutor(new SuccessTaskExecutor()), taskParameters);
+    Task task =
+        task(new LocalTaskExecutor(new SuccessTaskExecutor()), taskParameters);
 
-    TaskExecutionResult result = taskInstance.execute();
+    TaskExecutionResult result = task.execute();
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
     assertThat(result.getAttribute(TaskExecutionResult.COMMAND))
         .endsWith(
@@ -82,10 +82,10 @@ public class LocalTaskExecutorTest {
 
     TaskParameters taskParameters = TaskParameters.builder().build();
 
-    TaskInstance taskInstance =
-        taskInstance(new LocalTaskExecutor(new ErrorTaskExecutor()), taskParameters);
+    Task task =
+        task(new LocalTaskExecutor(new ErrorTaskExecutor()), taskParameters);
 
-    TaskExecutionResult result = taskInstance.execute();
+    TaskExecutionResult result = task.execute();
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.ERROR);
     assertThat(result.getAttribute(TaskExecutionResult.COMMAND))
         .endsWith(
@@ -105,10 +105,10 @@ public class LocalTaskExecutorTest {
 
     TaskParameters taskParameters = TaskParameters.builder().memory(2000).build();
 
-    TaskInstance taskInstance =
-        taskInstance(new LocalTaskExecutor(new SuccessTaskExecutor()), taskParameters);
+    Task task =
+        task(new LocalTaskExecutor(new SuccessTaskExecutor()), taskParameters);
 
-    TaskExecutionResult result = taskInstance.execute();
+    TaskExecutionResult result = task.execute();
 
     assertThat(result.getAttribute(TaskExecutionResult.COMMAND)).contains(("-Xmx2000M"));
   }
@@ -124,12 +124,12 @@ public class LocalTaskExecutorTest {
             .env(new String[] {"PIPELITE_TEST_JAVA_PROPERTY"})
             .build();
 
-    TaskInstance taskInstance = taskInstance(executor, taskParameters);
+    Task task = task(executor, taskParameters);
 
     TaskExecutionResult result = null;
     try {
       System.setProperty("PIPELITE_TEST_JAVA_PROPERTY", "VALUE");
-      result = executor.execute(taskInstance);
+      result = executor.execute(task);
     } finally {
       System.clearProperty("PIPELITE_TEST_JAVA_PROPERTY");
     }

@@ -22,13 +22,14 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import pipelite.FullTestConfiguration;
 import pipelite.UniqueStringGenerator;
-import pipelite.entity.PipeliteSchedule;
+import pipelite.entity.ScheduleEntity;
 
 @SpringBootTest(classes = FullTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test"})
-class HsqlPipeliteScheduleServiceTest {
+class HsqlScheduleServiceTest {
 
-  @Autowired PipeliteScheduleService service;
+  @Autowired
+  ScheduleService service;
 
   @Test
   @Transactional
@@ -39,7 +40,7 @@ class HsqlPipeliteScheduleServiceTest {
     String processName = UniqueStringGenerator.randomProcessName();
     String processName2 = UniqueStringGenerator.randomProcessName();
 
-    PipeliteSchedule schedule = new PipeliteSchedule();
+    ScheduleEntity schedule = new ScheduleEntity();
     schedule.setLauncherName(launcherName);
     schedule.setProcessName(processName);
     schedule.setProcessFactoryName("test");
@@ -47,7 +48,7 @@ class HsqlPipeliteScheduleServiceTest {
 
     service.saveProcessSchedule(schedule);
 
-    List<PipeliteSchedule> schedules = service.getAllProcessSchedules(launcherName);
+    List<ScheduleEntity> schedules = service.getAllProcessSchedules(launcherName);
     assertThat(schedules.size()).isEqualTo(1);
     assertThat(schedules.get(0).getLauncherName()).isEqualTo(schedule.getLauncherName());
     assertThat(schedules.get(0).getProcessName()).isEqualTo(schedule.getProcessName());
@@ -58,7 +59,7 @@ class HsqlPipeliteScheduleServiceTest {
     assertThat(schedules.get(0).getStartTime()).isNull();
     assertThat(schedules.get(0).getEndTime()).isNull();
 
-    PipeliteSchedule schedule2 = new PipeliteSchedule();
+    ScheduleEntity schedule2 = new ScheduleEntity();
     schedule2.setLauncherName(launcherName);
     schedule2.setProcessName(processName2);
     schedule2.setProcessFactoryName("test2");
@@ -67,7 +68,7 @@ class HsqlPipeliteScheduleServiceTest {
     service.saveProcessSchedule(schedule2);
 
     schedules = service.getAllProcessSchedules(launcherName);
-    schedules.sort(Comparator.comparing(PipeliteSchedule::getSchedule));
+    schedules.sort(Comparator.comparing(ScheduleEntity::getSchedule));
     assertThat(schedules.size()).isEqualTo(2);
     assertThat(schedules.get(0).getLauncherName()).isEqualTo(schedule.getLauncherName());
     assertThat(schedules.get(0).getProcessName()).isEqualTo(schedule.getProcessName());

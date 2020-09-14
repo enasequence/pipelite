@@ -20,21 +20,22 @@ import pipelite.FullTestConfiguration;
 
 @SpringBootTest(classes = FullTestConfiguration.class)
 @ActiveProfiles(value = {"oracle-test"})
-public class OraclePipeliteLockServiceTest {
+public class OracleLockServiceTest {
 
-  @Autowired PipeliteLockService service;
+  @Autowired
+  LockService service;
 
   @Test
   @Transactional
   @Rollback
   public void test() {
-    PipeliteLockServiceTester.testLaucherLocks(service);
+    LockServiceTester.testLaucherLocks(service);
   }
 
   @Test
   @Transactional
   @Rollback
   public void testProcessLocks() {
-    PipeliteLockServiceTester.testProcessLocks(service);
+    LockServiceTester.testProcessLocks(service);
   }
 }

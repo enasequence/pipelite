@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.task.TaskExecutionResult;
 import pipelite.task.TaskExecutionResultType;
-import pipelite.task.TaskInstance;
+import pipelite.task.Task;
 import pipelite.task.TaskParameters;
 
 public class LocalCommandExecutorTest {
@@ -30,8 +30,8 @@ public class LocalCommandExecutorTest {
 
     TaskParameters taskParameters = TaskParameters.builder().build();
 
-    TaskInstance taskInstance =
-        TaskInstance.builder()
+    Task task =
+        Task.builder()
             .processName(processName)
             .processId(processId)
             .taskName(taskName)
@@ -39,7 +39,7 @@ public class LocalCommandExecutorTest {
             .taskParameters(taskParameters)
             .build();
 
-    TaskExecutionResult result = taskInstance.execute();
+    TaskExecutionResult result = task.execute();
     assertThat(result.getResultType()).isEqualTo(TaskExecutionResultType.SUCCESS);
     assertThat(result.getAttribute(TaskExecutionResult.COMMAND)).isEqualTo("echo test");
     assertThat(result.getAttribute(TaskExecutionResult.EXIT_CODE)).isEqualTo("0");

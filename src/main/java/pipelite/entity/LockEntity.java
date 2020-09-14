@@ -10,16 +10,29 @@
  */
 package pipelite.entity;
 
-import java.io.Serializable;
+import javax.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@Entity
+@Table(name = "PIPELITE_LOCK")
+@IdClass(LockEntityId.class)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PipeliteProcessId implements Serializable {
+public class LockEntity {
 
-  private String processId;
+  // TODO: change column name to LAUNCHER_NAME
+  @Column(name = "ALLOCATOR_NAME")
+  private String launcherName;
+
+  // TODO: change column name to PROCESS_NAME
+  @Id
+  @Column(name = "PIPELINE_NAME")
   private String processName;
+
+  @Id
+  @Column(name = "LOCK_ID")
+  private String lockId;
 }

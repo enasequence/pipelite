@@ -15,13 +15,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import pipelite.UniqueStringGenerator;
 
-public class PipeliteLockServiceTester {
+public class LockServiceTester {
 
   private static final String processName = UniqueStringGenerator.randomProcessName();
   private static final String launcherName1 = UniqueStringGenerator.randomLauncherName();
   private static final String launcherName2 = UniqueStringGenerator.randomLauncherName();
 
-  public static void testLaucherLocks(PipeliteLockService service) {
+  public static void testLaucherLocks(LockService service) {
     service.unlockLauncher(launcherName1, processName);
     service.unlockLauncher(launcherName2, processName);
 
@@ -41,7 +41,7 @@ public class PipeliteLockServiceTester {
     assertFalse(service.isLauncherLocked(launcherName2, processName));
   }
 
-  public static void testProcessLocks(PipeliteLockService locker) {
+  public static void testProcessLocks(LockService locker) {
     assertTrue(locker.lockProcess(launcherName1, processName, "1"));
     assertTrue(locker.isProcessLocked(processName, "1"));
     assertTrue(locker.isProcessLocked(launcherName1, processName, "1"));

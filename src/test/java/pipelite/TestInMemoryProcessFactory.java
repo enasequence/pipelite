@@ -12,21 +12,21 @@ package pipelite;
 
 import java.util.*;
 import pipelite.process.ProcessFactory;
-import pipelite.process.ProcessInstance;
+import pipelite.process.Process;
 
 public class TestInMemoryProcessFactory implements ProcessFactory {
 
-  private final Map<String, ProcessInstance> processInstances = new HashMap<>();
+  private final Map<String, Process> processInstances = new HashMap<>();
 
-  public TestInMemoryProcessFactory(Collection<ProcessInstance> processInstances) {
-    processInstances.stream()
+  public TestInMemoryProcessFactory(Collection<Process> processes) {
+    processes.stream()
         .forEach(
             processInstance ->
                 this.processInstances.put(processInstance.getProcessId(), processInstance));
   }
 
   @Override
-  public ProcessInstance create(String processId) {
+  public Process create(String processId) {
     return processInstances.get(processId);
   }
 

@@ -16,20 +16,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import pipelite.entity.PipeliteLock;
+import pipelite.entity.LockEntity;
 import pipelite.log.LogKey;
-import pipelite.repository.PipeliteLockRepository;
+import pipelite.repository.LockRepository;
 
 // TODO: launcher lock is stored as a process lock and there is a possibility of lock name conflict
 
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 @Flogger
-public class PipeliteLockService {
+public class LockService {
 
-  private final PipeliteLockRepository repository;
+  private final LockRepository repository;
 
-  public PipeliteLockService(@Autowired PipeliteLockRepository repository) {
+  public LockService(@Autowired LockRepository repository) {
     this.repository = repository;
   }
 
@@ -103,20 +103,20 @@ public class PipeliteLockService {
     return isLocked(launcherName, processName, processId);
   }
 
-  private static PipeliteLock getLauncherLock(String launcherName, String processName) {
-    return new PipeliteLock(launcherName, processName, launcherName);
+  private static LockEntity getLauncherLock(String launcherName, String processName) {
+    return new LockEntity(launcherName, processName, launcherName);
   }
 
-  private static PipeliteLock getProcessLock(
+  private static LockEntity getProcessLock(
       String launcherName, String processName, String processId) {
-    return new PipeliteLock(launcherName, processName, processId);
+    return new LockEntity(launcherName, processName, processId);
   }
 
-  private boolean lock(PipeliteLock pipeliteLock) {
-    if (isLocked(pipeliteLock.getProcessName(), pipeliteLock.getLockId())) {
+  private boolean lock(LockEntity lockEntity) {
+    if (isLocked(lockEntity.getProcessName(), lockEntity.getLockId())) {
       return false;
     }
-    repository.save(pipeliteLock);
+    repository.save(lockEntity);
     return true;
   }
 
@@ -130,22 +130,22 @@ public class PipeliteLockService {
         .isPresent();
   }
 
-  private boolean unlock(PipeliteLock pipeliteLock) {
-    Optional<PipeliteLock> activeLock =
+  private boolean unlock(LockEntity lockEntity) {
+    Optional<LockEntity> activeLock =
         repository.findByProcessNameAndLockId(
-            pipeliteLock.getProcessName(), pipeliteLock.getLockId());
+            lockEntity.getProcessName(), lockEntity.getLockId());
     if (activeLock.isPresent()) {
-      if (!activeLock.get().getLauncherName().equals(pipeliteLock.getLauncherName())) {
+      if (!activeLock.get().getLauncherName().equals(lockEntity.getLauncherName())) {
         log.atSevere()
-            .with(LogKey.LAUNCHER_NAME, pipeliteLock.getLauncherName())
-            .with(LogKey.PROCESS_NAME, pipeliteLock.getProcessName())
-            .with(LogKey.PROCESS_ID, pipeliteLock.getLockId())
+            .with(LogKey.LAUNCHER_NAME, lockEntity.getLauncherName())
+            .with(LogKey.PROCESS_NAME, lockEntity.getProcessName())
+            .with(LogKey.PROCESS_ID, lockEntity.getLockId())
             .log(
                 "Failed to unlock lock. Lock held by different launcher %s",
                 activeLock.get().getLauncherName());
         return false;
       }
-      repository.delete(pipeliteLock);
+      repository.delete(lockEntity);
       return true;
     }
     return false;

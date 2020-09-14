@@ -21,14 +21,15 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import pipelite.FullTestConfiguration;
 import pipelite.UniqueStringGenerator;
-import pipelite.entity.PipeliteProcess;
+import pipelite.entity.ProcessEntity;
 import pipelite.process.ProcessExecutionState;
 
 @SpringBootTest(classes = FullTestConfiguration.class)
-@ActiveProfiles(value = {"hsql-test"})
-class HsqlPipeliteProcessServiceTest {
+@ActiveProfiles(value = {"oracle-test"})
+class OracleProcessServiceTest {
 
-  @Autowired PipeliteProcessService service;
+  @Autowired
+  ProcessService service;
 
   @Test
   @Transactional
@@ -41,7 +42,7 @@ class HsqlPipeliteProcessServiceTest {
     Integer execCnt = 3;
     Integer priority = 0;
 
-    PipeliteProcess process = new PipeliteProcess(processId, processName, state, execCnt, priority);
+    ProcessEntity process = new ProcessEntity(processId, processName, state, execCnt, priority);
 
     service.saveProcess(process);
 
@@ -66,15 +67,15 @@ class HsqlPipeliteProcessServiceTest {
   public void testReportsSamePriority() {
     String processName = UniqueStringGenerator.randomProcessName();
 
-    service.saveProcess(createPipeliteProcess(processName, ProcessExecutionState.ACTIVE, 1));
-    service.saveProcess(createPipeliteProcess(processName, ProcessExecutionState.ACTIVE, 1));
-    service.saveProcess(createPipeliteProcess(processName, ProcessExecutionState.COMPLETED, 1));
-    service.saveProcess(createPipeliteProcess(processName, ProcessExecutionState.COMPLETED, 1));
-    service.saveProcess(createPipeliteProcess(processName, ProcessExecutionState.COMPLETED, 1));
-    service.saveProcess(createPipeliteProcess(processName, ProcessExecutionState.FAILED, 1));
-    service.saveProcess(createPipeliteProcess(processName, ProcessExecutionState.FAILED, 1));
-    service.saveProcess(createPipeliteProcess(processName, ProcessExecutionState.FAILED, 1));
-    service.saveProcess(createPipeliteProcess(processName, ProcessExecutionState.FAILED, 1));
+    service.saveProcess(createProcessEntity(processName, ProcessExecutionState.ACTIVE, 1));
+    service.saveProcess(createProcessEntity(processName, ProcessExecutionState.ACTIVE, 1));
+    service.saveProcess(createProcessEntity(processName, ProcessExecutionState.COMPLETED, 1));
+    service.saveProcess(createProcessEntity(processName, ProcessExecutionState.COMPLETED, 1));
+    service.saveProcess(createProcessEntity(processName, ProcessExecutionState.COMPLETED, 1));
+    service.saveProcess(createProcessEntity(processName, ProcessExecutionState.FAILED, 1));
+    service.saveProcess(createProcessEntity(processName, ProcessExecutionState.FAILED, 1));
+    service.saveProcess(createProcessEntity(processName, ProcessExecutionState.FAILED, 1));
+    service.saveProcess(createProcessEntity(processName, ProcessExecutionState.FAILED, 1));
 
     assertThat(service.getActiveProcesses(processName)).hasSize(2);
     assertThat(service.getCompletedProcesses(processName)).hasSize(3);
@@ -87,29 +88,29 @@ class HsqlPipeliteProcessServiceTest {
   public void testReportsDifferentPriority() {
     String processName = UniqueStringGenerator.randomProcessName();
 
-    service.saveProcess(createPipeliteProcess(processName, ProcessExecutionState.ACTIVE, 1));
-    service.saveProcess(createPipeliteProcess(processName, ProcessExecutionState.ACTIVE, 2));
-    service.saveProcess(createPipeliteProcess(processName, ProcessExecutionState.COMPLETED, 1));
-    service.saveProcess(createPipeliteProcess(processName, ProcessExecutionState.COMPLETED, 2));
-    service.saveProcess(createPipeliteProcess(processName, ProcessExecutionState.COMPLETED, 3));
-    service.saveProcess(createPipeliteProcess(processName, ProcessExecutionState.FAILED, 1));
-    service.saveProcess(createPipeliteProcess(processName, ProcessExecutionState.FAILED, 2));
-    service.saveProcess(createPipeliteProcess(processName, ProcessExecutionState.FAILED, 4));
-    service.saveProcess(createPipeliteProcess(processName, ProcessExecutionState.FAILED, 3));
+    service.saveProcess(createProcessEntity(processName, ProcessExecutionState.ACTIVE, 1));
+    service.saveProcess(createProcessEntity(processName, ProcessExecutionState.ACTIVE, 2));
+    service.saveProcess(createProcessEntity(processName, ProcessExecutionState.COMPLETED, 1));
+    service.saveProcess(createProcessEntity(processName, ProcessExecutionState.COMPLETED, 2));
+    service.saveProcess(createProcessEntity(processName, ProcessExecutionState.COMPLETED, 3));
+    service.saveProcess(createProcessEntity(processName, ProcessExecutionState.FAILED, 1));
+    service.saveProcess(createProcessEntity(processName, ProcessExecutionState.FAILED, 2));
+    service.saveProcess(createProcessEntity(processName, ProcessExecutionState.FAILED, 4));
+    service.saveProcess(createProcessEntity(processName, ProcessExecutionState.FAILED, 3));
 
     assertThat(service.getActiveProcesses(processName)).hasSize(2);
     assertThat(service.getCompletedProcesses(processName)).hasSize(3);
     assertThat(service.getFailedProcesses(processName)).hasSize(4);
 
     assertThat(service.getActiveProcesses(processName))
-        .isSortedAccordingTo(Comparator.comparingInt(PipeliteProcess::getPriority).reversed());
+        .isSortedAccordingTo(Comparator.comparingInt(ProcessEntity::getPriority).reversed());
     assertThat(service.getFailedProcesses(processName))
-        .isSortedAccordingTo(Comparator.comparingInt(PipeliteProcess::getPriority).reversed());
+        .isSortedAccordingTo(Comparator.comparingInt(ProcessEntity::getPriority).reversed());
   }
 
-  private static PipeliteProcess createPipeliteProcess(
+  private static ProcessEntity createProcessEntity(
       String processName, ProcessExecutionState state, int priority) {
-    return new PipeliteProcess(
+    return new ProcessEntity(
         UniqueStringGenerator.randomProcessId(), processName, state, 0, priority);
   }
 }

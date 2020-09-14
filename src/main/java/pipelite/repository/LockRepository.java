@@ -10,20 +10,18 @@
  */
 package pipelite.repository;
 
-import java.util.List;
+import java.util.Optional;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
-import pipelite.entity.PipeliteProcess;
-import pipelite.entity.PipeliteProcessId;
-import pipelite.process.ProcessExecutionState;
+import pipelite.entity.LockEntity;
+import pipelite.entity.LockEntityId;
 
 @Repository
-public interface PipeliteProcessRepository
-    extends CrudRepository<PipeliteProcess, PipeliteProcessId> {
+public interface LockRepository extends CrudRepository<LockEntity, LockEntityId> {
+  Optional<LockEntity> findByProcessNameAndLockId(String processName, String lockId);
 
-  List<PipeliteProcess> findAllByProcessNameAndState(
-      String processName, ProcessExecutionState state);
+  Optional<LockEntity> findByLauncherNameAndProcessNameAndLockId(
+      String launcherName, String processName, String lockId);
 
-  List<PipeliteProcess> findAllByProcessNameAndStateOrderByPriorityDesc(
-      String processName, ProcessExecutionState state);
+  void deleteByLauncherNameAndProcessName(String launcherName, String processName);
 }

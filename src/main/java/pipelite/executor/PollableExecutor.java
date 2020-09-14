@@ -14,15 +14,15 @@ import java.time.Duration;
 
 import pipelite.task.ConfigurableTaskParameters;
 import pipelite.task.TaskExecutionResult;
-import pipelite.task.TaskInstance;
+import pipelite.task.Task;
 
 public interface PollableExecutor extends SerializableExecutor {
 
-  TaskExecutionResult poll(TaskInstance taskInstance);
+  TaskExecutionResult poll(Task task);
 
-  default Duration getPollFrequency(TaskInstance taskInstance) {
-    if (taskInstance.getTaskParameters().getPollDelay() != null) {
-      return taskInstance.getTaskParameters().getPollDelay();
+  default Duration getPollFrequency(Task task) {
+    if (task.getTaskParameters().getPollDelay() != null) {
+      return task.getTaskParameters().getPollDelay();
     }
     return ConfigurableTaskParameters.DEFAULT_POLL_DELAY;
   }
