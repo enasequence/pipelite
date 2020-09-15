@@ -15,11 +15,11 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.ComponentScan;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
-import pipelite.configuration.TaskConfiguration;
+import pipelite.configuration.StageConfiguration;
 
 @EnableAutoConfiguration
 @EnableConfigurationProperties(
-    value = {LauncherConfiguration.class, ProcessConfiguration.class, TaskConfiguration.class})
+    value = {LauncherConfiguration.class, ProcessConfiguration.class, StageConfiguration.class})
 @ComponentScan(
     basePackages = {
       "pipelite.service",

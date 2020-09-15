@@ -33,47 +33,47 @@ public class LockService {
     this.repository = repository;
   }
 
-  public boolean lockLauncher(String launcherName, String processName) {
+  public boolean lockLauncher(String launcherName, String pipelineName) {
     try {
-      return lock(getLauncherLock(launcherName, processName));
+      return lock(getLauncherLock(launcherName, pipelineName));
     } catch (Exception ex) {
       log.atSevere()
           .with(LogKey.LAUNCHER_NAME, launcherName)
-          .with(LogKey.PROCESS_NAME, processName)
+          .with(LogKey.PIPELINE_NAME, pipelineName)
           .withCause(ex)
           .log("Failed to lock launcher");
       return false;
     }
   }
 
-  public boolean isLauncherLocked(String launcherName, String processName) {
-    return isLocked(processName, launcherName);
+  public boolean isLauncherLocked(String launcherName, String pipelineName) {
+    return isLocked(pipelineName, launcherName);
   }
 
-  public boolean unlockLauncher(String launcherName, String processName) {
+  public boolean unlockLauncher(String launcherName, String pipelineName) {
     try {
-      return unlock(getLauncherLock(launcherName, processName));
+      return unlock(getLauncherLock(launcherName, pipelineName));
     } catch (Exception ex) {
       log.atSevere()
           .with(LogKey.LAUNCHER_NAME, launcherName)
-          .with(LogKey.PROCESS_NAME, processName)
+          .with(LogKey.PIPELINE_NAME, pipelineName)
           .withCause(ex)
           .log("Failed to unlock launcher");
       return false;
     }
   }
 
-  public void purgeLauncherLocks(String launcherName, String processName) {
-    repository.deleteByLauncherNameAndProcessName(launcherName, processName);
+  public void purgeLauncherLocks(String launcherName, String pipelineName) {
+    repository.deleteByLauncherNameAndPipelineName(launcherName, pipelineName);
   }
 
-  public boolean lockProcess(String launcherName, String processName, String processId) {
+  public boolean lockProcess(String launcherName, String pipelineName, String processId) {
     try {
-      return lock(getProcessLock(launcherName, processName, processId));
+      return lock(getProcessLock(launcherName, pipelineName, processId));
     } catch (Exception ex) {
       log.atSevere()
           .with(LogKey.LAUNCHER_NAME, launcherName)
-          .with(LogKey.PROCESS_NAME, processName)
+          .with(LogKey.PIPELINE_NAME, pipelineName)
           .with(LogKey.PROCESS_ID, processId)
           .withCause(ex)
           .log("Failed to lock process launcher");
@@ -81,13 +81,13 @@ public class LockService {
     }
   }
 
-  public boolean unlockProcess(String launcherName, String processName, String processId) {
+  public boolean unlockProcess(String launcherName, String pipelineName, String processId) {
     try {
-      return unlock(getProcessLock(launcherName, processName, processId));
+      return unlock(getProcessLock(launcherName, pipelineName, processId));
     } catch (Exception ex) {
       log.atSevere()
           .with(LogKey.LAUNCHER_NAME, launcherName)
-          .with(LogKey.PROCESS_NAME, processName)
+          .with(LogKey.PIPELINE_NAME, pipelineName)
           .with(LogKey.PROCESS_ID, processId)
           .withCause(ex)
           .log("Failed to unlock process launcher");
@@ -95,49 +95,50 @@ public class LockService {
     }
   }
 
-  public boolean isProcessLocked(String processName, String processId) {
-    return isLocked(processName, processId);
+  public boolean isProcessLocked(String pipelineName, String processId) {
+    return isLocked(pipelineName, processId);
   }
 
-  public boolean isProcessLocked(String launcherName, String processName, String processId) {
-    return isLocked(launcherName, processName, processId);
+  public boolean isProcessLocked(String launcherName, String pipelineName, String processId) {
+    return isLocked(launcherName, pipelineName, processId);
   }
 
-  private static LockEntity getLauncherLock(String launcherName, String processName) {
-    return new LockEntity(launcherName, processName, launcherName);
+  private static LockEntity getLauncherLock(String launcherName, String pipelineName) {
+    return new LockEntity(launcherName, pipelineName, launcherName);
   }
 
   private static LockEntity getProcessLock(
-      String launcherName, String processName, String processId) {
-    return new LockEntity(launcherName, processName, processId);
+      String launcherName, String pipelineName, String processId) {
+    return new LockEntity(launcherName, pipelineName, processId);
   }
 
   private boolean lock(LockEntity lockEntity) {
-    if (isLocked(lockEntity.getProcessName(), lockEntity.getLockId())) {
+    if (isLocked(lockEntity.getPipelineName(), lockEntity.getLockId())) {
       return false;
     }
     repository.save(lockEntity);
     return true;
   }
 
-  private boolean isLocked(String processName, String lockId) {
-    return repository.findByProcessNameAndLockId(processName, lockId).isPresent();
+  private boolean isLocked(String pipelineName, String lockId) {
+    return repository.findByPipelineNameAndLockId(pipelineName, lockId).isPresent();
   }
 
-  private boolean isLocked(String launcherName, String processName, String lockId) {
+  private boolean isLocked(String launcherName, String pipelineName, String lockId) {
     return repository
-        .findByLauncherNameAndProcessNameAndLockId(launcherName, processName, lockId)
+        .findByLauncherNameAndPipelineNameAndLockId(launcherName, pipelineName, lockId)
         .isPresent();
   }
 
   private boolean unlock(LockEntity lockEntity) {
     Optional<LockEntity> activeLock =
-        repository.findByProcessNameAndLockId(lockEntity.getProcessName(), lockEntity.getLockId());
+        repository.findByPipelineNameAndLockId(
+            lockEntity.getPipelineName(), lockEntity.getLockId());
     if (activeLock.isPresent()) {
       if (!activeLock.get().getLauncherName().equals(lockEntity.getLauncherName())) {
         log.atSevere()
             .with(LogKey.LAUNCHER_NAME, lockEntity.getLauncherName())
-            .with(LogKey.PROCESS_NAME, lockEntity.getProcessName())
+            .with(LogKey.PIPELINE_NAME, lockEntity.getPipelineName())
             .with(LogKey.PROCESS_ID, lockEntity.getLockId())
             .log(
                 "Failed to unlock lock. Lock held by different launcher %s",

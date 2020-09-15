@@ -25,8 +25,8 @@ import lombok.NoArgsConstructor;
 public class ScheduleEntity {
 
   @Id
-  @Column(name = "PROCESS_NAME")
-  private String processName;
+  @Column(name = "PIPELINE_NAME")
+  private String pipelineName;
 
   @Column(name = "LAUNCHER_NAME", nullable = false)
   private String launcherName;

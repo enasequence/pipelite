@@ -26,7 +26,7 @@ public class ProcessConfiguration {
   public ProcessConfiguration() {}
 
   /** Name of the process begin executed. */
-  private String processName;
+  private String pipelineName;
 
   /**
    * Name of the the class that creates process instances. Must implement the ProjectFactory

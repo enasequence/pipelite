@@ -15,7 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import java.util.regex.Pattern;
 import lombok.extern.flogger.Flogger;
-import pipelite.executor.TaskExecutor;
+import pipelite.executor.StageExecutor;
 
 @Flogger
 public class Json {
@@ -60,9 +60,9 @@ public class Json {
     }
   }
 
-  public static TaskExecutor deserializeThrowIfError(String json, String className) {
+  public static StageExecutor deserializeThrowIfError(String json, String className) {
     try {
-      return (TaskExecutor) mapper.readValue(json, Class.forName(className));
+      return (StageExecutor) mapper.readValue(json, Class.forName(className));
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Failed to deserialize json");
       throw new RuntimeException(ex);

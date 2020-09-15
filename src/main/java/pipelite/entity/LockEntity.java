@@ -27,10 +27,9 @@ public class LockEntity {
   @Column(name = "ALLOCATOR_NAME")
   private String launcherName;
 
-  // TODO: change column name to PROCESS_NAME
   @Id
   @Column(name = "PIPELINE_NAME")
-  private String processName;
+  private String pipelineName;
 
   @Id
   @Column(name = "LOCK_ID")

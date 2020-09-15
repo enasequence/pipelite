@@ -21,5 +21,5 @@ import lombok.NoArgsConstructor;
 public class ProcessEntityId implements Serializable {
 
   private String processId;
-  private String processName;
+  private String pipelineName;
 }

@@ -18,7 +18,7 @@ public class UniqueStringGenerator {
     return id();
   }
 
-  public static String randomProcessName() {
+  public static String randomPipelineName() {
     return id();
   }
 
@@ -26,7 +26,7 @@ public class UniqueStringGenerator {
     return id();
   }
 
-  public static String randomTaskName() {
+  public static String randomStageName() {
     return id();
   }
 

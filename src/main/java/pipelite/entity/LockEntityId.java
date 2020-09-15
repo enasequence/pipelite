@@ -19,6 +19,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LockEntityId implements Serializable {
-  private String processName;
+  private String pipelineName;
   private String lockId;
 }

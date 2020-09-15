@@ -14,45 +14,45 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
-import pipelite.executor.SuccessTaskExecutor;
+import pipelite.executor.SuccessStageExecutor;
 import pipelite.process.builder.ProcessBuilder;
 
 public class ProcessBuilderTest {
 
-  private static final String PROCESS_NAME = UniqueStringGenerator.randomProcessName();
+  private static final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
   private static final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
 
   @Test
   public void test() {
-    String taskName1 = UniqueStringGenerator.randomTaskName();
-    String taskName2 = UniqueStringGenerator.randomTaskName();
-    String taskName3 = UniqueStringGenerator.randomTaskName();
-    String taskName4 = UniqueStringGenerator.randomTaskName();
+    String stageName1 = UniqueStringGenerator.randomStageName();
+    String stageName2 = UniqueStringGenerator.randomStageName();
+    String stageName3 = UniqueStringGenerator.randomStageName();
+    String stageName4 = UniqueStringGenerator.randomStageName();
 
     Process process =
-        new ProcessBuilder(PROCESS_NAME, PROCESS_ID, 9)
-            .task(taskName1)
-            .executor(new SuccessTaskExecutor())
-            .taskDependsOnPrevious(taskName2)
-            .executor(new SuccessTaskExecutor())
-            .taskDependsOnPrevious(taskName3)
-            .executor(new SuccessTaskExecutor())
-            .taskDependsOnFirst(taskName4)
-            .executor(new SuccessTaskExecutor())
+        new ProcessBuilder(PIPELINE_NAME, PROCESS_ID, 9)
+            .execute(stageName1)
+            .with(new SuccessStageExecutor())
+            .executeAfterPrevious(stageName2)
+            .with(new SuccessStageExecutor())
+            .executeAfterPrevious(stageName3)
+            .with(new SuccessStageExecutor())
+            .executeAfterFirst(stageName4)
+            .with(new SuccessStageExecutor())
             .build();
 
     assertThat(process).isNotNull();
-    assertThat(process.getProcessName()).isEqualTo(PROCESS_NAME);
+    assertThat(process.getPipelineName()).isEqualTo(PIPELINE_NAME);
     assertThat(process.getProcessId()).isEqualTo(PROCESS_ID);
     assertThat(process.getPriority()).isEqualTo(9);
-    assertThat(process.getTasks().get(0).getProcessName()).isEqualTo(PROCESS_NAME);
-    assertThat(process.getTasks().get(1).getProcessName()).isEqualTo(PROCESS_NAME);
-    assertThat(process.getTasks().get(0).getProcessId()).isEqualTo(PROCESS_ID);
-    assertThat(process.getTasks().get(1).getProcessId()).isEqualTo(PROCESS_ID);
-    assertThat(process.getTasks().get(0).getDependsOn()).isNull();
-    assertThat(process.getTasks().get(1).getDependsOn().getTaskName()).isEqualTo(taskName1);
-    assertThat(process.getTasks().get(2).getDependsOn().getTaskName()).isEqualTo(taskName2);
-    assertThat(process.getTasks().get(3).getDependsOn().getTaskName()).isEqualTo(taskName1);
-    assertThat(process.getTasks()).hasSize(4);
+    assertThat(process.getStages().get(0).getPipelineName()).isEqualTo(PIPELINE_NAME);
+    assertThat(process.getStages().get(1).getPipelineName()).isEqualTo(PIPELINE_NAME);
+    assertThat(process.getStages().get(0).getProcessId()).isEqualTo(PROCESS_ID);
+    assertThat(process.getStages().get(1).getProcessId()).isEqualTo(PROCESS_ID);
+    assertThat(process.getStages().get(0).getDependsOn()).isNull();
+    assertThat(process.getStages().get(1).getDependsOn().getStageName()).isEqualTo(stageName1);
+    assertThat(process.getStages().get(2).getDependsOn().getStageName()).isEqualTo(stageName2);
+    assertThat(process.getStages().get(3).getDependsOn().getStageName()).isEqualTo(stageName1);
+    assertThat(process.getStages()).hasSize(4);
   }
 }

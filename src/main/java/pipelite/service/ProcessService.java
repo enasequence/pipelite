@@ -31,27 +31,27 @@ public class ProcessService {
     this.repository = repository;
   }
 
-  public Optional<ProcessEntity> getSavedProcess(String processName, String processId) {
-    return repository.findById(new ProcessEntityId(processId, processName));
+  public Optional<ProcessEntity> getSavedProcess(String pipelineName, String processId) {
+    return repository.findById(new ProcessEntityId(processId, pipelineName));
   }
 
-  public List<ProcessEntity> getNewProcesses(String processName) {
-    return repository.findAllByProcessNameAndStateOrderByPriorityDesc(
-        processName, ProcessExecutionState.NEW);
+  public List<ProcessEntity> getNewProcesses(String pipelineName) {
+    return repository.findAllByPipelineNameAndStateOrderByPriorityDesc(
+        pipelineName, ProcessExecutionState.NEW);
   }
 
-  public List<ProcessEntity> getActiveProcesses(String processName) {
-    return repository.findAllByProcessNameAndStateOrderByPriorityDesc(
-        processName, ProcessExecutionState.ACTIVE);
+  public List<ProcessEntity> getActiveProcesses(String pipelineName) {
+    return repository.findAllByPipelineNameAndStateOrderByPriorityDesc(
+        pipelineName, ProcessExecutionState.ACTIVE);
   }
 
-  public List<ProcessEntity> getCompletedProcesses(String processName) {
-    return repository.findAllByProcessNameAndState(processName, ProcessExecutionState.COMPLETED);
+  public List<ProcessEntity> getCompletedProcesses(String pipelineName) {
+    return repository.findAllByPipelineNameAndState(pipelineName, ProcessExecutionState.COMPLETED);
   }
 
-  public List<ProcessEntity> getFailedProcesses(String processName) {
-    return repository.findAllByProcessNameAndStateOrderByPriorityDesc(
-        processName, ProcessExecutionState.FAILED);
+  public List<ProcessEntity> getFailedProcesses(String pipelineName) {
+    return repository.findAllByPipelineNameAndStateOrderByPriorityDesc(
+        pipelineName, ProcessExecutionState.FAILED);
   }
 
   public ProcessEntity saveProcess(ProcessEntity processEntity) {

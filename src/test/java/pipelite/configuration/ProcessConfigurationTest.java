@@ -20,7 +20,7 @@ import pipelite.EmptyTestConfiguration;
 
 @SpringBootTest(
     classes = EmptyTestConfiguration.class,
-    properties = {"pipelite.process.processName=TEST", "pipelite.process.processFactoryName=TEST"})
+    properties = {"pipelite.process.pipelineName=TEST", "pipelite.process.processFactoryName=TEST"})
 @EnableConfigurationProperties(value = {ProcessConfiguration.class})
 public class ProcessConfigurationTest {
 
@@ -28,7 +28,7 @@ public class ProcessConfigurationTest {
 
   @Test
   public void test() {
-    assertThat(config.getProcessName()).isEqualTo("TEST");
+    assertThat(config.getPipelineName()).isEqualTo("TEST");
     assertThat(config.getProcessFactoryName()).isEqualTo("TEST");
   }
 }

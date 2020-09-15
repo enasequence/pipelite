@@ -28,10 +28,9 @@ public class ProcessEntity {
   @Column(name = "PROCESS_ID")
   private String processId;
 
-  // TODO: change column name to PROCESS_NAME
   @Id
   @Column(name = "PIPELINE_NAME")
-  private String processName;
+  private String pipelineName;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "STATE", length = 15, nullable = false)
@@ -47,10 +46,10 @@ public class ProcessEntity {
     ++executionCount;
   }
 
-  public static ProcessEntity newExecution(String processId, String processName, int priority) {
+  public static ProcessEntity newExecution(String processId, String pipelineName, int priority) {
     ProcessEntity processEntity = new ProcessEntity();
     processEntity.setProcessId(processId);
-    processEntity.setProcessName(processName);
+    processEntity.setPipelineName(pipelineName);
     processEntity.setPriority(priority);
     processEntity.setExecutionCount(0);
     processEntity.setState(ProcessExecutionState.NEW);

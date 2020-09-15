@@ -18,26 +18,26 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import pipelite.log.LogKey;
-import pipelite.task.Task;
+import pipelite.stage.Stage;
 
 @Flogger
 @Value
 @Builder
 public class Process {
-  private final String processName;
+  private final String pipelineName;
   private final String processId;
   @EqualsAndHashCode.Exclude private final int priority;
-  @EqualsAndHashCode.Exclude private final List<Task> tasks;
+  @EqualsAndHashCode.Exclude private final List<Stage> stages;
 
   public enum ValidateMode {
-    WITH_TASKS,
-    WITHOUT_TASKS
+    WITH_STAGES,
+    WITHOUT_STAGES
   };
 
   public boolean validate(ValidateMode validateMode) {
     boolean isSuccess = true;
-    if (processName == null || processName.isEmpty()) {
-      logContext(log.atSevere()).log("Process name is missing");
+    if (pipelineName == null || pipelineName.isEmpty()) {
+      logContext(log.atSevere()).log("Pipeline name is missing");
       isSuccess = false;
     }
     if (processId == null || processId.isEmpty()) {
@@ -45,34 +45,34 @@ public class Process {
       isSuccess = false;
     }
 
-    if (validateMode == ValidateMode.WITHOUT_TASKS) {
+    if (validateMode == ValidateMode.WITHOUT_STAGES) {
       return isSuccess;
     }
 
-    if (tasks == null || tasks.isEmpty()) {
-      logContext(log.atSevere()).log("No tasks");
+    if (stages == null || stages.isEmpty()) {
+      logContext(log.atSevere()).log("No stages");
       isSuccess = false;
 
     } else {
-      HashSet<String> taskNames = new HashSet<>();
+      HashSet<String> stageNames = new HashSet<>();
 
-      for (Task task : tasks) {
-        if (!task.validate()) {
+      for (Stage stage : stages) {
+        if (!stage.validate()) {
           isSuccess = false;
         }
-        if (task.getProcessName() != null) {
-          if (!task.getProcessName().equals(processName)) {
+        if (stage.getPipelineName() != null) {
+          if (!stage.getPipelineName().equals(pipelineName)) {
             logContext(log.atSevere())
-                .log("Conflicting process name in task %s", task.getProcessName());
+                .log("Conflicting pipeline name in stage %s", stage.getPipelineName());
             isSuccess = false;
           }
         }
-        if (task.getTaskName() != null) {
-          if (taskNames.contains(task.getTaskName())) {
-            task.logContext(log.atSevere()).log("Duplicate task name: %s", task.getTaskName());
+        if (stage.getStageName() != null) {
+          if (stageNames.contains(stage.getStageName())) {
+            stage.logContext(log.atSevere()).log("Duplicate stage name: %s", stage.getStageName());
             isSuccess = false;
           }
-          taskNames.add(task.getTaskName());
+          stageNames.add(stage.getStageName());
         }
       }
     }
@@ -80,6 +80,6 @@ public class Process {
   }
 
   public FluentLogger.Api logContext(FluentLogger.Api log) {
-    return log.with(LogKey.PROCESS_NAME, processName).with(LogKey.PROCESS_ID, processId);
+    return log.with(LogKey.PIPELINE_NAME, pipelineName).with(LogKey.PROCESS_ID, processId);
   }
 }

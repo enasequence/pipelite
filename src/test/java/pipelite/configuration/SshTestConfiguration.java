@@ -14,7 +14,7 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Data
-@ConfigurationProperties(prefix = "pipelite.test.ssh")
+@ConfigurationProperties(prefix = "pipelite.test.singularity")
 public class SshTestConfiguration {
   private String host;
 }

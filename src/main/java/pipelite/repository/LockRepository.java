@@ -18,10 +18,10 @@ import pipelite.entity.LockEntityId;
 
 @Repository
 public interface LockRepository extends CrudRepository<LockEntity, LockEntityId> {
-  Optional<LockEntity> findByProcessNameAndLockId(String processName, String lockId);
+  Optional<LockEntity> findByPipelineNameAndLockId(String pipelineName, String lockId);
 
-  Optional<LockEntity> findByLauncherNameAndProcessNameAndLockId(
-      String launcherName, String processName, String lockId);
+  Optional<LockEntity> findByLauncherNameAndPipelineNameAndLockId(
+      String launcherName, String pipelineName, String lockId);
 
-  void deleteByLauncherNameAndProcessName(String launcherName, String processName);
+  void deleteByLauncherNameAndPipelineName(String launcherName, String pipelineName);
 }

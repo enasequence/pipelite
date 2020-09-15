@@ -16,21 +16,18 @@ import pipelite.process.ProcessFactory;
 
 public class TestInMemoryProcessFactory implements ProcessFactory {
 
-  private final Map<String, Process> processInstances = new HashMap<>();
+  private final Map<String, Process> processes = new HashMap<>();
 
   public TestInMemoryProcessFactory(Collection<Process> processes) {
-    processes.stream()
-        .forEach(
-            processInstance ->
-                this.processInstances.put(processInstance.getProcessId(), processInstance));
+    processes.stream().forEach(process -> this.processes.put(process.getProcessId(), process));
   }
 
   @Override
   public Process create(String processId) {
-    return processInstances.get(processId);
+    return processes.get(processId);
   }
 
-  public int getProcessInstances() {
-    return processInstances.size();
+  public int getprocesses() {
+    return processes.size();
   }
 }
