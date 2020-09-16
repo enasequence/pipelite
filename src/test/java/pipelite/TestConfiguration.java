@@ -11,15 +11,9 @@
 package pipelite;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.ComponentScan;
-import pipelite.configuration.LauncherConfiguration;
-import pipelite.configuration.ProcessConfiguration;
-import pipelite.configuration.StageConfiguration;
 
 @EnableAutoConfiguration
-@EnableConfigurationProperties(
-    value = {LauncherConfiguration.class, ProcessConfiguration.class, StageConfiguration.class})
 @ComponentScan(
     basePackages = {
       "pipelite.service",
@@ -27,4 +21,4 @@ import pipelite.configuration.StageConfiguration;
       "pipelite.repository",
       "pipelite.configuration"
     })
-public class FullTestConfiguration {}
+public class TestConfiguration {}

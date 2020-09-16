@@ -14,10 +14,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import pipelite.EmptyTestConfiguration;
+import pipelite.TestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.SingularityTestConfiguration;
 import pipelite.configuration.SshTestConfiguration;
@@ -26,9 +25,7 @@ import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
 import pipelite.stage.StageParameters;
 
-@SpringBootTest(classes = EmptyTestConfiguration.class)
-@EnableConfigurationProperties(
-    value = {SshTestConfiguration.class, SingularityTestConfiguration.class})
+@SpringBootTest(classes = TestConfiguration.class)
 @ActiveProfiles("test")
 public class SshCmdExecutorTest {
 

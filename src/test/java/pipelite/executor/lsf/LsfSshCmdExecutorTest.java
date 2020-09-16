@@ -15,10 +15,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import pipelite.EmptyTestConfiguration;
+import pipelite.TestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LsfTestConfiguration;
 import pipelite.executor.cmd.LsfSshCmdExecutor;
@@ -27,12 +26,11 @@ import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
 import pipelite.stage.StageParameters;
 
-@SpringBootTest(classes = EmptyTestConfiguration.class)
-@EnableConfigurationProperties(value = {LsfTestConfiguration.class})
+@SpringBootTest(classes = TestConfiguration.class)
 @ActiveProfiles("test")
 public class LsfSshCmdExecutorTest {
 
-  @Autowired LsfTestConfiguration testConfiguration;
+  @Autowired LsfTestConfiguration lsfTestConfiguration;
 
   @Test
   public void test() {
@@ -45,7 +43,7 @@ public class LsfSshCmdExecutorTest {
 
     StageParameters stageParameters =
         StageParameters.builder()
-            .host(testConfiguration.getHost())
+            .host(lsfTestConfiguration.getHost())
             .pollDelay(Duration.ofSeconds(5))
             .build();
 

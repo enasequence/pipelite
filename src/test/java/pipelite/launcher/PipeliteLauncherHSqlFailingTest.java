@@ -21,7 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import pipelite.FullTestConfiguration;
+import pipelite.TestConfiguration;
 import pipelite.TestInMemoryProcessFactory;
 import pipelite.TestInMemoryProcessSource;
 import pipelite.UniqueStringGenerator;
@@ -33,7 +33,7 @@ import pipelite.process.ProcessSource;
 import pipelite.process.builder.ProcessBuilder;
 
 @SpringBootTest(
-    classes = FullTestConfiguration.class,
+    classes = TestConfiguration.class,
     properties = {
       "pipelite.launcher.workers=5",
       "pipelite.launcher.processLaunchFrequency=250ms",

@@ -18,12 +18,12 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import pipelite.FullTestConfiguration;
+import pipelite.TestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfiguration;
 
 @SpringBootTest(
-    classes = FullTestConfiguration.class,
+    classes = TestConfiguration.class,
     properties = {
       "pipelite.launcher.workers=5",
       "pipelite.launcher.processLaunchFrequency=250ms",

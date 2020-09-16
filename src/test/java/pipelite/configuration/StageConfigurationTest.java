@@ -14,12 +14,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
-import pipelite.EmptyTestConfiguration;
+import pipelite.TestConfiguration;
 
 @SpringBootTest(
-    classes = EmptyTestConfiguration.class,
+    classes = TestConfiguration.class,
     properties = {
       "pipelite.stage.memory=1",
       "pipelite.stage.cores=1",
@@ -29,7 +28,6 @@ import pipelite.EmptyTestConfiguration;
       "pipelite.stage.tempdir=",
       "pipelite.stage.env=TEST1,TEST2"
     })
-@EnableConfigurationProperties(value = {StageConfiguration.class})
 public class StageConfigurationTest {
 
   @Autowired StageConfiguration config;

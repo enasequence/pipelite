@@ -14,14 +14,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
-import pipelite.EmptyTestConfiguration;
+import pipelite.TestConfiguration;
 
 @SpringBootTest(
-    classes = EmptyTestConfiguration.class,
+    classes = TestConfiguration.class,
     properties = {"pipelite.process.pipelineName=TEST", "pipelite.process.processFactoryName=TEST"})
-@EnableConfigurationProperties(value = {ProcessConfiguration.class})
 public class ProcessConfigurationTest {
 
   @Autowired ProcessConfiguration config;

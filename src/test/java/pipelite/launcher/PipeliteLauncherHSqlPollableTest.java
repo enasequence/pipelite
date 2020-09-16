@@ -19,7 +19,7 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import pipelite.FullTestConfiguration;
+import pipelite.TestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
@@ -29,7 +29,7 @@ import pipelite.service.ProcessService;
 import pipelite.service.StageService;
 
 @SpringBootTest(
-    classes = FullTestConfiguration.class,
+    classes = TestConfiguration.class,
     properties = {
       "pipelite.launcher.workers=2",
       "pipelite.launcher.processLaunchFrequency=250ms",

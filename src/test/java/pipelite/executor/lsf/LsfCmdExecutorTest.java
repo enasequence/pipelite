@@ -20,26 +20,21 @@ import java.nio.file.Files;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import pipelite.EmptyTestConfiguration;
+import pipelite.TestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LsfTestConfiguration;
 import pipelite.executor.SuccessStageExecutor;
-import pipelite.executor.cmd.LocalCmdExecutor;
 import pipelite.executor.cmd.LsfCmdExecutor;
-import pipelite.executor.cmd.SshCmdExecutor;
 import pipelite.executor.cmd.runner.CmdRunner;
 import pipelite.executor.cmd.runner.CmdRunnerResult;
 import pipelite.executor.cmd.runner.LocalCmdRunner;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
-import pipelite.stage.StageExecutionResultType;
 import pipelite.stage.StageParameters;
 
-@SpringBootTest(classes = EmptyTestConfiguration.class)
-@EnableConfigurationProperties(value = {LsfTestConfiguration.class})
+@SpringBootTest(classes = TestConfiguration.class)
 @ActiveProfiles("test")
 public class LsfCmdExecutorTest {
 
