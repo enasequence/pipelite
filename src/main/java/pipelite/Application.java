@@ -11,56 +11,50 @@
 package pipelite;
 
 import lombok.extern.flogger.Flogger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import pipelite.launcher.PipeliteLauncher;
-import pipelite.launcher.PipeliteScheduler;
-import pipelite.launcher.ServerManager;
+import picocli.CommandLine;
 
-@Flogger
-@SpringBootApplication
-public class Application implements CommandLineRunner {
+@CommandLine.Command(mixinStandardHelpOptions = true)
+public class Application {
 
-  @Autowired PipeliteLauncher pipeliteLauncher;
-  @Autowired PipeliteScheduler pipeliteScheduler;
+  @CommandLine.ArgGroup(multiplicity = "1")
+  Mode mode;
 
-  private static final String LAUNCHER = "LAUNCHER";
-  private static final String SCHEDULER = "SCHEDULER";
+  private static class Mode {
+    @CommandLine.Option(
+        names = {"-l", "-launcher"},
+        description = "Run the pipelite launcher")
+    boolean launcher;
+
+    @CommandLine.Option(
+        names = {"-s", "-scheduler"},
+        description = "Run the pipelite scheduler")
+    boolean scheduler;
+  }
 
   public static void main(String[] args) {
-    SpringApplication.run(Application.class, args);
-  }
-
-  @Override
-  public void run(String... args) {
-    if (args.length == 0
-        || !(args[0].equalsIgnoreCase(LAUNCHER) && args[0].equalsIgnoreCase(SCHEDULER))) {
-      throw new RuntimeException(
-          "Please provide either 'LAUNCHER' or 'SCHEDULER' as the first command line argument");
-    }
-
     try {
-      switch (args[0]) {
-        case LAUNCHER:
-          launcher();
-          break;
-        case SCHEDULER:
-          scheduler();
-          break;
-      }
+      System.exit(_main(args, true));
     } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Uncaught exception");
-      throw ex;
+      ex.printStackTrace();
+      System.exit(1);
     }
   }
 
-  private void launcher() {
-    ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
-  }
-
-  private void scheduler() {
-    ServerManager.run(pipeliteScheduler, pipeliteScheduler.serviceName());
+  public static int _main(String[] args, boolean run) {
+    Application app = new Application();
+    try {
+      new CommandLine(app).parseArgs(args);
+    } catch (Exception ex) {
+      System.out.println(ex.getMessage());
+      return 1;
+    }
+    if (run) {
+      if (app.mode.launcher) {
+        new PipeliteLauncherRunner().run();
+      } else {
+        new PipeliteSchedulerRunner().run();
+      }
+    }
+    return 0;
   }
 }

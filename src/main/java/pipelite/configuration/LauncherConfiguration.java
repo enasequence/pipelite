@@ -15,6 +15,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
 import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.PipeliteScheduler;
 import pipelite.launcher.ProcessLauncher;
@@ -22,6 +23,7 @@ import pipelite.launcher.ProcessLauncher;
 @Data
 @Builder
 @AllArgsConstructor
+@Configuration
 @ConfigurationProperties(prefix = "pipelite.launcher")
 public class LauncherConfiguration {
 

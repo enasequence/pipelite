@@ -14,12 +14,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
 
 @Data
 @Builder
 @AllArgsConstructor
+@Configuration
 @ConfigurationProperties(prefix = "pipelite.process", ignoreInvalidFields = true)
 public class ProcessConfiguration {
 

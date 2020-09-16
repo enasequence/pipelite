@@ -15,11 +15,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
 import pipelite.stage.ConfigurableStageParameters;
 
 @Data
 @Builder
 @AllArgsConstructor
+@Configuration
 @ConfigurationProperties(prefix = "pipelite.stage", ignoreInvalidFields = true)
 /** Some configuration parameters are supported only by specific executors. */
 public class StageConfiguration implements ConfigurableStageParameters {
