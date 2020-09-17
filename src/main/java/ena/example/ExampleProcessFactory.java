@@ -8,7 +8,7 @@ import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 
 public class ExampleProcessFactory implements ProcessFactory {
-  private static final String PROCESS_NAME = "exampleProcess";
+  private static final String PIPELINE_NAME = "exampleProcess";
 
   public static class TestExecutor implements StageExecutor {
     @Override
@@ -21,7 +21,7 @@ public class ExampleProcessFactory implements ProcessFactory {
 
   @Override
   public Process create(String processId) {
-    return new ProcessBuilder(PROCESS_NAME, processId, 9)
+    return new ProcessBuilder(PIPELINE_NAME, processId, 9)
         .execute("STAGE1")
         .with(new TestExecutor())
         .executeAfterPrevious("STAGE2")
