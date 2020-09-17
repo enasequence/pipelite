@@ -10,29 +10,19 @@
  */
 package pipelite;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
-import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.PipeliteScheduler;
 import pipelite.launcher.ServerManager;
-
-import javax.annotation.PostConstruct;
 
 @SpringBootApplication
 public class PipeliteSchedulerRunner {
 
-  @Autowired private PipeliteScheduler pipeliteScheduler;
-
-  public static PipeliteScheduler run() {
+  public static void run() {
     ConfigurableApplicationContext context =
         SpringApplication.run(PipeliteSchedulerRunner.class, new String[] {});
-    return context.getBean(PipeliteScheduler.class);
-  }
-
-  @PostConstruct
-  public void init() {
+    PipeliteScheduler pipeliteScheduler = context.getBean(PipeliteScheduler.class);
     ServerManager.run(pipeliteScheduler, pipeliteScheduler.serviceName());
   }
 }

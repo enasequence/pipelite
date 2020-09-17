@@ -11,15 +11,21 @@
 package pipelite.configuration;
 
 import java.time.Duration;
+import java.util.HashSet;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.flogger.Flogger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.PipeliteScheduler;
 import pipelite.launcher.ProcessLauncher;
+import pipelite.process.Process;
+import pipelite.stage.Stage;
 
+@Flogger
 @Data
 @Builder
 @AllArgsConstructor
@@ -52,4 +58,16 @@ public class LauncherConfiguration {
   @Builder.Default
   private Duration processSchedulingFrequency =
       PipeliteScheduler.DEFAULT_PROCESS_SCHEDULING_FREQUENCY;
+
+  /** Stops the PipeliteLauncher if it is idle. */
+  private boolean shutdownIfIdle;
+
+  public boolean validate() {
+    boolean isSuccess = true;
+    if (launcherName == null || launcherName.isEmpty()) {
+      (log.atSevere()).log("Launcher name is missing");
+      isSuccess = false;
+    }
+    return isSuccess;
+  }
 }

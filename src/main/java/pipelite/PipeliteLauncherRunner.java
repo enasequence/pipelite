@@ -10,28 +10,19 @@
  */
 package pipelite;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.ServerManager;
 
-import javax.annotation.PostConstruct;
-
 @SpringBootApplication
 public class PipeliteLauncherRunner {
 
-  @Autowired private PipeliteLauncher pipeliteLauncher;
-
-  public static PipeliteLauncher run() {
+  public static void run() {
     ConfigurableApplicationContext context =
         SpringApplication.run(PipeliteLauncherRunner.class, new String[] {});
-    return context.getBean(PipeliteLauncher.class);
-  }
-
-  @PostConstruct
-  public void init() {
+    PipeliteLauncher pipeliteLauncher = context.getBean(PipeliteLauncher.class);
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
   }
 }

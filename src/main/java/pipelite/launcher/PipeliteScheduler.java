@@ -83,6 +83,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
       @Autowired ProcessService processService,
       @Autowired StageService stageService,
       @Autowired LockService lockService) {
+    launcherConfiguration.validate();
     this.launcherConfiguration = launcherConfiguration;
     this.stageConfiguration = stageConfiguration;
     this.scheduleService = scheduleService;

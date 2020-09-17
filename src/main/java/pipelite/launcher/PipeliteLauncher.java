@@ -85,6 +85,14 @@ public class PipeliteLauncher extends AbstractScheduledService {
       @Autowired ProcessService processService,
       @Autowired StageService stageService,
       @Autowired LockService lockService) {
+    if (!launcherConfiguration.validate()) {
+      throw new IllegalArgumentException("Invalid launcher configuration");
+    }
+    if (processConfiguration.getPipelineName() == null
+        || processConfiguration.getPipelineName().isEmpty()) {
+      throw new IllegalArgumentException("Process name is missing");
+    }
+
     this.launcherConfiguration = launcherConfiguration;
     this.processConfiguration = processConfiguration;
     this.stageConfiguration = stageConfiguration;
@@ -112,6 +120,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
     } else {
       this.processPrioritizationFrequency = DEFAULT_PROCESS_PRIORITIZATION_FREQUENCY;
     }
+
+    this.shutdownIfIdle = launcherConfiguration.isShutdownIfIdle();
   }
 
   @Override
