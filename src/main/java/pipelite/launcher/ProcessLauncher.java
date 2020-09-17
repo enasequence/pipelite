@@ -10,6 +10,7 @@
  */
 package pipelite.launcher;
 
+import static pipelite.stage.ConfigurableStageParameters.DEFAULT_RETRIES;
 import static pipelite.stage.StageExecutionResultType.*;
 
 import com.google.common.flogger.FluentLogger;
@@ -163,12 +164,13 @@ public class ProcessLauncher implements Runnable {
         return ProcessExecutionState.ACTIVE;
       } else {
         Integer executionCount = stageAndStageEntity.getStageEntity().getExecutionCount();
-        Integer retries = stageAndStageEntity.getStage().getStageParameters().getRetries();
 
-        if (resultType == ERROR
-            && executionCount != null
-            && retries != null
-            && executionCount >= retries) {
+        int retries = DEFAULT_RETRIES;
+        if (stageAndStageEntity.getStage().getStageParameters().getRetries() != null) {
+          retries = stageAndStageEntity.getStage().getStageParameters().getRetries();
+        }
+
+        if (resultType == ERROR && executionCount != null && executionCount >= retries) {
           return ProcessExecutionState.FAILED;
         }
       }

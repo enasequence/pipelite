@@ -20,13 +20,37 @@ import pipelite.stage.ConfigurableStageParameters;
 
 @Data
 @Builder
-@AllArgsConstructor
 @Configuration
 @ConfigurationProperties(prefix = "pipelite.stage", ignoreInvalidFields = true)
 /** Some configuration parameters are supported only by specific executors. */
 public class StageConfiguration implements ConfigurableStageParameters {
 
   public StageConfiguration() {}
+
+  public StageConfiguration(
+      String host,
+      Duration timeout,
+      Integer memory,
+      Duration memoryTimeout,
+      Integer cores,
+      String queue,
+      Integer retries,
+      String workDir,
+      String[] env,
+      Duration pollDelay,
+      String singularityImage) {
+    this.host = host;
+    this.timeout = timeout != null ? timeout : DEFAULT_TIMEOUT;
+    this.memory = memory;
+    this.memoryTimeout = memoryTimeout;
+    this.cores = cores;
+    this.queue = queue;
+    this.retries = retries != null ? retries : DEFAULT_RETRIES;
+    this.workDir = workDir;
+    this.env = env;
+    this.pollDelay = pollDelay != null ? pollDelay : DEFAULT_POLL_DELAY;
+    this.singularityImage = singularityImage;
+  }
 
   /** Remote host. */
   private String host;
