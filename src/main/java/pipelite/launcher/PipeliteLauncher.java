@@ -52,7 +52,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private final ProcessLocker processLocker;
   private final ExecutorService executorService;
   private final int workers;
-  private ProcessFactory processFactory;
+  private final ProcessFactory processFactory;
   private ProcessSource processSource;
 
   private final AtomicInteger processFailedToCreateCount = new AtomicInteger(0);
@@ -88,10 +88,6 @@ public class PipeliteLauncher extends AbstractScheduledService {
     if (!launcherConfiguration.validate()) {
       throw new IllegalArgumentException("Invalid launcher configuration");
     }
-    if (processConfiguration.getPipelineName() == null
-        || processConfiguration.getPipelineName().isEmpty()) {
-      throw new IllegalArgumentException("Process name is missing");
-    }
 
     this.launcherConfiguration = launcherConfiguration;
     this.processConfiguration = processConfiguration;
@@ -122,6 +118,19 @@ public class PipeliteLauncher extends AbstractScheduledService {
     }
 
     this.shutdownIfIdle = launcherConfiguration.isShutdownIfIdle();
+
+    this.processFactory = ProcessConfiguration.getProcessFactory(processConfiguration);
+    if (processFactory == null) {
+      throw new IllegalArgumentException("Missing process factory");
+    }
+    if (processFactory.getPipelineName() == null) {
+      throw new IllegalArgumentException("Missing process factory pipeline name");
+    }
+    if (processConfiguration.isProcessSource()) {
+      this.processSource = ProcessConfiguration.getProcessSource(processConfiguration);
+    } else {
+      this.processSource = null;
+    }
   }
 
   @Override
@@ -135,11 +144,6 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
     if (!launcherLocker.lock()) {
       throw new RuntimeException("Could not start launcher");
-    }
-
-    processFactory = ProcessConfiguration.getProcessFactory(processConfiguration);
-    if (processConfiguration.isProcessSource()) {
-      processSource = ProcessConfiguration.getProcessSource(processConfiguration);
     }
   }
 
@@ -346,7 +350,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
   }
 
   public String getPipelineName() {
-    return processConfiguration.getPipelineName();
+    return processFactory.getPipelineName();
   }
 
   public int getActiveProcessCount() {

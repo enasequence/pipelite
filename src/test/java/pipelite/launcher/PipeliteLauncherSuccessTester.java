@@ -17,6 +17,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import pipelite.TestInMemoryProcessFactory;
 import pipelite.TestInMemoryProcessSource;
 import pipelite.UniqueStringGenerator;
@@ -29,9 +31,10 @@ import pipelite.stage.StageExecutionResult;
 @AllArgsConstructor
 public class PipeliteLauncherSuccessTester {
 
-  private final PipeliteLauncher pipeliteLauncher;
+  private final ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
   private final ProcessConfiguration processConfiguration;
 
+  private static final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
   private final AtomicInteger processExecutionCount = new AtomicInteger();
   private final Set<String> processExecutionSet = ConcurrentHashMap.newKeySet();
   private final Set<String> processExcessExecutionSet = ConcurrentHashMap.newKeySet();
@@ -58,10 +61,9 @@ public class PipeliteLauncherSuccessTester {
   private List<Process> createProcesses() {
     List<Process> processes = new ArrayList<>();
     for (int i = 0; i < PROCESS_COUNT; ++i) {
-      String pipelineName = pipeliteLauncher.getPipelineName();
       String processId = "Process" + i;
       processes.add(
-          new ProcessBuilder(pipelineName, processId, 9)
+          new ProcessBuilder(PIPELINE_NAME, processId, 9)
               .execute(UniqueStringGenerator.randomStageName())
               .with(createStageExecutor(processId))
               .build());
@@ -70,11 +72,11 @@ public class PipeliteLauncherSuccessTester {
   }
 
   public void test() {
-
     List<Process> processes = createProcesses();
-    processConfiguration.setProcessFactory(new TestInMemoryProcessFactory(processes));
+    processConfiguration.setProcessFactory(
+        new TestInMemoryProcessFactory(PIPELINE_NAME, processes));
     processConfiguration.setProcessSource(new TestInMemoryProcessSource(processes));
-
+    PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
     pipeliteLauncher.setShutdownIfIdle(true);
 
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());

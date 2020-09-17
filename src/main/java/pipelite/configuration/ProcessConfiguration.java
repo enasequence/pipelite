@@ -27,9 +27,6 @@ public class ProcessConfiguration {
 
   public ProcessConfiguration() {}
 
-  /** Name of the process begin executed. */
-  private String pipelineName;
-
   /**
    * Name of the ProcessFactory class that creates processes for execution given a process id.
    * A Process is uniquely identified by the process id and contains execution instructions

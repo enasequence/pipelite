@@ -11,6 +11,7 @@
 package pipelite.launcher;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.util.TestPropertyValues;
@@ -33,7 +34,7 @@ import pipelite.configuration.ProcessConfiguration;
 @ActiveProfiles(value = {"oracle-test"})
 public class PipeliteLauncherOracleSuccessTest {
 
-  @Autowired private PipeliteLauncher pipeliteLauncher;
+  @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
   @Autowired private ProcessConfiguration processConfiguration;
 
   public static class TestContextInitializer
@@ -50,7 +51,7 @@ public class PipeliteLauncherOracleSuccessTest {
   @Test
   public void test() {
     PipeliteLauncherSuccessTester tester =
-        new PipeliteLauncherSuccessTester(pipeliteLauncher, processConfiguration);
+        new PipeliteLauncherSuccessTester(pipeliteLauncherObjectProvider, processConfiguration);
     tester.test();
   }
 }

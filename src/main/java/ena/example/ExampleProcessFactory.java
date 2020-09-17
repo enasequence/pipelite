@@ -8,6 +8,7 @@ import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 
 public class ExampleProcessFactory implements ProcessFactory {
+
   private static final String PIPELINE_NAME = "exampleProcess";
 
   public static class TestExecutor implements StageExecutor {
@@ -17,6 +18,11 @@ public class ExampleProcessFactory implements ProcessFactory {
           "running stage " + stage.getStageName() + " for id " + stage.getProcessId());
       return StageExecutionResult.success();
     }
+  }
+
+  @Override
+  public String getPipelineName() {
+    return PIPELINE_NAME;
   }
 
   @Override

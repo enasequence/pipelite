@@ -51,17 +51,17 @@ public class PipeliteLauncherHSqlFailingTest {
   private static final int PROCESS_CNT = 5;
 
   private PipeliteLauncher init(List<Process> processes, ProcessSource processSource) {
-    PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
-    TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processes);
+    TestInMemoryProcessFactory processFactory =
+        new TestInMemoryProcessFactory(PIPELINE_NAME, processes);
     processConfiguration.setProcessFactory(processFactory);
     processConfiguration.setProcessSource(processSource);
+    PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
     pipeliteLauncher.setShutdownIfIdle(true);
     return pipeliteLauncher;
   }
 
   @Test
   public void testFirstStageFails() {
-    processConfiguration.setPipelineName(PIPELINE_NAME);
 
     List<Process> processes = new ArrayList<>();
     IntStream.range(0, PROCESS_CNT)
@@ -97,7 +97,6 @@ public class PipeliteLauncherHSqlFailingTest {
 
   @Test
   public void testSecondStageFails() {
-    processConfiguration.setPipelineName(PIPELINE_NAME);
 
     List<Process> processes = new ArrayList<>();
     IntStream.range(0, PROCESS_CNT)
@@ -133,7 +132,6 @@ public class PipeliteLauncherHSqlFailingTest {
 
   @Test
   public void testThirdStageFails() {
-    processConfiguration.setPipelineName(PIPELINE_NAME);
 
     List<Process> processes = new ArrayList<>();
     IntStream.range(0, PROCESS_CNT)
@@ -169,7 +167,6 @@ public class PipeliteLauncherHSqlFailingTest {
 
   @Test
   public void testFourthStageFails() {
-    processConfiguration.setPipelineName(PIPELINE_NAME);
 
     List<Process> processes = new ArrayList<>();
     IntStream.range(0, PROCESS_CNT)
@@ -205,7 +202,6 @@ public class PipeliteLauncherHSqlFailingTest {
 
   @Test
   public void testNoStageFails() {
-    processConfiguration.setPipelineName(PIPELINE_NAME);
 
     List<Process> processes = new ArrayList<>();
     IntStream.range(0, PROCESS_CNT)

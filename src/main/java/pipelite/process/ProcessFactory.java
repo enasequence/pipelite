@@ -11,6 +11,9 @@
 package pipelite.process;
 
 public interface ProcessFactory {
+
+  String getPipelineName();
+
   Process create(String processId);
 
   static ProcessFactory getProcessFactory(String processFactoryName) {

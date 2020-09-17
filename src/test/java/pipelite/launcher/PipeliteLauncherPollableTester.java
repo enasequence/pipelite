@@ -161,8 +161,8 @@ public class PipeliteLauncherPollableTester {
   private void init(ProcessExecutionState processExecutionState, StageExecutor stageExecutor) {
     List<Process> processes = new ArrayList<>();
 
+    String pipelineName = UniqueStringGenerator.randomPipelineName();
     for (int i = 0; i < PROCESS_CNT; ++i) {
-      String pipelineName = processConfiguration.getPipelineName();
       String processId = UniqueStringGenerator.randomProcessId();
       String stageName = UniqueStringGenerator.randomStageName();
       ProcessEntity processEntity = ProcessEntity.newExecution(processId, pipelineName, 1);
@@ -182,7 +182,8 @@ public class PipeliteLauncherPollableTester {
       stageService.saveStage(stageEntity);
     }
 
-    TestInMemoryProcessFactory processFactory = new TestInMemoryProcessFactory(processes);
+    TestInMemoryProcessFactory processFactory =
+        new TestInMemoryProcessFactory(pipelineName, processes);
     processConfiguration.setProcessFactory(processFactory);
   }
 
