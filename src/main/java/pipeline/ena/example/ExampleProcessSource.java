@@ -1,4 +1,4 @@
-package ena.example;
+package pipeline.ena.example;
 
 import pipelite.process.ProcessSource;
 
@@ -10,16 +10,15 @@ public class ExampleProcessSource implements ProcessSource {
   private final List<String> ids =
       new ArrayList<String>() {
         {
-          add("ID001");
-          add("ID002");
-          add("ID003");
-          add("ID004");
-          add("ID005");
-          add("ID006");
-          add("ID007");
-          add("ID008");
-          add("ID009");
-          add("ID005");
+          add("ID1");
+          add("ID2");
+          add("ID3");
+          add("ID4");
+          add("ID5");
+          add("ID6");
+          add("ID7");
+          add("ID8");
+          add("ID9");
         }
       };
   private int current = 0;

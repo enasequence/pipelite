@@ -36,15 +36,6 @@ lombok {
     config['lombok.anyConstructor.addConstructorProperties'] = 'true'
 }
 
-task customFatJar(type: Jar) {
-    manifest {
-        attributes 'Main-Class': 'com.baeldung.fatjar.Application'
-    }
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
-}
-
-
 repositories {
     mavenLocal()
     maven {
@@ -71,6 +62,7 @@ dependencies {
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
     }
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.7.0'
 
     implementation group: 'com.google.guava', name: 'guava', version: '29.0-jre'
     implementation group: 'com.google.flogger', name: 'flogger', version: '0.5.1'
@@ -85,8 +77,6 @@ dependencies {
 
     testImplementation group: 'org.assertj', name: 'assertj-core', version: '3.16.1'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.3.1'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
     testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.5.0'
 
     implementation(group: 'com.oracle', name: 'ojdbc8', version: '12.2.0.1.0')

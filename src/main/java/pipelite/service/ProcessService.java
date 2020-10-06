@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ProcessEntityId;
-import pipelite.process.ProcessExecutionState;
+import pipelite.process.ProcessState;
 import pipelite.repository.ProcessRepository;
 
 @Service
@@ -37,21 +37,21 @@ public class ProcessService {
 
   public List<ProcessEntity> getNewProcesses(String pipelineName) {
     return repository.findAllByPipelineNameAndStateOrderByPriorityDesc(
-        pipelineName, ProcessExecutionState.NEW);
+        pipelineName, ProcessState.NEW);
   }
 
   public List<ProcessEntity> getActiveProcesses(String pipelineName) {
     return repository.findAllByPipelineNameAndStateOrderByPriorityDesc(
-        pipelineName, ProcessExecutionState.ACTIVE);
+        pipelineName, ProcessState.ACTIVE);
   }
 
   public List<ProcessEntity> getCompletedProcesses(String pipelineName) {
-    return repository.findAllByPipelineNameAndState(pipelineName, ProcessExecutionState.COMPLETED);
+    return repository.findAllByPipelineNameAndState(pipelineName, ProcessState.COMPLETED);
   }
 
   public List<ProcessEntity> getFailedProcesses(String pipelineName) {
     return repository.findAllByPipelineNameAndStateOrderByPriorityDesc(
-        pipelineName, ProcessExecutionState.FAILED);
+        pipelineName, ProcessState.FAILED);
   }
 
   public ProcessEntity saveProcess(ProcessEntity processEntity) {

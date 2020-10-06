@@ -33,7 +33,7 @@ import pipelite.executor.StageExecutor;
 import pipelite.launcher.dependency.DependencyResolver;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
-import pipelite.process.ProcessExecutionState;
+import pipelite.process.ProcessState;
 import pipelite.service.ProcessService;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
@@ -152,7 +152,7 @@ public class ProcessLauncher implements Runnable {
     }
   }
 
-  private ProcessExecutionState evaluateProcessExecutionState() {
+  private ProcessState evaluateProcessState() {
     int successCount = 0;
     for (StageAndStageEntity stageAndStageEntity : stageAndStageEntities) {
 
@@ -161,7 +161,7 @@ public class ProcessLauncher implements Runnable {
       if (resultType == SUCCESS) {
         successCount++;
       } else if (resultType == null || resultType == ACTIVE) {
-        return ProcessExecutionState.ACTIVE;
+        return ProcessState.ACTIVE;
       } else {
         Integer executionCount = stageAndStageEntity.getStageEntity().getExecutionCount();
 
@@ -171,16 +171,16 @@ public class ProcessLauncher implements Runnable {
         }
 
         if (resultType == ERROR && executionCount != null && executionCount >= retries) {
-          return ProcessExecutionState.FAILED;
+          return ProcessState.FAILED;
         }
       }
     }
 
     if (successCount == stageAndStageEntities.size()) {
-      return ProcessExecutionState.COMPLETED;
+      return ProcessState.COMPLETED;
     }
 
-    return ProcessExecutionState.ACTIVE;
+    return ProcessState.ACTIVE;
   }
 
   private void executeStages() {
@@ -241,7 +241,7 @@ public class ProcessLauncher implements Runnable {
 
     logContext(log.atInfo()).log("Saving process");
 
-    processEntity.setState(evaluateProcessExecutionState());
+    processEntity.setState(evaluateProcessState());
     processEntity.incrementExecutionCount();
 
     processService.saveProcess(processEntity);

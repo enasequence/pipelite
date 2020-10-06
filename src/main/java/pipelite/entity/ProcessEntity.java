@@ -14,7 +14,7 @@ import javax.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import pipelite.process.ProcessExecutionState;
+import pipelite.process.ProcessState;
 
 @Entity
 @Table(name = "PIPELITE_PROCESS")
@@ -34,7 +34,7 @@ public class ProcessEntity {
 
   @Enumerated(EnumType.STRING)
   @Column(name = "STATE", length = 15, nullable = false)
-  private ProcessExecutionState state;
+  private ProcessState state;
 
   @Column(name = "EXEC_CNT", nullable = false)
   private Integer executionCount = 0;
@@ -52,7 +52,7 @@ public class ProcessEntity {
     processEntity.setPipelineName(pipelineName);
     processEntity.setPriority(priority);
     processEntity.setExecutionCount(0);
-    processEntity.setState(ProcessExecutionState.NEW);
+    processEntity.setState(ProcessState.NEW);
     return processEntity;
   }
 }

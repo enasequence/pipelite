@@ -26,7 +26,7 @@ import pipelite.entity.StageEntity;
 import pipelite.executor.PollableExecutor;
 import pipelite.executor.StageExecutor;
 import pipelite.process.Process;
-import pipelite.process.ProcessExecutionState;
+import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.LockService;
 import pipelite.service.ProcessService;
@@ -158,7 +158,7 @@ public class PipeliteLauncherPollableTester {
     }
   }
 
-  private void init(ProcessExecutionState processExecutionState, StageExecutor stageExecutor) {
+  private void init(ProcessState processState, StageExecutor stageExecutor) {
     List<Process> processes = new ArrayList<>();
 
     String pipelineName = UniqueStringGenerator.randomPipelineName();
@@ -166,7 +166,7 @@ public class PipeliteLauncherPollableTester {
       String processId = UniqueStringGenerator.randomProcessId();
       String stageName = UniqueStringGenerator.randomStageName();
       ProcessEntity processEntity = ProcessEntity.newExecution(processId, pipelineName, 1);
-      processEntity.setState(processExecutionState);
+      processEntity.setState(processState);
       processService.saveProcess(processEntity);
 
       Process process =
@@ -188,7 +188,7 @@ public class PipeliteLauncherPollableTester {
   }
 
   public void testPollSuccessExecuteSuccess() {
-    init(ProcessExecutionState.ACTIVE, new PollSuccessExecuteSuccessStageExecutor());
+    init(ProcessState.ACTIVE, new PollSuccessExecuteSuccessStageExecutor());
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
@@ -200,7 +200,7 @@ public class PipeliteLauncherPollableTester {
   }
 
   public void testPollErrorExecuteSuccess() {
-    init(ProcessExecutionState.ACTIVE, new PollErrorExecuteSuccessStageExecutor());
+    init(ProcessState.ACTIVE, new PollErrorExecuteSuccessStageExecutor());
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
@@ -212,7 +212,7 @@ public class PipeliteLauncherPollableTester {
   }
 
   public void testPollErrorExecuteError() {
-    init(ProcessExecutionState.ACTIVE, new PollErrorExecuteErrorStageExecutor());
+    init(ProcessState.ACTIVE, new PollErrorExecuteErrorStageExecutor());
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
@@ -224,7 +224,7 @@ public class PipeliteLauncherPollableTester {
   }
 
   public void testPollExceptionExecuteSuccess() {
-    init(ProcessExecutionState.ACTIVE, new PollExceptionExecuteSuccessStageExecutor());
+    init(ProcessState.ACTIVE, new PollExceptionExecuteSuccessStageExecutor());
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
@@ -236,7 +236,7 @@ public class PipeliteLauncherPollableTester {
   }
 
   public void testPollExceptionExecuteError() {
-    init(ProcessExecutionState.ACTIVE, new PollExceptionExecuteErrorStageExecutor());
+    init(ProcessState.ACTIVE, new PollExceptionExecuteErrorStageExecutor());
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());

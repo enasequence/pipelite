@@ -15,14 +15,14 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ProcessEntityId;
-import pipelite.process.ProcessExecutionState;
+import pipelite.process.ProcessState;
 
 @Repository
 public interface ProcessRepository extends CrudRepository<ProcessEntity, ProcessEntityId> {
 
   List<ProcessEntity> findAllByPipelineNameAndState(
-      String pipelineName, ProcessExecutionState state);
+      String pipelineName, ProcessState state);
 
   List<ProcessEntity> findAllByPipelineNameAndStateOrderByPriorityDesc(
-      String pipelineName, ProcessExecutionState state);
+      String pipelineName, ProcessState state);
 }

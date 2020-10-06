@@ -1,4 +1,4 @@
-package ena.example;
+package pipeline.ena.example;
 
 import pipelite.executor.StageExecutor;
 import pipelite.process.ProcessFactory;
@@ -9,7 +9,7 @@ import pipelite.stage.StageExecutionResult;
 
 public class ExampleProcessFactory implements ProcessFactory {
 
-  private static final String PIPELINE_NAME = "exampleProcess";
+  private static final String PIPELINE_NAME = "example";
 
   public static class TestExecutor implements StageExecutor {
     @Override

@@ -8,31 +8,13 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.entity;
+package pipelite.process;
 
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
-
-@Converter(autoApply = true)
-public class BooleanConverter implements AttributeConverter<Boolean, Character> {
-
-  @Override
-  public Character convertToDatabaseColumn(Boolean attribute) {
-    if (attribute != null) {
-      if (attribute) {
-        return 'Y';
-      } else {
-        return 'N';
-      }
-    }
-    return null;
-  }
-
-  @Override
-  public Boolean convertToEntityAttribute(Character dbData) {
-    if (dbData != null) {
-      return dbData.equals('Y');
-    }
-    return null;
-  }
+public enum ProcessState {
+  NEW,
+  ACTIVE,
+  COMPLETED,
+  FAILED,
+  CANCELLED,
+  INACTIVE // TODO: remove
 }
