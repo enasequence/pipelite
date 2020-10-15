@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
@@ -38,6 +39,7 @@ import pipelite.service.StageService;
 
 @Flogger
 @Component
+@Scope("prototype")
 public class PipeliteScheduler extends AbstractScheduledService {
 
   private final LauncherConfiguration launcherConfiguration;
@@ -90,7 +92,8 @@ public class PipeliteScheduler extends AbstractScheduledService {
     this.processService = processService;
     this.stageService = stageService;
     this.lockService = lockService;
-    this.launcherName = launcherConfiguration.getLauncherName();
+    this.launcherName =
+        LauncherConfiguration.getLauncherNameForPipeliteScheduler(launcherConfiguration);
     this.launcherLocker = new LauncherLocker(launcherName, lockService);
     this.processLocker = new ProcessLocker(launcherName, lockService);
     this.executorService = Executors.newCachedThreadPool();
@@ -291,6 +294,10 @@ public class PipeliteScheduler extends AbstractScheduledService {
 
       logContext(log.atInfo()).log("Scheduler has been shut down");
     }
+  }
+
+  public void removeLocks() {
+    launcherLocker.removeLocks();
   }
 
   public int getActiveProcessCount() {

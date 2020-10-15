@@ -331,10 +331,6 @@ public class ProcessLauncher implements Runnable {
     }
   }
 
-  public String getLauncherName() {
-    return launcherConfiguration.getLauncherName();
-  }
-
   public String getPipelineName() {
     return processAndProcessEntity.getProcess().getPipelineName();
   }
@@ -352,14 +348,12 @@ public class ProcessLauncher implements Runnable {
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {
-    return log.with(LogKey.LAUNCHER_NAME, getLauncherName())
-        .with(LogKey.PIPELINE_NAME, getPipelineName())
+    return log.with(LogKey.PIPELINE_NAME, getPipelineName())
         .with(LogKey.PROCESS_ID, getProcessId());
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log, String stageName) {
-    return log.with(LogKey.LAUNCHER_NAME, getLauncherName())
-        .with(LogKey.PIPELINE_NAME, getPipelineName())
+    return log.with(LogKey.PIPELINE_NAME, getPipelineName())
         .with(LogKey.PROCESS_ID, getProcessId())
         .with(LogKey.STAGE_NAME, stageName);
   }

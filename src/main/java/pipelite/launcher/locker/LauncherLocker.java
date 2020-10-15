@@ -44,6 +44,16 @@ public class LauncherLocker {
     }
   }
 
+  public void removeLocks() {
+    logContext(log.atInfo()).log("Attempting to remove launcher locks");
+
+    if (lockService.removeLauncherLocks(launcherName)) {
+      logContext(log.atInfo()).log("Removed launcher locks");
+    } else {
+      logContext(log.atInfo()).log("Failed to remove launcher locks");
+    }
+  }
+
   private FluentLogger.Api logContext(FluentLogger.Api log) {
     return log.with(LogKey.LAUNCHER_NAME, launcherName);
   }

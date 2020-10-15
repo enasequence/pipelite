@@ -10,8 +10,8 @@
  */
 package pipelite.configuration;
 
+import java.net.InetAddress;
 import java.time.Duration;
-import java.util.HashSet;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,8 +22,6 @@ import org.springframework.context.annotation.Configuration;
 import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.PipeliteScheduler;
 import pipelite.launcher.ProcessLauncher;
-import pipelite.process.Process;
-import pipelite.stage.Stage;
 
 @Flogger
 @Data
@@ -35,7 +33,10 @@ public class LauncherConfiguration {
 
   public LauncherConfiguration() {}
 
-  /** Unique launcher name. */
+  /**
+   * Unique launcher name. Defaults to <host name>@<pipeline name> for PipeliteLauncher and to <host
+   * name>@<user name> for PipeliteScheduler.
+   */
   private String launcherName;
 
   /** Number of maximum parallel process executions in PipeliteLauncher and ScheduleLauncher. */
@@ -64,10 +65,38 @@ public class LauncherConfiguration {
 
   public boolean validate() {
     boolean isSuccess = true;
-    if (launcherName == null || launcherName.isEmpty()) {
-      (log.atSevere()).log("Launcher name is missing");
-      isSuccess = false;
-    }
     return isSuccess;
+  }
+
+  /** Defaults to <host name>@<pipeline name>. */
+  public static String getLauncherNameForPipeliteLauncher(
+      LauncherConfiguration launcherConfiguration, String pipelineName) {
+    return launcherConfiguration.getLauncherName() != null
+        ? launcherConfiguration.getLauncherName()
+        : getHostName() + "@" + pipelineName;
+  }
+
+  /** Defaults to <host name>@<user name>. */
+  public static String getLauncherNameForPipeliteScheduler(
+      LauncherConfiguration launcherConfiguration) {
+    return launcherConfiguration.getLauncherName() != null
+        ? launcherConfiguration.getLauncherName()
+        : getHostName() + "@" + getUserName();
+  }
+
+  public static String getHostName() {
+    try {
+      return InetAddress.getLocalHost().getHostName();
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
+  }
+
+  public static String getUserName() {
+    try {
+      return System.getProperty("user.name");
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
   }
 }

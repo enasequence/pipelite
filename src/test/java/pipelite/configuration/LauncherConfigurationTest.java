@@ -29,4 +29,43 @@ public class LauncherConfigurationTest {
     assertThat(config.getLauncherName()).isEqualTo("TEST");
     assertThat(config.getWorkers()).isEqualTo(1);
   }
+
+  @Test
+  public void getLauncherNameForPipeliteLauncherWithoutLauncherName() {
+    LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
+    String pipelineName = "TEST1";
+    String hostName = LauncherConfiguration.getHostName();
+    assertThat(
+            LauncherConfiguration.getLauncherNameForPipeliteLauncher(
+                launcherConfiguration, pipelineName))
+        .isEqualTo(hostName + "@" + pipelineName);
+  }
+
+  @Test
+  public void getLauncherNameForPipeliteLauncherWithLauncherName() {
+    LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
+    launcherConfiguration.setLauncherName("TEST2");
+    String pipelineName = "TEST1";
+    assertThat(
+            LauncherConfiguration.getLauncherNameForPipeliteLauncher(
+                launcherConfiguration, pipelineName))
+        .isEqualTo("TEST2");
+  }
+
+  @Test
+  public void getLauncherNameForPipeliteSchedulerWithoutLauncherName() {
+    LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
+    String hostName = LauncherConfiguration.getHostName();
+    String userName = LauncherConfiguration.getUserName();
+    assertThat(LauncherConfiguration.getLauncherNameForPipeliteScheduler(launcherConfiguration))
+        .isEqualTo(hostName + "@" + userName);
+  }
+
+  @Test
+  public void getLauncherNameForPipeliteSchedulerWithLauncherName() {
+    LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
+    launcherConfiguration.setLauncherName("TEST2");
+    assertThat(LauncherConfiguration.getLauncherNameForPipeliteScheduler(launcherConfiguration))
+        .isEqualTo("TEST2");
+  }
 }

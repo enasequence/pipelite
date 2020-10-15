@@ -19,10 +19,13 @@ import pipelite.launcher.ServerManager;
 @SpringBootApplication
 public class PipeliteLauncherRunner {
 
-  public static void run() {
+  public static void run(Application app) {
     ConfigurableApplicationContext context =
         SpringApplication.run(PipeliteLauncherRunner.class, new String[] {});
     PipeliteLauncher pipeliteLauncher = context.getBean(PipeliteLauncher.class);
+    if (app.removeLocks) {
+      pipeliteLauncher.removeLocks();
+    }
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
   }
 }

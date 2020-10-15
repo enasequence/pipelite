@@ -24,4 +24,6 @@ public interface LockRepository extends CrudRepository<LockEntity, LockEntityId>
       String launcherName, String pipelineName, String lockId);
 
   void deleteByLauncherNameAndPipelineName(String launcherName, String pipelineName);
+
+  void deleteByLauncherName(String launcherName);
 }

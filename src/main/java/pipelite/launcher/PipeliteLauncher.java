@@ -46,7 +46,6 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private final StageConfiguration stageConfiguration;
   private final ProcessService processService;
   private final StageService stageService;
-  private final LockService lockService;
   private final String launcherName;
   private final LauncherLocker launcherLocker;
   private final ProcessLocker processLocker;
@@ -94,10 +93,6 @@ public class PipeliteLauncher extends AbstractScheduledService {
     this.stageConfiguration = stageConfiguration;
     this.processService = processService;
     this.stageService = stageService;
-    this.lockService = lockService;
-    this.launcherName = launcherConfiguration.getLauncherName();
-    this.launcherLocker = new LauncherLocker(launcherName, lockService);
-    this.processLocker = new ProcessLocker(launcherName, lockService);
     this.workers =
         launcherConfiguration.getWorkers() > 0
             ? launcherConfiguration.getWorkers()
@@ -131,6 +126,12 @@ public class PipeliteLauncher extends AbstractScheduledService {
     } else {
       this.processSource = null;
     }
+
+    this.launcherName =
+        LauncherConfiguration.getLauncherNameForPipeliteLauncher(
+            launcherConfiguration, processFactory.getPipelineName());
+    this.launcherLocker = new LauncherLocker(this.launcherName, lockService);
+    this.processLocker = new ProcessLocker(this.launcherName, lockService);
   }
 
   @Override
@@ -347,6 +348,10 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
       logContext(log.atInfo()).log("Launcher has been shut down");
     }
+  }
+
+  public void removeLocks() {
+    launcherLocker.removeLocks();
   }
 
   public String getPipelineName() {

@@ -41,11 +41,11 @@ public class ProcessLocker {
   }
 
   public void unlock(String pipelineName, String processId) {
-    logContext(log.atInfo(), pipelineName, processId).log("Attempting to unlock process launcher");
+    logContext(log.atInfo(), pipelineName, processId).log("Attempting to unlock process");
     if (lockService.unlockProcess(launcherName, pipelineName, processId)) {
-      logContext(log.atInfo(), pipelineName, processId).log("Unlocked process launcher");
+      logContext(log.atInfo(), pipelineName, processId).log("Unlocked process");
     } else {
-      logContext(log.atInfo(), pipelineName, processId).log("Failed to unlock process launcher");
+      logContext(log.atInfo(), pipelineName, processId).log("Failed to unlock process");
     }
   }
 

@@ -10,7 +10,6 @@
  */
 package pipelite;
 
-import lombok.extern.flogger.Flogger;
 import picocli.CommandLine;
 
 @CommandLine.Command(mixinStandardHelpOptions = true)
@@ -19,17 +18,22 @@ public class Application {
   @CommandLine.ArgGroup(multiplicity = "1")
   Mode mode;
 
-  private static class Mode {
+  public static class Mode {
     @CommandLine.Option(
         names = {"-l", "-launcher"},
         description = "Run the pipelite launcher")
-    boolean launcher;
+    public boolean launcher;
 
     @CommandLine.Option(
         names = {"-s", "-scheduler"},
         description = "Run the pipelite scheduler")
-    boolean scheduler;
+    public boolean scheduler;
   }
+
+  @CommandLine.Option(
+      names = {"-u", "-unlock"},
+      description = "Remove all launcher or scheduler locks")
+  public boolean removeLocks;
 
   public static void main(String[] args) {
     try {
@@ -50,9 +54,9 @@ public class Application {
     }
     if (run) {
       if (app.mode.launcher) {
-        new PipeliteLauncherRunner().run();
+        new PipeliteLauncherRunner().run(app);
       } else {
-        new PipeliteSchedulerRunner().run();
+        new PipeliteSchedulerRunner().run(app);
       }
     }
     return 0;

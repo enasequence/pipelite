@@ -63,8 +63,31 @@ public class LockService {
     }
   }
 
-  public void purgeLauncherLocks(String launcherName, String pipelineName) {
+  public boolean removeLauncherLocks(String launcherName, String pipelineName) {
+    try {
     repository.deleteByLauncherNameAndPipelineName(launcherName, pipelineName);
+    return true;
+    } catch (Exception ex) {
+      log.atSevere()
+              .with(LogKey.LAUNCHER_NAME, launcherName)
+              .with(LogKey.PIPELINE_NAME, pipelineName)
+              .withCause(ex)
+              .log("Failed to remove launcher locks");
+      return false;
+    }
+  }
+
+  public boolean removeLauncherLocks(String launcherName) {
+    try {
+      repository.deleteByLauncherName(launcherName);
+      return true;
+    } catch (Exception ex) {
+      log.atSevere()
+              .with(LogKey.LAUNCHER_NAME, launcherName)
+              .withCause(ex)
+              .log("Failed to remove launcher locks");
+      return false;
+    }
   }
 
   public boolean lockProcess(String launcherName, String pipelineName, String processId) {
