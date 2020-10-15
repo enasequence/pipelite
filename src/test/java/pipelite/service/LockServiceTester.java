@@ -86,7 +86,7 @@ public class LockServiceTester {
     assertTrue(locker.isProcessLocked(pipelineName, "3"));
     assertFalse(locker.isProcessLocked(pipelineName, "4"));
 
-    locker.removeLauncherLocks(launcherName2, pipelineName);
+    locker.removeLauncherLocks(launcherName2);
 
     assertFalse(locker.isProcessLocked(pipelineName, "1"));
     assertFalse(locker.isProcessLocked(pipelineName, "2"));

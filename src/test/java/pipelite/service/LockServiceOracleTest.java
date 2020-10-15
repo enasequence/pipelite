@@ -27,7 +27,7 @@ public class LockServiceOracleTest {
   @Test
   @Transactional
   @Rollback
-  public void test() {
+  public void testLauncherLocks() {
     LockServiceTester.testLaucherLocks(service);
   }
 

@@ -27,7 +27,7 @@ public class LockServiceHsqlTest {
   @Test
   @Transactional
   @Rollback
-  public void test() {
+  public void testLauncherLocks() {
     LockServiceTester.testLaucherLocks(service);
   }
 
