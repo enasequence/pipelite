@@ -10,18 +10,8 @@
  */
 package pipelite.launcher;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.IntStream;
-import org.junit.jupiter.api.Test;
+import lombok.Data;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
-import pipelite.TestConfiguration;
 import pipelite.TestInMemoryProcessFactory;
 import pipelite.TestInMemoryProcessSource;
 import pipelite.UniqueStringGenerator;
@@ -32,20 +22,17 @@ import pipelite.process.Process;
 import pipelite.process.ProcessSource;
 import pipelite.process.builder.ProcessBuilder;
 
-@SpringBootTest(
-    classes = TestConfiguration.class,
-    properties = {
-      "pipelite.launcher.workers=5",
-      "pipelite.launcher.processLaunchFrequency=250ms",
-      "pipelite.launcher.stageLaunchFrequency=250ms",
-      "pipelite.stage.retries=1"
-    })
-@ContextConfiguration(initializers = PipeliteLauncherHSqlSuccessTest.TestContextInitializer.class)
-@ActiveProfiles(value = {"hsql-test"})
-public class PipeliteLauncherHSqlFailingTest {
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.IntStream;
 
-  @Autowired private ProcessConfiguration processConfiguration;
-  @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
+import static org.assertj.core.api.Assertions.assertThat;
+
+@Data
+public class PipeliteLauncherFailureTester {
+
+  private final ProcessConfiguration processConfiguration;
+  private final ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
 
   private static final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
   private static final int PROCESS_CNT = 5;
@@ -60,7 +47,6 @@ public class PipeliteLauncherHSqlFailingTest {
     return pipeliteLauncher;
   }
 
-  @Test
   public void testFirstStageFails() {
 
     List<Process> processes = new ArrayList<>();
@@ -95,7 +81,6 @@ public class PipeliteLauncherHSqlFailingTest {
     assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(PROCESS_CNT);
   }
 
-  @Test
   public void testSecondStageFails() {
 
     List<Process> processes = new ArrayList<>();
@@ -130,7 +115,6 @@ public class PipeliteLauncherHSqlFailingTest {
     assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(PROCESS_CNT);
   }
 
-  @Test
   public void testThirdStageFails() {
 
     List<Process> processes = new ArrayList<>();
@@ -165,7 +149,6 @@ public class PipeliteLauncherHSqlFailingTest {
     assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(PROCESS_CNT);
   }
 
-  @Test
   public void testFourthStageFails() {
 
     List<Process> processes = new ArrayList<>();
@@ -200,7 +183,6 @@ public class PipeliteLauncherHSqlFailingTest {
     assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(PROCESS_CNT);
   }
 
-  @Test
   public void testNoStageFails() {
 
     List<Process> processes = new ArrayList<>();
