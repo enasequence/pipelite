@@ -10,15 +10,16 @@
  */
 package pipelite.launcher;
 
-import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.entity.ScheduleEntity;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.repository.ScheduleRepository;
+import pipelite.service.ScheduleService;
 import pipelite.stage.StageExecutionResult;
 
 import java.time.Duration;
@@ -26,15 +27,24 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@AllArgsConstructor
+@Component
+@Scope("prototype")
 public class PipeliteSchedulerSuccessTester {
 
-  private final ObjectProvider<PipeliteScheduler> pipeliteSchedulerObjectProvider;
-  private final ScheduleRepository scheduleRepository;
+  private final PipeliteScheduler pipeliteScheduler;
+  private final ScheduleService scheduleService;
   private final LauncherConfiguration launcherConfiguration;
 
+  public PipeliteSchedulerSuccessTester(
+      @Autowired PipeliteScheduler pipeliteScheduler,
+      @Autowired ScheduleService scheduleService,
+      @Autowired LauncherConfiguration launcherConfiguration) {
+    this.pipeliteScheduler = pipeliteScheduler;
+    this.scheduleService = scheduleService;
+    this.launcherConfiguration = launcherConfiguration;
+  }
+
   private static final Duration STOP_AFTER = Duration.ofSeconds(10);
-  private static final int SCHEDULE_SECONDS = 2; // 60 must be divisible by SCHEDULE_SECONDS.
 
   private static class ExecutionCounter {
     public final AtomicInteger processExecutionCount = new AtomicInteger();
@@ -66,8 +76,13 @@ public class PipeliteSchedulerSuccessTester {
           .execute("STAGE1")
           .with(
               (stage) -> {
-                //System.out.println(
-                //    "executing process: " + processId + " stage: " + stage.getStageName());
+                System.out.println(
+                    "executing pipeline: "
+                        + pipelineName
+                        + " process: "
+                        + processId
+                        + " stage: "
+                        + stage.getStageName());
                 executionCounter.processExecutionCount.incrementAndGet();
                 executionCounter.stageExecutionCount.incrementAndGet();
                 return StageExecutionResult.success();
@@ -75,8 +90,13 @@ public class PipeliteSchedulerSuccessTester {
           .execute("STAGE2")
           .with(
               (stage) -> {
-                //System.out.println(
-                //    "executing process: " + processId + " stage: " + stage.getStageName());
+                System.out.println(
+                    "executing pipeline: "
+                        + pipelineName
+                        + " process: "
+                        + processId
+                        + " stage: "
+                        + stage.getStageName());
                 executionCounter.stageExecutionCount.incrementAndGet();
                 return StageExecutionResult.success();
               })
@@ -84,44 +104,160 @@ public class PipeliteSchedulerSuccessTester {
     }
   }
 
-  private static final String PIPELINE_NAME_1 = UniqueStringGenerator.randomPipelineName();
+  private static final String PIPELINE_NAME_0 =
+      UniqueStringGenerator.randomPipelineName(); //  "SCHEDULER_PIPELINE_0";
+  private static final String PIPELINE_NAME_1 =
+      UniqueStringGenerator.randomPipelineName(); //  "SCHEDULER_PIPELINE_1";
+  private static final String PIPELINE_NAME_2 =
+      UniqueStringGenerator.randomPipelineName(); // "SCHEDULER_PIPELINE_2";
+  private static final String PIPELINE_NAME_3 =
+      UniqueStringGenerator.randomPipelineName(); // "SCHEDULER_PIPELINE_3";
+
+  private static final int SCHEDULE_SECONDS_0 = 2; // 60 must be divisible by SCHEDULE_SECONDS.
+  private static final int SCHEDULE_SECONDS_1 = 2; // 60 must be divisible by SCHEDULE_SECONDS.
+  private static final int SCHEDULE_SECONDS_2 = 4; // 60 must be divisible by SCHEDULE_SECONDS.
+  private static final int SCHEDULE_SECONDS_3 = 6; // 60 must be divisible by SCHEDULE_SECONDS.
+
+  private static final ExecutionCounter EXECUTION_COUNTER_0 = new ExecutionCounter();
   private static final ExecutionCounter EXECUTION_COUNTER_1 = new ExecutionCounter();
+  private static final ExecutionCounter EXECUTION_COUNTER_2 = new ExecutionCounter();
+  private static final ExecutionCounter EXECUTION_COUNTER_3 = new ExecutionCounter();
+
+  public static class TestProcessFactory0 extends TestProcessFactory {
+    public TestProcessFactory0() {
+      super(PIPELINE_NAME_0, EXECUTION_COUNTER_0);
+    }
+  }
+
   public static class TestProcessFactory1 extends TestProcessFactory {
     public TestProcessFactory1() {
       super(PIPELINE_NAME_1, EXECUTION_COUNTER_1);
     }
   }
 
-  private void saveSchedule1() {
-    ScheduleEntity schedule = new ScheduleEntity();
-    schedule.setSchedule("0/" + SCHEDULE_SECONDS + " * * * * ?");
-    schedule.setLauncherName(launcherConfiguration.getLauncherName());
-    schedule.setPipelineName(PIPELINE_NAME_1);
-    schedule.setProcessFactoryName(TestProcessFactory1.class.getName());
-    scheduleRepository.save(schedule);
+  public static class TestProcessFactory2 extends TestProcessFactory {
+    public TestProcessFactory2() {
+      super(PIPELINE_NAME_2, EXECUTION_COUNTER_2);
+    }
   }
 
-  public void testSingleProcess() {
-    EXECUTION_COUNTER_1.reset();
+  public static class TestProcessFactory3 extends TestProcessFactory {
+    public TestProcessFactory3() {
+      super(PIPELINE_NAME_3, EXECUTION_COUNTER_3);
+    }
+  }
 
-    saveSchedule1();
+  private void saveSchedule(String pipelineName, int scheduleSeconds, String processFactoryName) {
+    ScheduleEntity schedule = new ScheduleEntity();
+    schedule.setSchedule("0/" + scheduleSeconds + " * * * * ?");
+    schedule.setLauncherName(launcherConfiguration.getLauncherName());
+    schedule.setPipelineName(pipelineName);
+    schedule.setProcessFactoryName(processFactoryName);
+    scheduleService.saveProcessSchedule(schedule);
+    System.out.println(
+        "saved schedule for pipeline: "
+            + pipelineName
+            + ", launcher: "
+            + launcherConfiguration.getLauncherName());
+  }
 
-    PipeliteScheduler pipeliteScheduler = pipeliteSchedulerObjectProvider.getObject();
-    pipeliteScheduler.setShutdownAfter(STOP_AFTER);
+  private void deleteSchedule(String pipelineName) {
+    ScheduleEntity schedule = new ScheduleEntity();
+    schedule.setPipelineName(pipelineName);
+    scheduleService.delete(schedule);
+    System.out.println(
+        "deleted schedule for pipeline: "
+            + pipelineName
+            + ", launcher: "
+            + launcherConfiguration.getLauncherName());
+  }
 
-    ServerManager.run(pipeliteScheduler, pipeliteScheduler.serviceName());
+  public void assertResult(
+      PipeliteScheduler pipeliteScheduler,
+      int[] scheduleSeconds,
+      ExecutionCounter[] executionCounters) {
 
-    long expectedProcessCompletedCount = STOP_AFTER.toMillis() / 1000 / SCHEDULE_SECONDS;
-    long expectedStageCompletedCount = expectedProcessCompletedCount * 2;
+    int totalMinExpectedProcessCompletedCount = 0;
+    int totalMinExpectedStageCompletedCount = 0;
+    int totalMaxExpectedProcessCompletedCount = 0;
+    int totalMaxExpectedStageCompletedCount = 0;
 
-    assertThat(EXECUTION_COUNTER_1.processExecutionCount.get()).isEqualTo(expectedProcessCompletedCount);
-    assertThat(EXECUTION_COUNTER_1.stageExecutionCount.get()).isEqualTo(expectedStageCompletedCount);
+    for (int i = 0; i < scheduleSeconds.length; ++i) {
+      // Minimum delay before first process is executed is ~0.
+      // Maximum executed processes is estimated as: STOP_AFTER / scheduleSeconds[i] + 1
+      // Maximum delay before first process is executed is ~scheduleSeconds[i].
+      // processLaunchFrequency may prevent last scheduled process execution.
+      // Minimum executed processes is estimated as STOP_AFTER / scheduleSeconds[i] - 2
+
+      int expectedProcessCompletedCount = (int) STOP_AFTER.toMillis() / 1000 / scheduleSeconds[i];
+
+      int minExpectedProcessCompletedCount = expectedProcessCompletedCount - 2;
+      int minExpectedStageCompletedCount = minExpectedProcessCompletedCount * 2;
+      int maxExpectedProcessCompletedCount = expectedProcessCompletedCount + 1;
+      int maxExpectedStageCompletedCount = maxExpectedProcessCompletedCount * 2;
+
+      assertThat(executionCounters[i].processExecutionCount.get())
+          .isBetween(minExpectedProcessCompletedCount, maxExpectedProcessCompletedCount);
+      assertThat(executionCounters[i].stageExecutionCount.get())
+          .isBetween(minExpectedStageCompletedCount, maxExpectedStageCompletedCount);
+
+      totalMinExpectedProcessCompletedCount += minExpectedProcessCompletedCount;
+      totalMinExpectedStageCompletedCount += minExpectedStageCompletedCount;
+      totalMaxExpectedProcessCompletedCount += maxExpectedProcessCompletedCount;
+      totalMaxExpectedStageCompletedCount += maxExpectedStageCompletedCount;
+    }
+
     assertThat(pipeliteScheduler.getActiveProcessCount()).isEqualTo(0);
     assertThat(pipeliteScheduler.getProcessFailedToCreateCount()).isEqualTo(0);
     assertThat(pipeliteScheduler.getProcessFailedToExecuteCount()).isEqualTo(0);
     assertThat(pipeliteScheduler.getProcessCompletedCount())
-        .isEqualTo(expectedProcessCompletedCount);
+        .isBetween(totalMinExpectedProcessCompletedCount, totalMaxExpectedProcessCompletedCount);
     assertThat(pipeliteScheduler.getStageFailedCount()).isEqualTo(0);
-    assertThat(pipeliteScheduler.getStageCompletedCount()).isEqualTo(expectedStageCompletedCount);
+    assertThat(pipeliteScheduler.getStageCompletedCount())
+        .isBetween(totalMinExpectedStageCompletedCount, totalMaxExpectedStageCompletedCount);
+  }
+
+  public void testSingleProcess() {
+    EXECUTION_COUNTER_0.reset();
+
+    try {
+      saveSchedule(PIPELINE_NAME_0, SCHEDULE_SECONDS_0, TestProcessFactory0.class.getName());
+
+      pipeliteScheduler.setShutdownAfter(STOP_AFTER);
+
+      ServerManager.run(pipeliteScheduler, pipeliteScheduler.serviceName());
+
+      assertResult(
+          pipeliteScheduler,
+          new int[] {SCHEDULE_SECONDS_0},
+          new ExecutionCounter[] {EXECUTION_COUNTER_0});
+    } finally {
+      deleteSchedule(PIPELINE_NAME_0);
+    }
+  }
+
+  public void testThreeProcesses() {
+    EXECUTION_COUNTER_1.reset();
+    EXECUTION_COUNTER_2.reset();
+    EXECUTION_COUNTER_3.reset();
+
+    try {
+      saveSchedule(PIPELINE_NAME_1, SCHEDULE_SECONDS_1, TestProcessFactory1.class.getName());
+      saveSchedule(PIPELINE_NAME_2, SCHEDULE_SECONDS_2, TestProcessFactory2.class.getName());
+      saveSchedule(PIPELINE_NAME_3, SCHEDULE_SECONDS_3, TestProcessFactory3.class.getName());
+
+      pipeliteScheduler.setShutdownAfter(STOP_AFTER);
+
+      ServerManager.run(pipeliteScheduler, pipeliteScheduler.serviceName());
+
+      assertResult(
+          pipeliteScheduler,
+          new int[] {SCHEDULE_SECONDS_1, SCHEDULE_SECONDS_2, SCHEDULE_SECONDS_3},
+          new ExecutionCounter[] {EXECUTION_COUNTER_1, EXECUTION_COUNTER_2, EXECUTION_COUNTER_3});
+    } finally {
+      deleteSchedule(PIPELINE_NAME_1);
+      deleteSchedule(PIPELINE_NAME_2);
+      deleteSchedule(PIPELINE_NAME_3);
+    }
   }
 }

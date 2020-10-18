@@ -181,8 +181,11 @@ public class PipeliteScheduler extends AbstractScheduledService {
     logContext(log.atInfo()).log("Scheduling processes");
 
     schedules.clear();
-    for (ScheduleEntity scheduleEntity : scheduleService.getAllProcessSchedules(launcherName)) {
 
+    List<ScheduleEntity> scheduleEntities = scheduleService.getAllProcessSchedules(launcherName);
+    logContext(log.atInfo()).log("Found %s schedules", scheduleEntities.size());
+
+    for (ScheduleEntity scheduleEntity : scheduleEntities) {
       String scheduleDescription = "invalid cron expression";
       if (CronUtils.validate(scheduleEntity.getSchedule())) {
         Schedule schedule = new Schedule();

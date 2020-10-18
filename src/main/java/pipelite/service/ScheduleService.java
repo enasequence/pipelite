@@ -35,4 +35,8 @@ public class ScheduleService {
   public ScheduleEntity saveProcessSchedule(ScheduleEntity scheduleEntity) {
     return repository.save(scheduleEntity);
   }
+
+  public void delete(ScheduleEntity scheduleEntity) {
+    repository.delete(scheduleEntity);
+  }
 }
