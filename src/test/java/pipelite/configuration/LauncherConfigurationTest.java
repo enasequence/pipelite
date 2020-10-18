@@ -19,7 +19,7 @@ import pipelite.TestConfiguration;
 
 @SpringBootTest(
     classes = TestConfiguration.class,
-    properties = {"pipelite.launcher.launcherName=TEST", "pipelite.launcher.workers=1"})
+    properties = {"pipelite.launcher.launcherName=TEST", "pipelite.launcher.processLaunchParallelism=1"})
 public class LauncherConfigurationTest {
 
   @Autowired LauncherConfiguration config;
@@ -27,7 +27,7 @@ public class LauncherConfigurationTest {
   @Test
   public void test() {
     assertThat(config.getLauncherName()).isEqualTo("TEST");
-    assertThat(config.getWorkers()).isEqualTo(1);
+    assertThat(config.getProcessLaunchParallelism()).isEqualTo(1);
   }
 
   @Test

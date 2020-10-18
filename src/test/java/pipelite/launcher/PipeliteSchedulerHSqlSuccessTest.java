@@ -17,41 +17,48 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import pipelite.TestConfiguration;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.ProcessConfiguration;
+import pipelite.configuration.LauncherConfiguration;
+import pipelite.repository.ScheduleRepository;
 
-@SpringBootTest(
-    classes = TestConfiguration.class,
-    properties = {
-      "pipelite.launcher.processLaunchParallelism=5",
-      "pipelite.launcher.processLaunchFrequency=250ms",
-      "pipelite.launcher.stageLaunchFrequency=250ms"
-    })
-@ContextConfiguration(initializers = PipeliteLauncherHSqlSuccessTest.TestContextInitializer.class)
+import javax.annotation.PostConstruct;
+
+@SpringBootTest(classes = TestConfiguration.class, properties = {
+        "pipelite.launcher.processLaunchFrequency=250ms",
+        "pipelite.launcher.stageLaunchFrequency=250ms"
+})
+@ContextConfiguration(initializers = PipeliteSchedulerHSqlSuccessTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"hsql-test"})
-public class PipeliteLauncherHSqlSuccessTest {
+@Rollback
+public class PipeliteSchedulerHSqlSuccessTest {
 
-  @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
-  @Autowired private ProcessConfiguration processConfiguration;
+  @Autowired private ObjectProvider<PipeliteScheduler> pipeliteScheduerObjectProvider;
+  @Autowired private ScheduleRepository scheduleRepository;
+  @Autowired private LauncherConfiguration launcherConfiguration;
 
   public static class TestContextInitializer
       implements ApplicationContextInitializer<ConfigurableApplicationContext> {
     @Override
     public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
       TestPropertyValues.of(
-              "pipelite.launcher.launcherName=" + UniqueStringGenerator.randomLauncherName(),
-              "pipelite.process.pipelineName=" + UniqueStringGenerator.randomPipelineName())
+              "pipelite.launcher.launcherName=" + UniqueStringGenerator.randomLauncherName())
           .applyTo(configurableApplicationContext.getEnvironment());
     }
   }
 
+  private PipeliteSchedulerSuccessTester tester;
+
+  @PostConstruct
+  public void init() {
+    tester = new PipeliteSchedulerSuccessTester(pipeliteScheduerObjectProvider, scheduleRepository, launcherConfiguration);
+  }
+
   @Test
-  public void test() {
-    PipeliteLauncherSuccessTester tester =
-        new PipeliteLauncherSuccessTester(pipeliteLauncherObjectProvider, processConfiguration);
-    tester.test();
+  public void testSingleProcess() {
+    tester.testSingleProcess();
   }
 }

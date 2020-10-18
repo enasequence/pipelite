@@ -18,7 +18,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import pipelite.TestInMemoryProcessFactory;
 import pipelite.TestInMemoryProcessSource;
 import pipelite.UniqueStringGenerator;

@@ -49,8 +49,12 @@ public class ScheduleEntity {
   @Column(name = "EXEC_CNT", nullable = false)
   private int executionCount = 0;
 
-  public void startExecution() {
+  @Column(name = "PROCESS_ID")
+  private String processId;
+
+  public void startExecution(String processId) {
     this.startTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    this.processId = processId;
     this.endTime = null;
   }
 

@@ -12,6 +12,7 @@ package pipelite.configuration;
 
 import java.net.InetAddress;
 import java.time.Duration;
+import java.util.concurrent.ForkJoinPool;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,9 +20,6 @@ import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
-import pipelite.launcher.PipeliteLauncher;
-import pipelite.launcher.PipeliteScheduler;
-import pipelite.launcher.ProcessLauncher;
 
 @Flogger
 @Data
@@ -29,39 +27,50 @@ import pipelite.launcher.ProcessLauncher;
 @AllArgsConstructor
 @Configuration
 @ConfigurationProperties(prefix = "pipelite.launcher")
+/**
+ * Pipelite supports two different launchers. The PipeliteLauncher executes processes in parallel
+ * for one pipeline. The PipeliteScheduler executes non-parallel processes for one or more pipelines
+ * with cron schedules.
+ */
 public class LauncherConfiguration {
+
+  public static final Duration DEFAULT_PROCESS_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
+  public static final Duration DEFAULT_PROCESS_REFRESH_FREQUENCY = Duration.ofHours(1);
+  public static final int DEFAULT_PROCESS_LAUNCH_PARALLELISM =
+      ForkJoinPool.getCommonPoolParallelism();
 
   public LauncherConfiguration() {}
 
   /**
-   * Unique launcher name. Defaults to <host name>@<pipeline name> for PipeliteLauncher and to <host
-   * name>@<user name> for PipeliteScheduler.
+   * The name of the PipeliteLauncher or PipeliteScheduler. Only one launcher with a given name can
+   * be executed in parallel. Default PipeliteLauncher name is <host name>@<pipeline name>. Default
+   * PipeliteScheduler name is <host name>@<user name>.
    */
   private String launcherName;
 
-  /** Number of maximum parallel process executions in PipeliteLauncher and ScheduleLauncher. */
-  @Builder.Default private int workers = PipeliteLauncher.DEFAULT_WORKERS;
+  /**
+   * The PipeliteLauncher and PipeliteScheduler periodically execute new processes. The
+   * processLaunchFrequency is the frequency of doing this.
+   */
+  private Duration processLaunchFrequency;
 
-  /** Frequency of assigning processes to workers in PipeliteLauncher. */
-  @Builder.Default
-  private Duration processLaunchFrequency = PipeliteLauncher.DEFAULT_PROCESS_LAUNCH_FREQUENCY;
+  /**
+   * The PipeliteLauncher and PipeliteScheduler periodically refresh their process execution queue.
+   * The processRefreshFrequency is the frequency of doing this.
+   */
+  private Duration processRefreshFrequency;
 
-  /** Frequency of assigning stages to workers in ProcessLauncher. */
-  @Builder.Default
-  private Duration stageLaunchFrequency = ProcessLauncher.DEFAULT_STAGE_LAUNCH_FREQUENCY;
+  /**
+   * The PipeliteLauncher and PipeliteScheduler periodically executes new process stages. The
+   * stageLaunchFrequency is the frequency of doing this.
+   */
+  private Duration stageLaunchFrequency;
 
-  /** Delay between re-prioritising process executions in PipeliteLauncher. */
-  @Builder.Default
-  private Duration processPrioritizationFrequency =
-      PipeliteLauncher.DEFAULT_PROCESS_PRIORITIZATION_FREQUENCY;
-
-  /** Frequency of scheduling processes to execute in ScheduleLauncher. */
-  @Builder.Default
-  private Duration processSchedulingFrequency =
-      PipeliteScheduler.DEFAULT_PROCESS_SCHEDULING_FREQUENCY;
-
-  /** Stops the PipeliteLauncher if it is idle. */
-  private boolean shutdownIfIdle;
+  /**
+   * The PipeliteLauncher has a maximum number of processes executed in parallel. The
+   * processLaunchParallelism is this limit.
+   */
+  private int processLaunchParallelism;
 
   public boolean validate() {
     boolean isSuccess = true;

@@ -36,6 +36,8 @@ import pipelite.service.LockService;
 import pipelite.service.ProcessService;
 import pipelite.service.StageService;
 
+import static pipelite.configuration.LauncherConfiguration.DEFAULT_PROCESS_LAUNCH_FREQUENCY;
+
 @Flogger
 @Component
 @Scope("prototype")
@@ -68,14 +70,10 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private LocalDateTime processQueueValidUntil = LocalDateTime.now();
 
   private boolean shutdownIfIdle;
-  private long iterations = 0;
-  private Long maxIterations;
+  private boolean shutdownIfIdleTriggered;
 
-  public static final int DEFAULT_WORKERS = ForkJoinPool.getCommonPoolParallelism();
-  public static final Duration DEFAULT_PROCESS_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
-  public static final Duration DEFAULT_PROCESS_PRIORITIZATION_FREQUENCY = Duration.ofHours(1);
   private final Duration processLaunchFrequency;
-  private final Duration processPrioritizationFrequency;
+  private final Duration processRefreshFrequency;
 
   public PipeliteLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
@@ -94,9 +92,9 @@ public class PipeliteLauncher extends AbstractScheduledService {
     this.processService = processService;
     this.stageService = stageService;
     this.workers =
-        launcherConfiguration.getWorkers() > 0
-            ? launcherConfiguration.getWorkers()
-            : DEFAULT_WORKERS;
+        launcherConfiguration.getProcessLaunchParallelism() > 0
+            ? launcherConfiguration.getProcessLaunchParallelism()
+            : LauncherConfiguration.DEFAULT_PROCESS_LAUNCH_PARALLELISM;
     this.executorService = Executors.newFixedThreadPool(workers);
 
     if (launcherConfiguration.getProcessLaunchFrequency() != null) {
@@ -105,14 +103,12 @@ public class PipeliteLauncher extends AbstractScheduledService {
       this.processLaunchFrequency = DEFAULT_PROCESS_LAUNCH_FREQUENCY;
     }
 
-    if (launcherConfiguration.getProcessPrioritizationFrequency() != null) {
-      this.processPrioritizationFrequency =
-          launcherConfiguration.getProcessPrioritizationFrequency();
+    if (launcherConfiguration.getProcessRefreshFrequency() != null) {
+      this.processRefreshFrequency =
+          launcherConfiguration.getProcessRefreshFrequency();
     } else {
-      this.processPrioritizationFrequency = DEFAULT_PROCESS_PRIORITIZATION_FREQUENCY;
+      this.processRefreshFrequency = LauncherConfiguration.DEFAULT_PROCESS_REFRESH_FREQUENCY;
     }
-
-    this.shutdownIfIdle = launcherConfiguration.isShutdownIfIdle();
 
     this.processFactory = ProcessConfiguration.getProcessFactory(processConfiguration);
     if (processFactory == null) {
@@ -155,7 +151,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   @Override
   protected void runOneIteration() throws Exception {
-    if (!isRunning()) {
+    if (shutdownIfIdleTriggered || !isRunning()) {
       return;
     }
 
@@ -173,20 +169,13 @@ public class PipeliteLauncher extends AbstractScheduledService {
       launchProcess();
     }
 
-    stopIfMaxIterations();
-    stopIfIdle();
+    shutdownIfIdle();
   }
 
-  private void stopIfMaxIterations() {
-    if (maxIterations != null && ++iterations > maxIterations) {
-      stopAsync();
-    }
-  }
-
-  private void stopIfIdle() throws InterruptedException {
+  private void shutdownIfIdle() throws InterruptedException {
     if (processQueueIndex == processQueue.size() && shutdownIfIdle) {
-      logContext(log.atInfo()).log("Shutting down no new active processes to launch");
-
+      logContext(log.atInfo()).log("Stopping idle pipelite launcher");
+      shutdownIfIdleTriggered = true;
       while (!initProcesses.isEmpty()) {
         try {
           Thread.sleep(Duration.ofSeconds(1).toMillis());
@@ -264,7 +253,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
         processService.getNewProcesses(getPipelineName()).stream()
             .filter(processEntity -> !activeProcesses.containsKey(processEntity.getProcessId()))
             .collect(Collectors.toList()));
-    processQueueValidUntil = LocalDateTime.now().plus(processPrioritizationFrequency);
+    processQueueValidUntil = LocalDateTime.now().plus(processRefreshFrequency);
   }
 
   private void launchProcess() {
@@ -388,14 +377,6 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   public void setShutdownIfIdle(boolean shutdownIfIdle) {
     this.shutdownIfIdle = shutdownIfIdle;
-  }
-
-  public Long getMaxIterations() {
-    return maxIterations;
-  }
-
-  public void setMaxIterations(Long maxIterations) {
-    this.maxIterations = maxIterations;
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {

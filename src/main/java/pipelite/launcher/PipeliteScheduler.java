@@ -59,7 +59,13 @@ public class PipeliteScheduler extends AbstractScheduledService {
   private final AtomicInteger stageFailedCount = new AtomicInteger(0);
   private final AtomicInteger stageCompletedCount = new AtomicInteger(0);
 
+  private final Map<String, ProcessFactory> processFactoryCache = new ConcurrentHashMap<>();
+
   private final Map<String, Schedule> activeProcesses = new ConcurrentHashMap<>();
+
+  private final LocalDateTime startTime;
+  private Duration shutdownAfter;
+  private boolean shutdownAfterTriggered = false;
 
   @Data
   private static class Schedule {
@@ -70,13 +76,10 @@ public class PipeliteScheduler extends AbstractScheduledService {
   }
 
   private final ArrayList<Schedule> schedules = new ArrayList<>();
-  private LocalDateTime schedulesValidUntil = LocalDateTime.now();
+  private LocalDateTime schedulesValidUntil;
 
-  private long iterations = 0;
-  private Long maxIterations;
-
-  public static final Duration DEFAULT_PROCESS_SCHEDULING_FREQUENCY = Duration.ofMinutes(5);
-  private final Duration processSchedulingFrequency;
+  private final Duration processLaunchFrequency;
+  private final Duration processRefreshFrequency;
 
   public PipeliteScheduler(
       @Autowired LauncherConfiguration launcherConfiguration,
@@ -99,10 +102,18 @@ public class PipeliteScheduler extends AbstractScheduledService {
     this.executorService = Executors.newCachedThreadPool();
 
     if (launcherConfiguration.getProcessLaunchFrequency() != null) {
-      this.processSchedulingFrequency = launcherConfiguration.getProcessSchedulingFrequency();
+      this.processLaunchFrequency = launcherConfiguration.getProcessLaunchFrequency();
     } else {
-      this.processSchedulingFrequency = DEFAULT_PROCESS_SCHEDULING_FREQUENCY;
+      this.processLaunchFrequency = LauncherConfiguration.DEFAULT_PROCESS_LAUNCH_FREQUENCY;
     }
+
+    if (launcherConfiguration.getProcessRefreshFrequency() != null) {
+      this.processRefreshFrequency = launcherConfiguration.getProcessRefreshFrequency();
+    } else {
+      this.processRefreshFrequency = LauncherConfiguration.DEFAULT_PROCESS_REFRESH_FREQUENCY;
+    }
+
+    this.startTime = LocalDateTime.now();
   }
 
   @Override
@@ -120,12 +131,12 @@ public class PipeliteScheduler extends AbstractScheduledService {
 
   @Override
   protected Scheduler scheduler() {
-    return Scheduler.newFixedDelaySchedule(Duration.ZERO, processSchedulingFrequency);
+    return Scheduler.newFixedDelaySchedule(Duration.ZERO, processLaunchFrequency);
   }
 
   @Override
   protected void runOneIteration() {
-    if (!isRunning()) {
+    if (shutdownAfterTriggered || !isRunning()) {
       return;
     }
 
@@ -136,19 +147,31 @@ public class PipeliteScheduler extends AbstractScheduledService {
     }
 
     for (Schedule schedule : schedules) {
-      if (!activeProcesses.containsKey(schedule.processEntity.getPipelineName())
-          && schedule.launchTime.isAfter(LocalDateTime.now())) {
+      if (!activeProcesses.containsKey(schedule.getScheduleEntity().getPipelineName())
+          && schedule.launchTime.isBefore(LocalDateTime.now())) {
+        // Update next launch time.
+        schedule.setLaunchTime(CronUtils.launchTime(schedule.getScheduleEntity().getSchedule()));
+        logContext(log.atInfo(), schedule.getScheduleEntity().getPipelineName())
+            .log(
+                "Launching %s pipeline with cron expression %s (%s). Next launch time is: %s",
+                schedule.getScheduleEntity().getPipelineName(),
+                schedule.getScheduleEntity().getSchedule(),
+                schedule.getScheduleEntity().getDescription(),
+                schedule.getLaunchTime());
         if (createProcess(schedule)) {
           launchProcess(schedule);
         }
       }
     }
 
-    stopIfMaxIterations();
+    shutdownIfAfter();
   }
 
-  private void stopIfMaxIterations() {
-    if (maxIterations != null && ++iterations > maxIterations) {
+  private void shutdownIfAfter() {
+    if (startTime.plus(shutdownAfter).isBefore(LocalDateTime.now())) {
+      logContext(log.atInfo())
+          .log("Stopping pipelite scheduler after: " + shutdownAfter.toString());
+      shutdownAfterTriggered = true;
       stopAsync();
     }
   }
@@ -164,26 +187,61 @@ public class PipeliteScheduler extends AbstractScheduledService {
       if (CronUtils.validate(scheduleEntity.getSchedule())) {
         Schedule schedule = new Schedule();
         schedule.setScheduleEntity(scheduleEntity);
+        // Update next launch time.
         schedule.setLaunchTime(CronUtils.launchTime(scheduleEntity.getSchedule()));
         schedules.add(schedule);
         scheduleDescription = CronUtils.describe(scheduleEntity.getSchedule());
+        logContext(log.atInfo(), scheduleEntity.getPipelineName())
+            .log(
+                "Scheduling %s pipeline with cron expression %s (%s). Next launch time is: %s",
+                scheduleEntity.getPipelineName(),
+                scheduleEntity.getSchedule(),
+                scheduleDescription,
+                schedule.getLaunchTime());
+      } else {
+        logContext(log.atSevere(), scheduleEntity.getPipelineName())
+            .log(
+                "Ignoring %s pipeline with invalid cron expression",
+                scheduleEntity.getPipelineName());
       }
       if (!scheduleDescription.equals(scheduleEntity.getDescription())) {
         scheduleEntity.setDescription(scheduleDescription);
         scheduleService.saveProcessSchedule(scheduleEntity);
       }
     }
+    schedulesValidUntil = LocalDateTime.now().plus(processRefreshFrequency);
+  }
+
+  public static String getNextProcessId(String processId) {
+    if (processId == null) {
+      return "1";
+    }
+    try {
+      return String.valueOf(Integer.valueOf(processId) + 1);
+    } catch (Exception ex) {
+      throw new RuntimeException("Invalid process id " + processId);
+    }
+  }
+
+  private ProcessFactory getCachedProcessFactory(String processFactoryName) {
+    if (processFactoryCache.containsKey(processFactoryName)) {
+      return processFactoryCache.get(processFactoryName);
+    }
+    ProcessFactory processFactory = ProcessFactory.getProcessFactory(processFactoryName);
+    processFactoryCache.put(processFactoryName, processFactory);
+    return processFactory;
   }
 
   private boolean createProcess(Schedule schedule) {
 
     String pipelineName = schedule.getScheduleEntity().getPipelineName();
-    String processId = String.valueOf(schedule.getScheduleEntity().getExecutionCount() + 1);
+
+    String processId = getNextProcessId(schedule.getScheduleEntity().getProcessId());
 
     logContext(log.atInfo(), pipelineName, processId).log("Creating new process");
 
     ProcessFactory processFactory =
-        ProcessFactory.getProcessFactory(schedule.getScheduleEntity().getProcessFactoryName());
+        getCachedProcessFactory(schedule.getScheduleEntity().getProcessFactoryName());
 
     Process process = processFactory.create(processId);
 
@@ -215,7 +273,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
     schedule.setProcess(process);
     schedule.setProcessEntity(newProcessEntity);
 
-    schedule.getScheduleEntity().startExecution();
+    schedule.getScheduleEntity().startExecution(processId);
     scheduleService.saveProcessSchedule(schedule.getScheduleEntity());
 
     return true;
@@ -239,7 +297,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
         () -> {
           activeProcesses.put(processId, schedule);
           try {
-            if (!processLocker.lock(schedule.scheduleEntity.getPipelineName(), processId)) {
+            if (!processLocker.lock(schedule.getScheduleEntity().getPipelineName(), processId)) {
               return;
             }
             processLauncher.run();
@@ -324,16 +382,20 @@ public class PipeliteScheduler extends AbstractScheduledService {
     return stageCompletedCount.get();
   }
 
-  public Long getMaxIterations() {
-    return maxIterations;
+  public Duration getShutdownAfter() {
+    return shutdownAfter;
   }
 
-  public void setMaxIterations(Long maxIterations) {
-    this.maxIterations = maxIterations;
+  public void setShutdownAfter(Duration shutdownAfter) {
+    this.shutdownAfter = shutdownAfter;
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {
     return log.with(LogKey.LAUNCHER_NAME, launcherName);
+  }
+
+  private FluentLogger.Api logContext(FluentLogger.Api log, String pipelineName) {
+    return log.with(LogKey.LAUNCHER_NAME, launcherName).with(LogKey.PIPELINE_NAME, pipelineName);
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log, String pipelineName, String processId) {

@@ -31,7 +31,7 @@ import pipelite.service.StageService;
 @SpringBootTest(
     classes = TestConfiguration.class,
     properties = {
-      "pipelite.launcher.workers=2",
+      "pipelite.launcher.processLaunchParallelism=2",
       "pipelite.launcher.processLaunchFrequency=250ms",
       "pipelite.launcher.stageLaunchFrequency=250ms",
       "pipelite.stage.retries=1"

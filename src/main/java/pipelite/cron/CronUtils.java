@@ -11,6 +11,7 @@
 package pipelite.cron;
 
 import com.cronutils.descriptor.CronDescriptor;
+import com.cronutils.model.Cron;
 import com.cronutils.model.CronType;
 import com.cronutils.model.definition.CronDefinition;
 import com.cronutils.model.definition.CronDefinitionBuilder;
@@ -26,29 +27,42 @@ public abstract class CronUtils {
 
   private CronUtils() {}
 
-  private static final CronDefinition cronDefinition =
+  private static final CronDefinition unixDefinition =
       CronDefinitionBuilder.instanceDefinitionFor(CronType.UNIX);
+  private static final CronDefinition quarzDefinition =
+      CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ);
+  private static final CronParser unixParser = new CronParser(unixDefinition);
+  private static final CronParser quartzParser = new CronParser(quarzDefinition);
+
+  private static Cron parse(String expression) {
+    try {
+      return unixParser.parse(expression);
+    } catch (Exception ex) {
+    }
+    try {
+      return quartzParser.parse(expression);
+    } catch (Exception ex) {
+    }
+    throw new RuntimeException("Invalid cron expression " + expression);
+  }
 
   public static boolean validate(String expression) {
-    CronParser parser = new CronParser(cronDefinition);
     try {
-      parser.parse(expression);
+      parse(expression);
       return true;
     } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Invalid cron expression %s", expression);
+      log.atSevere().log(ex.getMessage());
       return false;
     }
   }
 
   public static String describe(String expression) {
-    CronParser parser = new CronParser(cronDefinition);
     CronDescriptor descriptor = CronDescriptor.instance(Locale.UK);
-    return descriptor.describe(parser.parse(expression));
+    return descriptor.describe(parse(expression));
   }
 
   public static LocalDateTime launchTime(String expression) {
-    CronParser parser = new CronParser(cronDefinition);
-    ExecutionTime executionTime = ExecutionTime.forCron(parser.parse(expression));
+    ExecutionTime executionTime = ExecutionTime.forCron(parse(expression));
     return executionTime.nextExecution(ZonedDateTime.now()).get().toLocalDateTime();
   }
 }
