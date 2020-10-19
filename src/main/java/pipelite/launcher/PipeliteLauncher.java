@@ -57,7 +57,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private ProcessSource processSource;
 
   private final AtomicInteger processFailedToCreateCount = new AtomicInteger(0);
-  private final AtomicInteger processFailedToExecuteCount = new AtomicInteger(0);
+  private final AtomicInteger processExceptionCount = new AtomicInteger(0);
   private final AtomicInteger processCompletedCount = new AtomicInteger(0);
   private final AtomicInteger stageFailedCount = new AtomicInteger(0);
   private final AtomicInteger stageCompletedCount = new AtomicInteger(0);
@@ -293,7 +293,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
             processLauncher.run();
             processCompletedCount.incrementAndGet();
           } catch (Exception ex) {
-            processFailedToExecuteCount.incrementAndGet();
+            processExceptionCount.incrementAndGet();
             logContext(log.atSevere(), processId).withCause(ex).log("Failed to execute process");
           } finally {
             processLocker.unlock(getPipelineName(), processId);
@@ -355,8 +355,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
     return processFailedToCreateCount.get();
   }
 
-  public int getProcessFailedToExecuteCount() {
-    return processFailedToExecuteCount.get();
+  public int getProcessExceptionCount() {
+    return processExceptionCount.get();
   }
 
   public int getProcessCompletedCount() {

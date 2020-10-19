@@ -31,9 +31,14 @@ public class StageParametersUtils {
     return getValue(stageParameters::getTimeout, stageConfiguration::getTimeout);
   }
 
-  public static Integer getRetries(
+  public static Integer getMaximumRetries(
       StageParameters stageParameters, StageConfiguration stageConfiguration) {
-    return getValue(stageParameters::getRetries, stageConfiguration::getRetries);
+    return getValue(stageParameters::getMaximumRetries, stageConfiguration::getMaximumRetries);
+  }
+
+  public static Integer getImmediateRetries(
+          StageParameters stageParameters, StageConfiguration stageConfiguration) {
+    return getValue(stageParameters::getImmediateRetries, stageConfiguration::getImmediateRetries);
   }
 
   public static String getTempDir(

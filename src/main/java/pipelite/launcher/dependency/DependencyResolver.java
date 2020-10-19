@@ -54,7 +54,7 @@ public class DependencyResolver {
     }
   }
 
-  public List<ProcessLauncher.StageAndStageEntity> getRunnableStages() {
+  public List<ProcessLauncher.StageAndStageEntity> getExecutableStages() {
     List<ProcessLauncher.StageAndStageEntity> runnableStages = new ArrayList<>();
     for (ProcessLauncher.StageAndStageEntity stageAndStageEntity : stageAndStageEntities) {
       Stage stage = stageAndStageEntity.getStage();
@@ -71,11 +71,12 @@ public class DependencyResolver {
           case ERROR:
             {
               Integer executionCount = stageEntity.getExecutionCount();
-              Integer retries = stage.getStageParameters().getRetries();
-              if (retries == null) {
-                retries = ConfigurableStageParameters.DEFAULT_RETRIES;
-              }
-              if (executionCount < retries) {
+              int maximumRetries = ProcessLauncher.getMaximumRetries(stage);
+              int immediateRetries = ProcessLauncher.getImmediateRetries(stage);
+
+              if (executionCount != null
+                  && executionCount < maximumRetries
+                  && stageAndStageEntity.immediateExecutionCount < immediateRetries) {
                 runnableStages.add(stageAndStageEntity);
               }
             }

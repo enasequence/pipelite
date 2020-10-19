@@ -34,7 +34,7 @@ import pipelite.service.StageService;
       "pipelite.launcher.processLaunchParallelism=2",
       "pipelite.launcher.processLaunchFrequency=250ms",
       "pipelite.launcher.stageLaunchFrequency=250ms",
-      "pipelite.stage.retries=1"
+      "pipelite.stage.maximumRetries=1"
     })
 @ContextConfiguration(initializers = PipeliteLauncherOracleSuccessTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"oracle-test"})

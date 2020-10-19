@@ -26,14 +26,14 @@ import pipelite.UniqueStringGenerator;
     classes = TestConfiguration.class,
     properties = {
       "pipelite.launcher.processLaunchFrequency=250ms",
-      "pipelite.launcher.stageLaunchFrequency=250ms"
+      "pipelite.launcher.stageLaunchFrequency=250ms",
+      "pipelite.stage.maximumRetries=1"
     })
-@ContextConfiguration(
-    initializers = PipeliteSchedulerOracleSuccessTest.TestContextInitializer.class)
-@ActiveProfiles(value = {"oracle-test"})
-public class PipeliteSchedulerOracleSuccessTest {
+@ContextConfiguration(initializers = PipeliteSchedulerHSqlTest.TestContextInitializer.class)
+@ActiveProfiles(value = {"hsql-test"})
+public class PipeliteSchedulerHSqlTest {
 
-  @Autowired private ObjectProvider<PipeliteSchedulerSuccessTester> tester;
+  @Autowired private ObjectProvider<PipeliteSchedulerTester> tester;
 
   public static class TestContextInitializer
       implements ApplicationContextInitializer<ConfigurableApplicationContext> {
@@ -46,12 +46,22 @@ public class PipeliteSchedulerOracleSuccessTest {
   }
 
   @Test
-  public void testSingleProcess() {
-    tester.getObject().testSingleProcess();
+  public void testOneProcess() {
+    tester.getObject().testOneProcess();
   }
 
   @Test
   public void testThreeProcesses() {
     tester.getObject().testThreeProcesses();
+  }
+
+  @Test
+  public void testOneProcessOneFailure() {
+    tester.getObject().testOneProcessesOneFailure();
+  }
+
+  @Test
+  public void testThreeProcessesOneFailure() {
+    tester.getObject().testThreeProcessesOneFailure();
   }
 }

@@ -19,14 +19,16 @@ import java.time.Duration;
 public interface ConfigurableStageParameters {
 
   Duration DEFAULT_TIMEOUT = Duration.ofDays(7);
-  int DEFAULT_RETRIES = 3;
+  int DEFAULT_MAX_RETRIES = 3;
   Duration DEFAULT_POLL_DELAY = Duration.ofMinutes(1);
 
   String getHost();
 
   Duration getTimeout();
 
-  Integer getRetries();
+  Integer getMaximumRetries();
+
+  Integer getImmediateRetries();
 
   String[] getEnv();
 

@@ -28,7 +28,8 @@ public class StageParameters implements ConfigurableStageParameters {
 
   private String host; // Executors: SSH
   private Duration timeout; // Executors: all
-  private Integer retries; // Executors: all
+  private Integer maximumRetries; // Executors: all
+  private Integer immediateRetries; // Executors: all
   private String[] env; // Executors: all
   private String workDir; // Executors: LSF
   private Integer memory; // Executors: LSF
@@ -45,7 +46,8 @@ public class StageParameters implements ConfigurableStageParameters {
     }
     setHost(StageParametersUtils.getHost(this, stageConfiguration));
     setTimeout(StageParametersUtils.getTimeout(this, stageConfiguration));
-    setRetries(StageParametersUtils.getRetries(this, stageConfiguration));
+    setMaximumRetries(StageParametersUtils.getMaximumRetries(this, stageConfiguration));
+    setImmediateRetries(StageParametersUtils.getImmediateRetries(this, stageConfiguration));
     setEnv(StageParametersUtils.getEnv(this, stageConfiguration));
     setWorkDir(StageParametersUtils.getTempDir(this, stageConfiguration));
     setMemory(StageParametersUtils.getMemory(this, stageConfiguration));

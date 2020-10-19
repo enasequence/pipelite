@@ -27,7 +27,7 @@ import javax.annotation.PostConstruct;
       "pipelite.launcher.processLaunchParallelism=5",
       "pipelite.launcher.processLaunchFrequency=250ms",
       "pipelite.launcher.stageLaunchFrequency=250ms",
-      "pipelite.stage.retries=1"
+      "pipelite.stage.maximumRetries=1"
     })
 @ContextConfiguration(initializers = PipeliteLauncherHSqlSuccessTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"hsql-test"})

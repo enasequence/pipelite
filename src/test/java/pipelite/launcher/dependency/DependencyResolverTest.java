@@ -51,11 +51,11 @@ public class DependencyResolverTest {
 
     DependencyResolver dependencyResolver = new DependencyResolver(stageAndStageEntities);
 
-    List<ProcessLauncher.StageAndStageEntity> runnableStages =
-        dependencyResolver.getRunnableStages();
+    List<ProcessLauncher.StageAndStageEntity> executableStages =
+        dependencyResolver.getExecutableStages();
 
-    assertThat(runnableStages.size()).isOne();
-    assertThat(runnableStages.get(0).getStage().getStageName()).isEqualTo("STAGE1");
+    assertThat(executableStages.size()).isOne();
+    assertThat(executableStages.get(0).getStage().getStageName()).isEqualTo("STAGE1");
   }
 
   @Test
@@ -83,11 +83,11 @@ public class DependencyResolverTest {
 
     DependencyResolver dependencyResolver = new DependencyResolver(stageAndStageEntities);
 
-    List<ProcessLauncher.StageAndStageEntity> runnableStages =
-        dependencyResolver.getRunnableStages();
+    List<ProcessLauncher.StageAndStageEntity> executableStages =
+        dependencyResolver.getExecutableStages();
 
-    assertThat(runnableStages.size()).isOne();
-    assertThat(runnableStages.get(0).getStage().getStageName()).isEqualTo("STAGE1");
+    assertThat(executableStages.size()).isOne();
+    assertThat(executableStages.get(0).getStage().getStageName()).isEqualTo("STAGE1");
   }
 
   @Test
@@ -120,12 +120,12 @@ public class DependencyResolverTest {
 
     DependencyResolver dependencyResolver = new DependencyResolver(stageAndStageEntities);
 
-    List<ProcessLauncher.StageAndStageEntity> runnableStages =
-        dependencyResolver.getRunnableStages();
+    List<ProcessLauncher.StageAndStageEntity> executableStages =
+        dependencyResolver.getExecutableStages();
 
-    assertThat(runnableStages.size()).isEqualTo(2);
-    assertThat(runnableStages.get(0).getStage().getStageName()).isEqualTo("STAGE2");
-    assertThat(runnableStages.get(1).getStage().getStageName()).isEqualTo("STAGE3");
+    assertThat(executableStages.size()).isEqualTo(2);
+    assertThat(executableStages.get(0).getStage().getStageName()).isEqualTo("STAGE2");
+    assertThat(executableStages.get(1).getStage().getStageName()).isEqualTo("STAGE3");
   }
 
   @Test
@@ -151,7 +151,7 @@ public class DependencyResolverTest {
       stageEntity.startExecution(stage);
       if (stageNumber == 0) {
         stageEntity.endExecution(StageExecutionResult.error());
-        stage.getStageParameters().setRetries(1);
+        stage.getStageParameters().setMaximumRetries(1);
       }
       stageNumber++;
       stageAndStageEntities.add(new ProcessLauncher.StageAndStageEntity(stage, stageEntity));
@@ -159,10 +159,10 @@ public class DependencyResolverTest {
 
     DependencyResolver dependencyResolver = new DependencyResolver(stageAndStageEntities);
 
-    List<ProcessLauncher.StageAndStageEntity> runnableStages =
-        dependencyResolver.getRunnableStages();
+    List<ProcessLauncher.StageAndStageEntity> executableStages =
+        dependencyResolver.getExecutableStages();
 
-    assertThat(runnableStages.size()).isEqualTo(0);
+    assertThat(executableStages.size()).isEqualTo(0);
   }
 
   @Test
@@ -188,7 +188,7 @@ public class DependencyResolverTest {
       stageEntity.startExecution(stage);
       if (stageNumber == 0) {
         stageEntity.endExecution(StageExecutionResult.error());
-        stage.getStageParameters().setRetries(3);
+        stage.getStageParameters().setMaximumRetries(3);
       }
       stageNumber++;
       stageAndStageEntities.add(new ProcessLauncher.StageAndStageEntity(stage, stageEntity));
@@ -196,11 +196,11 @@ public class DependencyResolverTest {
 
     DependencyResolver dependencyResolver = new DependencyResolver(stageAndStageEntities);
 
-    List<ProcessLauncher.StageAndStageEntity> runnableStages =
-        dependencyResolver.getRunnableStages();
+    List<ProcessLauncher.StageAndStageEntity> executableStages =
+        dependencyResolver.getExecutableStages();
 
-    assertThat(runnableStages.size()).isOne();
-    assertThat(runnableStages.get(0).getStage().getStageName()).isEqualTo("STAGE1");
+    assertThat(executableStages.size()).isOne();
+    assertThat(executableStages.get(0).getStage().getStageName()).isEqualTo("STAGE1");
   }
 
   @Test

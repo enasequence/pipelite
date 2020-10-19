@@ -10,7 +10,7 @@
  */
 package pipelite.launcher;
 
-import static pipelite.stage.ConfigurableStageParameters.DEFAULT_RETRIES;
+import static pipelite.stage.ConfigurableStageParameters.DEFAULT_MAX_RETRIES;
 import static pipelite.stage.StageExecutionResultType.*;
 
 import com.google.common.flogger.FluentLogger;
@@ -104,6 +104,7 @@ public class ProcessLauncher implements Runnable {
   public static class StageAndStageEntity {
     private final Stage stage;
     private final StageEntity stageEntity;
+    public int immediateExecutionCount = 0;
 
     public StageAndStageEntity(Stage stage, StageEntity stageEntity) {
       this.stage = stage;
@@ -164,13 +165,8 @@ public class ProcessLauncher implements Runnable {
         return ProcessState.ACTIVE;
       } else {
         Integer executionCount = stageAndStageEntity.getStageEntity().getExecutionCount();
-
-        int retries = DEFAULT_RETRIES;
-        if (stageAndStageEntity.getStage().getStageParameters().getRetries() != null) {
-          retries = stageAndStageEntity.getStage().getStageParameters().getRetries();
-        }
-
-        if (resultType == ERROR && executionCount != null && executionCount >= retries) {
+        int maximumRetries = getMaximumRetries(stageAndStageEntity.getStage());
+        if (resultType == ERROR && executionCount != null && executionCount >= maximumRetries) {
           return ProcessState.FAILED;
         }
       }
@@ -183,6 +179,22 @@ public class ProcessLauncher implements Runnable {
     return ProcessState.ACTIVE;
   }
 
+  public static int getMaximumRetries(Stage stage) {
+    int maximumRetries = DEFAULT_MAX_RETRIES;
+    if (stage.getStageParameters().getMaximumRetries() != null) {
+      maximumRetries = stage.getStageParameters().getMaximumRetries();
+    }
+    return Math.max(0, maximumRetries);
+  }
+
+  public static int getImmediateRetries(Stage stage) {
+    int maximumRetries = getMaximumRetries(stage);
+    if (stage.getStageParameters().getImmediateRetries() != null) {
+      Math.max(0, stage.getStageParameters().getImmediateRetries());
+    }
+    return maximumRetries;
+  }
+
   private void executeStages() {
     while (true) {
       if (Thread.currentThread().isInterrupted()) {
@@ -190,14 +202,15 @@ public class ProcessLauncher implements Runnable {
         return;
       }
 
-      logContext(log.atFine()).log("Executing stages");
+      logContext(log.atInfo()).log("Executing stages");
 
-      List<StageAndStageEntity> runnableStages = dependencyResolver.getRunnableStages();
-      if (runnableStages.isEmpty()) {
+      List<StageAndStageEntity> executableStages = dependencyResolver.getExecutableStages();
+      if (executableStages.isEmpty()) {
+        logContext(log.atInfo()).log("No executable stages");
         return;
       }
 
-      for (StageAndStageEntity stageAndStageEntity : runnableStages) {
+      for (StageAndStageEntity stageAndStageEntity : executableStages) {
         String stageName = stageAndStageEntity.getStage().getStageName();
         if (activeStages.contains(stageName)) {
           continue;
@@ -307,6 +320,7 @@ public class ProcessLauncher implements Runnable {
 
     stageEntity.endExecution(result);
     stageService.saveStage(stageEntity);
+    stageAndStageEntity.immediateExecutionCount++;
 
     if (result.isSuccess()) {
       stageCompletedCount.incrementAndGet();

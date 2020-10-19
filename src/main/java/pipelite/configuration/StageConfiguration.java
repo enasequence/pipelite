@@ -11,7 +11,6 @@
 package pipelite.configuration;
 
 import java.time.Duration;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -34,7 +33,8 @@ public class StageConfiguration implements ConfigurableStageParameters {
       Duration memoryTimeout,
       Integer cores,
       String queue,
-      Integer retries,
+      Integer maximumRetries,
+      Integer immediateRetries,
       String workDir,
       String[] env,
       Duration pollDelay,
@@ -45,7 +45,8 @@ public class StageConfiguration implements ConfigurableStageParameters {
     this.memoryTimeout = memoryTimeout;
     this.cores = cores;
     this.queue = queue;
-    this.retries = retries != null ? retries : DEFAULT_RETRIES;
+    this.maximumRetries = maximumRetries != null ? maximumRetries : DEFAULT_MAX_RETRIES;
+    this.immediateRetries = immediateRetries;
     this.workDir = workDir;
     this.env = env;
     this.pollDelay = pollDelay != null ? pollDelay : DEFAULT_POLL_DELAY;
@@ -70,8 +71,11 @@ public class StageConfiguration implements ConfigurableStageParameters {
   /** Queue name. */
   private String queue;
 
-  /** Number of retries. */
-  @Builder.Default private Integer retries = DEFAULT_RETRIES;
+  /** Number of maximum retries. */
+  @Builder.Default private Integer maximumRetries = DEFAULT_MAX_RETRIES;
+
+  /** Number of maximum retries. */
+  private Integer immediateRetries;
 
   /** Work directory. */
   private String workDir;
