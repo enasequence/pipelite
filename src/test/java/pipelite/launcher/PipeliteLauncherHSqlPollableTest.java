@@ -19,17 +19,11 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import pipelite.TestConfiguration;
+import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.LauncherConfiguration;
-import pipelite.configuration.ProcessConfiguration;
-import pipelite.configuration.StageConfiguration;
-import pipelite.service.LockService;
-import pipelite.service.ProcessService;
-import pipelite.service.StageService;
 
 @SpringBootTest(
-    classes = TestConfiguration.class,
+    classes = PipeliteTestConfiguration.class,
     properties = {
       "pipelite.launcher.processLaunchParallelism=2",
       "pipelite.launcher.processLaunchFrequency=250ms",
@@ -40,13 +34,7 @@ import pipelite.service.StageService;
 @ActiveProfiles(value = {"hsql-test"})
 public class PipeliteLauncherHSqlPollableTest {
 
-  @Autowired private LauncherConfiguration launcherConfiguration;
-  @Autowired private ProcessConfiguration processConfiguration;
-  @Autowired private StageConfiguration stageConfiguration;
-  @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
-  @Autowired private ProcessService processService;
-  @Autowired private StageService stageService;
-  @Autowired private LockService lockService;
+  @Autowired private ObjectProvider<PipeliteLauncherPollableTester> testerObjectProvider;
 
   public PipeliteLauncherHSqlPollableTest() {}
 
@@ -55,76 +43,33 @@ public class PipeliteLauncherHSqlPollableTest {
     @Override
     public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
       TestPropertyValues.of(
-              "pipelite.launcher.launcherName=" + UniqueStringGenerator.randomLauncherName(),
-              "pipelite.process.pipelineName=" + UniqueStringGenerator.randomPipelineName())
+              "pipelite.launcher.launcherName=" + UniqueStringGenerator.randomLauncherName())
           .applyTo(configurableApplicationContext.getEnvironment());
     }
   }
 
   @Test
   public void testPollSuccessExecuteSuccess() {
-    PipeliteLauncherPollableTester tester =
-        new PipeliteLauncherPollableTester(
-            launcherConfiguration,
-            processConfiguration,
-            stageConfiguration,
-            processService,
-            stageService,
-            lockService);
-    tester.testPollSuccessExecuteSuccess();
+    testerObjectProvider.getObject().testPollSuccessExecuteSuccess();
   }
 
   @Test
   public void testPollErrorExecuteSuccess() {
-    PipeliteLauncherPollableTester tester =
-        new PipeliteLauncherPollableTester(
-            launcherConfiguration,
-            processConfiguration,
-            stageConfiguration,
-            processService,
-            stageService,
-            lockService);
-    tester.testPollErrorExecuteSuccess();
+    testerObjectProvider.getObject().testPollErrorExecuteSuccess();
   }
 
   @Test
   public void testPollErrorExecuteError() {
-    PipeliteLauncherPollableTester tester =
-        new PipeliteLauncherPollableTester(
-            launcherConfiguration,
-            processConfiguration,
-            stageConfiguration,
-            processService,
-            stageService,
-            lockService);
-    tester.testPollErrorExecuteSuccess();
+    testerObjectProvider.getObject().testPollErrorExecuteError();
   }
 
   @Test
   public void testPollExceptionExecuteSuccess() {
-    PipeliteLauncherPollableTester tester =
-        new PipeliteLauncherPollableTester(
-            launcherConfiguration,
-            processConfiguration,
-            stageConfiguration,
-            processService,
-            stageService,
-            lockService);
-
-    tester.testPollExceptionExecuteSuccess();
+    testerObjectProvider.getObject().testPollExceptionExecuteSuccess();
   }
 
   @Test
   public void testPollExceptionExecuteError() {
-    PipeliteLauncherPollableTester tester =
-        new PipeliteLauncherPollableTester(
-            launcherConfiguration,
-            processConfiguration,
-            stageConfiguration,
-            processService,
-            stageService,
-            lockService);
-
-    tester.testPollExceptionExecuteError();
+    testerObjectProvider.getObject().testPollExceptionExecuteError();
   }
 }

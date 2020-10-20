@@ -21,4 +21,4 @@ import org.springframework.context.annotation.ComponentScan;
       "pipelite.repository",
       "pipelite.configuration"
     })
-public class TestConfiguration {}
+public class PipeliteTestConfiguration {}

@@ -19,12 +19,11 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import pipelite.TestConfiguration;
+import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.ProcessConfiguration;
 
 @SpringBootTest(
-    classes = TestConfiguration.class,
+    classes = PipeliteTestConfiguration.class,
     properties = {
       "pipelite.launcher.processLaunchParallelism=5",
       "pipelite.launcher.processLaunchFrequency=250ms",
@@ -34,24 +33,20 @@ import pipelite.configuration.ProcessConfiguration;
 @ActiveProfiles(value = {"hsql-test"})
 public class PipeliteLauncherHSqlSuccessTest {
 
-  @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
-  @Autowired private ProcessConfiguration processConfiguration;
+  @Autowired private ObjectProvider<PipeliteLauncherSuccessTester> testerObjectProvider;
 
   public static class TestContextInitializer
       implements ApplicationContextInitializer<ConfigurableApplicationContext> {
     @Override
     public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
       TestPropertyValues.of(
-              "pipelite.launcher.launcherName=" + UniqueStringGenerator.randomLauncherName(),
-              "pipelite.process.pipelineName=" + UniqueStringGenerator.randomPipelineName())
+              "pipelite.launcher.launcherName=" + UniqueStringGenerator.randomLauncherName())
           .applyTo(configurableApplicationContext.getEnvironment());
     }
   }
 
   @Test
   public void test() {
-    PipeliteLauncherSuccessTester tester =
-        new PipeliteLauncherSuccessTester(pipeliteLauncherObjectProvider, processConfiguration);
-    tester.test();
+    testerObjectProvider.getObject().test();
   }
 }

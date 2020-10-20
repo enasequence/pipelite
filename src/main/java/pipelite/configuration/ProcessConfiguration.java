@@ -15,7 +15,6 @@ import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
-import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
 
 @Data
@@ -27,12 +26,7 @@ public class ProcessConfiguration {
 
   public ProcessConfiguration() {}
 
-  /**
-   * Name of the ProcessFactory class that creates processes for execution given a process id.
-   * A Process is uniquely identified by the process id and contains execution instructions
-   * for one or more Stages.
-   */
-  private String processFactoryClassName;
+  private String pipelineName;
 
   /**
    * Name of the ProcessSource class that creates new process ids to be executed. A Process is
@@ -41,31 +35,10 @@ public class ProcessConfiguration {
    */
   private String processSourceClassName;
 
-  private ProcessFactory processFactory;
-
-  private ProcessFactory getProcessFactory() {
-    return processFactory;
-  }
-
   private ProcessSource processSource;
 
   private ProcessSource getProcessSource() {
     return processSource;
-  }
-
-  public static ProcessFactory getProcessFactory(ProcessConfiguration processConfiguration) {
-    if (processConfiguration.getProcessFactory() != null) {
-      return processConfiguration.getProcessFactory();
-    }
-    if (processConfiguration.getProcessFactoryClassName() != null) {
-      ProcessFactory factory =
-          ProcessFactory.getProcessFactory(processConfiguration.getProcessFactoryClassName());
-      if (factory != null) {
-        processConfiguration.setProcessFactory(factory);
-        return factory;
-      }
-    }
-    throw new RuntimeException("Could not create process factory");
   }
 
   public static ProcessSource getProcessSource(ProcessConfiguration processConfiguration) {

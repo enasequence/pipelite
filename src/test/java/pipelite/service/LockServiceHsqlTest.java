@@ -16,9 +16,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
-import pipelite.TestConfiguration;
+import pipelite.PipeliteTestConfiguration;
 
-@SpringBootTest(classes = TestConfiguration.class)
+@SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test"})
 public class LockServiceHsqlTest {
 

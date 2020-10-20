@@ -15,70 +15,127 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
+
 import lombok.Value;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
 import pipelite.TestInMemoryProcessFactory;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.ProcessConfiguration;
-import pipelite.configuration.StageConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.executor.PollableExecutor;
-import pipelite.executor.StageExecutor;
 import pipelite.process.Process;
+import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.service.LockService;
 import pipelite.service.ProcessService;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 
+@Component
 public class PipeliteLauncherPollableTester {
 
-  private final LauncherConfiguration launcherConfiguration;
-  private final ProcessConfiguration processConfiguration;
-  private final StageConfiguration stageConfiguration;
-  private final ProcessService processService;
-  private final StageService stageService;
-  private final LockService lockService;
+  @Autowired private ProcessConfiguration processConfiguration;
+  @Autowired private ProcessService processService;
+  @Autowired private StageService stageService;
+  @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
 
-  public PipeliteLauncherPollableTester(
-      LauncherConfiguration launcherConfiguration,
-      ProcessConfiguration processConfiguration,
-      StageConfiguration stageConfiguration,
-      ProcessService processService,
-      StageService stageService,
-      LockService lockService) {
-    this.launcherConfiguration = launcherConfiguration;
-    this.processConfiguration = processConfiguration;
-    this.stageConfiguration = stageConfiguration;
-    this.processService = processService;
-    this.stageService = stageService;
-    this.lockService = lockService;
+  @TestConfiguration
+  static class TestConfig {
+    @Bean
+    public ProcessFactory pollSuccessExecuteSuccess() {
+      return new TestInMemoryProcessFactory(
+          POLL_SUCCESS_EXECUTE_SUCCESS_NAME, POLL_SUCCESS_EXECUTE_SUCCESS_PROCESSES);
+    }
 
-    pollCount = new AtomicInteger();
-    executeCount = new AtomicInteger();
-    pollCount = new AtomicInteger();
-    executeCount = new AtomicInteger();
-    pollCount = new AtomicInteger();
-    executeCount = new AtomicInteger();
+    @Bean
+    public ProcessFactory pollErrorExecuteSuccess() {
+      return new TestInMemoryProcessFactory(
+          POLL_ERROR_EXECUTE_SUCCESS_NAME, POLL_ERROR_EXECUTE_SUCCESS_PROCESSES);
+    }
+
+    @Bean
+    public ProcessFactory pollErrorExecuteError() {
+      return new TestInMemoryProcessFactory(
+          POLL_ERROR_EXECUTE_ERROR_NAME, POLL_ERROR_EXECUTE_ERROR_PROCESSES);
+    }
+
+    @Bean
+    public ProcessFactory pollExceptionExecuteSuccess() {
+      return new TestInMemoryProcessFactory(
+          POLL_EXCEPTION_EXECUTE_SUCCESS_NAME, POLL_EXCEPTION_EXECUTE_SUCCESS_PROCESSES);
+    }
+
+    @Bean
+    public ProcessFactory pollExceptionExecuteError() {
+      return new TestInMemoryProcessFactory(
+          POLL_EXCEPTION_EXECUTE_ERROR_NAME, POLL_EXCEPTION_EXECUTE_ERROR_PROCESSES);
+    }
   }
 
-  private static final int PROCESS_CNT = 4;
+  private static AtomicInteger pollCount = new AtomicInteger();
+  private static AtomicInteger executeCount = new AtomicInteger();
 
-  private static AtomicInteger pollCount;
-  private static AtomicInteger executeCount;
+  private static final String POLL_SUCCESS_EXECUTE_SUCCESS_NAME =
+      UniqueStringGenerator.randomPipelineName();
+  private static final String POLL_ERROR_EXECUTE_SUCCESS_NAME =
+      UniqueStringGenerator.randomPipelineName();
+  private static final String POLL_ERROR_EXECUTE_ERROR_NAME =
+      UniqueStringGenerator.randomPipelineName();
+  private static final String POLL_EXCEPTION_EXECUTE_SUCCESS_NAME =
+      UniqueStringGenerator.randomPipelineName();
+  private static final String POLL_EXCEPTION_EXECUTE_ERROR_NAME =
+      UniqueStringGenerator.randomPipelineName();
+
+  private static final int PROCESS_CNT = 4;
+  private static final List<Process> POLL_SUCCESS_EXECUTE_SUCCESS_PROCESSES = new ArrayList<>();
+  private static final List<Process> POLL_ERROR_EXECUTE_SUCCESS_PROCESSES = new ArrayList<>();
+  private static final List<Process> POLL_ERROR_EXECUTE_ERROR_PROCESSES = new ArrayList<>();
+  private static final List<Process> POLL_EXCEPTION_EXECUTE_SUCCESS_PROCESSES = new ArrayList<>();
+  private static final List<Process> POLL_EXCEPTION_EXECUTE_ERROR_PROCESSES = new ArrayList<>();
+
+  static {
+    IntStream.range(0, PROCESS_CNT)
+        .forEach(
+            i -> {
+              String processId = UniqueStringGenerator.randomProcessId();
+              String stageName = UniqueStringGenerator.randomStageName();
+              POLL_SUCCESS_EXECUTE_SUCCESS_PROCESSES.add(
+                  new ProcessBuilder(POLL_SUCCESS_EXECUTE_SUCCESS_NAME, processId, 9)
+                      .execute(stageName)
+                      .with(new PollSuccessExecuteSuccessStageExecutor())
+                      .build());
+              POLL_ERROR_EXECUTE_SUCCESS_PROCESSES.add(
+                  new ProcessBuilder(POLL_ERROR_EXECUTE_SUCCESS_NAME, processId, 9)
+                      .execute(stageName)
+                      .with(new PollErrorExecuteSuccessStageExecutor())
+                      .build());
+              POLL_ERROR_EXECUTE_ERROR_PROCESSES.add(
+                  new ProcessBuilder(POLL_ERROR_EXECUTE_ERROR_NAME, processId, 9)
+                      .execute(stageName)
+                      .with(new PollErrorExecuteErrorStageExecutor())
+                      .build());
+              POLL_EXCEPTION_EXECUTE_SUCCESS_PROCESSES.add(
+                  new ProcessBuilder(POLL_EXCEPTION_EXECUTE_SUCCESS_NAME, processId, 9)
+                      .execute(stageName)
+                      .with(new PollExceptionExecuteSuccessStageExecutor())
+                      .build());
+              POLL_EXCEPTION_EXECUTE_ERROR_PROCESSES.add(
+                  new ProcessBuilder(POLL_EXCEPTION_EXECUTE_ERROR_NAME, processId, 9)
+                      .execute(stageName)
+                      .with(new PollExceptionExecuteErrorStageExecutor())
+                      .build());
+            });
+  }
 
   private PipeliteLauncher pipeliteLauncher() {
-    PipeliteLauncher pipeliteLauncher =
-        new PipeliteLauncher(
-            launcherConfiguration,
-            processConfiguration,
-            stageConfiguration,
-            processService,
-            stageService,
-            lockService);
+    PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
     pipeliteLauncher.setShutdownIfIdle(true);
     return pipeliteLauncher;
   }
@@ -158,37 +215,27 @@ public class PipeliteLauncherPollableTester {
     }
   }
 
-  private void init(ProcessState processState, StageExecutor stageExecutor) {
-    List<Process> processes = new ArrayList<>();
+  private void init(ProcessState processState, List<Process> processes) {
+    pollCount.set(0);
+    executeCount.set(0);
 
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    for (int i = 0; i < PROCESS_CNT; ++i) {
-      String processId = UniqueStringGenerator.randomProcessId();
-      String stageName = UniqueStringGenerator.randomStageName();
-      ProcessEntity processEntity = ProcessEntity.newExecution(processId, pipelineName, 1);
+    for (Process process : processes) {
+      ProcessEntity processEntity =
+          ProcessEntity.newExecution(process.getProcessId(), process.getPipelineName(), 1);
       processEntity.setState(processState);
       processService.saveProcess(processEntity);
-
-      Process process =
-          new ProcessBuilder(pipelineName, processId, 9)
-              .execute(stageName)
-              .with(stageExecutor)
-              .build();
-      processes.add(process);
 
       Stage stage = process.getStages().get(0);
       StageEntity stageEntity = StageEntity.createExecution(stage);
       stageEntity.startExecution(stage);
       stageService.saveStage(stageEntity);
-    }
 
-    TestInMemoryProcessFactory processFactory =
-        new TestInMemoryProcessFactory(pipelineName, processes);
-    processConfiguration.setProcessFactory(processFactory);
+      processConfiguration.setPipelineName(process.getPipelineName());
+    }
   }
 
   public void testPollSuccessExecuteSuccess() {
-    init(ProcessState.ACTIVE, new PollSuccessExecuteSuccessStageExecutor());
+    init(ProcessState.ACTIVE, POLL_SUCCESS_EXECUTE_SUCCESS_PROCESSES);
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
@@ -200,7 +247,7 @@ public class PipeliteLauncherPollableTester {
   }
 
   public void testPollErrorExecuteSuccess() {
-    init(ProcessState.ACTIVE, new PollErrorExecuteSuccessStageExecutor());
+    init(ProcessState.ACTIVE, POLL_ERROR_EXECUTE_SUCCESS_PROCESSES);
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
@@ -212,7 +259,7 @@ public class PipeliteLauncherPollableTester {
   }
 
   public void testPollErrorExecuteError() {
-    init(ProcessState.ACTIVE, new PollErrorExecuteErrorStageExecutor());
+    init(ProcessState.ACTIVE, POLL_ERROR_EXECUTE_ERROR_PROCESSES);
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
@@ -224,7 +271,7 @@ public class PipeliteLauncherPollableTester {
   }
 
   public void testPollExceptionExecuteSuccess() {
-    init(ProcessState.ACTIVE, new PollExceptionExecuteSuccessStageExecutor());
+    init(ProcessState.ACTIVE, POLL_EXCEPTION_EXECUTE_SUCCESS_PROCESSES);
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
@@ -236,7 +283,7 @@ public class PipeliteLauncherPollableTester {
   }
 
   public void testPollExceptionExecuteError() {
-    init(ProcessState.ACTIVE, new PollExceptionExecuteErrorStageExecutor());
+    init(ProcessState.ACTIVE, POLL_EXCEPTION_EXECUTE_ERROR_PROCESSES);
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());

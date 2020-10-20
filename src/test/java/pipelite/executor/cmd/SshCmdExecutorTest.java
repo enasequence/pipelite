@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import pipelite.TestConfiguration;
+import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.SingularityTestConfiguration;
 import pipelite.configuration.SshTestConfiguration;
@@ -25,7 +25,7 @@ import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
 import pipelite.stage.StageParameters;
 
-@SpringBootTest(classes = TestConfiguration.class)
+@SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles("test")
 public class SshCmdExecutorTest {
 

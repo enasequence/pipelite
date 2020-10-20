@@ -36,7 +36,6 @@ create table pipelite_schedule
 (
     pipeline_name varchar2(64) not null,
     launcher_name varchar2(256) not null,
-    process_factory_name varchar2(256) not null,
 	schedule varchar2(256) not null,
 	description varchar2(256),
 	exec_start date,
@@ -54,7 +53,6 @@ create table pipelite_schedule_audit
 (
     pipeline_name varchar2(64),
     launcher_name varchar2(256),
-    process_factory_name varchar2(256),
 	schedule varchar2(256),
 	description varchar2(256),
 	exec_start date,
@@ -93,7 +91,6 @@ begin
       insert into pipelite_schedule_audit (
         pipeline_name,
         launcher_name,
-        process_factory_name,
     	schedule,
     	description,
 	    exec_start,
@@ -109,7 +106,6 @@ begin
       (
         :old.pipeline_name,
         :old.launcher_name,
-        :old.process_factory_name,
     	:old.schedule,
     	:old.description,
 	    :old.exec_start,

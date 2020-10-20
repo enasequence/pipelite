@@ -31,9 +31,6 @@ public class ScheduleEntity {
   @Column(name = "LAUNCHER_NAME", nullable = false)
   private String launcherName;
 
-  @Column(name = "PROCESS_FACTORY_NAME", nullable = false)
-  private String processFactoryName;
-
   @Column(name = "SCHEDULE", nullable = false)
   private String schedule;
 

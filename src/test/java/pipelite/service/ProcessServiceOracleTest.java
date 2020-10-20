@@ -19,12 +19,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
-import pipelite.TestConfiguration;
+import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.ProcessEntity;
 import pipelite.process.ProcessState;
 
-@SpringBootTest(classes = TestConfiguration.class)
+@SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"oracle-test"})
 class ProcessServiceOracleTest {
 

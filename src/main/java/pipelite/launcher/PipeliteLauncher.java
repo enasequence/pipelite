@@ -33,6 +33,7 @@ import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
 import pipelite.service.LockService;
+import pipelite.service.ProcessFactoryService;
 import pipelite.service.ProcessService;
 import pipelite.service.StageService;
 
@@ -46,6 +47,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private final LauncherConfiguration launcherConfiguration;
   private final ProcessConfiguration processConfiguration;
   private final StageConfiguration stageConfiguration;
+  private final ProcessFactoryService processFactoryService;
   private final ProcessService processService;
   private final StageService stageService;
   private final String launcherName;
@@ -79,16 +81,19 @@ public class PipeliteLauncher extends AbstractScheduledService {
       @Autowired LauncherConfiguration launcherConfiguration,
       @Autowired ProcessConfiguration processConfiguration,
       @Autowired StageConfiguration stageConfiguration,
+      @Autowired ProcessFactoryService processFactoryService,
       @Autowired ProcessService processService,
       @Autowired StageService stageService,
       @Autowired LockService lockService) {
-    if (!launcherConfiguration.validate()) {
-      throw new IllegalArgumentException("Invalid launcher configuration");
-    }
 
+    if (processConfiguration.getPipelineName() == null
+        || processConfiguration.getPipelineName().trim().isEmpty()) {
+      throw new IllegalArgumentException("Missing pipeline name");
+    }
     this.launcherConfiguration = launcherConfiguration;
     this.processConfiguration = processConfiguration;
     this.stageConfiguration = stageConfiguration;
+    this.processFactoryService = processFactoryService;
     this.processService = processService;
     this.stageService = stageService;
     this.workers =
@@ -104,19 +109,13 @@ public class PipeliteLauncher extends AbstractScheduledService {
     }
 
     if (launcherConfiguration.getProcessRefreshFrequency() != null) {
-      this.processRefreshFrequency =
-          launcherConfiguration.getProcessRefreshFrequency();
+      this.processRefreshFrequency = launcherConfiguration.getProcessRefreshFrequency();
     } else {
       this.processRefreshFrequency = LauncherConfiguration.DEFAULT_PROCESS_REFRESH_FREQUENCY;
     }
 
-    this.processFactory = ProcessConfiguration.getProcessFactory(processConfiguration);
-    if (processFactory == null) {
-      throw new IllegalArgumentException("Missing process factory");
-    }
-    if (processFactory.getPipelineName() == null) {
-      throw new IllegalArgumentException("Missing process factory pipeline name");
-    }
+    this.processFactory = processFactoryService.create(getPipelineName());
+
     if (processConfiguration.isProcessSource()) {
       this.processSource = ProcessConfiguration.getProcessSource(processConfiguration);
     } else {
@@ -344,7 +343,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
   }
 
   public String getPipelineName() {
-    return processFactory.getPipelineName();
+    return processConfiguration.getPipelineName();
   }
 
   public int getActiveProcessCount() {

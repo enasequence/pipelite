@@ -72,11 +72,6 @@ public class LauncherConfiguration {
    */
   private int processLaunchParallelism;
 
-  public boolean validate() {
-    boolean isSuccess = true;
-    return isSuccess;
-  }
-
   /** Defaults to <host name>@<pipeline name>. */
   public static String getLauncherNameForPipeliteLauncher(
       LauncherConfiguration launcherConfiguration, String pipelineName) {

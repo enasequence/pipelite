@@ -15,12 +15,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import pipelite.TestConfiguration;
+import pipelite.PipeliteTestConfiguration;
 
 @SpringBootTest(
-    classes = TestConfiguration.class,
+    classes = PipeliteTestConfiguration.class,
     properties = {
-      "pipelite.process.processFactoryClassName=TEST",
+      "pipelite.process.pipelineName=TEST",
       "pipelite.process.processSourceClassName=TEST"
     })
 public class ProcessConfigurationTest {
@@ -29,7 +29,7 @@ public class ProcessConfigurationTest {
 
   @Test
   public void test() {
-    assertThat(config.getProcessFactoryClassName()).isEqualTo("TEST");
+    assertThat(config.getPipelineName()).isEqualTo("TEST");
     assertThat(config.getProcessSourceClassName()).isEqualTo("TEST");
   }
 }

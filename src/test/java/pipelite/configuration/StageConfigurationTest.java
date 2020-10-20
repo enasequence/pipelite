@@ -15,10 +15,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import pipelite.TestConfiguration;
+import pipelite.PipeliteTestConfiguration;
 
 @SpringBootTest(
-    classes = TestConfiguration.class,
+    classes = PipeliteTestConfiguration.class,
     properties = {
       "pipelite.stage.memory=1",
       "pipelite.stage.cores=1",

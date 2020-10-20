@@ -20,11 +20,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
-import pipelite.TestConfiguration;
+import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.ScheduleEntity;
 
-@SpringBootTest(classes = TestConfiguration.class)
+@SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test"})
 class ScheduleServiceHsqlTest {
 
@@ -42,7 +42,6 @@ class ScheduleServiceHsqlTest {
     ScheduleEntity schedule = new ScheduleEntity();
     schedule.setLauncherName(launcherName);
     schedule.setPipelineName(pipelineName);
-    schedule.setProcessFactoryName("test");
     schedule.setSchedule("test");
 
     service.saveProcessSchedule(schedule);
@@ -51,8 +50,6 @@ class ScheduleServiceHsqlTest {
     assertThat(schedules.size()).isEqualTo(1);
     assertThat(schedules.get(0).getLauncherName()).isEqualTo(schedule.getLauncherName());
     assertThat(schedules.get(0).getPipelineName()).isEqualTo(schedule.getPipelineName());
-    assertThat(schedules.get(0).getProcessFactoryName())
-        .isEqualTo(schedule.getProcessFactoryName());
     assertThat(schedules.get(0).getSchedule()).isEqualTo(schedule.getSchedule());
     assertThat(schedules.get(0).getExecutionCount()).isEqualTo(0);
     assertThat(schedules.get(0).getStartTime()).isNull();
@@ -61,7 +58,6 @@ class ScheduleServiceHsqlTest {
     ScheduleEntity schedule2 = new ScheduleEntity();
     schedule2.setLauncherName(launcherName);
     schedule2.setPipelineName(pipelineName2);
-    schedule2.setProcessFactoryName("test2");
     schedule2.setSchedule("test2");
 
     service.saveProcessSchedule(schedule2);
@@ -71,8 +67,6 @@ class ScheduleServiceHsqlTest {
     assertThat(schedules.size()).isEqualTo(2);
     assertThat(schedules.get(0).getLauncherName()).isEqualTo(schedule.getLauncherName());
     assertThat(schedules.get(0).getPipelineName()).isEqualTo(schedule.getPipelineName());
-    assertThat(schedules.get(0).getProcessFactoryName())
-        .isEqualTo(schedule.getProcessFactoryName());
     assertThat(schedules.get(0).getSchedule()).isEqualTo(schedule.getSchedule());
     assertThat(schedules.get(0).getExecutionCount()).isEqualTo(0);
     assertThat(schedules.get(0).getStartTime()).isNull();
@@ -80,8 +74,6 @@ class ScheduleServiceHsqlTest {
 
     assertThat(schedules.get(1).getLauncherName()).isEqualTo(schedule2.getLauncherName());
     assertThat(schedules.get(1).getPipelineName()).isEqualTo(schedule2.getPipelineName());
-    assertThat(schedules.get(1).getProcessFactoryName())
-        .isEqualTo(schedule2.getProcessFactoryName());
     assertThat(schedules.get(1).getSchedule()).isEqualTo(schedule2.getSchedule());
     assertThat(schedules.get(1).getExecutionCount()).isEqualTo(0);
     assertThat(schedules.get(1).getStartTime()).isNull();

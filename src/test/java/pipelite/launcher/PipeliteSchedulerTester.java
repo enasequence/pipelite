@@ -12,6 +12,8 @@ package pipelite.launcher;
 
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import pipelite.UniqueStringGenerator;
@@ -47,7 +49,77 @@ public class PipeliteSchedulerTester {
     this.launcherConfiguration = launcherConfiguration;
   }
 
+  @TestConfiguration
+  static class TestConfig {
+    @Bean
+    public ProcessFactory oneProcess() {
+      return new TestProcessFactory(ONE);
+    }
+
+    @Bean
+    public ProcessFactory threeProcesses1() {
+      return new TestProcessFactory(THREE_1);
+    }
+
+    @Bean
+    public ProcessFactory threeProcesses2() {
+      return new TestProcessFactory(THREE_2);
+    }
+
+    @Bean
+    public ProcessFactory threeProcesses3() {
+      return new TestProcessFactory(THREE_3);
+    }
+
+    @Bean
+    public ProcessFactory oneProcessOneFailure() {
+      return new TestProcessFactory(ONE_FAILURE);
+    }
+
+    @Bean
+    public ProcessFactory threeProcessesOneFailure1() {
+      return new TestProcessFactory(THREE_ONE_FAILURE_1);
+    }
+
+    @Bean
+    public ProcessFactory threeProcessesOneFailure2() {
+      return new TestProcessFactory(THREE_ONE_FAILURE_2);
+    }
+
+    @Bean
+    public ProcessFactory threeProcessesOneFailure3() {
+      return new TestProcessFactory(THREE_ONE_FAILURE_3);
+    }
+
+    @Bean
+    public ProcessFactory threeProcessesAllFailure1() {
+      return new TestProcessFactory(THREE_ALL_FAILURE_1);
+    }
+
+    @Bean
+    public ProcessFactory threeProcessesAllFailure2() {
+      return new TestProcessFactory(THREE_ALL_FAILURE_2);
+    }
+
+    @Bean
+    public ProcessFactory threeProcessesAllFailure3() {
+      return new TestProcessFactory(THREE_ALL_FAILURE_3);
+    }
+  }
+
   private static final Duration STOP_AFTER = Duration.ofSeconds(10);
+
+  private static final ScheduleTest ONE = new ScheduleTest(2, false);
+  private static final ScheduleTest THREE_1 = new ScheduleTest(2, false);
+  private static final ScheduleTest THREE_2 = new ScheduleTest(4, false);
+  private static final ScheduleTest THREE_3 = new ScheduleTest(6, false);
+  private static final ScheduleTest ONE_FAILURE = new ScheduleTest(6, true);
+  private static final ScheduleTest THREE_ONE_FAILURE_1 = new ScheduleTest(2, false);
+  private static final ScheduleTest THREE_ONE_FAILURE_2 = new ScheduleTest(4, false);
+  private static final ScheduleTest THREE_ONE_FAILURE_3 = new ScheduleTest(6, true);
+  private static final ScheduleTest THREE_ALL_FAILURE_1 = new ScheduleTest(2, true);
+  private static final ScheduleTest THREE_ALL_FAILURE_2 = new ScheduleTest(4, true);
+  private static final ScheduleTest THREE_ALL_FAILURE_3 = new ScheduleTest(6, true);
 
   @Data
   private static class ScheduleTest {
@@ -103,90 +175,11 @@ public class PipeliteSchedulerTester {
     }
   }
 
-  private static final ScheduleTest ONE = new ScheduleTest(2, false);
-  private static final ScheduleTest THREE_1 = new ScheduleTest(2, false);
-  private static final ScheduleTest THREE_2 = new ScheduleTest(4, false);
-  private static final ScheduleTest THREE_3 = new ScheduleTest(6, false);
-  private static final ScheduleTest ONE_FAILURE = new ScheduleTest(6, true);
-  private static final ScheduleTest THREE_ONE_FAILURE_1 = new ScheduleTest(2, false);
-  private static final ScheduleTest THREE_ONE_FAILURE_2 = new ScheduleTest(4, false);
-  private static final ScheduleTest THREE_ONE_FAILURE_3 = new ScheduleTest(6, true);
-  private static final ScheduleTest THREE_ALL_FAILURE_1 = new ScheduleTest(2, true);
-  private static final ScheduleTest THREE_ALL_FAILURE_2 = new ScheduleTest(4, true);
-  private static final ScheduleTest THREE_ALL_FAILURE_3 = new ScheduleTest(6, true);
-
-  public static class TestProcessFactoryOneProcess extends TestProcessFactory {
-    public TestProcessFactoryOneProcess() {
-      super(ONE);
-    }
-  }
-
-  public static class TestProcessFactoryThreeProcesses1 extends TestProcessFactory {
-    public TestProcessFactoryThreeProcesses1() {
-      super(THREE_1);
-    }
-  }
-
-  public static class TestProcessFactoryThreeProcesses2 extends TestProcessFactory {
-    public TestProcessFactoryThreeProcesses2() {
-      super(THREE_2);
-    }
-  }
-
-  public static class TestProcessFactoryThreeProcesses3 extends TestProcessFactory {
-    public TestProcessFactoryThreeProcesses3() {
-      super(THREE_3);
-    }
-  }
-
-  public static class TestProcessFactoryOneProcessOneFailure extends TestProcessFactory {
-    public TestProcessFactoryOneProcessOneFailure() {
-      super(ONE_FAILURE);
-    }
-  }
-
-  public static class TestProcessFactoryThreeProcessesOneFailure1 extends TestProcessFactory {
-    public TestProcessFactoryThreeProcessesOneFailure1() {
-      super(THREE_ONE_FAILURE_1);
-    }
-  }
-
-  public static class TestProcessFactoryThreeProcessesOneFailure2 extends TestProcessFactory {
-    public TestProcessFactoryThreeProcessesOneFailure2() {
-      super(THREE_ONE_FAILURE_2);
-    }
-  }
-
-  public static class TestProcessFactoryThreeProcessesOneFailure3 extends TestProcessFactory {
-    public TestProcessFactoryThreeProcessesOneFailure3() {
-      super(THREE_ONE_FAILURE_3);
-    }
-  }
-
-  public static class TestProcessFactoryThreeProcessesAllFailure1 extends TestProcessFactory {
-    public TestProcessFactoryThreeProcessesAllFailure1() {
-      super(THREE_ALL_FAILURE_1);
-    }
-  }
-
-  public static class TestProcessFactoryThreeProcessesAllFailure2 extends TestProcessFactory {
-    public TestProcessFactoryThreeProcessesAllFailure2() {
-      super(THREE_ALL_FAILURE_2);
-    }
-  }
-
-  public static class TestProcessFactoryThreeProcessesAllFailure3 extends TestProcessFactory {
-    public TestProcessFactoryThreeProcessesAllFailure3() {
-      super(THREE_ALL_FAILURE_3);
-    }
-  }
-
-  private void saveSchedule(ScheduleTest scheduleTest, String processFactoryName) {
+  private void saveSchedule(ScheduleTest scheduleTest) {
     ScheduleEntity schedule = new ScheduleEntity();
     schedule.setSchedule("0/" + scheduleTest.seconds + " * * * * ?");
     schedule.setLauncherName(launcherConfiguration.getLauncherName());
     schedule.setPipelineName(scheduleTest.pipelineName);
-    schedule.setProcessFactoryName(processFactoryName);
     scheduleService.saveProcessSchedule(schedule);
     System.out.println(
         "saved schedule for pipeline: "
@@ -252,7 +245,7 @@ public class PipeliteSchedulerTester {
     ONE.reset();
 
     try {
-      saveSchedule(ONE, TestProcessFactoryOneProcess.class.getName());
+      saveSchedule(ONE);
 
       pipeliteScheduler.setShutdownAfter(STOP_AFTER);
 
@@ -270,9 +263,9 @@ public class PipeliteSchedulerTester {
     THREE_3.reset();
 
     try {
-      saveSchedule(THREE_1, TestProcessFactoryThreeProcesses1.class.getName());
-      saveSchedule(THREE_2, TestProcessFactoryThreeProcesses2.class.getName());
-      saveSchedule(THREE_3, TestProcessFactoryThreeProcesses3.class.getName());
+      saveSchedule(THREE_1);
+      saveSchedule(THREE_2);
+      saveSchedule(THREE_3);
 
       pipeliteScheduler.setShutdownAfter(STOP_AFTER);
 
@@ -291,7 +284,7 @@ public class PipeliteSchedulerTester {
     ONE_FAILURE.reset();
 
     try {
-      saveSchedule(ONE_FAILURE, TestProcessFactoryOneProcessOneFailure.class.getName());
+      saveSchedule(ONE_FAILURE);
 
       pipeliteScheduler.setShutdownAfter(STOP_AFTER);
 
@@ -310,12 +303,9 @@ public class PipeliteSchedulerTester {
     THREE_ONE_FAILURE_3.reset();
 
     try {
-      saveSchedule(
-          THREE_ONE_FAILURE_1, TestProcessFactoryThreeProcessesOneFailure1.class.getName());
-      saveSchedule(
-          THREE_ONE_FAILURE_2, TestProcessFactoryThreeProcessesOneFailure2.class.getName());
-      saveSchedule(
-          THREE_ONE_FAILURE_3, TestProcessFactoryThreeProcessesOneFailure3.class.getName());
+      saveSchedule(THREE_ONE_FAILURE_1);
+      saveSchedule(THREE_ONE_FAILURE_2);
+      saveSchedule(THREE_ONE_FAILURE_3);
 
       pipeliteScheduler.setShutdownAfter(STOP_AFTER);
 
@@ -338,12 +328,9 @@ public class PipeliteSchedulerTester {
     THREE_ALL_FAILURE_3.reset();
 
     try {
-      saveSchedule(
-          THREE_ALL_FAILURE_1, TestProcessFactoryThreeProcessesAllFailure1.class.getName());
-      saveSchedule(
-          THREE_ALL_FAILURE_2, TestProcessFactoryThreeProcessesAllFailure2.class.getName());
-      saveSchedule(
-          THREE_ALL_FAILURE_3, TestProcessFactoryThreeProcessesAllFailure3.class.getName());
+      saveSchedule(THREE_ALL_FAILURE_1);
+      saveSchedule(THREE_ALL_FAILURE_2);
+      saveSchedule(THREE_ALL_FAILURE_3);
 
       pipeliteScheduler.setShutdownAfter(STOP_AFTER);
 

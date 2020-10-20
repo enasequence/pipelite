@@ -32,10 +32,7 @@ import pipelite.launcher.locker.ProcessLocker;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
-import pipelite.service.LockService;
-import pipelite.service.ProcessService;
-import pipelite.service.ScheduleService;
-import pipelite.service.StageService;
+import pipelite.service.*;
 
 @Flogger
 @Component
@@ -44,6 +41,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
 
   private final LauncherConfiguration launcherConfiguration;
   private final StageConfiguration stageConfiguration;
+  private final ProcessFactoryService processFactoryService;
   private final ScheduleService scheduleService;
   private final ProcessService processService;
   private final StageService stageService;
@@ -84,13 +82,14 @@ public class PipeliteScheduler extends AbstractScheduledService {
   public PipeliteScheduler(
       @Autowired LauncherConfiguration launcherConfiguration,
       @Autowired StageConfiguration stageConfiguration,
+      @Autowired ProcessFactoryService processFactoryService,
       @Autowired ScheduleService scheduleService,
       @Autowired ProcessService processService,
       @Autowired StageService stageService,
       @Autowired LockService lockService) {
-    launcherConfiguration.validate();
     this.launcherConfiguration = launcherConfiguration;
     this.stageConfiguration = stageConfiguration;
+    this.processFactoryService = processFactoryService;
     this.scheduleService = scheduleService;
     this.processService = processService;
     this.stageService = stageService;
@@ -226,12 +225,12 @@ public class PipeliteScheduler extends AbstractScheduledService {
     }
   }
 
-  private ProcessFactory getCachedProcessFactory(String processFactoryName) {
-    if (processFactoryCache.containsKey(processFactoryName)) {
-      return processFactoryCache.get(processFactoryName);
+  private ProcessFactory getCachedProcessFactory(String pipelineName) {
+    if (processFactoryCache.containsKey(pipelineName)) {
+      return processFactoryCache.get(pipelineName);
     }
-    ProcessFactory processFactory = ProcessFactory.getProcessFactory(processFactoryName);
-    processFactoryCache.put(processFactoryName, processFactory);
+    ProcessFactory processFactory = processFactoryService.create(pipelineName);
+    processFactoryCache.put(pipelineName, processFactory);
     return processFactory;
   }
 
@@ -244,7 +243,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
     logContext(log.atInfo(), pipelineName, processId).log("Creating new process");
 
     ProcessFactory processFactory =
-        getCachedProcessFactory(schedule.getScheduleEntity().getProcessFactoryName());
+        getCachedProcessFactory(schedule.getScheduleEntity().getPipelineName());
 
     Process process = processFactory.create(processId);
 

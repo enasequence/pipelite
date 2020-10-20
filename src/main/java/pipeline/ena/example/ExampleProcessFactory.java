@@ -1,5 +1,6 @@
 package pipeline.ena.example;
 
+import org.springframework.stereotype.Component;
 import pipelite.executor.StageExecutor;
 import pipelite.process.ProcessFactory;
 import pipelite.process.Process;
@@ -7,6 +8,7 @@ import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 
+@Component
 public class ExampleProcessFactory implements ProcessFactory {
 
   private static final String PIPELINE_NAME = "example";

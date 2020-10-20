@@ -16,31 +16,58 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
 import pipelite.TestInMemoryProcessFactory;
 import pipelite.TestInMemoryProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ProcessConfiguration;
 import pipelite.executor.StageExecutor;
 import pipelite.process.Process;
+import pipelite.process.ProcessFactory;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.StageExecutionResult;
 
-@AllArgsConstructor
+@Component
 public class PipeliteLauncherSuccessTester {
 
-  private final ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
-  private final ProcessConfiguration processConfiguration;
+  @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
+  @Autowired private ProcessConfiguration processConfiguration;
+
+  @TestConfiguration
+  static class TestConfig {
+    @Bean
+    public ProcessFactory test() {
+      return new TestInMemoryProcessFactory(PIPELINE_NAME, PROCESSES);
+    }
+  }
 
   private static final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
-  private final AtomicInteger processExecutionCount = new AtomicInteger();
-  private final Set<String> processExecutionSet = ConcurrentHashMap.newKeySet();
-  private final Set<String> processExcessExecutionSet = ConcurrentHashMap.newKeySet();
   private static final int PROCESS_COUNT = 1;
+  private static final List<Process> PROCESSES = new ArrayList<>();
+
+  static {
+    for (int i = 0; i < PROCESS_COUNT; ++i) {
+      String processId = "Process" + i;
+      String stageName = UniqueStringGenerator.randomStageName();
+      PROCESSES.add(
+          new ProcessBuilder(PIPELINE_NAME, processId, 9)
+              .execute(stageName)
+              .with(createStageExecutor(processId))
+              .build());
+    }
+  }
+
   private static final Duration STAGE_EXECUTION_TIME = Duration.ofMillis(10);
 
-  private StageExecutor createStageExecutor(String processId) {
+  private static final AtomicInteger processExecutionCount = new AtomicInteger();
+  private static final Set<String> processExecutionSet = ConcurrentHashMap.newKeySet();
+  private static final Set<String> processExcessExecutionSet = ConcurrentHashMap.newKeySet();
+
+  private static StageExecutor createStageExecutor(String processId) {
     return stage -> {
       processExecutionCount.incrementAndGet();
       if (processExecutionSet.contains(processId)) {
@@ -57,24 +84,13 @@ public class PipeliteLauncherSuccessTester {
     };
   }
 
-  private List<Process> createProcesses() {
-    List<Process> processes = new ArrayList<>();
-    for (int i = 0; i < PROCESS_COUNT; ++i) {
-      String processId = "Process" + i;
-      processes.add(
-          new ProcessBuilder(PIPELINE_NAME, processId, 9)
-              .execute(UniqueStringGenerator.randomStageName())
-              .with(createStageExecutor(processId))
-              .build());
-    }
-    return processes;
-  }
-
   public void test() {
-    List<Process> processes = createProcesses();
-    processConfiguration.setProcessFactory(
-        new TestInMemoryProcessFactory(PIPELINE_NAME, processes));
-    processConfiguration.setProcessSource(new TestInMemoryProcessSource(processes));
+    processExecutionCount.set(0);
+    processExecutionSet.clear();
+    processExcessExecutionSet.clear();
+
+    processConfiguration.setPipelineName(PIPELINE_NAME);
+    processConfiguration.setProcessSource(new TestInMemoryProcessSource(PROCESSES));
     PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
     pipeliteLauncher.setShutdownIfIdle(true);
 

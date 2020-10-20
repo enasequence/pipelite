@@ -11,18 +11,14 @@
 package pipelite.launcher;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import pipelite.TestConfiguration;
-import pipelite.configuration.ProcessConfiguration;
-
-import javax.annotation.PostConstruct;
+import pipelite.PipeliteTestConfiguration;
 
 @SpringBootTest(
-    classes = TestConfiguration.class,
+    classes = PipeliteTestConfiguration.class,
     properties = {
       "pipelite.launcher.processLaunchParallelism=5",
       "pipelite.launcher.processLaunchFrequency=250ms",
@@ -32,16 +28,7 @@ import javax.annotation.PostConstruct;
 @ContextConfiguration(initializers = PipeliteLauncherOracleSuccessTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"oracle-test"})
 public class PipeliteLauncherOracleFailureTest {
-  @Autowired private ProcessConfiguration processConfiguration;
-  @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
-
-  private PipeliteLauncherFailureTester tester;
-
-  @PostConstruct
-  public void init() {
-    tester =
-            new PipeliteLauncherFailureTester(processConfiguration, pipeliteLauncherObjectProvider);
-  }
+  @Autowired private PipeliteLauncherFailureTester tester;
 
   @Test
   public void testFirstStageFails() {
