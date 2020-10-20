@@ -65,4 +65,9 @@ public class PipeliteSchedulerOracleTest {
   public void testThreeProcessesOneFailure() {
     tester.getObject().testThreeProcessesOneFailure();
   }
+
+  @Test
+  public void testThreeProcessesAllFailure() {
+    tester.getObject().testThreeProcessesAllFailure();
+  }
 }

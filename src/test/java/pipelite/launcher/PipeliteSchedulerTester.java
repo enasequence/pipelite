@@ -141,6 +141,12 @@ public class PipeliteSchedulerTester {
       UniqueStringGenerator.randomPipelineName();
   private static final String PIPELINE_NAME_THREE_PROCESS_ONE_FAILURE_3 =
       UniqueStringGenerator.randomPipelineName();
+  private static final String PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_1 =
+          UniqueStringGenerator.randomPipelineName();
+  private static final String PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_2 =
+          UniqueStringGenerator.randomPipelineName();
+  private static final String PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_3 =
+          UniqueStringGenerator.randomPipelineName();
 
   // 60 must be divisible by SCHEDULE_SECONDS.
   private static final int SCHEDULE_SECONDS_ONE_PROCESS = 2;
@@ -151,6 +157,9 @@ public class PipeliteSchedulerTester {
   private static final int SCHEDULE_SECONDS_THREE_PROCESS_ONE_FAILURE_1 = 2;
   private static final int SCHEDULE_SECONDS_THREE_PROCESS_ONE_FAILURE_2 = 4;
   private static final int SCHEDULE_SECONDS_THREE_PROCESS_ONE_FAILURE_3 = 6;
+  private static final int SCHEDULE_SECONDS_THREE_PROCESS_ALL_FAILURE_1 = 2;
+  private static final int SCHEDULE_SECONDS_THREE_PROCESS_ALL_FAILURE_2 = 4;
+  private static final int SCHEDULE_SECONDS_THREE_PROCESS_ALL_FAILURE_3 = 6;
 
   private static final ExecCnt EXEC_CNT_ONE_PROCESS = new ExecCnt();
   private static final ExecCnt EXEC_CNT_THREE_PROCESS_1 = new ExecCnt();
@@ -160,6 +169,9 @@ public class PipeliteSchedulerTester {
   private static final ExecCnt EXEC_CNT_THREE_PROCESS_ONE_FAILURE_1 = new ExecCnt();
   private static final ExecCnt EXEC_CNT_THREE_PROCESS_ONE_FAILURE_2 = new ExecCnt();
   private static final ExecCnt EXEC_CNT_THREE_PROCESS_ONE_FAILURE_3 = new ExecCnt();
+  private static final ExecCnt EXEC_CNT_THREE_PROCESS_ALL_FAILURE_1 = new ExecCnt();
+  private static final ExecCnt EXEC_CNT_THREE_PROCESS_ALL_FAILURE_2 = new ExecCnt();
+  private static final ExecCnt EXEC_CNT_THREE_PROCESS_ALL_FAILURE_3 = new ExecCnt();
 
   public static class TestProcessFactoryOneProcess extends TestProcessFactory {
     public TestProcessFactoryOneProcess() {
@@ -209,6 +221,23 @@ public class PipeliteSchedulerTester {
     }
   }
 
+  public static class TestProcessFactoryThreeProcessesAllFailure1 extends TestProcessFactory {
+    public TestProcessFactoryThreeProcessesAllFailure1() {
+      super(PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_1, EXEC_CNT_THREE_PROCESS_ALL_FAILURE_1, true);
+    }
+  }
+
+  public static class TestProcessFactoryThreeProcessesAllFailure2 extends TestProcessFactory {
+    public TestProcessFactoryThreeProcessesAllFailure2() {
+      super(PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_2, EXEC_CNT_THREE_PROCESS_ALL_FAILURE_2, true);
+    }
+  }
+
+  public static class TestProcessFactoryThreeProcessesAllFailure3 extends TestProcessFactory {
+    public TestProcessFactoryThreeProcessesAllFailure3() {
+      super(PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_3, EXEC_CNT_THREE_PROCESS_ALL_FAILURE_3, true);
+    }
+  }
   private void saveSchedule(String pipelineName, int scheduleSeconds, String processFactoryName) {
     ScheduleEntity schedule = new ScheduleEntity();
     schedule.setSchedule("0/" + scheduleSeconds + " * * * * ?");
@@ -403,6 +432,52 @@ public class PipeliteSchedulerTester {
       deleteSchedule(PIPELINE_NAME_THREE_PROCESS_ONE_FAILURE_1);
       deleteSchedule(PIPELINE_NAME_THREE_PROCESS_ONE_FAILURE_2);
       deleteSchedule(PIPELINE_NAME_THREE_PROCESS_ONE_FAILURE_3);
+    }
+  }
+
+  public void testThreeProcessesAllFailure() {
+    EXEC_CNT_THREE_PROCESS_ALL_FAILURE_1.reset();
+    EXEC_CNT_THREE_PROCESS_ALL_FAILURE_2.reset();
+    EXEC_CNT_THREE_PROCESS_ALL_FAILURE_3.reset();
+
+    try {
+      saveSchedule(
+              PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_1,
+              SCHEDULE_SECONDS_THREE_PROCESS_ALL_FAILURE_1,
+              TestProcessFactoryThreeProcessesAllFailure1.class.getName());
+      saveSchedule(
+              PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_2,
+              SCHEDULE_SECONDS_THREE_PROCESS_ALL_FAILURE_2,
+              TestProcessFactoryThreeProcessesAllFailure2.class.getName());
+      saveSchedule(
+              PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_3,
+              SCHEDULE_SECONDS_THREE_PROCESS_ALL_FAILURE_3,
+              TestProcessFactoryThreeProcessesAllFailure3.class.getName());
+
+      pipeliteScheduler.setShutdownAfter(STOP_AFTER);
+
+      ServerManager.run(pipeliteScheduler, pipeliteScheduler.serviceName());
+
+      assertResult(
+              pipeliteScheduler,
+              Arrays.asList(
+                      new TestResult(
+                              SCHEDULE_SECONDS_THREE_PROCESS_ALL_FAILURE_1,
+                              EXEC_CNT_THREE_PROCESS_ALL_FAILURE_1,
+                              true),
+                      new TestResult(
+                              SCHEDULE_SECONDS_THREE_PROCESS_ALL_FAILURE_2,
+                              EXEC_CNT_THREE_PROCESS_ALL_FAILURE_2,
+                              true),
+                      new TestResult(
+                              SCHEDULE_SECONDS_THREE_PROCESS_ALL_FAILURE_3,
+                              EXEC_CNT_THREE_PROCESS_ALL_FAILURE_3,
+                              true)));
+
+    } finally {
+      deleteSchedule(PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_1);
+      deleteSchedule(PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_2);
+      deleteSchedule(PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_3);
     }
   }
 }

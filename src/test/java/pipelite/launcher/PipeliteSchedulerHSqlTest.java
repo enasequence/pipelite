@@ -64,4 +64,9 @@ public class PipeliteSchedulerHSqlTest {
   public void testThreeProcessesOneFailure() {
     tester.getObject().testThreeProcessesOneFailure();
   }
+
+  @Test
+  public void testThreeProcessesAllFailure() {
+    tester.getObject().testThreeProcessesAllFailure();
+  }
 }
