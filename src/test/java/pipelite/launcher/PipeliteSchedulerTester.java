@@ -50,48 +50,40 @@ public class PipeliteSchedulerTester {
   private static final Duration STOP_AFTER = Duration.ofSeconds(10);
 
   @Data
-  private static class ExecCnt {
-    public final AtomicInteger processExecutionCount = new AtomicInteger();
-    public final AtomicInteger stageExecutionCount = new AtomicInteger();
+  private static class ScheduleTest {
+    private final int seconds; // 60 must be divisible by seconds.
+    private final boolean failure;
+    private final String pipelineName = UniqueStringGenerator.randomPipelineName();
+    public final AtomicInteger processExecCnt = new AtomicInteger();
+    public final AtomicInteger stageExecCnt = new AtomicInteger();
 
     public void reset() {
-      processExecutionCount.set(0);
-      stageExecutionCount.set(0);
+      processExecCnt.set(0);
+      stageExecCnt.set(0);
     }
   }
 
   public static class TestProcessFactory implements ProcessFactory {
-    public final String pipelineName;
-    public final ExecCnt execCnt;
-    public final boolean error;
+    private final ScheduleTest scheduleTest;
 
-    public TestProcessFactory(String pipelineName, ExecCnt execCnt, boolean error) {
-      this.pipelineName = pipelineName;
-      this.execCnt = execCnt;
-      this.error = error;
+    public TestProcessFactory(ScheduleTest scheduleTest) {
+      this.scheduleTest = scheduleTest;
     }
 
     @Override
     public String getPipelineName() {
-      return pipelineName;
+      return scheduleTest.pipelineName;
     }
 
     @Override
     public Process create(String processId) {
-      return new ProcessBuilder(pipelineName, processId, 9)
+      return new ProcessBuilder(getPipelineName(), processId, 9)
           .execute("STAGE1")
           .with(
               (stage) -> {
-                System.out.println(
-                    "executing pipeline: "
-                        + pipelineName
-                        + " process: "
-                        + processId
-                        + " stage: "
-                        + stage.getStageName());
-                execCnt.processExecutionCount.incrementAndGet();
-                execCnt.stageExecutionCount.incrementAndGet();
-                if (error) {
+                scheduleTest.processExecCnt.incrementAndGet();
+                scheduleTest.stageExecCnt.incrementAndGet();
+                if (scheduleTest.failure) {
                   return StageExecutionResult.error();
                 } else {
                   return StageExecutionResult.success();
@@ -100,15 +92,8 @@ public class PipeliteSchedulerTester {
           .execute("STAGE2")
           .with(
               (stage) -> {
-                System.out.println(
-                    "executing pipeline: "
-                        + pipelineName
-                        + " process: "
-                        + processId
-                        + " stage: "
-                        + stage.getStageName());
-                execCnt.stageExecutionCount.incrementAndGet();
-                if (error) {
+                scheduleTest.stageExecCnt.incrementAndGet();
+                if (scheduleTest.failure) {
                   return StageExecutionResult.error();
                 } else {
                   return StageExecutionResult.success();
@@ -118,165 +103,123 @@ public class PipeliteSchedulerTester {
     }
   }
 
-  @Data
-  private static class TestResult {
-    private final int scheduleSeconds;
-    private final ExecCnt execCnt;
-    private final boolean failure;
-  }
-
-  private static final String PIPELINE_NAME_ONE_PROCESS =
-      UniqueStringGenerator.randomPipelineName();
-  private static final String PIPELINE_NAME_THREE_PROCESS_1 =
-      UniqueStringGenerator.randomPipelineName();
-  private static final String PIPELINE_NAME_THREE_PROCESS_2 =
-      UniqueStringGenerator.randomPipelineName();
-  private static final String PIPELINE_NAME_THREE_PROCESS_3 =
-      UniqueStringGenerator.randomPipelineName();
-  private static final String PIPELINE_NAME_ONE_PROCESS_ONE_FAILURE =
-      UniqueStringGenerator.randomPipelineName();
-  private static final String PIPELINE_NAME_THREE_PROCESS_ONE_FAILURE_1 =
-      UniqueStringGenerator.randomPipelineName();
-  private static final String PIPELINE_NAME_THREE_PROCESS_ONE_FAILURE_2 =
-      UniqueStringGenerator.randomPipelineName();
-  private static final String PIPELINE_NAME_THREE_PROCESS_ONE_FAILURE_3 =
-      UniqueStringGenerator.randomPipelineName();
-  private static final String PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_1 =
-          UniqueStringGenerator.randomPipelineName();
-  private static final String PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_2 =
-          UniqueStringGenerator.randomPipelineName();
-  private static final String PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_3 =
-          UniqueStringGenerator.randomPipelineName();
-
-  // 60 must be divisible by SCHEDULE_SECONDS.
-  private static final int SCHEDULE_SECONDS_ONE_PROCESS = 2;
-  private static final int SCHEDULE_SECONDS_THREE_PROCESS_1 = 2;
-  private static final int SCHEDULE_SECONDS_THREE_PROCESS_2 = 4;
-  private static final int SCHEDULE_SECONDS_THREE_PROCESS_3 = 6;
-  private static final int SCHEDULE_SECONDS_ONE_PROCESS_ONE_FAILURE = 6;
-  private static final int SCHEDULE_SECONDS_THREE_PROCESS_ONE_FAILURE_1 = 2;
-  private static final int SCHEDULE_SECONDS_THREE_PROCESS_ONE_FAILURE_2 = 4;
-  private static final int SCHEDULE_SECONDS_THREE_PROCESS_ONE_FAILURE_3 = 6;
-  private static final int SCHEDULE_SECONDS_THREE_PROCESS_ALL_FAILURE_1 = 2;
-  private static final int SCHEDULE_SECONDS_THREE_PROCESS_ALL_FAILURE_2 = 4;
-  private static final int SCHEDULE_SECONDS_THREE_PROCESS_ALL_FAILURE_3 = 6;
-
-  private static final ExecCnt EXEC_CNT_ONE_PROCESS = new ExecCnt();
-  private static final ExecCnt EXEC_CNT_THREE_PROCESS_1 = new ExecCnt();
-  private static final ExecCnt EXEC_CNT_THREE_PROCESS_2 = new ExecCnt();
-  private static final ExecCnt EXEC_CNT_THREE_PROCESS_3 = new ExecCnt();
-  private static final ExecCnt EXEC_CNT_ONE_PROCESS_ONE_FAILURE = new ExecCnt();
-  private static final ExecCnt EXEC_CNT_THREE_PROCESS_ONE_FAILURE_1 = new ExecCnt();
-  private static final ExecCnt EXEC_CNT_THREE_PROCESS_ONE_FAILURE_2 = new ExecCnt();
-  private static final ExecCnt EXEC_CNT_THREE_PROCESS_ONE_FAILURE_3 = new ExecCnt();
-  private static final ExecCnt EXEC_CNT_THREE_PROCESS_ALL_FAILURE_1 = new ExecCnt();
-  private static final ExecCnt EXEC_CNT_THREE_PROCESS_ALL_FAILURE_2 = new ExecCnt();
-  private static final ExecCnt EXEC_CNT_THREE_PROCESS_ALL_FAILURE_3 = new ExecCnt();
+  private static final ScheduleTest ONE = new ScheduleTest(2, false);
+  private static final ScheduleTest THREE_1 = new ScheduleTest(2, false);
+  private static final ScheduleTest THREE_2 = new ScheduleTest(4, false);
+  private static final ScheduleTest THREE_3 = new ScheduleTest(6, false);
+  private static final ScheduleTest ONE_FAILURE = new ScheduleTest(6, true);
+  private static final ScheduleTest THREE_ONE_FAILURE_1 = new ScheduleTest(2, false);
+  private static final ScheduleTest THREE_ONE_FAILURE_2 = new ScheduleTest(4, false);
+  private static final ScheduleTest THREE_ONE_FAILURE_3 = new ScheduleTest(6, true);
+  private static final ScheduleTest THREE_ALL_FAILURE_1 = new ScheduleTest(2, true);
+  private static final ScheduleTest THREE_ALL_FAILURE_2 = new ScheduleTest(4, true);
+  private static final ScheduleTest THREE_ALL_FAILURE_3 = new ScheduleTest(6, true);
 
   public static class TestProcessFactoryOneProcess extends TestProcessFactory {
     public TestProcessFactoryOneProcess() {
-      super(PIPELINE_NAME_ONE_PROCESS, EXEC_CNT_ONE_PROCESS, false);
+      super(ONE);
     }
   }
 
   public static class TestProcessFactoryThreeProcesses1 extends TestProcessFactory {
     public TestProcessFactoryThreeProcesses1() {
-      super(PIPELINE_NAME_THREE_PROCESS_1, EXEC_CNT_THREE_PROCESS_1, false);
+      super(THREE_1);
     }
   }
 
   public static class TestProcessFactoryThreeProcesses2 extends TestProcessFactory {
     public TestProcessFactoryThreeProcesses2() {
-      super(PIPELINE_NAME_THREE_PROCESS_2, EXEC_CNT_THREE_PROCESS_2, false);
+      super(THREE_2);
     }
   }
 
   public static class TestProcessFactoryThreeProcesses3 extends TestProcessFactory {
     public TestProcessFactoryThreeProcesses3() {
-      super(PIPELINE_NAME_THREE_PROCESS_3, EXEC_CNT_THREE_PROCESS_3, false);
+      super(THREE_3);
     }
   }
 
   public static class TestProcessFactoryOneProcessOneFailure extends TestProcessFactory {
     public TestProcessFactoryOneProcessOneFailure() {
-      super(PIPELINE_NAME_ONE_PROCESS_ONE_FAILURE, EXEC_CNT_ONE_PROCESS_ONE_FAILURE, true);
+      super(ONE_FAILURE);
     }
   }
 
   public static class TestProcessFactoryThreeProcessesOneFailure1 extends TestProcessFactory {
     public TestProcessFactoryThreeProcessesOneFailure1() {
-      super(PIPELINE_NAME_THREE_PROCESS_ONE_FAILURE_1, EXEC_CNT_THREE_PROCESS_ONE_FAILURE_1, false);
+      super(THREE_ONE_FAILURE_1);
     }
   }
 
   public static class TestProcessFactoryThreeProcessesOneFailure2 extends TestProcessFactory {
     public TestProcessFactoryThreeProcessesOneFailure2() {
-      super(PIPELINE_NAME_THREE_PROCESS_ONE_FAILURE_2, EXEC_CNT_THREE_PROCESS_ONE_FAILURE_2, false);
+      super(THREE_ONE_FAILURE_2);
     }
   }
 
   public static class TestProcessFactoryThreeProcessesOneFailure3 extends TestProcessFactory {
     public TestProcessFactoryThreeProcessesOneFailure3() {
-      super(PIPELINE_NAME_THREE_PROCESS_ONE_FAILURE_3, EXEC_CNT_THREE_PROCESS_ONE_FAILURE_3, true);
+      super(THREE_ONE_FAILURE_3);
     }
   }
 
   public static class TestProcessFactoryThreeProcessesAllFailure1 extends TestProcessFactory {
     public TestProcessFactoryThreeProcessesAllFailure1() {
-      super(PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_1, EXEC_CNT_THREE_PROCESS_ALL_FAILURE_1, true);
+      super(THREE_ALL_FAILURE_1);
     }
   }
 
   public static class TestProcessFactoryThreeProcessesAllFailure2 extends TestProcessFactory {
     public TestProcessFactoryThreeProcessesAllFailure2() {
-      super(PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_2, EXEC_CNT_THREE_PROCESS_ALL_FAILURE_2, true);
+      super(THREE_ALL_FAILURE_2);
     }
   }
 
   public static class TestProcessFactoryThreeProcessesAllFailure3 extends TestProcessFactory {
     public TestProcessFactoryThreeProcessesAllFailure3() {
-      super(PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_3, EXEC_CNT_THREE_PROCESS_ALL_FAILURE_3, true);
+      super(THREE_ALL_FAILURE_3);
     }
   }
-  private void saveSchedule(String pipelineName, int scheduleSeconds, String processFactoryName) {
+
+  private void saveSchedule(ScheduleTest scheduleTest, String processFactoryName) {
     ScheduleEntity schedule = new ScheduleEntity();
-    schedule.setSchedule("0/" + scheduleSeconds + " * * * * ?");
+    schedule.setSchedule("0/" + scheduleTest.seconds + " * * * * ?");
     schedule.setLauncherName(launcherConfiguration.getLauncherName());
-    schedule.setPipelineName(pipelineName);
+    schedule.setPipelineName(scheduleTest.pipelineName);
     schedule.setProcessFactoryName(processFactoryName);
     scheduleService.saveProcessSchedule(schedule);
     System.out.println(
         "saved schedule for pipeline: "
-            + pipelineName
+            + scheduleTest.pipelineName
             + ", launcher: "
             + launcherConfiguration.getLauncherName());
   }
 
-  private void deleteSchedule(String pipelineName) {
+  private void deleteSchedule(ScheduleTest scheduleTest) {
     ScheduleEntity schedule = new ScheduleEntity();
-    schedule.setPipelineName(pipelineName);
+    schedule.setPipelineName(scheduleTest.pipelineName);
     scheduleService.delete(schedule);
     System.out.println(
         "deleted schedule for pipeline: "
-            + pipelineName
+            + scheduleTest.pipelineName
             + ", launcher: "
             + launcherConfiguration.getLauncherName());
   }
 
-  public void assertResult(PipeliteScheduler pipeliteScheduler, List<TestResult> results) {
+  public void assertResult(PipeliteScheduler pipeliteScheduler, List<ScheduleTest> results) {
 
     int totalProcessCompletedCount = 0;
     int totalStageFailedCount = 0;
     int totalStageCompletedCount = 0;
 
-    for (TestResult result : results) {
+    for (ScheduleTest result : results) {
 
-      totalProcessCompletedCount += result.execCnt.processExecutionCount.get();
+      totalProcessCompletedCount += result.processExecCnt.get();
       ;
       if (result.failure) {
-        totalStageFailedCount += result.execCnt.stageExecutionCount.get();
+        totalStageFailedCount += result.stageExecCnt.get();
       } else {
-        totalStageCompletedCount += result.execCnt.stageExecutionCount.get();
+        totalStageCompletedCount += result.stageExecCnt.get();
       }
 
       // Minimum delay before first process is executed is ~0.
@@ -285,15 +228,15 @@ public class PipeliteSchedulerTester {
       // processLaunchFrequency may prevent last scheduled process execution.
       // Minimum executed processes is estimated as STOP_AFTER / scheduleSeconds[i] - 2
 
-      int expectedProcessExecCnt = (int) STOP_AFTER.toMillis() / 1000 / result.scheduleSeconds;
+      int expectedProcessExecCnt = (int) STOP_AFTER.toMillis() / 1000 / result.seconds;
       int minExpectedProcessExecCnt = Math.max(0, expectedProcessExecCnt - 2);
       int maxExpectedProcessExecCnt = expectedProcessExecCnt + 1;
       int minExpectedStageExecCnt = minExpectedProcessExecCnt * 2;
       int maxExpectedStageExecCnt = maxExpectedProcessExecCnt * 2;
 
-      assertThat(result.execCnt.processExecutionCount.get())
+      assertThat(result.processExecCnt.get())
           .isBetween(minExpectedProcessExecCnt, maxExpectedProcessExecCnt);
-      assertThat(result.execCnt.stageExecutionCount.get())
+      assertThat(result.stageExecCnt.get())
           .isBetween(minExpectedStageExecCnt, maxExpectedStageExecCnt);
     }
 
@@ -306,107 +249,73 @@ public class PipeliteSchedulerTester {
   }
 
   public void testOneProcess() {
-    EXEC_CNT_ONE_PROCESS.reset();
+    ONE.reset();
 
     try {
-      saveSchedule(
-          PIPELINE_NAME_ONE_PROCESS,
-          SCHEDULE_SECONDS_ONE_PROCESS,
-          TestProcessFactoryOneProcess.class.getName());
+      saveSchedule(ONE, TestProcessFactoryOneProcess.class.getName());
 
       pipeliteScheduler.setShutdownAfter(STOP_AFTER);
 
       ServerManager.run(pipeliteScheduler, pipeliteScheduler.serviceName());
 
-      assertResult(
-          pipeliteScheduler,
-          Arrays.asList(new TestResult(SCHEDULE_SECONDS_ONE_PROCESS, EXEC_CNT_ONE_PROCESS, false)));
+      assertResult(pipeliteScheduler, Arrays.asList(ONE));
     } finally {
-      deleteSchedule(PIPELINE_NAME_ONE_PROCESS);
+      deleteSchedule(ONE);
     }
   }
 
   public void testThreeProcesses() {
-    EXEC_CNT_THREE_PROCESS_1.reset();
-    EXEC_CNT_THREE_PROCESS_2.reset();
-    EXEC_CNT_THREE_PROCESS_3.reset();
+    THREE_1.reset();
+    THREE_2.reset();
+    THREE_3.reset();
 
     try {
-      saveSchedule(
-          PIPELINE_NAME_THREE_PROCESS_1,
-          SCHEDULE_SECONDS_THREE_PROCESS_1,
-          TestProcessFactoryThreeProcesses1.class.getName());
-      saveSchedule(
-          PIPELINE_NAME_THREE_PROCESS_2,
-          SCHEDULE_SECONDS_THREE_PROCESS_2,
-          TestProcessFactoryThreeProcesses2.class.getName());
-      saveSchedule(
-          PIPELINE_NAME_THREE_PROCESS_3,
-          SCHEDULE_SECONDS_THREE_PROCESS_3,
-          TestProcessFactoryThreeProcesses3.class.getName());
+      saveSchedule(THREE_1, TestProcessFactoryThreeProcesses1.class.getName());
+      saveSchedule(THREE_2, TestProcessFactoryThreeProcesses2.class.getName());
+      saveSchedule(THREE_3, TestProcessFactoryThreeProcesses3.class.getName());
 
       pipeliteScheduler.setShutdownAfter(STOP_AFTER);
 
       ServerManager.run(pipeliteScheduler, pipeliteScheduler.serviceName());
 
-      assertResult(
-          pipeliteScheduler,
-          Arrays.asList(
-              new TestResult(SCHEDULE_SECONDS_THREE_PROCESS_1, EXEC_CNT_THREE_PROCESS_1, false),
-              new TestResult(SCHEDULE_SECONDS_THREE_PROCESS_2, EXEC_CNT_THREE_PROCESS_2, false),
-              new TestResult(SCHEDULE_SECONDS_THREE_PROCESS_3, EXEC_CNT_THREE_PROCESS_3, false)));
+      assertResult(pipeliteScheduler, Arrays.asList(THREE_1, THREE_2, THREE_3));
 
     } finally {
-      deleteSchedule(PIPELINE_NAME_THREE_PROCESS_1);
-      deleteSchedule(PIPELINE_NAME_THREE_PROCESS_2);
-      deleteSchedule(PIPELINE_NAME_THREE_PROCESS_3);
+      deleteSchedule(THREE_1);
+      deleteSchedule(THREE_2);
+      deleteSchedule(THREE_3);
     }
   }
 
   public void testOneProcessesOneFailure() {
-    EXEC_CNT_ONE_PROCESS_ONE_FAILURE.reset();
+    ONE_FAILURE.reset();
 
     try {
-      saveSchedule(
-              PIPELINE_NAME_ONE_PROCESS_ONE_FAILURE,
-              SCHEDULE_SECONDS_ONE_PROCESS_ONE_FAILURE,
-              TestProcessFactoryOneProcessOneFailure.class.getName());
+      saveSchedule(ONE_FAILURE, TestProcessFactoryOneProcessOneFailure.class.getName());
 
       pipeliteScheduler.setShutdownAfter(STOP_AFTER);
 
       ServerManager.run(pipeliteScheduler, pipeliteScheduler.serviceName());
 
-      assertResult(
-              pipeliteScheduler,
-              Arrays.asList(
-                      new TestResult(
-                              SCHEDULE_SECONDS_ONE_PROCESS_ONE_FAILURE,
-                              EXEC_CNT_ONE_PROCESS_ONE_FAILURE,
-                              true)));
+      assertResult(pipeliteScheduler, Arrays.asList(ONE_FAILURE));
 
     } finally {
-      deleteSchedule(PIPELINE_NAME_ONE_PROCESS_ONE_FAILURE);
+      deleteSchedule(ONE_FAILURE);
     }
   }
 
   public void testThreeProcessesOneFailure() {
-    EXEC_CNT_THREE_PROCESS_ONE_FAILURE_1.reset();
-    EXEC_CNT_THREE_PROCESS_ONE_FAILURE_2.reset();
-    EXEC_CNT_THREE_PROCESS_ONE_FAILURE_3.reset();
+    THREE_ONE_FAILURE_1.reset();
+    THREE_ONE_FAILURE_2.reset();
+    THREE_ONE_FAILURE_3.reset();
 
     try {
       saveSchedule(
-          PIPELINE_NAME_THREE_PROCESS_ONE_FAILURE_1,
-          SCHEDULE_SECONDS_THREE_PROCESS_ONE_FAILURE_1,
-          TestProcessFactoryThreeProcessesOneFailure1.class.getName());
+          THREE_ONE_FAILURE_1, TestProcessFactoryThreeProcessesOneFailure1.class.getName());
       saveSchedule(
-          PIPELINE_NAME_THREE_PROCESS_ONE_FAILURE_2,
-          SCHEDULE_SECONDS_THREE_PROCESS_ONE_FAILURE_2,
-          TestProcessFactoryThreeProcessesOneFailure2.class.getName());
+          THREE_ONE_FAILURE_2, TestProcessFactoryThreeProcessesOneFailure2.class.getName());
       saveSchedule(
-          PIPELINE_NAME_THREE_PROCESS_ONE_FAILURE_3,
-          SCHEDULE_SECONDS_THREE_PROCESS_ONE_FAILURE_3,
-          TestProcessFactoryThreeProcessesOneFailure3.class.getName());
+          THREE_ONE_FAILURE_3, TestProcessFactoryThreeProcessesOneFailure3.class.getName());
 
       pipeliteScheduler.setShutdownAfter(STOP_AFTER);
 
@@ -414,70 +323,40 @@ public class PipeliteSchedulerTester {
 
       assertResult(
           pipeliteScheduler,
-          Arrays.asList(
-              new TestResult(
-                  SCHEDULE_SECONDS_THREE_PROCESS_ONE_FAILURE_1,
-                  EXEC_CNT_THREE_PROCESS_ONE_FAILURE_1,
-                  false),
-              new TestResult(
-                  SCHEDULE_SECONDS_THREE_PROCESS_ONE_FAILURE_2,
-                  EXEC_CNT_THREE_PROCESS_ONE_FAILURE_2,
-                  false),
-              new TestResult(
-                  SCHEDULE_SECONDS_THREE_PROCESS_ONE_FAILURE_3,
-                  EXEC_CNT_THREE_PROCESS_ONE_FAILURE_3,
-                  true)));
+          Arrays.asList(THREE_ONE_FAILURE_1, THREE_ONE_FAILURE_2, THREE_ONE_FAILURE_3));
 
     } finally {
-      deleteSchedule(PIPELINE_NAME_THREE_PROCESS_ONE_FAILURE_1);
-      deleteSchedule(PIPELINE_NAME_THREE_PROCESS_ONE_FAILURE_2);
-      deleteSchedule(PIPELINE_NAME_THREE_PROCESS_ONE_FAILURE_3);
+      deleteSchedule(THREE_ONE_FAILURE_1);
+      deleteSchedule(THREE_ONE_FAILURE_2);
+      deleteSchedule(THREE_ONE_FAILURE_3);
     }
   }
 
   public void testThreeProcessesAllFailure() {
-    EXEC_CNT_THREE_PROCESS_ALL_FAILURE_1.reset();
-    EXEC_CNT_THREE_PROCESS_ALL_FAILURE_2.reset();
-    EXEC_CNT_THREE_PROCESS_ALL_FAILURE_3.reset();
+    THREE_ALL_FAILURE_1.reset();
+    THREE_ALL_FAILURE_2.reset();
+    THREE_ALL_FAILURE_3.reset();
 
     try {
       saveSchedule(
-              PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_1,
-              SCHEDULE_SECONDS_THREE_PROCESS_ALL_FAILURE_1,
-              TestProcessFactoryThreeProcessesAllFailure1.class.getName());
+          THREE_ALL_FAILURE_1, TestProcessFactoryThreeProcessesAllFailure1.class.getName());
       saveSchedule(
-              PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_2,
-              SCHEDULE_SECONDS_THREE_PROCESS_ALL_FAILURE_2,
-              TestProcessFactoryThreeProcessesAllFailure2.class.getName());
+          THREE_ALL_FAILURE_2, TestProcessFactoryThreeProcessesAllFailure2.class.getName());
       saveSchedule(
-              PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_3,
-              SCHEDULE_SECONDS_THREE_PROCESS_ALL_FAILURE_3,
-              TestProcessFactoryThreeProcessesAllFailure3.class.getName());
+          THREE_ALL_FAILURE_3, TestProcessFactoryThreeProcessesAllFailure3.class.getName());
 
       pipeliteScheduler.setShutdownAfter(STOP_AFTER);
 
       ServerManager.run(pipeliteScheduler, pipeliteScheduler.serviceName());
 
       assertResult(
-              pipeliteScheduler,
-              Arrays.asList(
-                      new TestResult(
-                              SCHEDULE_SECONDS_THREE_PROCESS_ALL_FAILURE_1,
-                              EXEC_CNT_THREE_PROCESS_ALL_FAILURE_1,
-                              true),
-                      new TestResult(
-                              SCHEDULE_SECONDS_THREE_PROCESS_ALL_FAILURE_2,
-                              EXEC_CNT_THREE_PROCESS_ALL_FAILURE_2,
-                              true),
-                      new TestResult(
-                              SCHEDULE_SECONDS_THREE_PROCESS_ALL_FAILURE_3,
-                              EXEC_CNT_THREE_PROCESS_ALL_FAILURE_3,
-                              true)));
+          pipeliteScheduler,
+          Arrays.asList(THREE_ALL_FAILURE_1, THREE_ALL_FAILURE_2, THREE_ALL_FAILURE_3));
 
     } finally {
-      deleteSchedule(PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_1);
-      deleteSchedule(PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_2);
-      deleteSchedule(PIPELINE_NAME_THREE_PROCESS_ALL_FAILURE_3);
+      deleteSchedule(THREE_ALL_FAILURE_1);
+      deleteSchedule(THREE_ALL_FAILURE_2);
+      deleteSchedule(THREE_ALL_FAILURE_3);
     }
   }
 }
