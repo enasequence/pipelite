@@ -14,6 +14,8 @@ import lombok.Value;
 
 public interface ProcessSource {
 
+  String getPipelineName();
+
   @Value
   class NewProcess {
     private final String processId;

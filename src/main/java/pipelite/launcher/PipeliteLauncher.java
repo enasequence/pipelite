@@ -32,10 +32,7 @@ import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
-import pipelite.service.LockService;
-import pipelite.service.ProcessFactoryService;
-import pipelite.service.ProcessService;
-import pipelite.service.StageService;
+import pipelite.service.*;
 
 import static pipelite.configuration.LauncherConfiguration.DEFAULT_PROCESS_LAUNCH_FREQUENCY;
 
@@ -48,6 +45,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private final ProcessConfiguration processConfiguration;
   private final StageConfiguration stageConfiguration;
   private final ProcessFactoryService processFactoryService;
+  private final ProcessSourceService processSourceService;
   private final ProcessService processService;
   private final StageService stageService;
   private final String launcherName;
@@ -82,6 +80,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
       @Autowired ProcessConfiguration processConfiguration,
       @Autowired StageConfiguration stageConfiguration,
       @Autowired ProcessFactoryService processFactoryService,
+      @Autowired ProcessSourceService processSourceService,
       @Autowired ProcessService processService,
       @Autowired StageService stageService,
       @Autowired LockService lockService) {
@@ -94,6 +93,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
     this.processConfiguration = processConfiguration;
     this.stageConfiguration = stageConfiguration;
     this.processFactoryService = processFactoryService;
+    this.processSourceService = processSourceService;
     this.processService = processService;
     this.stageService = stageService;
     this.workers =
@@ -115,12 +115,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
     }
 
     this.processFactory = processFactoryService.create(getPipelineName());
-
-    if (processConfiguration.isProcessSource()) {
-      this.processSource = ProcessConfiguration.getProcessSource(processConfiguration);
-    } else {
-      this.processSource = null;
-    }
+    this.processSource = processSourceService.create(getPipelineName());
 
     this.launcherName =
         LauncherConfiguration.getLauncherNameForPipeliteLauncher(
@@ -158,7 +153,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
     if (processQueueIndex >= processQueue.size()
         || processQueueValidUntil.isBefore(LocalDateTime.now())) {
-      if (processConfiguration.isProcessSource()) {
+      if (processSource != null) {
         createNewProcesses();
       }
       queueProcesses();

@@ -17,13 +17,20 @@ import pipelite.process.ProcessSource;
 
 public class TestInMemoryProcessSource implements ProcessSource {
 
+  private final String pipelineName;
   private final Set<Process> newProcesses = new HashSet<>();
   private final Map<String, Process> returnedProcesses = new HashMap<>();
   private final Map<String, Process> acceptedProcesses = new HashMap<>();
   private final Set<Process> rejectedProcesses = new HashSet<>();
 
-  public TestInMemoryProcessSource(Collection<Process> processes) {
+  public TestInMemoryProcessSource(String pipelineName, Collection<Process> processes) {
+    this.pipelineName = pipelineName;
     newProcesses.addAll(processes);
+  }
+
+  @Override
+  public String getPipelineName() {
+    return pipelineName;
   }
 
   private boolean permanentRejection = false;

@@ -19,10 +19,7 @@ import pipelite.PipeliteTestConfiguration;
 
 @SpringBootTest(
     classes = PipeliteTestConfiguration.class,
-    properties = {
-      "pipelite.process.pipelineName=TEST",
-      "pipelite.process.processSourceClassName=TEST"
-    })
+    properties = {"pipelite.process.pipelineName=TEST"})
 public class ProcessConfigurationTest {
 
   @Autowired ProcessConfiguration config;
@@ -30,6 +27,5 @@ public class ProcessConfigurationTest {
   @Test
   public void test() {
     assertThat(config.getPipelineName()).isEqualTo("TEST");
-    assertThat(config.getProcessSourceClassName()).isEqualTo("TEST");
   }
 }

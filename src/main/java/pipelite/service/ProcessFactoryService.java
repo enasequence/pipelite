@@ -24,13 +24,12 @@ public class ProcessFactoryService {
   }
 
   /**
-   * Creates a process.
+   * Creates a process factory.
    *
    * @param pipelineName the pipeline name. A pipeline is identified by its name.
-   * @return the created process that consists of stages and instructions how they should be
-   *     executed.
+   * @return the process factory for the pipeline.
    * @throws ProcessFactoryServiceException if the pipeline is not supported by this factory or if
-   *     the pipeline name or process id are null.
+   *     the pipeline name is null or empty.
    */
   public ProcessFactory create(String pipelineName) {
     if (pipelineName == null || pipelineName.trim().isEmpty()) {

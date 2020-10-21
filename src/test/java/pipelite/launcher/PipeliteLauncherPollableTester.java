@@ -22,6 +22,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import pipelite.TestInMemoryProcessFactory;
 import pipelite.UniqueStringGenerator;
@@ -39,6 +40,7 @@ import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 
 @Component
+@Scope("prototype")
 public class PipeliteLauncherPollableTester {
 
   @Autowired private ProcessConfiguration processConfiguration;

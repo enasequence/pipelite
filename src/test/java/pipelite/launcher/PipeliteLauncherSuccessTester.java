@@ -20,6 +20,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import pipelite.TestInMemoryProcessFactory;
 import pipelite.TestInMemoryProcessSource;
@@ -28,10 +29,12 @@ import pipelite.configuration.ProcessConfiguration;
 import pipelite.executor.StageExecutor;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
+import pipelite.process.ProcessSource;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.StageExecutionResult;
 
 @Component
+@Scope("prototype")
 public class PipeliteLauncherSuccessTester {
 
   @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
@@ -40,8 +43,13 @@ public class PipeliteLauncherSuccessTester {
   @TestConfiguration
   static class TestConfig {
     @Bean
-    public ProcessFactory test() {
+    public ProcessFactory testProcessFactory() {
       return new TestInMemoryProcessFactory(PIPELINE_NAME, PROCESSES);
+    }
+
+    @Bean
+    public ProcessSource testProcessSource() {
+      return new TestInMemoryProcessSource(PIPELINE_NAME, PROCESSES);
     }
   }
 
@@ -90,7 +98,6 @@ public class PipeliteLauncherSuccessTester {
     processExcessExecutionSet.clear();
 
     processConfiguration.setPipelineName(PIPELINE_NAME);
-    processConfiguration.setProcessSource(new TestInMemoryProcessSource(PROCESSES));
     PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
     pipeliteLauncher.setShutdownIfIdle(true);
 

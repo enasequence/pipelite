@@ -11,6 +11,7 @@
 package pipelite.launcher;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -29,30 +30,30 @@ import pipelite.PipeliteTestConfiguration;
 @ActiveProfiles(value = {"hsql-test"})
 public class PipeliteLauncherHSqlFailureTest {
 
-  @Autowired private PipeliteLauncherFailureTester tester;
+  @Autowired private ObjectProvider<PipeliteLauncherFailureTester> testerObjectProvider;
 
   @Test
   public void testFirstStageFails() {
-    tester.testFirstStageFails();
+    testerObjectProvider.getObject().testFirstStageFails();
   }
 
   @Test
   public void testSecondStageFails() {
-    tester.testSecondStageFails();
+    testerObjectProvider.getObject().testSecondStageFails();
   }
 
   @Test
   public void testThirdStageFails() {
-    tester.testThirdStageFails();
+    testerObjectProvider.getObject().testThirdStageFails();
   }
 
   @Test
   public void testFourthStageFails() {
-    tester.testFourthStageFails();
+    testerObjectProvider.getObject().testFourthStageFails();
   }
 
   @Test
   public void testNoStageFails() {
-    tester.testNoStageFails();
+    testerObjectProvider.getObject().testNoStageFails();
   }
 }
