@@ -9,7 +9,7 @@ import java.io.PrintStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ApplicationTest {
+public class PipeliteTest {
 
   @Test
   public void testMissingRequiredOption() {
@@ -17,7 +17,7 @@ public class ApplicationTest {
       ByteArrayOutputStream stdoutStream = getStdOutAsStream();
       ByteArrayOutputStream stderrStream = getStdErrAsStream();
 
-      assertThat(Application._main(new String[] {}, false)).isEqualTo(1);
+      assertThat(Pipelite._run(new String[] {}, false)).isEqualTo(1);
 
       assertThat(stdoutStream.toString())
           .startsWith("Error: Missing required argument (specify one of these): (-l | -s)");
@@ -35,7 +35,7 @@ public class ApplicationTest {
       ByteArrayOutputStream stdoutStream = getStdOutAsStream();
       ByteArrayOutputStream stderrStream = getStdErrAsStream();
 
-      assertThat(Application._main(new String[] {"-l", "-s"}, false)).isEqualTo(1);
+      assertThat(Pipelite._run(new String[] {"-l", "-s"}, false)).isEqualTo(1);
 
       assertThat(stdoutStream.toString())
           .startsWith("Error: -launcher, -scheduler are mutually exclusive");
@@ -53,7 +53,7 @@ public class ApplicationTest {
       ByteArrayOutputStream stdoutStream = getStdOutAsStream();
       ByteArrayOutputStream stderrStream = getStdErrAsStream();
 
-      assertThat(Application._main(new String[] {"-a"}, false)).isEqualTo(1);
+      assertThat(Pipelite._run(new String[] {"-a"}, false)).isEqualTo(1);
 
       assertThat(stdoutStream.toString()).startsWith("Unknown option: '-a'");
       assertThat(stderrStream.toString()).isEqualTo("");
@@ -70,7 +70,7 @@ public class ApplicationTest {
       ByteArrayOutputStream stdoutStream = getStdOutAsStream();
       ByteArrayOutputStream stderrStream = getStdErrAsStream();
 
-      assertThat(Application._main(new String[] {"-l"}, false)).isEqualTo(0);
+      assertThat(Pipelite._run(new String[] {"-l"}, false)).isEqualTo(0);
 
       assertThat(stdoutStream.toString()).startsWith("");
       assertThat(stderrStream.toString()).isEqualTo("");
@@ -87,7 +87,7 @@ public class ApplicationTest {
       ByteArrayOutputStream stdoutStream = getStdOutAsStream();
       ByteArrayOutputStream stderrStream = getStdErrAsStream();
 
-      assertThat(Application._main(new String[] {"-s"}, false)).isEqualTo(0);
+      assertThat(Pipelite._run(new String[] {"-s"}, false)).isEqualTo(0);
 
       assertThat(stdoutStream.toString()).startsWith("");
       assertThat(stderrStream.toString()).isEqualTo("");

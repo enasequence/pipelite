@@ -19,7 +19,7 @@ import pipelite.launcher.ServerManager;
 @SpringBootApplication
 public class PipeliteSchedulerRunner {
 
-  public static void run(Application app) {
+  public static void run(Pipelite app) {
     ConfigurableApplicationContext context =
         SpringApplication.run(PipeliteSchedulerRunner.class, new String[] {});
     PipeliteScheduler pipeliteScheduler = context.getBean(PipeliteScheduler.class);

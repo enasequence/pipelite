@@ -13,7 +13,7 @@ package pipelite;
 import picocli.CommandLine;
 
 @CommandLine.Command(mixinStandardHelpOptions = true)
-public class Application {
+public class Pipelite {
 
   @CommandLine.ArgGroup(multiplicity = "1")
   Mode mode;
@@ -35,28 +35,28 @@ public class Application {
       description = "Remove all launcher or scheduler locks")
   public boolean removeLocks;
 
-  public static void main(String[] args) {
+  public static int run(String[] args) {
     try {
-      System.exit(_main(args, true));
+      return _run(args, true);
     } catch (Exception ex) {
       ex.printStackTrace();
-      System.exit(1);
+      return 1;
     }
   }
 
-  public static int _main(String[] args, boolean run) {
-    Application app = new Application();
+  public static int _run(String[] args, boolean run) {
+    Pipelite options = new Pipelite();
     try {
-      new CommandLine(app).parseArgs(args);
+      new CommandLine(options).parseArgs(args);
     } catch (Exception ex) {
       System.out.println(ex.getMessage());
       return 1;
     }
     if (run) {
-      if (app.mode.launcher) {
-        new PipeliteLauncherRunner().run(app);
+      if (options.mode.launcher) {
+        new PipeliteLauncherRunner().run(options);
       } else {
-        new PipeliteSchedulerRunner().run(app);
+        new PipeliteSchedulerRunner().run(options);
       }
     }
     return 0;
