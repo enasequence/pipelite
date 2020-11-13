@@ -12,7 +12,7 @@ package pipelite;
 
 import picocli.CommandLine;
 
-@CommandLine.Command(mixinStandardHelpOptions = true)
+@CommandLine.Command(name="Pipelite", mixinStandardHelpOptions = true)
 public class Pipelite {
 
   @CommandLine.ArgGroup(multiplicity = "1")
