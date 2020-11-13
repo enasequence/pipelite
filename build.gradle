@@ -9,7 +9,7 @@ plugins {
 }
 
 group = 'pipelite'
-version = '1.0.1'
+version = '1.0.2'
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
 
@@ -96,7 +96,6 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
-            artifact jar
         }
     }
     repositories {

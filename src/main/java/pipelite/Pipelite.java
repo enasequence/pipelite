@@ -46,12 +46,30 @@ public class Pipelite {
 
   public static int _run(String[] args, boolean run) {
     Pipelite options = new Pipelite();
+
+    CommandLine commandLine;
+    CommandLine.ParseResult parseResult;
+
     try {
-      new CommandLine(options).parseArgs(args);
+      commandLine = new CommandLine(options);
     } catch (Exception ex) {
       System.out.println(ex.getMessage());
       return 1;
     }
+
+    try {
+      parseResult = commandLine.parseArgs(args);
+    } catch (Exception ex) {
+      System.out.println(ex.getMessage());
+      commandLine.usage(System.out);
+      return 1;
+    }
+
+    if (parseResult.isUsageHelpRequested()) {
+      commandLine.usage(System.out);
+      return 1;
+    }
+
     if (run) {
       if (options.mode.launcher) {
         new PipeliteLauncherRunner().run(options);
