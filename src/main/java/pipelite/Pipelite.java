@@ -12,7 +12,7 @@ package pipelite;
 
 import picocli.CommandLine;
 
-@CommandLine.Command(name="Pipelite", mixinStandardHelpOptions = true)
+@CommandLine.Command(name = "Pipelite", mixinStandardHelpOptions = true)
 public class Pipelite {
 
   @CommandLine.ArgGroup(multiplicity = "1")
@@ -71,11 +71,7 @@ public class Pipelite {
     }
 
     if (run) {
-      if (options.mode.launcher) {
-        new PipeliteLauncherRunner().run(options);
-      } else {
-        new PipeliteSchedulerRunner().run(options);
-      }
+      PipeliteRunner.run(options);
     }
     return 0;
   }
