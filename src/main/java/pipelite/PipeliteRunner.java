@@ -24,8 +24,6 @@ import pipelite.launcher.ServerManager;
 @EnableAutoConfiguration
 public class PipeliteRunner {
 
-  private PipeliteRunner() {}
-
   public static void run(Pipelite options) {
     ConfigurableApplicationContext context =
         SpringApplication.run(PipeliteRunner.class, new String[] {});
