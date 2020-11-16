@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
 import pipelite.TestInMemoryProcessFactory;
 import pipelite.TestInMemoryProcessSource;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.ProcessConfiguration;
+import pipelite.configuration.LauncherConfiguration;
 import pipelite.executor.StageExecutor;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
@@ -38,7 +38,7 @@ import pipelite.stage.StageExecutionResult;
 public class PipeliteLauncherSuccessTester {
 
   @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
-  @Autowired private ProcessConfiguration processConfiguration;
+  @Autowired private LauncherConfiguration launcherConfiguration;
 
   @TestConfiguration
   static class TestConfig {
@@ -97,7 +97,7 @@ public class PipeliteLauncherSuccessTester {
     processExecutionSet.clear();
     processExcessExecutionSet.clear();
 
-    processConfiguration.setPipelineName(PIPELINE_NAME);
+    launcherConfiguration.setPipelineName(PIPELINE_NAME);
     PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
 
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());

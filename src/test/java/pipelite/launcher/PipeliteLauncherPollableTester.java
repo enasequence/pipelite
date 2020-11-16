@@ -26,7 +26,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import pipelite.TestInMemoryProcessFactory;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.ProcessConfiguration;
+import pipelite.configuration.LauncherConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.executor.PollableExecutor;
@@ -43,7 +43,7 @@ import pipelite.stage.StageExecutionResult;
 @Scope("prototype")
 public class PipeliteLauncherPollableTester {
 
-  @Autowired private ProcessConfiguration processConfiguration;
+  @Autowired private LauncherConfiguration launcherConfiguration;
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
   @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
@@ -231,7 +231,7 @@ public class PipeliteLauncherPollableTester {
       stageEntity.startExecution(stage);
       stageService.saveStage(stageEntity);
 
-      processConfiguration.setPipelineName(process.getPipelineName());
+      launcherConfiguration.setPipelineName(process.getPipelineName());
     }
   }
 

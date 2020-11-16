@@ -23,7 +23,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import pipelite.configuration.LauncherConfiguration;
-import pipelite.configuration.ProcessConfiguration;
 import pipelite.configuration.StageConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.launcher.locker.LauncherLocker;
@@ -42,7 +41,6 @@ import static pipelite.configuration.LauncherConfiguration.DEFAULT_PROCESS_LAUNC
 public class PipeliteLauncher extends AbstractScheduledService {
 
   private final LauncherConfiguration launcherConfiguration;
-  private final ProcessConfiguration processConfiguration;
   private final StageConfiguration stageConfiguration;
   private final ProcessFactoryService processFactoryService;
   private final ProcessSourceService processSourceService;
@@ -76,7 +74,6 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   public PipeliteLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
-      @Autowired ProcessConfiguration processConfiguration,
       @Autowired StageConfiguration stageConfiguration,
       @Autowired ProcessFactoryService processFactoryService,
       @Autowired ProcessSourceService processSourceService,
@@ -84,12 +81,11 @@ public class PipeliteLauncher extends AbstractScheduledService {
       @Autowired StageService stageService,
       @Autowired LockService lockService) {
 
-    if (processConfiguration.getPipelineName() == null
-        || processConfiguration.getPipelineName().trim().isEmpty()) {
+    if (launcherConfiguration.getPipelineName() == null
+        || launcherConfiguration.getPipelineName().trim().isEmpty()) {
       throw new IllegalArgumentException("Missing pipeline name");
     }
     this.launcherConfiguration = launcherConfiguration;
-    this.processConfiguration = processConfiguration;
     this.stageConfiguration = stageConfiguration;
     this.processFactoryService = processFactoryService;
     this.processSourceService = processSourceService;
@@ -337,7 +333,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
   }
 
   public String getPipelineName() {
-    return processConfiguration.getPipelineName();
+    return launcherConfiguration.getPipelineName();
   }
 
   public int getActiveProcessCount() {

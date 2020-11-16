@@ -72,6 +72,10 @@ public class LauncherConfiguration {
    */
   private int processLaunchParallelism;
 
+  /** The PipeliteLauncher will execute processes from this pipeline.
+   */
+  private String pipelineName;
+
   /** The PipeliteLauncher can optionally shut down if idle.
    */
   private boolean shutdownIfIdle;

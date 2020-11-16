@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
 import pipelite.TestInMemoryProcessFactory;
 import pipelite.TestInMemoryProcessSource;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.ProcessConfiguration;
+import pipelite.configuration.LauncherConfiguration;
 import pipelite.executor.ErrorStageExecutor;
 import pipelite.executor.SuccessStageExecutor;
 import pipelite.process.Process;
@@ -39,7 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Scope("prototype")
 public class PipeliteLauncherFailureTester {
 
-  @Autowired private ProcessConfiguration processConfiguration;
+  @Autowired private LauncherConfiguration launcherConfiguration;
   @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
   @Autowired private ApplicationContext context;
 
@@ -185,7 +185,7 @@ public class PipeliteLauncherFailureTester {
   }
 
   private PipeliteLauncher pipeliteLauncher(String pipelineName) {
-    processConfiguration.setPipelineName(pipelineName);
+    launcherConfiguration.setPipelineName(pipelineName);
     PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
     return pipeliteLauncher;
   }
