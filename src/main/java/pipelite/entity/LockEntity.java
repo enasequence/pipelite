@@ -24,7 +24,7 @@ import lombok.NoArgsConstructor;
 public class LockEntity {
 
   // TODO: change column name to LAUNCHER_NAME
-  @Column(name = "ALLOCATOR_NAME")
+  @Column(name = "ALLOCATOR_NAME", nullable = false)
   private String launcherName;
 
   @Id

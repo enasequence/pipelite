@@ -53,22 +53,22 @@ public class StageEntity {
   @Column(name = "EXEC_DATE")
   private LocalDateTime endTime;
 
-  @Column(name = "EXEC_STDOUT")
+  @Column(name = "EXEC_STDOUT", columnDefinition = "CLOB")
   @Lob
   private String stdOut;
 
-  @Column(name = "EXEC_STDERR")
+  @Column(name = "EXEC_STDERR", columnDefinition = "CLOB")
   @Lob
   private String stdErr;
 
   @Column(name = "EXEC_NAME")
   private String executorName;
 
-  @Column(name = "EXEC_DATA")
+  @Column(name = "EXEC_DATA", columnDefinition = "CLOB")
   @Lob
   private String executorData;
 
-  @Column(name = "EXEC_PARAMS")
+  @Column(name = "EXEC_PARAMS", columnDefinition = "CLOB")
   @Lob
   private String executorParams;
 
@@ -76,7 +76,7 @@ public class StageEntity {
   @Column(name = "EXEC_RESULT_TYPE", length = 15)
   private StageExecutionResultType resultType;
 
-  @Column(name = "EXEC_RESULT_PARAMS")
+  @Column(name = "EXEC_RESULT_PARAMS", columnDefinition = "CLOB")
   @Lob
   private String resultParams;
 

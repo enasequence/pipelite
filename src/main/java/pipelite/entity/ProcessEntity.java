@@ -43,7 +43,7 @@ public class ProcessEntity {
   @Column(name = "EXEC_CNT", nullable = false)
   private Integer executionCount = 0;
 
-  @Column(name = "PRIORITY")
+  @Column(name = "PRIORITY", nullable = false)
   private Integer priority = DEFAULT_PRIORITY;
 
   public void incrementExecutionCount() {
