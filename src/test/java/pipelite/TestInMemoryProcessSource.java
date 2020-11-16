@@ -47,7 +47,7 @@ public class TestInMemoryProcessSource implements ProcessSource {
       Process process = newProcesses.iterator().next();
       returnedProcesses.put(process.getProcessId(), process);
       newProcesses.remove(process);
-      return new NewProcess(process.getProcessId(), 9);
+      return new NewProcess(process.getProcessId());
     } finally {
       monitor.leave();
     }

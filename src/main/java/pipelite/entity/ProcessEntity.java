@@ -24,6 +24,10 @@ import pipelite.process.ProcessState;
 @AllArgsConstructor
 public class ProcessEntity {
 
+  public static final int MIN_PRIORITY = 0;
+  public static final int DEFAULT_PRIORITY = 5;
+  public static final int MAX_PRIORITY = 9;
+
   @Id
   @Column(name = "PROCESS_ID")
   private String processId;
@@ -40,19 +44,32 @@ public class ProcessEntity {
   private Integer executionCount = 0;
 
   @Column(name = "PRIORITY")
-  private Integer priority;
+  private Integer priority = DEFAULT_PRIORITY;
 
   public void incrementExecutionCount() {
     ++executionCount;
   }
 
-  public static ProcessEntity newExecution(String processId, String pipelineName, int priority) {
+  public static ProcessEntity newExecution(String processId, String pipelineName, Integer priority) {
     ProcessEntity processEntity = new ProcessEntity();
     processEntity.setProcessId(processId);
     processEntity.setPipelineName(pipelineName);
-    processEntity.setPriority(priority);
+    processEntity.setPriority(getBoundedPriority(priority));
     processEntity.setExecutionCount(0);
     processEntity.setState(ProcessState.NEW);
     return processEntity;
+  }
+
+  public static int getBoundedPriority(Integer priority) {
+    if (priority == null) {
+      return DEFAULT_PRIORITY;
+    }
+    if (priority > MAX_PRIORITY) {
+      return MAX_PRIORITY;
+    }
+    if (priority < MIN_PRIORITY) {
+      return MIN_PRIORITY;
+    }
+    return priority;
   }
 }

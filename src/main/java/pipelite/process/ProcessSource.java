@@ -19,7 +19,17 @@ public interface ProcessSource {
   @Value
   class NewProcess {
     private final String processId;
-    private final int priority;
+    private final Integer priority;
+
+    public NewProcess(String processId, Integer priority) {
+      this.processId = processId;
+      this.priority = priority;
+    }
+
+    public NewProcess(String processId) {
+      this.processId = processId;
+      this.priority = null;
+    }
   }
 
   /** Returns the next new process to be executed. */
