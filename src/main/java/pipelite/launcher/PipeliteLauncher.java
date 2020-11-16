@@ -10,6 +10,8 @@
  */
 package pipelite.launcher;
 
+import static pipelite.configuration.LauncherConfiguration.DEFAULT_PROCESS_LAUNCH_FREQUENCY;
+
 import com.google.common.flogger.FluentLogger;
 import com.google.common.util.concurrent.AbstractScheduledService;
 import java.time.Duration;
@@ -32,8 +34,6 @@ import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
 import pipelite.service.*;
-
-import static pipelite.configuration.LauncherConfiguration.DEFAULT_PROCESS_LAUNCH_FREQUENCY;
 
 @Flogger
 @Component
@@ -92,8 +92,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
     this.processService = processService;
     this.stageService = stageService;
     this.workers =
-        launcherConfiguration.getProcessLaunchParallelism() > 0
-            ? launcherConfiguration.getProcessLaunchParallelism()
+        launcherConfiguration.getPipelineParallelism() > 0
+            ? launcherConfiguration.getPipelineParallelism()
             : LauncherConfiguration.DEFAULT_PROCESS_LAUNCH_PARALLELISM;
     this.executorService = Executors.newFixedThreadPool(workers);
 

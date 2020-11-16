@@ -10,6 +10,12 @@
  */
 package pipelite.launcher;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -24,13 +30,6 @@ import pipelite.process.ProcessFactory;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.ScheduleService;
 import pipelite.stage.StageExecutionResult;
-
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @Component
 @Scope("prototype")

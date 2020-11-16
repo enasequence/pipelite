@@ -37,7 +37,7 @@ public class StageParametersUtils {
   }
 
   public static Integer getImmediateRetries(
-          StageParameters stageParameters, StageConfiguration stageConfiguration) {
+      StageParameters stageParameters, StageConfiguration stageConfiguration) {
     return getValue(stageParameters::getImmediateRetries, stageConfiguration::getImmediateRetries);
   }
 

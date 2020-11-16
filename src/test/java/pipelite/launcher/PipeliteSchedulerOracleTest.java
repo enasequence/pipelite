@@ -29,8 +29,7 @@ import pipelite.UniqueStringGenerator;
       "pipelite.launcher.stageLaunchFrequency=250ms",
       "pipelite.stage.maximumRetries=1"
     })
-@ContextConfiguration(
-    initializers = PipeliteSchedulerOracleTest.TestContextInitializer.class)
+@ContextConfiguration(initializers = PipeliteSchedulerOracleTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"oracle-test"})
 public class PipeliteSchedulerOracleTest {
 

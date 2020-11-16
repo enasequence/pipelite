@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import pipelite.entity.StageEntity;
 import pipelite.launcher.ProcessLauncher;
-import pipelite.stage.ConfigurableStageParameters;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResultType;
 

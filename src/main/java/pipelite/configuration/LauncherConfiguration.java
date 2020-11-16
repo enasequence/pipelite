@@ -13,7 +13,6 @@ package pipelite.configuration;
 import java.net.InetAddress;
 import java.time.Duration;
 import java.util.concurrent.ForkJoinPool;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -48,6 +47,15 @@ public class LauncherConfiguration {
    */
   private String launcherName;
 
+  /** The PipeliteLauncher will execute processes from this pipeline. */
+  private String pipelineName;
+
+  /**
+   * The PipeliteLauncher will execute processes in parallel. The pipelineParallelism is the maximum
+   * number of processes executed in parallel.
+   */
+  private int pipelineParallelism;
+
   /**
    * The PipeliteLauncher and PipeliteScheduler periodically execute new processes. The
    * processLaunchFrequency is the frequency of doing this.
@@ -66,18 +74,7 @@ public class LauncherConfiguration {
    */
   private Duration stageLaunchFrequency;
 
-  /**
-   * The PipeliteLauncher has a maximum number of processes executed in parallel. The
-   * processLaunchParallelism is this limit.
-   */
-  private int processLaunchParallelism;
-
-  /** The PipeliteLauncher will execute processes from this pipeline.
-   */
-  private String pipelineName;
-
-  /** The PipeliteLauncher can optionally shut down if idle.
-   */
+  /** The PipeliteLauncher can optionally be shut down if idle. */
   private boolean shutdownIfIdle;
 
   /** Defaults to <host name>@<pipeline name>. */

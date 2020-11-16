@@ -25,7 +25,7 @@ import pipelite.UniqueStringGenerator;
 @SpringBootTest(
     classes = PipeliteTestConfiguration.class,
     properties = {
-      "pipelite.launcher.processLaunchParallelism=5",
+      "pipelite.launcher.pipelineParallelism=5",
       "pipelite.launcher.processLaunchFrequency=250ms",
       "pipelite.launcher.stageLaunchFrequency=250ms",
       "pipelite.launcher.shutdownIfIdle=true"
