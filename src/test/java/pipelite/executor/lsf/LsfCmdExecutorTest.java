@@ -112,7 +112,7 @@ public class LsfCmdExecutorTest {
     StageParameters stageParameters = stageParameters();
 
     String cmd = getCommandline(executor.execute(stage(stageParameters)));
-    assertTrue(cmd.contains(" -M 1 -R rusage[mem=1:duration=1]"));
+    assertTrue(cmd.contains(" -M 1M -R \"rusage[mem=1M:duration=1]\""));
     assertTrue(cmd.contains(" -n 1"));
     assertTrue(cmd.contains(" -q defaultQueue"));
     assertTrue(cmd.contains(" -oo " + stageParameters.getWorkDir()));
@@ -144,7 +144,7 @@ public class LsfCmdExecutorTest {
     stageParameters.setCores(12);
 
     String cmd = getCommandline(executor.execute(stage(stageParameters)));
-    assertTrue(cmd.contains(" -M 2000 -R rusage[mem=2000:duration=1]"));
+    assertTrue(cmd.contains(" -M 2000M -R \"rusage[mem=2000M:duration=1]\""));
     assertTrue(cmd.contains(" -n 12"));
     assertTrue(cmd.contains(" -q defaultQueue"));
     assertTrue(cmd.contains(" -oo " + stageParameters.getWorkDir()));

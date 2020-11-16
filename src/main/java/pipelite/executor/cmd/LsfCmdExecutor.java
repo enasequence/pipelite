@@ -61,20 +61,23 @@ public abstract class LsfCmdExecutor extends CmdExecutor implements PollableExec
     Duration memoryTimeout = stage.getStageParameters().getMemoryTimeout();
     if (memory != null && memory > 0) {
       addArgument(cmd, "-M");
-      addArgument(cmd, Integer.toString(memory));
+      addArgument(cmd, Integer.toString(memory) + "M"); // Megabytes
       addArgument(cmd, "-R");
       addArgument(
           cmd,
-          "rusage[mem="
+          "\"rusage[mem="
               + memory
               + ((memoryTimeout == null || memoryTimeout.toMinutes() < 0)
-                  ? ""
-                  : ":duration=" + memoryTimeout.toMinutes())
-              + "]");
+                  ? "M" // Megabytes
+                  : "M:duration=" + memoryTimeout.toMinutes())
+              + "]\"");
     }
 
     Duration timeout = stage.getStageParameters().getTimeout();
     if (timeout != null) {
+      if (timeout.toMinutes() == 0){
+        timeout = Duration.ofMinutes(1);
+      }
       addArgument(cmd, "-W");
       addArgument(cmd, String.valueOf(timeout.toMinutes()));
     }
