@@ -299,7 +299,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
       return false;
     }
 
-    boolean isSuccess = process.validate(Process.ValidateMode.WITHOUT_STAGES);
+    boolean isSuccess = process.validate();
 
     if (!getPipelineName().equals(process.getPipelineName())) {
       process

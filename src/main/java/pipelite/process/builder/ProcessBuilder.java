@@ -19,21 +19,11 @@ public class ProcessBuilder {
 
   final String pipelineName;
   final String processId;
-  final int priority;
   final List<Stage> stages = new ArrayList<>();
-
-  public static final int DEFAULT_PRIORITY = 0;
 
   public ProcessBuilder(String pipelineName, String processId) {
     this.pipelineName = pipelineName;
     this.processId = processId;
-    this.priority = DEFAULT_PRIORITY;
-  }
-
-  public ProcessBuilder(String pipelineName, String processId, int priority) {
-    this.pipelineName = pipelineName;
-    this.processId = processId;
-    this.priority = priority;
   }
 
   public StageBuilder execute(String stageName) {

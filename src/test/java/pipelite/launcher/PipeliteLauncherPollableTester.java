@@ -108,27 +108,27 @@ public class PipeliteLauncherPollableTester {
               String processId = UniqueStringGenerator.randomProcessId();
               String stageName = UniqueStringGenerator.randomStageName();
               POLL_SUCCESS_EXECUTE_SUCCESS_PROCESSES.add(
-                  new ProcessBuilder(POLL_SUCCESS_EXECUTE_SUCCESS_NAME, processId, 9)
+                  new ProcessBuilder(POLL_SUCCESS_EXECUTE_SUCCESS_NAME, processId)
                       .execute(stageName)
                       .with(new PollSuccessExecuteSuccessStageExecutor())
                       .build());
               POLL_ERROR_EXECUTE_SUCCESS_PROCESSES.add(
-                  new ProcessBuilder(POLL_ERROR_EXECUTE_SUCCESS_NAME, processId, 9)
+                  new ProcessBuilder(POLL_ERROR_EXECUTE_SUCCESS_NAME, processId)
                       .execute(stageName)
                       .with(new PollErrorExecuteSuccessStageExecutor())
                       .build());
               POLL_ERROR_EXECUTE_ERROR_PROCESSES.add(
-                  new ProcessBuilder(POLL_ERROR_EXECUTE_ERROR_NAME, processId, 9)
+                  new ProcessBuilder(POLL_ERROR_EXECUTE_ERROR_NAME, processId)
                       .execute(stageName)
                       .with(new PollErrorExecuteErrorStageExecutor())
                       .build());
               POLL_EXCEPTION_EXECUTE_SUCCESS_PROCESSES.add(
-                  new ProcessBuilder(POLL_EXCEPTION_EXECUTE_SUCCESS_NAME, processId, 9)
+                  new ProcessBuilder(POLL_EXCEPTION_EXECUTE_SUCCESS_NAME, processId)
                       .execute(stageName)
                       .with(new PollExceptionExecuteSuccessStageExecutor())
                       .build());
               POLL_EXCEPTION_EXECUTE_ERROR_PROCESSES.add(
-                  new ProcessBuilder(POLL_EXCEPTION_EXECUTE_ERROR_NAME, processId, 9)
+                  new ProcessBuilder(POLL_EXCEPTION_EXECUTE_ERROR_NAME, processId)
                       .execute(stageName)
                       .with(new PollExceptionExecuteErrorStageExecutor())
                       .build());

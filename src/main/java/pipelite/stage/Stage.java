@@ -62,14 +62,6 @@ public class Stage {
       logContext(log.atSevere()).log("Stage name is missing");
       isSuccess = false;
     }
-    if (executor == null) {
-      logContext(log.atSevere()).log("Executor is missing");
-      isSuccess = false;
-    }
-    if (stageParameters == null) {
-      logContext(log.atSevere()).log("Stage parameters are missing");
-      isSuccess = false;
-    }
     return isSuccess;
   }
 

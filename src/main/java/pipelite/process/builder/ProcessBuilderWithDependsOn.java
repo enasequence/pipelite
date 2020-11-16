@@ -59,7 +59,6 @@ public class ProcessBuilderWithDependsOn {
     return Process.builder()
         .pipelineName(processBuilder.pipelineName)
         .processId(processBuilder.processId)
-        .priority(processBuilder.priority)
         .stages(processBuilder.stages)
         .build();
   }

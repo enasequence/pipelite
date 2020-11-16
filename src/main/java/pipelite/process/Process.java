@@ -14,6 +14,7 @@ import com.google.common.flogger.FluentLogger;
 import java.util.HashSet;
 import java.util.List;
 import lombok.Builder;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
@@ -26,15 +27,9 @@ import pipelite.stage.Stage;
 public class Process {
   private final String pipelineName;
   private final String processId;
-  @EqualsAndHashCode.Exclude private final int priority;
   @EqualsAndHashCode.Exclude private final List<Stage> stages;
 
-  public enum ValidateMode {
-    WITH_STAGES,
-    WITHOUT_STAGES
-  };
-
-  public boolean validate(ValidateMode validateMode) {
+  public boolean validate() {
     boolean isSuccess = true;
     if (pipelineName == null || pipelineName.isEmpty()) {
       logContext(log.atSevere()).log("Pipeline name is missing");
@@ -43,10 +38,6 @@ public class Process {
     if (processId == null || processId.isEmpty()) {
       logContext(log.atSevere()).log("Process id is missing");
       isSuccess = false;
-    }
-
-    if (validateMode == ValidateMode.WITHOUT_STAGES) {
-      return isSuccess;
     }
 
     if (stages == null || stages.isEmpty()) {
@@ -59,20 +50,20 @@ public class Process {
       for (Stage stage : stages) {
         if (!stage.validate()) {
           isSuccess = false;
-        }
-        if (stage.getPipelineName() != null) {
-          if (!stage.getPipelineName().equals(pipelineName)) {
-            logContext(log.atSevere())
-                .log("Conflicting pipeline name in stage %s", stage.getPipelineName());
-            isSuccess = false;
-          }
-        }
-        if (stage.getStageName() != null) {
+        } else {
           if (stageNames.contains(stage.getStageName())) {
             stage.logContext(log.atSevere()).log("Duplicate stage name: %s", stage.getStageName());
             isSuccess = false;
           }
           stageNames.add(stage.getStageName());
+
+          if (!stage.getPipelineName().equals(pipelineName)) {
+            logContext(log.atSevere())
+                .log(
+                    "Conflicting pipeline name %s in stage %s",
+                    stage.getPipelineName(), stage.getStageName());
+            isSuccess = false;
+          }
         }
       }
     }

@@ -148,7 +148,7 @@ public class PipeliteSchedulerTester {
 
     @Override
     public Process create(String processId) {
-      return new ProcessBuilder(getPipelineName(), processId, 9)
+      return new ProcessBuilder(getPipelineName(), processId)
           .execute("STAGE1")
           .with(
               (stage) -> {

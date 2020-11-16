@@ -119,7 +119,7 @@ public class PipeliteLauncherFailureTester {
   }
 
   private static Process firstStageFailsProcessGenerator() {
-    return new ProcessBuilder(FIRST_STAGE_FAILS_NAME, UniqueStringGenerator.randomProcessId(), 9)
+    return new ProcessBuilder(FIRST_STAGE_FAILS_NAME, UniqueStringGenerator.randomProcessId())
         .execute("STAGE1")
         .with(new ErrorStageExecutor())
         .executeAfterPrevious("STAGE2")
@@ -132,7 +132,7 @@ public class PipeliteLauncherFailureTester {
   }
 
   private static Process secondStageFailsProcessGenerator() {
-    return new ProcessBuilder(SECOND_STAGE_FAILS_NAME, UniqueStringGenerator.randomProcessId(), 9)
+    return new ProcessBuilder(SECOND_STAGE_FAILS_NAME, UniqueStringGenerator.randomProcessId())
         .execute("STAGE1")
         .with(new SuccessStageExecutor())
         .executeAfterPrevious("STAGE2")
@@ -145,7 +145,7 @@ public class PipeliteLauncherFailureTester {
   }
 
   private static Process thirdStageFailsProcessGenerator() {
-    return new ProcessBuilder(THIRD_STAGE_FAILS_NAME, UniqueStringGenerator.randomProcessId(), 9)
+    return new ProcessBuilder(THIRD_STAGE_FAILS_NAME, UniqueStringGenerator.randomProcessId())
         .execute("STAGE1")
         .with(new SuccessStageExecutor())
         .executeAfterPrevious("STAGE2")
@@ -158,7 +158,7 @@ public class PipeliteLauncherFailureTester {
   }
 
   private static Process fourthStageFailsProcessGenerator() {
-    return new ProcessBuilder(FOURTH_STAGE_FAILS_NAME, UniqueStringGenerator.randomProcessId(), 9)
+    return new ProcessBuilder(FOURTH_STAGE_FAILS_NAME, UniqueStringGenerator.randomProcessId())
         .execute("STAGE1")
         .with(new SuccessStageExecutor())
         .executeAfterPrevious("STAGE2")
@@ -171,7 +171,7 @@ public class PipeliteLauncherFailureTester {
   }
 
   private static Process noStageFailsProcessGenerator() {
-    return new ProcessBuilder(NO_STAGE_FAILS_NAME, UniqueStringGenerator.randomProcessId(), 9)
+    return new ProcessBuilder(NO_STAGE_FAILS_NAME, UniqueStringGenerator.randomProcessId())
         .execute("STAGE1")
         .with(new SuccessStageExecutor())
         .executeAfterPrevious("STAGE2")

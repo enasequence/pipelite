@@ -62,7 +62,7 @@ public class PipeliteLauncherSuccessTester {
       String processId = "Process" + i;
       String stageName = UniqueStringGenerator.randomStageName();
       PROCESSES.add(
-          new ProcessBuilder(PIPELINE_NAME, processId, 9)
+          new ProcessBuilder(PIPELINE_NAME, processId)
               .execute(stageName)
               .with(createStageExecutor(processId))
               .build());

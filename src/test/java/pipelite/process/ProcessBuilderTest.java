@@ -30,7 +30,7 @@ public class ProcessBuilderTest {
     String stageName4 = UniqueStringGenerator.randomStageName();
 
     Process process =
-        new ProcessBuilder(PIPELINE_NAME, PROCESS_ID, 9)
+        new ProcessBuilder(PIPELINE_NAME, PROCESS_ID)
             .execute(stageName1)
             .with(new SuccessStageExecutor())
             .executeAfterPrevious(stageName2)
@@ -44,7 +44,6 @@ public class ProcessBuilderTest {
     assertThat(process).isNotNull();
     assertThat(process.getPipelineName()).isEqualTo(PIPELINE_NAME);
     assertThat(process.getProcessId()).isEqualTo(PROCESS_ID);
-    assertThat(process.getPriority()).isEqualTo(9);
     assertThat(process.getStages().get(0).getPipelineName()).isEqualTo(PIPELINE_NAME);
     assertThat(process.getStages().get(1).getPipelineName()).isEqualTo(PIPELINE_NAME);
     assertThat(process.getStages().get(0).getProcessId()).isEqualTo(PROCESS_ID);

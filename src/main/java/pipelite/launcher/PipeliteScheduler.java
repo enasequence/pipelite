@@ -325,7 +325,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
       return false;
     }
 
-    boolean isSuccess = process.validate(Process.ValidateMode.WITHOUT_STAGES);
+    boolean isSuccess = process.validate();
 
     String pipelineName = schedule.getScheduleEntity().getPipelineName();
 
