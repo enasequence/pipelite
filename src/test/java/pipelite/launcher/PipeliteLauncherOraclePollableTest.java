@@ -28,6 +28,7 @@ import pipelite.UniqueStringGenerator;
       "pipelite.launcher.processLaunchParallelism=2",
       "pipelite.launcher.processLaunchFrequency=250ms",
       "pipelite.launcher.stageLaunchFrequency=250ms",
+      "pipelite.launcher.shutdownIfIdle=true",
       "pipelite.stage.maximumRetries=1"
     })
 @ContextConfiguration(initializers = PipeliteLauncherOracleSuccessTest.TestContextInitializer.class)

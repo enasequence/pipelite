@@ -72,6 +72,10 @@ public class LauncherConfiguration {
    */
   private int processLaunchParallelism;
 
+  /** The PipeliteLauncher can optionally shut down if idle.
+   */
+  private boolean shutdownIfIdle;
+
   /** Defaults to <host name>@<pipeline name>. */
   public static String getLauncherNameForPipeliteLauncher(
       LauncherConfiguration launcherConfiguration, String pipelineName) {

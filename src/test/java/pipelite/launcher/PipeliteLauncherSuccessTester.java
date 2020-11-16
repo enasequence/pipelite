@@ -99,7 +99,6 @@ public class PipeliteLauncherSuccessTester {
 
     processConfiguration.setPipelineName(PIPELINE_NAME);
     PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
-    pipeliteLauncher.setShutdownIfIdle(true);
 
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 

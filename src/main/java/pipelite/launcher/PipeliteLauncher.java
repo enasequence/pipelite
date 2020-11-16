@@ -69,7 +69,6 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private int processQueueIndex = 0;
   private LocalDateTime processQueueValidUntil = LocalDateTime.now();
 
-  private boolean shutdownIfIdle;
   private boolean shutdownIfIdleTriggered;
 
   private final Duration processLaunchFrequency;
@@ -167,7 +166,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
   }
 
   private void shutdownIfIdle() throws InterruptedException {
-    if (processQueueIndex == processQueue.size() && shutdownIfIdle) {
+    if (processQueueIndex == processQueue.size() && launcherConfiguration.isShutdownIfIdle()) {
       logContext(log.atInfo()).log("Stopping idle pipelite launcher");
       shutdownIfIdleTriggered = true;
       while (!initProcesses.isEmpty()) {
@@ -363,14 +362,6 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   public int getStageCompletedCount() {
     return stageCompletedCount.get();
-  }
-
-  public boolean isShutdownIfIdle() {
-    return shutdownIfIdle;
-  }
-
-  public void setShutdownIfIdle(boolean shutdownIfIdle) {
-    this.shutdownIfIdle = shutdownIfIdle;
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {

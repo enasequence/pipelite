@@ -138,7 +138,6 @@ public class PipeliteLauncherPollableTester {
 
   private PipeliteLauncher pipeliteLauncher() {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
-    pipeliteLauncher.setShutdownIfIdle(true);
     return pipeliteLauncher;
   }
 

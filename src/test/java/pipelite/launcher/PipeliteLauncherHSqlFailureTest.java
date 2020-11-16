@@ -24,6 +24,7 @@ import pipelite.PipeliteTestConfiguration;
       "pipelite.launcher.processLaunchParallelism=5",
       "pipelite.launcher.processLaunchFrequency=250ms",
       "pipelite.launcher.stageLaunchFrequency=250ms",
+      "pipelite.launcher.shutdownIfIdle=true",
       "pipelite.stage.maximumRetries=1"
     })
 @ContextConfiguration(initializers = PipeliteLauncherHSqlSuccessTest.TestContextInitializer.class)

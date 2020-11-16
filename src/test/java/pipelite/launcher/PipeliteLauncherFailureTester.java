@@ -187,7 +187,6 @@ public class PipeliteLauncherFailureTester {
   private PipeliteLauncher pipeliteLauncher(String pipelineName) {
     processConfiguration.setPipelineName(pipelineName);
     PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
-    pipeliteLauncher.setShutdownIfIdle(true);
     return pipeliteLauncher;
   }
 
