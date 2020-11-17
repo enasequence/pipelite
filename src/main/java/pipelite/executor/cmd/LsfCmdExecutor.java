@@ -15,6 +15,8 @@ import java.time.LocalDateTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.PollableExecutor;
 import pipelite.executor.cmd.runner.CmdRunner;
@@ -26,6 +28,8 @@ import pipelite.stage.StageExecutionResultExitCode;
 import pipelite.stage.StageExecutionResultType;
 
 @Flogger
+@Data
+@EqualsAndHashCode(callSuper = true)
 public class LsfCmdExecutor extends CmdExecutor implements PollableExecutor {
 
   private String jobId;

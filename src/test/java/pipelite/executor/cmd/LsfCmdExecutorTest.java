@@ -18,8 +18,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
+import java.time.LocalDateTime;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -181,38 +181,66 @@ public class LsfCmdExecutorTest {
 
   @Test
   public void serializeNullCmdRunner() {
-    LsfCmdExecutor lsfCmdExecutor = StageExecutor.createLsfCmdExecutor("echo test", null);
     String cmd = "echo test";
+    LsfCmdExecutor lsfCmdExecutor = StageExecutor.createLsfCmdExecutor(cmd, null);
+    lsfCmdExecutor.setJobId("test");
+    lsfCmdExecutor.setStderrFile("test");
+    lsfCmdExecutor.setStdoutFile("test");
+    lsfCmdExecutor.setStartTime(LocalDateTime.of(2020, 1, 1, 1, 1));
     String json = Json.serialize(lsfCmdExecutor);
-    assertThat(json).isEqualTo("{\n" + "  \"cmd\" : \"echo test\"\n" + "}");
-    assertThat(Json.deserialize(json, CmdExecutor.class).getCmd()).isEqualTo(cmd);
+    assertThat(json)
+        .isEqualTo(
+            "{\n"
+                + "  \"cmd\" : \"echo test\",\n"
+                + "  \"jobId\" : \"test\",\n"
+                + "  \"stdoutFile\" : \"test\",\n"
+                + "  \"stderrFile\" : \"test\",\n"
+                + "  \"startTime\" : \"2020-01-01T01:01:00\"\n"
+                + "}");
+    assertThat(Json.deserialize(json, LsfCmdExecutor.class).getCmd()).isEqualTo(cmd);
   }
 
   @Test
   public void serializeLocalCmdRunner() {
-    LsfCmdExecutor lsfCmdExecutor = StageExecutor.createLsfLocalCmdExecutor("echo test");
     String cmd = "echo test";
+    LsfCmdExecutor lsfCmdExecutor = StageExecutor.createLsfLocalCmdExecutor(cmd);
+    lsfCmdExecutor.setJobId("test");
+    lsfCmdExecutor.setStderrFile("test");
+    lsfCmdExecutor.setStdoutFile("test");
+    lsfCmdExecutor.setStartTime(LocalDateTime.of(2020, 1, 1, 1, 1));
     String json = Json.serialize(lsfCmdExecutor);
     assertThat(json)
         .isEqualTo(
             "{\n"
                 + "  \"cmd\" : \"echo test\",\n"
-                + "  \"cmdRunnerType\" : \"LOCAL_CMD_RUNNER\"\n"
+                + "  \"cmdRunnerType\" : \"LOCAL_CMD_RUNNER\",\n"
+                + "  \"jobId\" : \"test\",\n"
+                + "  \"stdoutFile\" : \"test\",\n"
+                + "  \"stderrFile\" : \"test\",\n"
+                + "  \"startTime\" : \"2020-01-01T01:01:00\"\n"
                 + "}");
-    assertThat(Json.deserialize(json, CmdExecutor.class).getCmd()).isEqualTo(cmd);
+    assertThat(Json.deserialize(json, LsfCmdExecutor.class).getCmd()).isEqualTo(cmd);
   }
 
   @Test
   public void serializeSshCmdRunner() {
-    LsfCmdExecutor lsfCmdExecutor = StageExecutor.createLsfSshCmdExecutor("echo test");
     String cmd = "echo test";
+    LsfCmdExecutor lsfCmdExecutor = StageExecutor.createLsfSshCmdExecutor(cmd);
+    lsfCmdExecutor.setJobId("test");
+    lsfCmdExecutor.setStderrFile("test");
+    lsfCmdExecutor.setStdoutFile("test");
+    lsfCmdExecutor.setStartTime(LocalDateTime.of(2020, 1, 1, 1, 1));
     String json = Json.serialize(lsfCmdExecutor);
     assertThat(json)
         .isEqualTo(
             "{\n"
                 + "  \"cmd\" : \"echo test\",\n"
-                + "  \"cmdRunnerType\" : \"SSH_CMD_RUNNER\"\n"
+                + "  \"cmdRunnerType\" : \"SSH_CMD_RUNNER\",\n"
+                + "  \"jobId\" : \"test\",\n"
+                + "  \"stdoutFile\" : \"test\",\n"
+                + "  \"stderrFile\" : \"test\",\n"
+                + "  \"startTime\" : \"2020-01-01T01:01:00\"\n"
                 + "}");
-    assertThat(Json.deserialize(json, CmdExecutor.class).getCmd()).isEqualTo(cmd);
+    assertThat(Json.deserialize(json, LsfCmdExecutor.class).getCmd()).isEqualTo(cmd);
   }
 }
