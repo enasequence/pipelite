@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.PollableExecutor;
 import pipelite.executor.cmd.runner.CmdRunner;
@@ -25,16 +26,12 @@ import pipelite.stage.StageExecutionResultExitCode;
 import pipelite.stage.StageExecutionResultType;
 
 @Flogger
-public abstract class LsfCmdExecutor extends CmdExecutor implements PollableExecutor {
-
-  public LsfCmdExecutor(String cmd, CmdRunner cmdRunner) {
-    super(cmd, cmdRunner);
-  }
+public class LsfCmdExecutor extends CmdExecutor implements PollableExecutor {
 
   private String jobId;
   private String stdoutFile;
   private String stderrFile;
-  private final LocalDateTime startTime = LocalDateTime.now();
+  private LocalDateTime startTime = LocalDateTime.now();
 
   private static final Pattern JOB_ID_SUBMITTED_PATTERN =
       Pattern.compile("Job <(\\d+)\\> is submitted");
@@ -121,6 +118,8 @@ public abstract class LsfCmdExecutor extends CmdExecutor implements PollableExec
 
   @Override
   public final StageExecutionResult poll(Stage stage) {
+    CmdRunner cmdRunner = getCmdRunner();
+
     Duration timeout = stage.getStageParameters().getTimeout();
     while (true) {
       if (timeout != null && LocalDateTime.now().isAfter(startTime.plus(timeout))) {
@@ -130,7 +129,7 @@ public abstract class LsfCmdExecutor extends CmdExecutor implements PollableExec
             .with(LogKey.STAGE_NAME, stage.getStageName())
             .log("Maximum run time exceeded. Killing LSF job.");
 
-        getCmdRunner().execute("bkill " + jobId, stage.getStageParameters());
+        cmdRunner.execute("bkill " + jobId, stage.getStageParameters());
         return StageExecutionResult.error();
       }
 
@@ -141,7 +140,7 @@ public abstract class LsfCmdExecutor extends CmdExecutor implements PollableExec
           .log("Checking LSF job result using bjobs.");
 
       CmdRunnerResult bjobsCmdRunnerResult =
-          getCmdRunner().execute("bjobs -l " + jobId, stage.getStageParameters());
+          cmdRunner.execute("bjobs -l " + jobId, stage.getStageParameters());
 
       StageExecutionResult result = getResult(bjobsCmdRunnerResult.getStdout());
 
@@ -153,7 +152,7 @@ public abstract class LsfCmdExecutor extends CmdExecutor implements PollableExec
             .log("Checking LSF job result using bhist.");
 
         CmdRunnerResult bhistCmdRunnerResult =
-            getCmdRunner().execute("bhist -l " + jobId, stage.getStageParameters());
+            cmdRunner.execute("bhist -l " + jobId, stage.getStageParameters());
 
         result = getResult(bhistCmdRunnerResult.getStdout());
       }

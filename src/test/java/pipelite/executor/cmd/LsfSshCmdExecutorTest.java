@@ -21,7 +21,7 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LsfTestConfiguration;
-import pipelite.json.Json;
+import pipelite.executor.StageExecutor;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
@@ -36,7 +36,7 @@ public class LsfSshCmdExecutorTest {
   @Test
   public void test() {
 
-    LsfSshCmdExecutor executor = new LsfSshCmdExecutor("echo test");
+    LsfCmdExecutor executor = StageExecutor.createLsfSshCmdExecutor("echo test");
 
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     String processId = UniqueStringGenerator.randomProcessId();
@@ -69,13 +69,5 @@ public class LsfSshCmdExecutorTest {
     assertThat(result.getAttribute(StageExecutionResult.COMMAND)).isBlank();
     assertThat(result.getAttribute(StageExecutionResult.EXIT_CODE)).isEqualTo("0");
     assertThat(result.getStdout()).contains("test\n");
-  }
-
-  @Test
-  public void serialize() {
-    String cmd = "echo test";
-    String json = Json.serialize(new LsfSshCmdExecutor(cmd));
-    assertThat(json).isEqualTo("{\n" + "  \"cmd\" : \"echo test\"\n" + "}");
-    assertThat(Json.deserialize(json, LsfSshCmdExecutor.class).getCmd()).isEqualTo(cmd);
   }
 }

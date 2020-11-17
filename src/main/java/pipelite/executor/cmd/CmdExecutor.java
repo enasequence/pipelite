@@ -13,26 +13,20 @@ package pipelite.executor.cmd;
 import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.StageExecutor;
-import pipelite.executor.cmd.runner.CmdRunner;
-import pipelite.executor.cmd.runner.CmdRunnerResult;
+import pipelite.executor.cmd.runner.*;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultExitCode;
 
 @Data
 @Flogger
-public abstract class CmdExecutor implements StageExecutor {
+public class CmdExecutor implements StageExecutor {
 
-  /** The actual command string to be executed. */
-  private final String cmd;
+  /** The command string to be executed. */
+  private String cmd;
 
-  /** The runner that will be used to execute the command. */
-  private final CmdRunner cmdRunner;
-
-  public CmdExecutor(String cmd, CmdRunner cmdRunner) {
-    this.cmd = cmd;
-    this.cmdRunner = cmdRunner;
-  }
+  /** The type of runner that will be used to execute the command. */
+  private CmdRunnerType cmdRunnerType;
 
   public String getDispatcherCmd(Stage stage) {
     return null;
@@ -59,6 +53,8 @@ public abstract class CmdExecutor implements StageExecutor {
     }
 
     try {
+      CmdRunner cmdRunner = getCmdRunner();
+
       CmdRunnerResult cmdRunnerResult = cmdRunner.execute(execCmd, stage.getStageParameters());
 
       StageExecutionResult result =
@@ -78,6 +74,21 @@ public abstract class CmdExecutor implements StageExecutor {
       getDispatcherJobId(result);
       return result;
     }
+  }
+
+  protected CmdRunner getCmdRunner() {
+    CmdRunner cmdRunner;
+    switch (cmdRunnerType) {
+      case LOCAL_CMD_RUNNER:
+        cmdRunner = new LocalCmdRunner();
+        break;
+      case SSH_CMD_RUNNER:
+        cmdRunner = new SshCmdRunner();
+        break;
+      default:
+        throw new RuntimeException("Unsupported command runner: " + cmdRunnerType.name());
+    }
+    return cmdRunner;
   }
 
   public String getWorkDir(Stage stage) {

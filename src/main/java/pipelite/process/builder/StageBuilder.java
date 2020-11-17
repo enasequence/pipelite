@@ -12,10 +12,6 @@ package pipelite.process.builder;
 
 import java.util.Optional;
 import pipelite.executor.StageExecutor;
-import pipelite.executor.cmd.LocalCmdExecutor;
-import pipelite.executor.cmd.LsfLocalCmdExecutor;
-import pipelite.executor.cmd.LsfSshCmdExecutor;
-import pipelite.executor.cmd.SshCmdExecutor;
 import pipelite.stage.Stage;
 import pipelite.stage.StageParameters;
 
@@ -41,19 +37,19 @@ public class StageBuilder {
   }
 
   public ProcessBuilderWithDependsOn withLocalCmdExecutor(String cmd) {
-    return addStage(new LocalCmdExecutor(cmd));
+    return addStage(StageExecutor.createLocalCmdExecutor(cmd));
   }
 
   public ProcessBuilderWithDependsOn withSshCmdExecutor(String cmd) {
-    return addStage(new SshCmdExecutor(cmd));
+    return addStage(StageExecutor.createSshCmdExecutor(cmd));
   }
 
   public ProcessBuilderWithDependsOn withLsfLocalCmdExecutor(String cmd) {
-    return addStage(new LsfLocalCmdExecutor(cmd));
+    return addStage(StageExecutor.createLsfLocalCmdExecutor(cmd));
   }
 
   public ProcessBuilderWithDependsOn withLsfSshCmdExecutor(String cmd) {
-    return addStage(new LsfSshCmdExecutor(cmd));
+    return addStage(StageExecutor.createLsfSshCmdExecutor(cmd));
   }
 
   private ProcessBuilderWithDependsOn addStage(StageExecutor executor) {

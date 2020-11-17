@@ -10,10 +10,43 @@
  */
 package pipelite.executor;
 
+import pipelite.executor.cmd.CmdExecutor;
+import pipelite.executor.cmd.LsfCmdExecutor;
+import pipelite.executor.cmd.runner.CmdRunnerType;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 
 public interface StageExecutor {
 
   StageExecutionResult execute(Stage stage);
+
+  static CmdExecutor createCmdExecutor(String cmd, CmdRunnerType cmdRunnerType) {
+    CmdExecutor cmdExecutor = new CmdExecutor();
+    cmdExecutor.setCmd(cmd);
+    cmdExecutor.setCmdRunnerType(cmdRunnerType);
+    return cmdExecutor;
+  }
+
+  static CmdExecutor createLocalCmdExecutor(String cmd) {
+    return createCmdExecutor(cmd, CmdRunnerType.LOCAL_CMD_RUNNER);
+  }
+
+  static CmdExecutor createSshCmdExecutor(String cmd) {
+    return createCmdExecutor(cmd, CmdRunnerType.SSH_CMD_RUNNER);
+  }
+
+  static LsfCmdExecutor createLsfCmdExecutor(String cmd, CmdRunnerType cmdRunnerType) {
+    LsfCmdExecutor lsfCmdExecutor = new LsfCmdExecutor();
+    lsfCmdExecutor.setCmd(cmd);
+    lsfCmdExecutor.setCmdRunnerType(cmdRunnerType);
+    return lsfCmdExecutor;
+  }
+
+  static LsfCmdExecutor createLsfLocalCmdExecutor(String cmd) {
+    return createLsfCmdExecutor(cmd, CmdRunnerType.LOCAL_CMD_RUNNER);
+  }
+
+  static LsfCmdExecutor createLsfSshCmdExecutor(String cmd) {
+    return createLsfCmdExecutor(cmd, CmdRunnerType.SSH_CMD_RUNNER);
+  }
 }

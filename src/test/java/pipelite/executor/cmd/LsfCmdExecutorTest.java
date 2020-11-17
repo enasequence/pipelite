@@ -27,10 +27,12 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LsfTestConfiguration;
+import pipelite.executor.StageExecutor;
 import pipelite.executor.SuccessStageExecutor;
 import pipelite.executor.cmd.runner.CmdRunner;
 import pipelite.executor.cmd.runner.CmdRunnerResult;
 import pipelite.executor.cmd.runner.LocalCmdRunner;
+import pipelite.json.Json;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageParameters;
@@ -71,15 +73,19 @@ public class LsfCmdExecutorTest {
     return result.getAttribute(StageExecutionResult.COMMAND);
   }
 
-  private static class LsfCmdExecutorImpl extends LsfCmdExecutor {
-    public LsfCmdExecutorImpl() {
-      super(
-          "echo test",
-          (cmd, stageParameters) -> new CmdRunnerResult(0, "Job <13454> is submitted", ""));
+  private static class LsfCmdTestExecutor extends LsfCmdExecutor {
+
+    public LsfCmdTestExecutor() {
+      setCmd("echo test");
+    }
+
+    @Override
+    protected CmdRunner getCmdRunner() {
+      return (cmd, stageParameters) -> new CmdRunnerResult(0, "Job <13454> is submitted", "");
     }
   }
 
-  private static LsfCmdExecutor executor = new LsfCmdExecutorImpl();
+  private static LsfCmdExecutor executor = new LsfCmdTestExecutor();
 
   @Test
   public void testLocalCmdRunnerWriteFileToStdout() throws IOException {
@@ -171,5 +177,42 @@ public class LsfCmdExecutorTest {
   public void testExtractExitCode() {
     assertThat(LsfCmdExecutor.extractExitCode("Exited with exit code 1")).isEqualTo("1");
     assertThat(LsfCmdExecutor.extractExitCode("Exited with exit code 3.")).isEqualTo("3");
+  }
+
+  @Test
+  public void serializeNullCmdRunner() {
+    LsfCmdExecutor lsfCmdExecutor = StageExecutor.createLsfCmdExecutor("echo test", null);
+    String cmd = "echo test";
+    String json = Json.serialize(lsfCmdExecutor);
+    assertThat(json).isEqualTo("{\n" + "  \"cmd\" : \"echo test\"\n" + "}");
+    assertThat(Json.deserialize(json, CmdExecutor.class).getCmd()).isEqualTo(cmd);
+  }
+
+  @Test
+  public void serializeLocalCmdRunner() {
+    LsfCmdExecutor lsfCmdExecutor = StageExecutor.createLsfLocalCmdExecutor("echo test");
+    String cmd = "echo test";
+    String json = Json.serialize(lsfCmdExecutor);
+    assertThat(json)
+        .isEqualTo(
+            "{\n"
+                + "  \"cmd\" : \"echo test\",\n"
+                + "  \"cmdRunnerType\" : \"LOCAL_CMD_RUNNER\"\n"
+                + "}");
+    assertThat(Json.deserialize(json, CmdExecutor.class).getCmd()).isEqualTo(cmd);
+  }
+
+  @Test
+  public void serializeSshCmdRunner() {
+    LsfCmdExecutor lsfCmdExecutor = StageExecutor.createLsfSshCmdExecutor("echo test");
+    String cmd = "echo test";
+    String json = Json.serialize(lsfCmdExecutor);
+    assertThat(json)
+        .isEqualTo(
+            "{\n"
+                + "  \"cmd\" : \"echo test\",\n"
+                + "  \"cmdRunnerType\" : \"SSH_CMD_RUNNER\"\n"
+                + "}");
+    assertThat(Json.deserialize(json, CmdExecutor.class).getCmd()).isEqualTo(cmd);
   }
 }
