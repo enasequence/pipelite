@@ -86,6 +86,6 @@ public class StageExecutionResult {
     if (attributes.isEmpty()) {
       return null;
     }
-    return Json.serializeNullIfErrorOrEmpty(attributes);
+    return Json.serializeSafely(attributes);
   }
 }

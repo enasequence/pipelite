@@ -27,6 +27,10 @@ import pipelite.stage.StageExecutionResultType;
 @Flogger
 public abstract class LsfCmdExecutor extends CmdExecutor implements PollableExecutor {
 
+  public LsfCmdExecutor(String cmd, CmdRunner cmdRunner) {
+    super(cmd, cmdRunner);
+  }
+
   private String jobId;
   private String stdoutFile;
   private String stderrFile;

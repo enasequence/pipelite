@@ -85,6 +85,6 @@ public class StageParameters implements ConfigurableStageParameters {
   }
 
   public String json() {
-    return Json.serializeNullIfErrorOrEmpty(this);
+    return Json.serializeSafely(this);
   }
 }

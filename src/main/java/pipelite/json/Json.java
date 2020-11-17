@@ -15,7 +15,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import java.util.regex.Pattern;
 import lombok.extern.flogger.Flogger;
-import pipelite.executor.StageExecutor;
 
 @Flogger
 public class Json {
@@ -31,41 +30,70 @@ public class Json {
     mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
   }
 
-  private static String nullIfEmpty(String json) {
+  /**
+   * Serializes the object in JSON.
+   *
+   * @throws RuntimeException if the serialization fails.
+   */
+  public static String serialize(Object object) {
+    try {
+      return serializeThrowIfError(object);
+    } catch (Exception ex) {
+      log.atSevere().withCause(ex).log("Failed to serialize json");
+      throw new RuntimeException(ex);
+    }
+  }
+
+  /** Serializes the object in JSON. Returns null if the serialization fails or is empty. */
+  public static String serializeSafely(Object object) {
+    try {
+      return serializeNullIfEmpty(serializeThrowIfError(object));
+    } catch (Exception ex) {
+      log.atSevere().withCause(ex).log("Failed to serialize json");
+      return null;
+    }
+  }
+
+  /**
+   * Deserializes the object from JSON.
+   *
+   * @param json the JSON string.
+   * @param className the name of the class to deserialize into.
+   * @param clazz the return type.
+   * @throws RuntimeException if the deserialization fails.
+   */
+  public static <T> T deserialize(String json, String className, Class<T> clazz) {
+    try {
+      return (T) mapper.readValue(json, Class.forName(className));
+    } catch (Exception ex) {
+      log.atSevere().withCause(ex).log("Failed to deserialize json");
+      throw new RuntimeException(ex);
+    }
+  }
+
+  /**
+   * Deserializes the object from JSON.
+   * @param json the JSON string.
+   * @param clazz the return type.
+   * @throws RuntimeException if the deserialization fails.
+   */
+  public static <T> T deserialize(String json, Class<T> clazz) {
+    try {
+      return (T) mapper.readValue(json, clazz);
+    } catch (Exception ex) {
+      log.atSevere().withCause(ex).log("Failed to deserialize json");
+      throw new RuntimeException(ex);
+    }
+  }
+
+  private static String serializeNullIfEmpty(String json) {
     if (json == null || EMPTY_JSON.matcher(json).matches()) {
       return null;
     }
     return json;
   }
 
-  private static String serialize(Object object) throws Exception {
+  private static String serializeThrowIfError(Object object) throws Exception {
     return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
-  }
-
-  public static String serializeNullIfErrorOrEmpty(Object object) {
-    try {
-      return nullIfEmpty(serialize(object));
-    } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Failed to serialize json");
-      return null;
-    }
-  }
-
-  public static String serializeThrowIfError(Object object) {
-    try {
-      return serialize(object);
-    } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Failed to serialize json");
-      throw new RuntimeException(ex);
-    }
-  }
-
-  public static StageExecutor deserializeThrowIfError(String json, String className) {
-    try {
-      return (StageExecutor) mapper.readValue(json, Class.forName(className));
-    } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Failed to deserialize json");
-      throw new RuntimeException(ex);
-    }
   }
 }

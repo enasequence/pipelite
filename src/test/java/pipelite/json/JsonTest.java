@@ -20,23 +20,23 @@ public class JsonTest {
   @Test
   public void testEmpty() {
     Object object = new Object();
-    assertThat(Json.serializeThrowIfError(object)).isEqualTo("{ }");
-    assertThat(Json.serializeNullIfErrorOrEmpty(object)).isNull();
+    assertThat(Json.serialize(object)).isEqualTo("{ }");
+    assertThat(Json.serializeSafely(object)).isNull();
 
     HashMap<String, String> map = new HashMap<>();
-    assertThat(Json.serializeThrowIfError(map)).isEqualTo("{ }");
-    assertThat(Json.serializeNullIfErrorOrEmpty(map)).isNull();
+    assertThat(Json.serialize(map)).isEqualTo("{ }");
+    assertThat(Json.serializeSafely(map)).isNull();
     map.put("test", null);
-    assertThat(Json.serializeThrowIfError(map)).isEqualTo("{ }");
-    assertThat(Json.serializeNullIfErrorOrEmpty(map)).isNull();
+    assertThat(Json.serialize(map)).isEqualTo("{ }");
+    assertThat(Json.serializeSafely(map)).isNull();
   }
 
   @Test
   public void testNotEmpty() {
     HashMap<String, String> map = new HashMap<>();
     map.put("test", "test");
-    assertThat(Json.serializeThrowIfError(map)).isEqualTo("{\n" + "  \"test\" : \"test\"\n" + "}");
-    assertThat(Json.serializeNullIfErrorOrEmpty(map))
+    assertThat(Json.serialize(map)).isEqualTo("{\n" + "  \"test\" : \"test\"\n" + "}");
+    assertThat(Json.serializeSafely(map))
         .isEqualTo("{\n" + "  \"test\" : \"test\"\n" + "}");
   }
 }

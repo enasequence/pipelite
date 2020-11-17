@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.executor.lsf;
+package pipelite.executor.cmd;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -18,6 +18,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
+
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,7 +28,6 @@ import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LsfTestConfiguration;
 import pipelite.executor.SuccessStageExecutor;
-import pipelite.executor.cmd.LsfCmdExecutor;
 import pipelite.executor.cmd.runner.CmdRunner;
 import pipelite.executor.cmd.runner.CmdRunnerResult;
 import pipelite.executor.cmd.runner.LocalCmdRunner;
@@ -70,18 +71,15 @@ public class LsfCmdExecutorTest {
     return result.getAttribute(StageExecutionResult.COMMAND);
   }
 
-  private LsfCmdExecutor executor =
-      new LsfCmdExecutor() {
-        @Override
-        public CmdRunner getCmdRunner() {
-          return (cmd, stageParameters) -> new CmdRunnerResult(0, "Job <13454> is submitted", "");
-        }
+  private static class LsfCmdExecutorImpl extends LsfCmdExecutor {
+    public LsfCmdExecutorImpl() {
+      super(
+          "echo test",
+          (cmd, stageParameters) -> new CmdRunnerResult(0, "Job <13454> is submitted", ""));
+    }
+  }
 
-        @Override
-        public String getCmd(Stage stage) {
-          return "echo test";
-        }
-      };
+  private static LsfCmdExecutor executor = new LsfCmdExecutorImpl();
 
   @Test
   public void testLocalCmdRunnerWriteFileToStdout() throws IOException {

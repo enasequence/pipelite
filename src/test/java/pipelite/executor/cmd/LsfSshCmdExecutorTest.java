@@ -8,11 +8,12 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.executor.lsf;
+package pipelite.executor.cmd;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -20,7 +21,7 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LsfTestConfiguration;
-import pipelite.executor.cmd.LsfSshCmdExecutor;
+import pipelite.json.Json;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
@@ -68,5 +69,13 @@ public class LsfSshCmdExecutorTest {
     assertThat(result.getAttribute(StageExecutionResult.COMMAND)).isBlank();
     assertThat(result.getAttribute(StageExecutionResult.EXIT_CODE)).isEqualTo("0");
     assertThat(result.getStdout()).contains("test\n");
+  }
+
+  @Test
+  public void serialize() {
+    String cmd = "echo test";
+    String json = Json.serialize(new LsfSshCmdExecutor(cmd));
+    assertThat(json).isEqualTo("{\n" + "  \"cmd\" : \"echo test\"\n" + "}");
+    assertThat(Json.deserialize(json, LsfSshCmdExecutor.class).getCmd()).isEqualTo(cmd);
   }
 }

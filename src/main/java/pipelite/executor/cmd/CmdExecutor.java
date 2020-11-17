@@ -10,6 +10,7 @@
  */
 package pipelite.executor.cmd;
 
+import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.StageExecutor;
 import pipelite.executor.cmd.runner.CmdRunner;
@@ -18,12 +19,20 @@ import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultExitCode;
 
+@Data
 @Flogger
 public abstract class CmdExecutor implements StageExecutor {
 
-  public abstract CmdRunner getCmdRunner();
+  /** The actual command string to be executed. */
+  private final String cmd;
 
-  public abstract String getCmd(Stage stage);
+  /** The runner that will be used to execute the command. */
+  private final CmdRunner cmdRunner;
+
+  public CmdExecutor(String cmd, CmdRunner cmdRunner) {
+    this.cmd = cmd;
+    this.cmdRunner = cmdRunner;
+  }
 
   public String getDispatcherCmd(Stage stage) {
     return null;
@@ -32,9 +41,9 @@ public abstract class CmdExecutor implements StageExecutor {
   public void getDispatcherJobId(StageExecutionResult stageExecutionResult) {}
 
   public StageExecutionResult execute(Stage stage) {
-    String cmd = getCmd(stage);
-
     String singularityImage = stage.getStageParameters().getSingularityImage();
+
+    String execCmd = cmd;
 
     String dispatchCommand = getDispatcherCmd(stage);
     if (dispatchCommand != null) {
@@ -42,19 +51,19 @@ public abstract class CmdExecutor implements StageExecutor {
       if (singularityImage != null) {
         cmdPrefix += "singularity run " + singularityImage + " ";
       }
-      cmd = cmdPrefix + cmd;
+      execCmd = cmdPrefix + execCmd;
     } else {
       if (singularityImage != null) {
-        cmd = "singularity run " + singularityImage + " " + cmd;
+        execCmd = "singularity run " + singularityImage + " " + execCmd;
       }
     }
 
     try {
-      CmdRunnerResult cmdRunnerResult = getCmdRunner().execute(cmd, stage.getStageParameters());
+      CmdRunnerResult cmdRunnerResult = cmdRunner.execute(execCmd, stage.getStageParameters());
 
       StageExecutionResult result =
           StageExecutionResultExitCode.resolve(cmdRunnerResult.getExitCode());
-      result.addAttribute(StageExecutionResult.COMMAND, cmd);
+      result.addAttribute(StageExecutionResult.COMMAND, execCmd);
       result.addAttribute(StageExecutionResult.HOST, stage.getStageParameters().getHost());
       result.addAttribute(StageExecutionResult.EXIT_CODE, cmdRunnerResult.getExitCode());
       result.setStdout(cmdRunnerResult.getStdout());
@@ -62,9 +71,9 @@ public abstract class CmdExecutor implements StageExecutor {
       return result;
 
     } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Failed call: %s", cmd);
+      log.atSevere().withCause(ex).log("Failed call: %s", execCmd);
       StageExecutionResult result = StageExecutionResult.error();
-      result.addAttribute(StageExecutionResult.COMMAND, cmd);
+      result.addAttribute(StageExecutionResult.COMMAND, execCmd);
       result.addExceptionAttribute(ex);
       getDispatcherJobId(result);
       return result;

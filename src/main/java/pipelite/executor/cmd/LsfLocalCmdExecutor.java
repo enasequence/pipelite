@@ -10,26 +10,14 @@
  */
 package pipelite.executor.cmd;
 
-import pipelite.executor.cmd.runner.CmdRunner;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import pipelite.executor.cmd.runner.LocalCmdRunner;
-import pipelite.stage.Stage;
 
-public final class LsfLocalCmdExecutor extends LsfCmdExecutor {
+public class LsfLocalCmdExecutor extends LsfCmdExecutor {
 
-  /** The actual command string to be executed. */
-  private final String cmd;
-
-  public LsfLocalCmdExecutor(String cmd) {
-    this.cmd = cmd;
-  }
-
-  @Override
-  public CmdRunner getCmdRunner() {
-    return new LocalCmdRunner();
-  }
-
-  @Override
-  public String getCmd(Stage stage) {
-    return cmd;
+  @JsonCreator
+  public LsfLocalCmdExecutor(@JsonProperty("cmd") String cmd) {
+    super(cmd, new LocalCmdRunner());
   }
 }

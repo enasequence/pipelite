@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
+import pipelite.json.Json;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
@@ -44,5 +45,13 @@ public class LocalCmdExecutorTest {
     assertThat(result.getAttribute(StageExecutionResult.COMMAND)).isEqualTo("echo test");
     assertThat(result.getAttribute(StageExecutionResult.EXIT_CODE)).isEqualTo("0");
     assertThat(result.getStdout()).isEqualTo("test\n");
+  }
+
+  @Test
+  public void serialize() {
+    String cmd = "echo test";
+    String json = Json.serialize(new LocalCmdExecutor(cmd));
+    assertThat(json).isEqualTo("{\n" + "  \"cmd\" : \"echo test\"\n" + "}");
+    assertThat(Json.deserialize(json, LocalCmdExecutor.class).getCmd()).isEqualTo(cmd);
   }
 }

@@ -20,6 +20,7 @@ import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.SingularityTestConfiguration;
 import pipelite.configuration.SshTestConfiguration;
+import pipelite.json.Json;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
@@ -84,5 +85,13 @@ public class SshCmdExecutorTest {
         .isEqualTo("singularity run docker://enasequence/webin-cli ");
     assertThat(result.getStdout()).contains("Creating container runtime...");
     assertThat(result.getAttribute(StageExecutionResult.EXIT_CODE)).isEqualTo("2");
+  }
+
+  @Test
+  public void serialize() {
+    String cmd = "echo test";
+    String json = Json.serialize(new SshCmdExecutor(cmd));
+    assertThat(json).isEqualTo("{\n" + "  \"cmd\" : \"echo test\"\n" + "}");
+    assertThat(Json.deserialize(json, SshCmdExecutor.class).getCmd()).isEqualTo(cmd);
   }
 }

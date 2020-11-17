@@ -15,10 +15,10 @@ import pipelite.json.Json;
 public interface SerializableExecutor extends StageExecutor {
 
   default String serialize() {
-    return Json.serializeThrowIfError(this);
+    return Json.serialize(this);
   }
 
   static StageExecutor deserialize(String className, String json) {
-    return Json.deserializeThrowIfError(json, className);
+    return Json.deserialize(json, className, StageExecutor.class);
   }
 }
