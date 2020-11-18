@@ -98,7 +98,7 @@ public class LsfCmdExecutor extends CmdExecutor {
       return StageExecutionResult.error();
     }
 
-    log.atInfo()
+    log.atFine()
         .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
         .with(LogKey.PROCESS_ID, stage.getProcessId())
         .with(LogKey.STAGE_NAME, stage.getStageName())
@@ -115,7 +115,7 @@ public class LsfCmdExecutor extends CmdExecutor {
         return result;
       }
     } else {
-      log.atInfo()
+      log.atFine()
           .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
           .with(LogKey.PROCESS_ID, stage.getProcessId())
           .with(LogKey.STAGE_NAME, stage.getStageName())
@@ -138,13 +138,11 @@ public class LsfCmdExecutor extends CmdExecutor {
       Thread.currentThread().interrupt();
     }
 
-    /*
-    log.atInfo()
+    log.atFine()
         .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
         .with(LogKey.PROCESS_ID, stage.getProcessId())
         .with(LogKey.STAGE_NAME, stage.getStageName())
         .log("Reading stdout file: %s", stdoutFile);
-     */
 
     try {
       CmdRunnerResult stdoutCmdRunnerResult = writeFileToStdout(getCmdRunner(), stdoutFile, stage);
@@ -153,13 +151,11 @@ public class LsfCmdExecutor extends CmdExecutor {
       log.atSevere().withCause(ex).log("Failed to read stdout file: %s", stdoutFile);
     }
 
-    /*
-    log.atInfo()
+    log.atFine()
         .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
         .with(LogKey.PROCESS_ID, stage.getProcessId())
         .with(LogKey.STAGE_NAME, stage.getStageName())
         .log("Reading stderr file: %s", stderrFile);
-    */
 
     try {
       CmdRunnerResult stderrCmdRunnerResult = writeFileToStderr(getCmdRunner(), stderrFile, stage);

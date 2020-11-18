@@ -205,7 +205,7 @@ public class ProcessLauncher implements Runnable {
         return;
       }
 
-      logContext(log.atInfo()).log("Executing stages");
+      logContext(log.atFine()).log("Executing stages");
 
       List<StageAndStageEntity> executableStages = dependencyResolver.getExecutableStages();
       if (executableStages.isEmpty()) {
@@ -302,7 +302,7 @@ public class ProcessLauncher implements Runnable {
     if (result.isActive()) {
       while (true) {
         try {
-          logContext(log.atInfo(), stageName).log("Stage is active");
+          logContext(log.atInfo(), stageName).log("Polling async stage");
 
           result = stage.getExecutor().execute(stage);
           if (!result.isActive()) {
