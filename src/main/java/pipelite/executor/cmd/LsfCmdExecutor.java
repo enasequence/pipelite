@@ -31,7 +31,7 @@ public class LsfCmdExecutor extends CmdExecutor {
   private String jobId;
   private String stdoutFile;
   private String stderrFile;
-  private LocalDateTime startTime = LocalDateTime.now();
+  private LocalDateTime startTime;
 
   private static final String BSUB_CMD = "bsub";
   private static final String BJOBS_STANDARD_CMD = "bjobs -l ";
@@ -65,6 +65,8 @@ public class LsfCmdExecutor extends CmdExecutor {
 
   private StageExecutionResult submit(Stage stage) {
 
+    startTime = LocalDateTime.now();
+
     StageExecutionResult result = super.execute(stage);
 
     String stdout = result.getStdout();
@@ -95,6 +97,7 @@ public class LsfCmdExecutor extends CmdExecutor {
           .log("Maximum run time exceeded. Killing LSF job.");
 
       cmdRunner.execute(BKILL_CMD + jobId, stage.getStageParameters());
+      reset();
       return StageExecutionResult.error();
     }
 
@@ -126,6 +129,7 @@ public class LsfCmdExecutor extends CmdExecutor {
 
       result = getStandardJobResult(bhistCmdRunnerResult.getStdout());
       if (result == null) {
+        reset();
         result = StageExecutionResult.error();
       }
     }
@@ -165,6 +169,13 @@ public class LsfCmdExecutor extends CmdExecutor {
     }
 
     return result;
+  }
+
+  private void reset() {
+    jobId = null;
+    stdoutFile = null;
+    stderrFile = null;
+    startTime = null;
   }
 
   @Override

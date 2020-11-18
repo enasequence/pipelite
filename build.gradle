@@ -9,7 +9,7 @@ plugins {
 }
 
 group = 'pipelite'
-version = '1.0.20'
+version = '1.0.21'
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
 
