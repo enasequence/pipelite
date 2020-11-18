@@ -93,7 +93,6 @@ public class SshCmdRunner implements CmdRunner {
     try {
       stdoutStream.flush();
       value = stdoutStream.toString();
-      log.atInfo().log(value);
       stdoutStream.close();
     } catch (IOException e) {
     } finally {

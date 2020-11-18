@@ -109,26 +109,10 @@ public class LsfCmdExecutor extends CmdExecutor {
 
     StageExecutionResult result;
 
-    boolean isJobIdNotFound = extractJobIdNotFound(bjobsCustomCmdRunnerResult.getStdout());
-
-    if (!isJobIdNotFound) {
+    if (!extractJobIdNotFound(bjobsCustomCmdRunnerResult.getStdout())) {
       result = getCustomJobResult(bjobsCustomCmdRunnerResult.getStdout());
-
-      if (!result.isActive()) {
-
-        // TODO: LSF may not immediately flush stdout
-
-        log.atInfo()
-            .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
-            .with(LogKey.PROCESS_ID, stage.getProcessId())
-            .with(LogKey.STAGE_NAME, stage.getStageName())
-            .log("Waiting LSF to flush stdout and stderr");
-
-        try {
-          Thread.sleep(Duration.ofSeconds(15).toMillis());
-        } catch (InterruptedException ex) {
-          Thread.currentThread().interrupt();
-        }
+      if (result.isActive()) {
+        return result;
       }
     } else {
       log.atInfo()
@@ -146,34 +130,38 @@ public class LsfCmdExecutor extends CmdExecutor {
       }
     }
 
-    if (result != null) {
-      log.atInfo()
-          .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
-          .with(LogKey.PROCESS_ID, stage.getProcessId())
-          .with(LogKey.STAGE_NAME, stage.getStageName())
-          .log("Reading stdout file: %s", stdoutFile);
+    // TODO: LSF may not immediately flush stdout and stderr
 
-      try {
-        CmdRunnerResult stdoutCmdRunnerResult =
-            writeFileToStdout(getCmdRunner(), stdoutFile, stage);
-        result.setStdout(stdoutCmdRunnerResult.getStdout());
-      } catch (Exception ex) {
-        log.atSevere().withCause(ex).log("Failed to read stdout file: %s", stdoutFile);
-      }
+    try {
+      Thread.sleep(Duration.ofSeconds(15).toMillis());
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+    }
 
-      log.atInfo()
-          .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
-          .with(LogKey.PROCESS_ID, stage.getProcessId())
-          .with(LogKey.STAGE_NAME, stage.getStageName())
-          .log("Reading stderr file: %s", stderrFile);
+    log.atInfo()
+        .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
+        .with(LogKey.PROCESS_ID, stage.getProcessId())
+        .with(LogKey.STAGE_NAME, stage.getStageName())
+        .log("Reading stdout file: %s", stdoutFile);
 
-      try {
-        CmdRunnerResult stderrCmdRunnerResult =
-            writeFileToStderr(getCmdRunner(), stderrFile, stage);
-        result.setStderr(stderrCmdRunnerResult.getStderr());
-      } catch (Exception ex) {
-        log.atSevere().withCause(ex).log("Failed to read stderr file: %s", stderrFile);
-      }
+    try {
+      CmdRunnerResult stdoutCmdRunnerResult = writeFileToStdout(getCmdRunner(), stdoutFile, stage);
+      result.setStdout(stdoutCmdRunnerResult.getStdout());
+    } catch (Exception ex) {
+      log.atSevere().withCause(ex).log("Failed to read stdout file: %s", stdoutFile);
+    }
+
+    log.atInfo()
+        .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
+        .with(LogKey.PROCESS_ID, stage.getProcessId())
+        .with(LogKey.STAGE_NAME, stage.getStageName())
+        .log("Reading stderr file: %s", stderrFile);
+
+    try {
+      CmdRunnerResult stderrCmdRunnerResult = writeFileToStderr(getCmdRunner(), stderrFile, stage);
+      result.setStderr(stderrCmdRunnerResult.getStderr());
+    } catch (Exception ex) {
+      log.atSevere().withCause(ex).log("Failed to read stderr file: %s", stderrFile);
     }
 
     return result;
