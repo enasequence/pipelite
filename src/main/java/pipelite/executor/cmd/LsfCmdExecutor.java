@@ -56,11 +56,6 @@ public class LsfCmdExecutor extends CmdExecutor {
   private static final int BJOBS_HOST = 5;
 
   @Override
-  public boolean async() {
-    return true;
-  }
-
-  @Override
   public StageExecutionResult execute(Stage stage) {
     if (jobId == null) {
       return submit(stage);
