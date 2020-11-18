@@ -65,8 +65,6 @@ public class SshCmdRunner implements CmdRunner {
             SessionHeartbeatController.HeartbeatType.IGNORE,
             Duration.ofSeconds(SSH_HEARTBEAT_SECONDS));
 
-        log.atInfo().log("Executing ssh call: %s", cmd);
-
         ClientChannel channel = session.createExecChannel(cmd, null, stageParameters.getEnv());
         channel.setOut(stdoutStream);
         channel.setErr(stderrStream);
