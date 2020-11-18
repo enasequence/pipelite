@@ -23,18 +23,4 @@ public class StageExecutionResultExitCode {
     }
     return StageExecutionResult.error();
   }
-
-  public static int serialize(StageExecutionResult result) {
-    if (result.isSuccess()) {
-      return EXIT_CODE_SUCCESS;
-    }
-    return EXIT_CODE_ERROR;
-  }
-
-  public static StageExecutionResult deserialize(int exitCode) {
-    if (exitCode == EXIT_CODE_SUCCESS) {
-      return StageExecutionResult.success();
-    }
-    return StageExecutionResult.error();
-  }
 }

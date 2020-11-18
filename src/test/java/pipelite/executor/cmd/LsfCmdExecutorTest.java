@@ -28,7 +28,7 @@ import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LsfTestConfiguration;
 import pipelite.executor.StageExecutor;
-import pipelite.executor.SuccessStageExecutor;
+import pipelite.executor.SuccessAsyncExecutor;
 import pipelite.executor.cmd.runner.CmdRunner;
 import pipelite.executor.cmd.runner.CmdRunnerResult;
 import pipelite.executor.cmd.runner.LocalCmdRunner;
@@ -64,7 +64,7 @@ public class LsfCmdExecutorTest {
         .pipelineName(UniqueStringGenerator.randomPipelineName())
         .processId(UniqueStringGenerator.randomProcessId())
         .stageName(UniqueStringGenerator.randomStageName())
-        .executor(new SuccessStageExecutor())
+        .executor(new SuccessAsyncExecutor())
         .stageParameters(stageParameters)
         .build();
   }
@@ -84,8 +84,6 @@ public class LsfCmdExecutorTest {
       return (cmd, stageParameters) -> new CmdRunnerResult(0, "Job <13454> is submitted", "");
     }
   }
-
-  private static LsfCmdExecutor executor = new LsfCmdTestExecutor();
 
   @Test
   public void testLocalCmdRunnerWriteFileToStdout() throws IOException {
@@ -115,6 +113,8 @@ public class LsfCmdExecutorTest {
   public void testCmdArguments() {
     StageParameters stageParameters = stageParameters();
 
+    LsfCmdExecutor executor = new LsfCmdTestExecutor();
+
     String cmd = getCommandline(executor.execute(stage(stageParameters)));
     assertTrue(cmd.contains(" -M 1M -R \"rusage[mem=1M:duration=1]\""));
     assertTrue(cmd.contains(" -n 1"));
@@ -128,6 +128,8 @@ public class LsfCmdExecutorTest {
     StageParameters stageParameters = stageParameters();
     stageParameters.setQueue(null);
 
+    LsfCmdExecutor executor = new LsfCmdTestExecutor();
+
     String cmd = getCommandline(executor.execute(stage(stageParameters)));
     assertFalse(cmd.contains("-q "));
   }
@@ -136,6 +138,8 @@ public class LsfCmdExecutorTest {
   public void testQueueCmdArgument() {
     StageParameters stageParameters = stageParameters();
     stageParameters.setQueue("queue");
+
+    LsfCmdExecutor executor = new LsfCmdTestExecutor();
 
     String cmd = getCommandline(executor.execute(stage(stageParameters)));
     assertTrue(cmd.contains("-q queue"));
@@ -146,6 +150,8 @@ public class LsfCmdExecutorTest {
     StageParameters stageParameters = stageParameters();
     stageParameters.setMemory(2000);
     stageParameters.setCores(12);
+
+    LsfCmdExecutor executor = new LsfCmdTestExecutor();
 
     String cmd = getCommandline(executor.execute(stage(stageParameters)));
     assertTrue(cmd.contains(" -M 2000M -R \"rusage[mem=2000M:duration=1]\""));

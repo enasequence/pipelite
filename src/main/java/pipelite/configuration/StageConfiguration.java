@@ -11,6 +11,9 @@
 package pipelite.configuration;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -36,8 +39,7 @@ public class StageConfiguration implements ConfigurableStageParameters {
       Integer maximumRetries,
       Integer immediateRetries,
       String workDir,
-      String[] env,
-      Duration pollDelay,
+      Map<String, String> env,
       String singularityImage) {
     this.host = host;
     this.timeout = timeout != null ? timeout : DEFAULT_TIMEOUT;
@@ -49,7 +51,6 @@ public class StageConfiguration implements ConfigurableStageParameters {
     this.immediateRetries = immediateRetries;
     this.workDir = workDir;
     this.env = env;
-    this.pollDelay = pollDelay != null ? pollDelay : DEFAULT_POLL_DELAY;
     this.singularityImage = singularityImage;
   }
 
@@ -81,10 +82,7 @@ public class StageConfiguration implements ConfigurableStageParameters {
   private String workDir;
 
   /** Environmental variables. */
-  private String[] env;
-
-  /** Delay between stage polls. */
-  @Builder.Default private Duration pollDelay = DEFAULT_POLL_DELAY;
+  @Builder.Default private Map<String, String> env = new HashMap<>();
 
   private String singularityImage;
 }

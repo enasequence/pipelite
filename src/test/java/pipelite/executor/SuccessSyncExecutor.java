@@ -10,19 +10,13 @@
  */
 package pipelite.executor;
 
-import lombok.extern.flogger.Flogger;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 
-@Flogger
-public class SuccessStageExecutor implements StageExecutor, PollableExecutor {
-  @Override
-  public StageExecutionResult execute(Stage stage) {
-    return StageExecutionResult.success();
-  }
+public class SuccessSyncExecutor implements StageExecutor {
 
   @Override
-  public StageExecutionResult poll(Stage stage) {
+  public StageExecutionResult execute(Stage stage) {
     return StageExecutionResult.success();
   }
 }

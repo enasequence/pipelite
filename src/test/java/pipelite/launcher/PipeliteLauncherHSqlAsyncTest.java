@@ -31,13 +31,13 @@ import pipelite.UniqueStringGenerator;
       "pipelite.launcher.shutdownIfIdle=true",
       "pipelite.stage.maximumRetries=1"
     })
-@ContextConfiguration(initializers = PipeliteLauncherOracleSuccessTest.TestContextInitializer.class)
-@ActiveProfiles(value = {"oracle-test"})
-public class PipeliteLauncherOraclePollableTest {
+@ContextConfiguration(initializers = PipeliteLauncherHSqlSuccessTest.TestContextInitializer.class)
+@ActiveProfiles(value = {"hsql-test"})
+public class PipeliteLauncherHSqlAsyncTest {
 
-  @Autowired private ObjectProvider<PipeliteLauncherPollableTester> testerObjectProvider;
+  @Autowired private ObjectProvider<PipeliteLauncherAsyncTester> testerObjectProvider;
 
-  public PipeliteLauncherOraclePollableTest() {}
+  public PipeliteLauncherHSqlAsyncTest() {}
 
   public static class TestContextInitializer
       implements ApplicationContextInitializer<ConfigurableApplicationContext> {
@@ -50,27 +50,27 @@ public class PipeliteLauncherOraclePollableTest {
   }
 
   @Test
-  public void testPollSuccessExecuteSuccess() {
-    testerObjectProvider.getObject().testPollSuccessExecuteSuccess();
+  public void testSubmitSuccessPollSuccess() {
+    testerObjectProvider.getObject().testSubmitSuccessPollSuccess();
   }
 
   @Test
-  public void testPollErrorExecuteSuccess() {
-    testerObjectProvider.getObject().testPollErrorExecuteSuccess();
+  public void testSubmitError() {
+    testerObjectProvider.getObject().testSubmitError();
   }
 
   @Test
-  public void testPollErrorExecuteError() {
-    testerObjectProvider.getObject().testPollErrorExecuteError();
+  public void testSubmitException() {
+    testerObjectProvider.getObject().testSubmitException();
   }
 
   @Test
-  public void testPollExceptionExecuteSuccess() {
-    testerObjectProvider.getObject().testPollExceptionExecuteSuccess();
+  public void testPollError() {
+    testerObjectProvider.getObject().testPollError();
   }
 
   @Test
-  public void testPollExceptionExecuteError() {
-    testerObjectProvider.getObject().testPollExceptionExecuteError();
+  public void testPollException() {
+    testerObjectProvider.getObject().testPollException();
   }
 }

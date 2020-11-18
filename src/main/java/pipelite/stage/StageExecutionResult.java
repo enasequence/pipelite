@@ -33,6 +33,10 @@ public class StageExecutionResult {
   @EqualsAndHashCode.Exclude private final Map<String, String> attributes = new HashMap<>();
 
   public static final String HOST = "host";
+  public static final String EXEC_HOST = "execution host";
+  public static final String CPU_TIME = "cpu time";
+  public static final String MAX_MEM = "max mem";
+  public static final String AVG_MEM = "avg mem";
   public static final String MESSAGE = "message";
   public static final String EXCEPTION = "exception";
   public static final String COMMAND = "command";

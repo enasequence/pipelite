@@ -12,9 +12,8 @@ package pipelite.stage;
 
 import com.google.common.base.Supplier;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+
 import lombok.Value;
 import pipelite.configuration.StageConfiguration;
 
@@ -46,7 +45,7 @@ public class StageParametersUtils {
     return getValue(stageParameters::getWorkDir, stageConfiguration::getWorkDir);
   }
 
-  public static String[] getEnv(
+  public static Map<String, String> getEnv(
       StageParameters stageParameters, StageConfiguration stageConfiguration) {
     return mergeEnv(stageParameters.getEnv(), stageConfiguration.getEnv());
   }
@@ -71,11 +70,6 @@ public class StageParametersUtils {
     return getValue(stageParameters::getQueue, stageConfiguration::getQueue);
   }
 
-  public static Duration getPollDelay(
-      StageParameters stageParameters, StageConfiguration stageConfiguration) {
-    return getValue(stageParameters::getPollDelay, stageConfiguration::getPollDelay);
-  }
-
   public static String getSingularityImage(
       StageParameters stageParameters, StageConfiguration stageConfiguration) {
     return getValue(stageParameters::getSingularityImage, stageConfiguration::getSingularityImage);
@@ -89,16 +83,19 @@ public class StageParametersUtils {
     return value;
   }
 
-  private static String[] mergeEnv(String[] stage, String[] stageConfiguration) {
-    if (stage == null) {
-      stage = new String[0];
+  private static Map<String, String> mergeEnv(
+      Map<String, String> stageParameters, Map<String, String> stageConfiguration) {
+    Map<String, String> merge = new HashMap<>();
+    if (stageConfiguration != null) {
+      for (String key : stageConfiguration.keySet()) {
+        merge.put(key, stageConfiguration.get(key));
+      }
     }
-    if (stageConfiguration == null) {
-      stageConfiguration = new String[0];
+    if (stageParameters != null) {
+      for (String key : stageParameters.keySet()) {
+        merge.put(key, stageParameters.get(key));
+      }
     }
-    Set<String> set1 = new HashSet<>(Arrays.asList(stage));
-    Set<String> set2 = new HashSet<>(Arrays.asList(stageConfiguration));
-    set1.addAll(set2);
-    return set1.toArray(new String[0]);
+    return merge;
   }
 }

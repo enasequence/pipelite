@@ -10,11 +10,9 @@
  */
 package pipelite.executor;
 
-import lombok.extern.flogger.Flogger;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 
-@Flogger
 public class ErrorStageExecutor implements StageExecutor {
   @Override
   public StageExecutionResult execute(Stage stage) {

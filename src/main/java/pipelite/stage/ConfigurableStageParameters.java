@@ -11,6 +11,7 @@
 package pipelite.stage;
 
 import java.time.Duration;
+import java.util.Map;
 
 /**
  * Stage parameters that can be configured using StageConfiguration. If the stage does not have a
@@ -20,7 +21,6 @@ public interface ConfigurableStageParameters {
 
   Duration DEFAULT_TIMEOUT = Duration.ofDays(7);
   int DEFAULT_MAX_RETRIES = 3;
-  Duration DEFAULT_POLL_DELAY = Duration.ofMinutes(1);
 
   String getHost();
 
@@ -30,7 +30,7 @@ public interface ConfigurableStageParameters {
 
   Integer getImmediateRetries();
 
-  String[] getEnv();
+  Map<String, String> getEnv();
 
   String getWorkDir();
 
@@ -41,8 +41,6 @@ public interface ConfigurableStageParameters {
   Integer getCores();
 
   String getQueue();
-
-  Duration getPollDelay();
 
   String getSingularityImage();
 }

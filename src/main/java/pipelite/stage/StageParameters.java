@@ -30,13 +30,13 @@ public class StageParameters implements ConfigurableStageParameters {
   private Duration timeout; // Executors: all
   private Integer maximumRetries; // Executors: all
   private Integer immediateRetries; // Executors: all
-  private String[] env; // Executors: all
+  @Builder.Default Map<String, String> env = new HashMap<>(); // Executors: all
   private String workDir; // Executors: LSF
   private Integer memory; // Executors: LSF
   private Duration memoryTimeout; // Executors: LSF
   private Integer cores; // Executors: LSF
   private String queue; // Executors: LSF
-  private Duration pollDelay; // Executors: LSF
+  private Duration pollFrequency; // Executors: LSF
   private String singularityImage;
 
   /* Add parameters. Existing values will not be replaced. */
@@ -54,34 +54,7 @@ public class StageParameters implements ConfigurableStageParameters {
     setMemoryTimeout(StageParametersUtils.getMemoryTimeout(this, stageConfiguration));
     setCores(StageParametersUtils.getCores(this, stageConfiguration));
     setQueue(StageParametersUtils.getQueue(this, stageConfiguration));
-    setPollDelay(StageParametersUtils.getPollDelay(this, stageConfiguration));
     setSingularityImage(StageParametersUtils.getSingularityImage(this, stageConfiguration));
-  }
-
-  public List<String> getEnvAsJavaSystemPropertyOptions() {
-    List<String> options = new ArrayList<>();
-    if (getEnv() != null) {
-      for (String property : getEnv()) {
-        String value = System.getProperty(property);
-        if (value != null) {
-          options.add(String.format("-D%s=%s", property, value));
-        }
-      }
-    }
-    return options;
-  }
-
-  public Map<String, String> getEnvAsMap() {
-    Map<String, String> options = new HashMap<>();
-    if (getEnv() != null) {
-      for (String property : getEnv()) {
-        String value = System.getProperty(property);
-        if (value != null) {
-          options.put(property, value);
-        }
-      }
-    }
-    return options;
   }
 
   public String json() {

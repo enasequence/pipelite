@@ -67,7 +67,7 @@ public class LocalCmdRunner implements CmdRunner {
 
       log.atInfo().log("Executing system call: %s", cmd);
 
-      int exitCode = apacheExecutor.execute(commandLine, stageParameters.getEnvAsMap());
+      int exitCode = apacheExecutor.execute(commandLine, stageParameters.getEnv());
       return new CmdRunnerResult(exitCode, getStream(stdoutStream), getStream(stderrStream));
 
     } catch (Exception ex) {

@@ -17,7 +17,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.flogger.Flogger;
-import pipelite.executor.SerializableExecutor;
 import pipelite.executor.StageExecutor;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
@@ -80,6 +79,7 @@ public class StageEntity {
   @Lob
   private String resultParams;
 
+  /** Prepare stage for execution. */
   public static StageEntity createExecution(Stage stage) {
     String processId = stage.getProcessId();
     String pipelineName = stage.getPipelineName();
@@ -93,6 +93,7 @@ public class StageEntity {
     return stageEntity;
   }
 
+  /** Stage execution starts. */
   public void startExecution(Stage stage) {
     StageExecutor stageExecutor = stage.getExecutor();
     this.resultType = StageExecutionResultType.ACTIVE;
@@ -101,15 +102,20 @@ public class StageEntity {
     this.endTime = null;
     this.stdOut = null;
     this.stdErr = null;
-    if (stageExecutor instanceof SerializableExecutor) {
-      this.executorName = stageExecutor.getClass().getName();
-      this.executorData = ((SerializableExecutor) stageExecutor).serialize();
-    }
+    this.executorName = stageExecutor.getClass().getName();
+    this.executorData = stageExecutor.serialize();
     if (stage.getStageParameters() != null) {
       this.executorParams = stage.getStageParameters().json();
     }
   }
 
+  /** Asynchronous stage execution starts. Save information required to resume execution. */
+  public void asyncExecution(Stage stage) {
+    StageExecutor stageExecutor = stage.getExecutor();
+    this.executorData = stageExecutor.serialize();
+  }
+
+  /** Stage execution ends. */
   public void endExecution(StageExecutionResult result) {
     this.resultType = result.getResultType();
     this.resultParams = result.attributesJson();
@@ -119,6 +125,7 @@ public class StageEntity {
     this.executionCount++;
   }
 
+  /** Reset stage execution. */
   public void resetExecution() {
     this.resultType = StageExecutionResultType.NEW;
     this.resultParams = null;

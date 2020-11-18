@@ -12,20 +12,20 @@ package pipelite.stage;
 
 import com.google.common.flogger.FluentLogger;
 import lombok.Builder;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.StageExecutor;
 import pipelite.log.LogKey;
 
 @Flogger
-@Value
+@Data
 @Builder
 public class Stage {
   private final String pipelineName;
   private final String processId;
   private final String stageName;
-  @EqualsAndHashCode.Exclude private final StageExecutor executor;
+  @EqualsAndHashCode.Exclude private StageExecutor executor;
   @EqualsAndHashCode.Exclude private final Stage dependsOn;
   @EqualsAndHashCode.Exclude private final StageParameters stageParameters;
 

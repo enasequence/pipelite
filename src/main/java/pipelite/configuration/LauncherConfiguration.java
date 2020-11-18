@@ -37,6 +37,8 @@ public class LauncherConfiguration {
   public static final Duration DEFAULT_PROCESS_REFRESH_FREQUENCY = Duration.ofHours(1);
   public static final int DEFAULT_PROCESS_LAUNCH_PARALLELISM =
       ForkJoinPool.getCommonPoolParallelism();
+  public static final Duration DEFAULT_STAGE_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
+  public static final Duration DEFAULT_STAGE_POLL_FREQUENCY = Duration.ofMinutes(1);
 
   public LauncherConfiguration() {}
 
@@ -73,6 +75,12 @@ public class LauncherConfiguration {
    * stageLaunchFrequency is the frequency of doing this.
    */
   private Duration stageLaunchFrequency;
+
+  /**
+   * The PipeliteLauncher and PipeliteScheduler periodically poll for stage execution results. The
+   * stagePollFrequency is the frequency of doing this.
+   */
+  private Duration stagePollFrequency;
 
   /** The PipeliteLauncher can optionally be shut down if idle. */
   private boolean shutdownIfIdle;

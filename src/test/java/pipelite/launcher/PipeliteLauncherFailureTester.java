@@ -28,7 +28,7 @@ import pipelite.TestInMemoryProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.executor.ErrorStageExecutor;
-import pipelite.executor.SuccessStageExecutor;
+import pipelite.executor.SuccessSyncExecutor;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
@@ -123,48 +123,48 @@ public class PipeliteLauncherFailureTester {
         .execute("STAGE1")
         .with(new ErrorStageExecutor())
         .executeAfterPrevious("STAGE2")
-        .with(new SuccessStageExecutor())
+        .with(new SuccessSyncExecutor())
         .executeAfterPrevious("STAGE3")
-        .with(new SuccessStageExecutor())
+        .with(new SuccessSyncExecutor())
         .executeAfterPrevious("STAGE4")
-        .with(new SuccessStageExecutor())
+        .with(new SuccessSyncExecutor())
         .build();
   }
 
   private static Process secondStageFailsProcessGenerator() {
     return new ProcessBuilder(SECOND_STAGE_FAILS_NAME, UniqueStringGenerator.randomProcessId())
         .execute("STAGE1")
-        .with(new SuccessStageExecutor())
+        .with(new SuccessSyncExecutor())
         .executeAfterPrevious("STAGE2")
         .with(new ErrorStageExecutor())
         .executeAfterPrevious("STAGE3")
-        .with(new SuccessStageExecutor())
+        .with(new SuccessSyncExecutor())
         .executeAfterPrevious("STAGE4")
-        .with(new SuccessStageExecutor())
+        .with(new SuccessSyncExecutor())
         .build();
   }
 
   private static Process thirdStageFailsProcessGenerator() {
     return new ProcessBuilder(THIRD_STAGE_FAILS_NAME, UniqueStringGenerator.randomProcessId())
         .execute("STAGE1")
-        .with(new SuccessStageExecutor())
+        .with(new SuccessSyncExecutor())
         .executeAfterPrevious("STAGE2")
-        .with(new SuccessStageExecutor())
+        .with(new SuccessSyncExecutor())
         .executeAfterPrevious("STAGE3")
         .with(new ErrorStageExecutor())
         .executeAfterPrevious("STAGE4")
-        .with(new SuccessStageExecutor())
+        .with(new SuccessSyncExecutor())
         .build();
   }
 
   private static Process fourthStageFailsProcessGenerator() {
     return new ProcessBuilder(FOURTH_STAGE_FAILS_NAME, UniqueStringGenerator.randomProcessId())
         .execute("STAGE1")
-        .with(new SuccessStageExecutor())
+        .with(new SuccessSyncExecutor())
         .executeAfterPrevious("STAGE2")
-        .with(new SuccessStageExecutor())
+        .with(new SuccessSyncExecutor())
         .executeAfterPrevious("STAGE3")
-        .with(new SuccessStageExecutor())
+        .with(new SuccessSyncExecutor())
         .executeAfterPrevious("STAGE4")
         .with(new ErrorStageExecutor())
         .build();
@@ -173,13 +173,13 @@ public class PipeliteLauncherFailureTester {
   private static Process noStageFailsProcessGenerator() {
     return new ProcessBuilder(NO_STAGE_FAILS_NAME, UniqueStringGenerator.randomProcessId())
         .execute("STAGE1")
-        .with(new SuccessStageExecutor())
+        .with(new SuccessSyncExecutor())
         .executeAfterPrevious("STAGE2")
-        .with(new SuccessStageExecutor())
+        .with(new SuccessSyncExecutor())
         .executeAfterPrevious("STAGE3")
-        .with(new SuccessStageExecutor())
+        .with(new SuccessSyncExecutor())
         .executeAfterPrevious("STAGE4")
-        .with(new SuccessStageExecutor())
+        .with(new SuccessSyncExecutor())
         .build();
   }
 

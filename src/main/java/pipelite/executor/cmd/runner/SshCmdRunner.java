@@ -67,7 +67,7 @@ public class SshCmdRunner implements CmdRunner {
 
         log.atInfo().log("Executing ssh call: %s", cmd);
 
-        ClientChannel channel = session.createExecChannel(cmd, null, stageParameters.getEnvAsMap());
+        ClientChannel channel = session.createExecChannel(cmd, null, stageParameters.getEnv());
         channel.setOut(stdoutStream);
         channel.setErr(stderrStream);
 

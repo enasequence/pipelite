@@ -13,12 +13,28 @@ package pipelite.executor;
 import pipelite.executor.cmd.CmdExecutor;
 import pipelite.executor.cmd.LsfCmdExecutor;
 import pipelite.executor.cmd.runner.CmdRunnerType;
+import pipelite.json.Json;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 
 public interface StageExecutor {
 
+  /**
+   * Called repeatedly to execute the stage until it is not ACTIVE. Only asynchronous executions are
+   * expected to return ACTIVE.
+   *
+   * @param stage the stage to be executed.
+   * @return stage execution result.
+   */
   StageExecutionResult execute(Stage stage);
+
+  default String serialize() {
+    return Json.serialize(this);
+  }
+
+  static StageExecutor deserialize(String className, String json) {
+    return Json.deserialize(json, className, StageExecutor.class);
+  }
 
   static CmdExecutor createCmdExecutor(String cmd, CmdRunnerType cmdRunnerType) {
     CmdExecutor cmdExecutor = new CmdExecutor();

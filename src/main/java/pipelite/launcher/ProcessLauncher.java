@@ -27,8 +27,6 @@ import org.springframework.stereotype.Component;
 import pipelite.configuration.*;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
-import pipelite.executor.PollableExecutor;
-import pipelite.executor.SerializableExecutor;
 import pipelite.executor.StageExecutor;
 import pipelite.launcher.dependency.DependencyResolver;
 import pipelite.log.LogKey;
@@ -54,8 +52,7 @@ public class ProcessLauncher implements Runnable {
   private final ExecutorService executorService;
   private final Set<String> activeStages = ConcurrentHashMap.newKeySet();
   private final Duration stageLaunchFrequency;
-
-  public static final Duration DEFAULT_STAGE_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
+  private final Duration stagePollFrequency;
 
   private ProcessAndProcessEntity processAndProcessEntity;
 
@@ -79,7 +76,13 @@ public class ProcessLauncher implements Runnable {
     if (launcherConfiguration.getStageLaunchFrequency() != null) {
       this.stageLaunchFrequency = launcherConfiguration.getStageLaunchFrequency();
     } else {
-      this.stageLaunchFrequency = DEFAULT_STAGE_LAUNCH_FREQUENCY;
+      this.stageLaunchFrequency = LauncherConfiguration.DEFAULT_STAGE_LAUNCH_FREQUENCY;
+    }
+
+    if (launcherConfiguration.getStagePollFrequency() != null) {
+      this.stagePollFrequency = launcherConfiguration.getStagePollFrequency();
+    } else {
+      this.stagePollFrequency = LauncherConfiguration.DEFAULT_STAGE_POLL_FREQUENCY;
     }
   }
 
@@ -265,58 +268,62 @@ public class ProcessLauncher implements Runnable {
     StageEntity stageEntity = stageAndStageEntity.getStageEntity();
     String stageName = stage.getStageName();
 
-    logContext(log.atInfo(), stageName).log("Executing stage");
+    logContext(log.atInfo(), stageName).log("Preparing to executing stage");
 
-    StageExecutionResult result = null;
-    StageExecutor executor = null;
+    StageExecutor deserializedExecutor = deserializeActiveExecutor(stageAndStageEntity);
+    boolean isDeserializedExecutor = deserializedExecutor != null;
 
-    // Resume stage execution.
+    if (isDeserializedExecutor) {
+      stage.setExecutor(deserializedExecutor);
+      logContext(log.atInfo(), stageName).log("Using deserialized executor");
+    }
 
-    if (stageEntity.getResultType() == ACTIVE
-        && stageEntity.getExecutorName() != null
-        && stageEntity.getExecutorData() != null) {
-      try {
-        executor =
-            SerializableExecutor.deserialize(
-                stageEntity.getExecutorName(), stageEntity.getExecutorData());
-        if (!(executor instanceof PollableExecutor)) {
-          executor = null;
-        }
-      } catch (Exception ex) {
-        logContext(log.atSevere(), stageName)
-            .withCause(ex)
-            .log("Failed to resume stage execution: %s", stageEntity.getExecutorName());
+    StageExecutionResult result;
+
+    try {
+      logContext(log.atInfo(), stageName).log("Executing stage");
+
+      if (!isDeserializedExecutor) {
+        stageEntity.startExecution(stage);
+        stageService.saveStage(stageEntity);
       }
 
-      if (executor != null) {
+      result = stage.getExecutor().execute(stage);
+
+      if (!isDeserializedExecutor && result.isActive()) {
+        stageEntity.asyncExecution(stage);
+        stageService.saveStage(stageEntity);
+      }
+    } catch (Exception ex) {
+      result = StageExecutionResult.error();
+      result.addExceptionAttribute(ex);
+    }
+
+    if (result.isActive()) {
+      while (true) {
         try {
-          result = ((PollableExecutor) executor).poll(stage);
+          logContext(log.atInfo(), stageName).log("Stage is active");
+
+          result = stage.getExecutor().execute(stage);
+          if (!result.isActive()) {
+            break;
+          }
         } catch (Exception ex) {
-          logContext(log.atSevere(), stageName)
-              .withCause(ex)
-              .log("Failed to resume stage execution: %s", stageEntity.getExecutorName());
+          result = StageExecutionResult.error();
+          result.addExceptionAttribute(ex);
+          break;
+        }
+
+        try {
+          Thread.sleep(stagePollFrequency.toMillis());
+        } catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+          return;
         }
       }
     }
 
-    if (result == null || result.isError()) {
-      // Execute the stage.
-      stageEntity.startExecution(stage);
-      stageService.saveStage(stageEntity);
-
-      try {
-        result = stage.getExecutor().execute(stage);
-      } catch (Exception ex) {
-        result = StageExecutionResult.error();
-        result.addExceptionAttribute(ex);
-      }
-    }
-
-    if (result.isActive() && executor instanceof PollableExecutor) {
-      // Save the stage executor details required for polling.
-      stageService.saveStage(stageEntity);
-      result = ((PollableExecutor) executor).poll(stage);
-    }
+    // Stage has been executed.
 
     stageEntity.endExecution(result);
     stageService.saveStage(stageEntity);
@@ -336,6 +343,26 @@ public class ProcessLauncher implements Runnable {
           .with(LogKey.STAGE_EXECUTION_COUNT, stageEntity.getExecutionCount())
           .log("Stage execution failed");
     }
+  }
+
+  private StageExecutor deserializeActiveExecutor(StageAndStageEntity stageAndStageEntity) {
+    Stage stage = stageAndStageEntity.getStage();
+    StageEntity stageEntity = stageAndStageEntity.getStageEntity();
+    String stageName = stage.getStageName();
+
+    if (stageEntity.getResultType() == ACTIVE
+        && stageEntity.getExecutorName() != null
+        && stageEntity.getExecutorData() != null) {
+      try {
+        return StageExecutor.deserialize(
+            stageEntity.getExecutorName(), stageEntity.getExecutorData());
+      } catch (Exception ex) {
+        logContext(log.atSevere(), stageName)
+            .withCause(ex)
+            .log("Failed to deserialize executor: %s", stageEntity.getExecutorName());
+      }
+    }
+    return null;
   }
 
   private void invalidateDependentStages(StageAndStageEntity from) {

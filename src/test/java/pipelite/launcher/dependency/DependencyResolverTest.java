@@ -17,7 +17,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.StageEntity;
-import pipelite.executor.SuccessStageExecutor;
+import pipelite.executor.SuccessSyncExecutor;
 import pipelite.launcher.ProcessLauncher;
 import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
@@ -36,11 +36,11 @@ public class DependencyResolverTest {
     Process process =
         builder
             .execute("STAGE1")
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .executeAfterPrevious("STAGE2")
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .executeAfterPrevious("STAGE3")
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .build();
 
     for (Stage stage : process.getStages()) {
@@ -68,11 +68,11 @@ public class DependencyResolverTest {
     Process process =
         builder
             .execute("STAGE1")
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .executeAfter("STAGE2", "STAGE1")
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .executeAfter("STAGE3", "STAGE1")
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .build();
 
     for (Stage stage : process.getStages()) {
@@ -100,11 +100,11 @@ public class DependencyResolverTest {
     Process process =
         builder
             .execute("STAGE1")
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .executeAfter("STAGE2", "STAGE1")
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .executeAfter("STAGE3", "STAGE1")
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .build();
 
     int stageNumber = 0;
@@ -138,11 +138,11 @@ public class DependencyResolverTest {
     Process process =
         builder
             .execute("STAGE1")
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .executeAfter("STAGE2", "STAGE1")
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .executeAfter("STAGE3", "STAGE1")
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .build();
 
     int stageNumber = 0;
@@ -175,11 +175,11 @@ public class DependencyResolverTest {
     Process process =
         builder
             .execute("STAGE1")
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .executeAfter("STAGE2", "STAGE1")
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .executeAfter("STAGE3", "STAGE1")
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .build();
 
     int stageNumber = 0;
@@ -213,13 +213,13 @@ public class DependencyResolverTest {
     Process process =
         builder
             .execute("STAGE1")
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .executeAfterPrevious("STAGE2")
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .executeAfterPrevious("STAGE3")
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .executeAfterPrevious("STAGE4")
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .build();
 
     for (Stage stage : process.getStages()) {
@@ -256,13 +256,13 @@ public class DependencyResolverTest {
     Process process =
         builder
             .execute("STAGE1")
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .executeAfter("STAGE2", "STAGE1")
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .executeAfter("STAGE3", "STAGE1")
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .executeAfter("STAGE4", "STAGE1")
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .build();
 
     for (Stage stage : process.getStages()) {

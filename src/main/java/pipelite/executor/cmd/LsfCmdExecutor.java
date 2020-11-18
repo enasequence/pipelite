@@ -18,24 +18,27 @@ import java.util.regex.Pattern;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.flogger.Flogger;
-import pipelite.executor.PollableExecutor;
 import pipelite.executor.cmd.runner.CmdRunner;
 import pipelite.executor.cmd.runner.CmdRunnerResult;
 import pipelite.log.LogKey;
-import pipelite.stage.Stage;
-import pipelite.stage.StageExecutionResult;
-import pipelite.stage.StageExecutionResultExitCode;
-import pipelite.stage.StageExecutionResultType;
+import pipelite.stage.*;
 
 @Flogger
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class LsfCmdExecutor extends CmdExecutor implements PollableExecutor {
+public class LsfCmdExecutor extends CmdExecutor {
 
   private String jobId;
   private String stdoutFile;
   private String stderrFile;
   private LocalDateTime startTime = LocalDateTime.now();
+
+  private static final String BSUB_CMD = "bsub";
+  private static final String BJOBS_STANDARD_CMD = "bjobs -l ";
+  private static final String BJOBS_CUSTOM_CMD =
+      "bjobs -o \"stat exit_code cpu_used max_mem avg_mem exec_host delimiter='|'\" -noheader ";
+  private static final String BHIST_CMD = "bhist -l ";
+  private static final String BKILL_CMD = "bkill ";
 
   private static final Pattern JOB_ID_SUBMITTED_PATTERN =
       Pattern.compile("Job <(\\d+)\\> is submitted");
@@ -43,10 +46,152 @@ public class LsfCmdExecutor extends CmdExecutor implements PollableExecutor {
       Pattern.compile("Job <(\\d+)\\> is not found");
   private static final Pattern EXIT_CODE_PATTERN = Pattern.compile("Exited with exit code (\\d+)");
 
+  private static final String STATUS_DONE = "DONE";
+  private static final String STATUS_EXIT = "EXIT";
+  private static final int BJOBS_STATUS = 0;
+  private static final int BJOBS_EXIT_CODE = 1;
+  private static final int BJOBS_CPU_TIME = 2;
+  private static final int BJOBS_MAX_MEM = 3;
+  private static final int BJOBS_AVG_MEM = 4;
+  private static final int BJOBS_HOST = 5;
+
+  @Override
+  public boolean async() {
+    return true;
+  }
+
+  @Override
+  public StageExecutionResult execute(Stage stage) {
+    if (jobId == null) {
+      return submit(stage);
+    }
+    return poll(stage);
+  }
+
+  private StageExecutionResult submit(Stage stage) {
+
+    StageExecutionResult result = super.execute(stage);
+
+    String stdout = result.getStdout();
+    String stderr = result.getStderr();
+    jobId = extractJobIdSubmitted(stdout);
+    if (jobId == null) {
+      jobId = extractJobIdSubmitted(stderr);
+    }
+    if (jobId == null) {
+      result.setResultType(StageExecutionResultType.ERROR);
+    } else {
+      result.setResultType(StageExecutionResultType.ACTIVE);
+    }
+    return result;
+  }
+
+  private StageExecutionResult poll(Stage stage) {
+
+    CmdRunner cmdRunner = getCmdRunner();
+
+    Duration timeout = stage.getStageParameters().getTimeout();
+
+    if (timeout != null && LocalDateTime.now().isAfter(startTime.plus(timeout))) {
+      log.atSevere()
+          .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
+          .with(LogKey.PROCESS_ID, stage.getProcessId())
+          .with(LogKey.STAGE_NAME, stage.getStageName())
+          .log("Maximum run time exceeded. Killing LSF job.");
+
+      cmdRunner.execute(BKILL_CMD + jobId, stage.getStageParameters());
+      return StageExecutionResult.error();
+    }
+
+    log.atInfo()
+        .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
+        .with(LogKey.PROCESS_ID, stage.getProcessId())
+        .with(LogKey.STAGE_NAME, stage.getStageName())
+        .log("Checking LSF job result using bjobs.");
+
+    CmdRunnerResult bjobsCustomCmdRunnerResult =
+        cmdRunner.execute(BJOBS_CUSTOM_CMD + jobId, stage.getStageParameters());
+
+    StageExecutionResult result;
+
+    boolean isJobIdNotFound = extractJobIdNotFound(bjobsCustomCmdRunnerResult.getStdout());
+
+    if (!isJobIdNotFound) {
+      result = getCustomJobResult(bjobsCustomCmdRunnerResult.getStdout());
+
+      if (!result.isActive()) {
+
+        // TODO: LSF may not immediately flush stdout
+
+        log.atInfo()
+            .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
+            .with(LogKey.PROCESS_ID, stage.getProcessId())
+            .with(LogKey.STAGE_NAME, stage.getStageName())
+            .log("Waiting LSF to flush stdout and stderr");
+
+        try {
+          Thread.sleep(Duration.ofSeconds(15).toMillis());
+        } catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+        }
+      }
+    } else {
+      log.atInfo()
+          .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
+          .with(LogKey.PROCESS_ID, stage.getProcessId())
+          .with(LogKey.STAGE_NAME, stage.getStageName())
+          .log("Checking LSF job result using bhist.");
+
+      CmdRunnerResult bhistCmdRunnerResult =
+          cmdRunner.execute(BHIST_CMD + jobId, stage.getStageParameters());
+
+      result = getStandardJobResult(bhistCmdRunnerResult.getStdout());
+      if (result == null) {
+        result = StageExecutionResult.error();
+      }
+    }
+
+    if (result != null) {
+      log.atInfo()
+          .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
+          .with(LogKey.PROCESS_ID, stage.getProcessId())
+          .with(LogKey.STAGE_NAME, stage.getStageName())
+          .log("Reading stdout file: %s", stdoutFile);
+
+      try {
+        CmdRunnerResult stdoutCmdRunnerResult =
+            writeFileToStdout(getCmdRunner(), stdoutFile, stage);
+        result.setStdout(stdoutCmdRunnerResult.getStdout());
+      } catch (Exception ex) {
+        log.atSevere().withCause(ex).log("Failed to read stdout file: %s", stdoutFile);
+      }
+
+      log.atInfo()
+          .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
+          .with(LogKey.PROCESS_ID, stage.getProcessId())
+          .with(LogKey.STAGE_NAME, stage.getStageName())
+          .log("Reading stderr file: %s", stderrFile);
+
+      try {
+        CmdRunnerResult stderrCmdRunnerResult =
+            writeFileToStderr(getCmdRunner(), stderrFile, stage);
+        result.setStderr(stderrCmdRunnerResult.getStderr());
+      } catch (Exception ex) {
+        log.atSevere().withCause(ex).log("Failed to read stderr file: %s", stderrFile);
+      }
+    }
+
+    return result;
+  }
+
   @Override
   public final String getDispatcherCmd(Stage stage) {
+
+    // Write standard output file while the job is running not after the job has finished.
+    stage.getStageParameters().getEnv().put("LSB_STDOUT_DIRECT", "Y");
+
     StringBuilder cmd = new StringBuilder();
-    cmd.append("bsub");
+    cmd.append(BSUB_CMD);
 
     stdoutFile = getWorkFile(stage, "lsf", "stdout");
     stderrFile = getWorkFile(stage, "lsf", "stderr");
@@ -80,7 +225,7 @@ public class LsfCmdExecutor extends CmdExecutor implements PollableExecutor {
 
     Duration timeout = stage.getStageParameters().getTimeout();
     if (timeout != null) {
-      if (timeout.toMinutes() == 0){
+      if (timeout.toMinutes() == 0) {
         timeout = Duration.ofMinutes(1);
       }
       addArgument(cmd, "-W");
@@ -99,106 +244,6 @@ public class LsfCmdExecutor extends CmdExecutor implements PollableExecutor {
   @Override
   public final void getDispatcherJobId(StageExecutionResult stageExecutionResult) {
     jobId = extractJobIdSubmitted(stageExecutionResult.getStdout());
-  }
-
-  @Override
-  public final StageExecutionResult execute(Stage stage) {
-
-    StageExecutionResult result = super.execute(stage);
-
-    String stdout = result.getStdout();
-    String stderr = result.getStderr();
-    jobId = extractJobIdSubmitted(stdout);
-    if (jobId == null) {
-      jobId = extractJobIdSubmitted(stderr);
-    }
-    if (jobId == null) {
-      result.setResultType(StageExecutionResultType.ERROR);
-    } else {
-      result.setResultType(StageExecutionResultType.ACTIVE);
-    }
-    return result;
-  }
-
-  @Override
-  public final StageExecutionResult poll(Stage stage) {
-    CmdRunner cmdRunner = getCmdRunner();
-
-    Duration timeout = stage.getStageParameters().getTimeout();
-    while (true) {
-      if (timeout != null && LocalDateTime.now().isAfter(startTime.plus(timeout))) {
-        log.atSevere()
-            .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
-            .with(LogKey.PROCESS_ID, stage.getProcessId())
-            .with(LogKey.STAGE_NAME, stage.getStageName())
-            .log("Maximum run time exceeded. Killing LSF job.");
-
-        cmdRunner.execute("bkill " + jobId, stage.getStageParameters());
-        return StageExecutionResult.error();
-      }
-
-      log.atInfo()
-          .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
-          .with(LogKey.PROCESS_ID, stage.getProcessId())
-          .with(LogKey.STAGE_NAME, stage.getStageName())
-          .log("Checking LSF job result using bjobs.");
-
-      CmdRunnerResult bjobsCmdRunnerResult =
-          cmdRunner.execute("bjobs -l " + jobId, stage.getStageParameters());
-
-      StageExecutionResult result = getResult(bjobsCmdRunnerResult.getStdout());
-
-      if (result == null && extractJobIdNotFound(bjobsCmdRunnerResult.getStdout())) {
-        log.atInfo()
-            .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
-            .with(LogKey.PROCESS_ID, stage.getProcessId())
-            .with(LogKey.STAGE_NAME, stage.getStageName())
-            .log("Checking LSF job result using bhist.");
-
-        CmdRunnerResult bhistCmdRunnerResult =
-            cmdRunner.execute("bhist -l " + jobId, stage.getStageParameters());
-
-        result = getResult(bhistCmdRunnerResult.getStdout());
-      }
-
-      if (result != null) {
-        log.atInfo()
-            .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
-            .with(LogKey.PROCESS_ID, stage.getProcessId())
-            .with(LogKey.STAGE_NAME, stage.getStageName())
-            .log("Reading stdout file: %s", stdoutFile);
-
-        try {
-          CmdRunnerResult stdoutCmdRunnerResult =
-              writeFileToStdout(getCmdRunner(), stdoutFile, stage);
-          result.setStdout(stdoutCmdRunnerResult.getStdout());
-        } catch (Exception ex) {
-          log.atSevere().withCause(ex).log("Failed to read stdout file: %s", stdoutFile);
-        }
-
-        log.atInfo()
-            .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
-            .with(LogKey.PROCESS_ID, stage.getProcessId())
-            .with(LogKey.STAGE_NAME, stage.getStageName())
-            .log("Reading stderr file: %s", stderrFile);
-
-        try {
-          CmdRunnerResult stderrCmdRunnerResult =
-              writeFileToStderr(getCmdRunner(), stderrFile, stage);
-          result.setStderr(stderrCmdRunnerResult.getStderr());
-        } catch (Exception ex) {
-          log.atSevere().withCause(ex).log("Failed to read stderr file: %s", stderrFile);
-        }
-
-        return result;
-      }
-
-      try {
-        Thread.sleep(getPollFrequency(stage).toMillis());
-      } catch (InterruptedException ex) {
-        Thread.currentThread().interrupt();
-      }
-    }
   }
 
   public static CmdRunnerResult writeFileToStdout(
@@ -230,7 +275,32 @@ public class LsfCmdExecutor extends CmdExecutor implements PollableExecutor {
     return m.group(1);
   }
 
-  private static StageExecutionResult getResult(String str) {
+  private StageExecutionResult getCustomJobResult(String str) {
+    String[] bjobs = str.split("\\|");
+
+    int exitCode = 0;
+    StageExecutionResult result = null;
+
+    if (bjobs[BJOBS_STATUS].equals(STATUS_DONE)) {
+      result = StageExecutionResult.success();
+    } else if (bjobs[BJOBS_STATUS].equals(STATUS_EXIT)) {
+      exitCode = Integer.valueOf(bjobs[BJOBS_EXIT_CODE]);
+      result = StageExecutionResult.error();
+    }
+
+    if (result != null) {
+      result.getAttributes().put(StageExecutionResult.EXIT_CODE, String.valueOf(exitCode));
+      result.getAttributes().put(StageExecutionResult.EXEC_HOST, bjobs[BJOBS_HOST]);
+      result.getAttributes().put(StageExecutionResult.CPU_TIME, bjobs[BJOBS_CPU_TIME]);
+      result.getAttributes().put(StageExecutionResult.MAX_MEM, bjobs[BJOBS_MAX_MEM]);
+      result.getAttributes().put(StageExecutionResult.AVG_MEM, bjobs[BJOBS_AVG_MEM]);
+      return result;
+    }
+
+    return StageExecutionResult.active();
+  }
+
+  private static StageExecutionResult getStandardJobResult(String str) {
     if (str.contains("Done successfully")) {
       StageExecutionResult result = StageExecutionResult.success();
       result.getAttributes().put(StageExecutionResult.EXIT_CODE, "0");
@@ -239,10 +309,11 @@ public class LsfCmdExecutor extends CmdExecutor implements PollableExecutor {
 
     if (str.contains("Completed <exit>")) {
       int exitCode = Integer.valueOf(extractExitCode(str));
-      StageExecutionResult result = StageExecutionResultExitCode.deserialize(exitCode);
+      StageExecutionResult result = StageExecutionResult.error();
       result.getAttributes().put(StageExecutionResult.EXIT_CODE, String.valueOf(exitCode));
       return result;
     }
+
     return null;
   }
 

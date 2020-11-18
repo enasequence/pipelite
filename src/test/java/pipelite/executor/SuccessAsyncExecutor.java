@@ -10,15 +10,19 @@
  */
 package pipelite.executor;
 
-import pipelite.json.Json;
+import pipelite.stage.Stage;
+import pipelite.stage.StageExecutionResult;
 
-public interface SerializableExecutor extends StageExecutor {
+public class SuccessAsyncExecutor implements StageExecutor {
+  private boolean submit;
 
-  default String serialize() {
-    return Json.serialize(this);
-  }
-
-  static StageExecutor deserialize(String className, String json) {
-    return Json.deserialize(json, className, StageExecutor.class);
+  @Override
+  public StageExecutionResult execute(Stage stage) {
+    if (!submit) {
+      submit = true;
+      return StageExecutionResult.active();
+    } else {
+      return StageExecutionResult.success();
+    }
   }
 }

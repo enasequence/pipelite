@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
-import pipelite.executor.SuccessStageExecutor;
+import pipelite.executor.SuccessSyncExecutor;
 import pipelite.process.builder.ProcessBuilder;
 
 public class ProcessBuilderTest {
@@ -32,13 +32,13 @@ public class ProcessBuilderTest {
     Process process =
         new ProcessBuilder(PIPELINE_NAME, PROCESS_ID)
             .execute(stageName1)
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .executeAfterPrevious(stageName2)
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .executeAfterPrevious(stageName3)
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .executeAfterFirst(stageName4)
-            .with(new SuccessStageExecutor())
+            .with(new SuccessSyncExecutor())
             .build();
 
     assertThat(process).isNotNull();

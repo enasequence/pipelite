@@ -25,8 +25,7 @@ import pipelite.PipeliteTestConfiguration;
       "pipelite.stage.queue=TEST",
       "pipelite.stage.memoryTimeout=15s",
       "pipelite.stage.maximumRetries=3",
-      "pipelite.stage.tempdir=",
-      "pipelite.stage.env=TEST1,TEST2"
+      "pipelite.stage.tempdir="
     })
 public class StageConfigurationTest {
 
@@ -40,8 +39,5 @@ public class StageConfigurationTest {
     assertThat(config.getMemoryTimeout().toMillis() / 1000L).isEqualTo(15);
     assertThat(config.getMaximumRetries()).isEqualTo(3);
     assertThat(config.getWorkDir()).isBlank();
-    assertThat(config.getEnv().length).isEqualTo(2);
-    assertThat(config.getEnv()[0]).isEqualTo("TEST1");
-    assertThat(config.getEnv()[1]).isEqualTo("TEST2");
   }
 }
