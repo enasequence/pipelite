@@ -138,11 +138,13 @@ public class LsfCmdExecutor extends CmdExecutor {
       Thread.currentThread().interrupt();
     }
 
+    /*
     log.atInfo()
         .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
         .with(LogKey.PROCESS_ID, stage.getProcessId())
         .with(LogKey.STAGE_NAME, stage.getStageName())
         .log("Reading stdout file: %s", stdoutFile);
+     */
 
     try {
       CmdRunnerResult stdoutCmdRunnerResult = writeFileToStdout(getCmdRunner(), stdoutFile, stage);
@@ -151,11 +153,13 @@ public class LsfCmdExecutor extends CmdExecutor {
       log.atSevere().withCause(ex).log("Failed to read stdout file: %s", stdoutFile);
     }
 
+    /*
     log.atInfo()
         .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
         .with(LogKey.PROCESS_ID, stage.getProcessId())
         .with(LogKey.STAGE_NAME, stage.getStageName())
         .log("Reading stderr file: %s", stderrFile);
+    */
 
     try {
       CmdRunnerResult stderrCmdRunnerResult = writeFileToStderr(getCmdRunner(), stderrFile, stage);
