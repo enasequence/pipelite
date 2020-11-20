@@ -9,12 +9,11 @@ plugins {
 }
 
 group = 'pipelite'
-version = '1.0.22'
+version = '1.0.24'
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
 
 java {
-    // withJavadocJar()
     withSourcesJar()
 }
 
