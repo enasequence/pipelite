@@ -51,7 +51,7 @@ public class ProcessEntity {
   }
 
   public static ProcessEntity newExecution(
-      String processId, String pipelineName, Integer priority) {
+      String pipelineName, String processId, Integer priority) {
     ProcessEntity processEntity = new ProcessEntity();
     processEntity.setProcessId(processId);
     processEntity.setPipelineName(pipelineName);

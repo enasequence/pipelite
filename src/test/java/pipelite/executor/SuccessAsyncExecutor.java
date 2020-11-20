@@ -17,7 +17,7 @@ public class SuccessAsyncExecutor implements StageExecutor {
   private boolean submit;
 
   @Override
-  public StageExecutionResult execute(Stage stage) {
+  public StageExecutionResult execute(String pipelineName, String processId, Stage stage) {
     if (!submit) {
       submit = true;
       return StageExecutionResult.active();

@@ -10,34 +10,23 @@
  */
 package pipelite.stage;
 
-import com.google.common.flogger.FluentLogger;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.StageExecutor;
-import pipelite.log.LogKey;
 
 @Flogger
 @Data
 @Builder
 public class Stage {
-  private final String pipelineName;
-  private final String processId;
   private final String stageName;
   @EqualsAndHashCode.Exclude private StageExecutor executor;
   @EqualsAndHashCode.Exclude private final Stage dependsOn;
   @EqualsAndHashCode.Exclude private final StageParameters stageParameters;
 
   public Stage(
-      String pipelineName,
-      String processId,
-      String stageName,
-      StageExecutor executor,
-      Stage dependsOn,
-      StageParameters stageParameters) {
-    this.pipelineName = pipelineName;
-    this.processId = processId;
+      String stageName, StageExecutor executor, Stage dependsOn, StageParameters stageParameters) {
     this.stageName = stageName;
     this.executor = executor;
     this.dependsOn = dependsOn;
@@ -46,32 +35,16 @@ public class Stage {
     } else {
       this.stageParameters = StageParameters.builder().build();
     }
-  }
 
-  public boolean validate() {
-    boolean isSuccess = true;
-    if (pipelineName == null || pipelineName.isEmpty()) {
-      logContext(log.atSevere()).log("Pipeline name is missing");
-      isSuccess = false;
-    }
-    if (processId == null || processId.isEmpty()) {
-      logContext(log.atSevere()).log("Process id is missing");
-      isSuccess = false;
-    }
     if (stageName == null || stageName.isEmpty()) {
-      logContext(log.atSevere()).log("Stage name is missing");
-      isSuccess = false;
+      throw new IllegalArgumentException("Missing stage name");
     }
-    return isSuccess;
+    if (executor == null) {
+      throw new IllegalArgumentException("Missing executor");
+    }
   }
 
-  public StageExecutionResult execute() {
-    return executor.execute(this);
-  }
-
-  public FluentLogger.Api logContext(FluentLogger.Api log) {
-    return log.with(LogKey.PIPELINE_NAME, pipelineName)
-        .with(LogKey.PROCESS_ID, processId)
-        .with(LogKey.STAGE_NAME, stageName);
+  public StageExecutionResult execute(String pipelineName, String processId) {
+    return executor.execute(pipelineName, processId, this);
   }
 }

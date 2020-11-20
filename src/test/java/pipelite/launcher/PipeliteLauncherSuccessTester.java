@@ -16,6 +16,8 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -30,6 +32,7 @@ import pipelite.executor.StageExecutor;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
+import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.StageExecutionResult;
 
@@ -62,7 +65,7 @@ public class PipeliteLauncherSuccessTester {
       String processId = "Process" + i;
       String stageName = UniqueStringGenerator.randomStageName();
       PROCESSES.add(
-          new ProcessBuilder(PIPELINE_NAME, processId)
+          new ProcessBuilder(processId)
               .execute(stageName)
               .with(createStageExecutor(processId))
               .build());
@@ -71,12 +74,12 @@ public class PipeliteLauncherSuccessTester {
 
   private static final Duration STAGE_EXECUTION_TIME = Duration.ofMillis(10);
 
-  private static final AtomicInteger processExecutionCount = new AtomicInteger();
+  private static final AtomicLong processExecutionCount = new AtomicLong();
   private static final Set<String> processExecutionSet = ConcurrentHashMap.newKeySet();
   private static final Set<String> processExcessExecutionSet = ConcurrentHashMap.newKeySet();
 
   private static StageExecutor createStageExecutor(String processId) {
-    return stage -> {
+    return (pipelineName, processId1, stage) -> {
       processExecutionCount.incrementAndGet();
       if (processExecutionSet.contains(processId)) {
         processExcessExecutionSet.add(processId);
@@ -104,7 +107,7 @@ public class PipeliteLauncherSuccessTester {
 
     assertThat(processExcessExecutionSet).isEmpty();
     assertThat(processExecutionCount.get()).isEqualTo(PROCESS_COUNT);
-    assertThat(processExecutionCount.get()).isEqualTo(pipeliteLauncher.getProcessCompletedCount());
+    assertThat(processExecutionCount.get()).isEqualTo(pipeliteLauncher.getProcessExecutionEndedCount().get(ProcessState.COMPLETED));
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
   }
 }

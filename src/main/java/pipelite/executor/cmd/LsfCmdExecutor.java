@@ -55,18 +55,18 @@ public class LsfCmdExecutor extends CmdExecutor {
   private static final int BJOBS_HOST = 5;
 
   @Override
-  public StageExecutionResult execute(Stage stage) {
+  public StageExecutionResult execute(String pipelineName, String processId, Stage stage) {
     if (jobId == null) {
-      return submit(stage);
+      return submit(pipelineName, processId, stage);
     }
-    return poll(stage);
+    return poll(pipelineName, processId, stage);
   }
 
-  private StageExecutionResult submit(Stage stage) {
+  private StageExecutionResult submit(String pipelineName, String processId, Stage stage) {
 
     startTime = LocalDateTime.now();
 
-    StageExecutionResult result = super.execute(stage);
+    StageExecutionResult result = super.execute(pipelineName, processId, stage);
 
     String stdout = result.getStdout();
     String stderr = result.getStderr();
@@ -82,7 +82,7 @@ public class LsfCmdExecutor extends CmdExecutor {
     return result;
   }
 
-  private StageExecutionResult poll(Stage stage) {
+  private StageExecutionResult poll(String pipelineName, String processId, Stage stage) {
 
     CmdRunner cmdRunner = getCmdRunner();
 
@@ -90,8 +90,8 @@ public class LsfCmdExecutor extends CmdExecutor {
 
     if (timeout != null && LocalDateTime.now().isAfter(startTime.plus(timeout))) {
       log.atSevere()
-          .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
-          .with(LogKey.PROCESS_ID, stage.getProcessId())
+          .with(LogKey.PIPELINE_NAME, pipelineName)
+          .with(LogKey.PROCESS_ID, processId)
           .with(LogKey.STAGE_NAME, stage.getStageName())
           .log("Maximum run time exceeded. Killing LSF job.");
 
@@ -101,8 +101,8 @@ public class LsfCmdExecutor extends CmdExecutor {
     }
 
     log.atFine()
-        .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
-        .with(LogKey.PROCESS_ID, stage.getProcessId())
+        .with(LogKey.PIPELINE_NAME, pipelineName)
+        .with(LogKey.PROCESS_ID, processId)
         .with(LogKey.STAGE_NAME, stage.getStageName())
         .log("Checking LSF job result using bjobs.");
 
@@ -118,8 +118,8 @@ public class LsfCmdExecutor extends CmdExecutor {
       }
     } else {
       log.atFine()
-          .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
-          .with(LogKey.PROCESS_ID, stage.getProcessId())
+          .with(LogKey.PIPELINE_NAME, pipelineName)
+          .with(LogKey.PROCESS_ID, processId)
           .with(LogKey.STAGE_NAME, stage.getStageName())
           .log("Checking LSF job result using bhist.");
 
@@ -142,8 +142,8 @@ public class LsfCmdExecutor extends CmdExecutor {
     }
 
     log.atFine()
-        .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
-        .with(LogKey.PROCESS_ID, stage.getProcessId())
+        .with(LogKey.PIPELINE_NAME, pipelineName)
+        .with(LogKey.PROCESS_ID, processId)
         .with(LogKey.STAGE_NAME, stage.getStageName())
         .log("Reading stdout file: %s", stdoutFile);
 
@@ -155,8 +155,8 @@ public class LsfCmdExecutor extends CmdExecutor {
     }
 
     log.atFine()
-        .with(LogKey.PIPELINE_NAME, stage.getPipelineName())
-        .with(LogKey.PROCESS_ID, stage.getProcessId())
+        .with(LogKey.PIPELINE_NAME, pipelineName)
+        .with(LogKey.PROCESS_ID, processId)
         .with(LogKey.STAGE_NAME, stage.getStageName())
         .log("Reading stderr file: %s", stderrFile);
 
@@ -178,7 +178,7 @@ public class LsfCmdExecutor extends CmdExecutor {
   }
 
   @Override
-  public final String getDispatcherCmd(Stage stage) {
+  public final String getDispatcherCmd(String pipelineName, String processId, Stage stage) {
 
     // Write standard output file while the job is running not after the job has finished.
     stage.getStageParameters().getEnv().put("LSB_STDOUT_DIRECT", "Y");
@@ -186,8 +186,8 @@ public class LsfCmdExecutor extends CmdExecutor {
     StringBuilder cmd = new StringBuilder();
     cmd.append(BSUB_CMD);
 
-    stdoutFile = getWorkFile(stage, "lsf", "stdout");
-    stderrFile = getWorkFile(stage, "lsf", "stderr");
+    stdoutFile = getWorkFile(pipelineName, processId, stage, "lsf", "stdout");
+    stderrFile = getWorkFile(pipelineName, processId, stage, "lsf", "stderr");
 
     addArgument(cmd, "-oo");
     addArgument(cmd, stdoutFile);

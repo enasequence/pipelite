@@ -19,11 +19,9 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import lombok.extern.flogger.Flogger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
+
 import pipelite.configuration.*;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
@@ -39,14 +37,16 @@ import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
 
 @Flogger
-@Component()
-@Scope("prototype")
-public class ProcessLauncher implements Runnable {
+public class ProcessLauncher {
 
   private final LauncherConfiguration launcherConfiguration;
   private final StageConfiguration stageConfiguration;
   private final ProcessService processService;
   private final StageService stageService;
+  private final String pipelineName;
+  private final Process process;
+  private final ProcessEntity processEntity;
+
   private final List<StageAndStageEntity> stageAndStageEntities;
   private final DependencyResolver dependencyResolver;
   private final ExecutorService executorService;
@@ -54,21 +54,26 @@ public class ProcessLauncher implements Runnable {
   private final Duration stageLaunchFrequency;
   private final Duration stagePollFrequency;
 
-  private ProcessAndProcessEntity processAndProcessEntity;
-
-  private final AtomicInteger stageFailedCount = new AtomicInteger(0);
-  private final AtomicInteger stageCompletedCount = new AtomicInteger(0);
+  private final AtomicLong stageFailedCount = new AtomicLong(0);
+  private final AtomicLong stageSuccessCount = new AtomicLong(0);
 
   public ProcessLauncher(
-      @Autowired LauncherConfiguration launcherConfiguration,
-      @Autowired StageConfiguration stageConfiguration,
-      @Autowired ProcessService processService,
-      @Autowired StageService stageService) {
+      LauncherConfiguration launcherConfiguration,
+      StageConfiguration stageConfiguration,
+      ProcessService processService,
+      StageService stageService,
+      String pipelineName,
+      Process process,
+      ProcessEntity processEntity) {
 
     this.launcherConfiguration = launcherConfiguration;
     this.stageConfiguration = stageConfiguration;
     this.processService = processService;
     this.stageService = stageService;
+    this.pipelineName = pipelineName;
+    this.process = process;
+    this.processEntity = processEntity;
+
     this.stageAndStageEntities = new ArrayList<>();
     this.dependencyResolver = new DependencyResolver(stageAndStageEntities);
     this.executorService = Executors.newCachedThreadPool();
@@ -83,24 +88,6 @@ public class ProcessLauncher implements Runnable {
       this.stagePollFrequency = launcherConfiguration.getStagePollFrequency();
     } else {
       this.stagePollFrequency = LauncherConfiguration.DEFAULT_STAGE_POLL_FREQUENCY;
-    }
-  }
-
-  private static class ProcessAndProcessEntity {
-    private final Process process;
-    private final ProcessEntity processEntity;
-
-    public ProcessAndProcessEntity(Process process, ProcessEntity processEntity) {
-      this.process = process;
-      this.processEntity = processEntity;
-    }
-
-    public Process getProcess() {
-      return process;
-    }
-
-    public ProcessEntity getProcessEntity() {
-      return processEntity;
     }
   }
 
@@ -123,33 +110,29 @@ public class ProcessLauncher implements Runnable {
     }
   }
 
-  public void init(Process process, ProcessEntity processEntity) {
-    this.processAndProcessEntity = new ProcessAndProcessEntity(process, processEntity);
-  }
-
-  @Override
-  public void run() {
+  public ProcessState run() {
     logContext(log.atInfo()).log("Running process launcher");
     createStages();
     executeStages();
-    saveProcess();
+    return saveProcess();
   }
 
   // TODO: orphaned saved stages
   private void createStages() {
-    Process process = processAndProcessEntity.getProcess();
     List<Stage> stages = process.getStages();
 
     for (Stage stage : stages) {
       stage.getStageParameters().add(stageConfiguration);
 
       Optional<StageEntity> processEntity =
-          stageService.getSavedStage(
-              process.getPipelineName(), process.getProcessId(), stage.getStageName());
+          stageService.getSavedStage(pipelineName, process.getProcessId(), stage.getStageName());
 
       // Create the stage in database if it does not already exist.
       if (!processEntity.isPresent()) {
-        processEntity = Optional.of(stageService.saveStage(StageEntity.createExecution(stage)));
+        processEntity =
+            Optional.of(
+                stageService.saveStage(
+                    StageEntity.createExecution(pipelineName, getProcessId(), stage)));
       }
 
       stageAndStageEntities.add(new StageAndStageEntity(stage, processEntity.get()));
@@ -208,8 +191,8 @@ public class ProcessLauncher implements Runnable {
       logContext(log.atFine()).log("Executing stages");
 
       List<StageAndStageEntity> executableStages = dependencyResolver.getExecutableStages();
-      if (executableStages.isEmpty()) {
-        logContext(log.atInfo()).log("No executable stages");
+      if (activeStages.isEmpty() && executableStages.isEmpty()) {
+        logContext(log.atInfo()).log("No active or executable stages");
         return;
       }
 
@@ -251,16 +234,15 @@ public class ProcessLauncher implements Runnable {
     }
   }
 
-  private void saveProcess() {
-
-    ProcessEntity processEntity = processAndProcessEntity.getProcessEntity();
-
+  private ProcessState saveProcess() {
     logContext(log.atInfo()).log("Saving process");
 
     processEntity.setState(evaluateProcessState());
     processEntity.incrementExecutionCount();
 
     processService.saveProcess(processEntity);
+
+    return processEntity.getState();
   }
 
   private void executeStage(StageAndStageEntity stageAndStageEntity) {
@@ -288,7 +270,7 @@ public class ProcessLauncher implements Runnable {
         stageService.saveStage(stageEntity);
       }
 
-      result = stage.getExecutor().execute(stage);
+      result = stage.getExecutor().execute(pipelineName, getProcessId(), stage);
 
       if (!isDeserializedExecutor && result.isActive()) {
         stageEntity.asyncExecution(stage);
@@ -304,7 +286,7 @@ public class ProcessLauncher implements Runnable {
         try {
           logContext(log.atInfo(), stageName).log("Polling async stage");
 
-          result = stage.getExecutor().execute(stage);
+          result = stage.getExecutor().execute(pipelineName, getProcessId(), stage);
           if (!result.isActive()) {
             break;
           }
@@ -330,7 +312,7 @@ public class ProcessLauncher implements Runnable {
     stageAndStageEntity.immediateExecutionCount++;
 
     if (result.isSuccess()) {
-      stageCompletedCount.incrementAndGet();
+      stageSuccessCount.incrementAndGet();
       logContext(log.atInfo(), stageEntity.getStageName())
           .with(LogKey.STAGE_EXECUTION_RESULT_TYPE, stageEntity.getResultType())
           .with(LogKey.STAGE_EXECUTION_COUNT, stageEntity.getExecutionCount())
@@ -372,29 +354,24 @@ public class ProcessLauncher implements Runnable {
     }
   }
 
-  public String getPipelineName() {
-    return processAndProcessEntity.getProcess().getPipelineName();
-  }
-
   public String getProcessId() {
-    return processAndProcessEntity.getProcess().getProcessId();
+    return process.getProcessId();
   }
 
-  public int getStageFailedCount() {
+  public long getStageFailedCount() {
     return stageFailedCount.get();
   }
 
-  public int getStageCompletedCount() {
-    return stageCompletedCount.get();
+  public long getStageSuccessCount() {
+    return stageSuccessCount.get();
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {
-    return log.with(LogKey.PIPELINE_NAME, getPipelineName())
-        .with(LogKey.PROCESS_ID, getProcessId());
+    return log.with(LogKey.PIPELINE_NAME, pipelineName).with(LogKey.PROCESS_ID, getProcessId());
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log, String stageName) {
-    return log.with(LogKey.PIPELINE_NAME, getPipelineName())
+    return log.with(LogKey.PIPELINE_NAME, pipelineName)
         .with(LogKey.PROCESS_ID, getProcessId())
         .with(LogKey.STAGE_NAME, stageName);
   }

@@ -40,7 +40,8 @@ public class PipeliteSchedulerOracleTest {
     @Override
     public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
       TestPropertyValues.of(
-              "pipelite.launcher.launcherName=" + UniqueStringGenerator.randomLauncherName())
+              "pipelite.launcher.launcherName=" + UniqueStringGenerator.randomLauncherName(),
+              "pipelite.launcher.pipelineName=" + UniqueStringGenerator.randomPipelineName())
           .applyTo(configurableApplicationContext.getEnvironment());
     }
   }

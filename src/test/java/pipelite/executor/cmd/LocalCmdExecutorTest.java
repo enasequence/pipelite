@@ -22,25 +22,24 @@ import pipelite.stage.StageParameters;
 
 public class LocalCmdExecutorTest {
 
+  private final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
+  private final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
+
   @Test
   public void test() {
 
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
     String stageName = UniqueStringGenerator.randomStageName();
 
     StageParameters stageParameters = StageParameters.builder().build();
 
     Stage stage =
         Stage.builder()
-            .pipelineName(pipelineName)
-            .processId(processId)
             .stageName(stageName)
             .executor(StageExecutor.createLocalCmdExecutor("echo test"))
             .stageParameters(stageParameters)
             .build();
 
-    StageExecutionResult result = stage.execute();
+    StageExecutionResult result = stage.execute(PIPELINE_NAME, PROCESS_ID);
     assertThat(result.getResultType()).isEqualTo(StageExecutionResultType.SUCCESS);
     assertThat(result.getAttribute(StageExecutionResult.COMMAND)).isEqualTo("echo test");
     assertThat(result.getAttribute(StageExecutionResult.EXIT_CODE)).isEqualTo("0");

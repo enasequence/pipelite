@@ -23,10 +23,13 @@ public interface StageExecutor {
    * Called repeatedly to execute the stage until it is not ACTIVE. Only asynchronous executions are
    * expected to return ACTIVE.
    *
+   *
+   * @param pipelineName the pipeline name.
+   * @param processId the process id.
    * @param stage the stage to be executed.
    * @return stage execution result.
    */
-  StageExecutionResult execute(Stage stage);
+  StageExecutionResult execute(String pipelineName, String processId, Stage stage);
 
   default String serialize() {
     return Json.serialize(this);

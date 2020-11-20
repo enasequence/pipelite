@@ -30,9 +30,7 @@ public class DependencyResolverTest {
   public void testGetRunnableStageAllActiveAllDependOnPrevious() {
     List<ProcessLauncher.StageAndStageEntity> stageAndStageEntities = new ArrayList<>();
 
-    ProcessBuilder builder =
-        new ProcessBuilder(
-            UniqueStringGenerator.randomPipelineName(), UniqueStringGenerator.randomProcessId());
+    ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
     Process process =
         builder
             .execute("STAGE1")
@@ -62,9 +60,7 @@ public class DependencyResolverTest {
   public void testGetRunnableStageAllActiveAllDependOnFirst() {
     List<ProcessLauncher.StageAndStageEntity> stageAndStageEntities = new ArrayList<>();
 
-    ProcessBuilder builder =
-        new ProcessBuilder(
-            UniqueStringGenerator.randomPipelineName(), UniqueStringGenerator.randomProcessId());
+    ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
     Process process =
         builder
             .execute("STAGE1")
@@ -94,9 +90,7 @@ public class DependencyResolverTest {
   public void testGetRunnableStageFirstSuccessAllDependOnFirst() {
     List<ProcessLauncher.StageAndStageEntity> stageAndStageEntities = new ArrayList<>();
 
-    ProcessBuilder builder =
-        new ProcessBuilder(
-            UniqueStringGenerator.randomPipelineName(), UniqueStringGenerator.randomProcessId());
+    ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
     Process process =
         builder
             .execute("STAGE1")
@@ -132,9 +126,7 @@ public class DependencyResolverTest {
   public void testGetRunnableStageFirstErrorMaxRetriesAllDependOnFirst() {
     List<ProcessLauncher.StageAndStageEntity> stageAndStageEntities = new ArrayList<>();
 
-    ProcessBuilder builder =
-        new ProcessBuilder(
-            UniqueStringGenerator.randomPipelineName(), UniqueStringGenerator.randomProcessId());
+    ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
     Process process =
         builder
             .execute("STAGE1")
@@ -169,9 +161,7 @@ public class DependencyResolverTest {
   public void testGetRunnableStageFirstErrorNotMaxRetriesAllDependOnFirst() {
     List<ProcessLauncher.StageAndStageEntity> stageAndStageEntities = new ArrayList<>();
 
-    ProcessBuilder builder =
-        new ProcessBuilder(
-            UniqueStringGenerator.randomPipelineName(), UniqueStringGenerator.randomProcessId());
+    ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
     Process process =
         builder
             .execute("STAGE1")
@@ -207,9 +197,7 @@ public class DependencyResolverTest {
   public void testGetDependentStagesAllDependOnPrevious() {
     List<ProcessLauncher.StageAndStageEntity> stageAndStageEntities = new ArrayList<>();
 
-    ProcessBuilder builder =
-        new ProcessBuilder(
-            UniqueStringGenerator.randomPipelineName(), UniqueStringGenerator.randomProcessId());
+    ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
     Process process =
         builder
             .execute("STAGE1")
@@ -250,9 +238,7 @@ public class DependencyResolverTest {
   public void testGetDependentStagesAllDependOnFirst() {
     List<ProcessLauncher.StageAndStageEntity> stageAndStageEntities = new ArrayList<>();
 
-    ProcessBuilder builder =
-        new ProcessBuilder(
-            UniqueStringGenerator.randomPipelineName(), UniqueStringGenerator.randomProcessId());
+    ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
     Process process =
         builder
             .execute("STAGE1")

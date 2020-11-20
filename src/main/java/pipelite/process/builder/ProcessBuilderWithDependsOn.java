@@ -26,6 +26,10 @@ public class ProcessBuilderWithDependsOn {
     return new StageBuilder(processBuilder, stageName, null, StageParameters.builder().build());
   }
 
+  public StageBuilder execute(String stageName, StageParameters stageParameters) {
+    return new StageBuilder(processBuilder, stageName, null, stageParameters);
+  }
+
   public StageBuilder executeAfter(String stageName, String dependsOnStageName) {
     return new StageBuilder(
         processBuilder, stageName, dependsOnStageName, StageParameters.builder().build());
@@ -57,7 +61,6 @@ public class ProcessBuilderWithDependsOn {
 
   public Process build() {
     return Process.builder()
-        .pipelineName(processBuilder.pipelineName)
         .processId(processBuilder.processId)
         .stages(processBuilder.stages)
         .build();

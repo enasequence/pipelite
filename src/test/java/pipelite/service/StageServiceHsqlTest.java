@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.StageEntity;
+import pipelite.executor.SuccessSyncExecutor;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 
@@ -30,38 +31,34 @@ class StageServiceHsqlTest {
 
   @Autowired StageService service;
 
+  private final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
+  private final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
+
   @Test
   @Transactional
   @Rollback
   public void testCrud() {
 
-    String processId = UniqueStringGenerator.randomProcessId();
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
     String stageName = UniqueStringGenerator.randomStageName();
 
-    Stage stage =
-        Stage.builder()
-            .pipelineName(pipelineName)
-            .processId(processId)
-            .stageName(stageName)
-            .build();
+    Stage stage = Stage.builder().stageName(stageName).executor(new SuccessSyncExecutor()).build();
 
-    StageEntity stageEntity = StageEntity.createExecution(stage);
+    StageEntity stageEntity = StageEntity.createExecution(PIPELINE_NAME, PROCESS_ID, stage);
 
     service.saveStage(stageEntity);
 
-    assertThat(service.getSavedStage(pipelineName, processId, stageName).get())
+    assertThat(service.getSavedStage(PIPELINE_NAME, PROCESS_ID, stageName).get())
         .isEqualTo(stageEntity);
 
     stageEntity.endExecution(StageExecutionResult.success());
 
     service.saveStage(stageEntity);
 
-    assertThat(service.getSavedStage(pipelineName, processId, stageName).get())
+    assertThat(service.getSavedStage(PIPELINE_NAME, PROCESS_ID, stageName).get())
         .isEqualTo(stageEntity);
 
     service.delete(stageEntity);
 
-    assertThat(service.getSavedStage(pipelineName, processId, stageName).isPresent()).isFalse();
+    assertThat(service.getSavedStage(PIPELINE_NAME, PROCESS_ID, stageName).isPresent()).isFalse();
   }
 }

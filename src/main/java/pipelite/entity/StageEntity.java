@@ -80,14 +80,11 @@ public class StageEntity {
   private String resultParams;
 
   /** Prepare stage for execution. */
-  public static StageEntity createExecution(Stage stage) {
-    String processId = stage.getProcessId();
-    String pipelineName = stage.getPipelineName();
-    String stageName = stage.getStageName();
+  public static StageEntity createExecution(String pipelineName, String processId, Stage stage) {
     StageEntity stageEntity = new StageEntity();
     stageEntity.setProcessId(processId);
     stageEntity.setPipelineName(pipelineName);
-    stageEntity.setStageName(stageName);
+    stageEntity.setStageName(stage.getStageName());
     stageEntity.setResultType(StageExecutionResultType.NEW);
     stageEntity.setExecutionCount(0);
     return stageEntity;

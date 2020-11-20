@@ -51,39 +51,43 @@ public class PipeliteLauncherAsyncTester {
     @Bean
     public ProcessFactory submitSuccessPollSuccess() {
       return new TestInMemoryProcessFactory(
-          SUBMIT_SUCCESS_POLL_SUCCESS_NAME, SUBMIT_SUCCESS_POLL_SUCCESS_PROCESSES);
+          SUBMIT_SUCCESS_POLL_SUCCESS_PROCESS_NAME, SUBMIT_SUCCESS_POLL_SUCCESS_PROCESSES);
     }
 
     @Bean
     public ProcessFactory submitError() {
-      return new TestInMemoryProcessFactory(SUBMIT_ERROR_NAME, SUBMIT_ERROR_PROCESSES);
+      return new TestInMemoryProcessFactory(SUBMIT_ERROR_PROCESS_NAME, SUBMIT_ERROR_PROCESSES);
     }
 
     @Bean
     public ProcessFactory submitException() {
-      return new TestInMemoryProcessFactory(SUBMIT_EXCEPTION_NAME, SUBMIT_EXCEPTION_PROCESSES);
+      return new TestInMemoryProcessFactory(
+          SUBMIT_EXCEPTION_PROCESS_NAME, SUBMIT_EXCEPTION_PROCESSES);
     }
 
     @Bean
     public ProcessFactory pollError() {
-      return new TestInMemoryProcessFactory(POLL_ERROR_NAME, POLL_ERROR_PROCESSES);
+      return new TestInMemoryProcessFactory(POLL_ERROR_PROCESS_NAME, POLL_ERROR_PROCESSES);
     }
 
     @Bean
     public ProcessFactory pollException() {
-      return new TestInMemoryProcessFactory(POLL_EXCEPTION_NAME, POLL_EXCEPTION_PROCESSES);
+      return new TestInMemoryProcessFactory(POLL_EXCEPTION_PROCESS_NAME, POLL_EXCEPTION_PROCESSES);
     }
   }
 
   private static AtomicInteger submitCount = new AtomicInteger();
   private static AtomicInteger pollCount = new AtomicInteger();
 
-  private static final String SUBMIT_SUCCESS_POLL_SUCCESS_NAME =
+  private static final String SUBMIT_SUCCESS_POLL_SUCCESS_PROCESS_NAME =
       UniqueStringGenerator.randomPipelineName();
-  private static final String SUBMIT_ERROR_NAME = UniqueStringGenerator.randomPipelineName();
-  private static final String POLL_EXCEPTION_NAME = UniqueStringGenerator.randomPipelineName();
-  private static final String SUBMIT_EXCEPTION_NAME = UniqueStringGenerator.randomPipelineName();
-  private static final String POLL_ERROR_NAME = UniqueStringGenerator.randomPipelineName();
+  private static final String SUBMIT_ERROR_PROCESS_NAME =
+      UniqueStringGenerator.randomPipelineName();
+  private static final String POLL_EXCEPTION_PROCESS_NAME =
+      UniqueStringGenerator.randomPipelineName();
+  private static final String SUBMIT_EXCEPTION_PROCESS_NAME =
+      UniqueStringGenerator.randomPipelineName();
+  private static final String POLL_ERROR_PROCESS_NAME = UniqueStringGenerator.randomPipelineName();
 
   private static final int PROCESS_CNT = 4;
   private static final List<Process> SUBMIT_SUCCESS_POLL_SUCCESS_PROCESSES = new ArrayList<>();
@@ -99,27 +103,27 @@ public class PipeliteLauncherAsyncTester {
               String processId = UniqueStringGenerator.randomProcessId();
               String stageName = UniqueStringGenerator.randomStageName();
               SUBMIT_SUCCESS_POLL_SUCCESS_PROCESSES.add(
-                  new ProcessBuilder(SUBMIT_SUCCESS_POLL_SUCCESS_NAME, processId)
+                  new ProcessBuilder(processId)
                       .execute(stageName)
                       .with(new SubmitSuccessPollSuccessStageExecutor())
                       .build());
               SUBMIT_ERROR_PROCESSES.add(
-                  new ProcessBuilder(SUBMIT_ERROR_NAME, processId)
+                  new ProcessBuilder(processId)
                       .execute(stageName)
                       .with(new SubmitErrorStageExecutor())
                       .build());
               SUBMIT_EXCEPTION_PROCESSES.add(
-                  new ProcessBuilder(SUBMIT_EXCEPTION_NAME, processId)
+                  new ProcessBuilder(processId)
                       .execute(stageName)
                       .with(new SubmitExceptionStageExecutor())
                       .build());
               POLL_ERROR_PROCESSES.add(
-                  new ProcessBuilder(POLL_ERROR_NAME, processId)
+                  new ProcessBuilder(processId)
                       .execute(stageName)
                       .with(new PollErrorStageExecutor())
                       .build());
               POLL_EXCEPTION_PROCESSES.add(
-                  new ProcessBuilder(POLL_EXCEPTION_NAME, processId)
+                  new ProcessBuilder(processId)
                       .execute(stageName)
                       .with(new PollExceptionStageExecutor())
                       .build());
@@ -135,7 +139,7 @@ public class PipeliteLauncherAsyncTester {
     private boolean submit;
 
     @Override
-    public StageExecutionResult execute(Stage stage) {
+    public StageExecutionResult execute(String pipelineName, String processId, Stage stage) {
       if (!submit) {
         submitCount.incrementAndGet();
         submit = true;
@@ -154,7 +158,7 @@ public class PipeliteLauncherAsyncTester {
     private boolean submit;
 
     @Override
-    public StageExecutionResult execute(Stage stage) {
+    public StageExecutionResult execute(String pipelineName, String processId, Stage stage) {
       if (!submit) {
         submitCount.incrementAndGet();
         submit = true;
@@ -169,7 +173,7 @@ public class PipeliteLauncherAsyncTester {
     private boolean submit;
 
     @Override
-    public StageExecutionResult execute(Stage stage) {
+    public StageExecutionResult execute(String pipelineName, String processId, Stage stage) {
       if (!submit) {
         submitCount.incrementAndGet();
         submit = true;
@@ -184,7 +188,7 @@ public class PipeliteLauncherAsyncTester {
     private boolean submit;
 
     @Override
-    public StageExecutionResult execute(Stage stage) {
+    public StageExecutionResult execute(String pipelineName, String processId, Stage stage) {
       if (!submit) {
         submitCount.incrementAndGet();
         submit = true;
@@ -200,7 +204,7 @@ public class PipeliteLauncherAsyncTester {
     private boolean submit;
 
     @Override
-    public StageExecutionResult execute(Stage stage) {
+    public StageExecutionResult execute(String pipelineName, String processId, Stage stage) {
       if (!submit) {
         submitCount.incrementAndGet();
         submit = true;
@@ -212,81 +216,84 @@ public class PipeliteLauncherAsyncTester {
     }
   }
 
-  private void init(ProcessState processState, List<Process> processes) {
+  private void init(String pipelineName, ProcessState processState, List<Process> processes) {
     submitCount.set(0);
     pollCount.set(0);
 
     for (Process process : processes) {
       ProcessEntity processEntity =
-          ProcessEntity.newExecution(process.getProcessId(), process.getPipelineName(), 1);
+          ProcessEntity.newExecution(pipelineName, process.getProcessId(), 1);
       processEntity.setState(processState);
       processService.saveProcess(processEntity);
 
       Stage stage = process.getStages().get(0);
-      StageEntity stageEntity = StageEntity.createExecution(stage);
+      StageEntity stageEntity = StageEntity.createExecution(pipelineName, process.getProcessId(), stage);
       stageEntity.startExecution(stage);
       stageService.saveStage(stageEntity);
 
-      launcherConfiguration.setPipelineName(process.getPipelineName());
+      launcherConfiguration.setPipelineName(pipelineName);
     }
   }
 
   public void testSubmitSuccessPollSuccess() {
-    init(ProcessState.ACTIVE, SUBMIT_SUCCESS_POLL_SUCCESS_PROCESSES);
+    init(
+        SUBMIT_SUCCESS_POLL_SUCCESS_PROCESS_NAME,
+        ProcessState.ACTIVE,
+        SUBMIT_SUCCESS_POLL_SUCCESS_PROCESSES);
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getStageCompletedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getStageSuccessCount()).isEqualTo(PROCESS_CNT);
     assertThat(submitCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(pollCount.get()).isEqualTo(PROCESS_CNT);
   }
 
   public void testSubmitError() {
-    init(ProcessState.ACTIVE, SUBMIT_ERROR_PROCESSES);
+    init(SUBMIT_ERROR_PROCESS_NAME, ProcessState.ACTIVE, SUBMIT_ERROR_PROCESSES);
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getStageCompletedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getStageSuccessCount()).isEqualTo(0);
     assertThat(submitCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(pollCount.get()).isEqualTo(0);
   }
 
   public void testSubmitException() {
-    init(ProcessState.ACTIVE, SUBMIT_EXCEPTION_PROCESSES);
+    init(SUBMIT_EXCEPTION_PROCESS_NAME, ProcessState.ACTIVE, SUBMIT_EXCEPTION_PROCESSES);
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getStageCompletedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getStageSuccessCount()).isEqualTo(0);
     assertThat(submitCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(pollCount.get()).isEqualTo(0);
   }
 
   public void testPollError() {
-    init(ProcessState.ACTIVE, POLL_ERROR_PROCESSES);
+    init(POLL_ERROR_PROCESS_NAME, ProcessState.ACTIVE, POLL_ERROR_PROCESSES);
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getStageCompletedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getStageSuccessCount()).isEqualTo(0);
     assertThat(submitCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(pollCount.get()).isEqualTo(PROCESS_CNT);
   }
 
   public void testPollException() {
-    init(ProcessState.ACTIVE, POLL_EXCEPTION_PROCESSES);
+    init(POLL_EXCEPTION_PROCESS_NAME, ProcessState.ACTIVE, POLL_EXCEPTION_PROCESSES);
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getStageCompletedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getStageSuccessCount()).isEqualTo(0);
     assertThat(submitCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(pollCount.get()).isEqualTo(PROCESS_CNT);
   }

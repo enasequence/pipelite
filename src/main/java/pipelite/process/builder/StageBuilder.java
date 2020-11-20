@@ -68,8 +68,6 @@ public class StageBuilder {
 
     processBuilder.stages.add(
         Stage.builder()
-            .pipelineName(processBuilder.pipelineName)
-            .processId(processBuilder.processId)
             .stageName(stageName)
             .executor(executor)
             .dependsOn(dependsOn)

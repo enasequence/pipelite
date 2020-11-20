@@ -17,12 +17,10 @@ import pipelite.stage.StageParameters;
 
 public class ProcessBuilder {
 
-  final String pipelineName;
   final String processId;
   final List<Stage> stages = new ArrayList<>();
 
-  public ProcessBuilder(String pipelineName, String processId) {
-    this.pipelineName = pipelineName;
+  public ProcessBuilder(String processId) {
     this.processId = processId;
   }
 

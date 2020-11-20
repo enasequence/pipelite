@@ -33,11 +33,13 @@ public class SshCmdExecutorTest {
   @Autowired SshTestConfiguration sshTestConfiguration;
   @Autowired SingularityTestConfiguration singularityTestConfiguration;
 
+  private final static String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
+  private final static String PROCESS_ID = UniqueStringGenerator.randomProcessId();
+
+
   @Test
   public void test() {
 
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
     String stageName = UniqueStringGenerator.randomStageName();
 
     StageParameters stageParameters = StageParameters.builder().build();
@@ -45,14 +47,12 @@ public class SshCmdExecutorTest {
 
     Stage stage =
         Stage.builder()
-            .pipelineName(pipelineName)
-            .processId(processId)
             .stageName(stageName)
             .executor(StageExecutor.createSshCmdExecutor("echo test"))
             .stageParameters(stageParameters)
             .build();
 
-    StageExecutionResult result = stage.execute();
+    StageExecutionResult result = stage.execute(PIPELINE_NAME, PROCESS_ID);
     assertThat(result.getResultType()).isEqualTo(StageExecutionResultType.SUCCESS);
     assertThat(result.getAttribute(StageExecutionResult.COMMAND)).isEqualTo("echo test");
     assertThat(result.getAttribute(StageExecutionResult.EXIT_CODE)).isEqualTo("0");
@@ -66,20 +66,16 @@ public class SshCmdExecutorTest {
     stageParameters.setHost(singularityTestConfiguration.getHost());
     stageParameters.setSingularityImage("docker://enasequence/webin-cli");
 
-    String pipelineName = "testProcess";
-    String processId = "testProcessId";
     String stageName = "testStageName";
 
     Stage stage =
         Stage.builder()
-            .pipelineName(pipelineName)
-            .processId(processId)
             .stageName(stageName)
             .executor(StageExecutor.createSshCmdExecutor(""))
             .stageParameters(stageParameters)
             .build();
 
-    StageExecutionResult result = stage.execute();
+    StageExecutionResult result = stage.execute(PIPELINE_NAME, PROCESS_ID);
     assertThat(result.getResultType()).isEqualTo(StageExecutionResultType.ERROR);
     assertThat(result.getAttribute(StageExecutionResult.COMMAND))
         .isEqualTo("singularity run docker://enasequence/webin-cli ");

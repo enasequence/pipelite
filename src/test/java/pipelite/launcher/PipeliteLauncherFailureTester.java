@@ -12,6 +12,7 @@ package pipelite.launcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -32,7 +33,9 @@ import pipelite.executor.SuccessSyncExecutor;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
+import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.stage.StageParameters;
 
 @Component
 @Scope("prototype")
@@ -118,67 +121,70 @@ public class PipeliteLauncherFailureTester {
     return Stream.generate(() -> supplier.get()).limit(PROCESS_CNT).collect(Collectors.toList());
   }
 
+  private static final StageParameters STAGE_PARAMS =
+      StageParameters.builder().immediateRetries(0).maximumRetries(0).build();
+
   private static Process firstStageFailsProcessGenerator() {
-    return new ProcessBuilder(FIRST_STAGE_FAILS_NAME, UniqueStringGenerator.randomProcessId())
-        .execute("STAGE1")
+    return new ProcessBuilder(UniqueStringGenerator.randomProcessId())
+        .execute("STAGE1", STAGE_PARAMS)
         .with(new ErrorStageExecutor())
-        .executeAfterPrevious("STAGE2")
+        .executeAfterPrevious("STAGE2", STAGE_PARAMS)
         .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE3")
+        .executeAfterPrevious("STAGE3", STAGE_PARAMS)
         .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE4")
+        .executeAfterPrevious("STAGE4", STAGE_PARAMS)
         .with(new SuccessSyncExecutor())
         .build();
   }
 
   private static Process secondStageFailsProcessGenerator() {
-    return new ProcessBuilder(SECOND_STAGE_FAILS_NAME, UniqueStringGenerator.randomProcessId())
-        .execute("STAGE1")
+    return new ProcessBuilder(UniqueStringGenerator.randomProcessId())
+        .execute("STAGE1", STAGE_PARAMS)
         .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE2")
+        .executeAfterPrevious("STAGE2", STAGE_PARAMS)
         .with(new ErrorStageExecutor())
-        .executeAfterPrevious("STAGE3")
+        .executeAfterPrevious("STAGE3", STAGE_PARAMS)
         .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE4")
+        .executeAfterPrevious("STAGE4", STAGE_PARAMS)
         .with(new SuccessSyncExecutor())
         .build();
   }
 
   private static Process thirdStageFailsProcessGenerator() {
-    return new ProcessBuilder(THIRD_STAGE_FAILS_NAME, UniqueStringGenerator.randomProcessId())
-        .execute("STAGE1")
+    return new ProcessBuilder(UniqueStringGenerator.randomProcessId())
+        .execute("STAGE1", STAGE_PARAMS)
         .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE2")
+        .executeAfterPrevious("STAGE2", STAGE_PARAMS)
         .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE3")
+        .executeAfterPrevious("STAGE3", STAGE_PARAMS)
         .with(new ErrorStageExecutor())
-        .executeAfterPrevious("STAGE4")
+        .executeAfterPrevious("STAGE4", STAGE_PARAMS)
         .with(new SuccessSyncExecutor())
         .build();
   }
 
   private static Process fourthStageFailsProcessGenerator() {
-    return new ProcessBuilder(FOURTH_STAGE_FAILS_NAME, UniqueStringGenerator.randomProcessId())
-        .execute("STAGE1")
+    return new ProcessBuilder(UniqueStringGenerator.randomProcessId())
+        .execute("STAGE1", STAGE_PARAMS)
         .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE2")
+        .executeAfterPrevious("STAGE2", STAGE_PARAMS)
         .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE3")
+        .executeAfterPrevious("STAGE3", STAGE_PARAMS)
         .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE4")
+        .executeAfterPrevious("STAGE4", STAGE_PARAMS)
         .with(new ErrorStageExecutor())
         .build();
   }
 
   private static Process noStageFailsProcessGenerator() {
-    return new ProcessBuilder(NO_STAGE_FAILS_NAME, UniqueStringGenerator.randomProcessId())
-        .execute("STAGE1")
+    return new ProcessBuilder(UniqueStringGenerator.randomProcessId())
+        .execute("STAGE1", STAGE_PARAMS)
         .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE2")
+        .executeAfterPrevious("STAGE2", STAGE_PARAMS)
         .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE3")
+        .executeAfterPrevious("STAGE3", STAGE_PARAMS)
         .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE4")
+        .executeAfterPrevious("STAGE4", STAGE_PARAMS)
         .with(new SuccessSyncExecutor())
         .build();
   }
@@ -201,9 +207,10 @@ public class PipeliteLauncherFailureTester {
     assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
     assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
 
-    assertThat(pipeliteLauncher.getProcessCompletedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getProcessExecutionEndedCount().get(ProcessState.FAILED))
+        .isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getStageCompletedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getStageSuccessCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(PROCESS_CNT);
   }
 
@@ -219,9 +226,10 @@ public class PipeliteLauncherFailureTester {
     assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
     assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
 
-    assertThat(pipeliteLauncher.getProcessCompletedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getProcessExecutionEndedCount().get(ProcessState.FAILED))
+        .isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getStageCompletedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getStageSuccessCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(PROCESS_CNT);
   }
 
@@ -237,9 +245,10 @@ public class PipeliteLauncherFailureTester {
     assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
     assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
 
-    assertThat(pipeliteLauncher.getProcessCompletedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getProcessExecutionEndedCount().get(ProcessState.FAILED))
+        .isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getStageCompletedCount()).isEqualTo(PROCESS_CNT * 2);
+    assertThat(pipeliteLauncher.getStageSuccessCount()).isEqualTo(PROCESS_CNT * 2);
     assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(PROCESS_CNT);
   }
 
@@ -255,9 +264,10 @@ public class PipeliteLauncherFailureTester {
     assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
     assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
 
-    assertThat(pipeliteLauncher.getProcessCompletedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getProcessExecutionEndedCount().get(ProcessState.FAILED))
+        .isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getStageCompletedCount()).isEqualTo(PROCESS_CNT * 3);
+    assertThat(pipeliteLauncher.getStageSuccessCount()).isEqualTo(PROCESS_CNT * 3);
     assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(PROCESS_CNT);
   }
 
@@ -273,9 +283,10 @@ public class PipeliteLauncherFailureTester {
     assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
     assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
 
-    assertThat(pipeliteLauncher.getProcessCompletedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getProcessExecutionEndedCount().get(ProcessState.COMPLETED))
+        .isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getStageCompletedCount()).isEqualTo(PROCESS_CNT * 4);
+    assertThat(pipeliteLauncher.getStageSuccessCount()).isEqualTo(PROCESS_CNT * 4);
     assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(0);
   }
 }

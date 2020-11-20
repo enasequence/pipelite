@@ -15,7 +15,7 @@ import pipelite.stage.StageExecutionResult;
 
 public class ErrorStageExecutor implements StageExecutor {
   @Override
-  public StageExecutionResult execute(Stage stage) {
+  public StageExecutionResult execute(String pipelineName, String processId, Stage stage) {
     return StageExecutionResult.error();
   }
 }

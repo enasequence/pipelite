@@ -32,14 +32,15 @@ public class LsfSshCmdExecutorTest {
 
   @Autowired LsfTestConfiguration lsfTestConfiguration;
 
+  private final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
+  private final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
+
   @Test
   // @Timeout(value = 60, unit = TimeUnit.SECONDS)
   public void test() {
 
     LsfCmdExecutor executor = StageExecutor.createLsfSshCmdExecutor("echo test");
 
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
     String stageName = UniqueStringGenerator.randomStageName();
 
     StageParameters stageParameters =
@@ -50,14 +51,12 @@ public class LsfSshCmdExecutorTest {
 
     Stage stage =
         Stage.builder()
-            .pipelineName(pipelineName)
-            .processId(processId)
             .stageName(stageName)
             .executor(executor)
             .stageParameters(stageParameters)
             .build();
 
-    StageExecutionResult result = executor.execute(stage);
+    StageExecutionResult result = executor.execute(PIPELINE_NAME, PROCESS_ID, stage);
     assertThat(result.getResultType()).isEqualTo(StageExecutionResultType.ACTIVE);
     assertThat(result.getAttribute(StageExecutionResult.COMMAND)).startsWith("bsub");
     assertThat(result.getAttribute(StageExecutionResult.COMMAND)).endsWith("echo test");
@@ -65,7 +64,7 @@ public class LsfSshCmdExecutorTest {
     assertThat(result.getStdout()).contains("is submitted to default queue");
 
     while (true) {
-      result = executor.execute(stage);
+      result = executor.execute(PIPELINE_NAME, PROCESS_ID, stage);
       if (!result.isActive()) {
         break;
       }

@@ -19,7 +19,6 @@ import pipelite.process.builder.ProcessBuilder;
 
 public class ProcessBuilderTest {
 
-  private static final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
   private static final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
 
   @Test
@@ -30,7 +29,7 @@ public class ProcessBuilderTest {
     String stageName4 = UniqueStringGenerator.randomStageName();
 
     Process process =
-        new ProcessBuilder(PIPELINE_NAME, PROCESS_ID)
+        new ProcessBuilder(PROCESS_ID)
             .execute(stageName1)
             .with(new SuccessSyncExecutor())
             .executeAfterPrevious(stageName2)
@@ -42,12 +41,7 @@ public class ProcessBuilderTest {
             .build();
 
     assertThat(process).isNotNull();
-    assertThat(process.getPipelineName()).isEqualTo(PIPELINE_NAME);
     assertThat(process.getProcessId()).isEqualTo(PROCESS_ID);
-    assertThat(process.getStages().get(0).getPipelineName()).isEqualTo(PIPELINE_NAME);
-    assertThat(process.getStages().get(1).getPipelineName()).isEqualTo(PIPELINE_NAME);
-    assertThat(process.getStages().get(0).getProcessId()).isEqualTo(PROCESS_ID);
-    assertThat(process.getStages().get(1).getProcessId()).isEqualTo(PROCESS_ID);
     assertThat(process.getStages().get(0).getDependsOn()).isNull();
     assertThat(process.getStages().get(1).getDependsOn().getStageName()).isEqualTo(stageName1);
     assertThat(process.getStages().get(2).getDependsOn().getStageName()).isEqualTo(stageName2);

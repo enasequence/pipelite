@@ -28,18 +28,18 @@ public class CmdExecutor implements StageExecutor {
   /** The type of runner that will be used to execute the command. */
   private CmdRunnerType cmdRunnerType;
 
-  public String getDispatcherCmd(Stage stage) {
+  public String getDispatcherCmd(String pipelineName, String processId, Stage stage) {
     return null;
   }
 
   public void getDispatcherJobId(StageExecutionResult stageExecutionResult) {}
 
-  public StageExecutionResult execute(Stage stage) {
+  public StageExecutionResult execute(String pipelineName, String processId, Stage stage) {
     String singularityImage = stage.getStageParameters().getSingularityImage();
 
     String execCmd = cmd;
 
-    String dispatchCommand = getDispatcherCmd(stage);
+    String dispatchCommand = getDispatcherCmd(pipelineName, processId, stage);
     if (dispatchCommand != null) {
       String cmdPrefix = dispatchCommand + " ";
       if (singularityImage != null) {
@@ -99,7 +99,8 @@ public class CmdExecutor implements StageExecutor {
     }
   }
 
-  public String getWorkFile(Stage stage, String prefix, String suffix) {
+  public String getWorkFile(
+      String pipelineName, String processId, Stage stage, String prefix, String suffix) {
     String workDir = getWorkDir(stage);
     if (!workDir.isEmpty() && !workDir.endsWith("/")) {
       workDir += "/";
@@ -108,9 +109,9 @@ public class CmdExecutor implements StageExecutor {
         + "pipelite-"
         + prefix
         + "-"
-        + stage.getPipelineName()
+        + pipelineName
         + "_"
-        + stage.getProcessId()
+        + processId
         + "_"
         + stage.getStageName()
         + "."
