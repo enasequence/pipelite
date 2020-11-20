@@ -3,26 +3,29 @@ plugins {
     id 'io.spring.dependency-management' version '1.0.8.RELEASE'
     id "com.diffplug.spotless" version "5.1.1"
     id "io.freefair.lombok" version "5.1.1"
+
     id 'java'
     id 'maven-publish'
     id 'idea'
 }
 
 group = 'pipelite'
-version = '1.0.24'
+version = '1.0.30'
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
 
-java {
-    withSourcesJar()
+bootJar {
+    enabled = false
 }
 
 jar {
     enabled = true
+    from sourceSets.main.delombokTask
 }
 
-bootJar {
-    enabled = false
+task sourceJar(type: Jar) {
+    from sourceSets.main.delombokTask
+    archiveClassifier='sources'
 }
 
 spotless {
@@ -88,6 +91,9 @@ dependencies {
     implementation('com.cronutils:cron-utils:9.1.1')
     implementation group: 'info.picocli', name: 'picocli', version: '4.5.1'
 
+    compileOnly 'org.projectlombok:lombok:1.18.6'
+    annotationProcessor 'org.projectlombok:lombok:1.18.6'
+
     testImplementation group: 'org.assertj', name: 'assertj-core', version: '3.16.1'
     testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.5.0'
 
@@ -99,6 +105,7 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
+            artifact tasks.sourceJar
         }
     }
     repositories {

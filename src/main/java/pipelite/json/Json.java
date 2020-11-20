@@ -13,9 +13,8 @@ package pipelite.json;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import java.util.regex.Pattern;
-
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.util.regex.Pattern;
 import lombok.extern.flogger.Flogger;
 
 @Flogger
@@ -77,6 +76,7 @@ public class Json {
 
   /**
    * Deserializes the object from JSON.
+   *
    * @param json the JSON string.
    * @param clazz the return type.
    * @throws RuntimeException if the deserialization fails.

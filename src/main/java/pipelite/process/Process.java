@@ -14,7 +14,6 @@ import com.google.common.flogger.FluentLogger;
 import java.util.HashSet;
 import java.util.List;
 import lombok.Builder;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;

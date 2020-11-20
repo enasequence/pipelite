@@ -13,7 +13,6 @@ package pipelite.stage;
 import com.google.common.base.Supplier;
 import java.time.Duration;
 import java.util.*;
-
 import lombok.Value;
 import pipelite.configuration.StageConfiguration;
 

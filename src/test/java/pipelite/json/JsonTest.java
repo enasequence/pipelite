@@ -36,7 +36,6 @@ public class JsonTest {
     HashMap<String, String> map = new HashMap<>();
     map.put("test", "test");
     assertThat(Json.serialize(map)).isEqualTo("{\n" + "  \"test\" : \"test\"\n" + "}");
-    assertThat(Json.serializeSafely(map))
-        .isEqualTo("{\n" + "  \"test\" : \"test\"\n" + "}");
+    assertThat(Json.serializeSafely(map)).isEqualTo("{\n" + "  \"test\" : \"test\"\n" + "}");
   }
 }

@@ -13,7 +13,6 @@ package pipelite.configuration;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
