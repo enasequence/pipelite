@@ -21,12 +21,12 @@ import org.junit.jupiter.api.Test;
 public class PipeliteTest {
 
   @Test
-  public void testMissingRequiredOption() {
+  public void parseMissingRequiredOption() {
     try {
       ByteArrayOutputStream stdoutStream = getStdOutAsStream();
       ByteArrayOutputStream stderrStream = getStdErrAsStream();
 
-      assertThat(Pipelite._run(new String[] {}, false)).isEqualTo(1);
+      assertThat(Pipelite.parse(new String[] {})).isNull();
 
       assertThat(stdoutStream.toString())
           .startsWith("Error: Missing required argument (specify one of these): (-l | -s)");
@@ -39,12 +39,12 @@ public class PipeliteTest {
   }
 
   @Test
-  public void testMutuallyExclusiveOption() {
+  public void parseMutuallyExclusiveOption() {
     try {
       ByteArrayOutputStream stdoutStream = getStdOutAsStream();
       ByteArrayOutputStream stderrStream = getStdErrAsStream();
 
-      assertThat(Pipelite._run(new String[] {"-l", "-s"}, false)).isEqualTo(1);
+      assertThat(Pipelite.parse(new String[] {"-l", "-s"})).isNull();
 
       assertThat(stdoutStream.toString())
           .startsWith("Error: -launcher, -scheduler are mutually exclusive");
@@ -57,12 +57,12 @@ public class PipeliteTest {
   }
 
   @Test
-  public void testUnknownOption() {
+  public void parseUnknownOption() {
     try {
       ByteArrayOutputStream stdoutStream = getStdOutAsStream();
       ByteArrayOutputStream stderrStream = getStdErrAsStream();
 
-      assertThat(Pipelite._run(new String[] {"-a"}, false)).isEqualTo(1);
+      assertThat(Pipelite.parse(new String[] {"-a"})).isNull();
 
       assertThat(stdoutStream.toString()).startsWith("Unknown option: '-a'");
       assertThat(stderrStream.toString()).isEqualTo("");
@@ -74,12 +74,13 @@ public class PipeliteTest {
   }
 
   @Test
-  public void testLauncherOption() {
+  public void parseLauncherOption() {
     try {
       ByteArrayOutputStream stdoutStream = getStdOutAsStream();
       ByteArrayOutputStream stderrStream = getStdErrAsStream();
 
-      assertThat(Pipelite._run(new String[] {"-l"}, false)).isEqualTo(0);
+      PipeliteOptions options = Pipelite.parse(new String[] {"-l"});
+      assertThat(options).isNotNull();
 
       assertThat(stdoutStream.toString()).startsWith("");
       assertThat(stderrStream.toString()).isEqualTo("");
@@ -91,12 +92,13 @@ public class PipeliteTest {
   }
 
   @Test
-  public void testSchedulerOption() {
+  public void parseSchedulerOption() {
     try {
       ByteArrayOutputStream stdoutStream = getStdOutAsStream();
       ByteArrayOutputStream stderrStream = getStdErrAsStream();
 
-      assertThat(Pipelite._run(new String[] {"-s"}, false)).isEqualTo(0);
+      PipeliteOptions options = Pipelite.parse(new String[] {"-s"});
+      assertThat(options).isNotNull();
 
       assertThat(stdoutStream.toString()).startsWith("");
       assertThat(stderrStream.toString()).isEqualTo("");

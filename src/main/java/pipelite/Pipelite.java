@@ -10,42 +10,56 @@
  */
 package pipelite;
 
+import lombok.extern.flogger.Flogger;
+import org.springframework.boot.SpringApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 import picocli.CommandLine;
+import pipelite.launcher.PipeliteLauncher;
+import pipelite.launcher.PipeliteScheduler;
+import pipelite.launcher.ServerManager;
 
-@CommandLine.Command(name = "Pipelite", mixinStandardHelpOptions = true)
+@Flogger
 public class Pipelite {
 
-  @CommandLine.ArgGroup(multiplicity = "1")
-  Mode mode;
+  private final PipeliteOptions options;
+  private final PipeliteLauncher launcher;
+  private final PipeliteScheduler scheduler;
 
-  public static class Mode {
-    @CommandLine.Option(
-        names = {"-l", "-launcher"},
-        description = "Run the pipelite launcher")
-    public boolean launcher;
-
-    @CommandLine.Option(
-        names = {"-s", "-scheduler"},
-        description = "Run the pipelite scheduler")
-    public boolean scheduler;
-  }
-
-  @CommandLine.Option(
-      names = {"-u", "-unlock"},
-      description = "Remove all launcher or scheduler locks")
-  public boolean removeLocks;
-
-  public static int run(String[] args) {
-    try {
-      return _run(args, true);
-    } catch (Exception ex) {
-      ex.printStackTrace();
-      return 1;
+  public Pipelite(PipeliteOptions options) {
+    this.options = options;
+    ConfigurableApplicationContext context =
+        SpringApplication.run(Application.class, new String[] {});
+    if (options.mode.launcher) {
+      launcher = context.getBean(PipeliteLauncher.class);
+      scheduler = null;
+    } else {
+      launcher = null;
+      scheduler = context.getBean(PipeliteScheduler.class);
     }
   }
 
-  public static int _run(String[] args, boolean run) {
-    Pipelite options = new Pipelite();
+  /**
+   * Runs pipelite with the given command line arguments.
+   *
+   * @param args the command line arguments
+   * @return the exit code
+   */
+  public static int run(String[] args) {
+    PipeliteOptions options = parse(args);
+    if (options == null) {
+      return 1;
+    }
+    return new Pipelite(options).run();
+  }
+
+  /**
+   * Creates the pipeline options from command line arguments.
+   *
+   * @param args the command line arguments
+   * @return the pipelite options or null in case of invalid command line arguments.
+   */
+  public static PipeliteOptions parse(String[] args) {
+    PipeliteOptions options = new PipeliteOptions();
 
     CommandLine commandLine;
     CommandLine.ParseResult parseResult;
@@ -54,7 +68,7 @@ public class Pipelite {
       commandLine = new CommandLine(options);
     } catch (Exception ex) {
       System.out.println(ex.getMessage());
-      return 1;
+      return null;
     }
 
     try {
@@ -62,17 +76,61 @@ public class Pipelite {
     } catch (Exception ex) {
       System.out.println(ex.getMessage());
       commandLine.usage(System.out);
-      return 1;
+      return null;
     }
 
     if (parseResult.isUsageHelpRequested()) {
       commandLine.usage(System.out);
-      return 1;
+      return null;
     }
 
-    if (run) {
-      PipeliteRunner.run(options);
+    return options;
+  }
+
+  /**
+   * Creates the pipelite object from the pipelite options.
+   *
+   * @param options the pipeline options
+   * @return the pipelite object
+   */
+  public static Pipelite create(PipeliteOptions options) {
+    return new Pipelite(options);
+  }
+
+  /**
+   * Runs pipelite.
+   *
+   * @return the exit code
+   */
+  public int run() {
+    try {
+      if (options.mode.launcher) {
+        if (options.removeLocks) {
+          launcher.removeLocks();
+        }
+        ServerManager.run(launcher, launcher.serviceName());
+      } else {
+        if (options.removeLocks) {
+          scheduler.removeLocks();
+        }
+        ServerManager.run(scheduler, scheduler.serviceName());
+      }
+      return 0;
+    } catch (Exception ex) {
+      log.atSevere().withCause(ex).log("Unexpected exception when running pipelite");
+      return 1;
     }
-    return 0;
+  }
+
+  public PipeliteOptions getOptions() {
+    return options;
+  }
+
+  public PipeliteLauncher getLauncher() {
+    return launcher;
+  }
+
+  public PipeliteScheduler getScheduler() {
+    return scheduler;
   }
 }
