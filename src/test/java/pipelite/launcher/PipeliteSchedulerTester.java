@@ -15,7 +15,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import lombok.Data;
@@ -251,39 +250,39 @@ public class PipeliteSchedulerTester {
       assertThat(scheduleTest.stageExecCnt.get())
           .isBetween(minExpectedStageExecCnt, maxExpectedStageExecCnt);
 
-      assertThat(pipeliteScheduler.getCount(pipelineName).getProcessFactoryNoProcessErrorCount())
+      assertThat(pipeliteScheduler.getStats(pipelineName).getProcessCreationFailedCount())
           .isEqualTo(0);
-      assertThat(pipeliteScheduler.getCount(pipelineName).getProcessExecutionExceptionCount())
+      assertThat(pipeliteScheduler.getStats(pipelineName).getProcessExceptionCount())
           .isEqualTo(0);
 
       if (scheduleTest.failure) {
         assertThat(
                 pipeliteScheduler
-                    .getCount(pipelineName)
-                    .getProcessExecutionEndedCount(ProcessState.FAILED).get())
+                    .getStats(pipelineName)
+                    .getProcessExecutionCount(ProcessState.FAILED))
             .isEqualTo(scheduleTest.processExecCnt.get());
 
-        assertThat(pipeliteScheduler.getCount(pipelineName).getStageFailedCount())
+        assertThat(pipeliteScheduler.getStats(pipelineName).getStageFailedCount())
             .isEqualTo(scheduleTest.processExecCnt.get() * 2);
-        assertThat(pipeliteScheduler.getCount(pipelineName).getStageFailedCount())
+        assertThat(pipeliteScheduler.getStats(pipelineName).getStageFailedCount())
             .isEqualTo(scheduleTest.stageExecCnt.get());
 
-        assertThat(pipeliteScheduler.getCount(pipelineName).getStageCompletedCount()).isEqualTo(0L);
-        assertThat(pipeliteScheduler.getCount(pipelineName).getStageCompletedCount()).isEqualTo(0L);
+        assertThat(pipeliteScheduler.getStats(pipelineName).getStageSuccessCount()).isEqualTo(0L);
+        assertThat(pipeliteScheduler.getStats(pipelineName).getStageSuccessCount()).isEqualTo(0L);
 
       } else {
         assertThat(
                 pipeliteScheduler
-                    .getCount(pipelineName)
-                    .getProcessExecutionEndedCount(ProcessState.COMPLETED).get())
+                    .getStats(pipelineName)
+                    .getProcessExecutionCount(ProcessState.COMPLETED))
             .isEqualTo(scheduleTest.processExecCnt.get());
 
-        assertThat(pipeliteScheduler.getCount(pipelineName).getStageFailedCount()).isEqualTo(0L);
-        assertThat(pipeliteScheduler.getCount(pipelineName).getStageFailedCount()).isEqualTo(0L);
+        assertThat(pipeliteScheduler.getStats(pipelineName).getStageFailedCount()).isEqualTo(0L);
+        assertThat(pipeliteScheduler.getStats(pipelineName).getStageFailedCount()).isEqualTo(0L);
 
-        assertThat(pipeliteScheduler.getCount(pipelineName).getStageCompletedCount())
+        assertThat(pipeliteScheduler.getStats(pipelineName).getStageSuccessCount())
             .isEqualTo(scheduleTest.processExecCnt.get() * 2);
-        assertThat(pipeliteScheduler.getCount(pipelineName).getStageCompletedCount())
+        assertThat(pipeliteScheduler.getStats(pipelineName).getStageSuccessCount())
             .isEqualTo(scheduleTest.stageExecCnt.get());
       }
     }

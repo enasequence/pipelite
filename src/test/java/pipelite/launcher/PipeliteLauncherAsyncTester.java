@@ -244,8 +244,8 @@ public class PipeliteLauncherAsyncTester {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getStageSuccessCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getStats().getStageFailedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(PROCESS_CNT);
     assertThat(submitCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(pollCount.get()).isEqualTo(PROCESS_CNT);
   }
@@ -256,8 +256,8 @@ public class PipeliteLauncherAsyncTester {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getStageSuccessCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getStats().getStageFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(0);
     assertThat(submitCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(pollCount.get()).isEqualTo(0);
   }
@@ -268,8 +268,8 @@ public class PipeliteLauncherAsyncTester {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getStageSuccessCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getStats().getStageFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(0);
     assertThat(submitCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(pollCount.get()).isEqualTo(0);
   }
@@ -280,8 +280,8 @@ public class PipeliteLauncherAsyncTester {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getStageSuccessCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getStats().getStageFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(0);
     assertThat(submitCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(pollCount.get()).isEqualTo(PROCESS_CNT);
   }
@@ -292,8 +292,8 @@ public class PipeliteLauncherAsyncTester {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getStageSuccessCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getStats().getStageFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(0);
     assertThat(submitCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(pollCount.get()).isEqualTo(PROCESS_CNT);
   }

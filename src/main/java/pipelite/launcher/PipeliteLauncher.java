@@ -18,7 +18,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,14 +59,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private final int workers;
   private final ExecutorService executorService;
 
-  private final AtomicLong processSourceMissingProcessIdErrorCount = new AtomicLong(0);
-  private final AtomicLong processSourceNotUniqueProcessIdErrorCount = new AtomicLong(0);
-  private final AtomicLong processFactoryNoProcessErrorCount = new AtomicLong(0);
-  private final Map<ProcessState, AtomicLong> processExecutionEndedCount =
-      new ConcurrentHashMap<>();
-  private final AtomicLong processExecutionExceptionCount = new AtomicLong(0);
-  private final AtomicLong stageFailedCount = new AtomicLong(0);
-  private final AtomicLong stageSuccessCount = new AtomicLong(0);
+  private final PipeliteLauncherStats stats = new PipeliteLauncherStats();
 
   private final Map<String, ProcessLauncher> initProcesses = new ConcurrentHashMap<>();
   private final Map<String, ProcessLauncher> activeProcesses = new ConcurrentHashMap<>();
@@ -214,8 +206,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private boolean validateNewProcess(ProcessSource.NewProcess newProcess) {
     String processId = newProcess.getProcessId();
     if (processId == null || processId.trim().isEmpty()) {
-      logContext(log.atWarning()).log("Process from process source is missing process id");
-      processSourceMissingProcessIdErrorCount.incrementAndGet();
+      logContext(log.atWarning()).log("New process is missing process id");
+      stats.processIdMissingCount.incrementAndGet();
       return false;
     }
 
@@ -226,8 +218,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
     if (savedProcessEntity.isPresent()) {
       logContext(log.atSevere(), processId)
-          .log("Process from process source has non-unique process id %s", processId);
-      processSourceNotUniqueProcessIdErrorCount.incrementAndGet();
+          .log("New process has non-unique process id %s", processId);
+      stats.processIdNotUniqueCount.incrementAndGet();
       processSource.reject(processId);
       return false;
     }
@@ -266,9 +258,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
     Process process = processFactory.create(processId);
 
     if (process == null) {
-      logContext(log.atSevere(), processId)
-          .log("Process factory returned no process for: %s", processId);
-      processFactoryNoProcessErrorCount.incrementAndGet();
+      logContext(log.atSevere(), processId).log("Failed to create process: %s", processId);
+      stats.processCreationFailedCount.incrementAndGet();
       return;
     }
 
@@ -292,10 +283,9 @@ public class PipeliteLauncher extends AbstractScheduledService {
               return;
             }
             ProcessState state = processLauncher.run();
-            processExecutionEndedCount.putIfAbsent(state, new AtomicLong(0));
-            processExecutionEndedCount.get(state).incrementAndGet();
+            stats.setProcessExecutionCount(state).incrementAndGet();
           } catch (Exception ex) {
-            processExecutionExceptionCount.incrementAndGet();
+            stats.processExceptionCount.incrementAndGet();
             logContext(log.atSevere(), processId)
                 .withCause(ex)
                 .log("Failed to execute process because an exception was thrown");
@@ -303,8 +293,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
             processLocker.unlock(pipelineName, processId);
             activeProcesses.remove(processId);
             initProcesses.remove(processId);
-            stageSuccessCount.addAndGet(processLauncher.getStageSuccessCount());
-            stageFailedCount.addAndGet(processLauncher.getStageFailedCount());
+            stats.stageSuccessCount.addAndGet(processLauncher.getStageSuccessCount());
+            stats.stageFailedCount.addAndGet(processLauncher.getStageFailedCount());
           }
         });
   }
@@ -334,36 +324,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
     return activeProcesses.size();
   }
 
-  public long getProcessSourceMissingProcessIdErrorCount() {
-    return processSourceMissingProcessIdErrorCount.get();
-  }
-
-  public long getProcessSourceNotUniqueProcessIdErrorCount() {
-    return processSourceNotUniqueProcessIdErrorCount.get();
-  }
-
-  public long getProcessFactoryNoProcessErrorCount() {
-    return processFactoryNoProcessErrorCount.get();
-  }
-
-  public Map<ProcessState, Long> getProcessExecutionEndedCount() {
-    Map<ProcessState, Long> count = new HashMap<>();
-    for (ProcessState state : processExecutionEndedCount.keySet()) {
-      count.put(state, processExecutionEndedCount.get(state).get());
-    }
-    return count;
-  }
-
-  public long getProcessExecutionExceptionCount() {
-    return processExecutionExceptionCount.get();
-  }
-
-  public long getStageFailedCount() {
-    return stageFailedCount.get();
-  }
-
-  public long getStageSuccessCount() {
-    return stageSuccessCount.get();
+  public PipeliteLauncherStats getStats() {
+    return stats;
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {

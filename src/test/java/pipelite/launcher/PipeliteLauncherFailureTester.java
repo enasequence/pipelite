@@ -12,7 +12,6 @@ package pipelite.launcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -207,11 +206,11 @@ public class PipeliteLauncherFailureTester {
     assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
     assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
 
-    assertThat(pipeliteLauncher.getProcessExecutionEndedCount().get(ProcessState.FAILED))
+    assertThat(pipeliteLauncher.getStats().getProcessExecutionCount().get(ProcessState.FAILED))
         .isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getStageSuccessCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getStats().getStageFailedCount()).isEqualTo(PROCESS_CNT);
   }
 
   public void testSecondStageFails() {
@@ -226,11 +225,11 @@ public class PipeliteLauncherFailureTester {
     assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
     assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
 
-    assertThat(pipeliteLauncher.getProcessExecutionEndedCount().get(ProcessState.FAILED))
+    assertThat(pipeliteLauncher.getStats().getProcessExecutionCount().get(ProcessState.FAILED))
         .isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getStageSuccessCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getStats().getStageFailedCount()).isEqualTo(PROCESS_CNT);
   }
 
   public void testThirdStageFails() {
@@ -245,11 +244,11 @@ public class PipeliteLauncherFailureTester {
     assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
     assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
 
-    assertThat(pipeliteLauncher.getProcessExecutionEndedCount().get(ProcessState.FAILED))
+    assertThat(pipeliteLauncher.getStats().getProcessExecutionCount().get(ProcessState.FAILED))
         .isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getStageSuccessCount()).isEqualTo(PROCESS_CNT * 2);
-    assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(PROCESS_CNT * 2);
+    assertThat(pipeliteLauncher.getStats().getStageFailedCount()).isEqualTo(PROCESS_CNT);
   }
 
   public void testFourthStageFails() {
@@ -264,11 +263,11 @@ public class PipeliteLauncherFailureTester {
     assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
     assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
 
-    assertThat(pipeliteLauncher.getProcessExecutionEndedCount().get(ProcessState.FAILED))
+    assertThat(pipeliteLauncher.getStats().getProcessExecutionCount().get(ProcessState.FAILED))
         .isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getStageSuccessCount()).isEqualTo(PROCESS_CNT * 3);
-    assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(PROCESS_CNT * 3);
+    assertThat(pipeliteLauncher.getStats().getStageFailedCount()).isEqualTo(PROCESS_CNT);
   }
 
   public void testNoStageFails() {
@@ -283,10 +282,10 @@ public class PipeliteLauncherFailureTester {
     assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
     assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
 
-    assertThat(pipeliteLauncher.getProcessExecutionEndedCount().get(ProcessState.COMPLETED))
+    assertThat(pipeliteLauncher.getStats().getProcessExecutionCount().get(ProcessState.COMPLETED))
         .isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getStageSuccessCount()).isEqualTo(PROCESS_CNT * 4);
-    assertThat(pipeliteLauncher.getStageFailedCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(PROCESS_CNT * 4);
+    assertThat(pipeliteLauncher.getStats().getStageFailedCount()).isEqualTo(0);
   }
 }

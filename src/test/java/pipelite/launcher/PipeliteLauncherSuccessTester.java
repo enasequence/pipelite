@@ -15,7 +15,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.springframework.beans.factory.ObjectProvider;
@@ -107,7 +106,9 @@ public class PipeliteLauncherSuccessTester {
 
     assertThat(processExcessExecutionSet).isEmpty();
     assertThat(processExecutionCount.get()).isEqualTo(PROCESS_COUNT);
-    assertThat(processExecutionCount.get()).isEqualTo(pipeliteLauncher.getProcessExecutionEndedCount().get(ProcessState.COMPLETED));
+    assertThat(processExecutionCount.get())
+        .isEqualTo(
+            pipeliteLauncher.getStats().getProcessExecutionCount().get(ProcessState.COMPLETED));
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
   }
 }

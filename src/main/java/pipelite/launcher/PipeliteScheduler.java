@@ -52,13 +52,12 @@ public class PipeliteScheduler extends AbstractScheduledService {
   private final ProcessLocker processLocker;
   private final ExecutorService executorService;
 
-  private final Map<String, PipeliteSchedulerCount> counts = new ConcurrentHashMap<>();
-
   private final Map<String, ProcessFactory> processFactoryCache = new ConcurrentHashMap<>();
-
   private final Map<String, Schedule> activeProcesses = new ConcurrentHashMap<>();
+  private final Map<String, PipeliteSchedulerStats> stats = new ConcurrentHashMap<>();
 
   private final LocalDateTime startTime;
+
   private Duration shutdownAfter;
   private boolean shutdownAfterTriggered = false;
 
@@ -236,6 +235,16 @@ public class PipeliteScheduler extends AbstractScheduledService {
     String pipelineName = schedule.getScheduleEntity().getPipelineName();
     String processId = getNextProcessId(schedule.getScheduleEntity().getProcessId());
 
+    while (true) {
+      Optional<ProcessEntity> savedProcessEntity =
+          processService.getSavedProcess(pipelineName, processId);
+      if (savedProcessEntity.isPresent()) {
+        processId = getNextProcessId(schedule.getScheduleEntity().getProcessId());
+      } else {
+        break;
+      }
+    }
+
     logContext(log.atInfo(), pipelineName, processId).log("Creating new process");
 
     ProcessFactory processFactory = getCachedProcessFactory(pipelineName);
@@ -243,19 +252,8 @@ public class PipeliteScheduler extends AbstractScheduledService {
     Process process = processFactory.create(processId);
 
     if (process == null) {
-      logContext(log.atSevere(), processId)
-          .log("Process factory returned no process for: %s", processId);
-      addCount(pipelineName).processFactoryNoProcessErrorCount.incrementAndGet();
-      return false;
-    }
-
-    Optional<ProcessEntity> savedProcessEntity =
-        processService.getSavedProcess(pipelineName, processId);
-
-    if (savedProcessEntity.isPresent()) {
-      logContext(log.atSevere(), pipelineName, processId)
-          .log("Failed to execute process because process id already exists");
-      addCount(pipelineName).processExecutionNotUniqueProcessIdErrorCount.incrementAndGet();
+      logContext(log.atSevere(), processId).log("Failed to create process: %s", processId);
+      setStats(pipelineName).processCreationFailedCount.incrementAndGet();
       return false;
     }
 
@@ -297,9 +295,9 @@ public class PipeliteScheduler extends AbstractScheduledService {
               return;
             }
             ProcessState state = processLauncher.run();
-            addCount(pipelineName).getProcessExecutionEndedCount(state).incrementAndGet();
+            setStats(pipelineName).setProcessExecutionCount(state).incrementAndGet();
           } catch (Exception ex) {
-            addCount(pipelineName).processExecutionExceptionCount.incrementAndGet();
+            setStats(pipelineName).processExceptionCount.incrementAndGet();
             logContext(log.atSevere(), pipelineName, processId)
                 .withCause(ex)
                 .log("Failed to execute process because an exception was thrown");
@@ -308,10 +306,10 @@ public class PipeliteScheduler extends AbstractScheduledService {
             scheduleService.saveProcessSchedule(schedule.getScheduleEntity());
             processLocker.unlock(pipelineName, processId);
             activeProcesses.remove(processId);
-            addCount(pipelineName)
-                .stageCompletedCount
+            setStats(pipelineName)
+                .stageSuccessCount
                 .addAndGet(processLauncher.getStageSuccessCount());
-            addCount(pipelineName)
+            setStats(pipelineName)
                 .stageFailedCount
                 .addAndGet(processLauncher.getStageFailedCount());
           }
@@ -339,13 +337,13 @@ public class PipeliteScheduler extends AbstractScheduledService {
     launcherLocker.removeLocks();
   }
 
-  private PipeliteSchedulerCount addCount(String pipelineName) {
-    counts.putIfAbsent(pipelineName, new PipeliteSchedulerCount());
-    return counts.get(pipelineName);
+  private PipeliteSchedulerStats setStats(String pipelineName) {
+    stats.putIfAbsent(pipelineName, new PipeliteSchedulerStats());
+    return stats.get(pipelineName);
   }
 
-  public PipeliteSchedulerCount getCount(String pipelineName) {
-    return counts.get(pipelineName);
+  public PipeliteSchedulerStats getStats(String pipelineName) {
+    return stats.get(pipelineName);
   }
 
   public int getActiveProcessCount() {
