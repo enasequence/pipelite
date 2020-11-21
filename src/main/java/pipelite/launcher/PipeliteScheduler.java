@@ -54,9 +54,9 @@ public class PipeliteScheduler extends AbstractScheduledService {
   private final ExecutorService executorService;
 
   private final Map<String, ProcessFactory> processFactoryCache = new ConcurrentHashMap<>();
-  private final Map<String, Schedule> activeProcesses = new ConcurrentHashMap<>();
+  private final Set<String> activePipelines = new ConcurrentHashMap<>().newKeySet();
   private final Map<String, PipeliteSchedulerStats> stats = new ConcurrentHashMap<>();
-  private final Map<String, AtomicLong> maximumExecutions = new ConcurrentHashMap<>();
+  private final Map<String, AtomicLong> remainingExecutions = new ConcurrentHashMap<>();
 
   private final LocalDateTime startTime;
 
@@ -143,32 +143,41 @@ public class PipeliteScheduler extends AbstractScheduledService {
     }
 
     for (Schedule schedule : schedules) {
-      if (!activeProcesses.containsKey(schedule.getScheduleEntity().getPipelineName())
-          && schedule.launchTime.isBefore(LocalDateTime.now())) {
+      String pipelineName = schedule.getScheduleEntity().getPipelineName();
+      String cronExpression = schedule.getScheduleEntity().getSchedule();
+      LocalDateTime launchTime = schedule.getLaunchTime();
+
+      if (!activePipelines.contains(pipelineName) && launchTime.isBefore(LocalDateTime.now())) {
+
+        if (remainingExecutions.get(pipelineName) != null
+            && remainingExecutions.get(pipelineName).decrementAndGet() < 0) {
+          continue;
+        }
+
         // Update next launch time.
-        schedule.setLaunchTime(CronUtils.launchTime(schedule.getScheduleEntity().getSchedule()));
-        logContext(log.atInfo(), schedule.getScheduleEntity().getPipelineName())
+        schedule.setLaunchTime(CronUtils.launchTime(cronExpression));
+        logContext(log.atInfo(), pipelineName)
             .log(
                 "Launching %s pipeline with cron expression %s (%s). Next launch time is: %s",
-                schedule.getScheduleEntity().getPipelineName(),
-                schedule.getScheduleEntity().getSchedule(),
+                pipelineName,
+                cronExpression,
                 schedule.getScheduleEntity().getDescription(),
-                schedule.getLaunchTime());
+                launchTime);
         if (createProcess(schedule)) {
           launchProcess(schedule);
         }
       }
     }
 
-    shutdownIfMaximumExecutions();
+    shutdownIfNoRemainingExecutions();
   }
 
-  private void shutdownIfMaximumExecutions() {
-    if (maximumExecutions.isEmpty()) {
+  private void shutdownIfNoRemainingExecutions() {
+    if (remainingExecutions.isEmpty()) {
       return;
     }
-    for (AtomicLong remainingExecutions : maximumExecutions.values()) {
-      if (remainingExecutions.get() > 0) {
+    for (AtomicLong remaining : remainingExecutions.values()) {
+      if (remaining.get() > 0) {
         return;
       }
     }
@@ -286,11 +295,6 @@ public class PipeliteScheduler extends AbstractScheduledService {
     String pipelineName = processEntity.getPipelineName();
     String processId = processEntity.getProcessId();
 
-    if (maximumExecutions.get(pipelineName) != null
-        && maximumExecutions.get(pipelineName).decrementAndGet() < 0) {
-      return;
-    }
-
     logContext(log.atInfo(), pipelineName, processId).log("Launching process");
 
     ProcessLauncher processLauncher =
@@ -305,7 +309,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
 
     executorService.execute(
         () -> {
-          activeProcesses.put(processId, schedule);
+          activePipelines.add(pipelineName);
           try {
             if (!processLocker.lock(pipelineName, processId)) {
               return;
@@ -321,7 +325,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
             schedule.getScheduleEntity().endExecution();
             scheduleService.saveProcessSchedule(schedule.getScheduleEntity());
             processLocker.unlock(pipelineName, processId);
-            activeProcesses.remove(processId);
+            activePipelines.remove(pipelineName);
             setStats(pipelineName)
                 .stageSuccessCount
                 .addAndGet(processLauncher.getStageSuccessCount());
@@ -362,13 +366,13 @@ public class PipeliteScheduler extends AbstractScheduledService {
     return stats.get(pipelineName);
   }
 
-  public int getActiveProcessCount() {
-    return activeProcesses.size();
+  public int getActivePipelinesCount() {
+    return activePipelines.size();
   }
 
   public void setMaximumExecutions(String pipelineName, long maximumExecutions) {
-    this.maximumExecutions.putIfAbsent(pipelineName, new AtomicLong());
-    this.maximumExecutions.get(pipelineName).set(maximumExecutions);
+    this.remainingExecutions.putIfAbsent(pipelineName, new AtomicLong());
+    this.remainingExecutions.get(pipelineName).set(maximumExecutions);
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {

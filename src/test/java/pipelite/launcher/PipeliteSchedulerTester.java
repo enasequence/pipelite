@@ -12,6 +12,7 @@ package pipelite.launcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -24,12 +25,15 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
+import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.service.ProcessService;
 import pipelite.service.ScheduleService;
+import pipelite.service.StageService;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageParameters;
 
@@ -40,6 +44,8 @@ public class PipeliteSchedulerTester {
   private final PipeliteScheduler pipeliteScheduler;
   private final ScheduleService scheduleService;
   private final LauncherConfiguration launcherConfiguration;
+  private final ProcessService processService;
+  private final StageService stageService;
 
   @Autowired private TestProcessFactory firstProcessSuccess;
   @Autowired private TestProcessFactory secondProcessSuccess;
@@ -54,10 +60,14 @@ public class PipeliteSchedulerTester {
   public PipeliteSchedulerTester(
       @Autowired PipeliteScheduler pipeliteScheduler,
       @Autowired ScheduleService scheduleService,
-      @Autowired LauncherConfiguration launcherConfiguration) {
+      @Autowired LauncherConfiguration launcherConfiguration,
+      @Autowired ProcessService processService,
+      @Autowired StageService stageService) {
     this.pipeliteScheduler = pipeliteScheduler;
     this.scheduleService = scheduleService;
     this.launcherConfiguration = launcherConfiguration;
+    this.processService = processService;
+    this.stageService = stageService;
   }
 
   @TestConfiguration
@@ -121,6 +131,7 @@ public class PipeliteSchedulerTester {
     public final int schedulerSeconds; // 60 must be divisible by schedulerSeconds.
     public final int schedulerMaxExecutions;
     public final StageTestResult stageTestResult;
+    public final List<String> processIds = new ArrayList<>();
     public final AtomicLong stageExecCnt = new AtomicLong();
 
     public TestProcessFactory(
@@ -137,6 +148,7 @@ public class PipeliteSchedulerTester {
     }
 
     public void reset() {
+      processIds.clear();
       stageExecCnt.set(0L);
     }
 
@@ -147,6 +159,7 @@ public class PipeliteSchedulerTester {
 
     @Override
     public Process create(String processId) {
+      processIds.add(processId);
       StageParameters stageParams =
           StageParameters.builder().immediateRetries(0).maximumRetries(0).build();
 
@@ -203,6 +216,26 @@ public class PipeliteSchedulerTester {
     for (TestProcessFactory f : testProcessFactories) {
       String pipelineName = f.getPipelineName();
 
+      // Assert ProcessEntities
+
+      assertThat(f.processIds.size()).isEqualTo(f.schedulerMaxExecutions);
+
+      for (String processId : f.processIds) {
+        ProcessEntity processEntity =
+            processService.getSavedProcess(f.getPipelineName(), processId).get();
+        assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
+        assertThat(processEntity.getProcessId()).isEqualTo(processId);
+        assertThat(processEntity.getExecutionCount()).isEqualTo(1);
+        if (f.stageTestResult != StageTestResult.SUCCESS) {
+          assertThat(processEntity.getState())
+              .isEqualTo(ProcessState.FAILED); // no re-executions allowed
+        } else {
+          assertThat(processEntity.getState()).isEqualTo(ProcessState.COMPLETED);
+        }
+      }
+
+      // Assert PipeliteSchedulerStats
+
       assertThat(f.stageExecCnt.get() / f.stageCnt).isEqualTo(f.schedulerMaxExecutions);
 
       PipeliteSchedulerStats stats = pipeliteScheduler.getStats(pipelineName);
@@ -226,7 +259,7 @@ public class PipeliteSchedulerTester {
       }
     }
 
-    assertThat(pipeliteScheduler.getActiveProcessCount()).isEqualTo(0);
+    assertThat(pipeliteScheduler.getActivePipelinesCount()).isEqualTo(0);
   }
 
   private void test(List<TestProcessFactory> testProcessFactories) {

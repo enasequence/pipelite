@@ -34,21 +34,21 @@ public abstract class CronUtils {
   private static final CronParser unixParser = new CronParser(unixDefinition);
   private static final CronParser quartzParser = new CronParser(quarzDefinition);
 
-  private static Cron parse(String expression) {
+  private static Cron parse(String cronExpression) {
     try {
-      return unixParser.parse(expression);
+      return unixParser.parse(cronExpression);
     } catch (Exception ex) {
     }
     try {
-      return quartzParser.parse(expression);
+      return quartzParser.parse(cronExpression);
     } catch (Exception ex) {
     }
-    throw new RuntimeException("Invalid cron expression " + expression);
+    throw new RuntimeException("Invalid cron expression " + cronExpression);
   }
 
-  public static boolean validate(String expression) {
+  public static boolean validate(String cronExpression) {
     try {
-      parse(expression);
+      parse(cronExpression);
       return true;
     } catch (Exception ex) {
       log.atSevere().log(ex.getMessage());
@@ -56,13 +56,13 @@ public abstract class CronUtils {
     }
   }
 
-  public static String describe(String expression) {
+  public static String describe(String cronExpression) {
     CronDescriptor descriptor = CronDescriptor.instance(Locale.UK);
-    return descriptor.describe(parse(expression));
+    return descriptor.describe(parse(cronExpression));
   }
 
-  public static LocalDateTime launchTime(String expression) {
-    ExecutionTime executionTime = ExecutionTime.forCron(parse(expression));
+  public static LocalDateTime launchTime(String cronExpression) {
+    ExecutionTime executionTime = ExecutionTime.forCron(parse(cronExpression));
     return executionTime.nextExecution(ZonedDateTime.now()).get().toLocalDateTime();
   }
 }
