@@ -17,12 +17,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import lombok.Data;
+import lombok.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import org.springframework.test.annotation.DirtiesContext;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.entity.ScheduleEntity;
@@ -42,6 +43,13 @@ public class PipeliteSchedulerTester {
   private final ScheduleService scheduleService;
   private final LauncherConfiguration launcherConfiguration;
 
+  @Autowired private TestProcessFactory firstProcessSuccess;
+  @Autowired private TestProcessFactory secondProcessSuccess;
+  @Autowired private TestProcessFactory thirdProcessSuccess;
+  @Autowired private TestProcessFactory firstProcessFailure;
+  @Autowired private TestProcessFactory secondProcessFailure;
+  @Autowired private TestProcessFactory thirdProcessFailure;
+
   public PipeliteSchedulerTester(
       @Autowired PipeliteScheduler pipeliteScheduler,
       @Autowired ScheduleService scheduleService,
@@ -54,111 +62,63 @@ public class PipeliteSchedulerTester {
   @TestConfiguration
   static class TestConfig {
     @Bean
-    public ProcessFactory oneProcess() {
-      return new TestProcessFactory(ONE);
+    public ProcessFactory firstProcessSuccess() {
+      return new TestProcessFactory("firstProcessSuccess", 2, 4, false);
     }
 
     @Bean
-    public ProcessFactory threeProcesses1() {
-      return new TestProcessFactory(THREE_1);
+    public ProcessFactory secondProcessSuccess() {
+      return new TestProcessFactory("secondProcessSuccess", 4, 3, false);
     }
 
     @Bean
-    public ProcessFactory threeProcesses2() {
-      return new TestProcessFactory(THREE_2);
+    public ProcessFactory thirdProcessSuccess() {
+      return new TestProcessFactory("thirdProcessSuccess", 6, 2, false);
     }
 
     @Bean
-    public ProcessFactory threeProcesses3() {
-      return new TestProcessFactory(THREE_3);
+    public ProcessFactory firstProcessFailure() {
+      return new TestProcessFactory("firstProcessFailure", 2, 4, true);
     }
 
     @Bean
-    public ProcessFactory oneProcessOneFailure() {
-      return new TestProcessFactory(ONE_FAILURE);
+    public ProcessFactory secondProcessFailure() {
+      return new TestProcessFactory("secondProcessFailure", 4, 3, true);
     }
 
     @Bean
-    public ProcessFactory threeProcessesOneFailure1() {
-      return new TestProcessFactory(THREE_ONE_FAILURE_1);
-    }
-
-    @Bean
-    public ProcessFactory threeProcessesOneFailure2() {
-      return new TestProcessFactory(THREE_ONE_FAILURE_2);
-    }
-
-    @Bean
-    public ProcessFactory threeProcessesOneFailure3() {
-      return new TestProcessFactory(THREE_ONE_FAILURE_3);
-    }
-
-    @Bean
-    public ProcessFactory threeProcessesAllFailure1() {
-      return new TestProcessFactory(THREE_ALL_FAILURE_1);
-    }
-
-    @Bean
-    public ProcessFactory threeProcessesAllFailure2() {
-      return new TestProcessFactory(THREE_ALL_FAILURE_2);
-    }
-
-    @Bean
-    public ProcessFactory threeProcessesAllFailure3() {
-      return new TestProcessFactory(THREE_ALL_FAILURE_3);
+    public ProcessFactory thirdProcessFailure() {
+      return new TestProcessFactory("thirdProcessFailure", 6, 2, true);
     }
   }
 
   private static final Duration STOP_AFTER = Duration.ofSeconds(10);
 
-  private static final ScheduleTest ONE = new ScheduleTest("ONE", 2, false);
-  private static final ScheduleTest THREE_1 = new ScheduleTest("THREE_1", 2, false);
-  private static final ScheduleTest THREE_2 = new ScheduleTest("THREE_2", 4, false);
-  private static final ScheduleTest THREE_3 = new ScheduleTest("THREE_3", 6, false);
-  private static final ScheduleTest ONE_FAILURE = new ScheduleTest("ONE_FAILURE", 6, true);
-  private static final ScheduleTest THREE_ONE_FAILURE_1 =
-      new ScheduleTest("THREE_ONE_FAILURE_1", 2, false);
-  private static final ScheduleTest THREE_ONE_FAILURE_2 =
-      new ScheduleTest("THREE_ONE_FAILURE_2", 4, false);
-  private static final ScheduleTest THREE_ONE_FAILURE_3 =
-      new ScheduleTest("THREE_ONE_FAILURE_3", 6, true);
-  private static final ScheduleTest THREE_ALL_FAILURE_1 =
-      new ScheduleTest("THREE_ALL_FAILURE_1", 2, true);
-  private static final ScheduleTest THREE_ALL_FAILURE_2 =
-      new ScheduleTest("THREE_ALL_FAILURE_2", 4, true);
-  private static final ScheduleTest THREE_ALL_FAILURE_3 =
-      new ScheduleTest("THREE_ALL_FAILURE_3", 6, true);
-
-  @Data
-  private static class ScheduleTest {
-    private final int seconds; // 60 must be divisible by seconds.
-    private final boolean failure;
+  @Value
+  public static class TestProcessFactory implements ProcessFactory {
     private final String pipelineName;
+    public final int seconds; // 60 must be divisible by seconds.
+    public final int maxExecutions;
+    public final boolean failure;
     public final AtomicLong processExecCnt = new AtomicLong();
     public final AtomicLong stageExecCnt = new AtomicLong();
 
-    public ScheduleTest(String pipelineNamaPrefix, int seconds, boolean failure) {
-      this.pipelineName = pipelineNamaPrefix + "_" + UniqueStringGenerator.randomPipelineName();
+    public TestProcessFactory(
+        String pipelineNamePrefix, int seconds, int maxExecutions, boolean failure) {
+      this.pipelineName = pipelineNamePrefix + "_" + UniqueStringGenerator.randomPipelineName();
       this.seconds = seconds;
+      this.maxExecutions = maxExecutions;
       this.failure = failure;
     }
 
     public void reset() {
-      processExecCnt.set(0);
-      stageExecCnt.set(0);
-    }
-  }
-
-  public static class TestProcessFactory implements ProcessFactory {
-    private final ScheduleTest scheduleTest;
-
-    public TestProcessFactory(ScheduleTest scheduleTest) {
-      this.scheduleTest = scheduleTest;
+      processExecCnt.set(0L);
+      stageExecCnt.set(0L);
     }
 
     @Override
     public String getPipelineName() {
-      return scheduleTest.pipelineName;
+      return pipelineName;
     }
 
     private static final StageParameters STAGE_PARAMS =
@@ -170,9 +130,9 @@ public class PipeliteSchedulerTester {
           .execute("STAGE1", STAGE_PARAMS)
           .with(
               (pipelineName, processId1, stage) -> {
-                scheduleTest.processExecCnt.incrementAndGet();
-                scheduleTest.stageExecCnt.incrementAndGet();
-                if (scheduleTest.failure) {
+                processExecCnt.incrementAndGet();
+                stageExecCnt.incrementAndGet();
+                if (failure) {
                   return StageExecutionResult.error();
                 } else {
                   return StageExecutionResult.success();
@@ -181,8 +141,8 @@ public class PipeliteSchedulerTester {
           .execute("STAGE2", STAGE_PARAMS)
           .with(
               (pipelineName, processId1, stage) -> {
-                scheduleTest.stageExecCnt.incrementAndGet();
-                if (scheduleTest.failure) {
+                stageExecCnt.incrementAndGet();
+                if (failure) {
                   return StageExecutionResult.error();
                 } else {
                   return StageExecutionResult.success();
@@ -192,207 +152,97 @@ public class PipeliteSchedulerTester {
     }
   }
 
-  private void saveSchedule(ScheduleTest scheduleTest) {
+  private void saveSchedule(TestProcessFactory testProcessFactory) {
     ScheduleEntity schedule = new ScheduleEntity();
-    schedule.setSchedule("0/" + scheduleTest.seconds + " * * * * ?");
+    schedule.setSchedule("0/" + testProcessFactory.seconds + " * * * * ?");
     schedule.setLauncherName(launcherConfiguration.getLauncherName());
-    schedule.setPipelineName(scheduleTest.pipelineName);
+    schedule.setPipelineName(testProcessFactory.pipelineName);
     scheduleService.saveProcessSchedule(schedule);
     System.out.println(
         "saved schedule for pipeline: "
-            + scheduleTest.pipelineName
+            + testProcessFactory.pipelineName
             + ", launcher: "
             + launcherConfiguration.getLauncherName());
   }
 
-  private void deleteSchedule(ScheduleTest scheduleTest) {
+  private void deleteSchedule(TestProcessFactory testProcessFactory) {
     ScheduleEntity schedule = new ScheduleEntity();
-    schedule.setPipelineName(scheduleTest.pipelineName);
+    schedule.setPipelineName(testProcessFactory.pipelineName);
     scheduleService.delete(schedule);
     System.out.println(
         "deleted schedule for pipeline: "
-            + scheduleTest.pipelineName
+            + testProcessFactory.pipelineName
             + ", launcher: "
             + launcherConfiguration.getLauncherName());
   }
 
-  public void assertResult(PipeliteScheduler pipeliteScheduler, List<ScheduleTest> scheduleTests) {
+  public void assertResult(
+      PipeliteScheduler pipeliteScheduler, List<TestProcessFactory> testProcessFactories) {
 
-    long totalProcessCompletedCount = 0;
-    long totalStageFailedCount = 0;
-    long totalStageCompletedCount = 0;
+    for (TestProcessFactory f : testProcessFactories) {
+      String pipelineName = f.getPipelineName();
 
-    for (ScheduleTest scheduleTest : scheduleTests) {
-      String pipelineName = scheduleTest.getPipelineName();
+      assertThat(f.processExecCnt.get()).isEqualTo(f.maxExecutions);
 
-      totalProcessCompletedCount += scheduleTest.processExecCnt.get();
+      PipeliteSchedulerStats stats = pipeliteScheduler.getStats(pipelineName);
 
-      if (scheduleTest.failure) {
-        totalStageFailedCount += scheduleTest.stageExecCnt.get();
-      } else {
-        totalStageCompletedCount += scheduleTest.stageExecCnt.get();
-      }
+      assertThat(stats.getProcessCreationFailedCount()).isEqualTo(0);
+      assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
 
-      // Minimum delay before first process is executed is ~0.
-      // Maximum executed processes is estimated as: STOP_AFTER / scheduleSeconds[i] + 1
-      // Maximum delay before first process is executed is ~scheduleSeconds[i].
-      // processLaunchFrequency may prevent last scheduled process execution.
-      // Minimum executed processes is estimated as STOP_AFTER / scheduleSeconds[i] - 2
-
-      long expectedProcessExecCnt = STOP_AFTER.toMillis() / 1000 / scheduleTest.seconds;
-      long minExpectedProcessExecCnt = Math.max(0, expectedProcessExecCnt - 2);
-      long maxExpectedProcessExecCnt = expectedProcessExecCnt + 1;
-      long minExpectedStageExecCnt = minExpectedProcessExecCnt * 2;
-      long maxExpectedStageExecCnt = maxExpectedProcessExecCnt * 2;
-
-      assertThat(scheduleTest.processExecCnt.get())
-          .isBetween(minExpectedProcessExecCnt, maxExpectedProcessExecCnt);
-      assertThat(scheduleTest.stageExecCnt.get())
-          .isBetween(minExpectedStageExecCnt, maxExpectedStageExecCnt);
-
-      assertThat(pipeliteScheduler.getStats(pipelineName).getProcessCreationFailedCount())
-          .isEqualTo(0);
-      assertThat(pipeliteScheduler.getStats(pipelineName).getProcessExceptionCount())
-          .isEqualTo(0);
-
-      if (scheduleTest.failure) {
-        assertThat(
-                pipeliteScheduler
-                    .getStats(pipelineName)
-                    .getProcessExecutionCount(ProcessState.FAILED))
-            .isEqualTo(scheduleTest.processExecCnt.get());
-
-        assertThat(pipeliteScheduler.getStats(pipelineName).getStageFailedCount())
-            .isEqualTo(scheduleTest.processExecCnt.get() * 2);
-        assertThat(pipeliteScheduler.getStats(pipelineName).getStageFailedCount())
-            .isEqualTo(scheduleTest.stageExecCnt.get());
-
-        assertThat(pipeliteScheduler.getStats(pipelineName).getStageSuccessCount()).isEqualTo(0L);
-        assertThat(pipeliteScheduler.getStats(pipelineName).getStageSuccessCount()).isEqualTo(0L);
+      if (f.failure) {
+        assertThat(stats.getProcessExecutionCount(ProcessState.FAILED))
+            .isEqualTo(f.processExecCnt.get());
+        assertThat(stats.getStageFailedCount()).isEqualTo(f.processExecCnt.get() * 2);
+        assertThat(stats.getStageFailedCount()).isEqualTo(f.stageExecCnt.get());
+        assertThat(stats.getStageSuccessCount()).isEqualTo(0L);
+        assertThat(stats.getStageSuccessCount()).isEqualTo(0L);
 
       } else {
-        assertThat(
-                pipeliteScheduler
-                    .getStats(pipelineName)
-                    .getProcessExecutionCount(ProcessState.COMPLETED))
-            .isEqualTo(scheduleTest.processExecCnt.get());
-
-        assertThat(pipeliteScheduler.getStats(pipelineName).getStageFailedCount()).isEqualTo(0L);
-        assertThat(pipeliteScheduler.getStats(pipelineName).getStageFailedCount()).isEqualTo(0L);
-
-        assertThat(pipeliteScheduler.getStats(pipelineName).getStageSuccessCount())
-            .isEqualTo(scheduleTest.processExecCnt.get() * 2);
-        assertThat(pipeliteScheduler.getStats(pipelineName).getStageSuccessCount())
-            .isEqualTo(scheduleTest.stageExecCnt.get());
+        assertThat(stats.getProcessExecutionCount(ProcessState.COMPLETED))
+            .isEqualTo(f.processExecCnt.get());
+        assertThat(stats.getStageFailedCount()).isEqualTo(0L);
+        assertThat(stats.getStageFailedCount()).isEqualTo(0L);
+        assertThat(stats.getStageSuccessCount()).isEqualTo(f.processExecCnt.get() * 2);
+        assertThat(stats.getStageSuccessCount()).isEqualTo(f.stageExecCnt.get());
       }
     }
 
     assertThat(pipeliteScheduler.getActiveProcessCount()).isEqualTo(0);
   }
 
-  public void testOneProcess() {
-    ONE.reset();
-
+  private void test(List<TestProcessFactory> testProcessFactories) {
     try {
-      saveSchedule(ONE);
-
-      pipeliteScheduler.setShutdownAfter(STOP_AFTER);
-
+      for (TestProcessFactory f : testProcessFactories) {
+        f.reset();
+        saveSchedule(f);
+        pipeliteScheduler.setMaximumExecutions(f.getPipelineName(), f.maxExecutions);
+      }
       ServerManager.run(pipeliteScheduler, pipeliteScheduler.serviceName());
-
-      assertResult(pipeliteScheduler, Arrays.asList(ONE));
+      assertResult(pipeliteScheduler, testProcessFactories);
     } finally {
-      deleteSchedule(ONE);
+      for (TestProcessFactory f : testProcessFactories) {
+        deleteSchedule(f);
+      }
     }
   }
 
-  public void testThreeProcesses() {
-    THREE_1.reset();
-    THREE_2.reset();
-    THREE_3.reset();
-
-    try {
-      saveSchedule(THREE_1);
-      saveSchedule(THREE_2);
-      saveSchedule(THREE_3);
-
-      pipeliteScheduler.setShutdownAfter(STOP_AFTER);
-
-      ServerManager.run(pipeliteScheduler, pipeliteScheduler.serviceName());
-
-      assertResult(pipeliteScheduler, Arrays.asList(THREE_1, THREE_2, THREE_3));
-
-    } finally {
-      deleteSchedule(THREE_1);
-      deleteSchedule(THREE_2);
-      deleteSchedule(THREE_3);
-    }
+  public void testOneSuccessSchedule() {
+    test(Arrays.asList(firstProcessSuccess));
   }
 
-  public void testOneProcessesOneFailure() {
-    ONE_FAILURE.reset();
-
-    try {
-      saveSchedule(ONE_FAILURE);
-
-      pipeliteScheduler.setShutdownAfter(STOP_AFTER);
-
-      ServerManager.run(pipeliteScheduler, pipeliteScheduler.serviceName());
-
-      assertResult(pipeliteScheduler, Arrays.asList(ONE_FAILURE));
-
-    } finally {
-      deleteSchedule(ONE_FAILURE);
-    }
+  public void testThreeSuccessSchedules() {
+    test(Arrays.asList(firstProcessSuccess, secondProcessSuccess, thirdProcessSuccess));
   }
 
-  public void testThreeProcessesOneFailure() {
-    THREE_ONE_FAILURE_1.reset();
-    THREE_ONE_FAILURE_2.reset();
-    THREE_ONE_FAILURE_3.reset();
-
-    try {
-      saveSchedule(THREE_ONE_FAILURE_1);
-      saveSchedule(THREE_ONE_FAILURE_2);
-      saveSchedule(THREE_ONE_FAILURE_3);
-
-      pipeliteScheduler.setShutdownAfter(STOP_AFTER);
-
-      ServerManager.run(pipeliteScheduler, pipeliteScheduler.serviceName());
-
-      assertResult(
-          pipeliteScheduler,
-          Arrays.asList(THREE_ONE_FAILURE_1, THREE_ONE_FAILURE_2, THREE_ONE_FAILURE_3));
-
-    } finally {
-      deleteSchedule(THREE_ONE_FAILURE_1);
-      deleteSchedule(THREE_ONE_FAILURE_2);
-      deleteSchedule(THREE_ONE_FAILURE_3);
-    }
+  public void testOneSuccessOneFailureSchedule() {
+    test(Arrays.asList(firstProcessSuccess, firstProcessFailure));
   }
 
-  public void testThreeProcessesAllFailure() {
-    THREE_ALL_FAILURE_1.reset();
-    THREE_ALL_FAILURE_2.reset();
-    THREE_ALL_FAILURE_3.reset();
+  public void testOneFailureSchedule() {
+    test(Arrays.asList(firstProcessFailure));
+  }
 
-    try {
-      saveSchedule(THREE_ALL_FAILURE_1);
-      saveSchedule(THREE_ALL_FAILURE_2);
-      saveSchedule(THREE_ALL_FAILURE_3);
-
-      pipeliteScheduler.setShutdownAfter(STOP_AFTER);
-
-      ServerManager.run(pipeliteScheduler, pipeliteScheduler.serviceName());
-
-      assertResult(
-          pipeliteScheduler,
-          Arrays.asList(THREE_ALL_FAILURE_1, THREE_ALL_FAILURE_2, THREE_ALL_FAILURE_3));
-
-    } finally {
-      deleteSchedule(THREE_ALL_FAILURE_1);
-      deleteSchedule(THREE_ALL_FAILURE_2);
-      deleteSchedule(THREE_ALL_FAILURE_3);
-    }
+  public void testThreeFailureSchedules() {
+    test(Arrays.asList(firstProcessFailure, secondProcessFailure, thirdProcessFailure));
   }
 }

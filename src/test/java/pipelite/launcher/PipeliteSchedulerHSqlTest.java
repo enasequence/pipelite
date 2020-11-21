@@ -17,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import pipelite.PipeliteTestConfiguration;
@@ -26,14 +27,14 @@ import pipelite.UniqueStringGenerator;
     classes = PipeliteTestConfiguration.class,
     properties = {
       "pipelite.launcher.processLaunchFrequency=250ms",
-      "pipelite.launcher.stageLaunchFrequency=250ms",
-      "pipelite.stage.maximumRetries=1"
+      "pipelite.launcher.stageLaunchFrequency=250ms"
     })
 @ContextConfiguration(initializers = PipeliteSchedulerHSqlTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"hsql-test"})
+@DirtiesContext
 public class PipeliteSchedulerHSqlTest {
 
-  @Autowired private ObjectProvider<PipeliteSchedulerTester> tester;
+  @Autowired PipeliteSchedulerTester tester;
 
   public static class TestContextInitializer
       implements ApplicationContextInitializer<ConfigurableApplicationContext> {
@@ -47,27 +48,27 @@ public class PipeliteSchedulerHSqlTest {
   }
 
   @Test
-  public void testOneProcess() {
-    tester.getObject().testOneProcess();
+  public void testOneSuccessSchedule() {
+    tester.testOneSuccessSchedule();
   }
 
   @Test
-  public void testThreeProcesses() {
-    tester.getObject().testThreeProcesses();
+  public void testThreeSuccessSchedules() {
+    tester.testThreeSuccessSchedules();
   }
 
   @Test
-  public void testOneProcessOneFailure() {
-    tester.getObject().testOneProcessesOneFailure();
+  public void testOneSuccessOneFailureSchedule() {
+    tester.testOneSuccessOneFailureSchedule();
   }
 
   @Test
-  public void testThreeProcessesOneFailure() {
-    tester.getObject().testThreeProcessesOneFailure();
+  public void testOneFailureSchedule() {
+    tester.testOneFailureSchedule();
   }
 
   @Test
-  public void testThreeProcessesAllFailure() {
-    tester.getObject().testThreeProcessesAllFailure();
+  public void testThreeFailureSchedules() {
+    tester.testThreeFailureSchedules();
   }
 }

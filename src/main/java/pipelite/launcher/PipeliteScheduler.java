@@ -16,6 +16,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 import lombok.Data;
 import lombok.extern.flogger.Flogger;
@@ -55,10 +56,10 @@ public class PipeliteScheduler extends AbstractScheduledService {
   private final Map<String, ProcessFactory> processFactoryCache = new ConcurrentHashMap<>();
   private final Map<String, Schedule> activeProcesses = new ConcurrentHashMap<>();
   private final Map<String, PipeliteSchedulerStats> stats = new ConcurrentHashMap<>();
+  private final Map<String, AtomicLong> maximumExecutions = new ConcurrentHashMap<>();
 
   private final LocalDateTime startTime;
 
-  private Duration shutdownAfter;
   private boolean shutdownAfterTriggered = false;
 
   @Data
@@ -159,16 +160,22 @@ public class PipeliteScheduler extends AbstractScheduledService {
       }
     }
 
-    shutdownIfAfter();
+    shutdownIfMaximumExecutions();
   }
 
-  private void shutdownIfAfter() {
-    if (startTime.plus(shutdownAfter).isBefore(LocalDateTime.now())) {
-      logContext(log.atInfo())
-          .log("Stopping pipelite scheduler after: " + shutdownAfter.toString());
-      shutdownAfterTriggered = true;
-      stopAsync();
+  private void shutdownIfMaximumExecutions() {
+    if (maximumExecutions.isEmpty()) {
+      return;
     }
+    for (AtomicLong remainingExecutions : maximumExecutions.values()) {
+      if (remainingExecutions.get() > 0) {
+        return;
+      }
+    }
+
+    logContext(log.atInfo()).log("Stopping pipelite scheduler after maximum executions");
+    shutdownAfterTriggered = true;
+    stopAsync();
   }
 
   private void scheduleProcesses() {
@@ -235,13 +242,17 @@ public class PipeliteScheduler extends AbstractScheduledService {
     String pipelineName = schedule.getScheduleEntity().getPipelineName();
     String processId = getNextProcessId(schedule.getScheduleEntity().getProcessId());
 
+    int remainingProcessIdRetries = 100;
     while (true) {
       Optional<ProcessEntity> savedProcessEntity =
           processService.getSavedProcess(pipelineName, processId);
       if (savedProcessEntity.isPresent()) {
-        processId = getNextProcessId(schedule.getScheduleEntity().getProcessId());
+        processId = getNextProcessId(savedProcessEntity.get().getProcessId());
       } else {
         break;
+      }
+      if (--remainingProcessIdRetries <= 0) {
+        throw new RuntimeException("Could not assign new process id");
       }
     }
 
@@ -274,6 +285,11 @@ public class PipeliteScheduler extends AbstractScheduledService {
     ProcessEntity processEntity = schedule.getProcessEntity();
     String pipelineName = processEntity.getPipelineName();
     String processId = processEntity.getProcessId();
+
+    if (maximumExecutions.get(pipelineName) != null
+        && maximumExecutions.get(pipelineName).decrementAndGet() < 0) {
+      return;
+    }
 
     logContext(log.atInfo(), pipelineName, processId).log("Launching process");
 
@@ -350,8 +366,9 @@ public class PipeliteScheduler extends AbstractScheduledService {
     return activeProcesses.size();
   }
 
-  public void setShutdownAfter(Duration shutdownAfter) {
-    this.shutdownAfter = shutdownAfter;
+  public void setMaximumExecutions(String pipelineName, long maximumExecutions) {
+    this.maximumExecutions.putIfAbsent(pipelineName, new AtomicLong());
+    this.maximumExecutions.get(pipelineName).set(maximumExecutions);
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {
