@@ -27,6 +27,7 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
+import pipelite.entity.StageEntity;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessState;
@@ -35,6 +36,7 @@ import pipelite.service.ProcessService;
 import pipelite.service.ScheduleService;
 import pipelite.service.StageService;
 import pipelite.stage.StageExecutionResult;
+import pipelite.stage.StageExecutionResultType;
 import pipelite.stage.StageParameters;
 
 @Component
@@ -216,11 +218,12 @@ public class PipeliteSchedulerTester {
     for (TestProcessFactory f : testProcessFactories) {
       String pipelineName = f.getPipelineName();
 
-      // Assert ProcessEntities
-
       assertThat(f.processIds.size()).isEqualTo(f.schedulerMaxExecutions);
 
       for (String processId : f.processIds) {
+
+        // Assert ProcessEntity
+
         ProcessEntity processEntity =
             processService.getSavedProcess(f.getPipelineName(), processId).get();
         assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
@@ -231,6 +234,37 @@ public class PipeliteSchedulerTester {
               .isEqualTo(ProcessState.FAILED); // no re-executions allowed
         } else {
           assertThat(processEntity.getState()).isEqualTo(ProcessState.COMPLETED);
+        }
+
+        for (int i = 0; i < f.stageCnt; ++i) {
+
+          // Assert StageEntity
+
+          StageEntity stageEntity =
+              stageService.getSavedStage(f.getPipelineName(), processId, "STAGE" + i).get();
+          assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
+          assertThat(stageEntity.getProcessId()).isEqualTo(processId);
+          assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
+          assertThat(stageEntity.getStartTime()).isNotNull();
+          assertThat(stageEntity.getEndTime()).isNotNull();
+          assertThat(stageEntity.getStartTime()).isBeforeOrEqualTo(stageEntity.getEndTime());
+          assertThat(stageEntity.getExecutorName())
+              .startsWith(PipeliteSchedulerTester.class.getName());
+          assertThat(stageEntity.getExecutorData()).isEqualTo("{ }");
+          assertThat(stageEntity.getExecutorParams())
+              .isEqualTo("{\n  \"maximumRetries\" : 0,\n  \"immediateRetries\" : 0\n}");
+
+          if (f.stageTestResult == StageTestResult.ERROR) {
+            assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.ERROR);
+            assertThat(stageEntity.getResultParams()).isNull();
+          } else if (f.stageTestResult == StageTestResult.EXCEPTION) {
+            assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.ERROR);
+            assertThat(stageEntity.getResultParams())
+                .contains("exception\" : \"java.lang.RuntimeException: Expected exception");
+          } else {
+            assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.SUCCESS);
+            assertThat(stageEntity.getResultParams()).isNull();
+          }
         }
       }
 

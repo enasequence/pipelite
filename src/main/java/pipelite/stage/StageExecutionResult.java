@@ -81,9 +81,10 @@ public class StageExecutionResult {
     if (value == null) {
       return;
     }
-    PrintWriter pw = new PrintWriter(new StringWriter());
+    StringWriter stackTrace = new StringWriter();
+    PrintWriter pw = new PrintWriter(stackTrace);
     value.printStackTrace(pw);
-    addAttribute(StageExecutionResult.EXCEPTION, pw.toString());
+    addAttribute(StageExecutionResult.EXCEPTION, stackTrace.toString());
   }
 
   public String attributesJson() {
