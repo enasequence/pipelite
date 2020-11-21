@@ -133,6 +133,7 @@ public class PipeliteSchedulerTester {
     public final int schedulerSeconds; // 60 must be divisible by schedulerSeconds.
     public final int schedulerMaxExecutions;
     public final StageTestResult stageTestResult;
+    public final String cronExpression;
     public final List<String> processIds = new ArrayList<>();
     public final AtomicLong stageExecCnt = new AtomicLong();
 
@@ -147,6 +148,7 @@ public class PipeliteSchedulerTester {
       this.schedulerSeconds = schedulerSeconds;
       this.schedulerMaxExecutions = scheduleMaxExecutions;
       this.stageTestResult = stageTestResult;
+      this.cronExpression = "0/" + schedulerSeconds + " * * * * ?";
     }
 
     public void reset() {
@@ -190,7 +192,7 @@ public class PipeliteSchedulerTester {
 
   private void saveSchedule(TestProcessFactory testProcessFactory) {
     ScheduleEntity schedule = new ScheduleEntity();
-    schedule.setSchedule("0/" + testProcessFactory.schedulerSeconds + " * * * * ?");
+    schedule.setSchedule(testProcessFactory.cronExpression);
     schedule.setLauncherName(launcherConfiguration.getLauncherName());
     schedule.setPipelineName(testProcessFactory.pipelineName);
     scheduleService.saveProcessSchedule(schedule);
@@ -212,88 +214,102 @@ public class PipeliteSchedulerTester {
             + launcherConfiguration.getLauncherName());
   }
 
-  public void assertResult(
-      PipeliteScheduler pipeliteScheduler, List<TestProcessFactory> testProcessFactories) {
+  private void assertSchedulerStats(PipeliteScheduler pipeliteScheduler, TestProcessFactory f) {
+    String pipelineName = f.getPipelineName();
 
-    for (TestProcessFactory f : testProcessFactories) {
-      String pipelineName = f.getPipelineName();
+    PipeliteSchedulerStats stats = pipeliteScheduler.getStats(pipelineName);
 
-      assertThat(f.processIds.size()).isEqualTo(f.schedulerMaxExecutions);
+    assertThat(stats.getProcessCreationFailedCount()).isEqualTo(0);
+    assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
 
-      for (String processId : f.processIds) {
+    if (f.stageTestResult != StageTestResult.SUCCESS) {
+      assertThat(stats.getProcessExecutionCount(ProcessState.FAILED))
+          .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
+      assertThat(stats.getStageFailedCount()).isEqualTo(f.stageExecCnt.get());
+      assertThat(stats.getStageSuccessCount()).isEqualTo(0L);
+      assertThat(stats.getStageSuccessCount()).isEqualTo(0L);
 
-        // Assert ProcessEntity
+    } else {
+      assertThat(stats.getProcessExecutionCount(ProcessState.COMPLETED))
+          .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
+      assertThat(stats.getStageFailedCount()).isEqualTo(0L);
+      assertThat(stats.getStageFailedCount()).isEqualTo(0L);
+      assertThat(stats.getStageSuccessCount()).isEqualTo(f.stageExecCnt.get());
+    }
+  }
 
-        ProcessEntity processEntity =
-            processService.getSavedProcess(f.getPipelineName(), processId).get();
-        assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
-        assertThat(processEntity.getProcessId()).isEqualTo(processId);
-        assertThat(processEntity.getExecutionCount()).isEqualTo(1);
-        if (f.stageTestResult != StageTestResult.SUCCESS) {
-          assertThat(processEntity.getState())
-              .isEqualTo(ProcessState.FAILED); // no re-executions allowed
-        } else {
-          assertThat(processEntity.getState()).isEqualTo(ProcessState.COMPLETED);
-        }
+  private void assertScheduleEntity(List<ScheduleEntity> scheduleEntities, TestProcessFactory f) {
+    String pipelineName = f.getPipelineName();
 
-        for (int i = 0; i < f.stageCnt; ++i) {
+    assertThat(
+            scheduleEntities.stream()
+                .filter(e -> e.getPipelineName().equals(f.getPipelineName()))
+                .count())
+        .isEqualTo(1);
+    ScheduleEntity scheduleEntity =
+        scheduleEntities.stream()
+            .filter(e -> e.getPipelineName().equals(f.getPipelineName()))
+            .findFirst()
+            .get();
+    assertThat(scheduleEntity.getLauncherName()).isEqualTo(launcherConfiguration.getLauncherName());
+    assertThat(scheduleEntity.getPipelineName()).isEqualTo(pipelineName);
+    assertThat(scheduleEntity.getProcessId())
+        .isEqualTo(f.getProcessIds().get(f.getProcessIds().size() - 1));
+    assertThat(scheduleEntity.getExecutionCount()).isEqualTo(f.schedulerMaxExecutions);
+    assertThat(scheduleEntity.getSchedule()).isEqualTo(f.cronExpression);
+    assertThat(scheduleEntity.getStartTime()).isNotNull();
+    assertThat(scheduleEntity.getEndTime()).isNotNull();
+    assertThat(scheduleEntity.getStartTime()).isBeforeOrEqualTo(scheduleEntity.getEndTime());
+    assertThat(scheduleEntity.getDescription())
+        .isEqualTo("every " + f.schedulerSeconds + " seconds");
+  }
 
-          // Assert StageEntity
+  private void assertProcessEntity(TestProcessFactory f, String processId) {
+    String pipelineName = f.getPipelineName();
 
-          StageEntity stageEntity =
-              stageService.getSavedStage(f.getPipelineName(), processId, "STAGE" + i).get();
-          assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
-          assertThat(stageEntity.getProcessId()).isEqualTo(processId);
-          assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
-          assertThat(stageEntity.getStartTime()).isNotNull();
-          assertThat(stageEntity.getEndTime()).isNotNull();
-          assertThat(stageEntity.getStartTime()).isBeforeOrEqualTo(stageEntity.getEndTime());
-          assertThat(stageEntity.getExecutorName())
-              .startsWith(PipeliteSchedulerTester.class.getName());
-          assertThat(stageEntity.getExecutorData()).isEqualTo("{ }");
-          assertThat(stageEntity.getExecutorParams())
-              .isEqualTo("{\n  \"maximumRetries\" : 0,\n  \"immediateRetries\" : 0\n}");
+    ProcessEntity processEntity =
+        processService.getSavedProcess(f.getPipelineName(), processId).get();
+    assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
+    assertThat(processEntity.getProcessId()).isEqualTo(processId);
+    assertThat(processEntity.getExecutionCount()).isEqualTo(1);
+    if (f.stageTestResult != StageTestResult.SUCCESS) {
+      assertThat(processEntity.getState())
+          .isEqualTo(ProcessState.FAILED); // no re-executions allowed
+    } else {
+      assertThat(processEntity.getState()).isEqualTo(ProcessState.COMPLETED);
+    }
+  }
 
-          if (f.stageTestResult == StageTestResult.ERROR) {
-            assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.ERROR);
-            assertThat(stageEntity.getResultParams()).isNull();
-          } else if (f.stageTestResult == StageTestResult.EXCEPTION) {
-            assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.ERROR);
-            assertThat(stageEntity.getResultParams())
-                .contains("exception\" : \"java.lang.RuntimeException: Expected exception");
-          } else {
-            assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.SUCCESS);
-            assertThat(stageEntity.getResultParams()).isNull();
-          }
-        }
-      }
+  private void assertStageEntities(TestProcessFactory f, String processId) {
+    String pipelineName = f.getPipelineName();
 
-      // Assert PipeliteSchedulerStats
+    for (int i = 0; i < f.stageCnt; ++i) {
 
-      assertThat(f.stageExecCnt.get() / f.stageCnt).isEqualTo(f.schedulerMaxExecutions);
+      StageEntity stageEntity =
+          stageService.getSavedStage(f.getPipelineName(), processId, "STAGE" + i).get();
+      assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
+      assertThat(stageEntity.getProcessId()).isEqualTo(processId);
+      assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
+      assertThat(stageEntity.getStartTime()).isNotNull();
+      assertThat(stageEntity.getEndTime()).isNotNull();
+      assertThat(stageEntity.getStartTime()).isBeforeOrEqualTo(stageEntity.getEndTime());
+      assertThat(stageEntity.getExecutorName()).startsWith(PipeliteSchedulerTester.class.getName());
+      assertThat(stageEntity.getExecutorData()).isEqualTo("{ }");
+      assertThat(stageEntity.getExecutorParams())
+          .isEqualTo("{\n  \"maximumRetries\" : 0,\n  \"immediateRetries\" : 0\n}");
 
-      PipeliteSchedulerStats stats = pipeliteScheduler.getStats(pipelineName);
-
-      assertThat(stats.getProcessCreationFailedCount()).isEqualTo(0);
-      assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
-
-      if (f.stageTestResult != StageTestResult.SUCCESS) {
-        assertThat(stats.getProcessExecutionCount(ProcessState.FAILED))
-            .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
-        assertThat(stats.getStageFailedCount()).isEqualTo(f.stageExecCnt.get());
-        assertThat(stats.getStageSuccessCount()).isEqualTo(0L);
-        assertThat(stats.getStageSuccessCount()).isEqualTo(0L);
-
+      if (f.stageTestResult == StageTestResult.ERROR) {
+        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.ERROR);
+        assertThat(stageEntity.getResultParams()).isNull();
+      } else if (f.stageTestResult == StageTestResult.EXCEPTION) {
+        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.ERROR);
+        assertThat(stageEntity.getResultParams())
+            .contains("exception\" : \"java.lang.RuntimeException: Expected exception");
       } else {
-        assertThat(stats.getProcessExecutionCount(ProcessState.COMPLETED))
-            .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
-        assertThat(stats.getStageFailedCount()).isEqualTo(0L);
-        assertThat(stats.getStageFailedCount()).isEqualTo(0L);
-        assertThat(stats.getStageSuccessCount()).isEqualTo(f.stageExecCnt.get());
+        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.SUCCESS);
+        assertThat(stageEntity.getResultParams()).isNull();
       }
     }
-
-    assertThat(pipeliteScheduler.getActivePipelinesCount()).isEqualTo(0);
   }
 
   private void test(List<TestProcessFactory> testProcessFactories) {
@@ -304,7 +320,21 @@ public class PipeliteSchedulerTester {
         pipeliteScheduler.setMaximumExecutions(f.getPipelineName(), f.schedulerMaxExecutions);
       }
       ServerManager.run(pipeliteScheduler, pipeliteScheduler.serviceName());
-      assertResult(pipeliteScheduler, testProcessFactories);
+
+      assertThat(pipeliteScheduler.getActivePipelinesCount()).isEqualTo(0);
+      List<ScheduleEntity> scheduleEntities =
+          scheduleService.getAllProcessSchedules(launcherConfiguration.getLauncherName());
+      for (TestProcessFactory f : testProcessFactories) {
+        assertThat(f.stageExecCnt.get() / f.stageCnt).isEqualTo(f.schedulerMaxExecutions);
+        assertThat(f.processIds.size()).isEqualTo(f.schedulerMaxExecutions);
+        assertSchedulerStats(pipeliteScheduler, f);
+        assertScheduleEntity(scheduleEntities, f);
+        for (String processId : f.processIds) {
+          assertProcessEntity(f, processId);
+          assertStageEntities(f, processId);
+        }
+      }
+
     } finally {
       for (TestProcessFactory f : testProcessFactories) {
         deleteSchedule(f);
