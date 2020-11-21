@@ -32,27 +32,27 @@ public class StageBuilder {
     this.stageParameters = stageParameters;
   }
 
-  public ProcessBuilderWithDependsOn with(StageExecutor executor) {
+  public ProcessBuilder with(StageExecutor executor) {
     return addStage(executor);
   }
 
-  public ProcessBuilderWithDependsOn withLocalCmdExecutor(String cmd) {
+  public ProcessBuilder withLocalCmdExecutor(String cmd) {
     return addStage(StageExecutor.createLocalCmdExecutor(cmd));
   }
 
-  public ProcessBuilderWithDependsOn withSshCmdExecutor(String cmd) {
+  public ProcessBuilder withSshCmdExecutor(String cmd) {
     return addStage(StageExecutor.createSshCmdExecutor(cmd));
   }
 
-  public ProcessBuilderWithDependsOn withLsfLocalCmdExecutor(String cmd) {
+  public ProcessBuilder withLsfLocalCmdExecutor(String cmd) {
     return addStage(StageExecutor.createLsfLocalCmdExecutor(cmd));
   }
 
-  public ProcessBuilderWithDependsOn withLsfSshCmdExecutor(String cmd) {
+  public ProcessBuilder withLsfSshCmdExecutor(String cmd) {
     return addStage(StageExecutor.createLsfSshCmdExecutor(cmd));
   }
 
-  private ProcessBuilderWithDependsOn addStage(StageExecutor executor) {
+  private ProcessBuilder addStage(StageExecutor executor) {
     Stage dependsOn = null;
     if (dependsOnStageName != null) {
       Optional<Stage> dependsOnOptional =
@@ -73,6 +73,6 @@ public class StageBuilder {
             .dependsOn(dependsOn)
             .stageParameters(stageParameters)
             .build());
-    return new ProcessBuilderWithDependsOn(processBuilder);
+    return processBuilder;
   }
 }
