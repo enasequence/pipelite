@@ -34,7 +34,7 @@ import pipelite.UniqueStringGenerator;
 @DirtiesContext
 public class PipeliteSchedulerOracleTest {
 
-  @Autowired private ObjectProvider<PipeliteSchedulerTester> tester;
+  @Autowired PipeliteSchedulerTester tester;
 
   public static class TestContextInitializer
       implements ApplicationContextInitializer<ConfigurableApplicationContext> {
@@ -49,26 +49,41 @@ public class PipeliteSchedulerOracleTest {
 
   @Test
   public void testOneSuccessSchedule() {
-    tester.getObject().testOneSuccessSchedule();
+    tester.testOneSuccessSchedule();
   }
 
   @Test
   public void testThreeSuccessSchedules() {
-    tester.getObject().testThreeSuccessSchedules();
-  }
-
-  @Test
-  public void testOneSuccessOneFailureSchedule() {
-    tester.getObject().testOneSuccessOneFailureSchedule();
+    tester.testThreeSuccessSchedules();
   }
 
   @Test
   public void testOneFailureSchedule() {
-    tester.getObject().testOneFailureSchedule();
+    tester.testOneFailureSchedule();
   }
 
   @Test
   public void testThreeFailureSchedules() {
-    tester.getObject().testThreeFailureSchedules();
+    tester.testThreeFailureSchedules();
+  }
+
+  @Test
+  public void testOneExceptionSchedule() {
+    tester.testOneExceptionSchedule();
+  }
+
+  @Test
+  public void testThreeExceptionSchedules() {
+    tester.testThreeExceptionSchedules();
+  }
+
+  @Test
+  public void testOneSuccessOneFailureOneExceptionSchedule() {
+    tester.testOneSuccessOneFailureOneExceptionSchedule();
+  }
+
+  @Test
+  public void testTwoSuccessTwoFailureTwoExceptionSchedule() {
+    tester.testTwoSuccessTwoFailureTwoExceptionSchedule();
   }
 }

@@ -47,6 +47,9 @@ public class PipeliteSchedulerTester {
   @Autowired private TestProcessFactory firstProcessFailure;
   @Autowired private TestProcessFactory secondProcessFailure;
   @Autowired private TestProcessFactory thirdProcessFailure;
+  @Autowired private TestProcessFactory firstProcessException;
+  @Autowired private TestProcessFactory secondProcessException;
+  @Autowired private TestProcessFactory thirdProcessException;
 
   public PipeliteSchedulerTester(
       @Autowired PipeliteScheduler pipeliteScheduler,
@@ -87,6 +90,21 @@ public class PipeliteSchedulerTester {
     @Bean
     public ProcessFactory thirdProcessFailure() {
       return new TestProcessFactory("thirdProcessFailure", 10, 6, 2, StageTestResult.ERROR);
+    }
+
+    @Bean
+    public ProcessFactory firstProcessException() {
+      return new TestProcessFactory("firstProcessException", 2, 2, 4, StageTestResult.EXCEPTION);
+    }
+
+    @Bean
+    public ProcessFactory secondProcessException() {
+      return new TestProcessFactory("secondProcessException", 5, 4, 3, StageTestResult.EXCEPTION);
+    }
+
+    @Bean
+    public ProcessFactory thirdProcessException() {
+      return new TestProcessFactory("thirdProcessException", 10, 6, 2, StageTestResult.EXCEPTION);
     }
   }
 
@@ -235,15 +253,34 @@ public class PipeliteSchedulerTester {
     test(Arrays.asList(firstProcessSuccess, secondProcessSuccess, thirdProcessSuccess));
   }
 
-  public void testOneSuccessOneFailureSchedule() {
-    test(Arrays.asList(firstProcessSuccess, firstProcessFailure));
-  }
-
   public void testOneFailureSchedule() {
     test(Arrays.asList(firstProcessFailure));
   }
 
   public void testThreeFailureSchedules() {
     test(Arrays.asList(firstProcessFailure, secondProcessFailure, thirdProcessFailure));
+  }
+
+  public void testOneExceptionSchedule() {
+    test(Arrays.asList(firstProcessException));
+  }
+
+  public void testThreeExceptionSchedules() {
+    test(Arrays.asList(firstProcessException, secondProcessException, thirdProcessException));
+  }
+
+  public void testOneSuccessOneFailureOneExceptionSchedule() {
+    test(Arrays.asList(firstProcessSuccess, firstProcessFailure));
+  }
+
+  public void testTwoSuccessTwoFailureTwoExceptionSchedule() {
+    test(
+        Arrays.asList(
+            firstProcessSuccess,
+            secondProcessSuccess,
+            firstProcessFailure,
+            secondProcessFailure,
+            firstProcessException,
+            secondProcessException));
   }
 }

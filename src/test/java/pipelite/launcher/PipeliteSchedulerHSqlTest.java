@@ -58,11 +58,6 @@ public class PipeliteSchedulerHSqlTest {
   }
 
   @Test
-  public void testOneSuccessOneFailureSchedule() {
-    tester.testOneSuccessOneFailureSchedule();
-  }
-
-  @Test
   public void testOneFailureSchedule() {
     tester.testOneFailureSchedule();
   }
@@ -70,5 +65,25 @@ public class PipeliteSchedulerHSqlTest {
   @Test
   public void testThreeFailureSchedules() {
     tester.testThreeFailureSchedules();
+  }
+
+  @Test
+  public void testOneExceptionSchedule() {
+    tester.testOneExceptionSchedule();
+  }
+
+  @Test
+  public void testThreeExceptionSchedules() {
+    tester.testThreeExceptionSchedules();
+  }
+
+  @Test
+  public void testOneSuccessOneFailureOneExceptionSchedule() {
+    tester.testOneSuccessOneFailureOneExceptionSchedule();
+  }
+
+  @Test
+  public void testTwoSuccessTwoFailureTwoExceptionSchedule() {
+    tester.testTwoSuccessTwoFailureTwoExceptionSchedule();
   }
 }
