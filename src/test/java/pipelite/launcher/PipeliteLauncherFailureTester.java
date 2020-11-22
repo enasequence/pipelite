@@ -30,12 +30,17 @@ import org.springframework.stereotype.Component;
 import pipelite.TestProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
+import pipelite.entity.ProcessEntity;
+import pipelite.entity.StageEntity;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.service.ProcessService;
+import pipelite.service.StageService;
 import pipelite.stage.StageExecutionResult;
+import pipelite.stage.StageExecutionResultType;
 import pipelite.stage.StageParameters;
 
 @Component
@@ -46,7 +51,8 @@ public class PipeliteLauncherFailureTester {
 
   @Autowired private LauncherConfiguration launcherConfiguration;
   @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
-  @Autowired private ApplicationContext context;
+  @Autowired private ProcessService processService;
+  @Autowired private StageService stageService;
 
   @Autowired
   @Qualifier("firstStageFails")
@@ -211,25 +217,25 @@ public class PipeliteLauncherFailureTester {
           StageParameters.builder().immediateRetries(0).maximumRetries(0).build();
 
       return new ProcessBuilder(processId)
-          .execute("STAGE1", stageParams)
+          .execute("STAGE0", stageParams)
           .with(
               (pipelineName1, processId1, stage1) -> {
                 firstStageExecCnt.incrementAndGet();
                 return firstStageExecResult;
               })
-          .executeAfterPrevious("STAGE2", stageParams)
+          .executeAfterPrevious("STAGE1", stageParams)
           .with(
               (pipelineName1, processId1, stage1) -> {
                 secondStageExecCnt.incrementAndGet();
                 return secondStageExecResult;
               })
-          .executeAfterPrevious("STAGE3", stageParams)
+          .executeAfterPrevious("STAGE2", stageParams)
           .with(
               (pipelineName1, processId1, stage1) -> {
                 thirdStageExecCnt.incrementAndGet();
                 return thirdStageExecResult;
               })
-          .executeAfterPrevious("STAGE4", stageParams)
+          .executeAfterPrevious("STAGE3", stageParams)
           .with(
               (pipelineName1, processId1, stage1) -> {
                 fourthStageExecCnt.incrementAndGet();
@@ -256,10 +262,64 @@ public class PipeliteLauncherFailureTester {
     assertThat(s.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
     assertThat(s.getRejectedProcesses()).isEqualTo(0);
 
-    assertStats(pipeliteLauncher, f);
+    assertLauncherStats(pipeliteLauncher, f);
+    for (String processId : f.processIds) {
+      assertProcessEntity(f, processId);
+      assertStageEntities(f, processId);
+    }
   }
 
-  private void assertStats(PipeliteLauncher pipeliteLauncher, TestProcessFactory f) {
+  private void assertProcessEntity(TestProcessFactory f, String processId) {
+    String pipelineName = f.getPipelineName();
+
+    ProcessEntity processEntity =
+        processService.getSavedProcess(f.getPipelineName(), processId).get();
+    assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
+    assertThat(processEntity.getProcessId()).isEqualTo(processId);
+    assertThat(processEntity.getExecutionCount()).isEqualTo(1);
+    if (f.getFirstStageExecResult().isSuccess()
+        && f.getSecondStageExecResult().isSuccess()
+        && f.getThirdStageExecResult().isSuccess()
+        && f.getFourthStageExecResult().isSuccess()) {
+      assertThat(processEntity.getState()).isEqualTo(ProcessState.COMPLETED);
+    } else {
+      assertThat(processEntity.getState())
+          .isEqualTo(ProcessState.FAILED); // no re-executions allowed
+    }
+  }
+
+  private void assertStageEntities(TestProcessFactory f, String processId) {
+    String pipelineName = f.getPipelineName();
+
+    int stageCnt = 4;
+    for (int i = 0; i < stageCnt; ++i) {
+      StageEntity stageEntity =
+          stageService.getSavedStage(f.getPipelineName(), processId, "STAGE" + i).get();
+      assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
+      assertThat(stageEntity.getProcessId()).isEqualTo(processId);
+      assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
+      assertThat(stageEntity.getStartTime()).isNotNull();
+      assertThat(stageEntity.getEndTime()).isNotNull();
+      assertThat(stageEntity.getStartTime()).isBeforeOrEqualTo(stageEntity.getEndTime());
+      assertThat(stageEntity.getExecutorName()).startsWith(PipeliteLauncherTester.class.getName());
+      assertThat(stageEntity.getExecutorData()).isEqualTo("{ }");
+      assertThat(stageEntity.getExecutorParams())
+          .isEqualTo("{\n  \"maximumRetries\" : 0,\n  \"immediateRetries\" : 0\n}");
+
+      if ((i == 0 && f.getFirstStageExecResult().isError())
+          || (i == 1 && f.getSecondStageExecResult().isError())
+          || (i == 2 && f.getThirdStageExecResult().isError())
+          || (i == 3 && f.getFourthStageExecResult().isError())) {
+        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.ERROR);
+        assertThat(stageEntity.getResultParams()).isNull();
+      } else {
+        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.SUCCESS);
+        assertThat(stageEntity.getResultParams()).isNull();
+      }
+    }
+  }
+
+  private void assertLauncherStats(PipeliteLauncher pipeliteLauncher, TestProcessFactory f) {
     if (f.getFirstStageExecResult().isSuccess()
         && f.getSecondStageExecResult().isSuccess()
         && f.getThirdStageExecResult().isSuccess()
