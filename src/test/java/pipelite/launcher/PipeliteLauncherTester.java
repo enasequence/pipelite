@@ -162,24 +162,22 @@ public class PipeliteLauncherTester {
   }
 
   private void assertLauncherStats(PipeliteLauncher pipeliteLauncher, TestProcessFactory f) {
-    String pipelineName = f.getPipelineName();
-
     PipeliteLauncherStats stats = pipeliteLauncher.getStats();
 
+    assertThat(stats.getProcessIdMissingCount()).isZero();
+    assertThat(stats.getProcessIdNotUniqueCount()).isZero();
     assertThat(stats.getProcessCreationFailedCount()).isEqualTo(0);
     assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
 
     if (f.stageTestResult != StageTestResult.SUCCESS) {
       assertThat(stats.getProcessExecutionCount(ProcessState.FAILED))
-          .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
+              .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
       assertThat(stats.getStageFailedCount()).isEqualTo(f.stageExecCnt.get());
-      assertThat(stats.getStageSuccessCount()).isEqualTo(0L);
       assertThat(stats.getStageSuccessCount()).isEqualTo(0L);
 
     } else {
       assertThat(stats.getProcessExecutionCount(ProcessState.COMPLETED))
-          .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
-      assertThat(stats.getStageFailedCount()).isEqualTo(0L);
+              .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
       assertThat(stats.getStageFailedCount()).isEqualTo(0L);
       assertThat(stats.getStageSuccessCount()).isEqualTo(f.stageExecCnt.get());
     }

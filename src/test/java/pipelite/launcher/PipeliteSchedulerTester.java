@@ -69,12 +69,12 @@ public class PipeliteSchedulerTester {
 
     @Bean
     public ProcessFactory secondProcessSuccess() {
-      return new TestProcessFactory("secondProcessSuccess", 3, 5, 4, StageTestResult.SUCCESS);
+      return new TestProcessFactory("secondProcessSuccess", 3, 3, 4, StageTestResult.SUCCESS);
     }
 
     @Bean
     public ProcessFactory thirdProcessSuccess() {
-      return new TestProcessFactory("thirdProcessSuccess", 2, 10, 6, StageTestResult.SUCCESS);
+      return new TestProcessFactory("thirdProcessSuccess", 2, 4, 6, StageTestResult.SUCCESS);
     }
 
     @Bean
@@ -84,12 +84,12 @@ public class PipeliteSchedulerTester {
 
     @Bean
     public ProcessFactory secondProcessFailure() {
-      return new TestProcessFactory("secondProcessFailure", 3, 5, 4, StageTestResult.ERROR);
+      return new TestProcessFactory("secondProcessFailure", 3, 3, 4, StageTestResult.ERROR);
     }
 
     @Bean
     public ProcessFactory thirdProcessFailure() {
-      return new TestProcessFactory("thirdProcessFailure", 2, 10, 6, StageTestResult.ERROR);
+      return new TestProcessFactory("thirdProcessFailure", 2, 4, 6, StageTestResult.ERROR);
     }
 
     @Bean
@@ -99,12 +99,12 @@ public class PipeliteSchedulerTester {
 
     @Bean
     public ProcessFactory secondProcessException() {
-      return new TestProcessFactory("secondProcessException", 3, 5, 4, StageTestResult.EXCEPTION);
+      return new TestProcessFactory("secondProcessException", 3, 3, 4, StageTestResult.EXCEPTION);
     }
 
     @Bean
     public ProcessFactory thirdProcessException() {
-      return new TestProcessFactory("thirdProcessException", 2, 10, 6, StageTestResult.EXCEPTION);
+      return new TestProcessFactory("thirdProcessException", 2, 4, 6, StageTestResult.EXCEPTION);
     }
   }
 
@@ -215,12 +215,10 @@ public class PipeliteSchedulerTester {
           .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
       assertThat(stats.getStageFailedCount()).isEqualTo(f.stageExecCnt.get());
       assertThat(stats.getStageSuccessCount()).isEqualTo(0L);
-      assertThat(stats.getStageSuccessCount()).isEqualTo(0L);
 
     } else {
       assertThat(stats.getProcessExecutionCount(ProcessState.COMPLETED))
           .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
-      assertThat(stats.getStageFailedCount()).isEqualTo(0L);
       assertThat(stats.getStageFailedCount()).isEqualTo(0L);
       assertThat(stats.getStageSuccessCount()).isEqualTo(f.stageExecCnt.get());
     }
