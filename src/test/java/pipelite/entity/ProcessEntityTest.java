@@ -19,25 +19,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ProcessEntityTest {
 
   @Test
-  public void newExecution() {
+  public void lifecycle() {
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     String processId = UniqueStringGenerator.randomProcessId();
     int priority = 1;
-    ProcessEntity processEntity = ProcessEntity.newExecution(pipelineName, processId, priority);
+
+    ProcessEntity processEntity = ProcessEntity.createExecution(pipelineName, processId, priority);
+
     assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getPriority()).isEqualTo(priority);
-    assertThat(processEntity.getExecutionCount()).isEqualTo(0);
-    assertThat(processEntity.getState()).isEqualTo(ProcessState.NEW);
-  }
-
-  @Test
-  public void updateExecution() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
-    int priority = 1;
-
-    ProcessEntity processEntity = ProcessEntity.newExecution(pipelineName, processId, priority);
     assertThat(processEntity.getExecutionCount()).isEqualTo(0);
     assertThat(processEntity.getState()).isEqualTo(ProcessState.NEW);
 
@@ -51,7 +42,7 @@ class ProcessEntityTest {
   }
 
   @Test
-  public void getBoundedPriority() {
+  public void priority() {
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     String processId = UniqueStringGenerator.randomProcessId();
 
@@ -61,13 +52,13 @@ class ProcessEntityTest {
     assertThat(ProcessEntity.getBoundedPriority(ProcessEntity.MAX_PRIORITY + 1))
         .isEqualTo(ProcessEntity.MAX_PRIORITY);
 
-    ProcessEntity processEntity = ProcessEntity.newExecution(pipelineName, processId, null);
+    ProcessEntity processEntity = ProcessEntity.createExecution(pipelineName, processId, null);
     assertThat(processEntity.getPriority()).isEqualTo(ProcessEntity.DEFAULT_PRIORITY);
     processEntity =
-        ProcessEntity.newExecution(pipelineName, processId, ProcessEntity.MIN_PRIORITY - 1);
+        ProcessEntity.createExecution(pipelineName, processId, ProcessEntity.MIN_PRIORITY - 1);
     assertThat(processEntity.getPriority()).isEqualTo(ProcessEntity.MIN_PRIORITY);
     processEntity =
-        ProcessEntity.newExecution(pipelineName, processId, ProcessEntity.MAX_PRIORITY + 1);
+        ProcessEntity.createExecution(pipelineName, processId, ProcessEntity.MAX_PRIORITY + 1);
     assertThat(processEntity.getPriority()).isEqualTo(ProcessEntity.MAX_PRIORITY);
   }
 }

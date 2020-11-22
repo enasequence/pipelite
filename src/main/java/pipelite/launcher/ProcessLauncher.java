@@ -247,12 +247,17 @@ public class ProcessLauncher {
     StageEntity stageEntity = stageAndStageEntity.getStageEntity();
     String stageName = stage.getStageName();
 
-    logContext(log.atInfo(), stageName).log("Preparing to executing stage");
+    logContext(log.atInfo(), stageName).log("Preparing to execute stage");
+
+    // If the stage executor has been serialized we should use it to allow an active stage
+    // execution to continue. For example, an asynchronous executor may contain a job id that
+    // is associated with an external execution service.
 
     StageExecutor deserializedExecutor = deserializeActiveExecutor(stageAndStageEntity);
     boolean isDeserializedExecutor = deserializedExecutor != null;
 
     if (isDeserializedExecutor) {
+      // Use deserialized executor.
       stage.setExecutor(deserializedExecutor);
       logContext(log.atInfo(), stageName).log("Using deserialized executor");
     }
@@ -263,6 +268,7 @@ public class ProcessLauncher {
       logContext(log.atInfo(), stageName).log("Executing stage");
 
       if (!isDeserializedExecutor) {
+        // Start a new stage execution and serialize the executor.
         stageEntity.startExecution(stage);
         stageService.saveStage(stageEntity);
       }
@@ -270,7 +276,9 @@ public class ProcessLauncher {
       result = stage.getExecutor().execute(pipelineName, getProcessId(), stage);
 
       if (!isDeserializedExecutor && result.isActive()) {
-        stageEntity.asyncExecution(stage);
+        // Serialize an active executor. For example, an asynchronous executor may have
+        // assigned a job id that is associated with an external execution service.
+        stageEntity.serializeExecution(stage);
         stageService.saveStage(stageEntity);
       }
     } catch (Exception ex) {
@@ -279,12 +287,15 @@ public class ProcessLauncher {
     }
 
     if (result.isActive()) {
+      // If the execution state is active then we have an asynchronous executor.
       while (true) {
         try {
-          logContext(log.atInfo(), stageName).log("Polling async stage");
-
+          logContext(log.atInfo(), stageName)
+              .log("Waiting for asynchronous stage execution to complete");
+          // Execute the stage repeatedly until it is no longer active.
           result = stage.getExecutor().execute(pipelineName, getProcessId(), stage);
           if (!result.isActive()) {
+            // The asynchronous stage execution has completed.
             break;
           }
         } catch (Exception ex) {

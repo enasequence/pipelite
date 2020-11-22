@@ -15,7 +15,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import pipelite.PipeliteTestConfiguration;
@@ -27,6 +26,7 @@ import pipelite.stage.StageExecutionResult;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test"})
+@Transactional
 class StageServiceHsqlTest {
 
   @Autowired StageService service;
@@ -35,14 +35,9 @@ class StageServiceHsqlTest {
   private final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
 
   @Test
-  @Transactional
-  @Rollback
   public void testCrud() {
-
     String stageName = UniqueStringGenerator.randomStageName();
-
     Stage stage = Stage.builder().stageName(stageName).executor(new SuccessSyncExecutor()).build();
-
     StageEntity stageEntity = StageEntity.createExecution(PIPELINE_NAME, PROCESS_ID, stage);
 
     service.saveStage(stageEntity);

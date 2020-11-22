@@ -46,7 +46,7 @@ public class ProcessEntity {
   @Column(name = "PRIORITY", nullable = false)
   private Integer priority = DEFAULT_PRIORITY;
 
-  public static ProcessEntity newExecution(
+  public static ProcessEntity createExecution(
       String pipelineName, String processId, Integer priority) {
     ProcessEntity processEntity = new ProcessEntity();
     processEntity.setProcessId(processId);

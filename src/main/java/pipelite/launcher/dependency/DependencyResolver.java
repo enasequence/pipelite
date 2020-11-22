@@ -54,7 +54,7 @@ public class DependencyResolver {
   }
 
   public List<ProcessLauncher.StageAndStageEntity> getExecutableStages() {
-    List<ProcessLauncher.StageAndStageEntity> runnableStages = new ArrayList<>();
+    List<ProcessLauncher.StageAndStageEntity> executableStages = new ArrayList<>();
     for (ProcessLauncher.StageAndStageEntity stageAndStageEntity : stageAndStageEntities) {
       Stage stage = stageAndStageEntity.getStage();
       StageEntity stageEntity = stageAndStageEntity.getStageEntity();
@@ -63,7 +63,7 @@ public class DependencyResolver {
         switch (stageEntity.getResultType()) {
           case NEW:
           case ACTIVE:
-            runnableStages.add(stageAndStageEntity);
+            executableStages.add(stageAndStageEntity);
             break;
           case SUCCESS:
             break;
@@ -76,14 +76,14 @@ public class DependencyResolver {
               if (executionCount != null
                   && executionCount < maximumRetries
                   && stageAndStageEntity.immediateExecutionCount < immediateRetries) {
-                runnableStages.add(stageAndStageEntity);
+                executableStages.add(stageAndStageEntity);
               }
             }
         }
       }
     }
 
-    return runnableStages;
+    return executableStages;
   }
 
   private boolean isDependsOnStageCompleted(Stage stage) {

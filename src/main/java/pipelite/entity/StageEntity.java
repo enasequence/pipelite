@@ -107,7 +107,7 @@ public class StageEntity {
   }
 
   /** Asynchronous stage execution starts. Save information required to resume execution. */
-  public void asyncExecution(Stage stage) {
+  public void serializeExecution(Stage stage) {
     StageExecutor stageExecutor = stage.getExecutor();
     this.executorData = stageExecutor.serialize();
   }

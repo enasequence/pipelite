@@ -277,7 +277,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
       return false;
     }
 
-    ProcessEntity newProcessEntity = ProcessEntity.newExecution(pipelineName, processId, 9);
+    ProcessEntity newProcessEntity = ProcessEntity.createExecution(pipelineName, processId, 9);
     processService.saveProcess(newProcessEntity);
 
     schedule.setProcess(process);

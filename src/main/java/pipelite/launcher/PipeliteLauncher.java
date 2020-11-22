@@ -194,7 +194,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
       }
 
       ProcessEntity newProcessEntity =
-          ProcessEntity.newExecution(
+          ProcessEntity.createExecution(
               pipelineName, newProcess.getProcessId().trim(), newProcess.getPriority());
 
       processService.saveProcess(newProcessEntity);
