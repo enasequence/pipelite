@@ -46,10 +46,6 @@ public class ProcessEntity {
   @Column(name = "PRIORITY", nullable = false)
   private Integer priority = DEFAULT_PRIORITY;
 
-  public void incrementExecutionCount() {
-    ++executionCount;
-  }
-
   public static ProcessEntity newExecution(
       String pipelineName, String processId, Integer priority) {
     ProcessEntity processEntity = new ProcessEntity();
@@ -59,6 +55,11 @@ public class ProcessEntity {
     processEntity.setExecutionCount(0);
     processEntity.setState(ProcessState.NEW);
     return processEntity;
+  }
+
+  public void updateExecution(ProcessState state) {
+    this.state = state;
+    ++executionCount;
   }
 
   public static int getBoundedPriority(Integer priority) {

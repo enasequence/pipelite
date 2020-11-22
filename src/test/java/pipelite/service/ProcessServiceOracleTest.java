@@ -16,7 +16,6 @@ import java.util.Comparator;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import pipelite.PipeliteTestConfiguration;
@@ -26,55 +25,45 @@ import pipelite.process.ProcessState;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"oracle-test"})
+@Transactional
 class ProcessServiceOracleTest {
 
   @Autowired ProcessService service;
 
   @Test
-  @Transactional
-  @Rollback
   public void testCrud() {
-
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     String processId = UniqueStringGenerator.randomProcessId();
-    ProcessState state = ProcessState.ACTIVE;
-    Integer execCnt = 3;
     Integer priority = 0;
 
-    ProcessEntity process = new ProcessEntity(processId, pipelineName, state, execCnt, priority);
+    ProcessEntity processEntity = ProcessEntity.newExecution(pipelineName, processId, priority);
 
-    service.saveProcess(process);
+    service.saveProcess(processEntity);
+    assertThat(service.getSavedProcess(pipelineName, processId).get()).isEqualTo(processEntity);
 
-    assertThat(service.getSavedProcess(pipelineName, processId).get()).isEqualTo(process);
+    processEntity.updateExecution(ProcessState.COMPLETED);
 
-    process.setState(ProcessState.COMPLETED);
-    process.setExecutionCount(4);
-    process.setPriority(9);
+    service.saveProcess(processEntity);
+    assertThat(service.getSavedProcess(pipelineName, processId).get()).isEqualTo(processEntity);
 
-    service.saveProcess(process);
-
-    assertThat(service.getSavedProcess(pipelineName, processId).get()).isEqualTo(process);
-
-    service.delete(process);
+    service.delete(processEntity);
 
     assertThat(service.getSavedProcess(pipelineName, processId).isPresent()).isFalse();
   }
 
   @Test
-  @Transactional
-  @Rollback
-  public void testReportsSamePriority() {
+  public void testGetProcessesSamePriority() {
     String pipelineName = UniqueStringGenerator.randomPipelineName();
 
-    service.saveProcess(createProcessEntity(pipelineName, ProcessState.ACTIVE, 1));
-    service.saveProcess(createProcessEntity(pipelineName, ProcessState.ACTIVE, 1));
-    service.saveProcess(createProcessEntity(pipelineName, ProcessState.COMPLETED, 1));
-    service.saveProcess(createProcessEntity(pipelineName, ProcessState.COMPLETED, 1));
-    service.saveProcess(createProcessEntity(pipelineName, ProcessState.COMPLETED, 1));
-    service.saveProcess(createProcessEntity(pipelineName, ProcessState.FAILED, 1));
-    service.saveProcess(createProcessEntity(pipelineName, ProcessState.FAILED, 1));
-    service.saveProcess(createProcessEntity(pipelineName, ProcessState.FAILED, 1));
-    service.saveProcess(createProcessEntity(pipelineName, ProcessState.FAILED, 1));
+    service.saveProcess(create(pipelineName, ProcessState.ACTIVE, 1));
+    service.saveProcess(create(pipelineName, ProcessState.ACTIVE, 1));
+    service.saveProcess(create(pipelineName, ProcessState.COMPLETED, 1));
+    service.saveProcess(create(pipelineName, ProcessState.COMPLETED, 1));
+    service.saveProcess(create(pipelineName, ProcessState.COMPLETED, 1));
+    service.saveProcess(create(pipelineName, ProcessState.FAILED, 1));
+    service.saveProcess(create(pipelineName, ProcessState.FAILED, 1));
+    service.saveProcess(create(pipelineName, ProcessState.FAILED, 1));
+    service.saveProcess(create(pipelineName, ProcessState.FAILED, 1));
 
     assertThat(service.getActiveProcesses(pipelineName)).hasSize(2);
     assertThat(service.getCompletedProcesses(pipelineName)).hasSize(3);
@@ -82,20 +71,18 @@ class ProcessServiceOracleTest {
   }
 
   @Test
-  @Transactional
-  @Rollback
-  public void testReportsDifferentPriority() {
+  public void testGetProcessesDifferentPriority() {
     String pipelineName = UniqueStringGenerator.randomPipelineName();
 
-    service.saveProcess(createProcessEntity(pipelineName, ProcessState.ACTIVE, 1));
-    service.saveProcess(createProcessEntity(pipelineName, ProcessState.ACTIVE, 2));
-    service.saveProcess(createProcessEntity(pipelineName, ProcessState.COMPLETED, 1));
-    service.saveProcess(createProcessEntity(pipelineName, ProcessState.COMPLETED, 2));
-    service.saveProcess(createProcessEntity(pipelineName, ProcessState.COMPLETED, 3));
-    service.saveProcess(createProcessEntity(pipelineName, ProcessState.FAILED, 1));
-    service.saveProcess(createProcessEntity(pipelineName, ProcessState.FAILED, 2));
-    service.saveProcess(createProcessEntity(pipelineName, ProcessState.FAILED, 4));
-    service.saveProcess(createProcessEntity(pipelineName, ProcessState.FAILED, 3));
+    service.saveProcess(create(pipelineName, ProcessState.ACTIVE, 1));
+    service.saveProcess(create(pipelineName, ProcessState.ACTIVE, 2));
+    service.saveProcess(create(pipelineName, ProcessState.COMPLETED, 1));
+    service.saveProcess(create(pipelineName, ProcessState.COMPLETED, 2));
+    service.saveProcess(create(pipelineName, ProcessState.COMPLETED, 3));
+    service.saveProcess(create(pipelineName, ProcessState.FAILED, 1));
+    service.saveProcess(create(pipelineName, ProcessState.FAILED, 2));
+    service.saveProcess(create(pipelineName, ProcessState.FAILED, 4));
+    service.saveProcess(create(pipelineName, ProcessState.FAILED, 3));
 
     assertThat(service.getActiveProcesses(pipelineName)).hasSize(2);
     assertThat(service.getCompletedProcesses(pipelineName)).hasSize(3);
@@ -107,9 +94,10 @@ class ProcessServiceOracleTest {
         .isSortedAccordingTo(Comparator.comparingInt(ProcessEntity::getPriority).reversed());
   }
 
-  private static ProcessEntity createProcessEntity(
-      String pipelineName, ProcessState state, int priority) {
-    return new ProcessEntity(
-        UniqueStringGenerator.randomProcessId(), pipelineName, state, 0, priority);
+  private static ProcessEntity create(String pipelineName, ProcessState state, int priority) {
+    ProcessEntity processEntity =
+        ProcessEntity.newExecution(pipelineName, UniqueStringGenerator.randomProcessId(), priority);
+    processEntity.updateExecution(state);
+    return processEntity;
   }
 }

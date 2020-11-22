@@ -237,11 +237,8 @@ public class ProcessLauncher {
   private ProcessState saveProcess() {
     logContext(log.atInfo()).log("Saving process");
 
-    processEntity.setState(evaluateProcessState());
-    processEntity.incrementExecutionCount();
-
+    processEntity.updateExecution(evaluateProcessState());
     processService.saveProcess(processEntity);
-
     return processEntity.getState();
   }
 

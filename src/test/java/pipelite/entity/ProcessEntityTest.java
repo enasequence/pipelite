@@ -32,16 +32,22 @@ class ProcessEntityTest {
   }
 
   @Test
-  public void incrementExecutionCount() {
+  public void updateExecution() {
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     String processId = UniqueStringGenerator.randomProcessId();
     int priority = 1;
+
     ProcessEntity processEntity = ProcessEntity.newExecution(pipelineName, processId, priority);
     assertThat(processEntity.getExecutionCount()).isEqualTo(0);
-    processEntity.incrementExecutionCount();
+    assertThat(processEntity.getState()).isEqualTo(ProcessState.NEW);
+
+    processEntity.updateExecution(ProcessState.ACTIVE);
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);
-    processEntity.incrementExecutionCount();
+    assertThat(processEntity.getState()).isEqualTo(ProcessState.ACTIVE);
+
+    processEntity.updateExecution(ProcessState.COMPLETED);
     assertThat(processEntity.getExecutionCount()).isEqualTo(2);
+    assertThat(processEntity.getState()).isEqualTo(ProcessState.COMPLETED);
   }
 
   @Test
