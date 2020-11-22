@@ -18,10 +18,6 @@ public class TestProcessFactory implements ProcessFactory {
   private final String pipelineName;
   private final Map<String, Process> processes = new HashMap<>();
 
-  public TestProcessFactory(String pipelineName) {
-    this.pipelineName = pipelineName;
-  }
-
   public TestProcessFactory(String pipelineName, Collection<Process> processes) {
     this.pipelineName = pipelineName;
     addProcesses(processes);
@@ -43,9 +39,5 @@ public class TestProcessFactory implements ProcessFactory {
 
   public void addProcess(Process process) {
     this.processes.put(process.getProcessId(), process);
-  }
-
-  public Collection<Process> getProcesses() {
-    return processes.values();
   }
 }

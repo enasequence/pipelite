@@ -11,12 +11,12 @@
 package pipelite.launcher;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import pipelite.PipeliteTestConfiguration;
@@ -33,9 +33,10 @@ import pipelite.UniqueStringGenerator;
     })
 @ContextConfiguration(initializers = PipeliteLauncherOracleTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"oracle-test"})
+@DirtiesContext
 public class PipeliteLauncherOracleAsyncTest {
 
-  @Autowired private ObjectProvider<PipeliteLauncherAsyncTester> testerObjectProvider;
+  @Autowired private PipeliteLauncherAsyncTester tester;
 
   public PipeliteLauncherOracleAsyncTest() {}
 
@@ -51,26 +52,26 @@ public class PipeliteLauncherOracleAsyncTest {
 
   @Test
   public void testSubmitSuccessPollSuccess() {
-    testerObjectProvider.getObject().testSubmitSuccessPollSuccess();
+    tester.testSubmitSuccessPollSuccess();
   }
 
   @Test
   public void testSubmitError() {
-    testerObjectProvider.getObject().testSubmitError();
+    tester.testSubmitError();
   }
 
   @Test
   public void testSubmitException() {
-    testerObjectProvider.getObject().testSubmitException();
+    tester.testSubmitException();
   }
 
   @Test
   public void testPollError() {
-    testerObjectProvider.getObject().testPollError();
+    tester.testPollError();
   }
 
   @Test
   public void testPollException() {
-    testerObjectProvider.getObject().testPollException();
+    tester.testPollException();
   }
 }
