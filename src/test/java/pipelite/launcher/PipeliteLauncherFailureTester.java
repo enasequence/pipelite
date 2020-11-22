@@ -99,47 +99,27 @@ public class PipeliteLauncherFailureTester {
     @Bean("firstStageFails")
     @Primary
     public TestProcessFactory firstStageFails() {
-      return new TestProcessFactory(
-          StageExecutionResult.error(),
-          StageExecutionResult.success(),
-          StageExecutionResult.success(),
-          StageExecutionResult.success());
+      return new TestProcessFactory(StageTestResult.FIRST_ERROR);
     }
 
     @Bean("secondStageFails")
     public ProcessFactory secondStageFails() {
-      return new TestProcessFactory(
-          StageExecutionResult.success(),
-          StageExecutionResult.error(),
-          StageExecutionResult.success(),
-          StageExecutionResult.success());
+      return new TestProcessFactory(StageTestResult.SECOND_ERROR);
     }
 
     @Bean("thirdStageFails")
     public ProcessFactory thirdStageFails() {
-      return new TestProcessFactory(
-          StageExecutionResult.success(),
-          StageExecutionResult.success(),
-          StageExecutionResult.error(),
-          StageExecutionResult.success());
+      return new TestProcessFactory(StageTestResult.THIRD_ERROR);
     }
 
     @Bean("fourthStageFails")
     public ProcessFactory fourthStageFails() {
-      return new TestProcessFactory(
-          StageExecutionResult.success(),
-          StageExecutionResult.success(),
-          StageExecutionResult.success(),
-          StageExecutionResult.error());
+      return new TestProcessFactory(StageTestResult.FOURTH_ERROR);
     }
 
     @Bean("noStageFails")
     public ProcessFactory noStageFails() {
-      return new TestProcessFactory(
-          StageExecutionResult.success(),
-          StageExecutionResult.success(),
-          StageExecutionResult.success(),
-          StageExecutionResult.error());
+      return new TestProcessFactory(StageTestResult.NO_ERROR);
     }
 
     @Bean("firstStageFailsSource")
@@ -174,9 +154,18 @@ public class PipeliteLauncherFailureTester {
     }
   }
 
+  private enum StageTestResult {
+    FIRST_ERROR,
+    SECOND_ERROR,
+    THIRD_ERROR,
+    FOURTH_ERROR,
+    NO_ERROR
+  }
+
   @Value
   public static class TestProcessFactory implements ProcessFactory {
     private final String pipelineName = UniqueStringGenerator.randomPipelineName();
+    private final StageTestResult stageTestResult;
     public final List<String> processIds = Collections.synchronizedList(new ArrayList<>());
     private StageExecutionResult firstStageExecResult;
     private StageExecutionResult secondStageExecResult;
@@ -187,15 +176,24 @@ public class PipeliteLauncherFailureTester {
     public final AtomicLong thirdStageExecCnt = new AtomicLong();
     public final AtomicLong fourthStageExecCnt = new AtomicLong();
 
-    public TestProcessFactory(
-        StageExecutionResult firstStageExecResult,
-        StageExecutionResult secondStageExecResult,
-        StageExecutionResult thirdStageExecResult,
-        StageExecutionResult fourthStageExecResult) {
-      this.firstStageExecResult = firstStageExecResult;
-      this.secondStageExecResult = secondStageExecResult;
-      this.thirdStageExecResult = thirdStageExecResult;
-      this.fourthStageExecResult = fourthStageExecResult;
+    public TestProcessFactory(StageTestResult stageTestResult) {
+      this.stageTestResult = stageTestResult;
+      this.firstStageExecResult =
+          stageTestResult == StageTestResult.FIRST_ERROR
+              ? StageExecutionResult.error()
+              : StageExecutionResult.success();
+      this.secondStageExecResult =
+          stageTestResult == StageTestResult.SECOND_ERROR
+              ? StageExecutionResult.error()
+              : StageExecutionResult.success();
+      this.thirdStageExecResult =
+          stageTestResult == StageTestResult.THIRD_ERROR
+              ? StageExecutionResult.error()
+              : StageExecutionResult.success();
+      this.fourthStageExecResult =
+          stageTestResult == StageTestResult.FOURTH_ERROR
+              ? StageExecutionResult.error()
+              : StageExecutionResult.success();
     }
 
     public void reset() {
@@ -213,6 +211,8 @@ public class PipeliteLauncherFailureTester {
 
     @Override
     public Process create(String processId) {
+      processIds.add(processId);
+
       StageParameters stageParams =
           StageParameters.builder().immediateRetries(0).maximumRetries(0).build();
 
@@ -262,6 +262,29 @@ public class PipeliteLauncherFailureTester {
     assertThat(s.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
     assertThat(s.getRejectedProcesses()).isEqualTo(0);
 
+    if (f.stageTestResult == StageTestResult.FIRST_ERROR) {
+      assertThat(f.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(f.secondStageExecCnt.get()).isEqualTo(0);
+      assertThat(f.thirdStageExecCnt.get()).isEqualTo(0);
+      assertThat(f.fourthStageExecCnt.get()).isEqualTo(0);
+    } else if (f.stageTestResult == StageTestResult.SECOND_ERROR) {
+      assertThat(f.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(f.secondStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(f.thirdStageExecCnt.get()).isEqualTo(0);
+      assertThat(f.fourthStageExecCnt.get()).isEqualTo(0);
+    } else if (f.stageTestResult == StageTestResult.THIRD_ERROR) {
+      assertThat(f.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(f.secondStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(f.thirdStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(f.fourthStageExecCnt.get()).isEqualTo(0);
+    } else {
+      assertThat(f.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(f.secondStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(f.thirdStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(f.fourthStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+    }
+
+    assertThat(f.processIds.size()).isEqualTo(PROCESS_CNT);
     assertLauncherStats(pipeliteLauncher, f);
     for (String processId : f.processIds) {
       assertProcessEntity(f, processId);
@@ -277,10 +300,7 @@ public class PipeliteLauncherFailureTester {
     assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);
-    if (f.getFirstStageExecResult().isSuccess()
-        && f.getSecondStageExecResult().isSuccess()
-        && f.getThirdStageExecResult().isSuccess()
-        && f.getFourthStageExecResult().isSuccess()) {
+    if (f.stageTestResult == StageTestResult.NO_ERROR) {
       assertThat(processEntity.getState()).isEqualTo(ProcessState.COMPLETED);
     } else {
       assertThat(processEntity.getState())
@@ -295,26 +315,49 @@ public class PipeliteLauncherFailureTester {
     for (int i = 0; i < stageCnt; ++i) {
       StageEntity stageEntity =
           stageService.getSavedStage(f.getPipelineName(), processId, "STAGE" + i).get();
+
       assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
       assertThat(stageEntity.getProcessId()).isEqualTo(processId);
-      assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
-      assertThat(stageEntity.getStartTime()).isNotNull();
-      assertThat(stageEntity.getEndTime()).isNotNull();
-      assertThat(stageEntity.getStartTime()).isBeforeOrEqualTo(stageEntity.getEndTime());
-      assertThat(stageEntity.getExecutorName()).startsWith(PipeliteLauncherTester.class.getName());
-      assertThat(stageEntity.getExecutorData()).isEqualTo("{ }");
-      assertThat(stageEntity.getExecutorParams())
-          .isEqualTo("{\n  \"maximumRetries\" : 0,\n  \"immediateRetries\" : 0\n}");
 
-      if ((i == 0 && f.getFirstStageExecResult().isError())
-          || (i == 1 && f.getSecondStageExecResult().isError())
-          || (i == 2 && f.getThirdStageExecResult().isError())
-          || (i == 3 && f.getFourthStageExecResult().isError())) {
-        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.ERROR);
+      if ((i > 0 && f.stageTestResult == StageTestResult.FIRST_ERROR)
+          || (i > 1 && f.stageTestResult == StageTestResult.SECOND_ERROR)
+          || (i > 2 && f.stageTestResult == StageTestResult.THIRD_ERROR)
+          || (i > 3 && f.stageTestResult == StageTestResult.FOURTH_ERROR)) {
+
+        // Stage has been created but not executed.
+
+        assertThat(stageEntity.getExecutionCount()).isZero();
+        assertThat(stageEntity.getStartTime()).isNull();
+        assertThat(stageEntity.getEndTime()).isNull();
+        assertThat(stageEntity.getExecutorName()).isNull();
+        assertThat(stageEntity.getExecutorData()).isNull();
+        assertThat(stageEntity.getExecutorParams()).isNull();
+        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.NEW);
         assertThat(stageEntity.getResultParams()).isNull();
       } else {
-        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.SUCCESS);
-        assertThat(stageEntity.getResultParams()).isNull();
+
+        // Stage has been executed.
+
+        assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
+        assertThat(stageEntity.getStartTime()).isNotNull();
+        assertThat(stageEntity.getEndTime()).isNotNull();
+        assertThat(stageEntity.getStartTime()).isBeforeOrEqualTo(stageEntity.getEndTime());
+        assertThat(stageEntity.getExecutorName())
+            .startsWith(PipeliteLauncherFailureTester.class.getName());
+        assertThat(stageEntity.getExecutorData()).isEqualTo("{ }");
+        assertThat(stageEntity.getExecutorParams())
+            .isEqualTo("{\n  \"maximumRetries\" : 0,\n  \"immediateRetries\" : 0\n}");
+
+        if ((i == 0 && f.stageTestResult == StageTestResult.FIRST_ERROR)
+            || (i == 1 && f.stageTestResult == StageTestResult.SECOND_ERROR)
+            || (i == 2 && f.stageTestResult == StageTestResult.THIRD_ERROR)
+            || (i == 3 && f.stageTestResult == StageTestResult.FOURTH_ERROR)) {
+          assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.ERROR);
+          assertThat(stageEntity.getResultParams()).isNull();
+        } else {
+          assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.SUCCESS);
+          assertThat(stageEntity.getResultParams()).isNull();
+        }
       }
     }
   }
