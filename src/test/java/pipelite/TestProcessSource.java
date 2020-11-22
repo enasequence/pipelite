@@ -13,8 +13,6 @@ package pipelite;
 import com.google.common.util.concurrent.Monitor;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-
-import pipelite.process.Process;
 import pipelite.process.ProcessSource;
 
 public class TestProcessSource implements ProcessSource {

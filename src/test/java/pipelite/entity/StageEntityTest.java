@@ -10,6 +10,8 @@
  */
 package pipelite.entity;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import lombok.Data;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
@@ -17,8 +19,6 @@ import pipelite.executor.StageExecutor;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class StageEntityTest {
 
@@ -125,14 +125,14 @@ class StageEntityTest {
     assertThat(stageEntity.getStdOut()).isNull();
     assertThat(stageEntity.getStdErr()).isNull();
     assertThat(stageEntity.getExecutorName())
-            .isEqualTo("pipelite.entity.StageEntityTest$TestExecutor");
+        .isEqualTo("pipelite.entity.StageEntityTest$TestExecutor");
     assertThat(stageEntity.getExecutorData()).isEqualTo("{\n" + "  \"test\" : \"TEST2\"\n" + "}");
     assertThat(stageEntity.getExecutorParams()).isNull();
 
     // End second execution.
 
     StageExecutionResult secondExecutionResult =
-            new StageExecutionResult(StageExecutionResultType.SUCCESS);
+        new StageExecutionResult(StageExecutionResultType.SUCCESS);
     secondExecutionResult.setStdout("TEST5");
     secondExecutionResult.setStderr("TEST6");
 
@@ -150,7 +150,7 @@ class StageEntityTest {
     assertThat(stageEntity.getStdOut()).isEqualTo("TEST5");
     assertThat(stageEntity.getStdErr()).isEqualTo("TEST6");
     assertThat(stageEntity.getExecutorName())
-            .isEqualTo("pipelite.entity.StageEntityTest$TestExecutor");
+        .isEqualTo("pipelite.entity.StageEntityTest$TestExecutor");
     assertThat(stageEntity.getExecutorData()).isEqualTo("{\n" + "  \"test\" : \"TEST2\"\n" + "}");
     assertThat(stageEntity.getExecutorParams()).isNull();
 

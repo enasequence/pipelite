@@ -10,11 +10,11 @@
  */
 package pipelite.entity;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.process.ProcessState;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class ProcessEntityTest {
 

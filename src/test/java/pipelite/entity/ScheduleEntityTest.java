@@ -10,11 +10,11 @@
  */
 package pipelite.entity;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
-import java.time.LocalDateTime;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class ScheduleEntityTest {
 

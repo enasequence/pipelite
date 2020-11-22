@@ -12,7 +12,6 @@ package pipelite.process.builder;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import pipelite.process.Process;
 import pipelite.stage.Stage;
 import pipelite.stage.StageParameters;

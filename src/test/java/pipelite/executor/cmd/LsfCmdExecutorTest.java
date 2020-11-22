@@ -89,10 +89,10 @@ public class LsfCmdExecutorTest {
   @Test
   public void testLocalCmdRunnerWriteFileToStdout() throws IOException {
     Stage stage =
-            Stage.builder()
-                    .stageName(UniqueStringGenerator.randomStageName())
-                    .executor(new SuccessSyncExecutor())
-                    .build();
+        Stage.builder()
+            .stageName(UniqueStringGenerator.randomStageName())
+            .executor(new SuccessSyncExecutor())
+            .build();
     stage.getStageParameters().setHost(lsfTestConfiguration.getHost());
     File file = File.createTempFile("pipelite-test", "");
     file.createNewFile();

@@ -96,7 +96,8 @@ class ProcessServiceOracleTest {
 
   private static ProcessEntity create(String pipelineName, ProcessState state, int priority) {
     ProcessEntity processEntity =
-        ProcessEntity.createExecution(pipelineName, UniqueStringGenerator.randomProcessId(), priority);
+        ProcessEntity.createExecution(
+            pipelineName, UniqueStringGenerator.randomProcessId(), priority);
     processEntity.updateExecution(state);
     return processEntity;
   }
