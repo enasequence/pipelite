@@ -11,12 +11,12 @@
 package pipelite.launcher;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import pipelite.PipeliteTestConfiguration;
@@ -30,25 +30,35 @@ import pipelite.UniqueStringGenerator;
       "pipelite.launcher.stageLaunchFrequency=250ms",
       "pipelite.launcher.shutdownIfIdle=true"
     })
-@ContextConfiguration(initializers = PipeliteLauncherOracleSuccessTest.TestContextInitializer.class)
+@ContextConfiguration(initializers = PipeliteLauncherOracleTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"oracle-test"})
-public class PipeliteLauncherOracleSuccessTest {
+@DirtiesContext
+public class PipeliteLauncherOracleTest {
 
-  @Autowired private ObjectProvider<PipeliteLauncherSuccessTester> testerObjectProvider;
+  @Autowired private PipeliteLauncherTester tester;
 
   public static class TestContextInitializer
       implements ApplicationContextInitializer<ConfigurableApplicationContext> {
     @Override
     public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
       TestPropertyValues.of(
-              "pipelite.launcher.launcherName=" + UniqueStringGenerator.randomLauncherName(),
-              "pipelite.launcher.pipelineName=" + UniqueStringGenerator.randomPipelineName())
+              "pipelite.launcher.launcherName=" + UniqueStringGenerator.randomLauncherName())
           .applyTo(configurableApplicationContext.getEnvironment());
     }
   }
 
   @Test
-  public void test() {
-    testerObjectProvider.getObject().test();
+  public void testSuccess() {
+    tester.testSuccess();
+  }
+
+  @Test
+  public void testFailure() {
+    tester.testFailure();
+  }
+
+  @Test
+  public void testException() {
+    tester.testException();
   }
 }

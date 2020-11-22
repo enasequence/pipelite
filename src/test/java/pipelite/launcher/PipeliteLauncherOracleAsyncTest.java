@@ -31,7 +31,7 @@ import pipelite.UniqueStringGenerator;
       "pipelite.launcher.shutdownIfIdle=true",
       "pipelite.stage.maximumRetries=1"
     })
-@ContextConfiguration(initializers = PipeliteLauncherOracleSuccessTest.TestContextInitializer.class)
+@ContextConfiguration(initializers = PipeliteLauncherOracleTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"oracle-test"})
 public class PipeliteLauncherOracleAsyncTest {
 

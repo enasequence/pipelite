@@ -64,7 +64,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private final Map<String, ProcessLauncher> initProcesses = new ConcurrentHashMap<>();
   private final Map<String, ProcessLauncher> activeProcesses = new ConcurrentHashMap<>();
 
-  private final ArrayList<ProcessEntity> processQueue = new ArrayList<>();
+  private final List<ProcessEntity> processQueue = Collections.synchronizedList(new ArrayList<>());
   private int processQueueIndex = 0;
   private LocalDateTime processQueueValidUntil = LocalDateTime.now();
 

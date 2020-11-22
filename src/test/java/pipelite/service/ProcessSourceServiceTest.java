@@ -20,7 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import pipelite.PipeliteTestConfiguration;
-import pipelite.TestInMemoryProcessSource;
+import pipelite.TestProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.process.ProcessSource;
 
@@ -37,12 +37,12 @@ public class ProcessSourceServiceTest {
   static class TestConfig {
     @Bean
     public ProcessSource firstProcessSource() {
-      return new TestInMemoryProcessSource(PIPELINE_NAME_1, Collections.emptyList());
+      return new TestProcessSource(PIPELINE_NAME_1, Collections.emptyList());
     }
 
     @Bean
     public ProcessSource secondProcessSource() {
-      return new TestInMemoryProcessSource(PIPELINE_NAME_2, Collections.emptyList());
+      return new TestProcessSource(PIPELINE_NAME_2, Collections.emptyList());
     }
   }
 

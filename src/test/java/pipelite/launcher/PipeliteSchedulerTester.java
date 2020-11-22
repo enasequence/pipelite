@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -43,11 +44,11 @@ import pipelite.stage.StageParameters;
 @Scope("prototype")
 public class PipeliteSchedulerTester {
 
-  private final PipeliteScheduler pipeliteScheduler;
-  private final ScheduleService scheduleService;
-  private final LauncherConfiguration launcherConfiguration;
-  private final ProcessService processService;
-  private final StageService stageService;
+  @Autowired private PipeliteScheduler pipeliteScheduler;
+  @Autowired private ScheduleService scheduleService;
+  @Autowired private LauncherConfiguration launcherConfiguration;
+  @Autowired private ProcessService processService;
+  @Autowired private StageService stageService;
 
   @Autowired private TestProcessFactory firstProcessSuccess;
   @Autowired private TestProcessFactory secondProcessSuccess;
@@ -59,64 +60,51 @@ public class PipeliteSchedulerTester {
   @Autowired private TestProcessFactory secondProcessException;
   @Autowired private TestProcessFactory thirdProcessException;
 
-  public PipeliteSchedulerTester(
-      @Autowired PipeliteScheduler pipeliteScheduler,
-      @Autowired ScheduleService scheduleService,
-      @Autowired LauncherConfiguration launcherConfiguration,
-      @Autowired ProcessService processService,
-      @Autowired StageService stageService) {
-    this.pipeliteScheduler = pipeliteScheduler;
-    this.scheduleService = scheduleService;
-    this.launcherConfiguration = launcherConfiguration;
-    this.processService = processService;
-    this.stageService = stageService;
-  }
-
   @TestConfiguration
   static class TestConfig {
     @Bean
     public ProcessFactory firstProcessSuccess() {
-      return new TestProcessFactory("firstProcessSuccess", 2, 2, 4, StageTestResult.SUCCESS);
+      return new TestProcessFactory("firstProcessSuccess", 4, 2, 2, StageTestResult.SUCCESS);
     }
 
     @Bean
     public ProcessFactory secondProcessSuccess() {
-      return new TestProcessFactory("secondProcessSuccess", 5, 4, 3, StageTestResult.SUCCESS);
+      return new TestProcessFactory("secondProcessSuccess", 3, 5, 4, StageTestResult.SUCCESS);
     }
 
     @Bean
     public ProcessFactory thirdProcessSuccess() {
-      return new TestProcessFactory("thirdProcessSuccess", 10, 6, 2, StageTestResult.SUCCESS);
+      return new TestProcessFactory("thirdProcessSuccess", 2, 10, 6, StageTestResult.SUCCESS);
     }
 
     @Bean
     public ProcessFactory firstProcessFailure() {
-      return new TestProcessFactory("firstProcessFailure", 2, 2, 4, StageTestResult.ERROR);
+      return new TestProcessFactory("firstProcessFailure", 4, 2, 2, StageTestResult.ERROR);
     }
 
     @Bean
     public ProcessFactory secondProcessFailure() {
-      return new TestProcessFactory("secondProcessFailure", 5, 4, 3, StageTestResult.ERROR);
+      return new TestProcessFactory("secondProcessFailure", 3, 5, 4, StageTestResult.ERROR);
     }
 
     @Bean
     public ProcessFactory thirdProcessFailure() {
-      return new TestProcessFactory("thirdProcessFailure", 10, 6, 2, StageTestResult.ERROR);
+      return new TestProcessFactory("thirdProcessFailure", 2, 10, 6, StageTestResult.ERROR);
     }
 
     @Bean
     public ProcessFactory firstProcessException() {
-      return new TestProcessFactory("firstProcessException", 2, 2, 4, StageTestResult.EXCEPTION);
+      return new TestProcessFactory("firstProcessException", 4, 2, 2, StageTestResult.EXCEPTION);
     }
 
     @Bean
     public ProcessFactory secondProcessException() {
-      return new TestProcessFactory("secondProcessException", 5, 4, 3, StageTestResult.EXCEPTION);
+      return new TestProcessFactory("secondProcessException", 3, 5, 4, StageTestResult.EXCEPTION);
     }
 
     @Bean
     public ProcessFactory thirdProcessException() {
-      return new TestProcessFactory("thirdProcessException", 10, 6, 2, StageTestResult.EXCEPTION);
+      return new TestProcessFactory("thirdProcessException", 2, 10, 6, StageTestResult.EXCEPTION);
     }
   }
 
@@ -129,24 +117,24 @@ public class PipeliteSchedulerTester {
   @Value
   public static class TestProcessFactory implements ProcessFactory {
     private final String pipelineName;
-    private final int stageCnt;
+    public final int processCnt;
+    public final int stageCnt;
     public final int schedulerSeconds; // 60 must be divisible by schedulerSeconds.
-    public final int schedulerMaxExecutions;
     public final StageTestResult stageTestResult;
     public final String cronExpression;
-    public final List<String> processIds = new ArrayList<>();
+    public final List<String> processIds = Collections.synchronizedList(new ArrayList<>());
     public final AtomicLong stageExecCnt = new AtomicLong();
 
     public TestProcessFactory(
         String pipelineNamePrefix,
+        int processCnt,
         int stageCnt,
         int schedulerSeconds,
-        int scheduleMaxExecutions,
         StageTestResult stageTestResult) {
       this.pipelineName = pipelineNamePrefix + "_" + UniqueStringGenerator.randomPipelineName();
       this.stageCnt = stageCnt;
       this.schedulerSeconds = schedulerSeconds;
-      this.schedulerMaxExecutions = scheduleMaxExecutions;
+      this.processCnt = processCnt;
       this.stageTestResult = stageTestResult;
       this.cronExpression = "0/" + schedulerSeconds + " * * * * ?";
     }
@@ -255,7 +243,7 @@ public class PipeliteSchedulerTester {
     assertThat(scheduleEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(scheduleEntity.getProcessId())
         .isEqualTo(f.getProcessIds().get(f.getProcessIds().size() - 1));
-    assertThat(scheduleEntity.getExecutionCount()).isEqualTo(f.schedulerMaxExecutions);
+    assertThat(scheduleEntity.getExecutionCount()).isEqualTo(f.processCnt);
     assertThat(scheduleEntity.getSchedule()).isEqualTo(f.cronExpression);
     assertThat(scheduleEntity.getStartTime()).isNotNull();
     assertThat(scheduleEntity.getEndTime()).isNotNull();
@@ -284,7 +272,6 @@ public class PipeliteSchedulerTester {
     String pipelineName = f.getPipelineName();
 
     for (int i = 0; i < f.stageCnt; ++i) {
-
       StageEntity stageEntity =
           stageService.getSavedStage(f.getPipelineName(), processId, "STAGE" + i).get();
       assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
@@ -317,7 +304,7 @@ public class PipeliteSchedulerTester {
       for (TestProcessFactory f : testProcessFactories) {
         f.reset();
         saveSchedule(f);
-        pipeliteScheduler.setMaximumExecutions(f.getPipelineName(), f.schedulerMaxExecutions);
+        pipeliteScheduler.setMaximumExecutions(f.getPipelineName(), f.processCnt);
       }
       ServerManager.run(pipeliteScheduler, pipeliteScheduler.serviceName());
 
@@ -325,8 +312,8 @@ public class PipeliteSchedulerTester {
       List<ScheduleEntity> scheduleEntities =
           scheduleService.getAllProcessSchedules(launcherConfiguration.getLauncherName());
       for (TestProcessFactory f : testProcessFactories) {
-        assertThat(f.stageExecCnt.get() / f.stageCnt).isEqualTo(f.schedulerMaxExecutions);
-        assertThat(f.processIds.size()).isEqualTo(f.schedulerMaxExecutions);
+        assertThat(f.stageExecCnt.get() / f.stageCnt).isEqualTo(f.processCnt);
+        assertThat(f.processIds.size()).isEqualTo(f.processCnt);
         assertSchedulerStats(pipeliteScheduler, f);
         assertScheduleEntity(scheduleEntities, f);
         for (String processId : f.processIds) {

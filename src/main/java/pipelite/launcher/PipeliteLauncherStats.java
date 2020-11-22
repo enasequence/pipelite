@@ -34,12 +34,11 @@ public class PipeliteLauncherStats {
     return processExecutionCount.get(state);
   }
 
-  public Map<ProcessState, Long> getProcessExecutionCount() {
-    Map<ProcessState, Long> count = new HashMap<>();
-    for (ProcessState state : processExecutionCount.keySet()) {
-      count.put(state, processExecutionCount.get(state).get());
+  public long getProcessExecutionCount(ProcessState state) {
+    if (processExecutionCount.get(state) == null) {
+      return 0;
     }
-    return count;
+    return processExecutionCount.get(state).get();
   }
 
   public long getProcessExceptionCount() {

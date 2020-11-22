@@ -23,8 +23,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-import pipelite.TestInMemoryProcessFactory;
-import pipelite.TestInMemoryProcessSource;
+import pipelite.TestProcessFactory;
+import pipelite.TestProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.executor.ErrorStageExecutor;
@@ -48,52 +48,52 @@ public class PipeliteLauncherFailureTester {
   static class TestConfig {
     @Bean
     public ProcessFactory firstStageFailsProcessFactory() {
-      return new TestInMemoryProcessFactory(FIRST_STAGE_FAILS_NAME, FIRST_STAGE_FAILS_PROCESSES);
+      return new TestProcessFactory(FIRST_STAGE_FAILS_NAME, FIRST_STAGE_FAILS_PROCESSES);
     }
 
     @Bean
     public ProcessFactory secondStageFailsProcessFactory() {
-      return new TestInMemoryProcessFactory(SECOND_STAGE_FAILS_NAME, SECOND_STAGE_FAILS_PROCESSES);
+      return new TestProcessFactory(SECOND_STAGE_FAILS_NAME, SECOND_STAGE_FAILS_PROCESSES);
     }
 
     @Bean
     public ProcessFactory thirdStageFailsProcessFactory() {
-      return new TestInMemoryProcessFactory(THIRD_STAGE_FAILS_NAME, THIRD_STAGE_FAILS_PROCESSES);
+      return new TestProcessFactory(THIRD_STAGE_FAILS_NAME, THIRD_STAGE_FAILS_PROCESSES);
     }
 
     @Bean
     public ProcessFactory fourthStageFailsProcessFactory() {
-      return new TestInMemoryProcessFactory(FOURTH_STAGE_FAILS_NAME, FOURTH_STAGE_FAILS_PROCESSES);
+      return new TestProcessFactory(FOURTH_STAGE_FAILS_NAME, FOURTH_STAGE_FAILS_PROCESSES);
     }
 
     @Bean
     public ProcessFactory noStageFailsProcessFactory() {
-      return new TestInMemoryProcessFactory(NO_STAGE_FAILS_NAME, NO_STAGE_FAILS_PROCESSES);
+      return new TestProcessFactory(NO_STAGE_FAILS_NAME, NO_STAGE_FAILS_PROCESSES);
     }
 
     @Bean
     public ProcessSource firstStageFailsProcessSource() {
-      return new TestInMemoryProcessSource(FIRST_STAGE_FAILS_NAME, FIRST_STAGE_FAILS_PROCESSES);
+      return new TestProcessSource(FIRST_STAGE_FAILS_NAME, FIRST_STAGE_FAILS_PROCESSES);
     }
 
     @Bean
     public ProcessSource secondStageFailsProcessSource() {
-      return new TestInMemoryProcessSource(SECOND_STAGE_FAILS_NAME, SECOND_STAGE_FAILS_PROCESSES);
+      return new TestProcessSource(SECOND_STAGE_FAILS_NAME, SECOND_STAGE_FAILS_PROCESSES);
     }
 
     @Bean
     public ProcessSource thirdStageFailsProcessSource() {
-      return new TestInMemoryProcessSource(THIRD_STAGE_FAILS_NAME, THIRD_STAGE_FAILS_PROCESSES);
+      return new TestProcessSource(THIRD_STAGE_FAILS_NAME, THIRD_STAGE_FAILS_PROCESSES);
     }
 
     @Bean
     public ProcessSource fourthStageFailsProcessSource() {
-      return new TestInMemoryProcessSource(FOURTH_STAGE_FAILS_NAME, FOURTH_STAGE_FAILS_PROCESSES);
+      return new TestProcessSource(FOURTH_STAGE_FAILS_NAME, FOURTH_STAGE_FAILS_PROCESSES);
     }
 
     @Bean
     public ProcessSource noStageFailsProcessSource() {
-      return new TestInMemoryProcessSource(NO_STAGE_FAILS_NAME, NO_STAGE_FAILS_PROCESSES);
+      return new TestProcessSource(NO_STAGE_FAILS_NAME, NO_STAGE_FAILS_PROCESSES);
     }
   }
 
@@ -198,15 +198,15 @@ public class PipeliteLauncherFailureTester {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher(FIRST_STAGE_FAILS_NAME);
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    TestInMemoryProcessSource processSource =
-        (TestInMemoryProcessSource) context.getBean("firstStageFailsProcessSource");
+    TestProcessSource processSource =
+        (TestProcessSource) context.getBean("firstStageFailsProcessSource");
 
     assertThat(processSource.getNewProcesses()).isEqualTo(0);
-    assertThat(processSource.getReturnedProcesses()).isEqualTo(0);
+    assertThat(processSource.getReturnedProcesses()).isEqualTo(PROCESS_CNT);
     assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
     assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
 
-    assertThat(pipeliteLauncher.getStats().getProcessExecutionCount().get(ProcessState.FAILED))
+    assertThat(pipeliteLauncher.getStats().getProcessExecutionCount(ProcessState.FAILED))
         .isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(0);
@@ -217,15 +217,15 @@ public class PipeliteLauncherFailureTester {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher(SECOND_STAGE_FAILS_NAME);
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    TestInMemoryProcessSource processSource =
-        (TestInMemoryProcessSource) context.getBean("secondStageFailsProcessSource");
+    TestProcessSource processSource =
+        (TestProcessSource) context.getBean("secondStageFailsProcessSource");
 
     assertThat(processSource.getNewProcesses()).isEqualTo(0);
-    assertThat(processSource.getReturnedProcesses()).isEqualTo(0);
+    assertThat(processSource.getReturnedProcesses()).isEqualTo(PROCESS_CNT);
     assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
     assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
 
-    assertThat(pipeliteLauncher.getStats().getProcessExecutionCount().get(ProcessState.FAILED))
+    assertThat(pipeliteLauncher.getStats().getProcessExecutionCount(ProcessState.FAILED))
         .isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(PROCESS_CNT);
@@ -236,15 +236,15 @@ public class PipeliteLauncherFailureTester {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher(THIRD_STAGE_FAILS_NAME);
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    TestInMemoryProcessSource processSource =
-        (TestInMemoryProcessSource) context.getBean("thirdStageFailsProcessSource");
+    TestProcessSource processSource =
+        (TestProcessSource) context.getBean("thirdStageFailsProcessSource");
 
     assertThat(processSource.getNewProcesses()).isEqualTo(0);
-    assertThat(processSource.getReturnedProcesses()).isEqualTo(0);
+    assertThat(processSource.getReturnedProcesses()).isEqualTo(PROCESS_CNT);
     assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
     assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
 
-    assertThat(pipeliteLauncher.getStats().getProcessExecutionCount().get(ProcessState.FAILED))
+    assertThat(pipeliteLauncher.getStats().getProcessExecutionCount(ProcessState.FAILED))
         .isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(PROCESS_CNT * 2);
@@ -255,15 +255,15 @@ public class PipeliteLauncherFailureTester {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher(FOURTH_STAGE_FAILS_NAME);
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    TestInMemoryProcessSource processSource =
-        (TestInMemoryProcessSource) context.getBean("fourthStageFailsProcessSource");
+    TestProcessSource processSource =
+        (TestProcessSource) context.getBean("fourthStageFailsProcessSource");
 
     assertThat(processSource.getNewProcesses()).isEqualTo(0);
-    assertThat(processSource.getReturnedProcesses()).isEqualTo(0);
+    assertThat(processSource.getReturnedProcesses()).isEqualTo(PROCESS_CNT);
     assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
     assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
 
-    assertThat(pipeliteLauncher.getStats().getProcessExecutionCount().get(ProcessState.FAILED))
+    assertThat(pipeliteLauncher.getStats().getProcessExecutionCount(ProcessState.FAILED))
         .isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(PROCESS_CNT * 3);
@@ -274,15 +274,15 @@ public class PipeliteLauncherFailureTester {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher(NO_STAGE_FAILS_NAME);
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    TestInMemoryProcessSource processSource =
-        (TestInMemoryProcessSource) context.getBean("noStageFailsProcessSource");
+    TestProcessSource processSource =
+        (TestProcessSource) context.getBean("noStageFailsProcessSource");
 
     assertThat(processSource.getNewProcesses()).isEqualTo(0);
-    assertThat(processSource.getReturnedProcesses()).isEqualTo(0);
+    assertThat(processSource.getReturnedProcesses()).isEqualTo(PROCESS_CNT);
     assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
     assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
 
-    assertThat(pipeliteLauncher.getStats().getProcessExecutionCount().get(ProcessState.COMPLETED))
+    assertThat(pipeliteLauncher.getStats().getProcessExecutionCount(ProcessState.COMPLETED))
         .isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
     assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(PROCESS_CNT * 4);

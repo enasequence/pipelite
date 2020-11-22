@@ -31,7 +31,7 @@ import pipelite.UniqueStringGenerator;
       "pipelite.launcher.shutdownIfIdle=true",
       "pipelite.stage.maximumRetries=1"
     })
-@ContextConfiguration(initializers = PipeliteLauncherHSqlSuccessTest.TestContextInitializer.class)
+@ContextConfiguration(initializers = PipeliteLauncherHSqlTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"hsql-test"})
 public class PipeliteLauncherHSqlAsyncTest {
 

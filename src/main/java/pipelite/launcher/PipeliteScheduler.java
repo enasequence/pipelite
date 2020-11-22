@@ -70,7 +70,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
     private LocalDateTime launchTime;
   }
 
-  private final ArrayList<Schedule> schedules = new ArrayList<>();
+  private final List<Schedule> schedules = Collections.synchronizedList(new ArrayList<>());
   private LocalDateTime schedulesValidUntil;
 
   private final Duration processLaunchFrequency;

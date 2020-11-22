@@ -22,7 +22,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-import pipelite.TestInMemoryProcessFactory;
+import pipelite.TestProcessFactory;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.entity.ProcessEntity;
@@ -50,29 +50,29 @@ public class PipeliteLauncherAsyncTester {
   static class TestConfig {
     @Bean
     public ProcessFactory submitSuccessPollSuccess() {
-      return new TestInMemoryProcessFactory(
+      return new TestProcessFactory(
           SUBMIT_SUCCESS_POLL_SUCCESS_PROCESS_NAME, SUBMIT_SUCCESS_POLL_SUCCESS_PROCESSES);
     }
 
     @Bean
     public ProcessFactory submitError() {
-      return new TestInMemoryProcessFactory(SUBMIT_ERROR_PROCESS_NAME, SUBMIT_ERROR_PROCESSES);
+      return new TestProcessFactory(SUBMIT_ERROR_PROCESS_NAME, SUBMIT_ERROR_PROCESSES);
     }
 
     @Bean
     public ProcessFactory submitException() {
-      return new TestInMemoryProcessFactory(
+      return new TestProcessFactory(
           SUBMIT_EXCEPTION_PROCESS_NAME, SUBMIT_EXCEPTION_PROCESSES);
     }
 
     @Bean
     public ProcessFactory pollError() {
-      return new TestInMemoryProcessFactory(POLL_ERROR_PROCESS_NAME, POLL_ERROR_PROCESSES);
+      return new TestProcessFactory(POLL_ERROR_PROCESS_NAME, POLL_ERROR_PROCESSES);
     }
 
     @Bean
     public ProcessFactory pollException() {
-      return new TestInMemoryProcessFactory(POLL_EXCEPTION_PROCESS_NAME, POLL_EXCEPTION_PROCESSES);
+      return new TestProcessFactory(POLL_EXCEPTION_PROCESS_NAME, POLL_EXCEPTION_PROCESSES);
     }
   }
 

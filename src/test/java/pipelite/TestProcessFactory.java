@@ -14,22 +14,38 @@ import java.util.*;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 
-public class TestInMemoryProcessFactory implements ProcessFactory {
-  private final String processName;
+public class TestProcessFactory implements ProcessFactory {
+  private final String pipelineName;
   private final Map<String, Process> processes = new HashMap<>();
 
-  public TestInMemoryProcessFactory(String processName, Collection<Process> processes) {
-    this.processName = processName;
-    processes.stream().forEach(process -> this.processes.put(process.getProcessId(), process));
+  public TestProcessFactory(String pipelineName) {
+    this.pipelineName = pipelineName;
+  }
+
+  public TestProcessFactory(String pipelineName, Collection<Process> processes) {
+    this.pipelineName = pipelineName;
+    addProcesses(processes);
   }
 
   @Override
   public String getPipelineName() {
-    return processName;
+    return pipelineName;
   }
 
   @Override
   public Process create(String processId) {
     return processes.get(processId);
+  }
+
+  public void addProcesses(Collection<Process> processes) {
+    processes.stream().forEach(process -> addProcess(process));
+  }
+
+  public void addProcess(Process process) {
+    this.processes.put(process.getProcessId(), process);
+  }
+
+  public Collection<Process> getProcesses() {
+    return processes.values();
   }
 }

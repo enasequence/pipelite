@@ -12,28 +12,35 @@ package pipelite;
 
 import com.google.common.util.concurrent.Monitor;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
 import pipelite.process.Process;
 import pipelite.process.ProcessSource;
 
-public class TestInMemoryProcessSource implements ProcessSource {
+public class TestProcessSource implements ProcessSource {
 
   private final String pipelineName;
-  private final Set<Process> newProcesses = new HashSet<>();
-  private final Map<String, Process> returnedProcesses = new HashMap<>();
-  private final Map<String, Process> acceptedProcesses = new HashMap<>();
-  private final Set<Process> rejectedProcesses = new HashSet<>();
+  private final Set<String> newProcesses = new ConcurrentHashMap<>().newKeySet();
+  private final Set<String> returnedProcesses = new ConcurrentHashMap<>().newKeySet();
+  private final Set<String> acceptedProcesses = new ConcurrentHashMap<>().newKeySet();
+  private final Set<String> rejectedProcesses = new ConcurrentHashMap<>().newKeySet();
 
-  public TestInMemoryProcessSource(String pipelineName, Collection<Process> processes) {
+  public TestProcessSource(String pipelineName, int processCnt) {
     this.pipelineName = pipelineName;
-    newProcesses.addAll(processes);
+    for (int i = 0; i < processCnt; ++i) {
+      newProcesses.add(i + "_" + UniqueStringGenerator.randomProcessId());
+    }
+  }
+
+  public TestProcessSource(String pipelineName, Collection<Process> processes) {
+    this.pipelineName = pipelineName;
+    processes.forEach(process -> newProcesses.add(process.getProcessId()));
   }
 
   @Override
   public String getPipelineName() {
     return pipelineName;
   }
-
-  private boolean permanentRejection = false;
 
   private final Monitor monitor = new Monitor();
 
@@ -44,10 +51,10 @@ public class TestInMemoryProcessSource implements ProcessSource {
       if (newProcesses.isEmpty()) {
         return null;
       }
-      Process process = newProcesses.iterator().next();
-      returnedProcesses.put(process.getProcessId(), process);
-      newProcesses.remove(process);
-      return new NewProcess(process.getProcessId());
+      String processId = newProcesses.iterator().next();
+      returnedProcesses.add(processId);
+      newProcesses.remove(processId);
+      return new NewProcess(processId);
     } finally {
       monitor.leave();
     }
@@ -57,7 +64,7 @@ public class TestInMemoryProcessSource implements ProcessSource {
   public void accept(String processId) {
     monitor.enter();
     try {
-      acceptedProcesses.put(processId, returnedProcesses.remove(processId));
+      acceptedProcesses.add(processId);
     } finally {
       monitor.leave();
     }
@@ -67,22 +74,10 @@ public class TestInMemoryProcessSource implements ProcessSource {
   public void reject(String processId) {
     monitor.enter();
     try {
-      if (permanentRejection) {
-        rejectedProcesses.add(returnedProcesses.remove(processId));
-      } else {
-        newProcesses.add(returnedProcesses.remove(processId));
-      }
+      rejectedProcesses.add(processId);
     } finally {
       monitor.leave();
     }
-  }
-
-  public boolean isPermanentRejection() {
-    return permanentRejection;
-  }
-
-  public void setPermanentRejection(boolean permanentRejection) {
-    this.permanentRejection = permanentRejection;
   }
 
   public int getNewProcesses() {
