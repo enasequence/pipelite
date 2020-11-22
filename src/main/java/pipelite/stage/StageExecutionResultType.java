@@ -11,18 +11,24 @@
 package pipelite.stage;
 
 public enum StageExecutionResultType {
-  NEW(false),
-  ACTIVE(false),
-  SUCCESS(false),
-  ERROR(true);
+  NEW,
+  ACTIVE,
+  SUCCESS,
+  ERROR;
 
-  StageExecutionResultType(boolean isError) {
-    this.isError = isError;
+  public boolean isNew() {
+    return this == NEW;
   }
 
-  private final boolean isError;
+  public boolean isActive() {
+    return this == ACTIVE;
+  }
 
   public boolean isError() {
-    return isError;
+    return this == ERROR;
+  }
+
+  public boolean isSuccess() {
+    return this == SUCCESS;
   }
 }

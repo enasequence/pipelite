@@ -11,9 +11,9 @@
 package pipelite.launcher;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import pipelite.PipeliteTestConfiguration;
@@ -24,37 +24,37 @@ import pipelite.PipeliteTestConfiguration;
       "pipelite.launcher.pipelineParallelism=5",
       "pipelite.launcher.processLaunchFrequency=250ms",
       "pipelite.launcher.stageLaunchFrequency=250ms",
-      "pipelite.launcher.shutdownIfIdle=true",
-      "pipelite.stage.maximumRetries=1"
+      "pipelite.launcher.shutdownIfIdle=true"
     })
 @ContextConfiguration(initializers = PipeliteLauncherHSqlTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"hsql-test"})
+@DirtiesContext
 public class PipeliteLauncherHSqlFailureTest {
 
-  @Autowired private ObjectProvider<PipeliteLauncherFailureTester> testerObjectProvider;
+  @Autowired private PipeliteLauncherFailureTester tester;
 
   @Test
   public void testFirstStageFails() {
-    testerObjectProvider.getObject().testFirstStageFails();
+    tester.testFirstStageFails();
   }
 
   @Test
   public void testSecondStageFails() {
-    testerObjectProvider.getObject().testSecondStageFails();
+    tester.testSecondStageFails();
   }
 
   @Test
   public void testThirdStageFails() {
-    testerObjectProvider.getObject().testThirdStageFails();
+    tester.testThirdStageFails();
   }
 
   @Test
   public void testFourthStageFails() {
-    testerObjectProvider.getObject().testFourthStageFails();
+    tester.testFourthStageFails();
   }
 
   @Test
   public void testNoStageFails() {
-    testerObjectProvider.getObject().testNoStageFails();
+    tester.testNoStageFails();
   }
 }

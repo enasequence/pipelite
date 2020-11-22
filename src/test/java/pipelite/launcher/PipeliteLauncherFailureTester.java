@@ -12,180 +12,231 @@ package pipelite.launcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.concurrent.atomic.AtomicLong;
+
+import lombok.Value;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-import pipelite.TestProcessFactory;
 import pipelite.TestProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
-import pipelite.executor.ErrorStageExecutor;
-import pipelite.executor.SuccessSyncExecutor;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageParameters;
 
 @Component
 @Scope("prototype")
 public class PipeliteLauncherFailureTester {
 
+  private static final int PROCESS_CNT = 5;
+
   @Autowired private LauncherConfiguration launcherConfiguration;
   @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
   @Autowired private ApplicationContext context;
 
+  @Autowired
+  @Qualifier("firstStageFails")
+  private TestProcessFactory firstStageFails;
+
+  @Autowired
+  @Qualifier("secondStageFails")
+  private TestProcessFactory secondStageFails;
+
+  @Autowired
+  @Qualifier("thirdStageFails")
+  private TestProcessFactory thirdStageFails;
+
+  @Autowired
+  @Qualifier("fourthStageFails")
+  private TestProcessFactory fourthStageFails;
+
+  @Autowired
+  @Qualifier("noStageFails")
+  private TestProcessFactory noStageFails;
+
+  @Autowired
+  @Qualifier("firstStageFailsSource")
+  private TestProcessSource firstStageFailsSource;
+
+  @Autowired
+  @Qualifier("secondStageFailsSource")
+  public TestProcessSource secondStageFailsSource;
+
+  @Autowired
+  @Qualifier("thirdStageFailsSource")
+  public TestProcessSource thirdStageFailsSource;
+
+  @Autowired
+  @Qualifier("fourthStageFailsSource")
+  public TestProcessSource fourthStageFailsSource;
+
+  @Autowired
+  @Qualifier("noStageFailsSource")
+  public TestProcessSource noStageFailsSource;
+
   @TestConfiguration
   static class TestConfig {
-    @Bean
-    public ProcessFactory firstStageFailsProcessFactory() {
-      return new TestProcessFactory(FIRST_STAGE_FAILS_NAME, FIRST_STAGE_FAILS_PROCESSES);
+    @Bean("firstStageFails")
+    @Primary
+    public TestProcessFactory firstStageFails() {
+      return new TestProcessFactory(
+          StageExecutionResult.error(),
+          StageExecutionResult.success(),
+          StageExecutionResult.success(),
+          StageExecutionResult.success());
     }
 
-    @Bean
-    public ProcessFactory secondStageFailsProcessFactory() {
-      return new TestProcessFactory(SECOND_STAGE_FAILS_NAME, SECOND_STAGE_FAILS_PROCESSES);
+    @Bean("secondStageFails")
+    public ProcessFactory secondStageFails() {
+      return new TestProcessFactory(
+          StageExecutionResult.success(),
+          StageExecutionResult.error(),
+          StageExecutionResult.success(),
+          StageExecutionResult.success());
     }
 
-    @Bean
-    public ProcessFactory thirdStageFailsProcessFactory() {
-      return new TestProcessFactory(THIRD_STAGE_FAILS_NAME, THIRD_STAGE_FAILS_PROCESSES);
+    @Bean("thirdStageFails")
+    public ProcessFactory thirdStageFails() {
+      return new TestProcessFactory(
+          StageExecutionResult.success(),
+          StageExecutionResult.success(),
+          StageExecutionResult.error(),
+          StageExecutionResult.success());
     }
 
-    @Bean
-    public ProcessFactory fourthStageFailsProcessFactory() {
-      return new TestProcessFactory(FOURTH_STAGE_FAILS_NAME, FOURTH_STAGE_FAILS_PROCESSES);
+    @Bean("fourthStageFails")
+    public ProcessFactory fourthStageFails() {
+      return new TestProcessFactory(
+          StageExecutionResult.success(),
+          StageExecutionResult.success(),
+          StageExecutionResult.success(),
+          StageExecutionResult.error());
     }
 
-    @Bean
-    public ProcessFactory noStageFailsProcessFactory() {
-      return new TestProcessFactory(NO_STAGE_FAILS_NAME, NO_STAGE_FAILS_PROCESSES);
+    @Bean("noStageFails")
+    public ProcessFactory noStageFails() {
+      return new TestProcessFactory(
+          StageExecutionResult.success(),
+          StageExecutionResult.success(),
+          StageExecutionResult.success(),
+          StageExecutionResult.error());
     }
 
-    @Bean
-    public ProcessSource firstStageFailsProcessSource() {
-      return new TestProcessSource(FIRST_STAGE_FAILS_NAME, FIRST_STAGE_FAILS_PROCESSES);
+    @Bean("firstStageFailsSource")
+    @Primary
+    public ProcessSource firstStageFailsSource(
+        @Autowired @Qualifier("firstStageFails") TestProcessFactory f) {
+      return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
     }
 
-    @Bean
-    public ProcessSource secondStageFailsProcessSource() {
-      return new TestProcessSource(SECOND_STAGE_FAILS_NAME, SECOND_STAGE_FAILS_PROCESSES);
+    @Bean("secondStageFailsSource")
+    public ProcessSource secondStageFailsSource(
+        @Autowired @Qualifier("secondStageFails") TestProcessFactory f) {
+      return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
     }
 
-    @Bean
-    public ProcessSource thirdStageFailsProcessSource() {
-      return new TestProcessSource(THIRD_STAGE_FAILS_NAME, THIRD_STAGE_FAILS_PROCESSES);
+    @Bean("thirdStageFailsSource")
+    public ProcessSource thirdStageFailsSource(
+        @Autowired @Qualifier("thirdStageFails") TestProcessFactory f) {
+      return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
     }
 
-    @Bean
-    public ProcessSource fourthStageFailsProcessSource() {
-      return new TestProcessSource(FOURTH_STAGE_FAILS_NAME, FOURTH_STAGE_FAILS_PROCESSES);
+    @Bean("fourthStageFailsSource")
+    public ProcessSource fourthStageFailsSource(
+        @Autowired @Qualifier("fourthStageFails") TestProcessFactory f) {
+      return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
     }
 
-    @Bean
-    public ProcessSource noStageFailsProcessSource() {
-      return new TestProcessSource(NO_STAGE_FAILS_NAME, NO_STAGE_FAILS_PROCESSES);
+    @Bean("noStageFailsSource")
+    public ProcessSource noStageFailsSource(
+        @Autowired @Qualifier("noStageFails") TestProcessFactory f) {
+      return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
     }
   }
 
-  private static final String FIRST_STAGE_FAILS_NAME = UniqueStringGenerator.randomPipelineName();
-  private static final String SECOND_STAGE_FAILS_NAME = UniqueStringGenerator.randomPipelineName();
-  private static final String THIRD_STAGE_FAILS_NAME = UniqueStringGenerator.randomPipelineName();
-  private static final String FOURTH_STAGE_FAILS_NAME = UniqueStringGenerator.randomPipelineName();
-  private static final String NO_STAGE_FAILS_NAME = UniqueStringGenerator.randomPipelineName();
+  @Value
+  public static class TestProcessFactory implements ProcessFactory {
+    private final String pipelineName = UniqueStringGenerator.randomPipelineName();
+    public final List<String> processIds = Collections.synchronizedList(new ArrayList<>());
+    private StageExecutionResult firstStageExecResult;
+    private StageExecutionResult secondStageExecResult;
+    private StageExecutionResult thirdStageExecResult;
+    private StageExecutionResult fourthStageExecResult;
+    public final AtomicLong firstStageExecCnt = new AtomicLong();
+    public final AtomicLong secondStageExecCnt = new AtomicLong();
+    public final AtomicLong thirdStageExecCnt = new AtomicLong();
+    public final AtomicLong fourthStageExecCnt = new AtomicLong();
 
-  private static final int PROCESS_CNT = 5;
+    public TestProcessFactory(
+        StageExecutionResult firstStageExecResult,
+        StageExecutionResult secondStageExecResult,
+        StageExecutionResult thirdStageExecResult,
+        StageExecutionResult fourthStageExecResult) {
+      this.firstStageExecResult = firstStageExecResult;
+      this.secondStageExecResult = secondStageExecResult;
+      this.thirdStageExecResult = thirdStageExecResult;
+      this.fourthStageExecResult = fourthStageExecResult;
+    }
 
-  private static final List<Process> FIRST_STAGE_FAILS_PROCESSES =
-      list(PipeliteLauncherFailureTester::firstStageFailsProcessGenerator);
-  private static final List<Process> SECOND_STAGE_FAILS_PROCESSES =
-      list(PipeliteLauncherFailureTester::secondStageFailsProcessGenerator);
-  private static final List<Process> THIRD_STAGE_FAILS_PROCESSES =
-      list(PipeliteLauncherFailureTester::thirdStageFailsProcessGenerator);
-  private static final List<Process> FOURTH_STAGE_FAILS_PROCESSES =
-      list(PipeliteLauncherFailureTester::fourthStageFailsProcessGenerator);
-  private static final List<Process> NO_STAGE_FAILS_PROCESSES =
-      list(PipeliteLauncherFailureTester::noStageFailsProcessGenerator);
+    public void reset() {
+      processIds.clear();
+      firstStageExecCnt.set(0);
+      secondStageExecCnt.set(0);
+      thirdStageExecCnt.set(0);
+      fourthStageExecCnt.set(0);
+    }
 
-  private static List<Process> list(Supplier<Process> supplier) {
-    return Stream.generate(() -> supplier.get()).limit(PROCESS_CNT).collect(Collectors.toList());
-  }
+    @Override
+    public String getPipelineName() {
+      return pipelineName;
+    }
 
-  private static final StageParameters STAGE_PARAMS =
-      StageParameters.builder().immediateRetries(0).maximumRetries(0).build();
+    @Override
+    public Process create(String processId) {
+      StageParameters stageParams =
+          StageParameters.builder().immediateRetries(0).maximumRetries(0).build();
 
-  private static Process firstStageFailsProcessGenerator() {
-    return new ProcessBuilder(UniqueStringGenerator.randomProcessId())
-        .execute("STAGE1", STAGE_PARAMS)
-        .with(new ErrorStageExecutor())
-        .executeAfterPrevious("STAGE2", STAGE_PARAMS)
-        .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE3", STAGE_PARAMS)
-        .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE4", STAGE_PARAMS)
-        .with(new SuccessSyncExecutor())
-        .build();
-  }
-
-  private static Process secondStageFailsProcessGenerator() {
-    return new ProcessBuilder(UniqueStringGenerator.randomProcessId())
-        .execute("STAGE1", STAGE_PARAMS)
-        .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE2", STAGE_PARAMS)
-        .with(new ErrorStageExecutor())
-        .executeAfterPrevious("STAGE3", STAGE_PARAMS)
-        .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE4", STAGE_PARAMS)
-        .with(new SuccessSyncExecutor())
-        .build();
-  }
-
-  private static Process thirdStageFailsProcessGenerator() {
-    return new ProcessBuilder(UniqueStringGenerator.randomProcessId())
-        .execute("STAGE1", STAGE_PARAMS)
-        .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE2", STAGE_PARAMS)
-        .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE3", STAGE_PARAMS)
-        .with(new ErrorStageExecutor())
-        .executeAfterPrevious("STAGE4", STAGE_PARAMS)
-        .with(new SuccessSyncExecutor())
-        .build();
-  }
-
-  private static Process fourthStageFailsProcessGenerator() {
-    return new ProcessBuilder(UniqueStringGenerator.randomProcessId())
-        .execute("STAGE1", STAGE_PARAMS)
-        .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE2", STAGE_PARAMS)
-        .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE3", STAGE_PARAMS)
-        .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE4", STAGE_PARAMS)
-        .with(new ErrorStageExecutor())
-        .build();
-  }
-
-  private static Process noStageFailsProcessGenerator() {
-    return new ProcessBuilder(UniqueStringGenerator.randomProcessId())
-        .execute("STAGE1", STAGE_PARAMS)
-        .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE2", STAGE_PARAMS)
-        .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE3", STAGE_PARAMS)
-        .with(new SuccessSyncExecutor())
-        .executeAfterPrevious("STAGE4", STAGE_PARAMS)
-        .with(new SuccessSyncExecutor())
-        .build();
+      return new ProcessBuilder(processId)
+          .execute("STAGE1", stageParams)
+          .with(
+              (pipelineName1, processId1, stage1) -> {
+                firstStageExecCnt.incrementAndGet();
+                return firstStageExecResult;
+              })
+          .executeAfterPrevious("STAGE2", stageParams)
+          .with(
+              (pipelineName1, processId1, stage1) -> {
+                secondStageExecCnt.incrementAndGet();
+                return secondStageExecResult;
+              })
+          .executeAfterPrevious("STAGE3", stageParams)
+          .with(
+              (pipelineName1, processId1, stage1) -> {
+                thirdStageExecCnt.incrementAndGet();
+                return thirdStageExecResult;
+              })
+          .executeAfterPrevious("STAGE4", stageParams)
+          .with(
+              (pipelineName1, processId1, stage1) -> {
+                fourthStageExecCnt.incrementAndGet();
+                return fourthStageExecResult;
+              })
+          .build();
+    }
   }
 
   private PipeliteLauncher pipeliteLauncher(String pipelineName) {
@@ -194,98 +245,72 @@ public class PipeliteLauncherFailureTester {
     return pipeliteLauncher;
   }
 
-  public void testFirstStageFails() {
-    PipeliteLauncher pipeliteLauncher = pipeliteLauncher(FIRST_STAGE_FAILS_NAME);
+  public void test(TestProcessFactory f, TestProcessSource s) {
+    PipeliteLauncher pipeliteLauncher = pipeliteLauncher(f.getPipelineName());
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    TestProcessSource processSource =
-        (TestProcessSource) context.getBean("firstStageFailsProcessSource");
-
-    assertThat(processSource.getNewProcesses()).isEqualTo(0);
-    assertThat(processSource.getReturnedProcesses()).isEqualTo(PROCESS_CNT);
-    assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
-    assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
-
-    assertThat(pipeliteLauncher.getStats().getProcessExecutionCount(ProcessState.FAILED))
-        .isEqualTo(PROCESS_CNT);
     assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getStats().getStageFailedCount()).isEqualTo(PROCESS_CNT);
+
+    assertThat(s.getNewProcesses()).isEqualTo(0);
+    assertThat(s.getReturnedProcesses()).isEqualTo(PROCESS_CNT);
+    assertThat(s.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
+    assertThat(s.getRejectedProcesses()).isEqualTo(0);
+
+    assertStats(pipeliteLauncher, f);
+  }
+
+  private void assertStats(PipeliteLauncher pipeliteLauncher, TestProcessFactory f) {
+    if (f.getFirstStageExecResult().isSuccess()
+        && f.getSecondStageExecResult().isSuccess()
+        && f.getThirdStageExecResult().isSuccess()
+        && f.getFourthStageExecResult().isSuccess()) {
+      assertThat(pipeliteLauncher.getStats().getProcessExecutionCount(ProcessState.COMPLETED))
+          .isEqualTo(PROCESS_CNT);
+      assertThat(pipeliteLauncher.getStats().getProcessExecutionCount(ProcessState.FAILED))
+          .isEqualTo(0);
+    } else {
+      assertThat(pipeliteLauncher.getStats().getProcessExecutionCount(ProcessState.COMPLETED))
+          .isEqualTo(0);
+      assertThat(pipeliteLauncher.getStats().getProcessExecutionCount(ProcessState.FAILED))
+          .isEqualTo(PROCESS_CNT);
+    }
+
+    int stageSuccessCount = 0;
+    int stageFailedCount = PROCESS_CNT;
+    if (f.getFirstStageExecResult().isSuccess()) {
+      stageSuccessCount += PROCESS_CNT;
+      if (f.getSecondStageExecResult().isSuccess()) {
+        stageSuccessCount += PROCESS_CNT;
+        if (f.getThirdStageExecResult().isSuccess()) {
+          stageSuccessCount += PROCESS_CNT;
+          if (f.getFourthStageExecResult().isSuccess()) {
+            stageSuccessCount += PROCESS_CNT;
+            stageFailedCount = 0;
+          }
+        }
+      }
+    }
+    assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(stageSuccessCount);
+    assertThat(pipeliteLauncher.getStats().getStageFailedCount()).isEqualTo(stageFailedCount);
+  }
+
+  public void testFirstStageFails() {
+    test(firstStageFails, firstStageFailsSource);
   }
 
   public void testSecondStageFails() {
-    PipeliteLauncher pipeliteLauncher = pipeliteLauncher(SECOND_STAGE_FAILS_NAME);
-    ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
-
-    TestProcessSource processSource =
-        (TestProcessSource) context.getBean("secondStageFailsProcessSource");
-
-    assertThat(processSource.getNewProcesses()).isEqualTo(0);
-    assertThat(processSource.getReturnedProcesses()).isEqualTo(PROCESS_CNT);
-    assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
-    assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
-
-    assertThat(pipeliteLauncher.getStats().getProcessExecutionCount(ProcessState.FAILED))
-        .isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getStats().getStageFailedCount()).isEqualTo(PROCESS_CNT);
+    test(secondStageFails, secondStageFailsSource);
   }
 
   public void testThirdStageFails() {
-    PipeliteLauncher pipeliteLauncher = pipeliteLauncher(THIRD_STAGE_FAILS_NAME);
-    ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
-
-    TestProcessSource processSource =
-        (TestProcessSource) context.getBean("thirdStageFailsProcessSource");
-
-    assertThat(processSource.getNewProcesses()).isEqualTo(0);
-    assertThat(processSource.getReturnedProcesses()).isEqualTo(PROCESS_CNT);
-    assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
-    assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
-
-    assertThat(pipeliteLauncher.getStats().getProcessExecutionCount(ProcessState.FAILED))
-        .isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(PROCESS_CNT * 2);
-    assertThat(pipeliteLauncher.getStats().getStageFailedCount()).isEqualTo(PROCESS_CNT);
+    test(thirdStageFails, thirdStageFailsSource);
   }
 
   public void testFourthStageFails() {
-    PipeliteLauncher pipeliteLauncher = pipeliteLauncher(FOURTH_STAGE_FAILS_NAME);
-    ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
-
-    TestProcessSource processSource =
-        (TestProcessSource) context.getBean("fourthStageFailsProcessSource");
-
-    assertThat(processSource.getNewProcesses()).isEqualTo(0);
-    assertThat(processSource.getReturnedProcesses()).isEqualTo(PROCESS_CNT);
-    assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
-    assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
-
-    assertThat(pipeliteLauncher.getStats().getProcessExecutionCount(ProcessState.FAILED))
-        .isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(PROCESS_CNT * 3);
-    assertThat(pipeliteLauncher.getStats().getStageFailedCount()).isEqualTo(PROCESS_CNT);
+    test(fourthStageFails, fourthStageFailsSource);
   }
 
   public void testNoStageFails() {
-    PipeliteLauncher pipeliteLauncher = pipeliteLauncher(NO_STAGE_FAILS_NAME);
-    ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
-
-    TestProcessSource processSource =
-        (TestProcessSource) context.getBean("noStageFailsProcessSource");
-
-    assertThat(processSource.getNewProcesses()).isEqualTo(0);
-    assertThat(processSource.getReturnedProcesses()).isEqualTo(PROCESS_CNT);
-    assertThat(processSource.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
-    assertThat(processSource.getRejectedProcesses()).isEqualTo(0);
-
-    assertThat(pipeliteLauncher.getStats().getProcessExecutionCount(ProcessState.COMPLETED))
-        .isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(PROCESS_CNT * 4);
-    assertThat(pipeliteLauncher.getStats().getStageFailedCount()).isEqualTo(0);
+    test(noStageFails, noStageFailsSource);
   }
 }

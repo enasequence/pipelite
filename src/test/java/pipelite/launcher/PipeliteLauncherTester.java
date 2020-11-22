@@ -82,20 +82,20 @@ public class PipeliteLauncherTester {
 
     @Bean
     public ProcessSource processSuccessSource(
-        @Autowired @Qualifier("processSuccess") TestProcessFactory processSuccess) {
-      return new TestProcessSource(processSuccess.getPipelineName(), processSuccess.processCnt);
+        @Autowired @Qualifier("processSuccess") TestProcessFactory f) {
+      return new TestProcessSource(f.getPipelineName(), f.processCnt);
     }
 
     @Bean
     public ProcessSource processFailureSource(
-        @Autowired @Qualifier("processFailure") TestProcessFactory processFailure) {
-      return new TestProcessSource(processFailure.getPipelineName(), processFailure.processCnt);
+        @Autowired @Qualifier("processFailure") TestProcessFactory f) {
+      return new TestProcessSource(f.getPipelineName(), f.processCnt);
     }
 
     @Bean
     public ProcessSource processExceptionSource(
-        @Autowired @Qualifier("processException") TestProcessFactory processException) {
-      return new TestProcessSource(processException.getPipelineName(), processException.processCnt);
+        @Autowired @Qualifier("processException") TestProcessFactory f) {
+      return new TestProcessSource(f.getPipelineName(), f.processCnt);
     }
   }
 
@@ -171,13 +171,13 @@ public class PipeliteLauncherTester {
 
     if (f.stageTestResult != StageTestResult.SUCCESS) {
       assertThat(stats.getProcessExecutionCount(ProcessState.FAILED))
-              .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
+          .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
       assertThat(stats.getStageFailedCount()).isEqualTo(f.stageExecCnt.get());
       assertThat(stats.getStageSuccessCount()).isEqualTo(0L);
 
     } else {
       assertThat(stats.getProcessExecutionCount(ProcessState.COMPLETED))
-              .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
+          .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
       assertThat(stats.getStageFailedCount()).isEqualTo(0L);
       assertThat(stats.getStageSuccessCount()).isEqualTo(f.stageExecCnt.get());
     }
@@ -211,8 +211,7 @@ public class PipeliteLauncherTester {
       assertThat(stageEntity.getStartTime()).isNotNull();
       assertThat(stageEntity.getEndTime()).isNotNull();
       assertThat(stageEntity.getStartTime()).isBeforeOrEqualTo(stageEntity.getEndTime());
-      assertThat(stageEntity.getExecutorName())
-          .startsWith(PipeliteLauncherTester.class.getName());
+      assertThat(stageEntity.getExecutorName()).startsWith(PipeliteLauncherTester.class.getName());
       assertThat(stageEntity.getExecutorData()).isEqualTo("{ }");
       assertThat(stageEntity.getExecutorParams())
           .isEqualTo("{\n  \"maximumRetries\" : 0,\n  \"immediateRetries\" : 0\n}");
