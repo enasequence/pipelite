@@ -30,6 +30,7 @@ import pipelite.executor.StageExecutor;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
+import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.ProcessService;
 import pipelite.service.StageService;
@@ -48,90 +49,68 @@ public class PipeliteLauncherAsyncTester {
   @Autowired private StageService stageService;
   @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
 
-  @Autowired
-  // @Qualifier("submitSuccessPollSuccess")
-  private TestProcessFactory<SubmitSuccessPollSuccessExecutor> submitSuccessPollSuccess;
+  @Autowired private TestProcessFactory<SubmitSuccessPollSuccessExecutor> submitSuccessPollSuccess;
 
-  @Autowired
-  // @Qualifier("submitError")
-  public TestProcessFactory<SubmitErrorExecutor> submitError;
+  @Autowired public TestProcessFactory<SubmitErrorExecutor> submitError;
 
-  @Autowired
-  // @Qualifier("submitException")
-  public TestProcessFactory<SubmitExceptionExecutor> submitException;
+  @Autowired public TestProcessFactory<SubmitExceptionExecutor> submitException;
 
-  @Autowired
-  // @Qualifier("pollError")
-  public TestProcessFactory<PollErrorExecutor> pollError;
+  @Autowired public TestProcessFactory<PollErrorExecutor> pollError;
 
-  @Autowired
-  // @Qualifier("pollException")
-  public TestProcessFactory<PollExceptionExecutor> pollException;
+  @Autowired public TestProcessFactory<PollExceptionExecutor> pollException;
 
   @TestConfiguration
   static class TestConfig {
-    @Bean // ("submitSuccessPollSuccess")
-    // @Primary
+    @Bean
     public TestProcessFactory<SubmitSuccessPollSuccessExecutor> submitSuccessPollSuccess() {
       return new TestProcessFactory(new SubmitSuccessPollSuccessExecutor());
     }
 
-    @Bean // ("submitError")
+    @Bean
     public TestProcessFactory<SubmitErrorExecutor> submitError() {
       return new TestProcessFactory(new SubmitErrorExecutor());
     }
 
-    @Bean // ("submitException")
+    @Bean
     public TestProcessFactory<SubmitExceptionExecutor> submitException() {
       return new TestProcessFactory(new SubmitExceptionExecutor());
     }
 
-    @Bean // ("pollError")
+    @Bean
     public TestProcessFactory<PollErrorExecutor> pollError() {
       return new TestProcessFactory(new PollErrorExecutor());
     }
 
-    @Bean // ("pollException")
+    @Bean
     public TestProcessFactory<PollExceptionExecutor> pollException() {
       return new TestProcessFactory(new PollExceptionExecutor());
     }
 
     @Bean
     public ProcessSource submitSuccessPollSuccessSource(
-        @Autowired // @Qualifier("submitSuccessPollSuccess")
-            TestProcessFactory<SubmitSuccessPollSuccessExecutor> f) {
+        @Autowired TestProcessFactory<SubmitSuccessPollSuccessExecutor> f) {
       return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
     }
 
     @Bean
-    public ProcessSource submitErrorSource(
-        @Autowired
-            // @Qualifier("submitError")
-            TestProcessFactory<SubmitErrorExecutor> f) {
+    public ProcessSource submitErrorSource(@Autowired TestProcessFactory<SubmitErrorExecutor> f) {
       return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
     }
 
     @Bean
     public ProcessSource submitExceptionSource(
-        @Autowired
-            // @Qualifier("submitException")
-            TestProcessFactory<SubmitExceptionExecutor> f) {
+        @Autowired TestProcessFactory<SubmitExceptionExecutor> f) {
       return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
     }
 
     @Bean
-    public ProcessSource pollErrorSource(
-        @Autowired
-            // @Qualifier("pollError")
-            TestProcessFactory<PollErrorExecutor> f) {
+    public ProcessSource pollErrorSource(@Autowired TestProcessFactory<PollErrorExecutor> f) {
       return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
     }
 
     @Bean
     public ProcessSource pollExceptionSource(
-        @Autowired
-            // @Qualifier("pollException")
-            TestProcessFactory<PollExceptionExecutor> f) {
+        @Autowired TestProcessFactory<PollExceptionExecutor> f) {
       return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
     }
   }
@@ -254,8 +233,13 @@ public class PipeliteLauncherAsyncTester {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    assertThat(pipeliteLauncher.getStats().getStageFailedCount()).isEqualTo(0);
-    assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(PROCESS_CNT);
+    PipeliteLauncherStats stats = pipeliteLauncher.getStats();
+    assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
+    assertThat(stats.getProcessExecutionCount(ProcessState.COMPLETED)).isEqualTo(PROCESS_CNT);
+    assertThat(stats.getProcessExecutionCount(ProcessState.FAILED)).isZero();
+    assertThat(stats.getStageFailedCount()).isEqualTo(0);
+    assertThat(stats.getStageSuccessCount()).isEqualTo(PROCESS_CNT);
+
     assertThat(f.stageExecutor.submitCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(f.stageExecutor.pollCount.get()).isEqualTo(PROCESS_CNT);
   }
@@ -268,8 +252,13 @@ public class PipeliteLauncherAsyncTester {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    assertThat(pipeliteLauncher.getStats().getStageFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(0);
+    PipeliteLauncherStats stats = pipeliteLauncher.getStats();
+    assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
+    assertThat(stats.getProcessExecutionCount(ProcessState.COMPLETED)).isZero();
+    assertThat(stats.getProcessExecutionCount(ProcessState.FAILED)).isEqualTo(PROCESS_CNT);
+    assertThat(stats.getStageFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(stats.getStageSuccessCount()).isEqualTo(0);
+
     assertThat(f.stageExecutor.submitCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(f.stageExecutor.pollCount.get()).isEqualTo(0);
   }
@@ -282,8 +271,13 @@ public class PipeliteLauncherAsyncTester {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    assertThat(pipeliteLauncher.getStats().getStageFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(0);
+    PipeliteLauncherStats stats = pipeliteLauncher.getStats();
+    assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
+    assertThat(stats.getProcessExecutionCount(ProcessState.COMPLETED)).isZero();
+    assertThat(stats.getProcessExecutionCount(ProcessState.FAILED)).isEqualTo(PROCESS_CNT);
+    assertThat(stats.getStageFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(stats.getStageSuccessCount()).isEqualTo(0);
+
     assertThat(f.stageExecutor.submitCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(f.stageExecutor.pollCount.get()).isEqualTo(0);
   }
@@ -296,8 +290,13 @@ public class PipeliteLauncherAsyncTester {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    assertThat(pipeliteLauncher.getStats().getStageFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(0);
+    PipeliteLauncherStats stats = pipeliteLauncher.getStats();
+    assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
+    assertThat(stats.getProcessExecutionCount(ProcessState.COMPLETED)).isZero();
+    assertThat(stats.getProcessExecutionCount(ProcessState.FAILED)).isEqualTo(PROCESS_CNT);
+    assertThat(stats.getStageFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(stats.getStageSuccessCount()).isEqualTo(0);
+
     assertThat(f.stageExecutor.submitCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(f.stageExecutor.pollCount.get()).isEqualTo(PROCESS_CNT);
   }
@@ -310,8 +309,13 @@ public class PipeliteLauncherAsyncTester {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    assertThat(pipeliteLauncher.getStats().getStageFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipeliteLauncher.getStats().getStageSuccessCount()).isEqualTo(0);
+    PipeliteLauncherStats stats = pipeliteLauncher.getStats();
+    assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
+    assertThat(stats.getProcessExecutionCount(ProcessState.COMPLETED)).isZero();
+    assertThat(stats.getProcessExecutionCount(ProcessState.FAILED)).isEqualTo(PROCESS_CNT);
+    assertThat(stats.getStageFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(stats.getStageSuccessCount()).isEqualTo(0);
+
     assertThat(f.stageExecutor.submitCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(f.stageExecutor.pollCount.get()).isEqualTo(PROCESS_CNT);
   }
