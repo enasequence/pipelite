@@ -32,11 +32,6 @@ public class TestProcessSource implements ProcessSource {
     }
   }
 
-  public TestProcessSource(String pipelineName, Collection<Process> processes) {
-    this.pipelineName = pipelineName;
-    processes.forEach(process -> newProcesses.add(process.getProcessId()));
-  }
-
   @Override
   public String getPipelineName() {
     return pipelineName;
@@ -65,16 +60,6 @@ public class TestProcessSource implements ProcessSource {
     monitor.enter();
     try {
       acceptedProcesses.add(processId);
-    } finally {
-      monitor.leave();
-    }
-  }
-
-  @Override
-  public void reject(String processId) {
-    monitor.enter();
-    try {
-      rejectedProcesses.add(processId);
     } finally {
       monitor.leave();
     }

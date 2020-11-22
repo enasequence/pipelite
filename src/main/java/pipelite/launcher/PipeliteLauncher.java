@@ -220,7 +220,6 @@ public class PipeliteLauncher extends AbstractScheduledService {
       logContext(log.atSevere(), processId)
           .log("New process has non-unique process id %s", processId);
       stats.processIdNotUniqueCount.incrementAndGet();
-      processSource.reject(processId);
       return false;
     }
 

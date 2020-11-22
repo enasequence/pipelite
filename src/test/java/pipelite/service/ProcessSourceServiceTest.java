@@ -37,12 +37,12 @@ public class ProcessSourceServiceTest {
   static class TestConfig {
     @Bean
     public ProcessSource firstProcessSource() {
-      return new TestProcessSource(PIPELINE_NAME_1, Collections.emptyList());
+      return new TestProcessSource(PIPELINE_NAME_1, 0);
     }
 
     @Bean
     public ProcessSource secondProcessSource() {
-      return new TestProcessSource(PIPELINE_NAME_2, Collections.emptyList());
+      return new TestProcessSource(PIPELINE_NAME_2, 0);
     }
   }
 

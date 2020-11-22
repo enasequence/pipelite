@@ -32,8 +32,6 @@ import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.service.ProcessService;
-import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageParameters;
@@ -45,8 +43,6 @@ public class PipeliteLauncherAsyncTester {
   private static final int PROCESS_CNT = 5;
 
   @Autowired private LauncherConfiguration launcherConfiguration;
-  @Autowired private ProcessService processService;
-  @Autowired private StageService stageService;
   @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
 
   @Autowired private TestProcessFactory<SubmitSuccessPollSuccessExecutor> submitSuccessPollSuccess;
