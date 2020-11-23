@@ -163,8 +163,6 @@ public class PipeliteLauncherTester {
   private void assertLauncherStats(PipeliteLauncher pipeliteLauncher, TestProcessFactory f) {
     PipeliteLauncherStats stats = pipeliteLauncher.getStats();
 
-    assertThat(stats.getProcessIdMissingCount()).isZero();
-    assertThat(stats.getProcessIdNotUniqueCount()).isZero();
     assertThat(stats.getProcessCreationFailedCount()).isEqualTo(0);
     assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
 

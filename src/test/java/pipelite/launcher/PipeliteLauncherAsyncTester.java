@@ -58,27 +58,27 @@ public class PipeliteLauncherAsyncTester {
   static class TestConfig {
     @Bean
     public TestProcessFactory<SubmitSuccessPollSuccessExecutor> submitSuccessPollSuccess() {
-      return new TestProcessFactory(new SubmitSuccessPollSuccessExecutor());
+      return new TestProcessFactory<>(new SubmitSuccessPollSuccessExecutor());
     }
 
     @Bean
     public TestProcessFactory<SubmitErrorExecutor> submitError() {
-      return new TestProcessFactory(new SubmitErrorExecutor());
+      return new TestProcessFactory<>(new SubmitErrorExecutor());
     }
 
     @Bean
     public TestProcessFactory<SubmitExceptionExecutor> submitException() {
-      return new TestProcessFactory(new SubmitExceptionExecutor());
+      return new TestProcessFactory<>(new SubmitExceptionExecutor());
     }
 
     @Bean
     public TestProcessFactory<PollErrorExecutor> pollError() {
-      return new TestProcessFactory(new PollErrorExecutor());
+      return new TestProcessFactory<>(new PollErrorExecutor());
     }
 
     @Bean
     public TestProcessFactory<PollExceptionExecutor> pollException() {
-      return new TestProcessFactory(new PollExceptionExecutor());
+      return new TestProcessFactory<>(new PollExceptionExecutor());
     }
 
     @Bean

@@ -57,8 +57,8 @@ public class PipeliteScheduler extends AbstractScheduledService {
   private final Map<String, PipeliteSchedulerStats> stats = new ConcurrentHashMap<>();
   private final Map<String, AtomicLong> remainingExecutions = new ConcurrentHashMap<>();
 
+  public static final int maxProcessIdRetries = 100;
   private final LocalDateTime startTime;
-
   private boolean shutdownAfterTriggered = false;
 
   @Data
@@ -134,25 +134,19 @@ public class PipeliteScheduler extends AbstractScheduledService {
     if (shutdownAfterTriggered || !isRunning()) {
       return;
     }
-
     logContext(log.atInfo()).log("Running scheduler");
-
     if (schedules.isEmpty() || schedulesValidUntil.isBefore(LocalDateTime.now())) {
       scheduleProcesses();
     }
-
     for (Schedule schedule : schedules) {
       String pipelineName = schedule.getScheduleEntity().getPipelineName();
       String cronExpression = schedule.getScheduleEntity().getSchedule();
       LocalDateTime launchTime = schedule.getLaunchTime();
-
       if (!activePipelines.contains(pipelineName) && launchTime.isBefore(LocalDateTime.now())) {
-
         if (remainingExecutions.get(pipelineName) != null
             && remainingExecutions.get(pipelineName).decrementAndGet() < 0) {
           continue;
         }
-
         // Update next launch time.
         schedule.setLaunchTime(CronUtils.launchTime(cronExpression));
         logContext(log.atInfo(), pipelineName)
@@ -167,7 +161,6 @@ public class PipeliteScheduler extends AbstractScheduledService {
         }
       }
     }
-
     shutdownIfNoRemainingExecutions();
   }
 
@@ -180,21 +173,16 @@ public class PipeliteScheduler extends AbstractScheduledService {
         return;
       }
     }
-
     logContext(log.atInfo()).log("Stopping pipelite scheduler after maximum executions");
     shutdownAfterTriggered = true;
     stopAsync();
   }
 
   private void scheduleProcesses() {
-
     logContext(log.atInfo()).log("Scheduling processes");
-
     schedules.clear();
-
     List<ScheduleEntity> scheduleEntities = scheduleService.getAllProcessSchedules(launcherName);
     logContext(log.atInfo()).log("Found %s schedules", scheduleEntities.size());
-
     for (ScheduleEntity scheduleEntity : scheduleEntities) {
       String scheduleDescription = "invalid cron expression";
       if (CronUtils.validate(scheduleEntity.getSchedule())) {
@@ -246,11 +234,9 @@ public class PipeliteScheduler extends AbstractScheduledService {
   }
 
   private boolean createProcess(Schedule schedule) {
-
     String pipelineName = schedule.getScheduleEntity().getPipelineName();
     String processId = getNextProcessId(schedule.getScheduleEntity().getProcessId());
-
-    int remainingProcessIdRetries = 100;
+    int remainingProcessIdRetries = maxProcessIdRetries;
     while (true) {
       Optional<ProcessEntity> savedProcessEntity =
           processService.getSavedProcess(pipelineName, processId);
@@ -267,24 +253,18 @@ public class PipeliteScheduler extends AbstractScheduledService {
     logContext(log.atInfo(), pipelineName, processId).log("Creating new process");
 
     ProcessFactory processFactory = getCachedProcessFactory(pipelineName);
-
     Process process = processFactory.create(processId);
-
     if (process == null) {
       logContext(log.atSevere(), processId).log("Failed to create process: %s", processId);
       setStats(pipelineName).processCreationFailedCount.incrementAndGet();
       return false;
     }
-
     ProcessEntity newProcessEntity = ProcessEntity.createExecution(pipelineName, processId, 9);
     processService.saveProcess(newProcessEntity);
-
     schedule.setProcess(process);
     schedule.setProcessEntity(newProcessEntity);
-
     schedule.getScheduleEntity().startExecution(processId);
     scheduleService.saveProcessSchedule(schedule.getScheduleEntity());
-
     return true;
   }
 
@@ -296,6 +276,8 @@ public class PipeliteScheduler extends AbstractScheduledService {
 
     logContext(log.atInfo(), pipelineName, processId).log("Launching process");
 
+    activePipelines.add(pipelineName);
+
     ProcessLauncher processLauncher =
         new ProcessLauncher(
             launcherConfiguration,
@@ -305,10 +287,8 @@ public class PipeliteScheduler extends AbstractScheduledService {
             pipelineName,
             process,
             processEntity);
-
     executorService.execute(
         () -> {
-          activePipelines.add(pipelineName);
           try {
             if (!processLocker.lock(pipelineName, processId)) {
               return;
@@ -338,7 +318,6 @@ public class PipeliteScheduler extends AbstractScheduledService {
   @Override
   protected void shutDown() throws Exception {
     logContext(log.atInfo()).log("Shutting down scheduler");
-
     executorService.shutdown();
     try {
       executorService.awaitTermination(ServerManager.FORCE_STOP_WAIT_SECONDS - 1, TimeUnit.SECONDS);
@@ -347,7 +326,6 @@ public class PipeliteScheduler extends AbstractScheduledService {
       throw ex;
     } finally {
       launcherLocker.unlock();
-
       logContext(log.atInfo()).log("Scheduler has been shut down");
     }
   }

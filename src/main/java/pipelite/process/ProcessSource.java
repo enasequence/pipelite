@@ -37,4 +37,7 @@ public interface ProcessSource {
 
   /** Confirms that the new process has been accepted. */
   void accept(String processId);
+
+  /** Confirms that the new process has been rejected. */
+  default void reject(String processId, String message) {}
 }

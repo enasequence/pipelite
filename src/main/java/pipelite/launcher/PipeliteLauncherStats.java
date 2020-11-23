@@ -17,21 +17,11 @@ import pipelite.process.ProcessState;
 
 public class PipeliteLauncherStats {
 
-  final AtomicLong processIdMissingCount = new AtomicLong(0);
-  final AtomicLong processIdNotUniqueCount = new AtomicLong(0);
   final AtomicLong processCreationFailedCount = new AtomicLong(0);
   private final Map<ProcessState, AtomicLong> processExecutionCount = new ConcurrentHashMap<>();
   final AtomicLong processExceptionCount = new AtomicLong(0);
   final AtomicLong stageFailedCount = new AtomicLong(0);
   final AtomicLong stageSuccessCount = new AtomicLong(0);
-
-  public long getProcessIdMissingCount() {
-    return processIdMissingCount.get();
-  }
-
-  public long getProcessIdNotUniqueCount() {
-    return processIdNotUniqueCount.get();
-  }
 
   public long getProcessCreationFailedCount() {
     return processCreationFailedCount.get();

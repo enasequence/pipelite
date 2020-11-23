@@ -50,10 +50,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   private final LauncherLocker launcherLocker;
   private final ProcessLocker processLocker;
-
   private final ProcessFactory processFactory;
-  private ProcessSource processSource;
-
+  private final ProcessSource processSource;
   private final int workers;
   private final ExecutorService executorService;
 
@@ -69,6 +67,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   private final Duration processLaunchFrequency;
   private final Duration processRefreshFrequency;
+  private static final int processCreationCount = 5000;
 
   public PipeliteLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
@@ -114,7 +113,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
     this.workers =
         launcherConfiguration.getPipelineParallelism() > 0
             ? launcherConfiguration.getPipelineParallelism()
-            : LauncherConfiguration.DEFAULT_PROCESS_LAUNCH_PARALLELISM;
+            : LauncherConfiguration.DEFAULT_PIPELINE_PARALLELISM;
     this.executorService = Executors.newFixedThreadPool(workers);
   }
 
@@ -176,15 +175,27 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   private void createNewProcesses() {
     logContext(log.atInfo()).log("Creating new processes");
-    while (true) {
+    for (int i = 0; i < processCreationCount; ++i) {
       ProcessSource.NewProcess newProcess = processSource.next();
       if (newProcess == null) {
-        break;
+        // No new processes.
+        return;
       }
-      if (!validateNewProcess(newProcess)) {
+      String newProcessId = newProcess.getProcessId();
+      if (newProcessId == null || newProcessId.trim().isEmpty()) {
+        logContext(log.atWarning()).log("New process has no process id");
+        processSource.reject(newProcess.getProcessId(), "New process has no process id");
         continue;
       }
-      String trimmedNewProcessId = newProcess.getProcessId().trim();
+      String trimmedNewProcessId = newProcessId.trim();
+      Optional<ProcessEntity> savedProcessEntity =
+          processService.getSavedProcess(pipelineName, trimmedNewProcessId);
+      if (savedProcessEntity.isPresent()) {
+        logContext(log.atWarning()).log("New process id already exists %s", trimmedNewProcessId);
+        processSource.reject(
+            newProcess.getProcessId(), "New process id already exists " + trimmedNewProcessId);
+        continue;
+      }
       logContext(log.atInfo()).log("Creating new process %s", trimmedNewProcessId);
       ProcessEntity newProcessEntity =
           ProcessEntity.createExecution(
@@ -192,25 +203,6 @@ public class PipeliteLauncher extends AbstractScheduledService {
       processService.saveProcess(newProcessEntity);
       processSource.accept(newProcess.getProcessId());
     }
-  }
-
-  private boolean validateNewProcess(ProcessSource.NewProcess newProcess) {
-    String processId = newProcess.getProcessId();
-    if (processId == null || processId.trim().isEmpty()) {
-      logContext(log.atWarning()).log("New process has no process id");
-      stats.processIdMissingCount.incrementAndGet();
-      return false;
-    }
-    processId = processId.trim();
-    Optional<ProcessEntity> savedProcessEntity =
-        processService.getSavedProcess(pipelineName, processId);
-    if (savedProcessEntity.isPresent()) {
-      logContext(log.atSevere(), processId)
-          .log("New process has non-unique process id %s", processId);
-      stats.processIdNotUniqueCount.incrementAndGet();
-      return false;
-    }
-    return true;
   }
 
   private void queueProcesses() {
