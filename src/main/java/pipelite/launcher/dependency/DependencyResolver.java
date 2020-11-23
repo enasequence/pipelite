@@ -21,32 +21,33 @@ import static pipelite.stage.StageExecutionResultType.NEW;
 
 public class DependencyResolver {
 
-  private final List<ProcessLauncher.StageAndStageEntity> stageAndStageEntities;
+  private final List<ProcessLauncher.StageExecution> stageExecutions;
 
-  public DependencyResolver(List<ProcessLauncher.StageAndStageEntity> stageAndStageEntities) {
-    this.stageAndStageEntities = stageAndStageEntities;
+  public DependencyResolver(List<ProcessLauncher.StageExecution> stageExecutions) {
+    this.stageExecutions = stageExecutions;
   }
 
-  public List<ProcessLauncher.StageAndStageEntity> getDependentStages(
-      ProcessLauncher.StageAndStageEntity from) {
-    List<ProcessLauncher.StageAndStageEntity> dependentStages = new ArrayList<>();
+  public List<ProcessLauncher.StageExecution> getDependentStages(
+      ProcessLauncher.StageExecution from) {
+    List<ProcessLauncher.StageExecution> dependentStages = new ArrayList<>();
     getDependentStages(dependentStages, from, false);
     return dependentStages;
   }
 
   private void getDependentStages(
-      List<ProcessLauncher.StageAndStageEntity> dependentStages,
-      ProcessLauncher.StageAndStageEntity from,
+      List<ProcessLauncher.StageExecution> dependentStages,
+      ProcessLauncher.StageExecution from,
       boolean include) {
 
-    for (ProcessLauncher.StageAndStageEntity stage : stageAndStageEntities) {
-      if (stage.getStage().equals(from)) {
+    for (ProcessLauncher.StageExecution stageExecution : stageExecutions) {
+      Stage stage = stageExecution.getStage();
+      if (stage.equals(from)) {
         continue;
       }
 
-      Stage dependsOn = stage.getStage().getDependsOn();
+      Stage dependsOn = stage.getDependsOn();
       if (dependsOn != null && dependsOn.getStageName().equals(from.getStage().getStageName())) {
-        getDependentStages(dependentStages, stage, true);
+        getDependentStages(dependentStages, stageExecution, true);
       }
     }
 
@@ -55,11 +56,11 @@ public class DependencyResolver {
     }
   }
 
-  public List<ProcessLauncher.StageAndStageEntity> getExecutableStages() {
-    List<ProcessLauncher.StageAndStageEntity> executableStages = new ArrayList<>();
-    for (ProcessLauncher.StageAndStageEntity stageAndStageEntity : stageAndStageEntities) {
-      Stage stage = stageAndStageEntity.getStage();
-      StageEntity stageEntity = stageAndStageEntity.getStageEntity();
+  public List<ProcessLauncher.StageExecution> getExecutableStages() {
+    List<ProcessLauncher.StageExecution> executableStages = new ArrayList<>();
+    for (ProcessLauncher.StageExecution stageExecution : stageExecutions) {
+      Stage stage = stageExecution.getStage();
+      StageEntity stageEntity = stageExecution.getStageEntity();
 
       if (isDependsOnStageCompleted(stage)) {
         StageExecutionResultType resultType = stageEntity.getResultType();
@@ -69,7 +70,7 @@ public class DependencyResolver {
         switch (resultType) {
           case NEW:
           case ACTIVE:
-            executableStages.add(stageAndStageEntity);
+            executableStages.add(stageExecution);
             break;
           case SUCCESS:
             break;
@@ -81,8 +82,8 @@ public class DependencyResolver {
 
               if (executionCount != null
                   && executionCount <= maximumRetries
-                  && stageAndStageEntity.immediateExecutionCount <= immediateRetries) {
-                executableStages.add(stageAndStageEntity);
+                  && stageExecution.getImmediateExecutionCount() <= immediateRetries) {
+                executableStages.add(stageExecution);
               }
             }
         }
@@ -98,8 +99,8 @@ public class DependencyResolver {
       return true;
     }
 
-    return stageAndStageEntities.stream()
-            .filter(a -> a.getStage().equals(dependsOnStage))
+    return stageExecutions.stream()
+            .filter(e -> e.getStage().equals(dependsOnStage))
             .findFirst()
             .get()
             .getStageEntity()

@@ -20,6 +20,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.extern.flogger.Flogger;
 import pipelite.configuration.*;
@@ -47,7 +48,7 @@ public class ProcessLauncher {
   private final Process process;
   private final ProcessEntity processEntity;
 
-  private final List<StageAndStageEntity> stageAndStageEntities;
+  private final List<StageExecution> stageExecutions;
   private final DependencyResolver dependencyResolver;
   private final ExecutorService executorService;
   private final Set<String> activeStages = ConcurrentHashMap.newKeySet();
@@ -74,8 +75,8 @@ public class ProcessLauncher {
     this.process = process;
     this.processEntity = processEntity;
 
-    this.stageAndStageEntities = new ArrayList<>();
-    this.dependencyResolver = new DependencyResolver(stageAndStageEntities);
+    this.stageExecutions = new ArrayList<>();
+    this.dependencyResolver = new DependencyResolver(stageExecutions);
     this.executorService = Executors.newCachedThreadPool();
 
     if (launcherConfiguration.getStageLaunchFrequency() != null) {
@@ -91,12 +92,12 @@ public class ProcessLauncher {
     }
   }
 
-  public static class StageAndStageEntity {
+  public static class StageExecution {
     private final Stage stage;
     private final StageEntity stageEntity;
-    public int immediateExecutionCount = 0;
+    private AtomicInteger immediateExecutionCount = new AtomicInteger(0);
 
-    public StageAndStageEntity(Stage stage, StageEntity stageEntity) {
+    public StageExecution(Stage stage, StageEntity stageEntity) {
       this.stage = stage;
       this.stageEntity = stageEntity;
     }
@@ -107,6 +108,14 @@ public class ProcessLauncher {
 
     public StageEntity getStageEntity() {
       return stageEntity;
+    }
+
+    public int getImmediateExecutionCount() {
+      return immediateExecutionCount.get();
+    }
+
+    public void incrementImmediateExecutionCount() {
+      immediateExecutionCount.incrementAndGet();
     }
   }
 
@@ -135,30 +144,31 @@ public class ProcessLauncher {
                     StageEntity.createExecution(pipelineName, getProcessId(), stage)));
       }
 
-      stageAndStageEntities.add(new StageAndStageEntity(stage, processEntity.get()));
+      stageExecutions.add(new StageExecution(stage, processEntity.get()));
     }
   }
 
   private ProcessState evaluateProcessState() {
     int successCount = 0;
-    for (StageAndStageEntity stageAndStageEntity : stageAndStageEntities) {
-
-      StageExecutionResultType resultType = stageAndStageEntity.getStageEntity().getResultType();
+    for (StageExecution stageExecution : stageExecutions) {
+      Stage stage = stageExecution.stage;
+      StageEntity stageEntity = stageExecution.stageEntity;
+      StageExecutionResultType resultType = stageEntity.getResultType();
 
       if (resultType == SUCCESS) {
         successCount++;
       } else if (resultType == null || resultType == ACTIVE) {
         return ProcessState.ACTIVE;
       } else {
-        Integer executionCount = stageAndStageEntity.getStageEntity().getExecutionCount();
-        int maximumRetries = getMaximumRetries(stageAndStageEntity.getStage());
+        Integer executionCount = stageEntity.getExecutionCount();
+        int maximumRetries = getMaximumRetries(stage);
         if (resultType == ERROR && executionCount != null && executionCount >= maximumRetries) {
           return ProcessState.FAILED;
         }
       }
     }
 
-    if (successCount == stageAndStageEntities.size()) {
+    if (successCount == stageExecutions.size()) {
       return ProcessState.COMPLETED;
     }
 
@@ -190,20 +200,22 @@ public class ProcessLauncher {
 
       logContext(log.atFine()).log("Executing stages");
 
-      List<StageAndStageEntity> executableStages = dependencyResolver.getExecutableStages();
+      List<StageExecution> executableStages = dependencyResolver.getExecutableStages();
       if (activeStages.isEmpty() && executableStages.isEmpty()) {
         logContext(log.atInfo()).log("No active or executable stages");
         return;
       }
 
-      for (StageAndStageEntity stageAndStageEntity : executableStages) {
-        String stageName = stageAndStageEntity.getStage().getStageName();
+      for (StageExecution stageExecution : executableStages) {
+        Stage stage = stageExecution.stage;
+        String stageName = stage.getStageName();
+
         if (activeStages.contains(stageName)) {
           continue;
         }
 
-        if (stageAndStageEntity.getStage().getDependsOn() != null) {
-          String dependsOnStageName = stageAndStageEntity.getStage().getDependsOn().getStageName();
+        if (stage.getDependsOn() != null) {
+          String dependsOnStageName = stage.getDependsOn().getStageName();
           if (dependsOnStageName != null && activeStages.contains(dependsOnStageName)) {
             continue;
           }
@@ -213,7 +225,7 @@ public class ProcessLauncher {
         executorService.execute(
             () -> {
               try {
-                executeStage(stageAndStageEntity);
+                executeStage(stageExecution);
               } catch (Exception ex) {
                 logContext(log.atSevere())
                     .withCause(ex)
@@ -242,9 +254,9 @@ public class ProcessLauncher {
     return processEntity.getState();
   }
 
-  private void executeStage(StageAndStageEntity stageAndStageEntity) {
-    Stage stage = stageAndStageEntity.getStage();
-    StageEntity stageEntity = stageAndStageEntity.getStageEntity();
+  private void executeStage(StageExecution stageExecution) {
+    Stage stage = stageExecution.stage;
+    StageEntity stageEntity = stageExecution.stageEntity;
     String stageName = stage.getStageName();
 
     logContext(log.atInfo(), stageName).log("Preparing to execute stage");
@@ -253,7 +265,7 @@ public class ProcessLauncher {
     // execution to continue. For example, an asynchronous executor may contain a job id that
     // is associated with an external execution service.
 
-    StageExecutor deserializedExecutor = deserializeActiveExecutor(stageAndStageEntity);
+    StageExecutor deserializedExecutor = deserializeActiveExecutor(stageExecution);
     boolean isDeserializedExecutor = deserializedExecutor != null;
 
     if (isDeserializedExecutor) {
@@ -317,7 +329,7 @@ public class ProcessLauncher {
 
     stageEntity.endExecution(result);
     stageService.saveStage(stageEntity);
-    stageAndStageEntity.immediateExecutionCount++;
+    stageExecution.incrementImmediateExecutionCount();
 
     if (result.isSuccess()) {
       stageSuccessCount.incrementAndGet();
@@ -325,7 +337,7 @@ public class ProcessLauncher {
           .with(LogKey.STAGE_EXECUTION_RESULT_TYPE, stageEntity.getResultType())
           .with(LogKey.STAGE_EXECUTION_COUNT, stageEntity.getExecutionCount())
           .log("Stage executed successfully.");
-      invalidateDependentStages(stageAndStageEntity);
+      invalidateDependentStages(stageExecution);
     } else {
       stageFailedCount.incrementAndGet();
       logContext(log.atSevere(), stageEntity.getStageName())
@@ -335,9 +347,9 @@ public class ProcessLauncher {
     }
   }
 
-  private StageExecutor deserializeActiveExecutor(StageAndStageEntity stageAndStageEntity) {
-    Stage stage = stageAndStageEntity.getStage();
-    StageEntity stageEntity = stageAndStageEntity.getStageEntity();
+  private StageExecutor deserializeActiveExecutor(StageExecution stageExecution) {
+    Stage stage = stageExecution.stage;
+    StageEntity stageEntity = stageExecution.stageEntity;
     String stageName = stage.getStageName();
 
     if (stageEntity.getResultType() == ACTIVE
@@ -355,10 +367,11 @@ public class ProcessLauncher {
     return null;
   }
 
-  private void invalidateDependentStages(StageAndStageEntity from) {
-    for (StageAndStageEntity stageAndStageEntity : dependencyResolver.getDependentStages(from)) {
-      stageAndStageEntity.getStageEntity().resetExecution();
-      stageService.saveStage(stageAndStageEntity.getStageEntity());
+  private void invalidateDependentStages(StageExecution from) {
+    for (StageExecution stageExecution : dependencyResolver.getDependentStages(from)) {
+      StageEntity stageEntity = stageExecution.stageEntity;
+      stageEntity.resetExecution();
+      stageService.saveStage(stageEntity);
     }
   }
 
