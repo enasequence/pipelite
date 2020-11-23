@@ -10,25 +10,31 @@
  */
 package pipelite.stage;
 
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.flogger.Flogger;
+import pipelite.entity.StageEntity;
 import pipelite.executor.StageExecutor;
-
-import java.util.List;
 
 @Flogger
 @Data
-@Builder
 public class Stage {
   private final String stageName;
   @EqualsAndHashCode.Exclude private StageExecutor executor;
   @EqualsAndHashCode.Exclude private final List<Stage> dependsOn;
   @EqualsAndHashCode.Exclude private final StageParameters stageParameters;
+  @EqualsAndHashCode.Exclude private StageEntity stageEntity;
+  @EqualsAndHashCode.Exclude private AtomicInteger immediateExecutionCount = new AtomicInteger();
 
+  @Builder
   public Stage(
-      String stageName, StageExecutor executor, List<Stage> dependsOn, StageParameters stageParameters) {
+      String stageName,
+      StageExecutor executor,
+      List<Stage> dependsOn,
+      StageParameters stageParameters) {
     this.stageName = stageName;
     this.executor = executor;
     this.dependsOn = dependsOn;
@@ -48,5 +54,13 @@ public class Stage {
 
   public StageExecutionResult execute(String pipelineName, String processId) {
     return executor.execute(pipelineName, processId, this);
+  }
+
+  public int getImmediateExecutionCount() {
+    return immediateExecutionCount.get();
+  }
+
+  public void incrementImmediateExecutionCount() {
+    immediateExecutionCount.incrementAndGet();
   }
 }

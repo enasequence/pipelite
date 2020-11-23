@@ -12,12 +12,11 @@ package pipelite.process;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.executor.SuccessSyncExecutor;
 import pipelite.process.builder.ProcessBuilder;
-
-import java.util.Arrays;
 
 public class ProcessBuilderTest {
 
@@ -55,9 +54,9 @@ public class ProcessBuilderTest {
     assertThat(process.getStages().get(3).getDependsOn().get(0).getStageName())
         .isEqualTo(stageName1);
     assertThat(process.getStages().get(4).getDependsOn().get(0).getStageName())
-            .isEqualTo(stageName1);
+        .isEqualTo(stageName1);
     assertThat(process.getStages().get(4).getDependsOn().get(1).getStageName())
-            .isEqualTo(stageName2);
+        .isEqualTo(stageName2);
     assertThat(process.getStages()).hasSize(5);
   }
 }

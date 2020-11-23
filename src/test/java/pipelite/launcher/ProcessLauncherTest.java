@@ -1,5 +1,20 @@
+/*
+ * Copyright 2020 EMBL - European Bioinformatics Institute
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
+ * file except in compliance with the License. You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
 package pipelite.launcher;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static pipelite.stage.StageExecutionResultType.*;
+
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import pipelite.configuration.StageConfiguration;
 import pipelite.entity.StageEntity;
@@ -10,12 +25,6 @@ import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
 import pipelite.stage.StageParameters;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static pipelite.stage.StageExecutionResultType.*;
 
 public class ProcessLauncherTest {
 
@@ -66,7 +75,7 @@ public class ProcessLauncherTest {
     assertImmediateRetries(null, null, StageConfiguration.DEFAULT_IMMEDIATE_RETRIES);
   }
 
-  public static List<ProcessLauncher.StageExecution> createStageExecutions(
+  public static List<Stage> createStageExecutions(
       StageExecutionResultType firstResultType,
       StageExecutionResultType secondResultType,
       int executions,
@@ -84,40 +93,37 @@ public class ProcessLauncherTest {
             .execute("STAGE1", stageParams)
             .with((pipelineName, processId, stage) -> null)
             .build();
-    List<ProcessLauncher.StageExecution> stageExecutions = new ArrayList<>();
+    List<Stage> stages = new ArrayList<>();
 
     Stage firstStage = process.getStages().get(0);
     StageEntity firstStageEntity = new StageEntity();
+    firstStage.setStageEntity(firstStageEntity);
     firstStageEntity.setResultType(firstResultType);
     firstStageEntity.setExecutionCount(executions);
-    ProcessLauncher.StageExecution firstStageExecution =
-        new ProcessLauncher.StageExecution(firstStage, firstStageEntity);
     for (int i = 0; i < executions; ++i) {
-      firstStageExecution.incrementImmediateExecutionCount();
+      firstStage.incrementImmediateExecutionCount();
     }
-    stageExecutions.add(firstStageExecution);
+    stages.add(firstStage);
 
     Stage secondStage = process.getStages().get(1);
     StageEntity secondStageEntity = new StageEntity();
+    secondStage.setStageEntity(secondStageEntity);
     secondStageEntity.setResultType(secondResultType);
     secondStageEntity.setExecutionCount(executions);
-    ProcessLauncher.StageExecution secondStageExecution =
-        new ProcessLauncher.StageExecution(secondStage, secondStageEntity);
     for (int i = 0; i < executions; ++i) {
-      secondStageExecution.incrementImmediateExecutionCount();
+      secondStage.incrementImmediateExecutionCount();
     }
-    stageExecutions.add(secondStageExecution);
+    stages.add(secondStage);
 
-    return stageExecutions;
+    return stages;
   }
 
   private void evaluateProcessStateNoRetries(
       StageExecutionResultType firstResultType,
       StageExecutionResultType secondResultType,
       ProcessState state) {
-    List<ProcessLauncher.StageExecution> stageExecutions =
-        createStageExecutions(firstResultType, secondResultType, 1, 0, 0);
-    assertThat(ProcessLauncher.evaluateProcessState(stageExecutions)).isEqualTo(state);
+    List<Stage> stages = createStageExecutions(firstResultType, secondResultType, 1, 0, 0);
+    assertThat(ProcessLauncher.evaluateProcessState(stages)).isEqualTo(state);
   }
 
   @Test
@@ -151,9 +157,8 @@ public class ProcessLauncherTest {
       StageExecutionResultType firstResultType,
       StageExecutionResultType secondResultType,
       ProcessState state) {
-    List<ProcessLauncher.StageExecution> stageExecutions =
-        createStageExecutions(firstResultType, secondResultType, 1, 1, 1);
-    assertThat(ProcessLauncher.evaluateProcessState(stageExecutions)).isEqualTo(state);
+    List<Stage> stages = createStageExecutions(firstResultType, secondResultType, 1, 1, 1);
+    assertThat(ProcessLauncher.evaluateProcessState(stages)).isEqualTo(state);
   }
 
   @Test
