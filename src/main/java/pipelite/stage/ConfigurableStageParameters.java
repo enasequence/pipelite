@@ -21,6 +21,7 @@ public interface ConfigurableStageParameters {
 
   Duration DEFAULT_TIMEOUT = Duration.ofDays(7);
   int DEFAULT_MAX_RETRIES = 3;
+  int DEFAULT_IMMEDIATE_RETRIES = 0;
 
   String getHost();
 

@@ -10,6 +10,7 @@
  */
 package pipelite.launcher;
 
+import static pipelite.stage.ConfigurableStageParameters.DEFAULT_IMMEDIATE_RETRIES;
 import static pipelite.stage.ConfigurableStageParameters.DEFAULT_MAX_RETRIES;
 import static pipelite.stage.StageExecutionResultType.*;
 
@@ -173,11 +174,11 @@ public class ProcessLauncher {
   }
 
   public static int getImmediateRetries(Stage stage) {
-    int maximumRetries = getMaximumRetries(stage);
+    int immediateRetries = DEFAULT_IMMEDIATE_RETRIES;
     if (stage.getStageParameters().getImmediateRetries() != null) {
-      Math.max(0, stage.getStageParameters().getImmediateRetries());
+      immediateRetries = stage.getStageParameters().getImmediateRetries();
     }
-    return maximumRetries;
+    return Math.min(Math.max(0, immediateRetries), getMaximumRetries(stage));
   }
 
   private void executeStages() {

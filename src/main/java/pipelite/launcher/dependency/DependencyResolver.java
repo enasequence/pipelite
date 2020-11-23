@@ -17,6 +17,8 @@ import pipelite.launcher.ProcessLauncher;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResultType;
 
+import static pipelite.stage.StageExecutionResultType.NEW;
+
 public class DependencyResolver {
 
   private final List<ProcessLauncher.StageAndStageEntity> stageAndStageEntities;
@@ -60,7 +62,11 @@ public class DependencyResolver {
       StageEntity stageEntity = stageAndStageEntity.getStageEntity();
 
       if (isDependsOnStageCompleted(stage)) {
-        switch (stageEntity.getResultType()) {
+        StageExecutionResultType resultType = stageEntity.getResultType();
+        if (resultType == null) {
+          resultType = NEW;
+        }
+        switch (resultType) {
           case NEW:
           case ACTIVE:
             executableStages.add(stageAndStageEntity);
@@ -74,8 +80,8 @@ public class DependencyResolver {
               int immediateRetries = ProcessLauncher.getImmediateRetries(stage);
 
               if (executionCount != null
-                  && executionCount < maximumRetries
-                  && stageAndStageEntity.immediateExecutionCount < immediateRetries) {
+                  && executionCount <= maximumRetries
+                  && stageAndStageEntity.immediateExecutionCount <= immediateRetries) {
                 executableStages.add(stageAndStageEntity);
               }
             }
