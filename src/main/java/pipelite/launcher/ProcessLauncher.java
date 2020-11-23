@@ -228,15 +228,27 @@ public class ProcessLauncher {
         Stage stage = stageExecution.stage;
         String stageName = stage.getStageName();
 
-        if (activeStages.contains(stageName)) {
+        boolean isActive = activeStages.contains(stageName);
+
+        if (isActive) {
+          // We should not execute this stage because it is already active.
           continue;
         }
 
         if (stage.getDependsOn() != null) {
-          String dependsOnStageName = stage.getDependsOn().getStageName();
-          if (dependsOnStageName != null && activeStages.contains(dependsOnStageName)) {
-            continue;
+          for (StageExecution dependsOn :
+              DependencyResolver.getDependsOnStages(stageExecutions, stageExecution)) {
+            String dependsOnStageName = dependsOn.getStage().getStageName();
+            if (dependsOnStageName != null && activeStages.contains(dependsOnStageName)) {
+              isActive = true;
+              break;
+            }
           }
+        }
+
+        if (isActive) {
+          // We should not execute this stage because a stage it depends on is active.
+          continue;
         }
 
         activeStages.add(stageName);

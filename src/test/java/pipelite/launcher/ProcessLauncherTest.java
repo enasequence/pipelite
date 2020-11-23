@@ -66,7 +66,7 @@ public class ProcessLauncherTest {
     assertImmediateRetries(null, null, StageConfiguration.DEFAULT_IMMEDIATE_RETRIES);
   }
 
-  private List<ProcessLauncher.StageExecution> createStageExecutions(
+  public static List<ProcessLauncher.StageExecution> createStageExecutions(
       StageExecutionResultType firstResultType,
       StageExecutionResultType secondResultType,
       int executions,
@@ -97,7 +97,7 @@ public class ProcessLauncherTest {
     }
     stageExecutions.add(firstStageExecution);
 
-    Stage secondStage = process.getStages().get(0);
+    Stage secondStage = process.getStages().get(1);
     StageEntity secondStageEntity = new StageEntity();
     secondStageEntity.setResultType(secondResultType);
     secondStageEntity.setExecutionCount(executions);

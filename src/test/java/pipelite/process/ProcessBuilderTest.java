@@ -17,6 +17,8 @@ import pipelite.UniqueStringGenerator;
 import pipelite.executor.SuccessSyncExecutor;
 import pipelite.process.builder.ProcessBuilder;
 
+import java.util.Arrays;
+
 public class ProcessBuilderTest {
 
   private static final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
@@ -27,6 +29,7 @@ public class ProcessBuilderTest {
     String stageName2 = UniqueStringGenerator.randomStageName();
     String stageName3 = UniqueStringGenerator.randomStageName();
     String stageName4 = UniqueStringGenerator.randomStageName();
+    String stageName5 = UniqueStringGenerator.randomStageName();
 
     Process process =
         new ProcessBuilder(PROCESS_ID)
@@ -38,14 +41,23 @@ public class ProcessBuilderTest {
             .with(new SuccessSyncExecutor())
             .executeAfterFirst(stageName4)
             .with(new SuccessSyncExecutor())
+            .executeAfter(stageName5, Arrays.asList(stageName1, stageName2))
+            .with(new SuccessSyncExecutor())
             .build();
 
     assertThat(process).isNotNull();
     assertThat(process.getProcessId()).isEqualTo(PROCESS_ID);
-    assertThat(process.getStages().get(0).getDependsOn()).isNull();
-    assertThat(process.getStages().get(1).getDependsOn().getStageName()).isEqualTo(stageName1);
-    assertThat(process.getStages().get(2).getDependsOn().getStageName()).isEqualTo(stageName2);
-    assertThat(process.getStages().get(3).getDependsOn().getStageName()).isEqualTo(stageName1);
-    assertThat(process.getStages()).hasSize(4);
+    assertThat(process.getStages().get(0).getDependsOn()).isEmpty();
+    assertThat(process.getStages().get(1).getDependsOn().get(0).getStageName())
+        .isEqualTo(stageName1);
+    assertThat(process.getStages().get(2).getDependsOn().get(0).getStageName())
+        .isEqualTo(stageName2);
+    assertThat(process.getStages().get(3).getDependsOn().get(0).getStageName())
+        .isEqualTo(stageName1);
+    assertThat(process.getStages().get(4).getDependsOn().get(0).getStageName())
+            .isEqualTo(stageName1);
+    assertThat(process.getStages().get(4).getDependsOn().get(1).getStageName())
+            .isEqualTo(stageName2);
+    assertThat(process.getStages()).hasSize(5);
   }
 }

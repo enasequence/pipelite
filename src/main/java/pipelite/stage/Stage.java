@@ -16,17 +16,19 @@ import lombok.EqualsAndHashCode;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.StageExecutor;
 
+import java.util.List;
+
 @Flogger
 @Data
 @Builder
 public class Stage {
   private final String stageName;
   @EqualsAndHashCode.Exclude private StageExecutor executor;
-  @EqualsAndHashCode.Exclude private final Stage dependsOn;
+  @EqualsAndHashCode.Exclude private final List<Stage> dependsOn;
   @EqualsAndHashCode.Exclude private final StageParameters stageParameters;
 
   public Stage(
-      String stageName, StageExecutor executor, Stage dependsOn, StageParameters stageParameters) {
+      String stageName, StageExecutor executor, List<Stage> dependsOn, StageParameters stageParameters) {
     this.stageName = stageName;
     this.executor = executor;
     this.dependsOn = dependsOn;

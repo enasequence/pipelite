@@ -10,6 +10,9 @@
  */
 package pipelite.process.builder;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import pipelite.executor.StageExecutor;
 import pipelite.stage.Stage;
@@ -18,17 +21,17 @@ import pipelite.stage.StageParameters;
 public class StageBuilder {
   private final ProcessBuilder processBuilder;
   private final String stageName;
-  private final String dependsOnStageName;
+  private final List<String> dependsOnStageNames = new ArrayList<>();
   private final StageParameters stageParameters;
 
   public StageBuilder(
       ProcessBuilder processBuilder,
       String stageName,
-      String dependsOnStageName,
+      Collection<String> dependsOnStageNames,
       StageParameters stageParameters) {
     this.processBuilder = processBuilder;
     this.stageName = stageName;
-    this.dependsOnStageName = dependsOnStageName;
+    this.dependsOnStageNames.addAll(dependsOnStageNames);
     this.stageParameters = stageParameters;
   }
 
@@ -53,8 +56,8 @@ public class StageBuilder {
   }
 
   private ProcessBuilder addStage(StageExecutor executor) {
-    Stage dependsOn = null;
-    if (dependsOnStageName != null) {
+    List<Stage> dependsOn = new ArrayList<>();
+    for (String dependsOnStageName : dependsOnStageNames) {
       Optional<Stage> dependsOnOptional =
           processBuilder.stages.stream()
               .filter(stage -> stage.getStageName().equals(dependsOnStageName))
@@ -63,7 +66,7 @@ public class StageBuilder {
       if (!dependsOnOptional.isPresent()) {
         throw new IllegalArgumentException("Unknown stage dependency: " + dependsOnStageName);
       }
-      dependsOn = dependsOnOptional.get();
+      dependsOn.add(dependsOnOptional.get());
     }
 
     processBuilder.stages.add(

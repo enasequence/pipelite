@@ -42,14 +42,44 @@ public class DependencyResolver {
         continue;
       }
 
-      Stage dependsOn = stage.getDependsOn();
-      if (dependsOn != null && dependsOn.getStageName().equals(from.getStage().getStageName())) {
-        getDependentStages(stages, dependentStages, stageExecution, true);
+      if (stage.getDependsOn() != null) {
+        for (Stage dependsOn : stage.getDependsOn()) {
+          if (dependsOn.getStageName().equals(from.getStage().getStageName())) {
+            getDependentStages(stages, dependentStages, stageExecution, true);
+          }
+        }
       }
     }
 
     if (include) {
       dependentStages.add(from);
+    }
+  }
+
+  public static List<ProcessLauncher.StageExecution> getDependsOnStages(
+      List<ProcessLauncher.StageExecution> stages, ProcessLauncher.StageExecution from) {
+    List<ProcessLauncher.StageExecution> dependsOnStages = new ArrayList<>();
+    getDependsOnStages(stages, dependsOnStages, from);
+    return dependsOnStages;
+  }
+
+  private static void getDependsOnStages(
+      List<ProcessLauncher.StageExecution> stages,
+      List<ProcessLauncher.StageExecution> dependsOnStages,
+      ProcessLauncher.StageExecution from) {
+
+    if (from.getStage().getDependsOn() != null) {
+      for (Stage dependsOn : from.getStage().getDependsOn()) {
+        for (ProcessLauncher.StageExecution stageExecution : stages) {
+          Stage stage = stageExecution.getStage();
+          if (stage.equals(dependsOn)) {
+            if (!dependsOnStages.contains(stageExecution)) {
+              dependsOnStages.add(stageExecution);
+              getDependsOnStages(stages, dependsOnStages, stageExecution);
+            }
+          }
+        }
+      }
     }
   }
 
@@ -60,7 +90,7 @@ public class DependencyResolver {
       Stage stage = stageExecution.getStage();
       StageEntity stageEntity = stageExecution.getStageEntity();
 
-      if (isDependsOnStageCompleted(stages, stage)) {
+      if (isDependsOnStagesSuccess(stages, stageExecution)) {
         StageExecutionResultType resultType = stageEntity.getResultType();
         if (resultType == null) {
           resultType = NEW;
@@ -91,19 +121,11 @@ public class DependencyResolver {
     return executableStages;
   }
 
-  private static boolean isDependsOnStageCompleted(
-      List<ProcessLauncher.StageExecution> stageExecutions, Stage stage) {
-    Stage dependsOnStage = stage.getDependsOn();
-    if (dependsOnStage == null) {
-      return true;
-    }
-
-    return stageExecutions.stream()
-            .filter(e -> e.getStage().equals(dependsOnStage))
-            .findFirst()
-            .get()
-            .getStageEntity()
-            .getResultType()
-        == StageExecutionResultType.SUCCESS;
+  public static boolean isDependsOnStagesSuccess(
+      List<ProcessLauncher.StageExecution> stages, ProcessLauncher.StageExecution stage) {
+    return getDependsOnStages(stages, stage).stream()
+            .filter(s -> s.getStageEntity().getResultType() != StageExecutionResultType.SUCCESS)
+            .count()
+        == 0;
   }
 }

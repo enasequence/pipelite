@@ -11,8 +11,11 @@
 package pipelite.launcher.dependency;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static pipelite.stage.StageExecutionResultType.*;
+import static pipelite.stage.StageExecutionResultType.ERROR;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
@@ -23,6 +26,7 @@ import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
+import pipelite.stage.StageExecutionResultType;
 import pipelite.stage.StageParameters;
 
 public class DependencyResolverTest {
@@ -312,5 +316,113 @@ public class DependencyResolverTest {
     dependentStages =
         DependencyResolver.getDependentStages(stageExecutions, stageExecutions.get(3));
     assertThat(dependentStages.size()).isEqualTo(0);
+  }
+
+  private void getDependsOnStages(
+      List<ProcessLauncher.StageExecution> stageExecutions, int stageIndex, int dependsOnSize) {
+    assertThat(
+            DependencyResolver.getDependsOnStages(stageExecutions, stageExecutions.get(stageIndex))
+                .size())
+        .isEqualTo(dependsOnSize);
+  }
+
+  private void getDependsOnStages(
+      List<ProcessLauncher.StageExecution> stageExecutions,
+      int stageIndex,
+      int dependsOnIndex,
+      String dependsOnStageName) {
+    assertThat(
+            DependencyResolver.getDependsOnStages(stageExecutions, stageExecutions.get(stageIndex))
+                .get(dependsOnIndex)
+                .getStage()
+                .getStageName())
+        .isEqualTo(dependsOnStageName);
+  }
+
+  @Test
+  public void getDependsOnStages() {
+    ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
+    Process process =
+        builder
+            .execute("STAGE1")
+            .with(new SuccessSyncExecutor())
+            .executeAfter("STAGE2", "STAGE1")
+            .with(new SuccessSyncExecutor())
+            .executeAfter("STAGE3", Arrays.asList("STAGE1", "STAGE2"))
+            .with(new SuccessSyncExecutor())
+            .executeAfter("STAGE4", Arrays.asList("STAGE3", "STAGE3"))
+            .with(new SuccessSyncExecutor())
+            .build();
+
+    List<ProcessLauncher.StageExecution> stageExecutions = new ArrayList<>();
+    for (Stage stage : process.getStages()) {
+      StageEntity stageEntity = new StageEntity();
+      stageExecutions.add(new ProcessLauncher.StageExecution(stage, stageEntity));
+    }
+
+    getDependsOnStages(stageExecutions, 0, 0);
+    getDependsOnStages(stageExecutions, 1, 1);
+    getDependsOnStages(stageExecutions, 2, 2);
+    getDependsOnStages(stageExecutions, 3, 3);
+    getDependsOnStages(stageExecutions, 1, 0, "STAGE1");
+    getDependsOnStages(stageExecutions, 2, 0, "STAGE1");
+    getDependsOnStages(stageExecutions, 2, 1, "STAGE2");
+    getDependsOnStages(stageExecutions, 3, 0, "STAGE3");
+    getDependsOnStages(stageExecutions, 3, 1, "STAGE1");
+    getDependsOnStages(stageExecutions, 3, 2, "STAGE2");
+  }
+
+  public static List<ProcessLauncher.StageExecution> isDependsOnStageSuccessStages(
+      StageExecutionResultType dependsOnResultType, StageExecutionResultType secondResultType) {
+    Process process =
+        new ProcessBuilder("test")
+            .execute("STAGE0")
+            .with((pipelineName, processId, stage) -> null)
+            .execute("STAGE1")
+            .with((pipelineName, processId, stage) -> null)
+            .executeAfter("STAGE2", Arrays.asList("STAGE0", "STAGE1"))
+            .with((pipelineName, processId, stage) -> null)
+            .build();
+    List<ProcessLauncher.StageExecution> stageExecutions = new ArrayList<>();
+
+    Stage firstStage = process.getStages().get(0);
+    StageEntity firstStageEntity = new StageEntity();
+    firstStageEntity.setResultType(dependsOnResultType);
+    ProcessLauncher.StageExecution firstStageExecution =
+        new ProcessLauncher.StageExecution(firstStage, firstStageEntity);
+    stageExecutions.add(firstStageExecution);
+
+    Stage secondStage = process.getStages().get(1);
+    StageEntity secondStageEntity = new StageEntity();
+    secondStageEntity.setResultType(dependsOnResultType);
+    ProcessLauncher.StageExecution secondStageExecution =
+        new ProcessLauncher.StageExecution(secondStage, secondStageEntity);
+    stageExecutions.add(secondStageExecution);
+
+    Stage lastStage = process.getStages().get(2);
+    StageEntity lastStageEntity = new StageEntity();
+    lastStageEntity.setResultType(secondResultType);
+    ProcessLauncher.StageExecution lastStageExecution =
+        new ProcessLauncher.StageExecution(lastStage, lastStageEntity);
+    stageExecutions.add(lastStageExecution);
+
+    return stageExecutions;
+  }
+
+  private void isDependsOnStageSuccess(
+      StageExecutionResultType dependsOnResultType, boolean isDependsOnStageCompleted) {
+    List<ProcessLauncher.StageExecution> stageExecutions =
+        isDependsOnStageSuccessStages(dependsOnResultType, NEW);
+    assertThat(DependencyResolver.isDependsOnStagesSuccess(stageExecutions, stageExecutions.get(2)))
+        .isEqualTo(isDependsOnStageCompleted);
+  }
+
+  @Test
+  public void isDependsOnStageSuccess() {
+    isDependsOnStageSuccess(NEW, false);
+    isDependsOnStageSuccess(SUCCESS, true);
+    isDependsOnStageSuccess(ACTIVE, false);
+    isDependsOnStageSuccess(ERROR, false);
+    isDependsOnStageSuccess(null, false);
   }
 }
