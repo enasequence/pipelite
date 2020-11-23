@@ -29,7 +29,6 @@ public class LsfCmdExecutor extends CmdExecutor {
 
   private String jobId;
   private String stdoutFile;
-  private String stderrFile;
   private LocalDateTime startTime;
 
   private static final String BSUB_CMD = "bsub";
@@ -53,6 +52,9 @@ public class LsfCmdExecutor extends CmdExecutor {
   private static final int BJOBS_MAX_MEM = 3;
   private static final int BJOBS_AVG_MEM = 4;
   private static final int BJOBS_HOST = 5;
+
+  private static final Duration STDOUT_FILE_MAX_WAIT_TIME = Duration.ofMinutes(5);
+  private static final Duration STDOUT_FILE_POLL_WAIT_TIME = Duration.ofSeconds(10);
 
   @Override
   public StageExecutionResult execute(String pipelineName, String processId, Stage stage) {
@@ -133,12 +135,17 @@ public class LsfCmdExecutor extends CmdExecutor {
       }
     }
 
-    // TODO: LSF may not immediately flush stdout and stderr
+    // Check if the stdout file exists. The file may not be immediately available after the job
+    // execution finishes.
 
-    try {
-      Thread.sleep(Duration.ofSeconds(15).toMillis());
-    } catch (InterruptedException ex) {
-      Thread.currentThread().interrupt();
+    LocalDateTime stdoutFileWaitStart = LocalDateTime.now();
+    while (stdoutFileWaitStart.plus(STDOUT_FILE_MAX_WAIT_TIME).isAfter(LocalDateTime.now())
+        && !stdoutFileExists(getCmdRunner(), stdoutFile, stage)) {
+      try {
+        Thread.sleep(STDOUT_FILE_POLL_WAIT_TIME.toMillis());
+      } catch (InterruptedException ex) {
+        Thread.currentThread().interrupt();
+      }
     }
 
     log.atFine()
@@ -154,45 +161,27 @@ public class LsfCmdExecutor extends CmdExecutor {
       log.atSevere().withCause(ex).log("Failed to read stdout file: %s", stdoutFile);
     }
 
-    log.atFine()
-        .with(LogKey.PIPELINE_NAME, pipelineName)
-        .with(LogKey.PROCESS_ID, processId)
-        .with(LogKey.STAGE_NAME, stage.getStageName())
-        .log("Reading stderr file: %s", stderrFile);
-
-    try {
-      CmdRunnerResult stderrCmdRunnerResult = writeFileToStderr(getCmdRunner(), stderrFile, stage);
-      result.setStderr(stderrCmdRunnerResult.getStderr());
-    } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Failed to read stderr file: %s", stderrFile);
-    }
-
     return result;
   }
 
   private void reset() {
     jobId = null;
     stdoutFile = null;
-    stderrFile = null;
     startTime = null;
   }
 
   @Override
   public final String getDispatcherCmd(String pipelineName, String processId, Stage stage) {
 
-    // Write standard output file while the job is running not after the job has finished.
-    stage.getStageParameters().getEnv().put("LSB_STDOUT_DIRECT", "Y");
-
     StringBuilder cmd = new StringBuilder();
     cmd.append(BSUB_CMD);
 
     stdoutFile = getWorkFile(pipelineName, processId, stage, "lsf", "stdout");
-    stderrFile = getWorkFile(pipelineName, processId, stage, "lsf", "stderr");
+
+    // Write both stderr and stdout to the stdout file.
 
     addArgument(cmd, "-oo");
     addArgument(cmd, stdoutFile);
-    addArgument(cmd, "-eo");
-    addArgument(cmd, stderrFile);
 
     Integer cores = stage.getStageParameters().getCores();
     if (cores != null && cores > 0) {
@@ -237,6 +226,15 @@ public class LsfCmdExecutor extends CmdExecutor {
   @Override
   public final void getDispatcherJobId(StageExecutionResult stageExecutionResult) {
     jobId = extractJobIdSubmitted(stageExecutionResult.getStdout());
+  }
+
+  public static boolean stdoutFileExists(CmdRunner cmdRunner, String stdoutFile, Stage stage) {
+    // Check if the stdout file exists. The file may not be immediately available after the job
+    // execution finishes.
+    return 0
+        == cmdRunner
+            .execute("sh -c 'test -f " + stdoutFile + "'", stage.getStageParameters())
+            .getExitCode();
   }
 
   public static CmdRunnerResult writeFileToStdout(

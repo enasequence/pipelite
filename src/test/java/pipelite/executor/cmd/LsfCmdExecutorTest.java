@@ -130,7 +130,6 @@ public class LsfCmdExecutorTest {
     assertTrue(cmd.contains(" -n 1"));
     assertTrue(cmd.contains(" -q defaultQueue"));
     assertTrue(cmd.contains(" -oo " + stageParameters.getWorkDir()));
-    assertTrue(cmd.contains(" -eo " + stageParameters.getWorkDir()));
   }
 
   @Test
@@ -171,7 +170,6 @@ public class LsfCmdExecutorTest {
     assertTrue(cmd.contains(" -n 12"));
     assertTrue(cmd.contains(" -q defaultQueue"));
     assertTrue(cmd.contains(" -oo " + stageParameters.getWorkDir()));
-    assertTrue(cmd.contains(" -eo " + stageParameters.getWorkDir()));
   }
 
   @Test
@@ -203,7 +201,6 @@ public class LsfCmdExecutorTest {
     String cmd = "echo test";
     LsfCmdExecutor lsfCmdExecutor = StageExecutor.createLsfCmdExecutor(cmd, null);
     lsfCmdExecutor.setJobId("test");
-    lsfCmdExecutor.setStderrFile("test");
     lsfCmdExecutor.setStdoutFile("test");
     lsfCmdExecutor.setStartTime(LocalDateTime.of(2020, 1, 1, 1, 1));
     String json = Json.serialize(lsfCmdExecutor);
@@ -213,7 +210,6 @@ public class LsfCmdExecutorTest {
                 + "  \"cmd\" : \"echo test\",\n"
                 + "  \"jobId\" : \"test\",\n"
                 + "  \"stdoutFile\" : \"test\",\n"
-                + "  \"stderrFile\" : \"test\",\n"
                 + "  \"startTime\" : \"2020-01-01T01:01:00\"\n"
                 + "}");
     assertThat(Json.deserialize(json, LsfCmdExecutor.class).getCmd()).isEqualTo(cmd);
@@ -224,7 +220,6 @@ public class LsfCmdExecutorTest {
     String cmd = "echo test";
     LsfCmdExecutor lsfCmdExecutor = StageExecutor.createLsfLocalCmdExecutor(cmd);
     lsfCmdExecutor.setJobId("test");
-    lsfCmdExecutor.setStderrFile("test");
     lsfCmdExecutor.setStdoutFile("test");
     lsfCmdExecutor.setStartTime(LocalDateTime.of(2020, 1, 1, 1, 1));
     String json = Json.serialize(lsfCmdExecutor);
@@ -235,7 +230,6 @@ public class LsfCmdExecutorTest {
                 + "  \"cmdRunnerType\" : \"LOCAL_CMD_RUNNER\",\n"
                 + "  \"jobId\" : \"test\",\n"
                 + "  \"stdoutFile\" : \"test\",\n"
-                + "  \"stderrFile\" : \"test\",\n"
                 + "  \"startTime\" : \"2020-01-01T01:01:00\"\n"
                 + "}");
     assertThat(Json.deserialize(json, LsfCmdExecutor.class).getCmd()).isEqualTo(cmd);
@@ -246,7 +240,6 @@ public class LsfCmdExecutorTest {
     String cmd = "echo test";
     LsfCmdExecutor lsfCmdExecutor = StageExecutor.createLsfSshCmdExecutor(cmd);
     lsfCmdExecutor.setJobId("test");
-    lsfCmdExecutor.setStderrFile("test");
     lsfCmdExecutor.setStdoutFile("test");
     lsfCmdExecutor.setStartTime(LocalDateTime.of(2020, 1, 1, 1, 1));
     String json = Json.serialize(lsfCmdExecutor);
@@ -257,7 +250,6 @@ public class LsfCmdExecutorTest {
                 + "  \"cmdRunnerType\" : \"SSH_CMD_RUNNER\",\n"
                 + "  \"jobId\" : \"test\",\n"
                 + "  \"stdoutFile\" : \"test\",\n"
-                + "  \"stderrFile\" : \"test\",\n"
                 + "  \"startTime\" : \"2020-01-01T01:01:00\"\n"
                 + "}");
     assertThat(Json.deserialize(json, LsfCmdExecutor.class).getCmd()).isEqualTo(cmd);

@@ -42,8 +42,6 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   private final LauncherConfiguration launcherConfiguration;
   private final StageConfiguration stageConfiguration;
-  private final ProcessFactoryService processFactoryService;
-  private final ProcessSourceService processSourceService;
   private final ProcessService processService;
   private final StageService stageService;
 
@@ -84,8 +82,6 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
     this.launcherConfiguration = launcherConfiguration;
     this.stageConfiguration = stageConfiguration;
-    this.processFactoryService = processFactoryService;
-    this.processSourceService = processSourceService;
     this.processService = processService;
     this.stageService = stageService;
 
@@ -182,23 +178,18 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   private void createNewProcesses() {
     logContext(log.atInfo()).log("Creating new process instances");
-
     while (true) {
       ProcessSource.NewProcess newProcess = processSource.next();
       if (newProcess == null) {
         break;
       }
-
       if (!validateNewProcess(newProcess)) {
         continue;
       }
-
       ProcessEntity newProcessEntity =
           ProcessEntity.createExecution(
               pipelineName, newProcess.getProcessId().trim(), newProcess.getPriority());
-
       processService.saveProcess(newProcessEntity);
-
       processSource.accept(newProcess.getProcessId());
     }
   }
@@ -210,24 +201,19 @@ public class PipeliteLauncher extends AbstractScheduledService {
       stats.processIdMissingCount.incrementAndGet();
       return false;
     }
-
     processId = processId.trim();
-
     Optional<ProcessEntity> savedProcessEntity =
         processService.getSavedProcess(pipelineName, processId);
-
     if (savedProcessEntity.isPresent()) {
       logContext(log.atSevere(), processId)
           .log("New process has non-unique process id %s", processId);
       stats.processIdNotUniqueCount.incrementAndGet();
       return false;
     }
-
     return true;
   }
 
   private void queueProcesses() {
-
     logContext(log.atInfo()).log("Queuing process instances");
 
     // Clear process queue.
