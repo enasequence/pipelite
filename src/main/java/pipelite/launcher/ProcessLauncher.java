@@ -131,48 +131,67 @@ public class ProcessLauncher {
     List<Stage> stages = process.getStages();
 
     for (Stage stage : stages) {
+      // Adds stage parameter defaults from stage configuration.
       stage.getStageParameters().add(stageConfiguration);
 
-      Optional<StageEntity> processEntity =
+      // Gets existing stage entity from the database.
+      Optional<StageEntity> stageEntity =
           stageService.getSavedStage(pipelineName, process.getProcessId(), stage.getStageName());
 
-      // Create the stage in database if it does not already exist.
-      if (!processEntity.isPresent()) {
-        processEntity =
+      // Saves the stage entity in the database if it does not exist.
+      if (!stageEntity.isPresent()) {
+        stageEntity =
             Optional.of(
                 stageService.saveStage(
                     StageEntity.createExecution(pipelineName, getProcessId(), stage)));
       }
 
-      stageExecutions.add(new StageExecution(stage, processEntity.get()));
+      // Creates an executable stage consisting of the stage and stage entity.
+      stageExecutions.add(new StageExecution(stage, stageEntity.get()));
     }
   }
 
-  private ProcessState evaluateProcessState() {
+  public static ProcessState evaluateProcessState(List<StageExecution> stageExecutions) {
     int successCount = 0;
+    int activeCount = 0;
+    int errorCount = 0;
     for (StageExecution stageExecution : stageExecutions) {
       Stage stage = stageExecution.stage;
       StageEntity stageEntity = stageExecution.stageEntity;
       StageExecutionResultType resultType = stageEntity.getResultType();
 
       if (resultType == SUCCESS) {
+        // The stage execution has been successful.
         successCount++;
-      } else if (resultType == null || resultType == ACTIVE) {
-        return ProcessState.ACTIVE;
-      } else {
+      } else if (resultType == null || resultType == NEW || resultType == ACTIVE) {
+        // The stage and process execution is active.
+        activeCount++;
+      } else if (resultType == ERROR) {
         Integer executionCount = stageEntity.getExecutionCount();
         int maximumRetries = getMaximumRetries(stage);
-        if (resultType == ERROR && executionCount != null && executionCount >= maximumRetries) {
-          return ProcessState.FAILED;
+        if (executionCount != null && executionCount > maximumRetries) {
+          // The stage and process execution has failed.
+          errorCount++;
+        } else {
+          // The stage and process execution is active.
+          activeCount++;
         }
       }
     }
 
-    if (successCount == stageExecutions.size()) {
-      return ProcessState.COMPLETED;
+    if (activeCount > 0) {
+      if (!DependencyResolver.getExecutableStages(stageExecutions).isEmpty()) {
+        // All least one stage execution is active so the process is active.
+        return ProcessState.ACTIVE;
+      }
+    }
+    if (errorCount > 0) {
+      // All least one stage execution has failed so the process has failed.
+      return ProcessState.FAILED;
     }
 
-    return ProcessState.ACTIVE;
+    // All stages and the process have completed successfully.
+    return ProcessState.COMPLETED;
   }
 
   public static int getMaximumRetries(Stage stage) {
@@ -200,7 +219,8 @@ public class ProcessLauncher {
 
       logContext(log.atFine()).log("Executing stages");
 
-      List<StageExecution> executableStages = dependencyResolver.getExecutableStages();
+      List<StageExecution> executableStages =
+          DependencyResolver.getExecutableStages(stageExecutions);
       if (activeStages.isEmpty() && executableStages.isEmpty()) {
         logContext(log.atInfo()).log("No active or executable stages");
         return;
@@ -249,7 +269,7 @@ public class ProcessLauncher {
   private ProcessState saveProcess() {
     logContext(log.atInfo()).log("Saving process");
 
-    processEntity.updateExecution(evaluateProcessState());
+    processEntity.updateExecution(evaluateProcessState(stageExecutions));
     processService.saveProcess(processEntity);
     return processEntity.getState();
   }

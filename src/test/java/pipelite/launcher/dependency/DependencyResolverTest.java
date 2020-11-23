@@ -48,10 +48,8 @@ public class DependencyResolverTest {
       stageAndStageEntities.add(new ProcessLauncher.StageExecution(stage, stageEntity));
     }
 
-    DependencyResolver dependencyResolver = new DependencyResolver(stageAndStageEntities);
-
     List<ProcessLauncher.StageExecution> executableStages =
-        dependencyResolver.getExecutableStages();
+        DependencyResolver.getExecutableStages(stageAndStageEntities);
 
     assertThat(executableStages.size()).isOne();
     assertThat(executableStages.get(0).getStage().getStageName()).isEqualTo("STAGE1");
@@ -78,10 +76,8 @@ public class DependencyResolverTest {
       stageAndStageEntities.add(new ProcessLauncher.StageExecution(stage, stageEntity));
     }
 
-    DependencyResolver dependencyResolver = new DependencyResolver(stageAndStageEntities);
-
     List<ProcessLauncher.StageExecution> executableStages =
-        dependencyResolver.getExecutableStages();
+        DependencyResolver.getExecutableStages(stageAndStageEntities);
 
     assertThat(executableStages.size()).isOne();
     assertThat(executableStages.get(0).getStage().getStageName()).isEqualTo("STAGE1");
@@ -113,10 +109,8 @@ public class DependencyResolverTest {
       stageAndStageEntities.add(new ProcessLauncher.StageExecution(stage, stageEntity));
     }
 
-    DependencyResolver dependencyResolver = new DependencyResolver(stageAndStageEntities);
-
     List<ProcessLauncher.StageExecution> executableStages =
-        dependencyResolver.getExecutableStages();
+        DependencyResolver.getExecutableStages(stageAndStageEntities);
 
     assertThat(executableStages.size()).isEqualTo(2);
     assertThat(executableStages.get(0).getStage().getStageName()).isEqualTo("STAGE2");
@@ -130,8 +124,7 @@ public class DependencyResolverTest {
     ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
     Process process =
         builder
-            .execute(
-                "STAGE1", StageParameters.builder().maximumRetries(0).build())
+            .execute("STAGE1", StageParameters.builder().maximumRetries(0).build())
             .with(new SuccessSyncExecutor())
             .executeAfter("STAGE2", "STAGE1")
             .with(new SuccessSyncExecutor())
@@ -155,10 +148,8 @@ public class DependencyResolverTest {
       stageNumber++;
     }
 
-    DependencyResolver dependencyResolver = new DependencyResolver(stageAndStageEntities);
-
     List<ProcessLauncher.StageExecution> executableStages =
-        dependencyResolver.getExecutableStages();
+        DependencyResolver.getExecutableStages(stageAndStageEntities);
 
     assertThat(executableStages.size()).isEqualTo(0);
   }
@@ -195,10 +186,8 @@ public class DependencyResolverTest {
       stageNumber++;
     }
 
-    DependencyResolver dependencyResolver = new DependencyResolver(stageAndStageEntities);
-
     List<ProcessLauncher.StageExecution> executableStages =
-        dependencyResolver.getExecutableStages();
+        DependencyResolver.getExecutableStages(stageAndStageEntities);
 
     assertThat(executableStages.size()).isEqualTo(0);
   }
@@ -235,10 +224,8 @@ public class DependencyResolverTest {
       stageNumber++;
     }
 
-    DependencyResolver dependencyResolver = new DependencyResolver(stageAndStageEntities);
-
     List<ProcessLauncher.StageExecution> executableStages =
-        dependencyResolver.getExecutableStages();
+        DependencyResolver.getExecutableStages(stageAndStageEntities);
 
     assertThat(executableStages.size()).isOne();
     assertThat(executableStages.get(0).getStage().getStageName()).isEqualTo("STAGE1");

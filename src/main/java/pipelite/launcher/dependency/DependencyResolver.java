@@ -56,13 +56,14 @@ public class DependencyResolver {
     }
   }
 
-  public List<ProcessLauncher.StageExecution> getExecutableStages() {
+  public static List<ProcessLauncher.StageExecution> getExecutableStages(
+      List<ProcessLauncher.StageExecution> stageExecutions) {
     List<ProcessLauncher.StageExecution> executableStages = new ArrayList<>();
     for (ProcessLauncher.StageExecution stageExecution : stageExecutions) {
       Stage stage = stageExecution.getStage();
       StageEntity stageEntity = stageExecution.getStageEntity();
 
-      if (isDependsOnStageCompleted(stage)) {
+      if (isDependsOnStageCompleted(stageExecutions, stage)) {
         StageExecutionResultType resultType = stageEntity.getResultType();
         if (resultType == null) {
           resultType = NEW;
@@ -93,7 +94,8 @@ public class DependencyResolver {
     return executableStages;
   }
 
-  private boolean isDependsOnStageCompleted(Stage stage) {
+  private static boolean isDependsOnStageCompleted(
+      List<ProcessLauncher.StageExecution> stageExecutions, Stage stage) {
     Stage dependsOnStage = stage.getDependsOn();
     if (dependsOnStage == null) {
       return true;
