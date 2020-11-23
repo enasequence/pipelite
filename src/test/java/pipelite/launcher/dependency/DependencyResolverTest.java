@@ -29,7 +29,7 @@ public class DependencyResolverTest {
 
   @Test
   public void testGetRunnableStageAllActiveAllDependOnPrevious() {
-    List<ProcessLauncher.StageExecution> stageAndStageEntities = new ArrayList<>();
+    List<ProcessLauncher.StageExecution> stageExecutions = new ArrayList<>();
 
     ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
     Process process =
@@ -45,11 +45,11 @@ public class DependencyResolverTest {
     for (Stage stage : process.getStages()) {
       StageEntity stageEntity = new StageEntity();
       stageEntity.startExecution(stage);
-      stageAndStageEntities.add(new ProcessLauncher.StageExecution(stage, stageEntity));
+      stageExecutions.add(new ProcessLauncher.StageExecution(stage, stageEntity));
     }
 
     List<ProcessLauncher.StageExecution> executableStages =
-        DependencyResolver.getExecutableStages(stageAndStageEntities);
+        DependencyResolver.getExecutableStages(stageExecutions);
 
     assertThat(executableStages.size()).isOne();
     assertThat(executableStages.get(0).getStage().getStageName()).isEqualTo("STAGE1");
@@ -57,7 +57,7 @@ public class DependencyResolverTest {
 
   @Test
   public void testGetRunnableStageAllActiveAllDependOnFirst() {
-    List<ProcessLauncher.StageExecution> stageAndStageEntities = new ArrayList<>();
+    List<ProcessLauncher.StageExecution> stageExecutions = new ArrayList<>();
 
     ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
     Process process =
@@ -73,11 +73,11 @@ public class DependencyResolverTest {
     for (Stage stage : process.getStages()) {
       StageEntity stageEntity = new StageEntity();
       stageEntity.startExecution(stage);
-      stageAndStageEntities.add(new ProcessLauncher.StageExecution(stage, stageEntity));
+      stageExecutions.add(new ProcessLauncher.StageExecution(stage, stageEntity));
     }
 
     List<ProcessLauncher.StageExecution> executableStages =
-        DependencyResolver.getExecutableStages(stageAndStageEntities);
+        DependencyResolver.getExecutableStages(stageExecutions);
 
     assertThat(executableStages.size()).isOne();
     assertThat(executableStages.get(0).getStage().getStageName()).isEqualTo("STAGE1");
@@ -85,7 +85,7 @@ public class DependencyResolverTest {
 
   @Test
   public void testGetRunnableStageFirstSuccessAllDependOnFirst() {
-    List<ProcessLauncher.StageExecution> stageAndStageEntities = new ArrayList<>();
+    List<ProcessLauncher.StageExecution> stageExecutions = new ArrayList<>();
 
     ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
     Process process =
@@ -106,11 +106,11 @@ public class DependencyResolverTest {
         stageEntity.endExecution(StageExecutionResult.success());
       }
       stageNumber++;
-      stageAndStageEntities.add(new ProcessLauncher.StageExecution(stage, stageEntity));
+      stageExecutions.add(new ProcessLauncher.StageExecution(stage, stageEntity));
     }
 
     List<ProcessLauncher.StageExecution> executableStages =
-        DependencyResolver.getExecutableStages(stageAndStageEntities);
+        DependencyResolver.getExecutableStages(stageExecutions);
 
     assertThat(executableStages.size()).isEqualTo(2);
     assertThat(executableStages.get(0).getStage().getStageName()).isEqualTo("STAGE2");
@@ -119,7 +119,7 @@ public class DependencyResolverTest {
 
   @Test
   public void testGetRunnableStageFirstErrorMaxRetriesAllDependOnFirst() {
-    List<ProcessLauncher.StageExecution> stageAndStageEntities = new ArrayList<>();
+    List<ProcessLauncher.StageExecution> stageExecutions = new ArrayList<>();
 
     ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
     Process process =
@@ -141,22 +141,22 @@ public class DependencyResolverTest {
         ProcessLauncher.StageExecution stageExecution =
             new ProcessLauncher.StageExecution(stage, stageEntity);
         stageExecution.incrementImmediateExecutionCount();
-        stageAndStageEntities.add(stageExecution);
+        stageExecutions.add(stageExecution);
       } else {
-        stageAndStageEntities.add(new ProcessLauncher.StageExecution(stage, stageEntity));
+        stageExecutions.add(new ProcessLauncher.StageExecution(stage, stageEntity));
       }
       stageNumber++;
     }
 
     List<ProcessLauncher.StageExecution> executableStages =
-        DependencyResolver.getExecutableStages(stageAndStageEntities);
+        DependencyResolver.getExecutableStages(stageExecutions);
 
     assertThat(executableStages.size()).isEqualTo(0);
   }
 
   @Test
   public void testGetRunnableStageFirstErrorMaxImmediateAllDependOnFirst() {
-    List<ProcessLauncher.StageExecution> stageAndStageEntities = new ArrayList<>();
+    List<ProcessLauncher.StageExecution> stageExecutions = new ArrayList<>();
 
     ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
     Process process =
@@ -179,22 +179,22 @@ public class DependencyResolverTest {
         ProcessLauncher.StageExecution stageExecution =
             new ProcessLauncher.StageExecution(stage, stageEntity);
         stageExecution.incrementImmediateExecutionCount();
-        stageAndStageEntities.add(stageExecution);
+        stageExecutions.add(stageExecution);
       } else {
-        stageAndStageEntities.add(new ProcessLauncher.StageExecution(stage, stageEntity));
+        stageExecutions.add(new ProcessLauncher.StageExecution(stage, stageEntity));
       }
       stageNumber++;
     }
 
     List<ProcessLauncher.StageExecution> executableStages =
-        DependencyResolver.getExecutableStages(stageAndStageEntities);
+        DependencyResolver.getExecutableStages(stageExecutions);
 
     assertThat(executableStages.size()).isEqualTo(0);
   }
 
   @Test
   public void testGetRunnableStageFirstErrorNotMaxRetriesImmediateAllDependOnFirst() {
-    List<ProcessLauncher.StageExecution> stageAndStageEntities = new ArrayList<>();
+    List<ProcessLauncher.StageExecution> stageExecutions = new ArrayList<>();
 
     ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
     Process process =
@@ -217,15 +217,15 @@ public class DependencyResolverTest {
         ProcessLauncher.StageExecution stageExecution =
             new ProcessLauncher.StageExecution(stage, stageEntity);
         stageExecution.incrementImmediateExecutionCount();
-        stageAndStageEntities.add(stageExecution);
+        stageExecutions.add(stageExecution);
       } else {
-        stageAndStageEntities.add(new ProcessLauncher.StageExecution(stage, stageEntity));
+        stageExecutions.add(new ProcessLauncher.StageExecution(stage, stageEntity));
       }
       stageNumber++;
     }
 
     List<ProcessLauncher.StageExecution> executableStages =
-        DependencyResolver.getExecutableStages(stageAndStageEntities);
+        DependencyResolver.getExecutableStages(stageExecutions);
 
     assertThat(executableStages.size()).isOne();
     assertThat(executableStages.get(0).getStage().getStageName()).isEqualTo("STAGE1");
@@ -233,7 +233,7 @@ public class DependencyResolverTest {
 
   @Test
   public void testGetDependentStagesAllDependOnPrevious() {
-    List<ProcessLauncher.StageExecution> stageAndStageEntities = new ArrayList<>();
+    List<ProcessLauncher.StageExecution> stageExecutions = new ArrayList<>();
 
     ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
     Process process =
@@ -250,31 +250,31 @@ public class DependencyResolverTest {
 
     for (Stage stage : process.getStages()) {
       StageEntity stageEntity = new StageEntity();
-      stageAndStageEntities.add(new ProcessLauncher.StageExecution(stage, stageEntity));
+      stageExecutions.add(new ProcessLauncher.StageExecution(stage, stageEntity));
     }
 
-    DependencyResolver dependencyResolver = new DependencyResolver(stageAndStageEntities);
-
     List<ProcessLauncher.StageExecution> dependentStages =
-        dependencyResolver.getDependentStages(stageAndStageEntities.get(0));
+        DependencyResolver.getDependentStages(stageExecutions, stageExecutions.get(0));
     assertThat(dependentStages.size()).isEqualTo(3);
     assertThat(dependentStages.get(0).getStage().getStageName()).isEqualTo("STAGE4");
     assertThat(dependentStages.get(1).getStage().getStageName()).isEqualTo("STAGE3");
     assertThat(dependentStages.get(2).getStage().getStageName()).isEqualTo("STAGE2");
 
-    dependentStages = dependencyResolver.getDependentStages(stageAndStageEntities.get(1));
+    dependentStages =
+        DependencyResolver.getDependentStages(stageExecutions, stageExecutions.get(1));
     assertThat(dependentStages.size()).isEqualTo(2);
     assertThat(dependentStages.get(0).getStage().getStageName()).isEqualTo("STAGE4");
     assertThat(dependentStages.get(1).getStage().getStageName()).isEqualTo("STAGE3");
 
-    dependentStages = dependencyResolver.getDependentStages(stageAndStageEntities.get(2));
+    dependentStages =
+        DependencyResolver.getDependentStages(stageExecutions, stageExecutions.get(2));
     assertThat(dependentStages.size()).isEqualTo(1);
     assertThat(dependentStages.get(0).getStage().getStageName()).isEqualTo("STAGE4");
   }
 
   @Test
   public void testGetDependentStagesAllDependOnFirst() {
-    List<ProcessLauncher.StageExecution> stageAndStageEntities = new ArrayList<>();
+    List<ProcessLauncher.StageExecution> stageExecutions = new ArrayList<>();
 
     ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
     Process process =
@@ -291,25 +291,26 @@ public class DependencyResolverTest {
 
     for (Stage stage : process.getStages()) {
       StageEntity stageEntity = new StageEntity();
-      stageAndStageEntities.add(new ProcessLauncher.StageExecution(stage, stageEntity));
+      stageExecutions.add(new ProcessLauncher.StageExecution(stage, stageEntity));
     }
 
-    DependencyResolver dependencyResolver = new DependencyResolver(stageAndStageEntities);
-
     List<ProcessLauncher.StageExecution> dependentStages =
-        dependencyResolver.getDependentStages(stageAndStageEntities.get(0));
+        DependencyResolver.getDependentStages(stageExecutions, stageExecutions.get(0));
     assertThat(dependentStages.size()).isEqualTo(3);
     assertThat(dependentStages.get(0).getStage().getStageName()).isEqualTo("STAGE2");
     assertThat(dependentStages.get(1).getStage().getStageName()).isEqualTo("STAGE3");
     assertThat(dependentStages.get(2).getStage().getStageName()).isEqualTo("STAGE4");
 
-    dependentStages = dependencyResolver.getDependentStages(stageAndStageEntities.get(1));
+    dependentStages =
+        DependencyResolver.getDependentStages(stageExecutions, stageExecutions.get(1));
     assertThat(dependentStages.size()).isEqualTo(0);
 
-    dependentStages = dependencyResolver.getDependentStages(stageAndStageEntities.get(2));
+    dependentStages =
+        DependencyResolver.getDependentStages(stageExecutions, stageExecutions.get(2));
     assertThat(dependentStages.size()).isEqualTo(0);
 
-    dependentStages = dependencyResolver.getDependentStages(stageAndStageEntities.get(3));
+    dependentStages =
+        DependencyResolver.getDependentStages(stageExecutions, stageExecutions.get(3));
     assertThat(dependentStages.size()).isEqualTo(0);
   }
 }

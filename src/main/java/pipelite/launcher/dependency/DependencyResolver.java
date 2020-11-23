@@ -21,25 +21,22 @@ import static pipelite.stage.StageExecutionResultType.NEW;
 
 public class DependencyResolver {
 
-  private final List<ProcessLauncher.StageExecution> stageExecutions;
+  private DependencyResolver() {};
 
-  public DependencyResolver(List<ProcessLauncher.StageExecution> stageExecutions) {
-    this.stageExecutions = stageExecutions;
-  }
-
-  public List<ProcessLauncher.StageExecution> getDependentStages(
-      ProcessLauncher.StageExecution from) {
+  public static List<ProcessLauncher.StageExecution> getDependentStages(
+      List<ProcessLauncher.StageExecution> stages, ProcessLauncher.StageExecution from) {
     List<ProcessLauncher.StageExecution> dependentStages = new ArrayList<>();
-    getDependentStages(dependentStages, from, false);
+    getDependentStages(stages, dependentStages, from, false);
     return dependentStages;
   }
 
-  private void getDependentStages(
+  private static void getDependentStages(
+      List<ProcessLauncher.StageExecution> stages,
       List<ProcessLauncher.StageExecution> dependentStages,
       ProcessLauncher.StageExecution from,
       boolean include) {
 
-    for (ProcessLauncher.StageExecution stageExecution : stageExecutions) {
+    for (ProcessLauncher.StageExecution stageExecution : stages) {
       Stage stage = stageExecution.getStage();
       if (stage.equals(from)) {
         continue;
@@ -47,7 +44,7 @@ public class DependencyResolver {
 
       Stage dependsOn = stage.getDependsOn();
       if (dependsOn != null && dependsOn.getStageName().equals(from.getStage().getStageName())) {
-        getDependentStages(dependentStages, stageExecution, true);
+        getDependentStages(stages, dependentStages, stageExecution, true);
       }
     }
 
@@ -57,13 +54,13 @@ public class DependencyResolver {
   }
 
   public static List<ProcessLauncher.StageExecution> getExecutableStages(
-      List<ProcessLauncher.StageExecution> stageExecutions) {
+      List<ProcessLauncher.StageExecution> stages) {
     List<ProcessLauncher.StageExecution> executableStages = new ArrayList<>();
-    for (ProcessLauncher.StageExecution stageExecution : stageExecutions) {
+    for (ProcessLauncher.StageExecution stageExecution : stages) {
       Stage stage = stageExecution.getStage();
       StageEntity stageEntity = stageExecution.getStageEntity();
 
-      if (isDependsOnStageCompleted(stageExecutions, stage)) {
+      if (isDependsOnStageCompleted(stages, stage)) {
         StageExecutionResultType resultType = stageEntity.getResultType();
         if (resultType == null) {
           resultType = NEW;

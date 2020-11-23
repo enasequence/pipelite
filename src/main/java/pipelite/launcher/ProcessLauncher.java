@@ -49,7 +49,6 @@ public class ProcessLauncher {
   private final ProcessEntity processEntity;
 
   private final List<StageExecution> stageExecutions;
-  private final DependencyResolver dependencyResolver;
   private final ExecutorService executorService;
   private final Set<String> activeStages = ConcurrentHashMap.newKeySet();
   private final Duration stageLaunchFrequency;
@@ -76,7 +75,6 @@ public class ProcessLauncher {
     this.processEntity = processEntity;
 
     this.stageExecutions = new ArrayList<>();
-    this.dependencyResolver = new DependencyResolver(stageExecutions);
     this.executorService = Executors.newCachedThreadPool();
 
     if (launcherConfiguration.getStageLaunchFrequency() != null) {
@@ -388,7 +386,8 @@ public class ProcessLauncher {
   }
 
   private void invalidateDependentStages(StageExecution from) {
-    for (StageExecution stageExecution : dependencyResolver.getDependentStages(from)) {
+    for (StageExecution stageExecution :
+        DependencyResolver.getDependentStages(stageExecutions, from)) {
       StageEntity stageEntity = stageExecution.stageEntity;
       stageEntity.resetExecution();
       stageService.saveStage(stageEntity);
