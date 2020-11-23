@@ -48,13 +48,14 @@ public class ProcessLauncher {
   private final ProcessEntity processEntity;
 
   private final List<Stage> stages;
-  private final ExecutorService executorService;
   private final Set<String> activeStages = ConcurrentHashMap.newKeySet();
   private final Duration stageLaunchFrequency;
   private final Duration stagePollFrequency;
 
   private final AtomicLong stageFailedCount = new AtomicLong(0);
   private final AtomicLong stageSuccessCount = new AtomicLong(0);
+
+  private final ExecutorService executorService;
 
   public ProcessLauncher(
       LauncherConfiguration launcherConfiguration,
@@ -74,7 +75,6 @@ public class ProcessLauncher {
     this.processEntity = processEntity;
 
     this.stages = new ArrayList<>();
-    this.executorService = Executors.newCachedThreadPool();
 
     if (launcherConfiguration.getStageLaunchFrequency() != null) {
       this.stageLaunchFrequency = launcherConfiguration.getStageLaunchFrequency();
@@ -87,6 +87,8 @@ public class ProcessLauncher {
     } else {
       this.stagePollFrequency = LauncherConfiguration.DEFAULT_STAGE_POLL_FREQUENCY;
     }
+
+    this.executorService = Executors.newCachedThreadPool();
   }
 
   public ProcessState run() {
@@ -196,24 +198,19 @@ public class ProcessLauncher {
 
       for (Stage stage : executableStages) {
         String stageName = stage.getStageName();
-
         boolean isActive = activeStages.contains(stageName);
-
         if (isActive) {
           // We should not execute this stage because it is already active.
           continue;
         }
-
         if (stage.getDependsOn() != null) {
           for (Stage dependsOn : DependencyResolver.getDependsOnStages(stages, stage)) {
-            String dependsOnStageName = dependsOn.getStageName();
-            if (dependsOnStageName != null && activeStages.contains(dependsOnStageName)) {
+            if (activeStages.contains(dependsOn.getStageName())) {
               isActive = true;
               break;
             }
           }
         }
-
         if (isActive) {
           // We should not execute this stage because a stage it depends on is active.
           continue;
@@ -246,7 +243,6 @@ public class ProcessLauncher {
 
   private ProcessState saveProcess() {
     logContext(log.atInfo()).log("Saving process");
-
     processEntity.updateExecution(evaluateProcessState(stages));
     processService.saveProcess(processEntity);
     return processEntity.getState();
@@ -255,7 +251,6 @@ public class ProcessLauncher {
   private void executeStage(Stage stage) {
     StageEntity stageEntity = stage.getStageEntity();
     String stageName = stage.getStageName();
-
     logContext(log.atInfo(), stageName).log("Preparing to execute stage");
 
     // If the stage executor has been serialized we should use it to allow an active stage
@@ -264,7 +259,6 @@ public class ProcessLauncher {
 
     StageExecutor deserializedExecutor = deserializeActiveExecutor(stage);
     boolean isDeserializedExecutor = deserializedExecutor != null;
-
     if (isDeserializedExecutor) {
       // Use deserialized executor.
       stage.setExecutor(deserializedExecutor);
@@ -272,10 +266,8 @@ public class ProcessLauncher {
     }
 
     StageExecutionResult result;
-
     try {
       logContext(log.atInfo(), stageName).log("Executing stage");
-
       if (!isDeserializedExecutor) {
         // Start a new stage execution and serialize the executor.
         stageEntity.startExecution(stage);
@@ -323,11 +315,9 @@ public class ProcessLauncher {
     }
 
     // Stage has been executed.
-
     stageEntity.endExecution(result);
     stageService.saveStage(stageEntity);
     stage.incrementImmediateExecutionCount();
-
     if (result.isSuccess()) {
       stageSuccessCount.incrementAndGet();
       logContext(log.atInfo(), stageEntity.getStageName())
@@ -347,7 +337,6 @@ public class ProcessLauncher {
   private StageExecutor deserializeActiveExecutor(Stage stage) {
     StageEntity stageEntity = stage.getStageEntity();
     String stageName = stage.getStageName();
-
     if (stageEntity.getResultType() == ACTIVE
         && stageEntity.getExecutorName() != null
         && stageEntity.getExecutorData() != null) {
