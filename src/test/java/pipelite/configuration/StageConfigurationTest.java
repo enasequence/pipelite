@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfiguration;
 
 @SpringBootTest(
@@ -27,6 +28,7 @@ import pipelite.PipeliteTestConfiguration;
       "pipelite.stage.maximumRetries=3",
       "pipelite.stage.tempdir="
     })
+@ActiveProfiles(value = {"hsql-test"})
 public class StageConfigurationTest {
 
   @Autowired StageConfiguration config;
