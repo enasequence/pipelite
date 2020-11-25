@@ -187,17 +187,26 @@ public class PipeliteScheduler extends AbstractScheduledService {
       if (CronUtils.validate(scheduleEntity.getSchedule())) {
         Schedule schedule = new Schedule();
         schedule.setScheduleEntity(scheduleEntity);
-        // Update next launch time.
-        schedule.setLaunchTime(CronUtils.launchTime(scheduleEntity.getSchedule()));
         schedules.add(schedule);
-        scheduleDescription = CronUtils.describe(scheduleEntity.getSchedule());
-        logContext(log.atInfo(), scheduleEntity.getPipelineName())
-            .log(
-                "Scheduling %s pipeline with cron expression %s (%s). Next launch time is: %s",
-                scheduleEntity.getPipelineName(),
-                scheduleEntity.getSchedule(),
-                scheduleDescription,
-                schedule.getLaunchTime());
+
+        // TODO: test resume process execution
+        boolean isResumeProcessExecution = resumeProcessExecution(schedule);
+        if (isResumeProcessExecution) {
+          logContext(log.atInfo(), scheduleEntity.getPipelineName())
+              .log("Attempting to resume %s pipeline execution", scheduleEntity.getPipelineName());
+          launchProcess(schedule);
+        } else {
+          // Update next launch time.
+          schedule.setLaunchTime(CronUtils.launchTime(scheduleEntity.getSchedule()));
+          scheduleDescription = CronUtils.describe(scheduleEntity.getSchedule());
+          logContext(log.atInfo(), scheduleEntity.getPipelineName())
+              .log(
+                  "Scheduling %s pipeline with cron expression %s (%s). Next launch time is: %s",
+                  scheduleEntity.getPipelineName(),
+                  scheduleEntity.getSchedule(),
+                  scheduleDescription,
+                  schedule.getLaunchTime());
+        }
       } else {
         logContext(log.atSevere(), scheduleEntity.getPipelineName())
             .log(
@@ -210,6 +219,29 @@ public class PipeliteScheduler extends AbstractScheduledService {
       }
     }
     schedulesValidUntil = LocalDateTime.now().plus(processRefreshFrequency);
+  }
+
+  private boolean resumeProcessExecution(Schedule schedule) {
+    ScheduleEntity scheduleEntity = schedule.getScheduleEntity();
+    String pipelineName = scheduleEntity.getPipelineName();
+    String processId = scheduleEntity.getProcessId();
+    if (scheduleEntity.getStartTime() != null
+        && scheduleEntity.getEndTime() == null
+        && processId != null) {
+      Process process = createProcess(pipelineName, processId);
+      Optional<ProcessEntity> processEntity =
+          processService.getSavedProcess(pipelineName, processId);
+      if (process != null && processEntity.isPresent()) {
+        schedule.setProcess(process);
+        schedule.setProcessEntity(processEntity.get());
+        return true;
+      } else {
+        scheduleEntity.resetExecution();
+        scheduleService.saveProcessSchedule(scheduleEntity);
+        return false;
+      }
+    }
+    return false;
   }
 
   public static String getNextProcessId(String processId) {
@@ -248,14 +280,8 @@ public class PipeliteScheduler extends AbstractScheduledService {
         throw new RuntimeException("Could not assign new process id");
       }
     }
-
-    logContext(log.atInfo(), pipelineName, processId).log("Creating new process");
-
-    ProcessFactory processFactory = getCachedProcessFactory(pipelineName);
-    Process process = processFactory.create(processId);
+    Process process = createProcess(pipelineName, processId);
     if (process == null) {
-      logContext(log.atSevere(), processId).log("Failed to create process: %s", processId);
-      setStats(pipelineName).processCreationFailedCount.incrementAndGet();
       return false;
     }
     ProcessEntity newProcessEntity = ProcessEntity.createExecution(pipelineName, processId, 9);
@@ -267,12 +293,23 @@ public class PipeliteScheduler extends AbstractScheduledService {
     return true;
   }
 
+  private Process createProcess(String pipelineName, String processId) {
+    logContext(log.atInfo(), pipelineName, processId).log("Creating new process");
+    ProcessFactory processFactory = getCachedProcessFactory(pipelineName);
+    Process process = processFactory.create(processId);
+    if (process == null) {
+      logContext(log.atSevere(), processId).log("Failed to create process: %s", processId);
+      setStats(pipelineName).processCreationFailedCount.incrementAndGet();
+      return null;
+    }
+    return process;
+  }
+
   private void launchProcess(Schedule schedule) {
     Process process = schedule.getProcess();
     ProcessEntity processEntity = schedule.getProcessEntity();
     String pipelineName = processEntity.getPipelineName();
     String processId = processEntity.getProcessId();
-
     logContext(log.atInfo(), pipelineName, processId).log("Launching process");
 
     activePipelines.add(pipelineName);

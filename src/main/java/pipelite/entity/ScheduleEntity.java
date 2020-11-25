@@ -59,4 +59,10 @@ public class ScheduleEntity {
     this.endTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.executionCount++;
   }
+
+  public void resetExecution() {
+    this.startTime = null;
+    this.processId = null;
+    this.endTime = null;
+  }
 }
