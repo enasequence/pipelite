@@ -22,13 +22,13 @@ import org.apache.commons.text.StringTokenizer;
 import org.apache.commons.text.matcher.StringMatcher;
 import org.apache.commons.text.matcher.StringMatcherFactory;
 import pipelite.executor.stream.KeepOldestByteArrayOutputStream;
-import pipelite.stage.StageParameters;
+import pipelite.executor.StageExecutorParameters;
 
 @Flogger
 public class LocalCmdRunner implements CmdRunner {
 
   @Override
-  public CmdRunnerResult execute(String cmd, StageParameters stageParameters) {
+  public CmdRunnerResult execute(String cmd, StageExecutorParameters executorParams) {
     if (cmd == null) {
       return new CmdRunnerResult(EXIT_CODE_ERROR, null, null);
     }
@@ -56,18 +56,18 @@ public class LocalCmdRunner implements CmdRunner {
       apacheExecutor.setStreamHandler(new PumpStreamHandler(stdoutStream, stderrStream));
       // executor.setStreamHandler(new PumpStreamHandler(System.out, System.err));
 
-      Duration timeout = stageParameters.getTimeout();
+      Duration timeout = executorParams.getTimeout();
       if (timeout != null) {
         apacheExecutor.setWatchdog(
             new ExecuteWatchdog(
-                stageParameters.getTimeout() != null
-                    ? stageParameters.getTimeout().toMillis()
+                executorParams.getTimeout() != null
+                    ? executorParams.getTimeout().toMillis()
                     : ExecuteWatchdog.INFINITE_TIMEOUT));
       }
 
       log.atInfo().log("Executing system call: %s", cmd);
 
-      int exitCode = apacheExecutor.execute(commandLine, stageParameters.getEnv());
+      int exitCode = apacheExecutor.execute(commandLine, executorParams.getEnv());
       return new CmdRunnerResult(exitCode, getStream(stdoutStream), getStream(stderrStream));
 
     } catch (Exception ex) {

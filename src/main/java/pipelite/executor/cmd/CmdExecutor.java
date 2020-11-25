@@ -35,7 +35,7 @@ public class CmdExecutor implements StageExecutor {
   public void getDispatcherJobId(StageExecutionResult stageExecutionResult) {}
 
   public StageExecutionResult execute(String pipelineName, String processId, Stage stage) {
-    String singularityImage = stage.getStageParameters().getSingularityImage();
+    String singularityImage = stage.getExecutorParams().getSingularityImage();
 
     String execCmd = cmd;
 
@@ -55,12 +55,12 @@ public class CmdExecutor implements StageExecutor {
     try {
       CmdRunner cmdRunner = getCmdRunner();
 
-      CmdRunnerResult cmdRunnerResult = cmdRunner.execute(execCmd, stage.getStageParameters());
+      CmdRunnerResult cmdRunnerResult = cmdRunner.execute(execCmd, stage.getExecutorParams());
 
       StageExecutionResult result =
           StageExecutionResultExitCode.resolve(cmdRunnerResult.getExitCode());
       result.addAttribute(StageExecutionResult.COMMAND, execCmd);
-      result.addAttribute(StageExecutionResult.HOST, stage.getStageParameters().getHost());
+      result.addAttribute(StageExecutionResult.HOST, stage.getExecutorParams().getHost());
       result.addAttribute(StageExecutionResult.EXIT_CODE, cmdRunnerResult.getExitCode());
       result.setStdout(cmdRunnerResult.getStdout());
       result.setStderr(cmdRunnerResult.getStderr());
@@ -92,8 +92,8 @@ public class CmdExecutor implements StageExecutor {
   }
 
   public String getWorkDir(Stage stage) {
-    if (stage.getStageParameters().getWorkDir() != null) {
-      return stage.getStageParameters().getWorkDir();
+    if (stage.getExecutorParams().getWorkDir() != null) {
+      return stage.getExecutorParams().getWorkDir();
     } else {
       return "";
     }

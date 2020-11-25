@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.stage;
+package pipelite.executor;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -22,7 +22,7 @@ import pipelite.json.Json;
 @Data
 @Builder
 @Flogger
-public class StageParameters implements ConfigurableStageParameters {
+public class StageExecutorParameters implements ConfigurableStageExecutorParameters {
 
   private String host; // Executors: SSH
   private Duration timeout; // Executors: all
@@ -42,20 +42,24 @@ public class StageParameters implements ConfigurableStageParameters {
     if (stageConfiguration == null) {
       return;
     }
-    setHost(StageParametersUtils.getHost(this, stageConfiguration));
-    setTimeout(StageParametersUtils.getTimeout(this, stageConfiguration));
-    setMaximumRetries(StageParametersUtils.getMaximumRetries(this, stageConfiguration));
-    setImmediateRetries(StageParametersUtils.getImmediateRetries(this, stageConfiguration));
-    setEnv(StageParametersUtils.getEnv(this, stageConfiguration));
-    setWorkDir(StageParametersUtils.getTempDir(this, stageConfiguration));
-    setMemory(StageParametersUtils.getMemory(this, stageConfiguration));
-    setMemoryTimeout(StageParametersUtils.getMemoryTimeout(this, stageConfiguration));
-    setCores(StageParametersUtils.getCores(this, stageConfiguration));
-    setQueue(StageParametersUtils.getQueue(this, stageConfiguration));
-    setSingularityImage(StageParametersUtils.getSingularityImage(this, stageConfiguration));
+    setHost(StageExecutorParametersUtils.getHost(this, stageConfiguration));
+    setTimeout(StageExecutorParametersUtils.getTimeout(this, stageConfiguration));
+    setMaximumRetries(StageExecutorParametersUtils.getMaximumRetries(this, stageConfiguration));
+    setImmediateRetries(StageExecutorParametersUtils.getImmediateRetries(this, stageConfiguration));
+    setEnv(StageExecutorParametersUtils.getEnv(this, stageConfiguration));
+    setWorkDir(StageExecutorParametersUtils.getTempDir(this, stageConfiguration));
+    setMemory(StageExecutorParametersUtils.getMemory(this, stageConfiguration));
+    setMemoryTimeout(StageExecutorParametersUtils.getMemoryTimeout(this, stageConfiguration));
+    setCores(StageExecutorParametersUtils.getCores(this, stageConfiguration));
+    setQueue(StageExecutorParametersUtils.getQueue(this, stageConfiguration));
+    setSingularityImage(StageExecutorParametersUtils.getSingularityImage(this, stageConfiguration));
   }
 
-  public String json() {
-    return Json.serializeSafely(this);
+  public String serialize() {
+    return Json.serialize(this);
+  }
+
+  public static StageExecutorParameters deserialize(String json) {
+    return Json.deserialize(json, StageExecutorParameters.class);
   }
 }

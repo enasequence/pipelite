@@ -88,7 +88,7 @@ public class LsfCmdExecutor extends CmdExecutor {
 
     CmdRunner cmdRunner = getCmdRunner();
 
-    Duration timeout = stage.getStageParameters().getTimeout();
+    Duration timeout = stage.getExecutorParams().getTimeout();
 
     if (timeout != null && LocalDateTime.now().isAfter(startTime.plus(timeout))) {
       log.atSevere()
@@ -97,7 +97,7 @@ public class LsfCmdExecutor extends CmdExecutor {
           .with(LogKey.STAGE_NAME, stage.getStageName())
           .log("Maximum run time exceeded. Killing LSF job.");
 
-      cmdRunner.execute(BKILL_CMD + jobId, stage.getStageParameters());
+      cmdRunner.execute(BKILL_CMD + jobId, stage.getExecutorParams());
       reset();
       return StageExecutionResult.error();
     }
@@ -109,7 +109,7 @@ public class LsfCmdExecutor extends CmdExecutor {
         .log("Checking LSF job result using bjobs.");
 
     CmdRunnerResult bjobsCustomCmdRunnerResult =
-        cmdRunner.execute(BJOBS_CUSTOM_CMD + jobId, stage.getStageParameters());
+        cmdRunner.execute(BJOBS_CUSTOM_CMD + jobId, stage.getExecutorParams());
 
     StageExecutionResult result;
 
@@ -126,7 +126,7 @@ public class LsfCmdExecutor extends CmdExecutor {
           .log("Checking LSF job result using bhist.");
 
       CmdRunnerResult bhistCmdRunnerResult =
-          cmdRunner.execute(BHIST_CMD + jobId, stage.getStageParameters());
+          cmdRunner.execute(BHIST_CMD + jobId, stage.getExecutorParams());
 
       result = getStandardJobResult(bhistCmdRunnerResult.getStdout());
       if (result == null) {
@@ -183,14 +183,14 @@ public class LsfCmdExecutor extends CmdExecutor {
     addArgument(cmd, "-oo");
     addArgument(cmd, stdoutFile);
 
-    Integer cores = stage.getStageParameters().getCores();
+    Integer cores = stage.getExecutorParams().getCores();
     if (cores != null && cores > 0) {
       addArgument(cmd, "-n");
       addArgument(cmd, Integer.toString(cores));
     }
 
-    Integer memory = stage.getStageParameters().getMemory();
-    Duration memoryTimeout = stage.getStageParameters().getMemoryTimeout();
+    Integer memory = stage.getExecutorParams().getMemory();
+    Duration memoryTimeout = stage.getExecutorParams().getMemoryTimeout();
     if (memory != null && memory > 0) {
       addArgument(cmd, "-M");
       addArgument(cmd, Integer.toString(memory) + "M"); // Megabytes
@@ -205,7 +205,7 @@ public class LsfCmdExecutor extends CmdExecutor {
               + "]\"");
     }
 
-    Duration timeout = stage.getStageParameters().getTimeout();
+    Duration timeout = stage.getExecutorParams().getTimeout();
     if (timeout != null) {
       if (timeout.toMinutes() == 0) {
         timeout = Duration.ofMinutes(1);
@@ -214,7 +214,7 @@ public class LsfCmdExecutor extends CmdExecutor {
       addArgument(cmd, String.valueOf(timeout.toMinutes()));
     }
 
-    String queue = stage.getStageParameters().getQueue();
+    String queue = stage.getExecutorParams().getQueue();
     if (queue != null) {
       addArgument(cmd, "-q");
       addArgument(cmd, queue);
@@ -233,20 +233,20 @@ public class LsfCmdExecutor extends CmdExecutor {
     // execution finishes.
     return 0
         == cmdRunner
-            .execute("sh -c 'test -f " + stdoutFile + "'", stage.getStageParameters())
+            .execute("sh -c 'test -f " + stdoutFile + "'", stage.getExecutorParams())
             .getExitCode();
   }
 
   public static CmdRunnerResult writeFileToStdout(
       CmdRunner cmdRunner, String stdoutFile, Stage stage) {
     // Execute through sh required by LocalRunner to direct output to stdout/err.
-    return cmdRunner.execute("sh -c 'cat " + stdoutFile + "'", stage.getStageParameters());
+    return cmdRunner.execute("sh -c 'cat " + stdoutFile + "'", stage.getExecutorParams());
   }
 
   public static CmdRunnerResult writeFileToStderr(
       CmdRunner cmdRunner, String stderrFile, Stage stage) {
     // Execute through sh required by LocalRunner to direct output to stdout/err.
-    return cmdRunner.execute("sh -c 'cat " + stderrFile + " 1>&2'", stage.getStageParameters());
+    return cmdRunner.execute("sh -c 'cat " + stderrFile + " 1>&2'", stage.getExecutorParams());
   }
 
   public static String extractJobIdSubmitted(String str) {

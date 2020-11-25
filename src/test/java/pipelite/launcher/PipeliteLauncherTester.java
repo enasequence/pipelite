@@ -37,7 +37,7 @@ import pipelite.service.ProcessService;
 import pipelite.service.StageService;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
-import pipelite.stage.StageParameters;
+import pipelite.executor.StageExecutorParameters;
 
 @Component
 @Scope("prototype")
@@ -134,13 +134,13 @@ public class PipeliteLauncherTester {
     @Override
     public Process create(String processId) {
       processIds.add(processId);
-      StageParameters stageParams =
-          StageParameters.builder().immediateRetries(0).maximumRetries(0).build();
+      StageExecutorParameters executorParams =
+          StageExecutorParameters.builder().immediateRetries(0).maximumRetries(0).build();
 
       ProcessBuilder processBuilder = new ProcessBuilder(processId);
       for (int i = 0; i < stageCnt; ++i) {
         processBuilder
-            .execute("STAGE" + i, stageParams)
+            .execute("STAGE" + i, executorParams)
             .with(
                 (pipelineName, processId1, stage) -> {
                   stageExecCnt.incrementAndGet();

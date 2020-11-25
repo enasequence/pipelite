@@ -26,7 +26,7 @@ import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
-import pipelite.stage.StageParameters;
+import pipelite.executor.StageExecutorParameters;
 
 public class DependencyResolverTest {
 
@@ -127,7 +127,7 @@ public class DependencyResolverTest {
     ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
     Process process =
         builder
-            .execute("STAGE1", StageParameters.builder().maximumRetries(0).build())
+            .execute("STAGE1", StageExecutorParameters.builder().maximumRetries(0).build())
             .with(new SuccessSyncExecutor())
             .executeAfter("STAGE2", "STAGE1")
             .with(new SuccessSyncExecutor())
@@ -161,7 +161,7 @@ public class DependencyResolverTest {
     Process process =
         builder
             .execute(
-                "STAGE1", StageParameters.builder().maximumRetries(3).immediateRetries(0).build())
+                "STAGE1", StageExecutorParameters.builder().maximumRetries(3).immediateRetries(0).build())
             .with(new SuccessSyncExecutor())
             .executeAfter("STAGE2", "STAGE1")
             .with(new SuccessSyncExecutor())
@@ -195,7 +195,7 @@ public class DependencyResolverTest {
     Process process =
         builder
             .execute(
-                "STAGE1", StageParameters.builder().maximumRetries(1).immediateRetries(1).build())
+                "STAGE1", StageExecutorParameters.builder().maximumRetries(1).immediateRetries(1).build())
             .with(new SuccessSyncExecutor())
             .executeAfter("STAGE2", "STAGE1")
             .with(new SuccessSyncExecutor())

@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.stage;
+package pipelite.executor;
 
 import java.time.Duration;
 import java.util.Map;
@@ -17,7 +17,7 @@ import java.util.Map;
  * Stage parameters that can be configured using StageConfiguration. If the stage does not have a
  * StageParameter value then a value from StageConfiguration will be used.
  */
-public interface ConfigurableStageParameters {
+public interface ConfigurableStageExecutorParameters {
 
   Duration DEFAULT_TIMEOUT = Duration.ofDays(7);
   int DEFAULT_MAX_RETRIES = 3;

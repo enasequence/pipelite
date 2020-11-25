@@ -24,7 +24,7 @@ import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.session.SessionHeartbeatController;
 import pipelite.executor.stream.KeepOldestByteArrayOutputStream;
-import pipelite.stage.StageParameters;
+import pipelite.executor.StageExecutorParameters;
 
 @Flogger
 public class SshCmdRunner implements CmdRunner {
@@ -34,7 +34,7 @@ public class SshCmdRunner implements CmdRunner {
   public static final int SSH_HEARTBEAT_SECONDS = 10;
 
   @Override
-  public CmdRunnerResult execute(String cmd, StageParameters stageParameters) {
+  public CmdRunnerResult execute(String cmd, StageExecutorParameters executorParams) {
     if (cmd == null) {
       return new CmdRunnerResult(EXIT_CODE_ERROR, null, null);
     }
@@ -55,7 +55,7 @@ public class SshCmdRunner implements CmdRunner {
 
       try (ClientSession session =
           client
-              .connect(user, stageParameters.getHost(), SSH_PORT)
+              .connect(user, executorParams.getHost(), SSH_PORT)
               .verify(SSH_TIMEOUT_SECONDS, TimeUnit.SECONDS)
               .getSession()) {
 
@@ -65,13 +65,13 @@ public class SshCmdRunner implements CmdRunner {
             SessionHeartbeatController.HeartbeatType.IGNORE,
             Duration.ofSeconds(SSH_HEARTBEAT_SECONDS));
 
-        ClientChannel channel = session.createExecChannel(cmd, null, stageParameters.getEnv());
+        ClientChannel channel = session.createExecChannel(cmd, null, executorParams.getEnv());
         channel.setOut(stdoutStream);
         channel.setErr(stderrStream);
 
         channel.open().verify(SSH_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
-        channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), stageParameters.getTimeout());
+        channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), executorParams.getTimeout());
 
         int exitCode = channel.getExitStatus();
         return new CmdRunnerResult(exitCode, getStream(stdoutStream), getStream(stderrStream));

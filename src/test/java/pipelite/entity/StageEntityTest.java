@@ -77,7 +77,7 @@ class StageEntityTest {
     assertThat(stageEntity.getExecutorName())
         .isEqualTo("pipelite.entity.StageEntityTest$TestExecutor");
     assertThat(stageEntity.getExecutorData()).isEqualTo("{\n" + "  \"test\" : \"TEST\"\n" + "}");
-    assertThat(stageEntity.getExecutorParams()).isNull();
+    assertThat(stageEntity.getExecutorParams()).isEqualTo("{ }");
 
     // Serialize first execution.
 
@@ -108,7 +108,7 @@ class StageEntityTest {
     assertThat(stageEntity.getExecutorName())
         .isEqualTo("pipelite.entity.StageEntityTest$TestExecutor");
     assertThat(stageEntity.getExecutorData()).isEqualTo("{\n" + "  \"test\" : \"TEST2\"\n" + "}");
-    assertThat(stageEntity.getExecutorParams()).isNull();
+    assertThat(stageEntity.getExecutorParams()).isEqualTo("{ }");
 
     // Start second execution.
 
@@ -127,7 +127,7 @@ class StageEntityTest {
     assertThat(stageEntity.getExecutorName())
         .isEqualTo("pipelite.entity.StageEntityTest$TestExecutor");
     assertThat(stageEntity.getExecutorData()).isEqualTo("{\n" + "  \"test\" : \"TEST2\"\n" + "}");
-    assertThat(stageEntity.getExecutorParams()).isNull();
+    assertThat(stageEntity.getExecutorParams()).isEqualTo("{ }");
 
     // End second execution.
 
@@ -152,7 +152,7 @@ class StageEntityTest {
     assertThat(stageEntity.getExecutorName())
         .isEqualTo("pipelite.entity.StageEntityTest$TestExecutor");
     assertThat(stageEntity.getExecutorData()).isEqualTo("{\n" + "  \"test\" : \"TEST2\"\n" + "}");
-    assertThat(stageEntity.getExecutorParams()).isNull();
+    assertThat(stageEntity.getExecutorParams()).isEqualTo("{ }");
 
     // Reset execution.
 

@@ -24,7 +24,7 @@ import pipelite.executor.StageExecutor;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
-import pipelite.stage.StageParameters;
+import pipelite.executor.StageExecutorParameters;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test", "test"})
@@ -43,8 +43,8 @@ public class LsfSshCmdExecutorTest {
 
     String stageName = UniqueStringGenerator.randomStageName();
 
-    StageParameters stageParameters =
-        StageParameters.builder()
+    StageExecutorParameters executorParams =
+        StageExecutorParameters.builder()
             .host(lsfTestConfiguration.getHost())
             .pollFrequency(Duration.ofSeconds(5))
             .build();
@@ -53,7 +53,7 @@ public class LsfSshCmdExecutorTest {
         Stage.builder()
             .stageName(stageName)
             .executor(executor)
-            .stageParameters(stageParameters)
+            .executorParams(executorParams)
             .build();
 
     StageExecutionResult result = executor.execute(PIPELINE_NAME, PROCESS_ID, stage);

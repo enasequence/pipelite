@@ -17,14 +17,14 @@ import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
-import pipelite.stage.ConfigurableStageParameters;
+import pipelite.executor.ConfigurableStageExecutorParameters;
 
 @Data
 @Builder
 @Configuration
 @ConfigurationProperties(prefix = "pipelite.stage", ignoreInvalidFields = true)
 /** Some configuration parameters are supported only by specific executors. */
-public class StageConfiguration implements ConfigurableStageParameters {
+public class StageConfiguration implements ConfigurableStageExecutorParameters {
 
   public StageConfiguration() {}
 

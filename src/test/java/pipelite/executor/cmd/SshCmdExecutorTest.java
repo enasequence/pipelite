@@ -24,7 +24,7 @@ import pipelite.executor.StageExecutor;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
-import pipelite.stage.StageParameters;
+import pipelite.executor.StageExecutorParameters;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test", "test"})
@@ -41,14 +41,14 @@ public class SshCmdExecutorTest {
 
     String stageName = UniqueStringGenerator.randomStageName();
 
-    StageParameters stageParameters = StageParameters.builder().build();
-    stageParameters.setHost(sshTestConfiguration.getHost());
+    StageExecutorParameters executorParams = StageExecutorParameters.builder().build();
+    executorParams.setHost(sshTestConfiguration.getHost());
 
     Stage stage =
         Stage.builder()
             .stageName(stageName)
             .executor(StageExecutor.createSshCmdExecutor("echo test"))
-            .stageParameters(stageParameters)
+            .executorParams(executorParams)
             .build();
 
     StageExecutionResult result = stage.execute(PIPELINE_NAME, PROCESS_ID);
@@ -61,9 +61,9 @@ public class SshCmdExecutorTest {
   @Test
   public void testSingularity() {
 
-    StageParameters stageParameters = StageParameters.builder().build();
-    stageParameters.setHost(singularityTestConfiguration.getHost());
-    stageParameters.setSingularityImage("docker://enasequence/webin-cli");
+    StageExecutorParameters executorParams = StageExecutorParameters.builder().build();
+    executorParams.setHost(singularityTestConfiguration.getHost());
+    executorParams.setSingularityImage("docker://enasequence/webin-cli");
 
     String stageName = "testStageName";
 
@@ -71,7 +71,7 @@ public class SshCmdExecutorTest {
         Stage.builder()
             .stageName(stageName)
             .executor(StageExecutor.createSshCmdExecutor(""))
-            .stageParameters(stageParameters)
+            .executorParams(executorParams)
             .build();
 
     StageExecutionResult result = stage.execute(PIPELINE_NAME, PROCESS_ID);

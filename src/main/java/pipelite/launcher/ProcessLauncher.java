@@ -10,8 +10,8 @@
  */
 package pipelite.launcher;
 
-import static pipelite.stage.ConfigurableStageParameters.DEFAULT_IMMEDIATE_RETRIES;
-import static pipelite.stage.ConfigurableStageParameters.DEFAULT_MAX_RETRIES;
+import static pipelite.executor.ConfigurableStageExecutorParameters.DEFAULT_IMMEDIATE_RETRIES;
+import static pipelite.executor.ConfigurableStageExecutorParameters.DEFAULT_MAX_RETRIES;
 import static pipelite.stage.StageExecutionResultType.*;
 
 import com.google.common.flogger.FluentLogger;
@@ -35,6 +35,7 @@ import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
+import pipelite.executor.StageExecutorParameters;
 
 @Flogger
 public class ProcessLauncher {
@@ -104,7 +105,7 @@ public class ProcessLauncher {
 
     for (Stage stage : stages) {
       // Adds stage parameter defaults from stage configuration.
-      stage.getStageParameters().add(stageConfiguration);
+      stage.getExecutorParams().add(stageConfiguration);
 
       // Gets existing stage entity from the database.
       Optional<StageEntity> stageEntity =
@@ -167,16 +168,16 @@ public class ProcessLauncher {
 
   public static int getMaximumRetries(Stage stage) {
     int maximumRetries = DEFAULT_MAX_RETRIES;
-    if (stage.getStageParameters().getMaximumRetries() != null) {
-      maximumRetries = stage.getStageParameters().getMaximumRetries();
+    if (stage.getExecutorParams().getMaximumRetries() != null) {
+      maximumRetries = stage.getExecutorParams().getMaximumRetries();
     }
     return Math.max(0, maximumRetries);
   }
 
   public static int getImmediateRetries(Stage stage) {
     int immediateRetries = DEFAULT_IMMEDIATE_RETRIES;
-    if (stage.getStageParameters().getImmediateRetries() != null) {
-      immediateRetries = stage.getStageParameters().getImmediateRetries();
+    if (stage.getExecutorParams().getImmediateRetries() != null) {
+      immediateRetries = stage.getExecutorParams().getImmediateRetries();
     }
     return Math.min(Math.max(0, immediateRetries), getMaximumRetries(stage));
   }
@@ -257,18 +258,29 @@ public class ProcessLauncher {
     // execution to continue. For example, an asynchronous executor may contain a job id that
     // is associated with an external execution service.
 
-    StageExecutor deserializedExecutor = deserializeActiveExecutor(stage);
-    boolean isDeserializedExecutor = deserializedExecutor != null;
-    if (isDeserializedExecutor) {
-      // Use deserialized executor.
-      stage.setExecutor(deserializedExecutor);
-      logContext(log.atInfo(), stageName).log("Using deserialized executor");
+    // TODO: test deserialization of active executor
+    boolean isUsingDeserializedExecutor = false;
+    if (stageEntity.getResultType() == ACTIVE
+        && stageEntity.getExecutorName() != null
+        && stageEntity.getExecutorData() != null
+        && stageEntity.getExecutorParams() != null) {
+      StageExecutor deserializedExecutor = deserializeExecutor(stage);
+      StageExecutorParameters deserializedExecutorParams = deserializeExecutorParameters(stage);
+      boolean isDeserializedExecutor = deserializedExecutor != null;
+      boolean isDeserializedExecutorParams = deserializedExecutorParams != null;
+      if (isDeserializedExecutor && isDeserializedExecutorParams) {
+        // Use deserialized executor.
+        isUsingDeserializedExecutor  = true;
+        stage.setExecutor(deserializedExecutor);
+        stage.setExecutorParams(deserializedExecutorParams);
+        logContext(log.atInfo(), stageName).log("Using deserialized executor");
+      }
     }
 
     StageExecutionResult result;
     try {
       logContext(log.atInfo(), stageName).log("Executing stage");
-      if (!isDeserializedExecutor) {
+      if (!isUsingDeserializedExecutor) {
         // Start a new stage execution and serialize the executor.
         stageEntity.startExecution(stage);
         stageService.saveStage(stageEntity);
@@ -276,7 +288,7 @@ public class ProcessLauncher {
 
       result = stage.getExecutor().execute(pipelineName, getProcessId(), stage);
 
-      if (!isDeserializedExecutor && result.isActive()) {
+      if (!isUsingDeserializedExecutor && result.isActive()) {
         // Serialize an active executor. For example, an asynchronous executor may have
         // assigned a job id that is associated with an external execution service.
         stageEntity.serializeExecution(stage);
@@ -334,20 +346,29 @@ public class ProcessLauncher {
     }
   }
 
-  private StageExecutor deserializeActiveExecutor(Stage stage) {
+  private StageExecutor deserializeExecutor(Stage stage) {
     StageEntity stageEntity = stage.getStageEntity();
     String stageName = stage.getStageName();
-    if (stageEntity.getResultType() == ACTIVE
-        && stageEntity.getExecutorName() != null
-        && stageEntity.getExecutorData() != null) {
-      try {
-        return StageExecutor.deserialize(
-            stageEntity.getExecutorName(), stageEntity.getExecutorData());
-      } catch (Exception ex) {
-        logContext(log.atSevere(), stageName)
-            .withCause(ex)
-            .log("Failed to deserialize executor: %s", stageEntity.getExecutorName());
-      }
+    try {
+      return StageExecutor.deserialize(
+          stageEntity.getExecutorName(), stageEntity.getExecutorData());
+    } catch (Exception ex) {
+      logContext(log.atSevere(), stageName)
+          .withCause(ex)
+          .log("Failed to deserialize executor: %s", stageEntity.getExecutorName());
+    }
+    return null;
+  }
+
+  private StageExecutorParameters deserializeExecutorParameters(Stage stage) {
+    StageEntity stageEntity = stage.getStageEntity();
+    String stageName = stage.getStageName();
+    try {
+      return StageExecutorParameters.deserialize(stageEntity.getExecutorParams());
+    } catch (Exception ex) {
+      logContext(log.atSevere(), stageName)
+          .withCause(ex)
+          .log("Failed to deserialize executor parameters: %s", stageEntity.getExecutorName());
     }
     return null;
   }

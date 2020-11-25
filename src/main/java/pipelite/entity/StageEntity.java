@@ -101,8 +101,8 @@ public class StageEntity {
     this.stdErr = null;
     this.executorName = stageExecutor.getClass().getName();
     this.executorData = stageExecutor.serialize();
-    if (stage.getStageParameters() != null) {
-      this.executorParams = stage.getStageParameters().json();
+    if (stage.getExecutorParams() != null) {
+      this.executorParams = stage.getExecutorParams().serialize();
     }
   }
 

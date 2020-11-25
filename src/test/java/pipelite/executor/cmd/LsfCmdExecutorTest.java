@@ -35,7 +35,7 @@ import pipelite.executor.cmd.runner.LocalCmdRunner;
 import pipelite.json.Json;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
-import pipelite.stage.StageParameters;
+import pipelite.executor.StageExecutorParameters;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test"})
@@ -46,27 +46,27 @@ public class LsfCmdExecutorTest {
   private final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
   private final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
 
-  private StageParameters stageParameters() {
+  private StageExecutorParameters executorParams() {
     try {
-      StageParameters stageParameters =
-          StageParameters.builder()
+      StageExecutorParameters executorParams =
+          StageExecutorParameters.builder()
               .workDir(Files.createTempDirectory("TEMP").toString())
               .cores(1)
               .memory(1)
               .memoryTimeout(Duration.ofMinutes(1))
               .queue("defaultQueue")
               .build();
-      return stageParameters;
+      return executorParams;
     } catch (IOException ex) {
       throw new RuntimeException(ex);
     }
   }
 
-  private Stage stage(StageParameters stageParameters) {
+  private Stage stage(StageExecutorParameters executorParams) {
     return Stage.builder()
         .stageName(UniqueStringGenerator.randomStageName())
         .executor(new SuccessAsyncExecutor())
-        .stageParameters(stageParameters)
+        .executorParams(executorParams)
         .build();
   }
 
@@ -82,7 +82,7 @@ public class LsfCmdExecutorTest {
 
     @Override
     protected CmdRunner getCmdRunner() {
-      return (cmd, stageParameters) -> new CmdRunnerResult(0, "Job <13454> is submitted", "");
+      return (cmd, executorParams) -> new CmdRunnerResult(0, "Job <13454> is submitted", "");
     }
   }
 
@@ -93,7 +93,7 @@ public class LsfCmdExecutorTest {
             .stageName(UniqueStringGenerator.randomStageName())
             .executor(new SuccessSyncExecutor())
             .build();
-    stage.getStageParameters().setHost(lsfTestConfiguration.getHost());
+    stage.getExecutorParams().setHost(lsfTestConfiguration.getHost());
     File file = File.createTempFile("pipelite-test", "");
     file.createNewFile();
     Files.write(file.toPath(), "test".getBytes());
@@ -109,7 +109,7 @@ public class LsfCmdExecutorTest {
             .stageName(UniqueStringGenerator.randomStageName())
             .executor(new SuccessSyncExecutor())
             .build();
-    stage.getStageParameters().setHost(lsfTestConfiguration.getHost());
+    stage.getExecutorParams().setHost(lsfTestConfiguration.getHost());
     File file = File.createTempFile("pipelite-test", "");
     file.createNewFile();
     Files.write(file.toPath(), "test".getBytes());
@@ -120,56 +120,56 @@ public class LsfCmdExecutorTest {
 
   @Test
   public void testCmdArguments() {
-    StageParameters stageParameters = stageParameters();
+    StageExecutorParameters executorParams = executorParams();
 
     LsfCmdExecutor executor = new LsfCmdTestExecutor();
 
     String cmd =
-        getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, stage(stageParameters)));
+        getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, stage(executorParams)));
     assertTrue(cmd.contains(" -M 1M -R \"rusage[mem=1M:duration=1]\""));
     assertTrue(cmd.contains(" -n 1"));
     assertTrue(cmd.contains(" -q defaultQueue"));
-    assertTrue(cmd.contains(" -oo " + stageParameters.getWorkDir()));
+    assertTrue(cmd.contains(" -oo " + executorParams.getWorkDir()));
   }
 
   @Test
   public void testNoQueueCmdArgument() {
-    StageParameters stageParameters = stageParameters();
-    stageParameters.setQueue(null);
+    StageExecutorParameters executorParams = executorParams();
+    executorParams.setQueue(null);
 
     LsfCmdExecutor executor = new LsfCmdTestExecutor();
 
     String cmd =
-        getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, stage(stageParameters)));
+        getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, stage(executorParams)));
     assertFalse(cmd.contains("-q "));
   }
 
   @Test
   public void testQueueCmdArgument() {
-    StageParameters stageParameters = stageParameters();
-    stageParameters.setQueue("queue");
+    StageExecutorParameters executorParams = executorParams();
+    executorParams.setQueue("queue");
 
     LsfCmdExecutor executor = new LsfCmdTestExecutor();
 
     String cmd =
-        getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, stage(stageParameters)));
+        getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, stage(executorParams)));
     assertTrue(cmd.contains("-q queue"));
   }
 
   @Test
   public void testMemoryAndCoresCmdArgument() {
-    StageParameters stageParameters = stageParameters();
-    stageParameters.setMemory(2000);
-    stageParameters.setCores(12);
+    StageExecutorParameters executorParams = executorParams();
+    executorParams.setMemory(2000);
+    executorParams.setCores(12);
 
     LsfCmdExecutor executor = new LsfCmdTestExecutor();
 
     String cmd =
-        getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, stage(stageParameters)));
+        getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, stage(executorParams)));
     assertTrue(cmd.contains(" -M 2000M -R \"rusage[mem=2000M:duration=1]\""));
     assertTrue(cmd.contains(" -n 12"));
     assertTrue(cmd.contains(" -q defaultQueue"));
-    assertTrue(cmd.contains(" -oo " + stageParameters.getWorkDir()));
+    assertTrue(cmd.contains(" -oo " + executorParams.getWorkDir()));
   }
 
   @Test

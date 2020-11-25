@@ -16,23 +16,23 @@ import java.util.List;
 import java.util.Optional;
 import pipelite.executor.StageExecutor;
 import pipelite.stage.Stage;
-import pipelite.stage.StageParameters;
+import pipelite.executor.StageExecutorParameters;
 
 public class StageBuilder {
   private final ProcessBuilder processBuilder;
   private final String stageName;
   private final List<String> dependsOnStageNames = new ArrayList<>();
-  private final StageParameters stageParameters;
+  private final StageExecutorParameters executorParams;
 
   public StageBuilder(
       ProcessBuilder processBuilder,
       String stageName,
       Collection<String> dependsOnStageNames,
-      StageParameters stageParameters) {
+      StageExecutorParameters executorParams) {
     this.processBuilder = processBuilder;
     this.stageName = stageName;
     this.dependsOnStageNames.addAll(dependsOnStageNames);
-    this.stageParameters = stageParameters;
+    this.executorParams = executorParams;
   }
 
   public ProcessBuilder with(StageExecutor executor) {
@@ -74,7 +74,7 @@ public class StageBuilder {
             .stageName(stageName)
             .executor(executor)
             .dependsOn(dependsOn)
-            .stageParameters(stageParameters)
+            .executorParams(executorParams)
             .build());
     return processBuilder;
   }

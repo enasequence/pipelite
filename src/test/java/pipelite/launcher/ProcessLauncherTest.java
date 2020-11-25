@@ -24,7 +24,7 @@ import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
-import pipelite.stage.StageParameters;
+import pipelite.executor.StageExecutorParameters;
 
 public class ProcessLauncherTest {
 
@@ -34,8 +34,8 @@ public class ProcessLauncherTest {
                 Stage.builder()
                     .stageName("STAGE")
                     .executor((pipelineName, processId, stage) -> StageExecutionResult.success())
-                    .stageParameters(
-                        StageParameters.builder().maximumRetries(maximumRetries).build())
+                    .executorParams(
+                        StageExecutorParameters.builder().maximumRetries(maximumRetries).build())
                     .build()))
         .isEqualTo(expectedMaximumRetries);
   }
@@ -47,8 +47,8 @@ public class ProcessLauncherTest {
                 Stage.builder()
                     .stageName("STAGE")
                     .executor((pipelineName, processId, stage) -> StageExecutionResult.success())
-                    .stageParameters(
-                        StageParameters.builder()
+                    .executorParams(
+                        StageExecutorParameters.builder()
                             .maximumRetries(maximumRetries)
                             .immediateRetries(immediateRetries)
                             .build())
@@ -81,16 +81,16 @@ public class ProcessLauncherTest {
       int executions,
       int maximumRetries,
       int immediateRetries) {
-    StageParameters stageParams =
-        StageParameters.builder()
+    StageExecutorParameters executorParams =
+        StageExecutorParameters.builder()
             .maximumRetries(maximumRetries)
             .immediateRetries(immediateRetries)
             .build();
     Process process =
         new ProcessBuilder("test")
-            .execute("STAGE0", stageParams)
+            .execute("STAGE0", executorParams)
             .with((pipelineName, processId, stage) -> null)
-            .execute("STAGE1", stageParams)
+            .execute("STAGE1", executorParams)
             .with((pipelineName, processId, stage) -> null)
             .build();
     List<Stage> stages = new ArrayList<>();

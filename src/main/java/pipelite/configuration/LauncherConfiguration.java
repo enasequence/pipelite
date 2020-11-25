@@ -24,7 +24,6 @@ import pipelite.PipeliteMode;
 
 @Flogger
 @Data
-@Builder
 @AllArgsConstructor
 @Configuration
 @ConfigurationProperties(prefix = "pipelite.launcher")

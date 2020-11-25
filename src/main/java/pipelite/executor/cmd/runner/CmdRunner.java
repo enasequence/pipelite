@@ -10,8 +10,8 @@
  */
 package pipelite.executor.cmd.runner;
 
-import pipelite.stage.StageParameters;
+import pipelite.executor.StageExecutorParameters;
 
 public interface CmdRunner {
-  CmdRunnerResult execute(String cmd, StageParameters stageParameters);
+  CmdRunnerResult execute(String cmd, StageExecutorParameters executorParams);
 }

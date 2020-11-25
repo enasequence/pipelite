@@ -18,7 +18,7 @@ import pipelite.executor.StageExecutor;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
-import pipelite.stage.StageParameters;
+import pipelite.executor.StageExecutorParameters;
 
 public class LocalCmdExecutorTest {
 
@@ -30,13 +30,13 @@ public class LocalCmdExecutorTest {
 
     String stageName = UniqueStringGenerator.randomStageName();
 
-    StageParameters stageParameters = StageParameters.builder().build();
+    StageExecutorParameters executorParams = StageExecutorParameters.builder().build();
 
     Stage stage =
         Stage.builder()
             .stageName(stageName)
             .executor(StageExecutor.createLocalCmdExecutor("echo test"))
-            .stageParameters(stageParameters)
+            .executorParams(executorParams)
             .build();
 
     StageExecutionResult result = stage.execute(PIPELINE_NAME, PROCESS_ID);

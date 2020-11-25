@@ -33,7 +33,7 @@ import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
-import pipelite.stage.StageParameters;
+import pipelite.executor.StageExecutorParameters;
 
 @Component
 @Scope("prototype")
@@ -132,10 +132,10 @@ public class PipeliteLauncherAsyncTester {
     @Override
     public Process create(String processId) {
       processIds.add(processId);
-      StageParameters stageParams =
-          StageParameters.builder().immediateRetries(0).maximumRetries(0).build();
+      StageExecutorParameters executorParams =
+          StageExecutorParameters.builder().immediateRetries(0).maximumRetries(0).build();
       return new ProcessBuilder(processId)
-          .execute("STAGE", stageParams)
+          .execute("STAGE", executorParams)
           .with(stageExecutor)
           .build();
     }

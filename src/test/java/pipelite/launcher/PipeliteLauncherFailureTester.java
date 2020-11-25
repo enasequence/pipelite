@@ -39,7 +39,7 @@ import pipelite.service.ProcessService;
 import pipelite.service.StageService;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
-import pipelite.stage.StageParameters;
+import pipelite.executor.StageExecutorParameters;
 
 @Component
 @Scope("prototype")
@@ -211,29 +211,29 @@ public class PipeliteLauncherFailureTester {
     public Process create(String processId) {
       processIds.add(processId);
 
-      StageParameters stageParams =
-          StageParameters.builder().immediateRetries(0).maximumRetries(0).build();
+      StageExecutorParameters executorParams =
+          StageExecutorParameters.builder().immediateRetries(0).maximumRetries(0).build();
 
       return new ProcessBuilder(processId)
-          .execute("STAGE0", stageParams)
+          .execute("STAGE0", executorParams)
           .with(
               (pipelineName1, processId1, stage1) -> {
                 firstStageExecCnt.incrementAndGet();
                 return firstStageExecResult;
               })
-          .executeAfterPrevious("STAGE1", stageParams)
+          .executeAfterPrevious("STAGE1", executorParams)
           .with(
               (pipelineName1, processId1, stage1) -> {
                 secondStageExecCnt.incrementAndGet();
                 return secondStageExecResult;
               })
-          .executeAfterPrevious("STAGE2", stageParams)
+          .executeAfterPrevious("STAGE2", executorParams)
           .with(
               (pipelineName1, processId1, stage1) -> {
                 thirdStageExecCnt.incrementAndGet();
                 return thirdStageExecResult;
               })
-          .executeAfterPrevious("STAGE3", stageParams)
+          .executeAfterPrevious("STAGE3", executorParams)
           .with(
               (pipelineName1, processId1, stage1) -> {
                 fourthStageExecCnt.incrementAndGet();
