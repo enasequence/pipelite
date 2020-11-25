@@ -3,6 +3,7 @@ package pipelite.configuration;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.Data;
+import lombok.extern.flogger.Flogger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,7 +24,10 @@ import java.util.HashMap;
     basePackages = "pipelite.repository",
     entityManagerFactoryRef = "pipeliteEntityManager",
     transactionManagerRef = "pipeliteTransactionManager")
+@Flogger
 public class RepositoryConfiguration {
+
+  private static final int DEFAULT_MAX_ACTIVE = 10;
 
   private String driverClassName;
   private String url;
@@ -31,11 +35,37 @@ public class RepositoryConfiguration {
   private String password;
   private String ddlAuto;
   private String dialect;
-  private int maxActive;
+  private Integer maxActive;
+
+  // Better error reporting for required properties.
+  private boolean checkRequiredProperties() {
+    boolean isValid = true;
+    if (driverClassName == null || driverClassName.trim().isEmpty()) {
+      log.atSevere().log("Missing required pipelite property: pipelite.repository.driverClassName");
+      isValid = false;
+    }
+    if (url == null) {
+      log.atSevere().log("Missing required pipelite property: pipelite.repository.url");
+      isValid = false;
+    }
+    if (username == null) {
+      log.atSevere().log("Missing required pipelite property: pipelite.repository.username");
+      isValid = false;
+    }
+    if (password == null) {
+      log.atSevere().log("Missing required pipelite property: pipelite.repository.password");
+      isValid = false;
+    }
+    return isValid;
+  }
 
   @Bean
   @Primary
   public LocalContainerEntityManagerFactoryBean pipeliteEntityManager() {
+    if (!checkRequiredProperties()) {
+      throw new RuntimeException("Missing required pipelite properties");
+    }
+
     LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
     em.setDataSource(pipeliteDataSource());
     em.setPackagesToScan(new String[] {"pipelite.entity"});
@@ -61,6 +91,9 @@ public class RepositoryConfiguration {
     hikariConfig.setJdbcUrl(url);
     hikariConfig.setUsername(username);
     hikariConfig.setPassword(password);
+    if (maxActive == null || maxActive < 1) {
+      maxActive = DEFAULT_MAX_ACTIVE;
+    }
     hikariConfig.setMaximumPoolSize(maxActive);
     hikariConfig.setPoolName("pipeliteConnectionPool");
     hikariConfig.setAutoCommit(false);
