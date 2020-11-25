@@ -20,54 +20,31 @@ import pipelite.PipeliteTestConfiguration;
 
 @SpringBootTest(
     classes = PipeliteTestConfiguration.class,
-    properties = {"pipelite.launcher.launcherName=TEST", "pipelite.launcher.pipelineParallelism=1"})
+    properties = {
+      "pipelite.launcher.schedulerName=TEST",
+      "pipelite.launcher.pipelineParallelism=1"
+    })
 @ActiveProfiles(value = {"hsql-test"})
 public class LauncherConfigurationTest {
 
   @Autowired LauncherConfiguration config;
 
   @Test
-  public void test() {
-    assertThat(config.getLauncherName()).isEqualTo("TEST");
+  public void testPipelineParallelism() {
     assertThat(config.getPipelineParallelism()).isEqualTo(1);
   }
 
   @Test
-  public void getLauncherNameForPipeliteLauncherWithoutLauncherName() {
-    LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
-    String pipelineName = "TEST1";
-    String hostName = LauncherConfiguration.getHostName();
-    assertThat(
-            LauncherConfiguration.getLauncherNameForPipeliteLauncher(
-                launcherConfiguration, pipelineName))
-        .isEqualTo(hostName + "@" + pipelineName);
+  public void getSchedulerName() {
+    assertThat(config.getSchedulerName()).isEqualTo("TEST");
+    assertThat(LauncherConfiguration.getSchedulerName(config)).isEqualTo("TEST");
   }
 
   @Test
-  public void getLauncherNameForPipeliteLauncherWithLauncherName() {
-    LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
-    launcherConfiguration.setLauncherName("TEST2");
-    String pipelineName = "TEST1";
-    assertThat(
-            LauncherConfiguration.getLauncherNameForPipeliteLauncher(
-                launcherConfiguration, pipelineName))
-        .isEqualTo("TEST2");
-  }
-
-  @Test
-  public void getLauncherNameForPipeliteSchedulerWithoutLauncherName() {
-    LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
+  public void getLauncherName() {
     String hostName = LauncherConfiguration.getHostName();
     String userName = LauncherConfiguration.getUserName();
-    assertThat(LauncherConfiguration.getLauncherNameForPipeliteScheduler(launcherConfiguration))
-        .isEqualTo(hostName + "@" + userName);
-  }
-
-  @Test
-  public void getLauncherNameForPipeliteSchedulerWithLauncherName() {
-    LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
-    launcherConfiguration.setLauncherName("TEST2");
-    assertThat(LauncherConfiguration.getLauncherNameForPipeliteScheduler(launcherConfiguration))
-        .isEqualTo("TEST2");
+    assertThat(LauncherConfiguration.getLauncherName("TEST", 8080))
+        .isEqualTo(hostName + ":8080@" + "TEST");
   }
 }

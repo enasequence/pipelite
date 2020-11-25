@@ -13,16 +13,12 @@ package pipelite.launcher;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.util.TestPropertyValues;
-import org.springframework.context.ApplicationContextInitializer;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
 import pipelite.PipeliteTestConfiguration;
-import pipelite.UniqueStringGenerator;
 
 @SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     classes = PipeliteTestConfiguration.class,
     properties = {
       "pipelite.launcher.pipelineParallelism=5",
@@ -30,22 +26,11 @@ import pipelite.UniqueStringGenerator;
       "pipelite.launcher.stageLaunchFrequency=250ms",
       "pipelite.launcher.shutdownIfIdle=true"
     })
-@ContextConfiguration(initializers = PipeliteLauncherHSqlTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"hsql-test"})
 @DirtiesContext
 public class PipeliteLauncherHSqlTest {
 
   @Autowired private PipeliteLauncherTester tester;
-
-  public static class TestContextInitializer
-      implements ApplicationContextInitializer<ConfigurableApplicationContext> {
-    @Override
-    public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
-      TestPropertyValues.of(
-              "pipelite.launcher.launcherName=" + UniqueStringGenerator.randomLauncherName())
-          .applyTo(configurableApplicationContext.getEnvironment());
-    }
-  }
 
   @Test
   public void testSuccess() {

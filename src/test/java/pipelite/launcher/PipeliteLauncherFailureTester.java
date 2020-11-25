@@ -244,8 +244,8 @@ public class PipeliteLauncherFailureTester {
   }
 
   private PipeliteLauncher pipeliteLauncher(String pipelineName) {
-    launcherConfiguration.setPipelineName(pipelineName);
     PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
+    pipeliteLauncher.setPipelineName(pipelineName);
     return pipeliteLauncher;
   }
 

@@ -13,12 +13,14 @@ package pipelite.configuration;
 import java.net.InetAddress;
 import java.time.Duration;
 import java.util.concurrent.ForkJoinPool;
+import javax.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+import pipelite.PipeliteMode;
 
 @Flogger
 @Data
@@ -41,14 +43,39 @@ public class LauncherConfiguration {
 
   public LauncherConfiguration() {}
 
-  /**
-   * The name of the PipeliteLauncher or PipeliteScheduler. Only one launcher with a given name can
-   * be executed in parallel. Default PipeliteLauncher name is <host name>@<pipeline name>. Default
-   * PipeliteScheduler name is <host name>@<user name>.
-   */
-  private String launcherName;
+  @PostConstruct
+  private void checkRequiredProperties() {
+    boolean isValid = true;
+    if (port == null) {
+      log.atSevere().log("Missing required pipelite property: pipelite.launcher.port");
+      isValid = false;
+    }
+    if (contextPath == null) {
+      log.atSevere().log("Missing required pipelite property: pipelite.launcher.path");
+      isValid = false;
+    }
+    if (!isValid) {
+      throw new IllegalArgumentException(
+          "Missing required pipelite properties: pipelite.launcher.*");
+    }
+  }
 
-  /** The PipeliteLauncher will execute processes from this pipeline. */
+  /** The pipelite web server port number. */
+  private Integer port = 8080;
+
+  /** The pipelite web server context path. */
+  private String contextPath = "/pipelite";
+
+  /** The pipelite mode. Either LAUNCHER for PipeliteLauncher or SCHEDULER for PipeliteScheduler. */
+  private PipeliteMode mode;
+
+  /** The name of the PipeliteScheduler. The name must be unique. */
+  private String schedulerName;
+
+  /**
+   * PipeliteLaunchers will execute processes from these pipelines. The pipelineName is a comma
+   * separated list.
+   */
   private String pipelineName;
 
   /**
@@ -85,19 +112,13 @@ public class LauncherConfiguration {
   private boolean shutdownIfIdle;
 
   /** Defaults to <host name>@<pipeline name>. */
-  public static String getLauncherNameForPipeliteLauncher(
-      LauncherConfiguration launcherConfiguration, String pipelineName) {
-    return launcherConfiguration.getLauncherName() != null
-        ? launcherConfiguration.getLauncherName()
-        : getHostName() + "@" + pipelineName;
+  public static String getLauncherName(String pipelineName, int port) {
+    return getHostName() + ":" + port + "@" + pipelineName;
   }
 
   /** Defaults to <host name>@<user name>. */
-  public static String getLauncherNameForPipeliteScheduler(
-      LauncherConfiguration launcherConfiguration) {
-    return launcherConfiguration.getLauncherName() != null
-        ? launcherConfiguration.getLauncherName()
-        : getHostName() + "@" + getUserName();
+  public static String getSchedulerName(LauncherConfiguration launcherConfiguration) {
+    return launcherConfiguration.getSchedulerName();
   }
 
   public static String getHostName() {

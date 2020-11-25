@@ -21,42 +21,6 @@ import org.junit.jupiter.api.Test;
 public class PipeliteTest {
 
   @Test
-  public void parseMissingRequiredOption() {
-    try {
-      ByteArrayOutputStream stdoutStream = getStdOutAsStream();
-      ByteArrayOutputStream stderrStream = getStdErrAsStream();
-
-      assertThat(Pipelite.parse(new String[] {})).isNull();
-
-      assertThat(stdoutStream.toString())
-          .startsWith("Error: Missing required argument (specify one of these): (-l | -s)");
-      assertThat(stderrStream.toString()).isEqualTo("");
-
-    } finally {
-      System.setOut(new PrintStream(new FileOutputStream(FileDescriptor.out)));
-      System.setErr(new PrintStream(new FileOutputStream(FileDescriptor.err)));
-    }
-  }
-
-  @Test
-  public void parseMutuallyExclusiveOption() {
-    try {
-      ByteArrayOutputStream stdoutStream = getStdOutAsStream();
-      ByteArrayOutputStream stderrStream = getStdErrAsStream();
-
-      assertThat(Pipelite.parse(new String[] {"-l", "-s"})).isNull();
-
-      assertThat(stdoutStream.toString())
-          .startsWith("Error: -launcher, -scheduler are mutually exclusive");
-      assertThat(stderrStream.toString()).isEqualTo("");
-
-    } finally {
-      System.setOut(new PrintStream(new FileOutputStream(FileDescriptor.out)));
-      System.setErr(new PrintStream(new FileOutputStream(FileDescriptor.err)));
-    }
-  }
-
-  @Test
   public void parseUnknownOption() {
     try {
       ByteArrayOutputStream stdoutStream = getStdOutAsStream();
@@ -65,42 +29,6 @@ public class PipeliteTest {
       assertThat(Pipelite.parse(new String[] {"-a"})).isNull();
 
       assertThat(stdoutStream.toString()).startsWith("Unknown option: '-a'");
-      assertThat(stderrStream.toString()).isEqualTo("");
-
-    } finally {
-      System.setOut(new PrintStream(new FileOutputStream(FileDescriptor.out)));
-      System.setErr(new PrintStream(new FileOutputStream(FileDescriptor.err)));
-    }
-  }
-
-  @Test
-  public void parseLauncherOption() {
-    try {
-      ByteArrayOutputStream stdoutStream = getStdOutAsStream();
-      ByteArrayOutputStream stderrStream = getStdErrAsStream();
-
-      PipeliteOptions options = Pipelite.parse(new String[] {"-l"});
-      assertThat(options).isNotNull();
-
-      assertThat(stdoutStream.toString()).startsWith("");
-      assertThat(stderrStream.toString()).isEqualTo("");
-
-    } finally {
-      System.setOut(new PrintStream(new FileOutputStream(FileDescriptor.out)));
-      System.setErr(new PrintStream(new FileOutputStream(FileDescriptor.err)));
-    }
-  }
-
-  @Test
-  public void parseSchedulerOption() {
-    try {
-      ByteArrayOutputStream stdoutStream = getStdOutAsStream();
-      ByteArrayOutputStream stderrStream = getStdErrAsStream();
-
-      PipeliteOptions options = Pipelite.parse(new String[] {"-s"});
-      assertThat(options).isNotNull();
-
-      assertThat(stdoutStream.toString()).startsWith("");
       assertThat(stderrStream.toString()).isEqualTo("");
 
     } finally {

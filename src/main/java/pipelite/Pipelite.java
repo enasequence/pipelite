@@ -10,31 +10,63 @@
  */
 package pipelite;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import picocli.CommandLine;
+import pipelite.configuration.LauncherConfiguration;
 import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.PipeliteScheduler;
 import pipelite.launcher.ServerManager;
+import pipelite.service.ProcessFactoryService;
 
 @Flogger
 public class Pipelite {
 
   private final PipeliteOptions options;
-  private final PipeliteLauncher launcher;
+  private final List<PipeliteLauncher> launchers = new ArrayList<>();
   private final PipeliteScheduler scheduler;
 
   public Pipelite(PipeliteOptions options) {
     this.options = options;
     ConfigurableApplicationContext context =
         SpringApplication.run(Application.class, new String[] {});
-    if (options.mode.launcher) {
-      launcher = context.getBean(PipeliteLauncher.class);
+
+    LauncherConfiguration launcherConfiguration = context.getBean(LauncherConfiguration.class);
+    if (launcherConfiguration.getMode() == PipeliteMode.LAUNCHER) {
+      if (launcherConfiguration.getPipelineName() == null) {
+        throw new IllegalArgumentException("Missing pipeline name");
+      }
+
+      List<String> pipelineNames =
+          Arrays.stream(launcherConfiguration.getPipelineName().split(","))
+              .map(s -> s.trim())
+              .collect(Collectors.toList());
+      if (pipelineNames.isEmpty()) {
+        throw new IllegalArgumentException("Missing pipeline name");
+      }
+      ProcessFactoryService processFactoryService = context.getBean(ProcessFactoryService.class);
+      for (String pipelineName : pipelineNames) {
+        // Check that the pipeline name is valid.
+        processFactoryService.create(pipelineName);
+      }
+      for (String pipelineName : pipelineNames) {
+        PipeliteLauncher launcher = context.getBean(PipeliteLauncher.class);
+        launcher.setPipelineName(pipelineName);
+        launchers.add(launcher);
+      }
       scheduler = null;
-    } else {
-      launcher = null;
+    } else if (launcherConfiguration.getMode() == PipeliteMode.SHCEDULER) {
       scheduler = context.getBean(PipeliteScheduler.class);
+    } else {
+      scheduler = null;
     }
   }
 
@@ -104,12 +136,23 @@ public class Pipelite {
    */
   public int run() {
     try {
-      if (options.mode.launcher) {
-        if (options.removeLocks) {
-          launcher.removeLocks();
+
+      if (!launchers.isEmpty()) {
+        List<Callable<Object>> callables = new ArrayList<>();
+        for (PipeliteLauncher launcher : launchers) {
+          callables.add(
+              () -> {
+                if (options.removeLocks) {
+                  launcher.removeLocks();
+                }
+                ServerManager.run(launcher, launcher.serviceName());
+                return null;
+              });
         }
-        ServerManager.run(launcher, launcher.serviceName());
-      } else {
+        ExecutorService executorService = Executors.newCachedThreadPool();
+        executorService.invokeAll(callables);
+      }
+      if (scheduler != null) {
         if (options.removeLocks) {
           scheduler.removeLocks();
         }
@@ -126,8 +169,8 @@ public class Pipelite {
     return options;
   }
 
-  public PipeliteLauncher getLauncher() {
-    return launcher;
+  public List<PipeliteLauncher> getLaunchers() {
+    return launchers;
   }
 
   public PipeliteScheduler getScheduler() {

@@ -47,7 +47,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
   private final ProcessService processService;
   private final StageService stageService;
   private final LockService lockService;
-  private final String launcherName;
+  private final String schedulerName;
   private final LauncherLocker launcherLocker;
   private final ProcessLocker processLocker;
   private final ExecutorService executorService;
@@ -62,7 +62,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
   private boolean shutdownAfterTriggered = false;
 
   @Data
-  private static class Schedule {
+  public static class Schedule {
     private ScheduleEntity scheduleEntity;
     private ProcessEntity processEntity;
     private Process process;
@@ -90,10 +90,9 @@ public class PipeliteScheduler extends AbstractScheduledService {
     this.processService = processService;
     this.stageService = stageService;
     this.lockService = lockService;
-    this.launcherName =
-        LauncherConfiguration.getLauncherNameForPipeliteScheduler(launcherConfiguration);
-    this.launcherLocker = new LauncherLocker(launcherName, lockService);
-    this.processLocker = new ProcessLocker(launcherName, lockService);
+    this.schedulerName = LauncherConfiguration.getSchedulerName(launcherConfiguration);
+    this.launcherLocker = new LauncherLocker(schedulerName, lockService);
+    this.processLocker = new ProcessLocker(schedulerName, lockService);
     this.executorService = Executors.newCachedThreadPool();
 
     if (launcherConfiguration.getProcessLaunchFrequency() != null) {
@@ -113,7 +112,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
 
   @Override
   public String serviceName() {
-    return launcherName;
+    return schedulerName;
   }
 
   @Override
@@ -181,7 +180,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
   private void scheduleProcesses() {
     logContext(log.atInfo()).log("Scheduling processes");
     schedules.clear();
-    List<ScheduleEntity> scheduleEntities = scheduleService.getAllProcessSchedules(launcherName);
+    List<ScheduleEntity> scheduleEntities = scheduleService.getAllProcessSchedules(schedulerName);
     logContext(log.atInfo()).log("Found %s schedules", scheduleEntities.size());
     for (ScheduleEntity scheduleEntity : scheduleEntities) {
       String scheduleDescription = "invalid cron expression";
@@ -330,6 +329,14 @@ public class PipeliteScheduler extends AbstractScheduledService {
     }
   }
 
+  public String getSchedulerName() {
+    return schedulerName;
+  }
+
+  public List<Schedule> getSchedules() {
+    return this.schedules;
+  }
+
   public void removeLocks() {
     launcherLocker.removeLocks();
   }
@@ -353,15 +360,15 @@ public class PipeliteScheduler extends AbstractScheduledService {
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {
-    return log.with(LogKey.LAUNCHER_NAME, launcherName);
+    return log.with(LogKey.LAUNCHER_NAME, schedulerName);
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log, String pipelineName) {
-    return log.with(LogKey.LAUNCHER_NAME, launcherName).with(LogKey.PIPELINE_NAME, pipelineName);
+    return log.with(LogKey.LAUNCHER_NAME, schedulerName).with(LogKey.PIPELINE_NAME, pipelineName);
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log, String pipelineName, String processId) {
-    return log.with(LogKey.LAUNCHER_NAME, launcherName)
+    return log.with(LogKey.LAUNCHER_NAME, schedulerName)
         .with(LogKey.PIPELINE_NAME, pipelineName)
         .with(LogKey.PROCESS_ID, processId);
   }

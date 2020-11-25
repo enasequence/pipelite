@@ -23,10 +23,12 @@ import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 
 @SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     classes = PipeliteTestConfiguration.class,
     properties = {
       "pipelite.launcher.processLaunchFrequency=250ms",
-      "pipelite.launcher.stageLaunchFrequency=250ms"
+      "pipelite.launcher.stageLaunchFrequency=250ms",
+      "pipelite.launcher.schedulerName=test"
     })
 @ContextConfiguration(initializers = PipeliteSchedulerHSqlTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"hsql-test"})
@@ -40,8 +42,7 @@ public class PipeliteSchedulerHSqlTest {
     @Override
     public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
       TestPropertyValues.of(
-              "pipelite.launcher.launcherName=" + UniqueStringGenerator.randomLauncherName(),
-              "pipelite.launcher.pipelineName=" + UniqueStringGenerator.randomPipelineName())
+              "pipelite.launcher.schedulerName=" + UniqueStringGenerator.randomSchedulerName())
           .applyTo(configurableApplicationContext.getEnvironment());
     }
   }

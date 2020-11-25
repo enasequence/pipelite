@@ -180,14 +180,14 @@ public class PipeliteSchedulerTester {
   private void saveSchedule(TestProcessFactory testProcessFactory) {
     ScheduleEntity schedule = new ScheduleEntity();
     schedule.setSchedule(testProcessFactory.cronExpression);
-    schedule.setLauncherName(launcherConfiguration.getLauncherName());
+    schedule.setSchedulerName(launcherConfiguration.getSchedulerName());
     schedule.setPipelineName(testProcessFactory.pipelineName);
     scheduleService.saveProcessSchedule(schedule);
     System.out.println(
         "saved schedule for pipeline: "
             + testProcessFactory.pipelineName
-            + ", launcher: "
-            + launcherConfiguration.getLauncherName());
+            + ", scheduler: "
+            + launcherConfiguration.getSchedulerName());
   }
 
   private void deleteSchedule(TestProcessFactory testProcessFactory) {
@@ -197,8 +197,8 @@ public class PipeliteSchedulerTester {
     System.out.println(
         "deleted schedule for pipeline: "
             + testProcessFactory.pipelineName
-            + ", launcher: "
-            + launcherConfiguration.getLauncherName());
+            + ", scheduler: "
+            + launcherConfiguration.getSchedulerName());
   }
 
   private void assertSchedulerStats(PipeliteScheduler pipeliteScheduler, TestProcessFactory f) {
@@ -236,7 +236,8 @@ public class PipeliteSchedulerTester {
             .filter(e -> e.getPipelineName().equals(f.getPipelineName()))
             .findFirst()
             .get();
-    assertThat(scheduleEntity.getLauncherName()).isEqualTo(launcherConfiguration.getLauncherName());
+    assertThat(scheduleEntity.getSchedulerName())
+        .isEqualTo(launcherConfiguration.getSchedulerName());
     assertThat(scheduleEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(scheduleEntity.getProcessId())
         .isEqualTo(f.getProcessIds().get(f.getProcessIds().size() - 1));
@@ -307,7 +308,7 @@ public class PipeliteSchedulerTester {
 
       assertThat(pipeliteScheduler.getActivePipelinesCount()).isEqualTo(0);
       List<ScheduleEntity> scheduleEntities =
-          scheduleService.getAllProcessSchedules(launcherConfiguration.getLauncherName());
+          scheduleService.getAllProcessSchedules(launcherConfiguration.getSchedulerName());
       for (TestProcessFactory f : testProcessFactories) {
         assertThat(f.stageExecCnt.get() / f.stageCnt).isEqualTo(f.processCnt);
         assertThat(f.processIds.size()).isEqualTo(f.processCnt);

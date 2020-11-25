@@ -10,13 +10,7 @@
  */
 package pipelite;
 
-import picocli.CommandLine;
-
-@CommandLine.Command(name = "Pipelite", mixinStandardHelpOptions = true)
-public class PipeliteOptions {
-
-  @CommandLine.Option(
-      names = {"-u", "-unlock"},
-      description = "Remove all launcher or scheduler locks")
-  public boolean removeLocks;
+public enum PipeliteMode {
+  LAUNCHER,
+  SHCEDULER
 }

@@ -29,7 +29,7 @@ public class ScheduleService {
   }
 
   public List<ScheduleEntity> getAllProcessSchedules(String launcherName) {
-    return repository.findByLauncherName(launcherName);
+    return repository.findBySchedulerName(launcherName);
   }
 
   public ScheduleEntity saveProcessSchedule(ScheduleEntity scheduleEntity) {

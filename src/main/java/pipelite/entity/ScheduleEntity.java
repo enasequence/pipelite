@@ -28,8 +28,8 @@ public class ScheduleEntity {
   @Column(name = "PIPELINE_NAME")
   private String pipelineName;
 
-  @Column(name = "LAUNCHER_NAME", nullable = false)
-  private String launcherName;
+  @Column(name = "SCHEDULER_NAME", nullable = false)
+  private String schedulerName;
 
   @Column(name = "SCHEDULE", nullable = false)
   private String schedule;

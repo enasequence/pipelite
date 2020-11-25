@@ -35,7 +35,7 @@ alter table pipelite_process add constraint CK_PIPELITE_PROCESS_1 check
 create table pipelite_schedule
 (
     pipeline_name varchar2(64) not null,
-    launcher_name varchar2(256) not null,
+    scheduler_name varchar2(256) not null,
 	schedule varchar2(256) not null,
 	description varchar2(256),
 	exec_start date,
@@ -52,7 +52,7 @@ tablespace era_tab;
 create table pipelite_schedule_audit
 (
     pipeline_name varchar2(64),
-    launcher_name varchar2(256),
+    scheduler_name varchar2(256),
 	schedule varchar2(256),
 	description varchar2(256),
 	exec_start date,
@@ -90,7 +90,7 @@ begin
     if ( updating or deleting ) then
       insert into pipelite_schedule_audit (
         pipeline_name,
-        launcher_name,
+        scheduler_name,
     	schedule,
     	description,
 	    exec_start,
@@ -105,7 +105,7 @@ begin
       values
       (
         :old.pipeline_name,
-        :old.launcher_name,
+        :old.scheduler_name,
     	:old.schedule,
     	:old.description,
 	    :old.exec_start,

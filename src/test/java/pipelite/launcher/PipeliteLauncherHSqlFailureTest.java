@@ -15,10 +15,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
 import pipelite.PipeliteTestConfiguration;
 
 @SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     classes = PipeliteTestConfiguration.class,
     properties = {
       "pipelite.launcher.pipelineParallelism=5",
@@ -26,7 +26,6 @@ import pipelite.PipeliteTestConfiguration;
       "pipelite.launcher.stageLaunchFrequency=250ms",
       "pipelite.launcher.shutdownIfIdle=true"
     })
-@ContextConfiguration(initializers = PipeliteLauncherHSqlTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"hsql-test"})
 @DirtiesContext
 public class PipeliteLauncherHSqlFailureTest {

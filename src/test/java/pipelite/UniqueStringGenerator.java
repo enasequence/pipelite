@@ -14,6 +14,10 @@ import java.util.UUID;
 
 public class UniqueStringGenerator {
 
+  public static String randomSchedulerName() {
+    return id();
+  }
+
   public static String randomLauncherName() {
     return id();
   }

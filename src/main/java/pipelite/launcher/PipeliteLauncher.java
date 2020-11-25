@@ -21,6 +21,7 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import pipelite.configuration.LauncherConfiguration;
@@ -42,16 +43,19 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   private final LauncherConfiguration launcherConfiguration;
   private final StageConfiguration stageConfiguration;
+  private final ProcessFactoryService processFactoryService;
+  private final ProcessSourceService processSourceService;
+
   private final ProcessService processService;
   private final StageService stageService;
 
-  private final String pipelineName;
   private final String launcherName;
+  private String pipelineName;
 
   private final LauncherLocker launcherLocker;
   private final ProcessLocker processLocker;
-  private final ProcessFactory processFactory;
-  private final ProcessSource processSource;
+  private ProcessFactory processFactory;
+  private ProcessSource processSource;
   private final int workers;
   private final ExecutorService executorService;
 
@@ -68,6 +72,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private final Duration processLaunchFrequency;
   private final Duration processRefreshFrequency;
   private static final int processCreationCount = 5000;
+
+  @LocalServerPort int port;
 
   public PipeliteLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
@@ -95,20 +101,13 @@ public class PipeliteLauncher extends AbstractScheduledService {
       this.processRefreshFrequency = LauncherConfiguration.DEFAULT_PROCESS_REFRESH_FREQUENCY;
     }
 
-    this.pipelineName = launcherConfiguration.getPipelineName();
-    if (this.pipelineName == null || this.pipelineName.trim().isEmpty()) {
-      throw new IllegalArgumentException("Missing pipeline name from launcher configuration");
-    }
-
-    this.launcherName =
-        LauncherConfiguration.getLauncherNameForPipeliteLauncher(
-            launcherConfiguration, pipelineName);
+    this.launcherName = LauncherConfiguration.getLauncherName(pipelineName, port);
 
     this.launcherLocker = new LauncherLocker(this.launcherName, lockService);
     this.processLocker = new ProcessLocker(this.launcherName, lockService);
 
-    this.processFactory = processFactoryService.create(this.pipelineName);
-    this.processSource = processSourceService.create(this.pipelineName);
+    this.processFactoryService = processFactoryService;
+    this.processSourceService = processSourceService;
 
     this.workers =
         launcherConfiguration.getPipelineParallelism() > 0
@@ -122,8 +121,20 @@ public class PipeliteLauncher extends AbstractScheduledService {
     return launcherName + "/" + pipelineName;
   }
 
+  public void setPipelineName(String pipelineName) {
+    if (this.pipelineName != null) {
+      throw new IllegalArgumentException("Pipeline name can be provided only once");
+    }
+    this.pipelineName = pipelineName;
+    this.processFactory = processFactoryService.create(this.pipelineName);
+    this.processSource = processSourceService.create(this.pipelineName);
+  }
+
   @Override
   protected void startUp() {
+    if (this.pipelineName == null) {
+      throw new IllegalArgumentException("Missing pipeline name");
+    }
     logContext(log.atInfo()).log("Starting up launcher");
     if (!launcherLocker.lock()) {
       throw new RuntimeException("Could not start launcher");
@@ -285,6 +296,14 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
       logContext(log.atInfo()).log("Launcher has been shut down");
     }
+  }
+
+  public String getLauncherName() {
+    return launcherName;
+  }
+
+  public String getPipelineName() {
+    return pipelineName;
   }
 
   public void removeLocks() {
