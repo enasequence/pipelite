@@ -25,7 +25,7 @@ import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
-@ActiveProfiles(value = {"hsql-test", "test"})
+@ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 @Transactional
 class StageServiceHsqlTest {
 

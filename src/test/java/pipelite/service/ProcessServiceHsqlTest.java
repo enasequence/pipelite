@@ -25,7 +25,7 @@ import pipelite.entity.ProcessEntity;
 import pipelite.process.ProcessState;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
-@ActiveProfiles(value = {"hsql-test", "test"})
+@ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 class ProcessServiceHsqlTest {
 
   @Autowired ProcessService service;

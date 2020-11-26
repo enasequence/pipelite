@@ -27,7 +27,7 @@ import pipelite.stage.StageExecutionResultType;
 import pipelite.executor.StageExecutorParameters;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
-@ActiveProfiles(value = {"hsql-test", "test"})
+@ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 public class SshCmdExecutorTest {
 
   @Autowired SshTestConfiguration sshTestConfiguration;

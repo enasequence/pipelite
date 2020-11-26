@@ -21,7 +21,6 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import pipelite.configuration.LauncherConfiguration;
@@ -71,8 +70,6 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private final Duration processRefreshFrequency;
   private static final int processCreationCount = 5000;
 
-  @LocalServerPort int port;
-
   public PipeliteLauncher(
       @Autowired LauncherConfiguration launcherConfiguration,
       @Autowired StageConfiguration stageConfiguration,
@@ -99,7 +96,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
       this.processRefreshFrequency = LauncherConfiguration.DEFAULT_PROCESS_REFRESH_FREQUENCY;
     }
 
-    this.launcherName = LauncherConfiguration.getLauncherName(pipelineName, port);
+    this.launcherName =
+        LauncherConfiguration.getLauncherName(pipelineName, launcherConfiguration.getPort());
 
     this.lockService = lockService;
     this.processFactoryService = processFactoryService;
@@ -152,8 +150,9 @@ public class PipeliteLauncher extends AbstractScheduledService {
     logContext(log.atInfo()).log("Running launcher");
 
     // Relock launcher to avoid lock expiry.
-    if(!lockService.relockLauncher(launcherLock)) {
-      throw new RuntimeException("Failed to continue running launcher because of failed lock renewal");
+    if (!lockService.relockLauncher(launcherLock)) {
+      throw new RuntimeException(
+          "Failed to continue running launcher because of failed lock renewal");
     }
 
     if (processQueueIndex >= processQueue.size()

@@ -12,6 +12,8 @@ package pipelite;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+import pipelite.configuration.WebServerCustomizer;
 
 @EnableAutoConfiguration
 @ComponentScan(
@@ -20,5 +22,9 @@ import org.springframework.context.annotation.ComponentScan;
       "pipelite.launcher",
       "pipelite.repository",
       "pipelite.configuration"
-    })
+    },
+    excludeFilters =
+        @ComponentScan.Filter(
+            type = FilterType.ASSIGNABLE_TYPE,
+            classes = {WebServerCustomizer.class}))
 public class PipeliteTestConfiguration {}

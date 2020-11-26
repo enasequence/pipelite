@@ -20,7 +20,7 @@ import pipelite.executor.StageExecutor;
 import pipelite.json.Json;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
-@ActiveProfiles(value = {"hsql-test", "test"})
+@ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 public class CmdExecutorTest {
 
   @Test

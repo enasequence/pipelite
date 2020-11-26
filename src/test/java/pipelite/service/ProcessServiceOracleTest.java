@@ -24,7 +24,7 @@ import pipelite.entity.ProcessEntity;
 import pipelite.process.ProcessState;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
-@ActiveProfiles(value = {"oracle-test", "test"})
+@ActiveProfiles(value = {"oracle-test", "pipelite-test"})
 @Transactional
 class ProcessServiceOracleTest {
 

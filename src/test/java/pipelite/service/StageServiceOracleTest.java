@@ -25,7 +25,7 @@ import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
-@ActiveProfiles(value = {"oracle-test", "test"})
+@ActiveProfiles(value = {"oracle-test", "pipelite-test"})
 @Transactional
 class StageServiceOracleTest {
 

@@ -26,7 +26,7 @@ import pipelite.PipeliteTestConfiguration;
       "pipelite.launcher.stageLaunchFrequency=250ms",
       "pipelite.launcher.shutdownIfIdle=true"
     })
-@ActiveProfiles(value = {"hsql-test", "test"})
+@ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 @DirtiesContext
 public class PipeliteLauncherHSqlAsyncTest {
 

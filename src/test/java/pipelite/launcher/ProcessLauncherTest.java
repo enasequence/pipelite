@@ -87,7 +87,7 @@ public class ProcessLauncherTest {
             .immediateRetries(immediateRetries)
             .build();
     Process process =
-        new ProcessBuilder("test")
+        new ProcessBuilder("pipelite-test")
             .execute("STAGE0", executorParams)
             .with((pipelineName, processId, stage) -> null)
             .execute("STAGE1", executorParams)

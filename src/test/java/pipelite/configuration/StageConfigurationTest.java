@@ -28,7 +28,7 @@ import pipelite.PipeliteTestConfiguration;
       "pipelite.stage.maximumRetries=3",
       "pipelite.stage.tempdir="
     })
-@ActiveProfiles(value = {"hsql-test", "test"})
+@ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 public class StageConfigurationTest {
 
   @Autowired StageConfiguration config;
