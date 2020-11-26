@@ -138,6 +138,11 @@ public class PipeliteScheduler extends AbstractScheduledService {
       return;
     }
     logContext(log.atInfo()).log("Running scheduler");
+    // Relock scheduler to avoid lock expiry.
+    if(!lockService.relockLauncher(launcherLock)) {
+      throw new RuntimeException("Failed to continue running scheduler because of failed lock renewal");
+    }
+
     if (schedules.isEmpty() || schedulesValidUntil.isBefore(LocalDateTime.now())) {
       scheduleProcesses();
     }

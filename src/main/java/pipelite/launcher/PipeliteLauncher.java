@@ -150,6 +150,12 @@ public class PipeliteLauncher extends AbstractScheduledService {
       return;
     }
     logContext(log.atInfo()).log("Running launcher");
+
+    // Relock launcher to avoid lock expiry.
+    if(!lockService.relockLauncher(launcherLock)) {
+      throw new RuntimeException("Failed to continue running launcher because of failed lock renewal");
+    }
+
     if (processQueueIndex >= processQueue.size()
         || processQueueValidUntil.isBefore(LocalDateTime.now())) {
       if (processSource != null) {
