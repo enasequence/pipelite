@@ -21,34 +21,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
-  private static final String[] WHITELIST = {
-    "/",
-    // -- swagger ui
-    "/swagger-resources/**",
-    "/swagger-ui.html",
-    "/swagger-ui/index.html",
-    "/index.html",
-    "/swagger-ui/**",
-    "/v3/api-docs/**",
-    "/webjars/**",
-    "/info**",
-    "/health**"
-  };
-
   @Override
   protected void configure(HttpSecurity httpSecurity) throws Exception {
-    httpSecurity
-        .csrf()
-        .disable()
-        .cors()
-        .and()
-        .authorizeRequests()
-        .antMatchers(WHITELIST)
-        .permitAll()
-        .antMatchers("/admin")
-        .permitAll()
-        .anyRequest()
-        .denyAll();
+    httpSecurity.csrf().disable().cors().and().authorizeRequests().antMatchers("/*").permitAll();
   }
 
   @Bean

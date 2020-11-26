@@ -15,8 +15,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.launcher.PipeliteLauncher;
@@ -27,11 +31,7 @@ import pipelite.launcher.PipeliteScheduler;
 @Tag(name = "AdministrationAPI", description = "Administration of pipelite services")
 public class AdminController {
 
-  @Autowired(required = false)
-  List<PipeliteLauncher> launchers;
-
-  @Autowired(required = false)
-  List<PipeliteScheduler> schedulers;
+  @Autowired ApplicationContext applicationContext;
 
   @PutMapping("/stop")
   @ResponseStatus(HttpStatus.OK)
@@ -43,15 +43,12 @@ public class AdminController {
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
   public void stop() {
-    if (launchers != null) {
-      for (PipeliteLauncher launcher : launchers) {
-        launcher.stopAsync();
-      }
+    ;
+    for (PipeliteLauncher launcher : getLaunchers()) {
+      launcher.stopAsync();
     }
-    if (schedulers != null) {
-      for (PipeliteScheduler scheduler : schedulers) {
-        scheduler.stopAsync();
-      }
+    for (PipeliteScheduler scheduler : getSchedulers()) {
+      scheduler.stopAsync();
     }
   }
 
@@ -65,15 +62,13 @@ public class AdminController {
       })
   public List<PipeliteLauncherInfo> launchers() {
     List<PipeliteLauncherInfo> list = new ArrayList<>();
-    if (launchers != null) {
-      for (PipeliteLauncher launcher : launchers) {
-        list.add(
-            PipeliteLauncherInfo.builder()
-                .launcherName(launcher.getLauncherName())
-                .pipelineName(launcher.getPipelineName())
-                .stats(launcher.getStats())
-                .build());
-      }
+    for (PipeliteLauncher launcher : getLaunchers()) {
+      list.add(
+          PipeliteLauncherInfo.builder()
+              .launcherName(launcher.getLauncherName())
+              .pipelineName(launcher.getPipelineName())
+              .stats(launcher.getStats())
+              .build());
     }
     return list;
   }
@@ -88,27 +83,37 @@ public class AdminController {
       })
   public List<PipeliteSchedulerInfo> schedules() {
     List<PipeliteSchedulerInfo> list = new ArrayList<>();
-    if (schedulers != null) {
-      for (PipeliteScheduler scheduler : schedulers) {
-        List<PipeliteSchedulerInfo.ScheduleInfo> schedules = new ArrayList<>();
-        scheduler
-            .getSchedules()
-            .forEach(
-                s ->
-                    schedules.add(
-                        PipeliteSchedulerInfo.ScheduleInfo.builder()
-                            .pipelineName(s.getScheduleEntity().getPipelineName())
-                            .cron(s.getScheduleEntity().getSchedule())
-                            .description(s.getScheduleEntity().getDescription())
-                            .stats(scheduler.getStats(s.getScheduleEntity().getPipelineName()))
-                            .build()));
-        list.add(
-            PipeliteSchedulerInfo.builder()
-                .schedulerName(scheduler.getSchedulerName())
-                .schedules(schedules)
-                .build());
-      }
+    for (PipeliteScheduler scheduler : getSchedulers()) {
+      List<PipeliteSchedulerInfo.ScheduleInfo> schedules = new ArrayList<>();
+      scheduler
+          .getSchedules()
+          .forEach(
+              s ->
+                  schedules.add(
+                      PipeliteSchedulerInfo.ScheduleInfo.builder()
+                          .pipelineName(s.getScheduleEntity().getPipelineName())
+                          .cron(s.getScheduleEntity().getSchedule())
+                          .description(s.getScheduleEntity().getDescription())
+                          .stats(scheduler.getStats(s.getScheduleEntity().getPipelineName()))
+                          .build()));
+      list.add(
+          PipeliteSchedulerInfo.builder()
+              .schedulerName(scheduler.getSchedulerName())
+              .schedules(schedules)
+              .build());
     }
     return list;
+  }
+
+  private Collection<PipeliteScheduler> getSchedulers() {
+    return applicationContext.getBeansOfType(PipeliteScheduler.class).values().stream()
+        .filter(s -> s.isRunning())
+        .collect(Collectors.toList());
+  }
+
+  private Collection<PipeliteLauncher> getLaunchers() {
+    return applicationContext.getBeansOfType(PipeliteLauncher.class).values().stream()
+        .filter(s -> s.isRunning())
+        .collect(Collectors.toList());
   }
 }
