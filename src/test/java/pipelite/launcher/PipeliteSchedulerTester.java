@@ -306,7 +306,7 @@ public class PipeliteSchedulerTester {
       }
       ServerManager.run(pipeliteScheduler, pipeliteScheduler.serviceName());
 
-      assertThat(pipeliteScheduler.getActivePipelinesCount()).isEqualTo(0);
+      assertThat(pipeliteScheduler.getActiveProcesses().size()).isEqualTo(0);
       List<ScheduleEntity> scheduleEntities =
           scheduleService.getAllProcessSchedules(launcherConfiguration.getSchedulerName());
       for (TestProcessFactory f : testProcessFactories) {

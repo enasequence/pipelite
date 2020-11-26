@@ -10,14 +10,14 @@
  */
 package pipelite.controller;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
-import pipelite.launcher.PipeliteLauncherStats;
 
 @Value
 @Builder
-public class PipeliteLauncherInfo {
-  private String launcherName;
-  private String pipelineName;
-  private PipeliteLauncherStats stats;
+public class Scheduler {
+  private String schedulerName;
+  private List<Schedule> schedules;
+  private List<Process> active;
 }

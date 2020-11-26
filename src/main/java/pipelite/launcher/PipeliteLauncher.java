@@ -309,8 +309,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
     return pipelineName;
   }
 
-  public int getActiveProcessCount() {
-    return activeProcesses.size();
+  public Map<String, ProcessLauncher> getActiveProcesses() {
+    return activeProcesses;
   }
 
   public PipeliteLauncherStats getStats() {

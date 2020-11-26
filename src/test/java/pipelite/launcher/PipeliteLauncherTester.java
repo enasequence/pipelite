@@ -232,7 +232,7 @@ public class PipeliteLauncherTester {
     pipeliteLauncher.setPipelineName(f.getPipelineName());
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    assertThat(pipeliteLauncher.getActiveProcessCount()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getActiveProcesses().size()).isEqualTo(0);
 
     assertThat(f.stageExecCnt.get() / f.stageCnt).isEqualTo(f.processCnt);
     assertThat(f.processIds.size()).isEqualTo(f.processCnt);

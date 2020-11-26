@@ -14,6 +14,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -25,6 +28,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.PipeliteScheduler;
+import pipelite.launcher.ProcessLauncher;
 
 @RestController
 @RequestMapping(value = "/admin")
@@ -60,14 +64,14 @@ public class AdminController {
         @ApiResponse(responseCode = "200", description = "OK"),
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
-  public List<PipeliteLauncherInfo> launchers() {
-    List<PipeliteLauncherInfo> list = new ArrayList<>();
+  public List<Launcher> launchers() {
+    List<Launcher> list = new ArrayList<>();
     for (PipeliteLauncher launcher : getLaunchers()) {
       list.add(
-          PipeliteLauncherInfo.builder()
+          Launcher.builder()
               .launcherName(launcher.getLauncherName())
               .pipelineName(launcher.getPipelineName())
-              .stats(launcher.getStats())
+              .active(getProcesses(launcher.getActiveProcesses().values()))
               .build());
     }
     return list;
@@ -81,25 +85,14 @@ public class AdminController {
         @ApiResponse(responseCode = "200", description = "OK"),
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
-  public List<PipeliteSchedulerInfo> schedules() {
-    List<PipeliteSchedulerInfo> list = new ArrayList<>();
+  public List<Scheduler> schedules() {
+    List<Scheduler> list = new ArrayList<>();
     for (PipeliteScheduler scheduler : getSchedulers()) {
-      List<PipeliteSchedulerInfo.ScheduleInfo> schedules = new ArrayList<>();
-      scheduler
-          .getSchedules()
-          .forEach(
-              s ->
-                  schedules.add(
-                      PipeliteSchedulerInfo.ScheduleInfo.builder()
-                          .pipelineName(s.getScheduleEntity().getPipelineName())
-                          .cron(s.getScheduleEntity().getSchedule())
-                          .description(s.getScheduleEntity().getDescription())
-                          .stats(scheduler.getStats(s.getScheduleEntity().getPipelineName()))
-                          .build()));
       list.add(
-          PipeliteSchedulerInfo.builder()
+          Scheduler.builder()
               .schedulerName(scheduler.getSchedulerName())
-              .schedules(schedules)
+              .schedules(getSchedules(scheduler))
+              .active(getProcesses(scheduler.getActiveProcesses().values()))
               .build());
     }
     return list;
@@ -115,5 +108,41 @@ public class AdminController {
     return applicationContext.getBeansOfType(PipeliteLauncher.class).values().stream()
         .filter(s -> s.isRunning())
         .collect(Collectors.toList());
+  }
+
+  private List<Schedule> getSchedules(PipeliteScheduler scheduler) {
+    List<Schedule> schedules = new ArrayList<>();
+    scheduler
+        .getSchedules()
+        .forEach(
+            s ->
+                schedules.add(
+                    Schedule.builder()
+                        .pipelineName(s.getScheduleEntity().getPipelineName())
+                        .cron(s.getScheduleEntity().getSchedule())
+                        .description(s.getScheduleEntity().getDescription())
+                        .build()));
+    return schedules;
+  }
+
+  private List<Process> getProcesses(Collection<ProcessLauncher> processLaunchers) {
+    List<Process> processes = new ArrayList<>();
+    for (ProcessLauncher processLauncher : processLaunchers) {
+      Duration executionTime =
+          Duration.between(LocalDateTime.now(), processLauncher.getStartTime());
+      processes.add(
+          Process.builder()
+              .pipelineName(processLauncher.getPipelineName())
+              .processId(processLauncher.getProcessId())
+              .currentExecutionStartTime(processLauncher.getStartTime())
+              .currentExecutionTime(
+                  executionTime
+                      .toString()
+                      .substring(2)
+                      .replaceAll("(\\d[HMS])(?!$)", "$1 ")
+                      .toLowerCase())
+              .build());
+    }
+    return processes;
   }
 }

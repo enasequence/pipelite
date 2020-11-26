@@ -16,6 +16,7 @@ import static pipelite.stage.StageExecutionResultType.*;
 
 import com.google.common.flogger.FluentLogger;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -57,6 +58,8 @@ public class ProcessLauncher {
   private final AtomicLong stageSuccessCount = new AtomicLong(0);
 
   private final ExecutorService executorService;
+
+  private final LocalDateTime startTime = LocalDateTime.now();
 
   public ProcessLauncher(
       LauncherConfiguration launcherConfiguration,
@@ -381,8 +384,16 @@ public class ProcessLauncher {
     }
   }
 
+  public String getPipelineName() {
+    return pipelineName;
+  }
+
   public String getProcessId() {
     return process.getProcessId();
+  }
+
+  public LocalDateTime getStartTime() {
+    return startTime;
   }
 
   public long getStageFailedCount() {

@@ -10,23 +10,15 @@
  */
 package pipelite.controller;
 
-import java.util.List;
 import lombok.Builder;
 import lombok.Value;
-import pipelite.launcher.PipeliteSchedulerStats;
+
+import java.util.List;
 
 @Value
 @Builder
-public class PipeliteSchedulerInfo {
-  private String schedulerName;
-  private List<ScheduleInfo> schedules;
-
-  @Value
-  @Builder
-  public static class ScheduleInfo {
-    private String pipelineName;
-    private String cron;
-    private String description;
-    private PipeliteSchedulerStats stats;
-  }
+public class Launcher {
+  private String launcherName;
+  private String pipelineName;
+  private List<Process> active;
 }
