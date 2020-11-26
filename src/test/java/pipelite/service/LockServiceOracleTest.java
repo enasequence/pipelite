@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pipelite.PipeliteTestConfiguration;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
-@ActiveProfiles(value = {"oracle-test"})
+@ActiveProfiles(value = {"oracle-test", "test"})
 public class LockServiceOracleTest {
 
   @Autowired LockService service;
@@ -28,7 +28,7 @@ public class LockServiceOracleTest {
   @Transactional
   @Rollback
   public void testLauncherLocks() {
-    LockServiceTester.testLaucherLocks(service);
+    LockServiceTester.testLauncherLocks(service);
   }
 
   @Test

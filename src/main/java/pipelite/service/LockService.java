@@ -196,20 +196,16 @@ public class LockService {
   }
 
   /** Unlocks the processes associated with a pipeline. */
-  public void unlockProcesses(String pipelineName) {
-    log.atInfo()
-            .with(LogKey.PIPELINE_NAME, pipelineName)
-            .log("Attempting to unlock processes");
+  public void unlockProcessesByPipelineName(String pipelineName) {
+    log.atInfo().with(LogKey.PIPELINE_NAME, pipelineName).log("Attempting to unlock processes");
     try {
       processLockRepository.deleteByPipelineName(pipelineName);
-      log.atInfo()
-              .with(LogKey.PIPELINE_NAME, pipelineName)
-              .log("Unlock processes");
+      log.atInfo().with(LogKey.PIPELINE_NAME, pipelineName).log("Unlock processes");
     } catch (Exception ex) {
       log.atSevere()
-              .with(LogKey.PIPELINE_NAME, pipelineName)
-              .withCause(ex)
-              .log("Failed to unlock processes");
+          .with(LogKey.PIPELINE_NAME, pipelineName)
+          .withCause(ex)
+          .log("Failed to unlock processes");
     }
   }
 
@@ -238,16 +234,15 @@ public class LockService {
         .isPresent();
   }
 
-  /** Checks if the process is locked. */
-  public boolean isProcessLocked(
-      LauncherLockEntity launcherLock, String pipelineName, String processId) {
-    return processLockRepository
-        .findByLauncherIdAndPipelineNameAndProcessId(
-            launcherLock.getLauncherId(), pipelineName, processId)
-        .isPresent();
+  public List<LauncherLockEntity> getLauncherLocksByLauncherName(String launcherName) {
+    return launcherLockRepository.findByLauncherName(launcherName);
   }
 
-  public List<LauncherLockEntity> getLauncherLocks(String launcherName) {
-    return launcherLockRepository.findByLauncherName(launcherName);
+  public List<LauncherLockEntity> getExpiredLauncherLocks() {
+    return launcherLockRepository.findByExpiryLessThan(LocalDateTime.now());
+  }
+
+  public List<ProcessLockEntity> getProcessLocks(LauncherLockEntity launcherLock) {
+    return processLockRepository.findByLauncherId(launcherLock.getLauncherId());
   }
 }

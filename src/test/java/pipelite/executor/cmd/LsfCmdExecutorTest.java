@@ -38,7 +38,7 @@ import pipelite.stage.StageExecutionResult;
 import pipelite.executor.StageExecutorParameters;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
-@ActiveProfiles(value = {"hsql-test"})
+@ActiveProfiles(value = {"hsql-test", "test"})
 public class LsfCmdExecutorTest {
 
   @Autowired private LsfTestConfiguration lsfTestConfiguration;

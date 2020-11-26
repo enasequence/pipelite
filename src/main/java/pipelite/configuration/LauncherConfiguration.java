@@ -34,6 +34,7 @@ import pipelite.PipeliteMode;
 public class LauncherConfiguration {
 
   public static final Duration DEFAULT_PIPELINE_LOCK_DURATION = Duration.ofMinutes(10);
+  public static final Duration DEFAULT_PIPELINE_UNLOCK_FREQUENCY = Duration.ofMinutes(30);
   public static final Duration DEFAULT_PROCESS_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
   public static final Duration DEFAULT_PROCESS_REFRESH_FREQUENCY = Duration.ofHours(1);
   public static final int DEFAULT_PIPELINE_PARALLELISM = ForkJoinPool.getCommonPoolParallelism();
@@ -84,10 +85,16 @@ public class LauncherConfiguration {
   private int pipelineParallelism;
 
   /**
-   * The PipeliteLauncher and PipeliteScheduler lock processes for execution. The pipelineLockDuration
-   * is the maximum time to lock processes until the lock must be renewed.
+   * The PipeliteLauncher and PipeliteScheduler lock processes for execution. The
+   * pipelineLockDuration is the duration after which locks expire unless they are renewed.
    */
   private Duration pipelineLockDuration;
+
+  /**
+   * The PipeliteLauncher and PipeliteScheduler lock processes for execution. The
+   * pipelineUnlockFrequency is the frequency of removing expired locks.
+   */
+  private Duration pipelineUnlockFrequency;
 
   /**
    * The PipeliteLauncher and PipeliteScheduler periodically execute new processes. The

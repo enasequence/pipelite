@@ -15,15 +15,19 @@ import org.springframework.stereotype.Repository;
 import pipelite.entity.ProcessLockEntity;
 import pipelite.entity.ProcessLockEntityId;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface ProcessLockRepository
     extends CrudRepository<ProcessLockEntity, ProcessLockEntityId> {
+
   Optional<ProcessLockEntity> findByLauncherIdAndPipelineNameAndProcessId(
       Long launcherId, String pipelineName, String processId);
 
   Optional<ProcessLockEntity> findByPipelineNameAndProcessId(String pipelineName, String processId);
+
+  List<ProcessLockEntity> findByLauncherId(Long launcherId);
 
   void deleteByPipelineName(String pipelineName);
 

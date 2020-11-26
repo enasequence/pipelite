@@ -27,9 +27,9 @@ public class LockServiceTester {
   private static final String launcherName1 = UniqueStringGenerator.randomLauncherName();
   private static final String launcherName2 = UniqueStringGenerator.randomLauncherName();
 
-  public static void testLaucherLocks(LockService service) {
-    service.getLauncherLocks(launcherName1).forEach(s -> service.unlockLauncher(s));
-    service.getLauncherLocks(launcherName2).forEach(s -> service.unlockLauncher(s));
+  public static void testLauncherLocks(LockService service) {
+    service.getLauncherLocksByLauncherName(launcherName1).forEach(s -> service.unlockLauncher(s));
+    service.getLauncherLocksByLauncherName(launcherName2).forEach(s -> service.unlockLauncher(s));
 
     LauncherLockEntity launcherLock1 = service.lockLauncher(launcherName1);
     LauncherLockEntity launcherLock2 = service.lockLauncher(launcherName2);
@@ -55,72 +55,55 @@ public class LockServiceTester {
 
     assertThat(launcherLock1.getLauncherId()).isLessThan(launcherLock2.getLauncherId());
 
-    assertThat(service.getLauncherLocks(launcherName1).size()).isOne();
-    assertThat(service.getLauncherLocks(launcherName2).size()).isOne();
-    assertThat(service.getLauncherLocks(launcherName1).get(0).getLauncherId()).isEqualTo(launcherLock1.getLauncherId());
-    assertThat(service.getLauncherLocks(launcherName2).get(0).getLauncherId()).isEqualTo(launcherLock2.getLauncherId());
+    assertThat(service.getLauncherLocksByLauncherName(launcherName1).size()).isOne();
+    assertThat(service.getLauncherLocksByLauncherName(launcherName2).size()).isOne();
+    assertThat(service.getLauncherLocksByLauncherName(launcherName1).get(0).getLauncherId()).isEqualTo(launcherLock1.getLauncherId());
+    assertThat(service.getLauncherLocksByLauncherName(launcherName2).get(0).getLauncherId()).isEqualTo(launcherLock2.getLauncherId());
 
     assertTrue(service.relockLauncher(launcherLock1));
     assertTrue(service.relockLauncher(launcherLock2));
 
-    assertThat(service.getLauncherLocks(launcherName1).size()).isOne();
-    assertThat(service.getLauncherLocks(launcherName2).size()).isOne();
-    assertThat(service.getLauncherLocks(launcherName1).get(0).getLauncherId()).isEqualTo(launcherLock1.getLauncherId());
-    assertThat(service.getLauncherLocks(launcherName2).get(0).getLauncherId()).isEqualTo(launcherLock2.getLauncherId());
-    assertThat(service.getLauncherLocks(launcherName1).get(0).getExpiry()).isAfterOrEqualTo(expiry1);
-    assertThat(service.getLauncherLocks(launcherName2).get(0).getExpiry()).isAfterOrEqualTo(expiry2);
+    assertThat(service.getLauncherLocksByLauncherName(launcherName1).size()).isOne();
+    assertThat(service.getLauncherLocksByLauncherName(launcherName2).size()).isOne();
+    assertThat(service.getLauncherLocksByLauncherName(launcherName1).get(0).getLauncherId()).isEqualTo(launcherLock1.getLauncherId());
+    assertThat(service.getLauncherLocksByLauncherName(launcherName2).get(0).getLauncherId()).isEqualTo(launcherLock2.getLauncherId());
+    assertThat(service.getLauncherLocksByLauncherName(launcherName1).get(0).getExpiry()).isAfterOrEqualTo(expiry1);
+    assertThat(service.getLauncherLocksByLauncherName(launcherName2).get(0).getExpiry()).isAfterOrEqualTo(expiry2);
 
     service.unlockLauncher(launcherLock1);
     service.unlockLauncher(launcherLock2);
-    assertThat(service.getLauncherLocks(launcherName1).size()).isZero();
-    assertThat(service.getLauncherLocks(launcherName2).size()).isZero();
+    assertThat(service.getLauncherLocksByLauncherName(launcherName1).size()).isZero();
+    assertThat(service.getLauncherLocksByLauncherName(launcherName2).size()).isZero();
   }
 
   public static void testProcessLocks(LockService service) {
-    service.getLauncherLocks(launcherName1).forEach(s -> service.unlockLauncher(s));
-    service.getLauncherLocks(launcherName2).forEach(s -> service.unlockLauncher(s));
+    service.getLauncherLocksByLauncherName(launcherName1).forEach(s -> service.unlockLauncher(s));
+    service.getLauncherLocksByLauncherName(launcherName2).forEach(s -> service.unlockLauncher(s));
 
     LauncherLockEntity launcherLock1 = service.lockLauncher(launcherName1);
     LauncherLockEntity launcherLock2 = service.lockLauncher(launcherName2);
 
-    service.unlockProcesses(launcherName1);
-    service.unlockProcesses(launcherName2);
-
     assertTrue(service.lockProcess(launcherLock1, pipelineName, "1"));
     assertTrue(service.isProcessLocked(pipelineName, "1"));
-    assertTrue(service.isProcessLocked(launcherLock1, pipelineName, "1"));
 
     assertTrue(service.lockProcess(launcherLock1, pipelineName, "2"));
     assertTrue(service.isProcessLocked(pipelineName, "1"));
     assertTrue(service.isProcessLocked(pipelineName, "2"));
-    assertTrue(service.isProcessLocked(launcherLock1, pipelineName, "1"));
-    assertTrue(service.isProcessLocked(launcherLock1, pipelineName, "2"));
-    assertFalse(service.isProcessLocked(launcherLock2, pipelineName, "1"));
-    assertFalse(service.isProcessLocked(launcherLock2, pipelineName, "2"));
 
     assertTrue(service.unlockProcess(launcherLock1, pipelineName, "1"));
     assertFalse(service.isProcessLocked(pipelineName, "1"));
     assertTrue(service.isProcessLocked(pipelineName, "2"));
-    assertFalse(service.isProcessLocked(launcherLock1, pipelineName, "1"));
-    assertTrue(service.isProcessLocked(launcherLock1, pipelineName, "2"));
 
     assertTrue(service.lockProcess(launcherLock2, pipelineName, "3"));
     assertFalse(service.isProcessLocked(pipelineName, "1"));
     assertTrue(service.isProcessLocked(pipelineName, "2"));
     assertTrue(service.isProcessLocked(pipelineName, "3"));
-    assertFalse(service.isProcessLocked(launcherLock1, pipelineName, "1"));
-    assertTrue(service.isProcessLocked(launcherLock1, pipelineName, "2"));
-    assertTrue(service.isProcessLocked(launcherLock2, pipelineName, "3"));
 
     assertTrue(service.lockProcess(launcherLock2, pipelineName, "4"));
     assertFalse(service.isProcessLocked(pipelineName, "1"));
     assertTrue(service.isProcessLocked(pipelineName, "2"));
     assertTrue(service.isProcessLocked(pipelineName, "3"));
     assertTrue(service.isProcessLocked(pipelineName, "4"));
-    assertFalse(service.isProcessLocked(launcherLock1, pipelineName, "1"));
-    assertTrue(service.isProcessLocked(launcherLock1, pipelineName, "2"));
-    assertTrue(service.isProcessLocked(launcherLock2, pipelineName, "3"));
-    assertTrue(service.isProcessLocked(launcherLock2, pipelineName, "4"));
 
     assertTrue(service.unlockProcess(launcherLock2, pipelineName, "4"));
     assertFalse(service.isProcessLocked(pipelineName, "1"));

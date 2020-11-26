@@ -26,7 +26,7 @@ import pipelite.PipeliteTestConfiguration;
       "pipelite.launcher.stageLaunchFrequency=250ms",
       "pipelite.launcher.shutdownIfIdle=true"
     })
-@ActiveProfiles(value = {"oracle-test"})
+@ActiveProfiles(value = {"oracle-test", "test"})
 @DirtiesContext
 public class PipeliteLauncherOracleTest {
 

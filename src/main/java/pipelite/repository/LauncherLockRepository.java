@@ -22,5 +22,5 @@ import java.util.Optional;
 public interface LauncherLockRepository extends CrudRepository<LauncherLockEntity, String> {
   List<LauncherLockEntity> findByLauncherName(String launcherName);
 
-  List<LauncherLockEntity> findByExpiryGreaterThan(LocalDateTime expiry);
+  List<LauncherLockEntity> findByExpiryLessThan(LocalDateTime expiry);
 }

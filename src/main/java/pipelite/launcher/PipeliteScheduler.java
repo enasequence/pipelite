@@ -114,12 +114,12 @@ public class PipeliteScheduler extends AbstractScheduledService {
   @Override
   protected void startUp() {
     logContext(log.atInfo()).log("Starting up scheduler");
-    List<LauncherLockEntity> launcherLocks = lockService.getLauncherLocks(getLauncherName());
+    List<LauncherLockEntity> launcherLocks = lockService.getLauncherLocksByLauncherName(getLauncherName());
     if (!launcherLocks.isEmpty()) {
       throw new RuntimeException("Could not start scheduler " + schedulerName + ": already locked");
     }
     launcherLock = lockService.lockLauncher(getLauncherName());
-    launcherLocks = lockService.getLauncherLocks(getLauncherName());
+    launcherLocks = lockService.getLauncherLocksByLauncherName(getLauncherName());
     if (launcherLocks.size() != 1
         || !launcherLocks.get(0).getLauncherId().equals(launcherLock.getLauncherId())) {
       lockService.unlockLauncher(launcherLock);
@@ -386,7 +386,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
   }
 
   public void removeLocks() {
-    List<LauncherLockEntity> launcherLocks = lockService.getLauncherLocks(getLauncherName());
+    List<LauncherLockEntity> launcherLocks = lockService.getLauncherLocksByLauncherName(getLauncherName());
     for (LauncherLockEntity launcherLock : launcherLocks) {
       lockService.unlockProcesses(launcherLock);
       lockService.unlockLauncher(launcherLock);

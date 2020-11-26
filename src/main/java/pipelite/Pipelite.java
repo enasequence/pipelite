@@ -24,6 +24,7 @@ import picocli.CommandLine;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.PipeliteScheduler;
+import pipelite.launcher.PipeliteUnlocker;
 import pipelite.launcher.ServerManager;
 import pipelite.service.ProcessFactoryService;
 
@@ -31,6 +32,7 @@ import pipelite.service.ProcessFactoryService;
 public class Pipelite {
 
   private final PipeliteOptions options;
+  private final PipeliteUnlocker unlocker;
   private final List<PipeliteLauncher> launchers = new ArrayList<>();
   private final PipeliteScheduler scheduler;
 
@@ -39,8 +41,13 @@ public class Pipelite {
     ConfigurableApplicationContext context =
         SpringApplication.run(Application.class, new String[] {});
 
+    // Create unlocker.
+    unlocker = context.getBean(PipeliteUnlocker.class);
+
     LauncherConfiguration launcherConfiguration = context.getBean(LauncherConfiguration.class);
+
     if (launcherConfiguration.getMode() == PipeliteMode.LAUNCHER) {
+      // Create launchers.
       if (launcherConfiguration.getPipelineName() == null) {
         throw new IllegalArgumentException("Missing pipeline name");
       }
@@ -64,6 +71,7 @@ public class Pipelite {
       }
       scheduler = null;
     } else if (launcherConfiguration.getMode() == PipeliteMode.SHCEDULER) {
+      // Create scheduler.
       scheduler = context.getBean(PipeliteScheduler.class);
     } else {
       scheduler = null;
@@ -136,9 +144,15 @@ public class Pipelite {
    */
   public int run() {
     try {
+      ExecutorService executorService = Executors.newCachedThreadPool();
 
+      List<Callable<Object>> callables = new ArrayList<>();
+      callables.add(
+          () -> {
+            ServerManager.run(unlocker, "unlocker");
+            return null;
+          });
       if (!launchers.isEmpty()) {
-        List<Callable<Object>> callables = new ArrayList<>();
         for (PipeliteLauncher launcher : launchers) {
           callables.add(
               () -> {
@@ -146,15 +160,18 @@ public class Pipelite {
                 return null;
               });
         }
-        ExecutorService executorService = Executors.newCachedThreadPool();
-        executorService.invokeAll(callables);
       }
       if (scheduler != null) {
         if (options.removeLocks) {
           scheduler.removeLocks();
         }
-        ServerManager.run(scheduler, scheduler.serviceName());
+        callables.add(
+            () -> {
+              ServerManager.run(scheduler, scheduler.serviceName());
+              return null;
+            });
       }
+      executorService.invokeAll(callables);
       return 0;
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Unexpected exception when running pipelite");

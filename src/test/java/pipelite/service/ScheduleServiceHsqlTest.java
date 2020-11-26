@@ -25,7 +25,7 @@ import pipelite.UniqueStringGenerator;
 import pipelite.entity.ScheduleEntity;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
-@ActiveProfiles(value = {"hsql-test"})
+@ActiveProfiles(value = {"hsql-test", "test"})
 class ScheduleServiceHsqlTest {
 
   @Autowired ScheduleService service;

@@ -31,7 +31,7 @@ import pipelite.UniqueStringGenerator;
       "pipelite.launcher.schedulerName=test"
     })
 @ContextConfiguration(initializers = PipeliteSchedulerHSqlTest.TestContextInitializer.class)
-@ActiveProfiles(value = {"hsql-test"})
+@ActiveProfiles(value = {"hsql-test", "test"})
 @DirtiesContext
 public class PipeliteSchedulerHSqlTest {
 
