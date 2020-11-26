@@ -15,7 +15,6 @@ import java.time.Duration;
 import java.util.concurrent.ForkJoinPool;
 import javax.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -34,6 +33,7 @@ import pipelite.PipeliteMode;
  */
 public class LauncherConfiguration {
 
+  public static final Duration DEFAULT_PIPELINE_LOCK_DURATION = Duration.ofMinutes(10);
   public static final Duration DEFAULT_PROCESS_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
   public static final Duration DEFAULT_PROCESS_REFRESH_FREQUENCY = Duration.ofHours(1);
   public static final int DEFAULT_PIPELINE_PARALLELISM = ForkJoinPool.getCommonPoolParallelism();
@@ -84,6 +84,12 @@ public class LauncherConfiguration {
   private int pipelineParallelism;
 
   /**
+   * The PipeliteLauncher and PipeliteScheduler lock processes for execution. The pipelineLockDuration
+   * is the maximum time to lock processes until the lock must be renewed.
+   */
+  private Duration pipelineLockDuration;
+
+  /**
    * The PipeliteLauncher and PipeliteScheduler periodically execute new processes. The
    * processLaunchFrequency is the frequency of doing this.
    */
@@ -112,7 +118,7 @@ public class LauncherConfiguration {
 
   /** Defaults to <host name>@<pipeline name>. */
   public static String getLauncherName(String pipelineName, int port) {
-    return getHostName() + ":" + port + "@" + pipelineName;
+    return getCanonicalHostName() + ":" + port + "@" + pipelineName;
   }
 
   /** Defaults to <host name>@<user name>. */
@@ -120,17 +126,9 @@ public class LauncherConfiguration {
     return launcherConfiguration.getSchedulerName();
   }
 
-  public static String getHostName() {
+  public static String getCanonicalHostName() {
     try {
-      return InetAddress.getLocalHost().getHostName();
-    } catch (Exception ex) {
-      throw new RuntimeException(ex);
-    }
-  }
-
-  public static String getUserName() {
-    try {
-      return System.getProperty("user.name");
+      return InetAddress.getLocalHost().getCanonicalHostName();
     } catch (Exception ex) {
       throw new RuntimeException(ex);
     }

@@ -8,17 +8,19 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.entity;
+package pipelite.repository;
 
-import java.io.Serializable;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
+import pipelite.entity.LauncherLockEntity;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class LockEntityId implements Serializable {
-  private String pipelineName;
-  private String lockId;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface LauncherLockRepository extends CrudRepository<LauncherLockEntity, String> {
+  List<LauncherLockEntity> findByLauncherName(String launcherName);
+
+  List<LauncherLockEntity> findByExpiryGreaterThan(LocalDateTime expiry);
 }

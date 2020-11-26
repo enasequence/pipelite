@@ -26,9 +26,8 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
+import pipelite.entity.LauncherLockEntity;
 import pipelite.entity.ProcessEntity;
-import pipelite.launcher.locker.LauncherLocker;
-import pipelite.launcher.locker.ProcessLocker;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
@@ -52,16 +51,15 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private final String launcherName;
   private String pipelineName;
 
-  private final LauncherLocker launcherLocker;
-  private final ProcessLocker processLocker;
+  private final LockService lockService;
+  private LauncherLockEntity launcherLock;
   private ProcessFactory processFactory;
   private ProcessSource processSource;
   private final int workers;
   private final ExecutorService executorService;
 
-  private final PipeliteLauncherStats stats = new PipeliteLauncherStats();
-
   private final Map<String, ProcessLauncher> activeProcesses = new ConcurrentHashMap<>();
+  private final PipeliteLauncherStats stats = new PipeliteLauncherStats();
 
   private final List<ProcessEntity> processQueue = Collections.synchronizedList(new ArrayList<>());
   private int processQueueIndex = 0;
@@ -103,9 +101,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
     this.launcherName = LauncherConfiguration.getLauncherName(pipelineName, port);
 
-    this.launcherLocker = new LauncherLocker(this.launcherName, lockService);
-    this.processLocker = new ProcessLocker(this.launcherName, lockService);
-
+    this.lockService = lockService;
     this.processFactoryService = processFactoryService;
     this.processSourceService = processSourceService;
 
@@ -135,9 +131,11 @@ public class PipeliteLauncher extends AbstractScheduledService {
     if (this.pipelineName == null) {
       throw new IllegalArgumentException("Missing pipeline name");
     }
-    logContext(log.atInfo()).log("Starting up launcher");
-    if (!launcherLocker.lock()) {
-      throw new RuntimeException("Could not start launcher");
+    logContext(log.atInfo()).log("Starting up launcher: %s", getLauncherName());
+    launcherLock = lockService.lockLauncher(getLauncherName());
+    if (launcherLock == null) {
+      throw new RuntimeException(
+          "Could not start launcher " + getLauncherName() + ": failed to lock");
     }
   }
 
@@ -247,7 +245,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
       return;
     }
     // Lock process.
-    if (!processLocker.lock(pipelineName, processId)) {
+    if (!lockService.lockProcess(launcherLock, pipelineName, processId)) {
       return;
     }
     // Create process launcher.
@@ -273,7 +271,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
                 .withCause(ex)
                 .log("Failed to execute process because an exception was thrown");
           } finally {
-            processLocker.unlock(pipelineName, processId);
+            lockService.unlockProcess(launcherLock, pipelineName, processId);
             activeProcesses.remove(processId);
             stats.stageSuccessCount.addAndGet(processLauncher.getStageSuccessCount());
             stats.stageFailedCount.addAndGet(processLauncher.getStageFailedCount());
@@ -292,8 +290,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
       executorService.shutdownNow();
       throw ex;
     } finally {
-      launcherLocker.unlock();
-
+      lockService.unlockProcesses(launcherLock);
+      lockService.unlockLauncher(launcherLock);
       logContext(log.atInfo()).log("Launcher has been shut down");
     }
   }
@@ -304,10 +302,6 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   public String getPipelineName() {
     return pipelineName;
-  }
-
-  public void removeLocks() {
-    launcherLocker.removeLocks();
   }
 
   public int getActiveProcessCount() {

@@ -121,18 +121,43 @@ begin
 end;
 /
 
-# TODO: Singularity
+create table pipelite_process_lock
+(
+    launcher_id number(15,0) not null,
+    pipeline_name varchar2(64) not null,
+    process_id varchar2(256) not null,
+	audit_time date default sysdate not null,
+	audit_user varchar2(30) default user not null,
+	audit_osuser varchar2(30) default SYS_CONTEXT( 'USERENV', 'OS_USER' ) not null,
+	constraint pk_pipelite_process_lock primary key (process_id, pipeline_name)
+)
+tablespace era_tab;
 
-It is possible to run docker images using singularity on YODA/NOAH/SRA cluster:
+create table pipelite_launcher_lock
+(
+    launcher_id number(15,0) not null,
+    launcher_name varchar2(64) not null,
+    expiry timestamp not null,
+	audit_time date default sysdate not null,
+	audit_user varchar2(30) default user not null,
+	audit_osuser varchar2(30) default SYS_CONTEXT( 'USERENV', 'OS_USER' ) not null,
+	constraint pk_pipelite_launcher_lock primary key (launcher_id)
+)
+tablespace era_tab;
 
-bsub "singularity run docker://enasequence/webin-cli"
+create sequence pipelite_launcher_lock_seq
+increment by 1
+start with 1;
 
-We could have a contract where we bundle sra-stages into a docker image:
-....
-ENTRYPOINT "java", "-jar", "XXX.jar"]
+/*
+create or replace trigger pipelite_launcher_lock
+before insert on pipelite_launcher_lock
+for each row
+begin
+   :new.launcher_id := pipelite_launcher_lock_seq.nextval;
+end;
+/
+*/
 
-where the main expects <pipeline name> <process id> <stage name>
-
-and we call it:
-
-bsub "singularity run docker://enasequence/webin-cli <process name> <process id> <stage name>"
+create public synonym pipelite_process_lock for pipelite_process_lock;
+create public synonym pipelite_launcher_lock for pipelite_launcher_lock;

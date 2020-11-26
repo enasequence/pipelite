@@ -142,9 +142,6 @@ public class Pipelite {
         for (PipeliteLauncher launcher : launchers) {
           callables.add(
               () -> {
-                if (options.removeLocks) {
-                  launcher.removeLocks();
-                }
                 ServerManager.run(launcher, launcher.serviceName());
                 return null;
               });
