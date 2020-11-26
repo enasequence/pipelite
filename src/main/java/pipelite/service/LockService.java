@@ -10,6 +10,8 @@
  */
 package pipelite.service;
 
+import static pipelite.configuration.LauncherConfiguration.DEFAULT_PIPELINE_LOCK_DURATION;
+
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,8 +26,6 @@ import pipelite.entity.ProcessLockEntity;
 import pipelite.log.LogKey;
 import pipelite.repository.LauncherLockRepository;
 import pipelite.repository.ProcessLockRepository;
-
-import static pipelite.configuration.LauncherConfiguration.DEFAULT_PIPELINE_LOCK_DURATION;
 
 // TODO: launcher lock is stored as a process lock and there is a possibility of lock name conflict
 

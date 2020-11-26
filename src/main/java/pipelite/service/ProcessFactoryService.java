@@ -13,11 +13,13 @@ package pipelite.service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import pipelite.process.ProcessFactory;
 
 @Service
+@Flogger
 public class ProcessFactoryService {
 
   private final Map<String, ProcessFactory> map = new HashMap<>();
@@ -45,6 +47,7 @@ public class ProcessFactoryService {
       throw new ProcessFactoryServiceException("Missing pipeline name");
     }
     if (!map.containsKey(pipelineName)) {
+      log.atSevere().log("Unknown pipeline: " + pipelineName);
       throw new ProcessFactoryServiceException("Unknown pipeline: " + pipelineName);
     }
     return map.get(pipelineName);

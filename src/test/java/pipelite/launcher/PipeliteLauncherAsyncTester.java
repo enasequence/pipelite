@@ -26,6 +26,7 @@ import pipelite.TestProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.executor.StageExecutor;
+import pipelite.executor.StageExecutorParameters;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
@@ -33,7 +34,6 @@ import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
-import pipelite.executor.StageExecutorParameters;
 
 @Component
 @Scope("prototype")

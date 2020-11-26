@@ -10,11 +10,10 @@
  */
 package pipelite.entity;
 
+import javax.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import javax.persistence.*;
 
 @Entity
 @Table(name = "PIPELITE_PROCESS_LOCK")

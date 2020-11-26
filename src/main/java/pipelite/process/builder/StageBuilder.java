@@ -15,8 +15,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import pipelite.executor.StageExecutor;
-import pipelite.stage.Stage;
 import pipelite.executor.StageExecutorParameters;
+import pipelite.stage.Stage;
 
 public class StageBuilder {
   private final ProcessBuilder processBuilder;

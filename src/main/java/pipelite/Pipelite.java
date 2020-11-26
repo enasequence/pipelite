@@ -10,184 +10,20 @@
  */
 package pipelite;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
-import picocli.CommandLine;
-import pipelite.configuration.LauncherConfiguration;
-import pipelite.launcher.PipeliteLauncher;
-import pipelite.launcher.PipeliteScheduler;
-import pipelite.launcher.PipeliteUnlocker;
-import pipelite.launcher.ServerManager;
-import pipelite.service.ProcessFactoryService;
 
 @Flogger
 public class Pipelite {
 
-  private final PipeliteOptions options;
-  private final PipeliteUnlocker unlocker;
-  private final List<PipeliteLauncher> launchers = new ArrayList<>();
-  private final PipeliteScheduler scheduler;
+  private Pipelite() {}
 
-  public Pipelite(PipeliteOptions options) {
-    this.options = options;
-    ConfigurableApplicationContext context =
-        SpringApplication.run(Application.class, new String[] {});
-
-    // Create unlocker.
-    unlocker = context.getBean(PipeliteUnlocker.class);
-
-    LauncherConfiguration launcherConfiguration = context.getBean(LauncherConfiguration.class);
-
-    if (launcherConfiguration.getMode() == PipeliteMode.LAUNCHER) {
-      // Create launchers.
-      if (launcherConfiguration.getPipelineName() == null) {
-        throw new IllegalArgumentException("Missing pipeline name");
-      }
-
-      List<String> pipelineNames =
-          Arrays.stream(launcherConfiguration.getPipelineName().split(","))
-              .map(s -> s.trim())
-              .collect(Collectors.toList());
-      if (pipelineNames.isEmpty()) {
-        throw new IllegalArgumentException("Missing pipeline name");
-      }
-      ProcessFactoryService processFactoryService = context.getBean(ProcessFactoryService.class);
-      for (String pipelineName : pipelineNames) {
-        // Check that the pipeline name is valid.
-        processFactoryService.create(pipelineName);
-      }
-      for (String pipelineName : pipelineNames) {
-        PipeliteLauncher launcher = context.getBean(PipeliteLauncher.class);
-        launcher.setPipelineName(pipelineName);
-        launchers.add(launcher);
-      }
-      scheduler = null;
-    } else if (launcherConfiguration.getMode() == PipeliteMode.SHCEDULER) {
-      // Create scheduler.
-      scheduler = context.getBean(PipeliteScheduler.class);
-    } else {
-      scheduler = null;
-    }
+  public static ConfigurableApplicationContext run(String[] args) {
+    return SpringApplication.run(Application.class, args);
   }
 
-  /**
-   * Runs pipelite with the given command line arguments.
-   *
-   * @param args the command line arguments
-   * @return the exit code
-   */
-  public static int run(String[] args) {
-    PipeliteOptions options = parse(args);
-    if (options == null) {
-      return 1;
-    }
-    return new Pipelite(options).run();
-  }
-
-  /**
-   * Creates the pipeline options from command line arguments.
-   *
-   * @param args the command line arguments
-   * @return the pipelite options or null in case of invalid command line arguments.
-   */
-  public static PipeliteOptions parse(String[] args) {
-    PipeliteOptions options = new PipeliteOptions();
-
-    CommandLine commandLine;
-    CommandLine.ParseResult parseResult;
-
-    try {
-      commandLine = new CommandLine(options);
-    } catch (Exception ex) {
-      System.out.println(ex.getMessage());
-      return null;
-    }
-
-    try {
-      parseResult = commandLine.parseArgs(args);
-    } catch (Exception ex) {
-      System.out.println(ex.getMessage());
-      commandLine.usage(System.out);
-      return null;
-    }
-
-    if (parseResult.isUsageHelpRequested()) {
-      commandLine.usage(System.out);
-      return null;
-    }
-
-    return options;
-  }
-
-  /**
-   * Creates the pipelite object from the pipelite options.
-   *
-   * @param options the pipeline options
-   * @return the pipelite object
-   */
-  public static Pipelite create(PipeliteOptions options) {
-    return new Pipelite(options);
-  }
-
-  /**
-   * Runs pipelite.
-   *
-   * @return the exit code
-   */
-  public int run() {
-    try {
-      ExecutorService executorService = Executors.newCachedThreadPool();
-
-      List<Callable<Object>> callables = new ArrayList<>();
-      callables.add(
-          () -> {
-            ServerManager.run(unlocker, "unlocker");
-            return null;
-          });
-      if (!launchers.isEmpty()) {
-        for (PipeliteLauncher launcher : launchers) {
-          callables.add(
-              () -> {
-                ServerManager.run(launcher, launcher.serviceName());
-                return null;
-              });
-        }
-      }
-      if (scheduler != null) {
-        if (options.removeLocks) {
-          scheduler.removeLocks();
-        }
-        callables.add(
-            () -> {
-              ServerManager.run(scheduler, scheduler.serviceName());
-              return null;
-            });
-      }
-      executorService.invokeAll(callables);
-      return 0;
-    } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Unexpected exception when running pipelite");
-      return 1;
-    }
-  }
-
-  public PipeliteOptions getOptions() {
-    return options;
-  }
-
-  public List<PipeliteLauncher> getLaunchers() {
-    return launchers;
-  }
-
-  public PipeliteScheduler getScheduler() {
-    return scheduler;
+  public static void main(String[] args) {
+    run(args);
   }
 }

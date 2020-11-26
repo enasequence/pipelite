@@ -14,12 +14,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.entity.LauncherLockEntity;
-
-import java.time.Duration;
-import java.time.LocalDateTime;
 
 public class LockServiceTester {
 
@@ -57,18 +56,24 @@ public class LockServiceTester {
 
     assertThat(service.getLauncherLocksByLauncherName(launcherName1).size()).isOne();
     assertThat(service.getLauncherLocksByLauncherName(launcherName2).size()).isOne();
-    assertThat(service.getLauncherLocksByLauncherName(launcherName1).get(0).getLauncherId()).isEqualTo(launcherLock1.getLauncherId());
-    assertThat(service.getLauncherLocksByLauncherName(launcherName2).get(0).getLauncherId()).isEqualTo(launcherLock2.getLauncherId());
+    assertThat(service.getLauncherLocksByLauncherName(launcherName1).get(0).getLauncherId())
+        .isEqualTo(launcherLock1.getLauncherId());
+    assertThat(service.getLauncherLocksByLauncherName(launcherName2).get(0).getLauncherId())
+        .isEqualTo(launcherLock2.getLauncherId());
 
     assertTrue(service.relockLauncher(launcherLock1));
     assertTrue(service.relockLauncher(launcherLock2));
 
     assertThat(service.getLauncherLocksByLauncherName(launcherName1).size()).isOne();
     assertThat(service.getLauncherLocksByLauncherName(launcherName2).size()).isOne();
-    assertThat(service.getLauncherLocksByLauncherName(launcherName1).get(0).getLauncherId()).isEqualTo(launcherLock1.getLauncherId());
-    assertThat(service.getLauncherLocksByLauncherName(launcherName2).get(0).getLauncherId()).isEqualTo(launcherLock2.getLauncherId());
-    assertThat(service.getLauncherLocksByLauncherName(launcherName1).get(0).getExpiry()).isAfterOrEqualTo(expiry1);
-    assertThat(service.getLauncherLocksByLauncherName(launcherName2).get(0).getExpiry()).isAfterOrEqualTo(expiry2);
+    assertThat(service.getLauncherLocksByLauncherName(launcherName1).get(0).getLauncherId())
+        .isEqualTo(launcherLock1.getLauncherId());
+    assertThat(service.getLauncherLocksByLauncherName(launcherName2).get(0).getLauncherId())
+        .isEqualTo(launcherLock2.getLauncherId());
+    assertThat(service.getLauncherLocksByLauncherName(launcherName1).get(0).getExpiry())
+        .isAfterOrEqualTo(expiry1);
+    assertThat(service.getLauncherLocksByLauncherName(launcherName2).get(0).getExpiry())
+        .isAfterOrEqualTo(expiry2);
 
     service.unlockLauncher(launcherLock1);
     service.unlockLauncher(launcherLock2);

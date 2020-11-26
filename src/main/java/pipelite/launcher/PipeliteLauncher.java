@@ -112,7 +112,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   @Override
   public String serviceName() {
-    return launcherName + "/" + pipelineName;
+    return launcherName;
   }
 
   public void setPipelineName(String pipelineName) {

@@ -26,6 +26,7 @@ import pipelite.configuration.*;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.executor.StageExecutor;
+import pipelite.executor.StageExecutorParameters;
 import pipelite.launcher.dependency.DependencyResolver;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
@@ -35,7 +36,6 @@ import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
-import pipelite.executor.StageExecutorParameters;
 
 @Flogger
 public class ProcessLauncher {
@@ -270,7 +270,7 @@ public class ProcessLauncher {
       boolean isDeserializedExecutorParams = deserializedExecutorParams != null;
       if (isDeserializedExecutor && isDeserializedExecutorParams) {
         // Use deserialized executor.
-        isUsingDeserializedExecutor  = true;
+        isUsingDeserializedExecutor = true;
         stage.setExecutor(deserializedExecutor);
         stage.setExecutorParams(deserializedExecutorParams);
         logContext(log.atInfo(), stageName).log("Using deserialized executor");

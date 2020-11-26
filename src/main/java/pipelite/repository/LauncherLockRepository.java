@@ -10,13 +10,11 @@
  */
 package pipelite.repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import pipelite.entity.LauncherLockEntity;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface LauncherLockRepository extends CrudRepository<LauncherLockEntity, String> {

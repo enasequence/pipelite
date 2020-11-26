@@ -21,10 +21,10 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.SingularityTestConfiguration;
 import pipelite.configuration.SshTestConfiguration;
 import pipelite.executor.StageExecutor;
+import pipelite.executor.StageExecutorParameters;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
-import pipelite.executor.StageExecutorParameters;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})

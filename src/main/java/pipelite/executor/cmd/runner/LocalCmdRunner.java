@@ -21,8 +21,8 @@ import org.apache.commons.exec.*;
 import org.apache.commons.text.StringTokenizer;
 import org.apache.commons.text.matcher.StringMatcher;
 import org.apache.commons.text.matcher.StringMatcherFactory;
-import pipelite.executor.stream.KeepOldestByteArrayOutputStream;
 import pipelite.executor.StageExecutorParameters;
+import pipelite.executor.stream.KeepOldestByteArrayOutputStream;
 
 @Flogger
 public class LocalCmdRunner implements CmdRunner {

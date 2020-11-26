@@ -30,6 +30,7 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
+import pipelite.executor.StageExecutorParameters;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
@@ -39,7 +40,6 @@ import pipelite.service.ProcessService;
 import pipelite.service.StageService;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
-import pipelite.executor.StageExecutorParameters;
 
 @Component
 @Scope("prototype")

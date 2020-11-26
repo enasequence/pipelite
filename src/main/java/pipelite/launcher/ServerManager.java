@@ -22,12 +22,11 @@ import pipelite.log.LogKey;
 @Flogger
 public class ServerManager {
 
-  // Suppresses default constructor, ensuring non-instantiability.
   private ServerManager() {}
 
   public static final int FORCE_STOP_WAIT_SECONDS = 30;
 
-  private static void forceStop(ServiceManager manager, Service service, String serviceName) {
+  private static void forceStop(ServiceManager manager, String serviceName) {
     log.atInfo().with(LogKey.SERVICE_NAME, serviceName).log("Stopping service");
     try {
       manager.stopAsync().awaitStopped(FORCE_STOP_WAIT_SECONDS, TimeUnit.SECONDS);
@@ -48,7 +47,7 @@ public class ServerManager {
                 .with(LogKey.SERVICE_NAME, serviceName)
                 .withCause(service.failureCause())
                 .log("Service has failed");
-            forceStop(manager, service, serviceName);
+            forceStop(manager, serviceName);
           }
         },
         MoreExecutors.directExecutor());
@@ -57,7 +56,7 @@ public class ServerManager {
         .addShutdownHook(
             new Thread(
                 () -> {
-                  forceStop(manager, service, serviceName);
+                  forceStop(manager, serviceName);
                 }));
 
     log.atInfo().with(LogKey.SERVICE_NAME, serviceName).log("Starting service");

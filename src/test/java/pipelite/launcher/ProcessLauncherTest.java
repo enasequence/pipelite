@@ -18,13 +18,13 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import pipelite.configuration.StageConfiguration;
 import pipelite.entity.StageEntity;
+import pipelite.executor.StageExecutorParameters;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
-import pipelite.executor.StageExecutorParameters;
 
 public class ProcessLauncherTest {
 

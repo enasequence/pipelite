@@ -20,13 +20,13 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.StageEntity;
+import pipelite.executor.StageExecutorParameters;
 import pipelite.executor.SuccessSyncExecutor;
 import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
-import pipelite.executor.StageExecutorParameters;
 
 public class DependencyResolverTest {
 
@@ -161,7 +161,8 @@ public class DependencyResolverTest {
     Process process =
         builder
             .execute(
-                "STAGE1", StageExecutorParameters.builder().maximumRetries(3).immediateRetries(0).build())
+                "STAGE1",
+                StageExecutorParameters.builder().maximumRetries(3).immediateRetries(0).build())
             .with(new SuccessSyncExecutor())
             .executeAfter("STAGE2", "STAGE1")
             .with(new SuccessSyncExecutor())
@@ -195,7 +196,8 @@ public class DependencyResolverTest {
     Process process =
         builder
             .execute(
-                "STAGE1", StageExecutorParameters.builder().maximumRetries(1).immediateRetries(1).build())
+                "STAGE1",
+                StageExecutorParameters.builder().maximumRetries(1).immediateRetries(1).build())
             .with(new SuccessSyncExecutor())
             .executeAfter("STAGE2", "STAGE1")
             .with(new SuccessSyncExecutor())

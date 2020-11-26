@@ -19,7 +19,6 @@ import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
-import pipelite.PipeliteMode;
 
 @Flogger
 @Data
@@ -61,13 +60,10 @@ public class LauncherConfiguration {
   }
 
   /** The pipelite web server port number. */
-  private Integer port = 8080;
+  private Integer port = 8082;
 
   /** The pipelite web server context path. */
   private String contextPath = "/pipelite";
-
-  /** The pipelite mode. Either LAUNCHER for PipeliteLauncher or SCHEDULER for PipeliteScheduler. */
-  private PipeliteMode mode;
 
   /** The name of the PipeliteScheduler. The name must be unique. */
   private String schedulerName;

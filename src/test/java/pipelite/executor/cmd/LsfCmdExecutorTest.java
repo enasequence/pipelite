@@ -27,6 +27,7 @@ import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LsfTestConfiguration;
 import pipelite.executor.StageExecutor;
+import pipelite.executor.StageExecutorParameters;
 import pipelite.executor.SuccessAsyncExecutor;
 import pipelite.executor.SuccessSyncExecutor;
 import pipelite.executor.cmd.runner.CmdRunner;
@@ -35,7 +36,6 @@ import pipelite.executor.cmd.runner.LocalCmdRunner;
 import pipelite.json.Json;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
-import pipelite.executor.StageExecutorParameters;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
@@ -124,8 +124,7 @@ public class LsfCmdExecutorTest {
 
     LsfCmdExecutor executor = new LsfCmdTestExecutor();
 
-    String cmd =
-        getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, stage(executorParams)));
+    String cmd = getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, stage(executorParams)));
     assertTrue(cmd.contains(" -M 1M -R \"rusage[mem=1M:duration=1]\""));
     assertTrue(cmd.contains(" -n 1"));
     assertTrue(cmd.contains(" -q defaultQueue"));
@@ -139,8 +138,7 @@ public class LsfCmdExecutorTest {
 
     LsfCmdExecutor executor = new LsfCmdTestExecutor();
 
-    String cmd =
-        getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, stage(executorParams)));
+    String cmd = getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, stage(executorParams)));
     assertFalse(cmd.contains("-q "));
   }
 
@@ -151,8 +149,7 @@ public class LsfCmdExecutorTest {
 
     LsfCmdExecutor executor = new LsfCmdTestExecutor();
 
-    String cmd =
-        getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, stage(executorParams)));
+    String cmd = getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, stage(executorParams)));
     assertTrue(cmd.contains("-q queue"));
   }
 
@@ -164,8 +161,7 @@ public class LsfCmdExecutorTest {
 
     LsfCmdExecutor executor = new LsfCmdTestExecutor();
 
-    String cmd =
-        getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, stage(executorParams)));
+    String cmd = getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, stage(executorParams)));
     assertTrue(cmd.contains(" -M 2000M -R \"rusage[mem=2000M:duration=1]\""));
     assertTrue(cmd.contains(" -n 12"));
     assertTrue(cmd.contains(" -q defaultQueue"));

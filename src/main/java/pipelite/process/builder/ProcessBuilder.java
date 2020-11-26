@@ -11,9 +11,9 @@
 package pipelite.process.builder;
 
 import java.util.*;
+import pipelite.executor.StageExecutorParameters;
 import pipelite.process.Process;
 import pipelite.stage.Stage;
-import pipelite.executor.StageExecutorParameters;
 
 public class ProcessBuilder {
 
@@ -35,11 +35,15 @@ public class ProcessBuilder {
 
   public StageBuilder executeAfter(String stageName, String dependsOnStageName) {
     return new StageBuilder(
-        this, stageName, Arrays.asList(dependsOnStageName), StageExecutorParameters.builder().build());
+        this,
+        stageName,
+        Arrays.asList(dependsOnStageName),
+        StageExecutorParameters.builder().build());
   }
 
   public StageBuilder executeAfter(String stageName, List<String> dependsOnStageName) {
-    return new StageBuilder(this, stageName, dependsOnStageName, StageExecutorParameters.builder().build());
+    return new StageBuilder(
+        this, stageName, dependsOnStageName, StageExecutorParameters.builder().build());
   }
 
   public StageBuilder executeAfter(
@@ -60,7 +64,8 @@ public class ProcessBuilder {
         StageExecutorParameters.builder().build());
   }
 
-  public StageBuilder executeAfterPrevious(String stageName, StageExecutorParameters executorParams) {
+  public StageBuilder executeAfterPrevious(
+      String stageName, StageExecutorParameters executorParams) {
     return new StageBuilder(
         this, stageName, Arrays.asList(lastStage().getStageName()), executorParams);
   }

@@ -23,8 +23,8 @@ import org.apache.sshd.client.channel.ClientChannel;
 import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.session.SessionHeartbeatController;
-import pipelite.executor.stream.KeepOldestByteArrayOutputStream;
 import pipelite.executor.StageExecutorParameters;
+import pipelite.executor.stream.KeepOldestByteArrayOutputStream;
 
 @Flogger
 public class SshCmdRunner implements CmdRunner {
