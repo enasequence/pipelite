@@ -14,6 +14,7 @@ import javax.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import pipelite.json.Json;
 import pipelite.process.ProcessState;
 
 @Entity
@@ -73,5 +74,14 @@ public class ProcessEntity {
       return MIN_PRIORITY;
     }
     return priority;
+  }
+
+  public String serialize() {
+    return Json.serialize(this);
+  }
+
+  @Override
+  public String toString() {
+    return serialize();
   }
 }

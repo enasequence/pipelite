@@ -84,7 +84,7 @@ public class ProcessBuilder {
   }
 
   public Process build() {
-    return Process.builder().processId(this.processId).stages(this.stages).build();
+    return new Process(processId, this.stages);
   }
 
   private Stage lastStage() {

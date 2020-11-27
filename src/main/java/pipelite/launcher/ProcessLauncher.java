@@ -32,6 +32,7 @@ import pipelite.launcher.dependency.DependencyResolver;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
+import pipelite.service.MailService;
 import pipelite.service.ProcessService;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
@@ -45,9 +46,9 @@ public class ProcessLauncher {
   private final StageConfiguration stageConfiguration;
   private final ProcessService processService;
   private final StageService stageService;
+  private final MailService mailService;
   private final String pipelineName;
   private final Process process;
-  private final ProcessEntity processEntity;
 
   private final List<Stage> stages;
   private final Set<String> activeStages = ConcurrentHashMap.newKeySet();
@@ -66,17 +67,24 @@ public class ProcessLauncher {
       StageConfiguration stageConfiguration,
       ProcessService processService,
       StageService stageService,
+      MailService mailService,
       String pipelineName,
-      Process process,
-      ProcessEntity processEntity) {
+      Process process) {
 
     this.launcherConfiguration = launcherConfiguration;
     this.stageConfiguration = stageConfiguration;
     this.processService = processService;
     this.stageService = stageService;
+    this.mailService = mailService;
     this.pipelineName = pipelineName;
     this.process = process;
-    this.processEntity = processEntity;
+
+    if (process == null) {
+      throw new IllegalArgumentException("Missing process");
+    }
+    if (process.getProcessEntity() == null) {
+      throw new IllegalArgumentException("Missing process entity");
+    }
 
     this.stages = new ArrayList<>();
 
@@ -247,8 +255,11 @@ public class ProcessLauncher {
 
   private ProcessState saveProcess() {
     logContext(log.atInfo()).log("Saving process");
+    ProcessEntity processEntity = process.getProcessEntity();
     processEntity.updateExecution(evaluateProcessState(stages));
     processService.saveProcess(processEntity);
+    // Send email after process execution.
+    mailService.sendProcessExecutionMessage(pipelineName, process);
     return processEntity.getState();
   }
 
@@ -341,6 +352,8 @@ public class ProcessLauncher {
           .log("Stage executed successfully.");
       invalidateDependentStages(stage);
     } else {
+      // Send email after failed stage execution.
+      mailService.sendStageExecutionMessage(pipelineName, process, stage);
       stageFailedCount.incrementAndGet();
       logContext(log.atSevere(), stageEntity.getStageName())
           .with(LogKey.STAGE_EXECUTION_RESULT_TYPE, stageEntity.getResultType())

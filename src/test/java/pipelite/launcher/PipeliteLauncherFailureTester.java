@@ -55,6 +55,7 @@ public class PipeliteLauncherFailureTester {
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
   @Autowired private LockService lockService;
+  @Autowired private MailService mailService;
 
   @Autowired
   @Qualifier("firstStageFails")
@@ -166,14 +167,15 @@ public class PipeliteLauncherFailureTester {
 
   private PipeliteLauncher createPipeliteLauncher(String pipelineName) {
     return new PipeliteLauncher(
-            launcherConfiguration,
-            stageConfiguration,
-            processFactoryService,
-            processSourceService,
-            processService,
-            stageService,
-            lockService,
-            pipelineName);
+        launcherConfiguration,
+        stageConfiguration,
+        processFactoryService,
+        processSourceService,
+        processService,
+        stageService,
+        lockService,
+        mailService,
+        pipelineName);
   }
 
   @Value

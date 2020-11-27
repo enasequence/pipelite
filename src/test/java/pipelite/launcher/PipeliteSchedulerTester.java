@@ -50,6 +50,7 @@ public class PipeliteSchedulerTester {
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
   @Autowired private LockService lockService;
+  @Autowired private MailService mailService;
 
   @Autowired private TestProcessFactory firstProcessSuccess;
   @Autowired private TestProcessFactory secondProcessSuccess;
@@ -123,7 +124,8 @@ public class PipeliteSchedulerTester {
         scheduleService,
         processService,
         stageService,
-        lockService);
+        lockService,
+        mailService);
   }
 
   @Value

@@ -59,6 +59,11 @@ public class StageExecutorParameters implements ConfigurableStageExecutorParamet
     return Json.serialize(this);
   }
 
+  @Override
+  public String toString() {
+    return serialize();
+  }
+
   public static StageExecutorParameters deserialize(String json) {
     return Json.deserialize(json, StageExecutorParameters.class);
   }

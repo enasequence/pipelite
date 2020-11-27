@@ -44,6 +44,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
   private final ProcessService processService;
   private final StageService stageService;
   private final LockService lockService;
+  private final MailService mailService;
   private final String schedulerName;
   private final ExecutorService executorService;
   private final Duration processLaunchFrequency;
@@ -75,7 +76,8 @@ public class PipeliteScheduler extends AbstractScheduledService {
       ScheduleService scheduleService,
       ProcessService processService,
       StageService stageService,
-      LockService lockService) {
+      LockService lockService,
+      MailService mailService) {
     this.launcherConfiguration = launcherConfiguration;
     this.stageConfiguration = stageConfiguration;
     this.processFactoryService = processFactoryService;
@@ -83,6 +85,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
     this.processService = processService;
     this.stageService = stageService;
     this.lockService = lockService;
+    this.mailService = mailService;
     this.schedulerName = LauncherConfiguration.getSchedulerName(launcherConfiguration);
     this.executorService = Executors.newCachedThreadPool();
 
@@ -318,15 +321,16 @@ public class PipeliteScheduler extends AbstractScheduledService {
     String processId = processEntity.getProcessId();
     logContext(log.atInfo(), pipelineName, processId).log("Launching process");
 
+    process.setProcessEntity(processEntity);
     ProcessLauncher processLauncher =
         new ProcessLauncher(
             launcherConfiguration,
             stageConfiguration,
             processService,
             stageService,
+            mailService,
             pipelineName,
-            process,
-            processEntity);
+            process);
     activeProcesses.put(pipelineName, processLauncher);
     executorService.execute(
         () -> {

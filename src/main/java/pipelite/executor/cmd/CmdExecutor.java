@@ -113,4 +113,9 @@ public class CmdExecutor implements StageExecutor {
     }
     return workDir + pipelineName + "_" + processId + "_" + stage.getStageName() + "." + suffix;
   }
+
+  @Override
+  public String toString() {
+    return serialize();
+  }
 }

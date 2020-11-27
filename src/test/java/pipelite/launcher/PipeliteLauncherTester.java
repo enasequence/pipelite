@@ -51,6 +51,7 @@ public class PipeliteLauncherTester {
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
   @Autowired private LockService lockService;
+  @Autowired private MailService mailService;
 
   @Autowired
   @Qualifier("processSuccess")
@@ -116,6 +117,7 @@ public class PipeliteLauncherTester {
         processService,
         stageService,
         lockService,
+        mailService,
         pipelineName);
   }
 

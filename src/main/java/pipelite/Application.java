@@ -47,6 +47,7 @@ public class Application {
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
   @Autowired private LockService lockService;
+  @Autowired private MailService mailService;
   @Autowired private PipeliteUnlocker pipeliteUnlocker;
 
   private List<PipeliteLauncher> launchers = new ArrayList<>();
@@ -84,7 +85,8 @@ public class Application {
           processFactoryService.create(pipelineName);
         }
         for (String pipelineName : pipelineNames) {
-          PipeliteLauncher launcher = new PipeliteLauncher(
+          PipeliteLauncher launcher =
+              new PipeliteLauncher(
                   launcherConfiguration,
                   stageConfiguration,
                   processFactoryService,
@@ -92,19 +94,22 @@ public class Application {
                   processService,
                   stageService,
                   lockService,
+                  mailService,
                   pipelineName);
           launchers.add(launcher);
         }
       }
       if (launcherConfiguration.getSchedulerName() != null) {
-        scheduler = new PipeliteScheduler(
-                 launcherConfiguration,
-                 stageConfiguration,
-                 processFactoryService,
-                 scheduleService,
-                 processService,
-                 stageService,
-                 lockService);
+        scheduler =
+            new PipeliteScheduler(
+                launcherConfiguration,
+                stageConfiguration,
+                processFactoryService,
+                scheduleService,
+                processService,
+                stageService,
+                lockService,
+                mailService);
       }
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Unexpected exception when initialising pipelite services");

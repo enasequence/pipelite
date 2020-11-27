@@ -50,6 +50,7 @@ public class PipeliteLauncherAsyncTester {
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
   @Autowired private LockService lockService;
+  @Autowired private MailService mailService;
 
   @Autowired private TestProcessFactory<SubmitSuccessPollSuccessExecutor> submitSuccessPollSuccess;
   @Autowired public TestProcessFactory<SubmitErrorExecutor> submitError;
@@ -122,6 +123,7 @@ public class PipeliteLauncherAsyncTester {
             processService,
             stageService,
             lockService,
+            mailService,
             pipelineName);
   }
 

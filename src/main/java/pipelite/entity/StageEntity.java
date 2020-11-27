@@ -18,6 +18,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.StageExecutor;
+import pipelite.json.Json;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
@@ -134,5 +135,14 @@ public class StageEntity {
     this.executorName = null;
     this.executorData = null;
     this.executorParams = null;
+  }
+
+  public String serialize() {
+    return Json.serialize(this);
+  }
+
+  @Override
+  public String toString() {
+    return serialize();
   }
 }

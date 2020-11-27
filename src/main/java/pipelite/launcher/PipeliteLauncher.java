@@ -41,6 +41,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private final ProcessService processService;
   private final StageService stageService;
   private final LockService lockService;
+  private final MailService mailService;
   private final String pipelineName;
   private final String launcherName;
   private final ProcessFactory processFactory;
@@ -66,6 +67,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
       ProcessService processService,
       StageService stageService,
       LockService lockService,
+      MailService mailService,
       String pipelineName) {
 
     this.launcherConfiguration = launcherConfiguration;
@@ -75,6 +77,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
     this.processService = processService;
     this.stageService = stageService;
     this.lockService = lockService;
+    this.mailService = mailService;
 
     if (pipelineName == null) {
       throw new IllegalArgumentException("Missing pipeline name");
@@ -235,6 +238,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
     if (!lockService.lockProcess(launcherLock, pipelineName, processId)) {
       return;
     }
+    process.setProcessEntity(processEntity);
     // Create process launcher.
     ProcessLauncher processLauncher =
         new ProcessLauncher(
@@ -242,9 +246,9 @@ public class PipeliteLauncher extends AbstractScheduledService {
             stageConfiguration,
             processService,
             stageService,
+            mailService,
             pipelineName,
-            process,
-            processEntity);
+            process);
     activeProcesses.put(processId, processLauncher);
     // Run process.
     executorService.execute(
