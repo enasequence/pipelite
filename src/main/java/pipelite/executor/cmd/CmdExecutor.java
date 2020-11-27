@@ -91,30 +91,26 @@ public class CmdExecutor implements StageExecutor {
     return cmdRunner;
   }
 
-  public String getWorkDir(Stage stage) {
+  public static String getWorkDir(String pipelineName, String processId, Stage stage) {
     if (stage.getExecutorParams().getWorkDir() != null) {
-      return stage.getExecutorParams().getWorkDir().trim();
+      String workDir = stage.getExecutorParams().getWorkDir();
+      workDir = workDir.replace('\\', '/');
+      workDir = workDir.trim();
+      if (!workDir.endsWith("/")) {
+        workDir = workDir + "/";
+      }
+      return workDir + "pipelite/" + pipelineName + "/" + processId;
     } else {
-      return "";
+      return "pipelite/" + pipelineName + "/" + processId;
     }
   }
 
-  public String getWorkFile(
-      String pipelineName, String processId, Stage stage, String prefix, String suffix) {
-    String workDir = getWorkDir(stage);
-    if (!workDir.isEmpty() && !workDir.endsWith("/")) {
-      workDir += "/";
+  public static String getOutFile(
+      String pipelineName, String processId, Stage stage, String suffix) {
+    String workDir = getWorkDir(pipelineName, processId, stage);
+    if (!workDir.endsWith("/")) {
+      workDir = workDir + "/";
     }
-    return workDir
-        + "pipelite-"
-        + prefix
-        + "-"
-        + pipelineName
-        + "_"
-        + processId
-        + "_"
-        + stage.getStageName()
-        + "."
-        + suffix;
+    return workDir + pipelineName + "_" + processId + "_" + stage.getStageName() + "." + suffix;
   }
 }

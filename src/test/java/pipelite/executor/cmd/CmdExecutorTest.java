@@ -17,7 +17,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.executor.StageExecutor;
+import pipelite.executor.StageExecutorParameters;
+import pipelite.executor.SuccessSyncExecutor;
 import pipelite.json.Json;
+import pipelite.stage.Stage;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
@@ -58,5 +61,31 @@ public class CmdExecutorTest {
                 + "  \"cmdRunnerType\" : \"SSH_CMD_RUNNER\"\n"
                 + "}");
     assertThat(Json.deserialize(json, CmdExecutor.class).getCmd()).isEqualTo(cmd);
+  }
+
+  private Stage createStage(String workDir) {
+    return Stage.builder()
+        .stageName("STAGE")
+        .executor(new SuccessSyncExecutor())
+        .executorParams(StageExecutorParameters.builder().workDir(workDir).build())
+        .build();
+  }
+
+  @Test
+  public void getWorkDir() {
+    assertThat(CmdExecutor.getWorkDir("PIPELINE_NAME", "PROCESS_ID", createStage("WORKDIR ")))
+        .isEqualTo("WORKDIR/pipelite/PIPELINE_NAME/PROCESS_ID");
+    assertThat(CmdExecutor.getWorkDir("PIPELINE_NAME", "PROCESS_ID", createStage(null)))
+        .isEqualTo("pipelite/PIPELINE_NAME/PROCESS_ID");
+    assertThat(
+            CmdExecutor.getWorkDir("PIPELINE_NAME", "PROCESS_ID", createStage("WORKDIR/DIR\\DIR/")))
+        .isEqualTo("WORKDIR/DIR/DIR/pipelite/PIPELINE_NAME/PROCESS_ID");
+  }
+
+  @Test
+  public void getOutFile() {
+    assertThat(
+            CmdExecutor.getOutFile("PIPELINE_NAME", "PROCESS_ID", createStage("WORKDIR "), "out"))
+        .isEqualTo("WORKDIR/pipelite/PIPELINE_NAME/PROCESS_ID/PIPELINE_NAME_PROCESS_ID_STAGE.out");
   }
 }

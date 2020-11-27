@@ -69,9 +69,10 @@ public class LsfCmdExecutor extends CmdExecutor {
 
     startTime = LocalDateTime.now();
 
-    if (!getWorkDir(stage).isEmpty()) {
+    if (!getWorkDir(pipelineName, processId, stage).isEmpty()) {
       CmdRunner cmdRunner = getCmdRunner();
-      cmdRunner.execute(MKDIR_CMD + getWorkDir(stage), stage.getExecutorParams());
+      cmdRunner.execute(
+          MKDIR_CMD + getWorkDir(pipelineName, processId, stage), stage.getExecutorParams());
     }
 
     StageExecutionResult result = super.execute(pipelineName, processId, stage);
@@ -182,7 +183,7 @@ public class LsfCmdExecutor extends CmdExecutor {
     StringBuilder cmd = new StringBuilder();
     cmd.append(BSUB_CMD);
 
-    stdoutFile = getWorkFile(pipelineName, processId, stage, "lsf", "stdout");
+    stdoutFile = getOutFile(pipelineName, processId, stage, "stdout");
 
     // Write both stderr and stdout to the stdout file.
 
