@@ -26,6 +26,7 @@ import lombok.extern.flogger.Flogger;
 import pipelite.configuration.*;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
+import pipelite.entity.StageOutEntity;
 import pipelite.executor.StageExecutor;
 import pipelite.executor.StageExecutorParameters;
 import pipelite.launcher.dependency.DependencyResolver;
@@ -298,6 +299,7 @@ public class ProcessLauncher {
         // Start a new stage execution and serialize the executor.
         stageEntity.startExecution(stage);
         stageService.saveStage(stageEntity);
+        stageService.saveStageOut(StageOutEntity.startExecution(stageEntity));
       }
 
       result = stage.getExecutor().execute(pipelineName, getProcessId(), stage);
@@ -343,6 +345,7 @@ public class ProcessLauncher {
     // Stage has been executed.
     stageEntity.endExecution(result);
     stageService.saveStage(stageEntity);
+    stageService.saveStageOut(StageOutEntity.endExecution(stageEntity, result));
     stage.incrementImmediateExecutionCount();
     if (result.isSuccess()) {
       stageSuccessCount.incrementAndGet();
@@ -394,6 +397,7 @@ public class ProcessLauncher {
       StageEntity stageEntity = stage.getStageEntity();
       stageEntity.resetExecution();
       stageService.saveStage(stageEntity);
+      stageService.saveStageOut(StageOutEntity.resetExecution(stageEntity));
     }
   }
 

@@ -17,6 +17,8 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageEntityId;
+import pipelite.entity.StageOutEntity;
+import pipelite.repository.StageOutRepository;
 import pipelite.repository.StageRepository;
 
 @Service
@@ -24,9 +26,12 @@ import pipelite.repository.StageRepository;
 public class StageService {
 
   private final StageRepository repository;
+  private final StageOutRepository outRepository;
 
-  public StageService(@Autowired StageRepository repository) {
+  public StageService(
+      @Autowired StageRepository repository, @Autowired StageOutRepository outRepository) {
     this.repository = repository;
+    this.outRepository = outRepository;
   }
 
   public Optional<StageEntity> getSavedStage(
@@ -34,8 +39,18 @@ public class StageService {
     return repository.findById(new StageEntityId(processId, pipelineName, stageName));
   }
 
+  public Optional<StageOutEntity> getSavedStageOut(StageEntity stageEntity) {
+    return outRepository.findById(
+        new StageEntityId(
+            stageEntity.getProcessId(), stageEntity.getPipelineName(), stageEntity.getStageName()));
+  }
+
   public StageEntity saveStage(StageEntity stageEntity) {
     return repository.save(stageEntity);
+  }
+
+  public StageOutEntity saveStageOut(StageOutEntity stageOutEntity) {
+    return outRepository.save(stageOutEntity);
   }
 
   public void delete(StageEntity stageEntity) {

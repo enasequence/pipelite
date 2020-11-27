@@ -54,8 +54,6 @@ class StageEntityTest {
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNull();
     assertThat(stageEntity.getEndTime()).isNull();
-    assertThat(stageEntity.getStdOut()).isNull();
-    assertThat(stageEntity.getStdErr()).isNull();
     assertThat(stageEntity.getExecutorName()).isNull();
     assertThat(stageEntity.getExecutorData()).isNull();
     assertThat(stageEntity.getExecutorParams()).isNull();
@@ -72,8 +70,6 @@ class StageEntityTest {
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNull();
-    assertThat(stageEntity.getStdOut()).isNull();
-    assertThat(stageEntity.getStdErr()).isNull();
     assertThat(stageEntity.getExecutorName())
         .isEqualTo("pipelite.entity.StageEntityTest$TestExecutor");
     assertThat(stageEntity.getExecutorData()).isEqualTo("{\n" + "  \"test\" : \"TEST\"\n" + "}");
@@ -103,8 +99,6 @@ class StageEntityTest {
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNotNull();
     assertThat(stageEntity.getStartTime()).isBeforeOrEqualTo(stageEntity.getEndTime());
-    assertThat(stageEntity.getStdOut()).isEqualTo("TEST3");
-    assertThat(stageEntity.getStdErr()).isEqualTo("TEST4");
     assertThat(stageEntity.getExecutorName())
         .isEqualTo("pipelite.entity.StageEntityTest$TestExecutor");
     assertThat(stageEntity.getExecutorData()).isEqualTo("{\n" + "  \"test\" : \"TEST2\"\n" + "}");
@@ -122,8 +116,6 @@ class StageEntityTest {
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNull();
-    assertThat(stageEntity.getStdOut()).isNull();
-    assertThat(stageEntity.getStdErr()).isNull();
     assertThat(stageEntity.getExecutorName())
         .isEqualTo("pipelite.entity.StageEntityTest$TestExecutor");
     assertThat(stageEntity.getExecutorData()).isEqualTo("{\n" + "  \"test\" : \"TEST2\"\n" + "}");
@@ -147,8 +139,6 @@ class StageEntityTest {
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNotNull();
     assertThat(stageEntity.getStartTime()).isBeforeOrEqualTo(stageEntity.getEndTime());
-    assertThat(stageEntity.getStdOut()).isEqualTo("TEST5");
-    assertThat(stageEntity.getStdErr()).isEqualTo("TEST6");
     assertThat(stageEntity.getExecutorName())
         .isEqualTo("pipelite.entity.StageEntityTest$TestExecutor");
     assertThat(stageEntity.getExecutorData()).isEqualTo("{\n" + "  \"test\" : \"TEST2\"\n" + "}");
@@ -166,8 +156,6 @@ class StageEntityTest {
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNull();
     assertThat(stageEntity.getEndTime()).isNull();
-    assertThat(stageEntity.getStdOut()).isNull();
-    assertThat(stageEntity.getStdErr()).isNull();
     assertThat(stageEntity.getExecutorName()).isNull();
     assertThat(stageEntity.getExecutorData()).isNull();
     assertThat(stageEntity.getExecutorParams()).isNull();

@@ -53,14 +53,6 @@ public class StageEntity {
   @Column(name = "EXEC_DATE")
   private LocalDateTime endTime;
 
-  @Column(name = "EXEC_STDOUT", columnDefinition = "CLOB")
-  @Lob
-  private String stdOut;
-
-  @Column(name = "EXEC_STDERR", columnDefinition = "CLOB")
-  @Lob
-  private String stdErr;
-
   @Column(name = "EXEC_NAME")
   private String executorName;
 
@@ -98,8 +90,6 @@ public class StageEntity {
     this.resultParams = null;
     this.startTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.endTime = null;
-    this.stdOut = null;
-    this.stdErr = null;
     this.executorName = stageExecutor.getClass().getName();
     this.executorData = stageExecutor.serialize();
     if (stage.getExecutorParams() != null) {
@@ -118,8 +108,6 @@ public class StageEntity {
     this.resultType = result.getResultType();
     this.resultParams = result.attributesJson();
     this.endTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
-    this.stdOut = result.getStdout();
-    this.stdErr = result.getStderr();
     this.executionCount++;
   }
 
@@ -129,8 +117,6 @@ public class StageEntity {
     this.resultParams = null;
     this.startTime = null;
     this.endTime = null;
-    this.stdOut = null;
-    this.stdErr = null;
     this.executionCount = 0;
     this.executorName = null;
     this.executorData = null;
