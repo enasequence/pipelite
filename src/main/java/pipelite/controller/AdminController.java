@@ -23,9 +23,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import pipelite.Application;
 import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.PipeliteScheduler;
 import pipelite.launcher.ProcessLauncher;
@@ -35,7 +35,7 @@ import pipelite.launcher.ProcessLauncher;
 @Tag(name = "AdministrationAPI", description = "Administration of pipelite services")
 public class AdminController {
 
-  @Autowired ApplicationContext applicationContext;
+  @Autowired Application application;
 
   @PutMapping("/stop")
   @ResponseStatus(HttpStatus.OK)
@@ -98,14 +98,16 @@ public class AdminController {
     return list;
   }
 
-  private Collection<PipeliteScheduler> getSchedulers() {
-    return applicationContext.getBeansOfType(PipeliteScheduler.class).values().stream()
-        .filter(s -> s.isRunning())
-        .collect(Collectors.toList());
+  private List<PipeliteScheduler> getSchedulers() {
+    List<PipeliteScheduler> schedulers = new ArrayList<>();
+    if (application.getScheduler() != null && application.getScheduler().isRunning()) {
+      schedulers.add(application.getScheduler());
+    }
+    return schedulers;
   }
 
   private Collection<PipeliteLauncher> getLaunchers() {
-    return applicationContext.getBeansOfType(PipeliteLauncher.class).values().stream()
+    return application.getLaunchers().stream()
         .filter(s -> s.isRunning())
         .collect(Collectors.toList());
   }
