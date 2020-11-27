@@ -19,4 +19,5 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "pipelite.test.lsf")
 public class LsfTestConfiguration {
   private String host;
+  private String workDir;
 }

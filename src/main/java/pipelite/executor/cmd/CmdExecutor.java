@@ -93,7 +93,7 @@ public class CmdExecutor implements StageExecutor {
 
   public String getWorkDir(Stage stage) {
     if (stage.getExecutorParams().getWorkDir() != null) {
-      return stage.getExecutorParams().getWorkDir();
+      return stage.getExecutorParams().getWorkDir().trim();
     } else {
       return "";
     }

@@ -37,6 +37,7 @@ public class LsfCmdExecutor extends CmdExecutor {
       "bjobs -o \"stat exit_code cpu_used max_mem avg_mem exec_host delimiter='|'\" -noheader ";
   private static final String BHIST_CMD = "bhist -l ";
   private static final String BKILL_CMD = "bkill ";
+  private static final String MKDIR_CMD = "mkdir -p ";
 
   private static final Pattern JOB_ID_SUBMITTED_PATTERN =
       Pattern.compile("Job <(\\d+)\\> is submitted");
@@ -67,6 +68,11 @@ public class LsfCmdExecutor extends CmdExecutor {
   private StageExecutionResult submit(String pipelineName, String processId, Stage stage) {
 
     startTime = LocalDateTime.now();
+
+    if (!getWorkDir(stage).isEmpty()) {
+      CmdRunner cmdRunner = getCmdRunner();
+      cmdRunner.execute(MKDIR_CMD + getWorkDir(stage), stage.getExecutorParams());
+    }
 
     StageExecutionResult result = super.execute(pipelineName, processId, stage);
 

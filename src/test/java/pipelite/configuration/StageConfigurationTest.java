@@ -26,7 +26,7 @@ import pipelite.PipeliteTestConfiguration;
       "pipelite.stage.queue=TEST",
       "pipelite.stage.memoryTimeout=15s",
       "pipelite.stage.maximumRetries=3",
-      "pipelite.stage.tempdir="
+      "pipelite.stage.workdir="
     })
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 public class StageConfigurationTest {
