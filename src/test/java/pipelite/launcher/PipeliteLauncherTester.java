@@ -26,6 +26,7 @@ import org.springframework.stereotype.Component;
 import pipelite.TestProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
+import pipelite.configuration.StageConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.executor.StageExecutorParameters;
@@ -34,8 +35,7 @@ import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.service.ProcessService;
-import pipelite.service.StageService;
+import pipelite.service.*;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
 
@@ -43,11 +43,14 @@ import pipelite.stage.StageExecutionResultType;
 @Scope("prototype")
 public class PipeliteLauncherTester {
 
-  @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
   @Autowired private LauncherConfiguration launcherConfiguration;
-  @Autowired private TestProcessFactory testProcessFactory;
+  @Autowired private StageConfiguration stageConfiguration;
+  @Autowired private ProcessFactoryService processFactoryService;
+  @Autowired private ProcessSourceService processSourceService;
+  @Autowired private ScheduleService scheduleService;
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
+  @Autowired private LockService lockService;
 
   @Autowired
   @Qualifier("processSuccess")
@@ -102,6 +105,18 @@ public class PipeliteLauncherTester {
     SUCCESS,
     ERROR,
     EXCEPTION
+  }
+
+  private PipeliteLauncher createPipeliteLauncher(String pipelineName) {
+    return new PipeliteLauncher(
+        launcherConfiguration,
+        stageConfiguration,
+        processFactoryService,
+        processSourceService,
+        processService,
+        stageService,
+        lockService,
+        pipelineName);
   }
 
   @Value
@@ -228,8 +243,7 @@ public class PipeliteLauncherTester {
   }
 
   private void test(TestProcessFactory f) {
-    PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
-    pipeliteLauncher.startUp(f.getPipelineName());
+    PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     assertThat(pipeliteLauncher.getActiveProcesses().size()).isEqualTo(0);

@@ -136,7 +136,7 @@ tablespace era_tab;
 create table pipelite_launcher_lock
 (
     launcher_id number(15,0) not null,
-    launcher_name varchar2(64) not null,
+    launcher_name varchar2(256) not null,
     expiry timestamp not null,
 	audit_time date default sysdate not null,
 	audit_user varchar2(30) default user not null,

@@ -21,12 +21,12 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import lombok.extern.flogger.Flogger;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import pipelite.configuration.LauncherConfiguration;
+import pipelite.configuration.StageConfiguration;
 import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.PipeliteScheduler;
 import pipelite.launcher.PipeliteUnlocker;
@@ -40,15 +40,19 @@ import pipelite.service.*;
 public class Application {
 
   @Autowired private LauncherConfiguration launcherConfiguration;
+  @Autowired private StageConfiguration stageConfiguration;
   @Autowired private ProcessFactoryService processFactoryService;
+  @Autowired private ProcessSourceService processSourceService;
+  @Autowired private ScheduleService scheduleService;
+  @Autowired private ProcessService processService;
+  @Autowired private StageService stageService;
+  @Autowired private LockService lockService;
   @Autowired private PipeliteUnlocker pipeliteUnlocker;
-  @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
-  @Autowired private ObjectProvider<PipeliteScheduler> pipeliteSchedulerObjectProvider;
+
   private List<PipeliteLauncher> launchers = new ArrayList<>();
   private PipeliteScheduler scheduler;
-
-  List<Service> services = new ArrayList<>();
-  ExecutorService executorService = Executors.newCachedThreadPool();
+  private List<Service> services = new ArrayList<>();
+  private ExecutorService executorService = Executors.newCachedThreadPool();
 
   @PostConstruct
   private void construct() {
@@ -80,13 +84,27 @@ public class Application {
           processFactoryService.create(pipelineName);
         }
         for (String pipelineName : pipelineNames) {
-          PipeliteLauncher launcher = pipeliteLauncherObjectProvider.getObject();
-          launcher.startUp(pipelineName);
+          PipeliteLauncher launcher = new PipeliteLauncher(
+                  launcherConfiguration,
+                  stageConfiguration,
+                  processFactoryService,
+                  processSourceService,
+                  processService,
+                  stageService,
+                  lockService,
+                  pipelineName);
           launchers.add(launcher);
         }
       }
       if (launcherConfiguration.getSchedulerName() != null) {
-        scheduler = pipeliteSchedulerObjectProvider.getObject();
+        scheduler = new PipeliteScheduler(
+                 launcherConfiguration,
+                 stageConfiguration,
+                 processFactoryService,
+                 scheduleService,
+                 processService,
+                 stageService,
+                 lockService);
       }
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Unexpected exception when initialising pipelite services");

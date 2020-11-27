@@ -35,8 +35,6 @@ import pipelite.process.ProcessState;
 import pipelite.service.*;
 
 @Flogger
-@Component
-@Scope("prototype")
 public class PipeliteScheduler extends AbstractScheduledService {
 
   private final LauncherConfiguration launcherConfiguration;
@@ -48,14 +46,14 @@ public class PipeliteScheduler extends AbstractScheduledService {
   private final LockService lockService;
   private final String schedulerName;
   private final ExecutorService executorService;
-
+  private final Duration processLaunchFrequency;
+  private final Duration processRefreshFrequency;
   private LauncherLockEntity launcherLock;
   private final Map<String, ProcessFactory> processFactoryCache = new ConcurrentHashMap<>();
   private final Map<String, ProcessLauncher> activeProcesses = new ConcurrentHashMap<>();
   private final Map<String, PipeliteSchedulerStats> stats = new ConcurrentHashMap<>();
   private final Map<String, AtomicLong> remainingExecutions = new ConcurrentHashMap<>();
-
-  public static final int maxProcessIdRetries = 100;
+  private static final int maxProcessIdRetries = 100;
   private final LocalDateTime startTime;
   private boolean shutdownAfterTriggered = false;
 
@@ -70,17 +68,14 @@ public class PipeliteScheduler extends AbstractScheduledService {
   private final List<Schedule> schedules = Collections.synchronizedList(new ArrayList<>());
   private LocalDateTime schedulesValidUntil;
 
-  private final Duration processLaunchFrequency;
-  private final Duration processRefreshFrequency;
-
   public PipeliteScheduler(
-      @Autowired LauncherConfiguration launcherConfiguration,
-      @Autowired StageConfiguration stageConfiguration,
-      @Autowired ProcessFactoryService processFactoryService,
-      @Autowired ScheduleService scheduleService,
-      @Autowired ProcessService processService,
-      @Autowired StageService stageService,
-      @Autowired LockService lockService) {
+      LauncherConfiguration launcherConfiguration,
+      StageConfiguration stageConfiguration,
+      ProcessFactoryService processFactoryService,
+      ScheduleService scheduleService,
+      ProcessService processService,
+      StageService stageService,
+      LockService lockService) {
     this.launcherConfiguration = launcherConfiguration;
     this.stageConfiguration = stageConfiguration;
     this.processFactoryService = processFactoryService;

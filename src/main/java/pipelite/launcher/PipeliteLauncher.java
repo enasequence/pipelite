@@ -20,9 +20,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
 import pipelite.entity.LauncherLockEntity;
@@ -35,54 +32,59 @@ import pipelite.process.ProcessState;
 import pipelite.service.*;
 
 @Flogger
-@Component
-@Scope("prototype")
 public class PipeliteLauncher extends AbstractScheduledService {
 
   private final LauncherConfiguration launcherConfiguration;
   private final StageConfiguration stageConfiguration;
   private final ProcessFactoryService processFactoryService;
   private final ProcessSourceService processSourceService;
-
   private final ProcessService processService;
   private final StageService stageService;
-
-  private final String launcherName;
-  private String pipelineName;
-
   private final LockService lockService;
-  private LauncherLockEntity launcherLock;
-  private ProcessFactory processFactory;
-  private ProcessSource processSource;
-  private final int workers;
-  private final ExecutorService executorService;
-
-  private final Map<String, ProcessLauncher> activeProcesses = new ConcurrentHashMap<>();
-  private final PipeliteLauncherStats stats = new PipeliteLauncherStats();
-
-  private final List<ProcessEntity> processQueue = Collections.synchronizedList(new ArrayList<>());
-  private int processQueueIndex = 0;
-  private LocalDateTime processQueueValidUntil = LocalDateTime.now();
-
-  private boolean shutdownIfIdleTriggered;
-
+  private final String pipelineName;
+  private final String launcherName;
+  private final ProcessFactory processFactory;
+  private final ProcessSource processSource;
   private final Duration processLaunchFrequency;
   private final Duration processRefreshFrequency;
   private static final int processCreationCount = 5000;
+  private final int workers;
+  private final ExecutorService executorService;
+  private final Map<String, ProcessLauncher> activeProcesses = new ConcurrentHashMap<>();
+  private final PipeliteLauncherStats stats = new PipeliteLauncherStats();
+  private final List<ProcessEntity> processQueue = Collections.synchronizedList(new ArrayList<>());
+  private int processQueueIndex = 0;
+  private LocalDateTime processQueueValidUntil = LocalDateTime.now();
+  private LauncherLockEntity launcherLock;
+  private boolean shutdownIfIdleTriggered;
 
   public PipeliteLauncher(
-      @Autowired LauncherConfiguration launcherConfiguration,
-      @Autowired StageConfiguration stageConfiguration,
-      @Autowired ProcessFactoryService processFactoryService,
-      @Autowired ProcessSourceService processSourceService,
-      @Autowired ProcessService processService,
-      @Autowired StageService stageService,
-      @Autowired LockService lockService) {
+      LauncherConfiguration launcherConfiguration,
+      StageConfiguration stageConfiguration,
+      ProcessFactoryService processFactoryService,
+      ProcessSourceService processSourceService,
+      ProcessService processService,
+      StageService stageService,
+      LockService lockService,
+      String pipelineName) {
 
     this.launcherConfiguration = launcherConfiguration;
     this.stageConfiguration = stageConfiguration;
+    this.processFactoryService = processFactoryService;
+    this.processSourceService = processSourceService;
     this.processService = processService;
     this.stageService = stageService;
+    this.lockService = lockService;
+
+    if (pipelineName == null) {
+      throw new IllegalArgumentException("Missing pipeline name");
+    }
+    this.pipelineName = pipelineName;
+    this.launcherName =
+        LauncherConfiguration.getLauncherName(pipelineName, launcherConfiguration.getPort());
+
+    this.processFactory = processFactoryService.create(this.pipelineName);
+    this.processSource = processSourceService.create(this.pipelineName);
 
     if (launcherConfiguration.getProcessLaunchFrequency() != null) {
       this.processLaunchFrequency = launcherConfiguration.getProcessLaunchFrequency();
@@ -96,13 +98,6 @@ public class PipeliteLauncher extends AbstractScheduledService {
       this.processRefreshFrequency = LauncherConfiguration.DEFAULT_PROCESS_REFRESH_FREQUENCY;
     }
 
-    this.launcherName =
-        LauncherConfiguration.getLauncherName(pipelineName, launcherConfiguration.getPort());
-
-    this.lockService = lockService;
-    this.processFactoryService = processFactoryService;
-    this.processSourceService = processSourceService;
-
     this.workers =
         launcherConfiguration.getPipelineParallelism() > 0
             ? launcherConfiguration.getPipelineParallelism()
@@ -111,25 +106,17 @@ public class PipeliteLauncher extends AbstractScheduledService {
   }
 
   @Override
-  public String serviceName() {
-    return launcherName;
-  }
-
-  public void startUp(String pipelineName) {
-    if (this.pipelineName != null) {
-      throw new IllegalArgumentException("Pipeline name can be provided only once");
-    }
-    if (pipelineName == null) {
-      throw new IllegalArgumentException("Missing pipeline name");
-    }
+  protected void startUp() {
     logContext(log.atInfo()).log("Starting up launcher: %s", launcherName);
     launcherLock = lockService.lockLauncher(launcherName);
     if (launcherLock == null) {
       throw new RuntimeException("Could not start launcher " + launcherName + ": failed to lock");
     }
-    this.pipelineName = pipelineName;
-    this.processFactory = processFactoryService.create(this.pipelineName);
-    this.processSource = processSourceService.create(this.pipelineName);
+  }
+
+  @Override
+  public String serviceName() {
+    return launcherName;
   }
 
   @Override

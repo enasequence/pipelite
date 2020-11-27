@@ -25,6 +25,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
+import pipelite.configuration.StageConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.entity.StageEntity;
@@ -33,9 +34,7 @@ import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.service.ProcessService;
-import pipelite.service.ScheduleService;
-import pipelite.service.StageService;
+import pipelite.service.*;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
 
@@ -43,11 +42,14 @@ import pipelite.stage.StageExecutionResultType;
 @Scope("prototype")
 public class PipeliteSchedulerTester {
 
-  @Autowired private PipeliteScheduler pipeliteScheduler;
-  @Autowired private ScheduleService scheduleService;
   @Autowired private LauncherConfiguration launcherConfiguration;
+  @Autowired private StageConfiguration stageConfiguration;
+  @Autowired private ProcessFactoryService processFactoryService;
+  @Autowired private ProcessSourceService processSourceService;
+  @Autowired private ScheduleService scheduleService;
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
+  @Autowired private LockService lockService;
 
   @Autowired private TestProcessFactory firstProcessSuccess;
   @Autowired private TestProcessFactory secondProcessSuccess;
@@ -111,6 +113,17 @@ public class PipeliteSchedulerTester {
     SUCCESS,
     ERROR,
     EXCEPTION
+  }
+
+  private PipeliteScheduler createPipeliteScheduler() {
+    return new PipeliteScheduler(
+        launcherConfiguration,
+        stageConfiguration,
+        processFactoryService,
+        scheduleService,
+        processService,
+        stageService,
+        lockService);
   }
 
   @Value
@@ -298,6 +311,7 @@ public class PipeliteSchedulerTester {
   }
 
   private void test(List<TestProcessFactory> testProcessFactories) {
+    PipeliteScheduler pipeliteScheduler = createPipeliteScheduler();
     try {
       for (TestProcessFactory f : testProcessFactories) {
         f.reset();

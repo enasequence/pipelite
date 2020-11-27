@@ -16,7 +16,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Value;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -25,6 +24,7 @@ import org.springframework.stereotype.Component;
 import pipelite.TestProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
+import pipelite.configuration.StageConfiguration;
 import pipelite.executor.StageExecutor;
 import pipelite.executor.StageExecutorParameters;
 import pipelite.process.Process;
@@ -32,6 +32,7 @@ import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.service.*;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 
@@ -42,16 +43,18 @@ public class PipeliteLauncherAsyncTester {
   private static final int PROCESS_CNT = 5;
 
   @Autowired private LauncherConfiguration launcherConfiguration;
-  @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
+  @Autowired private StageConfiguration stageConfiguration;
+  @Autowired private ProcessFactoryService processFactoryService;
+  @Autowired private ProcessSourceService processSourceService;
+  @Autowired private ScheduleService scheduleService;
+  @Autowired private ProcessService processService;
+  @Autowired private StageService stageService;
+  @Autowired private LockService lockService;
 
   @Autowired private TestProcessFactory<SubmitSuccessPollSuccessExecutor> submitSuccessPollSuccess;
-
   @Autowired public TestProcessFactory<SubmitErrorExecutor> submitError;
-
   @Autowired public TestProcessFactory<SubmitExceptionExecutor> submitException;
-
   @Autowired public TestProcessFactory<PollErrorExecutor> pollError;
-
   @Autowired public TestProcessFactory<PollExceptionExecutor> pollException;
 
   @TestConfiguration
@@ -108,6 +111,18 @@ public class PipeliteLauncherAsyncTester {
         @Autowired TestProcessFactory<PollExceptionExecutor> f) {
       return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
     }
+  }
+
+  private PipeliteLauncher createPipeliteLauncher(String pipelineName) {
+    return new PipeliteLauncher(
+            launcherConfiguration,
+            stageConfiguration,
+            processFactoryService,
+            processSourceService,
+            processService,
+            stageService,
+            lockService,
+            pipelineName);
   }
 
   @Value
@@ -223,8 +238,7 @@ public class PipeliteLauncherAsyncTester {
   public void testSubmitSuccessPollSuccess() {
     TestProcessFactory<SubmitSuccessPollSuccessExecutor> f = submitSuccessPollSuccess;
 
-    PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
-    pipeliteLauncher.startUp(f.getPipelineName());
+    PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     PipeliteLauncherStats stats = pipeliteLauncher.getStats();
@@ -241,8 +255,7 @@ public class PipeliteLauncherAsyncTester {
   public void testSubmitError() {
     TestProcessFactory<SubmitErrorExecutor> f = submitError;
 
-    PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
-    pipeliteLauncher.startUp(f.getPipelineName());
+    PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     PipeliteLauncherStats stats = pipeliteLauncher.getStats();
@@ -259,8 +272,7 @@ public class PipeliteLauncherAsyncTester {
   public void testSubmitException() {
     TestProcessFactory<SubmitExceptionExecutor> f = submitException;
 
-    PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
-    pipeliteLauncher.startUp(f.getPipelineName());
+    PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     PipeliteLauncherStats stats = pipeliteLauncher.getStats();
@@ -277,8 +289,7 @@ public class PipeliteLauncherAsyncTester {
   public void testPollError() {
     TestProcessFactory<PollErrorExecutor> f = pollError;
 
-    PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
-    pipeliteLauncher.startUp(f.getPipelineName());
+    PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     PipeliteLauncherStats stats = pipeliteLauncher.getStats();
@@ -295,8 +306,7 @@ public class PipeliteLauncherAsyncTester {
   public void testPollException() {
     TestProcessFactory<PollExceptionExecutor> f = pollException;
 
-    PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
-    pipeliteLauncher.startUp(f.getPipelineName());
+    PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     PipeliteLauncherStats stats = pipeliteLauncher.getStats();

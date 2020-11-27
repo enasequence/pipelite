@@ -28,6 +28,7 @@ import org.springframework.stereotype.Component;
 import pipelite.TestProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
+import pipelite.configuration.StageConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.executor.StageExecutorParameters;
@@ -36,8 +37,7 @@ import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.service.ProcessService;
-import pipelite.service.StageService;
+import pipelite.service.*;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
 
@@ -48,9 +48,13 @@ public class PipeliteLauncherFailureTester {
   private static final int PROCESS_CNT = 5;
 
   @Autowired private LauncherConfiguration launcherConfiguration;
-  @Autowired private ObjectProvider<PipeliteLauncher> pipeliteLauncherObjectProvider;
+  @Autowired private StageConfiguration stageConfiguration;
+  @Autowired private ProcessFactoryService processFactoryService;
+  @Autowired private ProcessSourceService processSourceService;
+  @Autowired private ScheduleService scheduleService;
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
+  @Autowired private LockService lockService;
 
   @Autowired
   @Qualifier("firstStageFails")
@@ -160,6 +164,18 @@ public class PipeliteLauncherFailureTester {
     NO_ERROR
   }
 
+  private PipeliteLauncher createPipeliteLauncher(String pipelineName) {
+    return new PipeliteLauncher(
+            launcherConfiguration,
+            stageConfiguration,
+            processFactoryService,
+            processSourceService,
+            processService,
+            stageService,
+            lockService,
+            pipelineName);
+  }
+
   @Value
   public static class TestProcessFactory implements ProcessFactory {
     private final String pipelineName = UniqueStringGenerator.randomPipelineName();
@@ -244,8 +260,7 @@ public class PipeliteLauncherFailureTester {
   }
 
   private PipeliteLauncher pipeliteLauncher(String pipelineName) {
-    PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
-    pipeliteLauncher.startUp(pipelineName);
+    PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(pipelineName);
     return pipeliteLauncher;
   }
 
