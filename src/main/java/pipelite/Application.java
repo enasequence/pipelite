@@ -81,7 +81,7 @@ public class Application {
         }
         for (String pipelineName : pipelineNames) {
           PipeliteLauncher launcher = pipeliteLauncherObjectProvider.getObject();
-          launcher.setPipelineName(pipelineName);
+          launcher.startUp(pipelineName);
           launchers.add(launcher);
         }
       }

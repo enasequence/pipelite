@@ -381,10 +381,8 @@ public class PipeliteScheduler extends AbstractScheduledService {
     return schedulerName;
   }
 
-  /* Returns the launcher name used for locking.
-   */
   private String getLauncherName() {
-    return "scheduler:" + schedulerName;
+    return schedulerName;
   }
 
   public List<Schedule> getSchedules() {

@@ -224,7 +224,7 @@ public class PipeliteLauncherAsyncTester {
     TestProcessFactory<SubmitSuccessPollSuccessExecutor> f = submitSuccessPollSuccess;
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
-    pipeliteLauncher.setPipelineName(f.getPipelineName());
+    pipeliteLauncher.startUp(f.getPipelineName());
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     PipeliteLauncherStats stats = pipeliteLauncher.getStats();
@@ -242,7 +242,7 @@ public class PipeliteLauncherAsyncTester {
     TestProcessFactory<SubmitErrorExecutor> f = submitError;
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
-    pipeliteLauncher.setPipelineName(f.getPipelineName());
+    pipeliteLauncher.startUp(f.getPipelineName());
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     PipeliteLauncherStats stats = pipeliteLauncher.getStats();
@@ -260,7 +260,7 @@ public class PipeliteLauncherAsyncTester {
     TestProcessFactory<SubmitExceptionExecutor> f = submitException;
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
-    pipeliteLauncher.setPipelineName(f.getPipelineName());
+    pipeliteLauncher.startUp(f.getPipelineName());
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     PipeliteLauncherStats stats = pipeliteLauncher.getStats();
@@ -278,7 +278,7 @@ public class PipeliteLauncherAsyncTester {
     TestProcessFactory<PollErrorExecutor> f = pollError;
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
-    pipeliteLauncher.setPipelineName(f.getPipelineName());
+    pipeliteLauncher.startUp(f.getPipelineName());
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     PipeliteLauncherStats stats = pipeliteLauncher.getStats();
@@ -296,7 +296,7 @@ public class PipeliteLauncherAsyncTester {
     TestProcessFactory<PollExceptionExecutor> f = pollException;
 
     PipeliteLauncher pipeliteLauncher = pipeliteLauncherObjectProvider.getObject();
-    pipeliteLauncher.setPipelineName(f.getPipelineName());
+    pipeliteLauncher.startUp(f.getPipelineName());
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
     PipeliteLauncherStats stats = pipeliteLauncher.getStats();

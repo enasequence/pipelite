@@ -115,26 +115,21 @@ public class PipeliteLauncher extends AbstractScheduledService {
     return launcherName;
   }
 
-  public void setPipelineName(String pipelineName) {
+  public void startUp(String pipelineName) {
     if (this.pipelineName != null) {
       throw new IllegalArgumentException("Pipeline name can be provided only once");
+    }
+    if (pipelineName == null) {
+      throw new IllegalArgumentException("Missing pipeline name");
+    }
+    logContext(log.atInfo()).log("Starting up launcher: %s", launcherName);
+    launcherLock = lockService.lockLauncher(launcherName);
+    if (launcherLock == null) {
+      throw new RuntimeException("Could not start launcher " + launcherName + ": failed to lock");
     }
     this.pipelineName = pipelineName;
     this.processFactory = processFactoryService.create(this.pipelineName);
     this.processSource = processSourceService.create(this.pipelineName);
-  }
-
-  @Override
-  protected void startUp() {
-    if (this.pipelineName == null) {
-      throw new IllegalArgumentException("Missing pipeline name");
-    }
-    logContext(log.atInfo()).log("Starting up launcher: %s", getLauncherName());
-    launcherLock = lockService.lockLauncher(getLauncherName());
-    if (launcherLock == null) {
-      throw new RuntimeException(
-          "Could not start launcher " + getLauncherName() + ": failed to lock");
-    }
   }
 
   @Override

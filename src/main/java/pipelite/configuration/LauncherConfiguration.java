@@ -119,12 +119,10 @@ public class LauncherConfiguration {
   /** The PipeliteLauncher can optionally be shut down if idle. */
   private boolean shutdownIfIdle;
 
-  /** Defaults to <host name>@<pipeline name>. */
   public static String getLauncherName(String pipelineName, int port) {
-    return getCanonicalHostName() + ":" + port + "@" + pipelineName;
+    return pipelineName + "@" + getCanonicalHostName() + ":" + port;
   }
 
-  /** Defaults to <host name>@<user name>. */
   public static String getSchedulerName(LauncherConfiguration launcherConfiguration) {
     return launcherConfiguration.getSchedulerName();
   }
