@@ -52,7 +52,7 @@ public class ProcessEntity {
     processEntity.setPipelineName(pipelineName);
     processEntity.setPriority(getBoundedPriority(priority));
     processEntity.setExecutionCount(0);
-    processEntity.setState(ProcessState.NEW);
+    processEntity.setState(ProcessState.PENDING);
     return processEntity;
   }
 

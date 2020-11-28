@@ -12,7 +12,7 @@ package pipelite.launcher;
 
 import static pipelite.executor.ConfigurableStageExecutorParameters.DEFAULT_IMMEDIATE_RETRIES;
 import static pipelite.executor.ConfigurableStageExecutorParameters.DEFAULT_MAX_RETRIES;
-import static pipelite.stage.StageState.*;
+import static pipelite.stage.StageExecutionResultType.*;
 
 import com.google.common.flogger.FluentLogger;
 import java.time.Duration;
@@ -38,7 +38,7 @@ import pipelite.service.ProcessService;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
-import pipelite.stage.StageState;
+import pipelite.stage.StageExecutionResultType;
 
 @Flogger
 public class ProcessLauncher {
@@ -142,15 +142,15 @@ public class ProcessLauncher {
     int errorCount = 0;
     for (Stage stage : stages) {
       StageEntity stageEntity = stage.getStageEntity();
-      StageState stageState = stageEntity.getStageState();
+      StageExecutionResultType resultType = stageEntity.getResultType();
 
-      if (stageState == SUCCESS) {
+      if (resultType == SUCCESS) {
         // The stage execution has been successful.
         successCount++;
-      } else if (stageState == null || stageState == NEW || stageState == ACTIVE) {
+      } else if (resultType == null || resultType == ACTIVE) {
         // The stage and process execution is active.
         activeCount++;
-      } else if (stageState == ERROR) {
+      } else if (resultType == ERROR) {
         Integer executionCount = stageEntity.getExecutionCount();
         int maximumRetries = getMaximumRetries(stage);
         if (executionCount != null && executionCount > maximumRetries) {
@@ -275,7 +275,7 @@ public class ProcessLauncher {
 
     // TODO: test deserialization of active executor
     boolean isUsingDeserializedExecutor = false;
-    if (stageEntity.getStageState() == ACTIVE
+    if (stageEntity.getResultType() == ACTIVE
         && stageEntity.getExecutorName() != null
         && stageEntity.getExecutorData() != null
         && stageEntity.getExecutorParams() != null) {
@@ -350,7 +350,7 @@ public class ProcessLauncher {
     if (result.isSuccess()) {
       stageSuccessCount.incrementAndGet();
       logContext(log.atInfo(), stageEntity.getStageName())
-          .with(LogKey.STAGE_EXECUTION_RESULT_TYPE, stageEntity.getStageState())
+          .with(LogKey.STAGE_EXECUTION_RESULT_TYPE, stageEntity.getResultType())
           .with(LogKey.STAGE_EXECUTION_COUNT, stageEntity.getExecutionCount())
           .log("Stage executed successfully.");
       invalidateDependentStages(stage);
@@ -359,7 +359,7 @@ public class ProcessLauncher {
       mailService.sendStageExecutionMessage(pipelineName, process, stage);
       stageFailedCount.incrementAndGet();
       logContext(log.atSevere(), stageEntity.getStageName())
-          .with(LogKey.STAGE_EXECUTION_RESULT_TYPE, stageEntity.getStageState())
+          .with(LogKey.STAGE_EXECUTION_RESULT_TYPE, stageEntity.getResultType())
           .with(LogKey.STAGE_EXECUTION_COUNT, stageEntity.getExecutionCount())
           .log("Stage execution failed");
     }

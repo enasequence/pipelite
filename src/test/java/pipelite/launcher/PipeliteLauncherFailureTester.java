@@ -17,7 +17,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.Value;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -39,7 +38,7 @@ import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.*;
 import pipelite.stage.StageExecutionResult;
-import pipelite.stage.StageState;
+import pipelite.stage.StageExecutionResultType;
 
 @Component
 @Scope("prototype")
@@ -347,7 +346,7 @@ public class PipeliteLauncherFailureTester {
         assertThat(stageEntity.getExecutorName()).isNull();
         assertThat(stageEntity.getExecutorData()).isNull();
         assertThat(stageEntity.getExecutorParams()).isNull();
-        assertThat(stageEntity.getStageState()).isEqualTo(StageState.NEW);
+        assertThat(stageEntity.getResultType()).isNull();
         assertThat(stageEntity.getResultParams()).isNull();
       } else {
 
@@ -367,10 +366,10 @@ public class PipeliteLauncherFailureTester {
             || (i == 1 && f.stageTestResult == StageTestResult.SECOND_ERROR)
             || (i == 2 && f.stageTestResult == StageTestResult.THIRD_ERROR)
             || (i == 3 && f.stageTestResult == StageTestResult.FOURTH_ERROR)) {
-          assertThat(stageEntity.getStageState()).isEqualTo(StageState.ERROR);
+          assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.ERROR);
           assertThat(stageEntity.getResultParams()).isNull();
         } else {
-          assertThat(stageEntity.getStageState()).isEqualTo(StageState.SUCCESS);
+          assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.SUCCESS);
           assertThat(stageEntity.getResultParams()).isNull();
         }
       }

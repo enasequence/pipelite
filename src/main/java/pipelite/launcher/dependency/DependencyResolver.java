@@ -10,14 +10,12 @@
  */
 package pipelite.launcher.dependency;
 
-import static pipelite.stage.StageState.NEW;
-
 import java.util.ArrayList;
 import java.util.List;
 import pipelite.entity.StageEntity;
 import pipelite.launcher.ProcessLauncher;
 import pipelite.stage.Stage;
-import pipelite.stage.StageState;
+import pipelite.stage.StageExecutionResultType;
 
 public class DependencyResolver {
 
@@ -79,29 +77,29 @@ public class DependencyResolver {
       StageEntity stageEntity = stage.getStageEntity();
 
       if (isDependsOnStagesSuccess(stages, stage)) {
-        StageState stageState = stageEntity.getStageState();
-        if (stageState == null) {
-          stageState = NEW;
-        }
-        switch (stageState) {
-          case NEW:
-          case ACTIVE:
-            executableStages.add(stage);
-            break;
-          case SUCCESS:
-            break;
-          case ERROR:
-            {
-              Integer executionCount = stageEntity.getExecutionCount();
-              int maximumRetries = ProcessLauncher.getMaximumRetries(stage);
-              int immediateRetries = ProcessLauncher.getImmediateRetries(stage);
+        StageExecutionResultType resultType = stageEntity.getResultType();
+        if (resultType == null) {
+          executableStages.add(stage);
+        } else {
+          switch (resultType) {
+            case ACTIVE:
+              executableStages.add(stage);
+              break;
+            case SUCCESS:
+              break;
+            case ERROR:
+              {
+                Integer executionCount = stageEntity.getExecutionCount();
+                int maximumRetries = ProcessLauncher.getMaximumRetries(stage);
+                int immediateRetries = ProcessLauncher.getImmediateRetries(stage);
 
-              if (executionCount != null
-                  && executionCount <= maximumRetries
-                  && stage.getImmediateExecutionCount() <= immediateRetries) {
-                executableStages.add(stage);
+                if (executionCount != null
+                    && executionCount <= maximumRetries
+                    && stage.getImmediateExecutionCount() <= immediateRetries) {
+                  executableStages.add(stage);
+                }
               }
-            }
+          }
         }
       }
     }
@@ -111,7 +109,7 @@ public class DependencyResolver {
 
   public static boolean isDependsOnStagesSuccess(List<Stage> stages, Stage stage) {
     return getDependsOnStages(stages, stage).stream()
-            .filter(s -> s.getStageEntity().getStageState() != StageState.SUCCESS)
+            .filter(s -> s.getStageEntity().getResultType() != StageExecutionResultType.SUCCESS)
             .count()
         == 0;
   }

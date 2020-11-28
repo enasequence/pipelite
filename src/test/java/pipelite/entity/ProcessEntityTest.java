@@ -30,7 +30,7 @@ class ProcessEntityTest {
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getPriority()).isEqualTo(priority);
     assertThat(processEntity.getExecutionCount()).isEqualTo(0);
-    assertThat(processEntity.getState()).isEqualTo(ProcessState.NEW);
+    assertThat(processEntity.getState()).isEqualTo(ProcessState.PENDING);
 
     processEntity.updateExecution(ProcessState.ACTIVE);
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);

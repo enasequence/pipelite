@@ -42,7 +42,7 @@ public class MailServiceTest {
             "PIPELINE_NAME", "PROCESS_ID", ProcessEntity.DEFAULT_PRIORITY);
     process.setProcessEntity(processEntity);
     assertThat(mailService.getProcessExecutionSubject("PIPELINE_NAME", process))
-        .isEqualTo("pipelite process (NEW): PIPELINE_NAME/PROCESS_ID");
+        .isEqualTo("pipelite process (PENDING): PIPELINE_NAME/PROCESS_ID");
     assertThat(mailService.getExecutionBody(process, "SUBJECT"))
         .isEqualTo(
             "SUBJECT\n"
@@ -52,7 +52,7 @@ public class MailServiceTest {
                 + "{\n"
                 + "  \"processId\" : \"PROCESS_ID\",\n"
                 + "  \"pipelineName\" : \"PIPELINE_NAME\",\n"
-                + "  \"state\" : \"NEW\",\n"
+                + "  \"state\" : \"PENDING\",\n"
                 + "  \"executionCount\" : 0,\n"
                 + "  \"priority\" : 5\n"
                 + "}\n"
@@ -63,8 +63,7 @@ public class MailServiceTest {
                 + "  \"processId\" : \"PROCESS_ID\",\n"
                 + "  \"pipelineName\" : \"PIPELINE_NAME\",\n"
                 + "  \"stageName\" : \"STAGE1\",\n"
-                + "  \"executionCount\" : 0,\n"
-                + "  \"stageState\" : \"NEW\"\n"
+                + "  \"executionCount\" : 0\n"
                 + "}\n");
     // mailService.sendProcessExecutionMessage("PIPELINE_NAME", process);
   }
@@ -83,7 +82,7 @@ public class MailServiceTest {
     assertThat(
             mailService.getStageExecutionSubject(
                 "PIPELINE_NAME", process, process.getStages().get(0)))
-        .isEqualTo("pipelite stage (NEW): PIPELINE_NAME/PROCESS_ID/STAGE1");
+        .isEqualTo("pipelite stage (PENDING): PIPELINE_NAME/PROCESS_ID/STAGE1");
     assertThat(mailService.getExecutionBody(process, "SUBJECT"))
         .isEqualTo(
             "SUBJECT\n"
@@ -93,7 +92,7 @@ public class MailServiceTest {
                 + "{\n"
                 + "  \"processId\" : \"PROCESS_ID\",\n"
                 + "  \"pipelineName\" : \"PIPELINE_NAME\",\n"
-                + "  \"state\" : \"NEW\",\n"
+                + "  \"state\" : \"PENDING\",\n"
                 + "  \"executionCount\" : 0,\n"
                 + "  \"priority\" : 5\n"
                 + "}\n"
@@ -104,8 +103,7 @@ public class MailServiceTest {
                 + "  \"processId\" : \"PROCESS_ID\",\n"
                 + "  \"pipelineName\" : \"PIPELINE_NAME\",\n"
                 + "  \"stageName\" : \"STAGE1\",\n"
-                + "  \"executionCount\" : 0,\n"
-                + "  \"stageState\" : \"NEW\"\n"
+                + "  \"executionCount\" : 0\n"
                 + "}\n");
     // mailService.sendStageExecutionMessage("PIPELINE_NAME", process, process.getStages().get(0));
   }

@@ -11,7 +11,7 @@
 package pipelite.launcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static pipelite.stage.StageState.*;
+import static pipelite.stage.StageExecutionResultType.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +24,7 @@ import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
-import pipelite.stage.StageState;
+import pipelite.stage.StageExecutionResultType;
 
 public class ProcessLauncherTest {
 
@@ -76,8 +76,8 @@ public class ProcessLauncherTest {
   }
 
   public static List<Stage> createStageExecutions(
-      StageState firstStageState,
-      StageState secondStageState,
+      StageExecutionResultType firstStageState,
+      StageExecutionResultType secondStageState,
       int executions,
       int maximumRetries,
       int immediateRetries) {
@@ -98,7 +98,7 @@ public class ProcessLauncherTest {
     Stage firstStage = process.getStages().get(0);
     StageEntity firstStageEntity = new StageEntity();
     firstStage.setStageEntity(firstStageEntity);
-    firstStageEntity.setStageState(firstStageState);
+    firstStageEntity.setResultType(firstStageState);
     firstStageEntity.setExecutionCount(executions);
     for (int i = 0; i < executions; ++i) {
       firstStage.incrementImmediateExecutionCount();
@@ -108,7 +108,7 @@ public class ProcessLauncherTest {
     Stage secondStage = process.getStages().get(1);
     StageEntity secondStageEntity = new StageEntity();
     secondStage.setStageEntity(secondStageEntity);
-    secondStageEntity.setStageState(secondStageState);
+    secondStageEntity.setResultType(secondStageState);
     secondStageEntity.setExecutionCount(executions);
     for (int i = 0; i < executions; ++i) {
       secondStage.incrementImmediateExecutionCount();
@@ -119,8 +119,8 @@ public class ProcessLauncherTest {
   }
 
   private void evaluateProcessStateNoRetries(
-      StageState firstStageState,
-      StageState secondStageState,
+      StageExecutionResultType firstStageState,
+      StageExecutionResultType secondStageState,
       ProcessState state) {
     List<Stage> stages = createStageExecutions(firstStageState, secondStageState, 1, 0, 0);
     assertThat(ProcessLauncher.evaluateProcessState(stages)).isEqualTo(state);
@@ -128,34 +128,25 @@ public class ProcessLauncherTest {
 
   @Test
   public void evaluateProcessStateNoRetries() {
-    evaluateProcessStateNoRetries(NEW, NEW, ProcessState.ACTIVE);
-    evaluateProcessStateNoRetries(NEW, SUCCESS, ProcessState.ACTIVE);
-    evaluateProcessStateNoRetries(NEW, ACTIVE, ProcessState.ACTIVE);
-    evaluateProcessStateNoRetries(NEW, ERROR, ProcessState.ACTIVE);
-    evaluateProcessStateNoRetries(NEW, null, ProcessState.ACTIVE);
-
-    evaluateProcessStateNoRetries(SUCCESS, NEW, ProcessState.ACTIVE);
+    evaluateProcessStateNoRetries(SUCCESS, null, ProcessState.ACTIVE);
     evaluateProcessStateNoRetries(SUCCESS, SUCCESS, ProcessState.COMPLETED);
     evaluateProcessStateNoRetries(SUCCESS, ACTIVE, ProcessState.ACTIVE);
     evaluateProcessStateNoRetries(SUCCESS, ERROR, ProcessState.FAILED);
-    evaluateProcessStateNoRetries(SUCCESS, null, ProcessState.ACTIVE);
 
-    evaluateProcessStateNoRetries(ACTIVE, NEW, ProcessState.ACTIVE);
+    evaluateProcessStateNoRetries(ACTIVE, null, ProcessState.ACTIVE);
     evaluateProcessStateNoRetries(ACTIVE, SUCCESS, ProcessState.ACTIVE);
     evaluateProcessStateNoRetries(ACTIVE, ACTIVE, ProcessState.ACTIVE);
     evaluateProcessStateNoRetries(ACTIVE, ERROR, ProcessState.ACTIVE);
-    evaluateProcessStateNoRetries(ACTIVE, null, ProcessState.ACTIVE);
 
-    evaluateProcessStateNoRetries(ERROR, NEW, ProcessState.ACTIVE);
+    evaluateProcessStateNoRetries(ERROR, null, ProcessState.ACTIVE);
     evaluateProcessStateNoRetries(ERROR, SUCCESS, ProcessState.FAILED);
     evaluateProcessStateNoRetries(ERROR, ACTIVE, ProcessState.ACTIVE);
     evaluateProcessStateNoRetries(ERROR, ERROR, ProcessState.FAILED);
-    evaluateProcessStateNoRetries(ERROR, null, ProcessState.ACTIVE);
   }
 
   private void evaluateProcessStateWithRetries(
-      StageState firstStageState,
-      StageState secondStageState,
+      StageExecutionResultType firstStageState,
+      StageExecutionResultType secondStageState,
       ProcessState state) {
     List<Stage> stages = createStageExecutions(firstStageState, secondStageState, 1, 1, 1);
     assertThat(ProcessLauncher.evaluateProcessState(stages)).isEqualTo(state);
@@ -163,28 +154,19 @@ public class ProcessLauncherTest {
 
   @Test
   public void evaluateProcessStateWithRetries() {
-    evaluateProcessStateWithRetries(NEW, NEW, ProcessState.ACTIVE);
-    evaluateProcessStateWithRetries(NEW, SUCCESS, ProcessState.ACTIVE);
-    evaluateProcessStateWithRetries(NEW, ACTIVE, ProcessState.ACTIVE);
-    evaluateProcessStateWithRetries(NEW, ERROR, ProcessState.ACTIVE);
-    evaluateProcessStateWithRetries(NEW, null, ProcessState.ACTIVE);
-
-    evaluateProcessStateWithRetries(SUCCESS, NEW, ProcessState.ACTIVE);
+    evaluateProcessStateWithRetries(SUCCESS, null, ProcessState.ACTIVE);
     evaluateProcessStateWithRetries(SUCCESS, SUCCESS, ProcessState.COMPLETED);
     evaluateProcessStateWithRetries(SUCCESS, ACTIVE, ProcessState.ACTIVE);
     evaluateProcessStateWithRetries(SUCCESS, ERROR, ProcessState.ACTIVE);
-    evaluateProcessStateWithRetries(SUCCESS, null, ProcessState.ACTIVE);
 
-    evaluateProcessStateWithRetries(ACTIVE, NEW, ProcessState.ACTIVE);
+    evaluateProcessStateWithRetries(ACTIVE, null, ProcessState.ACTIVE);
     evaluateProcessStateWithRetries(ACTIVE, SUCCESS, ProcessState.ACTIVE);
     evaluateProcessStateWithRetries(ACTIVE, ACTIVE, ProcessState.ACTIVE);
     evaluateProcessStateWithRetries(ACTIVE, ERROR, ProcessState.ACTIVE);
-    evaluateProcessStateWithRetries(ACTIVE, null, ProcessState.ACTIVE);
 
-    evaluateProcessStateWithRetries(ERROR, NEW, ProcessState.ACTIVE);
+    evaluateProcessStateWithRetries(ERROR, null, ProcessState.ACTIVE);
     evaluateProcessStateWithRetries(ERROR, SUCCESS, ProcessState.ACTIVE);
     evaluateProcessStateWithRetries(ERROR, ACTIVE, ProcessState.ACTIVE);
     evaluateProcessStateWithRetries(ERROR, ERROR, ProcessState.ACTIVE);
-    evaluateProcessStateWithRetries(ERROR, null, ProcessState.ACTIVE);
   }
 }

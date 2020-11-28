@@ -66,18 +66,6 @@ public class StageExecutionResult {
     return new StageExecutionResult(StageExecutionResultType.ERROR);
   }
 
-  public StageState getStageState() {
-    switch (resultType) {
-      case ACTIVE:
-        return StageState.ACTIVE;
-      case SUCCESS:
-        return StageState.SUCCESS;
-      case ERROR:
-        return StageState.ERROR;
-    }
-    throw new RuntimeException("Unsupported stage execution result type: " + resultType.name());
-  }
-
   public String getAttribute(String value) {
     return attributes.get(value);
   }

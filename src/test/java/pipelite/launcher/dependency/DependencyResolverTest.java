@@ -11,8 +11,7 @@
 package pipelite.launcher.dependency;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static pipelite.stage.StageState.*;
-import static pipelite.stage.StageState.ERROR;
+import static pipelite.stage.StageExecutionResultType.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,7 +25,7 @@ import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
-import pipelite.stage.StageState;
+import pipelite.stage.StageExecutionResultType;
 
 public class DependencyResolverTest {
 
@@ -351,7 +350,7 @@ public class DependencyResolverTest {
   }
 
   public static List<Stage> isDependsOnStageSuccessStages(
-      StageState dependsOnStageState, StageState secondStageState) {
+      StageExecutionResultType dependsOnStageState, StageExecutionResultType secondStageState) {
     Process process =
         new ProcessBuilder("test")
             .execute("STAGE0")
@@ -366,37 +365,36 @@ public class DependencyResolverTest {
     Stage firstStage = process.getStages().get(0);
     StageEntity firstStageEntity = new StageEntity();
     firstStage.setStageEntity(firstStageEntity);
-    firstStageEntity.setStageState(dependsOnStageState);
+    firstStageEntity.setResultType(dependsOnStageState);
     stages.add(firstStage);
 
     Stage secondStage = process.getStages().get(1);
     StageEntity secondStageEntity = new StageEntity();
     secondStage.setStageEntity(secondStageEntity);
-    secondStageEntity.setStageState(dependsOnStageState);
+    secondStageEntity.setResultType(dependsOnStageState);
     stages.add(secondStage);
 
     Stage lastStage = process.getStages().get(2);
     StageEntity lastStageEntity = new StageEntity();
     lastStage.setStageEntity(lastStageEntity);
-    lastStageEntity.setStageState(secondStageState);
+    lastStageEntity.setResultType(secondStageState);
     stages.add(lastStage);
 
     return stages;
   }
 
   private void isDependsOnStageSuccess(
-      StageState dependsOnStageState, boolean isDependsOnStageCompleted) {
-    List<Stage> stages = isDependsOnStageSuccessStages(dependsOnStageState, NEW);
+      StageExecutionResultType dependsOnStageState, boolean isDependsOnStageCompleted) {
+    List<Stage> stages = isDependsOnStageSuccessStages(dependsOnStageState, null);
     assertThat(DependencyResolver.isDependsOnStagesSuccess(stages, stages.get(2)))
         .isEqualTo(isDependsOnStageCompleted);
   }
 
   @Test
   public void isDependsOnStageSuccess() {
-    isDependsOnStageSuccess(NEW, false);
+    isDependsOnStageSuccess(null, false);
     isDependsOnStageSuccess(SUCCESS, true);
     isDependsOnStageSuccess(ACTIVE, false);
     isDependsOnStageSuccess(ERROR, false);
-    isDependsOnStageSuccess(null, false);
   }
 }

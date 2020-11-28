@@ -37,7 +37,7 @@ public class ProcessService {
 
   public List<ProcessEntity> getNewProcesses(String pipelineName) {
     return repository.findAllByPipelineNameAndStateOrderByPriorityDesc(
-        pipelineName, ProcessState.NEW);
+        pipelineName, ProcessState.PENDING);
   }
 
   public List<ProcessEntity> getActiveProcesses(String pipelineName) {

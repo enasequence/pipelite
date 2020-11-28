@@ -11,7 +11,7 @@
 package pipelite.process;
 
 public enum ProcessState {
-  NEW,
+  PENDING,
   ACTIVE,
   COMPLETED,
   FAILED,

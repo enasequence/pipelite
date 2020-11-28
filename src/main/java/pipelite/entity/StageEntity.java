@@ -60,10 +60,9 @@ public class StageEntity {
   @Lob
   private String executorParams;
 
-  // TODO: rename to STAGE_STATE
   @Enumerated(EnumType.STRING)
   @Column(name = "EXEC_RESULT_TYPE", length = 15)
-  private StageState stageState;
+  private StageExecutionResultType resultType;
 
   @Column(name = "EXEC_RESULT_PARAMS", columnDefinition = "CLOB")
   @Lob
@@ -74,14 +73,13 @@ public class StageEntity {
     stageEntity.setProcessId(processId);
     stageEntity.setPipelineName(pipelineName);
     stageEntity.setStageName(stage.getStageName());
-    stageEntity.setStageState(StageState.NEW);
     stageEntity.setExecutionCount(0);
     return stageEntity;
   }
 
   public void startExecution(Stage stage) {
     StageExecutor stageExecutor = stage.getExecutor();
-    this.stageState = StageState.ACTIVE;
+    this.resultType = StageExecutionResultType.ACTIVE;
     this.resultParams = null;
     this.startTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.endTime = null;
@@ -99,14 +97,14 @@ public class StageEntity {
   }
 
   public void endExecution(StageExecutionResult result) {
-    this.stageState = result.getStageState();
+    this.resultType = result.getResultType();
     this.resultParams = result.attributesJson();
     this.endTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.executionCount++;
   }
 
   public void resetExecution() {
-    this.stageState = StageState.NEW;
+    this.resultType = null;
     this.resultParams = null;
     this.startTime = null;
     this.endTime = null;

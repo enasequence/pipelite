@@ -20,16 +20,18 @@ alter table pipelite_stage add (
 
 alter table pipelite_stage drop constraint CK_PIPELITE_STAGE_3;
 
+-- TODO: remove 'SKIPPED', 'TRANSIENT_ERROR', 'PERMANENT_ERROR'
 alter table pipelite_stage add constraint CK_PIPELITE_STAGE_3 check
 (
-  exec_result_type is null or exec_result_type in ( 'NEW', 'ACTIVE', 'SUCCESS', 'SKIPPED', 'TRANSIENT_ERROR', 'PERMANENT_ERROR', 'ERROR' )
+  exec_result_type is null or exec_result_type in ( 'ACTIVE', 'SUCCESS', 'SKIPPED', 'TRANSIENT_ERROR', 'PERMANENT_ERROR', 'ERROR' )
 );
 
 alter table pipelite_process drop constraint CK_PIPELITE_PROCESS_1;
 
+-- TODO: remove 'INACTIVE'
 alter table pipelite_process add constraint CK_PIPELITE_PROCESS_1 check
 (
-    state in ( 'NEW', 'ACTIVE', 'INACTIVE', 'COMPLETED', 'CANCELLED', 'FAILED' )
+    state in ( 'PENDING', 'ACTIVE', 'INACTIVE', 'COMPLETED', 'CANCELLED', 'FAILED' )
 );
 
 create table pipelite_schedule

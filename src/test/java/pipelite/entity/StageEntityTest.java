@@ -19,7 +19,6 @@ import pipelite.executor.StageExecutor;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
-import pipelite.stage.StageState;
 
 class StageEntityTest {
 
@@ -51,7 +50,7 @@ class StageEntityTest {
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getExecutionCount()).isEqualTo(0);
-    assertThat(stageEntity.getStageState()).isEqualTo(StageState.NEW);
+    assertThat(stageEntity.getResultType()).isNull();
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNull();
     assertThat(stageEntity.getEndTime()).isNull();
@@ -67,7 +66,7 @@ class StageEntityTest {
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getExecutionCount()).isEqualTo(0);
-    assertThat(stageEntity.getStageState()).isEqualTo(StageState.ACTIVE);
+    assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.ACTIVE);
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNull();
@@ -95,7 +94,7 @@ class StageEntityTest {
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
-    assertThat(stageEntity.getStageState()).isEqualTo(StageState.ERROR);
+    assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.ERROR);
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNotNull();
@@ -113,7 +112,7 @@ class StageEntityTest {
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
-    assertThat(stageEntity.getStageState()).isEqualTo(StageState.ACTIVE);
+    assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.ACTIVE);
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNull();
@@ -135,7 +134,7 @@ class StageEntityTest {
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getExecutionCount()).isEqualTo(2);
-    assertThat(stageEntity.getStageState()).isEqualTo(StageState.SUCCESS);
+    assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.SUCCESS);
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNotNull();
@@ -153,7 +152,7 @@ class StageEntityTest {
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getExecutionCount()).isEqualTo(0);
-    assertThat(stageEntity.getStageState()).isEqualTo(StageState.NEW);
+    assertThat(stageEntity.getResultType()).isNull();
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNull();
     assertThat(stageEntity.getEndTime()).isNull();

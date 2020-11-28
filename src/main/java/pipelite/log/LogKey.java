@@ -11,11 +11,10 @@
 package pipelite.log;
 
 import com.google.common.flogger.MetadataKey;
-import pipelite.stage.StageState;
+import pipelite.stage.StageExecutionResultType;
 
 public class LogKey {
 
-  // Suppresses default constructor, ensuring non-instantiability.
   private LogKey() {}
 
   public static final MetadataKey<String> SERVICE_NAME =
@@ -33,8 +32,8 @@ public class LogKey {
   public static final MetadataKey<String> STAGE_NAME =
       MetadataKey.single("stage_name", String.class);
 
-  public static final MetadataKey<StageState> STAGE_EXECUTION_RESULT_TYPE =
-      MetadataKey.single("stage_execution_result_type", StageState.class);
+  public static final MetadataKey<StageExecutionResultType> STAGE_EXECUTION_RESULT_TYPE =
+      MetadataKey.single("stage_execution_result_type", StageExecutionResultType.class);
 
   public static final MetadataKey<Integer> STAGE_EXECUTION_COUNT =
       MetadataKey.single("stage_execution_count", Integer.class);
