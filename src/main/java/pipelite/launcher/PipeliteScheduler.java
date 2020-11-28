@@ -19,9 +19,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.Data;
 import lombok.extern.flogger.Flogger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
 import pipelite.cron.CronUtils;
@@ -293,7 +290,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
     if (process == null) {
       return false;
     }
-    ProcessEntity newProcessEntity = ProcessEntity.createExecution(pipelineName, processId, 9);
+    ProcessEntity newProcessEntity = ProcessEntity.startExecution(pipelineName, processId, 9);
     processService.saveProcess(newProcessEntity);
     schedule.setProcess(process);
     schedule.setProcessEntity(newProcessEntity);

@@ -36,7 +36,7 @@ class ProcessServiceOracleTest {
     String processId = UniqueStringGenerator.randomProcessId();
     Integer priority = 0;
 
-    ProcessEntity processEntity = ProcessEntity.createExecution(pipelineName, processId, priority);
+    ProcessEntity processEntity = ProcessEntity.startExecution(pipelineName, processId, priority);
 
     service.saveProcess(processEntity);
     assertThat(service.getSavedProcess(pipelineName, processId).get()).isEqualTo(processEntity);
@@ -96,7 +96,7 @@ class ProcessServiceOracleTest {
 
   private static ProcessEntity create(String pipelineName, ProcessState state, int priority) {
     ProcessEntity processEntity =
-        ProcessEntity.createExecution(
+        ProcessEntity.startExecution(
             pipelineName, UniqueStringGenerator.randomProcessId(), priority);
     processEntity.updateExecution(state);
     return processEntity;

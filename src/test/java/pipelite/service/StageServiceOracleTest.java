@@ -43,14 +43,14 @@ class StageServiceOracleTest {
 
     // Create.
 
-    StageEntity stageEntity = StageEntity.createExecution(PIPELINE_NAME, PROCESS_ID, stage);
+    StageEntity stageEntity = StageEntity.startExecution(PIPELINE_NAME, PROCESS_ID, stage);
     StageOutEntity stageOutEntity = StageOutEntity.startExecution(stageEntity);
 
     service.saveStage(stageEntity);
     service.saveStageOut(stageOutEntity);
 
     assertThat(service.getSavedStage(PIPELINE_NAME, PROCESS_ID, stageName).get())
-            .isEqualTo(stageEntity);
+        .isEqualTo(stageEntity);
     assertThat(service.getSavedStageOut(stageEntity).get()).isEqualTo(stageOutEntity);
 
     // Update.
@@ -65,7 +65,7 @@ class StageServiceOracleTest {
     service.saveStageOut(stageOutEntity);
 
     assertThat(service.getSavedStage(PIPELINE_NAME, PROCESS_ID, stageName).get())
-            .isEqualTo(stageEntity);
+        .isEqualTo(stageEntity);
     StageOutEntity savedStageOutEntity = service.getSavedStageOut(stageEntity).get();
     assertThat(savedStageOutEntity).isEqualTo(stageOutEntity);
     assertThat(savedStageOutEntity.getStdOut()).isEqualTo("TEST3");

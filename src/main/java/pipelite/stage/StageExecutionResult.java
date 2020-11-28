@@ -26,7 +26,7 @@ public class StageExecutionResult {
   private String stdout;
   private String stderr;
 
-  public StageExecutionResult(@NonNull StageExecutionResultType resultType) {
+  public StageExecutionResult(StageExecutionResultType resultType) {
     this.resultType = resultType;
   }
 
@@ -43,11 +43,11 @@ public class StageExecutionResult {
   public static final String EXIT_CODE = "exit code";
 
   public boolean isActive() {
-    return resultType == StageExecutionResultType.ACTIVE;
+    return resultType.isActive();
   }
 
   public boolean isSuccess() {
-    return resultType == StageExecutionResultType.SUCCESS;
+    return resultType.isSuccess();
   }
 
   public boolean isError() {
@@ -64,6 +64,18 @@ public class StageExecutionResult {
 
   public static StageExecutionResult error() {
     return new StageExecutionResult(StageExecutionResultType.ERROR);
+  }
+
+  public StageState getStageState() {
+    switch (resultType) {
+      case ACTIVE:
+        return StageState.ACTIVE;
+      case SUCCESS:
+        return StageState.SUCCESS;
+      case ERROR:
+        return StageState.ERROR;
+    }
+    throw new RuntimeException("Unsupported stage execution result type: " + resultType.name());
   }
 
   public String getAttribute(String value) {

@@ -36,7 +36,7 @@ import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.*;
 import pipelite.stage.StageExecutionResult;
-import pipelite.stage.StageExecutionResultType;
+import pipelite.stage.StageState;
 
 @Component
 @Scope("prototype")
@@ -299,14 +299,14 @@ public class PipeliteSchedulerTester {
           .isEqualTo("{\n  \"maximumRetries\" : 0,\n  \"immediateRetries\" : 0\n}");
 
       if (f.stageTestResult == StageTestResult.ERROR) {
-        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.ERROR);
+        assertThat(stageEntity.getStageState()).isEqualTo(StageState.ERROR);
         assertThat(stageEntity.getResultParams()).isNull();
       } else if (f.stageTestResult == StageTestResult.EXCEPTION) {
-        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.ERROR);
+        assertThat(stageEntity.getStageState()).isEqualTo(StageState.ERROR);
         assertThat(stageEntity.getResultParams())
             .contains("exception\" : \"java.lang.RuntimeException: Expected exception");
       } else {
-        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.SUCCESS);
+        assertThat(stageEntity.getStageState()).isEqualTo(StageState.SUCCESS);
         assertThat(stageEntity.getResultParams()).isNull();
       }
     }

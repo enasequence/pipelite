@@ -43,7 +43,7 @@ class StageServiceHsqlTest {
 
     // Create.
 
-    StageEntity stageEntity = StageEntity.createExecution(PIPELINE_NAME, PROCESS_ID, stage);
+    StageEntity stageEntity = StageEntity.startExecution(PIPELINE_NAME, PROCESS_ID, stage);
     StageOutEntity stageOutEntity = StageOutEntity.startExecution(stageEntity);
 
     service.saveStage(stageEntity);

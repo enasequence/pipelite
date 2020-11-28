@@ -35,10 +35,10 @@ public class MailServiceTest {
     Process process =
         new ProcessBuilder("PROCESS_ID").execute("STAGE1").with(new SuccessSyncExecutor()).build();
     StageEntity stageEntity =
-        StageEntity.createExecution("PIPELINE_NAME", "PROCESS_ID", process.getStages().get(0));
+        StageEntity.startExecution("PIPELINE_NAME", "PROCESS_ID", process.getStages().get(0));
     process.getStages().get(0).setStageEntity(stageEntity);
     ProcessEntity processEntity =
-        ProcessEntity.createExecution(
+        ProcessEntity.startExecution(
             "PIPELINE_NAME", "PROCESS_ID", ProcessEntity.DEFAULT_PRIORITY);
     process.setProcessEntity(processEntity);
     assertThat(mailService.getProcessExecutionSubject("PIPELINE_NAME", process))
@@ -64,7 +64,7 @@ public class MailServiceTest {
                 + "  \"pipelineName\" : \"PIPELINE_NAME\",\n"
                 + "  \"stageName\" : \"STAGE1\",\n"
                 + "  \"executionCount\" : 0,\n"
-                + "  \"resultType\" : \"NEW\"\n"
+                + "  \"stageState\" : \"NEW\"\n"
                 + "}\n");
     // mailService.sendProcessExecutionMessage("PIPELINE_NAME", process);
   }
@@ -74,10 +74,10 @@ public class MailServiceTest {
     Process process =
         new ProcessBuilder("PROCESS_ID").execute("STAGE1").with(new SuccessSyncExecutor()).build();
     StageEntity stageEntity =
-        StageEntity.createExecution("PIPELINE_NAME", "PROCESS_ID", process.getStages().get(0));
+        StageEntity.startExecution("PIPELINE_NAME", "PROCESS_ID", process.getStages().get(0));
     process.getStages().get(0).setStageEntity(stageEntity);
     ProcessEntity processEntity =
-        ProcessEntity.createExecution(
+        ProcessEntity.startExecution(
             "PIPELINE_NAME", "PROCESS_ID", ProcessEntity.DEFAULT_PRIORITY);
     process.setProcessEntity(processEntity);
     assertThat(
@@ -105,7 +105,7 @@ public class MailServiceTest {
                 + "  \"pipelineName\" : \"PIPELINE_NAME\",\n"
                 + "  \"stageName\" : \"STAGE1\",\n"
                 + "  \"executionCount\" : 0,\n"
-                + "  \"resultType\" : \"NEW\"\n"
+                + "  \"stageState\" : \"NEW\"\n"
                 + "}\n");
     // mailService.sendStageExecutionMessage("PIPELINE_NAME", process, process.getStages().get(0));
   }

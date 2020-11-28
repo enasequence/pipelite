@@ -56,8 +56,8 @@ public class MailService {
 
   public String getStageExecutionSubject(String pipelineName, Process process, Stage stage) {
     String state = "";
-    if (stage.getStageEntity() != null && stage.getStageEntity().getResultType() != null) {
-      state = stage.getStageEntity().getResultType().name();
+    if (stage.getStageEntity() != null && stage.getStageEntity().getStageState() != null) {
+      state = stage.getStageEntity().getStageState().name();
     }
     return "pipelite stage ("
         + state

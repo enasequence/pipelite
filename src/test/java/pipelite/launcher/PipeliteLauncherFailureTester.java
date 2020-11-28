@@ -39,7 +39,7 @@ import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.*;
 import pipelite.stage.StageExecutionResult;
-import pipelite.stage.StageExecutionResultType;
+import pipelite.stage.StageState;
 
 @Component
 @Scope("prototype")
@@ -347,7 +347,7 @@ public class PipeliteLauncherFailureTester {
         assertThat(stageEntity.getExecutorName()).isNull();
         assertThat(stageEntity.getExecutorData()).isNull();
         assertThat(stageEntity.getExecutorParams()).isNull();
-        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.NEW);
+        assertThat(stageEntity.getStageState()).isEqualTo(StageState.NEW);
         assertThat(stageEntity.getResultParams()).isNull();
       } else {
 
@@ -367,10 +367,10 @@ public class PipeliteLauncherFailureTester {
             || (i == 1 && f.stageTestResult == StageTestResult.SECOND_ERROR)
             || (i == 2 && f.stageTestResult == StageTestResult.THIRD_ERROR)
             || (i == 3 && f.stageTestResult == StageTestResult.FOURTH_ERROR)) {
-          assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.ERROR);
+          assertThat(stageEntity.getStageState()).isEqualTo(StageState.ERROR);
           assertThat(stageEntity.getResultParams()).isNull();
         } else {
-          assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.SUCCESS);
+          assertThat(stageEntity.getStageState()).isEqualTo(StageState.SUCCESS);
           assertThat(stageEntity.getResultParams()).isNull();
         }
       }

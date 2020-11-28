@@ -13,22 +13,18 @@ package pipelite.entity;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import javax.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+
+import lombok.*;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.StageExecutor;
 import pipelite.json.Json;
-import pipelite.stage.Stage;
-import pipelite.stage.StageExecutionResult;
-import pipelite.stage.StageExecutionResultType;
+import pipelite.stage.*;
 
 @Entity
 @Table(name = "PIPELITE_STAGE")
 @IdClass(StageEntityId.class)
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 @Flogger
 public class StageEntity {
 
@@ -64,29 +60,28 @@ public class StageEntity {
   @Lob
   private String executorParams;
 
+  // TODO: rename to STAGE_STATE
   @Enumerated(EnumType.STRING)
   @Column(name = "EXEC_RESULT_TYPE", length = 15)
-  private StageExecutionResultType resultType;
+  private StageState stageState;
 
   @Column(name = "EXEC_RESULT_PARAMS", columnDefinition = "CLOB")
   @Lob
   private String resultParams;
 
-  /** Prepare stage for execution. */
-  public static StageEntity createExecution(String pipelineName, String processId, Stage stage) {
+  public static StageEntity startExecution(String pipelineName, String processId, Stage stage) {
     StageEntity stageEntity = new StageEntity();
     stageEntity.setProcessId(processId);
     stageEntity.setPipelineName(pipelineName);
     stageEntity.setStageName(stage.getStageName());
-    stageEntity.setResultType(StageExecutionResultType.NEW);
+    stageEntity.setStageState(StageState.NEW);
     stageEntity.setExecutionCount(0);
     return stageEntity;
   }
 
-  /** Stage execution starts. */
   public void startExecution(Stage stage) {
     StageExecutor stageExecutor = stage.getExecutor();
-    this.resultType = StageExecutionResultType.ACTIVE;
+    this.stageState = StageState.ACTIVE;
     this.resultParams = null;
     this.startTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.endTime = null;
@@ -97,23 +92,21 @@ public class StageEntity {
     }
   }
 
-  /** Asynchronous stage execution starts. Save information required to resume execution. */
   public void serializeExecution(Stage stage) {
+    /** Save information required to resume asynchronous executors. */
     StageExecutor stageExecutor = stage.getExecutor();
     this.executorData = stageExecutor.serialize();
   }
 
-  /** Stage execution ends. */
   public void endExecution(StageExecutionResult result) {
-    this.resultType = result.getResultType();
+    this.stageState = result.getStageState();
     this.resultParams = result.attributesJson();
     this.endTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.executionCount++;
   }
 
-  /** Reset stage execution. */
   public void resetExecution() {
-    this.resultType = StageExecutionResultType.NEW;
+    this.stageState = StageState.NEW;
     this.resultParams = null;
     this.startTime = null;
     this.endTime = null;

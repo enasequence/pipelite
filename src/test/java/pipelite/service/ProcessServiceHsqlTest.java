@@ -41,7 +41,9 @@ class ProcessServiceHsqlTest {
     Integer execCnt = 3;
     Integer priority = 0;
 
-    ProcessEntity process = new ProcessEntity(processId, pipelineName, state, execCnt, priority);
+    ProcessEntity process = ProcessEntity.startExecution(pipelineName, processId, priority);
+    process.setState(state);
+    process.setExecutionCount(execCnt);
 
     service.saveProcess(process);
 
@@ -109,7 +111,11 @@ class ProcessServiceHsqlTest {
 
   private static ProcessEntity createProcessEntity(
       String pipelineName, ProcessState state, int priority) {
-    return new ProcessEntity(
-        UniqueStringGenerator.randomProcessId(), pipelineName, state, 0, priority);
+    ProcessEntity process =
+        ProcessEntity.startExecution(
+            pipelineName, UniqueStringGenerator.randomProcessId(), priority);
+    process.setState(state);
+    process.setExecutionCount(0);
+    return process;
   }
 }

@@ -11,9 +11,8 @@
 package pipelite.entity;
 
 import javax.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+
+import lombok.*;
 import pipelite.json.Json;
 import pipelite.process.ProcessState;
 
@@ -22,7 +21,6 @@ import pipelite.process.ProcessState;
 @IdClass(ProcessEntityId.class)
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class ProcessEntity {
 
   public static final int MIN_PRIORITY = 0;
@@ -47,7 +45,7 @@ public class ProcessEntity {
   @Column(name = "PRIORITY", nullable = false)
   private Integer priority = DEFAULT_PRIORITY;
 
-  public static ProcessEntity createExecution(
+  public static ProcessEntity startExecution(
       String pipelineName, String processId, Integer priority) {
     ProcessEntity processEntity = new ProcessEntity();
     processEntity.setProcessId(processId);

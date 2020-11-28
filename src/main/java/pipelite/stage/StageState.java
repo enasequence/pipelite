@@ -10,10 +10,15 @@
  */
 package pipelite.stage;
 
-public enum StageExecutionResultType {
+public enum StageState {
+  NEW,
   ACTIVE,
   SUCCESS,
   ERROR;
+
+  public boolean isNew() {
+    return this == NEW;
+  }
 
   public boolean isActive() {
     return this == ACTIVE;

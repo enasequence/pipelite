@@ -18,24 +18,24 @@ public class StageExecutionResultTypeTest {
 
   @Test
   public void test() {
-    assertThat(StageExecutionResultType.NEW.isNew()).isTrue();
-    assertThat(StageExecutionResultType.ACTIVE.isNew()).isFalse();
-    assertThat(StageExecutionResultType.SUCCESS.isNew()).isFalse();
-    assertThat(StageExecutionResultType.ERROR.isNew()).isFalse();
+    assertThat(StageState.NEW.isNew()).isTrue();
+    assertThat(StageState.ACTIVE.isNew()).isFalse();
+    assertThat(StageState.SUCCESS.isNew()).isFalse();
+    assertThat(StageState.ERROR.isNew()).isFalse();
 
-    assertThat(StageExecutionResultType.NEW.isActive()).isFalse();
-    assertThat(StageExecutionResultType.ACTIVE.isActive()).isTrue();
-    assertThat(StageExecutionResultType.SUCCESS.isActive()).isFalse();
-    assertThat(StageExecutionResultType.ERROR.isActive()).isFalse();
+    assertThat(StageState.NEW.isActive()).isFalse();
+    assertThat(StageState.ACTIVE.isActive()).isTrue();
+    assertThat(StageState.SUCCESS.isActive()).isFalse();
+    assertThat(StageState.ERROR.isActive()).isFalse();
 
-    assertThat(StageExecutionResultType.NEW.isSuccess()).isFalse();
-    assertThat(StageExecutionResultType.ACTIVE.isSuccess()).isFalse();
-    assertThat(StageExecutionResultType.SUCCESS.isSuccess()).isTrue();
-    assertThat(StageExecutionResultType.ERROR.isSuccess()).isFalse();
+    assertThat(StageState.NEW.isSuccess()).isFalse();
+    assertThat(StageState.ACTIVE.isSuccess()).isFalse();
+    assertThat(StageState.SUCCESS.isSuccess()).isTrue();
+    assertThat(StageState.ERROR.isSuccess()).isFalse();
 
-    assertThat(StageExecutionResultType.NEW.isError()).isFalse();
-    assertThat(StageExecutionResultType.ACTIVE.isError()).isFalse();
-    assertThat(StageExecutionResultType.SUCCESS.isError()).isFalse();
-    assertThat(StageExecutionResultType.ERROR.isError()).isTrue();
+    assertThat(StageState.NEW.isError()).isFalse();
+    assertThat(StageState.ACTIVE.isError()).isFalse();
+    assertThat(StageState.SUCCESS.isError()).isFalse();
+    assertThat(StageState.ERROR.isError()).isTrue();
   }
 }
