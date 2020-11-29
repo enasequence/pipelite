@@ -44,7 +44,7 @@ import pipelite.stage.StageExecutionResultType;
 @Scope("prototype")
 public class PipeliteLauncherFailureTester {
 
-  private static final int PROCESS_CNT = 5;
+  private static final int PROCESS_CNT = 1;
 
   @Autowired private LauncherConfiguration launcherConfiguration;
   @Autowired private StageConfiguration stageConfiguration;

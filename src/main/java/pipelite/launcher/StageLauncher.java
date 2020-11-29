@@ -31,7 +31,6 @@ public class StageLauncher {
   private final String pipelineName;
   private final Process process;
   private final Stage stage;
-
   private final Duration stagePollFrequency;
 
   public StageLauncher(
@@ -102,7 +101,6 @@ public class StageLauncher {
     } catch (Exception ex) {
       result = StageExecutionResult.error(ex);
     }
-    stage.incrementImmediateExecutionCount();
     if (result.isSuccess()) {
       logContext(log.atInfo()).log("Stage execution succeeded");
     } else if (result.isError()) {

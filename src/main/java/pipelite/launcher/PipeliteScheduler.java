@@ -35,6 +35,7 @@ import pipelite.service.*;
 @Flogger
 public class PipeliteScheduler extends AbstractScheduledService {
 
+  private static final int DEFAULT_MAX_PROCESS_ID_RETRIES = 100;
   private final LauncherConfiguration launcherConfiguration;
   private final StageConfiguration stageConfiguration;
   private final ProcessFactoryService processFactoryService;
@@ -44,16 +45,17 @@ public class PipeliteScheduler extends AbstractScheduledService {
   private final LockService lockService;
   private final MailService mailService;
   private final String schedulerName;
-  private final ExecutorService executorService;
   private final Duration processLaunchFrequency;
   private final Duration processRefreshFrequency;
-  private LauncherLockEntity launcherLock;
+  private final ExecutorService executorService;
   private final Map<String, ProcessFactory> processFactoryCache = new ConcurrentHashMap<>();
   private final Map<String, ProcessLauncher> activeProcesses = new ConcurrentHashMap<>();
   private final Map<String, PipeliteSchedulerStats> stats = new ConcurrentHashMap<>();
   private final Map<String, AtomicLong> remainingExecutions = new ConcurrentHashMap<>();
-  private static final int maxProcessIdRetries = 100;
+  private final List<Schedule> schedules = Collections.synchronizedList(new ArrayList<>());
+  private LocalDateTime schedulesValidUntil;
   private final LocalDateTime startTime;
+  private LauncherLockEntity launcherLock;
   private boolean shutdownAfterTriggered = false;
 
   @Data
@@ -63,9 +65,6 @@ public class PipeliteScheduler extends AbstractScheduledService {
     private Process process;
     private LocalDateTime launchTime;
   }
-
-  private final List<Schedule> schedules = Collections.synchronizedList(new ArrayList<>());
-  private LocalDateTime schedulesValidUntil;
 
   public PipeliteScheduler(
       LauncherConfiguration launcherConfiguration,
@@ -118,14 +117,16 @@ public class PipeliteScheduler extends AbstractScheduledService {
     List<LauncherLockEntity> launcherLocks =
         lockService.getLauncherLocksByLauncherName(getLauncherName());
     if (!launcherLocks.isEmpty()) {
-      throw new RuntimeException("Could not start scheduler " + schedulerName + ": already locked");
+      throw new RuntimeException(
+          "Could not start scheduler " + schedulerName + ": scheduler is already locked");
     }
     launcherLock = lockService.lockLauncher(getLauncherName());
     launcherLocks = lockService.getLauncherLocksByLauncherName(getLauncherName());
     if (launcherLocks.size() != 1
         || !launcherLocks.get(0).getLauncherId().equals(launcherLock.getLauncherId())) {
       lockService.unlockLauncher(launcherLock);
-      throw new RuntimeException("Could not start scheduler " + schedulerName + ": already locked");
+      throw new RuntimeException(
+          "Could not start scheduler " + schedulerName + ": scheduler is already locked");
     }
   }
 
@@ -140,10 +141,10 @@ public class PipeliteScheduler extends AbstractScheduledService {
       return;
     }
     logContext(log.atInfo()).log("Running scheduler");
-    // Relock scheduler to avoid lock expiry.
+    // Renew scheduler lock to avoid lock expiry.
     if (!lockService.relockLauncher(launcherLock)) {
       throw new RuntimeException(
-          "Failed to continue running scheduler because of failed lock renewal");
+          "Could not continue running scheduler " + schedulerName + ": could not renew lock");
     }
 
     if (schedules.isEmpty() || schedulesValidUntil.isBefore(LocalDateTime.now())) {
@@ -158,7 +159,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
             && remainingExecutions.get(pipelineName).decrementAndGet() < 0) {
           continue;
         }
-        // Update next launch time.
+        // Set next launch time.
         schedule.setLaunchTime(CronUtils.launchTime(cronExpression));
         logContext(log.atInfo(), pipelineName)
             .log(
@@ -184,7 +185,8 @@ public class PipeliteScheduler extends AbstractScheduledService {
         return;
       }
     }
-    logContext(log.atInfo()).log("Stopping pipelite scheduler after maximum executions");
+    logContext(log.atInfo())
+        .log("Stopping pipelite scheduler " + schedulerName + " after maximum executions");
     shutdownAfterTriggered = true;
     stopAsync();
   }
@@ -279,7 +281,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
   private boolean createProcess(Schedule schedule) {
     String pipelineName = schedule.getScheduleEntity().getPipelineName();
     String processId = getNextProcessId(schedule.getScheduleEntity().getProcessId());
-    int remainingProcessIdRetries = maxProcessIdRetries;
+    int remainingProcessIdRetries = DEFAULT_MAX_PROCESS_ID_RETRIES;
     while (true) {
       Optional<ProcessEntity> savedProcessEntity =
           processService.getSavedProcess(pipelineName, processId);
@@ -297,7 +299,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
       return false;
     }
     ProcessEntity processEntity =
-        processService.pendingExecution(pipelineName, processId, ProcessEntity.DEFAULT_PRIORITY);
+        processService.createExecution(pipelineName, processId, ProcessEntity.DEFAULT_PRIORITY);
     schedule.setProcess(process);
     schedule.setProcessEntity(processEntity);
     schedule.getScheduleEntity().startExecution(processId);

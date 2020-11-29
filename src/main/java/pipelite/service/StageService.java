@@ -78,6 +78,7 @@ public class StageService {
   }
 
   public void endExecution(Stage stage, StageExecutionResult result) {
+    stage.incrementImmediateExecutionCount();
     StageEntity stageEntity = stage.getStageEntity();
     stageEntity.endExecution(result);
     saveStage(stageEntity);

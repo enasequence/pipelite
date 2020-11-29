@@ -12,6 +12,8 @@ package pipelite.launcher.dependency;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+
 import pipelite.entity.StageEntity;
 import pipelite.launcher.StageLauncher;
 import pipelite.stage.Stage;
@@ -71,38 +73,133 @@ public class DependencyResolver {
     }
   }
 
-  public static List<Stage> getExecutableStages(List<Stage> stages) {
+  /**
+   * Returns the list of stages that may be eventually executed based on the current execution
+   * results of all stages in the process
+   *
+   * @param stages all stages
+   * @param active active stages that are currently being executed
+   * @return the list of stages that may be eventually executed based on the current execution
+   *     results of all stages in the process
+   */
+  public static List<Stage> getEventuallyExecutableStages(List<Stage> stages) {
     List<Stage> executableStages = new ArrayList<>();
     for (Stage stage : stages) {
-      if (isExecutableStage(stages, stage)) {
+      if (isEventuallyExecutableStage(stages, stage)) {
+        executableStages.add(stage);
+      }
+    }
+    return executableStages;
+  }
+  /**
+   * Returns the list of stages that can be immediately executed.
+   *
+   * @param stages all stages
+   * @param active active stages that are currently being executed
+   * @return the list of stages that can be immediately executed
+   */
+  public static List<Stage> getImmediatelyExecutableStages(List<Stage> stages, Set<Stage> active) {
+    List<Stage> executableStages = new ArrayList<>();
+    for (Stage stage : stages) {
+      if (isImmediatelyExecutableStage(stages, active, stage)) {
         executableStages.add(stage);
       }
     }
     return executableStages;
   }
 
-  public static boolean isExecutableStage(List<Stage> stages, Stage stage) {
+  /**
+   * Returns true if the stage can be eventually executed based on the current execution results of
+   * all stages in the process.
+   *
+   * @param stages all stages
+   * @param active active stages that are currently being executed
+   * @param stage the stage of interest
+   * @return true if the stage can be eventually executed based on the current execution results of
+   *     all stages in the process
+   */
+  public static boolean isEventuallyExecutableStage(List<Stage> stages, Stage stage) {
     StageEntity stageEntity = stage.getStageEntity();
     if (stageEntity.getResultType() == StageExecutionResultType.SUCCESS) {
+      // Stage can't be executed because it has already been executed successfully.
       return false;
     }
-    Integer executionCount = stageEntity.getExecutionCount();
-    int maximumRetries = StageLauncher.getMaximumRetries(stage);
-    int immediateRetries = StageLauncher.getImmediateRetries(stage);
-    return (executionCount != null
-            && executionCount <= maximumRetries
-            && stage.getImmediateExecutionCount() <= immediateRetries)
-        && isDependsOnStagesSuccess(stages, stage);
+    if (stageEntity.getExecutionCount() > StageLauncher.getMaximumRetries(stage)
+        || stage.getImmediateExecutionCount() > StageLauncher.getImmediateRetries(stage)) {
+      // Stage can't be executed because it has already been executed the maximum number of times.
+      return false;
+    }
+    for (Stage dependsOn : getDependsOnStages(stages, stage)) {
+      if (dependsOn.getStageEntity().getResultType() == StageExecutionResultType.SUCCESS) {
+        // Stage can be executed because the stage it depends on has been executed successfully.
+        continue;
+      }
+      if (dependsOn.getStageEntity().getExecutionCount()
+              <= StageLauncher.getMaximumRetries(dependsOn)
+          || dependsOn.getImmediateExecutionCount()
+              <= StageLauncher.getImmediateRetries(dependsOn)) {
+        // Stage can be executed because the stage it depends on has not been executed the maximum
+        // number of times.
+        continue;
+      }
+      // Stage can't be executed.
+      return false;
+    }
+    // Stage can be executed.
+    return true;
   }
 
   /**
-   * Returns true if the stages the stage depends on have been successfully executed.
+   * Returns true if the stage can be immediately executed.
    *
-   * @param stages the list of stages in the process
-   * @param stage the stage that may depend on other stages
-   * @return true if the stages the stage depends on have been successfully executed
+   * @param stages all stages
+   * @param active active stages that are currently being executed
+   * @param stage the stage of interest
+   * @return true if the stage can be immediately executed
    */
-  public static boolean isDependsOnStagesSuccess(List<Stage> stages, Stage stage) {
+  public static boolean isImmediatelyExecutableStage(
+      List<Stage> stages, Set<Stage> active, Stage stage) {
+    if (!isEventuallyExecutableStage(stages, stage)) {
+      return false;
+    }
+    if (active.contains(stage)) {
+      // Stage can't be executed because it is already being currently executed.
+      return false;
+    }
+    if (isDependsOnStagesAnyActive(stages, active, stage)) {
+      // Stage can't be executed because it depends on stages that are currently being executed.
+      return false;
+    }
+    // Stage can be executed if all the stages it depends on have been successfully executed.
+    return isDependsOnStagesAllSuccess(stages, stage);
+  }
+
+  /**
+   * Returns true if any of the stages the stage depends on are active.
+   *
+   * @param stages all stages
+   * @param active active stages that are currently being executed
+   * @param stage the stage of interest
+   * @return true if any of the stages the stage depends on are active
+   */
+  public static boolean isDependsOnStagesAnyActive(
+      List<Stage> stages, Set<Stage> active, Stage stage) {
+    for (Stage dependsOn : getDependsOnStages(stages, stage)) {
+      if (active.contains(dependsOn)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Returns true if all of the stages the stage depends on have been successfully executed.
+   *
+   * @param stages all stages
+   * @param stage the stage of interest
+   * @return true if all of the stages the stage depends on have been successfully executed
+   */
+  public static boolean isDependsOnStagesAllSuccess(List<Stage> stages, Stage stage) {
     return getDependsOnStages(stages, stage).stream()
             .filter(s -> s.getStageEntity().getResultType() != StageExecutionResultType.SUCCESS)
             .count()

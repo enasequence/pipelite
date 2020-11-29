@@ -46,16 +46,12 @@ public class ProcessLauncher {
   private final MailService mailService;
   private final String pipelineName;
   private final Process process;
-
-  private final Set<String> activeStages = ConcurrentHashMap.newKeySet();
   private final Duration stageLaunchFrequency;
   private final Duration stagePollFrequency;
-
+  private final Set<Stage> active = ConcurrentHashMap.newKeySet();
   private final AtomicLong stageFailedCount = new AtomicLong(0);
   private final AtomicLong stageSuccessCount = new AtomicLong(0);
-
   private final ExecutorService executorService;
-
   private final LocalDateTime startTime = LocalDateTime.now();
 
   public ProcessLauncher(
@@ -106,33 +102,16 @@ public class ProcessLauncher {
     processService.startExecution(process.getProcessEntity());
     while (true) {
       logContext(log.atFine()).log("Executing stages");
-      List<Stage> executableStages = DependencyResolver.getExecutableStages(process.getStages());
-      if (activeStages.isEmpty() && executableStages.isEmpty()) {
+      List<Stage> executableStages =
+          DependencyResolver.getImmediatelyExecutableStages(process.getStages(), active);
+      if (active.isEmpty() && executableStages.isEmpty()) {
         break;
       }
       for (Stage stage : executableStages) {
-        boolean isActive = activeStages.contains(stage.getStageName());
-        if (isActive) {
-          // Do not execute this stage because it is already active.
-          continue;
-        }
-        if (stage.getDependsOn() != null) {
-          for (Stage dependsOn :
-              DependencyResolver.getDependsOnStages(process.getStages(), stage)) {
-            if (activeStages.contains(dependsOn.getStageName())) {
-              isActive = true;
-              break;
-            }
-          }
-        }
-        if (isActive) {
-          // Do not execute this stage because a stage it depends on is active.
-          continue;
-        }
         StageLauncher stageLauncher =
             new StageLauncher(
                 launcherConfiguration, stageConfiguration, pipelineName, process, stage);
-        activeStages.add(stage.getStageName());
+        active.add(stage);
         executorService.execute(
             () -> {
               try {
@@ -142,7 +121,7 @@ public class ProcessLauncher {
                 StageExecutionResult result = stageLauncher.run();
                 stageService.endExecution(stage, result);
                 if (result.isSuccess()) {
-                  invalidateDependentStages(stage);
+                  resetDependentStageExecution(stage);
                   stageSuccessCount.incrementAndGet();
                 } else {
                   mailService.sendStageExecutionMessage(pipelineName, process, stage);
@@ -154,7 +133,7 @@ public class ProcessLauncher {
                     .withCause(ex)
                     .log("Unexpected exception when executing stage");
               } finally {
-                activeStages.remove(stage.getStageName());
+                active.remove(stage);
               }
             });
       }
@@ -173,9 +152,9 @@ public class ProcessLauncher {
 
   private void beforeExecution() {
     for (Stage stage : process.getStages()) {
-      // Add default executor parameters.
+      // Set default executor parameters.
       stage.getExecutorParams().add(stageConfiguration);
-      // Get stage entity.
+      // Set stage entity.
       StageEntity stageEntity =
           stageService.beforeExecution(pipelineName, process.getProcessId(), stage).get();
       stage.setStageEntity(stageEntity);
@@ -189,6 +168,12 @@ public class ProcessLauncher {
     return processState;
   }
 
+  /**
+   * Evaluates the process state using the stage execution result types.
+   *
+   * @param stages list of stages
+   * @return the process state
+   */
   public static ProcessState evaluateProcessState(List<Stage> stages) {
     int errorCount = 0;
     for (Stage stage : stages) {
@@ -197,7 +182,7 @@ public class ProcessLauncher {
       if (resultType == SUCCESS) {
         continue;
       }
-      if (DependencyResolver.isExecutableStage(stages, stage)) {
+      if (DependencyResolver.isEventuallyExecutableStage(stages, stage)) {
         return ProcessState.ACTIVE;
       } else {
         errorCount++;
@@ -209,7 +194,12 @@ public class ProcessLauncher {
     return ProcessState.COMPLETED;
   }
 
-  private void invalidateDependentStages(Stage from) {
+  /**
+   * Resets the stage execution of all dependent stages.
+   *
+   * @param from the stage that has dependent stages
+   */
+  private void resetDependentStageExecution(Stage from) {
     for (Stage stage : DependencyResolver.getDependentStages(process.getStages(), from)) {
       stageService.resetExecution(stage);
     }

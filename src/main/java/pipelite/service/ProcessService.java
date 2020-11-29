@@ -62,7 +62,7 @@ public class ProcessService {
     return repository.save(processEntity);
   }
 
-  public ProcessEntity pendingExecution(String pipelineName, String processId, Integer priority) {
+  public ProcessEntity createExecution(String pipelineName, String processId, Integer priority) {
     ProcessEntity processEntity = ProcessEntity.createExecution(pipelineName, processId, priority);
     return saveProcess(processEntity);
   }

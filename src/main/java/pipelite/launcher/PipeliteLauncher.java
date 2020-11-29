@@ -35,10 +35,9 @@ import pipelite.service.*;
 @Flogger
 public class PipeliteLauncher extends AbstractScheduledService {
 
+  private static final int DEFAULT_PROCESS_CREATION_COUNT = 5000;
   private final LauncherConfiguration launcherConfiguration;
   private final StageConfiguration stageConfiguration;
-  private final ProcessFactoryService processFactoryService;
-  private final ProcessSourceService processSourceService;
   private final ProcessService processService;
   private final StageService stageService;
   private final LockService lockService;
@@ -49,8 +48,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private final ProcessSource processSource;
   private final Duration processLaunchFrequency;
   private final Duration processRefreshFrequency;
-  private static final int processCreationCount = 5000;
-  private final int workers;
+  private final int pipeliteParallelism;
   private final ExecutorService executorService;
   private final Map<String, ProcessLauncher> activeProcesses = new ConcurrentHashMap<>();
   private final PipeliteLauncherStats stats = new PipeliteLauncherStats();
@@ -81,8 +79,6 @@ public class PipeliteLauncher extends AbstractScheduledService {
     Assert.notNull(pipelineName, "Missing pipeline name");
     this.launcherConfiguration = launcherConfiguration;
     this.stageConfiguration = stageConfiguration;
-    this.processFactoryService = processFactoryService;
-    this.processSourceService = processSourceService;
     this.processService = processService;
     this.stageService = stageService;
     this.lockService = lockService;
@@ -105,11 +101,11 @@ public class PipeliteLauncher extends AbstractScheduledService {
       this.processRefreshFrequency = LauncherConfiguration.DEFAULT_PROCESS_REFRESH_FREQUENCY;
     }
 
-    this.workers =
+    this.pipeliteParallelism =
         launcherConfiguration.getPipelineParallelism() > 0
             ? launcherConfiguration.getPipelineParallelism()
             : LauncherConfiguration.DEFAULT_PIPELINE_PARALLELISM;
-    this.executorService = Executors.newFixedThreadPool(workers);
+    this.executorService = Executors.newFixedThreadPool(pipeliteParallelism);
   }
 
   @Override
@@ -117,7 +113,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
     logContext(log.atInfo()).log("Starting up launcher: %s", launcherName);
     launcherLock = lockService.lockLauncher(launcherName);
     if (launcherLock == null) {
-      throw new RuntimeException("Could not start launcher " + launcherName + ": failed to lock");
+      throw new RuntimeException(
+          "Could not start launcher " + launcherName + ": could not create lock");
     }
   }
 
@@ -138,10 +135,10 @@ public class PipeliteLauncher extends AbstractScheduledService {
     }
     logContext(log.atInfo()).log("Running launcher");
 
-    // Relock launcher to avoid lock expiry.
+    // Renew launcher lock to avoid lock expiry.
     if (!lockService.relockLauncher(launcherLock)) {
       throw new RuntimeException(
-          "Failed to continue running launcher because of failed lock renewal");
+          "Could not continue running launcher " + launcherName + ": could not renew lock");
     }
 
     if (processQueueIndex >= processQueue.size()
@@ -152,18 +149,17 @@ public class PipeliteLauncher extends AbstractScheduledService {
       queueProcesses();
     }
     for (;
-        processQueueIndex < processQueue.size() && activeProcesses.size() < workers;
+        processQueueIndex < processQueue.size() && activeProcesses.size() < pipeliteParallelism;
         processQueueIndex++) {
       ProcessEntity processEntity = processQueue.get(processQueueIndex);
       launchProcess(processEntity);
     }
-
     shutdownIfIdle();
   }
 
   private void shutdownIfIdle() throws InterruptedException {
     if (processQueueIndex == processQueue.size() && launcherConfiguration.isShutdownIfIdle()) {
-      logContext(log.atInfo()).log("Stopping idle pipelite launcher");
+      logContext(log.atInfo()).log("Stopping idle launcher " + launcherName);
       shutdownIfIdleTriggered = true;
       while (!activeProcesses.isEmpty()) {
         try {
@@ -178,7 +174,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   private void createNewProcesses() {
     logContext(log.atInfo()).log("Creating new processes");
-    for (int i = 0; i < processCreationCount; ++i) {
+    for (int i = 0; i < DEFAULT_PROCESS_CREATION_COUNT; ++i) {
       ProcessSource.NewProcess newProcess = processSource.next();
       if (newProcess == null) {
         // No new processes.
@@ -200,7 +196,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
         continue;
       }
       logContext(log.atInfo()).log("Creating new process %s", trimmedNewProcessId);
-      processService.pendingExecution(pipelineName, trimmedNewProcessId, newProcess.getPriority());
+      processService.createExecution(pipelineName, trimmedNewProcessId, newProcess.getPriority());
       processSource.accept(newProcess.getProcessId());
     }
   }
@@ -211,13 +207,13 @@ public class PipeliteLauncher extends AbstractScheduledService {
     processQueueIndex = 0;
     processQueue.clear();
 
-    // Add active processes. Asynchronous active processes may be able to continue execution.
+    // First add active processes. Asynchronous active processes may be able to continue execution.
     processQueue.addAll(
         processService.getActiveProcesses(pipelineName).stream()
             .filter(processEntity -> !activeProcesses.containsKey(processEntity.getProcessId()))
             .collect(Collectors.toList()));
 
-    // Add new processes.
+    // Then add new processes.
     processQueue.addAll(
         processService.getNewProcesses(pipelineName).stream()
             .filter(processEntity -> !activeProcesses.containsKey(processEntity.getProcessId()))
@@ -274,7 +270,6 @@ public class PipeliteLauncher extends AbstractScheduledService {
   @Override
   protected void shutDown() throws Exception {
     logContext(log.atInfo()).log("Shutting down launcher");
-
     executorService.shutdown();
     try {
       executorService.awaitTermination(ServerManager.FORCE_STOP_WAIT_SECONDS - 1, TimeUnit.SECONDS);

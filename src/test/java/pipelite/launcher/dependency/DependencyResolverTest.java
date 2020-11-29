@@ -13,9 +13,8 @@ package pipelite.launcher.dependency;
 import static org.assertj.core.api.Assertions.assertThat;
 import static pipelite.stage.StageExecutionResultType.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.StageEntity;
@@ -51,10 +50,17 @@ public class DependencyResolverTest {
       stages.add(stage);
     }
 
-    List<Stage> executableStages = DependencyResolver.getExecutableStages(stages);
+    List<Stage> immediatelyExecutableStages =
+        DependencyResolver.getImmediatelyExecutableStages(stages, Collections.emptySet());
+    assertThat(immediatelyExecutableStages.size()).isOne();
+    assertThat(immediatelyExecutableStages.get(0).getStageName()).isEqualTo("STAGE1");
 
-    assertThat(executableStages.size()).isOne();
-    assertThat(executableStages.get(0).getStageName()).isEqualTo("STAGE1");
+    List<Stage> eventuallyExecutableStages =
+        DependencyResolver.getEventuallyExecutableStages(stages);
+    assertThat(eventuallyExecutableStages.size()).isEqualTo(3);
+    assertThat(eventuallyExecutableStages.get(0).getStageName()).isEqualTo("STAGE1");
+    assertThat(eventuallyExecutableStages.get(1).getStageName()).isEqualTo("STAGE2");
+    assertThat(eventuallyExecutableStages.get(2).getStageName()).isEqualTo("STAGE3");
   }
 
   @Test
@@ -79,10 +85,17 @@ public class DependencyResolverTest {
       stages.add(stage);
     }
 
-    List<Stage> executableStages = DependencyResolver.getExecutableStages(stages);
+    List<Stage> immediatelyExecutableStages =
+        DependencyResolver.getImmediatelyExecutableStages(stages, Collections.emptySet());
+    assertThat(immediatelyExecutableStages.size()).isOne();
+    assertThat(immediatelyExecutableStages.get(0).getStageName()).isEqualTo("STAGE1");
 
-    assertThat(executableStages.size()).isOne();
-    assertThat(executableStages.get(0).getStageName()).isEqualTo("STAGE1");
+    List<Stage> eventuallyExecutableStages =
+        DependencyResolver.getEventuallyExecutableStages(stages);
+    assertThat(eventuallyExecutableStages.size()).isEqualTo(3);
+    assertThat(eventuallyExecutableStages.get(0).getStageName()).isEqualTo("STAGE1");
+    assertThat(eventuallyExecutableStages.get(1).getStageName()).isEqualTo("STAGE2");
+    assertThat(eventuallyExecutableStages.get(2).getStageName()).isEqualTo("STAGE3");
   }
 
   @Test
@@ -112,11 +125,17 @@ public class DependencyResolverTest {
       stages.add(stage);
     }
 
-    List<Stage> executableStages = DependencyResolver.getExecutableStages(stages);
+    List<Stage> immediatelyExecutableStages =
+        DependencyResolver.getImmediatelyExecutableStages(stages, Collections.emptySet());
+    assertThat(immediatelyExecutableStages.size()).isEqualTo(2);
+    assertThat(immediatelyExecutableStages.get(0).getStageName()).isEqualTo("STAGE2");
+    assertThat(immediatelyExecutableStages.get(1).getStageName()).isEqualTo("STAGE3");
 
-    assertThat(executableStages.size()).isEqualTo(2);
-    assertThat(executableStages.get(0).getStageName()).isEqualTo("STAGE2");
-    assertThat(executableStages.get(1).getStageName()).isEqualTo("STAGE3");
+    List<Stage> eventuallyExecutableStages =
+        DependencyResolver.getEventuallyExecutableStages(stages);
+    assertThat(eventuallyExecutableStages.size()).isEqualTo(2);
+    assertThat(eventuallyExecutableStages.get(0).getStageName()).isEqualTo("STAGE2");
+    assertThat(eventuallyExecutableStages.get(1).getStageName()).isEqualTo("STAGE3");
   }
 
   @Test
@@ -147,9 +166,13 @@ public class DependencyResolverTest {
       stageNumber++;
     }
 
-    List<Stage> executableStages = DependencyResolver.getExecutableStages(stages);
+    List<Stage> immediatelyExecutableStages =
+        DependencyResolver.getImmediatelyExecutableStages(stages, Collections.emptySet());
+    assertThat(immediatelyExecutableStages.size()).isEqualTo(0);
 
-    assertThat(executableStages.size()).isEqualTo(0);
+    List<Stage> eventuallyExecutableStages =
+        DependencyResolver.getEventuallyExecutableStages(stages);
+    assertThat(eventuallyExecutableStages.size()).isEqualTo(0);
   }
 
   @Test
@@ -182,9 +205,13 @@ public class DependencyResolverTest {
       stageNumber++;
     }
 
-    List<Stage> executableStages = DependencyResolver.getExecutableStages(stages);
+    List<Stage> immediatelyExecutableStages =
+        DependencyResolver.getImmediatelyExecutableStages(stages, Collections.emptySet());
+    assertThat(immediatelyExecutableStages.size()).isEqualTo(0);
 
-    assertThat(executableStages.size()).isEqualTo(0);
+    List<Stage> eventuallyExecutableStages =
+        DependencyResolver.getEventuallyExecutableStages(stages);
+    assertThat(eventuallyExecutableStages.size()).isEqualTo(0);
   }
 
   @Test
@@ -217,10 +244,15 @@ public class DependencyResolverTest {
       stageNumber++;
     }
 
-    List<Stage> executableStages = DependencyResolver.getExecutableStages(stages);
+    List<Stage> immediatelyExecutableStages =
+        DependencyResolver.getImmediatelyExecutableStages(stages, Collections.emptySet());
+    assertThat(immediatelyExecutableStages.size()).isOne();
+    assertThat(immediatelyExecutableStages.get(0).getStageName()).isEqualTo("STAGE1");
 
-    assertThat(executableStages.size()).isOne();
-    assertThat(executableStages.get(0).getStageName()).isEqualTo("STAGE1");
+    List<Stage> eventuallyExecutableStages =
+        DependencyResolver.getEventuallyExecutableStages(stages);
+    assertThat(eventuallyExecutableStages.size()).isOne();
+    assertThat(eventuallyExecutableStages.get(0).getStageName()).isEqualTo("STAGE1");
   }
 
   @Test
@@ -386,7 +418,7 @@ public class DependencyResolverTest {
   private void isDependsOnStageSuccess(
       StageExecutionResultType dependsOnStageState, boolean isDependsOnStageCompleted) {
     List<Stage> stages = isDependsOnStageSuccessStages(dependsOnStageState, null);
-    assertThat(DependencyResolver.isDependsOnStagesSuccess(stages, stages.get(2)))
+    assertThat(DependencyResolver.isDependsOnStagesAllSuccess(stages, stages.get(2)))
         .isEqualTo(isDependsOnStageCompleted);
   }
 
@@ -398,7 +430,7 @@ public class DependencyResolverTest {
     isDependsOnStageSuccess(ERROR, false);
   }
 
-  private boolean isExecutableStage(
+  private boolean isImmediatelyExecutableSingleStage(
       StageExecutionResultType stageExecutionResultType,
       int executionCount,
       int immediateRetries,
@@ -417,18 +449,53 @@ public class DependencyResolverTest {
                     .build())
             .build();
     stage.setStageEntity(stageEntity);
-    return DependencyResolver.isExecutableStage(Arrays.asList(stage), stage);
+    return DependencyResolver.isImmediatelyExecutableStage(
+        Arrays.asList(stage), Collections.emptySet(), stage);
   }
 
   @Test
-  public void isExecutableStage() {
-    assertThat(isExecutableStage(null, 0, 0, 0)).isTrue();
-    assertThat(isExecutableStage(null, 1, 0, 0)).isFalse();
-    assertThat(isExecutableStage(ERROR, 0, 0, 0)).isTrue();
-    assertThat(isExecutableStage(ERROR, 1, 0, 0)).isFalse();
-    assertThat(isExecutableStage(ACTIVE, 0, 0, 0)).isTrue();
-    assertThat(isExecutableStage(ACTIVE, 1, 0, 0)).isFalse();
-    assertThat(isExecutableStage(SUCCESS, 0, 0, 0)).isFalse();
-    assertThat(isExecutableStage(SUCCESS, 1, 0, 0)).isFalse();
+  public void isImmediatelyExecutableSingleStage() {
+    assertThat(isImmediatelyExecutableSingleStage(null, 0, 0, 0)).isTrue();
+    assertThat(isImmediatelyExecutableSingleStage(null, 1, 0, 0)).isFalse();
+    assertThat(isImmediatelyExecutableSingleStage(ERROR, 0, 0, 0)).isTrue();
+    assertThat(isImmediatelyExecutableSingleStage(ERROR, 1, 0, 0)).isFalse();
+    assertThat(isImmediatelyExecutableSingleStage(ACTIVE, 0, 0, 0)).isTrue();
+    assertThat(isImmediatelyExecutableSingleStage(ACTIVE, 1, 0, 0)).isFalse();
+    assertThat(isImmediatelyExecutableSingleStage(SUCCESS, 0, 0, 0)).isFalse();
+    assertThat(isImmediatelyExecutableSingleStage(SUCCESS, 1, 0, 0)).isFalse();
+  }
+
+  private boolean isEventuallyExecutableSingleStage(
+      StageExecutionResultType stageExecutionResultType,
+      int executionCount,
+      int immediateRetries,
+      int maximumRetries) {
+    StageEntity stageEntity = new StageEntity();
+    stageEntity.setExecutionCount(executionCount);
+    stageEntity.setResultType(stageExecutionResultType);
+    Stage stage =
+        Stage.builder()
+            .stageName("STAGE")
+            .executor(new EmptySyncStageExecutor(StageExecutionResultType.SUCCESS))
+            .executorParams(
+                StageExecutorParameters.builder()
+                    .immediateRetries(immediateRetries)
+                    .maximumRetries(maximumRetries)
+                    .build())
+            .build();
+    stage.setStageEntity(stageEntity);
+    return DependencyResolver.isEventuallyExecutableStage(Arrays.asList(stage), stage);
+  }
+
+  @Test
+  public void isEventuallyExecutableSingleStage() {
+    assertThat(isEventuallyExecutableSingleStage(null, 0, 0, 0)).isTrue();
+    assertThat(isEventuallyExecutableSingleStage(null, 1, 0, 0)).isFalse();
+    assertThat(isEventuallyExecutableSingleStage(ERROR, 0, 0, 0)).isTrue();
+    assertThat(isEventuallyExecutableSingleStage(ERROR, 1, 0, 0)).isFalse();
+    assertThat(isEventuallyExecutableSingleStage(ACTIVE, 0, 0, 0)).isTrue();
+    assertThat(isEventuallyExecutableSingleStage(ACTIVE, 1, 0, 0)).isFalse();
+    assertThat(isEventuallyExecutableSingleStage(SUCCESS, 0, 0, 0)).isFalse();
+    assertThat(isEventuallyExecutableSingleStage(SUCCESS, 1, 0, 0)).isFalse();
   }
 }
