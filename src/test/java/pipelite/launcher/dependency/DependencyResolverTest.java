@@ -381,8 +381,16 @@ public class DependencyResolverTest {
     getDependsOnStages(stages, 3, 2, "STAGE2");
   }
 
+  /**
+   * Creates a process with three stages. Two independent stages, STAGE0 and STAGE1, and a third
+   * stage STAGE2 that depends on both STAGE0 and STAGE1.
+   *
+   * @param dependsOnStageState the stage execution result type for STAGE0 and STAGE1
+   * @return a list of all three stages
+   */
   public static List<Stage> isDependsOnStageSuccessStages(
-      StageExecutionResultType dependsOnStageState, StageExecutionResultType secondStageState) {
+      StageExecutionResultType firstStageResultType,
+      StageExecutionResultType secondStageResultType) {
     Process process =
         new ProcessBuilder("test")
             .execute("STAGE0")
@@ -393,41 +401,61 @@ public class DependencyResolverTest {
             .with((pipelineName, processId, stage) -> null)
             .build();
     List<Stage> stages = new ArrayList<>();
-
     Stage firstStage = process.getStages().get(0);
     StageEntity firstStageEntity = new StageEntity();
     firstStage.setStageEntity(firstStageEntity);
-    firstStageEntity.setResultType(dependsOnStageState);
+    firstStageEntity.setResultType(firstStageResultType);
     stages.add(firstStage);
 
     Stage secondStage = process.getStages().get(1);
     StageEntity secondStageEntity = new StageEntity();
     secondStage.setStageEntity(secondStageEntity);
-    secondStageEntity.setResultType(dependsOnStageState);
+    secondStageEntity.setResultType(secondStageResultType);
     stages.add(secondStage);
 
     Stage lastStage = process.getStages().get(2);
     StageEntity lastStageEntity = new StageEntity();
     lastStage.setStageEntity(lastStageEntity);
-    lastStageEntity.setResultType(secondStageState);
     stages.add(lastStage);
 
     return stages;
   }
 
-  private void isDependsOnStageSuccess(
-      StageExecutionResultType dependsOnStageState, boolean isDependsOnStageCompleted) {
-    List<Stage> stages = isDependsOnStageSuccessStages(dependsOnStageState, null);
+  /**
+   * Tests isDependsOnStagesAllSuccess using a process with three stages. Two independent stages,
+   * STAGE0 and STAGE1, and a third stage STAGE2 that depends on both STAGE0 and STAGE1.
+   *
+   * @param firstStageResultType the stage execution result for STAGE0
+   * @param secondStageResultType the stage execution result for STAGE1
+   * @param expectedReturnValue the expected return value of isDependsOnStagesAllSuccess
+   */
+  private void isDependsOnAllStagesSuccess(
+      StageExecutionResultType firstStageResultType,
+      StageExecutionResultType secondStageResultType,
+      boolean expectedReturnValue) {
+    List<Stage> stages = isDependsOnStageSuccessStages(firstStageResultType, secondStageResultType);
     assertThat(DependencyResolver.isDependsOnStagesAllSuccess(stages, stages.get(2)))
-        .isEqualTo(isDependsOnStageCompleted);
+        .isEqualTo(expectedReturnValue);
   }
 
   @Test
-  public void isDependsOnStageSuccess() {
-    isDependsOnStageSuccess(null, false);
-    isDependsOnStageSuccess(SUCCESS, true);
-    isDependsOnStageSuccess(ACTIVE, false);
-    isDependsOnStageSuccess(ERROR, false);
+  public void isDependsOnAllStagesSuccess() {
+    isDependsOnAllStagesSuccess(null, null, false);
+    isDependsOnAllStagesSuccess(null, ACTIVE, false);
+    isDependsOnAllStagesSuccess(null, SUCCESS, false);
+    isDependsOnAllStagesSuccess(null, ERROR, false);
+    isDependsOnAllStagesSuccess(ACTIVE, null, false);
+    isDependsOnAllStagesSuccess(ACTIVE, ACTIVE, false);
+    isDependsOnAllStagesSuccess(ACTIVE, SUCCESS, false);
+    isDependsOnAllStagesSuccess(ACTIVE, ERROR, false);
+    isDependsOnAllStagesSuccess(ERROR, null, false);
+    isDependsOnAllStagesSuccess(ERROR, ACTIVE, false);
+    isDependsOnAllStagesSuccess(ERROR, SUCCESS, false);
+    isDependsOnAllStagesSuccess(ERROR, ERROR, false);
+    isDependsOnAllStagesSuccess(SUCCESS, null, false);
+    isDependsOnAllStagesSuccess(SUCCESS, ACTIVE, false);
+    isDependsOnAllStagesSuccess(SUCCESS, SUCCESS, true);
+    isDependsOnAllStagesSuccess(SUCCESS, ERROR, false);
   }
 
   private boolean isImmediatelyExecutableSingleStage(
