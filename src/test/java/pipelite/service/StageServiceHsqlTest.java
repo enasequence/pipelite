@@ -43,8 +43,7 @@ class StageServiceHsqlTest {
 
     // Create.
 
-    StageEntity stageEntity =
-        service.beforeExecution(PIPELINE_NAME, PROCESS_ID, stage).get();
+    StageEntity stageEntity = service.beforeExecution(PIPELINE_NAME, PROCESS_ID, stage).get();
     assertThat(stageEntity).isEqualTo(stageEntity);
     StageOutEntity stageOutEntity = StageOutEntity.startExecution(stageEntity);
     service.saveStageOut(stageOutEntity);

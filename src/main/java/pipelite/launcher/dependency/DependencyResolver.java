@@ -13,7 +13,7 @@ package pipelite.launcher.dependency;
 import java.util.ArrayList;
 import java.util.List;
 import pipelite.entity.StageEntity;
-import pipelite.launcher.ProcessLauncher;
+import pipelite.launcher.StageLauncher;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResultType;
 
@@ -87,15 +87,16 @@ public class DependencyResolver {
       return false;
     }
     Integer executionCount = stageEntity.getExecutionCount();
-    int maximumRetries = ProcessLauncher.getMaximumRetries(stage);
-    int immediateRetries = ProcessLauncher.getImmediateRetries(stage);
+    int maximumRetries = StageLauncher.getMaximumRetries(stage);
+    int immediateRetries = StageLauncher.getImmediateRetries(stage);
     return (executionCount != null
             && executionCount <= maximumRetries
             && stage.getImmediateExecutionCount() <= immediateRetries)
         && isDependsOnStagesSuccess(stages, stage);
   }
 
-  /** Returns true if the stages the stage depends on have been successfully executed.
+  /**
+   * Returns true if the stages the stage depends on have been successfully executed.
    *
    * @param stages the list of stages in the process
    * @param stage the stage that may depend on other stages

@@ -10,8 +10,6 @@
  */
 package pipelite.launcher;
 
-import static pipelite.executor.ConfigurableStageExecutorParameters.DEFAULT_IMMEDIATE_RETRIES;
-import static pipelite.executor.ConfigurableStageExecutorParameters.DEFAULT_MAX_RETRIES;
 import static pipelite.stage.StageExecutionResultType.*;
 
 import com.google.common.flogger.FluentLogger;
@@ -23,11 +21,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.extern.flogger.Flogger;
+import org.springframework.util.Assert;
 import pipelite.configuration.*;
 import pipelite.entity.StageEntity;
-import pipelite.entity.StageOutEntity;
-import pipelite.executor.StageExecutor;
-import pipelite.executor.StageExecutorParameters;
 import pipelite.launcher.dependency.DependencyResolver;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
@@ -69,7 +65,14 @@ public class ProcessLauncher {
       MailService mailService,
       String pipelineName,
       Process process) {
-
+    Assert.notNull(launcherConfiguration, "Missing launcher configuration");
+    Assert.notNull(stageConfiguration, "Missing stage configuration");
+    Assert.notNull(processService, "Missing process service");
+    Assert.notNull(stageService, "Missing stage service");
+    Assert.notNull(mailService, "Missing mail service");
+    Assert.notNull(pipelineName, "Missing pipeline name");
+    Assert.notNull(process, "Missing process");
+    Assert.notNull(process.getProcessEntity(), "Missing process entity");
     this.launcherConfiguration = launcherConfiguration;
     this.stageConfiguration = stageConfiguration;
     this.processService = processService;
@@ -77,52 +80,29 @@ public class ProcessLauncher {
     this.mailService = mailService;
     this.pipelineName = pipelineName;
     this.process = process;
-
-    if (process == null) {
-      throw new IllegalArgumentException("Missing process");
-    }
-    if (process.getProcessEntity() == null) {
-      throw new IllegalArgumentException("Missing process entity");
-    }
-
     if (launcherConfiguration.getStageLaunchFrequency() != null) {
       this.stageLaunchFrequency = launcherConfiguration.getStageLaunchFrequency();
     } else {
       this.stageLaunchFrequency = LauncherConfiguration.DEFAULT_STAGE_LAUNCH_FREQUENCY;
     }
-
     if (launcherConfiguration.getStagePollFrequency() != null) {
       this.stagePollFrequency = launcherConfiguration.getStagePollFrequency();
     } else {
       this.stagePollFrequency = LauncherConfiguration.DEFAULT_STAGE_POLL_FREQUENCY;
     }
-
     this.executorService = Executors.newCachedThreadPool();
   }
 
-  public static int getMaximumRetries(Stage stage) {
-    int maximumRetries = DEFAULT_MAX_RETRIES;
-    if (stage.getExecutorParams().getMaximumRetries() != null) {
-      maximumRetries = stage.getExecutorParams().getMaximumRetries();
-    }
-    return Math.max(0, maximumRetries);
-  }
-
-  public static int getImmediateRetries(Stage stage) {
-    int immediateRetries = DEFAULT_IMMEDIATE_RETRIES;
-    if (stage.getExecutorParams().getImmediateRetries() != null) {
-      immediateRetries = stage.getExecutorParams().getImmediateRetries();
-    }
-    return Math.min(Math.max(0, immediateRetries), getMaximumRetries(stage));
-  }
-
   // TODO: orphaned saved stages
+  /**
+   * Executes the process and returns the process state.
+   *
+   * @return The process state.
+   */
   public ProcessState run() {
     logContext(log.atInfo()).log("Running process launcher");
+    beforeExecution();
     processService.startExecution(process.getProcessEntity());
-    for (Stage stage : process.getStages()) {
-      beforeExecution(stage);
-    }
     while (true) {
       logContext(log.atFine()).log("Executing stages");
       List<Stage> executableStages = DependencyResolver.getExecutableStages(process.getStages());
@@ -152,7 +132,21 @@ public class ProcessLauncher {
         executorService.execute(
             () -> {
               try {
-                executeStage(stage);
+                StageLauncher stageLauncher =
+                    new StageLauncher(
+                        launcherConfiguration,
+                        stageConfiguration,
+                        stageService,
+                        mailService,
+                        pipelineName,
+                        process,
+                        stage);
+                StageExecutionResult result = stageLauncher.run();
+                if (result.isSuccess()) {
+                  stageSuccessCount.incrementAndGet();
+                } else {
+                  stageFailedCount.incrementAndGet();
+                }
               } catch (Exception ex) {
                 logContext(log.atSevere())
                     .withCause(ex)
@@ -175,103 +169,14 @@ public class ProcessLauncher {
     return endExecution();
   }
 
-  private void executeStage(Stage stage) {
-    String stageName = stage.getStageName();
-    logContext(log.atInfo(), stageName).log("Executing stage");
-
-    StageExecutionResult result;
-    try {
-      startExecution(stage);
-      result = stage.getExecutor().execute(pipelineName, getProcessId(), stage);
-      if (result.isActive()) {
-        // If the execution state is active then the executor is asynchronous.
-        result = pollExecution(stage);
-      }
-    } catch (Exception ex) {
-      result = StageExecutionResult.error();
-      result.addExceptionAttribute(ex);
-    }
-
-    endExecution(stage, result);
-  }
-
-  private void beforeExecution(Stage stage) {
-    // Add default executor parameters.
-    stage.getExecutorParams().add(stageConfiguration);
-    StageEntity stageEntity =
-        stageService.beforeExecution(pipelineName, process.getProcessId(), stage).get();
-    stage.setStageEntity(stageEntity);
-  }
-
-  // TODO: test deserialization of active executor
-  private void startExecution(Stage stage) {
-    StageEntity stageEntity = stage.getStageEntity();
-    // Attempt to deserialize stage executor to allow an asynchronous executor to continue executing
-    // an active stage.
-    if (stageEntity.getResultType() == ACTIVE
-        && stageEntity.getExecutorName() != null
-        && stageEntity.getExecutorData() != null
-        && stageEntity.getExecutorParams() != null) {
-      StageExecutor deserializedExecutor = deserializeExecutor(stage);
-      StageExecutorParameters deserializedExecutorParams = deserializeExecutorParameters(stage);
-      if (deserializedExecutor != null && deserializedExecutorParams != null) {
-        logContext(log.atInfo(), stage.getStageName()).log("Using deserialized executor");
-        stage.setExecutor(deserializedExecutor);
-        stage.setExecutorParams(deserializedExecutorParams);
-        return;
-      }
-    }
-    stageService.startExecution(stage);
-  }
-
-  private StageExecutionResult pollExecution(Stage stage) {
-    StageExecutionResult result;
-    while (true) {
-      try {
-        logContext(log.atInfo(), stage.getStageName())
-            .log("Waiting asynchronous stage execution to complete");
-        result = stage.getExecutor().execute(pipelineName, getProcessId(), stage);
-        if (!result.isActive()) {
-          // The asynchronous stage execution has completed.
-          break;
-        }
-      } catch (Exception ex) {
-        result = StageExecutionResult.error();
-        result.addExceptionAttribute(ex);
-        break;
-      }
-      try {
-        Thread.sleep(stagePollFrequency.toMillis());
-      } catch (InterruptedException ex) {
-        Thread.currentThread().interrupt();
-        break;
-      }
-    }
-    return result;
-  }
-
-  private void endExecution(Stage stage, StageExecutionResult result) {
-    stage.incrementImmediateExecutionCount();
-    StageEntity stageEntity = stage.getStageEntity();
-    stageService.endExecution(stage, result);
-    if (result.isSuccess()) {
-      stageSuccessCount.incrementAndGet();
-      logContext(log.atInfo(), stageEntity.getStageName())
-          .with(LogKey.STAGE_EXECUTION_RESULT_TYPE, stageEntity.getResultType())
-          .with(LogKey.STAGE_EXECUTION_COUNT, stageEntity.getExecutionCount())
-          .log("Stage executed successfully.");
-      invalidateDependentStages(stage);
-    } else if (result.isError()) {
-      stageFailedCount.incrementAndGet();
-      logContext(log.atSevere(), stageEntity.getStageName())
-          .with(LogKey.STAGE_EXECUTION_RESULT_TYPE, stageEntity.getResultType())
-          .with(LogKey.STAGE_EXECUTION_COUNT, stageEntity.getExecutionCount())
-          .log("Stage execution failed");
-      // Send email after failed stage execution.
-      mailService.sendStageExecutionMessage(pipelineName, process, stage);
-    } else {
-      throw new RuntimeException(
-          "Unexpected stage execution result type: " + result.getResultType().name());
+  private void beforeExecution() {
+    for (Stage stage : process.getStages()) {
+      // Add default executor parameters.
+      stage.getExecutorParams().add(stageConfiguration);
+      // Get stage entity.
+      StageEntity stageEntity =
+          stageService.beforeExecution(pipelineName, process.getProcessId(), stage).get();
+      stage.setStageEntity(stageEntity);
     }
   }
 
@@ -280,33 +185,6 @@ public class ProcessLauncher {
     logContext(log.atInfo()).log("Process execution finished: %s", processState.name());
     processService.endExecution(pipelineName, process, processState);
     return processState;
-  }
-
-  private StageExecutor deserializeExecutor(Stage stage) {
-    StageEntity stageEntity = stage.getStageEntity();
-    String stageName = stage.getStageName();
-    try {
-      return StageExecutor.deserialize(
-          stageEntity.getExecutorName(), stageEntity.getExecutorData());
-    } catch (Exception ex) {
-      logContext(log.atSevere(), stageName)
-          .withCause(ex)
-          .log("Failed to deserialize executor: %s", stageEntity.getExecutorName());
-    }
-    return null;
-  }
-
-  private StageExecutorParameters deserializeExecutorParameters(Stage stage) {
-    StageEntity stageEntity = stage.getStageEntity();
-    String stageName = stage.getStageName();
-    try {
-      return StageExecutorParameters.deserialize(stageEntity.getExecutorParams());
-    } catch (Exception ex) {
-      logContext(log.atSevere(), stageName)
-          .withCause(ex)
-          .log("Failed to deserialize executor parameters: %s", stageEntity.getExecutorName());
-    }
-    return null;
   }
 
   public static ProcessState evaluateProcessState(List<Stage> stages) {
@@ -327,15 +205,6 @@ public class ProcessLauncher {
       return ProcessState.FAILED;
     }
     return ProcessState.COMPLETED;
-  }
-
-  private void invalidateDependentStages(Stage from) {
-    for (Stage stage : DependencyResolver.getDependentStages(process.getStages(), from)) {
-      StageEntity stageEntity = stage.getStageEntity();
-      stageEntity.resetExecution();
-      stageService.saveStage(stageEntity);
-      stageService.saveStageOut(StageOutEntity.resetExecution(stageEntity));
-    }
   }
 
   public String getPipelineName() {
@@ -360,11 +229,5 @@ public class ProcessLauncher {
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {
     return log.with(LogKey.PIPELINE_NAME, pipelineName).with(LogKey.PROCESS_ID, getProcessId());
-  }
-
-  private FluentLogger.Api logContext(FluentLogger.Api log, String stageName) {
-    return log.with(LogKey.PIPELINE_NAME, pipelineName)
-        .with(LogKey.PROCESS_ID, getProcessId())
-        .with(LogKey.STAGE_NAME, stageName);
   }
 }

@@ -116,15 +116,15 @@ public class PipeliteLauncherAsyncTester {
 
   private PipeliteLauncher createPipeliteLauncher(String pipelineName) {
     return new PipeliteLauncher(
-            launcherConfiguration,
-            stageConfiguration,
-            processFactoryService,
-            processSourceService,
-            processService,
-            stageService,
-            lockService,
-            mailService,
-            pipelineName);
+        launcherConfiguration,
+        stageConfiguration,
+        processFactoryService,
+        processSourceService,
+        processService,
+        stageService,
+        lockService,
+        mailService,
+        pipelineName);
   }
 
   @Value

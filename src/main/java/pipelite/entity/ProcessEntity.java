@@ -11,7 +11,6 @@
 package pipelite.entity;
 
 import javax.persistence.*;
-
 import lombok.*;
 import pipelite.json.Json;
 import pipelite.process.ProcessState;

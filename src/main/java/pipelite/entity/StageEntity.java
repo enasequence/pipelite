@@ -13,7 +13,6 @@ package pipelite.entity;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import javax.persistence.*;
-
 import lombok.*;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.StageExecutor;
@@ -107,6 +106,7 @@ public class StageEntity {
     this.executorData = null;
     this.executorParams = null;
   }
+
 
   public String serialize() {
     return Json.serialize(this);

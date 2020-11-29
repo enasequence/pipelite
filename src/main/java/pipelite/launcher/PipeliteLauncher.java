@@ -20,6 +20,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
+import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
 import pipelite.entity.LauncherLockEntity;
@@ -69,7 +70,15 @@ public class PipeliteLauncher extends AbstractScheduledService {
       LockService lockService,
       MailService mailService,
       String pipelineName) {
-
+    Assert.notNull(launcherConfiguration, "Missing launcher configuration");
+    Assert.notNull(stageConfiguration, "Missing stage configuration");
+    Assert.notNull(processService, "Missing process service");
+    Assert.notNull(processFactoryService, "Missing process factory service");
+    Assert.notNull(processSourceService, "Missing process source service");
+    Assert.notNull(stageService, "Missing stage service");
+    Assert.notNull(mailService, "Missing mail service");
+    Assert.notNull(lockService, "Missing lock service");
+    Assert.notNull(pipelineName, "Missing pipeline name");
     this.launcherConfiguration = launcherConfiguration;
     this.stageConfiguration = stageConfiguration;
     this.processFactoryService = processFactoryService;
@@ -78,14 +87,9 @@ public class PipeliteLauncher extends AbstractScheduledService {
     this.stageService = stageService;
     this.lockService = lockService;
     this.mailService = mailService;
-
-    if (pipelineName == null) {
-      throw new IllegalArgumentException("Missing pipeline name");
-    }
     this.pipelineName = pipelineName;
     this.launcherName =
         LauncherConfiguration.getLauncherName(pipelineName, launcherConfiguration.getPort());
-
     this.processFactory = processFactoryService.create(this.pipelineName);
     this.processSource = processSourceService.create(this.pipelineName);
 

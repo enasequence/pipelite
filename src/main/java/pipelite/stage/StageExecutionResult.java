@@ -43,15 +43,24 @@ public class StageExecutionResult {
   public static final String EXIT_CODE = "exit code";
 
   public boolean isActive() {
-    return resultType.isActive();
+    if (resultType == null) {
+      return false;
+    }
+    return StageExecutionResultType.isActive(resultType);
   }
 
   public boolean isSuccess() {
-    return resultType.isSuccess();
+    if (resultType == null) {
+      return false;
+    }
+    return StageExecutionResultType.isSuccess(resultType);
   }
 
   public boolean isError() {
-    return resultType.isError();
+    if (resultType == null) {
+      return false;
+    }
+    return StageExecutionResultType.isError(resultType);
   }
 
   public static StageExecutionResult active() {

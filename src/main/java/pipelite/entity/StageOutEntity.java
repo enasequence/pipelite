@@ -10,14 +10,13 @@
  */
 package pipelite.entity;
 
+import javax.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.flogger.Flogger;
 import pipelite.json.Json;
 import pipelite.stage.StageExecutionResult;
-
-import javax.persistence.*;
 
 @Entity
 @Table(name = "PIPELITE_STAGE")

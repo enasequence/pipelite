@@ -19,6 +19,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.Data;
 import lombok.extern.flogger.Flogger;
+import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
 import pipelite.cron.CronUtils;
@@ -75,6 +76,14 @@ public class PipeliteScheduler extends AbstractScheduledService {
       StageService stageService,
       LockService lockService,
       MailService mailService) {
+    Assert.notNull(launcherConfiguration, "Missing launcher configuration");
+    Assert.notNull(stageConfiguration, "Missing stage configuration");
+    Assert.notNull(processFactoryService, "Missing process factory service");
+    Assert.notNull(processService, "Missing process service");
+    Assert.notNull(scheduleService, "Missing schedule service");
+    Assert.notNull(stageService, "Missing stage service");
+    Assert.notNull(lockService, "Missing lock service");
+    Assert.notNull(mailService, "Missing mail service");
     this.launcherConfiguration = launcherConfiguration;
     this.stageConfiguration = stageConfiguration;
     this.processFactoryService = processFactoryService;
@@ -85,19 +94,16 @@ public class PipeliteScheduler extends AbstractScheduledService {
     this.mailService = mailService;
     this.schedulerName = LauncherConfiguration.getSchedulerName(launcherConfiguration);
     this.executorService = Executors.newCachedThreadPool();
-
     if (launcherConfiguration.getProcessLaunchFrequency() != null) {
       this.processLaunchFrequency = launcherConfiguration.getProcessLaunchFrequency();
     } else {
       this.processLaunchFrequency = LauncherConfiguration.DEFAULT_PROCESS_LAUNCH_FREQUENCY;
     }
-
     if (launcherConfiguration.getProcessRefreshFrequency() != null) {
       this.processRefreshFrequency = launcherConfiguration.getProcessRefreshFrequency();
     } else {
       this.processRefreshFrequency = LauncherConfiguration.DEFAULT_PROCESS_REFRESH_FREQUENCY;
     }
-
     this.startTime = LocalDateTime.now();
   }
 

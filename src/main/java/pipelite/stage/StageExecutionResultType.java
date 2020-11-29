@@ -15,15 +15,15 @@ public enum StageExecutionResultType {
   SUCCESS,
   ERROR;
 
-  public boolean isActive() {
-    return this == ACTIVE;
+  public static boolean isActive(StageExecutionResultType resultType) {
+    return resultType == ACTIVE;
   }
 
-  public boolean isError() {
-    return this == ERROR;
+  public static boolean isError(StageExecutionResultType resultType) {
+    return resultType == ERROR;
   }
 
-  public boolean isSuccess() {
-    return this == SUCCESS;
+  public static boolean isSuccess(StageExecutionResultType resultType) {
+    return resultType == SUCCESS;
   }
 }
