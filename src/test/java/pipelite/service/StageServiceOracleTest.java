@@ -21,7 +21,7 @@ import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageOutEntity;
-import pipelite.executor.SuccessSyncExecutor;
+import pipelite.process.builder.StageBuilder;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
@@ -39,7 +39,11 @@ class StageServiceOracleTest {
   @Test
   public void testCrud() {
     String stageName = UniqueStringGenerator.randomStageName();
-    Stage stage = Stage.builder().stageName(stageName).executor(new SuccessSyncExecutor()).build();
+    Stage stage =
+        Stage.builder()
+            .stageName(stageName)
+            .executor(StageBuilder.emptyExecutor(StageExecutionResult.success()))
+            .build();
 
     // Create.
 

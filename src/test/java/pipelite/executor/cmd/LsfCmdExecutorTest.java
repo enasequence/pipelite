@@ -28,12 +28,11 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LsfTestConfiguration;
 import pipelite.executor.StageExecutor;
 import pipelite.executor.StageExecutorParameters;
-import pipelite.executor.SuccessAsyncExecutor;
-import pipelite.executor.SuccessSyncExecutor;
 import pipelite.executor.cmd.runner.CmdRunner;
 import pipelite.executor.cmd.runner.CmdRunnerResult;
 import pipelite.executor.cmd.runner.LocalCmdRunner;
 import pipelite.json.Json;
+import pipelite.process.builder.StageBuilder;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 
@@ -65,7 +64,7 @@ public class LsfCmdExecutorTest {
   private Stage stage(StageExecutorParameters executorParams) {
     return Stage.builder()
         .stageName(UniqueStringGenerator.randomStageName())
-        .executor(new SuccessAsyncExecutor())
+        .executor(StageBuilder.emptyExecutor(StageExecutionResult.success()))
         .executorParams(executorParams)
         .build();
   }
@@ -91,7 +90,7 @@ public class LsfCmdExecutorTest {
     Stage stage =
         Stage.builder()
             .stageName(UniqueStringGenerator.randomStageName())
-            .executor(new SuccessSyncExecutor())
+            .executor(StageBuilder.emptyExecutor(StageExecutionResult.success()))
             .build();
     stage.getExecutorParams().setHost(lsfTestConfiguration.getHost());
     File file = File.createTempFile("pipelite-test", "");
@@ -107,7 +106,7 @@ public class LsfCmdExecutorTest {
     Stage stage =
         Stage.builder()
             .stageName(UniqueStringGenerator.randomStageName())
-            .executor(new SuccessSyncExecutor())
+            .executor(StageBuilder.emptyExecutor(StageExecutionResult.success()))
             .build();
     stage.getExecutorParams().setHost(lsfTestConfiguration.getHost());
     File file = File.createTempFile("pipelite-test", "");

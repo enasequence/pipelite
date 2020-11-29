@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
-import pipelite.executor.SuccessSyncExecutor;
+import pipelite.process.builder.StageBuilder;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
@@ -27,7 +27,11 @@ class StageOutEntityTest {
     String processId = UniqueStringGenerator.randomProcessId();
     String stageName = UniqueStringGenerator.randomStageName();
 
-    Stage stage = Stage.builder().stageName(stageName).executor(new SuccessSyncExecutor()).build();
+    Stage stage =
+        Stage.builder()
+            .stageName(stageName)
+            .executor(StageBuilder.emptyExecutor(StageExecutionResult.success()))
+            .build();
 
     // Create execution.
 

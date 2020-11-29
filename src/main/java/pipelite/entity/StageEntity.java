@@ -107,7 +107,6 @@ public class StageEntity {
     this.executorParams = null;
   }
 
-
   public String serialize() {
     return Json.serialize(this);
   }

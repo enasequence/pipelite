@@ -17,6 +17,7 @@ import java.util.Optional;
 import pipelite.executor.StageExecutor;
 import pipelite.executor.StageExecutorParameters;
 import pipelite.stage.Stage;
+import pipelite.stage.StageExecutionResult;
 
 public class StageBuilder {
   private final ProcessBuilder processBuilder;
@@ -53,6 +54,14 @@ public class StageBuilder {
 
   public ProcessBuilder withLsfSshCmdExecutor(String cmd) {
     return addStage(StageExecutor.createLsfSshCmdExecutor(cmd));
+  }
+
+  public ProcessBuilder withEmptyExecutor(StageExecutionResult result) {
+    return addStage(emptyExecutor(result));
+  }
+
+  public static StageExecutor emptyExecutor(StageExecutionResult result) {
+    return (pipelineName, processId, Stage) -> result;
   }
 
   private ProcessBuilder addStage(StageExecutor executor) {

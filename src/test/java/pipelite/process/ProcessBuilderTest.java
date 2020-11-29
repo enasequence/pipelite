@@ -15,8 +15,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
-import pipelite.executor.SuccessSyncExecutor;
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.stage.StageExecutionResult;
 
 public class ProcessBuilderTest {
 
@@ -33,15 +33,15 @@ public class ProcessBuilderTest {
     Process process =
         new ProcessBuilder(PROCESS_ID)
             .execute(stageName1)
-            .with(new SuccessSyncExecutor())
+            .withEmptyExecutor(StageExecutionResult.success())
             .executeAfterPrevious(stageName2)
-            .with(new SuccessSyncExecutor())
+            .withEmptyExecutor(StageExecutionResult.success())
             .executeAfterPrevious(stageName3)
-            .with(new SuccessSyncExecutor())
+            .withEmptyExecutor(StageExecutionResult.success())
             .executeAfterFirst(stageName4)
-            .with(new SuccessSyncExecutor())
+            .withEmptyExecutor(StageExecutionResult.success())
             .executeAfter(stageName5, Arrays.asList(stageName1, stageName2))
-            .with(new SuccessSyncExecutor())
+            .withEmptyExecutor(StageExecutionResult.success())
             .build();
 
     assertThat(process).isNotNull();

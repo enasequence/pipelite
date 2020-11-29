@@ -20,10 +20,10 @@ import org.springframework.test.context.ContextConfiguration;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
-import pipelite.executor.SuccessSyncExecutor;
 import pipelite.launcher.PipeliteSchedulerOracleTest;
 import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.stage.StageExecutionResult;
 
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -43,7 +43,10 @@ public class MailServiceTest {
   @Test
   public void sendProcessExecutionMessage() {
     Process process =
-        new ProcessBuilder("PROCESS_ID").execute("STAGE1").with(new SuccessSyncExecutor()).build();
+        new ProcessBuilder("PROCESS_ID")
+            .execute("STAGE1")
+            .withEmptyExecutor(StageExecutionResult.success())
+            .build();
     StageEntity stageEntity =
         StageEntity.startExecution("PIPELINE_NAME", "PROCESS_ID", process.getStages().get(0));
     process.getStages().get(0).setStageEntity(stageEntity);
@@ -81,7 +84,10 @@ public class MailServiceTest {
   @Test
   public void sendStageExecutionMessage() {
     Process process =
-        new ProcessBuilder("PROCESS_ID").execute("STAGE1").with(new SuccessSyncExecutor()).build();
+        new ProcessBuilder("PROCESS_ID")
+            .execute("STAGE1")
+            .withEmptyExecutor(StageExecutionResult.success())
+            .build();
     StageEntity stageEntity =
         StageEntity.startExecution("PIPELINE_NAME", "PROCESS_ID", process.getStages().get(0));
     process.getStages().get(0).setStageEntity(stageEntity);
