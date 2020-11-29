@@ -14,10 +14,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+
+import pipelite.executor.EmptyAsyncStageExecutor;
+import pipelite.executor.EmptySyncStageExecutor;
 import pipelite.executor.StageExecutor;
 import pipelite.executor.StageExecutorParameters;
 import pipelite.stage.Stage;
-import pipelite.stage.StageExecutionResult;
+import pipelite.stage.StageExecutionResultType;
 
 public class StageBuilder {
   private final ProcessBuilder processBuilder;
@@ -40,28 +43,60 @@ public class StageBuilder {
     return addStage(executor);
   }
 
+  /**
+   * An executor that runs a command line command locally.
+   *
+   * @param cmd the command line command to execute
+   */
   public ProcessBuilder withLocalCmdExecutor(String cmd) {
     return addStage(StageExecutor.createLocalCmdExecutor(cmd));
   }
 
+  /**
+   * An executor that runs a command line command remotely over ssh.
+   *
+   * @param cmd the command line command to execute
+   */
   public ProcessBuilder withSshCmdExecutor(String cmd) {
     return addStage(StageExecutor.createSshCmdExecutor(cmd));
   }
 
+  /**
+   * An executor that runs a command line command locally using LSF.
+   *
+   * @param cmd the command line command to execute
+   */
   public ProcessBuilder withLsfLocalCmdExecutor(String cmd) {
     return addStage(StageExecutor.createLsfLocalCmdExecutor(cmd));
   }
 
+  /**
+   * An executor that runs a command line command remotely over ssh using LSF.
+   *
+   * @param cmd the command line command to execute
+   */
   public ProcessBuilder withLsfSshCmdExecutor(String cmd) {
     return addStage(StageExecutor.createLsfSshCmdExecutor(cmd));
   }
 
-  public ProcessBuilder withEmptyExecutor(StageExecutionResult result) {
-    return addStage(emptyExecutor(result));
+  /**
+   * An executor that simulates a synchronous executor that returns a stage execution result of the
+   * given result type.
+   *
+   * @param resultType the stage execution result type returned by the executor
+   */
+  public ProcessBuilder withEmptySyncExecutor(StageExecutionResultType resultType) {
+    return addStage(new EmptySyncStageExecutor(resultType));
   }
 
-  public static StageExecutor emptyExecutor(StageExecutionResult result) {
-    return (pipelineName, processId, Stage) -> result;
+  /**
+   * An executor that simulates an asynchronous executor that returns a stage execution result of
+   * the given result type.
+   *
+   * @param resultType the stage execution result returned by the executor
+   */
+  public ProcessBuilder withEmptyAsyncExecutor(StageExecutionResultType resultType) {
+    return addStage(new EmptyAsyncStageExecutor(resultType));
   }
 
   private ProcessBuilder addStage(StageExecutor executor) {

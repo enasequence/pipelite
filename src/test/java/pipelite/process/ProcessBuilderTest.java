@@ -16,7 +16,7 @@ import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.stage.StageExecutionResult;
+import pipelite.stage.StageExecutionResultType;
 
 public class ProcessBuilderTest {
 
@@ -33,15 +33,15 @@ public class ProcessBuilderTest {
     Process process =
         new ProcessBuilder(PROCESS_ID)
             .execute(stageName1)
-            .withEmptyExecutor(StageExecutionResult.success())
+            .withEmptySyncExecutor(StageExecutionResultType.SUCCESS)
             .executeAfterPrevious(stageName2)
-            .withEmptyExecutor(StageExecutionResult.success())
+            .withEmptySyncExecutor(StageExecutionResultType.SUCCESS)
             .executeAfterPrevious(stageName3)
-            .withEmptyExecutor(StageExecutionResult.success())
+            .withEmptySyncExecutor(StageExecutionResultType.SUCCESS)
             .executeAfterFirst(stageName4)
-            .withEmptyExecutor(StageExecutionResult.success())
+            .withEmptySyncExecutor(StageExecutionResultType.SUCCESS)
             .executeAfter(stageName5, Arrays.asList(stageName1, stageName2))
-            .withEmptyExecutor(StageExecutionResult.success())
+            .withEmptySyncExecutor(StageExecutionResultType.SUCCESS)
             .build();
 
     assertThat(process).isNotNull();

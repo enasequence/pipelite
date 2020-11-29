@@ -44,7 +44,7 @@ class StageEntityTest {
 
     // Create execution.
 
-    StageEntity stageEntity = StageEntity.startExecution(pipelineName, processId, stage);
+    StageEntity stageEntity = StageEntity.createExecution(pipelineName, processId, stage);
 
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);

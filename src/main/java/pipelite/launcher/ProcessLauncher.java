@@ -24,6 +24,7 @@ import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.*;
 import pipelite.entity.StageEntity;
+import pipelite.executor.StageExecutorSerializer;
 import pipelite.launcher.dependency.DependencyResolver;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
@@ -128,26 +129,27 @@ public class ProcessLauncher {
           // Do not execute this stage because a stage it depends on is active.
           continue;
         }
+        StageLauncher stageLauncher =
+            new StageLauncher(
+                launcherConfiguration, stageConfiguration, pipelineName, process, stage);
         activeStages.add(stage.getStageName());
         executorService.execute(
             () -> {
               try {
-                StageLauncher stageLauncher =
-                    new StageLauncher(
-                        launcherConfiguration,
-                        stageConfiguration,
-                        stageService,
-                        mailService,
-                        pipelineName,
-                        process,
-                        stage);
+                if (!StageExecutorSerializer.deserializeExecution(stage)) {
+                  stageService.startExecution(stage);
+                }
                 StageExecutionResult result = stageLauncher.run();
+                stageService.endExecution(stage, result);
                 if (result.isSuccess()) {
+                  invalidateDependentStages(stage);
                   stageSuccessCount.incrementAndGet();
                 } else {
+                  mailService.sendStageExecutionMessage(pipelineName, process, stage);
                   stageFailedCount.incrementAndGet();
                 }
               } catch (Exception ex) {
+                stageService.endExecution(stage, StageExecutionResult.error(ex));
                 logContext(log.atSevere())
                     .withCause(ex)
                     .log("Unexpected exception when executing stage");
@@ -205,6 +207,12 @@ public class ProcessLauncher {
       return ProcessState.FAILED;
     }
     return ProcessState.COMPLETED;
+  }
+
+  private void invalidateDependentStages(Stage from) {
+    for (Stage stage : DependencyResolver.getDependentStages(process.getStages(), from)) {
+      stageService.resetExecution(stage);
+    }
   }
 
   public String getPipelineName() {

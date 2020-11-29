@@ -63,7 +63,7 @@ public class ProcessService {
   }
 
   public ProcessEntity pendingExecution(String pipelineName, String processId, Integer priority) {
-    ProcessEntity processEntity = ProcessEntity.pendingExecution(pipelineName, processId, priority);
+    ProcessEntity processEntity = ProcessEntity.createExecution(pipelineName, processId, priority);
     return saveProcess(processEntity);
   }
 

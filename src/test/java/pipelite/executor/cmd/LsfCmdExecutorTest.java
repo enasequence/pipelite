@@ -26,15 +26,16 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LsfTestConfiguration;
+import pipelite.executor.EmptySyncStageExecutor;
 import pipelite.executor.StageExecutor;
 import pipelite.executor.StageExecutorParameters;
 import pipelite.executor.cmd.runner.CmdRunner;
 import pipelite.executor.cmd.runner.CmdRunnerResult;
 import pipelite.executor.cmd.runner.LocalCmdRunner;
 import pipelite.json.Json;
-import pipelite.process.builder.StageBuilder;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
+import pipelite.stage.StageExecutionResultType;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
@@ -64,7 +65,7 @@ public class LsfCmdExecutorTest {
   private Stage stage(StageExecutorParameters executorParams) {
     return Stage.builder()
         .stageName(UniqueStringGenerator.randomStageName())
-        .executor(StageBuilder.emptyExecutor(StageExecutionResult.success()))
+        .executor(new EmptySyncStageExecutor(StageExecutionResultType.SUCCESS))
         .executorParams(executorParams)
         .build();
   }
@@ -90,7 +91,7 @@ public class LsfCmdExecutorTest {
     Stage stage =
         Stage.builder()
             .stageName(UniqueStringGenerator.randomStageName())
-            .executor(StageBuilder.emptyExecutor(StageExecutionResult.success()))
+            .executor(new EmptySyncStageExecutor(StageExecutionResultType.SUCCESS))
             .build();
     stage.getExecutorParams().setHost(lsfTestConfiguration.getHost());
     File file = File.createTempFile("pipelite-test", "");
@@ -106,7 +107,7 @@ public class LsfCmdExecutorTest {
     Stage stage =
         Stage.builder()
             .stageName(UniqueStringGenerator.randomStageName())
-            .executor(StageBuilder.emptyExecutor(StageExecutionResult.success()))
+            .executor(new EmptySyncStageExecutor(StageExecutionResultType.SUCCESS))
             .build();
     stage.getExecutorParams().setHost(lsfTestConfiguration.getHost());
     File file = File.createTempFile("pipelite-test", "");

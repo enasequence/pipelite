@@ -21,7 +21,7 @@ import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageOutEntity;
-import pipelite.process.builder.StageBuilder;
+import pipelite.executor.EmptySyncStageExecutor;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
@@ -42,12 +42,12 @@ class StageServiceOracleTest {
     Stage stage =
         Stage.builder()
             .stageName(stageName)
-            .executor(StageBuilder.emptyExecutor(StageExecutionResult.success()))
+            .executor(new EmptySyncStageExecutor(StageExecutionResultType.SUCCESS))
             .build();
 
     // Create.
 
-    StageEntity stageEntity = StageEntity.startExecution(PIPELINE_NAME, PROCESS_ID, stage);
+    StageEntity stageEntity = StageEntity.createExecution(PIPELINE_NAME, PROCESS_ID, stage);
     StageOutEntity stageOutEntity = StageOutEntity.startExecution(stageEntity);
 
     service.saveStage(stageEntity);

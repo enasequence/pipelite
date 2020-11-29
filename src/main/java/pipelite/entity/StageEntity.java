@@ -67,7 +67,7 @@ public class StageEntity {
   @Lob
   private String resultParams;
 
-  public static StageEntity startExecution(String pipelineName, String processId, Stage stage) {
+  public static StageEntity createExecution(String pipelineName, String processId, Stage stage) {
     StageEntity stageEntity = new StageEntity();
     stageEntity.setProcessId(processId);
     stageEntity.setPipelineName(pipelineName);

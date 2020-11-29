@@ -16,12 +16,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfiguration;
+import pipelite.executor.EmptySyncStageExecutor;
 import pipelite.executor.StageExecutor;
 import pipelite.executor.StageExecutorParameters;
 import pipelite.json.Json;
-import pipelite.process.builder.StageBuilder;
 import pipelite.stage.Stage;
-import pipelite.stage.StageExecutionResult;
+import pipelite.stage.StageExecutionResultType;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
@@ -67,7 +67,7 @@ public class CmdExecutorTest {
   private Stage createStage(String workDir) {
     return Stage.builder()
         .stageName("STAGE")
-        .executor(StageBuilder.emptyExecutor(StageExecutionResult.success()))
+        .executor(new EmptySyncStageExecutor(StageExecutionResultType.SUCCESS))
         .executorParams(StageExecutorParameters.builder().workDir(workDir).build())
         .build();
   }

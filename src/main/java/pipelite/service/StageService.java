@@ -60,7 +60,7 @@ public class StageService {
     if (!stageEntity.isPresent()) {
       // Save stage if it did not already exists.
       stageEntity =
-          Optional.of(saveStage(StageEntity.startExecution(pipelineName, processId, stage)));
+          Optional.of(saveStage(StageEntity.createExecution(pipelineName, processId, stage)));
     }
     return stageEntity;
   }
@@ -82,6 +82,13 @@ public class StageService {
     stageEntity.endExecution(result);
     saveStage(stageEntity);
     saveStageOut(StageOutEntity.endExecution(stageEntity, result));
+  }
+
+  public void resetExecution(Stage stage) {
+    StageEntity stageEntity = stage.getStageEntity();
+    stageEntity.resetExecution();
+    saveStage(stageEntity);
+    saveStageOut(StageOutEntity.resetExecution(stageEntity));
   }
 
   public Optional<StageOutEntity> getSavedStageOut(StageEntity stageEntity) {

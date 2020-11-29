@@ -11,7 +11,7 @@
 package pipelite.launcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
@@ -22,71 +22,99 @@ import pipelite.entity.StageEntity;
 import pipelite.executor.StageExecutorParameters;
 import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.service.MailService;
-import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 
 public class StageLauncherTest {
 
-  @Test
-  public void runSuccess() {
+  /*
+    public class ResultCapture<T> implements Answer {
+      private T result = null;
+
+      public T getResult() {
+        return result;
+      }
+
+      @Override
+      public T answer(InvocationOnMock invocationOnMock) throws Throwable {
+        result = (T) invocationOnMock.callRealMethod();
+        return result;
+      }
+    }
+  */
+
+  private void testRunSyncExecutor(StageExecutionResult result) {
     LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
     StageConfiguration stageConfiguration = new StageConfiguration();
-    StageService stageService = mock(StageService.class);
-    MailService mailService = mock(MailService.class);
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     String processId = UniqueStringGenerator.randomProcessId();
     Process process =
         new ProcessBuilder(processId)
-            .execute("STAGE1")
-            .withEmptyExecutor(StageExecutionResult.success())
+            .execute(
+                "STAGE1",
+                StageExecutorParameters.builder().immediateRetries(3).maximumRetries(3).build())
+            .withEmptySyncExecutor(result.getResultType())
             .build();
     process.setProcessEntity(
-        ProcessEntity.pendingExecution(pipelineName, processId, ProcessEntity.DEFAULT_PRIORITY));
+        ProcessEntity.createExecution(pipelineName, processId, ProcessEntity.DEFAULT_PRIORITY));
     process.getProcessEntity().startExecution();
     Stage stage = process.getStages().get(0);
-    stage.setStageEntity(StageEntity.startExecution(pipelineName, processId, stage));
+    stage.setStageEntity(StageEntity.createExecution(pipelineName, processId, stage));
+    stage.getStageEntity().startExecution(stage);
     StageLauncher stageLauncher =
-        new StageLauncher(
-            launcherConfiguration,
-            stageConfiguration,
-            stageService,
-            mailService,
-            pipelineName,
-            process,
-            stage);
-    assertThat(stageLauncher.run()).isEqualTo(StageExecutionResult.success());
+        spy(
+            new StageLauncher(
+                launcherConfiguration, stageConfiguration, pipelineName, process, stage));
+    assertThat(stageLauncher.run()).isEqualTo(result);
+    verify(stageLauncher, times(0)).pollExecution();
+    assertThat(stage.getStageEntity().getExecutorName())
+        .isEqualTo("pipelite.executor.EmptySyncStageExecutor");
+    assertThat(stage.getStageEntity().getExecutorData())
+        .isEqualTo("{\n" + "  \"resultType\" : \"" + result.getResultType().name() + "\"\n}");
+    assertThat(stage.getStageEntity().getExecutorParams())
+        .isEqualTo("{\n" + "  \"maximumRetries\" : 3,\n" + "  \"immediateRetries\" : 3\n" + "}");
+  }
+
+  private void testRunAsyncExecutor(StageExecutionResult result) {
+    LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
+    StageConfiguration stageConfiguration = new StageConfiguration();
+    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String processId = UniqueStringGenerator.randomProcessId();
+    Process process =
+        new ProcessBuilder(processId)
+            .execute(
+                "STAGE1",
+                StageExecutorParameters.builder().immediateRetries(3).maximumRetries(3).build())
+            .withEmptyAsyncExecutor(result.getResultType())
+            .build();
+    process.setProcessEntity(
+        ProcessEntity.createExecution(pipelineName, processId, ProcessEntity.DEFAULT_PRIORITY));
+    process.getProcessEntity().startExecution();
+    Stage stage = process.getStages().get(0);
+    stage.setStageEntity(StageEntity.createExecution(pipelineName, processId, stage));
+    stage.getStageEntity().startExecution(stage);
+    stage.getStageEntity().endExecution(StageExecutionResult.error());
+    stage.getStageEntity().startExecution(stage);
+    StageLauncher stageLauncher =
+        spy(
+            new StageLauncher(
+                launcherConfiguration, stageConfiguration, pipelineName, process, stage));
+    assertThat(stageLauncher.run()).isEqualTo(result);
+    verify(stageLauncher, times(1)).pollExecution();
+    assertThat(stage.getStageEntity().getExecutorName())
+        .isEqualTo("pipelite.executor.EmptyAsyncStageExecutor");
+    assertThat(stage.getStageEntity().getExecutorData())
+        .isEqualTo("{\n" + "  \"resultType\" : \"" + result.getResultType().name() + "\"\n}");
+    assertThat(stage.getStageEntity().getExecutorParams())
+        .isEqualTo("{\n" + "  \"maximumRetries\" : 3,\n" + "  \"immediateRetries\" : 3\n" + "}");
   }
 
   @Test
-  public void runError() {
-    LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
-    StageConfiguration stageConfiguration = new StageConfiguration();
-    StageService stageService = mock(StageService.class);
-    MailService mailService = mock(MailService.class);
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
-    Process process =
-        new ProcessBuilder(processId)
-            .execute("STAGE1")
-            .withEmptyExecutor(StageExecutionResult.error())
-            .build();
-    process.setProcessEntity(
-        ProcessEntity.pendingExecution(pipelineName, processId, ProcessEntity.DEFAULT_PRIORITY));
-    process.getProcessEntity().startExecution();
-    Stage stage = process.getStages().get(0);
-    stage.setStageEntity(StageEntity.startExecution(pipelineName, processId, stage));
-    StageLauncher stageLauncher =
-        new StageLauncher(
-            launcherConfiguration,
-            stageConfiguration,
-            stageService,
-            mailService,
-            pipelineName,
-            process,
-            stage);
-    assertThat(stageLauncher.run()).isEqualTo(StageExecutionResult.error());
+  public void run() {
+    testRunSyncExecutor(StageExecutionResult.success());
+    testRunSyncExecutor(StageExecutionResult.error());
+    testRunAsyncExecutor(StageExecutionResult.success());
+    testRunAsyncExecutor(StageExecutionResult.error());
   }
 
   private void testMaximumRetries(Integer maximumRetries, int expectedMaximumRetries) {

@@ -75,6 +75,12 @@ public class StageExecutionResult {
     return new StageExecutionResult(StageExecutionResultType.ERROR);
   }
 
+  public static StageExecutionResult error(Exception ex) {
+    StageExecutionResult result = error();
+    result.addExceptionAttribute(ex);
+    return result;
+  }
+
   public String getAttribute(String value) {
     return attributes.get(value);
   }
