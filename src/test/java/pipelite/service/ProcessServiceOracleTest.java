@@ -36,12 +36,12 @@ class ProcessServiceOracleTest {
     String processId = UniqueStringGenerator.randomProcessId();
     Integer priority = 0;
 
-    ProcessEntity processEntity = ProcessEntity.startExecution(pipelineName, processId, priority);
+    ProcessEntity processEntity = ProcessEntity.pendingExecution(pipelineName, processId, priority);
 
     service.saveProcess(processEntity);
     assertThat(service.getSavedProcess(pipelineName, processId).get()).isEqualTo(processEntity);
 
-    processEntity.updateExecution(ProcessState.COMPLETED);
+    processEntity.endExecution(ProcessState.COMPLETED);
 
     service.saveProcess(processEntity);
     assertThat(service.getSavedProcess(pipelineName, processId).get()).isEqualTo(processEntity);
@@ -96,9 +96,9 @@ class ProcessServiceOracleTest {
 
   private static ProcessEntity create(String pipelineName, ProcessState state, int priority) {
     ProcessEntity processEntity =
-        ProcessEntity.startExecution(
+        ProcessEntity.pendingExecution(
             pipelineName, UniqueStringGenerator.randomProcessId(), priority);
-    processEntity.updateExecution(state);
+    processEntity.endExecution(state);
     return processEntity;
   }
 }

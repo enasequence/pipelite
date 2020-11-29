@@ -90,12 +90,6 @@ public class StageEntity {
     }
   }
 
-  public void serializeExecution(Stage stage) {
-    /** Save information required to resume asynchronous executors. */
-    StageExecutor stageExecutor = stage.getExecutor();
-    this.executorData = stageExecutor.serialize();
-  }
-
   public void endExecution(StageExecutionResult result) {
     this.resultType = result.getResultType();
     this.resultParams = result.attributesJson();

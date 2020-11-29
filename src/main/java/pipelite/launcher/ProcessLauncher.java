@@ -24,7 +24,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.extern.flogger.Flogger;
 import pipelite.configuration.*;
-import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageOutEntity;
 import pipelite.executor.StageExecutor;
@@ -51,7 +50,6 @@ public class ProcessLauncher {
   private final String pipelineName;
   private final Process process;
 
-  private final List<Stage> stages;
   private final Set<String> activeStages = ConcurrentHashMap.newKeySet();
   private final Duration stageLaunchFrequency;
   private final Duration stagePollFrequency;
@@ -87,8 +85,6 @@ public class ProcessLauncher {
       throw new IllegalArgumentException("Missing process entity");
     }
 
-    this.stages = new ArrayList<>();
-
     if (launcherConfiguration.getStageLaunchFrequency() != null) {
       this.stageLaunchFrequency = launcherConfiguration.getStageLaunchFrequency();
     } else {
@@ -102,80 +98,6 @@ public class ProcessLauncher {
     }
 
     this.executorService = Executors.newCachedThreadPool();
-  }
-
-  public ProcessState run() {
-    logContext(log.atInfo()).log("Running process launcher");
-    createStages();
-    executeStages();
-    return saveProcess();
-  }
-
-  // TODO: orphaned saved stages
-  private void createStages() {
-    List<Stage> stages = process.getStages();
-
-    for (Stage stage : stages) {
-      // Adds stage parameter defaults from stage configuration.
-      stage.getExecutorParams().add(stageConfiguration);
-
-      // Gets existing stage entity from the database.
-      Optional<StageEntity> stageEntity =
-          stageService.getSavedStage(pipelineName, process.getProcessId(), stage.getStageName());
-
-      // Saves the stage entity in the database if it does not exist.
-      if (!stageEntity.isPresent()) {
-        stageEntity =
-            Optional.of(
-                stageService.saveStage(
-                    StageEntity.startExecution(pipelineName, getProcessId(), stage)));
-      }
-
-      stage.setStageEntity(stageEntity.get());
-      this.stages.add(stage);
-    }
-  }
-
-  public static ProcessState evaluateProcessState(List<Stage> stages) {
-    int successCount = 0;
-    int activeCount = 0;
-    int errorCount = 0;
-    for (Stage stage : stages) {
-      StageEntity stageEntity = stage.getStageEntity();
-      StageExecutionResultType resultType = stageEntity.getResultType();
-
-      if (resultType == SUCCESS) {
-        // The stage execution has been successful.
-        successCount++;
-      } else if (resultType == null || resultType == ACTIVE) {
-        // The stage and process execution is active.
-        activeCount++;
-      } else if (resultType == ERROR) {
-        Integer executionCount = stageEntity.getExecutionCount();
-        int maximumRetries = getMaximumRetries(stage);
-        if (executionCount != null && executionCount > maximumRetries) {
-          // The stage and process execution has failed.
-          errorCount++;
-        } else {
-          // The stage and process execution is active.
-          activeCount++;
-        }
-      }
-    }
-
-    if (activeCount > 0) {
-      if (!DependencyResolver.getExecutableStages(stages).isEmpty()) {
-        // All least one stage execution is active so the process is active.
-        return ProcessState.ACTIVE;
-      }
-    }
-    if (errorCount > 0) {
-      // All least one stage execution has failed so the process has failed.
-      return ProcessState.FAILED;
-    }
-
-    // All stages and the process have completed successfully.
-    return ProcessState.COMPLETED;
   }
 
   public static int getMaximumRetries(Stage stage) {
@@ -194,30 +116,28 @@ public class ProcessLauncher {
     return Math.min(Math.max(0, immediateRetries), getMaximumRetries(stage));
   }
 
-  private void executeStages() {
+  // TODO: orphaned saved stages
+  public ProcessState run() {
+    logContext(log.atInfo()).log("Running process launcher");
+    processService.startExecution(process.getProcessEntity());
+    for (Stage stage : process.getStages()) {
+      beforeExecution(stage);
+    }
     while (true) {
-      if (Thread.currentThread().isInterrupted()) {
-        executorService.shutdownNow();
-        return;
-      }
-
       logContext(log.atFine()).log("Executing stages");
-
-      List<Stage> executableStages = DependencyResolver.getExecutableStages(stages);
+      List<Stage> executableStages = DependencyResolver.getExecutableStages(process.getStages());
       if (activeStages.isEmpty() && executableStages.isEmpty()) {
-        logContext(log.atInfo()).log("No active or executable stages");
-        return;
+        break;
       }
-
       for (Stage stage : executableStages) {
-        String stageName = stage.getStageName();
-        boolean isActive = activeStages.contains(stageName);
+        boolean isActive = activeStages.contains(stage.getStageName());
         if (isActive) {
-          // We should not execute this stage because it is already active.
+          // Do not execute this stage because it is already active.
           continue;
         }
         if (stage.getDependsOn() != null) {
-          for (Stage dependsOn : DependencyResolver.getDependsOnStages(stages, stage)) {
+          for (Stage dependsOn :
+              DependencyResolver.getDependsOnStages(process.getStages(), stage)) {
             if (activeStages.contains(dependsOn.getStageName())) {
               isActive = true;
               break;
@@ -225,11 +145,10 @@ public class ProcessLauncher {
           }
         }
         if (isActive) {
-          // We should not execute this stage because a stage it depends on is active.
+          // Do not execute this stage because a stage it depends on is active.
           continue;
         }
-
-        activeStages.add(stageName);
+        activeStages.add(stage.getStageName());
         executorService.execute(
             () -> {
               try {
@@ -239,114 +158,102 @@ public class ProcessLauncher {
                     .withCause(ex)
                     .log("Unexpected exception when executing stage");
               } finally {
-                activeStages.remove(stageName);
+                activeStages.remove(stage.getStageName());
               }
             });
       }
-
       try {
         Thread.sleep(stageLaunchFrequency.toMillis());
       } catch (InterruptedException ex) {
+        logContext(log.atSevere()).log("Process launcher was interrupted");
         executorService.shutdownNow();
         Thread.currentThread().interrupt();
-        return;
+        throw new RuntimeException(ex);
       }
     }
-  }
 
-  private ProcessState saveProcess() {
-    logContext(log.atInfo()).log("Saving process");
-    ProcessEntity processEntity = process.getProcessEntity();
-    processEntity.updateExecution(evaluateProcessState(stages));
-    processService.saveProcess(processEntity);
-    // Send email after process execution.
-    mailService.sendProcessExecutionMessage(pipelineName, process);
-    return processEntity.getState();
+    return endExecution();
   }
 
   private void executeStage(Stage stage) {
-    StageEntity stageEntity = stage.getStageEntity();
     String stageName = stage.getStageName();
-    logContext(log.atInfo(), stageName).log("Preparing to execute stage");
-
-    // If the stage executor has been serialized we should use it to allow an active stage
-    // execution to continue. For example, an asynchronous executor may contain a job id that
-    // is associated with an external execution service.
-
-    // TODO: test deserialization of active executor
-    boolean isUsingDeserializedExecutor = false;
-    if (stageEntity.getResultType() == ACTIVE
-        && stageEntity.getExecutorName() != null
-        && stageEntity.getExecutorData() != null
-        && stageEntity.getExecutorParams() != null) {
-      StageExecutor deserializedExecutor = deserializeExecutor(stage);
-      StageExecutorParameters deserializedExecutorParams = deserializeExecutorParameters(stage);
-      boolean isDeserializedExecutor = deserializedExecutor != null;
-      boolean isDeserializedExecutorParams = deserializedExecutorParams != null;
-      if (isDeserializedExecutor && isDeserializedExecutorParams) {
-        // Use deserialized executor.
-        isUsingDeserializedExecutor = true;
-        stage.setExecutor(deserializedExecutor);
-        stage.setExecutorParams(deserializedExecutorParams);
-        logContext(log.atInfo(), stageName).log("Using deserialized executor");
-      }
-    }
+    logContext(log.atInfo(), stageName).log("Executing stage");
 
     StageExecutionResult result;
     try {
-      logContext(log.atInfo(), stageName).log("Executing stage");
-      if (!isUsingDeserializedExecutor) {
-        // Start a new stage execution and serialize the executor.
-        stageEntity.startExecution(stage);
-        stageService.saveStage(stageEntity);
-        stageService.saveStageOut(StageOutEntity.startExecution(stageEntity));
-      }
-
+      startExecution(stage);
       result = stage.getExecutor().execute(pipelineName, getProcessId(), stage);
-
-      if (!isUsingDeserializedExecutor && result.isActive()) {
-        // Serialize an active executor. For example, an asynchronous executor may have
-        // assigned a job id that is associated with an external execution service.
-        stageEntity.serializeExecution(stage);
-        stageService.saveStage(stageEntity);
+      if (result.isActive()) {
+        // If the execution state is active then the executor is asynchronous.
+        result = pollExecution(stage);
       }
     } catch (Exception ex) {
       result = StageExecutionResult.error();
       result.addExceptionAttribute(ex);
     }
 
-    if (result.isActive()) {
-      // If the execution state is active then we have an asynchronous executor.
-      while (true) {
-        try {
-          logContext(log.atInfo(), stageName)
-              .log("Waiting for asynchronous stage execution to complete");
-          // Execute the stage repeatedly until it is no longer active.
-          result = stage.getExecutor().execute(pipelineName, getProcessId(), stage);
-          if (!result.isActive()) {
-            // The asynchronous stage execution has completed.
-            break;
-          }
-        } catch (Exception ex) {
-          result = StageExecutionResult.error();
-          result.addExceptionAttribute(ex);
-          break;
-        }
+    endExecution(stage, result);
+  }
 
-        try {
-          Thread.sleep(stagePollFrequency.toMillis());
-        } catch (InterruptedException ex) {
-          Thread.currentThread().interrupt();
-          return;
-        }
+  private void beforeExecution(Stage stage) {
+    // Add default executor parameters.
+    stage.getExecutorParams().add(stageConfiguration);
+    StageEntity stageEntity =
+        stageService.beforeExecution(pipelineName, process.getProcessId(), stage).get();
+    stage.setStageEntity(stageEntity);
+  }
+
+  // TODO: test deserialization of active executor
+  private void startExecution(Stage stage) {
+    StageEntity stageEntity = stage.getStageEntity();
+    // Attempt to deserialize stage executor to allow an asynchronous executor to continue executing
+    // an active stage.
+    if (stageEntity.getResultType() == ACTIVE
+        && stageEntity.getExecutorName() != null
+        && stageEntity.getExecutorData() != null
+        && stageEntity.getExecutorParams() != null) {
+      StageExecutor deserializedExecutor = deserializeExecutor(stage);
+      StageExecutorParameters deserializedExecutorParams = deserializeExecutorParameters(stage);
+      if (deserializedExecutor != null && deserializedExecutorParams != null) {
+        logContext(log.atInfo(), stage.getStageName()).log("Using deserialized executor");
+        stage.setExecutor(deserializedExecutor);
+        stage.setExecutorParams(deserializedExecutorParams);
+        return;
       }
     }
+    stageService.startExecution(stage);
+  }
 
-    // Stage has been executed.
-    stageEntity.endExecution(result);
-    stageService.saveStage(stageEntity);
-    stageService.saveStageOut(StageOutEntity.endExecution(stageEntity, result));
+  private StageExecutionResult pollExecution(Stage stage) {
+    StageExecutionResult result;
+    while (true) {
+      try {
+        logContext(log.atInfo(), stage.getStageName())
+            .log("Waiting asynchronous stage execution to complete");
+        result = stage.getExecutor().execute(pipelineName, getProcessId(), stage);
+        if (!result.isActive()) {
+          // The asynchronous stage execution has completed.
+          break;
+        }
+      } catch (Exception ex) {
+        result = StageExecutionResult.error();
+        result.addExceptionAttribute(ex);
+        break;
+      }
+      try {
+        Thread.sleep(stagePollFrequency.toMillis());
+      } catch (InterruptedException ex) {
+        Thread.currentThread().interrupt();
+        break;
+      }
+    }
+    return result;
+  }
+
+  private void endExecution(Stage stage, StageExecutionResult result) {
     stage.incrementImmediateExecutionCount();
+    StageEntity stageEntity = stage.getStageEntity();
+    stageService.endExecution(stage, result);
     if (result.isSuccess()) {
       stageSuccessCount.incrementAndGet();
       logContext(log.atInfo(), stageEntity.getStageName())
@@ -354,15 +261,25 @@ public class ProcessLauncher {
           .with(LogKey.STAGE_EXECUTION_COUNT, stageEntity.getExecutionCount())
           .log("Stage executed successfully.");
       invalidateDependentStages(stage);
-    } else {
-      // Send email after failed stage execution.
-      mailService.sendStageExecutionMessage(pipelineName, process, stage);
+    } else if (result.isError()) {
       stageFailedCount.incrementAndGet();
       logContext(log.atSevere(), stageEntity.getStageName())
           .with(LogKey.STAGE_EXECUTION_RESULT_TYPE, stageEntity.getResultType())
           .with(LogKey.STAGE_EXECUTION_COUNT, stageEntity.getExecutionCount())
           .log("Stage execution failed");
+      // Send email after failed stage execution.
+      mailService.sendStageExecutionMessage(pipelineName, process, stage);
+    } else {
+      throw new RuntimeException(
+          "Unexpected stage execution result type: " + result.getResultType().name());
     }
+  }
+
+  private ProcessState endExecution() {
+    ProcessState processState = evaluateProcessState(process.getStages());
+    logContext(log.atInfo()).log("Process execution finished: %s", processState.name());
+    processService.endExecution(pipelineName, process, processState);
+    return processState;
   }
 
   private StageExecutor deserializeExecutor(Stage stage) {
@@ -392,8 +309,28 @@ public class ProcessLauncher {
     return null;
   }
 
+  public static ProcessState evaluateProcessState(List<Stage> stages) {
+    int errorCount = 0;
+    for (Stage stage : stages) {
+      StageEntity stageEntity = stage.getStageEntity();
+      StageExecutionResultType resultType = stageEntity.getResultType();
+      if (resultType == SUCCESS) {
+        continue;
+      }
+      if (DependencyResolver.isExecutableStage(stages, stage)) {
+        return ProcessState.ACTIVE;
+      } else {
+        errorCount++;
+      }
+    }
+    if (errorCount > 0) {
+      return ProcessState.FAILED;
+    }
+    return ProcessState.COMPLETED;
+  }
+
   private void invalidateDependentStages(Stage from) {
-    for (Stage stage : DependencyResolver.getDependentStages(stages, from)) {
+    for (Stage stage : DependencyResolver.getDependentStages(process.getStages(), from)) {
       StageEntity stageEntity = stage.getStageEntity();
       stageEntity.resetExecution();
       stageService.saveStage(stageEntity);

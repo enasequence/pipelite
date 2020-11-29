@@ -45,7 +45,7 @@ public class ProcessEntity {
   @Column(name = "PRIORITY", nullable = false)
   private Integer priority = DEFAULT_PRIORITY;
 
-  public static ProcessEntity startExecution(
+  public static ProcessEntity pendingExecution(
       String pipelineName, String processId, Integer priority) {
     ProcessEntity processEntity = new ProcessEntity();
     processEntity.setProcessId(processId);
@@ -56,7 +56,11 @@ public class ProcessEntity {
     return processEntity;
   }
 
-  public void updateExecution(ProcessState state) {
+  public void startExecution() {
+    this.state = ProcessState.ACTIVE;
+  }
+
+  public void endExecution(ProcessState state) {
     this.state = state;
     ++executionCount;
   }

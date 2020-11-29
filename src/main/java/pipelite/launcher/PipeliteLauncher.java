@@ -196,10 +196,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
         continue;
       }
       logContext(log.atInfo()).log("Creating new process %s", trimmedNewProcessId);
-      ProcessEntity newProcessEntity =
-          ProcessEntity.startExecution(
-              pipelineName, trimmedNewProcessId, newProcess.getPriority());
-      processService.saveProcess(newProcessEntity);
+      processService.pendingExecution(pipelineName, trimmedNewProcessId, newProcess.getPriority());
       processSource.accept(newProcess.getProcessId());
     }
   }

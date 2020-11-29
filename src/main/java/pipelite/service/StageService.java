@@ -20,6 +20,8 @@ import pipelite.entity.StageEntityId;
 import pipelite.entity.StageOutEntity;
 import pipelite.repository.StageOutRepository;
 import pipelite.repository.StageRepository;
+import pipelite.stage.Stage;
+import pipelite.stage.StageExecutionResult;
 
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -34,9 +36,52 @@ public class StageService {
     this.outRepository = outRepository;
   }
 
+  /**
+   * Returns the saved stage entity.
+   *
+   * @param pipelineName the pipeline name
+   * @param processId the process id
+   * @param stageName the stage name
+   * @return the saved stage entity
+   */
   public Optional<StageEntity> getSavedStage(
       String pipelineName, String processId, String stageName) {
     return repository.findById(new StageEntityId(processId, pipelineName, stageName));
+  }
+
+  /**
+   * Called to get the latest execution information before the stage execution starts. Asynchronous
+   * executors may continue executing an active stage. Creates the stage if it is missing.
+   */
+  public Optional<StageEntity> beforeExecution(String pipelineName, String processId, Stage stage) {
+    // Get saved stage if it exists.
+    Optional<StageEntity> stageEntity =
+        repository.findById(new StageEntityId(processId, pipelineName, stage.getStageName()));
+    if (!stageEntity.isPresent()) {
+      // Save stage if it did not already exists.
+      stageEntity =
+          Optional.of(saveStage(StageEntity.startExecution(pipelineName, processId, stage)));
+    }
+    return stageEntity;
+  }
+
+  /**
+   * Called when the stage execution starts. Asynchronous executors may contain information that
+   * allow them to continue executing an interrupted stage execution. This information is saved
+   * here.
+   */
+  public void startExecution(Stage stage) {
+    StageEntity stageEntity = stage.getStageEntity();
+    stageEntity.startExecution(stage);
+    saveStage(stageEntity);
+    saveStageOut(StageOutEntity.startExecution(stageEntity));
+  }
+
+  public void endExecution(Stage stage, StageExecutionResult result) {
+    StageEntity stageEntity = stage.getStageEntity();
+    stageEntity.endExecution(result);
+    saveStage(stageEntity);
+    saveStageOut(StageOutEntity.endExecution(stageEntity, result));
   }
 
   public Optional<StageOutEntity> getSavedStageOut(StageEntity stageEntity) {

@@ -30,7 +30,7 @@ import pipelite.stage.StageExecutionResultType;
 public class DependencyResolverTest {
 
   @Test
-  public void testGetRunnableStageAllActiveAllDependOnPrevious() {
+  public void getExecutableStagesAllActiveAllDependOnPrevious() {
     List<Stage> stages = new ArrayList<>();
 
     ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
@@ -58,7 +58,7 @@ public class DependencyResolverTest {
   }
 
   @Test
-  public void testGetRunnableStageAllActiveAllDependOnFirst() {
+  public void getExecutableStagesAllActiveAllDependOnFirst() {
     List<Stage> stages = new ArrayList<>();
 
     ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
@@ -86,7 +86,7 @@ public class DependencyResolverTest {
   }
 
   @Test
-  public void testGetRunnableStageFirstSuccessAllDependOnFirst() {
+  public void getExecutableStagesFirstSuccessAllDependOnFirst() {
     List<Stage> stages = new ArrayList<>();
 
     ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
@@ -120,7 +120,7 @@ public class DependencyResolverTest {
   }
 
   @Test
-  public void testGetRunnableStageFirstErrorMaxRetriesAllDependOnFirst() {
+  public void getExecutableStagesFirstErrorMaxRetriesAllDependOnFirst() {
     List<Stage> stages = new ArrayList<>();
 
     ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
@@ -153,7 +153,7 @@ public class DependencyResolverTest {
   }
 
   @Test
-  public void testGetRunnableStageFirstErrorMaxImmediateAllDependOnFirst() {
+  public void getExecutableStagesFirstErrorMaxImmediateAllDependOnFirst() {
     List<Stage> stages = new ArrayList<>();
 
     ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
@@ -188,7 +188,7 @@ public class DependencyResolverTest {
   }
 
   @Test
-  public void testGetRunnableStageFirstErrorNotMaxRetriesImmediateAllDependOnFirst() {
+  public void getExecutableStagesFirstErrorNotMaxRetriesImmediateAllDependOnFirst() {
     List<Stage> stages = new ArrayList<>();
 
     ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
@@ -224,7 +224,7 @@ public class DependencyResolverTest {
   }
 
   @Test
-  public void testGetDependentStagesAllDependOnPrevious() {
+  public void getDependentStagesAllDependOnPrevious() {
     List<Stage> stages = new ArrayList<>();
 
     ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
@@ -263,7 +263,7 @@ public class DependencyResolverTest {
   }
 
   @Test
-  public void testGetDependentStagesAllDependOnFirst() {
+  public void getDependentStagesAllDependOnFirst() {
     List<Stage> stages = new ArrayList<>();
 
     ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
@@ -396,5 +396,39 @@ public class DependencyResolverTest {
     isDependsOnStageSuccess(SUCCESS, true);
     isDependsOnStageSuccess(ACTIVE, false);
     isDependsOnStageSuccess(ERROR, false);
+  }
+
+  private boolean isExecutableStage(
+      StageExecutionResultType stageExecutionResultType,
+      int executionCount,
+      int immediateRetries,
+      int maximumRetries) {
+    StageEntity stageEntity = new StageEntity();
+    stageEntity.setExecutionCount(executionCount);
+    stageEntity.setResultType(stageExecutionResultType);
+    Stage stage =
+        Stage.builder()
+            .stageName("STAGE")
+            .executor(new SuccessSyncExecutor())
+            .executorParams(
+                StageExecutorParameters.builder()
+                    .immediateRetries(immediateRetries)
+                    .maximumRetries(maximumRetries)
+                    .build())
+            .build();
+    stage.setStageEntity(stageEntity);
+    return DependencyResolver.isExecutableStage(Arrays.asList(stage), stage);
+  }
+
+  @Test
+  public void isExecutableStage() {
+    assertThat(isExecutableStage(null, 0, 0, 0)).isTrue();
+    assertThat(isExecutableStage(null, 1, 0, 0)).isFalse();
+    assertThat(isExecutableStage(ERROR, 0, 0, 0)).isTrue();
+    assertThat(isExecutableStage(ERROR, 1, 0, 0)).isFalse();
+    assertThat(isExecutableStage(ACTIVE, 0, 0, 0)).isTrue();
+    assertThat(isExecutableStage(ACTIVE, 1, 0, 0)).isFalse();
+    assertThat(isExecutableStage(SUCCESS, 0, 0, 0)).isFalse();
+    assertThat(isExecutableStage(SUCCESS, 1, 0, 0)).isFalse();
   }
 }

@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ProcessEntityId;
+import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.repository.ProcessRepository;
 
@@ -26,9 +27,12 @@ import pipelite.repository.ProcessRepository;
 public class ProcessService {
 
   private final ProcessRepository repository;
+  private final MailService mailService;
 
-  public ProcessService(@Autowired ProcessRepository repository) {
+  public ProcessService(
+      @Autowired ProcessRepository repository, @Autowired MailService mailService) {
     this.repository = repository;
+    this.mailService = mailService;
   }
 
   public Optional<ProcessEntity> getSavedProcess(String pipelineName, String processId) {
@@ -56,6 +60,23 @@ public class ProcessService {
 
   public ProcessEntity saveProcess(ProcessEntity processEntity) {
     return repository.save(processEntity);
+  }
+
+  public ProcessEntity pendingExecution(String pipelineName, String processId, Integer priority) {
+    ProcessEntity processEntity = ProcessEntity.pendingExecution(pipelineName, processId, priority);
+    return saveProcess(processEntity);
+  }
+
+  public void startExecution(ProcessEntity processEntity) {
+    processEntity.startExecution();
+    saveProcess(processEntity);
+  }
+
+  public void endExecution(String pipelineName, Process process, ProcessState processState) {
+    ProcessEntity processEntity = process.getProcessEntity();
+    processEntity.endExecution(processState);
+    saveProcess(processEntity);
+    mailService.sendProcessExecutionMessage(pipelineName, process);
   }
 
   public void delete(ProcessEntity processEntity) {

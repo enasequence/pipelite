@@ -283,17 +283,17 @@ public class PipeliteScheduler extends AbstractScheduledService {
         break;
       }
       if (--remainingProcessIdRetries <= 0) {
-        throw new RuntimeException("Could not assign new process id");
+        throw new RuntimeException("Could not assign a new process id");
       }
     }
     Process process = createProcess(pipelineName, processId);
     if (process == null) {
       return false;
     }
-    ProcessEntity newProcessEntity = ProcessEntity.startExecution(pipelineName, processId, 9);
-    processService.saveProcess(newProcessEntity);
+    ProcessEntity processEntity =
+        processService.pendingExecution(pipelineName, processId, ProcessEntity.DEFAULT_PRIORITY);
     schedule.setProcess(process);
-    schedule.setProcessEntity(newProcessEntity);
+    schedule.setProcessEntity(processEntity);
     schedule.getScheduleEntity().startExecution(processId);
     scheduleService.saveProcessSchedule(schedule.getScheduleEntity());
     return true;

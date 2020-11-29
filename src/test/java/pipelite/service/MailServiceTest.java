@@ -38,7 +38,7 @@ public class MailServiceTest {
         StageEntity.startExecution("PIPELINE_NAME", "PROCESS_ID", process.getStages().get(0));
     process.getStages().get(0).setStageEntity(stageEntity);
     ProcessEntity processEntity =
-        ProcessEntity.startExecution(
+        ProcessEntity.pendingExecution(
             "PIPELINE_NAME", "PROCESS_ID", ProcessEntity.DEFAULT_PRIORITY);
     process.setProcessEntity(processEntity);
     assertThat(mailService.getProcessExecutionSubject("PIPELINE_NAME", process))
@@ -76,7 +76,7 @@ public class MailServiceTest {
         StageEntity.startExecution("PIPELINE_NAME", "PROCESS_ID", process.getStages().get(0));
     process.getStages().get(0).setStageEntity(stageEntity);
     ProcessEntity processEntity =
-        ProcessEntity.startExecution(
+        ProcessEntity.pendingExecution(
             "PIPELINE_NAME", "PROCESS_ID", ProcessEntity.DEFAULT_PRIORITY);
     process.setProcessEntity(processEntity);
     assertThat(

@@ -24,7 +24,7 @@ class StageEntityTest {
 
   @Data
   public static final class TestExecutor implements StageExecutor {
-    private String test = "TEST";
+    private String test = "TEST_EXECUTOR_DATA";
 
     @Override
     public StageExecutionResult execute(String pipelineName, String processId, Stage stage) {
@@ -72,14 +72,8 @@ class StageEntityTest {
     assertThat(stageEntity.getEndTime()).isNull();
     assertThat(stageEntity.getExecutorName())
         .isEqualTo("pipelite.entity.StageEntityTest$TestExecutor");
-    assertThat(stageEntity.getExecutorData()).isEqualTo("{\n" + "  \"test\" : \"TEST\"\n" + "}");
+    assertThat(stageEntity.getExecutorData()).isEqualTo("{\n" + "  \"test\" : \"TEST_EXECUTOR_DATA\"\n" + "}");
     assertThat(stageEntity.getExecutorParams()).isEqualTo("{ }");
-
-    // Serialize first execution.
-
-    testExecutor.setTest("TEST2");
-    stageEntity.serializeExecution(stage);
-    assertThat(stageEntity.getExecutorData()).isEqualTo("{\n" + "  \"test\" : \"TEST2\"\n" + "}");
 
     // End first execution.
 
@@ -101,7 +95,7 @@ class StageEntityTest {
     assertThat(stageEntity.getStartTime()).isBeforeOrEqualTo(stageEntity.getEndTime());
     assertThat(stageEntity.getExecutorName())
         .isEqualTo("pipelite.entity.StageEntityTest$TestExecutor");
-    assertThat(stageEntity.getExecutorData()).isEqualTo("{\n" + "  \"test\" : \"TEST2\"\n" + "}");
+    assertThat(stageEntity.getExecutorData()).isEqualTo("{\n" + "  \"test\" : \"TEST_EXECUTOR_DATA\"\n" + "}");
     assertThat(stageEntity.getExecutorParams()).isEqualTo("{ }");
 
     // Start second execution.
@@ -118,7 +112,7 @@ class StageEntityTest {
     assertThat(stageEntity.getEndTime()).isNull();
     assertThat(stageEntity.getExecutorName())
         .isEqualTo("pipelite.entity.StageEntityTest$TestExecutor");
-    assertThat(stageEntity.getExecutorData()).isEqualTo("{\n" + "  \"test\" : \"TEST2\"\n" + "}");
+    assertThat(stageEntity.getExecutorData()).isEqualTo("{\n" + "  \"test\" : \"TEST_EXECUTOR_DATA\"\n" + "}");
     assertThat(stageEntity.getExecutorParams()).isEqualTo("{ }");
 
     // End second execution.
@@ -141,7 +135,7 @@ class StageEntityTest {
     assertThat(stageEntity.getStartTime()).isBeforeOrEqualTo(stageEntity.getEndTime());
     assertThat(stageEntity.getExecutorName())
         .isEqualTo("pipelite.entity.StageEntityTest$TestExecutor");
-    assertThat(stageEntity.getExecutorData()).isEqualTo("{\n" + "  \"test\" : \"TEST2\"\n" + "}");
+    assertThat(stageEntity.getExecutorData()).isEqualTo("{\n" + "  \"test\" : \"TEST_EXECUTOR_DATA\"\n" + "}");
     assertThat(stageEntity.getExecutorParams()).isEqualTo("{ }");
 
     // Reset execution.

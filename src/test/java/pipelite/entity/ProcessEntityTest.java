@@ -24,7 +24,7 @@ class ProcessEntityTest {
     String processId = UniqueStringGenerator.randomProcessId();
     int priority = 1;
 
-    ProcessEntity processEntity = ProcessEntity.startExecution(pipelineName, processId, priority);
+    ProcessEntity processEntity = ProcessEntity.pendingExecution(pipelineName, processId, priority);
 
     assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
@@ -32,11 +32,11 @@ class ProcessEntityTest {
     assertThat(processEntity.getExecutionCount()).isEqualTo(0);
     assertThat(processEntity.getState()).isEqualTo(ProcessState.PENDING);
 
-    processEntity.updateExecution(ProcessState.ACTIVE);
+    processEntity.endExecution(ProcessState.ACTIVE);
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);
     assertThat(processEntity.getState()).isEqualTo(ProcessState.ACTIVE);
 
-    processEntity.updateExecution(ProcessState.COMPLETED);
+    processEntity.endExecution(ProcessState.COMPLETED);
     assertThat(processEntity.getExecutionCount()).isEqualTo(2);
     assertThat(processEntity.getState()).isEqualTo(ProcessState.COMPLETED);
   }
@@ -52,13 +52,13 @@ class ProcessEntityTest {
     assertThat(ProcessEntity.getBoundedPriority(ProcessEntity.MAX_PRIORITY + 1))
         .isEqualTo(ProcessEntity.MAX_PRIORITY);
 
-    ProcessEntity processEntity = ProcessEntity.startExecution(pipelineName, processId, null);
+    ProcessEntity processEntity = ProcessEntity.pendingExecution(pipelineName, processId, null);
     assertThat(processEntity.getPriority()).isEqualTo(ProcessEntity.DEFAULT_PRIORITY);
     processEntity =
-        ProcessEntity.startExecution(pipelineName, processId, ProcessEntity.MIN_PRIORITY - 1);
+        ProcessEntity.pendingExecution(pipelineName, processId, ProcessEntity.MIN_PRIORITY - 1);
     assertThat(processEntity.getPriority()).isEqualTo(ProcessEntity.MIN_PRIORITY);
     processEntity =
-        ProcessEntity.startExecution(pipelineName, processId, ProcessEntity.MAX_PRIORITY + 1);
+        ProcessEntity.pendingExecution(pipelineName, processId, ProcessEntity.MAX_PRIORITY + 1);
     assertThat(processEntity.getPriority()).isEqualTo(ProcessEntity.MAX_PRIORITY);
   }
 }
