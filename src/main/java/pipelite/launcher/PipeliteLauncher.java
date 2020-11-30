@@ -113,12 +113,16 @@ public class PipeliteLauncher extends AbstractScheduledService {
     }
     this.pool =
         new ProcessLauncherPool(
-            launcherConfiguration,
-            stageConfiguration,
-            processService,
-            stageService,
             lockService,
-            mailService,
+            (pipelineName, process) ->
+                new ProcessLauncher(
+                    launcherConfiguration,
+                    stageConfiguration,
+                    processService,
+                    stageService,
+                    mailService,
+                    pipelineName,
+                    process),
             lock);
   }
 

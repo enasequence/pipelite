@@ -15,13 +15,10 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
-import pipelite.configuration.LauncherConfiguration;
-import pipelite.configuration.StageConfiguration;
 import pipelite.entity.LauncherLockEntity;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
-import pipelite.process.ProcessState;
-import pipelite.service.*;
+import pipelite.service.LockService;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,17 +26,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 @Flogger
 public class ProcessLauncherPool {
-  private final LauncherConfiguration launcherConfiguration;
-  private final StageConfiguration stageConfiguration;
-  private final ProcessService processService;
-  private final StageService stageService;
   private final LockService lockService;
-  private final MailService mailService;
-  private final LauncherLockEntity launcherLock;
+  private final BiFunction<String, Process, ProcessLauncher> factory;
+  private final LauncherLockEntity lock;
   private final ExecutorService executorService = Executors.newCachedThreadPool();
 
   @Value
@@ -59,28 +53,23 @@ public class ProcessLauncherPool {
 
   private final Set<ActiveLauncher> active = ConcurrentHashMap.newKeySet();
 
+  /**
+   * Creates a process launcher pool.
+   *
+   * @param lockService lock service
+   * @param factory a factory to create process launchers given pipeline name and process
+   * @param lock launcher lock
+   */
   public ProcessLauncherPool(
-      LauncherConfiguration launcherConfiguration,
-      StageConfiguration stageConfiguration,
-      ProcessService processService,
-      StageService stageService,
       LockService lockService,
-      MailService mailService,
+      BiFunction<String, Process, ProcessLauncher> factory,
       LauncherLockEntity lock) {
-    Assert.notNull(launcherConfiguration, "Missing launcher configuration");
-    Assert.notNull(stageConfiguration, "Missing stage configuration");
-    Assert.notNull(processService, "Missing process service");
-    Assert.notNull(stageService, "Missing stage service");
-    Assert.notNull(mailService, "Missing mail service");
     Assert.notNull(lockService, "Missing lock service");
     Assert.notNull(lock, "Missing launcher lock");
-    this.launcherConfiguration = launcherConfiguration;
-    this.stageConfiguration = stageConfiguration;
-    this.processService = processService;
-    this.stageService = stageService;
+    Assert.notNull(factory, "Missing factory");
     this.lockService = lockService;
-    this.mailService = mailService;
-    this.launcherLock = lock;
+    this.lock = lock;
+    this.factory = factory;
     logContext(log.atInfo()).log("Starting up process launcher pool");
   }
 
@@ -96,15 +85,7 @@ public class ProcessLauncherPool {
   public void run(String pipelineName, Process process, BiConsumer<Process, Result> callback) {
     String processId = process.getProcessId();
     // Create process launcher.
-    ProcessLauncher processLauncher =
-        new ProcessLauncher(
-            launcherConfiguration,
-            stageConfiguration,
-            processService,
-            stageService,
-            mailService,
-            pipelineName,
-            process);
+    ProcessLauncher processLauncher = factory.apply(pipelineName, process);
     ActiveLauncher activeLauncher = new ActiveLauncher(pipelineName, processId, processLauncher);
     active.add(activeLauncher);
     // Run process.
@@ -114,7 +95,7 @@ public class ProcessLauncherPool {
           long processExceptionCount = 0;
           try {
             // Lock process.
-            if (!lockService.lockProcess(launcherLock, pipelineName, processId)) {
+            if (!lockService.lockProcess(lock, pipelineName, processId)) {
               return;
             }
             processLauncher.run();
@@ -126,7 +107,7 @@ public class ProcessLauncherPool {
                 .log("Failed to execute process because an unexpected exception was thrown");
           } finally {
             // Unlock process.
-            lockService.unlockProcess(launcherLock, pipelineName, processId);
+            lockService.unlockProcess(lock, pipelineName, processId);
             active.remove(activeLauncher);
             Result result =
                 new Result(
@@ -166,8 +147,8 @@ public class ProcessLauncherPool {
       executorService.shutdownNow();
       throw ex;
     } finally {
-      lockService.unlockProcesses(launcherLock);
-      lockService.unlockLauncher(launcherLock);
+      lockService.unlockProcesses(lock);
+      lockService.unlockLauncher(lock);
       logContext(log.atInfo()).log("Process launcher pool has been shut down");
     }
   }
