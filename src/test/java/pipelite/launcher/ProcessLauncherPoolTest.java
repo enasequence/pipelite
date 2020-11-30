@@ -55,6 +55,8 @@ public class ProcessLauncherPoolTest {
     assertThat(stats.getProcessExceptionCount()).isZero();
     verify(lockService, times(PROCESS_CNT)).lockProcess(eq(lock), eq(PIPELINE_NAME), any());
     verify(lockService, times(PROCESS_CNT)).unlockProcess(eq(lock), eq(PIPELINE_NAME), any());
+    assertThat(pool.size()).isZero();
+    assertThat(pool.get().size()).isZero();
   }
 
   @Test
@@ -93,6 +95,8 @@ public class ProcessLauncherPoolTest {
     assertThat(stats.getProcessExceptionCount()).isZero();
     verify(lockService, times(PROCESS_CNT)).lockProcess(eq(lock), eq(PIPELINE_NAME), any());
     verify(lockService, times(PROCESS_CNT)).unlockProcess(eq(lock), eq(PIPELINE_NAME), any());
+    assertThat(pool.size()).isZero();
+    assertThat(pool.get().size()).isZero();
   }
 
   @Test
@@ -133,5 +137,7 @@ public class ProcessLauncherPoolTest {
     assertThat(stats.getProcessExceptionCount()).isEqualTo(PROCESS_CNT);
     verify(lockService, times(PROCESS_CNT)).lockProcess(eq(lock), eq(PIPELINE_NAME), any());
     verify(lockService, times(PROCESS_CNT)).unlockProcess(eq(lock), eq(PIPELINE_NAME), any());
+    assertThat(pool.size()).isZero();
+    assertThat(pool.get().size()).isZero();
   }
 }
