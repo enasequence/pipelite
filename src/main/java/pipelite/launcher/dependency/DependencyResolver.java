@@ -11,6 +11,7 @@
 package pipelite.launcher.dependency;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -51,9 +52,16 @@ public class DependencyResolver {
     }
   }
 
-  public static List<Stage> getDependsOnStages(List<Stage> stages, Stage from) {
+  /**
+   * Returns the list of stages that the stage depends on directly or transitively.
+   *
+   * @param stages all stages
+   * @param stage the stage of interest
+   * @return the list of stages that the stage depends on directly or transitively
+   */
+  public static List<Stage> getDependsOnStages(List<Stage> stages, Stage stage) {
     List<Stage> dependsOnStages = new ArrayList<>();
-    getDependsOnStages(stages, dependsOnStages, from);
+    getDependsOnStages(stages, dependsOnStages, stage);
     return dependsOnStages;
   }
 
@@ -78,7 +86,6 @@ public class DependencyResolver {
    * results of all stages in the process
    *
    * @param stages all stages
-   * @param active active stages that are currently being executed
    * @return the list of stages that may be eventually executed based on the current execution
    *     results of all stages in the process
    */
@@ -98,7 +105,8 @@ public class DependencyResolver {
    * @param active active stages that are currently being executed
    * @return the list of stages that can be immediately executed
    */
-  public static List<Stage> getImmediatelyExecutableStages(List<Stage> stages, Set<Stage> active) {
+  public static List<Stage> getImmediatelyExecutableStages(
+      List<Stage> stages, Collection<Stage> active) {
     List<Stage> executableStages = new ArrayList<>();
     for (Stage stage : stages) {
       if (isImmediatelyExecutableStage(stages, active, stage)) {
@@ -113,7 +121,6 @@ public class DependencyResolver {
    * all stages in the process.
    *
    * @param stages all stages
-   * @param active active stages that are currently being executed
    * @param stage the stage of interest
    * @return true if the stage can be eventually executed based on the current execution results of
    *     all stages in the process
@@ -158,7 +165,7 @@ public class DependencyResolver {
    * @return true if the stage can be immediately executed
    */
   public static boolean isImmediatelyExecutableStage(
-      List<Stage> stages, Set<Stage> active, Stage stage) {
+      List<Stage> stages, Collection<Stage> active, Stage stage) {
     if (!isEventuallyExecutableStage(stages, stage)) {
       return false;
     }
@@ -183,7 +190,7 @@ public class DependencyResolver {
    * @return true if any of the stages the stage depends on are active
    */
   public static boolean isDependsOnStagesAnyActive(
-      List<Stage> stages, Set<Stage> active, Stage stage) {
+      List<Stage> stages, Collection<Stage> active, Stage stage) {
     for (Stage dependsOn : getDependsOnStages(stages, stage)) {
       if (active.contains(dependsOn)) {
         return true;
