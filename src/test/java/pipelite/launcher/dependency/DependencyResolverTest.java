@@ -385,7 +385,8 @@ public class DependencyResolverTest {
    * Creates a process with three stages. Two independent stages, STAGE0 and STAGE1, and a third
    * stage STAGE2 that depends on both STAGE0 and STAGE1.
    *
-   * @param dependsOnStageState the stage execution result type for STAGE0 and STAGE1
+   * @param firstStageResultType the stage execution result type for STAGE0
+   * @param secondStageResultType the stage execution result type for STAGE1
    * @return a list of all three stages
    */
   public static List<Stage> isDependsOnStageSuccessStages(
@@ -458,14 +459,24 @@ public class DependencyResolverTest {
     isDependsOnAllStagesSuccess(SUCCESS, ERROR, false);
   }
 
+  /**
+   * Tests isImmediatelyExecutableStage using a process with one stage.
+   *
+   * @param resultType the stage execution result for the stage
+   * @param executionCount the stage execution count for the stage
+   * @param immediateCount the immediate stage execution count for the stage
+   * @param maximumRetries the number of maximum retries for the stage
+   * @param immediateRetries the number of immediate retries for the stage
+   */
   private boolean isImmediatelyExecutableSingleStage(
-      StageExecutionResultType stageExecutionResultType,
+      StageExecutionResultType resultType,
       int executionCount,
-      int immediateRetries,
-      int maximumRetries) {
+      int immediateCount,
+      int maximumRetries,
+      int immediateRetries) {
     StageEntity stageEntity = new StageEntity();
     stageEntity.setExecutionCount(executionCount);
-    stageEntity.setResultType(stageExecutionResultType);
+    stageEntity.setResultType(resultType);
     Stage stage =
         Stage.builder()
             .stageName("STAGE")
@@ -477,30 +488,66 @@ public class DependencyResolverTest {
                     .build())
             .build();
     stage.setStageEntity(stageEntity);
+    for (int i = 0; i < immediateCount; ++i) {
+      stage.incrementImmediateExecutionCount();
+    }
     return DependencyResolver.isImmediatelyExecutableStage(
         Arrays.asList(stage), Collections.emptySet(), stage);
   }
 
   @Test
   public void isImmediatelyExecutableSingleStage() {
-    assertThat(isImmediatelyExecutableSingleStage(null, 0, 0, 0)).isTrue();
-    assertThat(isImmediatelyExecutableSingleStage(null, 1, 0, 0)).isFalse();
-    assertThat(isImmediatelyExecutableSingleStage(ERROR, 0, 0, 0)).isTrue();
-    assertThat(isImmediatelyExecutableSingleStage(ERROR, 1, 0, 0)).isFalse();
-    assertThat(isImmediatelyExecutableSingleStage(ACTIVE, 0, 0, 0)).isTrue();
-    assertThat(isImmediatelyExecutableSingleStage(ACTIVE, 1, 0, 0)).isFalse();
-    assertThat(isImmediatelyExecutableSingleStage(SUCCESS, 0, 0, 0)).isFalse();
-    assertThat(isImmediatelyExecutableSingleStage(SUCCESS, 1, 0, 0)).isFalse();
+    for (int executionCount = 0; executionCount < 2; executionCount++) {
+      for (int immediateCount = 0; immediateCount < 2; immediateCount++) {
+        for (int maximumRetries = 0; maximumRetries < 2; maximumRetries++) {
+          for (int immediateRetries = 0; immediateRetries < 2; immediateRetries++) {
+            assertThat(
+                    isImmediatelyExecutableSingleStage(
+                        SUCCESS, executionCount, immediateCount, maximumRetries, immediateRetries))
+                .isFalse();
+            if (executionCount <= maximumRetries
+                && immediateCount <= Math.min(immediateRetries, maximumRetries)) {
+              System.out.println(executionCount);
+              System.out.println(maximumRetries);
+              System.out.println(immediateCount);
+              System.out.println(immediateRetries);
+              assertThat(
+                      isImmediatelyExecutableSingleStage(
+                          null, executionCount, immediateCount, maximumRetries, immediateRetries))
+                  .isTrue();
+              assertThat(
+                      isImmediatelyExecutableSingleStage(
+                          ERROR, executionCount, immediateCount, maximumRetries, immediateRetries))
+                  .isTrue();
+              assertThat(
+                      isImmediatelyExecutableSingleStage(
+                          ACTIVE, executionCount, immediateCount, maximumRetries, immediateRetries))
+                  .isTrue();
+            }
+          }
+        }
+      }
+    }
   }
 
+  /**
+   * Tests isEventuallyExecutableSingleStage using a process with one stage.
+   *
+   * @param resultType the stage execution result for the stage
+   * @param executionCount the stage execution count for the stage
+   * @param immediateCount the immediate stage execution count for the stage
+   * @param maximumRetries the number of maximum retries for the stage
+   * @param immediateRetries the number of immediate retries for the stage
+   */
   private boolean isEventuallyExecutableSingleStage(
-      StageExecutionResultType stageExecutionResultType,
+      StageExecutionResultType resultType,
       int executionCount,
-      int immediateRetries,
-      int maximumRetries) {
+      int immediateCount,
+      int maximumRetries,
+      int immediateRetries) {
     StageEntity stageEntity = new StageEntity();
     stageEntity.setExecutionCount(executionCount);
-    stageEntity.setResultType(stageExecutionResultType);
+    stageEntity.setResultType(resultType);
     Stage stage =
         Stage.builder()
             .stageName("STAGE")
@@ -512,18 +559,44 @@ public class DependencyResolverTest {
                     .build())
             .build();
     stage.setStageEntity(stageEntity);
+    for (int i = 0; i < immediateCount; ++i) {
+      stage.incrementImmediateExecutionCount();
+    }
     return DependencyResolver.isEventuallyExecutableStage(Arrays.asList(stage), stage);
   }
 
   @Test
   public void isEventuallyExecutableSingleStage() {
-    assertThat(isEventuallyExecutableSingleStage(null, 0, 0, 0)).isTrue();
-    assertThat(isEventuallyExecutableSingleStage(null, 1, 0, 0)).isFalse();
-    assertThat(isEventuallyExecutableSingleStage(ERROR, 0, 0, 0)).isTrue();
-    assertThat(isEventuallyExecutableSingleStage(ERROR, 1, 0, 0)).isFalse();
-    assertThat(isEventuallyExecutableSingleStage(ACTIVE, 0, 0, 0)).isTrue();
-    assertThat(isEventuallyExecutableSingleStage(ACTIVE, 1, 0, 0)).isFalse();
-    assertThat(isEventuallyExecutableSingleStage(SUCCESS, 0, 0, 0)).isFalse();
-    assertThat(isEventuallyExecutableSingleStage(SUCCESS, 1, 0, 0)).isFalse();
+    for (int executionCount = 0; executionCount < 2; executionCount++) {
+      for (int immediateCount = 0; immediateCount < 2; immediateCount++) {
+        for (int maximumRetries = 0; maximumRetries < 2; maximumRetries++) {
+          for (int immediateRetries = 0; immediateRetries < 2; immediateRetries++) {
+            assertThat(
+                    isEventuallyExecutableSingleStage(
+                        SUCCESS, executionCount, immediateCount, maximumRetries, immediateRetries))
+                .isFalse();
+            if (executionCount <= maximumRetries
+                && immediateCount <= Math.min(immediateRetries, maximumRetries)) {
+              System.out.println(executionCount);
+              System.out.println(maximumRetries);
+              System.out.println(immediateCount);
+              System.out.println(immediateRetries);
+              assertThat(
+                      isEventuallyExecutableSingleStage(
+                          null, executionCount, immediateCount, maximumRetries, immediateRetries))
+                  .isTrue();
+              assertThat(
+                      isEventuallyExecutableSingleStage(
+                          ERROR, executionCount, immediateCount, maximumRetries, immediateRetries))
+                  .isTrue();
+              assertThat(
+                      isEventuallyExecutableSingleStage(
+                          ACTIVE, executionCount, immediateCount, maximumRetries, immediateRetries))
+                  .isTrue();
+            }
+          }
+        }
+      }
+    }
   }
 }
