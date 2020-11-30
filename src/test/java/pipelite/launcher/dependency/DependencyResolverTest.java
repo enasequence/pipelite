@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static pipelite.stage.StageExecutionResultType.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
@@ -333,20 +334,35 @@ public class DependencyResolverTest {
     assertThat(dependentStages.size()).isEqualTo(0);
   }
 
-  private void getDependsOnStages(List<Stage> stages, int stageIndex, int dependsOnSize) {
-    assertThat(DependencyResolver.getDependsOnStages(stages, stages.get(stageIndex)).size())
-        .isEqualTo(dependsOnSize);
+  private Stage getStageByStageName(List<Stage> stages, String stageName) {
+    for (Stage stage : stages) {
+      if (stage.getStageName().equals(stageName)) {
+        return stage;
+      }
+    }
+    return null;
   }
 
+  /**
+   * Tests getDependsOnStages. Given a list of stages tests that a stage depends on other stages.
+   *
+   * @param stages the list of stages
+   * @param stageName the stage name of interest
+   * @param expectedDependsOnStageNames the list of stage names the stage should depend on
+   */
   private void getDependsOnStages(
-      List<Stage> stages, int stageIndex, int dependsOnIndex, String dependsOnStageName) {
-    assertThat(
-            DependencyResolver.getDependsOnStages(stages, stages.get(stageIndex))
-                .get(dependsOnIndex)
-                .getStageName())
-        .isEqualTo(dependsOnStageName);
+      List<Stage> stages, String stageName, List<String> expectedDependsOnStageNames) {
+    List<Stage> dependsOnStages =
+        DependencyResolver.getDependsOnStages(stages, getStageByStageName(stages, stageName));
+    List<String> dependsOnStageNames =
+        dependsOnStages.stream().map(s -> s.getStageName()).collect(Collectors.toList());
+    assertThat(expectedDependsOnStageNames)
+        .containsExactlyInAnyOrderElementsOf(dependsOnStageNames);
   }
 
+  /**
+   * Tests getDependsOnStages. Given a list of stages tests that a stage depends on other stages.
+   */
   @Test
   public void getDependsOnStages() {
     ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
@@ -369,16 +385,10 @@ public class DependencyResolverTest {
       stages.add(stage);
     }
 
-    getDependsOnStages(stages, 0, 0);
-    getDependsOnStages(stages, 1, 1);
-    getDependsOnStages(stages, 2, 2);
-    getDependsOnStages(stages, 3, 3);
-    getDependsOnStages(stages, 1, 0, "STAGE1");
-    getDependsOnStages(stages, 2, 0, "STAGE1");
-    getDependsOnStages(stages, 2, 1, "STAGE2");
-    getDependsOnStages(stages, 3, 0, "STAGE3");
-    getDependsOnStages(stages, 3, 1, "STAGE1");
-    getDependsOnStages(stages, 3, 2, "STAGE2");
+    getDependsOnStages(stages, "STAGE1", Arrays.asList());
+    getDependsOnStages(stages, "STAGE2", Arrays.asList("STAGE1"));
+    getDependsOnStages(stages, "STAGE3", Arrays.asList("STAGE1", "STAGE2"));
+    getDependsOnStages(stages, "STAGE4", Arrays.asList("STAGE1", "STAGE2", "STAGE3"));
   }
 
   /**
@@ -428,7 +438,7 @@ public class DependencyResolverTest {
    *
    * @param firstStageResultType the stage execution result for STAGE0
    * @param secondStageResultType the stage execution result for STAGE1
-   * @param expectedReturnValue the expected return value of isDependsOnStagesAllSuccess
+   * @param expectedReturnValue the expected return value of isDependsOnStagesAllSuccess for STAGE2
    */
   private void isDependsOnAllStagesSuccess(
       StageExecutionResultType firstStageResultType,
@@ -439,6 +449,10 @@ public class DependencyResolverTest {
         .isEqualTo(expectedReturnValue);
   }
 
+  /**
+   * Tests isDependsOnStagesAllSuccess using a process with three stages. Two independent stages,
+   * STAGE0 and STAGE1, and a third stage STAGE2 that depends on both STAGE0 and STAGE1.
+   */
   @Test
   public void isDependsOnAllStagesSuccess() {
     isDependsOnAllStagesSuccess(null, null, false);
@@ -495,6 +509,7 @@ public class DependencyResolverTest {
         Arrays.asList(stage), Collections.emptySet(), stage);
   }
 
+  /** Tests isImmediatelyExecutableStage using a process with one stage. */
   @Test
   public void isImmediatelyExecutableSingleStage() {
     for (int executionCount = 0; executionCount < 2; executionCount++) {
@@ -531,7 +546,7 @@ public class DependencyResolverTest {
   }
 
   /**
-   * Tests isEventuallyExecutableSingleStage using a process with one stage.
+   * Tests isEventuallyExecutableStage using a process with one stage.
    *
    * @param resultType the stage execution result for the stage
    * @param executionCount the stage execution count for the stage
@@ -565,6 +580,7 @@ public class DependencyResolverTest {
     return DependencyResolver.isEventuallyExecutableStage(Arrays.asList(stage), stage);
   }
 
+  /** Tests isEventuallyExecutableStage using a process with one stage. */
   @Test
   public void isEventuallyExecutableSingleStage() {
     for (int executionCount = 0; executionCount < 2; executionCount++) {
