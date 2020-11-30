@@ -129,6 +129,7 @@ public class ProcessLauncher {
                 }
               } catch (Exception ex) {
                 stageService.endExecution(stage, StageExecutionResult.error(ex));
+                mailService.sendStageExecutionMessage(pipelineName, process, stage);
                 logContext(log.atSevere())
                     .withCause(ex)
                     .log("Unexpected exception when executing stage");
@@ -201,7 +202,9 @@ public class ProcessLauncher {
    */
   private void resetDependentStageExecution(Stage from) {
     for (Stage stage : DependencyResolver.getDependentStages(process.getStages(), from)) {
-      stageService.resetExecution(stage);
+      if (stage.getStageEntity().getResultType() != null) {
+        stageService.resetExecution(stage);
+      }
     }
   }
 
