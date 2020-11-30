@@ -15,7 +15,6 @@ import static pipelite.stage.StageExecutionResultType.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.StageEntity;
@@ -265,9 +264,12 @@ public class DependencyResolverTest {
     testExecutableStages(stages, Arrays.asList("STAGE1"), Arrays.asList(), Arrays.asList("STAGE1"));
   }
 
-  /** Tests getDependsOnStages using four stages that are all independent of each other. */
+  /**
+   * Tests getDependsOnStages and getDependentStages using four stages that are all independent of
+   * each other.
+   */
   @Test
-  public void getDependentStagesAllIndependent() {
+  public void getDependsOnAndDependentStagesAllIndependent() {
     ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
     Process process =
         builder
@@ -290,11 +292,19 @@ public class DependencyResolverTest {
     getDependsOnStages(stages, "STAGE2", Arrays.asList());
     getDependsOnStages(stages, "STAGE3", Arrays.asList());
     getDependsOnStages(stages, "STAGE4", Arrays.asList());
+
+    getDependentStages(stages, "STAGE1", Arrays.asList());
+    getDependentStages(stages, "STAGE2", Arrays.asList());
+    getDependentStages(stages, "STAGE3", Arrays.asList());
+    getDependentStages(stages, "STAGE4", Arrays.asList());
   }
 
-  /** Tests getDependsOnStages using four stages that all depend on the previous stage. */
+  /**
+   * Tests getDependsOnStages and getDependentStages using four stages that all depend on the
+   * previous stage.
+   */
   @Test
-  public void getDependentStagesAllDependOnPrevious() {
+  public void gettDependsOnAndDependentAllDependOnPrevious() {
     ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
     Process process =
         builder
@@ -317,11 +327,19 @@ public class DependencyResolverTest {
     getDependsOnStages(stages, "STAGE2", Arrays.asList("STAGE1"));
     getDependsOnStages(stages, "STAGE3", Arrays.asList("STAGE1", "STAGE2"));
     getDependsOnStages(stages, "STAGE4", Arrays.asList("STAGE1", "STAGE2", "STAGE3"));
+
+    getDependentStages(stages, "STAGE1", Arrays.asList("STAGE2", "STAGE3", "STAGE4"));
+    getDependentStages(stages, "STAGE2", Arrays.asList("STAGE3", "STAGE4"));
+    getDependentStages(stages, "STAGE3", Arrays.asList("STAGE4"));
+    getDependentStages(stages, "STAGE4", Arrays.asList());
   }
 
-  /** Tests getDependsOnStages using four stages that all depend on STAGE1 some transitively. */
+  /**
+   * Tests getDependsOnStages and getDependentStages using four stages that all depend on STAGE1
+   * some transitively.
+   */
   @Test
-  public void getDependsOnStagesAllDependOnFirstTransitively() {
+  public void getDependsOnAndDependentAllDependOnFirstTransitively() {
     ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
     Process process =
         builder
@@ -344,6 +362,28 @@ public class DependencyResolverTest {
     getDependsOnStages(stages, "STAGE2", Arrays.asList("STAGE1"));
     getDependsOnStages(stages, "STAGE3", Arrays.asList("STAGE1", "STAGE2"));
     getDependsOnStages(stages, "STAGE4", Arrays.asList("STAGE1", "STAGE2", "STAGE3"));
+
+    getDependentStages(stages, "STAGE1", Arrays.asList("STAGE2", "STAGE3", "STAGE4"));
+    getDependentStages(stages, "STAGE2", Arrays.asList("STAGE3", "STAGE4"));
+    getDependentStages(stages, "STAGE3", Arrays.asList("STAGE4"));
+    getDependentStages(stages, "STAGE4", Arrays.asList());
+  }
+
+  /**
+   * Tests getDependentStages. Given a list of stages tests which stages depend on a stage.
+   *
+   * @param stages the list of stages
+   * @param stageName the stage name of interest
+   * @param expectedDependentStageNames the list of stage names the stage should depend on
+   */
+  private void getDependentStages(
+      List<Stage> stages, String stageName, List<String> expectedDependentStageNames) {
+    List<Stage> dependentStages =
+        DependencyResolver.getDependentStages(stages, getStageByStageName(stages, stageName));
+    List<String> dependentStageNames =
+        dependentStages.stream().map(s -> s.getStageName()).collect(Collectors.toList());
+    assertThat(expectedDependentStageNames)
+        .containsExactlyInAnyOrderElementsOf(dependentStageNames);
   }
 
   /**

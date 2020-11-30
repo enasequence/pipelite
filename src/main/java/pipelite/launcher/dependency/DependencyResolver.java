@@ -10,10 +10,7 @@
  */
 package pipelite.launcher.dependency;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import pipelite.entity.StageEntity;
 import pipelite.launcher.StageLauncher;
@@ -24,14 +21,21 @@ public class DependencyResolver {
 
   private DependencyResolver() {};
 
-  public static List<Stage> getDependentStages(List<Stage> stages, Stage from) {
-    List<Stage> dependentStages = new ArrayList<>();
-    getDependentStages(stages, dependentStages, from, false);
-    return dependentStages;
+  /**
+   * Returns the list of stages that depend on this stage directly or transitively.
+   *
+   * @param stages all stages
+   * @param stage the stage of interest
+   * @return the list of stages that depend on this stage directly or transitively
+   */
+  public static List<Stage> getDependentStages(List<Stage> stages, Stage stage) {
+    Set<Stage> dependentStages = new HashSet<>();
+    getDependentStages(stages, dependentStages, stage, false);
+    return new ArrayList<>(dependentStages);
   }
 
   private static void getDependentStages(
-      List<Stage> stages, List<Stage> dependentStages, Stage from, boolean include) {
+      List<Stage> stages, Set<Stage> dependentStages, Stage from, boolean include) {
 
     for (Stage stage : stages) {
       if (stage.equals(from)) {
