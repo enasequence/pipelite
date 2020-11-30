@@ -17,7 +17,6 @@ import com.google.common.util.concurrent.AbstractScheduledService;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
@@ -29,7 +28,6 @@ import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
-import pipelite.process.ProcessState;
 import pipelite.service.*;
 
 @Flogger
@@ -49,13 +47,13 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private final Duration processLaunchFrequency;
   private final Duration processRefreshFrequency;
   private final int pipeliteParallelism;
-  private final ExecutorService executorService;
-  private final Map<String, ProcessLauncher> activeProcesses = new ConcurrentHashMap<>();
-  private final PipeliteLauncherStats stats = new PipeliteLauncherStats();
+  private final ProcessLauncherStats stats = new ProcessLauncherStats();
   private final List<ProcessEntity> processQueue = Collections.synchronizedList(new ArrayList<>());
+
+  private LauncherLockEntity lock;
+  private ProcessLauncherPool pool;
   private int processQueueIndex = 0;
   private LocalDateTime processQueueValidUntil = LocalDateTime.now();
-  private LauncherLockEntity launcherLock;
   private boolean shutdownIfIdleTriggered;
 
   public PipeliteLauncher(
@@ -94,28 +92,34 @@ public class PipeliteLauncher extends AbstractScheduledService {
     } else {
       this.processLaunchFrequency = DEFAULT_PROCESS_LAUNCH_FREQUENCY;
     }
-
     if (launcherConfiguration.getProcessRefreshFrequency() != null) {
       this.processRefreshFrequency = launcherConfiguration.getProcessRefreshFrequency();
     } else {
       this.processRefreshFrequency = LauncherConfiguration.DEFAULT_PROCESS_REFRESH_FREQUENCY;
     }
-
     this.pipeliteParallelism =
         launcherConfiguration.getPipelineParallelism() > 0
             ? launcherConfiguration.getPipelineParallelism()
             : LauncherConfiguration.DEFAULT_PIPELINE_PARALLELISM;
-    this.executorService = Executors.newFixedThreadPool(pipeliteParallelism);
   }
 
   @Override
   protected void startUp() {
     logContext(log.atInfo()).log("Starting up launcher: %s", launcherName);
-    launcherLock = lockService.lockLauncher(launcherName);
-    if (launcherLock == null) {
+    lock = lockService.lockLauncher(launcherName);
+    if (lock == null) {
       throw new RuntimeException(
           "Could not start launcher " + launcherName + ": could not create lock");
     }
+    this.pool =
+        new ProcessLauncherPool(
+            launcherConfiguration,
+            stageConfiguration,
+            processService,
+            stageService,
+            lockService,
+            mailService,
+            lock);
   }
 
   @Override
@@ -136,7 +140,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
     logContext(log.atInfo()).log("Running launcher");
 
     // Renew launcher lock to avoid lock expiry.
-    if (!lockService.relockLauncher(launcherLock)) {
+    if (!lockService.relockLauncher(lock)) {
       throw new RuntimeException(
           "Could not continue running launcher " + launcherName + ": could not renew lock");
     }
@@ -149,7 +153,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
       queueProcesses();
     }
     for (;
-        processQueueIndex < processQueue.size() && activeProcesses.size() < pipeliteParallelism;
+        processQueueIndex < processQueue.size() && pool.size() < pipeliteParallelism;
         processQueueIndex++) {
       ProcessEntity processEntity = processQueue.get(processQueueIndex);
       launchProcess(processEntity);
@@ -161,7 +165,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
     if (processQueueIndex == processQueue.size() && launcherConfiguration.isShutdownIfIdle()) {
       logContext(log.atInfo()).log("Stopping idle launcher " + launcherName);
       shutdownIfIdleTriggered = true;
-      while (!activeProcesses.isEmpty()) {
+      while (pool.size() > 0) {
         try {
           Thread.sleep(Duration.ofSeconds(1).toMillis());
         } catch (InterruptedException ex) {
@@ -210,13 +214,15 @@ public class PipeliteLauncher extends AbstractScheduledService {
     // First add active processes. Asynchronous active processes may be able to continue execution.
     processQueue.addAll(
         processService.getActiveProcesses(pipelineName).stream()
-            .filter(processEntity -> !activeProcesses.containsKey(processEntity.getProcessId()))
+            .filter(
+                processEntity -> !pool.hasActiveProcess(pipelineName, processEntity.getProcessId()))
             .collect(Collectors.toList()));
 
     // Then add new processes.
     processQueue.addAll(
         processService.getNewProcesses(pipelineName).stream()
-            .filter(processEntity -> !activeProcesses.containsKey(processEntity.getProcessId()))
+            .filter(
+                processEntity -> !pool.hasActiveProcess(pipelineName, processEntity.getProcessId()))
             .collect(Collectors.toList()));
     processQueueValidUntil = LocalDateTime.now().plus(processRefreshFrequency);
   }
@@ -231,56 +237,15 @@ public class PipeliteLauncher extends AbstractScheduledService {
       stats.processCreationFailedCount.incrementAndGet();
       return;
     }
-    // Lock process.
-    if (!lockService.lockProcess(launcherLock, pipelineName, processId)) {
-      return;
-    }
     process.setProcessEntity(processEntity);
-    // Create process launcher.
-    ProcessLauncher processLauncher =
-        new ProcessLauncher(
-            launcherConfiguration,
-            stageConfiguration,
-            processService,
-            stageService,
-            mailService,
-            pipelineName,
-            process);
-    activeProcesses.put(processId, processLauncher);
-    // Run process.
-    executorService.execute(
-        () -> {
-          try {
-            ProcessState state = processLauncher.run();
-            stats.setProcessExecutionCount(state).incrementAndGet();
-          } catch (Exception ex) {
-            stats.processExceptionCount.incrementAndGet();
-            logContext(log.atSevere(), processId)
-                .withCause(ex)
-                .log("Failed to execute process because an exception was thrown");
-          } finally {
-            lockService.unlockProcess(launcherLock, pipelineName, processId);
-            activeProcesses.remove(processId);
-            stats.stageSuccessCount.addAndGet(processLauncher.getStageSuccessCount());
-            stats.stageFailedCount.addAndGet(processLauncher.getStageFailedCount());
-          }
-        });
+    pool.run(pipelineName, process, (p, r) -> stats.add(p, r));
   }
 
   @Override
-  protected void shutDown() throws Exception {
+  protected void shutDown() throws InterruptedException {
     logContext(log.atInfo()).log("Shutting down launcher");
-    executorService.shutdown();
-    try {
-      executorService.awaitTermination(ServerManager.FORCE_STOP_WAIT_SECONDS - 1, TimeUnit.SECONDS);
-    } catch (InterruptedException ex) {
-      executorService.shutdownNow();
-      throw ex;
-    } finally {
-      lockService.unlockProcesses(launcherLock);
-      lockService.unlockLauncher(launcherLock);
-      logContext(log.atInfo()).log("Launcher has been shut down");
-    }
+    pool.shutDown();
+    logContext(log.atInfo()).log("Launcher has been shut down");
   }
 
   public String getLauncherName() {
@@ -291,11 +256,11 @@ public class PipeliteLauncher extends AbstractScheduledService {
     return pipelineName;
   }
 
-  public Map<String, ProcessLauncher> getActiveProcesses() {
-    return activeProcesses;
+  public List<ProcessLauncher> getProcessLaunchers() {
+    return pool.get();
   }
 
-  public PipeliteLauncherStats getStats() {
+  public ProcessLauncherStats getStats() {
     return stats;
   }
 

@@ -69,7 +69,7 @@ public class AdminController {
           Launcher.builder()
               .launcherName(launcher.getLauncherName())
               .pipelineName(launcher.getPipelineName())
-              .active(getProcesses(launcher.getActiveProcesses().values()))
+              .active(getProcesses(launcher.getProcessLaunchers()))
               .build());
     }
     return list;
@@ -90,7 +90,7 @@ public class AdminController {
           Scheduler.builder()
               .schedulerName(scheduler.getSchedulerName())
               .schedules(getSchedules(scheduler))
-              .active(getProcesses(scheduler.getActiveProcesses().values()))
+              .active(getProcesses(scheduler.getProcessLaunchers()))
               .build());
     }
     return list;

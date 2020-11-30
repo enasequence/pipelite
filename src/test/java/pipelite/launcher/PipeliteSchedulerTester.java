@@ -219,7 +219,7 @@ public class PipeliteSchedulerTester {
   private void assertSchedulerStats(PipeliteScheduler pipeliteScheduler, TestProcessFactory f) {
     String pipelineName = f.getPipelineName();
 
-    PipeliteSchedulerStats stats = pipeliteScheduler.getStats(pipelineName);
+    ProcessLauncherStats stats = pipeliteScheduler.getStats(pipelineName);
 
     assertThat(stats.getProcessCreationFailedCount()).isEqualTo(0);
     assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
@@ -322,7 +322,7 @@ public class PipeliteSchedulerTester {
       }
       ServerManager.run(pipeliteScheduler, pipeliteScheduler.serviceName());
 
-      assertThat(pipeliteScheduler.getActiveProcesses().size()).isEqualTo(0);
+      assertThat(pipeliteScheduler.getProcessLaunchers().size()).isEqualTo(0);
       List<ScheduleEntity> scheduleEntities =
           scheduleService.getAllProcessSchedules(launcherConfiguration.getSchedulerName());
       for (TestProcessFactory f : testProcessFactories) {

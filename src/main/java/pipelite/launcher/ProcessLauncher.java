@@ -36,6 +36,7 @@ import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
 
+/** Executes a process and returns the process state. */
 @Flogger
 public class ProcessLauncher {
 
@@ -51,7 +52,7 @@ public class ProcessLauncher {
   private final Set<Stage> active = ConcurrentHashMap.newKeySet();
   private final AtomicLong stageFailedCount = new AtomicLong(0);
   private final AtomicLong stageSuccessCount = new AtomicLong(0);
-  private final ExecutorService executorService;
+  private final ExecutorService executorService = Executors.newCachedThreadPool();
   private final LocalDateTime startTime = LocalDateTime.now();
 
   public ProcessLauncher(
@@ -87,16 +88,11 @@ public class ProcessLauncher {
     } else {
       this.stagePollFrequency = LauncherConfiguration.DEFAULT_STAGE_POLL_FREQUENCY;
     }
-    this.executorService = Executors.newCachedThreadPool();
   }
 
   // TODO: orphaned saved stages
-  /**
-   * Executes the process and returns the process state.
-   *
-   * @return The process state.
-   */
-  public ProcessState run() {
+  /** Executes the process and sets the new process state. */
+  public void run() {
     logContext(log.atInfo()).log("Running process launcher");
     beforeExecution();
     processService.startExecution(process.getProcessEntity());
@@ -147,8 +143,7 @@ public class ProcessLauncher {
         throw new RuntimeException(ex);
       }
     }
-
-    return endExecution();
+    endExecution();
   }
 
   private void beforeExecution() {
@@ -162,11 +157,10 @@ public class ProcessLauncher {
     }
   }
 
-  private ProcessState endExecution() {
+  private void endExecution() {
     ProcessState processState = evaluateProcessState(process.getStages());
     logContext(log.atInfo()).log("Process execution finished: %s", processState.name());
     processService.endExecution(pipelineName, process, processState);
-    return processState;
   }
 
   /**

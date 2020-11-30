@@ -13,15 +13,26 @@ package pipelite.launcher;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import pipelite.process.Process;
 import pipelite.process.ProcessState;
 
-public class PipeliteLauncherStats {
+public class ProcessLauncherStats {
 
   final AtomicLong processCreationFailedCount = new AtomicLong(0);
   private final Map<ProcessState, AtomicLong> processExecutionCount = new ConcurrentHashMap<>();
   final AtomicLong processExceptionCount = new AtomicLong(0);
   final AtomicLong stageFailedCount = new AtomicLong(0);
   final AtomicLong stageSuccessCount = new AtomicLong(0);
+
+  void add(Process process, ProcessLauncherPool.Result result) {
+    if (result.getProcessExecutionCount() > 0) {
+      setProcessExecutionCount(process.getProcessEntity().getState())
+          .addAndGet(result.getProcessExecutionCount());
+    }
+    processExceptionCount.addAndGet(result.getProcessExceptionCount());
+    stageSuccessCount.addAndGet(result.getStageSuccessCount());
+    stageFailedCount.addAndGet(result.getStageFailedCount());
+  }
 
   public long getProcessCreationFailedCount() {
     return processCreationFailedCount.get();

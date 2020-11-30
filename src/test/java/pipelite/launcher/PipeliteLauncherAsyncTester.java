@@ -243,7 +243,7 @@ public class PipeliteLauncherAsyncTester {
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    PipeliteLauncherStats stats = pipeliteLauncher.getStats();
+    ProcessLauncherStats stats = pipeliteLauncher.getStats();
     assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
     assertThat(stats.getProcessExecutionCount(ProcessState.COMPLETED)).isEqualTo(PROCESS_CNT);
     assertThat(stats.getProcessExecutionCount(ProcessState.FAILED)).isZero();
@@ -260,7 +260,7 @@ public class PipeliteLauncherAsyncTester {
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    PipeliteLauncherStats stats = pipeliteLauncher.getStats();
+    ProcessLauncherStats stats = pipeliteLauncher.getStats();
     assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
     assertThat(stats.getProcessExecutionCount(ProcessState.COMPLETED)).isZero();
     assertThat(stats.getProcessExecutionCount(ProcessState.FAILED)).isEqualTo(PROCESS_CNT);
@@ -277,7 +277,7 @@ public class PipeliteLauncherAsyncTester {
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    PipeliteLauncherStats stats = pipeliteLauncher.getStats();
+    ProcessLauncherStats stats = pipeliteLauncher.getStats();
     assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
     assertThat(stats.getProcessExecutionCount(ProcessState.COMPLETED)).isZero();
     assertThat(stats.getProcessExecutionCount(ProcessState.FAILED)).isEqualTo(PROCESS_CNT);
@@ -294,7 +294,7 @@ public class PipeliteLauncherAsyncTester {
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    PipeliteLauncherStats stats = pipeliteLauncher.getStats();
+    ProcessLauncherStats stats = pipeliteLauncher.getStats();
     assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
     assertThat(stats.getProcessExecutionCount(ProcessState.COMPLETED)).isZero();
     assertThat(stats.getProcessExecutionCount(ProcessState.FAILED)).isEqualTo(PROCESS_CNT);
@@ -311,7 +311,7 @@ public class PipeliteLauncherAsyncTester {
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    PipeliteLauncherStats stats = pipeliteLauncher.getStats();
+    ProcessLauncherStats stats = pipeliteLauncher.getStats();
     assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
     assertThat(stats.getProcessExecutionCount(ProcessState.COMPLETED)).isZero();
     assertThat(stats.getProcessExecutionCount(ProcessState.FAILED)).isEqualTo(PROCESS_CNT);

@@ -177,7 +177,7 @@ public class PipeliteLauncherTester {
   }
 
   private void assertLauncherStats(PipeliteLauncher pipeliteLauncher, TestProcessFactory f) {
-    PipeliteLauncherStats stats = pipeliteLauncher.getStats();
+    ProcessLauncherStats stats = pipeliteLauncher.getStats();
 
     assertThat(stats.getProcessCreationFailedCount()).isEqualTo(0);
     assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
@@ -247,7 +247,7 @@ public class PipeliteLauncherTester {
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
     ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
 
-    assertThat(pipeliteLauncher.getActiveProcesses().size()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getProcessLaunchers().size()).isEqualTo(0);
 
     assertThat(f.stageExecCnt.get() / f.stageCnt).isEqualTo(f.processCnt);
     assertThat(f.processIds.size()).isEqualTo(f.processCnt);

@@ -29,7 +29,6 @@ import pipelite.entity.ScheduleEntity;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
-import pipelite.process.ProcessState;
 import pipelite.service.*;
 
 @Flogger
@@ -47,16 +46,15 @@ public class PipeliteScheduler extends AbstractScheduledService {
   private final String schedulerName;
   private final Duration processLaunchFrequency;
   private final Duration processRefreshFrequency;
-  private final ExecutorService executorService;
   private final Map<String, ProcessFactory> processFactoryCache = new ConcurrentHashMap<>();
-  private final Map<String, ProcessLauncher> activeProcesses = new ConcurrentHashMap<>();
-  private final Map<String, PipeliteSchedulerStats> stats = new ConcurrentHashMap<>();
+  private final Map<String, ProcessLauncherStats> stats = new ConcurrentHashMap<>();
   private final Map<String, AtomicLong> remainingExecutions = new ConcurrentHashMap<>();
   private final List<Schedule> schedules = Collections.synchronizedList(new ArrayList<>());
   private LocalDateTime schedulesValidUntil;
-  private final LocalDateTime startTime;
-  private LauncherLockEntity launcherLock;
   private boolean shutdownAfterTriggered = false;
+
+  private LauncherLockEntity lock;
+  private ProcessLauncherPool pool;
 
   @Data
   public static class Schedule {
@@ -92,7 +90,6 @@ public class PipeliteScheduler extends AbstractScheduledService {
     this.lockService = lockService;
     this.mailService = mailService;
     this.schedulerName = LauncherConfiguration.getSchedulerName(launcherConfiguration);
-    this.executorService = Executors.newCachedThreadPool();
     if (launcherConfiguration.getProcessLaunchFrequency() != null) {
       this.processLaunchFrequency = launcherConfiguration.getProcessLaunchFrequency();
     } else {
@@ -103,31 +100,37 @@ public class PipeliteScheduler extends AbstractScheduledService {
     } else {
       this.processRefreshFrequency = LauncherConfiguration.DEFAULT_PROCESS_REFRESH_FREQUENCY;
     }
-    this.startTime = LocalDateTime.now();
-  }
-
-  @Override
-  public String serviceName() {
-    return schedulerName;
   }
 
   @Override
   protected void startUp() {
     logContext(log.atInfo()).log("Starting up scheduler");
-    List<LauncherLockEntity> launcherLocks =
-        lockService.getLauncherLocksByLauncherName(getLauncherName());
-    if (!launcherLocks.isEmpty()) {
+    List<LauncherLockEntity> locks = lockService.getLauncherLocksByLauncherName(schedulerName);
+    if (!locks.isEmpty()) {
       throw new RuntimeException(
           "Could not start scheduler " + schedulerName + ": scheduler is already locked");
     }
-    launcherLock = lockService.lockLauncher(getLauncherName());
-    launcherLocks = lockService.getLauncherLocksByLauncherName(getLauncherName());
-    if (launcherLocks.size() != 1
-        || !launcherLocks.get(0).getLauncherId().equals(launcherLock.getLauncherId())) {
-      lockService.unlockLauncher(launcherLock);
+    lock = lockService.lockLauncher(schedulerName);
+    locks = lockService.getLauncherLocksByLauncherName(schedulerName);
+    if (locks.size() != 1 || !locks.get(0).getLauncherId().equals(lock.getLauncherId())) {
+      lockService.unlockLauncher(lock);
       throw new RuntimeException(
           "Could not start scheduler " + schedulerName + ": scheduler is already locked");
     }
+    this.pool =
+        new ProcessLauncherPool(
+            launcherConfiguration,
+            stageConfiguration,
+            processService,
+            stageService,
+            lockService,
+            mailService,
+            lock);
+  }
+
+  @Override
+  public String serviceName() {
+    return schedulerName;
   }
 
   @Override
@@ -142,7 +145,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
     }
     logContext(log.atInfo()).log("Running scheduler");
     // Renew scheduler lock to avoid lock expiry.
-    if (!lockService.relockLauncher(launcherLock)) {
+    if (!lockService.relockLauncher(lock)) {
       throw new RuntimeException(
           "Could not continue running scheduler " + schedulerName + ": could not renew lock");
     }
@@ -154,7 +157,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
       String pipelineName = schedule.getScheduleEntity().getPipelineName();
       String cronExpression = schedule.getScheduleEntity().getSchedule();
       LocalDateTime launchTime = schedule.getLaunchTime();
-      if (!activeProcesses.containsKey(pipelineName) && launchTime.isBefore(LocalDateTime.now())) {
+      if (!pool.hasActivePipeline(pipelineName) && launchTime.isBefore(LocalDateTime.now())) {
         if (remainingExecutions.get(pipelineName) != null
             && remainingExecutions.get(pipelineName).decrementAndGet() < 0) {
           continue;
@@ -313,7 +316,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
     Process process = processFactory.create(processId);
     if (process == null) {
       logContext(log.atSevere(), processId).log("Failed to create process: %s", processId);
-      setStats(pipelineName).processCreationFailedCount.incrementAndGet();
+      stats(pipelineName).processCreationFailedCount.incrementAndGet();
       return null;
     }
     return process;
@@ -327,65 +330,24 @@ public class PipeliteScheduler extends AbstractScheduledService {
     logContext(log.atInfo(), pipelineName, processId).log("Launching process");
 
     process.setProcessEntity(processEntity);
-    ProcessLauncher processLauncher =
-        new ProcessLauncher(
-            launcherConfiguration,
-            stageConfiguration,
-            processService,
-            stageService,
-            mailService,
-            pipelineName,
-            process);
-    activeProcesses.put(pipelineName, processLauncher);
-    executorService.execute(
-        () -> {
-          try {
-            if (!lockService.lockProcess(launcherLock, pipelineName, processId)) {
-              return;
-            }
-            ProcessState state = processLauncher.run();
-            setStats(pipelineName).setProcessExecutionCount(state).incrementAndGet();
-          } catch (Exception ex) {
-            setStats(pipelineName).processExceptionCount.incrementAndGet();
-            logContext(log.atSevere(), pipelineName, processId)
-                .withCause(ex)
-                .log("Failed to execute process because an exception was thrown");
-          } finally {
-            schedule.getScheduleEntity().endExecution();
-            scheduleService.saveProcessSchedule(schedule.getScheduleEntity());
-            lockService.unlockProcess(launcherLock, pipelineName, processId);
-            activeProcesses.remove(pipelineName);
-            setStats(pipelineName)
-                .stageSuccessCount
-                .addAndGet(processLauncher.getStageSuccessCount());
-            setStats(pipelineName)
-                .stageFailedCount
-                .addAndGet(processLauncher.getStageFailedCount());
-          }
+    pool.run(
+        pipelineName,
+        process,
+        (p, r) -> {
+          schedule.getScheduleEntity().endExecution();
+          scheduleService.saveProcessSchedule(schedule.getScheduleEntity());
+          stats(pipelineName).add(p, r);
         });
   }
 
   @Override
-  protected void shutDown() throws Exception {
+  protected void shutDown() throws InterruptedException {
     logContext(log.atInfo()).log("Shutting down scheduler");
-    executorService.shutdown();
-    try {
-      executorService.awaitTermination(ServerManager.FORCE_STOP_WAIT_SECONDS - 1, TimeUnit.SECONDS);
-    } catch (InterruptedException ex) {
-      executorService.shutdownNow();
-      throw ex;
-    } finally {
-      lockService.unlockProcesses(launcherLock);
-      lockService.unlockLauncher(launcherLock);
-      logContext(log.atInfo()).log("Scheduler has been shut down");
-    }
+    pool.shutDown();
+    logContext(log.atInfo()).log("Scheduler has been shut down");
   }
 
   public String getSchedulerName() {
-    return schedulerName;
-  }
-
-  private String getLauncherName() {
     return schedulerName;
   }
 
@@ -395,23 +357,23 @@ public class PipeliteScheduler extends AbstractScheduledService {
 
   public void removeLocks() {
     List<LauncherLockEntity> launcherLocks =
-        lockService.getLauncherLocksByLauncherName(getLauncherName());
+        lockService.getLauncherLocksByLauncherName(schedulerName);
     for (LauncherLockEntity launcherLock : launcherLocks) {
       lockService.unlockProcesses(launcherLock);
       lockService.unlockLauncher(launcherLock);
     }
   }
 
-  private PipeliteSchedulerStats setStats(String pipelineName) {
-    stats.putIfAbsent(pipelineName, new PipeliteSchedulerStats());
+  private ProcessLauncherStats stats(String pipelineName) {
+    stats.putIfAbsent(pipelineName, new ProcessLauncherStats());
     return stats.get(pipelineName);
   }
 
-  public Map<String, ProcessLauncher> getActiveProcesses() {
-    return activeProcesses;
+  public List<ProcessLauncher> getProcessLaunchers() {
+    return pool.get();
   }
 
-  public PipeliteSchedulerStats getStats(String pipelineName) {
+  public ProcessLauncherStats getStats(String pipelineName) {
     return stats.get(pipelineName);
   }
 
