@@ -1,12 +1,11 @@
 package pipelite.launcher;
 
 import org.junit.jupiter.api.Test;
-import pipelite.entity.LauncherLockEntity;
 import pipelite.entity.ProcessEntity;
+import pipelite.launcher.lock.PipeliteLocker;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.service.LockService;
 import pipelite.stage.StageExecutionResultType;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,19 +20,16 @@ public class ProcessLauncherPoolTest {
 
   @Test
   public void testSuccess() throws InterruptedException {
-    LockService lockService = mock(LockService.class);
-    LauncherLockEntity lock = mock(LauncherLockEntity.class);
-
-    when(lockService.lockProcess(any(), any(), any())).thenReturn(true);
+    PipeliteLocker locker = mock(PipeliteLocker.class);
+    when(locker.lockProcess(any(), any())).thenReturn(true);
 
     ProcessLauncherPool pool =
         new ProcessLauncherPool(
-            lockService,
+            locker,
             (pipelineName, process) -> {
               process.getProcessEntity().endExecution(ProcessState.COMPLETED);
               return mock(ProcessLauncher.class);
-            },
-            lock);
+            });
 
     ProcessLauncherStats stats = new ProcessLauncherStats();
 
@@ -53,27 +49,24 @@ public class ProcessLauncherPoolTest {
     assertThat(stats.getProcessExecutionCount(ProcessState.COMPLETED)).isEqualTo(PROCESS_CNT);
     assertThat(stats.getProcessExecutionCount(ProcessState.FAILED)).isZero();
     assertThat(stats.getProcessExceptionCount()).isZero();
-    verify(lockService, times(PROCESS_CNT)).lockProcess(eq(lock), eq(PIPELINE_NAME), any());
-    verify(lockService, times(PROCESS_CNT)).unlockProcess(eq(lock), eq(PIPELINE_NAME), any());
+    verify(locker, times(PROCESS_CNT)).lockProcess(eq(PIPELINE_NAME), any());
+    verify(locker, times(PROCESS_CNT)).unlockProcess(eq(PIPELINE_NAME), any());
     assertThat(pool.size()).isZero();
     assertThat(pool.get().size()).isZero();
   }
 
   @Test
   public void testFailed() throws InterruptedException {
-    LockService lockService = mock(LockService.class);
-    LauncherLockEntity lock = mock(LauncherLockEntity.class);
-
-    when(lockService.lockProcess(any(), any(), any())).thenReturn(true);
+    PipeliteLocker locker = mock(PipeliteLocker.class);
+    when(locker.lockProcess(any(), any())).thenReturn(true);
 
     ProcessLauncherPool pool =
         new ProcessLauncherPool(
-            lockService,
+            locker,
             (pipelineName, process) -> {
               process.getProcessEntity().endExecution(ProcessState.FAILED);
               return mock(ProcessLauncher.class);
-            },
-            lock);
+            });
 
     ProcessLauncherStats stats = new ProcessLauncherStats();
 
@@ -93,29 +86,26 @@ public class ProcessLauncherPoolTest {
     assertThat(stats.getProcessExecutionCount(ProcessState.COMPLETED)).isZero();
     assertThat(stats.getProcessExecutionCount(ProcessState.FAILED)).isEqualTo(PROCESS_CNT);
     assertThat(stats.getProcessExceptionCount()).isZero();
-    verify(lockService, times(PROCESS_CNT)).lockProcess(eq(lock), eq(PIPELINE_NAME), any());
-    verify(lockService, times(PROCESS_CNT)).unlockProcess(eq(lock), eq(PIPELINE_NAME), any());
+    verify(locker, times(PROCESS_CNT)).lockProcess(eq(PIPELINE_NAME), any());
+    verify(locker, times(PROCESS_CNT)).unlockProcess(eq(PIPELINE_NAME), any());
     assertThat(pool.size()).isZero();
     assertThat(pool.get().size()).isZero();
   }
 
   @Test
   public void testException() throws InterruptedException {
-    LockService lockService = mock(LockService.class);
-    LauncherLockEntity lock = mock(LauncherLockEntity.class);
-
-    when(lockService.lockProcess(any(), any(), any())).thenReturn(true);
+    PipeliteLocker locker = mock(PipeliteLocker.class);
+    when(locker.lockProcess(any(), any())).thenReturn(true);
 
     ProcessLauncherPool pool =
         new ProcessLauncherPool(
-            lockService,
+            locker,
             (pipelineName, process) -> {
               process.getProcessEntity().endExecution(ProcessState.FAILED);
               ProcessLauncher launcher = mock(ProcessLauncher.class);
               doThrow(new RuntimeException()).when(launcher).run();
               return launcher;
-            },
-            lock);
+            });
 
     ProcessLauncherStats stats = new ProcessLauncherStats();
 
@@ -135,8 +125,8 @@ public class ProcessLauncherPoolTest {
     assertThat(stats.getProcessExecutionCount(ProcessState.COMPLETED)).isZero();
     assertThat(stats.getProcessExecutionCount(ProcessState.FAILED)).isZero();
     assertThat(stats.getProcessExceptionCount()).isEqualTo(PROCESS_CNT);
-    verify(lockService, times(PROCESS_CNT)).lockProcess(eq(lock), eq(PIPELINE_NAME), any());
-    verify(lockService, times(PROCESS_CNT)).unlockProcess(eq(lock), eq(PIPELINE_NAME), any());
+    verify(locker, times(PROCESS_CNT)).lockProcess(eq(PIPELINE_NAME), any());
+    verify(locker, times(PROCESS_CNT)).unlockProcess(eq(PIPELINE_NAME), any());
     assertThat(pool.size()).isZero();
     assertThat(pool.get().size()).isZero();
   }

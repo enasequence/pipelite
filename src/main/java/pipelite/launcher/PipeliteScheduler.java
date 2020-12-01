@@ -24,6 +24,7 @@ import pipelite.configuration.StageConfiguration;
 import pipelite.cron.CronUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
+import pipelite.launcher.lock.PipeliteLocker;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
@@ -62,17 +63,20 @@ public class PipeliteScheduler extends ProcessLauncherService {
       MailService mailService) {
     super(
         launcherConfiguration,
-        lockService,
-        LauncherConfiguration.getSchedulerName(launcherConfiguration),
-        (pipelineName1, process1) ->
-            new ProcessLauncher(
-                launcherConfiguration,
-                stageConfiguration,
-                processService,
-                stageService,
-                mailService,
-                pipelineName1,
-                process1));
+        new PipeliteLocker(lockService, launcherName(launcherConfiguration)),
+        launcherName(launcherConfiguration),
+        (locker1) ->
+            new ProcessLauncherPool(
+                locker1,
+                (pipelineName1, process1) ->
+                    new ProcessLauncher(
+                        launcherConfiguration,
+                        stageConfiguration,
+                        processService,
+                        stageService,
+                        mailService,
+                        pipelineName1,
+                        process1)));
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(stageConfiguration, "Missing stage configuration");
     Assert.notNull(processFactoryService, "Missing process factory service");
@@ -86,6 +90,10 @@ public class PipeliteScheduler extends ProcessLauncherService {
     this.processService = processService;
     this.lockService = lockService;
     this.processRefreshFrequency = launcherConfiguration.getProcessRefreshFrequency();
+  }
+
+  private static String launcherName(LauncherConfiguration launcherConfiguration) {
+    return LauncherConfiguration.getSchedulerName(launcherConfiguration);
   }
 
   @Override

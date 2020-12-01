@@ -15,12 +15,10 @@ import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.launcher.lock.PipeliteLocker;
-import pipelite.process.Process;
-import pipelite.service.*;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
-import java.util.function.BiFunction;
 
 /**
  * Abstract base class for process execution services. They use AbstractScheduledService for
@@ -30,28 +28,26 @@ import java.util.function.BiFunction;
 @Flogger
 public abstract class ProcessLauncherService extends AbstractScheduledService {
 
-  private final LockService lockService;
-  private final String launcherName;
-  private final Duration processLaunchFrequency;
-  private final BiFunction<String, Process, ProcessLauncher> factory;
   private final PipeliteLocker locker;
+  private final String launcherName;
+  private final ProcessLauncherPoolFactory processLauncherPoolFactory;
+  private final Duration processLaunchFrequency;
   private ProcessLauncherPool pool;
   private boolean shutdown;
 
   public ProcessLauncherService(
       LauncherConfiguration launcherConfiguration,
-      LockService lockService,
+      PipeliteLocker locker,
       String launcherName,
-      BiFunction<String, Process, ProcessLauncher> factory) {
+      ProcessLauncherPoolFactory processLauncherPoolFactory) {
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
-    Assert.notNull(lockService, "Missing lock service");
+    Assert.notNull(locker, "Missing locker");
     Assert.notNull(launcherName, "Missing launcher name");
-    Assert.notNull(factory, "Missing process launcher factory");
-    this.lockService = lockService;
+    Assert.notNull(processLauncherPoolFactory, "Missing process launcher pool factory");
+    this.locker = locker;
     this.launcherName = launcherName;
+    this.processLauncherPoolFactory = processLauncherPoolFactory;
     this.processLaunchFrequency = launcherConfiguration.getProcessLaunchFrequency();
-    this.locker = new PipeliteLocker(lockService, launcherName);
-    this.factory = factory;
   }
 
   @Override
@@ -63,7 +59,7 @@ public abstract class ProcessLauncherService extends AbstractScheduledService {
   protected void startUp() {
     log.atInfo().log("Starting up launcher: %s", launcherName);
     locker.lock();
-    pool = new ProcessLauncherPool(lockService, factory, locker.getLock());
+    pool = processLauncherPoolFactory.apply(locker);
   }
 
   /** Starts the shutdown process. */
@@ -74,12 +70,16 @@ public abstract class ProcessLauncherService extends AbstractScheduledService {
 
   @Override
   protected void runOneIteration() throws Exception {
-    if (isRunning() && !shutdown) {
+    if (isActive()) {
       log.atInfo().log("Running launcher: %s", launcherName);
       // Renew lock to avoid lock expiry.
       locker.renewLock();
       run();
     }
+  }
+
+  protected boolean isActive() {
+    return isRunning() && !shutdown;
   }
 
   @Override
@@ -109,6 +109,9 @@ public abstract class ProcessLauncherService extends AbstractScheduledService {
   }
 
   public List<ProcessLauncher> getProcessLaunchers() {
+    if (pool == null) {
+      return Collections.emptyList();
+    }
     return pool.get();
   }
 

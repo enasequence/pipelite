@@ -73,7 +73,26 @@ public class PipeliteLocker {
     lockService.unlockLauncher(lock);
   }
 
-  public LauncherLockEntity getLock() {
+  /**
+   * Locks a process associated with this launcher.
+   *
+   * @return false if the process could not be locked
+   */
+  public boolean lockProcess(String pipelineName, String processId) {
+    return lockService.lockProcess(lock, pipelineName, processId);
+  }
+
+  /**
+   * Unlocks a process associated with this launcher.
+   *
+   * @param pipelineName the pipeline name
+   * @param processId the process id
+   */
+  public void unlockProcess(String pipelineName, String processId) {
+    lockService.unlockProcess(lock, pipelineName, processId);
+  }
+
+  LauncherLockEntity getLock() {
     return lock;
   }
 }

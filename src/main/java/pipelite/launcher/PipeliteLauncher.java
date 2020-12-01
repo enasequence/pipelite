@@ -20,6 +20,7 @@ import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
 import pipelite.entity.ProcessEntity;
+import pipelite.launcher.lock.PipeliteLocker;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
@@ -54,17 +55,20 @@ public class PipeliteLauncher extends ProcessLauncherService {
       String pipelineName) {
     super(
         launcherConfiguration,
-        lockService,
-        LauncherConfiguration.getLauncherName(pipelineName, launcherConfiguration.getPort()),
-        (pipelineName1, process1) ->
-            new ProcessLauncher(
-                launcherConfiguration,
-                stageConfiguration,
-                processService,
-                stageService,
-                mailService,
-                pipelineName1,
-                process1));
+        new PipeliteLocker(lockService, launcherName(pipelineName, launcherConfiguration)),
+        launcherName(pipelineName, launcherConfiguration),
+        (locker1) ->
+            new ProcessLauncherPool(
+                locker1,
+                (pipelineName1, process1) ->
+                    new ProcessLauncher(
+                        launcherConfiguration,
+                        stageConfiguration,
+                        processService,
+                        stageService,
+                        mailService,
+                        pipelineName1,
+                        process1)));
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(stageConfiguration, "Missing stage configuration");
     Assert.notNull(processFactoryService, "Missing process factory service");
@@ -81,6 +85,11 @@ public class PipeliteLauncher extends ProcessLauncherService {
     this.processRefreshFrequency = launcherConfiguration.getProcessRefreshFrequency();
     this.pipeliteParallelism = launcherConfiguration.getPipelineParallelism();
     this.shutdownIfIdle = launcherConfiguration.isShutdownIfIdle();
+  }
+
+  private static String launcherName(
+      String pipelineName, LauncherConfiguration launcherConfiguration) {
+    return LauncherConfiguration.getLauncherName(pipelineName, launcherConfiguration.getPort());
   }
 
   @Override
