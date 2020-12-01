@@ -22,7 +22,6 @@ import org.springframework.context.annotation.Configuration;
 
 @Flogger
 @Data
-@AllArgsConstructor
 @Configuration
 @ConfigurationProperties(prefix = "pipelite.launcher")
 /**
@@ -32,13 +31,13 @@ import org.springframework.context.annotation.Configuration;
  */
 public class LauncherConfiguration {
 
-  public static final Duration DEFAULT_PIPELINE_LOCK_DURATION = Duration.ofMinutes(10);
-  public static final Duration DEFAULT_PIPELINE_UNLOCK_FREQUENCY = Duration.ofMinutes(30);
-  public static final Duration DEFAULT_PROCESS_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
-  public static final Duration DEFAULT_PROCESS_REFRESH_FREQUENCY = Duration.ofHours(1);
-  public static final int DEFAULT_PIPELINE_PARALLELISM = ForkJoinPool.getCommonPoolParallelism();
-  public static final Duration DEFAULT_STAGE_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
-  public static final Duration DEFAULT_STAGE_POLL_FREQUENCY = Duration.ofMinutes(1);
+  private static final Duration DEFAULT_PIPELINE_LOCK_DURATION = Duration.ofMinutes(10);
+  private static final Duration DEFAULT_PIPELINE_UNLOCK_FREQUENCY = Duration.ofMinutes(30);
+  private static final Duration DEFAULT_PROCESS_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
+  private static final Duration DEFAULT_PROCESS_REFRESH_FREQUENCY = Duration.ofHours(1);
+  private static final int DEFAULT_PIPELINE_PARALLELISM = ForkJoinPool.getCommonPoolParallelism();
+  private static final Duration DEFAULT_STAGE_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
+  private static final Duration DEFAULT_STAGE_POLL_FREQUENCY = Duration.ofMinutes(1);
 
   public LauncherConfiguration() {}
 
@@ -78,43 +77,43 @@ public class LauncherConfiguration {
    * The PipeliteLauncher will execute processes in parallel. The pipelineParallelism is the maximum
    * number of processes executed in parallel.
    */
-  private int pipelineParallelism;
+  private int pipelineParallelism = DEFAULT_PIPELINE_PARALLELISM;
 
   /**
    * The PipeliteLauncher and PipeliteScheduler lock processes for execution. The
    * pipelineLockDuration is the duration after which locks expire unless they are renewed.
    */
-  private Duration pipelineLockDuration;
+  private Duration pipelineLockDuration = DEFAULT_PIPELINE_LOCK_DURATION;
 
   /**
    * The PipeliteLauncher and PipeliteScheduler lock processes for execution. The
    * pipelineUnlockFrequency is the frequency of removing expired locks.
    */
-  private Duration pipelineUnlockFrequency;
+  private Duration pipelineUnlockFrequency = DEFAULT_PIPELINE_UNLOCK_FREQUENCY;
 
   /**
    * The PipeliteLauncher and PipeliteScheduler periodically execute new processes. The
    * processLaunchFrequency is the frequency of doing this.
    */
-  private Duration processLaunchFrequency;
+  private Duration processLaunchFrequency = DEFAULT_PROCESS_LAUNCH_FREQUENCY;
 
   /**
    * The PipeliteLauncher and PipeliteScheduler periodically refresh their process execution queue.
    * The processRefreshFrequency is the frequency of doing this.
    */
-  private Duration processRefreshFrequency;
+  private Duration processRefreshFrequency = DEFAULT_PROCESS_REFRESH_FREQUENCY;
 
   /**
-   * The PipeliteLauncher and PipeliteScheduler periodically executes new process stages. The
-   * stageLaunchFrequency is the frequency of doing this.
+   * The ProcessLauncher periodically executes new process stages. The stageLaunchFrequency is the
+   * frequency of doing this.
    */
-  private Duration stageLaunchFrequency;
+  private Duration stageLaunchFrequency = DEFAULT_STAGE_LAUNCH_FREQUENCY;
 
   /**
-   * The PipeliteLauncher and PipeliteScheduler periodically poll for stage execution results. The
-   * stagePollFrequency is the frequency of doing this.
+   * The StageLauncher periodically poll for stage execution results. The stagePollFrequency is the
+   * frequency of doing this.
    */
-  private Duration stagePollFrequency;
+  private Duration stagePollFrequency = DEFAULT_STAGE_POLL_FREQUENCY;
 
   /** The PipeliteLauncher can optionally be shut down if idle. */
   private boolean shutdownIfIdle;

@@ -10,8 +10,6 @@
  */
 package pipelite.launcher;
 
-import static pipelite.configuration.LauncherConfiguration.DEFAULT_PROCESS_LAUNCH_FREQUENCY;
-
 import com.google.common.flogger.FluentLogger;
 import com.google.common.util.concurrent.AbstractScheduledService;
 import java.time.Duration;
@@ -47,6 +45,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private final Duration processLaunchFrequency;
   private final Duration processRefreshFrequency;
   private final int pipeliteParallelism;
+  private final boolean shutdownIfIdle;
   private final ProcessLauncherStats stats = new ProcessLauncherStats();
   private final List<ProcessEntity> processQueue = Collections.synchronizedList(new ArrayList<>());
 
@@ -86,21 +85,10 @@ public class PipeliteLauncher extends AbstractScheduledService {
         LauncherConfiguration.getLauncherName(pipelineName, launcherConfiguration.getPort());
     this.processFactory = processFactoryService.create(this.pipelineName);
     this.processSource = processSourceService.create(this.pipelineName);
-
-    if (launcherConfiguration.getProcessLaunchFrequency() != null) {
-      this.processLaunchFrequency = launcherConfiguration.getProcessLaunchFrequency();
-    } else {
-      this.processLaunchFrequency = DEFAULT_PROCESS_LAUNCH_FREQUENCY;
-    }
-    if (launcherConfiguration.getProcessRefreshFrequency() != null) {
-      this.processRefreshFrequency = launcherConfiguration.getProcessRefreshFrequency();
-    } else {
-      this.processRefreshFrequency = LauncherConfiguration.DEFAULT_PROCESS_REFRESH_FREQUENCY;
-    }
-    this.pipeliteParallelism =
-        launcherConfiguration.getPipelineParallelism() > 0
-            ? launcherConfiguration.getPipelineParallelism()
-            : LauncherConfiguration.DEFAULT_PIPELINE_PARALLELISM;
+    this.processLaunchFrequency = launcherConfiguration.getProcessLaunchFrequency();
+    this.processRefreshFrequency = launcherConfiguration.getProcessRefreshFrequency();
+    this.pipeliteParallelism = launcherConfiguration.getPipelineParallelism();
+    this.shutdownIfIdle = launcherConfiguration.isShutdownIfIdle();
   }
 
   @Override
@@ -166,7 +154,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
   }
 
   private void shutdownIfIdle() throws InterruptedException {
-    if (processQueueIndex == processQueue.size() && launcherConfiguration.isShutdownIfIdle()) {
+    if (processQueueIndex == processQueue.size() && shutdownIfIdle) {
       logContext(log.atInfo()).log("Stopping idle launcher " + launcherName);
       shutdownIfIdleTriggered = true;
       while (pool.size() > 0) {

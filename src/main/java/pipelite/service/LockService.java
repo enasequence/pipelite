@@ -10,8 +10,6 @@
  */
 package pipelite.service;
 
-import static pipelite.configuration.LauncherConfiguration.DEFAULT_PIPELINE_LOCK_DURATION;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -46,11 +44,7 @@ public class LockService {
     this.launcherConfiguration = launcherConfiguration;
     this.launcherLockRepository = launcherLockRepository;
     this.processLockRepository = processLockRepository;
-    if (launcherConfiguration.getPipelineLockDuration() != null) {
-      this.lockDuration = launcherConfiguration.getPipelineLockDuration();
-    } else {
-      this.lockDuration = DEFAULT_PIPELINE_LOCK_DURATION;
-    }
+    this.lockDuration = launcherConfiguration.getPipelineLockDuration();
   }
 
   /**

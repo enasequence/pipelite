@@ -51,11 +51,7 @@ public class StageLauncher {
     Assert.notNull(process.getProcessEntity(), "Missing process entity");
     Assert.notNull(stage, "Missing stage");
     Assert.notNull(stage.getStageEntity(), "Missing stage entity");
-    if (launcherConfiguration.getStagePollFrequency() != null) {
-      this.stagePollFrequency = launcherConfiguration.getStagePollFrequency();
-    } else {
-      this.stagePollFrequency = LauncherConfiguration.DEFAULT_STAGE_POLL_FREQUENCY;
-    }
+    this.stagePollFrequency = launcherConfiguration.getStagePollFrequency();
   }
 
   /**

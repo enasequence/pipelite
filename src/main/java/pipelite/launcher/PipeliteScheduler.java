@@ -90,16 +90,8 @@ public class PipeliteScheduler extends AbstractScheduledService {
     this.lockService = lockService;
     this.mailService = mailService;
     this.schedulerName = LauncherConfiguration.getSchedulerName(launcherConfiguration);
-    if (launcherConfiguration.getProcessLaunchFrequency() != null) {
-      this.processLaunchFrequency = launcherConfiguration.getProcessLaunchFrequency();
-    } else {
-      this.processLaunchFrequency = LauncherConfiguration.DEFAULT_PROCESS_LAUNCH_FREQUENCY;
-    }
-    if (launcherConfiguration.getProcessRefreshFrequency() != null) {
-      this.processRefreshFrequency = launcherConfiguration.getProcessRefreshFrequency();
-    } else {
-      this.processRefreshFrequency = LauncherConfiguration.DEFAULT_PROCESS_REFRESH_FREQUENCY;
-    }
+    this.processLaunchFrequency = launcherConfiguration.getProcessLaunchFrequency();
+    this.processRefreshFrequency = launcherConfiguration.getProcessRefreshFrequency();
   }
 
   @Override

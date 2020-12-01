@@ -26,7 +26,7 @@ public class LockServiceTester {
   private static final String launcherName1 = UniqueStringGenerator.randomLauncherName();
   private static final String launcherName2 = UniqueStringGenerator.randomLauncherName();
 
-  public static void testLauncherLocks(LockService service) {
+  public static void testLauncherLocks(LockService service, Duration lockDuration) {
     service.getLauncherLocksByLauncherName(launcherName1).forEach(s -> service.unlockLauncher(s));
     service.getLauncherLocksByLauncherName(launcherName2).forEach(s -> service.unlockLauncher(s));
 
@@ -39,18 +39,12 @@ public class LockServiceTester {
     assertThat(launcherLock1.getLauncherId()).isGreaterThan(0);
     assertThat(launcherLock1.getLauncherName()).isEqualTo(launcherName1);
     assertThat(launcherLock1.getExpiry())
-        .isAfterOrEqualTo(
-            LocalDateTime.now()
-                .plus(LauncherConfiguration.DEFAULT_PIPELINE_LOCK_DURATION)
-                .minus(Duration.ofSeconds(10)));
+        .isAfterOrEqualTo(LocalDateTime.now().plus(lockDuration).minus(Duration.ofSeconds(10)));
 
     assertThat(launcherLock2.getLauncherId()).isGreaterThan(0);
     assertThat(launcherLock2.getLauncherName()).isEqualTo(launcherName2);
     assertThat(launcherLock2.getExpiry())
-        .isAfterOrEqualTo(
-            LocalDateTime.now()
-                .plus(LauncherConfiguration.DEFAULT_PIPELINE_LOCK_DURATION)
-                .minus(Duration.ofSeconds(10)));
+        .isAfterOrEqualTo(LocalDateTime.now().plus(lockDuration).minus(Duration.ofSeconds(10)));
 
     assertThat(launcherLock1.getLauncherId()).isLessThan(launcherLock2.getLauncherId());
 

@@ -48,7 +48,6 @@ public class ProcessLauncher {
   private final String pipelineName;
   private final Process process;
   private final Duration stageLaunchFrequency;
-  private final Duration stagePollFrequency;
   private final Set<Stage> active = ConcurrentHashMap.newKeySet();
   private final AtomicLong stageFailedCount = new AtomicLong(0);
   private final AtomicLong stageSuccessCount = new AtomicLong(0);
@@ -78,16 +77,7 @@ public class ProcessLauncher {
     this.mailService = mailService;
     this.pipelineName = pipelineName;
     this.process = process;
-    if (launcherConfiguration.getStageLaunchFrequency() != null) {
-      this.stageLaunchFrequency = launcherConfiguration.getStageLaunchFrequency();
-    } else {
-      this.stageLaunchFrequency = LauncherConfiguration.DEFAULT_STAGE_LAUNCH_FREQUENCY;
-    }
-    if (launcherConfiguration.getStagePollFrequency() != null) {
-      this.stagePollFrequency = launcherConfiguration.getStagePollFrequency();
-    } else {
-      this.stagePollFrequency = LauncherConfiguration.DEFAULT_STAGE_POLL_FREQUENCY;
-    }
+    this.stageLaunchFrequency = launcherConfiguration.getStageLaunchFrequency();
   }
 
   // TODO: orphaned saved stages

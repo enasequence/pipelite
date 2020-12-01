@@ -17,18 +17,20 @@ import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import pipelite.PipeliteTestConfiguration;
+import pipelite.configuration.LauncherConfiguration;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 public class LockServiceHsqlTest {
 
   @Autowired LockService service;
+  @Autowired LauncherConfiguration launcherConfiguration;
 
   @Test
   @Transactional
   @Rollback
   public void testLauncherLocks() {
-    LockServiceTester.testLauncherLocks(service);
+    LockServiceTester.testLauncherLocks(service, launcherConfiguration.getPipelineLockDuration());
   }
 
   @Test

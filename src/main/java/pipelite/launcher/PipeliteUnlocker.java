@@ -32,12 +32,7 @@ public class PipeliteUnlocker extends AbstractScheduledService {
       @Autowired LauncherConfiguration launcherConfiguration, @Autowired LockService lockService) {
     this.launcherConfiguration = launcherConfiguration;
     this.lockService = lockService;
-
-    if (launcherConfiguration.getPipelineUnlockFrequency() != null) {
-      this.unlockFrequency = launcherConfiguration.getPipelineUnlockFrequency();
-    } else {
-      this.unlockFrequency = LauncherConfiguration.DEFAULT_PIPELINE_UNLOCK_FREQUENCY;
-    }
+    this.unlockFrequency = launcherConfiguration.getPipelineUnlockFrequency();
   }
 
   @Override
