@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.launcher.lock;
 
 import com.google.common.util.concurrent.AbstractScheduledService;
 import java.time.Duration;
@@ -21,7 +21,7 @@ import pipelite.service.LockService;
 
 @Component
 @Flogger
-/** Removes expired locks. */
+/** Removes expired launcher and process locks. */
 public class PipeliteUnlocker extends AbstractScheduledService {
 
   private final LauncherConfiguration launcherConfiguration;
@@ -57,8 +57,7 @@ public class PipeliteUnlocker extends AbstractScheduledService {
     log.atInfo().log("Removing expired locks");
     for (LauncherLockEntity launcherLock : lockService.getExpiredLauncherLocks()) {
       log.atInfo().log("Removing expired locks for %s", launcherLock.getLauncherName());
-      lockService.unlockProcesses(launcherLock);
-      lockService.unlockLauncher(launcherLock);
+      PipeliteLocker.unlock(lockService, launcherLock);
     }
   }
 }

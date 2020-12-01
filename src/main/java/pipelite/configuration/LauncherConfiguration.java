@@ -12,9 +12,9 @@ package pipelite.configuration;
 
 import java.net.InetAddress;
 import java.time.Duration;
+import java.util.UUID;
 import java.util.concurrent.ForkJoinPool;
 import javax.annotation.PostConstruct;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -119,7 +119,7 @@ public class LauncherConfiguration {
   private boolean shutdownIfIdle;
 
   public static String getLauncherName(String pipelineName, int port) {
-    return pipelineName + "@" + getCanonicalHostName() + ":" + port;
+    return pipelineName + "@" + getCanonicalHostName() + ":" + port + ":" + UUID.randomUUID();
   }
 
   public static String getSchedulerName(LauncherConfiguration launcherConfiguration) {

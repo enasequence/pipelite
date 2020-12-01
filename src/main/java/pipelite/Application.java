@@ -29,7 +29,7 @@ import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
 import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.PipeliteScheduler;
-import pipelite.launcher.PipeliteUnlocker;
+import pipelite.launcher.lock.PipeliteUnlocker;
 import pipelite.launcher.ServerManager;
 import pipelite.service.*;
 

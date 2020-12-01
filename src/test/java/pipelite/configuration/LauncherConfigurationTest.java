@@ -44,6 +44,6 @@ public class LauncherConfigurationTest {
   public void getLauncherName() {
     String hostName = LauncherConfiguration.getCanonicalHostName();
     assertThat(LauncherConfiguration.getLauncherName("TEST", 8080))
-        .isEqualTo("TEST@" + hostName + ":8080");
+        .startsWith("TEST@" + hostName + ":8080");
   }
 }

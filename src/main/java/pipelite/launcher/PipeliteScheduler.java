@@ -26,6 +26,7 @@ import pipelite.cron.CronUtils;
 import pipelite.entity.LauncherLockEntity;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
+import pipelite.launcher.lock.PipeliteLocker;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
@@ -50,10 +51,10 @@ public class PipeliteScheduler extends AbstractScheduledService {
   private final Map<String, ProcessLauncherStats> stats = new ConcurrentHashMap<>();
   private final Map<String, AtomicLong> remainingExecutions = new ConcurrentHashMap<>();
   private final List<Schedule> schedules = Collections.synchronizedList(new ArrayList<>());
+  private final PipeliteLocker locker;
+
   private LocalDateTime schedulesValidUntil;
   private boolean shutdownAfterTriggered = false;
-
-  private LauncherLockEntity lock;
   private ProcessLauncherPool pool;
 
   @Data
@@ -91,23 +92,13 @@ public class PipeliteScheduler extends AbstractScheduledService {
     this.schedulerName = LauncherConfiguration.getSchedulerName(launcherConfiguration);
     this.processLaunchFrequency = launcherConfiguration.getProcessLaunchFrequency();
     this.processRefreshFrequency = launcherConfiguration.getProcessRefreshFrequency();
+    this.locker = new PipeliteLocker(lockService, schedulerName);
   }
 
   @Override
   protected void startUp() {
     logContext(log.atInfo()).log("Starting up scheduler");
-    List<LauncherLockEntity> locks = lockService.getLauncherLocksByLauncherName(schedulerName);
-    if (!locks.isEmpty()) {
-      throw new RuntimeException(
-          "Could not start scheduler " + schedulerName + ": scheduler is already locked");
-    }
-    lock = lockService.lockLauncher(schedulerName);
-    locks = lockService.getLauncherLocksByLauncherName(schedulerName);
-    if (locks.size() != 1 || !locks.get(0).getLauncherId().equals(lock.getLauncherId())) {
-      lockService.unlockLauncher(lock);
-      throw new RuntimeException(
-          "Could not start scheduler " + schedulerName + ": scheduler is already locked");
-    }
+    locker.lock();
     this.pool =
         new ProcessLauncherPool(
             lockService,
@@ -120,7 +111,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
                     mailService,
                     pipelineName,
                     process),
-            lock);
+            locker.getLock());
   }
 
   @Override
@@ -139,12 +130,8 @@ public class PipeliteScheduler extends AbstractScheduledService {
       return;
     }
     logContext(log.atInfo()).log("Running scheduler");
-    // Renew scheduler lock to avoid lock expiry.
-    if (!lockService.relockLauncher(lock)) {
-      throw new RuntimeException(
-          "Could not continue running scheduler " + schedulerName + ": could not renew lock");
-    }
-
+    // Renew lock to avoid lock expiry.
+    locker.renewLock();
     if (schedules.isEmpty() || schedulesValidUntil.isBefore(LocalDateTime.now())) {
       scheduleProcesses();
     }
@@ -243,8 +230,8 @@ public class PipeliteScheduler extends AbstractScheduledService {
       Optional<ProcessEntity> processEntity =
           processService.getSavedProcess(pipelineName, processId);
       if (processEntity.isPresent()) {
-          schedule.setProcessEntity(processEntity.get());
-          return true;
+        schedule.setProcessEntity(processEntity.get());
+        return true;
       } else {
         scheduleEntity.resetExecution();
         scheduleService.saveProcessSchedule(scheduleEntity);
@@ -318,9 +305,13 @@ public class PipeliteScheduler extends AbstractScheduledService {
 
   @Override
   protected void shutDown() throws InterruptedException {
-    logContext(log.atInfo()).log("Shutting down scheduler");
-    pool.shutDown();
-    logContext(log.atInfo()).log("Scheduler has been shut down");
+    try {
+      logContext(log.atInfo()).log("Shutting down scheduler");
+      pool.shutDown();
+      logContext(log.atInfo()).log("Scheduler has been shut down");
+    } finally {
+      locker.unlock();
+    }
   }
 
   public String getSchedulerName() {

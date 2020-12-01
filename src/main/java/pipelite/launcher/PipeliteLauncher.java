@@ -20,8 +20,8 @@ import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
-import pipelite.entity.LauncherLockEntity;
 import pipelite.entity.ProcessEntity;
+import pipelite.launcher.lock.PipeliteLocker;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
@@ -45,11 +45,10 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private final Duration processLaunchFrequency;
   private final Duration processRefreshFrequency;
   private final int pipeliteParallelism;
+  private final PipeliteLocker locker;
   private final boolean shutdownIfIdle;
   private final ProcessLauncherStats stats = new ProcessLauncherStats();
   private final List<ProcessEntity> processQueue = Collections.synchronizedList(new ArrayList<>());
-
-  private LauncherLockEntity lock;
   private ProcessLauncherPool pool;
   private int processQueueIndex = 0;
   private LocalDateTime processQueueValidUntil = LocalDateTime.now();
@@ -88,17 +87,14 @@ public class PipeliteLauncher extends AbstractScheduledService {
     this.processLaunchFrequency = launcherConfiguration.getProcessLaunchFrequency();
     this.processRefreshFrequency = launcherConfiguration.getProcessRefreshFrequency();
     this.pipeliteParallelism = launcherConfiguration.getPipelineParallelism();
+    this.locker = new PipeliteLocker(lockService, launcherName);
     this.shutdownIfIdle = launcherConfiguration.isShutdownIfIdle();
   }
 
   @Override
   protected void startUp() {
     logContext(log.atInfo()).log("Starting up launcher: %s", launcherName);
-    lock = lockService.lockLauncher(launcherName);
-    if (lock == null) {
-      throw new RuntimeException(
-          "Could not start launcher " + launcherName + ": could not create lock");
-    }
+    locker.lock();
     this.pool =
         new ProcessLauncherPool(
             lockService,
@@ -111,7 +107,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
                     mailService,
                     pipelineName,
                     process),
-            lock);
+            locker.getLock());
   }
 
   @Override
@@ -130,13 +126,8 @@ public class PipeliteLauncher extends AbstractScheduledService {
       return;
     }
     logContext(log.atInfo()).log("Running launcher");
-
-    // Renew launcher lock to avoid lock expiry.
-    if (!lockService.relockLauncher(lock)) {
-      throw new RuntimeException(
-          "Could not continue running launcher " + launcherName + ": could not renew lock");
-    }
-
+    // Renew lock to avoid lock expiry.
+    locker.renewLock();
     if (processQueueIndex >= processQueue.size()
         || processQueueValidUntil.isBefore(LocalDateTime.now())) {
       if (processSource != null) {
@@ -228,9 +219,13 @@ public class PipeliteLauncher extends AbstractScheduledService {
 
   @Override
   protected void shutDown() throws InterruptedException {
-    logContext(log.atInfo()).log("Shutting down launcher");
-    pool.shutDown();
-    logContext(log.atInfo()).log("Launcher has been shut down");
+    try {
+      logContext(log.atInfo()).log("Shutting down launcher");
+      pool.shutDown();
+      logContext(log.atInfo()).log("Launcher has been shut down");
+    } finally {
+      locker.unlock();
+    }
   }
 
   public String getLauncherName() {

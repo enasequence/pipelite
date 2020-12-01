@@ -143,7 +143,8 @@ create table pipelite_launcher_lock
 	audit_time date default sysdate not null,
 	audit_user varchar2(30) default user not null,
 	audit_osuser varchar2(30) default SYS_CONTEXT( 'USERENV', 'OS_USER' ) not null,
-	constraint pk_pipelite_launcher_lock primary key (launcher_id)
+	constraint pk_pipelite_launcher_lock primary key (launcher_id),
+	constraint uk_pipelite_launcher_lock unique (launcher_name)
 )
 tablespace era_tab;
 

@@ -28,7 +28,7 @@ public class LauncherLockEntity {
   @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "PIPELITE_LAUNCHER_LOCK_SEQ")
   private Long launcherId;
 
-  @Column(name = "LAUNCHER_NAME", nullable = false)
+  @Column(name = "LAUNCHER_NAME", unique = true, nullable = false)
   private String launcherName;
 
   @Column(name = "EXPIRY", nullable = false)
