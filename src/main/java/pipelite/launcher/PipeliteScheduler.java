@@ -60,7 +60,6 @@ public class PipeliteScheduler extends AbstractScheduledService {
   public static class Schedule {
     private ScheduleEntity scheduleEntity;
     private ProcessEntity processEntity;
-    private Process process;
     private LocalDateTime launchTime;
   }
 
@@ -167,8 +166,8 @@ public class PipeliteScheduler extends AbstractScheduledService {
                 cronExpression,
                 schedule.getScheduleEntity().getDescription(),
                 launchTime);
-        if (createProcess(schedule)) {
-          launchProcess(schedule);
+        if (createProcessEntity(schedule)) {
+          runProcess(schedule);
         }
       }
     }
@@ -207,7 +206,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
         if (isResumeProcessExecution) {
           logContext(log.atInfo(), scheduleEntity.getPipelineName())
               .log("Attempting to resume %s pipeline execution", scheduleEntity.getPipelineName());
-          launchProcess(schedule);
+          runProcess(schedule);
         } else {
           // Update next launch time.
           schedule.setLaunchTime(CronUtils.launchTime(scheduleEntity.getSchedule()));
@@ -241,13 +240,11 @@ public class PipeliteScheduler extends AbstractScheduledService {
     if (scheduleEntity.getStartTime() != null
         && scheduleEntity.getEndTime() == null
         && processId != null) {
-      Process process = createProcess(pipelineName, processId);
       Optional<ProcessEntity> processEntity =
           processService.getSavedProcess(pipelineName, processId);
-      if (process != null && processEntity.isPresent()) {
-        schedule.setProcess(process);
-        schedule.setProcessEntity(processEntity.get());
-        return true;
+      if (processEntity.isPresent()) {
+          schedule.setProcessEntity(processEntity.get());
+          return true;
       } else {
         scheduleEntity.resetExecution();
         scheduleService.saveProcessSchedule(scheduleEntity);
@@ -268,16 +265,7 @@ public class PipeliteScheduler extends AbstractScheduledService {
     }
   }
 
-  private ProcessFactory getCachedProcessFactory(String pipelineName) {
-    if (processFactoryCache.containsKey(pipelineName)) {
-      return processFactoryCache.get(pipelineName);
-    }
-    ProcessFactory processFactory = processFactoryService.create(pipelineName);
-    processFactoryCache.put(pipelineName, processFactory);
-    return processFactory;
-  }
-
-  private boolean createProcess(Schedule schedule) {
+  private boolean createProcessEntity(Schedule schedule) {
     String pipelineName = schedule.getScheduleEntity().getPipelineName();
     String processId = getNextProcessId(schedule.getScheduleEntity().getProcessId());
     int remainingProcessIdRetries = DEFAULT_MAX_PROCESS_ID_RETRIES;
@@ -293,47 +281,39 @@ public class PipeliteScheduler extends AbstractScheduledService {
         throw new RuntimeException("Could not assign a new process id");
       }
     }
-    Process process = createProcess(pipelineName, processId);
-    if (process == null) {
-      return false;
-    }
     ProcessEntity processEntity =
         processService.createExecution(pipelineName, processId, ProcessEntity.DEFAULT_PRIORITY);
-    schedule.setProcess(process);
     schedule.setProcessEntity(processEntity);
     schedule.getScheduleEntity().startExecution(processId);
     scheduleService.saveProcessSchedule(schedule.getScheduleEntity());
     return true;
   }
 
-  private Process createProcess(String pipelineName, String processId) {
-    logContext(log.atInfo(), pipelineName, processId).log("Creating new process");
-    ProcessFactory processFactory = getCachedProcessFactory(pipelineName);
-    Process process = processFactory.create(processId);
-    if (process == null) {
-      logContext(log.atSevere(), processId).log("Failed to create process: %s", processId);
-      stats(pipelineName).processCreationFailedCount.incrementAndGet();
-      return null;
+  private void runProcess(Schedule schedule) {
+    ScheduleEntity scheduleEntity = schedule.getScheduleEntity();
+    String pipelineName = scheduleEntity.getPipelineName();
+    Process process =
+        ProcessFactory.create(
+            schedule.getProcessEntity(), cachedProcessFactory(pipelineName), stats(pipelineName));
+    if (process != null) {
+      pool.run(
+          pipelineName,
+          process,
+          (p, r) -> {
+            scheduleEntity.endExecution();
+            scheduleService.saveProcessSchedule(scheduleEntity);
+            stats(pipelineName).add(p, r);
+          });
     }
-    return process;
   }
 
-  private void launchProcess(Schedule schedule) {
-    Process process = schedule.getProcess();
-    ProcessEntity processEntity = schedule.getProcessEntity();
-    String pipelineName = processEntity.getPipelineName();
-    String processId = processEntity.getProcessId();
-    logContext(log.atInfo(), pipelineName, processId).log("Launching process");
-
-    process.setProcessEntity(processEntity);
-    pool.run(
-        pipelineName,
-        process,
-        (p, r) -> {
-          schedule.getScheduleEntity().endExecution();
-          scheduleService.saveProcessSchedule(schedule.getScheduleEntity());
-          stats(pipelineName).add(p, r);
-        });
+  private ProcessFactory cachedProcessFactory(String pipelineName) {
+    if (processFactoryCache.containsKey(pipelineName)) {
+      return processFactoryCache.get(pipelineName);
+    }
+    ProcessFactory processFactory = processFactoryService.create(pipelineName);
+    processFactoryCache.put(pipelineName, processFactory);
+    return processFactory;
   }
 
   @Override
@@ -384,11 +364,5 @@ public class PipeliteScheduler extends AbstractScheduledService {
 
   private FluentLogger.Api logContext(FluentLogger.Api log, String pipelineName) {
     return log.with(LogKey.LAUNCHER_NAME, schedulerName).with(LogKey.PIPELINE_NAME, pipelineName);
-  }
-
-  private FluentLogger.Api logContext(FluentLogger.Api log, String pipelineName, String processId) {
-    return log.with(LogKey.LAUNCHER_NAME, schedulerName)
-        .with(LogKey.PIPELINE_NAME, pipelineName)
-        .with(LogKey.PROCESS_ID, processId);
   }
 }

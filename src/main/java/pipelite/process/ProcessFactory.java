@@ -10,9 +10,30 @@
  */
 package pipelite.process;
 
+import com.google.common.flogger.FluentLogger;
+import pipelite.entity.ProcessEntity;
+import pipelite.launcher.ProcessLauncherStats;
+
 public interface ProcessFactory {
 
   String getPipelineName();
 
   Process create(String processId);
+
+  FluentLogger log = FluentLogger.forEnclosingClass();
+
+  static Process create(
+      ProcessEntity processEntity, ProcessFactory processFactory, ProcessLauncherStats stats) {
+    String processId = processEntity.getProcessId();
+    log.atInfo().log("Creating process: %s", processId);
+    // Create process.
+    Process process = processFactory.create(processId);
+    if (process == null) {
+      log.atSevere().log("Failed to create process: %s", processId);
+      stats.addProcessCreationFailedCount(1);
+      return null;
+    }
+    process.setProcessEntity(processEntity);
+    return process;
+  }
 }

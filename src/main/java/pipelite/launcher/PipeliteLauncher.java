@@ -148,7 +148,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
         processQueueIndex < processQueue.size() && pool.size() < pipeliteParallelism;
         processQueueIndex++) {
       ProcessEntity processEntity = processQueue.get(processQueueIndex);
-      launchProcess(processEntity);
+      runProcess(processEntity);
     }
     shutdownIfIdle();
   }
@@ -219,18 +219,11 @@ public class PipeliteLauncher extends AbstractScheduledService {
     processQueueValidUntil = LocalDateTime.now().plus(processRefreshFrequency);
   }
 
-  private void launchProcess(ProcessEntity processEntity) {
-    String processId = processEntity.getProcessId();
-    logContext(log.atInfo(), processId).log("Preparing to launch process: %s", processId);
-    // Create process.
-    Process process = processFactory.create(processId);
-    if (process == null) {
-      logContext(log.atSevere(), processId).log("Failed to create process: %s", processId);
-      stats.processCreationFailedCount.incrementAndGet();
-      return;
+  private void runProcess(ProcessEntity processEntity) {
+    Process process = ProcessFactory.create(processEntity, processFactory, stats);
+    if (process != null) {
+      pool.run(pipelineName, process, (p, r) -> stats.add(p, r));
     }
-    process.setProcessEntity(processEntity);
-    pool.run(pipelineName, process, (p, r) -> stats.add(p, r));
   }
 
   @Override

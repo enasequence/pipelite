@@ -18,29 +18,14 @@ import pipelite.process.ProcessState;
 
 public class ProcessLauncherStats {
 
-  final AtomicLong processCreationFailedCount = new AtomicLong(0);
+  private final AtomicLong processCreationFailedCount = new AtomicLong(0);
   private final Map<ProcessState, AtomicLong> processExecutionCount = new ConcurrentHashMap<>();
-  final AtomicLong processExceptionCount = new AtomicLong(0);
-  final AtomicLong stageFailedCount = new AtomicLong(0);
-  final AtomicLong stageSuccessCount = new AtomicLong(0);
-
-  void add(Process process, ProcessLauncherPool.Result result) {
-    if (result.getProcessExecutionCount() > 0) {
-      setProcessExecutionCount(process.getProcessEntity().getState())
-          .addAndGet(result.getProcessExecutionCount());
-    }
-    processExceptionCount.addAndGet(result.getProcessExceptionCount());
-    stageSuccessCount.addAndGet(result.getStageSuccessCount());
-    stageFailedCount.addAndGet(result.getStageFailedCount());
-  }
+  private final AtomicLong processExceptionCount = new AtomicLong(0);
+  private final AtomicLong stageFailedCount = new AtomicLong(0);
+  private final AtomicLong stageSuccessCount = new AtomicLong(0);
 
   public long getProcessCreationFailedCount() {
     return processCreationFailedCount.get();
-  }
-
-  AtomicLong setProcessExecutionCount(ProcessState state) {
-    processExecutionCount.putIfAbsent(state, new AtomicLong(0));
-    return processExecutionCount.get(state);
   }
 
   public long getProcessExecutionCount(ProcessState state) {
@@ -60,5 +45,24 @@ public class ProcessLauncherStats {
 
   public long getStageSuccessCount() {
     return stageSuccessCount.get();
+  }
+
+  public void addProcessCreationFailedCount(long count) {
+    processCreationFailedCount.addAndGet(count);
+  }
+
+  private void addProcessExecutionCount(ProcessState state, long count) {
+    processExecutionCount.putIfAbsent(state, new AtomicLong(0));
+    processExecutionCount.get(state).addAndGet(count);
+  }
+
+  void add(Process process, ProcessLauncherPool.Result result) {
+    if (result.getProcessExecutionCount() > 0) {
+      addProcessExecutionCount(
+          process.getProcessEntity().getState(), result.getProcessExecutionCount());
+    }
+    processExceptionCount.addAndGet(result.getProcessExceptionCount());
+    stageSuccessCount.addAndGet(result.getStageSuccessCount());
+    stageFailedCount.addAndGet(result.getStageFailedCount());
   }
 }
