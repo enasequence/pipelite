@@ -142,6 +142,7 @@ public class ProcessLauncherPool {
     logContext(log.atInfo()).log("Shutting down process launcher pool");
     executorService.shutdown();
     try {
+      // TODO: service shutdown max time from launcher config
       executorService.awaitTermination(ServerManager.FORCE_STOP_WAIT_SECONDS - 1, TimeUnit.SECONDS);
     } catch (InterruptedException ex) {
       executorService.shutdownNow();

@@ -11,7 +11,6 @@
 package pipelite.launcher;
 
 import com.google.common.flogger.FluentLogger;
-import com.google.common.util.concurrent.AbstractScheduledService;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -21,7 +20,6 @@ import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
 import pipelite.entity.ProcessEntity;
-import pipelite.launcher.lock.PipeliteLocker;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
@@ -29,30 +27,20 @@ import pipelite.process.ProcessSource;
 import pipelite.service.*;
 
 @Flogger
-public class PipeliteLauncher extends AbstractScheduledService {
+public class PipeliteLauncher extends ProcessLauncherService {
 
   private static final int DEFAULT_PROCESS_CREATION_COUNT = 5000;
-  private final LauncherConfiguration launcherConfiguration;
-  private final StageConfiguration stageConfiguration;
   private final ProcessService processService;
-  private final StageService stageService;
-  private final LockService lockService;
-  private final MailService mailService;
   private final String pipelineName;
-  private final String launcherName;
   private final ProcessFactory processFactory;
   private final ProcessSource processSource;
-  private final Duration processLaunchFrequency;
   private final Duration processRefreshFrequency;
   private final int pipeliteParallelism;
-  private final PipeliteLocker locker;
   private final boolean shutdownIfIdle;
   private final ProcessLauncherStats stats = new ProcessLauncherStats();
   private final List<ProcessEntity> processQueue = Collections.synchronizedList(new ArrayList<>());
-  private ProcessLauncherPool pool;
   private int processQueueIndex = 0;
   private LocalDateTime processQueueValidUntil = LocalDateTime.now();
-  private boolean shutdownIfIdleTriggered;
 
   public PipeliteLauncher(
       LauncherConfiguration launcherConfiguration,
@@ -64,70 +52,39 @@ public class PipeliteLauncher extends AbstractScheduledService {
       LockService lockService,
       MailService mailService,
       String pipelineName) {
+    super(
+        launcherConfiguration,
+        lockService,
+        LauncherConfiguration.getLauncherName(pipelineName, launcherConfiguration.getPort()),
+        (pipelineName1, process1) ->
+            new ProcessLauncher(
+                launcherConfiguration,
+                stageConfiguration,
+                processService,
+                stageService,
+                mailService,
+                pipelineName1,
+                process1));
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(stageConfiguration, "Missing stage configuration");
-    Assert.notNull(processService, "Missing process service");
     Assert.notNull(processFactoryService, "Missing process factory service");
     Assert.notNull(processSourceService, "Missing process source service");
+    Assert.notNull(processService, "Missing process service");
     Assert.notNull(stageService, "Missing stage service");
     Assert.notNull(mailService, "Missing mail service");
     Assert.notNull(lockService, "Missing lock service");
     Assert.notNull(pipelineName, "Missing pipeline name");
-    this.launcherConfiguration = launcherConfiguration;
-    this.stageConfiguration = stageConfiguration;
     this.processService = processService;
-    this.stageService = stageService;
-    this.lockService = lockService;
-    this.mailService = mailService;
     this.pipelineName = pipelineName;
-    this.launcherName =
-        LauncherConfiguration.getLauncherName(pipelineName, launcherConfiguration.getPort());
     this.processFactory = processFactoryService.create(this.pipelineName);
     this.processSource = processSourceService.create(this.pipelineName);
-    this.processLaunchFrequency = launcherConfiguration.getProcessLaunchFrequency();
     this.processRefreshFrequency = launcherConfiguration.getProcessRefreshFrequency();
     this.pipeliteParallelism = launcherConfiguration.getPipelineParallelism();
-    this.locker = new PipeliteLocker(lockService, launcherName);
     this.shutdownIfIdle = launcherConfiguration.isShutdownIfIdle();
   }
 
   @Override
-  protected void startUp() {
-    logContext(log.atInfo()).log("Starting up launcher: %s", launcherName);
-    locker.lock();
-    this.pool =
-        new ProcessLauncherPool(
-            lockService,
-            (pipelineName, process) ->
-                new ProcessLauncher(
-                    launcherConfiguration,
-                    stageConfiguration,
-                    processService,
-                    stageService,
-                    mailService,
-                    pipelineName,
-                    process),
-            locker.getLock());
-  }
-
-  @Override
-  public String serviceName() {
-    return launcherName;
-  }
-
-  @Override
-  protected Scheduler scheduler() {
-    return Scheduler.newFixedDelaySchedule(Duration.ZERO, processLaunchFrequency);
-  }
-
-  @Override
-  protected void runOneIteration() throws Exception {
-    if (shutdownIfIdleTriggered || !isRunning()) {
-      return;
-    }
-    logContext(log.atInfo()).log("Running launcher");
-    // Renew lock to avoid lock expiry.
-    locker.renewLock();
+  protected void run() {
     if (processQueueIndex >= processQueue.size()
         || processQueueValidUntil.isBefore(LocalDateTime.now())) {
       if (processSource != null) {
@@ -136,7 +93,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
       queueProcesses();
     }
     for (;
-        processQueueIndex < processQueue.size() && pool.size() < pipeliteParallelism;
+        processQueueIndex < processQueue.size() && getPool().size() < pipeliteParallelism;
         processQueueIndex++) {
       ProcessEntity processEntity = processQueue.get(processQueueIndex);
       runProcess(processEntity);
@@ -144,18 +101,10 @@ public class PipeliteLauncher extends AbstractScheduledService {
     shutdownIfIdle();
   }
 
-  private void shutdownIfIdle() throws InterruptedException {
+  private void shutdownIfIdle() {
     if (processQueueIndex == processQueue.size() && shutdownIfIdle) {
-      logContext(log.atInfo()).log("Stopping idle launcher " + launcherName);
-      shutdownIfIdleTriggered = true;
-      while (pool.size() > 0) {
-        try {
-          Thread.sleep(Duration.ofSeconds(1).toMillis());
-        } catch (InterruptedException ex) {
-          throw ex;
-        }
-      }
-      stopAsync();
+      logContext(log.atInfo()).log("Stopping idle launcher " + getLauncherName());
+      startShutdown();
     }
   }
 
@@ -198,14 +147,16 @@ public class PipeliteLauncher extends AbstractScheduledService {
     processQueue.addAll(
         processService.getActiveProcesses(pipelineName).stream()
             .filter(
-                processEntity -> !pool.hasActiveProcess(pipelineName, processEntity.getProcessId()))
+                processEntity ->
+                    !getPool().hasActiveProcess(pipelineName, processEntity.getProcessId()))
             .collect(Collectors.toList()));
 
     // Then add new processes.
     processQueue.addAll(
         processService.getNewProcesses(pipelineName).stream()
             .filter(
-                processEntity -> !pool.hasActiveProcess(pipelineName, processEntity.getProcessId()))
+                processEntity ->
+                    !getPool().hasActiveProcess(pipelineName, processEntity.getProcessId()))
             .collect(Collectors.toList()));
     processQueueValidUntil = LocalDateTime.now().plus(processRefreshFrequency);
   }
@@ -213,31 +164,12 @@ public class PipeliteLauncher extends AbstractScheduledService {
   private void runProcess(ProcessEntity processEntity) {
     Process process = ProcessFactory.create(processEntity, processFactory, stats);
     if (process != null) {
-      pool.run(pipelineName, process, (p, r) -> stats.add(p, r));
+      getPool().run(pipelineName, process, (p, r) -> stats.add(p, r));
     }
-  }
-
-  @Override
-  protected void shutDown() throws InterruptedException {
-    try {
-      logContext(log.atInfo()).log("Shutting down launcher");
-      pool.shutDown();
-      logContext(log.atInfo()).log("Launcher has been shut down");
-    } finally {
-      locker.unlock();
-    }
-  }
-
-  public String getLauncherName() {
-    return launcherName;
   }
 
   public String getPipelineName() {
     return pipelineName;
-  }
-
-  public List<ProcessLauncher> getProcessLaunchers() {
-    return pool.get();
   }
 
   public ProcessLauncherStats getStats() {
@@ -245,12 +177,7 @@ public class PipeliteLauncher extends AbstractScheduledService {
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {
-    return log.with(LogKey.LAUNCHER_NAME, launcherName).with(LogKey.PIPELINE_NAME, pipelineName);
-  }
-
-  private FluentLogger.Api logContext(FluentLogger.Api log, String processId) {
-    return log.with(LogKey.LAUNCHER_NAME, launcherName)
-        .with(LogKey.PIPELINE_NAME, pipelineName)
-        .with(LogKey.PROCESS_ID, processId);
+    return log.with(LogKey.LAUNCHER_NAME, getLauncherName())
+        .with(LogKey.PIPELINE_NAME, pipelineName);
   }
 }

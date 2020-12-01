@@ -88,7 +88,7 @@ public class AdminController {
     for (PipeliteScheduler scheduler : getSchedulers()) {
       list.add(
           Scheduler.builder()
-              .schedulerName(scheduler.getSchedulerName())
+              .schedulerName(scheduler.getLauncherName())
               .schedules(getSchedules(scheduler))
               .active(getProcesses(scheduler.getProcessLaunchers()))
               .build());
