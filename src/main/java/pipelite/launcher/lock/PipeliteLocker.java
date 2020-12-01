@@ -60,7 +60,11 @@ public class PipeliteLocker {
   /** Removes locks associated with the launcher. */
   public void unlock() {
     log.atInfo().log("Unlocking launcher: " + launcherName);
-    unlock(lockService, lock);
+    try {
+      unlock(lockService, lock);
+    } catch (Exception ex) {
+      log.atSevere().log("Failed to unlock launcher: " + launcherName);
+    }
   }
 
   /** Removes locks associated with the launcher. */
