@@ -41,7 +41,7 @@ public class PipeliteScheduler extends ProcessLauncherService {
   private final Duration processRefreshFrequency;
   private final Map<String, ProcessFactory> processFactoryCache = new ConcurrentHashMap<>();
   private final Map<String, ProcessLauncherStats> stats = new ConcurrentHashMap<>();
-  private final Map<String, AtomicLong> remainingExecutions = new ConcurrentHashMap<>();
+  private final Map<String, AtomicLong> maximumExecutions = new ConcurrentHashMap<>();
   private final List<Schedule> schedules = Collections.synchronizedList(new ArrayList<>());
   private LocalDateTime schedulesValidUntil;
 
@@ -105,8 +105,8 @@ public class PipeliteScheduler extends ProcessLauncherService {
       String cronExpression = schedule.getScheduleEntity().getSchedule();
       LocalDateTime launchTime = schedule.getLaunchTime();
       if (!getPool().hasActivePipeline(pipelineName) && launchTime.isBefore(LocalDateTime.now())) {
-        if (remainingExecutions.get(pipelineName) != null
-            && remainingExecutions.get(pipelineName).decrementAndGet() < 0) {
+        if (maximumExecutions.get(pipelineName) != null
+            && maximumExecutions.get(pipelineName).decrementAndGet() < 0) {
           continue;
         }
         // Set next launch time.
@@ -123,21 +123,12 @@ public class PipeliteScheduler extends ProcessLauncherService {
         }
       }
     }
-    shutdownIfNoRemainingExecutions();
   }
 
-  private void shutdownIfNoRemainingExecutions() {
-    if (remainingExecutions.isEmpty()) {
-      return;
-    }
-    for (AtomicLong remaining : remainingExecutions.values()) {
-      if (remaining.get() > 0) {
-        return;
-      }
-    }
-    logContext(log.atInfo())
-        .log("Stopping pipelite scheduler " + getLauncherName() + " after maximum executions");
-    startShutdown();
+  @Override
+  protected boolean shutdownIfIdle() {
+    return !(maximumExecutions.isEmpty()
+        || maximumExecutions.values().stream().anyMatch(r -> r.get() > 0));
   }
 
   private void scheduleProcesses() {
@@ -283,8 +274,8 @@ public class PipeliteScheduler extends ProcessLauncherService {
   }
 
   public void setMaximumExecutions(String pipelineName, long maximumExecutions) {
-    this.remainingExecutions.putIfAbsent(pipelineName, new AtomicLong());
-    this.remainingExecutions.get(pipelineName).set(maximumExecutions);
+    this.maximumExecutions.putIfAbsent(pipelineName, new AtomicLong());
+    this.maximumExecutions.get(pipelineName).set(maximumExecutions);
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {

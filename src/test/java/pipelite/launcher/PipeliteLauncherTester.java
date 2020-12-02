@@ -245,7 +245,7 @@ public class PipeliteLauncherTester {
 
   private void test(TestProcessFactory f) {
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
-    ServerManager.run(pipeliteLauncher, pipeliteLauncher.serviceName());
+    new ServerManager().add(pipeliteLauncher).run();
 
     assertThat(pipeliteLauncher.getProcessLaunchers().size()).isEqualTo(0);
 

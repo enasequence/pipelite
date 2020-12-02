@@ -75,8 +75,7 @@ public class LsfSshCmdExecutorTest {
       try {
         Thread.sleep(Duration.ofSeconds(5).toMillis());
       } catch (InterruptedException ex) {
-        Thread.currentThread().interrupt();
-        break;
+        throw new RuntimeException(ex);
       }
     }
 

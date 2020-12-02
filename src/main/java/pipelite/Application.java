@@ -10,13 +10,9 @@
  */
 package pipelite;
 
-import com.google.common.util.concurrent.Service;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -50,10 +46,9 @@ public class Application {
   @Autowired private MailService mailService;
   @Autowired private PipeliteUnlocker pipeliteUnlocker;
 
-  private List<PipeliteLauncher> launchers = new ArrayList<>();
+  private final ServerManager serverManager = new ServerManager();
+  private final List<PipeliteLauncher> launchers = new ArrayList<>();
   private PipeliteScheduler scheduler;
-  private List<Service> services = new ArrayList<>();
-  private ExecutorService executorService = Executors.newCachedThreadPool();
 
   @PostConstruct
   private void construct() {
@@ -63,27 +58,23 @@ public class Application {
 
   @PreDestroy
   private void destroy() {
-    services.stream().forEach(service -> service.stopAsync());
-    executorService.shutdown();
-    try {
-      executorService.awaitTermination(ServerManager.FORCE_STOP_WAIT_SECONDS - 1, TimeUnit.SECONDS);
-    } catch (InterruptedException ex) {
-      executorService.shutdownNow();
-    }
+    serverManager.stop();
   }
 
   private void init() {
     try {
       log.atInfo().log("Initialising pipelite services");
+      // Check pipeline names.
       if (launcherConfiguration.getPipelineName() != null) {
         List<String> pipelineNames =
             Arrays.stream(launcherConfiguration.getPipelineName().split(","))
                 .map(s -> s.trim())
                 .collect(Collectors.toList());
         for (String pipelineName : pipelineNames) {
-          // Check pipeline name.
           processFactoryService.create(pipelineName);
         }
+        // Create services.
+        serverManager.add(pipeliteUnlocker);
         for (String pipelineName : pipelineNames) {
           PipeliteLauncher launcher =
               new PipeliteLauncher(
@@ -97,6 +88,7 @@ public class Application {
                   mailService,
                   pipelineName);
           launchers.add(launcher);
+          serverManager.add(launcher);
         }
       }
       if (launcherConfiguration.getSchedulerName() != null) {
@@ -110,28 +102,18 @@ public class Application {
                 stageService,
                 lockService,
                 mailService);
+        serverManager.add(scheduler);
       }
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Unexpected exception when initialising pipelite services");
+      throw new RuntimeException(ex);
     }
   }
 
   private void run() {
     try {
       log.atInfo().log("Starting pipelite services");
-      services.add(pipeliteUnlocker);
-      executorService.submit(
-          () -> ServerManager.run(pipeliteUnlocker, pipeliteUnlocker.serviceName()));
-
-      for (PipeliteLauncher launcher : launchers) {
-        services.add(launcher);
-        executorService.submit(() -> ServerManager.run(launcher, launcher.serviceName()));
-      }
-
-      if (scheduler != null) {
-        services.add(scheduler);
-        executorService.submit(() -> ServerManager.run(scheduler, scheduler.serviceName()));
-      }
+      serverManager.run();
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Unexpected exception when starting pipelite services");
     }

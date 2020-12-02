@@ -130,8 +130,9 @@ public class StageLauncher {
       try {
         Thread.sleep(stagePollFrequency.toMillis());
       } catch (InterruptedException ex) {
+        log.atSevere().log("Stage launcher was interrupted");
         Thread.currentThread().interrupt();
-        break;
+        throw new RuntimeException(ex);
       }
     }
     return result;

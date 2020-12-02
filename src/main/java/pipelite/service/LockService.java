@@ -25,8 +25,6 @@ import pipelite.log.LogKey;
 import pipelite.repository.LauncherLockRepository;
 import pipelite.repository.ProcessLockRepository;
 
-// TODO: launcher lock is stored as a process lock and there is a possibility of lock name conflict
-
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 @Flogger

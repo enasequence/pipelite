@@ -151,7 +151,9 @@ public class LsfCmdExecutor extends CmdExecutor {
       try {
         Thread.sleep(STDOUT_FILE_POLL_WAIT_TIME.toMillis());
       } catch (InterruptedException ex) {
+        log.atSevere().log("LSF command executor was interrupted");
         Thread.currentThread().interrupt();
+        throw new RuntimeException(ex);
       }
     }
 

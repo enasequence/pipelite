@@ -57,22 +57,26 @@ public abstract class ProcessLauncherService extends AbstractScheduledService {
     pool = processLauncherPoolFactory.apply(locker);
   }
 
-  /** Starts the shutdown process. */
-  protected void startShutdown() {
-    shutdown = true;
-    stopAsync();
-  }
-
   @Override
   protected void runOneIteration() {
     if (isActive()) {
       log.atInfo().log("Running launcher: %s", getLauncherName());
+
       // Renew lock to avoid lock expiry.
       locker.renewLock();
+
+      // TODO: review exception handling policy
       try {
         run();
       } catch (Exception ex) {
-        log.atSevere().withCause(ex).log("Unexpected launcher exception");
+        log.atSevere().withCause(ex).log(
+            "Unexpected exception from launcher: %s", getLauncherName());
+      }
+
+      if (pool.size() == 0 && shutdownIfIdle()) {
+        log.atInfo().log("Stopping idle launcher: %s", getLauncherName());
+        shutdown = true;
+        stopAsync();
       }
     }
   }
@@ -82,7 +86,7 @@ public abstract class ProcessLauncherService extends AbstractScheduledService {
   }
 
   @Override
-  protected void shutDown() throws InterruptedException {
+  protected void shutDown() {
     try {
       log.atInfo().log("Shutting down launcher: %s", getLauncherName());
       pool.shutDown();
@@ -93,10 +97,19 @@ public abstract class ProcessLauncherService extends AbstractScheduledService {
   }
 
   /**
-   * Runs one iteration of the service. If an exception is thrown the exception
-   * will be logged and run will be called again after a fixed delay.
+   * Runs one iteration of the service. If an exception is thrown the exception will be logged and
+   * run will be called again after a fixed delay.
    */
   protected abstract void run() throws Exception;
+
+  /**
+   * Allows an idle launcher to be shut down.
+   *
+   * @return true if a launcher with no running processes should be shut down
+   */
+  protected boolean shutdownIfIdle() {
+    return false;
+  }
 
   @Override
   public String serviceName() {

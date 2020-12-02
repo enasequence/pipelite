@@ -13,29 +13,47 @@ package pipelite.launcher;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
-import java.util.Collections;
+
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
 import lombok.extern.flogger.Flogger;
-import pipelite.log.LogKey;
+import org.springframework.util.Assert;
+import pipelite.launcher.lock.PipeliteUnlocker;
 
 @Flogger
 public class ServerManager {
 
-  private ServerManager() {}
+  public static final int STOP_WAIT_MAX_SECONDS = 30;
+  public static final int STOP_WAIT_MIN_SECONDS = 25;
 
-  public static final int FORCE_STOP_WAIT_SECONDS = 30;
+  private final Set<Service> services = new HashSet<>();
+  private ServiceManager manager;
 
-  private static void forceStop(ServiceManager manager, String serviceName) {
-    log.atInfo().with(LogKey.SERVICE_NAME, serviceName).log("Stopping service");
-    try {
-      manager.stopAsync().awaitStopped(FORCE_STOP_WAIT_SECONDS, TimeUnit.SECONDS);
-    } catch (TimeoutException timeout) {
+  public ServerManager add(PipeliteUnlocker service) {
+    Assert.isNull(manager, "Unable to add new pipelite services");
+    Assert.notNull(service, "Missing pipelite service");
+    log.atInfo().log("Adding new pipelite service: " + service.serviceName());
+    if (!services.add(service)) {
+      throw new RuntimeException("Non unique pipelite service name: " + service.serviceName());
     }
+    return this;
   }
 
-  public static void run(Service service, String serviceName) {
-    ServiceManager manager = new ServiceManager(Collections.singleton(service));
+  public ServerManager add(ProcessLauncherService service) {
+    Assert.isNull(manager, "Unable to add new pipelite services");
+    Assert.notNull(service, "Missing pipelite service");
+    log.atInfo().log("Adding new pipelite service: " + service.serviceName());
+    if (!services.add(service)) {
+      throw new RuntimeException("Non unique pipelite service name: " + service.serviceName());
+    }
+    return this;
+  }
+
+  public void run() {
+    Assert.isNull(manager, "Unable to run new pipelite services");
+    manager = new ServiceManager(services);
     manager.addListener(
         new ServiceManager.Listener() {
           public void stopped() {}
@@ -43,26 +61,22 @@ public class ServerManager {
           public void healthy() {}
 
           public void failure(Service service) {
-            log.atSevere()
-                .with(LogKey.SERVICE_NAME, serviceName)
-                .withCause(service.failureCause())
-                .log("Service has failed");
-            forceStop(manager, serviceName);
+            log.atSevere().withCause(service.failureCause()).log("Pipelite service has failed");
+            stop();
           }
         },
         MoreExecutors.directExecutor());
-
-    Runtime.getRuntime()
-        .addShutdownHook(
-            new Thread(
-                () -> {
-                  forceStop(manager, serviceName);
-                }));
-
-    log.atInfo().with(LogKey.SERVICE_NAME, serviceName).log("Starting service");
-
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> stop()));
+    log.atInfo().log("Starting pipelite services");
     manager.startAsync().awaitStopped();
+    log.atInfo().log("Pipelite services have stopped");
+  }
 
-    log.atInfo().with(LogKey.SERVICE_NAME, serviceName).log("Service has stopped");
+  public void stop() {
+    log.atInfo().log("Stopping all pipelite services");
+    try {
+      manager.stopAsync().awaitStopped(STOP_WAIT_MAX_SECONDS, TimeUnit.SECONDS);
+    } catch (TimeoutException timeout) {
+    }
   }
 }

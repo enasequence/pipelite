@@ -10,7 +10,6 @@
  */
 package pipelite.launcher;
 
-import com.google.common.flogger.FluentLogger;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -22,7 +21,6 @@ import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.launcher.lock.PipeliteLocker;
-import pipelite.log.LogKey;
 import pipelite.process.Process;
 
 @Flogger
@@ -60,7 +58,7 @@ public class ProcessLauncherPool {
     Assert.notNull(processLauncherFactory, "Missing process launcher factory");
     this.locker = locker;
     this.processLauncherFactory = processLauncherFactory;
-    logContext(log.atInfo()).log("Starting up process launcher pool");
+    log.atInfo().log("Starting up process launcher pool");
   }
 
   /**
@@ -92,9 +90,8 @@ public class ProcessLauncherPool {
             ++processExecutionCount;
           } catch (Exception ex) {
             ++processExceptionCount;
-            logContext(log.atSevere(), pipelineName, processId)
-                .withCause(ex)
-                .log("Failed to execute process because an unexpected exception was thrown");
+            log.atSevere().withCause(ex).log(
+                "An unexpected exception was thrown when executing %s %s", pipelineName, processId);
           } finally {
             // Unlock process.
             locker.unlockProcess(pipelineName, processId);
@@ -128,26 +125,16 @@ public class ProcessLauncherPool {
     return active.stream().map(a -> a.getProcessLauncher()).collect(Collectors.toList());
   }
 
-  public void shutDown() throws InterruptedException {
-    logContext(log.atInfo()).log("Shutting down process launcher pool");
+  public void shutDown() {
+    log.atInfo().log("Shutting down process launcher pool");
     executorService.shutdown();
     try {
-      // TODO: service shutdown max time from launcher config
-      executorService.awaitTermination(ServerManager.FORCE_STOP_WAIT_SECONDS - 1, TimeUnit.SECONDS);
+      executorService.awaitTermination(ServerManager.STOP_WAIT_MIN_SECONDS, TimeUnit.SECONDS);
+      active.forEach(a -> locker.unlockProcess(a.getPipelineName(), a.getProcessId()));
     } catch (InterruptedException ex) {
       executorService.shutdownNow();
-      throw ex;
-    } finally {
-      active.forEach(a -> locker.unlockProcess(a.getPipelineName(), a.getProcessId()));
-      logContext(log.atInfo()).log("Process launcher pool has been shut down");
+      Thread.currentThread().interrupt();
     }
-  }
-
-  private FluentLogger.Api logContext(FluentLogger.Api log) {
-    return log;
-  }
-
-  private FluentLogger.Api logContext(FluentLogger.Api log, String pipelineName, String processId) {
-    return log.with(LogKey.PIPELINE_NAME, pipelineName).with(LogKey.PROCESS_ID, processId);
+    log.atInfo().log("Process launcher pool has been shut down");
   }
 }

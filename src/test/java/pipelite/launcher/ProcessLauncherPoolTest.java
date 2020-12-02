@@ -29,7 +29,7 @@ public class ProcessLauncherPoolTest {
   public static final String PIPELINE_NAME = "PIPELINE1";
 
   @Test
-  public void testSuccess() throws InterruptedException {
+  public void testSuccess() {
     PipeliteLocker locker = mock(PipeliteLocker.class);
     when(locker.lockProcess(any(), any())).thenReturn(true);
 
@@ -66,7 +66,7 @@ public class ProcessLauncherPoolTest {
   }
 
   @Test
-  public void testFailed() throws InterruptedException {
+  public void testFailed() {
     PipeliteLocker locker = mock(PipeliteLocker.class);
     when(locker.lockProcess(any(), any())).thenReturn(true);
 
@@ -103,7 +103,7 @@ public class ProcessLauncherPoolTest {
   }
 
   @Test
-  public void testException() throws InterruptedException {
+  public void testException() {
     PipeliteLocker locker = mock(PipeliteLocker.class);
     when(locker.lockProcess(any(), any())).thenReturn(true);
 

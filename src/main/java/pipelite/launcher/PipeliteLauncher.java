@@ -103,17 +103,13 @@ public class PipeliteLauncher extends ProcessLauncherService {
     for (;
         processQueueIndex < processQueue.size() && getPool().size() < pipeliteParallelism;
         processQueueIndex++) {
-      ProcessEntity processEntity = processQueue.get(processQueueIndex);
-      runProcess(processEntity);
+      runProcess(processQueue.get(processQueueIndex));
     }
-    shutdownIfIdle();
   }
 
-  private void shutdownIfIdle() {
-    if (processQueueIndex == processQueue.size() && shutdownIfIdle) {
-      logContext(log.atInfo()).log("Stopping idle launcher " + getLauncherName());
-      startShutdown();
-    }
+  @Override
+  protected boolean shutdownIfIdle() {
+    return processQueueIndex == processQueue.size() && shutdownIfIdle;
   }
 
   private void createNewProcesses() {
