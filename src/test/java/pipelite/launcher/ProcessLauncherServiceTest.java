@@ -14,6 +14,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
+
 import org.junit.jupiter.api.Test;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.lock.PipeliteLocker;
@@ -24,7 +26,7 @@ public class ProcessLauncherServiceTest {
 
   public static final String LAUNCHER_NAME = "LAUNCHER1";
 
-  private ProcessLauncherFactory processLauncherFactory(ProcessState state) {
+  private Supplier<ProcessLauncher> processLauncherSupplier(ProcessState state) {
     return () -> {
       ProcessLauncher processLauncher = mock(ProcessLauncher.class);
       doAnswer(
@@ -77,9 +79,7 @@ public class ProcessLauncherServiceTest {
             new ProcessLauncherService(
                 launcherConfiguration,
                 locker,
-                (locker1) ->
-                    new ProcessLauncherPool(
-                        locker1, processLauncherFactory(ProcessState.COMPLETED))) {
+                () -> new ProcessLauncherPool(processLauncherSupplier(ProcessState.COMPLETED))) {
               @Override
               protected void run() {
                 runCallCnt.incrementAndGet();
@@ -88,7 +88,7 @@ public class ProcessLauncherServiceTest {
     doReturn(true).when(processLauncherService).isActive();
 
     assertThat(processLauncherService.getLauncherName()).isEqualTo(LAUNCHER_NAME);
-    assertThat(processLauncherService.getPool()).isNull();
+    assertThat(processLauncherService.activeProcessCount()).isZero();
     assertThat(processLauncherService.getProcessLaunchers()).isEmpty();
 
     assertThat(lockCallCnt.get()).isZero();

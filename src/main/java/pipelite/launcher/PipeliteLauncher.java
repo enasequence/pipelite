@@ -56,9 +56,8 @@ public class PipeliteLauncher extends ProcessLauncherService {
     super(
         launcherConfiguration,
         new PipeliteLocker(lockService, launcherName(pipelineName, launcherConfiguration)),
-        (locker1) ->
+        () ->
             new ProcessLauncherPool(
-                locker1,
                 () ->
                     new ProcessLauncher(
                         launcherConfiguration,
@@ -99,7 +98,7 @@ public class PipeliteLauncher extends ProcessLauncherService {
       queueProcesses();
     }
     for (;
-        processQueueIndex < processQueue.size() && getPool().size() < pipeliteParallelism;
+        processQueueIndex < processQueue.size() && activeProcessCount() < pipeliteParallelism;
         processQueueIndex++) {
       runProcess(processQueue.get(processQueueIndex));
     }
@@ -148,17 +147,13 @@ public class PipeliteLauncher extends ProcessLauncherService {
     // First add active processes. Asynchronous active processes may be able to continue execution.
     processQueue.addAll(
         processService.getActiveProcesses(pipelineName).stream()
-            .filter(
-                processEntity ->
-                    !getPool().hasActiveProcess(pipelineName, processEntity.getProcessId()))
+            .filter(processEntity -> !isProcessActive(pipelineName, processEntity.getProcessId()))
             .collect(Collectors.toList()));
 
     // Then add new processes.
     processQueue.addAll(
         processService.getNewProcesses(pipelineName).stream()
-            .filter(
-                processEntity ->
-                    !getPool().hasActiveProcess(pipelineName, processEntity.getProcessId()))
+            .filter(processEntity -> !isProcessActive(pipelineName, processEntity.getProcessId()))
             .collect(Collectors.toList()));
     processQueueValidUntil = LocalDateTime.now().plus(processRefreshFrequency);
   }
@@ -166,7 +161,7 @@ public class PipeliteLauncher extends ProcessLauncherService {
   private void runProcess(ProcessEntity processEntity) {
     Process process = ProcessFactory.create(processEntity, processFactory, stats);
     if (process != null) {
-      getPool().run(pipelineName, process, (p, r) -> stats.add(p, r));
+      run(pipelineName, process, (p, r) -> stats.add(p, r));
     }
   }
 

@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -25,9 +26,9 @@ import pipelite.process.Process;
 
 @Flogger
 public class ProcessLauncherPool {
-  private final PipeliteLocker locker;
-  private final ProcessLauncherFactory processLauncherFactory;
+  private final Supplier<ProcessLauncher> processLauncherSupplier;
   private final ExecutorService executorService = Executors.newCachedThreadPool();
+  private PipeliteLocker locker;
 
   @Value
   public static class Result {
@@ -49,15 +50,11 @@ public class ProcessLauncherPool {
   /**
    * Creates a process launcher pool.
    *
-   * @param locker the launcher locker
-   * @param processLauncherFactory the factory to create process launchers given pipeline name and
-   *     process
+   * @param processLauncherSupplier the process launcher supplier
    */
-  public ProcessLauncherPool(PipeliteLocker locker, ProcessLauncherFactory processLauncherFactory) {
-    Assert.notNull(locker, "Missing locker");
-    Assert.notNull(processLauncherFactory, "Missing process launcher factory");
-    this.locker = locker;
-    this.processLauncherFactory = processLauncherFactory;
+  public ProcessLauncherPool(Supplier<ProcessLauncher> processLauncherSupplier) {
+    Assert.notNull(processLauncherSupplier, "Missing process launcher supplier");
+    this.processLauncherSupplier = processLauncherSupplier;
     log.atInfo().log("Starting up process launcher pool");
   }
 
@@ -67,13 +64,23 @@ public class ProcessLauncherPool {
    *
    * @param pipelineName the pipeline name
    * @param process the process
+   * @param locker the launcher locker
    * @param callback the callback called once the process execution has finished. The new process
    *     state is available from the process.
    */
-  public void run(String pipelineName, Process process, ProcessLauncherPoolCallback callback) {
+  public void run(
+      String pipelineName,
+      Process process,
+      PipeliteLocker locker,
+      ProcessLauncherPoolCallback callback) {
+    Assert.notNull(pipelineName, "Missing pipeline name");
+    Assert.notNull(process, "Missing process");
+    Assert.notNull(locker, "Missing locker");
+    Assert.notNull(callback, "Missing callback");
+    this.locker = locker;
     String processId = process.getProcessId();
     // Create process launcher.
-    ProcessLauncher processLauncher = processLauncherFactory.get();
+    ProcessLauncher processLauncher = processLauncherSupplier.get();
     ActiveLauncher activeLauncher = new ActiveLauncher(pipelineName, processId, processLauncher);
     active.add(activeLauncher);
     // Run process.
@@ -107,17 +114,17 @@ public class ProcessLauncherPool {
         });
   }
 
-  public boolean hasActivePipeline(String pipelineName) {
+  public boolean isPipelineActive(String pipelineName) {
     return active.stream().anyMatch(p -> p.getPipelineName().equals(pipelineName));
   }
 
-  public boolean hasActiveProcess(String pipelineName, String processId) {
+  public boolean isProcessActive(String pipelineName, String processId) {
     return active.stream()
         .anyMatch(
             p -> p.getPipelineName().equals(pipelineName) && p.getProcessId().equals(processId));
   }
 
-  public long size() {
+  public long activeProcessCount() {
     return active.size();
   }
 

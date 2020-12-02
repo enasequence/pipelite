@@ -23,12 +23,14 @@ import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.StageExecutionResultType;
 
+import java.util.function.Supplier;
+
 public class ProcessLauncherPoolTest {
 
   private static final int PROCESS_CNT = 1000;
   public static final String PIPELINE_NAME = "PIPELINE1";
 
-  private ProcessLauncherFactory processLauncherFactory(ProcessState state) {
+  private Supplier<ProcessLauncher> processLauncherSupplier(ProcessState state) {
     return () -> {
       ProcessLauncher processLauncher = mock(ProcessLauncher.class);
       doAnswer(
@@ -49,7 +51,7 @@ public class ProcessLauncherPoolTest {
     when(locker.lockProcess(any(), any())).thenReturn(true);
 
     ProcessLauncherPool pool =
-        new ProcessLauncherPool(locker, processLauncherFactory(ProcessState.COMPLETED));
+        new ProcessLauncherPool(processLauncherSupplier(ProcessState.COMPLETED));
 
     ProcessLauncherStats stats = new ProcessLauncherStats();
 
@@ -61,7 +63,7 @@ public class ProcessLauncherPoolTest {
               .build();
       ProcessEntity processEntity = new ProcessEntity();
       process.setProcessEntity(processEntity);
-      pool.run(PIPELINE_NAME, process, (p, r) -> stats.add(p, r));
+      pool.run(PIPELINE_NAME, process, locker, (p, r) -> stats.add(p, r));
     }
 
     pool.shutDown();
@@ -71,7 +73,7 @@ public class ProcessLauncherPoolTest {
     assertThat(stats.getProcessExceptionCount()).isZero();
     verify(locker, times(PROCESS_CNT)).lockProcess(eq(PIPELINE_NAME), any());
     verify(locker, times(PROCESS_CNT)).unlockProcess(eq(PIPELINE_NAME), any());
-    assertThat(pool.size()).isZero();
+    assertThat(pool.activeProcessCount()).isZero();
     assertThat(pool.get().size()).isZero();
   }
 
@@ -81,7 +83,7 @@ public class ProcessLauncherPoolTest {
     when(locker.lockProcess(any(), any())).thenReturn(true);
 
     ProcessLauncherPool pool =
-        new ProcessLauncherPool(locker, processLauncherFactory(ProcessState.FAILED));
+        new ProcessLauncherPool(processLauncherSupplier(ProcessState.FAILED));
 
     ProcessLauncherStats stats = new ProcessLauncherStats();
 
@@ -93,7 +95,7 @@ public class ProcessLauncherPoolTest {
               .build();
       ProcessEntity processEntity = new ProcessEntity();
       process.setProcessEntity(processEntity);
-      pool.run(PIPELINE_NAME, process, (p, r) -> stats.add(p, r));
+      pool.run(PIPELINE_NAME, process, locker, (p, r) -> stats.add(p, r));
     }
 
     pool.shutDown();
@@ -103,7 +105,7 @@ public class ProcessLauncherPoolTest {
     assertThat(stats.getProcessExceptionCount()).isZero();
     verify(locker, times(PROCESS_CNT)).lockProcess(eq(PIPELINE_NAME), any());
     verify(locker, times(PROCESS_CNT)).unlockProcess(eq(PIPELINE_NAME), any());
-    assertThat(pool.size()).isZero();
+    assertThat(pool.activeProcessCount()).isZero();
     assertThat(pool.get().size()).isZero();
   }
 
@@ -114,7 +116,6 @@ public class ProcessLauncherPoolTest {
 
     ProcessLauncherPool pool =
         new ProcessLauncherPool(
-            locker,
             () -> {
               ProcessLauncher processLauncher = mock(ProcessLauncher.class);
               doThrow(new RuntimeException()).when(processLauncher).run(any(), any());
@@ -131,7 +132,7 @@ public class ProcessLauncherPoolTest {
               .build();
       ProcessEntity processEntity = new ProcessEntity();
       process.setProcessEntity(processEntity);
-      pool.run(PIPELINE_NAME, process, (p, r) -> stats.add(p, r));
+      pool.run(PIPELINE_NAME, process, locker, (p, r) -> stats.add(p, r));
     }
 
     pool.shutDown();
@@ -141,7 +142,7 @@ public class ProcessLauncherPoolTest {
     assertThat(stats.getProcessExceptionCount()).isEqualTo(PROCESS_CNT);
     verify(locker, times(PROCESS_CNT)).lockProcess(eq(PIPELINE_NAME), any());
     verify(locker, times(PROCESS_CNT)).unlockProcess(eq(PIPELINE_NAME), any());
-    assertThat(pool.size()).isZero();
+    assertThat(pool.activeProcessCount()).isZero();
     assertThat(pool.get().size()).isZero();
   }
 }

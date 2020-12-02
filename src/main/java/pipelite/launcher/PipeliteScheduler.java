@@ -64,9 +64,8 @@ public class PipeliteScheduler extends ProcessLauncherService {
     super(
         launcherConfiguration,
         new PipeliteLocker(lockService, launcherName(launcherConfiguration)),
-        (locker1) ->
+        () ->
             new ProcessLauncherPool(
-                locker1,
                 () ->
                     new ProcessLauncher(
                         launcherConfiguration,
@@ -102,7 +101,7 @@ public class PipeliteScheduler extends ProcessLauncherService {
       String pipelineName = schedule.getScheduleEntity().getPipelineName();
       String cronExpression = schedule.getScheduleEntity().getSchedule();
       LocalDateTime launchTime = schedule.getLaunchTime();
-      if (!getPool().hasActivePipeline(pipelineName) && launchTime.isBefore(LocalDateTime.now())) {
+      if (!isPipelineActive(pipelineName) && launchTime.isBefore(LocalDateTime.now())) {
         if (maximumExecutions.get(pipelineName) != null
             && maximumExecutions.get(pipelineName).decrementAndGet() < 0) {
           continue;
@@ -237,15 +236,14 @@ public class PipeliteScheduler extends ProcessLauncherService {
         ProcessFactory.create(
             schedule.getProcessEntity(), cachedProcessFactory(pipelineName), stats(pipelineName));
     if (process != null) {
-      getPool()
-          .run(
-              pipelineName,
-              process,
-              (p, r) -> {
-                scheduleEntity.endExecution();
-                scheduleService.saveProcessSchedule(scheduleEntity);
-                stats(pipelineName).add(p, r);
-              });
+      run(
+          pipelineName,
+          process,
+          (p, r) -> {
+            scheduleEntity.endExecution();
+            scheduleService.saveProcessSchedule(scheduleEntity);
+            stats(pipelineName).add(p, r);
+          });
     }
   }
 

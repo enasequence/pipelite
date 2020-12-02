@@ -13,10 +13,13 @@ package pipelite.launcher;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
+
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.lock.PipeliteLocker;
+import pipelite.process.Process;
 
 /**
  * Abstract base class for process execution services. They use AbstractScheduledService for
@@ -27,7 +30,7 @@ import pipelite.lock.PipeliteLocker;
 public abstract class ProcessLauncherService extends PipeliteService {
 
   private final PipeliteLocker locker;
-  private final ProcessLauncherPoolFactory processLauncherPoolFactory;
+  private final Supplier<ProcessLauncherPool> processLauncherPoolSupplier;
   private final Duration processLaunchFrequency;
   private ProcessLauncherPool pool;
   private boolean shutdown;
@@ -35,12 +38,12 @@ public abstract class ProcessLauncherService extends PipeliteService {
   public ProcessLauncherService(
       LauncherConfiguration launcherConfiguration,
       PipeliteLocker locker,
-      ProcessLauncherPoolFactory processLauncherPoolFactory) {
+      Supplier<ProcessLauncherPool> processLauncherPoolSupplier) {
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(locker, "Missing locker");
-    Assert.notNull(processLauncherPoolFactory, "Missing process launcher pool factory");
+    Assert.notNull(processLauncherPoolSupplier, "Missing process launcher pool supplier");
     this.locker = locker;
-    this.processLauncherPoolFactory = processLauncherPoolFactory;
+    this.processLauncherPoolSupplier = processLauncherPoolSupplier;
     this.processLaunchFrequency = launcherConfiguration.getProcessLaunchFrequency();
   }
 
@@ -53,7 +56,7 @@ public abstract class ProcessLauncherService extends PipeliteService {
   protected void startUp() {
     log.atInfo().log("Starting up launcher: %s", getLauncherName());
     locker.lock();
-    pool = processLauncherPoolFactory.apply(locker);
+    pool = processLauncherPoolSupplier.get();
   }
 
   @Override
@@ -72,7 +75,7 @@ public abstract class ProcessLauncherService extends PipeliteService {
             "Unexpected exception from launcher: %s", getLauncherName());
       }
 
-      if (pool.size() == 0 && shutdownIfIdle()) {
+      if (pool.activeProcessCount() == 0 && shutdownIfIdle()) {
         log.atInfo().log("Stopping idle launcher: %s", getLauncherName());
         shutdown = true;
         stopAsync();
@@ -119,14 +122,60 @@ public abstract class ProcessLauncherService extends PipeliteService {
     return locker.getLauncherName();
   }
 
+  /**
+   * Runs a process.
+   *
+   * @param pipelineName the pipeline name
+   * @param process the process
+   * @param callback the process execution callback
+   */
+  protected void run(String pipelineName, Process process, ProcessLauncherPoolCallback callback) {
+    pool.run(pipelineName, process, locker, callback);
+  }
+
+  /**
+   * Returns true if there are any active processes for the pipeline.
+   *
+   * @param pipelineName the pipeline name
+   * @return true if there are any active processes for the pipeline.
+   */
+  public boolean isPipelineActive(String pipelineName) {
+    if (pool == null) {
+      return false;
+    }
+    return pool.isPipelineActive(pipelineName);
+  }
+
+  /**
+   * Returns true if there are any active processes.
+   *
+   * @param pipelineName the pipeline name
+   * @param processId the process id
+   * @return true if there are any active processes.
+   */
+  public boolean isProcessActive(String pipelineName, String processId) {
+    if (pool == null) {
+      return false;
+    }
+    return pool.isProcessActive(pipelineName, processId);
+  }
+
+  /**
+   * Returns the number of active processes.
+   *
+   * @return the number of active processes.
+   */
+  public long activeProcessCount() {
+    if (pool == null) {
+      return 0;
+    }
+    return pool.activeProcessCount();
+  }
+
   public List<ProcessLauncher> getProcessLaunchers() {
     if (pool == null) {
       return Collections.emptyList();
     }
     return pool.get();
-  }
-
-  protected ProcessLauncherPool getPool() {
-    return pool;
   }
 }
