@@ -241,7 +241,7 @@ public class PipeliteLauncherAsyncTester {
     TestProcessFactory<SubmitSuccessPollSuccessExecutor> f = submitSuccessPollSuccess;
 
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
-    new ServerManager().add(pipeliteLauncher).run();
+    new PipeliteServiceManager().add(pipeliteLauncher).run();
 
     ProcessLauncherStats stats = pipeliteLauncher.getStats();
     assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
@@ -258,7 +258,7 @@ public class PipeliteLauncherAsyncTester {
     TestProcessFactory<SubmitErrorExecutor> f = submitError;
 
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
-    new ServerManager().add(pipeliteLauncher).run();
+    new PipeliteServiceManager().add(pipeliteLauncher).run();
 
     ProcessLauncherStats stats = pipeliteLauncher.getStats();
     assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
@@ -275,7 +275,7 @@ public class PipeliteLauncherAsyncTester {
     TestProcessFactory<SubmitExceptionExecutor> f = submitException;
 
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
-    new ServerManager().add(pipeliteLauncher).run();
+    new PipeliteServiceManager().add(pipeliteLauncher).run();
 
     ProcessLauncherStats stats = pipeliteLauncher.getStats();
     assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
@@ -292,7 +292,7 @@ public class PipeliteLauncherAsyncTester {
     TestProcessFactory<PollErrorExecutor> f = pollError;
 
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
-    new ServerManager().add(pipeliteLauncher).run();
+    new PipeliteServiceManager().add(pipeliteLauncher).run();
 
     ProcessLauncherStats stats = pipeliteLauncher.getStats();
     assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
@@ -309,7 +309,7 @@ public class PipeliteLauncherAsyncTester {
     TestProcessFactory<PollExceptionExecutor> f = pollException;
 
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
-    new ServerManager().add(pipeliteLauncher).run();
+    new PipeliteServiceManager().add(pipeliteLauncher).run();
 
     ProcessLauncherStats stats = pipeliteLauncher.getStats();
     assertThat(stats.getProcessExceptionCount()).isEqualTo(0);

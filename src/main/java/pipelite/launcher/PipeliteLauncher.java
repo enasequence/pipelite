@@ -20,7 +20,7 @@ import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
 import pipelite.entity.ProcessEntity;
-import pipelite.launcher.lock.PipeliteLocker;
+import pipelite.lock.PipeliteLocker;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;

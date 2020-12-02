@@ -20,7 +20,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
-import pipelite.launcher.lock.PipeliteLocker;
+import pipelite.lock.PipeliteLocker;
 import pipelite.process.Process;
 
 @Flogger
@@ -129,7 +129,7 @@ public class ProcessLauncherPool {
     log.atInfo().log("Shutting down process launcher pool");
     executorService.shutdown();
     try {
-      executorService.awaitTermination(ServerManager.STOP_WAIT_MIN_SECONDS, TimeUnit.SECONDS);
+      executorService.awaitTermination(PipeliteServiceManager.STOP_WAIT_MIN_SECONDS, TimeUnit.SECONDS);
       active.forEach(a -> locker.unlockProcess(a.getPipelineName(), a.getProcessId()));
     } catch (InterruptedException ex) {
       executorService.shutdownNow();

@@ -24,7 +24,7 @@ import pipelite.configuration.StageConfiguration;
 import pipelite.cron.CronUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
-import pipelite.launcher.lock.PipeliteLocker;
+import pipelite.lock.PipeliteLocker;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;

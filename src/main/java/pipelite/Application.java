@@ -25,8 +25,8 @@ import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
 import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.PipeliteScheduler;
-import pipelite.launcher.ServerManager;
-import pipelite.launcher.lock.PipeliteUnlocker;
+import pipelite.launcher.PipeliteServiceManager;
+import pipelite.launcher.PipeliteUnlockService;
 import pipelite.service.*;
 
 @Configuration
@@ -44,9 +44,9 @@ public class Application {
   @Autowired private StageService stageService;
   @Autowired private LockService lockService;
   @Autowired private MailService mailService;
-  @Autowired private PipeliteUnlocker pipeliteUnlocker;
+  @Autowired private PipeliteUnlockService pipeliteUnlockService;
 
-  private final ServerManager serverManager = new ServerManager();
+  private final PipeliteServiceManager serverManager = new PipeliteServiceManager();
   private final List<PipeliteLauncher> launchers = new ArrayList<>();
   private PipeliteScheduler scheduler;
 
@@ -58,7 +58,7 @@ public class Application {
 
   @PreDestroy
   private void destroy() {
-    serverManager.stop();
+    serverManager.shutdown();
   }
 
   private void init() {
@@ -74,7 +74,7 @@ public class Application {
           processFactoryService.create(pipelineName);
         }
         // Create services.
-        serverManager.add(pipeliteUnlocker);
+        serverManager.add(pipeliteUnlockService);
         for (String pipelineName : pipelineNames) {
           PipeliteLauncher launcher =
               new PipeliteLauncher(

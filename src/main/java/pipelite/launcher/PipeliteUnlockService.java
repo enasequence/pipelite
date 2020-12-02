@@ -8,27 +8,27 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher.lock;
+package pipelite.launcher;
 
-import com.google.common.util.concurrent.AbstractScheduledService;
 import java.time.Duration;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.entity.LauncherLockEntity;
+import pipelite.lock.PipeliteLocker;
 import pipelite.service.LockService;
 
 @Component
 @Flogger
 /** Removes expired launcher and process locks. */
-public class PipeliteUnlocker extends AbstractScheduledService {
+public class PipeliteUnlockService extends PipeliteService {
 
   private final LauncherConfiguration launcherConfiguration;
   private final LockService lockService;
   private final Duration unlockFrequency;
 
-  public PipeliteUnlocker(
+  public PipeliteUnlockService(
       @Autowired LauncherConfiguration launcherConfiguration, @Autowired LockService lockService) {
     this.launcherConfiguration = launcherConfiguration;
     this.lockService = lockService;

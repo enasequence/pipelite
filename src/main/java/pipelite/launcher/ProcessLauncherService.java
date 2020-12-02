@@ -10,14 +10,13 @@
  */
 package pipelite.launcher;
 
-import com.google.common.util.concurrent.AbstractScheduledService;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
-import pipelite.launcher.lock.PipeliteLocker;
+import pipelite.lock.PipeliteLocker;
 
 /**
  * Abstract base class for process execution services. They use AbstractScheduledService for
@@ -25,7 +24,7 @@ import pipelite.launcher.lock.PipeliteLocker;
  * processes.
  */
 @Flogger
-public abstract class ProcessLauncherService extends AbstractScheduledService {
+public abstract class ProcessLauncherService extends PipeliteService {
 
   private final PipeliteLocker locker;
   private final ProcessLauncherPoolFactory processLauncherPoolFactory;

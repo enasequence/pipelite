@@ -11,7 +11,7 @@
 package pipelite.launcher;
 
 import java.util.function.Function;
-import pipelite.launcher.lock.PipeliteLocker;
+import pipelite.lock.PipeliteLocker;
 
 /** Creates a process launcher pool given a locker. */
 public interface ProcessLauncherPoolFactory extends Function<PipeliteLocker, ProcessLauncherPool> {}

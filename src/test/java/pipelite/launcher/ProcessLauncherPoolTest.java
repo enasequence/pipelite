@@ -17,7 +17,7 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 import org.junit.jupiter.api.Test;
 import pipelite.entity.ProcessEntity;
-import pipelite.launcher.lock.PipeliteLocker;
+import pipelite.lock.PipeliteLocker;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;

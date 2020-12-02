@@ -16,7 +16,7 @@ import static org.mockito.Mockito.*;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
 import pipelite.configuration.LauncherConfiguration;
-import pipelite.launcher.lock.PipeliteLocker;
+import pipelite.lock.PipeliteLocker;
 import pipelite.process.ProcessState;
 
 public class ProcessLauncherServiceTest {

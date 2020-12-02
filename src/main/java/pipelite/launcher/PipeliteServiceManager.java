@@ -20,28 +20,17 @@ import java.util.concurrent.TimeoutException;
 
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
-import pipelite.launcher.lock.PipeliteUnlocker;
 
 @Flogger
-public class ServerManager {
+public class PipeliteServiceManager {
 
   public static final int STOP_WAIT_MAX_SECONDS = 30;
   public static final int STOP_WAIT_MIN_SECONDS = 25;
 
-  private final Set<Service> services = new HashSet<>();
+  private final Set<PipeliteService> services = new HashSet<>();
   private ServiceManager manager;
 
-  public ServerManager add(PipeliteUnlocker service) {
-    Assert.isNull(manager, "Unable to add new pipelite services");
-    Assert.notNull(service, "Missing pipelite service");
-    log.atInfo().log("Adding new pipelite service: " + service.serviceName());
-    if (!services.add(service)) {
-      throw new RuntimeException("Non unique pipelite service name: " + service.serviceName());
-    }
-    return this;
-  }
-
-  public ServerManager add(ProcessLauncherService service) {
+  public PipeliteServiceManager add(PipeliteService service) {
     Assert.isNull(manager, "Unable to add new pipelite services");
     Assert.notNull(service, "Missing pipelite service");
     log.atInfo().log("Adding new pipelite service: " + service.serviceName());
@@ -61,18 +50,19 @@ public class ServerManager {
           public void healthy() {}
 
           public void failure(Service service) {
-            log.atSevere().withCause(service.failureCause()).log("Pipelite service has failed");
-            stop();
+            log.atSevere().withCause(service.failureCause()).log(
+                "Pipelite service has failed: " + ((PipeliteService) service).serviceName());
+            shutdown();
           }
         },
         MoreExecutors.directExecutor());
-    Runtime.getRuntime().addShutdownHook(new Thread(() -> stop()));
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> shutdown()));
     log.atInfo().log("Starting pipelite services");
     manager.startAsync().awaitStopped();
     log.atInfo().log("Pipelite services have stopped");
   }
 
-  public void stop() {
+  public void shutdown() {
     log.atInfo().log("Stopping all pipelite services");
     try {
       manager.stopAsync().awaitStopped(STOP_WAIT_MAX_SECONDS, TimeUnit.SECONDS);

@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher.lock;
+package pipelite.launcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -33,7 +33,7 @@ import pipelite.service.LockService;
     classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 @Transactional
-public class PipeliteUnlockerTest {
+public class PipeliteUnlockServiceTest {
 
   @Autowired LauncherLockRepository launcherLockRepository;
   @Autowired ProcessLockRepository processLockRepository;
@@ -64,7 +64,7 @@ public class PipeliteUnlockerTest {
     assertTrue(lockService.isProcessLocked(pipelineName, "2"));
     assertTrue(lockService.isProcessLocked(pipelineName, "3"));
 
-    PipeliteUnlocker unlocker = new PipeliteUnlocker(launcherConfiguration, lockService);
+    PipeliteUnlockService unlocker = new PipeliteUnlockService(launcherConfiguration, lockService);
     unlocker.stopAsync().awaitTerminated();
     unlocker.removeExpiredLocks();
 
@@ -97,7 +97,7 @@ public class PipeliteUnlockerTest {
     assertTrue(lockService.isProcessLocked(pipelineName, "2"));
     assertTrue(lockService.isProcessLocked(pipelineName, "3"));
 
-    PipeliteUnlocker unlocker = new PipeliteUnlocker(launcherConfiguration, lockService);
+    PipeliteUnlockService unlocker = new PipeliteUnlockService(launcherConfiguration, lockService);
     unlocker.stopAsync().awaitTerminated();
     unlocker.removeExpiredLocks();
 
