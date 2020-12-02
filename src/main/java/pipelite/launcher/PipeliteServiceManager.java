@@ -13,11 +13,9 @@ package pipelite.launcher;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
-
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 

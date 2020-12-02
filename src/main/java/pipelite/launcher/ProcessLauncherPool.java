@@ -129,7 +129,8 @@ public class ProcessLauncherPool {
     log.atInfo().log("Shutting down process launcher pool");
     executorService.shutdown();
     try {
-      executorService.awaitTermination(PipeliteServiceManager.STOP_WAIT_MIN_SECONDS, TimeUnit.SECONDS);
+      executorService.awaitTermination(
+          PipeliteServiceManager.STOP_WAIT_MIN_SECONDS, TimeUnit.SECONDS);
       active.forEach(a -> locker.unlockProcess(a.getPipelineName(), a.getProcessId()));
     } catch (InterruptedException ex) {
       executorService.shutdownNow();
