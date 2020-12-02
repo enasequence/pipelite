@@ -64,12 +64,16 @@ public abstract class ProcessLauncherService extends AbstractScheduledService {
   }
 
   @Override
-  protected void runOneIteration() throws Exception {
+  protected void runOneIteration() {
     if (isActive()) {
       log.atInfo().log("Running launcher: %s", getLauncherName());
       // Renew lock to avoid lock expiry.
       locker.renewLock();
-      run();
+      try {
+        run();
+      } catch (Exception ex) {
+        log.atSevere().withCause(ex).log("Unexpected launcher exception");
+      }
     }
   }
 
@@ -89,8 +93,8 @@ public abstract class ProcessLauncherService extends AbstractScheduledService {
   }
 
   /**
-   * Runs one iteration of the service. If an exception is thrown the service will transition to
-   * failed state and this method will no longer be called.
+   * Runs one iteration of the service. If an exception is thrown the exception
+   * will be logged and run will be called again after a fixed delay.
    */
   protected abstract void run() throws Exception;
 
