@@ -73,7 +73,7 @@ public class ProcessLauncherPool {
   public void run(String pipelineName, Process process, ProcessLauncherPoolCallback callback) {
     String processId = process.getProcessId();
     // Create process launcher.
-    ProcessLauncher processLauncher = processLauncherFactory.apply(pipelineName, process);
+    ProcessLauncher processLauncher = processLauncherFactory.get();
     ActiveLauncher activeLauncher = new ActiveLauncher(pipelineName, processId, processLauncher);
     active.add(activeLauncher);
     // Run process.
@@ -86,7 +86,7 @@ public class ProcessLauncherPool {
             if (!locker.lockProcess(pipelineName, processId)) {
               return;
             }
-            processLauncher.run();
+            processLauncher.run(pipelineName, process);
             ++processExecutionCount;
           } catch (Exception ex) {
             ++processExceptionCount;

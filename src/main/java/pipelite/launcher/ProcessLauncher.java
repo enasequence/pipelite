@@ -45,44 +45,42 @@ public class ProcessLauncher {
   private final ProcessService processService;
   private final StageService stageService;
   private final MailService mailService;
-  private final String pipelineName;
-  private final Process process;
   private final Duration stageLaunchFrequency;
   private final Set<Stage> active = ConcurrentHashMap.newKeySet();
   private final AtomicLong stageFailedCount = new AtomicLong(0);
   private final AtomicLong stageSuccessCount = new AtomicLong(0);
   private final ExecutorService executorService = Executors.newCachedThreadPool();
   private final LocalDateTime startTime = LocalDateTime.now();
+  private String pipelineName;
+  private Process process;
 
   public ProcessLauncher(
       LauncherConfiguration launcherConfiguration,
       StageConfiguration stageConfiguration,
       ProcessService processService,
       StageService stageService,
-      MailService mailService,
-      String pipelineName,
-      Process process) {
+      MailService mailService) {
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(stageConfiguration, "Missing stage configuration");
     Assert.notNull(processService, "Missing process service");
     Assert.notNull(stageService, "Missing stage service");
     Assert.notNull(mailService, "Missing mail service");
-    Assert.notNull(pipelineName, "Missing pipeline name");
-    Assert.notNull(process, "Missing process");
-    Assert.notNull(process.getProcessEntity(), "Missing process entity");
     this.launcherConfiguration = launcherConfiguration;
     this.stageConfiguration = stageConfiguration;
     this.processService = processService;
     this.stageService = stageService;
     this.mailService = mailService;
-    this.pipelineName = pipelineName;
-    this.process = process;
     this.stageLaunchFrequency = launcherConfiguration.getStageLaunchFrequency();
   }
 
   // TODO: orphaned saved stages
   /** Executes the process and sets the new process state. */
-  public void run() {
+  public void run(String pipelineName, Process process) {
+    Assert.notNull(pipelineName, "Missing pipeline name");
+    Assert.notNull(process, "Missing process");
+    Assert.notNull(process.getProcessEntity(), "Missing process entity");
+    this.pipelineName = pipelineName;
+    this.process = process;
     logContext(log.atInfo()).log("Running process launcher");
     beforeExecution();
     processService.startExecution(process.getProcessEntity());

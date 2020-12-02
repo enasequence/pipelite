@@ -28,18 +28,28 @@ public class ProcessLauncherPoolTest {
   private static final int PROCESS_CNT = 1000;
   public static final String PIPELINE_NAME = "PIPELINE1";
 
+  private ProcessLauncherFactory processLauncherFactory(ProcessState state) {
+    return () -> {
+      ProcessLauncher processLauncher = mock(ProcessLauncher.class);
+      doAnswer(
+              i -> {
+                Process process = (Process) i.getArguments()[1];
+                process.getProcessEntity().endExecution(state);
+                return null;
+              })
+          .when(processLauncher)
+          .run(any(), any());
+      return processLauncher;
+    };
+  }
+
   @Test
   public void testSuccess() {
     PipeliteLocker locker = mock(PipeliteLocker.class);
     when(locker.lockProcess(any(), any())).thenReturn(true);
 
     ProcessLauncherPool pool =
-        new ProcessLauncherPool(
-            locker,
-            (pipelineName, process) -> {
-              process.getProcessEntity().endExecution(ProcessState.COMPLETED);
-              return mock(ProcessLauncher.class);
-            });
+        new ProcessLauncherPool(locker, processLauncherFactory(ProcessState.COMPLETED));
 
     ProcessLauncherStats stats = new ProcessLauncherStats();
 
@@ -71,12 +81,7 @@ public class ProcessLauncherPoolTest {
     when(locker.lockProcess(any(), any())).thenReturn(true);
 
     ProcessLauncherPool pool =
-        new ProcessLauncherPool(
-            locker,
-            (pipelineName, process) -> {
-              process.getProcessEntity().endExecution(ProcessState.FAILED);
-              return mock(ProcessLauncher.class);
-            });
+        new ProcessLauncherPool(locker, processLauncherFactory(ProcessState.FAILED));
 
     ProcessLauncherStats stats = new ProcessLauncherStats();
 
@@ -110,11 +115,10 @@ public class ProcessLauncherPoolTest {
     ProcessLauncherPool pool =
         new ProcessLauncherPool(
             locker,
-            (pipelineName, process) -> {
-              process.getProcessEntity().endExecution(ProcessState.FAILED);
-              ProcessLauncher launcher = mock(ProcessLauncher.class);
-              doThrow(new RuntimeException()).when(launcher).run();
-              return launcher;
+            () -> {
+              ProcessLauncher processLauncher = mock(ProcessLauncher.class);
+              doThrow(new RuntimeException()).when(processLauncher).run(any(), any());
+              return processLauncher;
             });
 
     ProcessLauncherStats stats = new ProcessLauncherStats();

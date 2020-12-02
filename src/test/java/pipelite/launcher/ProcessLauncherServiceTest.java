@@ -17,14 +17,30 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.lock.PipeliteLocker;
+import pipelite.process.Process;
 import pipelite.process.ProcessState;
 
 public class ProcessLauncherServiceTest {
 
   public static final String LAUNCHER_NAME = "LAUNCHER1";
 
+  private ProcessLauncherFactory processLauncherFactory(ProcessState state) {
+    return () -> {
+      ProcessLauncher processLauncher = mock(ProcessLauncher.class);
+      doAnswer(
+              i -> {
+                Process process = (Process) i.getArguments()[1];
+                process.getProcessEntity().endExecution(state);
+                return null;
+              })
+          .when(processLauncher)
+          .run(any(), any());
+      return processLauncher;
+    };
+  }
+
   @Test
-  public void lifecycle() throws Exception {
+  public void lifecycle() {
     AtomicLong lockCallCnt = new AtomicLong();
     AtomicLong renewLockCallCnt = new AtomicLong();
     AtomicLong runCallCnt = new AtomicLong();
@@ -63,11 +79,7 @@ public class ProcessLauncherServiceTest {
                 locker,
                 (locker1) ->
                     new ProcessLauncherPool(
-                        locker1,
-                        (pipelineName1, process1) -> {
-                          process1.getProcessEntity().endExecution(ProcessState.COMPLETED);
-                          return mock(ProcessLauncher.class);
-                        })) {
+                        locker1, processLauncherFactory(ProcessState.COMPLETED))) {
               @Override
               protected void run() {
                 runCallCnt.incrementAndGet();

@@ -67,15 +67,13 @@ public class PipeliteScheduler extends ProcessLauncherService {
         (locker1) ->
             new ProcessLauncherPool(
                 locker1,
-                (pipelineName1, process1) ->
+                () ->
                     new ProcessLauncher(
                         launcherConfiguration,
                         stageConfiguration,
                         processService,
                         stageService,
-                        mailService,
-                        pipelineName1,
-                        process1)));
+                        mailService)));
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(stageConfiguration, "Missing stage configuration");
     Assert.notNull(processFactoryService, "Missing process factory service");

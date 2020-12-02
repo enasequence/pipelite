@@ -10,8 +10,7 @@
  */
 package pipelite.launcher;
 
-import java.util.function.BiFunction;
-import pipelite.process.Process;
+import java.util.function.Supplier;
 
-/** Creates a process launcher given a pipeline name and a process. */
-public interface ProcessLauncherFactory extends BiFunction<String, Process, ProcessLauncher> {}
+/** Creates a process launcher. */
+public interface ProcessLauncherFactory extends Supplier<ProcessLauncher> {}
