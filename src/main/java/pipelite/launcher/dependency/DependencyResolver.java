@@ -11,7 +11,6 @@
 package pipelite.launcher.dependency;
 
 import java.util.*;
-
 import pipelite.entity.StageEntity;
 import pipelite.launcher.StageLauncher;
 import pipelite.stage.Stage;

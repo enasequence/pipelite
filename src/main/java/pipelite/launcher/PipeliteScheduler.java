@@ -64,7 +64,6 @@ public class PipeliteScheduler extends ProcessLauncherService {
     super(
         launcherConfiguration,
         new PipeliteLocker(lockService, launcherName(launcherConfiguration)),
-        launcherName(launcherConfiguration),
         (locker1) ->
             new ProcessLauncherPool(
                 locker1,

@@ -11,14 +11,13 @@
 package pipelite.launcher;
 
 import com.google.common.util.concurrent.AbstractScheduledService;
+import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.launcher.lock.PipeliteLocker;
-
-import java.time.Duration;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Abstract base class for process execution services. They use AbstractScheduledService for
@@ -29,7 +28,6 @@ import java.util.List;
 public abstract class ProcessLauncherService extends AbstractScheduledService {
 
   private final PipeliteLocker locker;
-  private final String launcherName;
   private final ProcessLauncherPoolFactory processLauncherPoolFactory;
   private final Duration processLaunchFrequency;
   private ProcessLauncherPool pool;
@@ -38,14 +36,11 @@ public abstract class ProcessLauncherService extends AbstractScheduledService {
   public ProcessLauncherService(
       LauncherConfiguration launcherConfiguration,
       PipeliteLocker locker,
-      String launcherName,
       ProcessLauncherPoolFactory processLauncherPoolFactory) {
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(locker, "Missing locker");
-    Assert.notNull(launcherName, "Missing launcher name");
     Assert.notNull(processLauncherPoolFactory, "Missing process launcher pool factory");
     this.locker = locker;
-    this.launcherName = launcherName;
     this.processLauncherPoolFactory = processLauncherPoolFactory;
     this.processLaunchFrequency = launcherConfiguration.getProcessLaunchFrequency();
   }
@@ -57,7 +52,7 @@ public abstract class ProcessLauncherService extends AbstractScheduledService {
 
   @Override
   protected void startUp() {
-    log.atInfo().log("Starting up launcher: %s", launcherName);
+    log.atInfo().log("Starting up launcher: %s", getLauncherName());
     locker.lock();
     pool = processLauncherPoolFactory.apply(locker);
   }
@@ -71,7 +66,7 @@ public abstract class ProcessLauncherService extends AbstractScheduledService {
   @Override
   protected void runOneIteration() throws Exception {
     if (isActive()) {
-      log.atInfo().log("Running launcher: %s", launcherName);
+      log.atInfo().log("Running launcher: %s", getLauncherName());
       // Renew lock to avoid lock expiry.
       locker.renewLock();
       run();
@@ -85,9 +80,9 @@ public abstract class ProcessLauncherService extends AbstractScheduledService {
   @Override
   protected void shutDown() throws InterruptedException {
     try {
-      log.atInfo().log("Shutting down launcher: %s", launcherName);
+      log.atInfo().log("Shutting down launcher: %s", getLauncherName());
       pool.shutDown();
-      log.atInfo().log("Launcher has been shut down: %s", launcherName);
+      log.atInfo().log("Launcher has been shut down: %s", getLauncherName());
     } finally {
       locker.unlock();
     }
@@ -101,11 +96,11 @@ public abstract class ProcessLauncherService extends AbstractScheduledService {
 
   @Override
   public String serviceName() {
-    return launcherName;
+    return getLauncherName();
   }
 
   public String getLauncherName() {
-    return launcherName;
+    return locker.getLauncherName();
   }
 
   public List<ProcessLauncher> getProcessLaunchers() {

@@ -92,6 +92,10 @@ public class PipeliteLocker {
     lockService.unlockProcess(lock, pipelineName, processId);
   }
 
+  public String getLauncherName() {
+    return launcherName;
+  }
+
   LauncherLockEntity getLock() {
     return lock;
   }

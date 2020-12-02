@@ -10,13 +10,13 @@
  */
 package pipelite.launcher.lock;
 
-import org.junit.jupiter.api.Test;
-import pipelite.entity.LauncherLockEntity;
-import pipelite.service.LockService;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
+
+import org.junit.jupiter.api.Test;
+import pipelite.entity.LauncherLockEntity;
+import pipelite.service.LockService;
 
 public class PipeliteLockerTest {
 

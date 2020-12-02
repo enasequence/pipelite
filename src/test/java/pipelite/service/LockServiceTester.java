@@ -17,7 +17,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.LauncherConfiguration;
 import pipelite.entity.LauncherLockEntity;
 
 public class LockServiceTester {
