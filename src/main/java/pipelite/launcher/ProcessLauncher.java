@@ -141,7 +141,7 @@ public class ProcessLauncher {
       stage.getExecutorParams().add(stageConfiguration);
       // Set stage entity.
       StageEntity stageEntity =
-          stageService.beforeExecution(pipelineName, process.getProcessId(), stage).get();
+          stageService.getStage(pipelineName, process.getProcessId(), stage);
       stage.setStageEntity(stageEntity);
     }
   }

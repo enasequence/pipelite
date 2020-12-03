@@ -37,12 +37,12 @@ public class StageService {
   }
 
   /**
-   * Returns the saved stage entity.
+   * Returns the saved stage.
    *
    * @param pipelineName the pipeline name
    * @param processId the process id
    * @param stageName the stage name
-   * @return the saved stage entity
+   * @return the saved stage
    */
   public Optional<StageEntity> getSavedStage(
       String pipelineName, String processId, String stageName) {
@@ -50,10 +50,15 @@ public class StageService {
   }
 
   /**
-   * Called to get the latest execution information before the stage execution starts. Asynchronous
-   * executors may continue executing an active stage. Creates the stage if it is missing.
+   * Returns the saved stage or creates a new one if it is missing. Called before stage execution
+   * starts. Asynchronous executors may continue executing an interrupted stage.
+   *
+   * @param pipelineName the pipeline name
+   * @param processId the process id
+   * @param stage the associated Stage class
+   * @return the saved or created stage
    */
-  public Optional<StageEntity> beforeExecution(String pipelineName, String processId, Stage stage) {
+  public StageEntity getStage(String pipelineName, String processId, Stage stage) {
     // Get saved stage if it exists.
     Optional<StageEntity> stageEntity =
         repository.findById(new StageEntityId(processId, pipelineName, stage.getStageName()));
@@ -62,13 +67,14 @@ public class StageService {
       stageEntity =
           Optional.of(saveStage(StageEntity.createExecution(pipelineName, processId, stage)));
     }
-    return stageEntity;
+    return stageEntity.get();
   }
 
   /**
-   * Called when the stage execution starts. Asynchronous executors may contain information that
-   * allow them to continue executing an interrupted stage execution. This information is saved
-   * here.
+   * Called when the stage execution starts to save the stage. This may allow asynchronous executors
+   * to continue executing an interrupted stage.
+   *
+   * @param stage the associated Stage class
    */
   public void startExecution(Stage stage) {
     StageEntity stageEntity = stage.getStageEntity();
@@ -77,6 +83,12 @@ public class StageService {
     saveStageOut(StageOutEntity.startExecution(stageEntity));
   }
 
+  /**
+   * Called when the stage execution ends.
+   *
+   * @param stage the associated Stage class
+   * @param result the stage execution result
+   */
   public void endExecution(Stage stage, StageExecutionResult result) {
     stage.incrementImmediateExecutionCount();
     StageEntity stageEntity = stage.getStageEntity();
@@ -85,6 +97,11 @@ public class StageService {
     saveStageOut(StageOutEntity.endExecution(stageEntity, result));
   }
 
+  /**
+   * Called when the stage execution is reset.
+   *
+   * @param stage the associated Stage class
+   */
   public void resetExecution(Stage stage) {
     StageEntity stageEntity = stage.getStageEntity();
     stageEntity.resetExecution();
@@ -92,20 +109,43 @@ public class StageService {
     saveStageOut(StageOutEntity.resetExecution(stageEntity));
   }
 
+  /**
+   * Returns the saved stage output.
+   *
+   * @param stageEntity the stage
+   * @return the saved stage output
+   */
   public Optional<StageOutEntity> getSavedStageOut(StageEntity stageEntity) {
     return outRepository.findById(
         new StageEntityId(
             stageEntity.getProcessId(), stageEntity.getPipelineName(), stageEntity.getStageName()));
   }
 
+  /**
+   * Saves the stage.
+   *
+   * @param stageEntity the stage to save
+   * @return the saved stage
+   */
   public StageEntity saveStage(StageEntity stageEntity) {
     return repository.save(stageEntity);
   }
 
+  /**
+   * Saves the stage output.
+   *
+   * @param stageOutEntity the stage output to save
+   * @return the saved stage output
+   */
   public StageOutEntity saveStageOut(StageOutEntity stageOutEntity) {
     return outRepository.save(stageOutEntity);
   }
 
+  /**
+   * Deletes the stage.
+   *
+   * @param stageEntity the stage to delete
+   */
   public void delete(StageEntity stageEntity) {
     repository.delete(stageEntity);
   }

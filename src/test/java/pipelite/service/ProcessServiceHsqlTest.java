@@ -67,6 +67,7 @@ class ProcessServiceHsqlTest {
   @Rollback
   public void testReportsSamePriority() {
     String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String launcherName = UniqueStringGenerator.randomLauncherName();
 
     service.saveProcess(createProcessEntity(pipelineName, ProcessState.ACTIVE, 1));
     service.saveProcess(createProcessEntity(pipelineName, ProcessState.ACTIVE, 1));
@@ -78,7 +79,7 @@ class ProcessServiceHsqlTest {
     service.saveProcess(createProcessEntity(pipelineName, ProcessState.FAILED, 1));
     service.saveProcess(createProcessEntity(pipelineName, ProcessState.FAILED, 1));
 
-    assertThat(service.getActiveProcesses(pipelineName)).hasSize(2);
+    assertThat(service.getActiveProcesses(pipelineName, launcherName)).hasSize(2);
     assertThat(service.getCompletedProcesses(pipelineName)).hasSize(3);
     assertThat(service.getFailedProcesses(pipelineName)).hasSize(4);
   }
@@ -88,6 +89,7 @@ class ProcessServiceHsqlTest {
   @Rollback
   public void testReportsDifferentPriority() {
     String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String launcherName = UniqueStringGenerator.randomLauncherName();
 
     service.saveProcess(createProcessEntity(pipelineName, ProcessState.ACTIVE, 1));
     service.saveProcess(createProcessEntity(pipelineName, ProcessState.ACTIVE, 2));
@@ -99,11 +101,11 @@ class ProcessServiceHsqlTest {
     service.saveProcess(createProcessEntity(pipelineName, ProcessState.FAILED, 4));
     service.saveProcess(createProcessEntity(pipelineName, ProcessState.FAILED, 3));
 
-    assertThat(service.getActiveProcesses(pipelineName)).hasSize(2);
+    assertThat(service.getActiveProcesses(pipelineName, launcherName)).hasSize(2);
     assertThat(service.getCompletedProcesses(pipelineName)).hasSize(3);
     assertThat(service.getFailedProcesses(pipelineName)).hasSize(4);
 
-    assertThat(service.getActiveProcesses(pipelineName))
+    assertThat(service.getActiveProcesses(pipelineName, launcherName))
         .isSortedAccordingTo(Comparator.comparingInt(ProcessEntity::getPriority).reversed());
     assertThat(service.getFailedProcesses(pipelineName))
         .isSortedAccordingTo(Comparator.comparingInt(ProcessEntity::getPriority).reversed());

@@ -92,15 +92,11 @@ public class PipeliteLauncher extends ProcessLauncherService {
   protected void run() {
     if (processQueueIndex >= processQueue.size()
         || processQueueValidUntil.isBefore(LocalDateTime.now())) {
-      if (processSource != null) {
-        createNewProcesses();
-      }
+      createProcesses();
       queueProcesses();
     }
-    for (;
-        processQueueIndex < processQueue.size() && activeProcessCount() < pipeliteParallelism;
-        processQueueIndex++) {
-      runProcess(processQueue.get(processQueueIndex));
+    while (processQueueIndex < processQueue.size() && activeProcessCount() < pipeliteParallelism) {
+      runProcess(processQueue.get(processQueueIndex++));
     }
   }
 
@@ -109,33 +105,38 @@ public class PipeliteLauncher extends ProcessLauncherService {
     return processQueueIndex == processQueue.size() && shutdownIfIdle;
   }
 
-  private void createNewProcesses() {
+  /** Creates new processes using a process sources and saves them for execution. */
+  private void createProcesses() {
+    if (processSource == null) {
+      return;
+    }
     logContext(log.atInfo()).log("Creating new processes");
     for (int i = 0; i < DEFAULT_PROCESS_CREATION_COUNT; ++i) {
       ProcessSource.NewProcess newProcess = processSource.next();
       if (newProcess == null) {
-        // No new processes.
         return;
       }
-      String newProcessId = newProcess.getProcessId();
-      if (newProcessId == null || newProcessId.trim().isEmpty()) {
-        logContext(log.atWarning()).log("New process has no process id");
-        processSource.reject(newProcess.getProcessId(), "New process has no process id");
-        continue;
-      }
-      String trimmedNewProcessId = newProcessId.trim();
-      Optional<ProcessEntity> savedProcessEntity =
-          processService.getSavedProcess(pipelineName, trimmedNewProcessId);
-      if (savedProcessEntity.isPresent()) {
-        logContext(log.atWarning()).log("New process id already exists %s", trimmedNewProcessId);
-        processSource.reject(
-            newProcess.getProcessId(), "New process id already exists " + trimmedNewProcessId);
-        continue;
-      }
-      logContext(log.atInfo()).log("Creating new process %s", trimmedNewProcessId);
-      processService.createExecution(pipelineName, trimmedNewProcessId, newProcess.getPriority());
-      processSource.accept(newProcess.getProcessId());
+      createProcess(newProcess);
     }
+  }
+
+  /** Creates a new process and saves it for execution. */
+  private void createProcess(ProcessSource.NewProcess newProcess) {
+    String processId = newProcess.getProcessId();
+    if (processId == null || processId.trim().isEmpty()) {
+      logContext(log.atWarning()).log("New process has no process id");
+    } else {
+      String trimmedProcessId = processId.trim();
+      Optional<ProcessEntity> savedProcessEntity =
+          processService.getSavedProcess(pipelineName, trimmedProcessId);
+      if (savedProcessEntity.isPresent()) {
+        logContext(log.atWarning(), trimmedProcessId).log("New process already exists");
+      } else {
+        logContext(log.atInfo(), trimmedProcessId).log("Creating new process");
+        processService.createExecution(pipelineName, trimmedProcessId, newProcess.getPriority());
+      }
+    }
+    processSource.accept(processId);
   }
 
   private void queueProcesses() {
@@ -146,13 +147,13 @@ public class PipeliteLauncher extends ProcessLauncherService {
 
     // First add active processes. Asynchronous active processes may be able to continue execution.
     processQueue.addAll(
-        processService.getActiveProcesses(pipelineName).stream()
+        processService.getActiveProcesses(pipelineName, getLauncherName()).stream()
             .filter(processEntity -> !isProcessActive(pipelineName, processEntity.getProcessId()))
             .collect(Collectors.toList()));
 
     // Then add new processes.
     processQueue.addAll(
-        processService.getNewProcesses(pipelineName).stream()
+        processService.getPendingProcesses(pipelineName).stream()
             .filter(processEntity -> !isProcessActive(pipelineName, processEntity.getProcessId()))
             .collect(Collectors.toList()));
     processQueueValidUntil = LocalDateTime.now().plus(processRefreshFrequency);
@@ -176,5 +177,11 @@ public class PipeliteLauncher extends ProcessLauncherService {
   private FluentLogger.Api logContext(FluentLogger.Api log) {
     return log.with(LogKey.LAUNCHER_NAME, getLauncherName())
         .with(LogKey.PIPELINE_NAME, pipelineName);
+  }
+
+  private FluentLogger.Api logContext(FluentLogger.Api log, String processId) {
+    return log.with(LogKey.LAUNCHER_NAME, getLauncherName())
+        .with(LogKey.PIPELINE_NAME, pipelineName)
+        .with(LogKey.PROCESS_ID, processId);
   }
 }

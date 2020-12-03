@@ -39,14 +39,13 @@ public class ProcessService {
     return repository.findById(new ProcessEntityId(processId, pipelineName));
   }
 
-  public List<ProcessEntity> getNewProcesses(String pipelineName) {
+  public List<ProcessEntity> getPendingProcesses(String pipelineName) {
     return repository.findAllByPipelineNameAndStateOrderByPriorityDesc(
         pipelineName, ProcessState.PENDING);
   }
 
-  public List<ProcessEntity> getActiveProcesses(String pipelineName) {
-    return repository.findAllByPipelineNameAndStateOrderByPriorityDesc(
-        pipelineName, ProcessState.ACTIVE);
+  public List<ProcessEntity> getActiveProcesses(String pipelineName, String launcherName) {
+    return repository.findActiveOrderByPriorityDesc(pipelineName, launcherName);
   }
 
   public List<ProcessEntity> getCompletedProcesses(String pipelineName) {
