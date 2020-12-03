@@ -33,6 +33,7 @@ public class CronUtilsTest {
     assertThat(CronUtils.describe("00 09-18 * * 1-5"))
         .isEqualTo("every hour between 9 and 18 every day between Monday and Friday");
     assertThat(CronUtils.describe("*/10 * * * *")).isEqualTo("every 10 minutes");
+    assertThat(CronUtils.describe("invalid")).isEqualTo("invalid cron expression");
   }
 
   @Test
