@@ -42,7 +42,7 @@ class ScheduleServiceHsqlTest {
     ScheduleEntity schedule = new ScheduleEntity();
     schedule.setSchedulerName(schedulerName);
     schedule.setPipelineName(pipelineName);
-    schedule.setSchedule("test");
+    schedule.setCron("test");
 
     service.saveProcessSchedule(schedule);
 
@@ -50,7 +50,7 @@ class ScheduleServiceHsqlTest {
     assertThat(schedules.size()).isEqualTo(1);
     assertThat(schedules.get(0).getSchedulerName()).isEqualTo(schedule.getSchedulerName());
     assertThat(schedules.get(0).getPipelineName()).isEqualTo(schedule.getPipelineName());
-    assertThat(schedules.get(0).getSchedule()).isEqualTo(schedule.getSchedule());
+    assertThat(schedules.get(0).getCron()).isEqualTo(schedule.getCron());
     assertThat(schedules.get(0).getExecutionCount()).isEqualTo(0);
     assertThat(schedules.get(0).getStartTime()).isNull();
     assertThat(schedules.get(0).getEndTime()).isNull();
@@ -58,23 +58,23 @@ class ScheduleServiceHsqlTest {
     ScheduleEntity schedule2 = new ScheduleEntity();
     schedule2.setSchedulerName(schedulerName);
     schedule2.setPipelineName(pipelineName2);
-    schedule2.setSchedule("test2");
+    schedule2.setCron("test2");
 
     service.saveProcessSchedule(schedule2);
 
     schedules = service.getAllProcessSchedules(schedulerName);
-    schedules.sort(Comparator.comparing(ScheduleEntity::getSchedule));
+    schedules.sort(Comparator.comparing(ScheduleEntity::getCron));
     assertThat(schedules.size()).isEqualTo(2);
     assertThat(schedules.get(0).getSchedulerName()).isEqualTo(schedule.getSchedulerName());
     assertThat(schedules.get(0).getPipelineName()).isEqualTo(schedule.getPipelineName());
-    assertThat(schedules.get(0).getSchedule()).isEqualTo(schedule.getSchedule());
+    assertThat(schedules.get(0).getCron()).isEqualTo(schedule.getCron());
     assertThat(schedules.get(0).getExecutionCount()).isEqualTo(0);
     assertThat(schedules.get(0).getStartTime()).isNull();
     assertThat(schedules.get(0).getEndTime()).isNull();
 
     assertThat(schedules.get(1).getSchedulerName()).isEqualTo(schedule2.getSchedulerName());
     assertThat(schedules.get(1).getPipelineName()).isEqualTo(schedule2.getPipelineName());
-    assertThat(schedules.get(1).getSchedule()).isEqualTo(schedule2.getSchedule());
+    assertThat(schedules.get(1).getCron()).isEqualTo(schedule2.getCron());
     assertThat(schedules.get(1).getExecutionCount()).isEqualTo(0);
     assertThat(schedules.get(1).getStartTime()).isNull();
     assertThat(schedules.get(1).getEndTime()).isNull();

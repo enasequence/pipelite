@@ -119,7 +119,7 @@ public class AdminController {
                 schedules.add(
                     Schedule.builder()
                         .pipelineName(s.getScheduleEntity().getPipelineName())
-                        .cron(s.getScheduleEntity().getSchedule())
+                        .cron(s.getScheduleEntity().getCron())
                         .description(s.getScheduleEntity().getDescription())
                         .build()));
     return schedules;

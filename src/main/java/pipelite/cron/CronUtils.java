@@ -57,8 +57,10 @@ public abstract class CronUtils {
   }
 
   public static String describe(String cronExpression) {
-    CronDescriptor descriptor = CronDescriptor.instance(Locale.UK);
-    return descriptor.describe(parse(cronExpression));
+    if (!validate(cronExpression)) {
+      return "invalid cron expression";
+    }
+    return CronDescriptor.instance(Locale.UK).describe(parse(cronExpression));
   }
 
   public static LocalDateTime launchTime(String cronExpression) {

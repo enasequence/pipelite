@@ -22,6 +22,8 @@ import org.springframework.test.context.ContextConfiguration;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 
+import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
+
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     classes = PipeliteTestConfiguration.class,
@@ -31,7 +33,7 @@ import pipelite.UniqueStringGenerator;
     })
 @ContextConfiguration(initializers = PipeliteSchedulerOracleTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"oracle-test", "pipelite-test"})
-@DirtiesContext
+@DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
 public class PipeliteSchedulerOracleTest {
 
   @Autowired PipeliteSchedulerTester tester;

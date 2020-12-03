@@ -101,15 +101,18 @@ public class ProcessLauncherPool {
                 "An unexpected exception was thrown when executing %s %s", pipelineName, processId);
           } finally {
             // Unlock process.
-            locker.unlockProcess(pipelineName, processId);
-            active.remove(activeLauncher);
-            Result result =
-                new Result(
-                    processExecutionCount,
-                    processExceptionCount,
-                    processLauncher.getStageSuccessCount(),
-                    processLauncher.getStageFailedCount());
-            callback.accept(process, result);
+            try {
+              Result result =
+                  new Result(
+                      processExecutionCount,
+                      processExceptionCount,
+                      processLauncher.getStageSuccessCount(),
+                      processLauncher.getStageFailedCount());
+              callback.accept(process, result);
+            } finally {
+              locker.unlockProcess(pipelineName, processId);
+              active.remove(activeLauncher);
+            }
           }
         });
   }

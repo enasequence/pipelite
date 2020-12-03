@@ -135,7 +135,7 @@ public class PipeliteSchedulerTester {
     public final int stageCnt;
     public final int schedulerSeconds; // 60 must be divisible by schedulerSeconds.
     public final StageTestResult stageTestResult;
-    public final String cronExpression;
+    public final String cron;
     public final List<String> processIds = Collections.synchronizedList(new ArrayList<>());
     public final AtomicLong stageExecCnt = new AtomicLong();
 
@@ -150,7 +150,7 @@ public class PipeliteSchedulerTester {
       this.schedulerSeconds = schedulerSeconds;
       this.processCnt = processCnt;
       this.stageTestResult = stageTestResult;
-      this.cronExpression = "0/" + schedulerSeconds + " * * * * ?";
+      this.cron = "0/" + schedulerSeconds + " * * * * ?";
     }
 
     public void reset() {
@@ -194,7 +194,7 @@ public class PipeliteSchedulerTester {
 
   private void saveSchedule(TestProcessFactory testProcessFactory) {
     ScheduleEntity schedule = new ScheduleEntity();
-    schedule.setSchedule(testProcessFactory.cronExpression);
+    schedule.setCron(testProcessFactory.cron);
     schedule.setSchedulerName(launcherConfiguration.getSchedulerName());
     schedule.setPipelineName(testProcessFactory.pipelineName);
     scheduleService.saveProcessSchedule(schedule);
@@ -257,7 +257,7 @@ public class PipeliteSchedulerTester {
     assertThat(scheduleEntity.getProcessId())
         .isEqualTo(f.getProcessIds().get(f.getProcessIds().size() - 1));
     assertThat(scheduleEntity.getExecutionCount()).isEqualTo(f.processCnt);
-    assertThat(scheduleEntity.getSchedule()).isEqualTo(f.cronExpression);
+    assertThat(scheduleEntity.getCron()).isEqualTo(f.cron);
     assertThat(scheduleEntity.getStartTime()).isNotNull();
     assertThat(scheduleEntity.getEndTime()).isNotNull();
     assertThat(scheduleEntity.getStartTime()).isBeforeOrEqualTo(scheduleEntity.getEndTime());

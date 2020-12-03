@@ -16,7 +16,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
-import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
@@ -33,11 +32,10 @@ import pipelite.service.*;
 @Flogger
 public class PipeliteScheduler extends ProcessLauncherService {
 
-  private static final int DEFAULT_MAX_PROCESS_ID_RETRIES = 100;
+  private static final int MAX_PROCESS_ID_RETRIES = 100;
   private final ProcessFactoryService processFactoryService;
   private final ScheduleService scheduleService;
   private final ProcessService processService;
-  private final LockService lockService;
   private final Duration processRefreshFrequency;
   private final Map<String, ProcessFactory> processFactoryCache = new ConcurrentHashMap<>();
   private final Map<String, ProcessLauncherStats> stats = new ConcurrentHashMap<>();
@@ -45,11 +43,31 @@ public class PipeliteScheduler extends ProcessLauncherService {
   private final List<Schedule> schedules = Collections.synchronizedList(new ArrayList<>());
   private LocalDateTime schedulesValidUntil;
 
-  @Data
   public static class Schedule {
-    private ScheduleEntity scheduleEntity;
-    private ProcessEntity processEntity;
+    private final ScheduleEntity scheduleEntity;
     private LocalDateTime launchTime;
+
+    public Schedule(ScheduleEntity scheduleEntity) {
+      Assert.notNull(scheduleEntity, "Missing schedule entity");
+      this.scheduleEntity = scheduleEntity;
+    }
+
+    public void executeNow(LocalDateTime launchTime) {
+      Assert.notNull(launchTime, "Missing launch time");
+      this.launchTime = launchTime;
+    }
+
+    public void executeLater() {
+      launchTime = CronUtils.launchTime(scheduleEntity.getCron());
+    }
+
+    public ScheduleEntity getScheduleEntity() {
+      return scheduleEntity;
+    }
+
+    public LocalDateTime getLaunchTime() {
+      return launchTime;
+    }
   }
 
   public PipeliteScheduler(
@@ -84,7 +102,6 @@ public class PipeliteScheduler extends ProcessLauncherService {
     this.processFactoryService = processFactoryService;
     this.scheduleService = scheduleService;
     this.processService = processService;
-    this.lockService = lockService;
     this.processRefreshFrequency = launcherConfiguration.getProcessRefreshFrequency();
   }
 
@@ -98,26 +115,15 @@ public class PipeliteScheduler extends ProcessLauncherService {
       scheduleProcesses();
     }
     for (Schedule schedule : schedules) {
-      String pipelineName = schedule.getScheduleEntity().getPipelineName();
-      String cronExpression = schedule.getScheduleEntity().getSchedule();
-      LocalDateTime launchTime = schedule.getLaunchTime();
-      if (!isPipelineActive(pipelineName) && launchTime.isBefore(LocalDateTime.now())) {
+      ScheduleEntity scheduleEntity = schedule.getScheduleEntity();
+      String pipelineName = scheduleEntity.getPipelineName();
+      if (!isPipelineActive(pipelineName)
+          && !schedule.getLaunchTime().isAfter(LocalDateTime.now())) {
         if (maximumExecutions.get(pipelineName) != null
             && maximumExecutions.get(pipelineName).decrementAndGet() < 0) {
           continue;
         }
-        // Set next launch time.
-        schedule.setLaunchTime(CronUtils.launchTime(cronExpression));
-        logContext(log.atInfo(), pipelineName)
-            .log(
-                "Launching %s pipeline with cron expression %s (%s). Next launch time is: %s",
-                pipelineName,
-                cronExpression,
-                schedule.getScheduleEntity().getDescription(),
-                launchTime);
-        if (createProcessEntity(schedule)) {
-          runProcess(schedule);
-        }
+        runProcess(schedule, createProcessEntity(schedule));
       }
     }
   }
@@ -131,67 +137,62 @@ public class PipeliteScheduler extends ProcessLauncherService {
   private void scheduleProcesses() {
     logContext(log.atInfo()).log("Scheduling processes");
     schedules.clear();
-    List<ScheduleEntity> scheduleEntities =
-        scheduleService.getAllProcessSchedules(getLauncherName());
-    logContext(log.atInfo()).log("Found %s schedules", scheduleEntities.size());
-    for (ScheduleEntity scheduleEntity : scheduleEntities) {
-      String scheduleDescription = "invalid cron expression";
-      if (CronUtils.validate(scheduleEntity.getSchedule())) {
-        Schedule schedule = new Schedule();
-        schedule.setScheduleEntity(scheduleEntity);
-        schedules.add(schedule);
-
-        // TODO: test resume process execution
-        boolean isResumeProcessExecution = resumeProcessExecution(schedule);
-        if (isResumeProcessExecution) {
-          logContext(log.atInfo(), scheduleEntity.getPipelineName())
-              .log("Attempting to resume %s pipeline execution", scheduleEntity.getPipelineName());
-          runProcess(schedule);
-        } else {
-          // Update next launch time.
-          schedule.setLaunchTime(CronUtils.launchTime(scheduleEntity.getSchedule()));
-          scheduleDescription = CronUtils.describe(scheduleEntity.getSchedule());
-          logContext(log.atInfo(), scheduleEntity.getPipelineName())
-              .log(
-                  "Scheduling %s pipeline with cron expression %s (%s). Next launch time is: %s",
-                  scheduleEntity.getPipelineName(),
-                  scheduleEntity.getSchedule(),
-                  scheduleDescription,
-                  schedule.getLaunchTime());
-        }
-      } else {
-        logContext(log.atSevere(), scheduleEntity.getPipelineName())
-            .log(
-                "Ignoring %s pipeline with invalid cron expression",
-                scheduleEntity.getPipelineName());
+    schedulesValidUntil = LocalDateTime.now().plus(processRefreshFrequency);
+    for (ScheduleEntity scheduleEntity :
+        scheduleService.getAllProcessSchedules(getLauncherName())) {
+      Schedule schedule = createSchedule(scheduleEntity);
+      if (schedule == null) {
+        continue;
       }
-      if (!scheduleDescription.equals(scheduleEntity.getDescription())) {
-        scheduleEntity.setDescription(scheduleDescription);
-        scheduleService.saveProcessSchedule(scheduleEntity);
+      schedules.add(schedule);
+      if (!resumeProcess(schedule)) {
+        logContext(log.atInfo(), scheduleEntity.getPipelineName())
+            .log(
+                "Scheduling process execution: %s cron %s (%s)",
+                schedule.getLaunchTime(),
+                scheduleEntity.getCron(),
+                scheduleEntity.getDescription());
+        schedule.executeLater();
       }
     }
-    schedulesValidUntil = LocalDateTime.now().plus(processRefreshFrequency);
   }
 
-  private boolean resumeProcessExecution(Schedule schedule) {
+  private boolean resumeProcess(Schedule schedule) {
+    ProcessEntity processEntity = createResumedProcessEntity(schedule);
+    if (processEntity != null) {
+      logContext(log.atInfo(), schedule.getScheduleEntity().getPipelineName())
+          .log("Resuming process execution");
+      schedule.executeNow(LocalDateTime.now());
+      runProcess(schedule, processEntity);
+      return true;
+    }
+    return false;
+  }
+
+  private Schedule createSchedule(ScheduleEntity scheduleEntity) {
+    updateCronDescription(scheduleEntity);
+    if (!CronUtils.validate(scheduleEntity.getCron())) {
+      logContext(log.atSevere(), scheduleEntity.getPipelineName())
+          .log("Invalid cron expression: %s", scheduleEntity.getCron());
+      return null;
+    }
+    return new Schedule(scheduleEntity);
+  }
+
+  private ProcessEntity createResumedProcessEntity(Schedule schedule) {
     ScheduleEntity scheduleEntity = schedule.getScheduleEntity();
-    String pipelineName = scheduleEntity.getPipelineName();
     String processId = scheduleEntity.getProcessId();
     if (scheduleEntity.getStartTime() != null
         && scheduleEntity.getEndTime() == null
         && processId != null) {
+      String pipelineName = scheduleEntity.getPipelineName();
       Optional<ProcessEntity> processEntity =
           processService.getSavedProcess(pipelineName, processId);
       if (processEntity.isPresent()) {
-        schedule.setProcessEntity(processEntity.get());
-        return true;
-      } else {
-        scheduleEntity.resetExecution();
-        scheduleService.saveProcessSchedule(scheduleEntity);
-        return false;
+        return processEntity.get();
       }
     }
-    return false;
+    return null;
   }
 
   public static String getNextProcessId(String processId) {
@@ -199,55 +200,64 @@ public class PipeliteScheduler extends ProcessLauncherService {
       return "1";
     }
     try {
-      return String.valueOf(Integer.valueOf(processId) + 1);
+      return String.valueOf(Long.valueOf(processId) + 1);
     } catch (Exception ex) {
       throw new RuntimeException("Invalid process id " + processId);
     }
   }
 
-  private boolean createProcessEntity(Schedule schedule) {
+  private ProcessEntity createProcessEntity(Schedule schedule) {
     String pipelineName = schedule.getScheduleEntity().getPipelineName();
-    String processId = getNextProcessId(schedule.getScheduleEntity().getProcessId());
-    int remainingProcessIdRetries = DEFAULT_MAX_PROCESS_ID_RETRIES;
-    while (true) {
+    String processId = null;
+    for (int retries = MAX_PROCESS_ID_RETRIES; retries > 0; --retries) {
+      processId = getNextProcessId(schedule.getScheduleEntity().getProcessId());
       Optional<ProcessEntity> savedProcessEntity =
           processService.getSavedProcess(pipelineName, processId);
-      if (savedProcessEntity.isPresent()) {
-        processId = getNextProcessId(savedProcessEntity.get().getProcessId());
-      } else {
+      if (!savedProcessEntity.isPresent()) {
         break;
       }
-      if (--remainingProcessIdRetries <= 0) {
-        throw new RuntimeException("Could not assign a new process id");
-      }
     }
-    ProcessEntity processEntity =
-        processService.createExecution(pipelineName, processId, ProcessEntity.DEFAULT_PRIORITY);
-    schedule.setProcessEntity(processEntity);
-    schedule.getScheduleEntity().startExecution(processId);
-    scheduleService.saveProcessSchedule(schedule.getScheduleEntity());
-    return true;
+    if (processId == null) {
+      logContext(log.atSevere(), pipelineName).log("Could not create process id");
+      return null;
+    }
+    return processService.createExecution(pipelineName, processId, ProcessEntity.DEFAULT_PRIORITY);
   }
 
-  private void runProcess(Schedule schedule) {
+  private void updateCronDescription(ScheduleEntity scheduleEntity) {
+    String description = CronUtils.describe(scheduleEntity.getCron());
+    if (!description.equals(scheduleEntity.getDescription())) {
+      scheduleEntity.setDescription(description);
+      scheduleService.saveProcessSchedule(scheduleEntity);
+    }
+  }
+
+  private void runProcess(Schedule schedule, ProcessEntity processEntity) {
     ScheduleEntity scheduleEntity = schedule.getScheduleEntity();
     String pipelineName = scheduleEntity.getPipelineName();
+    String processId = processEntity.getProcessId();
+    logContext(log.atInfo(), pipelineName, processId).log("Executing process");
+    scheduleEntity.startExecution(processId);
+    scheduleService.saveProcessSchedule(scheduleEntity);
     Process process =
         ProcessFactory.create(
-            schedule.getProcessEntity(), cachedProcessFactory(pipelineName), stats(pipelineName));
-    if (process != null) {
-      run(
-          pipelineName,
-          process,
-          (p, r) -> {
-            scheduleEntity.endExecution();
-            scheduleService.saveProcessSchedule(scheduleEntity);
-            stats(pipelineName).add(p, r);
-          });
+            processEntity, processFactoryCache(pipelineName), stats(pipelineName));
+    if (process == null) {
+      logContext(log.atSevere(), pipelineName, processId).log("Failed to create process");
+      return;
     }
+    run(
+        pipelineName,
+        process,
+        (p, r) -> {
+          schedule.executeLater();
+          scheduleEntity.endExecution();
+          scheduleService.saveProcessSchedule(scheduleEntity);
+          stats(pipelineName).add(p, r);
+        });
   }
 
-  private ProcessFactory cachedProcessFactory(String pipelineName) {
+  private ProcessFactory processFactoryCache(String pipelineName) {
     if (processFactoryCache.containsKey(pipelineName)) {
       return processFactoryCache.get(pipelineName);
     }
@@ -281,5 +291,11 @@ public class PipeliteScheduler extends ProcessLauncherService {
   private FluentLogger.Api logContext(FluentLogger.Api log, String pipelineName) {
     return log.with(LogKey.LAUNCHER_NAME, getLauncherName())
         .with(LogKey.PIPELINE_NAME, pipelineName);
+  }
+
+  private FluentLogger.Api logContext(FluentLogger.Api log, String pipelineName, String processId) {
+    return log.with(LogKey.LAUNCHER_NAME, getLauncherName())
+        .with(LogKey.PIPELINE_NAME, pipelineName)
+        .with(LogKey.PROCESS_ID, processId);
   }
 }

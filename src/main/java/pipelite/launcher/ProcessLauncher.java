@@ -81,7 +81,7 @@ public class ProcessLauncher {
     Assert.notNull(process.getProcessEntity(), "Missing process entity");
     this.pipelineName = pipelineName;
     this.process = process;
-    logContext(log.atInfo()).log("Running process launcher");
+    logContext(log.atInfo()).log("Executing process");
     beforeExecution();
     processService.startExecution(process.getProcessEntity());
     while (true) {
@@ -89,6 +89,7 @@ public class ProcessLauncher {
       List<Stage> executableStages =
           DependencyResolver.getImmediatelyExecutableStages(process.getStages(), active);
       if (active.isEmpty() && executableStages.isEmpty()) {
+        logContext(log.atInfo()).log("No more executable stages");
         break;
       }
       for (Stage stage : executableStages) {

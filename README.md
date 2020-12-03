@@ -38,7 +38,7 @@ create table pipelite_schedule
 (
     pipeline_name varchar2(64) not null,
     scheduler_name varchar2(256) not null,
-	schedule varchar2(256) not null,
+	cron varchar2(256) not null,
 	description varchar2(256),
 	exec_start date,
 	exec_date date,
@@ -55,7 +55,7 @@ create table pipelite_schedule_audit
 (
     pipeline_name varchar2(64),
     scheduler_name varchar2(256),
-	schedule varchar2(256),
+	cron varchar2(256),
 	description varchar2(256),
 	exec_start date,
 	exec_date date,
@@ -93,7 +93,7 @@ begin
       insert into pipelite_schedule_audit (
         pipeline_name,
         scheduler_name,
-    	schedule,
+    	cron,
     	description,
 	    exec_start,
      	exec_date,
@@ -108,7 +108,7 @@ begin
       (
         :old.pipeline_name,
         :old.scheduler_name,
-    	:old.schedule,
+    	:old.cron,
     	:old.description,
 	    :old.exec_start,
         :old.exec_date,

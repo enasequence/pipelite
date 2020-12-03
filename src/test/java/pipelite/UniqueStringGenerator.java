@@ -15,11 +15,11 @@ import java.util.UUID;
 public class UniqueStringGenerator {
 
   public static String randomSchedulerName() {
-    return id();
+    return "scheduler:" + id();
   }
 
   public static String randomLauncherName() {
-    return id();
+    return "launcher:" + id();
   }
 
   public static String randomPipelineName() {

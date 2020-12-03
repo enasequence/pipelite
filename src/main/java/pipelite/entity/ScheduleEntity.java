@@ -31,8 +31,8 @@ public class ScheduleEntity {
   @Column(name = "SCHEDULER_NAME", nullable = false)
   private String schedulerName;
 
-  @Column(name = "SCHEDULE", nullable = false)
-  private String schedule;
+  @Column(name = "CRON", nullable = false)
+  private String cron;
 
   @Column(name = "DESCRIPTION")
   private String description;
@@ -58,11 +58,5 @@ public class ScheduleEntity {
   public void endExecution() {
     this.endTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.executionCount++;
-  }
-
-  public void resetExecution() {
-    this.startTime = null;
-    this.processId = null;
-    this.endTime = null;
   }
 }
