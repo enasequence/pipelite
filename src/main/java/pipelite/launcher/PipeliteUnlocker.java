@@ -11,28 +11,33 @@
 package pipelite.launcher;
 
 import java.time.Duration;
+
+import com.google.common.flogger.FluentLogger;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.entity.LauncherLockEntity;
 import pipelite.lock.PipeliteLocker;
+import pipelite.log.LogKey;
 import pipelite.service.LockService;
 
 @Component
 @Flogger
 /** Removes expired launcher and process locks. */
-public class PipeliteUnlockService extends PipeliteService {
+public class PipeliteUnlocker extends PipeliteService {
 
   private final LauncherConfiguration launcherConfiguration;
   private final LockService lockService;
   private final Duration unlockFrequency;
+  private final String unlockerName;
 
-  public PipeliteUnlockService(
+  public PipeliteUnlocker(
       @Autowired LauncherConfiguration launcherConfiguration, @Autowired LockService lockService) {
     this.launcherConfiguration = launcherConfiguration;
     this.lockService = lockService;
     this.unlockFrequency = launcherConfiguration.getPipelineUnlockFrequency();
+    this.unlockerName = LauncherConfiguration.getUnlockerName(launcherConfiguration);
   }
 
   @Override
@@ -50,14 +55,17 @@ public class PipeliteUnlockService extends PipeliteService {
 
   @Override
   public String serviceName() {
-    return "unlocker";
+    return unlockerName;
   }
 
   public void removeExpiredLocks() {
-    log.atInfo().log("Removing expired locks");
     for (LauncherLockEntity launcherLock : lockService.getExpiredLauncherLocks()) {
-      log.atInfo().log("Removing expired locks for %s", launcherLock.getLauncherName());
+      logContext(log.atInfo(), launcherLock.getLauncherName()).log("Removing expired locks");
       PipeliteLocker.unlock(lockService, launcherLock);
     }
+  }
+
+  private FluentLogger.Api logContext(FluentLogger.Api log, String launcherName) {
+    return log.with(LogKey.UNLOCKER_NAME, unlockerName).with(LogKey.LAUNCHER_NAME, launcherName);
   }
 }

@@ -26,7 +26,7 @@ import pipelite.configuration.StageConfiguration;
 import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.PipeliteScheduler;
 import pipelite.launcher.PipeliteServiceManager;
-import pipelite.launcher.PipeliteUnlockService;
+import pipelite.launcher.PipeliteUnlocker;
 import pipelite.service.*;
 
 @Configuration
@@ -44,11 +44,11 @@ public class Application {
   @Autowired private StageService stageService;
   @Autowired private LockService lockService;
   @Autowired private MailService mailService;
-  @Autowired private PipeliteUnlockService pipeliteUnlockService;
 
   private final PipeliteServiceManager serverManager = new PipeliteServiceManager();
   private final List<PipeliteLauncher> launchers = new ArrayList<>();
   private PipeliteScheduler scheduler;
+  private PipeliteUnlocker unlocker;
 
   @PostConstruct
   private void construct() {
@@ -74,40 +74,53 @@ public class Application {
           processFactoryService.create(pipelineName);
         }
         // Create services.
-        serverManager.add(pipeliteUnlockService);
         for (String pipelineName : pipelineNames) {
-          PipeliteLauncher launcher =
-              new PipeliteLauncher(
-                  launcherConfiguration,
-                  stageConfiguration,
-                  processFactoryService,
-                  processSourceService,
-                  processService,
-                  stageService,
-                  lockService,
-                  mailService,
-                  pipelineName);
+          PipeliteLauncher launcher = createLauncher(pipelineName);
           launchers.add(launcher);
           serverManager.add(launcher);
         }
       }
       if (launcherConfiguration.getSchedulerName() != null) {
-        scheduler =
-            new PipeliteScheduler(
-                launcherConfiguration,
-                stageConfiguration,
-                processFactoryService,
-                scheduleService,
-                processService,
-                stageService,
-                lockService,
-                mailService);
+        scheduler = createScheduler();
         serverManager.add(scheduler);
+      }
+      if (launcherConfiguration.getUnlockerName() != null) {
+        unlocker = createUnlocker();
+        serverManager.add(unlocker);
       }
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Unexpected exception when initialising pipelite services");
       throw new RuntimeException(ex);
     }
+  }
+
+  private PipeliteScheduler createScheduler() {
+    return new PipeliteScheduler(
+        launcherConfiguration,
+        stageConfiguration,
+        processFactoryService,
+        scheduleService,
+        processService,
+        stageService,
+        lockService,
+        mailService);
+  }
+
+  private PipeliteLauncher createLauncher(String pipelineName) {
+    return new PipeliteLauncher(
+        launcherConfiguration,
+        stageConfiguration,
+        processFactoryService,
+        processSourceService,
+        processService,
+        stageService,
+        lockService,
+        mailService,
+        pipelineName);
+  }
+
+  private PipeliteUnlocker createUnlocker() {
+    return new PipeliteUnlocker(launcherConfiguration, lockService);
   }
 
   private void run() {

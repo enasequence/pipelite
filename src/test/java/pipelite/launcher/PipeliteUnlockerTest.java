@@ -33,7 +33,7 @@ import pipelite.service.LockService;
     classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 @Transactional
-public class PipeliteUnlockServiceTest {
+public class PipeliteUnlockerTest {
 
   @Autowired LauncherLockRepository launcherLockRepository;
   @Autowired ProcessLockRepository processLockRepository;
@@ -64,7 +64,7 @@ public class PipeliteUnlockServiceTest {
     assertTrue(lockService.isProcessLocked(pipelineName, "2"));
     assertTrue(lockService.isProcessLocked(pipelineName, "3"));
 
-    PipeliteUnlockService unlocker = new PipeliteUnlockService(launcherConfiguration, lockService);
+    PipeliteUnlocker unlocker = new PipeliteUnlocker(launcherConfiguration, lockService);
     unlocker.stopAsync().awaitTerminated();
     unlocker.removeExpiredLocks();
 
@@ -97,7 +97,7 @@ public class PipeliteUnlockServiceTest {
     assertTrue(lockService.isProcessLocked(pipelineName, "2"));
     assertTrue(lockService.isProcessLocked(pipelineName, "3"));
 
-    PipeliteUnlockService unlocker = new PipeliteUnlockService(launcherConfiguration, lockService);
+    PipeliteUnlocker unlocker = new PipeliteUnlocker(launcherConfiguration, lockService);
     unlocker.stopAsync().awaitTerminated();
     unlocker.removeExpiredLocks();
 

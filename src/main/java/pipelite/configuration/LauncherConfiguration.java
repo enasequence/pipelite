@@ -64,14 +64,23 @@ public class LauncherConfiguration {
   /** The pipelite web server context path. */
   private String contextPath = "/pipelite";
 
-  /** The name of the PipeliteScheduler. The name must be unique. */
+  /**
+   * The PipeliteLauncher will execute processes from pipelines given process ids. The pipelineName
+   * is a comma separated list of zero or more pipeline names.
+   */
+  private String pipelineName;
+
+  /**
+   * The PipeliteScheduler will execute processes given cron expressions. The schedulerName is the
+   * name of an optional scheduler and must be unique.
+   */
   private String schedulerName;
 
   /**
-   * PipeliteLaunchers will execute processes from these pipelines. The pipelineName is a comma
-   * separated list.
+   * The PipeliteUnlocker will periodically remove expired locks. The unlockerName is the name of an
+   * optional unlocker and must be unique.
    */
-  private String pipelineName;
+  private String unlockerName;
 
   /**
    * The PipeliteLauncher will execute processes in parallel. The pipelineParallelism is the maximum
@@ -124,6 +133,10 @@ public class LauncherConfiguration {
 
   public static String getSchedulerName(LauncherConfiguration launcherConfiguration) {
     return launcherConfiguration.getSchedulerName();
+  }
+
+  public static String getUnlockerName(LauncherConfiguration launcherConfiguration) {
+    return launcherConfiguration.getUnlockerName();
   }
 
   public static String getCanonicalHostName() {

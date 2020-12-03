@@ -17,11 +17,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import com.google.common.flogger.FluentLogger;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.lock.PipeliteLocker;
+import pipelite.log.LogKey;
 import pipelite.process.Process;
 
 @Flogger
@@ -55,7 +58,6 @@ public class ProcessLauncherPool {
   public ProcessLauncherPool(Supplier<ProcessLauncher> processLauncherSupplier) {
     Assert.notNull(processLauncherSupplier, "Missing process launcher supplier");
     this.processLauncherSupplier = processLauncherSupplier;
-    log.atInfo().log("Starting up process launcher pool");
   }
 
   /**
@@ -97,8 +99,9 @@ public class ProcessLauncherPool {
             ++processExecutionCount;
           } catch (Exception ex) {
             ++processExceptionCount;
-            log.atSevere().withCause(ex).log(
-                "An unexpected exception was thrown when executing %s %s", pipelineName, processId);
+            logContext(log.atSevere(), pipelineName, processId)
+                .withCause(ex)
+                .log("Unexpected exception");
           } finally {
             // Unlock process.
             try {
@@ -136,7 +139,6 @@ public class ProcessLauncherPool {
   }
 
   public void shutDown() {
-    log.atInfo().log("Shutting down process launcher pool");
     executorService.shutdown();
     try {
       executorService.awaitTermination(
@@ -146,6 +148,9 @@ public class ProcessLauncherPool {
       executorService.shutdownNow();
       Thread.currentThread().interrupt();
     }
-    log.atInfo().log("Process launcher pool has been shut down");
+  }
+
+  private FluentLogger.Api logContext(FluentLogger.Api log, String pipelineName, String processId) {
+    return log.with(LogKey.PIPELINE_NAME, pipelineName).with(LogKey.PROCESS_ID, processId);
   }
 }
