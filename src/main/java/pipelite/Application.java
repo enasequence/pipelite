@@ -13,7 +13,6 @@ package pipelite;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -25,7 +24,6 @@ import org.springframework.context.annotation.Configuration;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
 import pipelite.launcher.*;
-import pipelite.lock.PipeliteLocker;
 import pipelite.service.*;
 
 @Configuration
@@ -94,40 +92,28 @@ public class Application {
   }
 
   private PipeliteScheduler createScheduler() {
-    return new PipeliteScheduler(
+    return new DefaultPipeliteScheduler(
         launcherConfiguration,
-        createPipeliteLocker(),
+        stageConfiguration,
+        lockService,
         processFactoryService,
-        scheduleService,
         processService,
-        createPoolSupplier());
+        scheduleService,
+        stageService,
+        mailService);
   }
 
   private PipeliteLauncher createLauncher(String pipelineName) {
-    return new PipeliteLauncher(
+    return new DefaultPipeliteLauncher(
         launcherConfiguration,
-        createPipeliteLocker(),
-        processFactoryService.create(pipelineName),
-        processSourceService.create(pipelineName),
+        stageConfiguration,
+        lockService,
+        processFactoryService,
+        processSourceService,
         processService,
-        createPoolSupplier(),
+        stageService,
+        mailService,
         pipelineName);
-  }
-
-  private PipeliteLocker createPipeliteLocker() {
-    return new PipeliteLocker(lockService);
-  }
-
-  private Supplier<ProcessLauncherPool> createPoolSupplier() {
-    return () ->
-        new ProcessLauncherPool(
-            () ->
-                new ProcessLauncher(
-                    launcherConfiguration,
-                    stageConfiguration,
-                    processService,
-                    stageService,
-                    mailService));
   }
 
   private PipeliteUnlocker createUnlocker() {

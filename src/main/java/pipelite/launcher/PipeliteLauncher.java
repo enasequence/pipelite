@@ -24,19 +24,18 @@ import pipelite.lock.PipeliteLocker;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
-import pipelite.process.ProcessSource;
 import pipelite.service.*;
 
 @Flogger
 public class PipeliteLauncher extends ProcessLauncherService {
 
-  private static final int DEFAULT_PROCESS_CREATION_COUNT = 5000;
   private final ProcessService processService;
   private final String pipelineName;
   private final ProcessFactory processFactory;
-  private final ProcessSource processSource;
-  private final Duration processMaxRefreshFrequency;
-  private final Duration processMinRefreshFrequency;
+  private final ProcessCreator processCreator;
+  private final Duration processQueueMaxRefreshFrequency;
+  private final Duration processQueueMinRefreshFrequency;
+  private final int processQueueMaxSize;
   private final int processParallelism;
   private final boolean shutdownIfIdle;
   private final ProcessLauncherStats stats = new ProcessLauncherStats();
@@ -50,8 +49,8 @@ public class PipeliteLauncher extends ProcessLauncherService {
       LauncherConfiguration launcherConfiguration,
       PipeliteLocker pipeliteLocker,
       ProcessFactory processFactory,
-      ProcessSource processSource,
       ProcessService processService,
+      ProcessCreator processCreator,
       Supplier<ProcessLauncherPool> processLauncherPoolSupplier,
       String pipelineName) {
     super(
@@ -65,10 +64,13 @@ public class PipeliteLauncher extends ProcessLauncherService {
     this.processService = processService;
     this.pipelineName = pipelineName;
     this.processFactory = processFactory;
-    this.processSource = processSource;
-    this.processMaxRefreshFrequency = launcherConfiguration.getProcessQueueMaxRefreshFrequency();
-    this.processMinRefreshFrequency = launcherConfiguration.getProcessQueueMinRefreshFrequency();
-    this.processParallelism = launcherConfiguration.getPipelineParallelism();
+    this.processCreator = processCreator;
+    this.processQueueMaxRefreshFrequency =
+        launcherConfiguration.getProcessQueueMaxRefreshFrequency();
+    this.processQueueMinRefreshFrequency =
+        launcherConfiguration.getProcessQueueMinRefreshFrequency();
+    this.processQueueMaxSize = launcherConfiguration.getProcessQueueMaxSize();
+    this.processParallelism = launcherConfiguration.getProcessParallelism();
     this.shutdownIfIdle = launcherConfiguration.isShutdownIfIdle();
   }
 
@@ -80,7 +82,7 @@ public class PipeliteLauncher extends ProcessLauncherService {
   @Override
   protected void run() {
     if (isQueueProcesses()) {
-      createProcesses();
+      processCreator.createProcesses(processQueueMaxSize);
       queueProcesses();
     }
     while (isRunProcess()) {
@@ -127,40 +129,6 @@ public class PipeliteLauncher extends ProcessLauncherService {
     return processQueueIndex == processQueue.size() && shutdownIfIdle;
   }
 
-  /** Creates new processes using a process sources and saves them for execution. */
-  protected void createProcesses() {
-    if (processSource == null) {
-      return;
-    }
-    logContext(log.atInfo()).log("Creating new processes");
-    for (int i = 0; i < DEFAULT_PROCESS_CREATION_COUNT; ++i) {
-      ProcessSource.NewProcess newProcess = processSource.next();
-      if (newProcess == null) {
-        return;
-      }
-      createProcess(newProcess);
-    }
-  }
-
-  /** Creates a new process and saves it for execution. */
-  protected void createProcess(ProcessSource.NewProcess newProcess) {
-    String processId = newProcess.getProcessId();
-    if (processId == null || processId.trim().isEmpty()) {
-      logContext(log.atWarning()).log("New process has no process id");
-    } else {
-      String trimmedProcessId = processId.trim();
-      Optional<ProcessEntity> savedProcessEntity =
-          processService.getSavedProcess(pipelineName, trimmedProcessId);
-      if (savedProcessEntity.isPresent()) {
-        logContext(log.atWarning(), trimmedProcessId).log("New process already exists");
-      } else {
-        logContext(log.atInfo(), trimmedProcessId).log("Creating new process");
-        processService.createExecution(pipelineName, trimmedProcessId, newProcess.getPriority());
-      }
-    }
-    processSource.accept(processId);
-  }
-
   protected void queueProcesses() {
     logContext(log.atInfo()).log("Queuing process instances");
     // Clear process queue.
@@ -172,8 +140,8 @@ public class PipeliteLauncher extends ProcessLauncherService {
 
     // Then add new processes.
     processQueue.addAll(getPendingProcesses());
-    processQueueMaxValidUntil = LocalDateTime.now().plus(processMaxRefreshFrequency);
-    processQueueMinValidUntil = LocalDateTime.now().plus(processMinRefreshFrequency);
+    processQueueMaxValidUntil = LocalDateTime.now().plus(processQueueMaxRefreshFrequency);
+    processQueueMinValidUntil = LocalDateTime.now().plus(processQueueMinRefreshFrequency);
   }
 
   protected List<ProcessEntity> getActiveProcesses() {
@@ -199,12 +167,12 @@ public class PipeliteLauncher extends ProcessLauncherService {
     return pipelineName;
   }
 
-  public Duration getProcessMaxRefreshFrequency() {
-    return processMaxRefreshFrequency;
+  public Duration getProcessQueueMaxRefreshFrequency() {
+    return processQueueMaxRefreshFrequency;
   }
 
-  public Duration getProcessMinRefreshFrequency() {
-    return processMinRefreshFrequency;
+  public Duration getProcessQueueMinRefreshFrequency() {
+    return processQueueMinRefreshFrequency;
   }
 
   public LocalDateTime getProcessQueueMaxValidUntil() {

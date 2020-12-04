@@ -17,7 +17,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
-
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
@@ -37,7 +36,7 @@ public class PipeliteScheduler extends ProcessLauncherService {
   private final ProcessFactoryService processFactoryService;
   private final ScheduleService scheduleService;
   private final ProcessService processService;
-  private final Duration processRefreshFrequency;
+  private final Duration scheduleRefreshFrequency;
   private final Map<String, ProcessFactory> processFactoryCache = new ConcurrentHashMap<>();
   private final Map<String, ProcessLauncherStats> stats = new ConcurrentHashMap<>();
   private final Map<String, AtomicLong> maximumExecutions = new ConcurrentHashMap<>();
@@ -90,7 +89,7 @@ public class PipeliteScheduler extends ProcessLauncherService {
     this.processFactoryService = processFactoryService;
     this.scheduleService = scheduleService;
     this.processService = processService;
-    this.processRefreshFrequency = launcherConfiguration.getProcessQueueMaxRefreshFrequency();
+    this.scheduleRefreshFrequency = launcherConfiguration.getScheduleRefreshFrequency();
   }
 
   private static String launcherName(LauncherConfiguration launcherConfiguration) {
@@ -125,7 +124,7 @@ public class PipeliteScheduler extends ProcessLauncherService {
   private void scheduleProcesses() {
     logContext(log.atInfo()).log("Scheduling processes");
     schedules.clear();
-    schedulesValidUntil = LocalDateTime.now().plus(processRefreshFrequency);
+    schedulesValidUntil = LocalDateTime.now().plus(scheduleRefreshFrequency);
     for (ScheduleEntity scheduleEntity :
         scheduleService.getAllProcessSchedules(getLauncherName())) {
       Schedule schedule = createSchedule(scheduleEntity);

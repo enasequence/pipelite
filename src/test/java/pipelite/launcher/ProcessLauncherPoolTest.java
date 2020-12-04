@@ -15,6 +15,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
+import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 import pipelite.entity.ProcessEntity;
 import pipelite.lock.PipeliteLocker;
@@ -22,8 +23,6 @@ import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.StageExecutionResultType;
-
-import java.util.function.Supplier;
 
 public class ProcessLauncherPoolTest {
 

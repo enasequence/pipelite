@@ -34,9 +34,11 @@ public class LauncherConfiguration {
   private static final Duration DEFAULT_PIPELINE_LOCK_DURATION = Duration.ofMinutes(10);
   private static final Duration DEFAULT_PIPELINE_UNLOCK_FREQUENCY = Duration.ofMinutes(30);
   private static final Duration DEFAULT_PROCESS_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
+  private static final int DEFAULT_PROCESS_PARALLELISM = ForkJoinPool.getCommonPoolParallelism();
+  private static final Duration DEFAULT_SCHEDULE_REFRESH_FREQUENCY = Duration.ofHours(4);
   private static final Duration DEFAULT_PROCESS_QUEUE_MAX_REFRESH_FREQUENCY = Duration.ofHours(6);
   private static final Duration DEFAULT_PROCESS_QUEUE_MIN_REFRESH_FREQUENCY = Duration.ofMinutes(5);
-  private static final int DEFAULT_PIPELINE_PARALLELISM = ForkJoinPool.getCommonPoolParallelism();
+  private static final int DEFAULT_PROCESS_QUEUE_MAX_SIZE = 5000;
   private static final Duration DEFAULT_STAGE_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
   private static final Duration DEFAULT_STAGE_POLL_FREQUENCY = Duration.ofMinutes(1);
 
@@ -84,10 +86,10 @@ public class LauncherConfiguration {
   private String unlockerName;
 
   /**
-   * The PipeliteLauncher will execute processes in parallel. The pipelineParallelism is the maximum
+   * The PipeliteLauncher will execute processes in parallel. The pROCESSPARALLELISM is the maximum
    * number of processes executed in parallel.
    */
-  private int pipelineParallelism = DEFAULT_PIPELINE_PARALLELISM;
+  private int processParallelism = DEFAULT_PROCESS_PARALLELISM;
 
   /**
    * The PipeliteLauncher and PipeliteScheduler lock processes for execution. The
@@ -108,16 +110,28 @@ public class LauncherConfiguration {
   private Duration processLaunchFrequency = DEFAULT_PROCESS_LAUNCH_FREQUENCY;
 
   /**
-   * The PipeliteLauncher and PipeliteScheduler periodically refresh their process execution queue.
-   * The processQueueMaxRefreshFrequency is the maximum frequency of doing this.
+   * The PipeliteScheduler periodically refreshes the schedules. The scheduleRefreshFrequency is the
+   * frequency of doing this.
+   */
+  private Duration scheduleRefreshFrequency = DEFAULT_SCHEDULE_REFRESH_FREQUENCY;
+
+  /**
+   * The PipeliteLauncher periodically refreshes its process execution queue. The
+   * processQueueMaxRefreshFrequency is the maximum frequency of doing this.
    */
   private Duration processQueueMaxRefreshFrequency = DEFAULT_PROCESS_QUEUE_MAX_REFRESH_FREQUENCY;
 
   /**
-   * The PipeliteLauncher and PipeliteScheduler periodically refresh their process execution queue.
-   * The processQueueMinRefreshFrequency is the minimum frequency of doing this.
+   * The PipeliteLauncher periodically refreshes its process execution queue. The
+   * processQueueMinRefreshFrequency is the minimum frequency of doing this.
    */
   private Duration processQueueMinRefreshFrequency = DEFAULT_PROCESS_QUEUE_MIN_REFRESH_FREQUENCY;
+
+  /**
+   * The PipeliteLauncher periodically refreshes its process execution queue. The
+   * processQueueMaxSize is the maximu, size of this queue.
+   */
+  private int processQueueMaxSize = DEFAULT_PROCESS_QUEUE_MAX_SIZE;
 
   /**
    * The ProcessLauncher periodically executes new process stages. The stageLaunchFrequency is the

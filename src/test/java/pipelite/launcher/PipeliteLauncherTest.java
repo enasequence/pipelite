@@ -1,26 +1,33 @@
+/*
+ * Copyright 2020 EMBL - European Bioinformatics Institute
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
+ * file except in compliance with the License. You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
 package pipelite.launcher;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
+import static org.mockito.internal.verification.VerificationModeFactory.times;
+import static pipelite.launcher.PipeliteLauncher.isQueueProcesses;
+import static pipelite.launcher.PipeliteLauncher.isRunProcess;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.Test;
-import pipelite.TestProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.lock.PipeliteLocker;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
-import pipelite.process.ProcessSource;
 import pipelite.service.*;
-
-import static pipelite.launcher.PipeliteLauncher.isRunProcess;
-import static pipelite.launcher.PipeliteLauncher.isQueueProcesses;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
-import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 public class PipeliteLauncherTest {
 
@@ -77,8 +84,8 @@ public class PipeliteLauncherTest {
                 new LauncherConfiguration(),
                 mock(PipeliteLocker.class),
                 processFactory,
-                mock(ProcessSource.class),
                 mock(ProcessService.class),
+                mock(ProcessCreator.class),
                 () -> mock(ProcessLauncherPool.class),
                 pipelineName));
 
@@ -108,8 +115,8 @@ public class PipeliteLauncherTest {
                 launcherConfiguration,
                 mock(PipeliteLocker.class),
                 mock(ProcessFactory.class),
-                mock(ProcessSource.class),
                 mock(ProcessService.class),
+                mock(ProcessCreator.class),
                 () -> mock(ProcessLauncherPool.class),
                 pipelineName));
 
@@ -142,14 +149,19 @@ public class PipeliteLauncherTest {
   public void testCreateProcess() {
     final int processCnt = 100;
     String pipelineName = UniqueStringGenerator.randomPipelineName();
+    LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
+    launcherConfiguration.setProcessQueueMaxSize(100);
+
+    ProcessCreator processCreator = mock(ProcessCreator.class);
+
     PipeliteLauncher launcher =
         spy(
             new PipeliteLauncher(
-                new LauncherConfiguration(),
+                launcherConfiguration,
                 mock(PipeliteLocker.class),
                 mock(ProcessFactory.class),
-                new TestProcessSource(pipelineName, processCnt),
                 mock(ProcessService.class),
+                processCreator,
                 () -> mock(ProcessLauncherPool.class),
                 pipelineName));
 
@@ -157,7 +169,6 @@ public class PipeliteLauncherTest {
     launcher.run();
 
     verify(launcher, times(1)).run();
-    verify(launcher, times(1)).createProcesses();
-    verify(launcher, times(processCnt)).createProcess(any());
+    verify(processCreator, times(1)).createProcesses(processCnt);
   }
 }

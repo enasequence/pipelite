@@ -20,18 +20,15 @@ import pipelite.PipeliteTestConfiguration;
 
 @SpringBootTest(
     classes = PipeliteTestConfiguration.class,
-    properties = {
-      "pipelite.launcher.schedulerName=TEST",
-      "pipelite.launcher.pipelineParallelism=1"
-    })
+    properties = {"pipelite.launcher.schedulerName=TEST", "pipelite.launcher.processParallelism=1"})
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 public class LauncherConfigurationTest {
 
   @Autowired LauncherConfiguration config;
 
   @Test
-  public void testPipelineParallelism() {
-    assertThat(config.getPipelineParallelism()).isEqualTo(1);
+  public void testProcessParallelism() {
+    assertThat(config.getProcessParallelism()).isEqualTo(1);
   }
 
   @Test

@@ -29,7 +29,6 @@ import pipelite.configuration.StageConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.executor.StageExecutorParameters;
-import pipelite.lock.PipeliteLocker;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
@@ -109,21 +108,15 @@ public class PipeliteLauncherTester {
   }
 
   private PipeliteLauncher createPipeliteLauncher(String pipelineName) {
-    return new PipeliteLauncher(
+    return new DefaultPipeliteLauncher(
         launcherConfiguration,
-        new PipeliteLocker(lockService),
-        processFactoryService.create(pipelineName),
-        processSourceService.create(pipelineName),
+        stageConfiguration,
+        lockService,
+        processFactoryService,
+        processSourceService,
         processService,
-        () ->
-            new ProcessLauncherPool(
-                () ->
-                    new ProcessLauncher(
-                        launcherConfiguration,
-                        stageConfiguration,
-                        processService,
-                        stageService,
-                        mailService)),
+        stageService,
+        mailService,
         pipelineName);
   }
 

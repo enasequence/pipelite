@@ -10,9 +10,8 @@
  */
 package pipelite.launcher;
 
-import java.time.Duration;
-
 import com.google.common.flogger.FluentLogger;
+import java.time.Duration;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
