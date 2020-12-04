@@ -11,6 +11,8 @@ import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
 import pipelite.service.*;
 
+import static pipelite.launcher.PipeliteLauncher.isRunProcess;
+import static pipelite.launcher.PipeliteLauncher.isQueueProcesses;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -23,78 +25,61 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 public class PipeliteLauncherTest {
 
   @Test
-  public void isQueueProcesses() {
+  public void testIsQueueProcesses() {
     LocalDateTime now = LocalDateTime.now();
     LocalDateTime later = LocalDateTime.now().plusHours(1);
-    int queueSize = 10;
+    int queue = 10;
     int parallelism = 5;
     // Queue is running low and we can refresh the queue now.
-    assertThat(PipeliteLauncher.isQueueProcesses(queueSize, queueSize, later, now, parallelism))
-        .isTrue();
-    assertThat(
-            PipeliteLauncher.isQueueProcesses(
-                queueSize - parallelism, queueSize, later, now, parallelism))
-        .isFalse();
-    assertThat(
-            PipeliteLauncher.isQueueProcesses(
-                queueSize - parallelism + 1, queueSize, later, now, parallelism))
-        .isTrue();
+    assertThat(isQueueProcesses(queue, queue, later, now, parallelism)).isTrue();
+    assertThat(isQueueProcesses(queue - parallelism, queue, later, now, parallelism)).isFalse();
+    assertThat(isQueueProcesses(queue - parallelism + 1, queue, later, now, parallelism)).isTrue();
     // Queue is not running low but we must refresh the queue now.
-    assertThat(PipeliteLauncher.isQueueProcesses(0, queueSize, now, now, parallelism)).isTrue();
+    assertThat(isQueueProcesses(0, queue, now, now, parallelism)).isTrue();
     // Queue is running low but we can't refresh it yet.
-    assertThat(PipeliteLauncher.isQueueProcesses(queueSize, queueSize, later, later, parallelism))
-        .isFalse();
+    assertThat(isQueueProcesses(queue, queue, later, later, parallelism)).isFalse();
     // Queue is not running low.
-    assertThat(PipeliteLauncher.isQueueProcesses(0, queueSize, later, now, parallelism)).isFalse();
+    assertThat(isQueueProcesses(0, queue, later, now, parallelism)).isFalse();
   }
 
   @Test
-  public void isRunProcess() {
-    int queueSize = 10;
+  public void testIsRunProcess() {
+    int queue = 10;
     int parallelism = 5;
     // We can run more processes.
-    assertThat(PipeliteLauncher.isRunProcess(0, queueSize, 0, parallelism)).isTrue();
+    assertThat(isRunProcess(0, queue, 0, parallelism)).isTrue();
     // Out of processes.
-    assertThat(PipeliteLauncher.isRunProcess(queueSize, queueSize, 0, parallelism)).isFalse();
+    assertThat(isRunProcess(queue, queue, 0, parallelism)).isFalse();
     // Out of active processes.
-    assertThat(PipeliteLauncher.isRunProcess(0, queueSize, parallelism - 1, parallelism)).isTrue();
-    assertThat(PipeliteLauncher.isRunProcess(0, queueSize, parallelism, parallelism)).isFalse();
+    assertThat(isRunProcess(0, queue, parallelism - 1, parallelism)).isTrue();
+    assertThat(isRunProcess(0, queue, parallelism, parallelism)).isFalse();
   }
 
   @Test
-  public void runProcess() {
+  public void testRunProcess() {
     final int processCnt = 100;
     String pipelineName = UniqueStringGenerator.randomPipelineName();
 
-    LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
     ProcessFactory processFactory =
         new ProcessFactory() {
-          @Override
           public String getPipelineName() {
             return pipelineName;
           }
 
-          @Override
           public Process create(String processId) {
-            Process process = mock(Process.class);
-            when(process.getProcessId()).thenReturn("PROCESS_ID");
-            return process;
+            return mock(Process.class);
           }
         };
-    ProcessSource processSource = mock(ProcessSource.class);
-    ProcessService processService = mock(ProcessService.class);
-    ProcessLauncherPool processLauncherPool = mock(ProcessLauncherPool.class);
-    PipeliteLocker pipeliteLocker = mock(PipeliteLocker.class);
 
     PipeliteLauncher launcher =
         spy(
             new PipeliteLauncher(
-                launcherConfiguration,
-                pipeliteLocker,
+                new LauncherConfiguration(),
+                mock(PipeliteLocker.class),
                 processFactory,
-                processSource,
-                processService,
-                () -> processLauncherPool,
+                mock(ProcessSource.class),
+                mock(ProcessService.class),
+                () -> mock(ProcessLauncherPool.class),
                 pipelineName));
 
     List<ProcessEntity> processesEntities =
@@ -109,30 +94,23 @@ public class PipeliteLauncherTest {
   }
 
   @Test
-  public void queueProcesses() {
+  public void testQueueProcesses() {
     final int processCnt = 100;
     String pipelineName = UniqueStringGenerator.randomPipelineName();
-
     Duration refreshFrequency = Duration.ofDays(1);
     LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
     launcherConfiguration.setProcessQueueMaxRefreshFrequency(refreshFrequency);
     launcherConfiguration.setProcessQueueMinRefreshFrequency(refreshFrequency);
 
-    ProcessFactory processFactory = mock(ProcessFactory.class);
-    ProcessSource processSource = mock(ProcessSource.class);
-    ProcessService processService = mock(ProcessService.class);
-    ProcessLauncherPool processLauncherPool = mock(ProcessLauncherPool.class);
-    PipeliteLocker pipeliteLocker = mock(PipeliteLocker.class);
-
     PipeliteLauncher launcher =
         spy(
             new PipeliteLauncher(
                 launcherConfiguration,
-                pipeliteLocker,
-                processFactory,
-                processSource,
-                processService,
-                () -> processLauncherPool,
+                mock(PipeliteLocker.class),
+                mock(ProcessFactory.class),
+                mock(ProcessSource.class),
+                mock(ProcessService.class),
+                () -> mock(ProcessLauncherPool.class),
                 pipelineName));
 
     assertThat(launcher.getProcessQueueMaxValidUntil()).isBefore(LocalDateTime.now());
@@ -161,27 +139,18 @@ public class PipeliteLauncherTest {
   }
 
   @Test
-  public void createProcess() {
+  public void testCreateProcess() {
     final int processCnt = 100;
     String pipelineName = UniqueStringGenerator.randomPipelineName();
-
-    LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
-    ProcessFactory processFactory = mock(ProcessFactory.class);
-    ProcessSource processSource = new TestProcessSource(pipelineName, processCnt);
-    ProcessService processService = mock(ProcessService.class);
-    ProcessLauncherPool processLauncherPool = mock(ProcessLauncherPool.class);
-    PipeliteLocker pipeliteLocker = mock(PipeliteLocker.class);
-    when(pipeliteLocker.getLauncherName()).thenReturn("LAUNCHER_NAME");
-
     PipeliteLauncher launcher =
         spy(
             new PipeliteLauncher(
-                launcherConfiguration,
-                pipeliteLocker,
-                processFactory,
-                processSource,
-                processService,
-                () -> processLauncherPool,
+                new LauncherConfiguration(),
+                mock(PipeliteLocker.class),
+                mock(ProcessFactory.class),
+                new TestProcessSource(pipelineName, processCnt),
+                mock(ProcessService.class),
+                () -> mock(ProcessLauncherPool.class),
                 pipelineName));
 
     launcher.startUp();

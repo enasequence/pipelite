@@ -79,19 +79,27 @@ public class PipeliteLauncher extends ProcessLauncherService {
 
   @Override
   protected void run() {
-    if (isQueueProcesses(
+    if (isQueueProcesses()) {
+      createProcesses();
+      queueProcesses();
+    }
+    while (isRunProcess()) {
+      runProcess(processQueue.get(processQueueIndex++));
+    }
+  }
+
+  protected boolean isQueueProcesses() {
+    return isQueueProcesses(
         processQueueIndex,
         processQueue.size(),
         processQueueMaxValidUntil,
         processQueueMinValidUntil,
-        processParallelism)) {
-      createProcesses();
-      queueProcesses();
-    }
-    while (isRunProcess(
-        processQueueIndex, processQueue.size(), activeProcessCount(), processParallelism)) {
-      runProcess(processQueue.get(processQueueIndex++));
-    }
+        processParallelism);
+  }
+
+  protected boolean isRunProcess() {
+    return isRunProcess(
+        processQueueIndex, processQueue.size(), activeProcessCount(), processParallelism);
   }
 
   /** Returns true if the process queue should be recreated. */
