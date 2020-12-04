@@ -28,7 +28,8 @@ public class PipeliteLockerTest {
     LauncherLockEntity lock = new LauncherLockEntity();
     when(lockService.lockLauncher(LAUNCHER_NAME)).thenAnswer((launcherName) -> lock);
     when(lockService.relockLauncher(lock)).thenAnswer((launcherName) -> true);
-    PipeliteLocker locker = new PipeliteLocker(lockService, LAUNCHER_NAME);
+    PipeliteLocker locker = new PipeliteLocker(lockService);
+    locker.init(LAUNCHER_NAME);
     locker.lock();
     assertThat(locker.getLock()).isSameAs(lock);
     locker.renewLock();
@@ -46,7 +47,8 @@ public class PipeliteLockerTest {
     LockService lockService = mock(LockService.class);
     RuntimeException ex = new RuntimeException("Expected exception");
     when(lockService.lockLauncher(LAUNCHER_NAME)).thenThrow(ex);
-    PipeliteLocker locker = new PipeliteLocker(lockService, LAUNCHER_NAME);
+    PipeliteLocker locker = new PipeliteLocker(lockService);
+    locker.init(LAUNCHER_NAME);
     assertThatThrownBy(() -> locker.lock()).isSameAs(ex);
     assertThat(locker.getLock()).isNull();
   }
@@ -58,7 +60,8 @@ public class PipeliteLockerTest {
     LauncherLockEntity lock = new LauncherLockEntity();
     when(lockService.lockLauncher(LAUNCHER_NAME)).thenAnswer((launcherName) -> lock);
     when(lockService.relockLauncher(lock)).thenThrow(ex);
-    PipeliteLocker locker = new PipeliteLocker(lockService, LAUNCHER_NAME);
+    PipeliteLocker locker = new PipeliteLocker(lockService);
+    locker.init(LAUNCHER_NAME);
     locker.lock();
     assertThat(locker.getLock()).isSameAs(lock);
     assertThatThrownBy(() -> locker.renewLock()).isSameAs(ex);
@@ -73,7 +76,8 @@ public class PipeliteLockerTest {
     when(lockService.lockLauncher(LAUNCHER_NAME)).thenAnswer((launcherName) -> lock);
     when(lockService.relockLauncher(lock)).thenAnswer((launcherName) -> true);
     doThrow(ex).when(lockService).unlockLauncher(lock);
-    PipeliteLocker locker = new PipeliteLocker(lockService, LAUNCHER_NAME);
+    PipeliteLocker locker = new PipeliteLocker(lockService);
+    locker.init(LAUNCHER_NAME);
     locker.lock();
     assertThat(locker.getLock()).isSameAs(lock);
     locker.renewLock();

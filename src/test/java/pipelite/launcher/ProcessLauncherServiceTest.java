@@ -79,6 +79,7 @@ public class ProcessLauncherServiceTest {
             new ProcessLauncherService(
                 launcherConfiguration,
                 locker,
+                LAUNCHER_NAME,
                 () -> new ProcessLauncherPool(processLauncherSupplier(ProcessState.COMPLETED))) {
               @Override
               protected void run() {

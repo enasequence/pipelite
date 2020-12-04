@@ -27,6 +27,7 @@ import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
 import pipelite.executor.StageExecutor;
 import pipelite.executor.StageExecutorParameters;
+import pipelite.lock.PipeliteLocker;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
@@ -117,13 +118,19 @@ public class PipeliteLauncherAsyncTester {
   private PipeliteLauncher createPipeliteLauncher(String pipelineName) {
     return new PipeliteLauncher(
         launcherConfiguration,
-        stageConfiguration,
-        processFactoryService,
-        processSourceService,
+        new PipeliteLocker(lockService),
+        processFactoryService.create(pipelineName),
+        processSourceService.create(pipelineName),
         processService,
-        stageService,
-        lockService,
-        mailService,
+        () ->
+            new ProcessLauncherPool(
+                () ->
+                    new ProcessLauncher(
+                        launcherConfiguration,
+                        stageConfiguration,
+                        processService,
+                        stageService,
+                        mailService)),
         pipelineName);
   }
 

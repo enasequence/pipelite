@@ -38,6 +38,7 @@ public abstract class ProcessLauncherService extends PipeliteService {
   public ProcessLauncherService(
       LauncherConfiguration launcherConfiguration,
       PipeliteLocker locker,
+      String launcherName,
       Supplier<ProcessLauncherPool> processLauncherPoolSupplier) {
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(locker, "Missing locker");
@@ -45,6 +46,7 @@ public abstract class ProcessLauncherService extends PipeliteService {
     this.locker = locker;
     this.processLauncherPoolSupplier = processLauncherPoolSupplier;
     this.processLaunchFrequency = launcherConfiguration.getProcessLaunchFrequency();
+    this.locker.init(launcherName);
   }
 
   @Override
@@ -165,7 +167,7 @@ public abstract class ProcessLauncherService extends PipeliteService {
    *
    * @return the number of active processes.
    */
-  public long activeProcessCount() {
+  public int activeProcessCount() {
     if (pool == null) {
       return 0;
     }

@@ -11,6 +11,7 @@
 package pipelite.lock;
 
 import lombok.extern.flogger.Flogger;
+import org.springframework.util.Assert;
 import pipelite.entity.LauncherLockEntity;
 import pipelite.service.LockService;
 
@@ -24,11 +25,16 @@ import pipelite.service.LockService;
 public class PipeliteLocker {
 
   private final LockService lockService;
-  private final String launcherName;
+  private String launcherName;
   private LauncherLockEntity lock;
 
-  public PipeliteLocker(LockService lockService, String launcherName) {
+  public PipeliteLocker(LockService lockService) {
+    Assert.notNull(lockService, "Missing locker service");
     this.lockService = lockService;
+  }
+
+  public void init(String launcherName) {
+    Assert.notNull(launcherName, "Missing launcher name");
     this.launcherName = launcherName;
   }
 
@@ -38,6 +44,7 @@ public class PipeliteLocker {
    * @throws RuntimeException if the launcher could not be locked
    */
   public void lock() {
+    Assert.notNull(launcherName, "Missing launcher name");
     log.atInfo().log("Locking launcher: " + launcherName);
     lock = lockService.lockLauncher(launcherName);
     if (lock == null) {
@@ -51,6 +58,7 @@ public class PipeliteLocker {
    * @throws RuntimeException if the launcher lock could not be renewed
    */
   public void renewLock() {
+    Assert.notNull(lock, "Missing lock");
     log.atInfo().log("Re-locking launcher: " + launcherName);
     if (!lockService.relockLauncher(lock)) {
       throw new RuntimeException("Could not re-lock launcher " + launcherName);
@@ -59,6 +67,7 @@ public class PipeliteLocker {
 
   /** Removes locks associated with the launcher. */
   public void unlock() {
+    Assert.notNull(lock, "Missing lock");
     log.atInfo().log("Unlocking launcher: " + launcherName);
     try {
       unlock(lockService, lock);
@@ -79,6 +88,9 @@ public class PipeliteLocker {
    * @return false if the process could not be locked
    */
   public boolean lockProcess(String pipelineName, String processId) {
+    Assert.notNull(lock, "Missing lock");
+    Assert.notNull(pipelineName, "Missing pipeline name");
+    Assert.notNull(processId, "Missing process id");
     return lockService.lockProcess(lock, pipelineName, processId);
   }
 
@@ -89,6 +101,9 @@ public class PipeliteLocker {
    * @param processId the process id
    */
   public void unlockProcess(String pipelineName, String processId) {
+    Assert.notNull(lock, "Missing lock");
+    Assert.notNull(pipelineName, "Missing pipeline name");
+    Assert.notNull(processId, "Missing process id");
     lockService.unlockProcess(lock, pipelineName, processId);
   }
 

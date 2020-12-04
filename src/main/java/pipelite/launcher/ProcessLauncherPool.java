@@ -130,7 +130,7 @@ public class ProcessLauncherPool {
             p -> p.getPipelineName().equals(pipelineName) && p.getProcessId().equals(processId));
   }
 
-  public long activeProcessCount() {
+  public int activeProcessCount() {
     return active.size();
   }
 

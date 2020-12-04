@@ -14,11 +14,11 @@ import com.google.common.flogger.FluentLogger;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
-import pipelite.configuration.StageConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.lock.PipeliteLocker;
 import pipelite.log.LogKey;
@@ -35,51 +35,40 @@ public class PipeliteLauncher extends ProcessLauncherService {
   private final String pipelineName;
   private final ProcessFactory processFactory;
   private final ProcessSource processSource;
-  private final Duration processRefreshFrequency;
-  private final int pipeliteParallelism;
+  private final Duration processMaxRefreshFrequency;
+  private final Duration processMinRefreshFrequency;
+  private final int processParallelism;
   private final boolean shutdownIfIdle;
   private final ProcessLauncherStats stats = new ProcessLauncherStats();
-  private final List<ProcessEntity> processQueue = Collections.synchronizedList(new ArrayList<>());
+  protected final List<ProcessEntity> processQueue =
+      Collections.synchronizedList(new ArrayList<>());
   private int processQueueIndex = 0;
-  private LocalDateTime processQueueValidUntil = LocalDateTime.now();
+  private LocalDateTime processQueueMaxValidUntil = LocalDateTime.now();
+  private LocalDateTime processQueueMinValidUntil = LocalDateTime.now();
 
   public PipeliteLauncher(
       LauncherConfiguration launcherConfiguration,
-      StageConfiguration stageConfiguration,
-      ProcessFactoryService processFactoryService,
-      ProcessSourceService processSourceService,
+      PipeliteLocker pipeliteLocker,
+      ProcessFactory processFactory,
+      ProcessSource processSource,
       ProcessService processService,
-      StageService stageService,
-      LockService lockService,
-      MailService mailService,
+      Supplier<ProcessLauncherPool> processLauncherPoolSupplier,
       String pipelineName) {
     super(
         launcherConfiguration,
-        new PipeliteLocker(lockService, launcherName(pipelineName, launcherConfiguration)),
-        () ->
-            new ProcessLauncherPool(
-                () ->
-                    new ProcessLauncher(
-                        launcherConfiguration,
-                        stageConfiguration,
-                        processService,
-                        stageService,
-                        mailService)));
+        pipeliteLocker,
+        launcherName(pipelineName, launcherConfiguration),
+        processLauncherPoolSupplier);
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
-    Assert.notNull(stageConfiguration, "Missing stage configuration");
-    Assert.notNull(processFactoryService, "Missing process factory service");
-    Assert.notNull(processSourceService, "Missing process source service");
     Assert.notNull(processService, "Missing process service");
-    Assert.notNull(stageService, "Missing stage service");
-    Assert.notNull(mailService, "Missing mail service");
-    Assert.notNull(lockService, "Missing lock service");
     Assert.notNull(pipelineName, "Missing pipeline name");
     this.processService = processService;
     this.pipelineName = pipelineName;
-    this.processFactory = processFactoryService.create(this.pipelineName);
-    this.processSource = processSourceService.create(this.pipelineName);
-    this.processRefreshFrequency = launcherConfiguration.getProcessRefreshFrequency();
-    this.pipeliteParallelism = launcherConfiguration.getPipelineParallelism();
+    this.processFactory = processFactory;
+    this.processSource = processSource;
+    this.processMaxRefreshFrequency = launcherConfiguration.getProcessQueueMaxRefreshFrequency();
+    this.processMinRefreshFrequency = launcherConfiguration.getProcessQueueMinRefreshFrequency();
+    this.processParallelism = launcherConfiguration.getPipelineParallelism();
     this.shutdownIfIdle = launcherConfiguration.isShutdownIfIdle();
   }
 
@@ -90,14 +79,39 @@ public class PipeliteLauncher extends ProcessLauncherService {
 
   @Override
   protected void run() {
-    if (processQueueIndex >= processQueue.size()
-        || processQueueValidUntil.isBefore(LocalDateTime.now())) {
+    if (isQueueProcesses(
+        processQueueIndex,
+        processQueue.size(),
+        processQueueMaxValidUntil,
+        processQueueMinValidUntil,
+        processParallelism)) {
       createProcesses();
       queueProcesses();
     }
-    while (processQueueIndex < processQueue.size() && activeProcessCount() < pipeliteParallelism) {
+    while (isRunProcess(
+        processQueueIndex, processQueue.size(), activeProcessCount(), processParallelism)) {
       runProcess(processQueue.get(processQueueIndex++));
     }
+  }
+
+  /** Returns true if the process queue should be recreated. */
+  protected static boolean isQueueProcesses(
+      int processQueueIndex,
+      int processQueueSize,
+      LocalDateTime processQueueMaxValidUntil,
+      LocalDateTime processQueueMinValidUntil,
+      int processParallelism) {
+    if (processQueueMinValidUntil.isAfter(LocalDateTime.now())) {
+      return false;
+    }
+    return processQueueIndex >= processQueueSize - processParallelism + 1
+        || processQueueMaxValidUntil.isBefore(LocalDateTime.now());
+  }
+
+  /** Returns true if a new process should be executed. */
+  protected static boolean isRunProcess(
+      int processQueueIndex, int processQueueSize, int activeProcessCount, int processParallelism) {
+    return processQueueIndex < processQueueSize && activeProcessCount < processParallelism;
   }
 
   @Override
@@ -106,7 +120,7 @@ public class PipeliteLauncher extends ProcessLauncherService {
   }
 
   /** Creates new processes using a process sources and saves them for execution. */
-  private void createProcesses() {
+  protected void createProcesses() {
     if (processSource == null) {
       return;
     }
@@ -121,7 +135,7 @@ public class PipeliteLauncher extends ProcessLauncherService {
   }
 
   /** Creates a new process and saves it for execution. */
-  private void createProcess(ProcessSource.NewProcess newProcess) {
+  protected void createProcess(ProcessSource.NewProcess newProcess) {
     String processId = newProcess.getProcessId();
     if (processId == null || processId.trim().isEmpty()) {
       logContext(log.atWarning()).log("New process has no process id");
@@ -139,27 +153,34 @@ public class PipeliteLauncher extends ProcessLauncherService {
     processSource.accept(processId);
   }
 
-  private void queueProcesses() {
+  protected void queueProcesses() {
     logContext(log.atInfo()).log("Queuing process instances");
     // Clear process queue.
     processQueueIndex = 0;
     processQueue.clear();
 
     // First add active processes. Asynchronous active processes may be able to continue execution.
-    processQueue.addAll(
-        processService.getActiveProcesses(pipelineName, getLauncherName()).stream()
-            .filter(processEntity -> !isProcessActive(pipelineName, processEntity.getProcessId()))
-            .collect(Collectors.toList()));
+    processQueue.addAll(getActiveProcesses());
 
     // Then add new processes.
-    processQueue.addAll(
-        processService.getPendingProcesses(pipelineName).stream()
-            .filter(processEntity -> !isProcessActive(pipelineName, processEntity.getProcessId()))
-            .collect(Collectors.toList()));
-    processQueueValidUntil = LocalDateTime.now().plus(processRefreshFrequency);
+    processQueue.addAll(getPendingProcesses());
+    processQueueMaxValidUntil = LocalDateTime.now().plus(processMaxRefreshFrequency);
+    processQueueMinValidUntil = LocalDateTime.now().plus(processMinRefreshFrequency);
   }
 
-  private void runProcess(ProcessEntity processEntity) {
+  protected List<ProcessEntity> getActiveProcesses() {
+    return processService.getActiveProcesses(pipelineName, getLauncherName()).stream()
+        .filter(processEntity -> !isProcessActive(pipelineName, processEntity.getProcessId()))
+        .collect(Collectors.toList());
+  }
+
+  protected List<ProcessEntity> getPendingProcesses() {
+    return processService.getPendingProcesses(pipelineName).stream()
+        .filter(processEntity -> !isProcessActive(pipelineName, processEntity.getProcessId()))
+        .collect(Collectors.toList());
+  }
+
+  protected void runProcess(ProcessEntity processEntity) {
     Process process = ProcessFactory.create(processEntity, processFactory, stats);
     if (process != null) {
       run(pipelineName, process, (p, r) -> stats.add(p, r));
@@ -168,6 +189,22 @@ public class PipeliteLauncher extends ProcessLauncherService {
 
   public String getPipelineName() {
     return pipelineName;
+  }
+
+  public Duration getProcessMaxRefreshFrequency() {
+    return processMaxRefreshFrequency;
+  }
+
+  public Duration getProcessMinRefreshFrequency() {
+    return processMinRefreshFrequency;
+  }
+
+  public LocalDateTime getProcessQueueMaxValidUntil() {
+    return processQueueMaxValidUntil;
+  }
+
+  public LocalDateTime getProcessQueueMinValidUntil() {
+    return processQueueMinValidUntil;
   }
 
   public ProcessLauncherStats getStats() {

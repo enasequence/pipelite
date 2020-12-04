@@ -34,7 +34,8 @@ public class LauncherConfiguration {
   private static final Duration DEFAULT_PIPELINE_LOCK_DURATION = Duration.ofMinutes(10);
   private static final Duration DEFAULT_PIPELINE_UNLOCK_FREQUENCY = Duration.ofMinutes(30);
   private static final Duration DEFAULT_PROCESS_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
-  private static final Duration DEFAULT_PROCESS_REFRESH_FREQUENCY = Duration.ofHours(1);
+  private static final Duration DEFAULT_PROCESS_QUEUE_MAX_REFRESH_FREQUENCY = Duration.ofHours(6);
+  private static final Duration DEFAULT_PROCESS_QUEUE_MIN_REFRESH_FREQUENCY = Duration.ofMinutes(5);
   private static final int DEFAULT_PIPELINE_PARALLELISM = ForkJoinPool.getCommonPoolParallelism();
   private static final Duration DEFAULT_STAGE_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
   private static final Duration DEFAULT_STAGE_POLL_FREQUENCY = Duration.ofMinutes(1);
@@ -108,9 +109,15 @@ public class LauncherConfiguration {
 
   /**
    * The PipeliteLauncher and PipeliteScheduler periodically refresh their process execution queue.
-   * The processRefreshFrequency is the frequency of doing this.
+   * The processQueueMaxRefreshFrequency is the maximum frequency of doing this.
    */
-  private Duration processRefreshFrequency = DEFAULT_PROCESS_REFRESH_FREQUENCY;
+  private Duration processQueueMaxRefreshFrequency = DEFAULT_PROCESS_QUEUE_MAX_REFRESH_FREQUENCY;
+
+  /**
+   * The PipeliteLauncher and PipeliteScheduler periodically refresh their process execution queue.
+   * The processQueueMinRefreshFrequency is the minimum frequency of doing this.
+   */
+  private Duration processQueueMinRefreshFrequency = DEFAULT_PROCESS_QUEUE_MIN_REFRESH_FREQUENCY;
 
   /**
    * The ProcessLauncher periodically executes new process stages. The stageLaunchFrequency is the

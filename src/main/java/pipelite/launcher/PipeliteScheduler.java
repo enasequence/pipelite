@@ -16,10 +16,11 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
+
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
-import pipelite.configuration.StageConfiguration;
 import pipelite.cron.CronUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
@@ -72,37 +73,24 @@ public class PipeliteScheduler extends ProcessLauncherService {
 
   public PipeliteScheduler(
       LauncherConfiguration launcherConfiguration,
-      StageConfiguration stageConfiguration,
+      PipeliteLocker pipeliteLocker,
       ProcessFactoryService processFactoryService,
       ScheduleService scheduleService,
       ProcessService processService,
-      StageService stageService,
-      LockService lockService,
-      MailService mailService) {
+      Supplier<ProcessLauncherPool> processLauncherPoolSupplier) {
     super(
         launcherConfiguration,
-        new PipeliteLocker(lockService, launcherName(launcherConfiguration)),
-        () ->
-            new ProcessLauncherPool(
-                () ->
-                    new ProcessLauncher(
-                        launcherConfiguration,
-                        stageConfiguration,
-                        processService,
-                        stageService,
-                        mailService)));
+        pipeliteLocker,
+        launcherName(launcherConfiguration),
+        processLauncherPoolSupplier);
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
-    Assert.notNull(stageConfiguration, "Missing stage configuration");
     Assert.notNull(processFactoryService, "Missing process factory service");
     Assert.notNull(processService, "Missing process service");
     Assert.notNull(scheduleService, "Missing schedule service");
-    Assert.notNull(stageService, "Missing stage service");
-    Assert.notNull(lockService, "Missing lock service");
-    Assert.notNull(mailService, "Missing mail service");
     this.processFactoryService = processFactoryService;
     this.scheduleService = scheduleService;
     this.processService = processService;
-    this.processRefreshFrequency = launcherConfiguration.getProcessRefreshFrequency();
+    this.processRefreshFrequency = launcherConfiguration.getProcessQueueMaxRefreshFrequency();
   }
 
   private static String launcherName(LauncherConfiguration launcherConfiguration) {

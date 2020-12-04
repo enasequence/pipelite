@@ -30,6 +30,7 @@ import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.entity.StageEntity;
 import pipelite.executor.StageExecutorParameters;
+import pipelite.lock.PipeliteLocker;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessState;
@@ -119,13 +120,19 @@ public class PipeliteSchedulerTester {
   private PipeliteScheduler createPipeliteScheduler() {
     return new PipeliteScheduler(
         launcherConfiguration,
-        stageConfiguration,
+        new PipeliteLocker(lockService),
         processFactoryService,
         scheduleService,
         processService,
-        stageService,
-        lockService,
-        mailService);
+        () ->
+            new ProcessLauncherPool(
+                () ->
+                    new ProcessLauncher(
+                        launcherConfiguration,
+                        stageConfiguration,
+                        processService,
+                        stageService,
+                        mailService)));
   }
 
   @Value
