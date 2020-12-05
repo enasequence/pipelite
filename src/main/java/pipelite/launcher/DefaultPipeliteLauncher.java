@@ -31,8 +31,12 @@ public class DefaultPipeliteLauncher extends PipeliteLauncher {
         launcherConfiguration,
         new PipeliteLocker(lockService),
         processFactoryService.create(pipelineName),
-        processService,
         new ProcessCreator(processSourceService.create(pipelineName), processService, pipelineName),
+        new ProcessQueue(
+            launcherConfiguration,
+            processService,
+            LauncherConfiguration.getLauncherName(pipelineName, launcherConfiguration),
+            pipelineName),
         () ->
             new ProcessLauncherPool(
                 () ->
@@ -42,6 +46,7 @@ public class DefaultPipeliteLauncher extends PipeliteLauncher {
                         processService,
                         stageService,
                         mailService)),
+        LauncherConfiguration.getLauncherName(pipelineName, launcherConfiguration),
         pipelineName);
   }
 }

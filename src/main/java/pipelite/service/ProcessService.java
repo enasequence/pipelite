@@ -12,6 +12,9 @@ package pipelite.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -39,22 +42,55 @@ public class ProcessService {
     return repository.findById(new ProcessEntityId(processId, pipelineName));
   }
 
+  private <T> List<T> list(Stream<T> strm, int limit) {
+    return strm.limit(limit).collect(Collectors.toList());
+  }
+
+  public List<ProcessEntity> getPendingProcesses(String pipelineName, int limit) {
+    try (Stream<ProcessEntity> strm =
+        repository.findAllByPipelineNameAndStateOrderByPriorityDesc(
+            pipelineName, ProcessState.PENDING)) {
+      return list(strm, limit);
+    }
+  }
+
+  public List<ProcessEntity> getActiveProcesses(
+      String pipelineName, String launcherName, int limit) {
+    try (Stream<ProcessEntity> strm =
+        repository.findActiveOrderByPriorityDesc(pipelineName, launcherName)) {
+      return list(strm, limit);
+    }
+  }
+
+  public List<ProcessEntity> getCompletedProcesses(String pipelineName, int limit) {
+    try (Stream<ProcessEntity> strm =
+        repository.findAllByPipelineNameAndState(pipelineName, ProcessState.COMPLETED)) {
+      return list(strm, limit);
+    }
+  }
+
+  public List<ProcessEntity> getFailedProcesses(String pipelineName, int limit) {
+    try (Stream<ProcessEntity> strm =
+        repository.findAllByPipelineNameAndStateOrderByPriorityDesc(
+            pipelineName, ProcessState.FAILED)) {
+      return list(strm, limit);
+    }
+  }
+
   public List<ProcessEntity> getPendingProcesses(String pipelineName) {
-    return repository.findAllByPipelineNameAndStateOrderByPriorityDesc(
-        pipelineName, ProcessState.PENDING);
+    return getPendingProcesses(pipelineName, Integer.MAX_VALUE);
   }
 
   public List<ProcessEntity> getActiveProcesses(String pipelineName, String launcherName) {
-    return repository.findActiveOrderByPriorityDesc(pipelineName, launcherName);
+    return getActiveProcesses(pipelineName, launcherName, Integer.MAX_VALUE);
   }
 
   public List<ProcessEntity> getCompletedProcesses(String pipelineName) {
-    return repository.findAllByPipelineNameAndState(pipelineName, ProcessState.COMPLETED);
+    return getCompletedProcesses(pipelineName, Integer.MAX_VALUE);
   }
 
   public List<ProcessEntity> getFailedProcesses(String pipelineName) {
-    return repository.findAllByPipelineNameAndStateOrderByPriorityDesc(
-        pipelineName, ProcessState.FAILED);
+    return getFailedProcesses(pipelineName, Integer.MAX_VALUE);
   }
 
   public ProcessEntity saveProcess(ProcessEntity processEntity) {

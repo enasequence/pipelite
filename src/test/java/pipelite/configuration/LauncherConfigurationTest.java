@@ -20,7 +20,11 @@ import pipelite.PipeliteTestConfiguration;
 
 @SpringBootTest(
     classes = PipeliteTestConfiguration.class,
-    properties = {"pipelite.launcher.schedulerName=TEST", "pipelite.launcher.processParallelism=1"})
+    properties = {
+      "pipelite.launcher.schedulerName=TEST",
+      "pipelite.launcher.processParallelism=1",
+      "pipelite.launcher.port=8080"
+    })
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 public class LauncherConfigurationTest {
 
@@ -40,7 +44,7 @@ public class LauncherConfigurationTest {
   @Test
   public void getLauncherName() {
     String hostName = LauncherConfiguration.getCanonicalHostName();
-    assertThat(LauncherConfiguration.getLauncherName("TEST", 8080))
+    assertThat(LauncherConfiguration.getLauncherName("TEST", config))
         .startsWith("TEST@" + hostName + ":8080");
   }
 }

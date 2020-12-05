@@ -148,25 +148,11 @@ public abstract class ProcessLauncherService extends PipeliteService {
   }
 
   /**
-   * Returns true if there are any active processes.
-   *
-   * @param pipelineName the pipeline name
-   * @param processId the process id
-   * @return true if there are any active processes.
-   */
-  public boolean isProcessActive(String pipelineName, String processId) {
-    if (pool == null) {
-      return false;
-    }
-    return pool.isProcessActive(pipelineName, processId);
-  }
-
-  /**
    * Returns the number of active processes.
    *
    * @return the number of active processes.
    */
-  public int activeProcessCount() {
+  public int getActiveProcessCount() {
     if (pool == null) {
       return 0;
     }

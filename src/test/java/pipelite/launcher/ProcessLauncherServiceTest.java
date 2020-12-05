@@ -29,8 +29,8 @@ public class ProcessLauncherServiceTest {
     return () -> {
       ProcessLauncher processLauncher = mock(ProcessLauncher.class);
       doAnswer(
-              i -> {
-                Process process = (Process) i.getArguments()[1];
+              I-> {
+                Process process = (Process) I.getArguments()[1];
                 process.getProcessEntity().endExecution(state);
                 return null;
               })
@@ -52,21 +52,21 @@ public class ProcessLauncherServiceTest {
     when(locker.getLauncherName()).thenReturn(LAUNCHER_NAME);
 
     doAnswer(
-            a -> {
+            I -> {
               lockCallCnt.incrementAndGet();
               return null;
             })
         .when(locker)
         .lock();
     doAnswer(
-            a -> {
+            I -> {
               renewLockCallCnt.incrementAndGet();
               return null;
             })
         .when(locker)
         .renewLock();
     doAnswer(
-            a -> {
+            I -> {
               unlockCallCnt.incrementAndGet();
               return null;
             })
@@ -88,7 +88,7 @@ public class ProcessLauncherServiceTest {
     doReturn(true).when(processLauncherService).isActive();
 
     assertThat(processLauncherService.getLauncherName()).isEqualTo(LAUNCHER_NAME);
-    assertThat(processLauncherService.activeProcessCount()).isZero();
+    assertThat(processLauncherService.getActiveProcessCount()).isZero();
     assertThat(processLauncherService.getProcessLaunchers()).isEmpty();
 
     assertThat(lockCallCnt.get()).isZero();

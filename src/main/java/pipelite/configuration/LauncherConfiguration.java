@@ -39,6 +39,7 @@ public class LauncherConfiguration {
   private static final Duration DEFAULT_PROCESS_QUEUE_MAX_REFRESH_FREQUENCY = Duration.ofHours(6);
   private static final Duration DEFAULT_PROCESS_QUEUE_MIN_REFRESH_FREQUENCY = Duration.ofMinutes(5);
   private static final int DEFAULT_PROCESS_QUEUE_MAX_SIZE = 5000;
+  private static final int DEFAULT_PROCESS_CREATE_MAX_SIZE = 5000;
   private static final Duration DEFAULT_STAGE_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
   private static final Duration DEFAULT_STAGE_POLL_FREQUENCY = Duration.ofMinutes(1);
 
@@ -134,6 +135,12 @@ public class LauncherConfiguration {
   private int processQueueMaxSize = DEFAULT_PROCESS_QUEUE_MAX_SIZE;
 
   /**
+   * The PipeliteLauncher periodically creates new processes if a process source is available. The
+   * processCreateMaxSize is the maximum number of processes created at one time.
+   */
+  private int processCreateMaxSize = DEFAULT_PROCESS_CREATE_MAX_SIZE;
+
+  /**
    * The ProcessLauncher periodically executes new process stages. The stageLaunchFrequency is the
    * frequency of doing this.
    */
@@ -148,8 +155,15 @@ public class LauncherConfiguration {
   /** The PipeliteLauncher can optionally be shut down if idle. */
   private boolean shutdownIfIdle;
 
-  public static String getLauncherName(String pipelineName, int port) {
-    return pipelineName + "@" + getCanonicalHostName() + ":" + port + ":" + UUID.randomUUID();
+  public static String getLauncherName(
+      String pipelineName, LauncherConfiguration launcherConfiguration) {
+    return pipelineName
+        + "@"
+        + getCanonicalHostName()
+        + ":"
+        + launcherConfiguration.getPort()
+        + ":"
+        + UUID.randomUUID();
   }
 
   public static String getSchedulerName(LauncherConfiguration launcherConfiguration) {
