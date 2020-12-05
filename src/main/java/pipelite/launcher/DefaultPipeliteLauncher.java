@@ -45,6 +45,7 @@ public class DefaultPipeliteLauncher {
         processQueue,
         () ->
             new ProcessLauncherPool(
+                pipeliteLocker,
                 () ->
                     new ProcessLauncher(
                         launcherConfiguration,

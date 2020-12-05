@@ -17,13 +17,13 @@ import org.junit.jupiter.api.Test;
 public class PipeliteSchedulerTest {
 
   @Test
-  public void getNextProcessId() {
-    assertThat(PipeliteScheduler.getNextProcessId(null)).isEqualTo("1");
-    assertThat(PipeliteScheduler.getNextProcessId("0")).isEqualTo("1");
-    assertThat(PipeliteScheduler.getNextProcessId("1")).isEqualTo("2");
-    assertThat(PipeliteScheduler.getNextProcessId("9")).isEqualTo("10");
-    assertThat(PipeliteScheduler.getNextProcessId("10")).isEqualTo("11");
-    assertThat(PipeliteScheduler.getNextProcessId("29")).isEqualTo("30");
-    assertThat(PipeliteScheduler.getNextProcessId("134232")).isEqualTo("134233");
+  public void nextProcessId() {
+    assertThat(PipeliteScheduler.nextProcessId(null)).isEqualTo("1");
+    assertThat(PipeliteScheduler.nextProcessId("0")).isEqualTo("1");
+    assertThat(PipeliteScheduler.nextProcessId("1")).isEqualTo("2");
+    assertThat(PipeliteScheduler.nextProcessId("9")).isEqualTo("10");
+    assertThat(PipeliteScheduler.nextProcessId("10")).isEqualTo("11");
+    assertThat(PipeliteScheduler.nextProcessId("29")).isEqualTo("30");
+    assertThat(PipeliteScheduler.nextProcessId("134232")).isEqualTo("134233");
   }
 }

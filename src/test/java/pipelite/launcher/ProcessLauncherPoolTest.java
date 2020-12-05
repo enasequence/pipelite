@@ -50,7 +50,7 @@ public class ProcessLauncherPoolTest {
     when(locker.lockProcess(any(), any())).thenReturn(true);
 
     ProcessLauncherPool pool =
-        new ProcessLauncherPool(processLauncherSupplier(ProcessState.COMPLETED));
+        new ProcessLauncherPool(locker, processLauncherSupplier(ProcessState.COMPLETED));
 
     ProcessLauncherStats stats = new ProcessLauncherStats();
 
@@ -62,7 +62,7 @@ public class ProcessLauncherPoolTest {
               .build();
       ProcessEntity processEntity = new ProcessEntity();
       process.setProcessEntity(processEntity);
-      pool.run(PIPELINE_NAME, process, locker, (p, r) -> stats.add(p, r));
+      pool.runProcess(PIPELINE_NAME, process, (p, r) -> stats.add(p, r));
     }
 
     pool.shutDown();
@@ -82,7 +82,7 @@ public class ProcessLauncherPoolTest {
     when(locker.lockProcess(any(), any())).thenReturn(true);
 
     ProcessLauncherPool pool =
-        new ProcessLauncherPool(processLauncherSupplier(ProcessState.FAILED));
+        new ProcessLauncherPool(locker, processLauncherSupplier(ProcessState.FAILED));
 
     ProcessLauncherStats stats = new ProcessLauncherStats();
 
@@ -94,7 +94,7 @@ public class ProcessLauncherPoolTest {
               .build();
       ProcessEntity processEntity = new ProcessEntity();
       process.setProcessEntity(processEntity);
-      pool.run(PIPELINE_NAME, process, locker, (p, r) -> stats.add(p, r));
+      pool.runProcess(PIPELINE_NAME, process, (p, r) -> stats.add(p, r));
     }
 
     pool.shutDown();
@@ -115,6 +115,7 @@ public class ProcessLauncherPoolTest {
 
     ProcessLauncherPool pool =
         new ProcessLauncherPool(
+            locker,
             () -> {
               ProcessLauncher processLauncher = mock(ProcessLauncher.class);
               doThrow(new RuntimeException()).when(processLauncher).run(any(), any());
@@ -131,7 +132,7 @@ public class ProcessLauncherPoolTest {
               .build();
       ProcessEntity processEntity = new ProcessEntity();
       process.setProcessEntity(processEntity);
-      pool.run(PIPELINE_NAME, process, locker, (p, r) -> stats.add(p, r));
+      pool.runProcess(PIPELINE_NAME, process, (p, r) -> stats.add(p, r));
     }
 
     pool.shutDown();

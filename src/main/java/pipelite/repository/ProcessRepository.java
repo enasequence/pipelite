@@ -34,4 +34,11 @@ public interface ProcessRepository extends CrudRepository<ProcessEntity, Process
           "SELECT * FROM PIPELITE_PROCESS A WHERE PIPELINE_NAME = ?1 AND STATE = 'ACTIVE' AND NOT EXISTS (SELECT 1 FROM PIPELITE_PROCESS_LOCK B JOIN PIPELITE_LAUNCHER_LOCK C USING (LAUNCHER_ID) WHERE A.PIPELINE_NAME = B.PIPELINE_NAME AND A.PROCESS_ID = B.PROCESS_ID AND C.LAUNCHER_NAME IS NOT NULL) ORDER BY PRIORITY DESC",
       nativeQuery = true)
   Stream<ProcessEntity> findActiveOrderByPriorityDesc(String pipelineName, String launcherName);
+
+  /** Finds maximum process id. */
+  @Query(
+          value =
+                  "SELECT MAX(PROCESS_ID) FROM PIPELITE_PROCESS A WHERE PIPELINE_NAME = ?1",
+          nativeQuery = true)
+  String findMaxProcessId(String pipelineName);
 }

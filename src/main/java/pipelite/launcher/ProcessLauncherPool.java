@@ -27,18 +27,10 @@ import pipelite.log.LogKey;
 import pipelite.process.Process;
 
 @Flogger
-public class ProcessLauncherPool {
+public class ProcessLauncherPool implements ProcessRunner {
+  private final PipeliteLocker pipeliteLocker;
   private final Supplier<ProcessLauncher> processLauncherSupplier;
   private final ExecutorService executorService = Executors.newCachedThreadPool();
-  private PipeliteLocker locker;
-
-  @Value
-  public static class Result {
-    private final long processExecutionCount;
-    private final long processExceptionCount;
-    private final long stageSuccessCount;
-    private final long stageFailedCount;
-  }
 
   @Value
   public class ActiveLauncher {
@@ -54,31 +46,19 @@ public class ProcessLauncherPool {
    *
    * @param processLauncherSupplier the process launcher supplier
    */
-  public ProcessLauncherPool(Supplier<ProcessLauncher> processLauncherSupplier) {
+  public ProcessLauncherPool(
+      PipeliteLocker pipeliteLocker, Supplier<ProcessLauncher> processLauncherSupplier) {
+    Assert.notNull(processLauncherSupplier, "Missing pipelite locker");
     Assert.notNull(processLauncherSupplier, "Missing process launcher supplier");
+    this.pipeliteLocker = pipeliteLocker;
     this.processLauncherSupplier = processLauncherSupplier;
   }
 
-  /**
-   * Executes the process and calls the callback once the execution has finished. The new process
-   * state is available from the process.
-   *
-   * @param pipelineName the pipeline name
-   * @param process the process
-   * @param locker the launcher locker
-   * @param callback the callback called once the process execution has finished. The new process
-   *     state is available from the process.
-   */
-  public void run(
-      String pipelineName,
-      Process process,
-      PipeliteLocker locker,
-      ProcessLauncherPoolCallback callback) {
+  @Override
+  public void runProcess(String pipelineName, Process process, Collection<ProcessRunnerCallback> callbacks) {
     Assert.notNull(pipelineName, "Missing pipeline name");
     Assert.notNull(process, "Missing process");
-    Assert.notNull(locker, "Missing locker");
-    Assert.notNull(callback, "Missing callback");
-    this.locker = locker;
+    Assert.notNull(callbacks, "Missing callback");
     String processId = process.getProcessId();
     // Create process launcher.
     ProcessLauncher processLauncher = processLauncherSupplier.get();
@@ -91,7 +71,7 @@ public class ProcessLauncherPool {
           long processExceptionCount = 0;
           try {
             // Lock process.
-            if (!locker.lockProcess(pipelineName, processId)) {
+            if (!pipeliteLocker.lockProcess(pipelineName, processId)) {
               return;
             }
             processLauncher.run(pipelineName, process);
@@ -104,25 +84,27 @@ public class ProcessLauncherPool {
           } finally {
             // Unlock process.
             try {
-              Result result =
-                  new Result(
+              ProcessRunnerResult result =
+                  new ProcessRunnerResult(
                       processExecutionCount,
                       processExceptionCount,
                       processLauncher.getStageSuccessCount(),
                       processLauncher.getStageFailedCount());
-              callback.accept(process, result);
+              callbacks.stream().forEach(callback -> callback.accept(process, result));
             } finally {
-              locker.unlockProcess(pipelineName, processId);
+              pipeliteLocker.unlockProcess(pipelineName, processId);
               active.remove(activeLauncher);
             }
           }
         });
   }
 
+  @Override
   public boolean isPipelineActive(String pipelineName) {
     return active.stream().anyMatch(p -> p.getPipelineName().equals(pipelineName));
   }
 
+  @Override
   public boolean isProcessActive(String pipelineName, String processId) {
     return active.stream()
         .anyMatch(
@@ -142,7 +124,7 @@ public class ProcessLauncherPool {
     try {
       executorService.awaitTermination(
           PipeliteServiceManager.STOP_WAIT_MIN_SECONDS, TimeUnit.SECONDS);
-      active.forEach(a -> locker.unlockProcess(a.getPipelineName(), a.getProcessId()));
+      active.forEach(a -> pipeliteLocker.unlockProcess(a.getPipelineName(), a.getProcessId()));
     } catch (InterruptedException ex) {
       executorService.shutdownNow();
       Thread.currentThread().interrupt();

@@ -11,6 +11,7 @@
 package pipelite.launcher;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
@@ -26,7 +27,7 @@ import pipelite.process.Process;
  * processes.
  */
 @Flogger
-public abstract class ProcessLauncherService extends PipeliteService {
+public abstract class ProcessLauncherService extends PipeliteService implements ProcessRunner {
 
   private final PipeliteLocker locker;
   private final Supplier<ProcessLauncherPool> processLauncherPoolSupplier;
@@ -123,15 +124,15 @@ public abstract class ProcessLauncherService extends PipeliteService {
     return locker.getLauncherName();
   }
 
-  /**
-   * Runs a process.
-   *
-   * @param pipelineName the pipeline name
-   * @param process the process
-   * @param callback the process execution callback
-   */
-  protected void run(String pipelineName, Process process, ProcessLauncherPoolCallback callback) {
-    pool.run(pipelineName, process, locker, callback);
+  @Override
+  public void runProcess(
+      String pipelineName, Process process, Collection<ProcessRunnerCallback> callbacks) {
+    pool.runProcess(pipelineName, process, callbacks);
+  }
+
+  @Override
+  public boolean isProcessActive(String pipelineName, String processId) {
+    return false;
   }
 
   /**
@@ -140,6 +141,7 @@ public abstract class ProcessLauncherService extends PipeliteService {
    * @param pipelineName the pipeline name
    * @return true if there are any active processes for the pipeline.
    */
+  @Override
   public boolean isPipelineActive(String pipelineName) {
     if (pool == null) {
       return false;

@@ -56,7 +56,7 @@ public class ProcessLauncherStats {
     processExecutionCount.get(state).addAndGet(count);
   }
 
-  void add(Process process, ProcessLauncherPool.Result result) {
+  void add(Process process, ProcessRunnerResult result) {
     if (result.getProcessExecutionCount() > 0) {
       addProcessExecutionCount(
           process.getProcessEntity().getState(), result.getProcessExecutionCount());

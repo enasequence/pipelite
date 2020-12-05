@@ -39,6 +39,7 @@ public class DefaultPipeliteScheduler {
         processService,
         () ->
             new ProcessLauncherPool(
+                pipeliteLocker,
                 () ->
                     new ProcessLauncher(
                         launcherConfiguration,

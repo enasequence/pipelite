@@ -71,9 +71,11 @@ public class PipeliteLauncher extends ProcessLauncherService {
   }
 
   protected void runProcess(ProcessEntity processEntity) {
-    Process process = ProcessFactory.create(processEntity, processFactory, stats);
+    Process process = ProcessFactory.create(processEntity, processFactory);
     if (process != null) {
-      run(pipelineName, process, (p, r) -> stats.add(p, r));
+      runProcess(pipelineName, process, (p, r) -> stats.add(p, r));
+    } else {
+      stats.addProcessCreationFailedCount(1);
     }
   }
 

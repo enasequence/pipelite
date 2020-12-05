@@ -14,7 +14,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import pipelite.entity.ProcessEntity;
-import pipelite.launcher.ProcessLauncherStats;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.StageExecutionResultType;
 
@@ -42,14 +41,11 @@ public class ProcessFactoryTest {
                 .build();
           }
         };
-    ProcessLauncherStats stats = new ProcessLauncherStats();
-
-    Process process = ProcessFactory.create(processEntity, processFactory, stats);
+    Process process = ProcessFactory.create(processEntity, processFactory);
     assertThat(process).isNotNull();
     assertThat(process.getProcessId()).isEqualTo(PROCESS_ID);
     assertThat(process.getProcessEntity()).isNotNull();
     assertThat(process.getProcessEntity()).isSameAs(processEntity);
-    assertThat(stats.getProcessCreationFailedCount()).isZero();
   }
 
   @Test
@@ -68,10 +64,7 @@ public class ProcessFactoryTest {
             return null;
           }
         };
-    ProcessLauncherStats stats = new ProcessLauncherStats();
-
-    Process process = ProcessFactory.create(processEntity, processFactory, stats);
+    Process process = ProcessFactory.create(processEntity, processFactory);
     assertThat(process).isNull();
-    assertThat(stats.getProcessCreationFailedCount()).isOne();
   }
 }

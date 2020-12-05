@@ -29,7 +29,7 @@ public class ProcessLauncherServiceTest {
     return () -> {
       ProcessLauncher processLauncher = mock(ProcessLauncher.class);
       doAnswer(
-              I-> {
+              I -> {
                 Process process = (Process) I.getArguments()[1];
                 process.getProcessEntity().endExecution(state);
                 return null;
@@ -79,7 +79,9 @@ public class ProcessLauncherServiceTest {
                 launcherConfiguration,
                 locker,
                 LAUNCHER_NAME,
-                () -> new ProcessLauncherPool(processLauncherSupplier(ProcessState.COMPLETED))) {
+                () ->
+                    new ProcessLauncherPool(
+                        locker, processLauncherSupplier(ProcessState.COMPLETED))) {
               @Override
               protected void run() {
                 runCallCnt.incrementAndGet();

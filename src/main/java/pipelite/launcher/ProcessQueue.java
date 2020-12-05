@@ -41,18 +41,18 @@ public class ProcessQueue {
   private LocalDateTime processQueueMinValidUntil = LocalDateTime.now();
 
   public ProcessQueue(
-      LauncherConfiguration launcherConfiguration,
-      ProcessService processService,
-      String pipelineName) {
+          LauncherConfiguration launcherConfiguration,
+          ProcessService processService,
+          String pipelineName) {
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(pipelineName, "Missing pipeline name");
     this.processService = processService;
     this.launcherName = LauncherConfiguration.getLauncherName(pipelineName, launcherConfiguration);
     this.pipelineName = pipelineName;
     this.processQueueMaxRefreshFrequency =
-        launcherConfiguration.getProcessQueueMaxRefreshFrequency();
+            launcherConfiguration.getProcessQueueMaxRefreshFrequency();
     this.processQueueMinRefreshFrequency =
-        launcherConfiguration.getProcessQueueMinRefreshFrequency();
+            launcherConfiguration.getProcessQueueMinRefreshFrequency();
     this.processQueueMaxSize = launcherConfiguration.getProcessQueueMaxSize();
     this.processParallelism = launcherConfiguration.getProcessParallelism();
   }
@@ -64,25 +64,25 @@ public class ProcessQueue {
    */
   public boolean isFillQueue() {
     return isFillQueue(
-        processQueueIndex.get(),
-        processQueue.size(),
-        processQueueMaxValidUntil,
-        processQueueMinValidUntil,
-        processParallelism);
+            processQueueIndex.get(),
+            processQueue.size(),
+            processQueueMaxValidUntil,
+            processQueueMinValidUntil,
+            processParallelism);
   }
 
   /** Returns true if the process queue should be recreated. */
   public static boolean isFillQueue(
-      int processQueueIndex,
-      int processQueueSize,
-      LocalDateTime processQueueMaxValidUntil,
-      LocalDateTime processQueueMinValidUntil,
-      int processParallelism) {
+          int processQueueIndex,
+          int processQueueSize,
+          LocalDateTime processQueueMaxValidUntil,
+          LocalDateTime processQueueMinValidUntil,
+          int processParallelism) {
     if (processQueueMinValidUntil.isAfter(LocalDateTime.now())) {
       return false;
     }
     return processQueueIndex >= processQueueSize - processParallelism + 1
-        || !processQueueMaxValidUntil.isAfter(LocalDateTime.now());
+            || !processQueueMaxValidUntil.isAfter(LocalDateTime.now());
   }
 
   /**
@@ -124,16 +124,6 @@ public class ProcessQueue {
   }
 
   /**
-   * Returns the number of available processes.
-   *
-   * @return the number of available processes
-   */
-  public int countAvailableProcesses(int activeProcesses) {
-    return Math.min(
-        processQueue.size() - processQueueIndex.get(), processParallelism - activeProcesses);
-  }
-
-  /**
    * Returns the next available process in the queue.
    *
    * @return the next available process in the queue
@@ -156,7 +146,7 @@ public class ProcessQueue {
 
   protected List<ProcessEntity> getPendingProcesses() {
     return processService.getPendingProcesses(
-        pipelineName, processQueueMaxSize - processQueue.size());
+            pipelineName, processQueueMaxSize - processQueue.size());
   }
 
   public LocalDateTime getProcessQueueMaxValidUntil() {
