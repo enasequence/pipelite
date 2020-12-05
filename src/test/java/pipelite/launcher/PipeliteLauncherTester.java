@@ -108,7 +108,7 @@ public class PipeliteLauncherTester {
   }
 
   private PipeliteLauncher createPipeliteLauncher(String pipelineName) {
-    return new DefaultPipeliteLauncher(
+    return DefaultPipeliteLauncher.create(
         launcherConfiguration,
         stageConfiguration,
         lockService,

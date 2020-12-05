@@ -13,14 +13,14 @@ package pipelite.launcher;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
 import pipelite.lock.PipeliteLocker;
+import pipelite.process.ProcessFactory;
 import pipelite.service.*;
 
-import java.net.InetAddress;
-import java.util.UUID;
+public class DefaultPipeliteLauncher {
 
-public class DefaultPipeliteLauncher extends PipeliteLauncher {
+  private DefaultPipeliteLauncher() {}
 
-  public DefaultPipeliteLauncher(
+  public static PipeliteLauncher create(
       LauncherConfiguration launcherConfiguration,
       StageConfiguration stageConfiguration,
       LockService lockService,
@@ -30,16 +30,19 @@ public class DefaultPipeliteLauncher extends PipeliteLauncher {
       StageService stageService,
       MailService mailService,
       String pipelineName) {
-    super(
+
+    PipeliteLocker pipeliteLocker = new PipeliteLocker(lockService);
+    ProcessFactory processFactory = processFactoryService.create(pipelineName);
+    ProcessCreator processCreator =
+        new ProcessCreator(processSourceService.create(pipelineName), processService, pipelineName);
+    ProcessQueue processQueue =
+        new ProcessQueue(launcherConfiguration, processService, pipelineName);
+    return new PipeliteLauncher(
         launcherConfiguration,
-        new PipeliteLocker(lockService),
-        processFactoryService.create(pipelineName),
-        new ProcessCreator(processSourceService.create(pipelineName), processService, pipelineName),
-        new ProcessQueue(
-            launcherConfiguration,
-            processService,
-            launcherName(pipelineName, launcherConfiguration),
-            pipelineName),
+        pipeliteLocker,
+        processFactory,
+        processCreator,
+        processQueue,
         () ->
             new ProcessLauncherPool(
                 () ->
@@ -49,24 +52,5 @@ public class DefaultPipeliteLauncher extends PipeliteLauncher {
                         processService,
                         stageService,
                         mailService)));
-  }
-
-  public static String launcherName(
-      String pipelineName, LauncherConfiguration launcherConfiguration) {
-    return pipelineName
-        + "@"
-        + getCanonicalHostName()
-        + ":"
-        + launcherConfiguration.getPort()
-        + ":"
-        + UUID.randomUUID();
-  }
-
-  public static String getCanonicalHostName() {
-    try {
-      return InetAddress.getLocalHost().getCanonicalHostName();
-    } catch (Exception ex) {
-      throw new RuntimeException(ex);
-    }
   }
 }

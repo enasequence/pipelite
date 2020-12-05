@@ -43,13 +43,11 @@ public class ProcessQueue {
   public ProcessQueue(
       LauncherConfiguration launcherConfiguration,
       ProcessService processService,
-      String launcherName,
       String pipelineName) {
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
-    Assert.notNull(launcherName, "Missing launcher name");
     Assert.notNull(pipelineName, "Missing pipeline name");
     this.processService = processService;
-    this.launcherName = launcherName;
+    this.launcherName = LauncherConfiguration.getLauncherName(pipelineName, launcherConfiguration);
     this.pipelineName = pipelineName;
     this.processQueueMaxRefreshFrequency =
         launcherConfiguration.getProcessQueueMaxRefreshFrequency();

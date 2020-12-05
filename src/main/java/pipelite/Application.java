@@ -92,7 +92,7 @@ public class Application {
   }
 
   private PipeliteScheduler createScheduler() {
-    return new DefaultPipeliteScheduler(
+    return DefaultPipeliteScheduler.create(
         launcherConfiguration,
         stageConfiguration,
         lockService,
@@ -104,7 +104,7 @@ public class Application {
   }
 
   private PipeliteLauncher createLauncher(String pipelineName) {
-    return new DefaultPipeliteLauncher(
+    return DefaultPipeliteLauncher.create(
         launcherConfiguration,
         stageConfiguration,
         lockService,

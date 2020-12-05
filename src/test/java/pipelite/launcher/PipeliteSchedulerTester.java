@@ -117,7 +117,7 @@ public class PipeliteSchedulerTester {
   }
 
   private PipeliteScheduler createPipeliteScheduler() {
-    return new DefaultPipeliteScheduler(
+    return DefaultPipeliteScheduler.create(
         launcherConfiguration,
         stageConfiguration,
         lockService,

@@ -15,9 +15,11 @@ import pipelite.configuration.StageConfiguration;
 import pipelite.lock.PipeliteLocker;
 import pipelite.service.*;
 
-public class DefaultPipeliteScheduler extends PipeliteScheduler {
+public class DefaultPipeliteScheduler {
 
-  public DefaultPipeliteScheduler(
+  private DefaultPipeliteScheduler() {}
+
+  public static PipeliteScheduler create(
       LauncherConfiguration launcherConfiguration,
       StageConfiguration stageConfiguration,
       LockService lockService,
@@ -26,9 +28,12 @@ public class DefaultPipeliteScheduler extends PipeliteScheduler {
       ScheduleService scheduleService,
       StageService stageService,
       MailService mailService) {
-    super(
+
+    PipeliteLocker pipeliteLocker = new PipeliteLocker(lockService);
+
+    return new PipeliteScheduler(
         launcherConfiguration,
-        new PipeliteLocker(lockService),
+        pipeliteLocker,
         processFactoryService,
         scheduleService,
         processService,

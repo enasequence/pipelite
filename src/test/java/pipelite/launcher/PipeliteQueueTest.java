@@ -52,7 +52,6 @@ public class PipeliteQueueTest {
     final int getPendingProcessCnt = 50;
     final int processQueueMaxSize = 150;
     final int processParallelism = 10;
-    String launcherName = UniqueStringGenerator.randomLauncherName();
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     Duration refreshFrequency = Duration.ofDays(1);
     LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
@@ -71,7 +70,7 @@ public class PipeliteQueueTest {
     doReturn(pendingEntities).when(processService).getPendingProcesses(any(), eq(50));
 
     ProcessQueue queue =
-        spy(new ProcessQueue(launcherConfiguration, processService, launcherName, pipelineName));
+        spy(new ProcessQueue(launcherConfiguration, processService, pipelineName));
 
     assertThat(queue.isFillQueue()).isTrue();
     assertThat(queue.isAvailableProcesses(0)).isFalse();
