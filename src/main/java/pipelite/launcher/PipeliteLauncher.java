@@ -36,23 +36,20 @@ public class PipeliteLauncher extends ProcessLauncherService {
       ProcessFactory processFactory,
       ProcessCreator processCreator,
       ProcessQueue processQueue,
-      Supplier<ProcessLauncherPool> processLauncherPoolSupplier,
-      String launcherName,
-      String pipelineName) {
+      Supplier<ProcessLauncherPool> processLauncherPoolSupplier) {
     super(
         launcherConfiguration,
         pipeliteLocker,
-        launcherName,
+        processQueue.getLauncherName(),
         processLauncherPoolSupplier);
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(processFactory, "Missing process factory");
     Assert.notNull(processCreator, "Missing process creator");
     Assert.notNull(processQueue, "Missing process queue");
-    Assert.notNull(pipelineName, "Missing pipeline name");
     this.processFactory = processFactory;
     this.processCreator = processCreator;
     this.processQueue = processQueue;
-    this.pipelineName = pipelineName;
+    this.pipelineName = processQueue.getPipelineName();
     this.processCreateMaxSize = launcherConfiguration.getProcessCreateMaxSize();
     this.shutdownIfIdle = launcherConfiguration.isShutdownIfIdle();
   }

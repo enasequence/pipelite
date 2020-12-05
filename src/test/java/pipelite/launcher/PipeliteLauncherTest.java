@@ -64,9 +64,7 @@ public class PipeliteLauncherTest {
                 processFactory,
                 mock(ProcessCreator.class),
                 queue,
-                () -> mock(ProcessLauncherPool.class),
-                launcherName,
-                pipelineName));
+                () -> mock(ProcessLauncherPool.class)));
 
     launcher.startUp();
     launcher.run();
@@ -106,9 +104,7 @@ public class PipeliteLauncherTest {
                 mock(ProcessFactory.class),
                 mock(ProcessCreator.class),
                 queue,
-                () -> mock(ProcessLauncherPool.class),
-                launcherName,
-                pipelineName));
+                () -> mock(ProcessLauncherPool.class)));
 
     launcher.startUp();
     launcher.run();
@@ -149,9 +145,7 @@ public class PipeliteLauncherTest {
                 mock(ProcessFactory.class),
                 processCreator,
                 queue,
-                () -> mock(ProcessLauncherPool.class),
-                launcherName,
-                pipelineName));
+                () -> mock(ProcessLauncherPool.class)));
 
     launcher.startUp();
     launcher.run();

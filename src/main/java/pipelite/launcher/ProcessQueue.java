@@ -46,6 +46,7 @@ public class ProcessQueue {
       String launcherName,
       String pipelineName) {
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
+    Assert.notNull(launcherName, "Missing launcher name");
     Assert.notNull(pipelineName, "Missing pipeline name");
     this.processService = processService;
     this.launcherName = launcherName;
@@ -141,6 +142,14 @@ public class ProcessQueue {
    */
   public ProcessEntity nextAvailableProcess() {
     return processQueue.get(processQueueIndex.getAndIncrement());
+  }
+
+  public String getLauncherName() {
+    return launcherName;
+  }
+
+  public String getPipelineName() {
+    return pipelineName;
   }
 
   protected List<ProcessEntity> getActiveProcesses() {

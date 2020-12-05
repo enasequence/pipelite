@@ -40,11 +40,4 @@ public class LauncherConfigurationTest {
     assertThat(config.getSchedulerName()).isEqualTo("TEST");
     assertThat(LauncherConfiguration.getSchedulerName(config)).isEqualTo("TEST");
   }
-
-  @Test
-  public void getLauncherName() {
-    String hostName = LauncherConfiguration.getCanonicalHostName();
-    assertThat(LauncherConfiguration.getLauncherName("TEST", config))
-        .startsWith("TEST@" + hostName + ":8080");
-  }
 }

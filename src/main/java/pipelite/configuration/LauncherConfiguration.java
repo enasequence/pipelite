@@ -155,16 +155,6 @@ public class LauncherConfiguration {
   /** The PipeliteLauncher can optionally be shut down if idle. */
   private boolean shutdownIfIdle;
 
-  public static String getLauncherName(
-      String pipelineName, LauncherConfiguration launcherConfiguration) {
-    return pipelineName
-        + "@"
-        + getCanonicalHostName()
-        + ":"
-        + launcherConfiguration.getPort()
-        + ":"
-        + UUID.randomUUID();
-  }
 
   public static String getSchedulerName(LauncherConfiguration launcherConfiguration) {
     return launcherConfiguration.getSchedulerName();
@@ -172,13 +162,5 @@ public class LauncherConfiguration {
 
   public static String getUnlockerName(LauncherConfiguration launcherConfiguration) {
     return launcherConfiguration.getUnlockerName();
-  }
-
-  public static String getCanonicalHostName() {
-    try {
-      return InetAddress.getLocalHost().getCanonicalHostName();
-    } catch (Exception ex) {
-      throw new RuntimeException(ex);
-    }
   }
 }

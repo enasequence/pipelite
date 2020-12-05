@@ -15,6 +15,9 @@ import pipelite.configuration.StageConfiguration;
 import pipelite.lock.PipeliteLocker;
 import pipelite.service.*;
 
+import java.net.InetAddress;
+import java.util.UUID;
+
 public class DefaultPipeliteLauncher extends PipeliteLauncher {
 
   public DefaultPipeliteLauncher(
@@ -35,7 +38,7 @@ public class DefaultPipeliteLauncher extends PipeliteLauncher {
         new ProcessQueue(
             launcherConfiguration,
             processService,
-            LauncherConfiguration.getLauncherName(pipelineName, launcherConfiguration),
+            launcherName(pipelineName, launcherConfiguration),
             pipelineName),
         () ->
             new ProcessLauncherPool(
@@ -45,8 +48,25 @@ public class DefaultPipeliteLauncher extends PipeliteLauncher {
                         stageConfiguration,
                         processService,
                         stageService,
-                        mailService)),
-        LauncherConfiguration.getLauncherName(pipelineName, launcherConfiguration),
-        pipelineName);
+                        mailService)));
+  }
+
+  public static String launcherName(
+      String pipelineName, LauncherConfiguration launcherConfiguration) {
+    return pipelineName
+        + "@"
+        + getCanonicalHostName()
+        + ":"
+        + launcherConfiguration.getPort()
+        + ":"
+        + UUID.randomUUID();
+  }
+
+  public static String getCanonicalHostName() {
+    try {
+      return InetAddress.getLocalHost().getCanonicalHostName();
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
   }
 }
