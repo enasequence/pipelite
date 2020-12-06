@@ -54,7 +54,7 @@ public class Application {
   }
 
   @PreDestroy
-  private void destroy() {
+  public void shutDown() {
     serverManager.shutdown();
   }
 

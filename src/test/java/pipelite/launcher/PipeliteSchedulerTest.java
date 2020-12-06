@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -162,9 +162,9 @@ public class PipeliteSchedulerTest {
     assertThat(pipeliteScheduler.getExecutableSchedules().count()).isEqualTo(2);
     assertThat(pipeliteScheduler.getPendingSchedules().count()).isEqualTo(2);
     assertThat(pipeliteScheduler.isRefreshSchedules()).isTrue();
-    LocalDateTime launchTime1 =
+    ZonedDateTime launchTime1 =
         pipeliteScheduler.getExecutableSchedules().findFirst().get().getLaunchTime();
-    LocalDateTime launchTime2 =
+    ZonedDateTime launchTime2 =
         pipeliteScheduler.getExecutableSchedules().skip(1).findFirst().get().getLaunchTime();
 
     // Check that no processes have been executed yet.
@@ -185,8 +185,8 @@ public class PipeliteSchedulerTest {
         .isEqualTo(
             pipeliteScheduler.getExecutableSchedules().skip(1).findFirst().get().getLaunchTime());
 
-    // Run the schedules and check that the launch times have been updated. The schedules are not be
-    // immediately executable and are not allowed to be immediately refreshed.
+    // Run the scheduler and check that the launch times have been removed. The schedules are not be
+    // immediately executable or pending.
 
     pipeliteScheduler.run();
 
@@ -196,8 +196,17 @@ public class PipeliteSchedulerTest {
 
     verify(processRunnerPool, times(2)).runProcess(any(), any(), any());
     assertThat(pipeliteScheduler.getExecutableSchedules().count()).isZero();
+    assertThat(pipeliteScheduler.getPendingSchedules().count()).isZero();
+    assertThat(pipeliteScheduler.getActiveSchedules().findFirst().get().getLaunchTime()).isNull();
+    assertThat(pipeliteScheduler.getActiveSchedules().skip(1).findFirst().get().getLaunchTime())
+        .isNull();
+
+    // Run the scheduler and check that the launch times have been set.
+
+    pipeliteScheduler.run();
+
+    verify(processRunnerPool, times(2)).runProcess(any(), any(), any());
     assertThat(pipeliteScheduler.getPendingSchedules().count()).isEqualTo(2);
-    assertThat(pipeliteScheduler.isRefreshSchedules()).isFalse();
     assertThat(launchTime1)
         .isBefore(pipeliteScheduler.getPendingSchedules().findFirst().get().getLaunchTime());
     assertThat(launchTime2)
@@ -222,8 +231,8 @@ public class PipeliteSchedulerTest {
 
     // Create two schedules with start time and process id to allow processes to resume.
 
-    LocalDateTime launchTime1 = LocalDateTime.now().minusHours(1);
-    LocalDateTime launchTime2 = LocalDateTime.now().minusHours(1);
+    ZonedDateTime launchTime1 = ZonedDateTime.now().minusHours(1);
+    ZonedDateTime launchTime2 = ZonedDateTime.now().minusHours(1);
 
     ScheduleEntity scheduleEntity1 = new ScheduleEntity();
     ScheduleEntity scheduleEntity2 = new ScheduleEntity();
@@ -343,14 +352,14 @@ public class PipeliteSchedulerTest {
     // Create pipelite scheduler.
 
     PipeliteScheduler pipeliteScheduler =
-            spy(
-                    new PipeliteScheduler(
-                            launcherConfiguration,
-                            pipeliteLocker,
-                            processFactoryService,
-                            scheduleService,
-                            processService,
-                            () -> processRunnerPool));
+        spy(
+            new PipeliteScheduler(
+                launcherConfiguration,
+                pipeliteLocker,
+                processFactoryService,
+                scheduleService,
+                processService,
+                () -> processRunnerPool));
     int maxExecution1 = 1;
     pipeliteScheduler.setMaximumExecutions(pipelineName1, maxExecution1);
 
@@ -372,7 +381,7 @@ public class PipeliteSchedulerTest {
 
     // Create schedule with start time and process id to allow processes to resume.
 
-    LocalDateTime launchTime1 = LocalDateTime.now().minusHours(1);
+    ZonedDateTime launchTime1 = ZonedDateTime.now().minusHours(1);
 
     ScheduleEntity scheduleEntity1 = new ScheduleEntity();
     scheduleEntity1.setPipelineName(pipelineName1);

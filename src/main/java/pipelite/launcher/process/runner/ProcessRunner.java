@@ -10,7 +10,7 @@
  */
 package pipelite.launcher.process.runner;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import pipelite.process.Process;
 
 public interface ProcessRunner {
@@ -27,5 +27,5 @@ public interface ProcessRunner {
 
   String getProcessId();
 
-  LocalDateTime getStartTime();
+  ZonedDateTime getStartTime();
 }

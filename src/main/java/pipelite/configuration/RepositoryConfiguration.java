@@ -88,6 +88,7 @@ public class RepositoryConfiguration {
     if (dialect != null) {
       properties.put("hibernate.dialect", dialect);
     }
+    properties.put("hibernate.jdbc.time_zone", "UTC"); // For ZonedDateTime.
     em.setJpaPropertyMap(properties);
     return em;
   }

@@ -15,7 +15,7 @@ import static org.mockito.Mockito.*;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -89,8 +89,8 @@ public class PipeliteLauncherTest {
             new DefaultProcessQueue(
                 launcherConfiguration, mock(ProcessService.class), pipelineName));
 
-    assertThat(queue.getProcessQueueMaxValidUntil()).isBefore(LocalDateTime.now());
-    assertThat(queue.getProcessQueueMinValidUntil()).isBefore(LocalDateTime.now());
+    assertThat(queue.getProcessQueueMaxValidUntil()).isBefore(ZonedDateTime.now());
+    assertThat(queue.getProcessQueueMinValidUntil()).isBefore(ZonedDateTime.now());
 
     List<ProcessEntity> processesEntities =
         Collections.nCopies(processCnt, mock(ProcessEntity.class));
@@ -110,8 +110,8 @@ public class PipeliteLauncherTest {
     launcher.startUp();
     launcher.run();
 
-    LocalDateTime plusRefresh = LocalDateTime.now().plus(refreshFrequency);
-    LocalDateTime plusBeforeRefresh = LocalDateTime.now().plus(Duration.ofHours(23));
+    ZonedDateTime plusRefresh = ZonedDateTime.now().plus(refreshFrequency);
+    ZonedDateTime plusBeforeRefresh = ZonedDateTime.now().plus(Duration.ofHours(23));
     assertThat(queue.getProcessQueueMaxValidUntil()).isAfter(plusBeforeRefresh);
     assertThat(queue.getProcessQueueMinValidUntil()).isAfter(plusBeforeRefresh);
     assertThat(plusRefresh.isAfter(queue.getProcessQueueMaxValidUntil()));

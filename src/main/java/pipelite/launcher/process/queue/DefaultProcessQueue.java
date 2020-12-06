@@ -12,7 +12,7 @@ package pipelite.launcher.process.queue;
 
 import com.google.common.flogger.FluentLogger;
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -36,8 +36,8 @@ public class DefaultProcessQueue implements ProcessQueue {
   private final int processParallelism;
   private final List<ProcessEntity> processQueue = Collections.synchronizedList(new ArrayList<>());
   private AtomicInteger processQueueIndex = new AtomicInteger();
-  private LocalDateTime processQueueMaxValidUntil = LocalDateTime.now();
-  private LocalDateTime processQueueMinValidUntil = LocalDateTime.now();
+  private ZonedDateTime processQueueMaxValidUntil = ZonedDateTime.now();
+  private ZonedDateTime processQueueMinValidUntil = ZonedDateTime.now();
 
   public DefaultProcessQueue(
       LauncherConfiguration launcherConfiguration,
@@ -80,14 +80,14 @@ public class DefaultProcessQueue implements ProcessQueue {
   public static boolean isFillQueue(
       int processQueueIndex,
       int processQueueSize,
-      LocalDateTime processQueueMaxValidUntil,
-      LocalDateTime processQueueMinValidUntil,
+      ZonedDateTime processQueueMaxValidUntil,
+      ZonedDateTime processQueueMinValidUntil,
       int processParallelism) {
-    if (processQueueMinValidUntil.isAfter(LocalDateTime.now())) {
+    if (processQueueMinValidUntil.isAfter(ZonedDateTime.now())) {
       return false;
     }
     return processQueueIndex >= processQueueSize - processParallelism + 1
-        || !processQueueMaxValidUntil.isAfter(LocalDateTime.now());
+        || !processQueueMaxValidUntil.isAfter(ZonedDateTime.now());
   }
 
   @Override
@@ -110,8 +110,8 @@ public class DefaultProcessQueue implements ProcessQueue {
     List<ProcessEntity> pendingProcesses = getPendingProcesses();
     processCnt += pendingProcesses.size();
     processQueue.addAll(pendingProcesses);
-    processQueueMaxValidUntil = LocalDateTime.now().plus(processQueueMaxRefreshFrequency);
-    processQueueMinValidUntil = LocalDateTime.now().plus(processQueueMinRefreshFrequency);
+    processQueueMaxValidUntil = ZonedDateTime.now().plus(processQueueMaxRefreshFrequency);
+    processQueueMinValidUntil = ZonedDateTime.now().plus(processQueueMinRefreshFrequency);
     return processCnt;
   }
 
@@ -134,11 +134,11 @@ public class DefaultProcessQueue implements ProcessQueue {
         pipelineName, processQueueMaxSize - processQueue.size());
   }
 
-  public LocalDateTime getProcessQueueMaxValidUntil() {
+  public ZonedDateTime getProcessQueueMaxValidUntil() {
     return processQueueMaxValidUntil;
   }
 
-  public LocalDateTime getProcessQueueMinValidUntil() {
+  public ZonedDateTime getProcessQueueMinValidUntil() {
     return processQueueMinValidUntil;
   }
 

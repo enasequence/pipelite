@@ -39,4 +39,14 @@ public class ScheduleService {
   public void delete(ScheduleEntity scheduleEntity) {
     repository.delete(scheduleEntity);
   }
+
+  public void startExecution(ScheduleEntity scheduleEntity, String processId) {
+    scheduleEntity.startExecution(processId);
+    saveProcessSchedule(scheduleEntity);
+  }
+
+  public void endExecution(ScheduleEntity scheduleEntity) {
+    scheduleEntity.endExecution();
+    saveProcessSchedule(scheduleEntity);
+  }
 }

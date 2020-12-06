@@ -17,7 +17,6 @@ import com.cronutils.model.definition.CronDefinition;
 import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.model.time.ExecutionTime;
 import com.cronutils.parser.CronParser;
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Locale;
 import lombok.extern.flogger.Flogger;
@@ -63,8 +62,8 @@ public abstract class CronUtils {
     return CronDescriptor.instance(Locale.UK).describe(parse(cronExpression));
   }
 
-  public static LocalDateTime launchTime(String cronExpression) {
+  public static ZonedDateTime launchTime(String cronExpression) {
     ExecutionTime executionTime = ExecutionTime.forCron(parse(cronExpression));
-    return executionTime.nextExecution(ZonedDateTime.now()).get().toLocalDateTime();
+    return executionTime.nextExecution(ZonedDateTime.now()).get();
   }
 }

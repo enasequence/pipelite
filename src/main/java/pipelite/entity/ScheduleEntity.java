@@ -10,7 +10,7 @@
  */
 package pipelite.entity;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import javax.persistence.*;
 import lombok.AllArgsConstructor;
@@ -42,11 +42,13 @@ public class ScheduleEntity {
   @Column(name = "DESCRIPTION")
   private String description;
 
+  /* The last execution start date. */
   @Column(name = "EXEC_START")
-  private LocalDateTime startTime;
+  private ZonedDateTime startTime;
 
+  /* The last successful execution date. */
   @Column(name = "EXEC_DATE")
-  private LocalDateTime endTime;
+  private ZonedDateTime endTime;
 
   @Column(name = "EXEC_CNT", nullable = false)
   private int executionCount = 0;
@@ -55,13 +57,15 @@ public class ScheduleEntity {
   private String processId;
 
   public void startExecution(String processId) {
-    this.startTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    this.startTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.processId = processId;
     this.endTime = null;
   }
 
   public void endExecution() {
-    this.endTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    this.startTime = null;
+    this.processId = null;
+    this.endTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.executionCount++;
   }
 }

@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.LauncherLockEntity;
 
@@ -32,18 +32,18 @@ public class LockServiceTester {
     LauncherLockEntity launcherLock1 = service.lockLauncher(launcherName1);
     LauncherLockEntity launcherLock2 = service.lockLauncher(launcherName2);
 
-    LocalDateTime expiry1 = launcherLock1.getExpiry();
-    LocalDateTime expiry2 = launcherLock2.getExpiry();
+    ZonedDateTime expiry1 = launcherLock1.getExpiry();
+    ZonedDateTime expiry2 = launcherLock2.getExpiry();
 
     assertThat(launcherLock1.getLauncherId()).isGreaterThan(0);
     assertThat(launcherLock1.getLauncherName()).isEqualTo(launcherName1);
     assertThat(launcherLock1.getExpiry())
-        .isAfterOrEqualTo(LocalDateTime.now().plus(lockDuration).minus(Duration.ofSeconds(10)));
+        .isAfterOrEqualTo(ZonedDateTime.now().plus(lockDuration).minus(Duration.ofSeconds(10)));
 
     assertThat(launcherLock2.getLauncherId()).isGreaterThan(0);
     assertThat(launcherLock2.getLauncherName()).isEqualTo(launcherName2);
     assertThat(launcherLock2.getExpiry())
-        .isAfterOrEqualTo(LocalDateTime.now().plus(lockDuration).minus(Duration.ofSeconds(10)));
+        .isAfterOrEqualTo(ZonedDateTime.now().plus(lockDuration).minus(Duration.ofSeconds(10)));
 
     assertThat(launcherLock1.getLauncherId()).isLessThan(launcherLock2.getLauncherId());
 

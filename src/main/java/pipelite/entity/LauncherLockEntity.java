@@ -10,7 +10,7 @@
  */
 package pipelite.entity;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import javax.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -32,5 +32,5 @@ public class LauncherLockEntity {
   private String launcherName;
 
   @Column(name = "EXPIRY", nullable = false)
-  private LocalDateTime expiry;
+  private ZonedDateTime expiry;
 }

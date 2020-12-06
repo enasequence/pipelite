@@ -14,7 +14,7 @@ import static pipelite.stage.StageExecutionResultType.*;
 
 import com.google.common.flogger.FluentLogger;
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -52,7 +52,7 @@ public class DefaultProcessRunner implements ProcessRunner {
   private String pipelineName;
   private Process process;
   private String processId;
-  private LocalDateTime startTime;
+  private ZonedDateTime startTime;
 
   public DefaultProcessRunner(
       LauncherConfiguration launcherConfiguration,
@@ -86,7 +86,7 @@ public class DefaultProcessRunner implements ProcessRunner {
     this.pipelineName = pipelineName;
     this.process = process;
     this.processId = process.getProcessId();
-    this.startTime = LocalDateTime.now();
+    this.startTime = ZonedDateTime.now();
 
     logContext(log.atInfo()).log("Executing process");
 
@@ -235,7 +235,7 @@ public class DefaultProcessRunner implements ProcessRunner {
   }
 
   @Override
-  public LocalDateTime getStartTime() {
+  public ZonedDateTime getStartTime() {
     return startTime;
   }
 

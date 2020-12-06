@@ -11,7 +11,7 @@
 package pipelite.executor.cmd;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.Data;
@@ -31,7 +31,7 @@ public class LsfCmdExecutor extends CmdExecutor {
 
   private String jobId;
   private String stdoutFile;
-  private LocalDateTime startTime;
+  private ZonedDateTime startTime;
 
   private static final String BSUB_CMD = "bsub";
   private static final String BJOBS_STANDARD_CMD = "bjobs -l ";
@@ -69,7 +69,7 @@ public class LsfCmdExecutor extends CmdExecutor {
 
   private StageExecutionResult submit(String pipelineName, String processId, Stage stage) {
 
-    startTime = LocalDateTime.now();
+    startTime = ZonedDateTime.now();
 
     if (!getWorkDir(pipelineName, processId, stage).isEmpty()) {
       CmdRunner cmdRunner = getCmdRunner();
@@ -99,7 +99,7 @@ public class LsfCmdExecutor extends CmdExecutor {
 
     Duration timeout = stage.getExecutorParams().getTimeout();
 
-    if (timeout != null && LocalDateTime.now().isAfter(startTime.plus(timeout))) {
+    if (timeout != null && ZonedDateTime.now().isAfter(startTime.plus(timeout))) {
       log.atSevere()
           .with(LogKey.PIPELINE_NAME, pipelineName)
           .with(LogKey.PROCESS_ID, processId)
@@ -147,8 +147,8 @@ public class LsfCmdExecutor extends CmdExecutor {
     // Check if the stdout file exists. The file may not be immediately available after the job
     // execution finishes.
 
-    LocalDateTime stdoutFileWaitStart = LocalDateTime.now();
-    while (stdoutFileWaitStart.plus(STDOUT_FILE_MAX_WAIT_TIME).isAfter(LocalDateTime.now())
+    ZonedDateTime stdoutFileWaitStart = ZonedDateTime.now();
+    while (stdoutFileWaitStart.plus(STDOUT_FILE_MAX_WAIT_TIME).isAfter(ZonedDateTime.now())
         && !stdoutFileExists(getCmdRunner(), stdoutFile, stage)) {
 
       if (!Time.wait(STDOUT_FILE_POLL_WAIT_TIME)) {

@@ -12,7 +12,7 @@ package pipelite.cron;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import org.junit.jupiter.api.Test;
 
 public class CronUtilsTest {
@@ -39,7 +39,7 @@ public class CronUtilsTest {
   @Test
   public void testLaunchTime() {
     assertThat(CronUtils.launchTime("00 11 * * *").getHour()).isEqualTo(11);
-    assertThat(CronUtils.launchTime("00 11 * * *").isAfter(LocalDateTime.now()));
-    assertThat(CronUtils.launchTime("00 11 * * *").isBefore(LocalDateTime.now().plusDays(1)));
+    assertThat(CronUtils.launchTime("00 11 * * *").isAfter(ZonedDateTime.now()));
+    assertThat(CronUtils.launchTime("00 11 * * *").isBefore(ZonedDateTime.now().plusDays(1)));
   }
 }

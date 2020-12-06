@@ -16,7 +16,7 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 import static pipelite.launcher.process.queue.DefaultProcessQueue.isFillQueue;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -29,8 +29,8 @@ public class DefaultProcessQueueTest {
 
   @Test
   public void fillQueue() {
-    LocalDateTime now = LocalDateTime.now();
-    LocalDateTime later = LocalDateTime.now().plusHours(1);
+    ZonedDateTime now = ZonedDateTime.now();
+    ZonedDateTime later = ZonedDateTime.now().plusHours(1);
     int len = 10; // queue length
     int par = 5; // parallelism
     // Queue is running low and we can refresh the queue now.
@@ -73,10 +73,10 @@ public class DefaultProcessQueueTest {
 
     assertThat(queue.isFillQueue()).isTrue();
     assertThat(queue.isAvailableProcesses(0)).isFalse();
-    LocalDateTime processQueueMaxValidUntil = queue.getProcessQueueMaxValidUntil();
-    LocalDateTime processQueueMinValidUntil = queue.getProcessQueueMinValidUntil();
-    assertThat(processQueueMaxValidUntil).isBeforeOrEqualTo(LocalDateTime.now());
-    assertThat(processQueueMinValidUntil).isBeforeOrEqualTo(LocalDateTime.now());
+    ZonedDateTime processQueueMaxValidUntil = queue.getProcessQueueMaxValidUntil();
+    ZonedDateTime processQueueMinValidUntil = queue.getProcessQueueMinValidUntil();
+    assertThat(processQueueMaxValidUntil).isBeforeOrEqualTo(ZonedDateTime.now());
+    assertThat(processQueueMinValidUntil).isBeforeOrEqualTo(ZonedDateTime.now());
 
     // Queue processes.
     assertThat(queue.fillQueue()).isEqualTo(processQueueMaxSize);

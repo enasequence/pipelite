@@ -15,7 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -45,18 +45,12 @@ public class AdminController {
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
   public void stop() {
-    ;
-    for (PipeliteLauncher launcher : getLaunchers()) {
-      launcher.stopAsync();
-    }
-    for (PipeliteScheduler scheduler : getSchedulers()) {
-      scheduler.stopAsync();
-    }
+    application.shutDown();
   }
 
   @GetMapping("/launcher")
   @ResponseStatus(HttpStatus.OK)
-  @Operation(description = "Return all schedules associated with this pipelite service")
+  @Operation(description = "Return all process launchers associated with this pipelite service")
   @ApiResponses(
       value = {
         @ApiResponse(responseCode = "200", description = "OK"),
@@ -77,7 +71,7 @@ public class AdminController {
 
   @GetMapping("/schedule")
   @ResponseStatus(HttpStatus.OK)
-  @Operation(description = "Return all schedules associated with this pipelite service")
+  @Operation(description = "Return all process schedules associated with this pipelite service")
   @ApiResponses(
       value = {
         @ApiResponse(responseCode = "200", description = "OK"),
@@ -128,7 +122,7 @@ public class AdminController {
   private List<Process> getProcesses(Collection<ProcessRunner> processRunners) {
     List<Process> processes = new ArrayList<>();
     for (ProcessRunner processRunner : processRunners) {
-      Duration executionTime = Duration.between(LocalDateTime.now(), processRunner.getStartTime());
+      Duration executionTime = Duration.between(ZonedDateTime.now(), processRunner.getStartTime());
       processes.add(
           Process.builder()
               .pipelineName(processRunner.getPipelineName())

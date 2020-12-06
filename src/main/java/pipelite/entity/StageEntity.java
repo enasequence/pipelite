@@ -10,7 +10,7 @@
  */
 package pipelite.entity;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import javax.persistence.*;
 import lombok.*;
@@ -43,10 +43,10 @@ public class StageEntity {
   private int executionCount = 0;
 
   @Column(name = "EXEC_START")
-  private LocalDateTime startTime;
+  private ZonedDateTime startTime;
 
   @Column(name = "EXEC_DATE")
-  private LocalDateTime endTime;
+  private ZonedDateTime endTime;
 
   @Column(name = "EXEC_NAME")
   private String executorName;
@@ -80,7 +80,7 @@ public class StageEntity {
     StageExecutor stageExecutor = stage.getExecutor();
     this.resultType = StageExecutionResultType.ACTIVE;
     this.resultParams = null;
-    this.startTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    this.startTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.endTime = null;
     this.executorName = stageExecutor.getClass().getName();
     this.executorData = stageExecutor.serialize();
@@ -92,7 +92,7 @@ public class StageEntity {
   public void endExecution(StageExecutionResult result) {
     this.resultType = result.getResultType();
     this.resultParams = result.attributesJson();
-    this.endTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    this.endTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.executionCount++;
   }
 

@@ -12,7 +12,7 @@ package pipelite.entity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 
@@ -25,7 +25,7 @@ class ScheduleEntityTest {
 
     // Start execution.
 
-    scheduleEntity.setEndTime(LocalDateTime.now());
+    scheduleEntity.setEndTime(ZonedDateTime.now());
 
     scheduleEntity.startExecution(processId);
 
@@ -38,10 +38,9 @@ class ScheduleEntityTest {
 
     scheduleEntity.endExecution();
 
-    assertThat(scheduleEntity.getProcessId()).isEqualTo(processId);
-    assertThat(scheduleEntity.getStartTime()).isNotNull();
+    assertThat(scheduleEntity.getProcessId()).isNull();
+    assertThat(scheduleEntity.getStartTime()).isNull();
     assertThat(scheduleEntity.getEndTime()).isNotNull();
-    assertThat(scheduleEntity.getStartTime()).isBeforeOrEqualTo(scheduleEntity.getEndTime());
     assertThat(scheduleEntity.getExecutionCount()).isOne();
   }
 }

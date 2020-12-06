@@ -12,7 +12,7 @@ package pipelite.launcher;
 
 import com.google.common.flogger.FluentLogger;
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -45,24 +45,27 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   private final Map<String, AtomicLong> maximumExecutions = new ConcurrentHashMap<>();
   private final Map<String, ProcessLauncherStats> stats = new ConcurrentHashMap<>();
   private final Duration scheduleRefreshFrequency;
-  private LocalDateTime scheduleValidUntil = LocalDateTime.now();
+  private ZonedDateTime scheduleValidUntil = ZonedDateTime.now();
 
   public static class Schedule {
     private final ScheduleEntity scheduleEntity;
-    private LocalDateTime launchTime;
+    private ZonedDateTime launchTime;
 
     public Schedule(ScheduleEntity scheduleEntity) {
       Assert.notNull(scheduleEntity, "Missing schedule entity");
       this.scheduleEntity = scheduleEntity;
     }
 
-    public void newExecution() {
+    public void scheduleExecution() {
       launchTime = CronUtils.launchTime(scheduleEntity.getCron());
     }
 
     public void resumeExecution() {
-      Assert.notNull(scheduleEntity.getStartTime(), "Missing launch time");
       launchTime = scheduleEntity.getStartTime();
+    }
+
+    public void endExecution() {
+      launchTime = null;
     }
 
     public void refreshSchedule(ScheduleEntity newScheduleEntity) {
@@ -78,7 +81,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
       return scheduleEntity;
     }
 
-    public LocalDateTime getLaunchTime() {
+    public ZonedDateTime getLaunchTime() {
       return launchTime;
     }
 
@@ -138,8 +141,8 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   protected void run() {
     if (refreshSchedules()) {
       refreshSchedules();
-      scheduleProcesses();
     }
+    scheduleProcesses();
     executeSchedules();
   }
 
@@ -162,7 +165,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
    *     the database
    */
   public boolean isRefreshSchedules() {
-    return !scheduleValidUntil.isAfter(LocalDateTime.now());
+    return !scheduleValidUntil.isAfter(ZonedDateTime.now());
   }
 
   /**
@@ -176,7 +179,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
       return false;
     }
     logContext(log.atInfo()).log("Refreshing schedules");
-    scheduleValidUntil = LocalDateTime.now().plus(scheduleRefreshFrequency);
+    scheduleValidUntil = ZonedDateTime.now().plus(scheduleRefreshFrequency);
 
     Collection<ScheduleEntity> newScheduleEntities =
         scheduleService.getAllProcessSchedules(getLauncherName());
@@ -286,9 +289,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
    */
   protected boolean isResumeProcess(Schedule schedule) {
     ScheduleEntity scheduleEntity = schedule.getScheduleEntity();
-    return (scheduleEntity.getStartTime() != null
-        && scheduleEntity.getEndTime() == null
-        && scheduleEntity.getProcessId() != null);
+    return (scheduleEntity.getStartTime() != null && scheduleEntity.getProcessId() != null);
   }
 
   /**
@@ -339,7 +340,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
         .log(
             "Scheduling process for execution: %s cron %s (%s)",
             schedule.getLaunchTime(), scheduleEntity.getCron(), scheduleEntity.getDescription());
-    schedule.newExecution();
+    schedule.scheduleExecution();
   }
 
   /**
@@ -401,9 +402,6 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     String processId = processEntity.getProcessId();
     logContext(log.atInfo(), pipelineName, processId).log("Executing scheduled process");
 
-    scheduleEntity.startExecution(processId);
-    scheduleService.saveProcessSchedule(scheduleEntity);
-
     Process process =
         ProcessFactory.create(processEntity, processFactoryCache.getProcessFactory(pipelineName));
     if (process == null) {
@@ -413,13 +411,14 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     }
     maximumExecutions.get(pipelineName).decrementAndGet();
     runningSchedules.add(schedule);
+
+    scheduleService.startExecution(scheduleEntity, process.getProcessId());
     runProcess(
         pipelineName,
         process,
         (p, r) -> {
-          scheduleEntity.endExecution();
-          scheduleService.saveProcessSchedule(scheduleEntity);
-          schedule.newExecution();
+          scheduleService.endExecution(scheduleEntity);
+          schedule.endExecution();
           getStats(pipelineName).add(p, r);
           runningSchedules.remove(schedule);
         });
@@ -451,7 +450,11 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
    */
   public Stream<Schedule> getPendingSchedules() {
     return getActiveSchedules()
+        // Must have launch time.
+        .filter(schedule -> schedule.launchTime != null)
+        // Must not be running.
         .filter(schedule -> !isPipelineActive(schedule.scheduleEntity.getPipelineName()))
+        // Must not have exceeded maximum executions.
         .filter(
             schedule ->
                 maximumExecutions.get(schedule.getPipelineName()) == null
@@ -465,7 +468,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
    */
   public Stream<Schedule> getExecutableSchedules() {
     return getPendingSchedules()
-        .filter(schedule -> !schedule.getLaunchTime().isAfter(LocalDateTime.now()));
+        .filter(schedule -> !schedule.getLaunchTime().isAfter(ZonedDateTime.now()));
   }
 
   /**

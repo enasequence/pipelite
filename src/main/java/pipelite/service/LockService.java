@@ -11,7 +11,7 @@
 package pipelite.service;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,7 +55,7 @@ public class LockService {
     try {
       LauncherLockEntity launcherLock = new LauncherLockEntity();
       launcherLock.setLauncherName(launcherName);
-      launcherLock.setExpiry(LocalDateTime.now().plus(lockDuration));
+      launcherLock.setExpiry(ZonedDateTime.now().plus(lockDuration));
       launcherLock = launcherLockRepository.save(launcherLock);
       if (launcherLock.getLauncherId() == null) {
         log.atSevere()
@@ -84,7 +84,7 @@ public class LockService {
         .with(LogKey.LAUNCHER_NAME, launcherLock.getLauncherName())
         .log("Attempting to relock launcher");
     try {
-      launcherLock.setExpiry(LocalDateTime.now().plus(lockDuration));
+      launcherLock.setExpiry(ZonedDateTime.now().plus(lockDuration));
       launcherLockRepository.save(launcherLock);
       log.atInfo()
           .with(LogKey.LAUNCHER_NAME, launcherLock.getLauncherName())
@@ -231,7 +231,7 @@ public class LockService {
   }
 
   public List<LauncherLockEntity> getExpiredLauncherLocks() {
-    return launcherLockRepository.findByExpiryLessThan(LocalDateTime.now());
+    return launcherLockRepository.findByExpiryLessThan(ZonedDateTime.now());
   }
 
   public List<ProcessLockEntity> getProcessLocks(LauncherLockEntity launcherLock) {

@@ -10,7 +10,7 @@
  */
 package pipelite.repository;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
@@ -20,5 +20,5 @@ import pipelite.entity.LauncherLockEntity;
 public interface LauncherLockRepository extends CrudRepository<LauncherLockEntity, String> {
   List<LauncherLockEntity> findByLauncherName(String launcherName);
 
-  List<LauncherLockEntity> findByExpiryLessThan(LocalDateTime expiry);
+  List<LauncherLockEntity> findByExpiryLessThan(ZonedDateTime expiry);
 }

@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -198,7 +200,8 @@ public class LsfCmdExecutorTest {
     LsfCmdExecutor lsfCmdExecutor = StageExecutor.createLsfCmdExecutor(cmd, null);
     lsfCmdExecutor.setJobId("test");
     lsfCmdExecutor.setStdoutFile("test");
-    lsfCmdExecutor.setStartTime(LocalDateTime.of(2020, 1, 1, 1, 1));
+    lsfCmdExecutor.setStartTime(
+        ZonedDateTime.of(LocalDateTime.of(2020, 1, 1, 1, 1), ZoneId.of("UTC")));
     String json = Json.serialize(lsfCmdExecutor);
     assertThat(json)
         .isEqualTo(
@@ -206,7 +209,7 @@ public class LsfCmdExecutorTest {
                 + "  \"cmd\" : \"echo test\",\n"
                 + "  \"jobId\" : \"test\",\n"
                 + "  \"stdoutFile\" : \"test\",\n"
-                + "  \"startTime\" : \"2020-01-01T01:01:00\"\n"
+                + "  \"startTime\" : \"2020-01-01T01:01:00Z\"\n"
                 + "}");
     assertThat(Json.deserialize(json, LsfCmdExecutor.class).getCmd()).isEqualTo(cmd);
   }
@@ -217,7 +220,8 @@ public class LsfCmdExecutorTest {
     LsfCmdExecutor lsfCmdExecutor = StageExecutor.createLsfLocalCmdExecutor(cmd);
     lsfCmdExecutor.setJobId("test");
     lsfCmdExecutor.setStdoutFile("test");
-    lsfCmdExecutor.setStartTime(LocalDateTime.of(2020, 1, 1, 1, 1));
+    lsfCmdExecutor.setStartTime(
+        ZonedDateTime.of(LocalDateTime.of(2020, 1, 1, 1, 1), ZoneId.of("UTC")));
     String json = Json.serialize(lsfCmdExecutor);
     assertThat(json)
         .isEqualTo(
@@ -226,7 +230,7 @@ public class LsfCmdExecutorTest {
                 + "  \"cmdRunnerType\" : \"LOCAL_CMD_RUNNER\",\n"
                 + "  \"jobId\" : \"test\",\n"
                 + "  \"stdoutFile\" : \"test\",\n"
-                + "  \"startTime\" : \"2020-01-01T01:01:00\"\n"
+                + "  \"startTime\" : \"2020-01-01T01:01:00Z\"\n"
                 + "}");
     assertThat(Json.deserialize(json, LsfCmdExecutor.class).getCmd()).isEqualTo(cmd);
   }
@@ -237,7 +241,8 @@ public class LsfCmdExecutorTest {
     LsfCmdExecutor lsfCmdExecutor = StageExecutor.createLsfSshCmdExecutor(cmd);
     lsfCmdExecutor.setJobId("test");
     lsfCmdExecutor.setStdoutFile("test");
-    lsfCmdExecutor.setStartTime(LocalDateTime.of(2020, 1, 1, 1, 1));
+    lsfCmdExecutor.setStartTime(
+            ZonedDateTime.of(LocalDateTime.of(2020, 1, 1, 1, 1), ZoneId.of("UTC")));
     String json = Json.serialize(lsfCmdExecutor);
     assertThat(json)
         .isEqualTo(
@@ -246,7 +251,7 @@ public class LsfCmdExecutorTest {
                 + "  \"cmdRunnerType\" : \"SSH_CMD_RUNNER\",\n"
                 + "  \"jobId\" : \"test\",\n"
                 + "  \"stdoutFile\" : \"test\",\n"
-                + "  \"startTime\" : \"2020-01-01T01:01:00\"\n"
+                + "  \"startTime\" : \"2020-01-01T01:01:00Z\"\n"
                 + "}");
     assertThat(Json.deserialize(json, LsfCmdExecutor.class).getCmd()).isEqualTo(cmd);
   }
