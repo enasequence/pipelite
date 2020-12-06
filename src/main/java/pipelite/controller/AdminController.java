@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
 import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.PipeliteScheduler;
-import pipelite.launcher.ProcessLauncher;
+import pipelite.launcher.ProcessRunner;
 
 @RestController
 @RequestMapping(value = "/admin")
@@ -69,7 +69,7 @@ public class AdminController {
           Launcher.builder()
               .launcherName(launcher.getLauncherName())
               .pipelineName(launcher.getPipelineName())
-              .active(getProcesses(launcher.getProcessLaunchers()))
+              .active(getProcesses(launcher.getActiveProcessRunners()))
               .build());
     }
     return list;
@@ -90,7 +90,7 @@ public class AdminController {
           Scheduler.builder()
               .schedulerName(scheduler.getLauncherName())
               .schedules(getSchedules(scheduler))
-              .active(getProcesses(scheduler.getProcessLaunchers()))
+              .active(getProcesses(scheduler.getActiveProcessRunners()))
               .build());
     }
     return list;
@@ -113,7 +113,7 @@ public class AdminController {
   private List<Schedule> getSchedules(PipeliteScheduler scheduler) {
     List<Schedule> schedules = new ArrayList<>();
     scheduler
-        .getSchedules()
+        .getActiveSchedules()
         .forEach(
             s ->
                 schedules.add(
@@ -125,16 +125,16 @@ public class AdminController {
     return schedules;
   }
 
-  private List<Process> getProcesses(Collection<ProcessLauncher> processLaunchers) {
+  private List<Process> getProcesses(Collection<ProcessRunner> processRunners) {
     List<Process> processes = new ArrayList<>();
-    for (ProcessLauncher processLauncher : processLaunchers) {
+    for (ProcessRunner processRunner : processRunners) {
       Duration executionTime =
-          Duration.between(LocalDateTime.now(), processLauncher.getStartTime());
+          Duration.between(LocalDateTime.now(), processRunner.getStartTime());
       processes.add(
           Process.builder()
-              .pipelineName(processLauncher.getPipelineName())
-              .processId(processLauncher.getProcessId())
-              .currentExecutionStartTime(processLauncher.getStartTime())
+              .pipelineName(processRunner.getPipelineName())
+              .processId(processRunner.getProcessId())
+              .currentExecutionStartTime(processRunner.getStartTime())
               .currentExecutionTime(
                   executionTime
                       .toString()

@@ -18,10 +18,10 @@ import pipelite.process.ProcessSource;
 public class TestProcessSource implements ProcessSource {
 
   private final String pipelineName;
-  private final Set<String> newProcesses = new ConcurrentHashMap<>().newKeySet();
-  private final Set<String> returnedProcesses = new ConcurrentHashMap<>().newKeySet();
-  private final Set<String> acceptedProcesses = new ConcurrentHashMap<>().newKeySet();
-  private final Set<String> rejectedProcesses = new ConcurrentHashMap<>().newKeySet();
+  private final Set<String> newProcesses = ConcurrentHashMap.newKeySet();
+  private final Set<String> returnedProcesses = ConcurrentHashMap.newKeySet();
+  private final Set<String> acceptedProcesses = ConcurrentHashMap.newKeySet();
+  private final Set<String> rejectedProcesses = ConcurrentHashMap.newKeySet();
 
   public TestProcessSource(String pipelineName, int processCnt) {
     this.pipelineName = pipelineName;

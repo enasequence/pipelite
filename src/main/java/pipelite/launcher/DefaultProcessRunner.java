@@ -19,11 +19,12 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicLong;
+
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.*;
 import pipelite.entity.StageEntity;
+import pipelite.exception.PipeliteInterruptedException;
 import pipelite.executor.StageExecutorSerializer;
 import pipelite.launcher.dependency.DependencyResolver;
 import pipelite.log.LogKey;
@@ -35,10 +36,11 @@ import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
+import pipelite.time.Time;
 
 /** Executes a process and returns the process state. */
 @Flogger
-public class ProcessLauncher {
+public class DefaultProcessRunner implements ProcessRunner {
 
   private final LauncherConfiguration launcherConfiguration;
   private final StageConfiguration stageConfiguration;
@@ -46,15 +48,13 @@ public class ProcessLauncher {
   private final StageService stageService;
   private final MailService mailService;
   private final Duration stageLaunchFrequency;
-  private final Set<Stage> active = ConcurrentHashMap.newKeySet();
-  private final AtomicLong stageFailedCount = new AtomicLong(0);
-  private final AtomicLong stageSuccessCount = new AtomicLong(0);
   private final ExecutorService executorService = Executors.newCachedThreadPool();
-  private final LocalDateTime startTime = LocalDateTime.now();
   private String pipelineName;
   private Process process;
+  private String processId;
+  private LocalDateTime startTime;
 
-  public ProcessLauncher(
+  public DefaultProcessRunner(
       LauncherConfiguration launcherConfiguration,
       StageConfiguration stageConfiguration,
       ProcessService processService,
@@ -75,77 +75,111 @@ public class ProcessLauncher {
 
   // TODO: orphaned saved stages
   /** Executes the process and sets the new process state. */
-  public void run(String pipelineName, Process process) {
+  @Override
+  public void runProcess(String pipelineName, Process process, ProcessRunnerCallback callback) {
     Assert.notNull(pipelineName, "Missing pipeline name");
     Assert.notNull(process, "Missing process");
+    Assert.notNull(process.getProcessId(), "Missing process id");
     Assert.notNull(process.getProcessEntity(), "Missing process entity");
+    Assert.notNull(callback, "Missing process runner callback");
+
     this.pipelineName = pipelineName;
     this.process = process;
+    this.processId = process.getProcessId();
+    this.startTime = LocalDateTime.now();
+
     logContext(log.atInfo()).log("Executing process");
-    beforeExecution();
-    processService.startExecution(process.getProcessEntity());
+
+    ProcessRunnerResult result = new ProcessRunnerResult();
+    startProcessExecution();
+    executeProcess(result);
+    endProcessExecution();
+    result.setProcessExecutionCount(1);
+    callback.accept(process, result);
+  }
+
+  private void executeProcess(ProcessRunnerResult result) {
+    Set<Stage> activeStages = ConcurrentHashMap.newKeySet();
     while (true) {
       logContext(log.atFine()).log("Executing stages");
       List<Stage> executableStages =
-          DependencyResolver.getImmediatelyExecutableStages(process.getStages(), active);
-      if (active.isEmpty() && executableStages.isEmpty()) {
+          DependencyResolver.getImmediatelyExecutableStages(process.getStages(), activeStages);
+
+      if (activeStages.isEmpty() && executableStages.isEmpty()) {
         logContext(log.atInfo()).log("No more executable stages");
         break;
       }
-      for (Stage stage : executableStages) {
-        StageLauncher stageLauncher =
-            new StageLauncher(
-                launcherConfiguration, stageConfiguration, pipelineName, process, stage);
-        active.add(stage);
-        executorService.execute(
-            () -> {
-              try {
-                if (!StageExecutorSerializer.deserializeExecution(stage)) {
-                  stageService.startExecution(stage);
-                }
-                StageExecutionResult result = stageLauncher.run();
-                stageService.endExecution(stage, result);
-                if (result.isSuccess()) {
-                  resetDependentStageExecution(stage);
-                  stageSuccessCount.incrementAndGet();
-                } else {
-                  mailService.sendStageExecutionMessage(pipelineName, process, stage);
-                  stageFailedCount.incrementAndGet();
-                }
-              } catch (Exception ex) {
-                stageService.endExecution(stage, StageExecutionResult.error(ex));
-                mailService.sendStageExecutionMessage(pipelineName, process, stage);
-                logContext(log.atSevere())
-                    .withCause(ex)
-                    .log("Unexpected exception when executing stage");
-              } finally {
-                active.remove(stage);
-              }
-            });
-      }
-      try {
-        Thread.sleep(stageLaunchFrequency.toMillis());
-      } catch (InterruptedException ex) {
-        logContext(log.atSevere()).log("Process launcher was interrupted");
+
+      runStages(activeStages, executableStages, result);
+
+      if (!Time.wait(stageLaunchFrequency)) {
         executorService.shutdownNow();
-        Thread.currentThread().interrupt();
-        throw new RuntimeException(ex);
+        throw new PipeliteInterruptedException("Process launcher was interrupted");
       }
     }
-    endExecution();
   }
 
-  private void beforeExecution() {
+  private void runStages(
+      Set<Stage> activeStages, List<Stage> executableStages, ProcessRunnerResult result) {
+    executableStages.forEach(
+        stage -> {
+          runStage(stage, activeStages, result);
+        });
+  }
+
+  private void runStage(Stage stage, Set<Stage> activeStages, ProcessRunnerResult result) {
+    StageLauncher stageLauncher =
+        new StageLauncher(launcherConfiguration, stageConfiguration, pipelineName, process, stage);
+    activeStages.add(stage);
+    executorService.execute(
+        () -> {
+          try {
+            if (!StageExecutorSerializer.deserializeExecution(stage)) {
+              stageService.startExecution(stage);
+            }
+            StageExecutionResult stageExecutionResult = stageLauncher.run();
+            stageService.endExecution(stage, stageExecutionResult);
+            if (stageExecutionResult.isSuccess()) {
+              resetDependentStageExecution(process, stage);
+              result.addStageSuccessCount(1);
+            } else {
+              mailService.sendStageExecutionMessage(pipelineName, process, stage);
+              result.addStageFailedCount(1);
+            }
+          } catch (Exception ex) {
+            stageService.endExecution(stage, StageExecutionResult.error(ex));
+            mailService.sendStageExecutionMessage(pipelineName, process, stage);
+            result.addStageExceptionCount(1);
+            logContext(log.atSevere())
+                .withCause(ex)
+                .log("Unexpected exception when executing stage");
+          } finally {
+            activeStages.remove(stage);
+          }
+        });
+  }
+
+  private void startProcessExecution() {
+    startStageExecution();
+    processService.startExecution(process.getProcessEntity());
+  }
+
+  private void startStageExecution() {
     for (Stage stage : process.getStages()) {
-      // Set default executor parameters.
-      stage.getExecutorParams().add(stageConfiguration);
-      // Set stage entity.
-      StageEntity stageEntity = stageService.getStage(pipelineName, process.getProcessId(), stage);
-      stage.setStageEntity(stageEntity);
+      startStageExecution(stage);
     }
   }
 
-  private void endExecution() {
+  private void startStageExecution(Stage stage) {
+    // Use default executor parameters.
+    stage.getExecutorParams().add(stageConfiguration);
+
+    // Use saved stage or create a new one if it is missing.
+    StageEntity stageEntity = stageService.getStage(pipelineName, process.getProcessId(), stage);
+    stage.setStageEntity(stageEntity);
+  }
+
+  private void endProcessExecution() {
     ProcessState processState = evaluateProcessState(process.getStages());
     logContext(log.atInfo()).log("Process execution finished: %s", processState.name());
     processService.endExecution(pipelineName, process, processState);
@@ -182,7 +216,7 @@ public class ProcessLauncher {
    *
    * @param from the stage that has dependent stages
    */
-  private void resetDependentStageExecution(Stage from) {
+  private void resetDependentStageExecution(Process process, Stage from) {
     for (Stage stage : DependencyResolver.getDependentStages(process.getStages(), from)) {
       if (stage.getStageEntity().getResultType() != null) {
         stageService.resetExecution(stage);
@@ -190,27 +224,22 @@ public class ProcessLauncher {
     }
   }
 
+  @Override
   public String getPipelineName() {
     return pipelineName;
   }
 
+  @Override
   public String getProcessId() {
-    return process.getProcessId();
+    return processId;
   }
 
+  @Override
   public LocalDateTime getStartTime() {
     return startTime;
   }
 
-  public long getStageFailedCount() {
-    return stageFailedCount.get();
-  }
-
-  public long getStageSuccessCount() {
-    return stageSuccessCount.get();
-  }
-
   private FluentLogger.Api logContext(FluentLogger.Api log) {
-    return log.with(LogKey.PIPELINE_NAME, pipelineName).with(LogKey.PROCESS_ID, getProcessId());
+    return log.with(LogKey.PIPELINE_NAME, pipelineName).with(LogKey.PROCESS_ID, processId);
   }
 }

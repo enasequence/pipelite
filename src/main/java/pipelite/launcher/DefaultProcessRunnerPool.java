@@ -27,74 +27,64 @@ import pipelite.log.LogKey;
 import pipelite.process.Process;
 
 @Flogger
-public class ProcessLauncherPool implements ProcessRunner {
+public class DefaultProcessRunnerPool implements ProcessRunnerPool {
   private final PipeliteLocker pipeliteLocker;
-  private final Supplier<ProcessLauncher> processLauncherSupplier;
+  private final Supplier<ProcessRunner> processRunnerSupplier;
   private final ExecutorService executorService = Executors.newCachedThreadPool();
 
   @Value
-  public class ActiveLauncher {
+  public class ActiveProcessRunner {
     private final String pipelineName;
     private final String processId;
-    @EqualsAndHashCode.Exclude private final ProcessLauncher processLauncher;
+    @EqualsAndHashCode.Exclude private final ProcessRunner processRunner;
   }
 
-  private final Set<ActiveLauncher> active = ConcurrentHashMap.newKeySet();
+  private final Set<ActiveProcessRunner> active = ConcurrentHashMap.newKeySet();
 
   /**
-   * Creates a process launcher pool.
+   * Creates a default process runner pool.
    *
-   * @param processLauncherSupplier the process launcher supplier
+   * @param processRunnerSupplier the process runner supplier
    */
-  public ProcessLauncherPool(
-      PipeliteLocker pipeliteLocker, Supplier<ProcessLauncher> processLauncherSupplier) {
-    Assert.notNull(processLauncherSupplier, "Missing pipelite locker");
-    Assert.notNull(processLauncherSupplier, "Missing process launcher supplier");
+  public DefaultProcessRunnerPool(
+      PipeliteLocker pipeliteLocker, Supplier<ProcessRunner> processRunnerSupplier) {
+    Assert.notNull(pipeliteLocker, "Missing pipelite locker");
+    Assert.notNull(processRunnerSupplier, "Missing process runner supplier");
     this.pipeliteLocker = pipeliteLocker;
-    this.processLauncherSupplier = processLauncherSupplier;
+    this.processRunnerSupplier = processRunnerSupplier;
   }
 
   @Override
-  public void runProcess(String pipelineName, Process process, Collection<ProcessRunnerCallback> callbacks) {
+  public void runProcess(String pipelineName, Process process, ProcessRunnerCallback callback) {
     Assert.notNull(pipelineName, "Missing pipeline name");
     Assert.notNull(process, "Missing process");
-    Assert.notNull(callbacks, "Missing callback");
+    Assert.notNull(callback, "Missing process runner callback");
     String processId = process.getProcessId();
     // Create process launcher.
-    ProcessLauncher processLauncher = processLauncherSupplier.get();
-    ActiveLauncher activeLauncher = new ActiveLauncher(pipelineName, processId, processLauncher);
-    active.add(activeLauncher);
+    ProcessRunner processRunner = processRunnerSupplier.get();
+    ActiveProcessRunner activeProcessRunner =
+        new ActiveProcessRunner(pipelineName, processId, processRunner);
+    active.add(activeProcessRunner);
     // Run process.
     executorService.execute(
         () -> {
-          long processExecutionCount = 0;
-          long processExceptionCount = 0;
           try {
             // Lock process.
             if (!pipeliteLocker.lockProcess(pipelineName, processId)) {
               return;
             }
-            processLauncher.run(pipelineName, process);
-            ++processExecutionCount;
+            processRunner.runProcess(pipelineName, process, callback);
           } catch (Exception ex) {
-            ++processExceptionCount;
             logContext(log.atSevere(), pipelineName, processId)
                 .withCause(ex)
-                .log("Unexpected exception");
+                .log("Process runner exception");
+            ProcessRunnerResult result = new ProcessRunnerResult();
+            result.setProcessExceptionCount(1);
+            callback.accept(process, result);
           } finally {
             // Unlock process.
-            try {
-              ProcessRunnerResult result =
-                  new ProcessRunnerResult(
-                      processExecutionCount,
-                      processExceptionCount,
-                      processLauncher.getStageSuccessCount(),
-                      processLauncher.getStageFailedCount());
-              callbacks.stream().forEach(callback -> callback.accept(process, result));
-            } finally {
-              pipeliteLocker.unlockProcess(pipelineName, processId);
-              active.remove(activeLauncher);
-            }
+            pipeliteLocker.unlockProcess(pipelineName, processId);
+            active.remove(activeProcessRunner);
           }
         });
   }
@@ -111,12 +101,12 @@ public class ProcessLauncherPool implements ProcessRunner {
             p -> p.getPipelineName().equals(pipelineName) && p.getProcessId().equals(processId));
   }
 
-  public int activeProcessCount() {
+  public int getActiveProcessRunnerCount() {
     return active.size();
   }
 
-  public List<ProcessLauncher> get() {
-    return active.stream().map(a -> a.getProcessLauncher()).collect(Collectors.toList());
+  public List<ProcessRunner> getActiveProcessRunners() {
+    return active.stream().map(a -> a.getProcessRunner()).collect(Collectors.toList());
   }
 
   public void shutDown() {

@@ -247,7 +247,7 @@ public class PipeliteLauncherTester {
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
     new PipeliteServiceManager().add(pipeliteLauncher).run();
 
-    assertThat(pipeliteLauncher.getProcessLaunchers().size()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getActiveProcessRunners().size()).isEqualTo(0);
 
     assertThat(f.stageExecCnt.get() / f.stageCnt).isEqualTo(f.processCnt);
     assertThat(f.processIds.size()).isEqualTo(f.processCnt);

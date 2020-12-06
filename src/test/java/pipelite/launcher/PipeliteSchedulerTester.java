@@ -322,7 +322,7 @@ public class PipeliteSchedulerTester {
       }
       new PipeliteServiceManager().add(pipeliteScheduler).run();
 
-      assertThat(pipeliteScheduler.getProcessLaunchers().size()).isEqualTo(0);
+      assertThat(pipeliteScheduler.getActiveProcessRunners().size()).isEqualTo(0);
       List<ScheduleEntity> scheduleEntities =
           scheduleService.getAllProcessSchedules(launcherConfiguration.getSchedulerName());
       for (TestProcessFactory f : testProcessFactories) {

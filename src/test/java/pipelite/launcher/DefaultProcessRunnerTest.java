@@ -24,7 +24,7 @@ import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResultType;
 
-public class ProcessLauncherTest {
+public class DefaultProcessRunnerTest {
 
   public static List<Stage> createStageExecutions(
       StageExecutionResultType firstStageState,
@@ -79,7 +79,7 @@ public class ProcessLauncherTest {
     List<Stage> stages =
         createStageExecutions(
             firstStageState, secondStageState, firstStageExecutions, secondStageExecutions, 0, 0);
-    assertThat(ProcessLauncher.evaluateProcessState(stages)).isEqualTo(state);
+    assertThat(DefaultProcessRunner.evaluateProcessState(stages)).isEqualTo(state);
   }
 
   @Test
@@ -111,7 +111,7 @@ public class ProcessLauncherTest {
     List<Stage> stages =
         createStageExecutions(
             firstStageState, secondStageState, firstStageExecutions, secondStageExecutions, 1, 1);
-    assertThat(ProcessLauncher.evaluateProcessState(stages)).isEqualTo(state);
+    assertThat(DefaultProcessRunner.evaluateProcessState(stages)).isEqualTo(state);
   }
 
   @Test

@@ -161,7 +161,7 @@ public class PipeliteLauncherAsyncTester {
   public abstract static class TestExecutor implements StageExecutor {
     public AtomicInteger submitCount = new AtomicInteger();
     public AtomicInteger pollCount = new AtomicInteger();
-    private Set<String> submit = new ConcurrentHashMap<>().newKeySet();
+    private Set<String> submit = ConcurrentHashMap.newKeySet();
 
     protected boolean isSubmitted(String processId) {
       if (!submit.contains(processId)) {

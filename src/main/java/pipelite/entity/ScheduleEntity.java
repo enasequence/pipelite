@@ -16,6 +16,7 @@ import javax.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import pipelite.entity.converter.BooleanConverter;
 
 @Entity
 @Table(name = "PIPELITE_SCHEDULE")
@@ -33,6 +34,10 @@ public class ScheduleEntity {
 
   @Column(name = "CRON", nullable = false)
   private String cron;
+
+  @Column(name = "ACTIVE")
+  @Convert(converter = BooleanConverter.class)
+  private Boolean active;
 
   @Column(name = "DESCRIPTION")
   private String description;

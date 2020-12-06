@@ -11,7 +11,6 @@
 package pipelite.launcher;
 
 import java.time.Duration;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
@@ -22,29 +21,30 @@ import pipelite.lock.PipeliteLocker;
 import pipelite.process.Process;
 
 /**
- * Abstract base class for process execution services. They use AbstractScheduledService for
- * lifecycle management, PipeliteLocker for lock management, and ProcessLauncherPool for executing
- * processes.
+ * Abstract base class for services executing processes. AbstractScheduledService is used for
+ * service lifecycle management, PipeliteLocker for lock management, and ProcessRunnerPool for
+ * executing processes.
  */
 @Flogger
-public abstract class ProcessLauncherService extends PipeliteService implements ProcessRunner {
+public abstract class ProcessRunnerPoolService extends PipeliteService
+    implements ProcessRunnerPool {
 
   private final PipeliteLocker locker;
-  private final Supplier<ProcessLauncherPool> processLauncherPoolSupplier;
+  private final Supplier<ProcessRunnerPool> processRunnerPoolSupplier;
   private final Duration processLaunchFrequency;
-  private ProcessLauncherPool pool;
+  private ProcessRunnerPool pool;
   private boolean shutdown;
 
-  public ProcessLauncherService(
+  public ProcessRunnerPoolService(
       LauncherConfiguration launcherConfiguration,
       PipeliteLocker locker,
       String launcherName,
-      Supplier<ProcessLauncherPool> processLauncherPoolSupplier) {
+      Supplier<ProcessRunnerPool> processRunnerPoolSupplier) {
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(locker, "Missing locker");
-    Assert.notNull(processLauncherPoolSupplier, "Missing process launcher pool supplier");
+    Assert.notNull(processRunnerPoolSupplier, "Missing process runner pool supplier");
     this.locker = locker;
-    this.processLauncherPoolSupplier = processLauncherPoolSupplier;
+    this.processRunnerPoolSupplier = processRunnerPoolSupplier;
     this.processLaunchFrequency = launcherConfiguration.getProcessLaunchFrequency();
     this.locker.init(launcherName);
   }
@@ -56,15 +56,15 @@ public abstract class ProcessLauncherService extends PipeliteService implements 
 
   @Override
   protected void startUp() {
-    log.atInfo().log("Starting up launcher: %s", getLauncherName());
+    log.atInfo().log("Starting up service: %s", getLauncherName());
     locker.lock();
-    pool = processLauncherPoolSupplier.get();
+    pool = processRunnerPoolSupplier.get();
   }
 
   @Override
   protected void runOneIteration() {
     if (isActive()) {
-      log.atInfo().log("Running launcher: %s", getLauncherName());
+      log.atFine().log("Running service: %s", getLauncherName());
 
       // Renew lock to avoid lock expiry.
       locker.renewLock();
@@ -74,42 +74,36 @@ public abstract class ProcessLauncherService extends PipeliteService implements 
         run();
       } catch (Exception ex) {
         log.atSevere().withCause(ex).log(
-            "Unexpected exception from launcher: %s", getLauncherName());
+            "Unexpected exception from service: %s", getLauncherName());
       }
 
-      if (pool.activeProcessCount() == 0 && shutdownIfIdle()) {
-        log.atInfo().log("Stopping idle launcher: %s", getLauncherName());
+      if (pool.getActiveProcessRunnerCount() == 0 && shutdownIfIdle()) {
+        log.atInfo().log("Stopping idle service: %s", getLauncherName());
         shutdown = true;
         stopAsync();
       }
     }
   }
 
+  /**
+   * Returns true if the service is active.
+   *
+   * @return true if the service is active.
+   */
   protected boolean isActive() {
     return isRunning() && !shutdown;
   }
 
-  @Override
-  protected void shutDown() {
-    try {
-      log.atInfo().log("Shutting down launcher: %s", getLauncherName());
-      pool.shutDown();
-      log.atInfo().log("Launcher has been shut down: %s", getLauncherName());
-    } finally {
-      locker.unlock();
-    }
-  }
-
   /**
-   * Runs one iteration of the service. If an exception is thrown the exception will be logged and
-   * run will be called again after a fixed delay.
+   * Implement to runs one iteration of the service. If an exception is thrown the exception will be
+   * logged and run will be called again after a fixed delay.
    */
   protected abstract void run() throws Exception;
 
   /**
-   * Allows an idle launcher to be shut down.
+   * Override to allow an idle launcher to be shut down.
    *
-   * @return true if a launcher with no running processes should be shut down
+   * @return true if a launcher is idle and can be shut down
    */
   protected boolean shutdownIfIdle() {
     return false;
@@ -125,22 +119,26 @@ public abstract class ProcessLauncherService extends PipeliteService implements 
   }
 
   @Override
-  public void runProcess(
-      String pipelineName, Process process, Collection<ProcessRunnerCallback> callbacks) {
-    pool.runProcess(pipelineName, process, callbacks);
+  public void runProcess(String pipelineName, Process process, ProcessRunnerCallback callback) {
+    pool.runProcess(pipelineName, process, callback);
   }
 
   @Override
-  public boolean isProcessActive(String pipelineName, String processId) {
-    return false;
+  public int getActiveProcessRunnerCount() {
+    if (pool == null) {
+      return 0;
+    }
+    return pool.getActiveProcessRunnerCount();
   }
 
-  /**
-   * Returns true if there are any active processes for the pipeline.
-   *
-   * @param pipelineName the pipeline name
-   * @return true if there are any active processes for the pipeline.
-   */
+  @Override
+  public List<ProcessRunner> getActiveProcessRunners() {
+    if (pool == null) {
+      return Collections.emptyList();
+    }
+    return pool.getActiveProcessRunners();
+  }
+
   @Override
   public boolean isPipelineActive(String pipelineName) {
     if (pool == null) {
@@ -149,22 +147,22 @@ public abstract class ProcessLauncherService extends PipeliteService implements 
     return pool.isPipelineActive(pipelineName);
   }
 
-  /**
-   * Returns the number of active processes.
-   *
-   * @return the number of active processes.
-   */
-  public int getActiveProcessCount() {
+  @Override
+  public boolean isProcessActive(String pipelineName, String processId) {
     if (pool == null) {
-      return 0;
+      return false;
     }
-    return pool.activeProcessCount();
+    return pool.isProcessActive(pipelineName, processId);
   }
 
-  public List<ProcessLauncher> getProcessLaunchers() {
-    if (pool == null) {
-      return Collections.emptyList();
+  @Override
+  public void shutDown() {
+    try {
+      log.atInfo().log("Shutting down service: %s", getLauncherName());
+      pool.shutDown();
+      log.atInfo().log("Service has been shut down: %s", getLauncherName());
+    } finally {
+      locker.unlock();
     }
-    return pool.get();
   }
 }

@@ -24,23 +24,27 @@ import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.StageExecutionResultType;
 
-public class ProcessLauncherPoolTest {
+public class DefaultProcessRunnerPoolTest {
 
   private static final int PROCESS_CNT = 1000;
   public static final String PIPELINE_NAME = "PIPELINE1";
 
-  private Supplier<ProcessLauncher> processLauncherSupplier(ProcessState state) {
+  private Supplier<ProcessRunner> processRunnerSupplier(ProcessState state) {
     return () -> {
-      ProcessLauncher processLauncher = mock(ProcessLauncher.class);
+      ProcessRunner processRunner = mock(ProcessRunner.class);
       doAnswer(
               i -> {
-                Process process = (Process) i.getArguments()[1];
+                Process process = i.getArgument(1);
+                ProcessRunnerCallback callback = i.getArgument(2);
                 process.getProcessEntity().endExecution(state);
+                ProcessRunnerResult result = new ProcessRunnerResult();
+                result.setProcessExecutionCount(1);
+                callback.accept(process, result);
                 return null;
               })
-          .when(processLauncher)
-          .run(any(), any());
-      return processLauncher;
+          .when(processRunner)
+          .runProcess(any(), any(), any());
+      return processRunner;
     };
   }
 
@@ -49,8 +53,8 @@ public class ProcessLauncherPoolTest {
     PipeliteLocker locker = mock(PipeliteLocker.class);
     when(locker.lockProcess(any(), any())).thenReturn(true);
 
-    ProcessLauncherPool pool =
-        new ProcessLauncherPool(locker, processLauncherSupplier(ProcessState.COMPLETED));
+    DefaultProcessRunnerPool pool =
+        new DefaultProcessRunnerPool(locker, processRunnerSupplier(ProcessState.COMPLETED));
 
     ProcessLauncherStats stats = new ProcessLauncherStats();
 
@@ -72,8 +76,8 @@ public class ProcessLauncherPoolTest {
     assertThat(stats.getProcessExceptionCount()).isZero();
     verify(locker, times(PROCESS_CNT)).lockProcess(eq(PIPELINE_NAME), any());
     verify(locker, times(PROCESS_CNT)).unlockProcess(eq(PIPELINE_NAME), any());
-    assertThat(pool.activeProcessCount()).isZero();
-    assertThat(pool.get().size()).isZero();
+    assertThat(pool.getActiveProcessRunnerCount()).isZero();
+    assertThat(pool.getActiveProcessRunners().size()).isZero();
   }
 
   @Test
@@ -81,8 +85,8 @@ public class ProcessLauncherPoolTest {
     PipeliteLocker locker = mock(PipeliteLocker.class);
     when(locker.lockProcess(any(), any())).thenReturn(true);
 
-    ProcessLauncherPool pool =
-        new ProcessLauncherPool(locker, processLauncherSupplier(ProcessState.FAILED));
+    DefaultProcessRunnerPool pool =
+        new DefaultProcessRunnerPool(locker, processRunnerSupplier(ProcessState.FAILED));
 
     ProcessLauncherStats stats = new ProcessLauncherStats();
 
@@ -104,22 +108,21 @@ public class ProcessLauncherPoolTest {
     assertThat(stats.getProcessExceptionCount()).isZero();
     verify(locker, times(PROCESS_CNT)).lockProcess(eq(PIPELINE_NAME), any());
     verify(locker, times(PROCESS_CNT)).unlockProcess(eq(PIPELINE_NAME), any());
-    assertThat(pool.activeProcessCount()).isZero();
-    assertThat(pool.get().size()).isZero();
+    assertThat(pool.getActiveProcessRunnerCount()).isZero();
+    assertThat(pool.getActiveProcessRunners().size()).isZero();
   }
 
   @Test
   public void testException() {
     PipeliteLocker locker = mock(PipeliteLocker.class);
     when(locker.lockProcess(any(), any())).thenReturn(true);
-
-    ProcessLauncherPool pool =
-        new ProcessLauncherPool(
+    DefaultProcessRunnerPool pool =
+        new DefaultProcessRunnerPool(
             locker,
             () -> {
-              ProcessLauncher processLauncher = mock(ProcessLauncher.class);
-              doThrow(new RuntimeException()).when(processLauncher).run(any(), any());
-              return processLauncher;
+              ProcessRunner processRunner = mock(ProcessRunner.class);
+              doThrow(new RuntimeException()).when(processRunner).runProcess(any(), any(), any());
+              return processRunner;
             });
 
     ProcessLauncherStats stats = new ProcessLauncherStats();
@@ -142,7 +145,7 @@ public class ProcessLauncherPoolTest {
     assertThat(stats.getProcessExceptionCount()).isEqualTo(PROCESS_CNT);
     verify(locker, times(PROCESS_CNT)).lockProcess(eq(PIPELINE_NAME), any());
     verify(locker, times(PROCESS_CNT)).unlockProcess(eq(PIPELINE_NAME), any());
-    assertThat(pool.activeProcessCount()).isZero();
-    assertThat(pool.get().size()).isZero();
+    assertThat(pool.getActiveProcessRunnerCount()).isZero();
+    assertThat(pool.getActiveProcessRunners().size()).isZero();
   }
 }

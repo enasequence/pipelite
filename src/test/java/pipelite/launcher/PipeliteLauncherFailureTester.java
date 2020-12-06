@@ -269,7 +269,7 @@ public class PipeliteLauncherFailureTester {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher(f.getPipelineName());
     new PipeliteServiceManager().add(pipeliteLauncher).run();
 
-    assertThat(pipeliteLauncher.getProcessLaunchers().size()).isEqualTo(0);
+    assertThat(pipeliteLauncher.getActiveProcessRunners().size()).isEqualTo(0);
 
     assertThat(s.getNewProcesses()).isEqualTo(0);
     assertThat(s.getReturnedProcesses()).isEqualTo(PROCESS_CNT);

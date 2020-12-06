@@ -44,10 +44,10 @@ public class DefaultPipeliteLauncher {
         processCreator,
         processQueue,
         () ->
-            new ProcessLauncherPool(
+            new DefaultProcessRunnerPool(
                 pipeliteLocker,
                 () ->
-                    new ProcessLauncher(
+                    new DefaultProcessRunner(
                         launcherConfiguration,
                         stageConfiguration,
                         processService,

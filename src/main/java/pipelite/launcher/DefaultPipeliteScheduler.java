@@ -38,10 +38,10 @@ public class DefaultPipeliteScheduler {
         scheduleService,
         processService,
         () ->
-            new ProcessLauncherPool(
+            new DefaultProcessRunnerPool(
                 pipeliteLocker,
                 () ->
-                    new ProcessLauncher(
+                    new DefaultProcessRunner(
                         launcherConfiguration,
                         stageConfiguration,
                         processService,

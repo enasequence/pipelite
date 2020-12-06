@@ -20,7 +20,7 @@ import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 
 @Flogger
-public class PipeliteLauncher extends ProcessLauncherService {
+public class PipeliteLauncher extends ProcessRunnerPoolService {
 
   private final String pipelineName;
   private final ProcessFactory processFactory;
@@ -36,12 +36,12 @@ public class PipeliteLauncher extends ProcessLauncherService {
       ProcessFactory processFactory,
       ProcessCreator processCreator,
       ProcessQueue processQueue,
-      Supplier<ProcessLauncherPool> processLauncherPoolSupplier) {
+      Supplier<ProcessRunnerPool> processRunnerPoolSupplier) {
     super(
         launcherConfiguration,
         pipeliteLocker,
         processQueue.getLauncherName(),
-        processLauncherPoolSupplier);
+        processRunnerPoolSupplier);
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(processFactory, "Missing process factory");
     Assert.notNull(processCreator, "Missing process creator");
@@ -60,14 +60,14 @@ public class PipeliteLauncher extends ProcessLauncherService {
       processCreator.createProcesses(processCreateMaxSize);
       processQueue.fillQueue();
     }
-    while (processQueue.isAvailableProcesses(getActiveProcessCount())) {
+    while (processQueue.isAvailableProcesses(getActiveProcessRunnerCount())) {
       runProcess(processQueue.nextAvailableProcess());
     }
   }
 
   @Override
   protected boolean shutdownIfIdle() {
-    return !processQueue.isAvailableProcesses(0) && getActiveProcessCount() == 0 && shutdownIfIdle;
+    return !processQueue.isAvailableProcesses(0) && getActiveProcessRunnerCount() == 0 && shutdownIfIdle;
   }
 
   protected void runProcess(ProcessEntity processEntity) {

@@ -21,22 +21,22 @@ import pipelite.lock.PipeliteLocker;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 
-public class ProcessLauncherServiceTest {
+public class ProcessRunnerPoolServiceTest {
 
   public static final String LAUNCHER_NAME = "LAUNCHER1";
 
-  private Supplier<ProcessLauncher> processLauncherSupplier(ProcessState state) {
+  private Supplier<ProcessRunner> processRunnerSupplier(ProcessState state) {
     return () -> {
-      ProcessLauncher processLauncher = mock(ProcessLauncher.class);
+      ProcessRunner processRunner = mock(ProcessRunner.class);
       doAnswer(
               I -> {
                 Process process = (Process) I.getArguments()[1];
                 process.getProcessEntity().endExecution(state);
                 return null;
               })
-          .when(processLauncher)
-          .run(any(), any());
-      return processLauncher;
+          .when(processRunner)
+          .runProcess(any(), any(), any());
+      return processRunner;
     };
   }
 
@@ -73,53 +73,53 @@ public class ProcessLauncherServiceTest {
         .when(locker)
         .unlock();
 
-    ProcessLauncherService processLauncherService =
+    ProcessRunnerPoolService processRunnerPoolService =
         spy(
-            new ProcessLauncherService(
+            new ProcessRunnerPoolService(
                 launcherConfiguration,
                 locker,
                 LAUNCHER_NAME,
                 () ->
-                    new ProcessLauncherPool(
-                        locker, processLauncherSupplier(ProcessState.COMPLETED))) {
+                    new DefaultProcessRunnerPool(
+                        locker, processRunnerSupplier(ProcessState.COMPLETED))) {
               @Override
               protected void run() {
                 runCallCnt.incrementAndGet();
               }
             });
-    doReturn(true).when(processLauncherService).isActive();
+    doReturn(true).when(processRunnerPoolService).isActive();
 
-    assertThat(processLauncherService.getLauncherName()).isEqualTo(LAUNCHER_NAME);
-    assertThat(processLauncherService.getActiveProcessCount()).isZero();
-    assertThat(processLauncherService.getProcessLaunchers()).isEmpty();
+    assertThat(processRunnerPoolService.getLauncherName()).isEqualTo(LAUNCHER_NAME);
+    assertThat(processRunnerPoolService.getActiveProcessRunnerCount()).isZero();
+    assertThat(processRunnerPoolService.getActiveProcessRunners()).isEmpty();
 
     assertThat(lockCallCnt.get()).isZero();
     assertThat(renewLockCallCnt.get()).isZero();
     assertThat(runCallCnt.get()).isZero();
     assertThat(unlockCallCnt.get()).isZero();
 
-    processLauncherService.startUp();
+    processRunnerPoolService.startUp();
 
     assertThat(lockCallCnt.get()).isOne();
     assertThat(renewLockCallCnt.get()).isZero();
     assertThat(runCallCnt.get()).isZero();
     assertThat(unlockCallCnt.get()).isZero();
 
-    processLauncherService.runOneIteration();
+    processRunnerPoolService.runOneIteration();
 
     assertThat(lockCallCnt.get()).isOne();
     assertThat(renewLockCallCnt.get()).isOne();
     assertThat(runCallCnt.get()).isOne();
     assertThat(unlockCallCnt.get()).isZero();
 
-    processLauncherService.runOneIteration();
+    processRunnerPoolService.runOneIteration();
 
     assertThat(lockCallCnt.get()).isOne();
     assertThat(renewLockCallCnt.get()).isEqualTo(2);
     assertThat(runCallCnt.get()).isEqualTo(2);
     assertThat(unlockCallCnt.get()).isZero();
 
-    processLauncherService.shutDown();
+    processRunnerPoolService.shutDown();
 
     assertThat(lockCallCnt.get()).isOne();
     assertThat(renewLockCallCnt.get()).isEqualTo(2);

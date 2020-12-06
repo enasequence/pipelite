@@ -33,16 +33,17 @@ import pipelite.process.ProcessFactoryCache;
 import pipelite.service.*;
 
 @Flogger
-public class PipeliteScheduler extends ProcessLauncherService {
+public class PipeliteScheduler extends ProcessRunnerPoolService {
 
   private final ScheduleService scheduleService;
   private final ProcessService processService;
   private final ProcessFactoryCache processFactoryCache;
   private final List<Schedule> schedules = Collections.synchronizedList(new ArrayList<>());
+  private final Set<Schedule> runningSchedules = ConcurrentHashMap.newKeySet();
   private final Map<String, AtomicLong> maximumExecutions = new ConcurrentHashMap<>();
   private final Map<String, ProcessLauncherStats> stats = new ConcurrentHashMap<>();
   private final Duration scheduleRefreshFrequency;
-  private LocalDateTime scheduleValidUntil;
+  private LocalDateTime scheduleValidUntil = LocalDateTime.now();
 
   public static class Schedule {
     private final ScheduleEntity scheduleEntity;
@@ -62,6 +63,15 @@ public class PipeliteScheduler extends ProcessLauncherService {
       launchTime = scheduleEntity.getStartTime();
     }
 
+    public void refreshSchedule(ScheduleEntity newScheduleEntity) {
+      scheduleEntity.setCron(newScheduleEntity.getCron());
+      scheduleEntity.setActive(newScheduleEntity.getActive());
+    }
+
+    public void removeSchedule() {
+      scheduleEntity.setActive(false);
+    }
+
     public ScheduleEntity getScheduleEntity() {
       return scheduleEntity;
     }
@@ -73,6 +83,23 @@ public class PipeliteScheduler extends ProcessLauncherService {
     public String getPipelineName() {
       return scheduleEntity.getPipelineName();
     }
+
+    public boolean isActive() {
+      return scheduleEntity.getActive() == null || scheduleEntity.getActive();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      Schedule schedule = (Schedule) o;
+      return scheduleEntity.getPipelineName().equals(schedule.scheduleEntity.getPipelineName());
+    }
+
+    @Override
+    public int hashCode() {
+      return scheduleEntity.getPipelineName().hashCode();
+    }
   }
 
   public PipeliteScheduler(
@@ -81,12 +108,12 @@ public class PipeliteScheduler extends ProcessLauncherService {
       ProcessFactoryService processFactoryService,
       ScheduleService scheduleService,
       ProcessService processService,
-      Supplier<ProcessLauncherPool> processLauncherPoolSupplier) {
+      Supplier<ProcessRunnerPool> processRunnerPoolSupplier) {
     super(
         launcherConfiguration,
         pipeliteLocker,
         LauncherConfiguration.getSchedulerName(launcherConfiguration),
-        processLauncherPoolSupplier);
+        processRunnerPoolSupplier);
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(processFactoryService, "Missing process factory service");
     Assert.notNull(scheduleService, "Missing schedule service");
@@ -98,10 +125,23 @@ public class PipeliteScheduler extends ProcessLauncherService {
   }
 
   @Override
+  protected void startUp() {
+    super.startUp();
+    refreshSchedules();
+    resumeProcesses();
+    scheduleProcesses();
+  }
+
+  @Override
   protected void run() {
-    if (isScheduleProcesses()) {
+    if (refreshSchedules()) {
+      refreshSchedules();
       scheduleProcesses();
     }
+    executeSchedules();
+  }
+
+  private void executeSchedules() {
     getExecutableSchedules()
         .forEach(schedule -> runProcess(schedule, createNewProcessEntity(schedule)));
   }
@@ -112,52 +152,128 @@ public class PipeliteScheduler extends ProcessLauncherService {
         || maximumExecutions.values().stream().anyMatch(r -> r.get() > 0));
   }
 
-  public boolean isScheduleProcesses() {
-    return schedules.isEmpty() || scheduleValidUntil.isBefore(LocalDateTime.now());
+  /**
+   * Returns true the if the schedules are allowed be refreshed to match the latest information in
+   * the database. The permitted frequency is defined by scheduleRefreshFrequency.
+   *
+   * @return true the if the schedules are allowed be refreshed to match the latest information in
+   *     the database
+   */
+  public boolean isRefreshSchedules() {
+    return !scheduleValidUntil.isAfter(LocalDateTime.now());
   }
 
-  private void scheduleProcesses() {
-    logContext(log.atInfo()).log("Scheduling processes");
-    schedules.clear();
+  /**
+   * Refreshes schedules to match the latest information in the database. The permitted frequency is
+   * defined by scheduleRefreshFrequency.
+   *
+   * @return true the if the schedules were refreshed
+   */
+  protected boolean refreshSchedules() {
+    if (!isRefreshSchedules()) {
+      return false;
+    }
+    logContext(log.atInfo()).log("Refreshing schedules");
     scheduleValidUntil = LocalDateTime.now().plus(scheduleRefreshFrequency);
-    for (ScheduleEntity scheduleEntity :
-        scheduleService.getAllProcessSchedules(getLauncherName())) {
-      scheduleProcess(scheduleEntity);
+
+    Collection<ScheduleEntity> newScheduleEntities =
+        scheduleService.getAllProcessSchedules(getLauncherName());
+    for (ScheduleEntity newScheduleEntity : newScheduleEntities) {
+      Optional<Schedule> schedule = findSchedule(newScheduleEntity.getPipelineName());
+      if (schedule.isPresent()) {
+        refreshSchedule(schedule.get(), newScheduleEntity);
+      } else {
+        createSchedule(newScheduleEntity);
+      }
     }
+    removeSchedules(newScheduleEntities);
+    return true;
   }
 
-  private void scheduleProcess(ScheduleEntity scheduleEntity) {
-    Schedule schedule = createSchedule(scheduleEntity);
-    if (schedule == null) {
-      return;
-    }
-    schedules.add(schedule);
-    if (isResumeProcess(schedule)) {
-      resumeProcess(schedule);
+  private Optional<Schedule> findSchedule(String pipelineName) {
+    return schedules.stream()
+        .filter(schedule -> schedule.getPipelineName().equals(pipelineName))
+        .findFirst();
+  }
+
+  /**
+   * Creates a new schedule.
+   *
+   * @param newScheduleEntity the new schedule
+   */
+  private void createSchedule(ScheduleEntity newScheduleEntity) {
+    updateCron(newScheduleEntity);
+    if (!CronUtils.validate(newScheduleEntity.getCron())) {
+      logContext(log.atSevere(), newScheduleEntity.getPipelineName())
+          .log("Invalid cron expression: %s", newScheduleEntity.getCron());
+
     } else {
-      logContext(log.atInfo(), scheduleEntity.getPipelineName())
-          .log(
-              "Scheduling process execution: %s cron %s (%s)",
-              schedule.getLaunchTime(), scheduleEntity.getCron(), scheduleEntity.getDescription());
-      schedule.newExecution();
+      schedules.add(new Schedule(newScheduleEntity));
     }
   }
 
-  private Schedule createSchedule(ScheduleEntity scheduleEntity) {
-    // Update cron description.
+  /**
+   * Refreshes the schedule.
+   *
+   * @param newScheduleEntity the new schedule
+   */
+  private void refreshSchedule(Schedule schedule, ScheduleEntity newScheduleEntity) {
+    updateCron(newScheduleEntity);
+    if (!CronUtils.validate(newScheduleEntity.getCron())) {
+      logContext(log.atSevere(), newScheduleEntity.getPipelineName())
+          .log("Invalid cron expression: %s", newScheduleEntity.getCron());
+      schedule.removeSchedule();
+    } else {
+      schedule.refreshSchedule(newScheduleEntity);
+    }
+  }
+
+  /**
+   * Updates the cron description if it is null or has changed.
+   *
+   * @param scheduleEntity the schedule
+   */
+  private void updateCron(ScheduleEntity scheduleEntity) {
     String description = CronUtils.describe(scheduleEntity.getCron());
     if (!description.equals(scheduleEntity.getDescription())) {
       scheduleEntity.setDescription(description);
       scheduleService.saveProcessSchedule(scheduleEntity);
     }
-    if (!CronUtils.validate(scheduleEntity.getCron())) {
-      logContext(log.atSevere(), scheduleEntity.getPipelineName())
-          .log("Invalid cron expression: %s", scheduleEntity.getCron());
-      return null;
-    }
-    return new Schedule(scheduleEntity);
   }
 
+  /**
+   * Removes deleted schedules.
+   *
+   * @param newScheduleEntities the new schedules
+   */
+  private void removeSchedules(Collection<ScheduleEntity> newScheduleEntities) {
+    for (Schedule schedule : schedules) {
+      if (!newScheduleEntities.stream()
+          .filter(s -> s.getPipelineName().equals(schedule.getPipelineName()))
+          .findAny()
+          .isPresent()) {
+        schedule.removeSchedule();
+      }
+    }
+  }
+
+  /** Resumes processes if this is possible. */
+  private void resumeProcesses() {
+    getActiveSchedules()
+        .forEach(
+            schedule -> {
+              if (isResumeProcess(schedule)) {
+                resumeProcess(schedule);
+              }
+            });
+  }
+
+  /**
+   * Returns true if process execution can be resumed.
+   *
+   * @param schedule the schedule
+   * @return true if process execution can be resumed
+   */
   private boolean isResumeProcess(Schedule schedule) {
     ScheduleEntity scheduleEntity = schedule.getScheduleEntity();
     return (scheduleEntity.getStartTime() != null
@@ -165,18 +281,59 @@ public class PipeliteScheduler extends ProcessLauncherService {
         && scheduleEntity.getProcessId() != null);
   }
 
-  private void resumeProcess(Schedule schedule) {
+  /**
+   * Resumes process execution.
+   *
+   * @param schedule the schedule
+   * @return true if process execution was resumed
+   */
+  private boolean resumeProcess(Schedule schedule) {
+    if (!isResumeProcess(schedule)) {
+      return false;
+    }
     logContext(log.atInfo(), schedule.getPipelineName()).log("Resuming process execution");
     schedule.resumeExecution();
-    runProcess(schedule, createResumeProcessEntity(schedule));
+    runProcess(schedule, getSavedProcessEntity(schedule));
+    return true;
   }
 
-  private ProcessEntity createResumeProcessEntity(Schedule schedule) {
+  private ProcessEntity getSavedProcessEntity(Schedule schedule) {
     return processService
         .getSavedProcess(schedule.getPipelineName(), schedule.getScheduleEntity().getProcessId())
         .get();
   }
 
+  /** Schedules processes for execution. */
+  private void scheduleProcesses() {
+    getActiveSchedules()
+        .forEach(
+            schedule -> {
+              if (schedule.getLaunchTime() == null) {
+                scheduleProcess(schedule);
+              }
+            });
+  }
+
+  /**
+   * Schedules a process for execution.
+   *
+   * @param schedule the schedule
+   */
+  private void scheduleProcess(Schedule schedule) {
+    ScheduleEntity scheduleEntity = schedule.getScheduleEntity();
+    logContext(log.atInfo(), scheduleEntity.getPipelineName())
+        .log(
+            "Scheduling process for execution: %s cron %s (%s)",
+            schedule.getLaunchTime(), scheduleEntity.getCron(), scheduleEntity.getDescription());
+    schedule.newExecution();
+  }
+
+  /**
+   * Creates a new process entity to be executed.
+   *
+   * @param schedule the schedule
+   * @return the new process entity or null if it could not be created
+   */
   private ProcessEntity createNewProcessEntity(Schedule schedule) {
     String lastProcessId = schedule.getScheduleEntity().getProcessId();
     String nextProcessId = nextProcessId(lastProcessId);
@@ -199,6 +356,13 @@ public class PipeliteScheduler extends ProcessLauncherService {
         pipelineName, nextProcessId, ProcessEntity.DEFAULT_PRIORITY);
   }
 
+  /**
+   * Returns the next process id.
+   *
+   * @param lastProcessId the last process id
+   * @return the next process id
+   * @throws RuntimeException if a new process id could not be created
+   */
   public static String nextProcessId(String lastProcessId) {
     if (lastProcessId == null) {
       return "1";
@@ -210,7 +374,14 @@ public class PipeliteScheduler extends ProcessLauncherService {
     }
   }
 
-  private void runProcess(Schedule schedule, ProcessEntity processEntity) {
+  /**
+   * Executes the scheduled process.
+   *
+   * @param schedule the schedule
+   * @param processEntity the process
+   * @return true if the process could be executed
+   */
+  private boolean runProcess(Schedule schedule, ProcessEntity processEntity) {
     ScheduleEntity scheduleEntity = schedule.getScheduleEntity();
     String pipelineName = scheduleEntity.getPipelineName();
     String processId = processEntity.getProcessId();
@@ -224,36 +395,63 @@ public class PipeliteScheduler extends ProcessLauncherService {
     if (process == null) {
       stats.get(pipelineName).addProcessCreationFailedCount(1);
       logContext(log.atSevere(), pipelineName, processId).log("Failed to create scheduled process");
-    } else {
-      maximumExecutions.get(pipelineName).decrementAndGet();
-      runProcess(
-          pipelineName,
-          process,
-          (p, r) -> {
-            scheduleEntity.endExecution();
-            scheduleService.saveProcessSchedule(scheduleEntity);
-            schedule.newExecution();
-            stats(pipelineName).add(p, r);
-          });
+      return false;
     }
+    maximumExecutions.get(pipelineName).decrementAndGet();
+    runningSchedules.add(schedule);
+    runProcess(
+        pipelineName,
+        process,
+        (p, r) -> {
+          scheduleEntity.endExecution();
+          scheduleService.saveProcessSchedule(scheduleEntity);
+          schedule.newExecution();
+          getStats(pipelineName).add(p, r);
+          runningSchedules.remove(schedule);
+        });
+    return true;
   }
 
-  public Collection<Schedule> getSchedules() {
-    return this.schedules;
+  /**
+   * Returns all active schedules.
+   *
+   * @return all active schedules.
+   */
+  public Stream<Schedule> getActiveSchedules() {
+    return this.schedules.stream().filter(schedule -> schedule.isActive());
   }
 
+  /**
+   * Returns all schedules that are not running and are waiting to be executed later.
+   *
+   * @return all schedules that are not running and are waiting to be executed later.
+   */
   public Stream<Schedule> getPendingSchedules() {
-    return this.schedules.stream()
-        .filter(schedule -> !isPipelineActive(schedule.scheduleEntity.getPipelineName()));
-  }
-
-  public Stream<Schedule> getExecutableSchedules() {
-    return getPendingSchedules()
-        .filter(schedule -> !schedule.getLaunchTime().isAfter(LocalDateTime.now()))
+    return getActiveSchedules()
+        .filter(schedule -> !isPipelineActive(schedule.scheduleEntity.getPipelineName()))
         .filter(
             schedule ->
                 maximumExecutions.get(schedule.getPipelineName()) == null
                     || maximumExecutions.get(schedule.getPipelineName()).get() > 0);
+  }
+
+  /**
+   * Returns all stages that are not running and can be executed immediately.
+   *
+   * @return all stages that are not running and can be executed immediately.
+   */
+  public Stream<Schedule> getExecutableSchedules() {
+    return getPendingSchedules()
+        .filter(schedule -> !schedule.getLaunchTime().isAfter(LocalDateTime.now()));
+  }
+
+  /**
+   * Returns all running schedules.
+   *
+   * @return all running schedules.
+   */
+  public Stream<Schedule> getRunningSchedules() {
+    return this.runningSchedules.stream();
   }
 
   public void setMaximumExecutions(String pipelineName, long maximumExecutions) {
@@ -261,12 +459,8 @@ public class PipeliteScheduler extends ProcessLauncherService {
     this.maximumExecutions.get(pipelineName).set(maximumExecutions);
   }
 
-  private ProcessLauncherStats stats(String pipelineName) {
-    stats.putIfAbsent(pipelineName, new ProcessLauncherStats());
-    return stats.get(pipelineName);
-  }
-
   public ProcessLauncherStats getStats(String pipelineName) {
+    stats.putIfAbsent(pipelineName, new ProcessLauncherStats());
     return stats.get(pipelineName);
   }
 
