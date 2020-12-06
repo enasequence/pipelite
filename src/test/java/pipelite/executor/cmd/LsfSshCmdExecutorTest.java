@@ -22,11 +22,13 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LsfTestConfiguration;
+import pipelite.exception.PipeliteInterruptedException;
 import pipelite.executor.StageExecutor;
 import pipelite.executor.StageExecutorParameters;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
+import pipelite.time.Time;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
@@ -71,11 +73,8 @@ public class LsfSshCmdExecutorTest {
       if (!result.isActive()) {
         break;
       }
-
-      try {
-        Thread.sleep(Duration.ofSeconds(5).toMillis());
-      } catch (InterruptedException ex) {
-        throw new RuntimeException(ex);
+      if (!Time.wait(5, TimeUnit.SECONDS)) {
+        throw new PipeliteInterruptedException("Stage launcher was interrupted");
       }
     }
 

@@ -67,7 +67,9 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
 
   @Override
   protected boolean shutdownIfIdle() {
-    return !processQueue.isAvailableProcesses(0) && getActiveProcessRunnerCount() == 0 && shutdownIfIdle;
+    return !processQueue.isAvailableProcesses(0)
+        && getActiveProcessRunnerCount() == 0
+        && shutdownIfIdle;
   }
 
   protected void runProcess(ProcessEntity processEntity) {

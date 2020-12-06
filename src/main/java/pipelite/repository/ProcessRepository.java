@@ -10,9 +10,7 @@
  */
 package pipelite.repository;
 
-import java.util.List;
 import java.util.stream.Stream;
-
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
@@ -37,8 +35,7 @@ public interface ProcessRepository extends CrudRepository<ProcessEntity, Process
 
   /** Finds maximum process id. */
   @Query(
-          value =
-                  "SELECT MAX(PROCESS_ID) FROM PIPELITE_PROCESS A WHERE PIPELINE_NAME = ?1",
-          nativeQuery = true)
+      value = "SELECT MAX(PROCESS_ID) FROM PIPELITE_PROCESS A WHERE PIPELINE_NAME = ?1",
+      nativeQuery = true)
   String findMaxProcessId(String pipelineName);
 }

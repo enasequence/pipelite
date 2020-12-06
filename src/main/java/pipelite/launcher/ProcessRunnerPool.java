@@ -10,9 +10,8 @@
  */
 package pipelite.launcher;
 
-import pipelite.process.Process;
-
 import java.util.List;
+import pipelite.process.Process;
 
 public interface ProcessRunnerPool {
 

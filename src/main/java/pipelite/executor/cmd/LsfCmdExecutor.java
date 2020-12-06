@@ -17,10 +17,12 @@ import java.util.regex.Pattern;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.flogger.Flogger;
+import pipelite.exception.PipeliteInterruptedException;
 import pipelite.executor.cmd.runner.CmdRunner;
 import pipelite.executor.cmd.runner.CmdRunnerResult;
 import pipelite.log.LogKey;
 import pipelite.stage.*;
+import pipelite.time.Time;
 
 @Flogger
 @Data
@@ -148,12 +150,9 @@ public class LsfCmdExecutor extends CmdExecutor {
     LocalDateTime stdoutFileWaitStart = LocalDateTime.now();
     while (stdoutFileWaitStart.plus(STDOUT_FILE_MAX_WAIT_TIME).isAfter(LocalDateTime.now())
         && !stdoutFileExists(getCmdRunner(), stdoutFile, stage)) {
-      try {
-        Thread.sleep(STDOUT_FILE_POLL_WAIT_TIME.toMillis());
-      } catch (InterruptedException ex) {
-        log.atSevere().log("LSF command executor was interrupted");
-        Thread.currentThread().interrupt();
-        throw new RuntimeException(ex);
+
+      if (!Time.wait(STDOUT_FILE_POLL_WAIT_TIME)) {
+        throw new PipeliteInterruptedException("LSF command executor was interrupted");
       }
     }
 

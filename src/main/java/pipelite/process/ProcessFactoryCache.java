@@ -10,12 +10,11 @@
  */
 package pipelite.process;
 
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.service.ProcessFactoryService;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Flogger
 public class ProcessFactoryCache {

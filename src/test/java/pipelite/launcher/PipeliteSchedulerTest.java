@@ -13,6 +13,10 @@ package pipelite.launcher;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import pipelite.TestProcessFactory;
 import pipelite.UniqueStringGenerator;
@@ -29,11 +33,6 @@ import pipelite.service.ProcessService;
 import pipelite.service.ScheduleService;
 import pipelite.stage.StageExecutionResultType;
 import pipelite.time.Time;
-
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
 
 public class PipeliteSchedulerTest {
 

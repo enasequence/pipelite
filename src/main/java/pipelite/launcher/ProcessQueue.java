@@ -11,19 +11,18 @@
 package pipelite.launcher;
 
 import com.google.common.flogger.FluentLogger;
-import lombok.extern.flogger.Flogger;
-import org.springframework.util.Assert;
-import pipelite.configuration.LauncherConfiguration;
-import pipelite.entity.ProcessEntity;
-import pipelite.log.LogKey;
-import pipelite.service.ProcessService;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.extern.flogger.Flogger;
+import org.springframework.util.Assert;
+import pipelite.configuration.LauncherConfiguration;
+import pipelite.entity.ProcessEntity;
+import pipelite.log.LogKey;
+import pipelite.service.ProcessService;
 
 @Flogger
 public class ProcessQueue {
@@ -41,18 +40,18 @@ public class ProcessQueue {
   private LocalDateTime processQueueMinValidUntil = LocalDateTime.now();
 
   public ProcessQueue(
-          LauncherConfiguration launcherConfiguration,
-          ProcessService processService,
-          String pipelineName) {
+      LauncherConfiguration launcherConfiguration,
+      ProcessService processService,
+      String pipelineName) {
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(pipelineName, "Missing pipeline name");
     this.processService = processService;
     this.launcherName = LauncherConfiguration.getLauncherName(pipelineName, launcherConfiguration);
     this.pipelineName = pipelineName;
     this.processQueueMaxRefreshFrequency =
-            launcherConfiguration.getProcessQueueMaxRefreshFrequency();
+        launcherConfiguration.getProcessQueueMaxRefreshFrequency();
     this.processQueueMinRefreshFrequency =
-            launcherConfiguration.getProcessQueueMinRefreshFrequency();
+        launcherConfiguration.getProcessQueueMinRefreshFrequency();
     this.processQueueMaxSize = launcherConfiguration.getProcessQueueMaxSize();
     this.processParallelism = launcherConfiguration.getProcessParallelism();
   }
@@ -64,25 +63,25 @@ public class ProcessQueue {
    */
   public boolean isFillQueue() {
     return isFillQueue(
-            processQueueIndex.get(),
-            processQueue.size(),
-            processQueueMaxValidUntil,
-            processQueueMinValidUntil,
-            processParallelism);
+        processQueueIndex.get(),
+        processQueue.size(),
+        processQueueMaxValidUntil,
+        processQueueMinValidUntil,
+        processParallelism);
   }
 
   /** Returns true if the process queue should be recreated. */
   public static boolean isFillQueue(
-          int processQueueIndex,
-          int processQueueSize,
-          LocalDateTime processQueueMaxValidUntil,
-          LocalDateTime processQueueMinValidUntil,
-          int processParallelism) {
+      int processQueueIndex,
+      int processQueueSize,
+      LocalDateTime processQueueMaxValidUntil,
+      LocalDateTime processQueueMinValidUntil,
+      int processParallelism) {
     if (processQueueMinValidUntil.isAfter(LocalDateTime.now())) {
       return false;
     }
     return processQueueIndex >= processQueueSize - processParallelism + 1
-            || !processQueueMaxValidUntil.isAfter(LocalDateTime.now());
+        || !processQueueMaxValidUntil.isAfter(LocalDateTime.now());
   }
 
   /**
@@ -146,7 +145,7 @@ public class ProcessQueue {
 
   protected List<ProcessEntity> getPendingProcesses() {
     return processService.getPendingProcesses(
-            pipelineName, processQueueMaxSize - processQueue.size());
+        pipelineName, processQueueMaxSize - processQueue.size());
   }
 
   public LocalDateTime getProcessQueueMaxValidUntil() {

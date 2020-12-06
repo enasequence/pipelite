@@ -14,5 +14,4 @@ import java.util.function.BiConsumer;
 import pipelite.process.Process;
 
 /** Callback at the end of process execution. */
-public interface ProcessRunnerCallback
-    extends BiConsumer<Process, ProcessRunnerResult> {}
+public interface ProcessRunnerCallback extends BiConsumer<Process, ProcessRunnerResult> {}

@@ -16,11 +16,13 @@ import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
+import pipelite.exception.PipeliteInterruptedException;
 import pipelite.executor.ConfigurableStageExecutorParameters;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
+import pipelite.time.Time;
 
 @Flogger
 /** Executes a stage and returns the stage execution result. */
@@ -127,12 +129,9 @@ public class StageLauncher {
         result = StageExecutionResult.error(ex);
         break;
       }
-      try {
-        Thread.sleep(stagePollFrequency.toMillis());
-      } catch (InterruptedException ex) {
-        log.atSevere().log("Stage launcher was interrupted");
-        Thread.currentThread().interrupt();
-        throw new RuntimeException(ex);
+
+      if (!Time.wait(stagePollFrequency)) {
+        throw new PipeliteInterruptedException("Stage launcher was interrupted");
       }
     }
     return result;

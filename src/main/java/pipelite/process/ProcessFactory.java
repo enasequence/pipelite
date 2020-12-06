@@ -21,8 +21,7 @@ public interface ProcessFactory {
 
   FluentLogger log = FluentLogger.forEnclosingClass();
 
-  static Process create(
-      ProcessEntity processEntity, ProcessFactory processFactory) {
+  static Process create(ProcessEntity processEntity, ProcessFactory processFactory) {
     String processId = processEntity.getProcessId();
     log.atInfo().log("Creating process: %s", processId);
     // Create process.

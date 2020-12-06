@@ -128,8 +128,7 @@ public class AdminController {
   private List<Process> getProcesses(Collection<ProcessRunner> processRunners) {
     List<Process> processes = new ArrayList<>();
     for (ProcessRunner processRunner : processRunners) {
-      Duration executionTime =
-          Duration.between(LocalDateTime.now(), processRunner.getStartTime());
+      Duration executionTime = Duration.between(LocalDateTime.now(), processRunner.getStartTime());
       processes.add(
           Process.builder()
               .pipelineName(processRunner.getPipelineName())
