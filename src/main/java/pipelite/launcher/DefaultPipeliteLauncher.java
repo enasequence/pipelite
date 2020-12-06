@@ -12,6 +12,7 @@ package pipelite.launcher;
 
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
+import pipelite.lock.DefaultPipeliteLocker;
 import pipelite.lock.PipeliteLocker;
 import pipelite.process.ProcessFactory;
 import pipelite.service.*;
@@ -31,7 +32,7 @@ public class DefaultPipeliteLauncher {
       MailService mailService,
       String pipelineName) {
 
-    PipeliteLocker pipeliteLocker = new PipeliteLocker(lockService);
+    PipeliteLocker pipeliteLocker = new DefaultPipeliteLocker(lockService);
     ProcessFactory processFactory = processFactoryService.create(pipelineName);
     ProcessCreator processCreator =
         new ProcessCreator(processSourceService.create(pipelineName), processService, pipelineName);

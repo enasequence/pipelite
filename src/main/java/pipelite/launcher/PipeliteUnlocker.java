@@ -17,7 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.entity.LauncherLockEntity;
-import pipelite.lock.PipeliteLocker;
+import pipelite.lock.DefaultPipeliteLocker;
 import pipelite.log.LogKey;
 import pipelite.service.LockService;
 
@@ -60,7 +60,7 @@ public class PipeliteUnlocker extends PipeliteService {
   public void removeExpiredLocks() {
     for (LauncherLockEntity launcherLock : lockService.getExpiredLauncherLocks()) {
       logContext(log.atInfo(), launcherLock.getLauncherName()).log("Removing expired locks");
-      PipeliteLocker.unlock(lockService, launcherLock);
+      DefaultPipeliteLocker.unlock(lockService, launcherLock);
     }
   }
 

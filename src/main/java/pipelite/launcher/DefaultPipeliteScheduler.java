@@ -12,6 +12,7 @@ package pipelite.launcher;
 
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
+import pipelite.lock.DefaultPipeliteLocker;
 import pipelite.lock.PipeliteLocker;
 import pipelite.service.*;
 
@@ -29,7 +30,7 @@ public class DefaultPipeliteScheduler {
       StageService stageService,
       MailService mailService) {
 
-    PipeliteLocker pipeliteLocker = new PipeliteLocker(lockService);
+    PipeliteLocker pipeliteLocker = new DefaultPipeliteLocker(lockService);
 
     return new PipeliteScheduler(
         launcherConfiguration,

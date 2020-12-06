@@ -10,89 +10,53 @@
  */
 package pipelite.lock;
 
-import lombok.extern.flogger.Flogger;
-import org.springframework.util.Assert;
 import pipelite.entity.LauncherLockEntity;
-import pipelite.service.LockService;
 
-@Flogger
 /**
  * Manages launcher locks. Launcher locks prevent two launchers with the same name from being
  * executed at the same time. Launcher lock may expire. If it does then the launcher lock and any
  * associated process locks will be removed by the PipeliteUnlocker. Lock expiry can be prevented by
  * renewing the launcher lock.
  */
-public class PipeliteLocker {
+public interface PipeliteLocker {
 
-  private final LockService lockService;
-  private String launcherName;
-  private LauncherLockEntity lock;
+  /**
+   * Initialises the locker. Must be called before calling any other methods.
+   *
+   * @param launcherName the unique launcher name
+   */
+  void init(String launcherName);
 
-  public PipeliteLocker(LockService lockService) {
-    Assert.notNull(lockService, "Missing locker service");
-    this.lockService = lockService;
-  }
-
-  public void init(String launcherName) {
-    Assert.notNull(launcherName, "Missing launcher name");
-    this.launcherName = launcherName;
-  }
+  /**
+   * Returns the launcher name.
+   *
+   * @return the launcher name
+   */
+  String getLauncherName();
 
   /**
    * Locks the launcher.
    *
    * @throws RuntimeException if the launcher could not be locked
    */
-  public void lock() {
-    Assert.notNull(launcherName, "Missing launcher name");
-    log.atInfo().log("Locking launcher: " + launcherName);
-    lock = lockService.lockLauncher(launcherName);
-    if (lock == null) {
-      throw new RuntimeException("Could not lock launcher " + launcherName);
-    }
-  }
+  void lock();
 
   /**
    * Renews the launcher lock.
    *
    * @throws RuntimeException if the launcher lock could not be renewed
    */
-  public void renewLock() {
-    Assert.notNull(lock, "Missing lock");
-    log.atInfo().log("Re-locking launcher: " + launcherName);
-    if (!lockService.relockLauncher(lock)) {
-      throw new RuntimeException("Could not re-lock launcher " + launcherName);
-    }
-  }
+  void renewLock();
 
   /** Removes locks associated with the launcher. */
-  public void unlock() {
-    Assert.notNull(lock, "Missing lock");
-    log.atInfo().log("Unlocking launcher: " + launcherName);
-    try {
-      unlock(lockService, lock);
-    } catch (Exception ex) {
-      log.atSevere().log("Failed to unlock launcher: " + launcherName);
-    }
-  }
-
-  /** Removes locks associated with the launcher. */
-  public static void unlock(LockService lockService, LauncherLockEntity lock) {
-    lockService.unlockProcesses(lock);
-    lockService.unlockLauncher(lock);
-  }
+  void unlock();
 
   /**
    * Locks a process associated with this launcher.
    *
    * @return false if the process could not be locked
    */
-  public boolean lockProcess(String pipelineName, String processId) {
-    Assert.notNull(lock, "Missing lock");
-    Assert.notNull(pipelineName, "Missing pipeline name");
-    Assert.notNull(processId, "Missing process id");
-    return lockService.lockProcess(lock, pipelineName, processId);
-  }
+  boolean lockProcess(String pipelineName, String processId);
 
   /**
    * Unlocks a process associated with this launcher.
@@ -100,18 +64,12 @@ public class PipeliteLocker {
    * @param pipelineName the pipeline name
    * @param processId the process id
    */
-  public void unlockProcess(String pipelineName, String processId) {
-    Assert.notNull(lock, "Missing lock");
-    Assert.notNull(pipelineName, "Missing pipeline name");
-    Assert.notNull(processId, "Missing process id");
-    lockService.unlockProcess(lock, pipelineName, processId);
-  }
+  void unlockProcess(String pipelineName, String processId);
 
-  public String getLauncherName() {
-    return launcherName;
-  }
-
-  LauncherLockEntity getLock() {
-    return lock;
-  }
+  /**
+   * Returns the lock.
+   *
+   * @return the lock
+   */
+  LauncherLockEntity getLock();
 }

@@ -159,11 +159,11 @@ public class DefaultProcessRunner implements ProcessRunner {
   }
 
   private void startProcessExecution() {
-    startStageExecution();
+    startStagesExecution();
     processService.startExecution(process.getProcessEntity());
   }
 
-  private void startStageExecution() {
+  private void startStagesExecution() {
     for (Stage stage : process.getStages()) {
       startStageExecution(stage);
     }
