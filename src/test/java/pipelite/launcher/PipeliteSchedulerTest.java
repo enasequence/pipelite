@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import pipelite.TestProcessFactory;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
@@ -58,6 +59,7 @@ public class PipeliteSchedulerTest {
   }
 
   @Test
+  @Timeout(10)
   public void refresh() {
     String launcherName = UniqueStringGenerator.randomLauncherName();
     String pipelineName1 = UniqueStringGenerator.randomPipelineName();
@@ -218,7 +220,7 @@ public class PipeliteSchedulerTest {
     launcherConfiguration.setSchedulerName(launcherName);
     launcherConfiguration.setScheduleRefreshFrequency(scheduleRefreshFrequency);
 
-    // Create two schedules with start and process id to allow processes to resume.
+    // Create two schedules with start time and process id to allow processes to resume.
 
     LocalDateTime launchTime1 = LocalDateTime.now().minusHours(1);
     LocalDateTime launchTime2 = LocalDateTime.now().minusHours(1);
@@ -229,8 +231,10 @@ public class PipeliteSchedulerTest {
     scheduleEntity2.setPipelineName(pipelineName2);
     scheduleEntity1.setStartTime(launchTime1);
     scheduleEntity2.setStartTime(launchTime2);
-    scheduleEntity1.setProcessId("1");
-    scheduleEntity2.setProcessId("1");
+    String processId1 = "1";
+    String processId2 = "2";
+    scheduleEntity1.setProcessId(processId1);
+    scheduleEntity2.setProcessId(processId2);
 
     scheduleEntity1.setCron("0/2 * * * * ?"); // every two seconds
     scheduleEntity2.setCron("0/1 * * * * ?"); // every second
@@ -240,9 +244,9 @@ public class PipeliteSchedulerTest {
     ScheduleService scheduleService = mock(ScheduleService.class);
 
     ProcessFactory processFactory1 =
-        new TestProcessFactory(pipelineName1, Arrays.asList(testProcess("1")));
+        new TestProcessFactory(pipelineName1, Arrays.asList(testProcess(processId1)));
     ProcessFactory processFactory2 =
-        new TestProcessFactory(pipelineName2, Arrays.asList(testProcess("1")));
+        new TestProcessFactory(pipelineName2, Arrays.asList(testProcess(processId2)));
     doAnswer(I -> processFactory1).when(processFactoryService).create(eq(pipelineName1));
     doAnswer(I -> processFactory2).when(processFactoryService).create(eq(pipelineName2));
 
@@ -297,7 +301,8 @@ public class PipeliteSchedulerTest {
 
     pipeliteScheduler.startUp();
     verify(pipeliteScheduler, times(4)).isResumeProcess(any());
-    verify(processRunnerPool, times(2)).runProcess(any(), any(), any());
+    verify(processRunnerPool, times(1)).runProcess(eq(pipelineName1), any(), any());
+    verify(processRunnerPool, times(1)).runProcess(eq(pipelineName2), any(), any());
 
     assertThat(pipeliteScheduler.getExecutableSchedules().count()).isEqualTo(0);
     assertThat(pipeliteScheduler.getPendingSchedules().count()).isEqualTo(2);
@@ -307,5 +312,113 @@ public class PipeliteSchedulerTest {
     assertThat(launchTime2)
         .isBefore(
             pipeliteScheduler.getPendingSchedules().skip(1).findFirst().get().getLaunchTime());
+  }
+
+  @Test
+  public void invalidCron() {
+    String launcherName = UniqueStringGenerator.randomLauncherName();
+    String pipelineName1 = UniqueStringGenerator.randomPipelineName();
+
+    // Create launcher configuration with schedule refresh frequency.
+
+    LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
+    launcherConfiguration.setSchedulerName(launcherName);
+
+    // Create schedule that has invalid cron.
+
+    ScheduleEntity scheduleEntity1 = new ScheduleEntity();
+    scheduleEntity1.setPipelineName(pipelineName1);
+    scheduleEntity1.setCron("invalid");
+
+    PipeliteLocker pipeliteLocker = mock(PipeliteLocker.class);
+    ProcessFactoryService processFactoryService = mock(ProcessFactoryService.class);
+    ScheduleService scheduleService = mock(ScheduleService.class);
+    ProcessService processService = mock(ProcessService.class);
+    ProcessRunnerPool processRunnerPool = mock(ProcessRunnerPool.class);
+
+    // Return schedule from the schedule service.
+
+    doReturn(Arrays.asList(scheduleEntity1)).when(scheduleService).getAllProcessSchedules(any());
+
+    // Create pipelite scheduler.
+
+    PipeliteScheduler pipeliteScheduler =
+            spy(
+                    new PipeliteScheduler(
+                            launcherConfiguration,
+                            pipeliteLocker,
+                            processFactoryService,
+                            scheduleService,
+                            processService,
+                            () -> processRunnerPool));
+    int maxExecution1 = 1;
+    pipeliteScheduler.setMaximumExecutions(pipelineName1, maxExecution1);
+
+    pipeliteScheduler.startUp();
+
+    verify(processRunnerPool, times(0)).runProcess(any(), any(), any());
+    assertThat(pipeliteScheduler.getSchedules().count()).isZero();
+  }
+
+  @Test
+  public void resumeNoProcess() {
+    String launcherName = UniqueStringGenerator.randomLauncherName();
+    String pipelineName1 = UniqueStringGenerator.randomPipelineName();
+
+    // Create launcher configuration with schedule refresh frequency.
+
+    LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
+    launcherConfiguration.setSchedulerName(launcherName);
+
+    // Create schedule with start time and process id to allow processes to resume.
+
+    LocalDateTime launchTime1 = LocalDateTime.now().minusHours(1);
+
+    ScheduleEntity scheduleEntity1 = new ScheduleEntity();
+    scheduleEntity1.setPipelineName(pipelineName1);
+    scheduleEntity1.setStartTime(launchTime1);
+    String processId1 = "1";
+    scheduleEntity1.setProcessId(processId1);
+    scheduleEntity1.setCron("0/2 * * * * ?"); // every two seconds
+
+    PipeliteLocker pipeliteLocker = mock(PipeliteLocker.class);
+    ProcessFactoryService processFactoryService = mock(ProcessFactoryService.class);
+    ScheduleService scheduleService = mock(ScheduleService.class);
+    ProcessService processService = mock(ProcessService.class);
+    ProcessRunnerPool processRunnerPool = mock(ProcessRunnerPool.class);
+
+    // Create process factory.
+
+    ProcessFactory processFactory1 =
+        new TestProcessFactory(pipelineName1, Arrays.asList(testProcess(processId1)));
+    doAnswer(I -> processFactory1).when(processFactoryService).create(eq(pipelineName1));
+
+    // Return schedule from the schedule service.
+
+    doReturn(Arrays.asList(scheduleEntity1)).when(scheduleService).getAllProcessSchedules(any());
+
+    // Create pipelite scheduler.
+
+    PipeliteScheduler pipeliteScheduler =
+        spy(
+            new PipeliteScheduler(
+                launcherConfiguration,
+                pipeliteLocker,
+                processFactoryService,
+                scheduleService,
+                processService,
+                () -> processRunnerPool));
+    int maxExecution1 = 1;
+    pipeliteScheduler.setMaximumExecutions(pipelineName1, maxExecution1);
+
+    pipeliteScheduler.startUp();
+
+    verify(pipeliteScheduler, times(1)).resumeProcesses();
+    verify(pipeliteScheduler, times(1)).resumeProcess(any());
+    verify(processRunnerPool, times(0)).runProcess(any(), any(), any());
+    verify(pipeliteScheduler, times(1)).scheduleProcesses();
+    verify(pipeliteScheduler, times(1)).scheduleProcess(any());
+    assertThat(pipeliteScheduler.getExecutableSchedules().count()).isEqualTo(0);
+    assertThat(pipeliteScheduler.getPendingSchedules().count()).isEqualTo(1);
   }
 }

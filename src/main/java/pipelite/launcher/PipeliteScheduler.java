@@ -297,24 +297,28 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
    * @param schedule the schedule
    * @return true if process execution was resumed
    */
-  private boolean resumeProcess(Schedule schedule) {
+  protected boolean resumeProcess(Schedule schedule) {
     if (!isResumeProcess(schedule)) {
       return false;
     }
     logContext(log.atInfo(), schedule.getPipelineName()).log("Resuming process execution");
+    Optional<ProcessEntity> processEntity = getSavedProcessEntity(schedule);
+    if (!processEntity.isPresent()) {
+      logContext(log.atSevere()).log("Could not resume process because it does not exist");
+      return false;
+    }
     schedule.resumeExecution();
-    runProcess(schedule, getSavedProcessEntity(schedule));
+    runProcess(schedule, processEntity.get());
     return true;
   }
 
-  private ProcessEntity getSavedProcessEntity(Schedule schedule) {
-    return processService
-        .getSavedProcess(schedule.getPipelineName(), schedule.getScheduleEntity().getProcessId())
-        .get();
+  private Optional<ProcessEntity> getSavedProcessEntity(Schedule schedule) {
+    return processService.getSavedProcess(
+        schedule.getPipelineName(), schedule.getScheduleEntity().getProcessId());
   }
 
   /** Schedules processes for execution. */
-  private void scheduleProcesses() {
+  protected void scheduleProcesses() {
     getActiveSchedules()
         .forEach(
             schedule -> {
@@ -329,7 +333,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
    *
    * @param schedule the schedule
    */
-  private void scheduleProcess(Schedule schedule) {
+  protected void scheduleProcess(Schedule schedule) {
     ScheduleEntity scheduleEntity = schedule.getScheduleEntity();
     logContext(log.atInfo(), scheduleEntity.getPipelineName())
         .log(
@@ -403,7 +407,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     Process process =
         ProcessFactory.create(processEntity, processFactoryCache.getProcessFactory(pipelineName));
     if (process == null) {
-      stats.get(pipelineName).addProcessCreationFailedCount(1);
+      getStats(pipelineName).addProcessCreationFailedCount(1);
       logContext(log.atSevere(), pipelineName, processId).log("Failed to create scheduled process");
       return false;
     }
@@ -423,12 +427,21 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   }
 
   /**
+   * Returns all schedules.
+   *
+   * @return all schedules.
+   */
+  public Stream<Schedule> getSchedules() {
+    return this.schedules.stream();
+  }
+
+  /**
    * Returns all active schedules.
    *
    * @return all active schedules.
    */
   public Stream<Schedule> getActiveSchedules() {
-    return this.schedules.stream().filter(schedule -> schedule.isActive());
+    return getSchedules().filter(schedule -> schedule.isActive());
   }
 
   /**
