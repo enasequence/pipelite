@@ -8,12 +8,12 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.launcher.process.queue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
-import static pipelite.launcher.DefaultProcessQueue.isFillQueue;
+import static pipelite.launcher.process.queue.DefaultProcessQueue.isFillQueue;
 
 import java.time.Duration;
 import java.time.LocalDateTime;

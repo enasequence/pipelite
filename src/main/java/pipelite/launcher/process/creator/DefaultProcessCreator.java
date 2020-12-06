@@ -8,17 +8,16 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.launcher.process.creator;
 
 import com.google.common.flogger.FluentLogger;
+import java.util.Optional;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.entity.ProcessEntity;
 import pipelite.log.LogKey;
 import pipelite.process.ProcessSource;
 import pipelite.service.ProcessService;
-
-import java.util.Optional;
 
 @Flogger
 public class DefaultProcessCreator implements ProcessCreator {

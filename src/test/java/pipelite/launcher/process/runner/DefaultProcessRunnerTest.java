@@ -8,13 +8,14 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.launcher.process.runner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static pipelite.stage.StageExecutionResultType.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import pipelite.entity.StageEntity;
 import pipelite.executor.StageExecutorParameters;
@@ -79,7 +80,7 @@ public class DefaultProcessRunnerTest {
     List<Stage> stages =
         createStageExecutions(
             firstStageState, secondStageState, firstStageExecutions, secondStageExecutions, 0, 0);
-    assertThat(DefaultProcessRunner.evaluateProcessState(stages)).isEqualTo(state);
+    Assertions.assertThat(DefaultProcessRunner.evaluateProcessState(stages)).isEqualTo(state);
   }
 
   @Test

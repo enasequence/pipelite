@@ -15,6 +15,10 @@ import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.entity.ProcessEntity;
+import pipelite.launcher.process.creator.ProcessCreator;
+import pipelite.launcher.process.queue.ProcessQueue;
+import pipelite.launcher.process.runner.ProcessRunnerPool;
+import pipelite.launcher.process.runner.ProcessRunnerPoolService;
 import pipelite.lock.PipeliteLocker;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
@@ -52,6 +56,11 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
     this.pipelineName = processQueue.getPipelineName();
     this.processCreateMaxSize = launcherConfiguration.getProcessCreateMaxSize();
     this.shutdownIfIdle = launcherConfiguration.isShutdownIfIdle();
+  }
+
+  @Override
+  protected void startUp() {
+    super.startUp();
   }
 
   @Override

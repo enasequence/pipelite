@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.launcher.process.runner;
 
 import static pipelite.stage.StageExecutionResultType.*;
 
@@ -25,6 +25,7 @@ import pipelite.configuration.*;
 import pipelite.entity.StageEntity;
 import pipelite.exception.PipeliteInterruptedException;
 import pipelite.executor.StageExecutorSerializer;
+import pipelite.launcher.StageLauncher;
 import pipelite.launcher.dependency.DependencyResolver;
 import pipelite.log.LogKey;
 import pipelite.process.Process;

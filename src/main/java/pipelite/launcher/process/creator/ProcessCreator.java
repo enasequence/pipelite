@@ -8,24 +8,26 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.launcher.process.creator;
 
-import java.time.LocalDateTime;
-import pipelite.process.Process;
+import pipelite.entity.ProcessEntity;
+import pipelite.process.ProcessSource;
 
-public interface ProcessRunner {
+public interface ProcessCreator {
+
   /**
-   * Runs a process.
+   * Creates and saves new processes using a process source.
    *
-   * @param pipelineName the pipeline name
-   * @param process the process
-   * @param callbacks the process execution callbacks
+   * @param processCnt the number or requested processes
+   * @return the number of created processes
    */
-  void runProcess(String pipelineName, Process process, ProcessRunnerCallback callbacks);
+  int createProcesses(int processCnt);
 
-  String getPipelineName();
-
-  String getProcessId();
-
-  LocalDateTime getStartTime();
+  /**
+   * Creates and saves a new process.
+   *
+   * @param newProcess the new process from process source
+   * @return the created process or null if it could not be created
+   */
+  ProcessEntity createProcess(ProcessSource.NewProcess newProcess);
 }

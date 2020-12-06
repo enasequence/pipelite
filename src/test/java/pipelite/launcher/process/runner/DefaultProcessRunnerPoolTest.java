@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.launcher.process.runner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -18,6 +18,7 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 import pipelite.entity.ProcessEntity;
+import pipelite.launcher.ProcessLauncherStats;
 import pipelite.lock.PipeliteLocker;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;

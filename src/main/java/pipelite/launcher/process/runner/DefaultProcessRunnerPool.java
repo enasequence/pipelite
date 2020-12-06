@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.launcher.process.runner;
 
 import com.google.common.flogger.FluentLogger;
 import java.util.*;
@@ -22,6 +22,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
+import pipelite.launcher.PipeliteServiceManager;
 import pipelite.lock.PipeliteLocker;
 import pipelite.log.LogKey;
 import pipelite.process.Process;

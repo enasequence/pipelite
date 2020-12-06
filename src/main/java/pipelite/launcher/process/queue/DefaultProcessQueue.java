@@ -8,22 +8,21 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.launcher.process.queue;
 
 import com.google.common.flogger.FluentLogger;
-import lombok.extern.flogger.Flogger;
-import org.springframework.util.Assert;
-import pipelite.configuration.LauncherConfiguration;
-import pipelite.entity.ProcessEntity;
-import pipelite.log.LogKey;
-import pipelite.service.ProcessService;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.extern.flogger.Flogger;
+import org.springframework.util.Assert;
+import pipelite.configuration.LauncherConfiguration;
+import pipelite.entity.ProcessEntity;
+import pipelite.log.LogKey;
+import pipelite.service.ProcessService;
 
 @Flogger
 public class DefaultProcessQueue implements ProcessQueue {
@@ -126,20 +125,20 @@ public class DefaultProcessQueue implements ProcessQueue {
     return processQueue.get(processQueueIndex.getAndIncrement());
   }
 
-  protected List<ProcessEntity> getActiveProcesses() {
+  public List<ProcessEntity> getActiveProcesses() {
     return processService.getActiveProcesses(pipelineName, launcherName, processQueueMaxSize);
   }
 
-  protected List<ProcessEntity> getPendingProcesses() {
+  public List<ProcessEntity> getPendingProcesses() {
     return processService.getPendingProcesses(
         pipelineName, processQueueMaxSize - processQueue.size());
   }
 
-  protected LocalDateTime getProcessQueueMaxValidUntil() {
+  public LocalDateTime getProcessQueueMaxValidUntil() {
     return processQueueMaxValidUntil;
   }
 
-  protected LocalDateTime getProcessQueueMinValidUntil() {
+  public LocalDateTime getProcessQueueMinValidUntil() {
     return processQueueMinValidUntil;
   }
 

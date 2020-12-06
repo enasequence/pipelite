@@ -12,6 +12,12 @@ package pipelite.launcher;
 
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
+import pipelite.launcher.process.creator.DefaultProcessCreator;
+import pipelite.launcher.process.creator.ProcessCreator;
+import pipelite.launcher.process.queue.DefaultProcessQueue;
+import pipelite.launcher.process.queue.ProcessQueue;
+import pipelite.launcher.process.runner.DefaultProcessRunner;
+import pipelite.launcher.process.runner.DefaultProcessRunnerPool;
 import pipelite.lock.DefaultPipeliteLocker;
 import pipelite.lock.PipeliteLocker;
 import pipelite.process.ProcessFactory;

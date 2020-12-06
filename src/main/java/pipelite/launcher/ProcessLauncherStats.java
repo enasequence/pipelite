@@ -13,6 +13,7 @@ package pipelite.launcher;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import pipelite.launcher.process.runner.ProcessRunnerResult;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 
@@ -56,7 +57,7 @@ public class ProcessLauncherStats {
     processExecutionCount.get(state).addAndGet(count);
   }
 
-  void add(Process process, ProcessRunnerResult result) {
+  public void add(Process process, ProcessRunnerResult result) {
     if (result.getProcessExecutionCount() > 0) {
       addProcessExecutionCount(
           process.getProcessEntity().getState(), result.getProcessExecutionCount());

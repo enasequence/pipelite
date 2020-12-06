@@ -8,10 +8,24 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.launcher.process.runner;
 
-import java.util.function.BiConsumer;
+import java.time.LocalDateTime;
 import pipelite.process.Process;
 
-/** Callback at the end of process execution. */
-public interface ProcessRunnerCallback extends BiConsumer<Process, ProcessRunnerResult> {}
+public interface ProcessRunner {
+  /**
+   * Runs a process.
+   *
+   * @param pipelineName the pipeline name
+   * @param process the process
+   * @param callbacks the process execution callbacks
+   */
+  void runProcess(String pipelineName, Process process, ProcessRunnerCallback callbacks);
+
+  String getPipelineName();
+
+  String getProcessId();
+
+  LocalDateTime getStartTime();
+}

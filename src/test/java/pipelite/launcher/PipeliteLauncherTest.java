@@ -22,6 +22,9 @@ import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.entity.ProcessEntity;
+import pipelite.launcher.process.creator.ProcessCreator;
+import pipelite.launcher.process.queue.DefaultProcessQueue;
+import pipelite.launcher.process.runner.DefaultProcessRunnerPool;
 import pipelite.lock.PipeliteLocker;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
@@ -82,7 +85,9 @@ public class PipeliteLauncherTest {
     launcherConfiguration.setProcessQueueMinRefreshFrequency(refreshFrequency);
 
     DefaultProcessQueue queue =
-        spy(new DefaultProcessQueue(launcherConfiguration, mock(ProcessService.class), pipelineName));
+        spy(
+            new DefaultProcessQueue(
+                launcherConfiguration, mock(ProcessService.class), pipelineName));
 
     assertThat(queue.getProcessQueueMaxValidUntil()).isBefore(LocalDateTime.now());
     assertThat(queue.getProcessQueueMinValidUntil()).isBefore(LocalDateTime.now());
@@ -127,7 +132,9 @@ public class PipeliteLauncherTest {
 
     ProcessCreator processCreator = mock(ProcessCreator.class);
     DefaultProcessQueue queue =
-        spy(new DefaultProcessQueue(launcherConfiguration, mock(ProcessService.class), pipelineName));
+        spy(
+            new DefaultProcessQueue(
+                launcherConfiguration, mock(ProcessService.class), pipelineName));
     when(queue.isFillQueue()).thenReturn(true);
 
     PipeliteLauncher launcher =

@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
 import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.PipeliteScheduler;
-import pipelite.launcher.ProcessRunner;
+import pipelite.launcher.process.runner.ProcessRunner;
 
 @RestController
 @RequestMapping(value = "/admin")
