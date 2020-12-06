@@ -46,8 +46,10 @@ public class PipeliteLauncherTest {
           }
         };
 
-    ProcessQueue queue =
-        spy(new ProcessQueue(launcherConfiguration, mock(ProcessService.class), pipelineName));
+    DefaultProcessQueue queue =
+        spy(
+            new DefaultProcessQueue(
+                launcherConfiguration, mock(ProcessService.class), pipelineName));
 
     List<ProcessEntity> processesEntities =
         Collections.nCopies(processCnt, mock(ProcessEntity.class));
@@ -79,8 +81,8 @@ public class PipeliteLauncherTest {
     launcherConfiguration.setProcessQueueMaxRefreshFrequency(refreshFrequency);
     launcherConfiguration.setProcessQueueMinRefreshFrequency(refreshFrequency);
 
-    ProcessQueue queue =
-        spy(new ProcessQueue(launcherConfiguration, mock(ProcessService.class), pipelineName));
+    DefaultProcessQueue queue =
+        spy(new DefaultProcessQueue(launcherConfiguration, mock(ProcessService.class), pipelineName));
 
     assertThat(queue.getProcessQueueMaxValidUntil()).isBefore(LocalDateTime.now());
     assertThat(queue.getProcessQueueMinValidUntil()).isBefore(LocalDateTime.now());
@@ -124,8 +126,8 @@ public class PipeliteLauncherTest {
     launcherConfiguration.setProcessCreateMaxSize(100);
 
     ProcessCreator processCreator = mock(ProcessCreator.class);
-    ProcessQueue queue =
-        spy(new ProcessQueue(launcherConfiguration, mock(ProcessService.class), pipelineName));
+    DefaultProcessQueue queue =
+        spy(new DefaultProcessQueue(launcherConfiguration, mock(ProcessService.class), pipelineName));
     when(queue.isFillQueue()).thenReturn(true);
 
     PipeliteLauncher launcher =

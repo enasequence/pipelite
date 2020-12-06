@@ -13,7 +13,7 @@ package pipelite.launcher;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
-import static pipelite.launcher.ProcessQueue.isFillQueue;
+import static pipelite.launcher.DefaultProcessQueue.isFillQueue;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -25,7 +25,7 @@ import pipelite.configuration.LauncherConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.service.ProcessService;
 
-public class PipeliteQueueTest {
+public class DefaultProcessQueueTest {
 
   @Test
   public void fillQueue() {
@@ -68,7 +68,8 @@ public class PipeliteQueueTest {
     doReturn(activeEntities).when(processService).getActiveProcesses(any(), any(), eq(150));
     doReturn(pendingEntities).when(processService).getPendingProcesses(any(), eq(50));
 
-    ProcessQueue queue = spy(new ProcessQueue(launcherConfiguration, processService, pipelineName));
+    DefaultProcessQueue queue =
+        spy(new DefaultProcessQueue(launcherConfiguration, processService, pipelineName));
 
     assertThat(queue.isFillQueue()).isTrue();
     assertThat(queue.isAvailableProcesses(0)).isFalse();
