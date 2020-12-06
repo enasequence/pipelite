@@ -16,6 +16,7 @@ import static org.mockito.Mockito.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import pipelite.TestProcessFactory;
@@ -29,7 +30,6 @@ import pipelite.launcher.process.runner.ProcessRunnerResult;
 import pipelite.lock.PipeliteLocker;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
-import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.ProcessFactoryService;
 import pipelite.service.ProcessService;
@@ -58,7 +58,7 @@ public class PipeliteSchedulerTest {
   }
 
   @Test
-  public void lifecycle() {
+  public void refresh() {
     String launcherName = UniqueStringGenerator.randomLauncherName();
     String pipelineName1 = UniqueStringGenerator.randomPipelineName();
     String pipelineName2 = UniqueStringGenerator.randomPipelineName();
@@ -167,16 +167,7 @@ public class PipeliteSchedulerTest {
 
     // Check that no processes have been executed yet.
 
-    assertThat(
-            pipeliteScheduler
-                .getStats(pipelineName1)
-                .getProcessExecutionCount(ProcessState.COMPLETED))
-        .isEqualTo(0);
-    assertThat(
-            pipeliteScheduler
-                .getStats(pipelineName2)
-                .getProcessExecutionCount(ProcessState.COMPLETED))
-        .isEqualTo(0);
+    verify(processRunnerPool, times(0)).runProcess(any(), any(), any());
 
     // Refresh the schedules and check that the launch times do not change. The schedules are not
     // allowed to be immediately refreshed.
@@ -201,7 +192,114 @@ public class PipeliteSchedulerTest {
       Time.wait(100, TimeUnit.MILLISECONDS);
     }
 
+    verify(processRunnerPool, times(2)).runProcess(any(), any(), any());
     assertThat(pipeliteScheduler.getExecutableSchedules().count()).isZero();
+    assertThat(pipeliteScheduler.getPendingSchedules().count()).isEqualTo(2);
+    assertThat(pipeliteScheduler.isRefreshSchedules()).isFalse();
+    assertThat(launchTime1)
+        .isBefore(pipeliteScheduler.getPendingSchedules().findFirst().get().getLaunchTime());
+    assertThat(launchTime2)
+        .isBefore(
+            pipeliteScheduler.getPendingSchedules().skip(1).findFirst().get().getLaunchTime());
+  }
+
+  @Test
+  public void resume() {
+    String launcherName = UniqueStringGenerator.randomLauncherName();
+    String pipelineName1 = UniqueStringGenerator.randomPipelineName();
+    String pipelineName2 = UniqueStringGenerator.randomPipelineName();
+    int maxExecution1 = 5;
+    int maxExecution2 = 5;
+
+    // Create launcher configuration with schedule refresh frequency.
+
+    Duration scheduleRefreshFrequency = Duration.ofSeconds(5);
+    LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
+    launcherConfiguration.setSchedulerName(launcherName);
+    launcherConfiguration.setScheduleRefreshFrequency(scheduleRefreshFrequency);
+
+    // Create two schedules with start and process id to allow processes to resume.
+
+    LocalDateTime launchTime1 = LocalDateTime.now().minusHours(1);
+    LocalDateTime launchTime2 = LocalDateTime.now().minusHours(1);
+
+    ScheduleEntity scheduleEntity1 = new ScheduleEntity();
+    ScheduleEntity scheduleEntity2 = new ScheduleEntity();
+    scheduleEntity1.setPipelineName(pipelineName1);
+    scheduleEntity2.setPipelineName(pipelineName2);
+    scheduleEntity1.setStartTime(launchTime1);
+    scheduleEntity2.setStartTime(launchTime2);
+    scheduleEntity1.setProcessId("1");
+    scheduleEntity2.setProcessId("1");
+
+    scheduleEntity1.setCron("0/2 * * * * ?"); // every two seconds
+    scheduleEntity2.setCron("0/1 * * * * ?"); // every second
+
+    PipeliteLocker pipeliteLocker = mock(PipeliteLocker.class);
+    ProcessFactoryService processFactoryService = mock(ProcessFactoryService.class);
+    ScheduleService scheduleService = mock(ScheduleService.class);
+
+    ProcessFactory processFactory1 =
+        new TestProcessFactory(pipelineName1, Arrays.asList(testProcess("1")));
+    ProcessFactory processFactory2 =
+        new TestProcessFactory(pipelineName2, Arrays.asList(testProcess("1")));
+    doAnswer(I -> processFactory1).when(processFactoryService).create(eq(pipelineName1));
+    doAnswer(I -> processFactory2).when(processFactoryService).create(eq(pipelineName2));
+
+    // Return both schedules from the schedule service.
+
+    doReturn(Arrays.asList(scheduleEntity1, scheduleEntity2))
+        .when(scheduleService)
+        .getAllProcessSchedules(any());
+
+    // Create process service to return saved process entities.
+
+    ProcessService processService = mock(ProcessService.class);
+    doAnswer(
+            I -> {
+              ProcessEntity processEntity = new ProcessEntity();
+              processEntity.setPipelineName(I.getArgument(0));
+              processEntity.setProcessId(I.getArgument(1));
+              return Optional.of(processEntity);
+            })
+        .when(processService)
+        .getSavedProcess(any(), any());
+
+    // Create process launcher pool.
+
+    ProcessRunnerPool processRunnerPool = mock(ProcessRunnerPool.class);
+    doAnswer(
+            I -> {
+              Process process = I.getArgument(1);
+              ProcessRunnerCallback callback = I.getArgument(2);
+              callback.accept(process, mock(ProcessRunnerResult.class));
+              return null;
+            })
+        .when(processRunnerPool)
+        .runProcess(any(), any(), any());
+
+    // Create pipelite scheduler.
+
+    PipeliteScheduler pipeliteScheduler =
+        spy(
+            new PipeliteScheduler(
+                launcherConfiguration,
+                pipeliteLocker,
+                processFactoryService,
+                scheduleService,
+                processService,
+                () -> processRunnerPool));
+    pipeliteScheduler.setMaximumExecutions(pipelineName1, maxExecution1);
+    pipeliteScheduler.setMaximumExecutions(pipelineName2, maxExecution2);
+
+    // Resume the two processes, check that they are immediately executed
+    // and that they are scheduled for a later execution.
+
+    pipeliteScheduler.startUp();
+    verify(pipeliteScheduler, times(4)).isResumeProcess(any());
+    verify(processRunnerPool, times(2)).runProcess(any(), any(), any());
+
+    assertThat(pipeliteScheduler.getExecutableSchedules().count()).isEqualTo(0);
     assertThat(pipeliteScheduler.getPendingSchedules().count()).isEqualTo(2);
     assertThat(pipeliteScheduler.isRefreshSchedules()).isFalse();
     assertThat(launchTime1)

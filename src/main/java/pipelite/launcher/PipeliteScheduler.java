@@ -15,6 +15,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -258,15 +259,23 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     }
   }
 
-  /** Resumes processes if this is possible. */
-  private void resumeProcesses() {
+  /**
+   * Attempts to resume processes. It may be possible to continue executing asynchronous processes.
+   *
+   * @return the number of process resume attempts.
+   */
+  protected int resumeProcesses() {
+    AtomicInteger resumedProcessesCount = new AtomicInteger();
     getActiveSchedules()
         .forEach(
             schedule -> {
               if (isResumeProcess(schedule)) {
-                resumeProcess(schedule);
+                if (resumeProcess(schedule)) {
+                  resumedProcessesCount.incrementAndGet();
+                }
               }
             });
+    return resumedProcessesCount.get();
   }
 
   /**
@@ -275,7 +284,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
    * @param schedule the schedule
    * @return true if process execution can be resumed
    */
-  private boolean isResumeProcess(Schedule schedule) {
+  protected boolean isResumeProcess(Schedule schedule) {
     ScheduleEntity scheduleEntity = schedule.getScheduleEntity();
     return (scheduleEntity.getStartTime() != null
         && scheduleEntity.getEndTime() == null
