@@ -20,16 +20,16 @@ import pipelite.UniqueStringGenerator;
 import pipelite.entity.ProcessEntity;
 import pipelite.service.ProcessService;
 
-public class ProcessCreatorTest {
+public class DefaultProcessCreatorTest {
 
   @Test
   public void test() {
     final int processCnt = 100;
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     ProcessService service = mock(ProcessService.class);
-    ProcessCreator creator =
+    DefaultProcessCreator creator =
         spy(
-            new ProcessCreator(
+            new DefaultProcessCreator(
                 new TestProcessSource(pipelineName, processCnt), service, pipelineName));
 
     when(service.createExecution(any(), any(), any())).thenReturn(mock(ProcessEntity.class));

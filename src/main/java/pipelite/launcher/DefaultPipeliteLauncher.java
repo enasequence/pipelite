@@ -35,7 +35,8 @@ public class DefaultPipeliteLauncher {
     PipeliteLocker pipeliteLocker = new DefaultPipeliteLocker(lockService);
     ProcessFactory processFactory = processFactoryService.create(pipelineName);
     ProcessCreator processCreator =
-        new ProcessCreator(processSourceService.create(pipelineName), processService, pipelineName);
+        new DefaultProcessCreator(
+            processSourceService.create(pipelineName), processService, pipelineName);
     ProcessQueue processQueue =
         new DefaultProcessQueue(launcherConfiguration, processService, pipelineName);
     return new PipeliteLauncher(
