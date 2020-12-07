@@ -27,5 +27,7 @@ public interface ProcessRunner {
 
   String getProcessId();
 
+  Process getProcess();
+
   ZonedDateTime getStartTime();
 }

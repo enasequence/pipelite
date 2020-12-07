@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.controller;
+package pipelite.controller.info;
 
 import java.util.List;
 import lombok.Builder;
@@ -16,8 +16,8 @@ import lombok.Value;
 
 @Value
 @Builder
-public class Scheduler {
+public class SchedulerInfo {
   private String schedulerName;
-  private List<Schedule> schedules;
-  private List<Process> active;
+  private List<ScheduleInfo> schedules;
+  private List<ProcessInfo> processes;
 }

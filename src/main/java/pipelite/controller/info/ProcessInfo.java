@@ -8,16 +8,20 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.controller;
+package pipelite.controller.info;
 
-import java.util.List;
+import java.time.ZonedDateTime;
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder
-public class Launcher {
-  private String launcherName;
+public class ProcessInfo {
   private String pipelineName;
-  private List<Process> active;
+  private String processId;
+  private ZonedDateTime currentExecutionStartTime;
+  private String currentExecutionTime;
+  private String state;
+  private Integer executionCount;
+  private Integer priority;
 }

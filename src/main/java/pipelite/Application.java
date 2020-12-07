@@ -10,9 +10,7 @@
  */
 package pipelite;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -42,23 +40,42 @@ public class Application {
   @Autowired private LockService lockService;
   @Autowired private MailService mailService;
 
-  private final PipeliteServiceManager serverManager = new PipeliteServiceManager();
-  private final List<PipeliteLauncher> launchers = new ArrayList<>();
+  private PipeliteServiceManager serverManager;
+  private List<PipeliteLauncher> launchers;
   private PipeliteScheduler scheduler;
   private PipeliteUnlocker unlocker;
 
   @PostConstruct
-  private void construct() {
-    init();
+  private void init() {
+    startUp();
     run();
   }
 
+  /** Stops all services. */
   @PreDestroy
-  public void shutDown() {
-    serverManager.shutdown();
+  public void stop() {
+    if (serverManager != null) {
+      serverManager.shutdown();
+    }
+    launchers = null;
+    scheduler = null;
+    unlocker = null;
   }
 
-  private void init() {
+  /** Restarts all services. */
+  public void restart() {
+    stop();
+    startUp();
+  }
+
+  /** Shuts down the application. */
+  public void shutDown() {
+    // TODO
+  }
+
+  private void startUp() {
+    serverManager = new PipeliteServiceManager();
+    launchers = new ArrayList<>();
     try {
       log.atInfo().log("Initialising pipelite services");
       // Check pipeline names.
@@ -129,11 +146,16 @@ public class Application {
     }
   }
 
-  public List<PipeliteLauncher> getLaunchers() {
-    return launchers;
+  public Collection<PipeliteLauncher> getRunningLaunchers() {
+    return launchers.stream()
+        .filter(pipeliteLauncher -> pipeliteLauncher.isRunning())
+        .collect(Collectors.toList());
   }
 
-  public PipeliteScheduler getScheduler() {
-    return scheduler;
+  public Collection<PipeliteScheduler> getRunningSchedulers() {
+    if (scheduler == null || !scheduler.isRunning()) {
+      return Collections.emptyList();
+    }
+    return Arrays.asList(scheduler);
   }
 }

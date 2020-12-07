@@ -235,6 +235,11 @@ public class DefaultProcessRunner implements ProcessRunner {
   }
 
   @Override
+  public Process getProcess() {
+    return process;
+  }
+
+  @Override
   public ZonedDateTime getStartTime() {
     return startTime;
   }
