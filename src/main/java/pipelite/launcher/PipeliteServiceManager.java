@@ -28,7 +28,7 @@ public class PipeliteServiceManager {
   private final Set<PipeliteService> services = new HashSet<>();
   private ServiceManager manager;
 
-  public PipeliteServiceManager add(PipeliteService service) {
+  public PipeliteServiceManager addService(PipeliteService service) {
     Assert.isNull(manager, "Unable to add new pipelite services");
     Assert.notNull(service, "Missing pipelite service");
     log.atInfo().log("Adding new pipelite service: " + service.serviceName());
@@ -36,6 +36,10 @@ public class PipeliteServiceManager {
       throw new RuntimeException("Non unique pipelite service name: " + service.serviceName());
     }
     return this;
+  }
+
+  public int getServiceCount() {
+    return services.size();
   }
 
   public void run() {
@@ -56,15 +60,18 @@ public class PipeliteServiceManager {
         MoreExecutors.directExecutor());
     Runtime.getRuntime().addShutdownHook(new Thread(() -> shutdown()));
     log.atInfo().log("Starting pipelite services");
-    manager.startAsync().awaitStopped();
-    log.atInfo().log("Pipelite services have stopped");
+    manager.startAsync();
   }
 
   public void shutdown() {
     log.atInfo().log("Stopping all pipelite services");
+    if (manager == null) {
+      return;
+    }
     try {
       manager.stopAsync().awaitStopped(STOP_WAIT_MAX_SECONDS, TimeUnit.SECONDS);
     } catch (TimeoutException timeout) {
     }
+    log.atInfo().log("Stopped pipelite services");
   }
 }

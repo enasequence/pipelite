@@ -17,6 +17,7 @@ import javax.annotation.PreDestroy;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import pipelite.configuration.LauncherConfiguration;
@@ -39,11 +40,13 @@ public class Application {
   @Autowired private StageService stageService;
   @Autowired private LockService lockService;
   @Autowired private MailService mailService;
+  @Autowired private ConfigurableApplicationContext applicationContext;
 
   private PipeliteServiceManager serverManager;
   private List<PipeliteLauncher> launchers;
   private PipeliteScheduler scheduler;
   private PipeliteUnlocker unlocker;
+  private boolean shutdown;
 
   @PostConstruct
   private void init() {
@@ -53,7 +56,8 @@ public class Application {
 
   /** Stops all services. */
   @PreDestroy
-  public void stop() {
+  public synchronized void stop() {
+    log.atInfo().log("Stopping pipelite services");
     if (serverManager != null) {
       serverManager.shutdown();
     }
@@ -63,21 +67,28 @@ public class Application {
   }
 
   /** Restarts all services. */
-  public void restart() {
+  public synchronized void restart() {
+    log.atInfo().log("Restarting pipelite services");
     stop();
     startUp();
   }
 
   /** Shuts down the application. */
-  public void shutDown() {
-    // TODO
+  public synchronized void shutDown() {
+    shutdown = true;
+    log.atInfo().log("Shutting down pipelite services");
+    stop();
+    applicationContext.close();
   }
 
-  private void startUp() {
+  private synchronized void startUp() {
+    if (shutdown) {
+      return;
+    }
     serverManager = new PipeliteServiceManager();
     launchers = new ArrayList<>();
     try {
-      log.atInfo().log("Initialising pipelite services");
+      log.atInfo().log("Starting pipelite services");
       // Check pipeline names.
       if (launcherConfiguration.getPipelineName() != null) {
         List<String> pipelineNames =
@@ -91,20 +102,24 @@ public class Application {
         for (String pipelineName : pipelineNames) {
           PipeliteLauncher launcher = createLauncher(pipelineName);
           launchers.add(launcher);
-          serverManager.add(launcher);
+          serverManager.addService(launcher);
         }
       }
       if (launcherConfiguration.getSchedulerName() != null) {
         scheduler = createScheduler();
-        serverManager.add(scheduler);
+        serverManager.addService(scheduler);
       }
       if (launcherConfiguration.getUnlockerName() != null) {
         unlocker = createUnlocker();
-        serverManager.add(unlocker);
+        serverManager.addService(unlocker);
       }
     } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Unexpected exception when initialising pipelite services");
+      log.atSevere().withCause(ex).log("Unexpected exception when starting pipelite services");
       throw new RuntimeException(ex);
+    }
+    if (serverManager.getServiceCount() == 0) {
+      log.atSevere().log("No pipelite services configured");
+      shutDown();
     }
   }
 
@@ -138,11 +153,16 @@ public class Application {
   }
 
   private void run() {
+    if (shutdown) {
+      return;
+    }
     try {
-      log.atInfo().log("Starting pipelite services");
+      log.atInfo().log("Running pipelite services");
+
       serverManager.run();
+
     } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Unexpected exception when starting pipelite services");
+      log.atSevere().withCause(ex).log("Unexpected exception when running pipelite services");
     }
   }
 

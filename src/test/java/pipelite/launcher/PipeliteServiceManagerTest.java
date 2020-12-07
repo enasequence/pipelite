@@ -65,9 +65,9 @@ public class PipeliteServiceManagerTest {
     TestPipeliteService pipeliteService2 = new TestPipeliteService(maxRunCnt);
     TestPipeliteService pipeliteService3 = new TestPipeliteService(maxRunCnt);
 
-    serviceManager.add(pipeliteService1);
-    serviceManager.add(pipeliteService2);
-    serviceManager.add(pipeliteService3);
+    serviceManager.addService(pipeliteService1);
+    serviceManager.addService(pipeliteService2);
+    serviceManager.addService(pipeliteService3);
 
     serviceManager.run();
 

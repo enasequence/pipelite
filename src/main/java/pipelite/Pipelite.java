@@ -10,11 +10,9 @@
  */
 package pipelite;
 
-import lombok.extern.flogger.Flogger;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
-@Flogger
 public class Pipelite {
 
   private Pipelite() {}

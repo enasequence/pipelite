@@ -28,8 +28,7 @@ public class AdminController {
 
   @PutMapping("/stop")
   @ResponseStatus(HttpStatus.OK)
-  @Operation(
-      description = "Stop all pipelite services")
+  @Operation(description = "Stop all pipelite services")
   @ApiResponses(
       value = {
         @ApiResponse(responseCode = "200", description = "OK"),
@@ -41,27 +40,25 @@ public class AdminController {
 
   @PutMapping("/restart")
   @ResponseStatus(HttpStatus.OK)
-  @Operation(
-          description = "Restarts all pipelite services")
+  @Operation(description = "Restarts all pipelite services")
   @ApiResponses(
-          value = {
-                  @ApiResponse(responseCode = "200", description = "OK"),
-                  @ApiResponse(responseCode = "500", description = "Internal Server error")
-          })
+      value = {
+        @ApiResponse(responseCode = "200", description = "OK"),
+        @ApiResponse(responseCode = "500", description = "Internal Server error")
+      })
   public void restart() {
     application.restart();
   }
 
   @PutMapping("/shutdown")
   @ResponseStatus(HttpStatus.OK)
-  @Operation(
-          description = "Shuts down all pipelite services")
+  @Operation(description = "Shuts down all pipelite services")
   @ApiResponses(
-          value = {
-                  @ApiResponse(responseCode = "200", description = "OK"),
-                  @ApiResponse(responseCode = "500", description = "Internal Server error")
-          })
+      value = {
+        @ApiResponse(responseCode = "200", description = "OK"),
+        @ApiResponse(responseCode = "500", description = "Internal Server error")
+      })
   public void shutDown() {
-    application.shutDown();
+    new Thread(() -> application.shutDown()).start();
   }
 }
