@@ -10,6 +10,7 @@
  */
 package pipelite.controller.info;
 
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import lombok.Builder;
 import lombok.Value;
@@ -17,6 +18,7 @@ import lombok.Value;
 @Value
 @Builder
 public class ProcessInfo {
+  private String launcherName;
   private String pipelineName;
   private String processId;
   private ZonedDateTime currentExecutionStartTime;

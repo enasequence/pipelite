@@ -18,6 +18,7 @@ import java.time.ZonedDateTime;
 @Value
 @Builder
 public class ScheduleInfo {
+  private String launcherName;
   private String pipelineName;
   private String cron;
   private String description;

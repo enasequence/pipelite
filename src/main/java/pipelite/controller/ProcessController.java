@@ -10,24 +10,25 @@
  */
 package pipelite.controller;
 
+import com.thedeanda.lorem.Lorem;
+import com.thedeanda.lorem.LoremIpsum;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
 import pipelite.controller.info.ProcessInfo;
-import pipelite.controller.info.ProcessRunnerInfo;
 import pipelite.launcher.process.runner.ProcessRunner;
+import pipelite.launcher.process.runner.ProcessRunnerPoolService;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Stream;
+import java.util.*;
+import java.util.stream.IntStream;
 
 @RestController
 @RequestMapping(value = "/process")
@@ -35,6 +36,7 @@ import java.util.stream.Stream;
 public class ProcessController {
 
   @Autowired Application application;
+  @Autowired Environment environment;
 
   @GetMapping("/")
   @ResponseStatus(HttpStatus.OK)
@@ -44,33 +46,24 @@ public class ProcessController {
         @ApiResponse(responseCode = "200", description = "OK"),
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
-  public List<ProcessRunnerInfo> allRunningProcesses() {
-    List<ProcessRunnerInfo> list = new ArrayList<>();
+  public List<ProcessInfo> runningProcesses() {
+    List<ProcessInfo> list = new ArrayList<>();
     application.getRunningLaunchers().stream()
-        .forEach(
-            launcher ->
-                list.add(
-                    ProcessRunnerInfo.builder()
-                        .launcherName(launcher.getLauncherName())
-                        .processes(getProcesses(launcher.getActiveProcessRunners()))
-                        .build()));
+        .forEach(launcher -> list.addAll(getProcesses(launcher)));
     application.getRunningSchedulers().stream()
-        .forEach(
-            scheduler ->
-                list.add(
-                    ProcessRunnerInfo.builder()
-                        .launcherName(scheduler.getLauncherName())
-                        .processes(getProcesses(scheduler.getActiveProcessRunners()))
-                        .build()));
+        .forEach(launcher -> list.addAll(getProcesses(launcher)));
+    getLoremIpsumProcesses(list);
     return list;
   }
 
-  public static List<ProcessInfo> getProcesses(Collection<ProcessRunner> processRunners) {
+  public static List<ProcessInfo> getProcesses(ProcessRunnerPoolService service) {
+    Collection<ProcessRunner> processRunners = service.getActiveProcessRunners();
     List<ProcessInfo> processes = new ArrayList<>();
     for (ProcessRunner processRunner : processRunners) {
       Duration executionTime = Duration.between(ZonedDateTime.now(), processRunner.getStartTime());
       processes.add(
           ProcessInfo.builder()
+              .launcherName(service.getLauncherName())
               .pipelineName(processRunner.getPipelineName())
               .processId(processRunner.getProcessId())
               .currentExecutionStartTime(processRunner.getStartTime())
@@ -86,5 +79,27 @@ public class ProcessController {
               .build());
     }
     return processes;
+  }
+
+  public void getLoremIpsumProcesses(List<ProcessInfo> list) {
+    if (Arrays.stream(environment.getActiveProfiles())
+        .anyMatch(profile -> "LoremIpsum".equals(profile))) {
+      Lorem lorem = LoremIpsum.getInstance();
+      Random random = new Random();
+      IntStream.range(1, 100)
+          .forEach(
+              i ->
+                  list.add(
+                      ProcessInfo.builder()
+                          .launcherName(lorem.getFirstNameFemale())
+                          .pipelineName(lorem.getCountry())
+                          .processId(lorem.getWords(1))
+                          .currentExecutionStartTime(ZonedDateTime.now())
+                          .currentExecutionTime(Duration.ofMinutes(5).toString())
+                          .state(lorem.getFirstNameMale())
+                          .executionCount(random.nextInt(10))
+                          .priority(random.nextInt(10))
+                          .build()));
+    }
   }
 }
