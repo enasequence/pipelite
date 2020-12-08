@@ -3,10 +3,10 @@
       xmlns:th="http://www.thymeleaf.org">
 <head>
     <div th:replace="fragments/header :: header"></div>
-    <title>Running pipelite processes</title>
+    <title>Active processes</title>
     <script>
 $(document).ready( function () {
-    $('#schedulesTable').DataTable({
+    $('#processesTable').DataTable({
         ajax: {
            url: "/pipelite/process/",
            dataSrc: ""
@@ -33,6 +33,7 @@ $(document).ready( function () {
 
 
 
+
     </script>
 </head>
 
@@ -41,9 +42,9 @@ $(document).ready( function () {
 
 <div class="card m-2">
     <div class="card-body">
-        <h5 class="card-title">Running processes</h5>
+        <!-- <h5 class="card-title">Active processes</h5> -->
 
-        <table id="schedulesTable" class="table table-striped table-hover" style="width:100%">
+        <table id="processesTable" class="table table-striped table-hover" style="width:100%">
             <thead>
             <tr>
                 <th>Launcher name</th>

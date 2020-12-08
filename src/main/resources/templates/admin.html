@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <div th:replace="fragments/header :: header"></div>
+    <title>Admin</title>
+    <script>
+    </script>
+</head>
+
+<body>
+<div th:replace="fragments/navigation :: navigation"></div>
+
+<div class="card m-2">
+    <div class="card-body">
+        <!-- <h5 class="card-title">Administrative actions</h5> -->
+
+        <table class="table table-hover" style="width:100%">
+            <thead>
+            <tr>
+                <th>Description</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Stop all running pipelite services. They can be restarted later.</td>
+                <td><a href="/pipelite/admin/stop" class="btn btn-primary btn-lg active" role="button"
+                       aria-pressed="true">Stop
+                    services</a>
+                </td>
+            </tr>
+            <tr>
+                <td>Restart all pipelite services. Any running services will be stopped first.</td>
+                <td><a href="/pipelite/admin/restart" class="btn btn-primary btn-lg active" role="button"
+                       aria-pressed="true">Restart
+                    services</a>
+                </td>
+            </tr>
+            <tr>
+                <td>Stop all running pipelite services and this web service.</td>
+                <td><a href="/pipelite/admin/shutdown" class="btn btn-primary btn-lg active" role="button"
+                       aria-pressed="true">Shutdown
+                    services</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

@@ -3,9 +3,10 @@
       xmlns:th="http://www.thymeleaf.org">
 <head>
     <div th:replace="fragments/header :: header"></div>
+    <title>Active services</title>
     <script>
 $(document).ready( function () {
-    $('#schedulesTable').DataTable({
+    $('#servicesTable').DataTable({
         ajax: {
            url: "/pipelite/service/",
            dataSrc: ""
@@ -26,6 +27,7 @@ $(document).ready( function () {
     })
 });
 
+
     </script>
 </head>
 
@@ -34,8 +36,8 @@ $(document).ready( function () {
 
 <div class="card m-2">
     <div class="card-body">
-        <h5 class="card-title">Running services</h5>
-        <table id="schedulesTable" class="table table-striped table-hover" style="width:100%">
+        <!-- <h5 class="card-title">Active services</h5> -->
+        <table id="servicesTable" class="table table-striped table-hover" style="width:100%">
 
             <!-- Header Table -->
             <thead>

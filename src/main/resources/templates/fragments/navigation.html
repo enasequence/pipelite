@@ -5,19 +5,34 @@
 
         <div class="collapse navbar-collapse">
             <ul class="navbar-nav mr-auto">
-                <li class="nav-item active">
-                    <a class="nav-link" href="/pipelite/report/processes">Processes</a>
+                <li class="nav-item">
+                    <a class="nav-link" href="/pipelite/ui/processes">Processes</a>
                 </li>
-                <li class="nav-item active">
-                    <a class="nav-link" href="/pipelite/report/schedules">Schedules</a>
+                <li class="nav-item">
+                    <a class="nav-link" href="/pipelite/ui/schedules">Schedules</a>
                 </li>
-                <li class="nav-item active">
-                    <a class="nav-link" href="/pipelite/report/services">Services</a>
+                <li class="nav-item">
+                    <a class="nav-link" href="/pipelite/ui/services">Services</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/pipelite/ui/admin">Admin</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link"
+                       href="/pipelite/swagger-ui/index.html?configUrl=/pipelite/v3/api-docs/swagger-config">OpenAPI</a>
                 </li>
             </ul>
         </div>
     </nav>
 
+    <script>
+// activate nav-item
+$(document).ready(function() {
+    $('.nav-item.active').removeClass('active');
+    $('.nav-item a[href="' +  location.pathname  + '"]').parent().addClass('active');
+    $(this).parent().addClass('active').siblings().removeClass('active');
+});
+
+    </script>
+
 </th:block>
-
-

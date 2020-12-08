@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
+import pipelite.controller.info.AdminInfo;
 
 @RestController
 @RequestMapping(value = "/admin")
@@ -26,7 +27,7 @@ public class AdminController {
 
   @Autowired Application application;
 
-  @PutMapping("/stop")
+  @GetMapping("/stop")
   @ResponseStatus(HttpStatus.OK)
   @Operation(description = "Stop all pipelite services")
   @ApiResponses(
@@ -34,11 +35,12 @@ public class AdminController {
         @ApiResponse(responseCode = "200", description = "OK"),
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
-  public void stop() {
-    application.stop();
+  public AdminInfo stop() {
+    new Thread(() -> application.stop()).start();
+    return new AdminInfo("Stopping all pipelite services");
   }
 
-  @PutMapping("/restart")
+  @GetMapping("/restart")
   @ResponseStatus(HttpStatus.OK)
   @Operation(description = "Restarts all pipelite services")
   @ApiResponses(
@@ -46,11 +48,12 @@ public class AdminController {
         @ApiResponse(responseCode = "200", description = "OK"),
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
-  public void restart() {
-    application.restart();
+  public AdminInfo restart() {
+    new Thread(() -> application.restart()).start();
+    return new AdminInfo("Restarting all pipelite services");
   }
 
-  @PutMapping("/shutdown")
+  @GetMapping("/shutdown")
   @ResponseStatus(HttpStatus.OK)
   @Operation(description = "Shuts down all pipelite services")
   @ApiResponses(
@@ -58,7 +61,8 @@ public class AdminController {
         @ApiResponse(responseCode = "200", description = "OK"),
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
-  public void shutDown() {
+  public AdminInfo shutDown() {
     new Thread(() -> application.shutDown()).start();
+    return new AdminInfo("Shutting down all pipelite services");
   }
 }
