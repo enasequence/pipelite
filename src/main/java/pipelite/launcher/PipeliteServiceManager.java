@@ -38,6 +38,10 @@ public class PipeliteServiceManager {
     return this;
   }
 
+  public Collection<PipeliteService> getServices() {
+    return services;
+  }
+
   public int getServiceCount() {
     return services.size();
   }

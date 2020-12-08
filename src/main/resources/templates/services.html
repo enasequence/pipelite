@@ -3,23 +3,18 @@
       xmlns:th="http://www.thymeleaf.org">
 <head>
     <div th:replace="fragments/header :: header"></div>
-    <title>Running pipelite processes</title>
     <script>
 $(document).ready( function () {
     $('#schedulesTable').DataTable({
         ajax: {
-           url: "/pipelite/process/",
+           url: "/pipelite/service/",
            dataSrc: ""
         },
         columns: [
-            { data: "launcherName" },
+            { data: "serviceName" },
             { data: "pipelineName" },
-            { data: "processId" },
-            { data: "currentExecutionStartTime" },
-            { data: "currentExecutionTime" },
-            { data: "state" },
-            { data: "executionCount" },
-            { data: "priority" }
+            { data: "serviceType" },
+            { data: "description" }
         ],
         dom: 'frtBip',
         buttons: [
@@ -31,8 +26,6 @@ $(document).ready( function () {
     })
 });
 
-
-
     </script>
 </head>
 
@@ -41,23 +34,21 @@ $(document).ready( function () {
 
 <div class="card m-2">
     <div class="card-body">
-        <h5 class="card-title">Running processes</h5>
-
+        <h5 class="card-title">Running services</h5>
         <table id="schedulesTable" class="table table-striped table-hover" style="width:100%">
+
+            <!-- Header Table -->
             <thead>
             <tr>
-                <th>Launcher name</th>
+                <th>Service name</th>
                 <th>Pipeline name</th>
-                <th>Process id</th>
-                <th>Current execution start time</th>
-                <th>Current execution time</th>
-                <th>state</th>
-                <th>Execution count</th>
-                <th>Priority</th>
+                <th>Service type</th>
+                <th>Description</th>
             </tr>
             </thead>
         </table>
     </div>
 </div>
+
 </body>
 </html>

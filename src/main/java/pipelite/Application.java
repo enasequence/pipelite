@@ -178,4 +178,11 @@ public class Application {
     }
     return Arrays.asList(scheduler);
   }
+
+  public Collection<PipeliteService> getRunningServices() {
+    if (serverManager == null) {
+      return Collections.emptyList();
+    }
+    return serverManager.getServices();
+  }
 }

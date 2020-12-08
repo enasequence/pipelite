@@ -62,7 +62,7 @@ public class ScheduleController {
             s ->
                 schedules.add(
                     ScheduleInfo.builder()
-                        .launcherName(scheduler.getLauncherName())
+                        .schedulerName(scheduler.getLauncherName())
                         .pipelineName(s.getScheduleEntity().getPipelineName())
                         .cron(s.getScheduleEntity().getCron())
                         .description(s.getScheduleEntity().getDescription())
@@ -87,7 +87,7 @@ public class ScheduleController {
               i ->
                   list.add(
                       ScheduleInfo.builder()
-                          .launcherName(lorem.getFirstNameFemale())
+                          .schedulerName(lorem.getFirstNameFemale())
                           .pipelineName(lorem.getCountry())
                           .cron(lorem.getWords(1))
                           .description(lorem.getWords(5))

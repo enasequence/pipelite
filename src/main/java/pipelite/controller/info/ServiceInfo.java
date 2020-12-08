@@ -17,13 +17,9 @@ import java.time.ZonedDateTime;
 
 @Value
 @Builder
-public class ScheduleInfo {
-  private String schedulerName;
+public class ServiceInfo {
+  private String serviceName;
   private String pipelineName;
-  private String cron;
+  private String serviceType;
   private String description;
-  private ZonedDateTime lastExecution;
-  private ZonedDateTime activeExecution;
-  private ZonedDateTime nextExecution;
-  private String processId;
 }

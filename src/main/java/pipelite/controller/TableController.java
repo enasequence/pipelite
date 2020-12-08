@@ -22,4 +22,9 @@ public class TableController {
         return "processes";
     }
 
+    @RequestMapping("/services")
+    @Operation(description = "Table of all services")
+    public String services() {
+        return "services";
+    }
 }
