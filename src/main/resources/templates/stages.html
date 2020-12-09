@@ -16,15 +16,15 @@ $(document).ready(function() {
             { data: "executionCount" },
             {
                 "data": null,
-                "defaultContent": "<button class=\"btn btn-primary mr-2\">Logs</button>"
+                "defaultContent": "<button class=\"btn btn-outline-secondary mr-2\">Logs</button>"
             }
         ],
         dom: 'frtBip',
         buttons: {
             buttons: [
-                { extend: 'copy', className: 'btn btn-primary' },
-                { extend: 'csv', className: 'btn btn-primary' },
-                { extend: 'excel', className: 'btn btn-primary' }
+                { extend: 'copy', className: 'btn btn-outline-secondary' },
+                { extend: 'csv', className: 'btn btn-outline-secondary' },
+                { extend: 'excel', className: 'btn btn-outline-secondary' }
             ],
             dom: {
     		  button: {
@@ -65,9 +65,9 @@ $(document).ready(function() {
         dom: 'frtBip',
         buttons: {
             buttons: [
-                { extend: 'copy', className: 'btn btn-primary' },
-                { extend: 'csv', className: 'btn btn-primary' },
-                { extend: 'excel', className: 'btn btn-primary' }
+                { extend: 'copy', className: 'btn btn-outline-secondary' },
+                { extend: 'csv', className: 'btn btn-outline-secondary' },
+                { extend: 'excel', className: 'btn btn-outline-secondary' }
             ],
             dom: {
     		  button: {
@@ -109,17 +109,14 @@ function copy() {
     window.getSelection().removeAllRanges();// to deselect
 };
 
+
+
+
     </script>
 </head>
 
 <body>
 <div th:replace="fragments/navigation :: navigation"></div>
-
-
-<!-- Button to Open the Modal -->
-<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#myModal">
-    Open modal
-</button>
 
 <!-- The Modal -->
 <div class="modal fade" id="logsModal">
@@ -141,12 +138,18 @@ function copy() {
     </div>
 </div>
 
-<div class="form-inline m-2">
-    <label class="mr-2" for="pipelineName">Pipeline name</label>
-    <input type="text" class="form-control mr-2" placeholder="Pipeline name" id="pipelineName">
-    <label class="mr-2" for="processId">Process id</label>
-    <input type="text" class="form-control mr-2" placeholder="Process id" id="processId">
-    <button type="submit" class="btn btn-primary mr-2" onclick="show()">Show</button>
+<div class="card m-2">
+    <div class="card-body">
+        <h5 class="card-title">Process</h5>
+        <!--        <p class="card-text">Provide the pipeline name and process id to see the process stages.</p> -->
+        <div class="form-inline m-2">
+            <!--                        <label class="mr-2" for="pipelineName">Pipeline name</label> -->
+            <input type="text" class="form-control m-2" placeholder="Pipeline name" id="pipelineName">
+            <!--                <label class="mr-2" for="processId">Process id</label> -->
+            <input type="text" class="form-control m-2" placeholder="Process id" id="processId">
+            <button type="submit" class="btn btn-primary m-2" onclick="show()">Show stages</button>
+        </div>
+    </div>
 </div>
 
 
@@ -154,7 +157,7 @@ function copy() {
     <div class="card-body">
 
         <div>
-            <ul class="nav nav-pills justify-content-center" role="tablist">
+            <ul class="nav nav-pill justify-content-center" role="tablist">
                 <li class="nav-item" role="presentation"><a class="nav-link active" data-toggle="tab" role="tab"
                                                             href="#status">Status</a></li>
                 <li class="nav-item" role="presentation"><a class="nav-link" data-toggle="tab" role="tab" href="#data">Data</a>
