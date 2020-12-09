@@ -44,8 +44,7 @@ public class StageService {
    * @param processId the process id
    * @return the saved stages
    */
-  public List<StageEntity> getSavedStages(
-          String pipelineName, String processId) {
+  public List<StageEntity> getSavedStages(String pipelineName, String processId) {
     return repository.findByPipelineNameAndProcessId(pipelineName, processId);
   }
 
@@ -129,9 +128,21 @@ public class StageService {
    * @return the saved stage output
    */
   public Optional<StageOutEntity> getSavedStageOut(StageEntity stageEntity) {
-    return outRepository.findById(
-        new StageEntityId(
-            stageEntity.getProcessId(), stageEntity.getPipelineName(), stageEntity.getStageName()));
+    return getSavedStageOut(
+        stageEntity.getPipelineName(), stageEntity.getProcessId(), stageEntity.getStageName());
+  }
+
+  /**
+   * Returns the saved stage output.
+   *
+   * @param pipelineName the pipeline name
+   * @param processId the process id
+   * @param stageName the stage name
+   * @return the saved stage output
+   */
+  public Optional<StageOutEntity> getSavedStageOut(
+      String pipelineName, String processId, String stageName) {
+    return outRepository.findById(new StageEntityId(processId, pipelineName, stageName));
   }
 
   /**
