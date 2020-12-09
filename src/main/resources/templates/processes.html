@@ -22,12 +22,24 @@ $(document).ready( function () {
             { data: "priority" }
         ],
         dom: 'frtBip',
-        buttons: [
-        { extend: 'copy', className: 'btn btn-light' },
-        { extend: 'csv', className: 'btn btn-light' },
-        { extend: 'excel', className: 'btn btn-light' }
-        ],
-        responsive: true
+        buttons: {
+            buttons: [
+                { extend: 'copy', className: 'btn btn-primary' },
+                { extend: 'csv', className: 'btn btn-primary' },
+                { extend: 'excel', className: 'btn btn-primary' }
+            ],
+            dom: {
+    		  button: {
+	    	    className: 'btn'
+	          }
+            }
+        },
+        responsive: true,
+        orderCellsTop: true,
+        fixedHeader: true,
+        language : {
+           "zeroRecords": " "
+        },
     })
 });
 

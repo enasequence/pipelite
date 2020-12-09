@@ -8,17 +8,24 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.repository;
+package pipelite.controller.info;
 
-import org.springframework.data.repository.CrudRepository;
-import org.springframework.stereotype.Repository;
-import pipelite.entity.StageEntity;
-import pipelite.entity.StageEntityId;
+import lombok.Builder;
+import lombok.Value;
+import java.time.ZonedDateTime;
 
-import java.util.List;
-
-@Repository
-public interface StageRepository extends CrudRepository<StageEntity, StageEntityId> {
-
-    List<StageEntity> findByPipelineNameAndProcessId(String pipelineName, String processId);
+@Value
+@Builder
+public class StageInfo {
+  private String pipelineName;
+  private String processId;
+  private String stageName;
+  private String resultType;
+  private ZonedDateTime startTime;
+  private ZonedDateTime endTime;
+  private Integer executionCount;
+  private String executorName;
+  private String executorData;
+  private String executorParams;
+  private String resultParams;
 }

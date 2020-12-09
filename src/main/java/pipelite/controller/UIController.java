@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping(value = "/ui")
 public class UIController {
 
-    @RequestMapping("/processes")
-    public String processes() {
-        return "processes";
+    @RequestMapping("/services")
+    public String services() {
+        return "services";
     }
 
     @RequestMapping("/schedules")
@@ -18,9 +18,14 @@ public class UIController {
         return "schedules";
     }
 
-    @RequestMapping("/services")
-    public String services() {
-        return "services";
+    @RequestMapping("/processes")
+    public String processes() {
+        return "processes";
+    }
+
+    @RequestMapping("/stages")
+    public String stages() {
+        return "stages";
     }
 
     @RequestMapping("/admin")

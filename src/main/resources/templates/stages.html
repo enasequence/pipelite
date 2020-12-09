@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <div th:replace="fragments/header :: header"></div>
+    <title>Process stages</title>
+    <script>
+$(document).ready(function() {
+    $('#statusTable').DataTable({
+        columns: [
+            { data: "stageName" },
+            { data: "resultType" },
+            { data: "startTime" },
+            { data: "endTime" },
+            { data: "executionCount" },
+        ],
+        dom: 'frtBip',
+        buttons: {
+            buttons: [
+                { extend: 'copy', className: 'btn btn-primary' },
+                { extend: 'csv', className: 'btn btn-primary' },
+                { extend: 'excel', className: 'btn btn-primary' }
+            ],
+            dom: {
+    		  button: {
+	    	    className: 'btn'
+	          }
+            }
+        },
+        responsive: true,
+        orderCellsTop: true,
+        fixedHeader: true,
+        language : {
+           "zeroRecords": " "
+        },
+    });
+
+    $('#dataTable').DataTable({
+        columns: [
+            { data: "stageName" },
+            { data: "executorName" },
+            { data: "executorData" },
+            { data: "executorParams" },
+            { data: "resultParams" },
+        ],
+        dom: 'frtBip',
+        buttons: {
+            buttons: [
+                { extend: 'copy', className: 'btn btn-primary' },
+                { extend: 'csv', className: 'btn btn-primary' },
+                { extend: 'excel', className: 'btn btn-primary' }
+            ],
+            dom: {
+    		  button: {
+	    	    className: 'btn'
+	          }
+            }
+        },
+        responsive: true,
+        orderCellsTop: true,
+        fixedHeader: true,
+        language : {
+           "zeroRecords": " "
+        },
+    });
+});
+
+function show() {
+    var table1 = $('#statusTable').DataTable();
+    var table2 = $('#dataTable').DataTable();
+
+    var pipelineName = document.getElementById("pipelineName").value;
+    var processId = document.getElementById("processId").value;
+    var url =  "/pipelite/stage/" + pipelineName + "/" + processId + "/";
+
+    $.get(url, function(data, status) {
+        table1.clear().rows.add(data).draw();
+        table2.clear().rows.add(data).draw();
+     });
+};
+
+
+
+
+
+
+    </script>
+</head>
+
+<body>
+<div th:replace="fragments/navigation :: navigation"></div>
+
+<div class="form-inline m-2">
+    <label class="mr-2" for="pipelineName">Pipeline name</label>
+    <input type="text" class="form-control mr-2" placeholder="Pipeline name" id="pipelineName">
+    <label class="mr-2" for="processId">Process id</label>
+    <input type="text" class="form-control mr-2" placeholder="Process id" id="processId">
+    <button type="submit" class="btn btn-primary mr-2" onclick="show()">Show</button>
+</div>
+
+
+<div class="card m-2">
+    <div class="card-body">
+
+        <div>
+            <ul class="nav nav-pills justify-content-center" role="tablist">
+                <li class="nav-item" role="presentation"><a class="nav-link active" data-toggle="tab" role="tab"
+                                                            href="#status">Status</a></li>
+                <li class="nav-item" role="presentation"><a class="nav-link" data-toggle="tab" role="tab" href="#data">Data</a>
+                </li>
+            </ul>
+
+            <div class="tab-content m-2">
+                <div id="status" class="tab-pane fade show active" role="tabpanel">
+                    <table id="statusTable" class="table table-striped table-hover" style="width:100%">
+                        <thead>
+                        <tr>
+                            <th>Stage name</th>
+                            <th>Result type</th>
+                            <th>Start time</th>
+                            <th>End time</th>
+                            <th>Execution count</th>
+                        </tr>
+                        </thead>
+                    </table>
+                </div>
+                <div id="data" class="tab-pane fade" role="tabpanel">
+                    <table id="dataTable" class="table table-striped table-hover" style="width:100%">
+                        <thead>
+                        <tr>
+                            <th>Stage name</th>
+                            <th>Executor name</th>
+                            <th>Executor data</th>
+                            <th>Executor params</th>
+                            <th>Result params</th>
+                        </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

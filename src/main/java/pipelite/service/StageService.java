@@ -10,6 +10,7 @@
  */
 package pipelite.service;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,18 @@ public class StageService {
       @Autowired StageRepository repository, @Autowired StageOutRepository outRepository) {
     this.repository = repository;
     this.outRepository = outRepository;
+  }
+
+  /**
+   * Returns the saved stages.
+   *
+   * @param pipelineName the pipeline name
+   * @param processId the process id
+   * @return the saved stages
+   */
+  public List<StageEntity> getSavedStages(
+          String pipelineName, String processId) {
+    return repository.findByPipelineNameAndProcessId(pipelineName, processId);
   }
 
   /**
