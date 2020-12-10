@@ -7,10 +7,6 @@
     <script>
 $(document).ready( function () {
     $('#processesTable').DataTable({
-        ajax: {
-           url: "/pipelite/process/",
-           dataSrc: ""
-        },
         columns: [
             { data: "launcherName" },
             { data: "pipelineName" },
@@ -54,7 +50,48 @@ $(document).ready( function () {
         window.location.href = url;
     });
 
+    // Set up autocomplete for pipeline name.
+    var url = "/pipelite/pipeline/";
+    $.get(url, function(data, status) {
+        var pipelineNames = data.map(function (obj) {
+            return obj.pipelineName;
+        });
+        $( "#pipelineName" ).autocomplete({
+          source: pipelineNames,
+          minLength: 0,
+          open: function() {
+            $( this ).removeClass( "ui-corner-all" ).addClass( "ui-corner-top" );
+          },
+          close: function() {
+            $( this ).removeClass( "ui-corner-top" ).addClass( "ui-corner-all" );
+          }
+        });
+    });
+    var pipelineName = /*[[${param.pipelineName}?: 'Pipeline name']]*/ 'Pipeline name';
+    if (pipelineName != 'Pipeline name') {
+       $( "#pipelineName" ).val(pipelineName);
+    }
+    show();
 });
+
+// Show the table.
+function show() {
+    var table1 = $('#processesTable').DataTable();
+
+    var pipelineName = document.getElementById("pipelineName").value;
+    var url;
+    if (pipelineName) {
+        url = "/pipelite/process/" + pipelineName;
+    }
+    else {
+        url = "/pipelite/process/";
+    }
+
+    $.get(url, function(data, status) {
+        table1.clear().rows.add(data).draw();
+     });
+};
+
 
 
 
@@ -64,6 +101,21 @@ $(document).ready( function () {
 
 <body>
 <div th:replace="fragments/navigation :: navigation"></div>
+
+<div class="card m-2">
+    <div class="card-body">
+        <h5 class="card-title">Pipeline</h5>
+        <!--        <p class="card-text">Provide the pipeline name and process id to see the process stages.</p> -->
+        <div class="form-inline m-2">
+
+            <label class="mr-2" for="pipelineName">Pipeline name</label>
+            <!-- placeholder="Pipeline name" -->
+            <input type="text" class="form-control m-2" id="pipelineName">
+
+            <button type="submit" class="btn btn-primary m-2" onclick="show()">Show processes</button>
+        </div>
+    </div>
+</div>
 
 <div class="card m-2">
     <div class="card-body">

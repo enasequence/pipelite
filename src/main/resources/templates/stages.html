@@ -54,7 +54,6 @@ $(document).ready(function() {
          });
     } );
 
-
     $('#dataTable').DataTable({
         columns: [
             { data: "stageName" },
@@ -90,7 +89,6 @@ $(document).ready(function() {
         var pipelineNames = data.map(function (obj) {
             return obj.pipelineName;
         });
-
         $( "#pipelineName" ).autocomplete({
           source: pipelineNames,
           minLength: 0,
@@ -102,11 +100,9 @@ $(document).ready(function() {
           }
         });
     });
-
     var pipelineName = /*[[${param.pipelineName}?: 'Pipeline name']]*/ 'Pipeline name';
     var processId = /*[[${param.processId}?: 'Process id']]*/ 'Process id';
     if (pipelineName != 'Pipeline name') {
-       console.log("pipelineName parameter:" + pipelineName);
        $( "#pipelineName" ).val(pipelineName);
     }
     if (processId != 'Process id') {
@@ -180,13 +176,13 @@ function copy() {
         <!--        <p class="card-text">Provide the pipeline name and process id to see the process stages.</p> -->
         <div class="form-inline m-2">
 
-            <!-- <label class="mr-2" for="pipelineName">Pipeline name</label> -->
-            <!-- th:placeholder="${param.pipelineName}?: 'Pipeline name'" -->
-            <input type="text" class="form-control m-2" placeholder="Pipeline name" id="pipelineName">
+            <label class="mr-2" for="pipelineName">Pipeline name</label>
+            <!-- placeholder="Pipeline name" -->
+            <input type="text" class="form-control m-2" id="pipelineName">
 
-            <!-- <label class="mr-2" for="processId">Process id</label> -->
-            <!-- th:placeholder="${param.processId}?: 'Process id'" -->
-            <input type="text" class="form-control m-2" placeholder="Process id" id="processId">
+            <label class="mr-2" for="processId">Process id</label>
+            <!-- placeholder="Process id"  -->
+            <input type="text" class="form-control m-2" id="processId">
 
             <button type="submit" class="btn btn-primary m-2" onclick="show()">Show stages</button>
 

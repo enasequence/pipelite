@@ -28,6 +28,7 @@ import pipelite.launcher.process.runner.ProcessRunnerPoolService;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @RestController
@@ -53,6 +54,23 @@ public class ProcessController {
     application.getRunningSchedulers().stream()
         .forEach(launcher -> list.addAll(getProcesses(launcher)));
     getLoremIpsumProcesses(list);
+    return list;
+  }
+
+  @GetMapping("/{pipelineName}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(description = "All running processes for a pipeline")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "OK"),
+        @ApiResponse(responseCode = "500", description = "Internal Server error")
+      })
+  public List<ProcessInfo> runningProcesses(
+      @PathVariable(value = "pipelineName") String pipelineName) {
+    List<ProcessInfo> list =
+        runningProcesses().stream()
+            .filter(processInfo -> pipelineName.equals(processInfo.getPipelineName()))
+            .collect(Collectors.toList());
     return list;
   }
 
