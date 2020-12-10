@@ -22,10 +22,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
 import pipelite.controller.info.ProcessInfo;
+import pipelite.controller.utils.TimeUtils;
 import pipelite.launcher.process.runner.ProcessRunner;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
 
-import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -78,7 +78,6 @@ public class ProcessController {
     Collection<ProcessRunner> processRunners = service.getActiveProcessRunners();
     List<ProcessInfo> processes = new ArrayList<>();
     for (ProcessRunner processRunner : processRunners) {
-      Duration executionTime = Duration.between(ZonedDateTime.now(), processRunner.getStartTime());
       processes.add(
           ProcessInfo.builder()
               .launcherName(service.getLauncherName())
@@ -86,11 +85,8 @@ public class ProcessController {
               .processId(processRunner.getProcessId())
               .currentExecutionStartTime(processRunner.getStartTime())
               .currentExecutionTime(
-                  executionTime
-                      .toString()
-                      .substring(2)
-                      .replaceAll("(\\d[HMS])(?!$)", "$1 ")
-                      .toLowerCase())
+                  TimeUtils.getTimeAsStringAlwaysPositive(
+                      ZonedDateTime.now(), processRunner.getStartTime()))
               .state(processRunner.getProcess().getProcessEntity().getState().name())
               .executionCount(processRunner.getProcess().getProcessEntity().getExecutionCount())
               .priority(processRunner.getProcess().getProcessEntity().getPriority())
@@ -113,7 +109,9 @@ public class ProcessController {
                           .pipelineName(lorem.getCountry())
                           .processId(lorem.getWords(1))
                           .currentExecutionStartTime(ZonedDateTime.now())
-                          .currentExecutionTime(Duration.ofMinutes(5).toString())
+                          .currentExecutionTime(
+                              TimeUtils.getTimeAsStringAlwaysPositive(
+                                  ZonedDateTime.now(), ZonedDateTime.now().minusMinutes(5)))
                           .state(lorem.getFirstNameMale())
                           .executionCount(random.nextInt(10))
                           .priority(random.nextInt(10))

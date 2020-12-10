@@ -12,13 +12,16 @@ $(document).ready( function () {
            dataSrc: ""
         },
         columns: [
-            { data: "schedulerName" },
+            // { data: "schedulerName" },
             { data: "pipelineName" },
             { data: "cron" },
             { data: "description" },
             { data: "lastExecution" },
             { data: "activeExecution" },
             { data: "nextExecution" },
+            { data: "timeSinceLastExecution" },
+            { data: "currentExecutionTime" },
+            { data: "timeUntilNextExecution" },
             { data: "processId" }
         ],
         dom: 'frtBip',
@@ -44,6 +47,9 @@ $(document).ready( function () {
 });
 
 
+
+
+
     </script>
 </head>
 
@@ -58,13 +64,16 @@ $(document).ready( function () {
             <!-- Header Table -->
             <thead>
             <tr>
-                <th>Scheduler name</th>
+                <!-- <th>Scheduler name</th> -->
                 <th>Pipeline name</th>
                 <th>Cron</th>
                 <th>Description</th>
                 <th>Last execution</th>
                 <th>Active execution</th>
                 <th>Next execution</th>
+                <th>Time since last execution</th>
+                <th>Current execution time</th>
+                <th>Time until next execution</th>
                 <th>Process id</th>
             </tr>
             </thead>

@@ -25,5 +25,8 @@ public class ScheduleInfo {
   private ZonedDateTime lastExecution;
   private ZonedDateTime activeExecution;
   private ZonedDateTime nextExecution;
+  private String timeSinceLastExecution;
+  private String currentExecutionTime;
+  private String timeUntilNextExecution;
   private String processId;
 }

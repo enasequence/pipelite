@@ -22,6 +22,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
 import pipelite.controller.info.ScheduleInfo;
+import pipelite.controller.utils.TimeUtils;
 import pipelite.launcher.PipeliteScheduler;
 
 import java.time.ZonedDateTime;
@@ -72,9 +73,19 @@ public class ScheduleController {
                                 ? s.getScheduleEntity().getStartTime()
                                 : null)
                         .nextExecution(s.getLaunchTime())
+                        .timeSinceLastExecution(
+                            TimeUtils.getTimeAsStringAlwaysPositive(
+                                ZonedDateTime.now(), s.getScheduleEntity().getEndTime()))
+                        .currentExecutionTime(
+                            (s.getScheduleEntity().getProcessId() != null)
+                                ? TimeUtils.getTimeAsStringAlwaysPositive(
+                                    ZonedDateTime.now(), s.getScheduleEntity().getStartTime())
+                                : null)
+                        .timeUntilNextExecution(
+                            TimeUtils.getTimeAsStringAlwaysPositive(
+                                s.getLaunchTime(), ZonedDateTime.now()))
                         .processId(s.getScheduleEntity().getProcessId())
                         .build()));
-
     return schedules;
   }
 
@@ -94,6 +105,15 @@ public class ScheduleController {
                           .lastExecution(ZonedDateTime.now())
                           .activeExecution(ZonedDateTime.now())
                           .nextExecution(ZonedDateTime.now())
+                          .timeSinceLastExecution(
+                              TimeUtils.getTimeAsStringAlwaysPositive(
+                                  ZonedDateTime.now(), ZonedDateTime.now().plusHours(6)))
+                          .currentExecutionTime(
+                              TimeUtils.getTimeAsStringAlwaysPositive(
+                                  ZonedDateTime.now(), ZonedDateTime.now().plusHours(1)))
+                          .timeUntilNextExecution(
+                              TimeUtils.getTimeAsStringAlwaysPositive(
+                                  ZonedDateTime.now(), ZonedDateTime.now()))
                           .processId(lorem.getWords(1))
                           .build()));
     }
