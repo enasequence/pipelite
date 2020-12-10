@@ -82,6 +82,25 @@ $(document).ready(function() {
            "zeroRecords": " "
         },
     });
+
+    // Set up autocomplete for pipeline name.
+    var url = "/pipelite/pipeline/";
+    $.get(url, function(data, status) {
+        var pipelineNames = data.map(function (obj) {
+            return obj.pipelineName;
+        });
+
+        $( "#pipelineName" ).autocomplete({
+          source: pipelineNames,
+          minLength: 0,
+          open: function() {
+            $( this ).removeClass( "ui-corner-all" ).addClass( "ui-corner-top" );
+          },
+          close: function() {
+            $( this ).removeClass( "ui-corner-top" ).addClass( "ui-corner-all" );
+          }
+        });
+    });
 });
 
 // Show the tables.
@@ -108,8 +127,6 @@ function copy() {
     document.execCommand("copy");
     window.getSelection().removeAllRanges();// to deselect
 };
-
-
 
 
     </script>
@@ -148,6 +165,7 @@ function copy() {
             <!--                <label class="mr-2" for="processId">Process id</label> -->
             <input type="text" class="form-control m-2" placeholder="Process id" id="processId">
             <button type="submit" class="btn btn-primary m-2" onclick="show()">Show stages</button>
+
         </div>
     </div>
 </div>
