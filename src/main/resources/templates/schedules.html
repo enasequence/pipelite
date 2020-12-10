@@ -22,7 +22,11 @@ $(document).ready( function () {
             { data: "timeSinceLastExecution" },
             { data: "currentExecutionTime" },
             { data: "timeUntilNextExecution" },
-            { data: "processId" }
+            { data: "processId" },
+            {
+                "data": null,
+                "defaultContent": "<button class=\"btn btn-outline-secondary mr-2\">Process</button>"
+            }
         ],
         dom: 'frtBip',
         buttons: {
@@ -37,18 +41,22 @@ $(document).ready( function () {
 	          }
             }
         },
-        responsive: true,
         orderCellsTop: true,
         fixedHeader: true,
         language : {
            "zeroRecords": " "
         },
     })
+
+    // Process button is pressed.
+    $('#schedulesTable tbody').on( 'click', 'button', function () {
+        var table = $('#schedulesTable').DataTable();
+        var data = table.row( $(this).parents('tr') ).data();
+        var url = "/pipelite/ui/processes?pipelineName=" + data.pipelineName + "&processId=" + data.processId;
+        console.log(url);
+        window.location.href = url;
+    });
 });
-
-
-
-
 
     </script>
 </head>
@@ -75,6 +83,7 @@ $(document).ready( function () {
                 <th>Current execution time</th>
                 <th>Time until next execution</th>
                 <th>Process id</th>
+                <th>Process</th>
             </tr>
             </thead>
         </table>

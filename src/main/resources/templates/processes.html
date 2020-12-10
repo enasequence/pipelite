@@ -4,7 +4,7 @@
 <head>
     <div th:replace="fragments/header :: header"></div>
     <title>Active processes</title>
-    <script>
+    <script th:inline="javascript">
 $(document).ready( function () {
     $('#processesTable').DataTable({
         columns: [
@@ -34,7 +34,6 @@ $(document).ready( function () {
 	          }
             }
         },
-        responsive: true,
         orderCellsTop: true,
         fixedHeader: true,
         language : {
@@ -71,22 +70,29 @@ $(document).ready( function () {
     if (pipelineName != 'Pipeline name') {
        $( "#pipelineName" ).val(pipelineName);
     }
+    var processId = /*[[${param.processId}?: 'Process id']]*/ 'Process id';
+    if (processId != 'Process id') {
+       $( "#processId" ).val(processId);
+    }
     show();
 });
 
 // Show the table.
 function show() {
     var table1 = $('#processesTable').DataTable();
-
     var pipelineName = document.getElementById("pipelineName").value;
+    var processId = document.getElementById("processId").value;
     var url;
-    if (pipelineName) {
+    if (pipelineName && processId) {
+        url = "/pipelite/process/" + pipelineName + "/" + processId;
+    }
+    else if (pipelineName) {
         url = "/pipelite/process/" + pipelineName;
     }
     else {
         url = "/pipelite/process/";
     }
-
+    console.log(url);
     $.get(url, function(data, status) {
         table1.clear().rows.add(data).draw();
      });
@@ -104,13 +110,17 @@ function show() {
 
 <div class="card m-2">
     <div class="card-body">
-        <h5 class="card-title">Pipeline</h5>
+        <h5 class="card-title">Process</h5>
         <!--        <p class="card-text">Provide the pipeline name and process id to see the process stages.</p> -->
         <div class="form-inline m-2">
 
             <label class="mr-2" for="pipelineName">Pipeline name</label>
             <!-- placeholder="Pipeline name" -->
             <input type="text" class="form-control m-2" id="pipelineName">
+
+            <label class="mr-2" for="processId">Process id</label>
+            <!-- placeholder="Process id"  -->
+            <input type="text" class="form-control m-2" id="processId">
 
             <button type="submit" class="btn btn-primary m-2" onclick="show()">Show processes</button>
         </div>

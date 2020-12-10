@@ -74,6 +74,27 @@ public class ProcessController {
     return list;
   }
 
+  @GetMapping("/{pipelineName}/{processId}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(description = "All running processes for a pipeline")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "OK"),
+        @ApiResponse(responseCode = "500", description = "Internal Server error")
+      })
+  public List<ProcessInfo> runningProcesses(
+      @PathVariable(value = "pipelineName") String pipelineName,
+      @PathVariable(value = "processId") String processId) {
+    List<ProcessInfo> list =
+        runningProcesses().stream()
+            .filter(
+                processInfo ->
+                    pipelineName.equals(processInfo.getPipelineName())
+                        && processId.equals(processInfo.getProcessId()))
+            .collect(Collectors.toList());
+    return list;
+  }
+
   public static List<ProcessInfo> getProcesses(ProcessRunnerPoolService service) {
     Collection<ProcessRunner> processRunners = service.getActiveProcessRunners();
     List<ProcessInfo> processes = new ArrayList<>();
