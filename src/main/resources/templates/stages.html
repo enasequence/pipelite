@@ -4,7 +4,7 @@
 <head>
     <div th:replace="fragments/header :: header"></div>
     <title>Process stages</title>
-    <script>
+    <script th:inline="javascript">
 
 $(document).ready(function() {
     $('#statusTable').DataTable({
@@ -40,6 +40,7 @@ $(document).ready(function() {
         },
     });
 
+    // Logs button is pressed.
     $('#statusTable tbody').on( 'click', 'button', function () {
         var pipelineName = document.getElementById("pipelineName").value;
         var processId = document.getElementById("processId").value;
@@ -101,6 +102,21 @@ $(document).ready(function() {
           }
         });
     });
+
+    var pipelineName = /*[[${param.pipelineName}?: 'Pipeline name']]*/ 'Pipeline name';
+    var processId = /*[[${param.processId}?: 'Process id']]*/ 'Process id';
+    if (pipelineName != 'Pipeline name') {
+       console.log("pipelineName parameter:" + pipelineName);
+       $( "#pipelineName" ).val(pipelineName);
+    }
+    if (processId != 'Process id') {
+       console.log("processId parameter:" + processId);
+       $( "#processId" ).val(processId);
+    }
+    if (pipelineName != 'Pipeline name' &&
+        processId != 'Process id') {
+        show();
+    }
 });
 
 // Show the tables.
@@ -127,6 +143,9 @@ function copy() {
     document.execCommand("copy");
     window.getSelection().removeAllRanges();// to deselect
 };
+
+
+
 
 
     </script>
@@ -160,10 +179,15 @@ function copy() {
         <h5 class="card-title">Process</h5>
         <!--        <p class="card-text">Provide the pipeline name and process id to see the process stages.</p> -->
         <div class="form-inline m-2">
-            <!--                        <label class="mr-2" for="pipelineName">Pipeline name</label> -->
+
+            <!-- <label class="mr-2" for="pipelineName">Pipeline name</label> -->
+            <!-- th:placeholder="${param.pipelineName}?: 'Pipeline name'" -->
             <input type="text" class="form-control m-2" placeholder="Pipeline name" id="pipelineName">
-            <!--                <label class="mr-2" for="processId">Process id</label> -->
+
+            <!-- <label class="mr-2" for="processId">Process id</label> -->
+            <!-- th:placeholder="${param.processId}?: 'Process id'" -->
             <input type="text" class="form-control m-2" placeholder="Process id" id="processId">
+
             <button type="submit" class="btn btn-primary m-2" onclick="show()">Show stages</button>
 
         </div>

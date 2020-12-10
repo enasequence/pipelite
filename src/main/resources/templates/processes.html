@@ -19,7 +19,11 @@ $(document).ready( function () {
             { data: "currentExecutionTime" },
             { data: "state" },
             { data: "executionCount" },
-            { data: "priority" }
+            { data: "priority" },
+            {
+                "data": null,
+                "defaultContent": "<button class=\"btn btn-outline-secondary mr-2\">Stages</button>"
+            }
         ],
         dom: 'frtBip',
         buttons: {
@@ -40,7 +44,16 @@ $(document).ready( function () {
         language : {
            "zeroRecords": " "
         },
-    })
+    });
+
+    // Stages button is pressed.
+    $('#processesTable tbody').on( 'click', 'button', function () {
+        var table = $('#processesTable').DataTable();
+        var data = table.row( $(this).parents('tr') ).data();
+        var url = "/pipelite/ui/stages?pipelineName=" + data.pipelineName + "&processId=" + data.processId;
+        window.location.href = url;
+    });
+
 });
 
 
@@ -67,6 +80,7 @@ $(document).ready( function () {
                 <th>state</th>
                 <th>Execution count</th>
                 <th>Priority</th>
+                <th>Stages</th>
             </tr>
             </thead>
         </table>
