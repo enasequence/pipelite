@@ -24,6 +24,7 @@ public class StageInfo {
   private String resultType;
   private ZonedDateTime startTime;
   private ZonedDateTime endTime;
+  private String executionTime;
   private Integer executionCount;
   private String executorName;
   private String executorData;

@@ -106,7 +106,7 @@ public class ProcessController {
               .processId(processRunner.getProcessId())
               .currentExecutionStartTime(processRunner.getStartTime())
               .currentExecutionTime(
-                  TimeUtils.getTimeAsStringAlwaysPositive(
+                  TimeUtils.getDurationAsStringAlwaysPositive(
                       ZonedDateTime.now(), processRunner.getStartTime()))
               .state(processRunner.getProcess().getProcessEntity().getState().name())
               .executionCount(processRunner.getProcess().getProcessEntity().getExecutionCount())
@@ -131,7 +131,7 @@ public class ProcessController {
                           .processId(lorem.getWords(1))
                           .currentExecutionStartTime(ZonedDateTime.now())
                           .currentExecutionTime(
-                              TimeUtils.getTimeAsStringAlwaysPositive(
+                              TimeUtils.getDurationAsStringAlwaysPositive(
                                   ZonedDateTime.now(), ZonedDateTime.now().minusMinutes(5)))
                           .state(lorem.getFirstNameMale())
                           .executionCount(random.nextInt(10))

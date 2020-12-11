@@ -22,6 +22,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.controller.info.StageInfo;
+import pipelite.controller.utils.TimeUtils;
 import pipelite.entity.StageEntity;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
@@ -29,11 +30,11 @@ import pipelite.service.ProcessFactoryService;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
 
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @RestController
 @RequestMapping(value = "/stage")
@@ -84,6 +85,15 @@ public class StageController {
                 .collect(Collectors.toList());
       }
     }
+    String executionTime = null;
+    if (stageEntity.getStartTime() != null && stageEntity.getEndTime() != null) {
+      executionTime =
+          TimeUtils.getDurationAsStringAlwaysPositive(
+              stageEntity.getEndTime(), stageEntity.getStartTime());
+    } else if (stageEntity.getStartTime() != null) {
+      executionTime =
+          TimeUtils.getDurationAsStringAlwaysPositive(ZonedDateTime.now(), stageEntity.getStartTime());
+    }
     return StageInfo.builder()
         .pipelineName(stageEntity.getPipelineName())
         .processId(stageEntity.getProcessId())
@@ -91,6 +101,7 @@ public class StageController {
         .resultType(stageEntity.getResultType().name())
         .startTime(stageEntity.getStartTime())
         .endTime(stageEntity.getEndTime())
+        .executionTime(executionTime)
         .executionCount(stageEntity.getExecutionCount())
         .executorName(stageEntity.getExecutorName())
         .executorData(stageEntity.getExecutorData())
@@ -105,31 +116,35 @@ public class StageController {
         .anyMatch(profile -> "LoremIpsum".equals(profile))) {
       Lorem lorem = LoremIpsum.getInstance();
       AtomicReference<String> previousStageName = new AtomicReference<>();
-      IntStream.range(1, 10)
-          .forEach(
-              i -> {
-                String stageName = lorem.getFirstNameMale();
-                List<String> dependsOnStages = new ArrayList<>();
-                if (previousStageName.get() != null) {
-                  dependsOnStages.add(previousStageName.get());
-                }
-                previousStageName.set(stageName);
-                list.add(
-                    StageInfo.builder()
-                        .pipelineName(lorem.getCountry())
-                        .processId(lorem.getWords(1))
-                        .stageName(stageName)
-                        .resultType(lorem.getCity())
-                        .startTime(ZonedDateTime.now())
-                        .endTime(ZonedDateTime.now())
-                        .executionCount(10)
-                        .executorName(lorem.getNameFemale())
-                        .executorData(lorem.getWords(1))
-                        .executorParams(lorem.getWords(2))
-                        .resultParams(lorem.getWords(2))
-                        .dependsOnStage(dependsOnStages)
-                        .build());
-              });
+      for (int i = 0; i < 10; ++i) {
+        // IntStream.range(1, 10)
+        //     .forEach(
+        //         i -> {
+        String stageName = String.valueOf(i);
+        List<String> dependsOnStages = new ArrayList<>();
+        if (previousStageName.get() != null) {
+          dependsOnStages.add(previousStageName.get());
+        }
+        previousStageName.set(String.valueOf(i));
+        list.add(
+            StageInfo.builder()
+                .pipelineName(lorem.getCountry())
+                .processId(lorem.getWords(1))
+                .stageName(stageName)
+                .resultType("SUCCESS")
+                .startTime(ZonedDateTime.now())
+                .endTime(ZonedDateTime.now())
+                .executionCount(10)
+                .executionTime(
+                    TimeUtils.getDurationAsStringAlwaysPositive(
+                        ZonedDateTime.now(), ZonedDateTime.now().minus(Duration.ofHours(1))))
+                .executorName(lorem.getNameFemale())
+                .executorData(lorem.getWords(1))
+                .executorParams(lorem.getWords(2))
+                .resultParams(lorem.getWords(2))
+                .dependsOnStage(dependsOnStages)
+                .build());
+      }
     }
   }
 }

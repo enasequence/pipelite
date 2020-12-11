@@ -13,6 +13,7 @@ $(document).ready(function() {
             { data: "resultType" },
             { data: "startTime" },
             { data: "endTime" },
+            { data: "executionTime" },
             { data: "executionCount" },
             {
                 "data": null,
@@ -141,7 +142,6 @@ function plot() {
 
     var minWidth = 100;
     var fullWidth = $("#div-svg").width();
-    console.log("fullWidth:" + fullWidth);
     if (fullWidth < minWidth) {
        return;
     }
@@ -162,7 +162,20 @@ function plot() {
           .setDefaultEdgeLabel(function() { return {}; });
 
         // Set nodes
-        data.forEach(function(stage) { g.setNode(stage.stageName, { label: stage.stageName }); });
+        data.forEach(function(stage) {
+            if (stage.resultType == "SUCCESS") {
+               g.setNode(stage.stageName, { label: stage.stageName, class: "stageSuccess" });
+            }
+            else if (stage.resultType == "ERROR") {
+               g.setNode(stage.stageName, { label: stage.stageName, class: "stageError" });
+            }
+            else if (stage.resultType == "ACTIVE") {
+               g.setNode(stage.stageName, { label: stage.stageName, class: "stageActive" });
+            }
+            else {
+               g.setNode(stage.stageName, { label: stage.stageName });
+            }
+        });
 
         // Set edges
         data.forEach(function(stage) {
@@ -193,7 +206,6 @@ function plot() {
 
         var paddingPercent = 0.95;
         var svgGroupBounds = svgGroup.node().getBBox();
-        console.log("svgGroupBounds: " + JSON.stringify(svgGroupBounds));
         var width = svgGroupBounds.width,
             height = svgGroupBounds.height;
 
@@ -210,8 +222,8 @@ function plot() {
         }
         var leftMargin = 10;
         var translate = [leftMargin /*fullWidth / 2 - scale * midX*/, fullHeight / 2 - scale * midY];
-        console.log("scale: " + scale);
-        console.log("translate: " + translate);
+        // console.log("scale: " + scale);
+        // console.log("translate: " + translate);
         svgGroup.attr('transform',
             'translate(' + translate + ')' +
             'scale(' + scale + ')');
@@ -297,6 +309,7 @@ function copy() {
                         <th>Result type</th>
                         <th>Start time</th>
                         <th>End time</th>
+                        <th>Execution time</th>
                         <th>Execution count</th>
                         <th>Logs</th>
                     </tr>

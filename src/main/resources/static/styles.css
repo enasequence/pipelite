@@ -1,5 +1,5 @@
 
-/* dagre */
+/* Stage graph. */
 
 .node rect {
   stroke: #333;
@@ -10,4 +10,16 @@
   stroke: #333;
   fill: #333;
   stroke-width: 1.5px;
+}
+
+g.stageSuccess > rect {
+  fill: #28A744;
+}
+
+g.stageError > rect {
+  fill: #FFC006;
+}
+
+g.stageActive > rect {
+  fill: ##6C757D;
 }

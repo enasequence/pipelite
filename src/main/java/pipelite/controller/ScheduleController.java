@@ -74,15 +74,15 @@ public class ScheduleController {
                                 : null)
                         .nextExecution(s.getLaunchTime())
                         .timeSinceLastExecution(
-                            TimeUtils.getTimeAsStringAlwaysPositive(
+                            TimeUtils.getDurationAsStringAlwaysPositive(
                                 ZonedDateTime.now(), s.getScheduleEntity().getEndTime()))
                         .currentExecutionTime(
                             (s.getScheduleEntity().getProcessId() != null)
-                                ? TimeUtils.getTimeAsStringAlwaysPositive(
+                                ? TimeUtils.getDurationAsStringAlwaysPositive(
                                     ZonedDateTime.now(), s.getScheduleEntity().getStartTime())
                                 : null)
                         .timeUntilNextExecution(
-                            TimeUtils.getTimeAsStringAlwaysPositive(
+                            TimeUtils.getDurationAsStringAlwaysPositive(
                                 s.getLaunchTime(), ZonedDateTime.now()))
                         .processId(s.getScheduleEntity().getProcessId())
                         .build()));
@@ -106,13 +106,13 @@ public class ScheduleController {
                           .activeExecution(ZonedDateTime.now())
                           .nextExecution(ZonedDateTime.now())
                           .timeSinceLastExecution(
-                              TimeUtils.getTimeAsStringAlwaysPositive(
+                              TimeUtils.getDurationAsStringAlwaysPositive(
                                   ZonedDateTime.now(), ZonedDateTime.now().plusHours(6)))
                           .currentExecutionTime(
-                              TimeUtils.getTimeAsStringAlwaysPositive(
+                              TimeUtils.getDurationAsStringAlwaysPositive(
                                   ZonedDateTime.now(), ZonedDateTime.now().plusHours(1)))
                           .timeUntilNextExecution(
-                              TimeUtils.getTimeAsStringAlwaysPositive(
+                              TimeUtils.getDurationAsStringAlwaysPositive(
                                   ZonedDateTime.now(), ZonedDateTime.now()))
                           .processId(lorem.getWords(1))
                           .build()));
