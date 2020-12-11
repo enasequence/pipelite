@@ -13,6 +13,7 @@ package pipelite.controller.info;
 import lombok.Builder;
 import lombok.Value;
 import java.time.ZonedDateTime;
+import java.util.List;
 
 @Value
 @Builder
@@ -28,4 +29,5 @@ public class StageInfo {
   private String executorData;
   private String executorParams;
   private String resultParams;
+  private List<String> dependsOnStage;
 }

@@ -16,24 +16,33 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.controller.info.StageInfo;
 import pipelite.entity.StageEntity;
+import pipelite.process.Process;
+import pipelite.process.ProcessFactory;
+import pipelite.service.ProcessFactoryService;
 import pipelite.service.StageService;
+import pipelite.stage.Stage;
 
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @RestController
 @RequestMapping(value = "/stage")
 @Tag(name = "StageAPI", description = "Process stages")
+@Flogger
 public class StageController {
 
   @Autowired StageService stageService;
+  @Autowired ProcessFactoryService processFactoryService;
   @Autowired Environment environment;
 
   @GetMapping("/{pipelineName}/{processId}")
@@ -48,13 +57,33 @@ public class StageController {
       @PathVariable(value = "pipelineName") String pipelineName,
       @PathVariable(value = "processId") String processId) {
     List<StageInfo> list = new ArrayList<>();
+    AtomicReference<Process> process = new AtomicReference<>();
+    try {
+      ProcessFactory processFactory = processFactoryService.create(pipelineName);
+      process.set(processFactory.create(processId));
+    } catch (Exception ex) {
+      log.atSevere().withCause(ex).log(ex.getMessage());
+    }
     stageService.getSavedStages(pipelineName, processId).stream()
-        .forEach(stageEntity -> list.add(getStage(stageEntity)));
+        .forEach(stageEntity -> list.add(getStage(stageEntity, process.get())));
     getLoremIpsumStages(list);
     return list;
   }
 
-  public static StageInfo getStage(StageEntity stageEntity) {
+  public StageInfo getStage(StageEntity stageEntity, Process process) {
+    List<String> dependsOnStage = new ArrayList<>();
+    if (process != null) {
+      Optional<Stage> stage =
+          process.getStages().stream()
+              .filter(s -> s.getStageName().equals(stageEntity.getStageName()))
+              .findAny();
+      if (stage.isPresent()) {
+        dependsOnStage =
+            stage.get().getDependsOn().stream()
+                .map(s -> s.getStageName())
+                .collect(Collectors.toList());
+      }
+    }
     return StageInfo.builder()
         .pipelineName(stageEntity.getPipelineName())
         .processId(stageEntity.getProcessId())
@@ -67,6 +96,7 @@ public class StageController {
         .executorData(stageEntity.getExecutorData())
         .executorParams(stageEntity.getExecutorParams())
         .resultParams(stageEntity.getResultParams())
+        .dependsOnStage(dependsOnStage)
         .build();
   }
 
@@ -74,24 +104,32 @@ public class StageController {
     if (Arrays.stream(environment.getActiveProfiles())
         .anyMatch(profile -> "LoremIpsum".equals(profile))) {
       Lorem lorem = LoremIpsum.getInstance();
-      Random random = new Random();
-      IntStream.range(1, 100)
+      AtomicReference<String> previousStageName = new AtomicReference<>();
+      IntStream.range(1, 10)
           .forEach(
-              i ->
-                  list.add(
-                      StageInfo.builder()
-                          .pipelineName(lorem.getCountry())
-                          .processId(lorem.getWords(1))
-                          .stageName(lorem.getFirstNameMale())
-                          .resultType(lorem.getCity())
-                          .startTime(ZonedDateTime.now())
-                          .endTime(ZonedDateTime.now())
-                          .executionCount(10)
-                          .executorName(lorem.getNameFemale())
-                          .executorData(lorem.getWords(1))
-                          .executorParams(lorem.getWords(2))
-                          .resultParams(lorem.getWords(2))
-                          .build()));
+              i -> {
+                String stageName = lorem.getFirstNameMale();
+                List<String> dependsOnStages = new ArrayList<>();
+                if (previousStageName.get() != null) {
+                  dependsOnStages.add(previousStageName.get());
+                }
+                previousStageName.set(stageName);
+                list.add(
+                    StageInfo.builder()
+                        .pipelineName(lorem.getCountry())
+                        .processId(lorem.getWords(1))
+                        .stageName(stageName)
+                        .resultType(lorem.getCity())
+                        .startTime(ZonedDateTime.now())
+                        .endTime(ZonedDateTime.now())
+                        .executionCount(10)
+                        .executorName(lorem.getNameFemale())
+                        .executorData(lorem.getWords(1))
+                        .executorParams(lorem.getWords(2))
+                        .resultParams(lorem.getWords(2))
+                        .dependsOnStage(dependsOnStages)
+                        .build());
+              });
     }
   }
 }
