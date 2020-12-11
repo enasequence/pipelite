@@ -167,7 +167,7 @@ function plot() {
         // Set edges
         data.forEach(function(stage) {
             stage.dependsOnStage.forEach(function(dependsOnStage) {
-                g.setEdge(stage.stageName, dependsOnStage, {
+                g.setEdge(dependsOnStage, stage.stageName, {
                 // label: "depends on"
                 });
             });
