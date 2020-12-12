@@ -128,13 +128,14 @@ function show() {
 
     var pipelineName = document.getElementById("pipelineName").value;
     var processId = document.getElementById("processId").value;
-    var url =  "/pipelite/stage/" + pipelineName + "/" + processId + "/";
-
-    $.get(url, function(data, status) {
-        table1.clear().rows.add(data).draw();
-        table2.clear().rows.add(data).draw();
-     });
-    plot();
+    if (pipelineName && processId) {
+        var url =  "/pipelite/stage/" + pipelineName + "/" + processId + "/";
+        $.get(url, function(data, status) {
+            table1.clear().rows.add(data).draw();
+            table2.clear().rows.add(data).draw();
+         });
+        plot();
+    }
 };
 
 // Show graph.

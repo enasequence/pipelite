@@ -92,7 +92,7 @@ function show() {
     else {
         url = "/pipelite/process/";
     }
-    console.log(url);
+    // console.log(url);
     $.get(url, function(data, status) {
         table1.clear().rows.add(data).draw();
      });
