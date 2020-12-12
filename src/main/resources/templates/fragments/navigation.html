@@ -1,7 +1,8 @@
 <th:block th:fragment="navigation">
 
     <nav class="navbar navbar-expand navbar-dark bg-dark">
-        <a class="navbar-brand" href="#">Pipelite</a>
+        <a class="navbar-brand" href="#"><img src="/pipelite/favicon-32x32.png"/>
+            Pipelite</a>
 
         <div class="collapse navbar-collapse">
             <ul class="navbar-nav mr-auto">
@@ -39,6 +40,7 @@ $(document).ready(function() {
     $(this).parent().addClass('active').siblings().removeClass('active');
     console.log('location.pathname:' + location.pathname);
 });
+
 
 
     </script>
