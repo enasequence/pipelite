@@ -13,15 +13,45 @@ package pipelite;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.util.Properties;
+
 public class Pipelite {
 
   private Pipelite() {}
 
-  public static ConfigurableApplicationContext run(String[] args) {
-    return SpringApplication.run(Application.class, args);
-  }
-
+  /**
+   * Runs the pipelite services.
+   *
+   * @param args command line arguments
+   */
   public static void main(String[] args) {
     run(args);
+  }
+
+  /**
+   * Runs the pipelite services.
+   *
+   * @param args command line arguments
+   * @return Spring configurable application context
+   */
+  public static ConfigurableApplicationContext run(String[] args) {
+    SpringApplication application = new SpringApplication(Application.class);
+    application.setDefaultProperties(getDefaultProperties());
+    return application.run(args);
+  }
+
+  /**
+   * Returns application properties needed by pipelite.
+   *
+   * @return application properties needed by pipelite
+   */
+  private static Properties getDefaultProperties() {
+    Properties properties = new Properties();
+    properties.put("spring.mvc.static-path-pattern", "/static/**");
+    properties.put("spring.resources.static-locations", "classpath:/static/");
+    properties.put(
+        "flogger.backend_factory",
+        "com.google.common.flogger.backend.slf4j.Slf4jBackendFactory#getInstance");
+    return properties;
   }
 }
