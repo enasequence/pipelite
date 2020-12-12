@@ -10,11 +10,10 @@
  */
 package pipelite.configuration;
 
-import java.net.InetAddress;
 import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.ForkJoinPool;
-import javax.annotation.PostConstruct;
+
 import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -25,9 +24,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "pipelite.launcher")
 /**
- * Pipelite supports two different launchers. The PipeliteLauncher executes processes in parallel
- * for one pipeline. The PipeliteScheduler executes non-parallel processes for one or more pipelines
- * with cron schedules.
+ * Pipelite launcher configuration. Pipelite supports two different launchers. The PipeliteLauncher
+ * executes processes in parallel for one pipeline. The PipeliteScheduler executes non-parallel
+ * processes for one or more pipelines with cron schedules.
  */
 public class LauncherConfiguration {
 
@@ -44,29 +43,6 @@ public class LauncherConfiguration {
   private static final Duration DEFAULT_STAGE_POLL_FREQUENCY = Duration.ofMinutes(1);
 
   public LauncherConfiguration() {}
-
-  @PostConstruct
-  private void checkRequiredProperties() {
-    boolean isValid = true;
-    if (port == null) {
-      log.atSevere().log("Missing required pipelite property: pipelite.launcher.port");
-      isValid = false;
-    }
-    if (contextPath == null) {
-      log.atSevere().log("Missing required pipelite property: pipelite.launcher.path");
-      isValid = false;
-    }
-    if (!isValid) {
-      throw new IllegalArgumentException(
-          "Missing required pipelite properties: pipelite.launcher.*");
-    }
-  }
-
-  /** The pipelite web server port number. */
-  private Integer port = 8082;
-
-  /** The pipelite web server context path. */
-  private String contextPath = "/pipelite";
 
   /**
    * The PipeliteLauncher will execute processes from pipelines given process ids. The pipelineName
@@ -155,13 +131,12 @@ public class LauncherConfiguration {
   /** The PipeliteLauncher can optionally be shut down if idle. */
   private boolean shutdownIfIdle;
 
-  public static String getLauncherName(
-      String pipelineName, LauncherConfiguration launcherConfiguration) {
+  public static String getLauncherName(String pipelineName, int port) {
     return pipelineName
         + "@"
-        + getCanonicalHostName()
+        + WebConfiguration.getCanonicalHostName()
         + ":"
-        + launcherConfiguration.getPort()
+        + port
         + ":"
         + UUID.randomUUID();
   }
@@ -172,13 +147,5 @@ public class LauncherConfiguration {
 
   public static String getUnlockerName(LauncherConfiguration launcherConfiguration) {
     return launcherConfiguration.getUnlockerName();
-  }
-
-  public static String getCanonicalHostName() {
-    try {
-      return InetAddress.getLocalHost().getCanonicalHostName();
-    } catch (Exception ex) {
-      throw new RuntimeException(ex);
-    }
   }
 }

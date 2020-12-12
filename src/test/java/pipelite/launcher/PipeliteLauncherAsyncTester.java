@@ -25,6 +25,7 @@ import pipelite.TestProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
+import pipelite.configuration.WebConfiguration;
 import pipelite.executor.StageExecutor;
 import pipelite.executor.StageExecutorParameters;
 import pipelite.process.Process;
@@ -42,6 +43,7 @@ public class PipeliteLauncherAsyncTester {
 
   private static final int PROCESS_CNT = 5;
 
+  @Autowired private WebConfiguration webConfiguration;
   @Autowired private LauncherConfiguration launcherConfiguration;
   @Autowired private StageConfiguration stageConfiguration;
   @Autowired private ProcessFactoryService processFactoryService;
@@ -116,6 +118,7 @@ public class PipeliteLauncherAsyncTester {
 
   private PipeliteLauncher createPipeliteLauncher(String pipelineName) {
     return DefaultPipeliteLauncher.create(
+        webConfiguration,
         launcherConfiguration,
         stageConfiguration,
         lockService,
@@ -241,7 +244,7 @@ public class PipeliteLauncherAsyncTester {
     TestProcessFactory<SubmitSuccessPollSuccessExecutor> f = submitSuccessPollSuccess;
 
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
-    new PipeliteServiceManager().addService(pipeliteLauncher).run();
+    new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
 
     ProcessLauncherStats stats = pipeliteLauncher.getStats();
     assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
@@ -258,7 +261,7 @@ public class PipeliteLauncherAsyncTester {
     TestProcessFactory<SubmitErrorExecutor> f = submitError;
 
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
-    new PipeliteServiceManager().addService(pipeliteLauncher).run();
+    new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
 
     ProcessLauncherStats stats = pipeliteLauncher.getStats();
     assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
@@ -275,7 +278,7 @@ public class PipeliteLauncherAsyncTester {
     TestProcessFactory<SubmitExceptionExecutor> f = submitException;
 
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
-    new PipeliteServiceManager().addService(pipeliteLauncher).run();
+    new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
 
     ProcessLauncherStats stats = pipeliteLauncher.getStats();
     assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
@@ -292,7 +295,7 @@ public class PipeliteLauncherAsyncTester {
     TestProcessFactory<PollErrorExecutor> f = pollError;
 
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
-    new PipeliteServiceManager().addService(pipeliteLauncher).run();
+    new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
 
     ProcessLauncherStats stats = pipeliteLauncher.getStats();
     assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
@@ -309,7 +312,7 @@ public class PipeliteLauncherAsyncTester {
     TestProcessFactory<PollExceptionExecutor> f = pollException;
 
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
-    new PipeliteServiceManager().addService(pipeliteLauncher).run();
+    new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
 
     ProcessLauncherStats stats = pipeliteLauncher.getStats();
     assertThat(stats.getProcessExceptionCount()).isEqualTo(0);

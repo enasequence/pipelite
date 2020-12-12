@@ -21,6 +21,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
+import pipelite.configuration.WebConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.launcher.process.creator.ProcessCreator;
 import pipelite.launcher.process.queue.DefaultProcessQueue;
@@ -36,6 +37,7 @@ public class PipeliteLauncherTest {
   public void runProcess() {
     final int processCnt = 100;
     String pipelineName = UniqueStringGenerator.randomPipelineName();
+    WebConfiguration webConfiguration = new WebConfiguration();
     LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
 
     ProcessFactory processFactory =
@@ -52,7 +54,7 @@ public class PipeliteLauncherTest {
     DefaultProcessQueue queue =
         spy(
             new DefaultProcessQueue(
-                launcherConfiguration, mock(ProcessService.class), pipelineName));
+                webConfiguration, launcherConfiguration, mock(ProcessService.class), pipelineName));
 
     List<ProcessEntity> processesEntities =
         Collections.nCopies(processCnt, mock(ProcessEntity.class));
@@ -80,6 +82,7 @@ public class PipeliteLauncherTest {
     final int processCnt = 100;
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     Duration refreshFrequency = Duration.ofDays(1);
+    WebConfiguration webConfiguration = new WebConfiguration();
     LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
     launcherConfiguration.setProcessQueueMaxRefreshFrequency(refreshFrequency);
     launcherConfiguration.setProcessQueueMinRefreshFrequency(refreshFrequency);
@@ -87,7 +90,7 @@ public class PipeliteLauncherTest {
     DefaultProcessQueue queue =
         spy(
             new DefaultProcessQueue(
-                launcherConfiguration, mock(ProcessService.class), pipelineName));
+                webConfiguration, launcherConfiguration, mock(ProcessService.class), pipelineName));
 
     assertThat(queue.getProcessQueueMaxValidUntil()).isBefore(ZonedDateTime.now());
     assertThat(queue.getProcessQueueMinValidUntil()).isBefore(ZonedDateTime.now());
@@ -127,6 +130,7 @@ public class PipeliteLauncherTest {
   public void testCreateProcess() {
     final int processCnt = 100;
     String pipelineName = UniqueStringGenerator.randomPipelineName();
+    WebConfiguration webConfiguration = new WebConfiguration();
     LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
     launcherConfiguration.setProcessCreateMaxSize(100);
 
@@ -134,7 +138,7 @@ public class PipeliteLauncherTest {
     DefaultProcessQueue queue =
         spy(
             new DefaultProcessQueue(
-                launcherConfiguration, mock(ProcessService.class), pipelineName));
+                webConfiguration, launcherConfiguration, mock(ProcessService.class), pipelineName));
     when(queue.isFillQueue()).thenReturn(true);
 
     PipeliteLauncher launcher =

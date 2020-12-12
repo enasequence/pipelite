@@ -26,6 +26,7 @@ import pipelite.TestProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
+import pipelite.configuration.WebConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.executor.StageExecutorParameters;
@@ -42,6 +43,7 @@ import pipelite.stage.StageExecutionResultType;
 @Scope("prototype")
 public class PipeliteLauncherTester {
 
+  @Autowired private WebConfiguration webConfiguration;
   @Autowired private LauncherConfiguration launcherConfiguration;
   @Autowired private StageConfiguration stageConfiguration;
   @Autowired private ProcessFactoryService processFactoryService;
@@ -109,6 +111,7 @@ public class PipeliteLauncherTester {
 
   private PipeliteLauncher createPipeliteLauncher(String pipelineName) {
     return DefaultPipeliteLauncher.create(
+        webConfiguration,
         launcherConfiguration,
         stageConfiguration,
         lockService,
@@ -245,7 +248,7 @@ public class PipeliteLauncherTester {
 
   private void test(TestProcessFactory f) {
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
-    new PipeliteServiceManager().addService(pipeliteLauncher).run();
+    new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
 
     assertThat(pipeliteLauncher.getActiveProcessRunners().size()).isEqualTo(0);
 

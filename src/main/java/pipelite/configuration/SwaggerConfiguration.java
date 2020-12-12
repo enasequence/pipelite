@@ -20,12 +20,12 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class SwaggerConfiguration {
 
-  @Autowired LauncherConfiguration launcherConfiguration;
+  @Autowired WebConfiguration webConfiguration;
 
   @Bean
   public OpenAPI openAPI() {
     return new OpenAPI()
-        .addServersItem(new Server().url(launcherConfiguration.getContextPath()))
+        .addServersItem(new Server().url(webConfiguration.getContextPath()))
         .info(new Info().version("1").title("Pipelite launcher and scheduler services"));
   }
 }

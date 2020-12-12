@@ -22,6 +22,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
+import pipelite.configuration.WebConfiguration;
 import pipelite.launcher.*;
 import pipelite.service.*;
 
@@ -31,6 +32,7 @@ import pipelite.service.*;
 @Flogger
 public class Application {
 
+  @Autowired private WebConfiguration webConfiguration;
   @Autowired private LauncherConfiguration launcherConfiguration;
   @Autowired private StageConfiguration stageConfiguration;
   @Autowired private ProcessFactoryService processFactoryService;
@@ -137,6 +139,7 @@ public class Application {
 
   private PipeliteLauncher createLauncher(String pipelineName) {
     return DefaultPipeliteLauncher.create(
+        webConfiguration,
         launcherConfiguration,
         stageConfiguration,
         lockService,
@@ -159,7 +162,7 @@ public class Application {
     try {
       log.atInfo().log("Running pipelite services");
 
-      serverManager.run();
+      serverManager.runAsync();
 
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Unexpected exception when running pipelite services");

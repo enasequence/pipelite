@@ -318,7 +318,7 @@ public class PipeliteSchedulerTester {
         saveSchedule(f);
         pipeliteScheduler.setMaximumExecutions(f.getPipelineName(), f.processCnt);
       }
-      new PipeliteServiceManager().addService(pipeliteScheduler).run();
+      new PipeliteServiceManager().addService(pipeliteScheduler).runSync();
 
       assertThat(pipeliteScheduler.getActiveProcessRunners().size()).isEqualTo(0);
       List<ScheduleEntity> scheduleEntities =

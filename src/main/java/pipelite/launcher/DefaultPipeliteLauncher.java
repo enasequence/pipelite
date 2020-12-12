@@ -12,6 +12,7 @@ package pipelite.launcher;
 
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
+import pipelite.configuration.WebConfiguration;
 import pipelite.launcher.process.creator.DefaultProcessCreator;
 import pipelite.launcher.process.creator.ProcessCreator;
 import pipelite.launcher.process.queue.DefaultProcessQueue;
@@ -28,6 +29,7 @@ public class DefaultPipeliteLauncher {
   private DefaultPipeliteLauncher() {}
 
   public static PipeliteLauncher create(
+      WebConfiguration webConfiguration,
       LauncherConfiguration launcherConfiguration,
       StageConfiguration stageConfiguration,
       LockService lockService,
@@ -44,7 +46,8 @@ public class DefaultPipeliteLauncher {
         new DefaultProcessCreator(
             processSourceService.create(pipelineName), processService, pipelineName);
     ProcessQueue processQueue =
-        new DefaultProcessQueue(launcherConfiguration, processService, pipelineName);
+        new DefaultProcessQueue(
+            webConfiguration, launcherConfiguration, processService, pipelineName);
     return new PipeliteLauncher(
         launcherConfiguration,
         pipeliteLocker,

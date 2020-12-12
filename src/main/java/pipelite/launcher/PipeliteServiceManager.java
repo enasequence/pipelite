@@ -46,7 +46,15 @@ public class PipeliteServiceManager {
     return services.size();
   }
 
-  public void run() {
+  public void runAsync() {
+    run(false);
+  }
+
+  public void runSync() {
+    run(true);
+  }
+
+  private void run(boolean sync) {
     Assert.isNull(manager, "Unable to run new pipelite services");
     manager = new ServiceManager(services);
     manager.addListener(
@@ -64,7 +72,11 @@ public class PipeliteServiceManager {
         MoreExecutors.directExecutor());
     Runtime.getRuntime().addShutdownHook(new Thread(() -> shutdown()));
     log.atInfo().log("Starting pipelite services");
+
     manager.startAsync();
+    if (sync) {
+      manager.awaitStopped();
+    }
   }
 
   public void shutdown() {

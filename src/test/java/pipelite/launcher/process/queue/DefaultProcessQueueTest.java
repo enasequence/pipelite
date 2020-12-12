@@ -22,6 +22,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
+import pipelite.configuration.WebConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.service.ProcessService;
 
@@ -53,6 +54,7 @@ public class DefaultProcessQueueTest {
     final int processParallelism = 10;
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     Duration refreshFrequency = Duration.ofDays(1);
+    WebConfiguration webConfiguration = new WebConfiguration();
     LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
     launcherConfiguration.setProcessQueueMaxRefreshFrequency(refreshFrequency);
     launcherConfiguration.setProcessQueueMinRefreshFrequency(refreshFrequency);
@@ -69,7 +71,9 @@ public class DefaultProcessQueueTest {
     doReturn(pendingEntities).when(processService).getPendingProcesses(any(), eq(50));
 
     DefaultProcessQueue queue =
-        spy(new DefaultProcessQueue(launcherConfiguration, processService, pipelineName));
+        spy(
+            new DefaultProcessQueue(
+                webConfiguration, launcherConfiguration, processService, pipelineName));
 
     assertThat(queue.isFillQueue()).isTrue();
     assertThat(queue.isAvailableProcesses(0)).isFalse();

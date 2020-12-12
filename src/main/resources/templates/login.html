@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <div th:replace="fragments/header :: header"></div>
+    <title>Login</title>
+</head>
+<body>
+
+<nav class="navbar navbar-expand navbar-dark bg-dark">
+    <a class="navbar-brand" href="#">Pipelite</a>
+    <div class="collapse navbar-collapse">
+        <ul class="navbar-nav mr-auto">
+        </ul>
+    </div>
+</nav>
+
+<div class="card m-2">
+    <div class="card-body">
+        <h5 class="card-title">Login</h5>
+        <!--        <p class="card-text">Provide the pipeline name and process id to see the process stages.</p> -->
+        <div class="form-group">
+            <form th:action="@{/login}" method="post" role="form">
+                <fieldset>
+                    <div class="form-group row">
+                        <label class="col-sm-2 col-form-label" for="username">Username</label>
+                        <div class="col-sm-6">
+                            <input class="form-control" type="text" id="username" name="username" autocomplete="on"
+                                   autofocus="autofocus"/>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-sm-2 col-form-label" for="password">Password</label>
+                        <div class="col-sm-6">
+                            <input class="form-control" type="password" id="password" name="password"
+                                   autocomplete="on"/>
+                        </div>
+                    </div>
+                </fieldset>
+            </form>
+            <div th:if="${loginError}">
+                <div class="alert alert-danger">Invalid username or password.</div>
+            </div>
+            <div class="form-group row">
+                <div class="col-sm-10">
+                    <button onclick="document.forms[0].submit()" type="button" class="btn btn-primary">Login
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

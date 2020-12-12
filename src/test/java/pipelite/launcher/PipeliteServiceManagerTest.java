@@ -69,7 +69,7 @@ public class PipeliteServiceManagerTest {
     serviceManager.addService(pipeliteService2);
     serviceManager.addService(pipeliteService3);
 
-    serviceManager.run();
+    serviceManager.runSync();
 
     assertThat(pipeliteService1.getSchedulerCnt()).isEqualTo(1);
     assertThat(pipeliteService2.getSchedulerCnt()).isEqualTo(1);
