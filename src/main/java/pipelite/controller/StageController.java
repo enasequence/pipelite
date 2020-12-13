@@ -16,6 +16,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
@@ -29,12 +34,6 @@ import pipelite.process.ProcessFactory;
 import pipelite.service.ProcessFactoryService;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
-
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = "/stage")
@@ -92,7 +91,8 @@ public class StageController {
               stageEntity.getEndTime(), stageEntity.getStartTime());
     } else if (stageEntity.getStartTime() != null) {
       executionTime =
-          TimeUtils.getDurationAsStringAlwaysPositive(ZonedDateTime.now(), stageEntity.getStartTime());
+          TimeUtils.getDurationAsStringAlwaysPositive(
+              ZonedDateTime.now(), stageEntity.getStartTime());
     }
     return StageInfo.builder()
         .pipelineName(stageEntity.getPipelineName())

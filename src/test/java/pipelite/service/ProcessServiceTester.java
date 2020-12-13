@@ -10,14 +10,13 @@
  */
 package pipelite.service;
 
-import pipelite.UniqueStringGenerator;
-import pipelite.entity.ProcessEntity;
-import pipelite.process.ProcessState;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import pipelite.UniqueStringGenerator;
+import pipelite.entity.ProcessEntity;
+import pipelite.process.ProcessState;
 
 class ProcessServiceTester {
 

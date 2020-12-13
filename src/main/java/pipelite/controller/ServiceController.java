@@ -16,6 +16,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.*;
+import java.util.stream.IntStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
@@ -29,9 +31,6 @@ import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.PipeliteScheduler;
 import pipelite.launcher.PipeliteService;
 import pipelite.launcher.PipeliteUnlocker;
-
-import java.util.*;
-import java.util.stream.IntStream;
 
 @RestController
 @RequestMapping(value = "/service")

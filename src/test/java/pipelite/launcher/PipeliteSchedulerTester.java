@@ -254,10 +254,12 @@ public class PipeliteSchedulerTester {
     assertThat(scheduleEntity.getSchedulerName())
         .isEqualTo(launcherConfiguration.getSchedulerName());
     assertThat(scheduleEntity.getPipelineName()).isEqualTo(pipelineName);
-    assertThat(scheduleEntity.getProcessId()).isNull(); // Process id is made null after successful execution.
+    assertThat(scheduleEntity.getProcessId())
+        .isNull(); // Process id is made null after successful execution.
     assertThat(scheduleEntity.getExecutionCount()).isEqualTo(f.processCnt);
     assertThat(scheduleEntity.getCron()).isEqualTo(f.cron);
-    assertThat(scheduleEntity.getStartTime()).isNull(); // Start time is made null after successful execution.
+    assertThat(scheduleEntity.getStartTime())
+        .isNull(); // Start time is made null after successful execution.
     assertThat(scheduleEntity.getEndTime()).isNotNull();
     assertThat(scheduleEntity.getDescription())
         .isEqualTo("every " + f.schedulerSeconds + " seconds");

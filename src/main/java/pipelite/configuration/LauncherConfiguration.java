@@ -13,7 +13,6 @@ package pipelite.configuration;
 import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.ForkJoinPool;
-
 import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import org.springframework.boot.context.properties.ConfigurationProperties;

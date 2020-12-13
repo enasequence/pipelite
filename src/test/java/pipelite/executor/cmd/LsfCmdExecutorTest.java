@@ -242,7 +242,7 @@ public class LsfCmdExecutorTest {
     lsfCmdExecutor.setJobId("test");
     lsfCmdExecutor.setStdoutFile("test");
     lsfCmdExecutor.setStartTime(
-            ZonedDateTime.of(LocalDateTime.of(2020, 1, 1, 1, 1), ZoneId.of("UTC")));
+        ZonedDateTime.of(LocalDateTime.of(2020, 1, 1, 1, 1), ZoneId.of("UTC")));
     String json = Json.serialize(lsfCmdExecutor);
     assertThat(json)
         .isEqualTo(

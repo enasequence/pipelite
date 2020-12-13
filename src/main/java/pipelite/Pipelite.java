@@ -10,10 +10,9 @@
  */
 package pipelite;
 
+import java.util.Properties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
-
-import java.util.Properties;
 
 public class Pipelite {
 

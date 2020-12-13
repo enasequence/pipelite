@@ -16,6 +16,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.*;
+import java.util.stream.IntStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
@@ -25,14 +27,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import pipelite.Application;
 import pipelite.controller.info.PipelineInfo;
-import pipelite.controller.info.ProcessInfo;
 import pipelite.launcher.process.runner.ProcessRunner;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
-
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.*;
-import java.util.stream.IntStream;
 
 @RestController
 @RequestMapping(value = "/pipeline")

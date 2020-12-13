@@ -10,7 +10,6 @@
  */
 package pipelite.repository;
 
-import java.util.Optional;
 import java.util.stream.Stream;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -62,15 +61,6 @@ public interface ProcessRepository extends CrudRepository<ProcessEntity, Process
    * @return all processes given pipeline name and process state
    */
   Stream<ProcessEntity> findAllByPipelineNameAndState(String pipelineName, ProcessState state);
-
-  /**
-   * Finds a process given pipeline name and process id.
-   *
-   * @param pipelineName the pipeline name
-   * @param processId the process id
-   * @return the process given pipeline name and process id
-   */
-  Optional<ProcessEntity> findOneByPipelineNameAndProcessId(String pipelineName, String processId);
 
   /**
    * Finds processes given pipeline name and process state in priority order.

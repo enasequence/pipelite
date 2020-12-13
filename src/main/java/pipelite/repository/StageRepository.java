@@ -10,15 +10,14 @@
  */
 package pipelite.repository;
 
+import java.util.List;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageEntityId;
 
-import java.util.List;
-
 @Repository
 public interface StageRepository extends CrudRepository<StageEntity, StageEntityId> {
 
-    List<StageEntity> findByPipelineNameAndProcessId(String pipelineName, String processId);
+  List<StageEntity> findByPipelineNameAndProcessId(String pipelineName, String processId);
 }

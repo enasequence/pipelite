@@ -36,7 +36,6 @@ class ProcessServiceHsqlTest {
     new ProcessServiceTester(service).testGetActiveCompletedFailedPendingSamePriority();
   }
 
-
   @Test
   public void testGetActiveCompletedFailedPendingDifferentPriority() {
     new ProcessServiceTester(service).testGetActiveCompletedFailedPendingDifferentPriority();
