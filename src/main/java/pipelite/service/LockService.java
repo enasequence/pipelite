@@ -13,6 +13,7 @@ package pipelite.service;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.List;
+
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -219,7 +220,13 @@ public class LockService {
     }
   }
 
-  /** Checks if the process is locked. */
+  /**
+   * Returns true if the process is locked.
+   *
+   * @param pipelineName the pipeline name
+   * @param processId the process id
+   * @return true if the process is locked
+   */
   public boolean isProcessLocked(String pipelineName, String processId) {
     return processLockRepository
         .findByPipelineNameAndProcessId(pipelineName, processId)

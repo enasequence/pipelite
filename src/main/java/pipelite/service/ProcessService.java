@@ -10,6 +10,7 @@
  */
 package pipelite.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -37,6 +38,13 @@ public class ProcessService {
     this.mailService = mailService;
   }
 
+  /**
+   * Returns a saved process.
+   *
+   * @param pipelineName the pipeline name
+   * @param processId the process id
+   * @return the saved process
+   */
   public Optional<ProcessEntity> getSavedProcess(String pipelineName, String processId) {
     return repository.findById(new ProcessEntityId(processId, pipelineName));
   }
@@ -45,6 +53,13 @@ public class ProcessService {
     return strm.limit(limit).collect(Collectors.toList());
   }
 
+  /**
+   * Returns pending processes for a pipeline in priority order.
+   *
+   * @param pipelineName the pipeline name
+   * @param limit the maximum number of processes to return
+   * @return the pending processes for a pipeline in priority order
+   */
   public List<ProcessEntity> getPendingProcesses(String pipelineName, int limit) {
     try (Stream<ProcessEntity> strm =
         repository.findAllByPipelineNameAndStateOrderByPriorityDesc(
@@ -53,6 +68,13 @@ public class ProcessService {
     }
   }
 
+  /**
+   * Returns active processes for a pipeline in priority order.
+   *
+   * @param pipelineName the pipeline name
+   * @param limit the maximum number of processes to return
+   * @return the active processes for a pipeline in priority order
+   */
   public List<ProcessEntity> getActiveProcesses(
       String pipelineName, String launcherName, int limit) {
     try (Stream<ProcessEntity> strm =
@@ -61,6 +83,13 @@ public class ProcessService {
     }
   }
 
+  /**
+   * Returns completed processes for a pipeline.
+   *
+   * @param pipelineName the pipeline name
+   * @param limit the maximum number of processes to return
+   * @return the completed processes for a pipeline
+   */
   public List<ProcessEntity> getCompletedProcesses(String pipelineName, int limit) {
     try (Stream<ProcessEntity> strm =
         repository.findAllByPipelineNameAndState(pipelineName, ProcessState.COMPLETED)) {
@@ -68,6 +97,13 @@ public class ProcessService {
     }
   }
 
+  /**
+   * Returns failed processes for a pipeline.
+   *
+   * @param pipelineName the pipeline name
+   * @param limit the maximum number of processes to return
+   * @return the failed processes for a pipeline
+   */
   public List<ProcessEntity> getFailedProcesses(String pipelineName, int limit) {
     try (Stream<ProcessEntity> strm =
         repository.findAllByPipelineNameAndStateOrderByPriorityDesc(
@@ -76,26 +112,72 @@ public class ProcessService {
     }
   }
 
-  public List<ProcessEntity> getPendingProcesses(String pipelineName) {
-    return getPendingProcesses(pipelineName, Integer.MAX_VALUE);
+  /**
+   * Returns processes given optional pipeline name, process id and process state.
+   *
+   * @param pipelineName optional pipeline name
+   * @param processId optional process id
+   * @param state optional process state
+   * @param limit the maximum number of processes to return
+   * @return processes given optional pipeline name, process id and process state
+   */
+  public List<ProcessEntity> getProcesses(
+      String pipelineName, String processId, ProcessState state, int limit) {
+    List<ProcessEntity> processes = new ArrayList<>();
+    // pipelineName processId state
+    // Y            Y         Y/N
+    if (pipelineName != null && processId != null) {
+      Optional<ProcessEntity> process = getSavedProcess(pipelineName, processId);
+      if (process.isPresent() && (state == null || state.equals(process.get().getState()))) {
+        processes.add(process.get());
+      }
+    }
+    // pipelineName processId state
+    // N            Y         Y/N
+    else if (pipelineName == null && processId != null) {
+      processes.addAll(
+          list(
+              repository
+                  .findAllByProcessId(processId)
+                  .filter(process -> state == null || state.equals(process.getState())),
+              limit));
+      // pipelineName processId state
+      // Y            N         Y
+    } else if (pipelineName != null && processId == null && state != null) {
+      processes.addAll(list(repository.findAllByPipelineNameAndState(pipelineName, state), limit));
+      // pipelineName processId state
+      // Y            N         N
+    } else if (pipelineName != null && processId == null && state == null) {
+      processes.addAll(list(repository.findAllByPipelineName(pipelineName), limit));
+      // pipelineName processId state
+      // N            N         Y
+    } else if (pipelineName == null && processId == null && state != null) {
+      processes.addAll(list(repository.findAllByState(state), limit));
+    }
+    // pipelineName processId state
+    // N            N         N
+    else {
+      processes.addAll(list(repository.findAllStream(), limit));
+    }
+    return processes;
   }
 
-  public List<ProcessEntity> getActiveProcesses(String pipelineName, String launcherName) {
-    return getActiveProcesses(pipelineName, launcherName, Integer.MAX_VALUE);
-  }
-
-  public List<ProcessEntity> getCompletedProcesses(String pipelineName) {
-    return getCompletedProcesses(pipelineName, Integer.MAX_VALUE);
-  }
-
-  public List<ProcessEntity> getFailedProcesses(String pipelineName) {
-    return getFailedProcesses(pipelineName, Integer.MAX_VALUE);
-  }
-
+  /**
+   * Saves the process.
+   *
+   * @param processEntity the process
+   * @return the saved process
+   */
   public ProcessEntity saveProcess(ProcessEntity processEntity) {
     return repository.save(processEntity);
   }
 
+  /**
+   * Returns the maximum process id for the pipeline.
+   *
+   * @param pipelineName the pipeline name
+   * @return the maximum process id for the pipeline
+   */
   public String getMaxProcessId(String pipelineName) {
     return repository.findMaxProcessId(pipelineName);
   }
@@ -117,6 +199,11 @@ public class ProcessService {
     mailService.sendProcessExecutionMessage(pipelineName, process);
   }
 
+  /**
+   * Delete the process.
+   *
+   * @param processEntity the process
+   */
   public void delete(ProcessEntity processEntity) {
     repository.delete(processEntity);
   }

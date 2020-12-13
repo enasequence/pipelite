@@ -10,97 +10,39 @@
  */
 package pipelite.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.util.Comparator;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import pipelite.PipeliteTestConfiguration;
-import pipelite.UniqueStringGenerator;
-import pipelite.entity.ProcessEntity;
-import pipelite.process.ProcessState;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"oracle-test", "pipelite-test"})
 @Transactional
+@DirtiesContext
 class ProcessServiceOracleTest {
 
   @Autowired ProcessService service;
 
   @Test
   public void testCrud() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
-    Integer priority = 0;
-
-    ProcessEntity processEntity = ProcessEntity.createExecution(pipelineName, processId, priority);
-
-    service.saveProcess(processEntity);
-    assertThat(service.getSavedProcess(pipelineName, processId).get()).isEqualTo(processEntity);
-
-    processEntity.endExecution(ProcessState.COMPLETED);
-
-    service.saveProcess(processEntity);
-    assertThat(service.getSavedProcess(pipelineName, processId).get()).isEqualTo(processEntity);
-
-    service.delete(processEntity);
-
-    assertThat(service.getSavedProcess(pipelineName, processId).isPresent()).isFalse();
+    new ProcessServiceTester(service).testCrud();
   }
 
   @Test
-  public void testGetProcessesSamePriority() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String launcherName = UniqueStringGenerator.randomLauncherName();
-
-    service.saveProcess(create(pipelineName, ProcessState.ACTIVE, 1));
-    service.saveProcess(create(pipelineName, ProcessState.ACTIVE, 1));
-    service.saveProcess(create(pipelineName, ProcessState.COMPLETED, 1));
-    service.saveProcess(create(pipelineName, ProcessState.COMPLETED, 1));
-    service.saveProcess(create(pipelineName, ProcessState.COMPLETED, 1));
-    service.saveProcess(create(pipelineName, ProcessState.FAILED, 1));
-    service.saveProcess(create(pipelineName, ProcessState.FAILED, 1));
-    service.saveProcess(create(pipelineName, ProcessState.FAILED, 1));
-    service.saveProcess(create(pipelineName, ProcessState.FAILED, 1));
-
-    assertThat(service.getActiveProcesses(pipelineName, launcherName)).hasSize(2);
-    assertThat(service.getCompletedProcesses(pipelineName)).hasSize(3);
-    assertThat(service.getFailedProcesses(pipelineName)).hasSize(4);
+  public void testGetActiveCompletedFailedPendingSamePriority() {
+    new ProcessServiceTester(service).testGetActiveCompletedFailedPendingSamePriority();
   }
 
   @Test
-  public void testGetProcessesDifferentPriority() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String launcherName = UniqueStringGenerator.randomLauncherName();
-
-    service.saveProcess(create(pipelineName, ProcessState.ACTIVE, 1));
-    service.saveProcess(create(pipelineName, ProcessState.ACTIVE, 2));
-    service.saveProcess(create(pipelineName, ProcessState.COMPLETED, 1));
-    service.saveProcess(create(pipelineName, ProcessState.COMPLETED, 2));
-    service.saveProcess(create(pipelineName, ProcessState.COMPLETED, 3));
-    service.saveProcess(create(pipelineName, ProcessState.FAILED, 1));
-    service.saveProcess(create(pipelineName, ProcessState.FAILED, 2));
-    service.saveProcess(create(pipelineName, ProcessState.FAILED, 4));
-    service.saveProcess(create(pipelineName, ProcessState.FAILED, 3));
-
-    assertThat(service.getActiveProcesses(pipelineName, launcherName)).hasSize(2);
-    assertThat(service.getCompletedProcesses(pipelineName)).hasSize(3);
-    assertThat(service.getFailedProcesses(pipelineName)).hasSize(4);
-
-    assertThat(service.getActiveProcesses(pipelineName, launcherName))
-        .isSortedAccordingTo(Comparator.comparingInt(ProcessEntity::getPriority).reversed());
-    assertThat(service.getFailedProcesses(pipelineName))
-        .isSortedAccordingTo(Comparator.comparingInt(ProcessEntity::getPriority).reversed());
+  public void testGetActiveCompletedFailedPendingDifferentPriority() {
+    new ProcessServiceTester(service).testGetActiveCompletedFailedPendingDifferentPriority();
   }
 
-  private static ProcessEntity create(String pipelineName, ProcessState state, int priority) {
-    ProcessEntity processEntity =
-        ProcessEntity.createExecution(
-            pipelineName, UniqueStringGenerator.randomProcessId(), priority);
-    processEntity.endExecution(state);
-    return processEntity;
+  @Test
+  public void testGetProcess() {
+    new ProcessServiceTester(service).testGetProcess();
   }
 }

@@ -10,12 +10,11 @@
  */
 package pipelite.controller.info;
 
-import java.time.Duration;
 import java.time.ZonedDateTime;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 
-@Value
+@Data
 @Builder
 public class ProcessInfo {
   private String launcherName;

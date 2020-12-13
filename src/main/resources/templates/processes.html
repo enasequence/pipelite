@@ -80,25 +80,58 @@ $(document).ready( function () {
 // Show the table.
 function show() {
     var table1 = $('#processesTable').DataTable();
-    var pipelineName = document.getElementById("pipelineName").value;
-    var processId = document.getElementById("processId").value;
-    var url;
-    if (pipelineName && processId) {
-        url = "/pipelite/process/" + pipelineName + "/" + processId;
-    }
-    else if (pipelineName) {
-        url = "/pipelite/process/" + pipelineName;
+    var pipelineName = $( "#pipelineName" ).val();
+    var processId = $( "#processId" ).val();
+    var processScope = $( "#processScope" ).val();
+
+    var url = "/pipelite/process/";
+
+    if (processScope == "local") {
+        url = url + "local?";
     }
     else {
-        url = "/pipelite/process/";
+        url = url + "all?";
     }
-    // console.log(url);
+    if (pipelineName) {
+        url = url + "pipelineName=" + pipelineName + "&";
+    }
+    if (processId) {
+        url = url + "processId=" + processId + "&";
+    }
+
+    var state;
+    if (processScope == "local") {
+       $( "#title" ).text("Processes running in this service");
+    }
+    if (processScope == "allPending") {
+        state = "PENDING";
+        $( "#title" ).text("All pending processes");
+    }
+    else if (processScope == "allActive") {
+        state = "ACTIVE";
+        $( "#title" ).text("All active processes");
+    }
+    else if (processScope == "allCompleted") {
+        state = "COMPLETED";
+        $( "#title" ).text("All completed processes");
+    }
+    else if (processScope == "allFailed") {
+        state = "FAILED";
+        $( "#title" ).text("All failed processes");
+    }
+    else if (processScope == "allCancelled") {
+        state = "CANCELLED";
+        $( "#title" ).text("All cancelled processes");
+    }
+    if (state) {
+        url = url + "state=" + state + "&";
+    }
+
+    console.log(url);
     $.get(url, function(data, status) {
         table1.clear().rows.add(data).draw();
      });
 };
-
-
 
 
 
@@ -110,7 +143,7 @@ function show() {
 
 <div class="card m-2">
     <div class="card-body">
-        <h5 class="card-title">Process</h5>
+        <h5 class="card-title">Filter conditions</h5>
         <!--        <p class="card-text">Provide the pipeline name and process id to see the process stages.</p> -->
         <div class="form-inline m-2">
 
@@ -122,6 +155,15 @@ function show() {
             <!-- placeholder="Process id"  -->
             <input type="text" class="form-control m-2" id="processId">
 
+            <select class="custom-select" id="processScope">
+                <option value="local" selected>Processes running in this service</option>
+                <option value="allPending">All pending processes</option>
+                <option value="allActive">All active processes</option>
+                <option value="allFailed">All failed processes</option>
+                <option value="allCompleted">All completed processes</option>
+                <option value="allCancelled">All cancelled processes</option>
+            </select>
+
             <button type="submit" class="btn btn-primary m-2" onclick="show()">Show processes</button>
         </div>
     </div>
@@ -129,12 +171,11 @@ function show() {
 
 <div class="card m-2">
     <div class="card-body">
-        <!-- <h5 class="card-title">Active processes</h5> -->
-
+        <h5 class="card-title" id="title"></h5>
         <table id="processesTable" class="table table-striped table-hover" style="width:100%">
             <thead>
             <tr>
-              <!-- <th>Launcher name</th> -->
+                <!-- <th>Launcher name</th> -->
                 <th>Pipeline name</th>
                 <th>Process id</th>
                 <th>Current execution start time</th>

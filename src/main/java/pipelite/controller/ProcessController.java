@@ -23,12 +23,15 @@ import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
 import pipelite.controller.info.ProcessInfo;
 import pipelite.controller.utils.TimeUtils;
+import pipelite.entity.ProcessEntity;
 import pipelite.launcher.process.runner.ProcessRunner;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
+import pipelite.process.Process;
+import pipelite.process.ProcessState;
+import pipelite.service.ProcessService;
 
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @RestController
@@ -36,84 +39,87 @@ import java.util.stream.IntStream;
 @Tag(name = "ProcessAPI", description = "Pipelite processes")
 public class ProcessController {
 
-  @Autowired Application application;
-  @Autowired Environment environment;
+  private static final int DEFAULT_LIMIT = 1000;
 
-  @GetMapping("/")
+  @Autowired private Application application;
+  @Autowired private Environment environment;
+  @Autowired private ProcessService processService;
+
+  @GetMapping("/local")
   @ResponseStatus(HttpStatus.OK)
-  @Operation(description = "All running processes")
+  @Operation(
+      description =
+          "Processes running in this service given optional pipeline name, process id and state")
   @ApiResponses(
       value = {
         @ApiResponse(responseCode = "200", description = "OK"),
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
-  public List<ProcessInfo> runningProcesses() {
+  public List<ProcessInfo> localProcesses(
+      @RequestParam(required = false) String pipelineName,
+      @RequestParam(required = false) String processId) {
     List<ProcessInfo> list = new ArrayList<>();
     application.getRunningLaunchers().stream()
-        .forEach(launcher -> list.addAll(getProcesses(launcher)));
+        .forEach(launcher -> list.addAll(getLocalProcesses(launcher, pipelineName, processId)));
     application.getRunningSchedulers().stream()
-        .forEach(launcher -> list.addAll(getProcesses(launcher)));
+        .forEach(launcher -> list.addAll(getLocalProcesses(launcher, pipelineName, processId)));
     getLoremIpsumProcesses(list);
     return list;
   }
 
-  @GetMapping("/{pipelineName}")
+  @GetMapping("/all")
   @ResponseStatus(HttpStatus.OK)
-  @Operation(description = "All running processes for a pipeline")
+  @Operation(description = "All processes given optional pipeline name, process id and state")
   @ApiResponses(
       value = {
         @ApiResponse(responseCode = "200", description = "OK"),
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
-  public List<ProcessInfo> runningProcesses(
-      @PathVariable(value = "pipelineName") String pipelineName) {
-    List<ProcessInfo> list =
-        runningProcesses().stream()
-            .filter(processInfo -> pipelineName.equals(processInfo.getPipelineName()))
-            .collect(Collectors.toList());
+  public List<ProcessInfo> allProcesses(
+      @RequestParam(required = false) String pipelineName,
+      @RequestParam(required = false) String processId,
+      @RequestParam(required = false) String state) {
+    List<ProcessInfo> list = new ArrayList<>();
+    processService.getProcesses(pipelineName, processId, ProcessState.valueOf(state), DEFAULT_LIMIT)
+        .stream()
+        .map(process -> getProcess(process))
+        .forEach(process -> list.add(process));
+    getLoremIpsumProcesses(list);
     return list;
   }
 
-  @GetMapping("/{pipelineName}/{processId}")
-  @ResponseStatus(HttpStatus.OK)
-  @Operation(description = "All running processes for a pipeline")
-  @ApiResponses(
-      value = {
-        @ApiResponse(responseCode = "200", description = "OK"),
-        @ApiResponse(responseCode = "500", description = "Internal Server error")
-      })
-  public List<ProcessInfo> runningProcesses(
-      @PathVariable(value = "pipelineName") String pipelineName,
-      @PathVariable(value = "processId") String processId) {
-    List<ProcessInfo> list =
-        runningProcesses().stream()
-            .filter(
-                processInfo ->
-                    pipelineName.equals(processInfo.getPipelineName())
-                        && processId.equals(processInfo.getProcessId()))
-            .collect(Collectors.toList());
-    return list;
-  }
-
-  public static List<ProcessInfo> getProcesses(ProcessRunnerPoolService service) {
-    Collection<ProcessRunner> processRunners = service.getActiveProcessRunners();
+  public static List<ProcessInfo> getLocalProcesses(
+      ProcessRunnerPoolService service, String pipelineName, String processId) {
     List<ProcessInfo> processes = new ArrayList<>();
-    for (ProcessRunner processRunner : processRunners) {
-      processes.add(
-          ProcessInfo.builder()
-              .launcherName(service.getLauncherName())
-              .pipelineName(processRunner.getPipelineName())
-              .processId(processRunner.getProcessId())
-              .currentExecutionStartTime(processRunner.getStartTime())
-              .currentExecutionTime(
-                  TimeUtils.getDurationAsStringAlwaysPositive(
-                      ZonedDateTime.now(), processRunner.getStartTime()))
-              .state(processRunner.getProcess().getProcessEntity().getState().name())
-              .executionCount(processRunner.getProcess().getProcessEntity().getExecutionCount())
-              .priority(processRunner.getProcess().getProcessEntity().getPriority())
-              .build());
+    for (ProcessRunner processRunner : service.getActiveProcessRunners()) {
+      Process process = processRunner.getProcess();
+      ProcessEntity processEntity = process.getProcessEntity();
+      if ((pipelineName == null || pipelineName.equals(processRunner.getPipelineName()))
+          || (processId == null || processId.equals(process.getProcessId()))) {
+        ZonedDateTime currentExecutionStartTime = processRunner.getStartTime();
+        String currentExecutionTime =
+            TimeUtils.getDurationAsStringAlwaysPositive(
+                ZonedDateTime.now(), currentExecutionStartTime);
+        ProcessInfo processInfo = getProcess(processEntity);
+        // TODO: launcher name, execution start time and execution time is only known for processes
+        // supervised by this service.
+        processInfo.setLauncherName(service.getLauncherName());
+        processInfo.setCurrentExecutionStartTime(currentExecutionStartTime);
+        processInfo.setCurrentExecutionTime(currentExecutionTime);
+        processes.add(processInfo);
+      }
     }
     return processes;
+  }
+
+  public static ProcessInfo getProcess(ProcessEntity processEntity) {
+    return ProcessInfo.builder()
+        .pipelineName(processEntity.getPipelineName())
+        .processId(processEntity.getProcessId())
+        .state(processEntity.getState().name())
+        .executionCount(processEntity.getExecutionCount())
+        .priority(processEntity.getPriority())
+        .build();
   }
 
   public void getLoremIpsumProcesses(List<ProcessInfo> list) {
