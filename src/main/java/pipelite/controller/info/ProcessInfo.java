@@ -17,11 +17,8 @@ import lombok.Data;
 @Data
 @Builder
 public class ProcessInfo {
-  private String launcherName;
   private String pipelineName;
   private String processId;
-  private ZonedDateTime currentExecutionStartTime;
-  private String currentExecutionTime;
   private String state;
   private Integer executionCount;
   private Integer priority;

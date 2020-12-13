@@ -95,16 +95,7 @@ public class ProcessController {
       ProcessEntity processEntity = process.getProcessEntity();
       if ((pipelineName == null || pipelineName.equals(processRunner.getPipelineName()))
           || (processId == null || processId.equals(process.getProcessId()))) {
-        ZonedDateTime currentExecutionStartTime = processRunner.getStartTime();
-        String currentExecutionTime =
-            TimeUtils.getDurationAsStringAlwaysPositive(
-                ZonedDateTime.now(), currentExecutionStartTime);
         ProcessInfo processInfo = getProcess(processEntity);
-        // TODO: launcher name, execution start time and execution time is only known for processes
-        // supervised by this service.
-        processInfo.setLauncherName(service.getLauncherName());
-        processInfo.setCurrentExecutionStartTime(currentExecutionStartTime);
-        processInfo.setCurrentExecutionTime(currentExecutionTime);
         processes.add(processInfo);
       }
     }
@@ -131,13 +122,8 @@ public class ProcessController {
               i ->
                   list.add(
                       ProcessInfo.builder()
-                          .launcherName(lorem.getFirstNameFemale())
                           .pipelineName(lorem.getCountry())
                           .processId(lorem.getWords(1))
-                          .currentExecutionStartTime(ZonedDateTime.now())
-                          .currentExecutionTime(
-                              TimeUtils.getDurationAsStringAlwaysPositive(
-                                  ZonedDateTime.now(), ZonedDateTime.now().minusMinutes(5)))
                           .state(lorem.getFirstNameMale())
                           .executionCount(random.nextInt(10))
                           .priority(random.nextInt(10))
