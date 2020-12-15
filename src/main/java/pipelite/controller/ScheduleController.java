@@ -38,23 +38,23 @@ public class ScheduleController {
   @Autowired Application application;
   @Autowired Environment environment;
 
-  @GetMapping("/")
+  @GetMapping("/local")
   @ResponseStatus(HttpStatus.OK)
-  @Operation(description = "All running schedules")
+  @Operation(description = "Schedules running in this service")
   @ApiResponses(
       value = {
         @ApiResponse(responseCode = "200", description = "OK"),
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
-  public List<ScheduleInfo> runningSchedules() {
+  public List<ScheduleInfo> localSchedules() {
     List<ScheduleInfo> list = new ArrayList<>();
     application.getRunningSchedulers().stream()
-        .forEach(scheduler -> list.addAll(getSchedules(scheduler)));
+        .forEach(scheduler -> list.addAll(getLocalSchedules(scheduler)));
     getLoremIpsumSchedules(list);
     return list;
   }
 
-  public static List<ScheduleInfo> getSchedules(PipeliteScheduler scheduler) {
+  public static List<ScheduleInfo> getLocalSchedules(PipeliteScheduler scheduler) {
     List<ScheduleInfo> schedules = new ArrayList<>();
     scheduler
         .getActiveSchedules()
