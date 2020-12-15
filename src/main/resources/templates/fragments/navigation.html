@@ -22,6 +22,8 @@
                     <a class="nav-link" target="_blank"
                        href="/pipelite/swagger-ui/index.html?configUrl=/pipelite/v3/api-docs/swagger-config">OpenAPI</a>
                 </li>
+            </ul>
+            <ul class="navbar-nav ml-auto">
                 <li class="nav-item">
                     <a class="nav-link" href="javascript: document.logoutForm.submit()"> Logout</a>
                     <form name="logoutForm" th:action="@{/logout}" method="post" th:hidden="true">
@@ -33,13 +35,14 @@
     </nav>
 
     <script>
-// activate nav-item
 $(document).ready(function() {
+    // Activate nav-item.
     $('.nav-item.active').removeClass('active');
     $('.nav-item a[href="' +  location.pathname  + '"]').parent().addClass('active');
     $(this).parent().addClass('active').siblings().removeClass('active');
     // console.log('location.pathname:' + location.pathname);
 });
+
 
 
 
