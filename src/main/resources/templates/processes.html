@@ -169,15 +169,7 @@ function show() {
         <!--        <p class="card-text">Provide the pipeline name and process id to see the process stages.</p> -->
         <div class="form-inline m-2">
 
-            <label class="mr-2" for="pipelineName">Pipeline name</label>
-            <!-- placeholder="Pipeline name" -->
-            <input type="text" class="form-control m-2" id="pipelineName">
-
-            <label class="mr-2" for="processId">Process id</label>
-            <!-- placeholder="Process id"  -->
-            <input type="text" class="form-control m-2" id="processId">
-
-            <select class="custom-select" id="processScope">
+            <select class="custom-select m-2" id="processScope">
                 <option value="local" selected>Processes running in this service</option>
                 <option value="allPending">All pending processes</option>
                 <option value="allActive">All active processes</option>
@@ -185,6 +177,12 @@ function show() {
                 <option value="allCompleted">All completed processes</option>
                 <option value="allCancelled">All cancelled processes</option>
             </select>
+
+            <label class="mr-2" for="pipelineName">Pipeline</label>
+            <input type="text" class="form-control m-2" id="pipelineName">
+
+            <label class="mr-2" for="processId">Process</label>
+            <input type="text" class="form-control m-2" id="processId">
 
             <button type="submit" class="btn btn-primary m-2" onclick="show()">Show processes</button>
         </div>

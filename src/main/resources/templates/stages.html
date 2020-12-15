@@ -305,14 +305,10 @@ function copy() {
     <div class="card-body">
         <h5 class="card-title">Select process</h5>
         <div class="form-inline m-2">
-            <label class="mr-2" for="pipelineName">Pipeline name</label>
-            <!-- placeholder="Pipeline name" -->
-            <input type="text" class="form-control m-2" id="pipelineName" required>
-
-            <label class="mr-2" for="processId">Process id</label>
-            <!-- placeholder="Process id"  -->
-            <input type="text" class="form-control m-2" id="processId" required>
-
+            <label class="mr-2" for="pipelineName">Pipeline</label>
+            <input type="text" class="form-control m-2" id="pipelineName">
+            <label class="mr-2" for="processId">Process</label>
+            <input type="text" class="form-control m-2" id="processId">
             <button type="submit" class="btn btn-primary m-2" onclick="show()">Show stages</button>
         </div>
         <div class="alert alert-warning" style="display: none;" role="alert" id = "alert">
