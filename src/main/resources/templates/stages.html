@@ -129,6 +129,8 @@ function show() {
     if (pipelineName && processId) {
         console.log("show");
 
+        $( "#alert" ).hide();
+
         // Save pipeline name and processId.
         window.pipelineName = pipelineName;
         window.processId = processId;
@@ -161,6 +163,10 @@ function show() {
             table2.clear().rows.add(data).draw();
          });
         plot();
+    }
+    else {
+        $( "#alert" ).text("Please provide pipeline name and process id");
+        $( "#alert" ).show();
     }
 };
 
@@ -297,17 +303,19 @@ function copy() {
 
 <div class="card m-2">
     <div class="card-body">
-        <h5 class="card-title">Filter conditions</h5>
+        <h5 class="card-title">Select process</h5>
         <div class="form-inline m-2">
             <label class="mr-2" for="pipelineName">Pipeline name</label>
             <!-- placeholder="Pipeline name" -->
-            <input type="text" class="form-control m-2" id="pipelineName">
+            <input type="text" class="form-control m-2" id="pipelineName" required>
 
             <label class="mr-2" for="processId">Process id</label>
             <!-- placeholder="Process id"  -->
-            <input type="text" class="form-control m-2" id="processId">
+            <input type="text" class="form-control m-2" id="processId" required>
 
             <button type="submit" class="btn btn-primary m-2" onclick="show()">Show stages</button>
+        </div>
+        <div class="alert alert-warning" role="alert" id = "alert">
         </div>
     </div>
 </div>
