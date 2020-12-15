@@ -63,12 +63,15 @@ $(document).ready( function () {
           }
         });
     });
-    var pipelineName = /*[[${param.pipelineName}?: 'Pipeline name']]*/ 'Pipeline name';
-    if (pipelineName != 'Pipeline name') {
+    var urlParams = new URLSearchParams(window.location.search);
+    var pipelineName = urlParams.get("pipelineName");
+    var processId = urlParams.get("processId");
+    // console.log("url parameter pipelineName:" + pipelineName);
+    // console.log("url parameter processId:" + processId);
+    if (pipelineName) {
        $( "#pipelineName" ).val(pipelineName);
     }
-    var processId = /*[[${param.processId}?: 'Process id']]*/ 'Process id';
-    if (processId != 'Process id') {
+    if (processId) {
        $( "#processId" ).val(processId);
     }
     show();
@@ -80,6 +83,11 @@ function show() {
     var pipelineName = $( "#pipelineName" ).val();
     var processId = $( "#processId" ).val();
     var processScope = $( "#processScope" ).val();
+
+    // Save pipeline name, processId and processScope.
+    // window.pipelineName = pipelineName;
+    // window.processId = processId;
+    // window.processScope = processScope;
 
     // Show the filter badges.
     var pipelineNameBadgeText;
