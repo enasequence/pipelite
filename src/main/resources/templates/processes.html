@@ -81,6 +81,23 @@ function show() {
     var processId = $( "#processId" ).val();
     var processScope = $( "#processScope" ).val();
 
+    var pipelineNameBadgeText;
+    var processIdBadgeText;
+    if (pipelineName) {
+        pipelineNameBadgeText = "Pipeline:" + pipelineName;
+    }
+    else {
+        pipelineNameBadgeText = "";
+    }
+    if (processId) {
+        processIdBadgeText = "Process:" + processId;
+    }
+    else {
+        processIdBadgeText = "";
+    }
+    $( "#pipelineNameBadge" ).text(pipelineNameBadgeText);
+    $( "#processIdBadge" ).text(processIdBadgeText);
+
     var url = "/pipelite/process/";
 
     if (processScope == "local") {
@@ -130,9 +147,6 @@ function show() {
      });
 };
 
-
-
-
     </script>
 </head>
 
@@ -141,7 +155,7 @@ function show() {
 
 <div class="card m-2">
     <div class="card-body">
-        <h5 class="card-title">Filter conditions</h5>
+        <h5 class="card-title">Filter processes</h5>
         <!--        <p class="card-text">Provide the pipeline name and process id to see the process stages.</p> -->
         <div class="form-inline m-2">
 
@@ -170,6 +184,10 @@ function show() {
 <div class="card m-2">
     <div class="card-body">
         <h5 class="card-title" id="title"></h5>
+        <p class="card-text">
+            <span class="badge badge-secondary" id="pipelineNameBadge"></span>
+            <span class="badge badge-secondary" id="processIdBadge"></span>
+        </p>
         <table id="processesTable" class="table table-striped table-hover" style="width:100%">
             <thead>
             <tr>
