@@ -18,6 +18,7 @@ import java.time.Duration;
 import java.time.ZonedDateTime;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.LauncherLockEntity;
+import pipelite.launcher.ProcessLauncherType;
 
 public class LockServiceTester {
 
@@ -29,8 +30,10 @@ public class LockServiceTester {
     service.getLauncherLocksByLauncherName(launcherName1).forEach(s -> service.unlockLauncher(s));
     service.getLauncherLocksByLauncherName(launcherName2).forEach(s -> service.unlockLauncher(s));
 
-    LauncherLockEntity launcherLock1 = service.lockLauncher(launcherName1);
-    LauncherLockEntity launcherLock2 = service.lockLauncher(launcherName2);
+    LauncherLockEntity launcherLock1 =
+        service.lockLauncher(launcherName1, ProcessLauncherType.LAUNCHER);
+    LauncherLockEntity launcherLock2 =
+        service.lockLauncher(launcherName2, ProcessLauncherType.LAUNCHER);
 
     ZonedDateTime expiry1 = launcherLock1.getExpiry();
     ZonedDateTime expiry2 = launcherLock2.getExpiry();
@@ -78,8 +81,10 @@ public class LockServiceTester {
     service.getLauncherLocksByLauncherName(launcherName1).forEach(s -> service.unlockLauncher(s));
     service.getLauncherLocksByLauncherName(launcherName2).forEach(s -> service.unlockLauncher(s));
 
-    LauncherLockEntity launcherLock1 = service.lockLauncher(launcherName1);
-    LauncherLockEntity launcherLock2 = service.lockLauncher(launcherName2);
+    LauncherLockEntity launcherLock1 =
+        service.lockLauncher(launcherName1, ProcessLauncherType.LAUNCHER);
+    LauncherLockEntity launcherLock2 =
+        service.lockLauncher(launcherName2, ProcessLauncherType.LAUNCHER);
 
     assertTrue(service.lockProcess(launcherLock1, pipelineName, "1"));
     assertTrue(service.isProcessLocked(pipelineName, "1"));

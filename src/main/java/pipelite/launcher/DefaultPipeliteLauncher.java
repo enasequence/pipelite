@@ -40,7 +40,8 @@ public class DefaultPipeliteLauncher {
       MailService mailService,
       String pipelineName) {
 
-    PipeliteLocker pipeliteLocker = new DefaultPipeliteLocker(lockService);
+    PipeliteLocker pipeliteLocker =
+        new DefaultPipeliteLocker(lockService, ProcessLauncherType.LAUNCHER);
     ProcessFactory processFactory = processFactoryService.create(pipelineName);
     ProcessCreator processCreator =
         new DefaultProcessCreator(

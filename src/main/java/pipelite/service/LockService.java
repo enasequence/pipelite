@@ -19,8 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import pipelite.configuration.LauncherConfiguration;
+import pipelite.configuration.WebConfiguration;
 import pipelite.entity.LauncherLockEntity;
 import pipelite.entity.ProcessLockEntity;
+import pipelite.launcher.ProcessLauncherType;
 import pipelite.log.LogKey;
 import pipelite.repository.LauncherLockRepository;
 import pipelite.repository.ProcessLockRepository;
@@ -31,15 +33,18 @@ import pipelite.repository.ProcessLockRepository;
 public class LockService {
 
   private final LauncherConfiguration launcherConfiguration;
+  private final WebConfiguration webConfiguration;
   private final LauncherLockRepository launcherLockRepository;
   private final ProcessLockRepository processLockRepository;
   private final Duration lockDuration;
 
   public LockService(
       @Autowired LauncherConfiguration launcherConfiguration,
+      @Autowired WebConfiguration webConfiguration,
       @Autowired LauncherLockRepository launcherLockRepository,
       @Autowired ProcessLockRepository processLockRepository) {
     this.launcherConfiguration = launcherConfiguration;
+    this.webConfiguration = webConfiguration;
     this.launcherLockRepository = launcherLockRepository;
     this.processLockRepository = processLockRepository;
     this.lockDuration = launcherConfiguration.getPipelineLockDuration();
@@ -50,12 +55,16 @@ public class LockService {
    *
    * @return the launcher lock or null if the lock could not be created.
    */
-  public LauncherLockEntity lockLauncher(String launcherName) {
+  public LauncherLockEntity lockLauncher(String launcherName, ProcessLauncherType launcherType) {
     log.atInfo().with(LogKey.LAUNCHER_NAME, launcherName).log("Attempting to lock launcher");
     try {
       LauncherLockEntity launcherLock = new LauncherLockEntity();
       launcherLock.setLauncherName(launcherName);
+      launcherLock.setLauncherType(launcherType);
       launcherLock.setExpiry(ZonedDateTime.now().plus(lockDuration));
+      launcherLock.setHost(WebConfiguration.getCanonicalHostName());
+      launcherLock.setPort(webConfiguration.getPort());
+      launcherLock.setContextPath(webConfiguration.getContextPath());
       launcherLock = launcherLockRepository.save(launcherLock);
       if (launcherLock.getLauncherId() == null) {
         log.atSevere()

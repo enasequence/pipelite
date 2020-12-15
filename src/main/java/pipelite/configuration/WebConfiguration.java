@@ -24,6 +24,9 @@ import org.springframework.context.annotation.Configuration;
 /** Pipelite web service configuration. */
 public class WebConfiguration {
 
+  public static final String DEFAULT_CONTEXT_PATH = "/pipelite";
+  public static final int DEFAULT_PORT = 8082;
+
   public static String getCanonicalHostName() {
     try {
       return InetAddress.getLocalHost().getCanonicalHostName();
@@ -57,10 +60,10 @@ public class WebConfiguration {
   }
 
   /** The pipelite web server port number. */
-  private Integer port = 8082;
+  private Integer port = DEFAULT_PORT;
 
   /** The pipelite web server context path. */
-  private String contextPath = "/pipelite";
+  private String contextPath = DEFAULT_CONTEXT_PATH;
 
   /** The pipelite web server password. */
   private String username = "pipelite";

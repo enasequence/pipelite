@@ -32,6 +32,11 @@ public class UIController {
     return "stages";
   }
 
+  @RequestMapping("/servers")
+  public String servers() {
+    return "servers";
+  }
+
   @RequestMapping("/admin")
   public String admin() {
     return "admin";

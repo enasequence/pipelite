@@ -3,7 +3,7 @@
       xmlns:th="http://www.thymeleaf.org">
 <head>
     <div th:replace="fragments/header :: header"></div>
-    <title>Active processes</title>
+    <title>Processes</title>
     <script th:inline="javascript">
 $(document).ready( function () {
     $('#processesTable').DataTable({
@@ -171,11 +171,11 @@ function show() {
 
             <select class="custom-select m-2" id="processScope">
                 <option value="local" selected>Processes running in this server</option>
-                <option value="allPending">All pending processes</option>
-                <option value="allActive">All active processes</option>
-                <option value="allFailed">All failed processes</option>
-                <option value="allCompleted">All completed processes</option>
-                <option value="allCancelled">All cancelled processes</option>
+                <option value="allPending">Pending processes</option>
+                <option value="allActive">Active processes</option>
+                <option value="allFailed">Failed processes</option>
+                <option value="allCompleted">Completed processes</option>
+                <option value="allCancelled">Cancelled processes</option>
             </select>
 
             <label class="mr-2" for="pipelineName">Pipeline</label>

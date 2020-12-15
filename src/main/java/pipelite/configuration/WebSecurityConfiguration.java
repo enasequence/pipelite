@@ -26,6 +26,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
+  public static final String HEALTH_ENDPOINT = "/actuator/health";
+
   @Autowired WebConfiguration webConfiguration;
 
   @Bean
@@ -43,7 +45,7 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
   @Override
   public void configure(WebSecurity web) {
-    web.ignoring().antMatchers("/static/**");
+    web.ignoring().antMatchers("/static/**").and().ignoring().antMatchers(HEALTH_ENDPOINT);
   }
 
   @Override
@@ -55,6 +57,8 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
         .and()
         .authorizeRequests()
         .antMatchers("static/**")
+        .permitAll()
+        .antMatchers(HEALTH_ENDPOINT)
         .permitAll()
         .anyRequest()
         .authenticated()

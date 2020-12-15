@@ -15,6 +15,7 @@ import javax.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import pipelite.launcher.ProcessLauncherType;
 
 @Entity
 @Table(name = "PIPELITE_LAUNCHER_LOCK")
@@ -30,6 +31,18 @@ public class LauncherLockEntity {
 
   @Column(name = "LAUNCHER_NAME", unique = true, nullable = false)
   private String launcherName;
+
+  @Column(name = "LAUNCHER_TYPE", nullable = false)
+  private ProcessLauncherType launcherType;
+
+  @Column(name = "HOST", nullable = false)
+  private String host;
+
+  @Column(name = "PORT", nullable = false)
+  private Integer port;
+
+  @Column(name = "CONTEXT_PATH", nullable = false)
+  private String contextPath;
 
   @Column(name = "EXPIRY", nullable = false)
   private ZonedDateTime expiry;

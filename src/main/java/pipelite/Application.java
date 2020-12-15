@@ -188,4 +188,8 @@ public class Application {
     }
     return serverManager.getServices();
   }
+
+  public boolean isShutdown() {
+    return shutdown;
+  }
 }

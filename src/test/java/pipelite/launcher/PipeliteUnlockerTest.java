@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
+import pipelite.configuration.WebConfiguration;
 import pipelite.entity.LauncherLockEntity;
 import pipelite.repository.LauncherLockRepository;
 import pipelite.repository.ProcessLockRepository;
@@ -47,14 +48,20 @@ public class PipeliteUnlockerTest {
     launcherConfiguration.setPipelineLockDuration(Duration.ofMillis(0));
     launcherConfiguration.setPipelineUnlockFrequency(Duration.ofMillis(1000));
 
+    WebConfiguration webConfiguration = new WebConfiguration();
+    webConfiguration.setPort(WebConfiguration.DEFAULT_PORT);
+    webConfiguration.setContextPath(WebConfiguration.DEFAULT_CONTEXT_PATH);
+
     LockService lockService =
-        new LockService(launcherConfiguration, launcherLockRepository, processLockRepository);
+        new LockService(
+            launcherConfiguration, webConfiguration, launcherLockRepository, processLockRepository);
 
     lockService
         .getLauncherLocksByLauncherName(launcherName)
         .forEach(s -> lockService.unlockLauncher(s));
     lockService.unlockProcessesByPipelineName(pipelineName);
-    LauncherLockEntity launcherLock = lockService.lockLauncher(launcherName);
+    LauncherLockEntity launcherLock =
+        lockService.lockLauncher(launcherName, ProcessLauncherType.LAUNCHER);
     assertThat(lockService.getProcessLocks(launcherLock)).isEmpty();
 
     assertTrue(lockService.lockProcess(launcherLock, pipelineName, "1"));
@@ -80,14 +87,20 @@ public class PipeliteUnlockerTest {
     launcherConfiguration.setPipelineLockDuration(Duration.ofHours(1));
     launcherConfiguration.setPipelineUnlockFrequency(Duration.ofMillis(1000));
 
+    WebConfiguration webConfiguration = new WebConfiguration();
+    webConfiguration.setPort(WebConfiguration.DEFAULT_PORT);
+    webConfiguration.setContextPath(WebConfiguration.DEFAULT_CONTEXT_PATH);
+
     LockService lockService =
-        new LockService(launcherConfiguration, launcherLockRepository, processLockRepository);
+        new LockService(
+            launcherConfiguration, webConfiguration, launcherLockRepository, processLockRepository);
 
     lockService
         .getLauncherLocksByLauncherName(launcherName)
         .forEach(s -> lockService.unlockLauncher(s));
     lockService.unlockProcessesByPipelineName(pipelineName);
-    LauncherLockEntity launcherLock = lockService.lockLauncher(launcherName);
+    LauncherLockEntity launcherLock =
+        lockService.lockLauncher(launcherName, ProcessLauncherType.LAUNCHER);
     assertThat(lockService.getProcessLocks(launcherLock)).isEmpty();
 
     assertTrue(lockService.lockProcess(launcherLock, pipelineName, "1"));

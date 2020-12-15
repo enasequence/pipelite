@@ -32,7 +32,8 @@ public class DefaultPipeliteScheduler {
       StageService stageService,
       MailService mailService) {
 
-    PipeliteLocker pipeliteLocker = new DefaultPipeliteLocker(lockService);
+    PipeliteLocker pipeliteLocker =
+        new DefaultPipeliteLocker(lockService, ProcessLauncherType.SCHEDULER);
 
     return new PipeliteScheduler(
         launcherConfiguration,
