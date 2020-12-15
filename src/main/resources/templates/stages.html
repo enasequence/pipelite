@@ -121,13 +121,35 @@ $(document).ready(function() {
  });
 });
 
-// Show tables and graph.
+// Show the filter badges, tables and graph.
 function show() {
     var table1 = $('#statusTable').DataTable();
     var table2 = $('#dataTable').DataTable();
 
-    var pipelineName = document.getElementById("pipelineName").value;
-    var processId = document.getElementById("processId").value;
+    var pipelineName = $( "#pipelineName" ).val();
+    var processId = $( "#processId" ).val();
+
+    // Show the filter badges.
+    var pipelineNameBadgeText;
+    var processIdBadgeText;
+    if (pipelineName) {
+        pipelineNameBadgeText = "Pipeline:" + pipelineName;
+    }
+    else {
+        pipelineNameBadgeText = "";
+    }
+    if (processId) {
+        processIdBadgeText = "Process:" + processId;
+    }
+    else {
+        processIdBadgeText = "";
+    }
+    $( "#pipelineNameBadge" ).text(pipelineNameBadgeText);
+    $( "#processIdBadge" ).text(processIdBadgeText);
+
+
+
+
     if (pipelineName && processId) {
         var url =  "/pipelite/stage/" + pipelineName + "/" + processId + "/";
         $.get(url, function(data, status) {
@@ -149,8 +171,8 @@ function plot() {
     var fullHeight = 500;
     $("#div-svg").height(fullHeight);
 
-    var pipelineName = document.getElementById("pipelineName").value;
-    var processId = document.getElementById("processId").value;
+    var pipelineName = $( "#pipelineName" ).val();
+    var processId = $( "#processId" ).val();
     var url =  "/pipelite/stage/" + pipelineName + "/" + processId + "/";
 
     $.get(url, function(data, status) {
@@ -235,6 +257,7 @@ function plot() {
 // Copy logs.
 function copy() {
     var range = document.createRange();
+
     range.selectNode(document.getElementById("logsText"));
     window.getSelection().removeAllRanges(); // clear current selection
     window.getSelection().addRange(range); // to select text
@@ -290,6 +313,10 @@ function copy() {
 <div class="card m-2">
     <div class="card-body">
         <h5 class="card-title">Process stages</h5>
+        <p class="card-text">
+            <span class="badge badge-secondary" id="pipelineNameBadge"></span>
+            <span class="badge badge-secondary" id="processIdBadge"></span>
+        </p>
         <ul class="nav nav-pill justify-content-center" role="tablist">
             <li class="nav-item" role="presentation"><a class="nav-link active" data-toggle="tab" role="tab"
                                                         href="#status">Status</a></li>

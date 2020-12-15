@@ -74,13 +74,14 @@ $(document).ready( function () {
     show();
 });
 
-// Show the table.
+// Show the filter badges and table.
 function show() {
     var table1 = $('#processesTable').DataTable();
     var pipelineName = $( "#pipelineName" ).val();
     var processId = $( "#processId" ).val();
     var processScope = $( "#processScope" ).val();
 
+    // Show the filter badges.
     var pipelineNameBadgeText;
     var processIdBadgeText;
     if (pipelineName) {
@@ -98,6 +99,7 @@ function show() {
     $( "#pipelineNameBadge" ).text(pipelineNameBadgeText);
     $( "#processIdBadge" ).text(processIdBadgeText);
 
+    // Show the tables.
     var url = "/pipelite/process/";
 
     if (processScope == "local") {
