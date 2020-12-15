@@ -46,8 +46,8 @@ $(document).ready(function() {
     $('#statusTable tbody').on( 'click', 'button', function () {
         var table = $('#statusTable').DataTable();
         var data = table.row( $(this).parents('tr') ).data();
-        var url =  "/pipelite/log/" + data.pipelineName + "/" + data.processId + "/" + data.stageName + "/";
-        // console.log(url);
+        var url =  "/pipelite/log/" + window.pipelineName + "/" + window.processId + "/" + data.stageName + "/";
+        console.log(url);
         $.get(url, function(data, status) {
                 $( "#logsText" ).text( data.log );
                 $('#logsModal').modal('show');
@@ -128,6 +128,11 @@ function show() {
 
     if (pipelineName && processId) {
         console.log("show");
+
+        // Save pipeline name and processId.
+        window.pipelineName = pipelineName;
+        window.processId = processId;
+
         // Show the filter badges.
         var pipelineNameBadgeText;
         var processIdBadgeText;
@@ -149,7 +154,8 @@ function show() {
         // Show the tables and graph.
         var table1 = $('#statusTable').DataTable();
         var table2 = $('#dataTable').DataTable();
-        var url =  "/pipelite/stage/" + pipelineName + "/" + processId + "/";
+        var url =  "/pipelite/stage/" + window.pipelineName + "/" + processId + "/";
+        console.log(url);
         $.get(url, function(data, status) {
             table1.clear().rows.add(data).draw();
             table2.clear().rows.add(data).draw();
@@ -169,10 +175,8 @@ function plot() {
     var fullHeight = 500;
     $("#div-svg").height(fullHeight);
 
-    var pipelineName = $( "#pipelineName" ).val();
-    var processId = $( "#processId" ).val();
-    var url =  "/pipelite/stage/" + pipelineName + "/" + processId + "/";
-
+    var url =  "/pipelite/stage/" + window.pipelineName + "/" + window.processId + "/";
+    console.log(url);
     $.get(url, function(data, status) {
         var g = new dagreD3.graphlib.Graph()
           .setGraph({
