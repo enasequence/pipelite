@@ -12,22 +12,9 @@ package pipelite.repository;
 
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.stream.Stream;
-
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import pipelite.entity.LauncherLockEntity;
-import pipelite.entity.ProcessEntity;
-import pipelite.entity.ServerEntity;
-import pipelite.launcher.ProcessLauncherType;
-
-import javax.persistence.Column;
-import javax.persistence.ColumnResult;
-import javax.persistence.ConstructorResult;
-import javax.persistence.SqlResultSetMapping;
 
 @Repository
 public interface LauncherLockRepository extends CrudRepository<LauncherLockEntity, String> {
