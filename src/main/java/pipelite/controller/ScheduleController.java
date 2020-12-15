@@ -40,7 +40,7 @@ public class ScheduleController {
 
   @GetMapping("/local")
   @ResponseStatus(HttpStatus.OK)
-  @Operation(description = "Schedules running in this service")
+  @Operation(description = "Schedules running in this server")
   @ApiResponses(
       value = {
         @ApiResponse(responseCode = "200", description = "OK"),

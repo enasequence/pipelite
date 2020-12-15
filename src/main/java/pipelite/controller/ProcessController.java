@@ -46,7 +46,7 @@ public class ProcessController {
   @ResponseStatus(HttpStatus.OK)
   @Operation(
       description =
-          "Processes running in this service given optional pipeline name, process id and state")
+          "Processes running in this server given optional pipeline name, process id and state")
   @ApiResponses(
       value = {
         @ApiResponse(responseCode = "200", description = "OK"),

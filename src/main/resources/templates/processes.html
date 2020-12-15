@@ -125,7 +125,7 @@ function show() {
 
     var state;
     if (processScope == "local") {
-       $( "#title" ).text("Processes running in this service");
+       $( "#title" ).text("Processes running in this server");
     }
     if (processScope == "allPending") {
         state = "PENDING";
@@ -170,7 +170,7 @@ function show() {
         <div class="form-inline m-2">
 
             <select class="custom-select m-2" id="processScope">
-                <option value="local" selected>Processes running in this service</option>
+                <option value="local" selected>Processes running in this server</option>
                 <option value="allPending">All pending processes</option>
                 <option value="allActive">All active processes</option>
                 <option value="allFailed">All failed processes</option>
