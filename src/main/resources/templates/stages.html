@@ -9,6 +9,8 @@
 $(document).ready(function() {
     $('#statusTable').DataTable({
         columns: [
+            { data: "pipelineName", visible: false, searchable: false },
+            { data: "processId", visible: false, searchable: false },
             { data: "stageName" },
             { data: "resultType" },
             { data: "startTime" },
@@ -42,12 +44,10 @@ $(document).ready(function() {
 
     // Logs button is pressed.
     $('#statusTable tbody').on( 'click', 'button', function () {
-        var pipelineName = document.getElementById("pipelineName").value;
-        var processId = document.getElementById("processId").value;
         var table = $('#statusTable').DataTable();
         var data = table.row( $(this).parents('tr') ).data();
-        var stageName = data.stageName;
-        var url =  "/pipelite/log/" + pipelineName + "/" + processId + "/" + stageName + "/";
+        var url =  "/pipelite/log/" + data.pipelineName + "/" + data.processId + "/" + data.stageName + "/";
+        // console.log(url);
         $.get(url, function(data, status) {
                 $( "#logsText" ).text( data.log );
                 $('#logsModal').modal('show');
@@ -56,6 +56,8 @@ $(document).ready(function() {
 
     $('#dataTable').DataTable({
         columns: [
+            { data: "pipelineName", visible: false, searchable: false },
+            { data: "processId", visible: false, searchable: false },
             { data: "stageName" },
             { data: "executorName" },
             { data: "executorData" },
@@ -101,20 +103,18 @@ $(document).ready(function() {
     });
 
     // Show tables and graph.
-    var pipelineName = /*[[${param.pipelineName}?: 'Pipeline name']]*/ 'Pipeline name';
-    var processId = /*[[${param.processId}?: 'Process id']]*/ 'Process id';
-    if (pipelineName != 'Pipeline name') {
+    var urlParams = new URLSearchParams(window.location.search);
+    var pipelineName = urlParams.get("pipelineName");
+    var processId = urlParams.get("processId");
+    // console.log("url parameter pipelineName:" + pipelineName);
+    // console.log("url parameter processId:" + processId);
+    if (pipelineName && processId) {
        $( "#pipelineName" ).val(pipelineName);
-    }
-    if (processId != 'Process id') {
        $( "#processId" ).val(processId);
-    }
-    if (pipelineName != 'Pipeline name' &&
-        processId != 'Process id') {
         show();
     }
 
-    // Show graph.
+    // Show graph when tag is changed.
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
         $('svg').remove();
         plot();
@@ -123,34 +123,32 @@ $(document).ready(function() {
 
 // Show the filter badges, tables and graph.
 function show() {
-    var table1 = $('#statusTable').DataTable();
-    var table2 = $('#dataTable').DataTable();
-
     var pipelineName = $( "#pipelineName" ).val();
     var processId = $( "#processId" ).val();
 
-    // Show the filter badges.
-    var pipelineNameBadgeText;
-    var processIdBadgeText;
-    if (pipelineName) {
-        pipelineNameBadgeText = "Pipeline:" + pipelineName;
-    }
-    else {
-        pipelineNameBadgeText = "";
-    }
-    if (processId) {
-        processIdBadgeText = "Process:" + processId;
-    }
-    else {
-        processIdBadgeText = "";
-    }
-    $( "#pipelineNameBadge" ).text(pipelineNameBadgeText);
-    $( "#processIdBadge" ).text(processIdBadgeText);
-
-
-
-
     if (pipelineName && processId) {
+        console.log("show");
+        // Show the filter badges.
+        var pipelineNameBadgeText;
+        var processIdBadgeText;
+        if (pipelineName) {
+            pipelineNameBadgeText = "Pipeline:" + pipelineName;
+        }
+        else {
+            pipelineNameBadgeText = "";
+        }
+        if (processId) {
+            processIdBadgeText = "Process:" + processId;
+        }
+        else {
+            processIdBadgeText = "";
+        }
+        $( "#pipelineNameBadge" ).text(pipelineNameBadgeText);
+        $( "#processIdBadge" ).text(processIdBadgeText);
+
+        // Show the tables and graph.
+        var table1 = $('#statusTable').DataTable();
+        var table2 = $('#dataTable').DataTable();
         var url =  "/pipelite/stage/" + pipelineName + "/" + processId + "/";
         $.get(url, function(data, status) {
             table1.clear().rows.add(data).draw();
@@ -333,6 +331,8 @@ function copy() {
                 <table id="statusTable" class="table table-striped table-hover" style="width:100%">
                     <thead>
                     <tr>
+                        <th>Pipeline name</th>
+                        <th>Process id</th>
                         <th>Stage name</th>
                         <th>Result type</th>
                         <th>Start time</th>
@@ -348,6 +348,8 @@ function copy() {
                 <table id="dataTable" class="table table-striped table-hover" style="width:100%">
                     <thead>
                     <tr>
+                        <th>Pipeline name</th>
+                        <th>Process id</th>
                         <th>Stage name</th>
                         <th>Executor name</th>
                         <th>Executor data</th>
