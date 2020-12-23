@@ -31,16 +31,17 @@ public class DefaultPipeliteLauncher {
   private DefaultPipeliteLauncher() {}
 
   public static PipeliteLauncher create(
-          WebConfiguration webConfiguration,
-          LauncherConfiguration launcherConfiguration,
-          StageConfiguration stageConfiguration,
-          LockService lockService,
-          ProcessFactoryService processFactoryService,
-          ProcessSourceService processSourceService,
-          ProcessService processService,
-          StageService stageService,
-          MailService mailService,
-          MeterRegistry meterRegistry, String pipelineName) {
+      WebConfiguration webConfiguration,
+      LauncherConfiguration launcherConfiguration,
+      StageConfiguration stageConfiguration,
+      LockService lockService,
+      ProcessFactoryService processFactoryService,
+      ProcessSourceService processSourceService,
+      ProcessService processService,
+      StageService stageService,
+      MailService mailService,
+      MeterRegistry meterRegistry,
+      String pipelineName) {
 
     PipeliteLocker pipeliteLocker =
         new DefaultPipeliteLocker(lockService, ProcessRunnerType.LAUNCHER);

@@ -119,7 +119,6 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
   }
 
   {
-
   }
 
   @Override

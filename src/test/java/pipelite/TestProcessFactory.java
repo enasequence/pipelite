@@ -12,7 +12,6 @@ package pipelite;
 
 import java.util.*;
 import java.util.concurrent.ForkJoinPool;
-
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 

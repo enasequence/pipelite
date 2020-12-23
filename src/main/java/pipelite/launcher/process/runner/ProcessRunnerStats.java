@@ -12,9 +12,8 @@ package pipelite.launcher.process.runner;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import pipelite.process.ProcessState;
-
 import java.time.Duration;
+import pipelite.process.ProcessState;
 
 public class ProcessRunnerStats {
 

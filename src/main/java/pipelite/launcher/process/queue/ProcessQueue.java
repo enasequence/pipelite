@@ -43,8 +43,8 @@ public interface ProcessQueue {
   int fillQueue();
 
   /**
-   * Returns true if there are available processes in the queue taking into
-   * account the maximum number of active processes.
+   * Returns true if there are available processes in the queue taking into account the maximum
+   * number of active processes.
    *
    * @param activeProcesses the number of currently executing processes
    * @return true if there are available processes in the queue

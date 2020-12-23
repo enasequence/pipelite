@@ -13,13 +13,12 @@ package pipelite.launcher;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import pipelite.TestProcessFactory;
@@ -256,11 +255,9 @@ public class PipeliteSchedulerTest {
     ScheduleService scheduleService = mock(ScheduleService.class);
 
     ProcessFactory processFactory1 =
-        new TestProcessFactory(
-            pipelineName1, Arrays.asList(testProcess(processId1)));
+        new TestProcessFactory(pipelineName1, Arrays.asList(testProcess(processId1)));
     ProcessFactory processFactory2 =
-        new TestProcessFactory(
-            pipelineName2, Arrays.asList(testProcess(processId2)));
+        new TestProcessFactory(pipelineName2, Arrays.asList(testProcess(processId2)));
     doAnswer(I -> processFactory1).when(processFactoryService).create(eq(pipelineName1));
     doAnswer(I -> processFactory2).when(processFactoryService).create(eq(pipelineName2));
 
@@ -406,8 +403,7 @@ public class PipeliteSchedulerTest {
     // Create process factory.
 
     ProcessFactory processFactory1 =
-        new TestProcessFactory(
-            pipelineName1, Arrays.asList(testProcess(processId1)));
+        new TestProcessFactory(pipelineName1, Arrays.asList(testProcess(processId1)));
     doAnswer(I -> processFactory1).when(processFactoryService).create(eq(pipelineName1));
 
     // Return schedule from the schedule service.

@@ -12,9 +12,6 @@ package pipelite.controller.info;
 
 import lombok.Builder;
 import lombok.Data;
-import pipelite.process.ProcessState;
-
-import java.time.ZonedDateTime;
 
 @Data
 @Builder

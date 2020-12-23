@@ -10,12 +10,11 @@
  */
 package pipelite;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.*;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-
-import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;

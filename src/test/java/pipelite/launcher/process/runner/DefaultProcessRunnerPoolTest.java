@@ -15,10 +15,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
 import java.util.function.Supplier;
-
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 import pipelite.entity.ProcessEntity;
 import pipelite.lock.PipeliteLocker;
@@ -70,7 +69,9 @@ public class DefaultProcessRunnerPoolTest {
       ProcessEntity processEntity = new ProcessEntity();
       process.setProcessEntity(processEntity);
       pool.runProcess(
-          PIPELINE_NAME, process, (p, r) -> stats.addProcessRunnerResult(p.getProcessEntity().getState(), r));
+          PIPELINE_NAME,
+          process,
+          (p, r) -> stats.addProcessRunnerResult(p.getProcessEntity().getState(), r));
     }
 
     pool.shutDown();
@@ -113,7 +114,9 @@ public class DefaultProcessRunnerPoolTest {
       ProcessEntity processEntity = new ProcessEntity();
       process.setProcessEntity(processEntity);
       pool.runProcess(
-          PIPELINE_NAME, process, (p, r) -> stats.addProcessRunnerResult(p.getProcessEntity().getState(), r));
+          PIPELINE_NAME,
+          process,
+          (p, r) -> stats.addProcessRunnerResult(p.getProcessEntity().getState(), r));
     }
 
     pool.shutDown();
@@ -161,7 +164,9 @@ public class DefaultProcessRunnerPoolTest {
       ProcessEntity processEntity = new ProcessEntity();
       process.setProcessEntity(processEntity);
       pool.runProcess(
-          PIPELINE_NAME, process, (p, r) -> stats.addProcessRunnerResult(p.getProcessEntity().getState(), r));
+          PIPELINE_NAME,
+          process,
+          (p, r) -> stats.addProcessRunnerResult(p.getProcessEntity().getState(), r));
     }
 
     pool.shutDown();

@@ -10,10 +10,9 @@
  */
 package pipelite.launcher;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import java.time.ZonedDateTime;
 import java.util.function.Supplier;
-
-import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
@@ -98,7 +97,10 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
   protected void runProcess(ProcessEntity processEntity) {
     Process process = ProcessFactory.create(processEntity, processFactory);
     if (process != null) {
-      runProcess(pipelineName, process, (p, r) -> stats.addProcessRunnerResult(p.getProcessEntity().getState(), r));
+      runProcess(
+          pipelineName,
+          process,
+          (p, r) -> stats.addProcessRunnerResult(p.getProcessEntity().getState(), r));
     } else {
       stats.addProcessCreationFailed(1);
     }

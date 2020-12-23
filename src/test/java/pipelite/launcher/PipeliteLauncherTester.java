@@ -12,10 +12,9 @@ package pipelite.launcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
-
-import io.micrometer.core.instrument.MeterRegistry;
 import lombok.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;

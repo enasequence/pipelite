@@ -11,6 +11,7 @@
 package pipelite.launcher;
 
 import com.google.common.flogger.FluentLogger;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -19,8 +20,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-
-import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;

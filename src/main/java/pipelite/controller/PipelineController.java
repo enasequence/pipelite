@@ -16,7 +16,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.util.*;
@@ -42,7 +41,8 @@ public class PipelineController {
   @GetMapping("/local")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
-      description = "Pipelines running in this server including statistics within the given number of minutes")
+      description =
+          "Pipelines running in this server including statistics within the given number of minutes")
   @ApiResponses(
       value = {
         @ApiResponse(responseCode = "200", description = "OK"),
