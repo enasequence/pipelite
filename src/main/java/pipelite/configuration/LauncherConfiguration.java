@@ -12,7 +12,6 @@ package pipelite.configuration;
 
 import java.time.Duration;
 import java.util.UUID;
-import java.util.concurrent.ForkJoinPool;
 import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -32,7 +31,6 @@ public class LauncherConfiguration {
   private static final Duration DEFAULT_PIPELINE_LOCK_DURATION = Duration.ofMinutes(10);
   private static final Duration DEFAULT_PIPELINE_UNLOCK_FREQUENCY = Duration.ofMinutes(30);
   private static final Duration DEFAULT_PROCESS_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
-  private static final int DEFAULT_PROCESS_PARALLELISM = ForkJoinPool.getCommonPoolParallelism();
   private static final Duration DEFAULT_SCHEDULE_REFRESH_FREQUENCY = Duration.ofHours(4);
   private static final Duration DEFAULT_PROCESS_QUEUE_MAX_REFRESH_FREQUENCY = Duration.ofHours(6);
   private static final Duration DEFAULT_PROCESS_QUEUE_MIN_REFRESH_FREQUENCY = Duration.ofMinutes(5);
@@ -60,12 +58,6 @@ public class LauncherConfiguration {
    * optional unlocker and must be unique.
    */
   private String unlockerName;
-
-  /**
-   * The PipeliteLauncher will execute processes in parallel. The pROCESSPARALLELISM is the maximum
-   * number of processes executed in parallel.
-   */
-  private int processParallelism = DEFAULT_PROCESS_PARALLELISM;
 
   /**
    * The PipeliteLauncher and PipeliteScheduler lock processes for execution. The

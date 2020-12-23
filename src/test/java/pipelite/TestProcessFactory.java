@@ -11,21 +11,38 @@
 package pipelite;
 
 import java.util.*;
+import java.util.concurrent.ForkJoinPool;
+
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 
 public class TestProcessFactory implements ProcessFactory {
   private final String pipelineName;
   private final Map<String, Process> processes = new HashMap<>();
+  private final int processParallelism;
+
+  public TestProcessFactory(
+      String pipelineName, Collection<Process> processes, int processParallelism) {
+    this.pipelineName = pipelineName;
+    addProcesses(processes);
+    this.processParallelism = processParallelism;
+  }
 
   public TestProcessFactory(String pipelineName, Collection<Process> processes) {
     this.pipelineName = pipelineName;
     addProcesses(processes);
+    this.processParallelism = ForkJoinPool.getCommonPoolParallelism();
+    ;
   }
 
   @Override
   public String getPipelineName() {
     return pipelineName;
+  }
+
+  @Override
+  public int getProcessParallelism() {
+    return processParallelism;
   }
 
   @Override

@@ -21,9 +21,9 @@ public class ScheduleInfo {
   private String pipelineName;
   private String cron;
   private String description;
-  private ZonedDateTime lastExecution;
-  private ZonedDateTime activeExecution;
-  private ZonedDateTime nextExecution;
+  private ZonedDateTime lastExecutionEndTime;
+  private ZonedDateTime runningExecutionStartTime;
+  private ZonedDateTime nextExecutionStartTime;
   private String timeSinceLastExecution;
   private String currentExecutionTime;
   private String timeUntilNextExecution;

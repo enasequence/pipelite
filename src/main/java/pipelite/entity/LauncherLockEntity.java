@@ -15,7 +15,7 @@ import javax.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import pipelite.launcher.ProcessLauncherType;
+import pipelite.launcher.process.runner.ProcessRunnerType;
 
 @Entity
 @Table(name = "PIPELITE_LAUNCHER_LOCK")
@@ -33,7 +33,7 @@ public class LauncherLockEntity {
   private String launcherName;
 
   @Column(name = "LAUNCHER_TYPE", nullable = false)
-  private ProcessLauncherType launcherType;
+  private ProcessRunnerType launcherType;
 
   @Column(name = "HOST", nullable = false)
   private String host;

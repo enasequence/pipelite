@@ -15,10 +15,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
+import java.time.Duration;
 import java.util.function.Supplier;
+
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 import pipelite.entity.ProcessEntity;
-import pipelite.launcher.ProcessLauncherStats;
 import pipelite.lock.PipeliteLocker;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
@@ -57,7 +59,7 @@ public class DefaultProcessRunnerPoolTest {
     DefaultProcessRunnerPool pool =
         new DefaultProcessRunnerPool(locker, processRunnerSupplier(ProcessState.COMPLETED));
 
-    ProcessLauncherStats stats = new ProcessLauncherStats();
+    ProcessRunnerStats stats = new ProcessRunnerStats(PIPELINE_NAME, new SimpleMeterRegistry());
 
     for (int i = 0; i < PROCESS_CNT; i++) {
       Process process =
@@ -67,17 +69,28 @@ public class DefaultProcessRunnerPoolTest {
               .build();
       ProcessEntity processEntity = new ProcessEntity();
       process.setProcessEntity(processEntity);
-      pool.runProcess(PIPELINE_NAME, process, (p, r) -> stats.add(p, r));
+      pool.runProcess(
+          PIPELINE_NAME, process, (p, r) -> stats.addProcessRunnerResult(p.getProcessEntity().getState(), r));
     }
 
     pool.shutDown();
 
-    assertThat(stats.getProcessExecutionCount(ProcessState.COMPLETED)).isEqualTo(PROCESS_CNT);
-    assertThat(stats.getProcessExecutionCount(ProcessState.FAILED)).isZero();
+    assertThat(stats.getCompletedProcessCount()).isEqualTo(PROCESS_CNT);
+    assertThat(stats.getFailedProcessCount()).isZero();
     assertThat(stats.getProcessExceptionCount()).isZero();
+
+    Duration before = Duration.ofMinutes(1);
+
+    assertThat(stats.getProcessCompletedCount(before)).isEqualTo(PROCESS_CNT);
+    assertThat(stats.getProcessFailedCount(before)).isZero();
+    assertThat(stats.getProcessExceptionCount(before)).isZero();
+    assertThat(stats.getProcessCompletedCount(Duration.ofNanos(0))).isZero();
+    assertThat(stats.getProcessFailedCount(Duration.ofNanos(0))).isZero();
+    assertThat(stats.getProcessExceptionCount(Duration.ofNanos(0))).isZero();
+
     verify(locker, times(PROCESS_CNT)).lockProcess(eq(PIPELINE_NAME), any());
     verify(locker, times(PROCESS_CNT)).unlockProcess(eq(PIPELINE_NAME), any());
-    assertThat(pool.getActiveProcessRunnerCount()).isZero();
+    assertThat(pool.getActiveProcessCount()).isZero();
     assertThat(pool.getActiveProcessRunners().size()).isZero();
   }
 
@@ -89,7 +102,7 @@ public class DefaultProcessRunnerPoolTest {
     DefaultProcessRunnerPool pool =
         new DefaultProcessRunnerPool(locker, processRunnerSupplier(ProcessState.FAILED));
 
-    ProcessLauncherStats stats = new ProcessLauncherStats();
+    ProcessRunnerStats stats = new ProcessRunnerStats(PIPELINE_NAME, new SimpleMeterRegistry());
 
     for (int i = 0; i < PROCESS_CNT; i++) {
       Process process =
@@ -99,17 +112,28 @@ public class DefaultProcessRunnerPoolTest {
               .build();
       ProcessEntity processEntity = new ProcessEntity();
       process.setProcessEntity(processEntity);
-      pool.runProcess(PIPELINE_NAME, process, (p, r) -> stats.add(p, r));
+      pool.runProcess(
+          PIPELINE_NAME, process, (p, r) -> stats.addProcessRunnerResult(p.getProcessEntity().getState(), r));
     }
 
     pool.shutDown();
 
-    assertThat(stats.getProcessExecutionCount(ProcessState.COMPLETED)).isZero();
-    assertThat(stats.getProcessExecutionCount(ProcessState.FAILED)).isEqualTo(PROCESS_CNT);
+    assertThat(stats.getCompletedProcessCount()).isZero();
+    assertThat(stats.getFailedProcessCount()).isEqualTo(PROCESS_CNT);
     assertThat(stats.getProcessExceptionCount()).isZero();
+
+    Duration before = Duration.ofMinutes(1);
+
+    assertThat(stats.getProcessCompletedCount(before)).isZero();
+    assertThat(stats.getProcessFailedCount(before)).isEqualTo(PROCESS_CNT);
+    assertThat(stats.getProcessExceptionCount(before)).isZero();
+    assertThat(stats.getProcessCompletedCount(Duration.ofNanos(0))).isZero();
+    assertThat(stats.getProcessFailedCount(Duration.ofNanos(0))).isZero();
+    assertThat(stats.getProcessExceptionCount(Duration.ofNanos(0))).isZero();
+
     verify(locker, times(PROCESS_CNT)).lockProcess(eq(PIPELINE_NAME), any());
     verify(locker, times(PROCESS_CNT)).unlockProcess(eq(PIPELINE_NAME), any());
-    assertThat(pool.getActiveProcessRunnerCount()).isZero();
+    assertThat(pool.getActiveProcessCount()).isZero();
     assertThat(pool.getActiveProcessRunners().size()).isZero();
   }
 
@@ -126,7 +150,7 @@ public class DefaultProcessRunnerPoolTest {
               return processRunner;
             });
 
-    ProcessLauncherStats stats = new ProcessLauncherStats();
+    ProcessRunnerStats stats = new ProcessRunnerStats(PIPELINE_NAME, new SimpleMeterRegistry());
 
     for (int i = 0; i < PROCESS_CNT; i++) {
       Process process =
@@ -136,17 +160,28 @@ public class DefaultProcessRunnerPoolTest {
               .build();
       ProcessEntity processEntity = new ProcessEntity();
       process.setProcessEntity(processEntity);
-      pool.runProcess(PIPELINE_NAME, process, (p, r) -> stats.add(p, r));
+      pool.runProcess(
+          PIPELINE_NAME, process, (p, r) -> stats.addProcessRunnerResult(p.getProcessEntity().getState(), r));
     }
 
     pool.shutDown();
 
-    assertThat(stats.getProcessExecutionCount(ProcessState.COMPLETED)).isZero();
-    assertThat(stats.getProcessExecutionCount(ProcessState.FAILED)).isZero();
+    assertThat(stats.getCompletedProcessCount()).isZero();
+    assertThat(stats.getFailedProcessCount()).isZero();
     assertThat(stats.getProcessExceptionCount()).isEqualTo(PROCESS_CNT);
+
+    Duration before = Duration.ofMinutes(1);
+
+    assertThat(stats.getProcessCompletedCount(before)).isZero();
+    assertThat(stats.getProcessFailedCount(before)).isZero();
+    assertThat(stats.getProcessExceptionCount(before)).isEqualTo(PROCESS_CNT);
+    assertThat(stats.getProcessCompletedCount(Duration.ofNanos(0))).isZero();
+    assertThat(stats.getProcessFailedCount(Duration.ofNanos(0))).isZero();
+    assertThat(stats.getProcessExceptionCount(Duration.ofNanos(0))).isZero();
+
     verify(locker, times(PROCESS_CNT)).lockProcess(eq(PIPELINE_NAME), any());
     verify(locker, times(PROCESS_CNT)).unlockProcess(eq(PIPELINE_NAME), any());
-    assertThat(pool.getActiveProcessRunnerCount()).isZero();
+    assertThat(pool.getActiveProcessCount()).isZero();
     assertThat(pool.getActiveProcessRunners().size()).isZero();
   }
 }

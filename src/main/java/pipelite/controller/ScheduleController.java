@@ -66,12 +66,12 @@ public class ScheduleController {
                         .pipelineName(s.getScheduleEntity().getPipelineName())
                         .cron(s.getScheduleEntity().getCron())
                         .description(s.getScheduleEntity().getDescription())
-                        .lastExecution(s.getScheduleEntity().getEndTime())
-                        .activeExecution(
+                        .lastExecutionEndTime(s.getScheduleEntity().getEndTime())
+                        .runningExecutionStartTime(
                             (s.getScheduleEntity().getProcessId() != null)
                                 ? s.getScheduleEntity().getStartTime()
                                 : null)
-                        .nextExecution(s.getLaunchTime())
+                        .nextExecutionStartTime(s.getLaunchTime())
                         .timeSinceLastExecution(
                             TimeUtils.getDurationAsStringAlwaysPositive(
                                 ZonedDateTime.now(), s.getScheduleEntity().getEndTime()))
@@ -101,9 +101,9 @@ public class ScheduleController {
                           .pipelineName(lorem.getCountry())
                           .cron(lorem.getWords(1))
                           .description(lorem.getWords(5))
-                          .lastExecution(ZonedDateTime.now())
-                          .activeExecution(ZonedDateTime.now())
-                          .nextExecution(ZonedDateTime.now())
+                          .lastExecutionEndTime(ZonedDateTime.now())
+                          .runningExecutionStartTime(ZonedDateTime.now())
+                          .nextExecutionStartTime(ZonedDateTime.now())
                           .timeSinceLastExecution(
                               TimeUtils.getDurationAsStringAlwaysPositive(
                                   ZonedDateTime.now(), ZonedDateTime.now().plusHours(6)))

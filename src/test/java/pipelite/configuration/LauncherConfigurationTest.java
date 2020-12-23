@@ -21,9 +21,9 @@ import pipelite.PipeliteTestConfiguration;
 @SpringBootTest(
     classes = PipeliteTestConfiguration.class,
     properties = {
+      "pipelite.launcher.pipelineName=TEST1,TEST2",
       "pipelite.launcher.schedulerName=TEST",
-      "pipelite.launcher.processParallelism=1",
-      "pipelite.launcher.port=8080"
+      "pipelite.launcher.unlockerName=TEST3"
     })
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 public class LauncherConfigurationTest {
@@ -31,8 +31,8 @@ public class LauncherConfigurationTest {
   @Autowired LauncherConfiguration config;
 
   @Test
-  public void testProcessParallelism() {
-    assertThat(config.getProcessParallelism()).isEqualTo(1);
+  public void getPipelineName() {
+    assertThat(config.getPipelineName()).isEqualTo("TEST1,TEST2");
   }
 
   @Test
@@ -46,5 +46,10 @@ public class LauncherConfigurationTest {
   public void getSchedulerName() {
     assertThat(config.getSchedulerName()).isEqualTo("TEST");
     assertThat(LauncherConfiguration.getSchedulerName(config)).isEqualTo("TEST");
+  }
+
+  @Test
+  public void getUnlockerName() {
+    assertThat(config.getUnlockerName()).isEqualTo("TEST3");
   }
 }

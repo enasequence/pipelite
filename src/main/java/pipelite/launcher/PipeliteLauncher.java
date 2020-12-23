@@ -10,7 +10,10 @@
  */
 package pipelite.launcher;
 
+import java.time.ZonedDateTime;
 import java.util.function.Supplier;
+
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
@@ -19,6 +22,7 @@ import pipelite.launcher.process.creator.ProcessCreator;
 import pipelite.launcher.process.queue.ProcessQueue;
 import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
+import pipelite.launcher.process.runner.ProcessRunnerStats;
 import pipelite.lock.PipeliteLocker;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
@@ -32,7 +36,8 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
   private final ProcessQueue processQueue;
   private final int processCreateMaxSize;
   private final boolean shutdownIfIdle;
-  private final ProcessLauncherStats stats = new ProcessLauncherStats();
+  private final ZonedDateTime startTime;
+  private final ProcessRunnerStats stats;
 
   public PipeliteLauncher(
       LauncherConfiguration launcherConfiguration,
@@ -40,7 +45,8 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
       ProcessFactory processFactory,
       ProcessCreator processCreator,
       ProcessQueue processQueue,
-      Supplier<ProcessRunnerPool> processRunnerPoolSupplier) {
+      Supplier<ProcessRunnerPool> processRunnerPoolSupplier,
+      MeterRegistry meterRegistry) {
     super(
         launcherConfiguration,
         pipeliteLocker,
@@ -56,6 +62,8 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
     this.pipelineName = processQueue.getPipelineName();
     this.processCreateMaxSize = launcherConfiguration.getProcessCreateMaxSize();
     this.shutdownIfIdle = launcherConfiguration.isShutdownIfIdle();
+    this.startTime = ZonedDateTime.now();
+    this.stats = new ProcessRunnerStats(this.pipelineName, meterRegistry);
   }
 
   @Override
@@ -69,24 +77,30 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
       processCreator.createProcesses(processCreateMaxSize);
       processQueue.fillQueue();
     }
-    while (processQueue.isAvailableProcesses(getActiveProcessRunnerCount())) {
+    while (processQueue.isAvailableProcesses(this.getActiveProcessCount())) {
       runProcess(processQueue.nextAvailableProcess());
     }
+
+    purgeStats();
   }
 
   @Override
   protected boolean shutdownIfIdle() {
     return !processQueue.isAvailableProcesses(0)
-        && getActiveProcessRunnerCount() == 0
+        && this.getActiveProcessCount() == 0
         && shutdownIfIdle;
+  }
+
+  public ZonedDateTime getStartTime() {
+    return startTime;
   }
 
   protected void runProcess(ProcessEntity processEntity) {
     Process process = ProcessFactory.create(processEntity, processFactory);
     if (process != null) {
-      runProcess(pipelineName, process, (p, r) -> stats.add(p, r));
+      runProcess(pipelineName, process, (p, r) -> stats.addProcessRunnerResult(p.getProcessEntity().getState(), r));
     } else {
-      stats.addProcessCreationFailedCount(1);
+      stats.addProcessCreationFailed(1);
     }
   }
 
@@ -94,7 +108,19 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
     return pipelineName;
   }
 
-  public ProcessLauncherStats getStats() {
+  public int getProcessParallelism() {
+    return processFactory.getProcessParallelism();
+  }
+
+  public int getQueuedProcessCount() {
+    return processQueue.getQueuedProcessCount();
+  }
+
+  public ProcessRunnerStats getStats() {
     return stats;
+  }
+
+  private void purgeStats() {
+    stats.purge();
   }
 }

@@ -12,9 +12,21 @@ package pipelite.controller.info;
 
 import lombok.Builder;
 import lombok.Data;
+import pipelite.process.ProcessState;
+
+import java.time.ZonedDateTime;
 
 @Data
 @Builder
 public class PipelineInfo {
   private String pipelineName;
+  private Integer maxRunningProcessCount;
+  private Integer runningProcessCount;
+  private Integer queuedProcessCount;
+  private String completedProcessCount;
+  private String failedProcessCount;
+  private String processExceptionCount;
+  private String successfulStageCount;
+  private String failedStageCount;
+  private String stageExceptionCount;
 }

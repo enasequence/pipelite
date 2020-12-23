@@ -34,6 +34,11 @@ public class ProcessFactoryTest {
           }
 
           @Override
+          public int getProcessParallelism() {
+            return 5;
+          }
+
+          @Override
           public Process create(String processId) {
             return new ProcessBuilder(processId)
                 .execute("STAGE1")
@@ -57,6 +62,11 @@ public class ProcessFactoryTest {
           @Override
           public String getPipelineName() {
             return PIPELINE_NAME;
+          }
+
+          @Override
+          public int getProcessParallelism() {
+            return 5;
           }
 
           @Override

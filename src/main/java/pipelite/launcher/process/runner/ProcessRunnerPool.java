@@ -29,7 +29,7 @@ public interface ProcessRunnerPool {
    *
    * @return the number of active process runners
    */
-  int getActiveProcessRunnerCount();
+  int getActiveProcessCount();
 
   /**
    * Returns the active process runners.

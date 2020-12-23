@@ -22,7 +22,7 @@ import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.WebConfiguration;
 import pipelite.entity.LauncherLockEntity;
 import pipelite.entity.ProcessLockEntity;
-import pipelite.launcher.ProcessLauncherType;
+import pipelite.launcher.process.runner.ProcessRunnerType;
 import pipelite.log.LogKey;
 import pipelite.repository.LauncherLockRepository;
 import pipelite.repository.ProcessLockRepository;
@@ -55,7 +55,7 @@ public class LockService {
    *
    * @return the launcher lock or null if the lock could not be created.
    */
-  public LauncherLockEntity lockLauncher(String launcherName, ProcessLauncherType launcherType) {
+  public LauncherLockEntity lockLauncher(String launcherName, ProcessRunnerType launcherType) {
     log.atInfo().with(LogKey.LAUNCHER_NAME, launcherName).log("Attempting to lock launcher");
     try {
       LauncherLockEntity launcherLock = new LauncherLockEntity();

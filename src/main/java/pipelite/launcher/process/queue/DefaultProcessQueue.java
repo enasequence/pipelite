@@ -44,7 +44,8 @@ public class DefaultProcessQueue implements ProcessQueue {
       WebConfiguration webConfiguration,
       LauncherConfiguration launcherConfiguration,
       ProcessService processService,
-      String pipelineName) {
+      String pipelineName,
+      int processParallelism) {
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(pipelineName, "Missing pipeline name");
     this.processService = processService;
@@ -56,7 +57,7 @@ public class DefaultProcessQueue implements ProcessQueue {
     this.processQueueMinRefreshFrequency =
         launcherConfiguration.getProcessQueueMinRefreshFrequency();
     this.processQueueMaxSize = launcherConfiguration.getProcessQueueMaxSize();
-    this.processParallelism = launcherConfiguration.getProcessParallelism();
+    this.processParallelism = (processParallelism < 1) ? 1 : processParallelism;
   }
 
   @Override
@@ -121,6 +122,11 @@ public class DefaultProcessQueue implements ProcessQueue {
   @Override
   public boolean isAvailableProcesses(int activeProcesses) {
     return processQueueIndex.get() < processQueue.size() && activeProcesses < processParallelism;
+  }
+
+  @Override
+  public int getQueuedProcessCount() {
+    return processQueue.size() - processQueueIndex.get();
   }
 
   @Override

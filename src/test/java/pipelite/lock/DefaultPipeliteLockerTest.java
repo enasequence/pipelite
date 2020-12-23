@@ -16,7 +16,7 @@ import static org.mockito.Mockito.*;
 
 import org.junit.jupiter.api.Test;
 import pipelite.entity.LauncherLockEntity;
-import pipelite.launcher.ProcessLauncherType;
+import pipelite.launcher.process.runner.ProcessRunnerType;
 import pipelite.service.LockService;
 
 public class DefaultPipeliteLockerTest {
@@ -27,10 +27,10 @@ public class DefaultPipeliteLockerTest {
   public void lifecycle() {
     LockService lockService = mock(LockService.class);
     LauncherLockEntity lock = new LauncherLockEntity();
-    when(lockService.lockLauncher(LAUNCHER_NAME, ProcessLauncherType.LAUNCHER))
+    when(lockService.lockLauncher(LAUNCHER_NAME, ProcessRunnerType.LAUNCHER))
         .thenAnswer((launcherName) -> lock);
     when(lockService.relockLauncher(lock)).thenAnswer((launcherName) -> true);
-    PipeliteLocker locker = new DefaultPipeliteLocker(lockService, ProcessLauncherType.LAUNCHER);
+    PipeliteLocker locker = new DefaultPipeliteLocker(lockService, ProcessRunnerType.LAUNCHER);
     locker.init(LAUNCHER_NAME);
     locker.lock();
     assertThat(locker.getLock()).isSameAs(lock);
@@ -48,8 +48,8 @@ public class DefaultPipeliteLockerTest {
   public void lockThrows() {
     LockService lockService = mock(LockService.class);
     RuntimeException ex = new RuntimeException("Expected exception");
-    when(lockService.lockLauncher(LAUNCHER_NAME, ProcessLauncherType.LAUNCHER)).thenThrow(ex);
-    PipeliteLocker locker = new DefaultPipeliteLocker(lockService, ProcessLauncherType.LAUNCHER);
+    when(lockService.lockLauncher(LAUNCHER_NAME, ProcessRunnerType.LAUNCHER)).thenThrow(ex);
+    PipeliteLocker locker = new DefaultPipeliteLocker(lockService, ProcessRunnerType.LAUNCHER);
     locker.init(LAUNCHER_NAME);
     assertThatThrownBy(() -> locker.lock()).isSameAs(ex);
     assertThat(locker.getLock()).isNull();
@@ -60,10 +60,10 @@ public class DefaultPipeliteLockerTest {
     LockService lockService = mock(LockService.class);
     RuntimeException ex = new RuntimeException("Expected exception");
     LauncherLockEntity lock = new LauncherLockEntity();
-    when(lockService.lockLauncher(LAUNCHER_NAME, ProcessLauncherType.LAUNCHER))
+    when(lockService.lockLauncher(LAUNCHER_NAME, ProcessRunnerType.LAUNCHER))
         .thenAnswer((launcherName) -> lock);
     when(lockService.relockLauncher(lock)).thenThrow(ex);
-    PipeliteLocker locker = new DefaultPipeliteLocker(lockService, ProcessLauncherType.LAUNCHER);
+    PipeliteLocker locker = new DefaultPipeliteLocker(lockService, ProcessRunnerType.LAUNCHER);
     locker.init(LAUNCHER_NAME);
     locker.lock();
     assertThat(locker.getLock()).isSameAs(lock);
@@ -76,11 +76,11 @@ public class DefaultPipeliteLockerTest {
     LockService lockService = mock(LockService.class);
     RuntimeException ex = new RuntimeException("Expected exception");
     LauncherLockEntity lock = new LauncherLockEntity();
-    when(lockService.lockLauncher(LAUNCHER_NAME, ProcessLauncherType.LAUNCHER))
+    when(lockService.lockLauncher(LAUNCHER_NAME, ProcessRunnerType.LAUNCHER))
         .thenAnswer((launcherName) -> lock);
     when(lockService.relockLauncher(lock)).thenAnswer((launcherName) -> true);
     doThrow(ex).when(lockService).unlockLauncher(lock);
-    PipeliteLocker locker = new DefaultPipeliteLocker(lockService, ProcessLauncherType.LAUNCHER);
+    PipeliteLocker locker = new DefaultPipeliteLocker(lockService, ProcessRunnerType.LAUNCHER);
     locker.init(LAUNCHER_NAME);
     locker.lock();
     assertThat(locker.getLock()).isSameAs(lock);

@@ -14,6 +14,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -43,6 +45,7 @@ public class Application {
   @Autowired private LockService lockService;
   @Autowired private MailService mailService;
   @Autowired private ConfigurableApplicationContext applicationContext;
+  @Autowired private MeterRegistry meterRegistry;
 
   private PipeliteServiceManager serverManager;
   private List<PipeliteLauncher> launchers;
@@ -134,7 +137,8 @@ public class Application {
         processService,
         scheduleService,
         stageService,
-        mailService);
+        mailService,
+        meterRegistry);
   }
 
   private PipeliteLauncher createLauncher(String pipelineName) {
@@ -148,6 +152,7 @@ public class Application {
         processService,
         stageService,
         mailService,
+        meterRegistry,
         pipelineName);
   }
 

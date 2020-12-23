@@ -20,10 +20,16 @@ import pipelite.stage.StageExecutionResultType;
 public class TestPipeline implements ProcessFactory {
 
   public static final String PIPELINE_NAME = "testPipeline";
+  public static final int PIPELINE_PARALLELISM = 5;
 
   @Override
   public String getPipelineName() {
     return PIPELINE_NAME;
+  }
+
+  @Override
+  public int getProcessParallelism() {
+    return PIPELINE_PARALLELISM;
   }
 
   @Override

@@ -22,6 +22,11 @@ public class UIController {
     return "schedules";
   }
 
+  @RequestMapping("/pipelines")
+  public String pipelines() {
+    return "pipelines";
+  }
+
   @RequestMapping("/processes")
   public String processes() {
     return "processes";

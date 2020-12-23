@@ -90,7 +90,7 @@ public class ProcessRunnerPoolServiceTest {
     doReturn(true).when(processRunnerPoolService).isActive();
 
     assertThat(processRunnerPoolService.getLauncherName()).isEqualTo(LAUNCHER_NAME);
-    assertThat(processRunnerPoolService.getActiveProcessRunnerCount()).isZero();
+    assertThat(processRunnerPoolService.getActiveProcessCount()).isZero();
     assertThat(processRunnerPoolService.getActiveProcessRunners()).isEmpty();
 
     assertThat(lockCallCnt.get()).isZero();

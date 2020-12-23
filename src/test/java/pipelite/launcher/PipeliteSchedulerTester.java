@@ -17,6 +17,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -30,6 +32,7 @@ import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.entity.StageEntity;
 import pipelite.executor.StageExecutorParameters;
+import pipelite.launcher.process.runner.ProcessRunnerStats;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessState;
@@ -61,6 +64,7 @@ public class PipeliteSchedulerTester {
   @Autowired private TestProcessFactory firstProcessException;
   @Autowired private TestProcessFactory secondProcessException;
   @Autowired private TestProcessFactory thirdProcessException;
+  @Autowired private MeterRegistry meterRegistry;
 
   @TestConfiguration
   static class TestConfig {
@@ -125,7 +129,8 @@ public class PipeliteSchedulerTester {
         processService,
         scheduleService,
         stageService,
-        mailService);
+        mailService,
+        meterRegistry);
   }
 
   @Value
@@ -161,6 +166,11 @@ public class PipeliteSchedulerTester {
     @Override
     public String getPipelineName() {
       return pipelineName;
+    }
+
+    @Override
+    public int getProcessParallelism() {
+      return 1;
     }
 
     @Override
@@ -219,22 +229,20 @@ public class PipeliteSchedulerTester {
   private void assertSchedulerStats(PipeliteScheduler pipeliteScheduler, TestProcessFactory f) {
     String pipelineName = f.getPipelineName();
 
-    ProcessLauncherStats stats = pipeliteScheduler.getStats(pipelineName);
+    ProcessRunnerStats stats = pipeliteScheduler.getStats(pipelineName);
 
     assertThat(stats.getProcessCreationFailedCount()).isEqualTo(0);
     assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
 
     if (f.stageTestResult != StageTestResult.SUCCESS) {
-      assertThat(stats.getProcessExecutionCount(ProcessState.FAILED))
-          .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
-      assertThat(stats.getStageFailedCount()).isEqualTo(f.stageExecCnt.get());
-      assertThat(stats.getStageSuccessCount()).isEqualTo(0L);
+      assertThat(stats.getFailedProcessCount()).isEqualTo(f.stageExecCnt.get() / f.stageCnt);
+      assertThat(stats.getFailedStageCount()).isEqualTo(f.stageExecCnt.get());
+      assertThat(stats.getSuccessfulStageCount()).isEqualTo(0L);
 
     } else {
-      assertThat(stats.getProcessExecutionCount(ProcessState.COMPLETED))
-          .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
-      assertThat(stats.getStageFailedCount()).isEqualTo(0L);
-      assertThat(stats.getStageSuccessCount()).isEqualTo(f.stageExecCnt.get());
+      assertThat(stats.getCompletedProcessCount()).isEqualTo(f.stageExecCnt.get() / f.stageCnt);
+      assertThat(stats.getFailedStageCount()).isEqualTo(0L);
+      assertThat(stats.getSuccessfulStageCount()).isEqualTo(f.stageExecCnt.get());
     }
   }
 

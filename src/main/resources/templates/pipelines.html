@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <div th:replace="fragments/header :: header"></div>
+    <title>Pipelines</title>
+    <script>
+$(document).ready( function () {
+    $('#pipelinesTable').DataTable({
+        columns: [
+            { data: "pipelineName" },
+            { data: "maxRunningProcessCount" },
+            { data: "runningProcessCount" },
+            { data: "queuedProcessCount" },
+            { data: "completedProcessCount" },
+            { data: "failedProcessCount" },
+            { data: "processExceptionCount" },
+            { data: "successfulStageCount" },
+            { data: "failedStageCount" },
+            { data: "stageExceptionCount" },
+            {
+                "data": null,
+                "defaultContent": "<button class=\"btn btn-outline-secondary mr-2\">Processes</button>"
+            }
+        ],
+        dom: 'frtBip',
+        buttons: {
+            buttons: [
+                { extend: 'copy', className: 'btn btn-outline-secondary' },
+                { extend: 'csv', className: 'btn btn-outline-secondary' },
+                { extend: 'excel', className: 'btn btn-outline-secondary' }
+            ],
+            dom: {
+    		  button: {
+	    	    className: 'btn'
+	          }
+            }
+        },
+        orderCellsTop: true,
+        fixedHeader: true,
+        language : {
+           "zeroRecords": " "
+        },
+    })
+
+    // Process button is pressed.
+    $('#pipelinesTable tbody').on( 'click', 'button', function () {
+        var table = $('#pipelinesTable').DataTable();
+        var data = table.row( $(this).parents('tr') ).data();
+        var url = "/pipelite/ui/processes?pipelineName=" + data.pipelineName;
+        window.location.href = url;
+    });
+
+    show();
+});
+
+
+// Show the filter badges and table.
+function show() {
+    var table = $('#pipelinesTable').DataTable();
+    var since = $( "#since" ).val();
+
+    // Show the filter badges.
+    var sinceBadgeText = "Reporting window: last ";
+
+    var minutes = since % 60;
+    var hours = (since-minutes)/60;
+
+    if (hours == 1) {
+        sinceBadgeText = sinceBadgeText + hours + " hour ";
+    }
+    else if (hours > 1) {
+        sinceBadgeText = sinceBadgeText + hours + " hours ";
+    }
+    if (minutes == 1) {
+        sinceBadgeText = sinceBadgeText + minutes + " minute";
+    }
+    else if (minutes > 1) {
+        sinceBadgeText = sinceBadgeText + minutes + " minutes";
+    }
+    $( "#sinceBadge" ).text(sinceBadgeText);
+
+    // Show the tables.
+    var url = "/pipelite/pipeline/local?since=" + since;
+    console.log(url);
+    $.get(url, function(data, status) {
+        table.clear().rows.add(data).draw();
+     });
+};
+
+    </script>
+</head>
+
+<body>
+<div th:replace="fragments/navigation :: navigation"></div>
+
+
+<div class="card m-2">
+    <div class="card-body">
+        <h5 class="card-title">Select reporting window</h5>
+        <div class="form-inline m-2">
+
+            <select class="custom-select m-2" id="since">
+                <option value="5" selected>Last 5 minutes</option>
+                <option value="15">Last 15 minutes</option>
+                <option value="30">Last 30 minutes</option>
+                <option value="60">Last 1 hour</option>
+                <option value="120">Last 2 hours</option>
+                <option value="240">Last 4 hours</option>
+                <option value="480">Last 8 hours</option>
+                <option value="720">Last 12 hours</option>
+                <option value="1440">Last 24 hours</option>
+            </select>
+
+            <button type="submit" class="btn btn-primary m-2" onclick="show()">Show pipelines</button>
+        </div>
+    </div>
+</div>
+
+<div class="card m-2">
+    <div class="card-body">
+        <h5 class="card-title">Pipelines running in this server</h5>
+        <p class="card-text">
+            <span class="badge badge-secondary" id="sinceBadge"></span>
+        </p>
+
+        <table id="pipelinesTable" class="table table-striped table-hover" style="width:100%">
+
+            <!-- Header Table -->
+            <thead>
+            <tr>
+                <th>Pipeline name</th>
+                <th>Max. running processes</th>
+                <th>Running processes</th>
+                <th>Queued processes</th>
+                <th>Completed processes</th>
+                <th>Failed processes</th>
+                <th>Process exceptions</th>
+                <th>Completed stages</th>
+                <th>Failed stages</th>
+                <th>Stage exceptions</th>
+                <th>Processes</th>
+            </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>

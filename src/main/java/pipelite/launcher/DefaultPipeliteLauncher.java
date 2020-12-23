@@ -10,6 +10,7 @@
  */
 package pipelite.launcher;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
 import pipelite.configuration.WebConfiguration;
@@ -19,6 +20,7 @@ import pipelite.launcher.process.queue.DefaultProcessQueue;
 import pipelite.launcher.process.queue.ProcessQueue;
 import pipelite.launcher.process.runner.DefaultProcessRunner;
 import pipelite.launcher.process.runner.DefaultProcessRunnerPool;
+import pipelite.launcher.process.runner.ProcessRunnerType;
 import pipelite.lock.DefaultPipeliteLocker;
 import pipelite.lock.PipeliteLocker;
 import pipelite.process.ProcessFactory;
@@ -29,26 +31,30 @@ public class DefaultPipeliteLauncher {
   private DefaultPipeliteLauncher() {}
 
   public static PipeliteLauncher create(
-      WebConfiguration webConfiguration,
-      LauncherConfiguration launcherConfiguration,
-      StageConfiguration stageConfiguration,
-      LockService lockService,
-      ProcessFactoryService processFactoryService,
-      ProcessSourceService processSourceService,
-      ProcessService processService,
-      StageService stageService,
-      MailService mailService,
-      String pipelineName) {
+          WebConfiguration webConfiguration,
+          LauncherConfiguration launcherConfiguration,
+          StageConfiguration stageConfiguration,
+          LockService lockService,
+          ProcessFactoryService processFactoryService,
+          ProcessSourceService processSourceService,
+          ProcessService processService,
+          StageService stageService,
+          MailService mailService,
+          MeterRegistry meterRegistry, String pipelineName) {
 
     PipeliteLocker pipeliteLocker =
-        new DefaultPipeliteLocker(lockService, ProcessLauncherType.LAUNCHER);
+        new DefaultPipeliteLocker(lockService, ProcessRunnerType.LAUNCHER);
     ProcessFactory processFactory = processFactoryService.create(pipelineName);
     ProcessCreator processCreator =
         new DefaultProcessCreator(
             processSourceService.create(pipelineName), processService, pipelineName);
     ProcessQueue processQueue =
         new DefaultProcessQueue(
-            webConfiguration, launcherConfiguration, processService, pipelineName);
+            webConfiguration,
+            launcherConfiguration,
+            processService,
+            pipelineName,
+            processFactory.getProcessParallelism());
     return new PipeliteLauncher(
         launcherConfiguration,
         pipeliteLocker,
@@ -64,6 +70,7 @@ public class DefaultPipeliteLauncher {
                         stageConfiguration,
                         processService,
                         stageService,
-                        mailService)));
+                        mailService)),
+        meterRegistry);
   }
 }

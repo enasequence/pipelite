@@ -25,6 +25,7 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.WebConfiguration;
 import pipelite.entity.LauncherLockEntity;
+import pipelite.launcher.process.runner.ProcessRunnerType;
 import pipelite.repository.LauncherLockRepository;
 import pipelite.repository.ProcessLockRepository;
 import pipelite.service.LockService;
@@ -61,7 +62,7 @@ public class PipeliteUnlockerTest {
         .forEach(s -> lockService.unlockLauncher(s));
     lockService.unlockProcessesByPipelineName(pipelineName);
     LauncherLockEntity launcherLock =
-        lockService.lockLauncher(launcherName, ProcessLauncherType.LAUNCHER);
+        lockService.lockLauncher(launcherName, ProcessRunnerType.LAUNCHER);
     assertThat(lockService.getProcessLocks(launcherLock)).isEmpty();
 
     assertTrue(lockService.lockProcess(launcherLock, pipelineName, "1"));
@@ -100,7 +101,7 @@ public class PipeliteUnlockerTest {
         .forEach(s -> lockService.unlockLauncher(s));
     lockService.unlockProcessesByPipelineName(pipelineName);
     LauncherLockEntity launcherLock =
-        lockService.lockLauncher(launcherName, ProcessLauncherType.LAUNCHER);
+        lockService.lockLauncher(launcherName, ProcessRunnerType.LAUNCHER);
     assertThat(lockService.getProcessLocks(launcherLock)).isEmpty();
 
     assertTrue(lockService.lockProcess(launcherLock, pipelineName, "1"));

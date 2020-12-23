@@ -59,7 +59,6 @@ public class DefaultProcessQueueTest {
     launcherConfiguration.setProcessQueueMaxRefreshFrequency(refreshFrequency);
     launcherConfiguration.setProcessQueueMinRefreshFrequency(refreshFrequency);
     launcherConfiguration.setProcessQueueMaxSize(processQueueMaxSize);
-    launcherConfiguration.setProcessParallelism(processParallelism);
 
     ProcessService processService = mock(ProcessService.class);
 
@@ -73,7 +72,11 @@ public class DefaultProcessQueueTest {
     DefaultProcessQueue queue =
         spy(
             new DefaultProcessQueue(
-                webConfiguration, launcherConfiguration, processService, pipelineName));
+                webConfiguration,
+                launcherConfiguration,
+                processService,
+                pipelineName,
+                processParallelism));
 
     assertThat(queue.isFillQueue()).isTrue();
     assertThat(queue.isAvailableProcesses(0)).isFalse();

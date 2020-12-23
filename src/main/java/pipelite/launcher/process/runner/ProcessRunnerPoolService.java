@@ -70,7 +70,6 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
       // Renew lock to avoid lock expiry.
       locker.renewLock();
 
-      // TODO: review exception handling policy
       try {
         run();
       } catch (Exception ex) {
@@ -78,7 +77,7 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
             "Unexpected exception from service: %s", getLauncherName());
       }
 
-      if (pool.getActiveProcessRunnerCount() == 0 && shutdownIfIdle()) {
+      if (pool.getActiveProcessCount() == 0 && shutdownIfIdle()) {
         log.atInfo().log("Stopping idle service: %s", getLauncherName());
         shutdown = true;
         stopAsync();
@@ -119,17 +118,21 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
     return locker.getLauncherName();
   }
 
+  {
+
+  }
+
   @Override
   public void runProcess(String pipelineName, Process process, ProcessRunnerCallback callback) {
     pool.runProcess(pipelineName, process, callback);
   }
 
   @Override
-  public int getActiveProcessRunnerCount() {
+  public int getActiveProcessCount() {
     if (pool == null) {
       return 0;
     }
-    return pool.getActiveProcessRunnerCount();
+    return pool.getActiveProcessCount();
   }
 
   @Override

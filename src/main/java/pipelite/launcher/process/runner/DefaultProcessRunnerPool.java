@@ -102,7 +102,7 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
             p -> p.getPipelineName().equals(pipelineName) && p.getProcessId().equals(processId));
   }
 
-  public int getActiveProcessRunnerCount() {
+  public int getActiveProcessCount() {
     return active.size();
   }
 

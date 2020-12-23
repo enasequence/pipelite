@@ -21,7 +21,6 @@ import pipelite.PipeliteTestConfiguration;
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     classes = PipeliteTestConfiguration.class,
     properties = {
-      "pipelite.launcher.processParallelism=5",
       "pipelite.launcher.processLaunchFrequency=250ms",
       "pipelite.launcher.stageLaunchFrequency=250ms",
       "pipelite.launcher.shutdownIfIdle=true"

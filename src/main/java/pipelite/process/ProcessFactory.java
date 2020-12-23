@@ -15,7 +15,19 @@ import pipelite.entity.ProcessEntity;
 
 public interface ProcessFactory {
 
+  /**
+   * Returns the pipeline name. The pipeline name must be unique.
+   *
+   * @return the pipeine name
+   */
   String getPipelineName();
+
+  /**
+   * Returns the maximum number of parallel process executions for the pipeline.
+   *
+   * @return the maximum number of parallel process executions for the pipeline.
+   */
+  int getProcessParallelism();
 
   Process create(String processId);
 

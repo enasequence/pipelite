@@ -13,7 +13,7 @@ package pipelite.lock;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.entity.LauncherLockEntity;
-import pipelite.launcher.ProcessLauncherType;
+import pipelite.launcher.process.runner.ProcessRunnerType;
 import pipelite.service.LockService;
 
 @Flogger
@@ -21,11 +21,11 @@ import pipelite.service.LockService;
 public class DefaultPipeliteLocker implements PipeliteLocker {
 
   private final LockService lockService;
-  private final ProcessLauncherType launcherType;
+  private final ProcessRunnerType launcherType;
   private String launcherName;
   private LauncherLockEntity lock;
 
-  public DefaultPipeliteLocker(LockService lockService, ProcessLauncherType launcherType) {
+  public DefaultPipeliteLocker(LockService lockService, ProcessRunnerType launcherType) {
     Assert.notNull(lockService, "Missing locker service");
     Assert.notNull(launcherType, "Missing process launcher type");
     this.lockService = lockService;

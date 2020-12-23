@@ -47,11 +47,17 @@ $(document).ready( function () {
     });
 
     // Set up autocomplete for pipeline name.
-    var url = "/pipelite/pipeline/";
+    var url = "/pipelite/process/local";
     $.get(url, function(data, status) {
+
         var pipelineNames = data.map(function (obj) {
             return obj.pipelineName;
         });
+        function onlyUnique(value, index, self) {
+            return self.indexOf(value) === index;
+        }
+        pipelineNames = pipelineNames.filter(onlyUnique);
+
         $( "#pipelineName" ).autocomplete({
           source: pipelineNames,
           minLength: 0,
@@ -74,6 +80,7 @@ $(document).ready( function () {
     if (processId) {
        $( "#processId" ).val(processId);
     }
+
     show();
 });
 

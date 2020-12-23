@@ -19,6 +19,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
@@ -27,6 +29,7 @@ import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
+import pipelite.launcher.process.runner.ProcessRunnerStats;
 import pipelite.lock.PipeliteLocker;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
@@ -43,9 +46,10 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   private final List<Schedule> schedules = Collections.synchronizedList(new ArrayList<>());
   private final Set<Schedule> runningSchedules = ConcurrentHashMap.newKeySet();
   private final Map<String, AtomicLong> maximumExecutions = new ConcurrentHashMap<>();
-  private final Map<String, ProcessLauncherStats> stats = new ConcurrentHashMap<>();
+  private final Map<String, ProcessRunnerStats> stats = new ConcurrentHashMap<>();
   private final Duration scheduleRefreshFrequency;
   private ZonedDateTime scheduleValidUntil = ZonedDateTime.now();
+  private MeterRegistry meterRegistry;
 
   public static class Schedule {
     private final ScheduleEntity scheduleEntity;
@@ -113,7 +117,8 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
       ProcessFactoryService processFactoryService,
       ScheduleService scheduleService,
       ProcessService processService,
-      Supplier<ProcessRunnerPool> processRunnerPoolSupplier) {
+      Supplier<ProcessRunnerPool> processRunnerPoolSupplier,
+      MeterRegistry meterRegistry) {
     super(
         launcherConfiguration,
         pipeliteLocker,
@@ -127,6 +132,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     this.scheduleService = scheduleService;
     this.processService = processService;
     this.scheduleRefreshFrequency = launcherConfiguration.getScheduleRefreshFrequency();
+    this.meterRegistry = meterRegistry;
   }
 
   @Override
@@ -144,6 +150,8 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     }
     scheduleProcesses();
     executeSchedules();
+
+    purgeStats();
   }
 
   private void executeSchedules() {
@@ -405,7 +413,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     Process process =
         ProcessFactory.create(processEntity, processFactoryCache.getProcessFactory(pipelineName));
     if (process == null) {
-      getStats(pipelineName).addProcessCreationFailedCount(1);
+      getStats(pipelineName).addProcessCreationFailed(1);
       logContext(log.atSevere(), pipelineName, processId).log("Failed to create scheduled process");
       return false;
     }
@@ -419,7 +427,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
         (p, r) -> {
           scheduleService.endExecution(scheduleEntity);
           schedule.endExecution();
-          getStats(pipelineName).add(p, r);
+          getStats(pipelineName).addProcessRunnerResult(p.getProcessEntity().getState(), r);
           runningSchedules.remove(schedule);
         });
     return true;
@@ -485,9 +493,15 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     this.maximumExecutions.get(pipelineName).set(maximumExecutions);
   }
 
-  public ProcessLauncherStats getStats(String pipelineName) {
-    stats.putIfAbsent(pipelineName, new ProcessLauncherStats());
+  public ProcessRunnerStats getStats(String pipelineName) {
+    stats.putIfAbsent(pipelineName, new ProcessRunnerStats(pipelineName, meterRegistry));
     return stats.get(pipelineName);
+  }
+
+  private void purgeStats() {
+    for (ProcessRunnerStats stats : stats.values()) {
+      stats.purge();
+    }
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {

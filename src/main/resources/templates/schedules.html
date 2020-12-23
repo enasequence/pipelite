@@ -16,9 +16,9 @@ $(document).ready( function () {
             { data: "pipelineName" },
             { data: "cron" },
             { data: "description" },
-            { data: "lastExecution" },
-            { data: "activeExecution" },
-            { data: "nextExecution" },
+            { data: "lastExecutionEndTime" },
+            { data: "runningExecutionStartTime" },
+            { data: "nextExecutionStartTime" },
             { data: "timeSinceLastExecution" },
             { data: "currentExecutionTime" },
             { data: "timeUntilNextExecution" },
@@ -75,9 +75,9 @@ $(document).ready( function () {
                 <th>Pipeline name</th>
                 <th>Cron</th>
                 <th>Description</th>
-                <th>Last execution</th>
-                <th>Active execution</th>
-                <th>Next execution</th>
+                <th>Last execution end time</th>
+                <th>Running execution start time</th>
+                <th>Next execution start time</th>
                 <th>Time since last execution</th>
                 <th>Current execution time</th>
                 <th>Time until next execution</th>
