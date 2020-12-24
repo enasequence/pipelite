@@ -319,7 +319,12 @@ public class LockService {
    * @return true if the launcher is locked
    */
   public boolean isLauncherLocked(String launcherName) {
-    return launcherLockRepository.findByLauncherName(launcherName).isPresent();
+    Optional<LauncherLockEntity> launcherLock =
+        launcherLockRepository.findByLauncherName(launcherName);
+    if (!launcherLock.isPresent()) {
+      return false;
+    }
+    return launcherLock.get().getExpiry().isAfter(ZonedDateTime.now());
   }
 
   /**

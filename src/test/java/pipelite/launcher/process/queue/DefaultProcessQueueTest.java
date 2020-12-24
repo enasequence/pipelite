@@ -66,7 +66,7 @@ public class DefaultProcessQueueTest {
         Collections.nCopies(getActiveProcessCnt, mock(ProcessEntity.class));
     List<ProcessEntity> pendingEntities =
         Collections.nCopies(getPendingProcessCnt, mock(ProcessEntity.class));
-    doReturn(activeEntities).when(processService).getActiveProcesses(any(), any(), eq(150));
+    doReturn(activeEntities).when(processService).getActiveProcesses(any(), eq(150));
     doReturn(pendingEntities).when(processService).getPendingProcesses(any(), eq(50));
 
     DefaultProcessQueue queue =

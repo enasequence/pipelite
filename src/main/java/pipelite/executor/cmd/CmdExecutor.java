@@ -64,13 +64,13 @@ public class CmdExecutor implements StageExecutor {
       result.addAttribute(StageExecutionResult.EXIT_CODE, cmdRunnerResult.getExitCode());
       result.setStdout(cmdRunnerResult.getStdout());
       result.setStderr(cmdRunnerResult.getStderr());
+      result.setCmdRunnerResult(cmdRunnerResult);
       return result;
 
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Failed call: %s", execCmd);
-      StageExecutionResult result = StageExecutionResult.error();
+      StageExecutionResult result = StageExecutionResult.error(ex);
       result.addAttribute(StageExecutionResult.COMMAND, execCmd);
-      result.addExceptionAttribute(ex);
       getDispatcherJobId(result);
       return result;
     }

@@ -10,6 +10,7 @@
  */
 package pipelite.service;
 
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -76,9 +77,9 @@ public class ProcessService {
    * @return the active processes for a pipeline in priority order
    */
   public List<ProcessEntity> getActiveProcesses(
-      String pipelineName, String launcherName, int limit) {
+      String pipelineName, int limit) {
     try (Stream<ProcessEntity> strm =
-        repository.findActiveOrderByPriorityDesc(pipelineName, launcherName)) {
+        repository.findActiveNotLockedOrderByPriorityDesc(pipelineName, ZonedDateTime.now())) {
       return list(strm, limit);
     }
   }

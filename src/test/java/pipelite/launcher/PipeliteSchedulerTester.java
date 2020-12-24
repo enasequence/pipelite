@@ -350,24 +350,12 @@ public class PipeliteSchedulerTester {
     }
   }
 
-  public void testOneSuccessSchedule() {
-    test(Arrays.asList(firstProcessSuccess));
-  }
-
   public void testThreeSuccessSchedules() {
     test(Arrays.asList(firstProcessSuccess, secondProcessSuccess, thirdProcessSuccess));
   }
 
-  public void testOneFailureSchedule() {
-    test(Arrays.asList(firstProcessFailure));
-  }
-
   public void testThreeFailureSchedules() {
     test(Arrays.asList(firstProcessFailure, secondProcessFailure, thirdProcessFailure));
-  }
-
-  public void testOneExceptionSchedule() {
-    test(Arrays.asList(firstProcessException));
   }
 
   public void testThreeExceptionSchedules() {

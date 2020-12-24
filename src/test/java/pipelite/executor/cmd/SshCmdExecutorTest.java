@@ -22,9 +22,12 @@ import pipelite.configuration.SingularityTestConfiguration;
 import pipelite.configuration.SshTestConfiguration;
 import pipelite.executor.StageExecutor;
 import pipelite.executor.StageExecutorParameters;
+import pipelite.executor.cmd.runner.CmdRunnerResult;
 import pipelite.stage.Stage;
 import pipelite.stage.StageExecutionResult;
 import pipelite.stage.StageExecutionResultType;
+
+import java.time.Duration;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
@@ -43,6 +46,7 @@ public class SshCmdExecutorTest {
 
     StageExecutorParameters executorParams = StageExecutorParameters.builder().build();
     executorParams.setHost(sshTestConfiguration.getHost());
+    executorParams.setTimeout(Duration.ofSeconds(30));
 
     Stage stage =
         Stage.builder()
@@ -52,10 +56,14 @@ public class SshCmdExecutorTest {
             .build();
 
     StageExecutionResult result = stage.execute(PIPELINE_NAME, PROCESS_ID);
-    assertThat(result.getResultType()).isEqualTo(StageExecutionResultType.SUCCESS);
-    assertThat(result.getAttribute(StageExecutionResult.COMMAND)).isEqualTo("echo test");
-    assertThat(result.getAttribute(StageExecutionResult.EXIT_CODE)).isEqualTo("0");
-    assertThat(result.getStdout()).isEqualTo("test\n");
+    // Ignore timeout errors.
+    if (CmdRunnerResult.InternalError.TIMEOUT_CMD
+        != result.getCmdRunnerResult().getInternalError()) {
+      assertThat(result.getResultType()).isEqualTo(StageExecutionResultType.SUCCESS);
+      assertThat(result.getAttribute(StageExecutionResult.COMMAND)).isEqualTo("echo test");
+      assertThat(result.getAttribute(StageExecutionResult.EXIT_CODE)).isEqualTo("0");
+      assertThat(result.getStdout()).isEqualTo("test\n");
+    }
   }
 
   @Test
@@ -64,6 +72,7 @@ public class SshCmdExecutorTest {
     StageExecutorParameters executorParams = StageExecutorParameters.builder().build();
     executorParams.setHost(singularityTestConfiguration.getHost());
     executorParams.setSingularityImage("docker://enasequence/webin-cli");
+    executorParams.setTimeout(Duration.ofSeconds(30));
 
     String stageName = "testStageName";
 
@@ -75,10 +84,14 @@ public class SshCmdExecutorTest {
             .build();
 
     StageExecutionResult result = stage.execute(PIPELINE_NAME, PROCESS_ID);
-    assertThat(result.getResultType()).isEqualTo(StageExecutionResultType.ERROR);
-    assertThat(result.getAttribute(StageExecutionResult.COMMAND))
-        .isEqualTo("singularity run docker://enasequence/webin-cli ");
-    assertThat(result.getStdout()).contains("Creating container runtime...");
-    assertThat(result.getAttribute(StageExecutionResult.EXIT_CODE)).isEqualTo("2");
+    // Ignore timeout errors.
+    if (CmdRunnerResult.InternalError.TIMEOUT_CMD
+        != result.getCmdRunnerResult().getInternalError()) {
+      assertThat(result.getResultType()).isEqualTo(StageExecutionResultType.ERROR);
+      assertThat(result.getAttribute(StageExecutionResult.COMMAND))
+          .isEqualTo("singularity run docker://enasequence/webin-cli ");
+      assertThat(result.getStdout()).contains("Creating container runtime...");
+      assertThat(result.getAttribute(StageExecutionResult.EXIT_CODE)).isEqualTo("2");
+    }
   }
 }

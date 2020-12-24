@@ -30,7 +30,8 @@ public class LocalCmdRunner implements CmdRunner {
   @Override
   public CmdRunnerResult execute(String cmd, StageExecutorParameters executorParams) {
     if (cmd == null) {
-      return new CmdRunnerResult(EXIT_CODE_ERROR, null, null);
+      return new CmdRunnerResult(
+          EXIT_CODE_ERROR, null, null, CmdRunnerResult.InternalError.NULL_CMD);
     }
 
     StringTokenizer st = new StringTokenizer(cmd);
@@ -38,7 +39,8 @@ public class LocalCmdRunner implements CmdRunner {
     st.setQuoteMatcher(sm);
     List<String> args = st.getTokenList();
     if (args.isEmpty()) {
-      return new CmdRunnerResult(EXIT_CODE_ERROR, null, null);
+      return new CmdRunnerResult(
+          EXIT_CODE_ERROR, null, null, CmdRunnerResult.InternalError.EMPTY_CMD);
     }
 
     try {
@@ -68,11 +70,12 @@ public class LocalCmdRunner implements CmdRunner {
       log.atInfo().log("Executing system call: %s", cmd);
 
       int exitCode = apacheExecutor.execute(commandLine, executorParams.getEnv());
-      return new CmdRunnerResult(exitCode, getStream(stdoutStream), getStream(stderrStream));
+      return new CmdRunnerResult(exitCode, getStream(stdoutStream), getStream(stderrStream), null);
 
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Failed system call: %s", cmd);
-      return new CmdRunnerResult(EXIT_CODE_ERROR, null, null);
+      return new CmdRunnerResult(
+          EXIT_CODE_ERROR, null, null, CmdRunnerResult.InternalError.EXCEPTION_CMD);
     }
   }
 

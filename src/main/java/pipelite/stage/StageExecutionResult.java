@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import lombok.*;
 import lombok.extern.flogger.Flogger;
+import pipelite.executor.cmd.runner.CmdRunnerResult;
 import pipelite.json.Json;
 
 @Data
@@ -25,6 +26,7 @@ public class StageExecutionResult {
   private StageExecutionResultType resultType;
   private String stdout;
   private String stderr;
+  private CmdRunnerResult cmdRunnerResult;
 
   public StageExecutionResult(StageExecutionResultType resultType) {
     this.resultType = resultType;

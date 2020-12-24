@@ -40,7 +40,7 @@ public class LsfSshCmdExecutorTest {
   private final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
 
   @Test
-  @Timeout(value = 60, unit = TimeUnit.SECONDS)
+  @Timeout(value = 60)
   public void test() {
 
     LsfCmdExecutor executor = StageExecutor.createLsfSshCmdExecutor("echo test");

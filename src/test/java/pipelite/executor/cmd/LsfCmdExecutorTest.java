@@ -84,7 +84,7 @@ public class LsfCmdExecutorTest {
 
     @Override
     protected CmdRunner getCmdRunner() {
-      return (cmd, executorParams) -> new CmdRunnerResult(0, "Job <13454> is submitted", "");
+      return (cmd, executorParams) -> new CmdRunnerResult(0, "Job <13454> is submitted", "", null);
     }
   }
 

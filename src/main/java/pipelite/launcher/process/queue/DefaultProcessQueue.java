@@ -135,7 +135,7 @@ public class DefaultProcessQueue implements ProcessQueue {
   }
 
   public List<ProcessEntity> getActiveProcesses() {
-    return processService.getActiveProcesses(pipelineName, launcherName, processQueueMaxSize);
+    return processService.getActiveProcesses(pipelineName, processQueueMaxSize);
   }
 
   public List<ProcessEntity> getPendingProcesses() {

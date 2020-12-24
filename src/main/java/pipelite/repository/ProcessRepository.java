@@ -10,6 +10,7 @@
  */
 package pipelite.repository;
 
+import java.time.ZonedDateTime;
 import java.util.stream.Stream;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -73,17 +74,17 @@ public interface ProcessRepository extends CrudRepository<ProcessEntity, Process
       String pipelineName, ProcessState state);
 
   /**
-   * Finds active processes except ones that are locked by other launchers.
+   * Finds active processes that are not locked.
    *
    * @param pipelineName the pipeline name
-   * @param launcherName the launcher name
-   * @return the active processes except ones that are locked by other launchers
+   * @param now the current time
+   * @return the active processes that are not locked
    */
   @Query(
       value =
-          "SELECT * FROM PIPELITE_PROCESS A WHERE PIPELINE_NAME = ?1 AND STATE = 'ACTIVE' AND NOT EXISTS (SELECT 1 FROM PIPELITE_PROCESS_LOCK B JOIN PIPELITE_LAUNCHER_LOCK C USING (LAUNCHER_ID) WHERE A.PIPELINE_NAME = B.PIPELINE_NAME AND A.PROCESS_ID = B.PROCESS_ID AND C.LAUNCHER_NAME IS NOT NULL) ORDER BY PRIORITY DESC",
+          "SELECT * FROM PIPELITE_PROCESS A WHERE PIPELINE_NAME = ?1 AND STATE = 'ACTIVE' AND NOT EXISTS (SELECT 1 FROM PIPELITE_PROCESS_LOCK B JOIN PIPELITE_LAUNCHER_LOCK C USING (LAUNCHER_ID) WHERE A.PIPELINE_NAME = B.PIPELINE_NAME AND A.PROCESS_ID = B.PROCESS_ID AND C.EXPIRY > ?2) ORDER BY PRIORITY DESC",
       nativeQuery = true)
-  Stream<ProcessEntity> findActiveOrderByPriorityDesc(String pipelineName, String launcherName);
+  Stream<ProcessEntity> findActiveNotLockedOrderByPriorityDesc(String pipelineName, ZonedDateTime now);
 
   /**
    * Finds maximum process id for a pipeline.

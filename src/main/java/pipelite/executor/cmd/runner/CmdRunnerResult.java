@@ -17,4 +17,12 @@ public class CmdRunnerResult {
   private final int exitCode;
   private final String stdout;
   private final String stderr;
+  private final InternalError internalError;
+
+  public enum InternalError {
+    NULL_CMD,
+    EMPTY_CMD,
+    EXCEPTION_CMD,
+    TIMEOUT_CMD
+  }
 }

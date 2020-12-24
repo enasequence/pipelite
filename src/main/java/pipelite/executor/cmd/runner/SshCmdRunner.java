@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.time.Duration;
 import java.util.EnumSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.flogger.Flogger;
 import org.apache.sshd.client.SshClient;
@@ -25,18 +26,23 @@ import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.session.SessionHeartbeatController;
 import pipelite.executor.StageExecutorParameters;
 import pipelite.executor.stream.KeepOldestByteArrayOutputStream;
-
+/** Executes a command over ssh. */
 @Flogger
 public class SshCmdRunner implements CmdRunner {
 
   public static final int SSH_PORT = 22;
-  public static final int SSH_TIMEOUT_SECONDS = 60;
+  public static final int SSH_VERIFY_SECONDS = 60;
   public static final int SSH_HEARTBEAT_SECONDS = 10;
 
   @Override
   public CmdRunnerResult execute(String cmd, StageExecutorParameters executorParams) {
     if (cmd == null) {
-      return new CmdRunnerResult(EXIT_CODE_ERROR, null, null);
+      return new CmdRunnerResult(
+          EXIT_CODE_ERROR, null, null, CmdRunnerResult.InternalError.NULL_CMD);
+    }
+    if (cmd.trim().isEmpty()) {
+      return new CmdRunnerResult(
+          EXIT_CODE_ERROR, null, null, CmdRunnerResult.InternalError.EMPTY_CMD);
     }
 
     SshClient client = null;
@@ -56,10 +62,10 @@ public class SshCmdRunner implements CmdRunner {
       try (ClientSession session =
           client
               .connect(user, executorParams.getHost(), SSH_PORT)
-              .verify(SSH_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+              .verify(SSH_VERIFY_SECONDS, TimeUnit.SECONDS)
               .getSession()) {
 
-        session.auth().verify(SSH_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        session.auth().verify(SSH_VERIFY_SECONDS, TimeUnit.SECONDS);
 
         session.setSessionHeartbeat(
             SessionHeartbeatController.HeartbeatType.IGNORE,
@@ -69,16 +75,25 @@ public class SshCmdRunner implements CmdRunner {
         channel.setOut(stdoutStream);
         channel.setErr(stderrStream);
 
-        channel.open().verify(SSH_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        channel.open().verify(SSH_VERIFY_SECONDS, TimeUnit.SECONDS);
 
-        channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), executorParams.getTimeout());
+        Set<ClientChannelEvent> events =
+            channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), executorParams.getTimeout());
+
+        if (events.contains(ClientChannelEvent.TIMEOUT)) {
+          log.atSevere().log("Failed ssh call because of timeout: %s", cmd);
+          return new CmdRunnerResult(
+              EXIT_CODE_ERROR, null, null, CmdRunnerResult.InternalError.TIMEOUT_CMD);
+        }
 
         int exitCode = channel.getExitStatus();
-        return new CmdRunnerResult(exitCode, getStream(stdoutStream), getStream(stderrStream));
+        return new CmdRunnerResult(
+            exitCode, getStream(stdoutStream), getStream(stderrStream), null);
       }
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Failed ssh call: %s", cmd);
-      return new CmdRunnerResult(EXIT_CODE_ERROR, null, null);
+      return new CmdRunnerResult(
+          EXIT_CODE_ERROR, null, null, CmdRunnerResult.InternalError.EXCEPTION_CMD);
     } finally {
       if (client != null) {
         client.stop();
