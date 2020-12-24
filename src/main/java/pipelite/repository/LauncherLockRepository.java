@@ -12,13 +12,16 @@ package pipelite.repository;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import pipelite.entity.LauncherLockEntity;
 
 @Repository
-public interface LauncherLockRepository extends CrudRepository<LauncherLockEntity, String> {
-  List<LauncherLockEntity> findByLauncherName(String launcherName);
+public interface LauncherLockRepository extends JpaRepository<LauncherLockEntity, Long> {
+  Optional<LauncherLockEntity> findByLauncherName(String launcherName);
 
-  List<LauncherLockEntity> findByExpiryLessThan(ZonedDateTime expiry);
+  Long deleteByLauncherNameAndExpiryLessThanEqual(String launcherName, ZonedDateTime expiry);
 }

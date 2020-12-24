@@ -30,7 +30,6 @@ import pipelite.controller.info.ServiceInfo;
 import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.PipeliteScheduler;
 import pipelite.launcher.PipeliteService;
-import pipelite.launcher.PipeliteUnlocker;
 
 @RestController
 @RequestMapping(value = "/service")
@@ -69,11 +68,6 @@ public class ServiceController {
     if (service instanceof PipeliteScheduler) {
       serviceType = "PipeliteScheduler";
       description = "Runs processes for one or more schedules";
-      pipelineName = "";
-    }
-    if (service instanceof PipeliteUnlocker) {
-      serviceType = "PipeliteUnlocker";
-      description = "Removes expired locks";
       pipelineName = "";
     }
     services.add(

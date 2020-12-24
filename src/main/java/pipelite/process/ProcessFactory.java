@@ -13,6 +13,7 @@ package pipelite.process;
 import com.google.common.flogger.FluentLogger;
 import pipelite.entity.ProcessEntity;
 
+/** Creates new process instances for execution given process ids. */
 public interface ProcessFactory {
 
   /**
@@ -29,6 +30,12 @@ public interface ProcessFactory {
    */
   int getProcessParallelism();
 
+  /**
+   * Creates a new process instance for execution given process id.
+   *
+   * @param processId the process id
+   * @return a new process instance for execution with the given process id
+   */
   Process create(String processId);
 
   FluentLogger log = FluentLogger.forEnclosingClass();

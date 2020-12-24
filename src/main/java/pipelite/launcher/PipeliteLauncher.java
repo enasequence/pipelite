@@ -26,6 +26,12 @@ import pipelite.lock.PipeliteLocker;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 
+/**
+ * Executes processes in parallel for one pipeline. New process instances are created using {@link
+ * pipelite.process.ProcessFactory} for process ids waiting to be executed. New process ids are
+ * provided by {@link pipelite.process.ProcessSource} or they are inserted into the PIPELITE_PROCESS
+ * table.
+ */
 @Flogger
 public class PipeliteLauncher extends ProcessRunnerPoolService {
 

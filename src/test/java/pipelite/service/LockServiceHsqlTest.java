@@ -13,30 +13,34 @@ package pipelite.service;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 import pipelite.PipeliteTestConfiguration;
-import pipelite.configuration.LauncherConfiguration;
 
-@SpringBootTest(classes = PipeliteTestConfiguration.class)
+@SpringBootTest(
+    classes = PipeliteTestConfiguration.class,
+    properties = {"pipelite.launcher.pipelineLockDuration=5s"})
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 public class LockServiceHsqlTest {
 
   @Autowired LockService service;
-  @Autowired LauncherConfiguration launcherConfiguration;
 
   @Test
-  @Transactional
-  @Rollback
   public void testLauncherLocks() {
-    LockServiceTester.testLauncherLocks(service, launcherConfiguration.getPipelineLockDuration());
+    LockServiceTester.testLauncherLocks(service);
   }
 
   @Test
-  @Transactional
-  @Rollback
   public void testProcessLocks() {
     LockServiceTester.testProcessLocks(service);
+  }
+
+  @Test
+  public void testRemoveExpiredLauncherLock() {
+    LockServiceTester.testRemoveExpiredLauncherLock(service);
+  }
+
+  @Test
+  public void testRemoveExpiredProcessLock() {
+    LockServiceTester.testRemoveExpiredProcessLock(service);
   }
 }

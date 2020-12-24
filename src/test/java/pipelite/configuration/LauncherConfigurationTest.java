@@ -22,8 +22,7 @@ import pipelite.PipeliteTestConfiguration;
     classes = PipeliteTestConfiguration.class,
     properties = {
       "pipelite.launcher.pipelineName=TEST1,TEST2",
-      "pipelite.launcher.schedulerName=TEST",
-      "pipelite.launcher.unlockerName=TEST3"
+      "pipelite.launcher.schedulerName=TEST"
     })
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 public class LauncherConfigurationTest {
@@ -46,10 +45,5 @@ public class LauncherConfigurationTest {
   public void getSchedulerName() {
     assertThat(config.getSchedulerName()).isEqualTo("TEST");
     assertThat(LauncherConfiguration.getSchedulerName(config)).isEqualTo("TEST");
-  }
-
-  @Test
-  public void getUnlockerName() {
-    assertThat(config.getUnlockerName()).isEqualTo("TEST3");
   }
 }

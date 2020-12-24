@@ -16,17 +16,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.util.concurrent.TimeUnit;
+
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.LauncherLockEntity;
 import pipelite.launcher.process.runner.ProcessRunnerType;
+import pipelite.time.Time;
 
 public class LockServiceTester {
 
-  private static final String pipelineName = UniqueStringGenerator.randomPipelineName();
-  private static final String launcherName1 = UniqueStringGenerator.randomLauncherName();
-  private static final String launcherName2 = UniqueStringGenerator.randomLauncherName();
+  public static void testLauncherLocks(LockService service) {
+    String launcherName1 = UniqueStringGenerator.randomLauncherName();
+    String launcherName2 = UniqueStringGenerator.randomLauncherName();
 
-  public static void testLauncherLocks(LockService service, Duration lockDuration) {
     service.getLauncherLocksByLauncherName(launcherName1).forEach(s -> service.unlockLauncher(s));
     service.getLauncherLocksByLauncherName(launcherName2).forEach(s -> service.unlockLauncher(s));
 
@@ -41,12 +43,14 @@ public class LockServiceTester {
     assertThat(launcherLock1.getLauncherId()).isGreaterThan(0);
     assertThat(launcherLock1.getLauncherName()).isEqualTo(launcherName1);
     assertThat(launcherLock1.getExpiry())
-        .isAfterOrEqualTo(ZonedDateTime.now().plus(lockDuration).minus(Duration.ofSeconds(10)));
+        .isAfterOrEqualTo(
+            ZonedDateTime.now().plus(service.getLockDuration()).minus(Duration.ofSeconds(10)));
 
     assertThat(launcherLock2.getLauncherId()).isGreaterThan(0);
     assertThat(launcherLock2.getLauncherName()).isEqualTo(launcherName2);
     assertThat(launcherLock2.getExpiry())
-        .isAfterOrEqualTo(ZonedDateTime.now().plus(lockDuration).minus(Duration.ofSeconds(10)));
+        .isAfterOrEqualTo(
+            ZonedDateTime.now().plus(service.getLockDuration()).minus(Duration.ofSeconds(10)));
 
     assertThat(launcherLock1.getLauncherId()).isLessThan(launcherLock2.getLauncherId());
 
@@ -78,6 +82,10 @@ public class LockServiceTester {
   }
 
   public static void testProcessLocks(LockService service) {
+    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String launcherName1 = UniqueStringGenerator.randomLauncherName();
+    String launcherName2 = UniqueStringGenerator.randomLauncherName();
+
     service.getLauncherLocksByLauncherName(launcherName1).forEach(s -> service.unlockLauncher(s));
     service.getLauncherLocksByLauncherName(launcherName2).forEach(s -> service.unlockLauncher(s));
 
@@ -127,5 +135,63 @@ public class LockServiceTester {
     assertFalse(service.isProcessLocked(pipelineName, "2"));
     assertFalse(service.isProcessLocked(pipelineName, "3"));
     assertFalse(service.isProcessLocked(pipelineName, "4"));
+  }
+
+  // Test fails if the lock is not created and checked for the first time within the lock duration.
+  public static void testRemoveExpiredLauncherLock(LockService service) {
+    String launcherName1 = UniqueStringGenerator.randomLauncherName();
+    String launcherName2 = UniqueStringGenerator.randomLauncherName();
+
+    service.getLauncherLocksByLauncherName(launcherName1).forEach(s -> service.unlockLauncher(s));
+    service.getLauncherLocksByLauncherName(launcherName2).forEach(s -> service.unlockLauncher(s));
+
+    assertThat(service.lockLauncher(launcherName1, ProcessRunnerType.LAUNCHER)).isNotNull();
+    assertThat(service.isLauncherLocked(launcherName1)).isTrue();
+
+    // Expired lock will not be removed.
+    assertThat(service.lockLauncher(launcherName1, ProcessRunnerType.LAUNCHER)).isNull();
+    assertThat(service.isLauncherLocked(launcherName1)).isTrue();
+
+    Time.wait(service.getLockDuration());
+
+    // Expired lock will be removed.
+    assertThat(service.lockLauncher(launcherName1, ProcessRunnerType.LAUNCHER)).isNotNull();
+    assertThat(service.isLauncherLocked(launcherName1)).isTrue();
+  }
+
+  // Test fails if the lock is not created and checked for the first time within the lock duration.
+  public static void testRemoveExpiredProcessLock(LockService service) {
+    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String launcherName1 = UniqueStringGenerator.randomLauncherName();
+    String launcherName2 = UniqueStringGenerator.randomLauncherName();
+
+    service.getLauncherLocksByLauncherName(launcherName1).forEach(s -> service.unlockLauncher(s));
+    service.getLauncherLocksByLauncherName(launcherName2).forEach(s -> service.unlockLauncher(s));
+
+    LauncherLockEntity launcherLock1 =
+        service.lockLauncher(launcherName1, ProcessRunnerType.LAUNCHER);
+    LauncherLockEntity launcherLock2 =
+        service.lockLauncher(launcherName2, ProcessRunnerType.LAUNCHER);
+
+    assertThat(service.isLauncherLocked(launcherName1)).isTrue();
+    assertThat(service.isLauncherLocked(launcherName2)).isTrue();
+
+    String processId = "1";
+
+    assertThat(service.isProcessLocked(pipelineName, processId)).isFalse();
+    assertThat(service.lockProcess(launcherLock1, pipelineName, processId)).isTrue();
+    assertThat(service.lockProcess(launcherLock2, pipelineName, processId)).isFalse();
+    assertThat(service.isProcessLocked(pipelineName, processId)).isTrue();
+
+    // Expired lock will not be removed.
+    assertThat(service.lockProcess(launcherLock2, pipelineName, processId)).isFalse();
+    assertThat(service.isProcessLocked(pipelineName, processId)).isTrue();
+
+    Time.wait(service.getLockDuration());
+
+    // Expired lock will be removed.
+    service.relockLauncher(launcherLock2);
+    assertThat(service.lockProcess(launcherLock2, pipelineName, processId)).isTrue();
+    assertThat(service.isProcessLocked(pipelineName, processId)).isTrue();
   }
 }

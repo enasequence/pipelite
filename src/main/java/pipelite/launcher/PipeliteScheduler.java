@@ -36,6 +36,11 @@ import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessFactoryCache;
 import pipelite.service.*;
 
+/**
+ * Executes non-parallel processes using cron schedules. New process instances are created using
+ * {@link pipelite.process.ProcessFactory}. New process ids are inserted into the PIPELITE_PROCESS
+ * table by the {@link pipelite.launcher.PipeliteScheduler}.
+ */
 @Flogger
 public class PipeliteScheduler extends ProcessRunnerPoolService {
 

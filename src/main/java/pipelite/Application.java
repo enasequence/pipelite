@@ -49,7 +49,6 @@ public class Application {
   private PipeliteServiceManager serverManager;
   private List<PipeliteLauncher> launchers;
   private PipeliteScheduler scheduler;
-  private PipeliteUnlocker unlocker;
   private boolean shutdown;
 
   @PostConstruct
@@ -67,7 +66,6 @@ public class Application {
     }
     launchers = null;
     scheduler = null;
-    unlocker = null;
   }
 
   /** Restarts all services. */
@@ -113,10 +111,6 @@ public class Application {
         scheduler = createScheduler();
         serverManager.addService(scheduler);
       }
-      if (launcherConfiguration.getUnlockerName() != null) {
-        unlocker = createUnlocker();
-        serverManager.addService(unlocker);
-      }
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Unexpected exception when starting pipelite services");
       throw new RuntimeException(ex);
@@ -153,10 +147,6 @@ public class Application {
         mailService,
         meterRegistry,
         pipelineName);
-  }
-
-  private PipeliteUnlocker createUnlocker() {
-    return new PipeliteUnlocker(launcherConfiguration, lockService);
   }
 
   private void run() {

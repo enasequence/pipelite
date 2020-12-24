@@ -12,6 +12,8 @@ package pipelite.repository;
 
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import pipelite.entity.ProcessLockEntity;
@@ -19,16 +21,11 @@ import pipelite.entity.ProcessLockEntityId;
 
 @Repository
 public interface ProcessLockRepository
-    extends CrudRepository<ProcessLockEntity, ProcessLockEntityId> {
-
-  Optional<ProcessLockEntity> findByLauncherIdAndPipelineNameAndProcessId(
-      Long launcherId, String pipelineName, String processId);
+    extends JpaRepository<ProcessLockEntity, ProcessLockEntityId> {
 
   Optional<ProcessLockEntity> findByPipelineNameAndProcessId(String pipelineName, String processId);
 
-  List<ProcessLockEntity> findByLauncherId(Long launcherId);
+  Long deleteByLauncherId(Long launcherId);
 
-  void deleteByPipelineName(String pipelineName);
-
-  void deleteByLauncherId(Long launcherId);
+  Long deleteByPipelineNameAndProcessId(String pipelineName, String processId);
 }

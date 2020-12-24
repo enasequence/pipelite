@@ -12,12 +12,20 @@ package pipelite.service;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.WebConfiguration;
 import pipelite.entity.LauncherLockEntity;
@@ -36,56 +44,90 @@ public class LockService {
   private final WebConfiguration webConfiguration;
   private final LauncherLockRepository launcherLockRepository;
   private final ProcessLockRepository processLockRepository;
-  private final Duration lockDuration;
+  private final PlatformTransactionManager transactionManager;
+  private Duration lockDuration;
 
   public LockService(
       @Autowired LauncherConfiguration launcherConfiguration,
       @Autowired WebConfiguration webConfiguration,
       @Autowired LauncherLockRepository launcherLockRepository,
-      @Autowired ProcessLockRepository processLockRepository) {
+      @Autowired ProcessLockRepository processLockRepository,
+      @Autowired PlatformTransactionManager transactionManager) {
     this.launcherConfiguration = launcherConfiguration;
     this.webConfiguration = webConfiguration;
     this.launcherLockRepository = launcherLockRepository;
     this.processLockRepository = processLockRepository;
+    this.transactionManager = transactionManager;
     this.lockDuration = launcherConfiguration.getPipelineLockDuration();
   }
 
   /**
    * Locks the launcher.
    *
+   * @param launcherName the launcher name
+   * @param launcherType the launcher type
    * @return the launcher lock or null if the lock could not be created.
    */
   public LauncherLockEntity lockLauncher(String launcherName, ProcessRunnerType launcherType) {
-    log.atInfo().with(LogKey.LAUNCHER_NAME, launcherName).log("Attempting to lock launcher");
+    // Use transaction template to catch DataIntegrityViolationException thrown during commit.
+    TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+    transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     try {
-      LauncherLockEntity launcherLock = new LauncherLockEntity();
-      launcherLock.setLauncherName(launcherName);
-      launcherLock.setLauncherType(launcherType);
-      launcherLock.setExpiry(ZonedDateTime.now().plus(lockDuration));
-      launcherLock.setHost(WebConfiguration.getCanonicalHostName());
-      launcherLock.setPort(webConfiguration.getPort());
-      launcherLock.setContextPath(webConfiguration.getContextPath());
-      launcherLock = launcherLockRepository.save(launcherLock);
-      if (launcherLock.getLauncherId() == null) {
-        log.atSevere()
-            .with(LogKey.LAUNCHER_NAME, launcherName)
-            .log("Failed to lock launcher: missing launcher id");
-        return null;
-      }
-      log.atInfo().with(LogKey.LAUNCHER_NAME, launcherName).log("Locked launcher");
-      return launcherLock;
-    } catch (Exception ex) {
+      return transactionTemplate.execute(status -> lockLauncherThrows(launcherName, launcherType));
+    } catch (DataIntegrityViolationException ex) {
+      // Locking a launcher may throw DataIntegrityViolationException during commit.
       log.atSevere()
           .with(LogKey.LAUNCHER_NAME, launcherName)
-          .withCause(ex)
+          // .withCause(ex)
           .log("Failed to lock launcher");
       return null;
     }
   }
 
+  private LauncherLockEntity lockLauncherThrows(
+      String launcherName, ProcessRunnerType launcherType) {
+    log.atInfo().with(LogKey.LAUNCHER_NAME, launcherName).log("Attempting to lock launcher");
+    removeExpiredLauncherLock(launcherName);
+    LauncherLockEntity launcherLock = new LauncherLockEntity();
+    launcherLock.setLauncherName(launcherName);
+    launcherLock.setLauncherType(launcherType);
+    launcherLock.setExpiry(ZonedDateTime.now().plus(lockDuration));
+    launcherLock.setHost(WebConfiguration.getCanonicalHostName());
+    launcherLock.setPort(webConfiguration.getPort());
+    launcherLock.setContextPath(webConfiguration.getContextPath());
+    launcherLock = launcherLockRepository.save(launcherLock);
+    if (launcherLock.getLauncherId() == null) {
+      log.atSevere()
+          .with(LogKey.LAUNCHER_NAME, launcherName)
+          .log("Failed to lock launcher: missing launcher id");
+      return null;
+    }
+    log.atInfo().with(LogKey.LAUNCHER_NAME, launcherName).log("Locked launcher");
+    return launcherLock;
+  }
+
+  /**
+   * Remove expired launcher lock.
+   *
+   * @param launcherName the launcher name
+   * @return true if an expired launcher lock was removed
+   */
+  private boolean removeExpiredLauncherLock(String launcherName) {
+    if (launcherLockRepository.deleteByLauncherNameAndExpiryLessThanEqual(
+            launcherName, ZonedDateTime.now())
+        > 0) {
+      // Flush to make sure delete is done before new lock is saved.
+      launcherLockRepository.flush();
+      log.atInfo().with(LogKey.LAUNCHER_NAME, launcherName).log("Removed expired launcher lock");
+      return true;
+    }
+    return false;
+  }
+
   /**
    * Relocks the launcher to avoid lock expiry.
    *
+   * @param launcherLock the launcher lock
    * @return true if successful.
    */
   public boolean relockLauncher(LauncherLockEntity launcherLock) {
@@ -108,7 +150,11 @@ public class LockService {
     }
   }
 
-  /** Unlocks the launcher. */
+  /**
+   * Unlocks the launcher.
+   *
+   * @param launcherLock the launcher lock
+   */
   public void unlockLauncher(LauncherLockEntity launcherLock) {
     log.atInfo()
         .with(LogKey.LAUNCHER_NAME, launcherLock.getLauncherName())
@@ -129,41 +175,89 @@ public class LockService {
   /**
    * Locks the process.
    *
+   * @param launcherLock the launcher lock
+   * @param pipelineName the pipeline name
+   * @param processId the process id
    * @return true if successful.
    */
   public boolean lockProcess(
+      LauncherLockEntity launcherLock, String pipelineName, String processId) {
+    // Use transaction template to catch DataIntegrityViolationException thrown during commit.
+    TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+    transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    try {
+      return transactionTemplate.execute(
+          status -> lockProcessThrows(launcherLock, pipelineName, processId));
+    } catch (DataIntegrityViolationException ex) {
+      // Locking a process may throw DataIntegrityViolationException during commit.
+      log.atSevere()
+          .with(LogKey.LAUNCHER_NAME, launcherLock.getLauncherName())
+          .with(LogKey.PIPELINE_NAME, pipelineName)
+          .with(LogKey.PROCESS_ID, processId)
+          // .withCause(ex)
+          .log("Failed to lock process");
+      return false;
+    }
+  }
+
+  private boolean lockProcessThrows(
       LauncherLockEntity launcherLock, String pipelineName, String processId) {
     log.atInfo()
         .with(LogKey.LAUNCHER_NAME, launcherLock.getLauncherName())
         .with(LogKey.PIPELINE_NAME, pipelineName)
         .with(LogKey.PROCESS_ID, processId)
         .log("Attempting to lock process");
-    try {
-      ProcessLockEntity processLock = new ProcessLockEntity();
-      processLock.setLauncherId(launcherLock.getLauncherId());
-      processLock.setPipelineName(pipelineName);
-      processLock.setProcessId(processId);
-      processLockRepository.save(processLock);
-      log.atInfo()
-          .with(LogKey.LAUNCHER_NAME, launcherLock.getLauncherName())
-          .with(LogKey.PIPELINE_NAME, pipelineName)
-          .with(LogKey.PROCESS_ID, processId)
-          .log("Locked process");
-      return true;
-    } catch (Exception ex) {
-      log.atSevere()
-          .with(LogKey.LAUNCHER_NAME, launcherLock.getLauncherName())
-          .with(LogKey.PIPELINE_NAME, pipelineName)
-          .with(LogKey.PROCESS_ID, processId)
-          .withCause(ex)
-          .log("Failed to lock process");
+    removeExpiredProcessLock(pipelineName, processId);
+
+    if (isProcessLocked(pipelineName, processId)) {
       return false;
     }
+
+    ProcessLockEntity processLock = new ProcessLockEntity();
+    processLock.setLauncherId(launcherLock.getLauncherId());
+    processLock.setPipelineName(pipelineName);
+    processLock.setProcessId(processId);
+    processLockRepository.save(processLock);
+    log.atInfo()
+        .with(LogKey.LAUNCHER_NAME, launcherLock.getLauncherName())
+        .with(LogKey.PIPELINE_NAME, pipelineName)
+        .with(LogKey.PROCESS_ID, processId)
+        .log("Locked process");
+    return true;
+  }
+
+  /**
+   * Remove expired process lock.
+   *
+   * @param pipelineName the pipeline name
+   * @param processId the process id
+   * @return true if an expired process lock was removed
+   */
+  private boolean removeExpiredProcessLock(String pipelineName, String processId) {
+    Optional<ProcessLockEntity> processLock =
+        processLockRepository.findByPipelineNameAndProcessId(pipelineName, processId);
+    if (!processLock.isPresent()) {
+      return false;
+    }
+    Optional<LauncherLockEntity> launcherLock =
+        launcherLockRepository.findById(processLock.get().getLauncherId());
+    if (!launcherLock.isPresent()) {
+      // Remove process lock as launcher lock does not exist.
+      return processLockRepository.deleteByPipelineNameAndProcessId(pipelineName, processId) > 0;
+    }
+    if (!launcherLock.get().getExpiry().isAfter(ZonedDateTime.now())) {
+      // Remove process lock as launcher lock has expired.
+      return processLockRepository.deleteByPipelineNameAndProcessId(pipelineName, processId) > 0;
+    }
+    return false;
   }
 
   /**
    * Unlocks the process.
    *
+   * @param launcherLock the launcher lock
+   * @param pipelineName the pipeline name
+   * @param processId the process id
    * @return true if successful.
    */
   public boolean unlockProcess(
@@ -196,21 +290,11 @@ public class LockService {
     }
   }
 
-  /** Unlocks the processes associated with a pipeline. */
-  public void unlockProcessesByPipelineName(String pipelineName) {
-    log.atInfo().with(LogKey.PIPELINE_NAME, pipelineName).log("Attempting to unlock processes");
-    try {
-      processLockRepository.deleteByPipelineName(pipelineName);
-      log.atInfo().with(LogKey.PIPELINE_NAME, pipelineName).log("Unlock processes");
-    } catch (Exception ex) {
-      log.atSevere()
-          .with(LogKey.PIPELINE_NAME, pipelineName)
-          .withCause(ex)
-          .log("Failed to unlock processes");
-    }
-  }
-
-  /** Unlocks the processes associated with a launcher. */
+  /**
+   * Unlocks the processes associated with a launcher.
+   *
+   * @param launcherLock the launcher lock
+   */
   public void unlockProcesses(LauncherLockEntity launcherLock) {
     log.atInfo()
         .with(LogKey.LAUNCHER_NAME, launcherLock.getLauncherName())
@@ -229,6 +313,16 @@ public class LockService {
   }
 
   /**
+   * Returns true if the launcher is locked.
+   *
+   * @param launcherName the launcher name
+   * @return true if the launcher is locked
+   */
+  public boolean isLauncherLocked(String launcherName) {
+    return launcherLockRepository.findByLauncherName(launcherName).isPresent();
+  }
+
+  /**
    * Returns true if the process is locked.
    *
    * @param pipelineName the pipeline name
@@ -236,20 +330,33 @@ public class LockService {
    * @return true if the process is locked
    */
   public boolean isProcessLocked(String pipelineName, String processId) {
-    return processLockRepository
-        .findByPipelineNameAndProcessId(pipelineName, processId)
-        .isPresent();
+    Optional<ProcessLockEntity> processLock =
+        processLockRepository.findByPipelineNameAndProcessId(pipelineName, processId);
+    if (!processLock.isPresent()) {
+      return false;
+    }
+    Optional<LauncherLockEntity> launcherLock =
+        launcherLockRepository.findById(processLock.get().getLauncherId());
+    if (!launcherLock.isPresent()) {
+      return false;
+    }
+    return launcherLock.get().getExpiry().isAfter(ZonedDateTime.now());
+  }
+
+  /**
+   * Returns the lock duration.
+   *
+   * @return the lock duration.
+   */
+  public Duration getLockDuration() {
+    return lockDuration;
   }
 
   public List<LauncherLockEntity> getLauncherLocksByLauncherName(String launcherName) {
-    return launcherLockRepository.findByLauncherName(launcherName);
-  }
-
-  public List<LauncherLockEntity> getExpiredLauncherLocks() {
-    return launcherLockRepository.findByExpiryLessThan(ZonedDateTime.now());
-  }
-
-  public List<ProcessLockEntity> getProcessLocks(LauncherLockEntity launcherLock) {
-    return processLockRepository.findByLauncherId(launcherLock.getLauncherId());
+    Optional<LauncherLockEntity> lock = launcherLockRepository.findByLauncherName(launcherName);
+    if (lock.isPresent()) {
+      return Arrays.asList(lock.get());
+    }
+    return Collections.emptyList();
   }
 }
