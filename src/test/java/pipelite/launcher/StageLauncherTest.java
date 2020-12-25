@@ -19,10 +19,10 @@ import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
-import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
 

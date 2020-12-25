@@ -22,8 +22,8 @@ import org.apache.sshd.client.channel.ClientChannel;
 import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.session.SessionHeartbeatController;
-import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.executor.cmd.stream.KeepOldestByteArrayOutputStream;
+import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.stage.executor.StageExecutorResult;
 
 /** Executes a command over ssh. */

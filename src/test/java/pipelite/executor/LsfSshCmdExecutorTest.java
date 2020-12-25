@@ -23,8 +23,8 @@ import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LsfTestConfiguration;
 import pipelite.exception.PipeliteInterruptedException;
-import pipelite.stage.executor.*;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.*;
 import pipelite.time.Time;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)

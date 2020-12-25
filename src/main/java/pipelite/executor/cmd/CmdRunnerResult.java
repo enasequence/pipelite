@@ -10,11 +10,11 @@
  */
 package pipelite.executor.cmd;
 
+import static pipelite.executor.cmd.CmdRunner.EXIT_CODE_SUCCESS;
+
 import lombok.Getter;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
-
-import static pipelite.executor.cmd.CmdRunner.EXIT_CODE_SUCCESS;
 
 @Getter
 public class CmdRunnerResult {
@@ -23,7 +23,8 @@ public class CmdRunnerResult {
   private final String stderr;
   private final StageExecutorResult.InternalError internalError;
 
-  public CmdRunnerResult(int exitCode, String stdout, String stderr, StageExecutorResult.InternalError internalError) {
+  public CmdRunnerResult(
+      int exitCode, String stdout, String stderr, StageExecutorResult.InternalError internalError) {
     this.exitCode = exitCode;
     this.stdout = stdout;
     this.stderr = stderr;

@@ -16,14 +16,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfiguration;
-import pipelite.executor.CmdExecutor;
 import pipelite.executor.cmd.LocalCmdRunner;
 import pipelite.executor.cmd.SshCmdRunner;
+import pipelite.json.Json;
+import pipelite.stage.Stage;
 import pipelite.stage.executor.EmptySyncStageExecutor;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorParameters;
-import pipelite.json.Json;
-import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResultType;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)

@@ -14,8 +14,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
-import pipelite.stage.executor.*;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.*;
 
 public class LocalCmdExecutorTest {
 

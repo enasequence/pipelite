@@ -15,8 +15,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import lombok.Data;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
-import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
 

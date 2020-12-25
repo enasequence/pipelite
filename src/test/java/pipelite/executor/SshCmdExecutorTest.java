@@ -12,6 +12,7 @@ package pipelite.executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -20,10 +21,8 @@ import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.SingularityTestConfiguration;
 import pipelite.configuration.SshTestConfiguration;
-import pipelite.stage.executor.*;
 import pipelite.stage.Stage;
-
-import java.time.Duration;
+import pipelite.stage.executor.*;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})

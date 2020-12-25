@@ -14,11 +14,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import pipelite.stage.Stage;
 import pipelite.stage.executor.EmptyAsyncStageExecutor;
 import pipelite.stage.executor.EmptySyncStageExecutor;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorParameters;
-import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResultType;
 
 public class StageBuilder {

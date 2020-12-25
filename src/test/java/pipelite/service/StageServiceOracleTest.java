@@ -21,8 +21,8 @@ import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageOutEntity;
-import pipelite.stage.executor.EmptySyncStageExecutor;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.EmptySyncStageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
 

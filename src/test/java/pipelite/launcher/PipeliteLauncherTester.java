@@ -30,7 +30,6 @@ import pipelite.configuration.StageConfiguration;
 import pipelite.configuration.WebConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
-import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.launcher.process.runner.ProcessRunnerStats;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
@@ -38,6 +37,7 @@ import pipelite.process.ProcessSource;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.*;
+import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
 

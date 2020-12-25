@@ -27,8 +27,6 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
 import pipelite.configuration.WebConfiguration;
-import pipelite.stage.executor.StageExecutor;
-import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.launcher.process.runner.ProcessRunnerStats;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
@@ -36,6 +34,8 @@ import pipelite.process.ProcessSource;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.*;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.StageExecutor;
+import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.stage.executor.StageExecutorResult;
 
 @Component

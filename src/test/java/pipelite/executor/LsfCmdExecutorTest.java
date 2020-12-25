@@ -30,9 +30,9 @@ import pipelite.configuration.LsfTestConfiguration;
 import pipelite.executor.cmd.CmdRunnerResult;
 import pipelite.executor.cmd.LocalCmdRunner;
 import pipelite.executor.cmd.SshCmdRunner;
-import pipelite.stage.executor.*;
 import pipelite.json.Json;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.*;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
@@ -188,7 +188,7 @@ public class LsfCmdExecutorTest {
     lsfCmdExecutor.setJobId("test");
     lsfCmdExecutor.setStdoutFile("test");
     ZonedDateTime startTime =
-            ZonedDateTime.of(LocalDateTime.of(2020, 1, 1, 1, 1), ZoneId.of("UTC"));
+        ZonedDateTime.of(LocalDateTime.of(2020, 1, 1, 1, 1), ZoneId.of("UTC"));
     lsfCmdExecutor.setStartTime(startTime);
     String json = Json.serialize(lsfCmdExecutor);
     assertThat(json)

@@ -17,10 +17,10 @@ import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
 import pipelite.exception.PipeliteInterruptedException;
-import pipelite.stage.executor.ConfigurableStageExecutorParameters;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.ConfigurableStageExecutorParameters;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.time.Time;
 

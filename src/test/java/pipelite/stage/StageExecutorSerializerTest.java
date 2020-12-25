@@ -15,7 +15,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import pipelite.entity.StageEntity;
-import pipelite.stage.*;
 import pipelite.stage.executor.*;
 
 public class StageExecutorSerializerTest {

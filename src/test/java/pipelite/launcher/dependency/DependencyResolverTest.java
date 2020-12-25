@@ -18,11 +18,11 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.StageEntity;
-import pipelite.stage.executor.EmptySyncStageExecutor;
-import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.EmptySyncStageExecutor;
+import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
 
@@ -412,8 +412,7 @@ public class DependencyResolverTest {
    * @return a list of all three stages
    */
   public static List<Stage> isDependsOnStageSuccessStages(
-      StageExecutorResultType firstStageResultType,
-      StageExecutorResultType secondStageResultType) {
+      StageExecutorResultType firstStageResultType, StageExecutorResultType secondStageResultType) {
     Process process =
         new ProcessBuilder("test")
             .execute("STAGE0")

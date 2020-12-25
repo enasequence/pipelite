@@ -18,11 +18,11 @@ import java.util.List;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import pipelite.entity.StageEntity;
-import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.stage.executor.StageExecutorResultType;
 
 public class DefaultProcessRunnerTest {

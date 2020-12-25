@@ -10,16 +10,6 @@
  */
 package pipelite.stage.executor;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.extern.flogger.Flogger;
-import pipelite.json.Json;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.Map;
-
 public class StageExecutorResultAttribute {
 
   public static final String EXIT_CODE = "exit code";

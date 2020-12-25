@@ -19,16 +19,15 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import java.io.IOException;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.cmd.*;
-import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
-
-import java.io.IOException;
 
 /** Executes a command. Must be serializable to json. */
 @Flogger
@@ -36,37 +35,39 @@ import java.io.IOException;
 @Setter
 public class CmdExecutor implements StageExecutor {
 
-  /** The command string to be executed. */
+  /** The command to be executed. */
   private String cmd;
 
-  /** The command runner used to execute the command. */
+  /** The runner to execute the command. */
   @JsonSerialize(using = CmdRunnerSerializer.class)
   @JsonDeserialize(using = CmdRunnerDeserializer.class)
   protected CmdRunner cmdRunner;
 
-  public String getDispatcherCmd(String pipelineName, String processId, Stage stage) {
+  /**
+   * Returns an optional command prefix.
+   *
+   * @param pipelineName the pipeline name
+   * @param processId the process id
+   * @param stage the stage
+   * @return an optional command prefix.
+   */
+  public String getCmdPrefix(String pipelineName, String processId, Stage stage) {
     return null;
   }
-
-  public void getDispatcherJobId(StageExecutorResult stageExecutorResult) {}
 
   public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
     String singularityImage = stage.getExecutorParams().getSingularityImage();
 
-    String execCmd = cmd;
-
-    String dispatchCommand = getDispatcherCmd(pipelineName, processId, stage);
-    if (dispatchCommand != null) {
-      String cmdPrefix = dispatchCommand + " ";
-      if (singularityImage != null) {
-        cmdPrefix += "singularity run " + singularityImage + " ";
-      }
-      execCmd = cmdPrefix + execCmd;
+    String cmdPrefix = getCmdPrefix(pipelineName, processId, stage);
+    if (cmdPrefix != null) {
+      cmdPrefix = cmdPrefix + " ";
     } else {
-      if (singularityImage != null) {
-        execCmd = "singularity run " + singularityImage + " " + execCmd;
-      }
+      cmdPrefix = "";
     }
+    if (singularityImage != null) {
+      cmdPrefix += "singularity run " + singularityImage + " ";
+    }
+    String execCmd = cmdPrefix + cmd;
 
     try {
       CmdRunnerResult result = cmdRunner.execute(execCmd, stage.getExecutorParams());
@@ -75,7 +76,6 @@ public class CmdExecutor implements StageExecutor {
       log.atSevere().withCause(ex).log("Failed call: %s", execCmd);
       StageExecutorResult result = StageExecutorResult.error(ex);
       result.addAttribute(StageExecutorResultAttribute.COMMAND, execCmd);
-      getDispatcherJobId(result);
       return result;
     }
   }
@@ -129,9 +129,10 @@ public class CmdExecutor implements StageExecutor {
     }
 
     @Override
-    public CmdRunner deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
+    public CmdRunner deserialize(JsonParser parser, DeserializationContext context)
+        throws IOException {
       try {
-        JsonNode node = jp.getCodec().readTree(jp);
+        JsonNode node = parser.getCodec().readTree(parser);
         String className = node.asText();
         return (CmdRunner) Class.forName(className).newInstance();
       } catch (Exception ex) {

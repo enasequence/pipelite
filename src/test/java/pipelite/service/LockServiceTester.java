@@ -16,8 +16,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.concurrent.TimeUnit;
-
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.LauncherLockEntity;
 import pipelite.launcher.process.runner.ProcessRunnerType;

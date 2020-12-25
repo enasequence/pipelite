@@ -24,7 +24,6 @@ import org.springframework.util.Assert;
 import pipelite.configuration.*;
 import pipelite.entity.StageEntity;
 import pipelite.exception.PipeliteInterruptedException;
-import pipelite.stage.executor.StageExecutorSerializer;
 import pipelite.launcher.StageLauncher;
 import pipelite.launcher.dependency.DependencyResolver;
 import pipelite.log.LogKey;
@@ -36,6 +35,7 @@ import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
+import pipelite.stage.executor.StageExecutorSerializer;
 import pipelite.time.Time;
 
 /** Executes a process and returns the process state. */

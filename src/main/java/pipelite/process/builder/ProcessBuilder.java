@@ -11,9 +11,9 @@
 package pipelite.process.builder;
 
 import java.util.*;
-import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.process.Process;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.StageExecutorParameters;
 
 public class ProcessBuilder {
 

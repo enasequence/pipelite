@@ -14,7 +14,6 @@ import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
@@ -184,7 +183,7 @@ public class LsfCmdExecutor extends CmdExecutor {
   }
 
   @Override
-  public final String getDispatcherCmd(String pipelineName, String processId, Stage stage) {
+  public final String getCmdPrefix(String pipelineName, String processId, Stage stage) {
 
     StringBuilder cmd = new StringBuilder();
     cmd.append(BSUB_CMD);
@@ -234,11 +233,6 @@ public class LsfCmdExecutor extends CmdExecutor {
     }
 
     return cmd.toString();
-  }
-
-  @Override
-  public final void getDispatcherJobId(StageExecutorResult stageExecutorResult) {
-    jobId = extractBsubJobIdSubmitted(stageExecutorResult.getStdout());
   }
 
   public static boolean stdoutFileExists(CmdRunner cmdRunner, String stdoutFile, Stage stage) {
