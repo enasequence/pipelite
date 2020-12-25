@@ -89,7 +89,7 @@ public class DefaultProcessQueueTest {
     assertThat(queue.fillQueue()).isEqualTo(processQueueMaxSize);
 
     verify(queue, times(1)).fillQueue();
-    verify(queue, times(1)).getAvailablActiveProcesses();
+    verify(queue, times(1)).getAvailableActiveProcesses();
     verify(queue, times(1)).getPendingProcesses();
 
     assertThat(queue.isFillQueue()).isFalse();

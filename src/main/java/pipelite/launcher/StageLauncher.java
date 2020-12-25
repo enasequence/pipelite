@@ -141,7 +141,7 @@ public class StageLauncher {
     return log.with(LogKey.PIPELINE_NAME, pipelineName)
         .with(LogKey.PROCESS_ID, process.getProcessId())
         .with(LogKey.STAGE_NAME, stage.getStageName())
-        .with(LogKey.STAGE_EXECUTION_RESULT_TYPE, stage.getStageEntity().getResultType())
+        .with(LogKey.STAGE_EXECUTOR_RESULT_TYPE, stage.getStageEntity().getResultType())
         .with(LogKey.STAGE_EXECUTION_COUNT, stage.getStageEntity().getExecutionCount());
   }
 }
