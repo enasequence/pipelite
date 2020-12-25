@@ -4,17 +4,39 @@ alter table pipelite_process modify (
   process_id varchar2(64)
 );
 
+alter table pipelite_process_audit modify (
+  process_id varchar2(64)
+);
+
 alter table pipelite_stage modify (
   process_id varchar2(64)
 );
 
-alter table pipelite_stage add (
-  EXEC_PARAMS clob,
-  EXEC_RESULT_PARAMS clob
+alter table pipelite_stage_audit modify (
+  process_id varchar2(64)
+);
+
+alter table pipelite_process add (
+    exec_start date,
+    exec_date date
+);
+
+alter table pipelite_process_audit add (
+    exec_start date,
+    exec_date date
 );
 
 alter table pipelite_stage add (
-  exec_name varchar2(4000),
+  exec_name varchar2(256),
+  exec_params clob,
+  exec_result_params clob,
+  exec_data clob
+);
+
+alter table pipelite_stage_audit add (
+  exec_name varchar2(256),
+  exec_params clob,
+  exec_result_params clob,
   exec_data clob
 );
 
@@ -41,10 +63,11 @@ create table pipelite_schedule
 	cron varchar2(256) not null,
 	active char(1),
 	description varchar2(256),
+    process_id varchar2(64),
 	exec_start date,
 	exec_date date,
     exec_cnt number(10,0) default 0 not null,
-    process_id varchar2(64),
+	exec_hist clob,
 	audit_time date default sysdate not null,
 	audit_user varchar2(30) default user not null,
 	audit_osuser varchar2(30) default SYS_CONTEXT( 'USERENV', 'OS_USER' ) not null,
@@ -59,10 +82,11 @@ create table pipelite_schedule_audit
 	cron varchar2(256),
 	active char(1),
 	description varchar2(256),
+    process_id varchar2(64),
 	exec_start date,
 	exec_date date,
     exec_cnt number(10,0),
-    process_id varchar2(64),
+	exec_hist clob,    
     audit_time date not null,
     audit_user varchar2(30) not null,
     audit_osuser varchar2(30),
@@ -98,10 +122,11 @@ begin
     	cron,
     	active,
     	description,
+        process_id,
 	    exec_start,
      	exec_date,
         exec_cnt,
-        process_id,
+        exec_hist,
         audit_time,
         audit_user,
         audit_osuser,
@@ -114,10 +139,136 @@ begin
     	:old.cron,
     	:old.active,
     	:old.description,
+        :old.process_id,
 	    :old.exec_start,
         :old.exec_date,
         :old.exec_cnt,
+        :old.exec_hist,
+        :old.audit_time,
+        :old.audit_user,
+        :old.audit_osuser,
+        audit_stmt
+      );
+    end if;
+end;
+/
+
+
+
+
+create or replace TRIGGER PIPELITE_PROCESS_AUDIT
+before insert or update or delete on PIPELITE_PROCESS
+for each row
+declare
+    audit_stmt varchar2(1);
+begin
+    if updating or inserting then
+      :new.audit_time := sysdate;
+      :new.audit_user := user;
+      :new.audit_osuser := SYS_CONTEXT( 'USERENV','OS_USER' );
+    end if;
+
+    if updating then
+      audit_stmt := 'U';
+    elsif deleting then
+      audit_stmt := 'D';
+    end if;
+
+    if ( updating or deleting ) then
+      insert into pipelite_process_audit (
+        pipeline_name,
+        process_id,
+        priority,
+        state,
+        state_comment,
+        exec_start,
+        exec_date,
+        exec_cnt,
+        audit_time,
+        audit_user,
+        audit_osuser,
+        audit_stmt
+      )
+      values
+      (
+        :old.pipeline_name,
         :old.process_id,
+        :old.priority,
+        :old.state,
+        :old.state_comment,
+        :old.exec_start,
+        :old.exec_date,
+        :old.exec_cnt,
+        :old.audit_time,
+        :old.audit_user,
+        :old.audit_osuser,
+        audit_stmt
+      );
+    end if;
+end;
+/
+
+create or replace trigger pipelite_stage_audit
+before insert or update or delete on pipelite_stage
+for each row
+declare
+    audit_stmt varchar2(1);
+begin
+    if ( updating or inserting ) then
+      :new.audit_time := sysdate;
+      :new.audit_user := user;
+      :new.audit_osuser := SYS_CONTEXT('USERENV','OS_USER');
+    end if;
+
+    if updating then
+      audit_stmt := 'U';
+    elsif deleting then
+      audit_stmt := 'D';
+    end if;
+
+    if ( updating or deleting ) then
+      insert into pipelite_stage_audit (
+        pipeline_name,
+        process_id,
+        stage_name,
+        enabled, /* TODO: remove */
+        exec_cnt,
+        exec_date,
+        exec_result,
+        exec_id, /* TODO: remove */
+        exec_start,        
+        exec_result_type,
+        exec_stdout,
+        exec_stderr,
+        exec_name,
+        exec_params,
+        exec_result_params,
+        exec_data,
+        exec_cmd_line, /* TODO: remove */
+        audit_time,
+        audit_user,
+        audit_osuser,
+        audit_stmt
+      )
+      values
+      (
+        :old.pipeline_name,
+        :old.process_id,
+        :old.stage_name,
+        :old.enabled, /* TODO: remove */
+        :old.exec_cnt,
+        :old.exec_date,
+        :old.exec_result,
+        :old.exec_id, /* TODO: remove */
+        :old.exec_start,
+        :old.exec_result_type,
+        :old.exec_stdout,
+        :old.exec_stderr,
+        :old.exec_name,
+        :old.exec_params,
+        :old.exec_result_params,
+        :old.exec_data,
+        :old.exec_cmd_line, /* TODO: remove */
         :old.audit_time,
         :old.audit_user,
         :old.audit_osuser,
@@ -172,3 +323,4 @@ end;
 
 create public synonym pipelite_process_lock for pipelite_process_lock;
 create public synonym pipelite_launcher_lock for pipelite_launcher_lock;
+

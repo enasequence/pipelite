@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.repository.ScheduleRepository;
 
@@ -45,8 +46,8 @@ public class ScheduleService {
     saveProcessSchedule(scheduleEntity);
   }
 
-  public void endExecution(ScheduleEntity scheduleEntity) {
-    scheduleEntity.endExecution();
+  public void endExecution(ScheduleEntity scheduleEntity, ProcessEntity processEntity) {
+    scheduleEntity.endExecution(processEntity);
     saveProcessSchedule(scheduleEntity);
   }
 }

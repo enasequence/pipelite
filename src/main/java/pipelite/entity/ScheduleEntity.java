@@ -16,45 +16,61 @@ import javax.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.flogger.Flogger;
 import pipelite.entity.converter.BooleanConverter;
+import pipelite.schedule.ScheduleExecution;
+import pipelite.schedule.ScheduleExecutionHistory;
 
 @Entity
 @Table(name = "PIPELITE_SCHEDULE")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Flogger
 public class ScheduleEntity {
 
+  /** Pipeline name. */
   @Id
   @Column(name = "PIPELINE_NAME")
   private String pipelineName;
 
+  /** Scheduler name. */
   @Column(name = "SCHEDULER_NAME", nullable = false)
   private String schedulerName;
 
+  /** Cron expression. */
   @Column(name = "CRON", nullable = false)
   private String cron;
 
+  /** Cron expression description. */
+  @Column(name = "DESCRIPTION")
+  private String description;
+
+  /** Is the schedule active. */
   @Column(name = "ACTIVE")
   @Convert(converter = BooleanConverter.class)
   private Boolean active;
 
-  @Column(name = "DESCRIPTION")
-  private String description;
+  /** Last execution process id. */
+  @Column(name = "PROCESS_ID")
+  private String processId;
 
-  /* The last execution start date. */
+  /** Last execution start date. */
   @Column(name = "EXEC_START")
   private ZonedDateTime startTime;
 
-  /* The last successful execution date. */
+  /** Last execution end date. */
   @Column(name = "EXEC_DATE")
   private ZonedDateTime endTime;
 
+  /** Total execution count. */
   @Column(name = "EXEC_CNT", nullable = false)
   private int executionCount = 0;
 
-  @Column(name = "PROCESS_ID")
-  private String processId;
+  /** Execution history. */
+  @Column(name = "EXEC_HIST", columnDefinition = "CLOB")
+  @Lob
+  private String executionHistory;
 
   public void startExecution(String processId) {
     this.startTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
@@ -62,10 +78,26 @@ public class ScheduleEntity {
     this.endTime = null;
   }
 
-  public void endExecution() {
-    this.startTime = null;
-    this.processId = null;
+  public void endExecution(ProcessEntity processEntity) {
+    ScheduleExecutionHistory history = null;
+    if (executionHistory != null) {
+      history = ScheduleExecutionHistory.deserialize(executionHistory);
+    }
+    if (history == null) {
+      history = new ScheduleExecutionHistory();
+    }
+    history.addExecution(new ScheduleExecution(processEntity));
+    executionHistory = history.serialize();
     this.endTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.executionCount++;
+  }
+
+  /**
+   * Returns true if process execution can be resumed.
+   *
+   * @return true if process execution can be resumed
+   */
+  public boolean isResumeProcess() {
+    return (startTime != null && endTime == null && processId != null);
   }
 }

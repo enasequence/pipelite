@@ -312,7 +312,6 @@ public class PipeliteSchedulerTest {
     // and that they are scheduled for a later execution.
 
     pipeliteScheduler.startUp();
-    verify(pipeliteScheduler, times(4)).isResumeProcess(any());
     verify(processRunnerPool, times(1)).runProcess(eq(pipelineName1), any(), any());
     verify(processRunnerPool, times(1)).runProcess(eq(pipelineName2), any(), any());
 

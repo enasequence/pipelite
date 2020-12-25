@@ -17,8 +17,12 @@ import org.junit.jupiter.api.Test;
 
 public class JsonTest {
 
+  private static class A {
+    public HashMap<String, String> map = new HashMap<>();
+  }
+
   @Test
-  public void testEmpty() {
+  public void serializeEmpty() {
     Object object = new Object();
     assertThat(Json.serialize(object)).isEqualTo("{ }");
     assertThat(Json.serializeSafely(object)).isNull();
@@ -29,13 +33,66 @@ public class JsonTest {
     map.put("test", null);
     assertThat(Json.serialize(map)).isEqualTo("{ }");
     assertThat(Json.serializeSafely(map)).isNull();
+
+    A a = new A();
+    assertThat(Json.serialize(a)).isEqualTo("{ }");
+    assertThat(Json.serializeSafely(a)).isNull();
+    a.map.put("test", null);
+    assertThat(Json.serialize(a)).isEqualTo("{ }");
+    assertThat(Json.serializeSafely(a)).isNull();
   }
 
   @Test
-  public void testNotEmpty() {
+  public void serializeNotEmpty() {
     HashMap<String, String> map = new HashMap<>();
     map.put("test", "test");
     assertThat(Json.serialize(map)).isEqualTo("{\n" + "  \"test\" : \"test\"\n" + "}");
     assertThat(Json.serializeSafely(map)).isEqualTo("{\n" + "  \"test\" : \"test\"\n" + "}");
+
+    A a = new A();
+    a.map.put("test", "test");
+    assertThat(Json.serialize(a))
+        .isEqualTo("{\n" + "  \"map\" : {\n" + "    \"test\" : \"test\"\n" + "  }\n" + "}");
+    assertThat(Json.serializeSafely(a))
+        .isEqualTo("{\n" + "  \"map\" : {\n" + "    \"test\" : \"test\"\n" + "  }\n" + "}");
+  }
+
+  @Test
+  public void deserializeEmpty() {
+    A a = Json.deserialize("{ }", A.class);
+    assertThat(a.map.size()).isZero();
+    a = Json.deserializeSafely("{ }", A.class);
+    assertThat(a.map.size()).isZero();
+  }
+
+  @Test
+  public void deserializeNotEmpty() {
+    A a =
+        Json.deserialize(
+            "{\n" + "  \"map\" : {\n" + "    \"test\" : \"test\"\n" + "  }\n" + "}", A.class);
+    assertThat(a.map.size()).isOne();
+    assertThat(a.map.get("test")).isEqualTo("test");
+    a =
+        Json.deserializeSafely(
+            "{\n" + "  \"map\" : {\n" + "    \"test\" : \"test\"\n" + "  }\n" + "}", A.class);
+    assertThat(a.map.size()).isOne();
+    assertThat(a.map.get("test")).isEqualTo("test");
+  }
+
+  @Test
+  public void deserializeInvalid() {
+    boolean isError = false;
+    try {
+      A a =
+          Json.deserialize(
+              "{\n" + "  \"invalid\" : {\n" + "    \"test\" : \"test\"\n" + "  }\n" + "}", A.class);
+    } catch (Exception ex) {
+      isError = true;
+    }
+    assertThat(isError).isTrue();
+    A a =
+        Json.deserializeSafely(
+            "{\n" + "  \"invalid\" : {\n" + "    \"test\" : \"test\"\n" + "  }\n" + "}", A.class);
+    assertThat(a).isNull();
   }
 }

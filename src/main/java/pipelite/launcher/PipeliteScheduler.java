@@ -34,6 +34,7 @@ import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessFactoryCache;
+import pipelite.schedule.Schedule;
 import pipelite.service.*;
 
 /**
@@ -54,66 +55,6 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   private final Duration scheduleRefreshFrequency;
   private ZonedDateTime scheduleValidUntil = ZonedDateTime.now();
   private MeterRegistry meterRegistry;
-
-  public static class Schedule {
-    private final ScheduleEntity scheduleEntity;
-    private ZonedDateTime launchTime;
-
-    public Schedule(ScheduleEntity scheduleEntity) {
-      Assert.notNull(scheduleEntity, "Missing schedule entity");
-      this.scheduleEntity = scheduleEntity;
-    }
-
-    public void scheduleExecution() {
-      launchTime = CronUtils.launchTime(scheduleEntity.getCron());
-    }
-
-    public void resumeExecution() {
-      launchTime = scheduleEntity.getStartTime();
-    }
-
-    public void endExecution() {
-      launchTime = null;
-    }
-
-    public void refreshSchedule(ScheduleEntity newScheduleEntity) {
-      scheduleEntity.setCron(newScheduleEntity.getCron());
-      scheduleEntity.setActive(newScheduleEntity.getActive());
-    }
-
-    public void removeSchedule() {
-      scheduleEntity.setActive(false);
-    }
-
-    public ScheduleEntity getScheduleEntity() {
-      return scheduleEntity;
-    }
-
-    public ZonedDateTime getLaunchTime() {
-      return launchTime;
-    }
-
-    public String getPipelineName() {
-      return scheduleEntity.getPipelineName();
-    }
-
-    public boolean isActive() {
-      return scheduleEntity.getActive() == null || scheduleEntity.getActive();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-      Schedule schedule = (Schedule) o;
-      return scheduleEntity.getPipelineName().equals(schedule.scheduleEntity.getPipelineName());
-    }
-
-    @Override
-    public int hashCode() {
-      return scheduleEntity.getPipelineName().hashCode();
-    }
-  }
 
   public PipeliteScheduler(
       LauncherConfiguration launcherConfiguration,
@@ -284,7 +225,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     getActiveSchedules()
         .forEach(
             schedule -> {
-              if (isResumeProcess(schedule)) {
+              if (schedule.getScheduleEntity().isResumeProcess()) {
                 if (resumeProcess(schedule)) {
                   resumedProcessesCount.incrementAndGet();
                 }
@@ -294,24 +235,13 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   }
 
   /**
-   * Returns true if process execution can be resumed.
-   *
-   * @param schedule the schedule
-   * @return true if process execution can be resumed
-   */
-  protected boolean isResumeProcess(Schedule schedule) {
-    ScheduleEntity scheduleEntity = schedule.getScheduleEntity();
-    return (scheduleEntity.getStartTime() != null && scheduleEntity.getProcessId() != null);
-  }
-
-  /**
    * Resumes process execution.
    *
    * @param schedule the schedule
    * @return true if process execution was resumed
    */
   protected boolean resumeProcess(Schedule schedule) {
-    if (!isResumeProcess(schedule)) {
+    if (!schedule.getScheduleEntity().isResumeProcess()) {
       return false;
     }
     logContext(log.atInfo(), schedule.getPipelineName()).log("Resuming process execution");
@@ -429,7 +359,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
         pipelineName,
         process,
         (p, r) -> {
-          scheduleService.endExecution(scheduleEntity);
+          scheduleService.endExecution(scheduleEntity, processEntity);
           schedule.endExecution();
           getStats(pipelineName).addProcessRunnerResult(p.getProcessEntity().getState(), r);
           runningSchedules.remove(schedule);
@@ -463,9 +393,9 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   public Stream<Schedule> getPendingSchedules() {
     return getActiveSchedules()
         // Must have launch time.
-        .filter(schedule -> schedule.launchTime != null)
+        .filter(schedule -> schedule.getLaunchTime() != null)
         // Must not be running.
-        .filter(schedule -> !isPipelineActive(schedule.scheduleEntity.getPipelineName()))
+        .filter(schedule -> !isPipelineActive(schedule.getPipelineName()))
         // Must not have exceeded maximum executions.
         .filter(
             schedule ->

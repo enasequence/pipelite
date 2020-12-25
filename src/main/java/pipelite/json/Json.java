@@ -91,6 +91,21 @@ public class Json {
     }
   }
 
+  /**
+   * Deserializes the object from JSON. Returns null if the deserialization fails.
+   *
+   * @param json the JSON string.
+   * @param clazz the return type.
+   */
+  public static <T> T deserializeSafely(String json, Class<T> clazz) {
+    try {
+      return (T) mapper.readValue(json, clazz);
+    } catch (Exception ex) {
+      log.atSevere().withCause(ex).log("Failed to deserialize json");
+      return null;
+    }
+  }
+
   private static String serializeNullIfEmpty(String json) {
     if (json == null || EMPTY_JSON.matcher(json).matches()) {
       return null;

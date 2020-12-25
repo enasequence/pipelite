@@ -30,14 +30,26 @@ class ProcessEntityTest {
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getPriority()).isEqualTo(priority);
     assertThat(processEntity.getExecutionCount()).isEqualTo(0);
+    assertThat(processEntity.getStartTime()).isNull();
+    assertThat(processEntity.getEndTime()).isNull();
     assertThat(processEntity.getState()).isEqualTo(ProcessState.PENDING);
 
-    processEntity.endExecution(ProcessState.ACTIVE);
-    assertThat(processEntity.getExecutionCount()).isEqualTo(1);
+    processEntity.startExecution();
+    assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
+    assertThat(processEntity.getProcessId()).isEqualTo(processId);
+    assertThat(processEntity.getPriority()).isEqualTo(priority);
+    assertThat(processEntity.getExecutionCount()).isEqualTo(0);
+    assertThat(processEntity.getStartTime()).isNotNull();
+    assertThat(processEntity.getEndTime()).isNull();
     assertThat(processEntity.getState()).isEqualTo(ProcessState.ACTIVE);
 
     processEntity.endExecution(ProcessState.COMPLETED);
-    assertThat(processEntity.getExecutionCount()).isEqualTo(2);
+    assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
+    assertThat(processEntity.getProcessId()).isEqualTo(processId);
+    assertThat(processEntity.getPriority()).isEqualTo(priority);
+    assertThat(processEntity.getExecutionCount()).isEqualTo(1);
+    assertThat(processEntity.getStartTime()).isNotNull();
+    assertThat(processEntity.getEndTime()).isNotNull();
     assertThat(processEntity.getState()).isEqualTo(ProcessState.COMPLETED);
   }
 

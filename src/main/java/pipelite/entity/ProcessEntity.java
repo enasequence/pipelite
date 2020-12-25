@@ -10,6 +10,8 @@
  */
 package pipelite.entity;
 
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import javax.persistence.*;
 import lombok.*;
 import pipelite.json.Json;
@@ -41,6 +43,12 @@ public class ProcessEntity {
   @Column(name = "EXEC_CNT", nullable = false)
   private Integer executionCount = 0;
 
+  @Column(name = "EXEC_START")
+  private ZonedDateTime startTime;
+
+  @Column(name = "EXEC_DATE")
+  private ZonedDateTime endTime;
+
   @Column(name = "PRIORITY", nullable = false)
   private Integer priority = DEFAULT_PRIORITY;
 
@@ -57,10 +65,13 @@ public class ProcessEntity {
 
   public void startExecution() {
     this.state = ProcessState.ACTIVE;
+    this.startTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    this.endTime = null;
   }
 
   public void endExecution(ProcessState state) {
     this.state = state;
+    this.endTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     ++executionCount;
   }
 
