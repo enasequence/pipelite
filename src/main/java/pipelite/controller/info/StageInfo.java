@@ -22,8 +22,8 @@ public class StageInfo {
   private String processId;
   private String stageName;
   private String resultType;
-  private ZonedDateTime startTime;
-  private ZonedDateTime endTime;
+  private String startTime;
+  private String endTime;
   private String executionTime;
   private Integer executionCount;
   private String executorName;

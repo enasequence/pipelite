@@ -15,8 +15,10 @@ $(document).ready( function () {
             { data: "completedProcessCount" },
             { data: "failedProcessCount" },
             { data: "processExceptionCount" },
+            /*
             { data: "successfulStageCount" },
             { data: "failedStageCount" },
+            */
             { data: "stageExceptionCount" },
             {
                 "data": null,
@@ -88,6 +90,8 @@ function show() {
      });
 };
 
+
+
     </script>
 </head>
 
@@ -130,14 +134,16 @@ function show() {
             <thead>
             <tr>
                 <th>Pipeline name</th>
-                <th>Max. running processes</th>
+                <th>Max processes</th>
                 <th>Running processes</th>
                 <th>Queued processes</th>
                 <th>Completed processes</th>
                 <th>Failed processes</th>
                 <th>Process exceptions</th>
-                <th>Completed stages</th>
-                <th>Failed stages</th>
+                <!--
+                 <th>Completed stages</th>
+                 <th>Failed stages</th>
+                -->
                 <th>Stage exceptions</th>
                 <th>Processes</th>
             </tr>

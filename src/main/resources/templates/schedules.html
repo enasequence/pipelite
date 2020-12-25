@@ -16,13 +16,13 @@ $(document).ready( function () {
             { data: "pipelineName" },
             { data: "cron" },
             { data: "description" },
-            { data: "lastExecutionEndTime" },
-            { data: "runningExecutionStartTime" },
-            { data: "nextExecutionStartTime" },
-            { data: "timeSinceLastExecution" },
-            { data: "currentExecutionTime" },
-            { data: "timeUntilNextExecution" },
+            { data: "startTime" },
+            { data: "endTime" },
+            { data: "runTime" },
             { data: "processId" },
+            { data: "nextStartTime" },
+            { data: "sinceLastExecution" },
+            { data: "untilNextExecution" },
             {
                 "data": null,
                 "defaultContent": "<button class=\"btn btn-outline-secondary mr-2\">Process</button>"
@@ -75,13 +75,13 @@ $(document).ready( function () {
                 <th>Pipeline name</th>
                 <th>Cron</th>
                 <th>Description</th>
-                <th>Last execution end time</th>
-                <th>Running execution start time</th>
-                <th>Next execution start time</th>
-                <th>Time since last execution</th>
-                <th>Current execution time</th>
-                <th>Time until next execution</th>
+                <th>Start time</th>
+                <th>End time</th>
+                <th>Run time</th>
                 <th>Process id</th>
+                <th>Next execution</th>
+                <th>Since last execution</th>
+                <th>Until next execution</th>
                 <th>Process</th>
             </tr>
             </thead>

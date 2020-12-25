@@ -13,12 +13,16 @@ package pipelite.controller.info;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.ZonedDateTime;
+
 @Data
 @Builder
 public class ProcessInfo {
   private String pipelineName;
   private String processId;
   private String state;
+  private String startTime;
+  private String endTime;
   private Integer executionCount;
   private Integer priority;
 }

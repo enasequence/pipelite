@@ -87,11 +87,11 @@ public class StageController {
     String executionTime = null;
     if (stageEntity.getStartTime() != null && stageEntity.getEndTime() != null) {
       executionTime =
-          TimeUtils.getDurationAsStringAlwaysPositive(
+          TimeUtils.durationToStringAlwaysPositive(
               stageEntity.getEndTime(), stageEntity.getStartTime());
     } else if (stageEntity.getStartTime() != null) {
       executionTime =
-          TimeUtils.getDurationAsStringAlwaysPositive(
+          TimeUtils.durationToStringAlwaysPositive(
               ZonedDateTime.now(), stageEntity.getStartTime());
     }
     return StageInfo.builder()
@@ -99,8 +99,8 @@ public class StageController {
         .processId(stageEntity.getProcessId())
         .stageName(stageEntity.getStageName())
         .resultType(stageEntity.getResultType().name())
-        .startTime(stageEntity.getStartTime())
-        .endTime(stageEntity.getEndTime())
+        .startTime(TimeUtils.dateTimeToString(stageEntity.getStartTime()))
+        .endTime(TimeUtils.dateTimeToString(stageEntity.getEndTime()))
         .executionTime(executionTime)
         .executionCount(stageEntity.getExecutionCount())
         .executorName(stageEntity.getExecutorName())
@@ -132,11 +132,11 @@ public class StageController {
                 .processId(lorem.getWords(1))
                 .stageName(stageName)
                 .resultType("SUCCESS")
-                .startTime(ZonedDateTime.now())
-                .endTime(ZonedDateTime.now())
+                .startTime(TimeUtils.dateTimeToString(ZonedDateTime.now()))
+                .endTime(TimeUtils.dateTimeToString(ZonedDateTime.now()))
                 .executionCount(10)
                 .executionTime(
-                    TimeUtils.getDurationAsStringAlwaysPositive(
+                    TimeUtils.durationToStringAlwaysPositive(
                         ZonedDateTime.now(), ZonedDateTime.now().minus(Duration.ofHours(1))))
                 .executorName(lorem.getNameFemale())
                 .executorData(lorem.getWords(1))

@@ -66,22 +66,19 @@ public class ScheduleController {
                         .pipelineName(s.getScheduleEntity().getPipelineName())
                         .cron(s.getScheduleEntity().getCron())
                         .description(s.getScheduleEntity().getDescription())
-                        .lastExecutionEndTime(s.getScheduleEntity().getEndTime())
-                        .runningExecutionStartTime(
-                            (s.getScheduleEntity().getProcessId() != null)
-                                ? s.getScheduleEntity().getStartTime()
-                                : null)
-                        .nextExecutionStartTime(s.getLaunchTime())
-                        .timeSinceLastExecution(
-                            TimeUtils.getDurationAsStringAlwaysPositive(
+                        .startTime(TimeUtils.dateTimeToString(s.getScheduleEntity().getStartTime()))
+                        .endTime(TimeUtils.dateTimeToString(s.getScheduleEntity().getEndTime()))
+                        .nextStartTime(TimeUtils.dateTimeToString(s.getLaunchTime()))
+                        .sinceLastExecution(
+                            TimeUtils.durationToStringAlwaysPositive(
                                 ZonedDateTime.now(), s.getScheduleEntity().getEndTime()))
-                        .currentExecutionTime(
+                        .runTime(
                             (s.getScheduleEntity().getProcessId() != null)
-                                ? TimeUtils.getDurationAsStringAlwaysPositive(
+                                ? TimeUtils.durationToStringAlwaysPositive(
                                     ZonedDateTime.now(), s.getScheduleEntity().getStartTime())
                                 : null)
-                        .timeUntilNextExecution(
-                            TimeUtils.getDurationAsStringAlwaysPositive(
+                        .untilNextExecution(
+                            TimeUtils.durationToStringAlwaysPositive(
                                 s.getLaunchTime(), ZonedDateTime.now()))
                         .processId(s.getScheduleEntity().getProcessId())
                         .build()));
@@ -101,17 +98,17 @@ public class ScheduleController {
                           .pipelineName(lorem.getCountry())
                           .cron(lorem.getWords(1))
                           .description(lorem.getWords(5))
-                          .lastExecutionEndTime(ZonedDateTime.now())
-                          .runningExecutionStartTime(ZonedDateTime.now())
-                          .nextExecutionStartTime(ZonedDateTime.now())
-                          .timeSinceLastExecution(
-                              TimeUtils.getDurationAsStringAlwaysPositive(
+                          .startTime(TimeUtils.dateTimeToString(ZonedDateTime.now()))
+                          .endTime(TimeUtils.dateTimeToString(ZonedDateTime.now()))
+                          .nextStartTime(TimeUtils.dateTimeToString(ZonedDateTime.now()))
+                          .sinceLastExecution(
+                              TimeUtils.durationToStringAlwaysPositive(
                                   ZonedDateTime.now(), ZonedDateTime.now().plusHours(6)))
-                          .currentExecutionTime(
-                              TimeUtils.getDurationAsStringAlwaysPositive(
+                          .runTime(
+                              TimeUtils.durationToStringAlwaysPositive(
                                   ZonedDateTime.now(), ZonedDateTime.now().plusHours(1)))
-                          .timeUntilNextExecution(
-                              TimeUtils.getDurationAsStringAlwaysPositive(
+                          .untilNextExecution(
+                              TimeUtils.durationToStringAlwaysPositive(
                                   ZonedDateTime.now(), ZonedDateTime.now()))
                           .processId(lorem.getWords(1))
                           .build()));

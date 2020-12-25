@@ -25,7 +25,7 @@ import org.springframework.context.annotation.Configuration;
 public class WebConfiguration {
 
   public static final String DEFAULT_CONTEXT_PATH = "/pipelite";
-  public static final int DEFAULT_PORT = 8082;
+  public static final int DEFAULT_PORT = 8083;
 
   public static String getCanonicalHostName() {
     try {

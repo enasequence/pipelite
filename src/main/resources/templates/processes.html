@@ -11,6 +11,8 @@ $(document).ready( function () {
             { data: "pipelineName" },
             { data: "processId" },
             { data: "state" },
+            { data: "startTime" },
+            { data: "endTime" },
             { data: "executionCount" },
             { data: "priority" },
             {
@@ -164,6 +166,7 @@ function show() {
      });
 };
 
+
     </script>
 </head>
 
@@ -208,7 +211,9 @@ function show() {
             <tr>
                 <th>Pipeline name</th>
                 <th>Process id</th>
-                <th>state</th>
+                <th>State</th>
+                <th>Start time</th>
+                <th>End time</th>
                 <th>Execution count</th>
                 <th>Priority</th>
                 <th>Stages</th>

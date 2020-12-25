@@ -12,17 +12,26 @@ package pipelite.controller.utils;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 
 public class TimeUtils {
 
   private TimeUtils() {}
 
-  public static String getDurationAsString(ZonedDateTime startTime, ZonedDateTime endTime) {
+  private static final DateTimeFormatter dateTimeFormatter =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssX");
+
+  public static String dateTimeToString(ZonedDateTime dateTime) {
+    return dateTime.format(dateTimeFormatter);
+  }
+
+  public static String durationToString(ZonedDateTime startTime, ZonedDateTime endTime) {
     Duration duration = Duration.between(endTime, startTime);
     return duration.toString().substring(2).replaceAll("(\\d[HMS])(?!$)", "$1 ").toLowerCase();
   }
 
-  public static String getDurationAsStringAlwaysPositive(
+  public static String durationToStringAlwaysPositive(
       ZonedDateTime startTime, ZonedDateTime endTime) {
     Duration duration = Duration.between(endTime, startTime);
     if (duration.isNegative()) {

@@ -16,6 +16,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.IntStream;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
 import pipelite.controller.info.ProcessInfo;
+import pipelite.controller.utils.TimeUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.launcher.process.runner.ProcessRunner;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
@@ -105,6 +108,8 @@ public class ProcessController {
         .pipelineName(processEntity.getPipelineName())
         .processId(processEntity.getProcessId())
         .state(processEntity.getState().name())
+        .startTime(TimeUtils.dateTimeToString(processEntity.getStartTime()))
+        .endTime(TimeUtils.dateTimeToString(processEntity.getEndTime()))
         .executionCount(processEntity.getExecutionCount())
         .priority(processEntity.getPriority())
         .build();
@@ -123,6 +128,8 @@ public class ProcessController {
                           .pipelineName(lorem.getCountry())
                           .processId(lorem.getWords(1))
                           .state(lorem.getFirstNameMale())
+                          .startTime(TimeUtils.dateTimeToString(ZonedDateTime.now()))
+                          .endTime(TimeUtils.dateTimeToString(ZonedDateTime.now()))
                           .executionCount(random.nextInt(10))
                           .priority(random.nextInt(10))
                           .build()));

@@ -21,11 +21,11 @@ public class ScheduleInfo {
   private String pipelineName;
   private String cron;
   private String description;
-  private ZonedDateTime lastExecutionEndTime;
-  private ZonedDateTime runningExecutionStartTime;
-  private ZonedDateTime nextExecutionStartTime;
-  private String timeSinceLastExecution;
-  private String currentExecutionTime;
-  private String timeUntilNextExecution;
+  private String startTime;
+  private String endTime;
+  private String runTime;
+  private String nextStartTime;
+  private String sinceLastExecution;
+  private String untilNextExecution;
   private String processId;
 }

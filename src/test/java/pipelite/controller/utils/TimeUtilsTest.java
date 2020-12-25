@@ -19,41 +19,37 @@ import org.junit.jupiter.api.Test;
 public class TimeUtilsTest {
 
   @Test
-  public void getDurationAsString() {
+  public void durationToString() {
     ZonedDateTime now = ZonedDateTime.now();
-    assertThat(
-            TimeUtils.getDurationAsString(now, now.minus(Duration.between(now, now.plusHours(1)))))
+    assertThat(TimeUtils.durationToString(now, now.minus(Duration.between(now, now.plusHours(1)))))
         .isEqualTo("1h");
     assertThat(
-            TimeUtils.getDurationAsString(
-                now, now.minus(Duration.between(now, now.plusMinutes(30)))))
+            TimeUtils.durationToString(now, now.minus(Duration.between(now, now.plusMinutes(30)))))
         .isEqualTo("30m");
-    assertThat(
-            TimeUtils.getDurationAsString(now, now.minus(Duration.between(now, now.minusHours(1)))))
+    assertThat(TimeUtils.durationToString(now, now.minus(Duration.between(now, now.minusHours(1)))))
         .isEqualTo("-1h");
     assertThat(
-            TimeUtils.getDurationAsString(
-                now, now.minus(Duration.between(now, now.minusMinutes(30)))))
+            TimeUtils.durationToString(now, now.minus(Duration.between(now, now.minusMinutes(30)))))
         .isEqualTo("-30m");
   }
 
   @Test
-  public void getDurationAsStringAlwaysPositive() {
+  public void durationToStringAlwaysPositive() {
     ZonedDateTime now = ZonedDateTime.now();
     assertThat(
-            TimeUtils.getDurationAsStringAlwaysPositive(
+            TimeUtils.durationToStringAlwaysPositive(
                 now, now.minus(Duration.between(now, now.plusHours(1)))))
         .isEqualTo("1h");
     assertThat(
-            TimeUtils.getDurationAsStringAlwaysPositive(
+            TimeUtils.durationToStringAlwaysPositive(
                 now, now.minus(Duration.between(now, now.plusMinutes(30)))))
         .isEqualTo("30m");
     assertThat(
-            TimeUtils.getDurationAsStringAlwaysPositive(
+            TimeUtils.durationToStringAlwaysPositive(
                 now, now.minus(Duration.between(now, now.minusHours(1)))))
         .isEqualTo("1h");
     assertThat(
-            TimeUtils.getDurationAsStringAlwaysPositive(
+            TimeUtils.durationToStringAlwaysPositive(
                 now, now.minus(Duration.between(now, now.minusMinutes(30)))))
         .isEqualTo("30m");
   }
