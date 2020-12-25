@@ -49,23 +49,18 @@ public class PipeliteSchedulerOracleTest {
   }
 
   @Test
-  public void testThreeSuccessSchedules() {
-    tester.testThreeSuccessSchedules();
+  public void testTwoSuccessSchedules() {
+    tester.testTwoSuccessSchedules();
   }
 
   @Test
-  public void testThreeFailureSchedules() {
-    tester.testThreeFailureSchedules();
+  public void testTwoFailureSchedules() {
+    tester.testTwoFailureSchedules();
   }
 
   @Test
-  public void testThreeExceptionSchedules() {
-    tester.testThreeExceptionSchedules();
-  }
-
-  @Test
-  public void testOneSuccessOneFailureOneExceptionSchedule() {
-    tester.testOneSuccessOneFailureOneExceptionSchedule();
+  public void testTwoExceptionSchedules() {
+    tester.testTwoExceptionSchedules();
   }
 
   @Test

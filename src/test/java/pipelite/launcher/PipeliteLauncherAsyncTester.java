@@ -42,7 +42,7 @@ import pipelite.stage.executor.StageExecutorResult;
 @Scope("prototype")
 public class PipeliteLauncherAsyncTester {
 
-  private static final int PROCESS_CNT = 5;
+  private static final int PROCESS_CNT = 2;
 
   @Autowired private WebConfiguration webConfiguration;
   @Autowired private LauncherConfiguration launcherConfiguration;

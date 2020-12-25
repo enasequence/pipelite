@@ -56,60 +56,42 @@ public class PipeliteSchedulerTester {
 
   @Autowired private TestProcessFactory firstProcessSuccess;
   @Autowired private TestProcessFactory secondProcessSuccess;
-  @Autowired private TestProcessFactory thirdProcessSuccess;
   @Autowired private TestProcessFactory firstProcessFailure;
   @Autowired private TestProcessFactory secondProcessFailure;
-  @Autowired private TestProcessFactory thirdProcessFailure;
   @Autowired private TestProcessFactory firstProcessException;
   @Autowired private TestProcessFactory secondProcessException;
-  @Autowired private TestProcessFactory thirdProcessException;
   @Autowired private MeterRegistry meterRegistry;
 
   @TestConfiguration
   static class TestConfig {
     @Bean
     public ProcessFactory firstProcessSuccess() {
-      return new TestProcessFactory("firstProcessSuccess", 4, 2, 2, StageTestResult.SUCCESS);
+      return new TestProcessFactory("firstProcessSuccess", 2, 1, 2, StageTestResult.SUCCESS);
     }
 
     @Bean
     public ProcessFactory secondProcessSuccess() {
-      return new TestProcessFactory("secondProcessSuccess", 3, 3, 4, StageTestResult.SUCCESS);
-    }
-
-    @Bean
-    public ProcessFactory thirdProcessSuccess() {
-      return new TestProcessFactory("thirdProcessSuccess", 2, 4, 6, StageTestResult.SUCCESS);
+      return new TestProcessFactory("secondProcessSuccess", 1, 2, 4, StageTestResult.SUCCESS);
     }
 
     @Bean
     public ProcessFactory firstProcessFailure() {
-      return new TestProcessFactory("firstProcessFailure", 4, 2, 2, StageTestResult.ERROR);
+      return new TestProcessFactory("firstProcessFailure", 2, 1, 2, StageTestResult.ERROR);
     }
 
     @Bean
     public ProcessFactory secondProcessFailure() {
-      return new TestProcessFactory("secondProcessFailure", 3, 3, 4, StageTestResult.ERROR);
-    }
-
-    @Bean
-    public ProcessFactory thirdProcessFailure() {
-      return new TestProcessFactory("thirdProcessFailure", 2, 4, 6, StageTestResult.ERROR);
+      return new TestProcessFactory("secondProcessFailure", 1, 2, 4, StageTestResult.ERROR);
     }
 
     @Bean
     public ProcessFactory firstProcessException() {
-      return new TestProcessFactory("firstProcessException", 4, 2, 2, StageTestResult.EXCEPTION);
+      return new TestProcessFactory("firstProcessException", 2, 1, 2, StageTestResult.EXCEPTION);
     }
 
     @Bean
     public ProcessFactory secondProcessException() {
-      return new TestProcessFactory("secondProcessException", 3, 3, 4, StageTestResult.EXCEPTION);
-    }
-
-    @Bean
-    public ProcessFactory thirdProcessException() {
-      return new TestProcessFactory("thirdProcessException", 2, 4, 6, StageTestResult.EXCEPTION);
+      return new TestProcessFactory("secondProcessException", 1, 2, 4, StageTestResult.EXCEPTION);
     }
   }
 
@@ -350,20 +332,16 @@ public class PipeliteSchedulerTester {
     }
   }
 
-  public void testThreeSuccessSchedules() {
-    test(Arrays.asList(firstProcessSuccess, secondProcessSuccess, thirdProcessSuccess));
+  public void testTwoSuccessSchedules() {
+    test(Arrays.asList(firstProcessSuccess, secondProcessSuccess));
   }
 
-  public void testThreeFailureSchedules() {
-    test(Arrays.asList(firstProcessFailure, secondProcessFailure, thirdProcessFailure));
+  public void testTwoFailureSchedules() {
+    test(Arrays.asList(firstProcessFailure, secondProcessFailure));
   }
 
-  public void testThreeExceptionSchedules() {
-    test(Arrays.asList(firstProcessException, secondProcessException, thirdProcessException));
-  }
-
-  public void testOneSuccessOneFailureOneExceptionSchedule() {
-    test(Arrays.asList(firstProcessSuccess, firstProcessFailure));
+  public void testTwoExceptionSchedules() {
+    test(Arrays.asList(firstProcessException, secondProcessException));
   }
 
   public void testTwoSuccessTwoFailureTwoExceptionSchedule() {

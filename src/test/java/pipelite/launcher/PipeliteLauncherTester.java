@@ -74,17 +74,17 @@ public class PipeliteLauncherTester {
     @Bean("processSuccess")
     @Primary
     public TestProcessFactory processSuccess() {
-      return new TestProcessFactory("processSuccess", 10, 2, StageTestResult.SUCCESS);
+      return new TestProcessFactory("processSuccess", 4, 2, StageTestResult.SUCCESS);
     }
 
     @Bean("processFailure")
     public TestProcessFactory processFailure() {
-      return new TestProcessFactory("processFailure", 10, 2, StageTestResult.ERROR);
+      return new TestProcessFactory("processFailure", 4, 2, StageTestResult.ERROR);
     }
 
     @Bean("processException")
     public TestProcessFactory processException() {
-      return new TestProcessFactory("processException", 10, 2, StageTestResult.EXCEPTION);
+      return new TestProcessFactory("processException", 4, 2, StageTestResult.EXCEPTION);
     }
 
     @Bean
