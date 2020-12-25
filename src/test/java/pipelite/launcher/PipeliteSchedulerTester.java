@@ -13,7 +13,6 @@ package pipelite.launcher;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.micrometer.core.instrument.MeterRegistry;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;

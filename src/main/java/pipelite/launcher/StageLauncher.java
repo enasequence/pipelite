@@ -11,6 +11,7 @@
 package pipelite.launcher;
 
 import com.google.common.flogger.FluentLogger;
+import java.time.Duration;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.StageConfiguration;
@@ -21,8 +22,6 @@ import pipelite.stage.Stage;
 import pipelite.stage.executor.ConfigurableStageExecutorParameters;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.time.Time;
-
-import java.time.Duration;
 
 @Flogger
 /** Executes a stage and returns the stage execution result. */

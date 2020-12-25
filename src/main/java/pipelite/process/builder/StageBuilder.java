@@ -75,8 +75,7 @@ public class StageBuilder {
   }
 
   /**
-   * An synchronous executor that returns a stage execution result of the
-   * given result type.
+   * An synchronous executor that returns a stage execution result of the given result type.
    *
    * @param resultType the stage execution result type returned by the executor
    */
@@ -85,8 +84,7 @@ public class StageBuilder {
   }
 
   /**
-   * An asynchronous executor that returns a stage execution result of
-   * the given result type.
+   * An asynchronous executor that returns a stage execution result of the given result type.
    *
    * @param resultType the stage execution result returned by the executor
    */

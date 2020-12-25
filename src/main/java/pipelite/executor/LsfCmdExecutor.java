@@ -10,12 +10,11 @@
  */
 package pipelite.executor;
 
+import com.google.common.flogger.FluentLogger;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import com.google.common.flogger.FluentLogger;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
