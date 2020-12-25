@@ -32,15 +32,15 @@ import pipelite.configuration.StageConfiguration;
 import pipelite.configuration.WebConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
-import pipelite.executor.StageExecutorParameters;
+import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.*;
-import pipelite.stage.StageExecutionResult;
-import pipelite.stage.StageExecutionResultType;
+import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultType;
 
 @Component
 @Scope("prototype")
@@ -188,10 +188,10 @@ public class PipeliteLauncherFailureTester {
     private final String pipelineName = UniqueStringGenerator.randomPipelineName();
     private final StageTestResult stageTestResult;
     public final List<String> processIds = Collections.synchronizedList(new ArrayList<>());
-    private StageExecutionResult firstStageExecResult;
-    private StageExecutionResult secondStageExecResult;
-    private StageExecutionResult thirdStageExecResult;
-    private StageExecutionResult fourthStageExecResult;
+    private StageExecutorResult firstStageExecResult;
+    private StageExecutorResult secondStageExecResult;
+    private StageExecutorResult thirdStageExecResult;
+    private StageExecutorResult fourthStageExecResult;
     public final AtomicLong firstStageExecCnt = new AtomicLong();
     public final AtomicLong secondStageExecCnt = new AtomicLong();
     public final AtomicLong thirdStageExecCnt = new AtomicLong();
@@ -201,20 +201,20 @@ public class PipeliteLauncherFailureTester {
       this.stageTestResult = stageTestResult;
       this.firstStageExecResult =
           stageTestResult == StageTestResult.FIRST_ERROR
-              ? StageExecutionResult.error()
-              : StageExecutionResult.success();
+              ? StageExecutorResult.error()
+              : StageExecutorResult.success();
       this.secondStageExecResult =
           stageTestResult == StageTestResult.SECOND_ERROR
-              ? StageExecutionResult.error()
-              : StageExecutionResult.success();
+              ? StageExecutorResult.error()
+              : StageExecutorResult.success();
       this.thirdStageExecResult =
           stageTestResult == StageTestResult.THIRD_ERROR
-              ? StageExecutionResult.error()
-              : StageExecutionResult.success();
+              ? StageExecutorResult.error()
+              : StageExecutorResult.success();
       this.fourthStageExecResult =
           stageTestResult == StageTestResult.FOURTH_ERROR
-              ? StageExecutionResult.error()
-              : StageExecutionResult.success();
+              ? StageExecutorResult.error()
+              : StageExecutorResult.success();
     }
 
     public void reset() {
@@ -377,10 +377,10 @@ public class PipeliteLauncherFailureTester {
             || (i == 1 && f.stageTestResult == StageTestResult.SECOND_ERROR)
             || (i == 2 && f.stageTestResult == StageTestResult.THIRD_ERROR)
             || (i == 3 && f.stageTestResult == StageTestResult.FOURTH_ERROR)) {
-          assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.ERROR);
+          assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.ERROR);
           assertThat(stageEntity.getResultParams()).isNull();
         } else {
-          assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.SUCCESS);
+          assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.SUCCESS);
           assertThat(stageEntity.getResultParams()).isNull();
         }
       }

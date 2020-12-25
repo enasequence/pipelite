@@ -14,10 +14,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
-import pipelite.executor.EmptySyncStageExecutor;
+import pipelite.stage.executor.EmptySyncStageExecutor;
 import pipelite.stage.Stage;
-import pipelite.stage.StageExecutionResult;
-import pipelite.stage.StageExecutionResultType;
+import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultType;
 
 class StageOutEntityTest {
 
@@ -30,7 +30,7 @@ class StageOutEntityTest {
     Stage stage =
         Stage.builder()
             .stageName(stageName)
-            .executor(new EmptySyncStageExecutor(StageExecutionResultType.SUCCESS))
+            .executor(new EmptySyncStageExecutor(StageExecutorResultType.SUCCESS))
             .build();
 
     // Create execution.
@@ -46,7 +46,7 @@ class StageOutEntityTest {
 
     // End execution.
 
-    StageExecutionResult result = new StageExecutionResult(StageExecutionResultType.ERROR);
+    StageExecutorResult result = new StageExecutorResult(StageExecutorResultType.ERROR);
     result.setStdout("TEST3");
     result.setStderr("TEST4");
     stageOutEntity = StageOutEntity.endExecution(stageEntity, result);

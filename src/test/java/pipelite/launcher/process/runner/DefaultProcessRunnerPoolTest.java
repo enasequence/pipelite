@@ -24,7 +24,7 @@ import pipelite.lock.PipeliteLocker;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.stage.StageExecutionResultType;
+import pipelite.stage.executor.StageExecutorResultType;
 
 public class DefaultProcessRunnerPoolTest {
 
@@ -64,7 +64,7 @@ public class DefaultProcessRunnerPoolTest {
       Process process =
           new ProcessBuilder("PROCESS" + i)
               .execute("STAGE1")
-              .withEmptySyncExecutor(StageExecutionResultType.SUCCESS)
+              .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
               .build();
       ProcessEntity processEntity = new ProcessEntity();
       process.setProcessEntity(processEntity);
@@ -109,7 +109,7 @@ public class DefaultProcessRunnerPoolTest {
       Process process =
           new ProcessBuilder("PROCESS" + i)
               .execute("STAGE1")
-              .withEmptySyncExecutor(StageExecutionResultType.SUCCESS)
+              .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
               .build();
       ProcessEntity processEntity = new ProcessEntity();
       process.setProcessEntity(processEntity);
@@ -159,7 +159,7 @@ public class DefaultProcessRunnerPoolTest {
       Process process =
           new ProcessBuilder("PROCESS" + i)
               .execute("STAGE1")
-              .withEmptySyncExecutor(StageExecutionResultType.SUCCESS)
+              .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
               .build();
       ProcessEntity processEntity = new ProcessEntity();
       process.setProcessEntity(processEntity);

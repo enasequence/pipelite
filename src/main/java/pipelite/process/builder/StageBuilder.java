@@ -14,12 +14,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import pipelite.executor.EmptyAsyncStageExecutor;
-import pipelite.executor.EmptySyncStageExecutor;
-import pipelite.executor.StageExecutor;
-import pipelite.executor.StageExecutorParameters;
+import pipelite.stage.executor.EmptyAsyncStageExecutor;
+import pipelite.stage.executor.EmptySyncStageExecutor;
+import pipelite.stage.executor.StageExecutor;
+import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.stage.Stage;
-import pipelite.stage.StageExecutionResultType;
+import pipelite.stage.executor.StageExecutorResultType;
 
 public class StageBuilder {
   private final ProcessBuilder processBuilder;
@@ -84,7 +84,7 @@ public class StageBuilder {
    *
    * @param resultType the stage execution result type returned by the executor
    */
-  public ProcessBuilder withEmptySyncExecutor(StageExecutionResultType resultType) {
+  public ProcessBuilder withEmptySyncExecutor(StageExecutorResultType resultType) {
     return addStage(new EmptySyncStageExecutor(resultType));
   }
 
@@ -94,7 +94,7 @@ public class StageBuilder {
    *
    * @param resultType the stage execution result returned by the executor
    */
-  public ProcessBuilder withEmptyAsyncExecutor(StageExecutionResultType resultType) {
+  public ProcessBuilder withEmptyAsyncExecutor(StageExecutorResultType resultType) {
     return addStage(new EmptyAsyncStageExecutor(resultType));
   }
 

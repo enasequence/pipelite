@@ -11,7 +11,7 @@
 package pipelite.log;
 
 import com.google.common.flogger.MetadataKey;
-import pipelite.stage.StageExecutionResultType;
+import pipelite.stage.executor.StageExecutorResultType;
 
 public class LogKey {
 
@@ -35,8 +35,8 @@ public class LogKey {
   public static final MetadataKey<String> EXECUTOR_NAME =
       MetadataKey.single("executor_name", String.class);
 
-  public static final MetadataKey<StageExecutionResultType> STAGE_EXECUTION_RESULT_TYPE =
-      MetadataKey.single("stage_execution_result_type", StageExecutionResultType.class);
+  public static final MetadataKey<StageExecutorResultType> STAGE_EXECUTION_RESULT_TYPE =
+      MetadataKey.single("stage_execution_result_type", StageExecutorResultType.class);
 
   public static final MetadataKey<Integer> STAGE_EXECUTION_COUNT =
       MetadataKey.single("stage_execution_count", Integer.class);

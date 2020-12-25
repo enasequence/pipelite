@@ -105,10 +105,11 @@ public class DefaultProcessQueue implements ProcessQueue {
     processQueueIndex.set(0);
     processQueue.clear();
 
-    // First add active processes. Asynchronous active processes may be able to continue execution.
-    List<ProcessEntity> activeProcesses = getActiveProcesses();
-    processCnt += activeProcesses.size();
-    processQueue.addAll(activeProcesses);
+    // First add unlocked active processes. Asynchronous active processes may be able to continue
+    // execution.
+    List<ProcessEntity> availableActiveProcesses = getAvailablActiveProcesses();
+    processCnt += availableActiveProcesses.size();
+    processQueue.addAll(availableActiveProcesses);
 
     // Then add new processes.
     List<ProcessEntity> pendingProcesses = getPendingProcesses();
@@ -134,8 +135,8 @@ public class DefaultProcessQueue implements ProcessQueue {
     return processQueue.get(processQueueIndex.getAndIncrement());
   }
 
-  public List<ProcessEntity> getActiveProcesses() {
-    return processService.getActiveProcesses(pipelineName, processQueueMaxSize);
+  public List<ProcessEntity> getAvailablActiveProcesses() {
+    return processService.getAvailableActiveProcesses(pipelineName, processQueueMaxSize);
   }
 
   public List<ProcessEntity> getPendingProcesses() {

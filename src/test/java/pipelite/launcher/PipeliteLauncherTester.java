@@ -30,7 +30,7 @@ import pipelite.configuration.StageConfiguration;
 import pipelite.configuration.WebConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
-import pipelite.executor.StageExecutorParameters;
+import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.launcher.process.runner.ProcessRunnerStats;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
@@ -38,8 +38,8 @@ import pipelite.process.ProcessSource;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.*;
-import pipelite.stage.StageExecutionResult;
-import pipelite.stage.StageExecutionResultType;
+import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultType;
 
 @Component
 @Scope("prototype")
@@ -173,10 +173,10 @@ public class PipeliteLauncherTester {
                 (pipelineName, processId1, stage) -> {
                   stageExecCnt.incrementAndGet();
                   if (stageTestResult == StageTestResult.ERROR) {
-                    return StageExecutionResult.error();
+                    return StageExecutorResult.error();
                   }
                   if (stageTestResult == StageTestResult.SUCCESS) {
-                    return StageExecutionResult.success();
+                    return StageExecutorResult.success();
                   }
                   if (stageTestResult == StageTestResult.EXCEPTION) {
                     throw new RuntimeException("Expected exception");
@@ -240,14 +240,14 @@ public class PipeliteLauncherTester {
           .isEqualTo("{\n  \"maximumRetries\" : 0,\n  \"immediateRetries\" : 0\n}");
 
       if (f.stageTestResult == StageTestResult.ERROR) {
-        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.ERROR);
+        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.ERROR);
         assertThat(stageEntity.getResultParams()).isNull();
       } else if (f.stageTestResult == StageTestResult.EXCEPTION) {
-        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.ERROR);
+        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.ERROR);
         assertThat(stageEntity.getResultParams())
             .contains("exception\" : \"java.lang.RuntimeException: Expected exception");
       } else {
-        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.SUCCESS);
+        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.SUCCESS);
         assertThat(stageEntity.getResultParams()).isNull();
       }
     }

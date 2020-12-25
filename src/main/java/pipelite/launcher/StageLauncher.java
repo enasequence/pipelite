@@ -17,11 +17,11 @@ import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
 import pipelite.exception.PipeliteInterruptedException;
-import pipelite.executor.ConfigurableStageExecutorParameters;
+import pipelite.stage.executor.ConfigurableStageExecutorParameters;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.stage.Stage;
-import pipelite.stage.StageExecutionResult;
+import pipelite.stage.executor.StageExecutorResult;
 import pipelite.time.Time;
 
 @Flogger
@@ -87,9 +87,9 @@ public class StageLauncher {
    *
    * @return The stage execution result.
    */
-  public StageExecutionResult run() {
+  public StageExecutorResult run() {
     logContext(log.atInfo()).log("Executing stage");
-    StageExecutionResult result;
+    StageExecutorResult result;
     try {
       result = stage.getExecutor().execute(pipelineName, process.getProcessId(), stage);
       if (result.isActive()) {
@@ -97,7 +97,7 @@ public class StageLauncher {
         result = pollExecution();
       }
     } catch (Exception ex) {
-      result = StageExecutionResult.error(ex);
+      result = StageExecutorResult.error(ex);
     }
     if (result.isSuccess()) {
       logContext(log.atInfo()).log("Stage execution succeeded");
@@ -115,8 +115,8 @@ public class StageLauncher {
    *
    * @return the stage execution result
    */
-  StageExecutionResult pollExecution() {
-    StageExecutionResult result;
+  StageExecutorResult pollExecution() {
+    StageExecutorResult result;
     while (true) {
       try {
         logContext(log.atInfo()).log("Waiting asynchronous stage execution to complete");
@@ -126,7 +126,7 @@ public class StageLauncher {
           break;
         }
       } catch (Exception ex) {
-        result = StageExecutionResult.error(ex);
+        result = StageExecutorResult.error(ex);
         break;
       }
 

@@ -17,7 +17,7 @@ import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
-import pipelite.executor.ConfigurableStageExecutorParameters;
+import pipelite.stage.executor.ConfigurableStageExecutorParameters;
 
 @Data
 @Builder

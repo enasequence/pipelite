@@ -36,7 +36,7 @@ import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.ProcessFactoryService;
 import pipelite.service.ProcessService;
 import pipelite.service.ScheduleService;
-import pipelite.stage.StageExecutionResultType;
+import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.time.Time;
 
 public class PipeliteSchedulerTest {
@@ -55,7 +55,7 @@ public class PipeliteSchedulerTest {
   private static Process testProcess(String processId) {
     return new ProcessBuilder(processId)
         .execute("STAGE")
-        .withEmptySyncExecutor(StageExecutionResultType.SUCCESS)
+        .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
         .build();
   }
 

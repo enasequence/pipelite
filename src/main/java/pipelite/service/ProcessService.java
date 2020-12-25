@@ -70,16 +70,15 @@ public class ProcessService {
   }
 
   /**
-   * Returns active processes for a pipeline in priority order.
+   * Returns active processes that are not locked for a pipeline in priority order.
    *
    * @param pipelineName the pipeline name
    * @param limit the maximum number of processes to return
-   * @return the active processes for a pipeline in priority order
+   * @return the active processes that are not locked for a pipeline in priority order
    */
-  public List<ProcessEntity> getActiveProcesses(
-      String pipelineName, int limit) {
+  public List<ProcessEntity> getAvailableActiveProcesses(String pipelineName, int limit) {
     try (Stream<ProcessEntity> strm =
-        repository.findActiveNotLockedOrderByPriorityDesc(pipelineName, ZonedDateTime.now())) {
+        repository.findAvailableActiveOrderByPriorityDesc(pipelineName, ZonedDateTime.now())) {
       return list(strm, limit);
     }
   }

@@ -15,9 +15,11 @@ import java.time.temporal.ChronoUnit;
 import javax.persistence.*;
 import lombok.*;
 import lombok.extern.flogger.Flogger;
-import pipelite.executor.StageExecutor;
+import pipelite.stage.executor.StageExecutor;
 import pipelite.json.Json;
 import pipelite.stage.*;
+import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultType;
 
 @Entity
 @Table(name = "PIPELITE_STAGE")
@@ -61,7 +63,7 @@ public class StageEntity {
 
   @Enumerated(EnumType.STRING)
   @Column(name = "EXEC_RESULT_TYPE", length = 15)
-  private StageExecutionResultType resultType;
+  private StageExecutorResultType resultType;
 
   @Column(name = "EXEC_RESULT_PARAMS", columnDefinition = "CLOB")
   @Lob
@@ -78,7 +80,7 @@ public class StageEntity {
 
   public void startExecution(Stage stage) {
     StageExecutor stageExecutor = stage.getExecutor();
-    this.resultType = StageExecutionResultType.ACTIVE;
+    this.resultType = StageExecutorResultType.ACTIVE;
     this.resultParams = null;
     this.startTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.endTime = null;
@@ -89,7 +91,7 @@ public class StageEntity {
     }
   }
 
-  public void endExecution(StageExecutionResult result) {
+  public void endExecution(StageExecutorResult result) {
     this.resultType = result.getResultType();
     this.resultParams = result.attributesJson();
     this.endTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);

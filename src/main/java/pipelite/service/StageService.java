@@ -22,7 +22,7 @@ import pipelite.entity.StageOutEntity;
 import pipelite.repository.StageOutRepository;
 import pipelite.repository.StageRepository;
 import pipelite.stage.Stage;
-import pipelite.stage.StageExecutionResult;
+import pipelite.stage.executor.StageExecutorResult;
 
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -101,7 +101,7 @@ public class StageService {
    * @param stage the associated Stage class
    * @param result the stage execution result
    */
-  public void endExecution(Stage stage, StageExecutionResult result) {
+  public void endExecution(Stage stage, StageExecutorResult result) {
     stage.incrementImmediateExecutionCount();
     StageEntity stageEntity = stage.getStageEntity();
     stageEntity.endExecution(result);

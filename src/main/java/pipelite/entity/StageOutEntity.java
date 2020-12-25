@@ -16,7 +16,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.flogger.Flogger;
 import pipelite.json.Json;
-import pipelite.stage.StageExecutionResult;
+import pipelite.stage.executor.StageExecutorResult;
 
 @Entity
 @Table(name = "PIPELITE_STAGE")
@@ -59,7 +59,7 @@ public class StageOutEntity {
   }
 
   /** Stage execution ends. */
-  public static StageOutEntity endExecution(StageEntity stageEntity, StageExecutionResult result) {
+  public static StageOutEntity endExecution(StageEntity stageEntity, StageExecutorResult result) {
     StageOutEntity stageOutEntity = new StageOutEntity();
     stageOutEntity.pipelineName = stageEntity.getPipelineName();
     stageOutEntity.processId = stageEntity.getProcessId();

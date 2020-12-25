@@ -11,25 +11,25 @@
 package pipelite.launcher.process.runner;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static pipelite.stage.StageExecutionResultType.*;
+import static pipelite.stage.executor.StageExecutorResultType.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import pipelite.entity.StageEntity;
-import pipelite.executor.StageExecutorParameters;
+import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.Stage;
-import pipelite.stage.StageExecutionResultType;
+import pipelite.stage.executor.StageExecutorResultType;
 
 public class DefaultProcessRunnerTest {
 
   public static List<Stage> createStageExecutions(
-      StageExecutionResultType firstStageState,
-      StageExecutionResultType secondStageState,
+      StageExecutorResultType firstStageState,
+      StageExecutorResultType secondStageState,
       int firstStageExecutions,
       int secondStageExecutions,
       int maximumRetries,
@@ -72,8 +72,8 @@ public class DefaultProcessRunnerTest {
   }
 
   private void evaluateProcessStateNoRetries(
-      StageExecutionResultType firstStageState,
-      StageExecutionResultType secondStageState,
+      StageExecutorResultType firstStageState,
+      StageExecutorResultType secondStageState,
       ProcessState state) {
     int firstStageExecutions = firstStageState != null ? 1 : 0;
     int secondStageExecutions = secondStageState != null ? 1 : 0;
@@ -104,8 +104,8 @@ public class DefaultProcessRunnerTest {
   }
 
   private void evaluateProcessStateWithRetries(
-      StageExecutionResultType firstStageState,
-      StageExecutionResultType secondStageState,
+      StageExecutorResultType firstStageState,
+      StageExecutorResultType secondStageState,
       ProcessState state) {
     int firstStageExecutions = firstStageState != null ? 1 : 0;
     int secondStageExecutions = secondStageState != null ? 1 : 0;

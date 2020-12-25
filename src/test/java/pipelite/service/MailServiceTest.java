@@ -23,7 +23,7 @@ import pipelite.entity.StageEntity;
 import pipelite.launcher.PipeliteSchedulerOracleTest;
 import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.stage.StageExecutionResultType;
+import pipelite.stage.executor.StageExecutorResultType;
 
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -45,7 +45,7 @@ public class MailServiceTest {
     Process process =
         new ProcessBuilder("PROCESS_ID")
             .execute("STAGE1")
-            .withEmptySyncExecutor(StageExecutionResultType.SUCCESS)
+            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
             .build();
     StageEntity stageEntity =
         StageEntity.createExecution("PIPELINE_NAME", "PROCESS_ID", process.getStages().get(0));
@@ -86,7 +86,7 @@ public class MailServiceTest {
     Process process =
         new ProcessBuilder("PROCESS_ID")
             .execute("STAGE1")
-            .withEmptySyncExecutor(StageExecutionResultType.SUCCESS)
+            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
             .build();
     StageEntity stageEntity =
         StageEntity.createExecution("PIPELINE_NAME", "PROCESS_ID", process.getStages().get(0));

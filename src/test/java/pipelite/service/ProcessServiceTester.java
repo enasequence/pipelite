@@ -87,7 +87,7 @@ class ProcessServiceTester {
     assertThat(service.saveProcess(createProcess(pipelineName, ProcessState.PENDING, 1)).getState())
         .isEqualTo(ProcessState.PENDING);
 
-    assertThat(service.getActiveProcesses(pipelineName, DEFAULT_LIMIT)).hasSize(2);
+    assertThat(service.getAvailableActiveProcesses(pipelineName, DEFAULT_LIMIT)).hasSize(2);
     assertThat(service.getCompletedProcesses(pipelineName, DEFAULT_LIMIT)).hasSize(3);
     assertThat(service.getFailedProcesses(pipelineName, DEFAULT_LIMIT)).hasSize(4);
     assertThat(service.getPendingProcesses(pipelineName, DEFAULT_LIMIT)).hasSize(2);
@@ -123,12 +123,12 @@ class ProcessServiceTester {
     assertThat(service.saveProcess(createProcess(pipelineName, ProcessState.PENDING, 2)).getState())
         .isEqualTo(ProcessState.PENDING);
 
-    assertThat(service.getActiveProcesses(pipelineName, DEFAULT_LIMIT)).hasSize(2);
+    assertThat(service.getAvailableActiveProcesses(pipelineName, DEFAULT_LIMIT)).hasSize(2);
     assertThat(service.getCompletedProcesses(pipelineName, DEFAULT_LIMIT)).hasSize(3);
     assertThat(service.getFailedProcesses(pipelineName, DEFAULT_LIMIT)).hasSize(4);
     assertThat(service.getPendingProcesses(pipelineName, DEFAULT_LIMIT)).hasSize(2);
 
-    assertThat(service.getActiveProcesses(pipelineName, DEFAULT_LIMIT))
+    assertThat(service.getAvailableActiveProcesses(pipelineName, DEFAULT_LIMIT))
         .isSortedAccordingTo(Comparator.comparingInt(ProcessEntity::getPriority).reversed());
     assertThat(service.getFailedProcesses(pipelineName, DEFAULT_LIMIT))
         .isSortedAccordingTo(Comparator.comparingInt(ProcessEntity::getPriority).reversed());

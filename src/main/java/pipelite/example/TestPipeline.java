@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.stage.StageExecutionResultType;
+import pipelite.stage.executor.StageExecutorResultType;
 
 @Component
 public class TestPipeline implements ProcessFactory {
@@ -36,7 +36,7 @@ public class TestPipeline implements ProcessFactory {
   public Process create(String processId) {
     return new ProcessBuilder(processId)
         .execute("STAGE")
-        .withEmptySyncExecutor(StageExecutionResultType.SUCCESS)
+        .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
         .build();
   }
 }

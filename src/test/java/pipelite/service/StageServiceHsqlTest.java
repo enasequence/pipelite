@@ -21,10 +21,10 @@ import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageOutEntity;
-import pipelite.executor.EmptySyncStageExecutor;
+import pipelite.stage.executor.EmptySyncStageExecutor;
 import pipelite.stage.Stage;
-import pipelite.stage.StageExecutionResult;
-import pipelite.stage.StageExecutionResultType;
+import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultType;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
@@ -42,7 +42,7 @@ class StageServiceHsqlTest {
     Stage stage =
         Stage.builder()
             .stageName(stageName)
-            .executor(new EmptySyncStageExecutor(StageExecutionResultType.SUCCESS))
+            .executor(new EmptySyncStageExecutor(StageExecutorResultType.SUCCESS))
             .build();
 
     // Create.
@@ -55,7 +55,7 @@ class StageServiceHsqlTest {
 
     // Update.
 
-    StageExecutionResult result = new StageExecutionResult(StageExecutionResultType.ERROR);
+    StageExecutorResult result = new StageExecutorResult(StageExecutorResultType.ERROR);
     result.setStdout("TEST3");
     result.setStderr("TEST4");
     stageEntity.endExecution(result);

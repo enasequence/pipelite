@@ -10,7 +10,7 @@
  */
 package pipelite.launcher.process.runner;
 
-import static pipelite.stage.StageExecutionResultType.*;
+import static pipelite.stage.executor.StageExecutorResultType.*;
 
 import com.google.common.flogger.FluentLogger;
 import java.time.Duration;
@@ -24,7 +24,7 @@ import org.springframework.util.Assert;
 import pipelite.configuration.*;
 import pipelite.entity.StageEntity;
 import pipelite.exception.PipeliteInterruptedException;
-import pipelite.executor.StageExecutorSerializer;
+import pipelite.stage.executor.StageExecutorSerializer;
 import pipelite.launcher.StageLauncher;
 import pipelite.launcher.dependency.DependencyResolver;
 import pipelite.log.LogKey;
@@ -34,8 +34,8 @@ import pipelite.service.MailService;
 import pipelite.service.ProcessService;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
-import pipelite.stage.StageExecutionResult;
-import pipelite.stage.StageExecutionResultType;
+import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.time.Time;
 
 /** Executes a process and returns the process state. */
@@ -137,9 +137,9 @@ public class DefaultProcessRunner implements ProcessRunner {
             if (!StageExecutorSerializer.deserializeExecution(stage)) {
               stageService.startExecution(stage);
             }
-            StageExecutionResult stageExecutionResult = stageLauncher.run();
-            stageService.endExecution(stage, stageExecutionResult);
-            if (stageExecutionResult.isSuccess()) {
+            StageExecutorResult stageExecutorResult = stageLauncher.run();
+            stageService.endExecution(stage, stageExecutorResult);
+            if (stageExecutorResult.isSuccess()) {
               resetDependentStageExecution(process, stage);
               result.addStageSuccessCount(1);
             } else {
@@ -147,7 +147,7 @@ public class DefaultProcessRunner implements ProcessRunner {
               result.addStageFailedCount(1);
             }
           } catch (Exception ex) {
-            stageService.endExecution(stage, StageExecutionResult.error(ex));
+            stageService.endExecution(stage, StageExecutorResult.error(ex));
             mailService.sendStageExecutionMessage(pipelineName, process, stage);
             result.addStageExceptionCount(1);
             logContext(log.atSevere())
@@ -195,7 +195,7 @@ public class DefaultProcessRunner implements ProcessRunner {
     int errorCount = 0;
     for (Stage stage : stages) {
       StageEntity stageEntity = stage.getStageEntity();
-      StageExecutionResultType resultType = stageEntity.getResultType();
+      StageExecutorResultType resultType = stageEntity.getResultType();
       if (resultType == SUCCESS) {
         continue;
       }

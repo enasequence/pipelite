@@ -72,7 +72,7 @@ public class PipeliteLauncherTest {
 
     List<ProcessEntity> processesEntities =
         Collections.nCopies(processCnt, mock(ProcessEntity.class));
-    doReturn(processesEntities).when(queue).getActiveProcesses();
+    doReturn(processesEntities).when(queue).getAvailablActiveProcesses();
 
     PipeliteLauncher launcher =
         spy(
@@ -117,7 +117,7 @@ public class PipeliteLauncherTest {
 
     List<ProcessEntity> processesEntities =
         Collections.nCopies(processCnt, mock(ProcessEntity.class));
-    doReturn(processesEntities).when(queue).getActiveProcesses();
+    doReturn(processesEntities).when(queue).getAvailablActiveProcesses();
     doReturn(processesEntities).when(queue).getPendingProcesses();
 
     PipeliteLauncher launcher =
@@ -143,7 +143,7 @@ public class PipeliteLauncherTest {
 
     verify(launcher, times(1)).run();
     verify(queue, times(1)).fillQueue();
-    verify(queue, times(1)).getActiveProcesses();
+    verify(queue, times(1)).getAvailablActiveProcesses();
     verify(queue, times(1)).getPendingProcesses();
   }
 

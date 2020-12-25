@@ -15,10 +15,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import lombok.Data;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
-import pipelite.executor.StageExecutor;
+import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.Stage;
-import pipelite.stage.StageExecutionResult;
-import pipelite.stage.StageExecutionResultType;
+import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultType;
 
 class StageEntityTest {
 
@@ -27,7 +27,7 @@ class StageEntityTest {
     private String test = "TEST_EXECUTOR_DATA";
 
     @Override
-    public StageExecutionResult execute(String pipelineName, String processId, Stage stage) {
+    public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
       return null;
     }
   }
@@ -66,7 +66,7 @@ class StageEntityTest {
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getExecutionCount()).isEqualTo(0);
-    assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.ACTIVE);
+    assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.ACTIVE);
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNull();
@@ -78,8 +78,8 @@ class StageEntityTest {
 
     // End first execution.
 
-    StageExecutionResult firstExecutionResult =
-        new StageExecutionResult(StageExecutionResultType.ERROR);
+    StageExecutorResult firstExecutionResult =
+        new StageExecutorResult(StageExecutorResultType.ERROR);
     firstExecutionResult.setStdout("TEST3");
     firstExecutionResult.setStderr("TEST4");
 
@@ -89,7 +89,7 @@ class StageEntityTest {
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
-    assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.ERROR);
+    assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.ERROR);
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNotNull();
@@ -108,7 +108,7 @@ class StageEntityTest {
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
-    assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.ACTIVE);
+    assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.ACTIVE);
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNull();
@@ -120,8 +120,8 @@ class StageEntityTest {
 
     // End second execution.
 
-    StageExecutionResult secondExecutionResult =
-        new StageExecutionResult(StageExecutionResultType.SUCCESS);
+    StageExecutorResult secondExecutionResult =
+        new StageExecutorResult(StageExecutorResultType.SUCCESS);
     secondExecutionResult.setStdout("TEST5");
     secondExecutionResult.setStderr("TEST6");
 
@@ -131,7 +131,7 @@ class StageEntityTest {
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getExecutionCount()).isEqualTo(2);
-    assertThat(stageEntity.getResultType()).isEqualTo(StageExecutionResultType.SUCCESS);
+    assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.SUCCESS);
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNotNull();

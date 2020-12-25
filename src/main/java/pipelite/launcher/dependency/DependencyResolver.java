@@ -14,7 +14,7 @@ import java.util.*;
 import pipelite.entity.StageEntity;
 import pipelite.launcher.StageLauncher;
 import pipelite.stage.Stage;
-import pipelite.stage.StageExecutionResultType;
+import pipelite.stage.executor.StageExecutorResultType;
 
 public class DependencyResolver {
 
@@ -130,7 +130,7 @@ public class DependencyResolver {
    */
   public static boolean isEventuallyExecutableStage(List<Stage> stages, Stage stage) {
     StageEntity stageEntity = stage.getStageEntity();
-    if (stageEntity.getResultType() == StageExecutionResultType.SUCCESS) {
+    if (stageEntity.getResultType() == StageExecutorResultType.SUCCESS) {
       // Stage can't be executed because it has already been executed successfully.
       return false;
     }
@@ -140,7 +140,7 @@ public class DependencyResolver {
       return false;
     }
     for (Stage dependsOn : getDependsOnStages(stages, stage)) {
-      if (dependsOn.getStageEntity().getResultType() == StageExecutionResultType.SUCCESS) {
+      if (dependsOn.getStageEntity().getResultType() == StageExecutorResultType.SUCCESS) {
         // Stage can be executed because the stage it depends on has been executed successfully.
         continue;
       }
@@ -211,7 +211,7 @@ public class DependencyResolver {
    */
   public static boolean isDependsOnStagesAllSuccess(List<Stage> stages, Stage stage) {
     return getDependsOnStages(stages, stage).stream()
-            .filter(s -> s.getStageEntity().getResultType() != StageExecutionResultType.SUCCESS)
+            .filter(s -> s.getStageEntity().getResultType() != StageExecutorResultType.SUCCESS)
             .count()
         == 0;
   }
