@@ -10,8 +10,8 @@
  */
 package pipelite.exception;
 
-public class PipeliteInterruptedException extends PipeliteException {
-  public PipeliteInterruptedException(String message) {
+public class PipeliteException extends RuntimeException {
+  public PipeliteException(String message) {
     super(message);
   }
 }

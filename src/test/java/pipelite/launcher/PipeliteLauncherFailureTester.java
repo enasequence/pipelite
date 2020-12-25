@@ -13,6 +13,8 @@ package pipelite.launcher;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -240,7 +242,11 @@ public class PipeliteLauncherFailureTester {
       processIds.add(processId);
 
       StageExecutorParameters executorParams =
-          StageExecutorParameters.builder().immediateRetries(0).maximumRetries(0).build();
+          StageExecutorParameters.builder()
+              .immediateRetries(0)
+              .maximumRetries(0)
+              .timeout(Duration.ofSeconds(10))
+              .build();
 
       return new ProcessBuilder(processId)
           .execute("STAGE0", executorParams)
@@ -371,7 +377,12 @@ public class PipeliteLauncherFailureTester {
             .startsWith(PipeliteLauncherFailureTester.class.getName());
         assertThat(stageEntity.getExecutorData()).isEqualTo("{ }");
         assertThat(stageEntity.getExecutorParams())
-            .isEqualTo("{\n  \"maximumRetries\" : 0,\n  \"immediateRetries\" : 0\n}");
+            .isEqualTo(
+                "{\n"
+                    + "  \"timeout\" : 10000,\n"
+                    + "  \"maximumRetries\" : 0,\n"
+                    + "  \"immediateRetries\" : 0\n"
+                    + "}");
 
         if ((i == 0 && f.stageTestResult == StageTestResult.FIRST_ERROR)
             || (i == 1 && f.stageTestResult == StageTestResult.SECOND_ERROR)

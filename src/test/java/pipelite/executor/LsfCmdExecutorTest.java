@@ -115,7 +115,6 @@ public class LsfCmdExecutorTest {
   public void testCmdArguments() {
     StageExecutorParameters executorParams = executorParams();
     LsfCmdExecutor executor = createExecutor();
-
     String cmd = getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, stage(executorParams)));
     assertTrue(cmd.contains(" -M 1M -R \"rusage[mem=1M:duration=1]\""));
     assertTrue(cmd.contains(" -n 1"));

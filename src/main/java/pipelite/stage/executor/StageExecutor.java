@@ -28,7 +28,7 @@ public interface StageExecutor {
    * @param pipelineName the pipeline name.
    * @param processId the process id.
    * @param stage the stage to be executed.
-   * @return stage execution result.
+   * @return stage execution result
    */
   StageExecutorResult execute(String pipelineName, String processId, Stage stage);
 

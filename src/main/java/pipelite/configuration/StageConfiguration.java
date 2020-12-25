@@ -13,75 +13,44 @@ package pipelite.configuration;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import pipelite.stage.executor.ConfigurableStageExecutorParameters;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Configuration
 @ConfigurationProperties(prefix = "pipelite.stage", ignoreInvalidFields = true)
-/** Some configuration parameters are supported only by specific executors. */
 public class StageConfiguration implements ConfigurableStageExecutorParameters {
 
-  public StageConfiguration() {}
-
-  public StageConfiguration(
-      String host,
-      Duration timeout,
-      Integer memory,
-      Duration memoryTimeout,
-      Integer cores,
-      String queue,
-      Integer maximumRetries,
-      Integer immediateRetries,
-      String workDir,
-      Map<String, String> env,
-      String singularityImage) {
-    this.host = host;
-    this.timeout = timeout != null ? timeout : DEFAULT_TIMEOUT;
-    this.memory = memory;
-    this.memoryTimeout = memoryTimeout;
-    this.cores = cores;
-    this.queue = queue;
-    this.maximumRetries = maximumRetries != null ? maximumRetries : DEFAULT_MAX_RETRIES;
-    this.immediateRetries = immediateRetries;
-    this.workDir = workDir;
-    this.env = env;
-    this.singularityImage = singularityImage;
-  }
-
-  /** Remote host. */
-  private String host;
-
-  /** Execution timeout. */
   @Builder.Default private Duration timeout = DEFAULT_TIMEOUT;
 
-  /** Memory reservation (MBytes). */
-  private Integer memory;
-
-  /** Memory reservation timeout (minutes). */
-  private Duration memoryTimeout;
-
-  /** Core reservation. */
-  private Integer cores;
-
-  /** Queue name. */
-  private String queue;
-
-  /** Number of maximum retries. */
   @Builder.Default private Integer maximumRetries = DEFAULT_MAX_RETRIES;
 
-  /** Number of maximum retries. */
-  private Integer immediateRetries;
+  @Builder.Default private Integer immediateRetries = DEFAULT_IMMEDIATE_RETRIES;
 
-  /** Work directory. */
+  @Builder.Default private Map<String, String> env = new HashMap<>();
+
   private String workDir;
 
-  /** Environmental variables. */
-  @Builder.Default private Map<String, String> env = new HashMap<>();
+  private Integer memory;
+
+  private Duration memoryTimeout;
+
+  private Integer cores;
+
+  private String host;
+
+  private String queue;
+
+  @Builder.Default private Duration pollFrequency = DEFAULT_POLL_FREQUENCY;
 
   private String singularityImage;
 }

@@ -14,6 +14,8 @@ import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.google.common.flogger.FluentLogger;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
@@ -66,6 +68,7 @@ public class LsfCmdExecutor extends CmdExecutor {
     if (jobId == null) {
       return submit(pipelineName, processId, stage);
     }
+
     return poll(pipelineName, processId, stage);
   }
 
@@ -86,11 +89,7 @@ public class LsfCmdExecutor extends CmdExecutor {
     }
 
     if (jobId == null) {
-      log.atSevere()
-          .with(LogKey.PIPELINE_NAME, pipelineName)
-          .with(LogKey.PROCESS_ID, processId)
-          .with(LogKey.STAGE_NAME, stage.getStageName())
-          .log("No LSF submit job id.");
+      logContext(log.atSevere(), pipelineName, processId, stage).log("No LSF submit job id.");
       result.setResultType(StageExecutorResultType.ERROR);
       result.setInternalError(StageExecutorResult.InternalError.CMD_SUBMIT);
     } else {
@@ -104,21 +103,16 @@ public class LsfCmdExecutor extends CmdExecutor {
     Duration timeout = stage.getExecutorParams().getTimeout();
 
     if (timeout != null && ZonedDateTime.now().isAfter(startTime.plus(timeout))) {
-      log.atSevere()
-          .with(LogKey.PIPELINE_NAME, pipelineName)
-          .with(LogKey.PROCESS_ID, processId)
-          .with(LogKey.STAGE_NAME, stage.getStageName())
+      logContext(log.atSevere(), pipelineName, processId, stage)
           .log("Maximum run time exceeded. Killing LSF job.");
-
       cmdRunner.execute(BKILL_CMD + jobId, stage.getExecutorParams());
       reset();
-      return StageExecutorResult.error();
+      StageExecutorResult result = StageExecutorResult.error();
+      result.setInternalError(StageExecutorResult.InternalError.CMD_TIMEOUT);
+      return result;
     }
 
-    log.atFine()
-        .with(LogKey.PIPELINE_NAME, pipelineName)
-        .with(LogKey.PROCESS_ID, processId)
-        .with(LogKey.STAGE_NAME, stage.getStageName())
+    logContext(log.atFine(), pipelineName, processId, stage)
         .log("Checking LSF job result using bjobs.");
 
     CmdRunnerResult bjobsCustomCmdRunnerResult =
@@ -132,10 +126,7 @@ public class LsfCmdExecutor extends CmdExecutor {
         return result;
       }
     } else {
-      log.atFine()
-          .with(LogKey.PIPELINE_NAME, pipelineName)
-          .with(LogKey.PROCESS_ID, processId)
-          .with(LogKey.STAGE_NAME, stage.getStageName())
+      logContext(log.atFine(), pipelineName, processId, stage)
           .log("Checking LSF job result using bhist.");
 
       CmdRunnerResult bhistCmdRunnerResult =
@@ -160,10 +151,7 @@ public class LsfCmdExecutor extends CmdExecutor {
       }
     }
 
-    log.atFine()
-        .with(LogKey.PIPELINE_NAME, pipelineName)
-        .with(LogKey.PROCESS_ID, processId)
-        .with(LogKey.STAGE_NAME, stage.getStageName())
+    logContext(log.atFine(), pipelineName, processId, stage)
         .log("Reading stdout file: %s", stdoutFile);
 
     try {
@@ -183,7 +171,7 @@ public class LsfCmdExecutor extends CmdExecutor {
   }
 
   @Override
-  public final String getCmdPrefix(String pipelineName, String processId, Stage stage) {
+  public final String getPrefixCmd(String pipelineName, String processId, Stage stage) {
 
     StringBuilder cmd = new StringBuilder();
     cmd.append(BSUB_CMD);
@@ -318,5 +306,12 @@ public class LsfCmdExecutor extends CmdExecutor {
   private static void addArgument(StringBuilder cmd, String argument) {
     cmd.append(" ");
     cmd.append(argument);
+  }
+
+  private FluentLogger.Api logContext(
+      FluentLogger.Api log, String pipelineName, String processId, Stage stage) {
+    return log.with(LogKey.PIPELINE_NAME, pipelineName)
+        .with(LogKey.PROCESS_ID, processId)
+        .with(LogKey.STAGE_NAME, stage.getStageName());
   }
 }

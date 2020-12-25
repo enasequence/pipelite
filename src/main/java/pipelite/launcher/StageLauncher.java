@@ -11,10 +11,8 @@
 package pipelite.launcher;
 
 import com.google.common.flogger.FluentLogger;
-import java.time.Duration;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
-import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
 import pipelite.exception.PipeliteInterruptedException;
 import pipelite.log.LogKey;
@@ -24,36 +22,29 @@ import pipelite.stage.executor.ConfigurableStageExecutorParameters;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.time.Time;
 
+import java.time.Duration;
+
 @Flogger
 /** Executes a stage and returns the stage execution result. */
 public class StageLauncher {
 
-  private final LauncherConfiguration launcherConfiguration;
   private final StageConfiguration stageConfiguration;
   private final String pipelineName;
   private final Process process;
   private final Stage stage;
-  private final Duration stagePollFrequency;
 
   public StageLauncher(
-      LauncherConfiguration launcherConfiguration,
-      StageConfiguration stageConfiguration,
-      String pipelineName,
-      Process process,
-      Stage stage) {
-    this.launcherConfiguration = launcherConfiguration;
+      StageConfiguration stageConfiguration, String pipelineName, Process process, Stage stage) {
     this.stageConfiguration = stageConfiguration;
     this.pipelineName = pipelineName;
     this.process = process;
     this.stage = stage;
-    Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(stageConfiguration, "Missing stage configuration");
     Assert.notNull(pipelineName, "Missing pipeline name");
     Assert.notNull(process, "Missing process");
     Assert.notNull(process.getProcessEntity(), "Missing process entity");
     Assert.notNull(stage, "Missing stage");
     Assert.notNull(stage.getStageEntity(), "Missing stage entity");
-    this.stagePollFrequency = launcherConfiguration.getStagePollFrequency();
   }
 
   /**
@@ -130,7 +121,11 @@ public class StageLauncher {
         break;
       }
 
-      if (!Time.wait(stagePollFrequency)) {
+      Duration pollFrequency = stage.getExecutorParams().getPollFrequency();
+      if (pollFrequency == null) {
+        pollFrequency = ConfigurableStageExecutorParameters.DEFAULT_POLL_FREQUENCY;
+      }
+      if (!Time.wait(pollFrequency)) {
         throw new PipeliteInterruptedException("Stage launcher was interrupted");
       }
     }

@@ -15,7 +15,6 @@ import static org.mockito.Mockito.*;
 
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
@@ -28,24 +27,7 @@ import pipelite.stage.executor.StageExecutorResultType;
 
 public class StageLauncherTest {
 
-  /*
-    public class ResultCapture<T> implements Answer {
-      private T result = null;
-
-      public T getResult() {
-        return result;
-      }
-
-      @Override
-      public T answer(InvocationOnMock invocationOnMock) throws Throwable {
-        result = (T) invocationOnMock.callRealMethod();
-        return result;
-      }
-    }
-  */
-
   private void testRunSyncExecutor(StageExecutorResultType resultType) {
-    LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
     StageConfiguration stageConfiguration = new StageConfiguration();
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     String processId = UniqueStringGenerator.randomProcessId();
@@ -64,8 +46,7 @@ public class StageLauncherTest {
     stage.getStageEntity().startExecution(stage);
     StageLauncher stageLauncher =
         spy(
-            new StageLauncher(
-                launcherConfiguration, stageConfiguration, pipelineName, process, stage));
+            new StageLauncher(stageConfiguration, pipelineName, process, stage));
     assertThat(stageLauncher.run().getResultType()).isEqualTo(resultType);
     verify(stageLauncher, times(0)).pollExecution();
     assertThat(stage.getStageEntity().getExecutorName())
@@ -77,7 +58,6 @@ public class StageLauncherTest {
   }
 
   private void testRunAsyncExecutor(StageExecutorResultType resultType) {
-    LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
     StageConfiguration stageConfiguration = new StageConfiguration();
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     String processId = UniqueStringGenerator.randomProcessId();
@@ -98,8 +78,7 @@ public class StageLauncherTest {
     stage.getStageEntity().startExecution(stage);
     StageLauncher stageLauncher =
         spy(
-            new StageLauncher(
-                launcherConfiguration, stageConfiguration, pipelineName, process, stage));
+            new StageLauncher(stageConfiguration, pipelineName, process, stage));
     assertThat(stageLauncher.run().getResultType()).isEqualTo(resultType);
     verify(stageLauncher, times(1)).pollExecution();
     assertThat(stage.getStageEntity().getExecutorName())

@@ -13,6 +13,8 @@ package pipelite.launcher;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.micrometer.core.instrument.MeterRegistry;
+
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -158,7 +160,11 @@ public class PipeliteSchedulerTester {
     public Process create(String processId) {
       processIds.add(processId);
       StageExecutorParameters executorParams =
-          StageExecutorParameters.builder().immediateRetries(0).maximumRetries(0).build();
+          StageExecutorParameters.builder()
+              .immediateRetries(0)
+              .maximumRetries(0)
+              .timeout(Duration.ofSeconds(10))
+              .build();
 
       ProcessBuilder processBuilder = new ProcessBuilder(processId);
       for (int i = 0; i < stageCnt; ++i) {
@@ -284,7 +290,12 @@ public class PipeliteSchedulerTester {
       assertThat(stageEntity.getExecutorName()).startsWith(PipeliteSchedulerTester.class.getName());
       assertThat(stageEntity.getExecutorData()).isEqualTo("{ }");
       assertThat(stageEntity.getExecutorParams())
-          .isEqualTo("{\n  \"maximumRetries\" : 0,\n  \"immediateRetries\" : 0\n}");
+          .isEqualTo(
+              "{\n"
+                  + "  \"timeout\" : 10000,\n"
+                  + "  \"maximumRetries\" : 0,\n"
+                  + "  \"immediateRetries\" : 0\n"
+                  + "}");
 
       if (f.stageTestResult == StageTestResult.ERROR) {
         assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.ERROR);

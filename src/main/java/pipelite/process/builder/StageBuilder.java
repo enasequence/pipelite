@@ -15,11 +15,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.EmptyAsyncStageExecutor;
-import pipelite.stage.executor.EmptySyncStageExecutor;
-import pipelite.stage.executor.StageExecutor;
-import pipelite.stage.executor.StageExecutorParameters;
-import pipelite.stage.executor.StageExecutorResultType;
+import pipelite.stage.executor.*;
 
 public class StageBuilder {
   private final ProcessBuilder processBuilder;
@@ -79,7 +75,7 @@ public class StageBuilder {
   }
 
   /**
-   * An executor that simulates a synchronous executor that returns a stage execution result of the
+   * An synchronous executor that returns a stage execution result of the
    * given result type.
    *
    * @param resultType the stage execution result type returned by the executor
@@ -89,7 +85,7 @@ public class StageBuilder {
   }
 
   /**
-   * An executor that simulates an asynchronous executor that returns a stage execution result of
+   * An asynchronous executor that returns a stage execution result of
    * the given result type.
    *
    * @param resultType the stage execution result returned by the executor

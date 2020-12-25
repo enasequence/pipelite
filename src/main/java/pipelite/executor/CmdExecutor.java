@@ -44,38 +44,48 @@ public class CmdExecutor implements StageExecutor {
   protected CmdRunner cmdRunner;
 
   /**
-   * Returns an optional command prefix.
+   * Returns an optional prefix command.
    *
    * @param pipelineName the pipeline name
    * @param processId the process id
    * @param stage the stage
-   * @return an optional command prefix.
+   * @return an optional prefix command
    */
-  public String getCmdPrefix(String pipelineName, String processId, Stage stage) {
+  public String getPrefixCmd(String pipelineName, String processId, Stage stage) {
     return null;
   }
 
-  public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
-    String singularityImage = stage.getExecutorParams().getSingularityImage();
-
-    String cmdPrefix = getCmdPrefix(pipelineName, processId, stage);
-    if (cmdPrefix != null) {
-      cmdPrefix = cmdPrefix + " ";
+  /**
+   * Returns the full command after all modifications including the optional prefix command.
+   *
+   * @param pipelineName the pipeline name
+   * @param processId the process id
+   * @param stage the stage
+   * @return the full command after all modifications including the optional prefix command
+   */
+  public String getFullCmd(String pipelineName, String processId, Stage stage) {
+    String prefixCmd = getPrefixCmd(pipelineName, processId, stage);
+    if (prefixCmd != null) {
+      prefixCmd = prefixCmd + " ";
     } else {
-      cmdPrefix = "";
+      prefixCmd = "";
     }
+    String singularityImage = stage.getExecutorParams().getSingularityImage();
     if (singularityImage != null) {
-      cmdPrefix += "singularity run " + singularityImage + " ";
+      prefixCmd += "singularity run " + singularityImage + " ";
     }
-    String execCmd = cmdPrefix + cmd;
+    return prefixCmd + cmd;
+  }
 
+  public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
+    String fullCmd = getFullCmd(pipelineName, processId, stage);
     try {
-      CmdRunnerResult result = cmdRunner.execute(execCmd, stage.getExecutorParams());
-      return result.getStageExecutorResult(execCmd, stage.getExecutorParams().getHost());
+      CmdRunnerResult result = cmdRunner.execute(fullCmd, stage.getExecutorParams());
+      return result.getStageExecutorResult(fullCmd, stage.getExecutorParams().getHost());
     } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Failed call: %s", execCmd);
+      log.atSevere().withCause(ex).log("Failed call: %s", fullCmd);
       StageExecutorResult result = StageExecutorResult.error(ex);
-      result.addAttribute(StageExecutorResultAttribute.COMMAND, execCmd);
+      result.addAttribute(StageExecutorResultAttribute.COMMAND, fullCmd);
       return result;
     }
   }

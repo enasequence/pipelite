@@ -38,7 +38,6 @@ public class LauncherConfiguration {
   private static final int DEFAULT_PROCESS_QUEUE_MAX_SIZE = 5000;
   private static final int DEFAULT_PROCESS_CREATE_MAX_SIZE = 5000;
   private static final Duration DEFAULT_STAGE_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
-  private static final Duration DEFAULT_STAGE_POLL_FREQUENCY = Duration.ofMinutes(1);
 
   public LauncherConfiguration() {}
 
@@ -71,12 +70,6 @@ public class LauncherConfiguration {
    * pipelite.launcher.PipeliteScheduler} to execute new process stages.
    */
   private Duration stageLaunchFrequency = DEFAULT_STAGE_LAUNCH_FREQUENCY;
-
-  /**
-   * The frequency for {@link pipelite.launcher.PipeliteLauncher} and {@link
-   * pipelite.launcher.PipeliteScheduler} to poll for stage execution results.
-   */
-  private Duration stagePollFrequency = DEFAULT_STAGE_POLL_FREQUENCY;
 
   /**
    * The frequency for {@link pipelite.launcher.PipeliteScheduler} to refresh its process schedules.
