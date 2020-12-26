@@ -24,6 +24,7 @@ class ScheduleEntityTest {
   public void lifecycle() {
     String processId = "test";
     String processId2 = "test2";
+    String processId3 = "test3";
     ScheduleEntity scheduleEntity = new ScheduleEntity();
 
     // Start execution.
@@ -34,7 +35,10 @@ class ScheduleEntityTest {
     assertThat(scheduleEntity.getStartTime()).isNotNull();
     assertThat(scheduleEntity.getEndTime()).isNull();
     assertThat(scheduleEntity.getExecutionCount()).isZero();
-    assertThat(scheduleEntity.getExecutionHistory()).isNull();
+    assertThat(scheduleEntity.getLastCompleted()).isNull();
+    assertThat(scheduleEntity.getLastFailed()).isNull();
+    assertThat(scheduleEntity.getStreakCompleted()).isEqualTo(0);
+    assertThat(scheduleEntity.getStreakFailed()).isEqualTo(0);
 
     // End execution.
 
@@ -51,15 +55,10 @@ class ScheduleEntityTest {
     assertThat(scheduleEntity.getStartTime()).isNotNull();
     assertThat(scheduleEntity.getEndTime()).isNotNull();
     assertThat(scheduleEntity.getExecutionCount()).isOne();
-    assertThat(scheduleEntity.getExecutionHistory())
-        .isEqualTo(
-            "{\n"
-                + "  \"executions\" : [ {\n"
-                + "    \"processId\" : \"test\",\n"
-                + "    \"state\" : \"COMPLETED\",\n"
-                + "    \"endTime\" : \"2020-01-01T01:01:00Z\"\n"
-                + "  } ]\n"
-                + "}");
+    assertThat(scheduleEntity.getLastCompleted()).isNotNull();
+    assertThat(scheduleEntity.getLastFailed()).isNull();
+    assertThat(scheduleEntity.getStreakCompleted()).isEqualTo(1);
+    assertThat(scheduleEntity.getStreakFailed()).isEqualTo(0);
 
     // Start 2nd execution.
 
@@ -69,7 +68,10 @@ class ScheduleEntityTest {
     assertThat(scheduleEntity.getStartTime()).isNotNull();
     assertThat(scheduleEntity.getEndTime()).isNull();
     assertThat(scheduleEntity.getExecutionCount()).isOne();
-    assertThat(scheduleEntity.getExecutionHistory()).isNotNull();
+    assertThat(scheduleEntity.getLastCompleted()).isNotNull();
+    assertThat(scheduleEntity.getLastFailed()).isNull();
+    assertThat(scheduleEntity.getStreakCompleted()).isEqualTo(1);
+    assertThat(scheduleEntity.getStreakFailed()).isEqualTo(0);
 
     // End 2nd execution.
 
@@ -86,19 +88,43 @@ class ScheduleEntityTest {
     assertThat(scheduleEntity.getStartTime()).isNotNull();
     assertThat(scheduleEntity.getEndTime()).isNotNull();
     assertThat(scheduleEntity.getExecutionCount()).isEqualTo(2);
-    assertThat(scheduleEntity.getExecutionHistory())
-        .isEqualTo(
-            "{\n"
-                + "  \"executions\" : [ {\n"
-                + "    \"processId\" : \"test\",\n"
-                + "    \"state\" : \"COMPLETED\",\n"
-                + "    \"endTime\" : \"2020-01-01T01:01:00Z\"\n"
-                + "  }, {\n"
-                + "    \"processId\" : \"test2\",\n"
-                + "    \"state\" : \"COMPLETED\",\n"
-                + "    \"endTime\" : \"2020-02-01T01:01:00Z\"\n"
-                + "  } ]\n"
-                + "}");
+    assertThat(scheduleEntity.getLastCompleted()).isNotNull();
+    assertThat(scheduleEntity.getLastFailed()).isNull();
+    assertThat(scheduleEntity.getStreakCompleted()).isEqualTo(2);
+    assertThat(scheduleEntity.getStreakFailed()).isEqualTo(0);
+
+    // Start 2nd execution.
+
+    scheduleEntity.startExecution(processId2);
+
+    assertThat(scheduleEntity.getProcessId()).isEqualTo(processId2);
+    assertThat(scheduleEntity.getStartTime()).isNotNull();
+    assertThat(scheduleEntity.getEndTime()).isNull();
+    assertThat(scheduleEntity.getExecutionCount()).isEqualTo(2);
+    assertThat(scheduleEntity.getLastCompleted()).isNotNull();
+    assertThat(scheduleEntity.getLastFailed()).isNull();
+    assertThat(scheduleEntity.getStreakCompleted()).isEqualTo(2);
+    assertThat(scheduleEntity.getStreakFailed()).isEqualTo(0);
+
+    // End 3rd execution.
+
+    ZonedDateTime endTime3 = ZonedDateTime.of(LocalDateTime.of(2020, 3, 1, 1, 1), ZoneId.of("UTC"));
+
+    ProcessEntity processEntity3 = new ProcessEntity();
+    processEntity3.setProcessId(processId3);
+    processEntity3.setState(ProcessState.FAILED);
+    processEntity3.setEndTime(endTime3);
+
+    scheduleEntity.endExecution(processEntity3);
+
+    assertThat(scheduleEntity.getProcessId()).isEqualTo(processId2);
+    assertThat(scheduleEntity.getStartTime()).isNotNull();
+    assertThat(scheduleEntity.getEndTime()).isNotNull();
+    assertThat(scheduleEntity.getExecutionCount()).isEqualTo(3);
+    assertThat(scheduleEntity.getLastCompleted()).isNotNull();
+    assertThat(scheduleEntity.getLastFailed()).isNotNull();
+    assertThat(scheduleEntity.getStreakCompleted()).isEqualTo(0);
+    assertThat(scheduleEntity.getStreakFailed()).isEqualTo(1);
   }
 
   @Test

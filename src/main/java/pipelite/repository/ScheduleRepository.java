@@ -18,5 +18,5 @@ import pipelite.entity.ScheduleEntity;
 @Repository
 public interface ScheduleRepository extends CrudRepository<ScheduleEntity, String> {
 
-  List<ScheduleEntity> findBySchedulerName(String launcherName);
+  List<ScheduleEntity> findBySchedulerNameAndActive(String launcherName, boolean active);
 }

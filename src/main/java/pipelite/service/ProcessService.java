@@ -172,16 +172,6 @@ public class ProcessService {
     return repository.save(processEntity);
   }
 
-  /**
-   * Returns the maximum process id for the pipeline.
-   *
-   * @param pipelineName the pipeline name
-   * @return the maximum process id for the pipeline
-   */
-  public String getMaxProcessId(String pipelineName) {
-    return repository.findMaxProcessId(pipelineName);
-  }
-
   public ProcessEntity createExecution(String pipelineName, String processId, Integer priority) {
     ProcessEntity processEntity = ProcessEntity.createExecution(pipelineName, processId, priority);
     return saveProcess(processEntity);

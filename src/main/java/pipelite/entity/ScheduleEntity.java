@@ -18,8 +18,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.flogger.Flogger;
 import pipelite.entity.converter.BooleanConverter;
-import pipelite.schedule.ScheduleExecution;
-import pipelite.schedule.ScheduleExecutionHistory;
+import pipelite.process.ProcessState;
 
 @Entity
 @Table(name = "PIPELITE_SCHEDULE")
@@ -67,10 +66,21 @@ public class ScheduleEntity {
   @Column(name = "EXEC_CNT", nullable = false)
   private int executionCount = 0;
 
-  /** Execution history. */
-  @Column(name = "EXEC_HIST", columnDefinition = "CLOB")
-  @Lob
-  private String executionHistory;
+  /** Last completed date. */
+  @Column(name = "LAST_COMPLETED")
+  private ZonedDateTime lastCompleted;
+
+  /** Last failed date. */
+  @Column(name = "LAST_FAILED")
+  private ZonedDateTime lastFailed;
+
+  /** Number of uninterrupted completed executions. */
+  @Column(name = "STREAK_COMPLETED")
+  private int streakCompleted = 0;
+
+  /** Number of uninterrupted failed executions. */
+  @Column(name = "STREAK_FAILED")
+  private int streakFailed = 0;
 
   public void startExecution(String processId) {
     this.startTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
@@ -79,17 +89,18 @@ public class ScheduleEntity {
   }
 
   public void endExecution(ProcessEntity processEntity) {
-    ScheduleExecutionHistory history = null;
-    if (executionHistory != null) {
-      history = ScheduleExecutionHistory.deserialize(executionHistory);
-    }
-    if (history == null) {
-      history = new ScheduleExecutionHistory();
-    }
-    history.addExecution(new ScheduleExecution(processEntity));
-    executionHistory = history.serialize();
     this.endTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.executionCount++;
+    if (processEntity.getState() == ProcessState.COMPLETED) {
+      this.lastCompleted = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+      this.streakCompleted++;
+      this.streakFailed = 0;
+    }
+    if (processEntity.getState() == ProcessState.FAILED) {
+      this.lastFailed = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+      this.streakCompleted = 0;
+      this.streakFailed++;
+    }
   }
 
   /**

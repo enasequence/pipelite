@@ -193,7 +193,8 @@ public class PipeliteSchedulerTester {
     schedule.setCron(testProcessFactory.cron);
     schedule.setSchedulerName(launcherConfiguration.getSchedulerName());
     schedule.setPipelineName(testProcessFactory.pipelineName);
-    scheduleService.saveProcessSchedule(schedule);
+    schedule.setActive(true);
+    scheduleService.saveSchedule(schedule);
     System.out.println(
         "saved schedule for pipeline: "
             + testProcessFactory.pipelineName
@@ -253,7 +254,6 @@ public class PipeliteSchedulerTester {
     assertThat(scheduleEntity.getCron()).isEqualTo(f.cron);
     assertThat(scheduleEntity.getStartTime()).isNotNull();
     assertThat(scheduleEntity.getEndTime()).isNotNull();
-    assertThat(scheduleEntity.getExecutionHistory()).isNotNull();
     assertThat(scheduleEntity.getDescription())
         .isEqualTo("every " + f.schedulerSeconds + " seconds");
   }
@@ -322,7 +322,7 @@ public class PipeliteSchedulerTester {
 
       assertThat(pipeliteScheduler.getActiveProcessRunners().size()).isEqualTo(0);
       List<ScheduleEntity> scheduleEntities =
-          scheduleService.getAllProcessSchedules(launcherConfiguration.getSchedulerName());
+          scheduleService.getActiveSchedules(launcherConfiguration.getSchedulerName());
       for (TestProcessFactory f : testProcessFactories) {
         assertThat(f.stageExecCnt.get() / f.stageCnt).isEqualTo(f.processCnt);
         assertThat(f.processIds.size()).isEqualTo(f.processCnt);

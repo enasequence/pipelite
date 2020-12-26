@@ -29,8 +29,7 @@ import pipelite.UniqueStringGenerator;
     classes = PipeliteTestConfiguration.class,
     properties = {
       "pipelite.launcher.processLaunchFrequency=250ms",
-      "pipelite.launcher.stageLaunchFrequency=250ms",
-      "pipelite.launcher.schedulerName=test"
+      "pipelite.launcher.stageLaunchFrequency=250ms"
     })
 @ContextConfiguration(initializers = PipeliteSchedulerHSqlTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})

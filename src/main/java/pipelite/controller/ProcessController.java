@@ -108,8 +108,8 @@ public class ProcessController {
         .pipelineName(processEntity.getPipelineName())
         .processId(processEntity.getProcessId())
         .state(processEntity.getState().name())
-        .startTime(TimeUtils.dateTimeToString(processEntity.getStartTime()))
-        .endTime(TimeUtils.dateTimeToString(processEntity.getEndTime()))
+        .startTime(TimeUtils.humanReadableDate(processEntity.getStartTime()))
+        .endTime(TimeUtils.humanReadableDate(processEntity.getEndTime()))
         .executionCount(processEntity.getExecutionCount())
         .priority(processEntity.getPriority())
         .build();
@@ -128,8 +128,8 @@ public class ProcessController {
                           .pipelineName(lorem.getCountry())
                           .processId(lorem.getWords(1))
                           .state(lorem.getFirstNameMale())
-                          .startTime(TimeUtils.dateTimeToString(ZonedDateTime.now()))
-                          .endTime(TimeUtils.dateTimeToString(ZonedDateTime.now()))
+                          .startTime(TimeUtils.humanReadableDate(ZonedDateTime.now()))
+                          .endTime(TimeUtils.humanReadableDate(ZonedDateTime.now()))
                           .executionCount(random.nextInt(10))
                           .priority(random.nextInt(10))
                           .build()));

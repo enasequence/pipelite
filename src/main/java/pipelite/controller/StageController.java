@@ -87,11 +87,11 @@ public class StageController {
     String executionTime = null;
     if (stageEntity.getStartTime() != null && stageEntity.getEndTime() != null) {
       executionTime =
-          TimeUtils.durationToStringAlwaysPositive(
+          TimeUtils.humanReadableDuration(
               stageEntity.getEndTime(), stageEntity.getStartTime());
     } else if (stageEntity.getStartTime() != null) {
       executionTime =
-          TimeUtils.durationToStringAlwaysPositive(
+          TimeUtils.humanReadableDuration(
               ZonedDateTime.now(), stageEntity.getStartTime());
     }
     return StageInfo.builder()
@@ -99,8 +99,8 @@ public class StageController {
         .processId(stageEntity.getProcessId())
         .stageName(stageEntity.getStageName())
         .resultType(stageEntity.getResultType().name())
-        .startTime(TimeUtils.dateTimeToString(stageEntity.getStartTime()))
-        .endTime(TimeUtils.dateTimeToString(stageEntity.getEndTime()))
+        .startTime(TimeUtils.humanReadableDate(stageEntity.getStartTime()))
+        .endTime(TimeUtils.humanReadableDate(stageEntity.getEndTime()))
         .executionTime(executionTime)
         .executionCount(stageEntity.getExecutionCount())
         .executorName(stageEntity.getExecutorName())
@@ -132,11 +132,11 @@ public class StageController {
                 .processId(lorem.getWords(1))
                 .stageName(stageName)
                 .resultType("SUCCESS")
-                .startTime(TimeUtils.dateTimeToString(ZonedDateTime.now()))
-                .endTime(TimeUtils.dateTimeToString(ZonedDateTime.now()))
+                .startTime(TimeUtils.humanReadableDate(ZonedDateTime.now()))
+                .endTime(TimeUtils.humanReadableDate(ZonedDateTime.now()))
                 .executionCount(10)
                 .executionTime(
-                    TimeUtils.durationToStringAlwaysPositive(
+                    TimeUtils.humanReadableDuration(
                         ZonedDateTime.now(), ZonedDateTime.now().minus(Duration.ofHours(1))))
                 .executorName(lorem.getNameFemale())
                 .executorData(lorem.getWords(1))

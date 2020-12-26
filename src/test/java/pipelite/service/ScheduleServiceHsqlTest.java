@@ -43,10 +43,11 @@ class ScheduleServiceHsqlTest {
     schedule.setSchedulerName(schedulerName);
     schedule.setPipelineName(pipelineName);
     schedule.setCron("test");
+    schedule.setActive(true);
 
-    service.saveProcessSchedule(schedule);
+    service.saveSchedule(schedule);
 
-    List<ScheduleEntity> schedules = service.getAllProcessSchedules(schedulerName);
+    List<ScheduleEntity> schedules = service.getActiveSchedules(schedulerName);
     assertThat(schedules.size()).isEqualTo(1);
     assertThat(schedules.get(0).getSchedulerName()).isEqualTo(schedule.getSchedulerName());
     assertThat(schedules.get(0).getPipelineName()).isEqualTo(schedule.getPipelineName());
@@ -59,10 +60,11 @@ class ScheduleServiceHsqlTest {
     schedule2.setSchedulerName(schedulerName);
     schedule2.setPipelineName(pipelineName2);
     schedule2.setCron("test2");
+    schedule2.setActive(true);
 
-    service.saveProcessSchedule(schedule2);
+    service.saveSchedule(schedule2);
 
-    schedules = service.getAllProcessSchedules(schedulerName);
+    schedules = service.getActiveSchedules(schedulerName);
     schedules.sort(Comparator.comparing(ScheduleEntity::getCron));
     assertThat(schedules.size()).isEqualTo(2);
     assertThat(schedules.get(0).getSchedulerName()).isEqualTo(schedule.getSchedulerName());

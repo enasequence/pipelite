@@ -13,7 +13,6 @@ package pipelite.controller.utils;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 
 public class TimeUtils {
 
@@ -22,21 +21,56 @@ public class TimeUtils {
   private static final DateTimeFormatter dateTimeFormatter =
       DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssX");
 
-  public static String dateTimeToString(ZonedDateTime dateTime) {
+  /**
+   * Returns the date time as a yyyy-MM-dd'T'HH:mm:ssX formatted string.
+   *
+   * @param dateTime the date time.
+   * @return the date time as a yyyy-MM-dd'T'HH:mm:ssX formatted string
+   */
+  public static String humanReadableDate(ZonedDateTime dateTime) {
     return dateTime.format(dateTimeFormatter);
   }
 
-  public static String durationToString(ZonedDateTime startTime, ZonedDateTime endTime) {
-    Duration duration = Duration.between(endTime, startTime);
-    return duration.toString().substring(2).replaceAll("(\\d[HMS])(?!$)", "$1 ").toLowerCase();
+  /**
+   * Returns the duration between now and the date time as a [\d+d] [\d+h] [\d+m] [\d+s] formatted
+   * string.
+   *
+   * @param dateTime the date time
+   * @return the duration between now and the date time as a [\d+d] [\d+h] [\d+m] [\d+s] formatted
+   *     string
+   */
+  public static String humanReadableDuration(ZonedDateTime dateTime) {
+    return humanReadableDuration(dateTime, ZonedDateTime.now());
   }
 
-  public static String durationToStringAlwaysPositive(
-      ZonedDateTime startTime, ZonedDateTime endTime) {
-    Duration duration = Duration.between(endTime, startTime);
-    if (duration.isNegative()) {
-      duration = Duration.between(startTime, endTime);
+  /**
+   * Returns the duration between the two date times as a [\d+d] [\d+h] [\d+m] [\d+s] formatted
+   * string.
+   *
+   * @param dateTime1 the first date time
+   * @param dateTime2 the second date time
+   * @return the duration between the two date times as a [\d+d] [\d+h] [\d+m] [\d+s] formatted
+   *     string
+   */
+  public static String humanReadableDuration(ZonedDateTime dateTime1, ZonedDateTime dateTime2) {
+    if (dateTime1 == null || dateTime2 == null) {
+      return null;
     }
-    return duration.toString().substring(2).replaceAll("(\\d[HMS])(?!$)", "$1 ").toLowerCase();
+    Duration d = Duration.between(dateTime2, dateTime1);
+    if (d.isNegative()) {
+      d = Duration.between(dateTime1, dateTime2);
+    }
+    long days = d.toDays();
+    d = d.minusDays(days);
+    long hours = d.toHours();
+    d = d.minusHours(hours);
+    long minutes = d.toMinutes();
+    d = d.minusMinutes(minutes);
+    long seconds = d.getSeconds();
+    return ((days == 0 ? "" : days + "d ")
+            + (hours == 0 ? "" : hours + "h ")
+            + (minutes == 0 ? "" : minutes + "m ")
+            + (seconds == 0 ? "" : seconds + "s "))
+        .trim();
   }
 }

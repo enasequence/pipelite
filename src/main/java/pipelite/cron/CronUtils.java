@@ -33,21 +33,34 @@ public abstract class CronUtils {
   private static final CronParser unixParser = new CronParser(unixDefinition);
   private static final CronParser quartzParser = new CronParser(quarzDefinition);
 
-  private static Cron parse(String cronExpression) {
+  /**
+   * Parses the cron expression.
+   *
+   * @param cron the cron expression
+   * @return the parsed cron expression
+   * @throws IllegalArgumentException if the cron expression was not valid
+   */
+  private static Cron parse(String cron) {
     try {
-      return unixParser.parse(cronExpression);
+      return unixParser.parse(cron);
     } catch (Exception ex) {
     }
     try {
-      return quartzParser.parse(cronExpression);
+      return quartzParser.parse(cron);
     } catch (Exception ex) {
     }
-    throw new RuntimeException("Invalid cron expression " + cronExpression);
+    throw new IllegalArgumentException("Invalid cron expression " + cron);
   }
 
-  public static boolean validate(String cronExpression) {
+  /**
+   * Returns true if the cron expression is valid.
+   *
+   * @param cron the cron expression
+   * @return true if the cron expression is valid
+   */
+  public static boolean validate(String cron) {
     try {
-      parse(cronExpression);
+      parse(cron);
       return true;
     } catch (Exception ex) {
       log.atSevere().log(ex.getMessage());
@@ -55,15 +68,30 @@ public abstract class CronUtils {
     }
   }
 
-  public static String describe(String cronExpression) {
-    if (!validate(cronExpression)) {
+  /**
+   * Returns a human readable description of the cron expression.
+   *
+   * @param cron the cron expression
+   * @return a human readable description of the cron expression
+   */
+  public static String describe(String cron) {
+    if (!validate(cron)) {
       return "invalid cron expression";
     }
-    return CronDescriptor.instance(Locale.UK).describe(parse(cronExpression));
+    return CronDescriptor.instance(Locale.UK).describe(parse(cron));
   }
 
-  public static ZonedDateTime launchTime(String cronExpression) {
-    ExecutionTime executionTime = ExecutionTime.forCron(parse(cronExpression));
+  /**
+   * Returns the next launch time or null if the cron expression is not valid.
+   *
+   * @param cron the cron expression
+   * @return the next launch time or null if the cron expression is not valid
+   */
+  public static ZonedDateTime launchTime(String cron) {
+    if (!validate(cron)) {
+      return null;
+    }
+    ExecutionTime executionTime = ExecutionTime.forCron(parse(cron));
     return executionTime.nextExecution(ZonedDateTime.now()).get();
   }
 }

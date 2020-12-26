@@ -86,15 +86,4 @@ public interface ProcessRepository extends CrudRepository<ProcessEntity, Process
       nativeQuery = true)
   Stream<ProcessEntity> findAvailableActiveOrderByPriorityDesc(
       String pipelineName, ZonedDateTime now);
-
-  /**
-   * Finds maximum process id for a pipeline.
-   *
-   * @param pipelineName the pipeline name
-   * @return maximum process id for a pipeline
-   */
-  @Query(
-      value = "SELECT MAX(PROCESS_ID) FROM PIPELITE_PROCESS A WHERE PIPELINE_NAME = ?1",
-      nativeQuery = true)
-  String findMaxProcessId(String pipelineName);
 }

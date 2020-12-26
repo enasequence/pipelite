@@ -11,6 +11,8 @@
 package pipelite.service;
 
 import java.util.List;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.repository.ScheduleRepository;
+import pipelite.schedule.Schedule;
 
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -29,11 +32,15 @@ public class ScheduleService {
     this.repository = repository;
   }
 
-  public List<ScheduleEntity> getAllProcessSchedules(String launcherName) {
-    return repository.findBySchedulerName(launcherName);
+  public List<ScheduleEntity> getActiveSchedules(String schedulerName) {
+    return repository.findBySchedulerNameAndActive(schedulerName, true);
   }
 
-  public ScheduleEntity saveProcessSchedule(ScheduleEntity scheduleEntity) {
+  public Optional<ScheduleEntity> geSavedSchedule(String pipelineName) {
+    return repository.findById(pipelineName);
+  }
+
+  public ScheduleEntity saveSchedule(ScheduleEntity scheduleEntity) {
     return repository.save(scheduleEntity);
   }
 
@@ -41,13 +48,17 @@ public class ScheduleService {
     repository.delete(scheduleEntity);
   }
 
-  public void startExecution(ScheduleEntity scheduleEntity, String processId) {
+  public ScheduleEntity startExecution(String pipelineName, String processId) {
+    ScheduleEntity scheduleEntity = geSavedSchedule(pipelineName).get();
     scheduleEntity.startExecution(processId);
-    saveProcessSchedule(scheduleEntity);
+    saveSchedule(scheduleEntity);
+    return scheduleEntity;
   }
 
-  public void endExecution(ScheduleEntity scheduleEntity, ProcessEntity processEntity) {
+  public ScheduleEntity endExecution(String pipelineName, ProcessEntity processEntity) {
+    ScheduleEntity scheduleEntity = geSavedSchedule(pipelineName).get();
     scheduleEntity.endExecution(processEntity);
-    saveProcessSchedule(scheduleEntity);
+    saveSchedule(scheduleEntity);
+    return scheduleEntity;
   }
 }

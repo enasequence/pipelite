@@ -11,56 +11,72 @@
 package pipelite.schedule;
 
 import java.time.ZonedDateTime;
-import lombok.Getter;
+
+import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.cron.CronUtils;
-import pipelite.entity.ScheduleEntity;
 
-@Getter
+/**
+ * Schedule for a pipeline with cron expression and launch time. When the launch time is set the
+ * schedule is executable.
+ */
+@Flogger
 public class Schedule {
-  private final ScheduleEntity scheduleEntity;
+  private final String pipelineName;
+  private String cron;
   private ZonedDateTime launchTime;
 
-  public Schedule(ScheduleEntity scheduleEntity) {
-    Assert.notNull(scheduleEntity, "Missing schedule entity");
-    this.scheduleEntity = scheduleEntity;
+  public Schedule(String pipelineName) {
+    Assert.notNull(pipelineName, "Missing pipeline name");
+    this.pipelineName = pipelineName;
   }
 
-  public void scheduleExecution() {
-    launchTime = CronUtils.launchTime(scheduleEntity.getCron());
+  /**
+   * Returns the pipeline name.
+   *
+   * @return the pipeline name
+   */
+  public String getPipelineName() {
+    return pipelineName;
   }
 
-  public void resumeExecution() {
-    launchTime = scheduleEntity.getStartTime();
+  /**
+   * Sets the cron expression.
+   *
+   * @param cron the cron expression.
+   */
+  public void setCron(String cron) {
+    this.cron = cron;
   }
 
-  public void endExecution() {
+  public String getCron() {
+    return cron;
+  }
+
+  /**
+   * Sets the launch time using the cron expression. When the launch time is set the schedule is
+   * executable.
+   */
+  public void setLaunchTime() {
+    if (cron != null) {
+      launchTime = CronUtils.launchTime(cron);
+    } else {
+      launchTime = null;
+    }
+  }
+
+  /** Removes the launch time. When the launch time is null the schedule is not executable. */
+  public void removeLaunchTime() {
     launchTime = null;
   }
 
-  public void refreshSchedule(ScheduleEntity newScheduleEntity) {
-    scheduleEntity.setCron(newScheduleEntity.getCron());
-    scheduleEntity.setActive(newScheduleEntity.getActive());
-  }
-
-  public void removeSchedule() {
-    scheduleEntity.setActive(false);
-  }
-
-  public ScheduleEntity getScheduleEntity() {
-    return scheduleEntity;
-  }
-
+  /**
+   * Returns the launch time.
+   *
+   * @return the launch time
+   */
   public ZonedDateTime getLaunchTime() {
     return launchTime;
-  }
-
-  public String getPipelineName() {
-    return scheduleEntity.getPipelineName();
-  }
-
-  public boolean isActive() {
-    return scheduleEntity.getActive() == null || scheduleEntity.getActive();
   }
 
   @Override
@@ -68,11 +84,11 @@ public class Schedule {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     Schedule schedule = (Schedule) o;
-    return scheduleEntity.getPipelineName().equals(schedule.scheduleEntity.getPipelineName());
+    return pipelineName.equals(schedule.pipelineName);
   }
 
   @Override
   public int hashCode() {
-    return scheduleEntity.getPipelineName().hashCode();
+    return pipelineName.hashCode();
   }
 }
