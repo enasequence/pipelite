@@ -27,6 +27,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
 import pipelite.controller.info.PipelineInfo;
+import pipelite.controller.test.LoremIpsumUtils;
 import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.process.runner.ProcessRunnerStats;
 
@@ -86,7 +87,7 @@ public class PipelineController {
     Random random = new Random();
     Function<Duration, Double> randomCount = duration -> Double.valueOf(random.nextInt(100));
     if (Arrays.stream(environment.getActiveProfiles())
-        .anyMatch(profile -> "LoremIpsum".equals(profile))) {
+        .anyMatch(profile -> LoremIpsumUtils.PROFILE_NAME.equals(profile))) {
       Lorem lorem = LoremIpsum.getInstance();
       IntStream.range(1, 100)
           .forEach(

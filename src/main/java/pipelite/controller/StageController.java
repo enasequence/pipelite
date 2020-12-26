@@ -27,6 +27,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.controller.info.StageInfo;
+import pipelite.controller.test.LoremIpsumUtils;
 import pipelite.controller.utils.TimeUtils;
 import pipelite.entity.StageEntity;
 import pipelite.process.Process;
@@ -111,7 +112,7 @@ public class StageController {
 
   public void getLoremIpsumStages(List<StageInfo> list) {
     if (Arrays.stream(environment.getActiveProfiles())
-        .anyMatch(profile -> "LoremIpsum".equals(profile))) {
+        .anyMatch(profile -> LoremIpsumUtils.PROFILE_NAME.equals(profile))) {
       Lorem lorem = LoremIpsum.getInstance();
       AtomicReference<String> previousStageName = new AtomicReference<>();
       for (int i = 0; i < 10; ++i) {

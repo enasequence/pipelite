@@ -28,12 +28,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
 import pipelite.controller.info.ScheduleInfo;
+import pipelite.controller.test.LoremIpsumUtils;
 import pipelite.controller.utils.TimeUtils;
-import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.launcher.PipeliteScheduler;
-import pipelite.process.ProcessState;
-import pipelite.service.ProcessService;
 import pipelite.service.ScheduleService;
 
 @RestController
@@ -44,7 +42,6 @@ public class ScheduleController {
   @Autowired Application application;
   @Autowired Environment environment;
   @Autowired ScheduleService scheduleService;
-  @Autowired ProcessService processService;
 
   @GetMapping("/local")
   @ResponseStatus(HttpStatus.OK)
@@ -73,14 +70,6 @@ public class ScheduleController {
                 return;
               }
               ScheduleEntity e = o.get();
-              String processState = null;
-              if (e.getProcessId() != null) {
-                Optional<ProcessEntity> processEntity =
-                    processService.getSavedProcess(s.getPipelineName(), e.getProcessId());
-                if (processEntity.isPresent()) {
-                  processState = processEntity.get().getState().name();
-                }
-              }
               schedules.add(
                   ScheduleInfo.builder()
                       .schedulerName(scheduler.getLauncherName())
@@ -91,7 +80,6 @@ public class ScheduleController {
                       .sinceStartTime(TimeUtils.humanReadableDuration(e.getStartTime()))
                       .endTime(TimeUtils.humanReadableDate(e.getEndTime()))
                       .sinceEndTime(TimeUtils.humanReadableDuration(e.getEndTime()))
-                      .runTime(TimeUtils.humanReadableDuration(e.getStartTime()))
                       .nextStartTime(TimeUtils.humanReadableDate(s.getLaunchTime()))
                       .untilNextStartTime(TimeUtils.humanReadableDuration(s.getLaunchTime()))
                       .lastCompleted(TimeUtils.humanReadableDate(e.getLastCompleted()))
@@ -101,7 +89,6 @@ public class ScheduleController {
                       .completedStreak(e.getStreakCompleted())
                       .failedStreak(e.getStreakFailed())
                       .processId(e.getProcessId())
-                      .state(processState)
                       .build());
             });
     return schedules;
@@ -109,7 +96,7 @@ public class ScheduleController {
 
   public void getLoremIpsumSchedules(List<ScheduleInfo> list) {
     if (Arrays.stream(environment.getActiveProfiles())
-        .anyMatch(profile -> "LoremIpsum".equals(profile))) {
+        .anyMatch(profile -> LoremIpsumUtils.PROFILE_NAME.equals(profile))) {
       Lorem lorem = LoremIpsum.getInstance();
       IntStream.range(1, 100)
           .forEach(
@@ -127,7 +114,6 @@ public class ScheduleController {
                         .sinceStartTime(humanReadableDuration)
                         .endTime(humanReadableDate)
                         .sinceEndTime(humanReadableDuration)
-                        .runTime(humanReadableDuration)
                         .nextStartTime(humanReadableDate)
                         .untilNextStartTime(humanReadableDuration)
                         .lastCompleted(humanReadableDate)
@@ -137,7 +123,6 @@ public class ScheduleController {
                         .completedStreak(5)
                         .failedStreak(1)
                         .processId(lorem.getWords(1))
-                        .state(ProcessState.COMPLETED.name())
                         .build());
               });
     }
