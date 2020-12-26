@@ -49,8 +49,7 @@ public class Pipelite {
     properties.put("management.endpoints.enabled-by-default", "false");
     properties.put("management.endpoint.health.enabled", "true");
     properties.put("management.endpoint.metrics.enabled", "true");
-    properties.put("management.endpoints.web.exposure.include", "metrics");
-
+    properties.put("management.endpoints.web.exposure.include", "*");
     properties.put("spring.mvc.static-path-pattern", "/static/**");
     properties.put("spring.resources.static-locations", "classpath:/static/");
     properties.put(
