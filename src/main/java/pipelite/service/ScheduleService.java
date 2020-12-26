@@ -12,7 +12,6 @@ package pipelite.service;
 
 import java.util.List;
 import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -20,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.repository.ScheduleRepository;
-import pipelite.schedule.Schedule;
 
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)

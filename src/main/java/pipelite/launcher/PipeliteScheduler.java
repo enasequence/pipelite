@@ -38,9 +38,8 @@ import pipelite.schedule.Schedule;
 import pipelite.service.*;
 
 /**
- * Executes non-parallel processes using cron schedules. New process instances are created using
- * {@link pipelite.process.ProcessFactory}. New process ids are inserted into the PIPELITE_PROCESS
- * table by the {@link pipelite.launcher.PipeliteScheduler}.
+ * Schedules non-parallel processes using cron expressions. New process instances are created using
+ * {@link pipelite.process.ProcessFactory}.
  */
 @Flogger
 public class PipeliteScheduler extends ProcessRunnerPoolService {
@@ -121,7 +120,6 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     return schedules.isEmpty() || !scheduleValidUntil.isAfter(ZonedDateTime.now());
   }
 
-  /** Refreshes the schedules. The refresh frequency is defined by scheduleRefreshFrequency. */
   protected void refreshSchedules() {
     if (!isRefreshSchedules()) {
       return;
@@ -164,7 +162,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
         .findFirst();
   }
   /**
-   * Creates a new schedule and sets the launch time.
+   * Creates and enables the schedule.
    *
    * @param scheduleEntity the schedule entity
    */
@@ -172,7 +170,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     Schedule schedule = new Schedule(scheduleEntity.getPipelineName());
     updateCron(scheduleEntity);
     schedule.setCron(scheduleEntity.getCron());
-    schedule.setLaunchTime();
+    schedule.enable();
     schedules.add(schedule);
   }
 
@@ -199,30 +197,29 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     }
   }
 
-  /** Resumes process executions. */
   protected void resumeSchedules() {
     getSchedules()
         .forEach(
             s -> {
               try {
-                Optional<ScheduleEntity> opt = scheduleService.geSavedSchedule(s.getPipelineName());
-                ScheduleEntity scheduleEntity = opt.get();
-                resumeSchedule(s, scheduleEntity);
+                resumeSchedule(s);
               } catch (Exception ex) {
-                logContext(log.atSevere(), s.getPipelineName()).log("Could not resume process");
+                logContext(log.atSevere(), s.getPipelineName()).log("Could not resume schedule");
               }
             });
   }
 
-  protected void resumeSchedule(Schedule schedule, ScheduleEntity scheduleEntity) {
+  protected void resumeSchedule(Schedule schedule) {
+    String pipelineName = schedule.getPipelineName();
+    ScheduleEntity scheduleEntity = scheduleService.geSavedSchedule(pipelineName).get();
     if (!scheduleEntity.isResumeProcess()) {
       return;
     }
-    logContext(log.atInfo(), schedule.getPipelineName()).log("Resuming process execution");
+    logContext(log.atInfo(), pipelineName).log("Resuming schedule");
     Optional<ProcessEntity> processEntity = getSavedProcessEntity(scheduleEntity);
     if (!processEntity.isPresent()) {
-      logContext(log.atSevere(), scheduleEntity.getPipelineName(), scheduleEntity.getProcessId())
-          .log("Could not resume process execution because process does not exist");
+      logContext(log.atSevere(), pipelineName, scheduleEntity.getProcessId())
+          .log("Could not resume schedule because process does not exist");
     } else {
       executeSchedule(schedule, processEntity.get());
     }
@@ -255,7 +252,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
    *
    * @param lastProcessId the last process id
    * @return the next process id
-   * @throws RuntimeException if a new process id could not be created
+   * @throws PipeliteException if a new process id could not be created
    */
   public static String nextProcessId(String lastProcessId) {
     if (lastProcessId == null) {
@@ -280,47 +277,45 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
       logContext(log.atSevere(), pipelineName, processId).log("Failed to create scheduled process");
       return;
     }
-    maximumExecutions.get(pipelineName).decrementAndGet();
-
     scheduleService.startExecution(pipelineName, processId);
-    schedule.removeLaunchTime();
+    schedule.disable();
+    maximumExecutions.get(pipelineName).decrementAndGet();
 
     runProcess(
         pipelineName,
         process,
         (p, r) -> {
           scheduleService.endExecution(pipelineName, processEntity);
-          schedule.setLaunchTime();
+          schedule.enable();
           getStats(pipelineName).addProcessRunnerResult(p.getProcessEntity().getState(), r);
         });
   }
 
   /**
-   * Returns all schedules.
+   * Returns the schedules.
    *
-   * @return all schedules.
+   * @return the schedules
    */
   public List<Schedule> getSchedules() {
-    return this.schedules;
+    return schedules;
   }
 
   /**
-   * Returns all stages that are not running and can be executed.
+   * Returns schedules that can be executed.
    *
-   * @return all stages that are not running and can be executed.
+   * @return schedules that can be executed
    */
-  public Stream<Schedule> getExecutableSchedules() {
+  private Stream<Schedule> getExecutableSchedules() {
     return getSchedules().stream()
-        // Must have launch time.
-        .filter(s -> s.getLaunchTime() != null)
+        // Must be executable.
+        .filter(s -> s.isExecutable())
         // Must not be running.
         .filter(s -> !isPipelineActive(s.getPipelineName()))
         // Must not have exceeded maximum executions.
         .filter(
-            schedule ->
-                maximumExecutions.get(schedule.getPipelineName()) == null
-                    || maximumExecutions.get(schedule.getPipelineName()).get() > 0)
-        .filter(schedule -> !schedule.getLaunchTime().isAfter(ZonedDateTime.now()));
+            s ->
+                maximumExecutions.get(s.getPipelineName()) == null
+                    || maximumExecutions.get(s.getPipelineName()).get() > 0);
   }
 
   public void setMaximumExecutions(String pipelineName, long maximumExecutions) {

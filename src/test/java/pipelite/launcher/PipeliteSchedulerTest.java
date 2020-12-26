@@ -18,9 +18,7 @@ import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 import pipelite.TestProcessFactory;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
@@ -204,7 +202,6 @@ public class PipeliteSchedulerTest {
 
     // Check that there are no schedules yet and that new schedules can be created.
 
-    assertThat(pipeliteScheduler.getExecutableSchedules().count()).isZero();
     assertThat(pipeliteScheduler.isRefreshSchedules()).isTrue();
 
     // Create new schedules. The schedules are not immediately executable. The schedules are not
@@ -212,14 +209,12 @@ public class PipeliteSchedulerTest {
 
     pipeliteScheduler.startUp();
 
-    assertThat(pipeliteScheduler.getExecutableSchedules().count()).isZero();
     assertThat(pipeliteScheduler.isRefreshSchedules()).isFalse();
 
     // Wait for the two schedules to be allowed to be refreshed.
 
     Time.wait(scheduleRefreshFrequency.plusMillis(1));
 
-    assertThat(pipeliteScheduler.getExecutableSchedules().count()).isEqualTo(2);
     assertThat(pipeliteScheduler.isRefreshSchedules()).isTrue();
 
     ZonedDateTime launchTime1 = pipeliteScheduler.getSchedules().get(0).getLaunchTime();
@@ -234,7 +229,6 @@ public class PipeliteSchedulerTest {
 
     pipeliteScheduler.refreshSchedules();
 
-    assertThat(pipeliteScheduler.getExecutableSchedules().count()).isEqualTo(2);
     assertThat(pipeliteScheduler.isRefreshSchedules()).isFalse();
 
     assertThat(launchTime1).isEqualTo(pipeliteScheduler.getSchedules().get(0).getLaunchTime());
@@ -356,7 +350,6 @@ public class PipeliteSchedulerTest {
 
     // Check that there are no schedules yet and that new schedules can be created.
 
-    assertThat(pipeliteScheduler.getExecutableSchedules().count()).isZero();
     assertThat(pipeliteScheduler.isRefreshSchedules()).isTrue();
 
     // Resume the two processes, check that they are immediately executed
@@ -371,7 +364,7 @@ public class PipeliteSchedulerTest {
     }
 
     verify(pipeliteScheduler, times(1)).resumeSchedules();
-    verify(pipeliteScheduler, times(2)).resumeSchedule(any(), any());
+    verify(pipeliteScheduler, times(2)).resumeSchedule(any());
     verify(pipeliteScheduler, times(2)).executeSchedule(any(), any());
     verify(processRunnerPool, times(1)).runProcess(eq(pipelineName1), any(), any());
     verify(processRunnerPool, times(1)).runProcess(eq(pipelineName2), any(), any());

@@ -87,12 +87,10 @@ public class StageController {
     String executionTime = null;
     if (stageEntity.getStartTime() != null && stageEntity.getEndTime() != null) {
       executionTime =
-          TimeUtils.humanReadableDuration(
-              stageEntity.getEndTime(), stageEntity.getStartTime());
+          TimeUtils.humanReadableDuration(stageEntity.getEndTime(), stageEntity.getStartTime());
     } else if (stageEntity.getStartTime() != null) {
       executionTime =
-          TimeUtils.humanReadableDuration(
-              ZonedDateTime.now(), stageEntity.getStartTime());
+          TimeUtils.humanReadableDuration(ZonedDateTime.now(), stageEntity.getStartTime());
     }
     return StageInfo.builder()
         .pipelineName(stageEntity.getPipelineName())

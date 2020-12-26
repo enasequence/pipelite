@@ -11,14 +11,16 @@
 package pipelite.schedule;
 
 import java.time.ZonedDateTime;
-
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.cron.CronUtils;
 
 /**
- * Schedule for a pipeline with cron expression and launch time. When the launch time is set the
- * schedule is executable.
+ * Schedule for one pipeline. The schedule becomes executable after it has been provided with a
+ * valid cron expression and has been enabled. When the schedule is enabled the cron expression is
+ * evaluated and the launch time is set. The schedule should be executed once the launch time is in
+ * the past. The schedule should be disabled when it is executed and enabled again after the
+ * execution completes.
  */
 @Flogger
 public class Schedule {
@@ -54,20 +56,12 @@ public class Schedule {
   }
 
   /**
-   * Sets the launch time using the cron expression. When the launch time is set the schedule is
-   * executable.
+   * Returns true if the schedule can be executed.
+   *
+   * @return true if the schedule can be executed
    */
-  public void setLaunchTime() {
-    if (cron != null) {
-      launchTime = CronUtils.launchTime(cron);
-    } else {
-      launchTime = null;
-    }
-  }
-
-  /** Removes the launch time. When the launch time is null the schedule is not executable. */
-  public void removeLaunchTime() {
-    launchTime = null;
+  public boolean isExecutable() {
+    return launchTime != null && !launchTime.isAfter(ZonedDateTime.now());
   }
 
   /**
@@ -77,6 +71,20 @@ public class Schedule {
    */
   public ZonedDateTime getLaunchTime() {
     return launchTime;
+  }
+
+  /** Enables the schedule. Sets the launch time using the cron expression. */
+  public void enable() {
+    if (cron != null) {
+      launchTime = CronUtils.launchTime(cron);
+    } else {
+      launchTime = null;
+    }
+  }
+
+  /** Disables the schedule. Sets the launch time to null. */
+  public void disable() {
+    launchTime = null;
   }
 
   @Override
