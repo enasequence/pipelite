@@ -75,12 +75,17 @@ public class StageBuilder {
   }
 
   /**
-   * An synchronous executor that returns a stage execution result of the given result type.
+   * A synchronous executor that returns a stage execution result of the given result type.
    *
    * @param resultType the stage execution result type returned by the executor
    */
   public ProcessBuilder withEmptySyncExecutor(StageExecutorResultType resultType) {
     return addStage(new EmptySyncStageExecutor(resultType));
+  }
+
+  /** A synchronous executor that returns COMPLETED stage execution result. */
+  public ProcessBuilder withEmptySyncExecutor() {
+    return withEmptySyncExecutor(StageExecutorResultType.SUCCESS);
   }
 
   /**
@@ -90,6 +95,11 @@ public class StageBuilder {
    */
   public ProcessBuilder withEmptyAsyncExecutor(StageExecutorResultType resultType) {
     return addStage(new EmptyAsyncStageExecutor(resultType));
+  }
+
+  /** An asynchronous executor that returns COMPLETED stage execution result. */
+  public ProcessBuilder withEmptyAsyncExecutor() {
+    return withEmptyAsyncExecutor(StageExecutorResultType.SUCCESS);
   }
 
   private ProcessBuilder addStage(StageExecutor executor) {

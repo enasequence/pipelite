@@ -15,7 +15,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import pipelite.entity.ProcessEntity;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.stage.executor.StageExecutorResultType;
 
 public class ProcessFactoryTest {
 
@@ -40,10 +39,7 @@ public class ProcessFactoryTest {
 
           @Override
           public Process create(String processId) {
-            return new ProcessBuilder(processId)
-                .execute("STAGE1")
-                .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
-                .build();
+            return new ProcessBuilder(processId).execute("STAGE1").withEmptySyncExecutor().build();
           }
         };
     Process process = ProcessFactory.create(processEntity, processFactory);

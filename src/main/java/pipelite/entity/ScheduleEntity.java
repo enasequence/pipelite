@@ -11,14 +11,12 @@
 package pipelite.entity;
 
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import javax.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.flogger.Flogger;
 import pipelite.entity.converter.BooleanConverter;
-import pipelite.process.ProcessState;
 
 @Entity
 @Table(name = "PIPELITE_SCHEDULE")

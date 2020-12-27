@@ -83,11 +83,11 @@ public class DependencyResolverTest {
     Process process =
         builder
             .execute("STAGE1")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .executeAfterPrevious("STAGE2")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .executeAfterPrevious("STAGE3")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .build();
     List<Stage> stages = new ArrayList<>();
     for (Stage stage : process.getStages()) {
@@ -114,11 +114,11 @@ public class DependencyResolverTest {
     Process process =
         builder
             .execute("STAGE1")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .executeAfter("STAGE2", "STAGE1")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .executeAfter("STAGE3", "STAGE1")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .build();
     List<Stage> stages = new ArrayList<>();
     for (Stage stage : process.getStages()) {
@@ -145,11 +145,11 @@ public class DependencyResolverTest {
     Process process =
         builder
             .execute("STAGE1")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .executeAfter("STAGE2", "STAGE1")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .executeAfter("STAGE3", "STAGE1")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .build();
     List<Stage> stages = new ArrayList<>();
     int stageNumber = 0;
@@ -181,11 +181,11 @@ public class DependencyResolverTest {
     Process process =
         builder
             .execute("STAGE1", StageExecutorParameters.builder().maximumRetries(0).build())
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .executeAfter("STAGE2", "STAGE1")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .executeAfter("STAGE3", "STAGE1")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .build();
     List<Stage> stages = new ArrayList<>();
     int stageNumber = 0;
@@ -211,11 +211,11 @@ public class DependencyResolverTest {
             .execute(
                 "STAGE1",
                 StageExecutorParameters.builder().maximumRetries(3).immediateRetries(0).build())
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .executeAfter("STAGE2", "STAGE1")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .executeAfter("STAGE3", "STAGE1")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .build();
     List<Stage> stages = new ArrayList<>();
     int stageNumber = 0;
@@ -241,11 +241,11 @@ public class DependencyResolverTest {
             .execute(
                 "STAGE1",
                 StageExecutorParameters.builder().maximumRetries(1).immediateRetries(1).build())
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .executeAfter("STAGE2", "STAGE1")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .executeAfter("STAGE3", "STAGE1")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .build();
     List<Stage> stages = new ArrayList<>();
     int stageNumber = 0;
@@ -274,13 +274,13 @@ public class DependencyResolverTest {
     Process process =
         builder
             .execute("STAGE1")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .execute("STAGE2")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .execute("STAGE3")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .execute("STAGE4")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .build();
     List<Stage> stages = new ArrayList<>();
     for (Stage stage : process.getStages()) {
@@ -309,13 +309,13 @@ public class DependencyResolverTest {
     Process process =
         builder
             .execute("STAGE1")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .executeAfterPrevious("STAGE2")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .executeAfterPrevious("STAGE3")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .executeAfterPrevious("STAGE4")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .build();
     List<Stage> stages = new ArrayList<>();
     for (Stage stage : process.getStages()) {
@@ -344,13 +344,13 @@ public class DependencyResolverTest {
     Process process =
         builder
             .execute("STAGE1")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .executeAfter("STAGE2", "STAGE1")
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .executeAfter("STAGE3", Arrays.asList("STAGE2"))
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .executeAfter("STAGE4", Arrays.asList("STAGE3", "STAGE3"))
-            .withEmptySyncExecutor(StageExecutorResultType.SUCCESS)
+            .withEmptySyncExecutor()
             .build();
     List<Stage> stages = new ArrayList<>();
     for (Stage stage : process.getStages()) {

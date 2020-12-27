@@ -12,7 +12,6 @@ package pipelite.launcher;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.ZonedDateTime;
-import java.util.function.Supplier;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;

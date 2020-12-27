@@ -35,6 +35,7 @@ class ProcessEntityTest {
     assertThat(processEntity.getState()).isEqualTo(ProcessState.PENDING);
 
     processEntity.startExecution();
+
     assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getPriority()).isEqualTo(priority);
@@ -44,6 +45,7 @@ class ProcessEntityTest {
     assertThat(processEntity.getState()).isEqualTo(ProcessState.ACTIVE);
 
     processEntity.endExecution(ProcessState.COMPLETED);
+
     assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getPriority()).isEqualTo(priority);

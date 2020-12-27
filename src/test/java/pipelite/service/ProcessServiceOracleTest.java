@@ -27,22 +27,24 @@ class ProcessServiceOracleTest {
   @Autowired ProcessService service;
 
   @Test
-  public void testCrud() {
-    new ProcessServiceTester(service).testCrud();
+  public void lifecycle() {
+    new ProcessServiceTester(service).lifecycle();
   }
 
   @Test
-  public void testGetActiveCompletedFailedPendingSamePriority() {
-    new ProcessServiceTester(service).testGetActiveCompletedFailedPendingSamePriority();
+  public void testGetActiveCompletedFailedPendingProcessesWithSamePriority() {
+    new ProcessServiceTester(service)
+        .testGetActiveCompletedFailedPendingProcessesWithSamePriority();
   }
 
   @Test
-  public void testGetActiveCompletedFailedPendingDifferentPriority() {
-    new ProcessServiceTester(service).testGetActiveCompletedFailedPendingDifferentPriority();
+  public void testGetActiveCompletedFailedPendingProcessesWithDifferentPriority() {
+    new ProcessServiceTester(service)
+        .testGetActiveCompletedFailedPendingProcessesWithDifferentPriority();
   }
 
   @Test
-  public void testGetProcess() {
-    new ProcessServiceTester(service).testGetProcess();
+  public void testGetProcesses() {
+    new ProcessServiceTester(service).testGetProcesses();
   }
 }

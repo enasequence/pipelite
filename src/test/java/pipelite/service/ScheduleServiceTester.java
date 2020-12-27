@@ -10,16 +10,15 @@
  */
 package pipelite.service;
 
-import pipelite.UniqueStringGenerator;
-import pipelite.entity.ProcessEntity;
-import pipelite.entity.ScheduleEntity;
-import pipelite.process.ProcessState;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import pipelite.UniqueStringGenerator;
+import pipelite.entity.ProcessEntity;
+import pipelite.entity.ScheduleEntity;
+import pipelite.process.ProcessState;
 
 class ScheduleServiceTester {
 

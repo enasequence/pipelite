@@ -27,7 +27,6 @@ import pipelite.stage.executor.StageExecutorResultType;
 
 public class StageLauncherTest {
 
-
   private void testRunSyncExecutor(StageExecutorResultType resultType) {
     StageConfiguration stageConfiguration = new StageConfiguration();
     String pipelineName = UniqueStringGenerator.randomPipelineName();
