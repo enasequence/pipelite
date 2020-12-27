@@ -86,32 +86,6 @@ public class ScheduleEntity {
   @Column(name = "STREAK_FAILED")
   private int streakFailed = 0;
 
-  public void scheduleExecution(ZonedDateTime nextStart) {
-    this.nextTime = nextStart;
-  }
-
-  public void startExecution(String processId) {
-    this.startTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
-    this.processId = processId;
-    this.endTime = null;
-    this.nextTime = null;
-  }
-
-  public void endExecution(ProcessEntity processEntity) {
-    this.endTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
-    this.executionCount++;
-    if (processEntity.getState() == ProcessState.COMPLETED) {
-      this.lastCompleted = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
-      this.streakCompleted++;
-      this.streakFailed = 0;
-    }
-    if (processEntity.getState() == ProcessState.FAILED) {
-      this.lastFailed = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
-      this.streakCompleted = 0;
-      this.streakFailed++;
-    }
-  }
-
   /**
    * Returns true if process execution can be resumed.
    *

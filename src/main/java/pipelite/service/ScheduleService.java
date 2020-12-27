@@ -11,6 +11,7 @@
 package pipelite.service;
 
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
+import pipelite.process.ProcessState;
 import pipelite.repository.ScheduleRepository;
 
 @Service
@@ -57,22 +59,36 @@ public class ScheduleService {
     repository.delete(scheduleEntity);
   }
 
-  public void scheduleExecution(ScheduleEntity scheduleEntity, ZonedDateTime nextStart) {
-    scheduleEntity.scheduleExecution(nextStart);
+  public void scheduleExecution(String pipelineName, ZonedDateTime nextTime) {
+    ScheduleEntity scheduleEntity = geSavedSchedule(pipelineName).get();
+    scheduleEntity.setNextTime(nextTime.truncatedTo(ChronoUnit.SECONDS));
     saveSchedule(scheduleEntity);
   }
 
-  public ScheduleEntity startExecution(String pipelineName, String processId) {
+  public void startExecution(String pipelineName, String processId) {
     ScheduleEntity scheduleEntity = geSavedSchedule(pipelineName).get();
-    scheduleEntity.startExecution(processId);
+    scheduleEntity.setStartTime(ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS));
+    scheduleEntity.setProcessId(processId);
+    scheduleEntity.setEndTime(null);
+    scheduleEntity.setNextTime(null);
     saveSchedule(scheduleEntity);
-    return scheduleEntity;
   }
 
-  public ScheduleEntity endExecution(String pipelineName, ProcessEntity processEntity) {
+  public void endExecution(ProcessEntity processEntity) {
+    String pipelineName = processEntity.getPipelineName();
     ScheduleEntity scheduleEntity = geSavedSchedule(pipelineName).get();
-    scheduleEntity.endExecution(processEntity);
+    scheduleEntity.setEndTime(ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS));
+    scheduleEntity.setExecutionCount(scheduleEntity.getExecutionCount() + 1);
+    if (processEntity.getState() == ProcessState.COMPLETED) {
+      scheduleEntity.setLastCompleted(ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS));
+      scheduleEntity.setStreakCompleted(scheduleEntity.getStreakCompleted() + 1);
+      scheduleEntity.setStreakFailed(0);
+    }
+    if (processEntity.getState() == ProcessState.FAILED) {
+      scheduleEntity.setLastFailed(ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS));
+      scheduleEntity.setStreakCompleted(0);
+      scheduleEntity.setStreakFailed(scheduleEntity.getStreakFailed() + 1);
+    }
     saveSchedule(scheduleEntity);
-    return scheduleEntity;
   }
 }

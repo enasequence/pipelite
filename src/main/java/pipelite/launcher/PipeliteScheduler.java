@@ -179,7 +179,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     } else {
       // Evaluate the cron expression and assign the next launch time.
       schedule.enable();
-      scheduleService.scheduleExecution(scheduleEntity, schedule.getLaunchTime());
+      scheduleService.scheduleExecution(pipelineName, schedule.getLaunchTime());
     }
     schedules.add(schedule);
   }
@@ -295,9 +295,9 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
         pipelineName,
         process,
         (p, r) -> {
-          ScheduleEntity scheduleEntity = scheduleService.endExecution(pipelineName, processEntity);
+          scheduleService.endExecution(processEntity);
           schedule.enable();
-          scheduleService.scheduleExecution(scheduleEntity, schedule.getLaunchTime());
+          scheduleService.scheduleExecution(pipelineName, schedule.getLaunchTime());
           getMetrics(pipelineName).addProcessRunnerResult(p.getProcessEntity().getState(), r);
         });
   }

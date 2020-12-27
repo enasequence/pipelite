@@ -18,9 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 import pipelite.PipeliteTestConfiguration;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
-@ActiveProfiles(value = {"hsql-test", "pipelite-test"})
+@ActiveProfiles(value = {"oracle-test", "pipelite-test"})
 @Transactional
-class ScheduleServiceHsqlTest {
+class ScheduleServiceOracleTest {
 
   @Autowired ScheduleService service;
 
