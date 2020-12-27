@@ -59,7 +59,7 @@ class ScheduleServiceTester {
     ZonedDateTime launchTime1 = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     service.scheduleExecution(pipelineName, launchTime1);
 
-    ScheduleEntity s = service.geSavedSchedule(pipelineName).get();
+    ScheduleEntity s = service.getSavedSchedule(pipelineName).get();
     assertThat(s.getSchedulerName()).isEqualTo(schedulerName);
     assertThat(s.getPipelineName()).isEqualTo(pipelineName);
     assertThat(s.getCron()).isEqualTo(cron);
@@ -80,7 +80,7 @@ class ScheduleServiceTester {
 
     service.startExecution(pipelineName, processId1);
 
-    s = service.geSavedSchedule(pipelineName).get();
+    s = service.getSavedSchedule(pipelineName).get();
     assertThat(s.getSchedulerName()).isEqualTo(schedulerName);
     assertThat(s.getPipelineName()).isEqualTo(pipelineName);
     assertThat(s.getCron()).isEqualTo(cron);
@@ -107,7 +107,7 @@ class ScheduleServiceTester {
 
     service.endExecution(processEntity1);
 
-    s = service.geSavedSchedule(pipelineName).get();
+    s = service.getSavedSchedule(pipelineName).get();
     assertThat(s.getSchedulerName()).isEqualTo(schedulerName);
     assertThat(s.getPipelineName()).isEqualTo(pipelineName);
     assertThat(s.getCron()).isEqualTo(cron);
@@ -127,7 +127,7 @@ class ScheduleServiceTester {
     ZonedDateTime launchTime2 = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     service.scheduleExecution(pipelineName, launchTime2);
 
-    s = service.geSavedSchedule(pipelineName).get();
+    s = service.getSavedSchedule(pipelineName).get();
     assertThat(s.getSchedulerName()).isEqualTo(schedulerName);
     assertThat(s.getPipelineName()).isEqualTo(pipelineName);
     assertThat(s.getCron()).isEqualTo(cron);
@@ -148,7 +148,7 @@ class ScheduleServiceTester {
 
     service.startExecution(pipelineName, processId2);
 
-    s = service.geSavedSchedule(pipelineName).get();
+    s = service.getSavedSchedule(pipelineName).get();
     assertThat(s.getSchedulerName()).isEqualTo(schedulerName);
     assertThat(s.getPipelineName()).isEqualTo(pipelineName);
     assertThat(s.getCron()).isEqualTo(cron);
@@ -175,7 +175,7 @@ class ScheduleServiceTester {
 
     service.endExecution(processEntity2);
 
-    s = service.geSavedSchedule(pipelineName).get();
+    s = service.getSavedSchedule(pipelineName).get();
     assertThat(s.getSchedulerName()).isEqualTo(schedulerName);
     assertThat(s.getPipelineName()).isEqualTo(pipelineName);
     assertThat(s.getCron()).isEqualTo(cron);
@@ -195,7 +195,7 @@ class ScheduleServiceTester {
     ZonedDateTime launchTime3 = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     service.scheduleExecution(pipelineName, launchTime3);
 
-    s = service.geSavedSchedule(pipelineName).get();
+    s = service.getSavedSchedule(pipelineName).get();
     assertThat(s.getSchedulerName()).isEqualTo(schedulerName);
     assertThat(s.getPipelineName()).isEqualTo(pipelineName);
     assertThat(s.getCron()).isEqualTo(cron);
@@ -216,7 +216,7 @@ class ScheduleServiceTester {
 
     service.startExecution(pipelineName, processId3);
 
-    s = service.geSavedSchedule(pipelineName).get();
+    s = service.getSavedSchedule(pipelineName).get();
     assertThat(s.getSchedulerName()).isEqualTo(schedulerName);
     assertThat(s.getPipelineName()).isEqualTo(pipelineName);
     assertThat(s.getCron()).isEqualTo(cron);
@@ -243,7 +243,7 @@ class ScheduleServiceTester {
 
     service.endExecution(processEntity3);
 
-    s = service.geSavedSchedule(pipelineName).get();
+    s = service.getSavedSchedule(pipelineName).get();
     assertThat(s.getSchedulerName()).isEqualTo(schedulerName);
     assertThat(s.getPipelineName()).isEqualTo(pipelineName);
     assertThat(s.getCron()).isEqualTo(cron);

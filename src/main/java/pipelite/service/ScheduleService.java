@@ -47,7 +47,7 @@ public class ScheduleService {
     return repository.findBySchedulerNameAndActive(schedulerName, true);
   }
 
-  public Optional<ScheduleEntity> geSavedSchedule(String pipelineName) {
+  public Optional<ScheduleEntity> getSavedSchedule(String pipelineName) {
     return repository.findById(pipelineName);
   }
 
@@ -60,13 +60,13 @@ public class ScheduleService {
   }
 
   public void scheduleExecution(String pipelineName, ZonedDateTime nextTime) {
-    ScheduleEntity scheduleEntity = geSavedSchedule(pipelineName).get();
+    ScheduleEntity scheduleEntity = getSavedSchedule(pipelineName).get();
     scheduleEntity.setNextTime(nextTime.truncatedTo(ChronoUnit.SECONDS));
     saveSchedule(scheduleEntity);
   }
 
   public void startExecution(String pipelineName, String processId) {
-    ScheduleEntity scheduleEntity = geSavedSchedule(pipelineName).get();
+    ScheduleEntity scheduleEntity = getSavedSchedule(pipelineName).get();
     scheduleEntity.setStartTime(ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS));
     scheduleEntity.setProcessId(processId);
     scheduleEntity.setEndTime(null);
@@ -76,7 +76,7 @@ public class ScheduleService {
 
   public void endExecution(ProcessEntity processEntity) {
     String pipelineName = processEntity.getPipelineName();
-    ScheduleEntity scheduleEntity = geSavedSchedule(pipelineName).get();
+    ScheduleEntity scheduleEntity = getSavedSchedule(pipelineName).get();
     scheduleEntity.setEndTime(ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS));
     scheduleEntity.setExecutionCount(scheduleEntity.getExecutionCount() + 1);
     if (processEntity.getState() == ProcessState.COMPLETED) {

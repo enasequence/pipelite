@@ -221,7 +221,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
 
   protected void resumeSchedule(Schedule schedule) {
     String pipelineName = schedule.getPipelineName();
-    ScheduleEntity scheduleEntity = scheduleService.geSavedSchedule(pipelineName).get();
+    ScheduleEntity scheduleEntity = scheduleService.getSavedSchedule(pipelineName).get();
     if (!scheduleEntity.isResumeProcess()) {
       return;
     }
@@ -242,7 +242,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
 
   private ProcessEntity createProcessEntity(Schedule schedule) {
     String pipelineName = schedule.getPipelineName();
-    ScheduleEntity scheduleEntity = scheduleService.geSavedSchedule(pipelineName).get();
+    ScheduleEntity scheduleEntity = scheduleService.getSavedSchedule(pipelineName).get();
 
     String lastProcessId = scheduleEntity.getProcessId();
     String nextProcessId = nextProcessId(lastProcessId);

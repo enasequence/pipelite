@@ -155,8 +155,8 @@ public class PipeliteSchedulerTest {
     doReturn(Arrays.asList(scheduleEntity1, scheduleEntity2))
         .when(scheduleService)
         .getActiveSchedules(any());
-    doReturn(Optional.of(scheduleEntity1)).when(scheduleService).geSavedSchedule(eq(pipelineName1));
-    doReturn(Optional.of(scheduleEntity2)).when(scheduleService).geSavedSchedule(eq(pipelineName2));
+    doReturn(Optional.of(scheduleEntity1)).when(scheduleService).getSavedSchedule(eq(pipelineName1));
+    doReturn(Optional.of(scheduleEntity2)).when(scheduleService).getSavedSchedule(eq(pipelineName2));
 
     // Create process service to create process entities.
 
@@ -304,8 +304,8 @@ public class PipeliteSchedulerTest {
     doReturn(Arrays.asList(scheduleEntity1, scheduleEntity2))
         .when(scheduleService)
         .getActiveSchedules(any());
-    doReturn(Optional.of(scheduleEntity1)).when(scheduleService).geSavedSchedule(eq(pipelineName1));
-    doReturn(Optional.of(scheduleEntity2)).when(scheduleService).geSavedSchedule(eq(pipelineName2));
+    doReturn(Optional.of(scheduleEntity1)).when(scheduleService).getSavedSchedule(eq(pipelineName1));
+    doReturn(Optional.of(scheduleEntity2)).when(scheduleService).getSavedSchedule(eq(pipelineName2));
 
     // Create process service to return saved process entities.
 
