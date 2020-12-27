@@ -14,5 +14,5 @@ public class LoremUtils {
 
   private LoremUtils() {}
 
-  public static final String PROFILE_NAME = "LoremIpsum";
+  public static final String PROFILE_NAME = "test-lorem";
 }

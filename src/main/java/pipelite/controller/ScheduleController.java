@@ -49,17 +49,21 @@ public class ScheduleController {
         @ApiResponse(responseCode = "200", description = "OK"),
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
-  public List<ScheduleInfo> localSchedules() {
+  public List<ScheduleInfo> localSchedules(
+      @RequestParam(required = false, defaultValue = "false") boolean relative) {
     List<ScheduleInfo> list = new ArrayList<>();
     application.getRunningSchedulers().stream()
-        .forEach(scheduler -> list.addAll(getLocalSchedules(scheduler.getLauncherName())));
-    getLoremIpsumSchedules(list);
+        .forEach(
+            scheduler -> list.addAll(getLocalSchedules(scheduler.getLauncherName(), relative)));
+    getLoremIpsumSchedules(list, relative);
     return list;
   }
 
-  public List<ScheduleInfo> getLocalSchedules(String schedulerName) {
+  public List<ScheduleInfo> getLocalSchedules(String schedulerName, boolean relative) {
     List<ScheduleInfo> schedules = new ArrayList<>();
-    scheduleService.getSchedules(schedulerName).forEach(s -> schedules.add(getSchedule(s)));
+    scheduleService
+        .getSchedules(schedulerName)
+        .forEach(s -> schedules.add(getSchedule(s, relative)));
     return schedules;
   }
 
@@ -71,35 +75,51 @@ public class ScheduleController {
         @ApiResponse(responseCode = "200", description = "OK"),
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
-  public List<ScheduleInfo> allSchedules() {
+  public List<ScheduleInfo> allSchedules(
+      @RequestParam(required = false, defaultValue = "false") boolean relative) {
     List<ScheduleInfo> list = new ArrayList<>();
-    list.addAll(getAllSchedules());
-    getLoremIpsumSchedules(list);
+    list.addAll(getAllSchedules(relative));
+    getLoremIpsumSchedules(list, relative);
     return list;
   }
 
-  public List<ScheduleInfo> getAllSchedules() {
+  public List<ScheduleInfo> getAllSchedules(boolean relative) {
     List<ScheduleInfo> schedules = new ArrayList<>();
-    scheduleService.getSchedules().forEach(s -> schedules.add(getSchedule(s)));
+    scheduleService.getSchedules().forEach(s -> schedules.add(getSchedule(s, relative)));
     return schedules;
   }
 
-  private ScheduleInfo getSchedule(ScheduleEntity s) {
+  private ScheduleInfo getSchedule(ScheduleEntity s, boolean relative) {
+    String startTime =
+        relative
+            ? TimeUtils.humanReadableDuration(s.getStartTime())
+            : TimeUtils.humanReadableDate(s.getStartTime());
+    String endTime =
+        relative
+            ? TimeUtils.humanReadableDuration(s.getEndTime())
+            : TimeUtils.humanReadableDate(s.getEndTime());
+    String nextTime =
+        relative
+            ? TimeUtils.humanReadableDuration(s.getNextTime())
+            : TimeUtils.humanReadableDate(s.getNextTime());
+    String lastCompleted =
+        relative
+            ? TimeUtils.humanReadableDuration(s.getLastCompleted())
+            : TimeUtils.humanReadableDate(s.getLastCompleted());
+    String lastFailed =
+        relative
+            ? TimeUtils.humanReadableDuration(s.getLastFailed())
+            : TimeUtils.humanReadableDate(s.getLastFailed());
     return ScheduleInfo.builder()
         .schedulerName(s.getSchedulerName())
         .pipelineName(s.getPipelineName())
         .cron(s.getCron())
         .description(s.getDescription())
-        .startTime(TimeUtils.humanReadableDate(s.getStartTime()))
-        .sinceStartTime(TimeUtils.humanReadableDuration(s.getStartTime()))
-        .endTime(TimeUtils.humanReadableDate(s.getEndTime()))
-        .sinceEndTime(TimeUtils.humanReadableDuration(s.getEndTime()))
-        .nextTime(TimeUtils.humanReadableDate(s.getNextTime()))
-        .untilNextTime(TimeUtils.humanReadableDuration(s.getNextTime()))
-        .lastCompleted(TimeUtils.humanReadableDate(s.getLastCompleted()))
-        .sinceLastCompleted(TimeUtils.humanReadableDuration(s.getLastCompleted()))
-        .lastFailed(TimeUtils.humanReadableDate(s.getLastFailed()))
-        .sinceLastFailed(TimeUtils.humanReadableDuration(s.getLastFailed()))
+        .startTime(startTime)
+        .endTime(endTime)
+        .nextTime(nextTime)
+        .lastCompleted(lastCompleted)
+        .lastFailed(lastFailed)
         .completedStreak(s.getStreakCompleted())
         .failedStreak(s.getStreakFailed())
         .active(s.getActive())
@@ -107,32 +127,44 @@ public class ScheduleController {
         .build();
   }
 
-  public void getLoremIpsumSchedules(List<ScheduleInfo> list) {
+  public void getLoremIpsumSchedules(List<ScheduleInfo> list, boolean relative) {
     if (Arrays.stream(environment.getActiveProfiles())
         .anyMatch(profile -> LoremUtils.PROFILE_NAME.equals(profile))) {
       Lorem lorem = LoremIpsum.getInstance();
       IntStream.range(1, 100)
           .forEach(
               i -> {
-                String humanReadableDate = TimeUtils.humanReadableDate(ZonedDateTime.now());
-                String humanReadableDuration =
-                    TimeUtils.humanReadableDuration(ZonedDateTime.now().minusHours(1));
+                String startTime =
+                        relative
+                                ? TimeUtils.humanReadableDuration(ZonedDateTime.now().minusHours(1))
+                                : TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(1));
+                String endTime =
+                        relative
+                                ? TimeUtils.humanReadableDuration(ZonedDateTime.now().minusHours(2))
+                                : TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(2));
+                String nextTime =
+                        relative
+                                ? TimeUtils.humanReadableDuration(ZonedDateTime.now().minusHours(3))
+                                : TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(3));
+                String lastCompleted =
+                        relative
+                                ? TimeUtils.humanReadableDuration(ZonedDateTime.now().minusHours(4))
+                                : TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(4));
+                String lastFailed =
+                        relative
+                                ? TimeUtils.humanReadableDuration(ZonedDateTime.now().minusHours(5))
+                                : TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(5));
                 list.add(
                     ScheduleInfo.builder()
                         .schedulerName(lorem.getFirstNameFemale())
                         .pipelineName(lorem.getCountry())
                         .cron(lorem.getWords(1))
                         .description(lorem.getWords(5))
-                        .startTime(humanReadableDate)
-                        .sinceStartTime(humanReadableDuration)
-                        .endTime(humanReadableDate)
-                        .sinceEndTime(humanReadableDuration)
-                        .nextTime(humanReadableDate)
-                        .untilNextTime(humanReadableDuration)
-                        .lastCompleted(humanReadableDate)
-                        .sinceLastCompleted(humanReadableDuration)
-                        .lastFailed(humanReadableDate)
-                        .sinceLastFailed(humanReadableDuration)
+                        .startTime(startTime)
+                        .endTime(endTime)
+                        .nextTime(nextTime)
+                        .lastCompleted(lastCompleted)
+                        .lastFailed(lastFailed)
                         .completedStreak(5)
                         .failedStreak(1)
                         .active(true)

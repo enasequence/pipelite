@@ -6,55 +6,7 @@
     <title>Schedules</title>
     <script>
 $(document).ready( function () {
-    $('#relativeTimeTable').DataTable({
-        ajax: {
-           url: "/pipelite/schedule/local/",
-           dataSrc: ""
-        },
-        columns: [
-            { data: "schedulerName" },
-            { data: "pipelineName" },
-            { data: "active" },
-            { data: "completedStreak" },
-            { data: "failedStreak" },
-            { data: "sinceLastCompleted" },
-            { data: "sinceLastFailed" },
-            { data: "sinceStartTime" },
-            { data: "untilNextTime" },
-            { data: "cron" },
-            { data: "description" },
-            { data: "processId" },
-            {
-                "data": null,
-                "defaultContent": "<button class=\"btn btn-outline-secondary mr-2\">Process</button>"
-            }
-        ],
-        dom: 'frtBip',
-        buttons: {
-            buttons: [
-                { extend: 'copy', className: 'btn btn-outline-secondary' },
-                { extend: 'csv', className: 'btn btn-outline-secondary' },
-                { extend: 'excel', className: 'btn btn-outline-secondary' }
-            ],
-            dom: {
-    		  button: {
-	    	    className: 'btn'
-	          }
-            }
-        },
-        orderCellsTop: true,
-        fixedHeader: true,
-        responsive: true,
-        language : {
-           "zeroRecords": " "
-        },
-    });
-
-    $('#absoluteTimeTable').DataTable({
-        ajax: {
-           url: "/pipelite/schedule/local/",
-           dataSrc: ""
-        },
+    $('#schedulesTable').DataTable({
         columns: [
             { data: "schedulerName" },
             { data: "pipelineName" },
@@ -87,7 +39,7 @@ $(document).ready( function () {
             }
         },
         orderCellsTop: true,
-        fixedHeader: true,
+        // fixedHeader: true,
         responsive: true,
         language : {
            "zeroRecords": " "
@@ -95,22 +47,46 @@ $(document).ready( function () {
     });
 
     // Process button is pressed.
-    $('#absoluteTimeTable tbody').on( 'click', 'button', function () {
-        var table = $('#absoluteTimeTable').DataTable();
+    $('#schedulesTable tbody').on( 'click', 'button', function () {
+        var table = $('#schedulesTable').DataTable();
         var data = table.row( $(this).parents('tr') ).data();
         var url = "/pipelite/ui/processes?pipelineName=" + data.pipelineName + "&processId=" + data.processId;
         window.location.href = url;
     });
-    $('#relativeTimeTable tbody').on( 'click', 'button', function () {
-        var table = $('#relativeTimeTable').DataTable();
-        var data = table.row( $(this).parents('tr') ).data();
-        var url = "/pipelite/ui/processes?pipelineName=" + data.pipelineName + "&processId=" + data.processId;
-        window.location.href = url;
-    });
+
+  show();
 });
 
+// Show the table.
+function show() {
+    var table = $('#schedulesTable').DataTable();
+    var scheduleScope = $( "#scheduleScope" ).val();
 
+    // Show the title.
 
+    $( "#title" ).text( $( "#scheduleScope option:selected" ).text() );
+
+    // Show the table.
+    var url = "/pipelite/schedule/";
+
+    if (scheduleScope == "localRelative") {
+        url = url + "local?relative=true";
+    }
+    if (scheduleScope == "localAbsolute") {
+        url = url + "local";
+    }
+    if (scheduleScope == "allRelative") {
+        url = url + "all?relative=true";
+    }
+    if (scheduleScope == "allAbsolute") {
+        url = url + "all";
+    }
+
+    console.log(url);
+    $.get(url, function(data, status) {
+        table.clear().rows.add(data).draw();
+     });
+};
 
 
 
@@ -122,62 +98,45 @@ $(document).ready( function () {
 <body>
 <div th:replace="fragments/navigation :: navigation"></div>
 
+
 <div class="card m-2">
     <div class="card-body">
-        <h5 class="card-title">Schedules running in this server</h5>
-
-        <ul class="nav nav-tabs justify-content-center" role="tablist">
-            <li class="nav-item" role="presentation"><a class="nav-link active" data-toggle="tab" role="tab"
-                                                        href="#relativeTime">Relative time</a>
-            </li>
-            <li class="nav-item" role="presentation"><a class="nav-link" data-toggle="tab" role="tab"
-                                                        href="#absoluteTime">Absolute time</a></li>
-        </ul>
-
-        <div class="tab-content m-2">
-            <div id="relativeTime" class="tab-pane fade show active" role="tabpanel">
-                <table id="relativeTimeTable" class="table table-striped table-hover" style="width:100%">
-                    <thead>
-                    <tr>
-                        <th>Scheduler name</th>
-                        <th>Pipeline name</th>
-                        <th>Active</th>
-                        <th>Completed streak</th>
-                        <th>Failed streak</th>
-                        <th>Last completed</th>
-                        <th>Last failed</th>
-                        <th>Last start</th>
-                        <th>Next start</th>
-                        <th>Cron</th>
-                        <th>Description</th>
-                        <th>Process id</th>
-                        <th>Process</th>
-                    </tr>
-                    </thead>
-                </table>
-            </div>
-            <div id="absoluteTime" class="tab-pane fade" role="tabpanel">
-                <table id="absoluteTimeTable" class="table table-striped table-hover" style="width:100%">
-                    <thead>
-                    <tr>
-                        <th>Scheduler name</th>
-                        <th>Pipeline name</th>
-                        <th>Active</th>
-                        <th>Completed streak</th>
-                        <th>Failed streak</th>
-                        <th>Last completed</th>
-                        <th>Last failed</th>
-                        <th>Last start</th>
-                        <th>Next start</th>
-                        <th>Cron</th>
-                        <th>Description</th>
-                        <th>Process id</th>
-                        <th>Process</th>
-                    </tr>
-                    </thead>
-                </table>
-            </div>
+        <h5 class="card-title">Select schedules</h5>
+        <div class="form-inline m-2">
+            <select class="custom-select m-2" id="scheduleScope">
+                <option value="localRelative" selected>Schedules running in this server (relative time)</option>
+                <option value="localAbsolute">Schedules running in this server (absolute time)</option>
+                <option value="allRelative">All schedules (relative time)</option>
+                <option value="allAbsolute">All schedules (absolute time)</option>
+            </select>
+            <button type="submit" class="btn btn-primary m-2" onclick="show()">Show schedules</button>
         </div>
+    </div>
+</div>
+
+<div class="card m-2">
+    <div class="card-body">
+        <h5 class="card-title" id="title"></h5>
+
+        <table id="schedulesTable" class="table table-striped table-hover" style="width:100%">
+            <thead>
+            <tr>
+                <th>Scheduler name</th>
+                <th>Pipeline name</th>
+                <th>Active</th>
+                <th>Completed streak</th>
+                <th>Failed streak</th>
+                <th>Last completed</th>
+                <th>Last failed</th>
+                <th>Last start</th>
+                <th>Next start</th>
+                <th>Cron</th>
+                <th>Description</th>
+                <th>Process id</th>
+                <th>Process</th>
+            </tr>
+            </thead>
+        </table>
     </div>
 </div>
 
