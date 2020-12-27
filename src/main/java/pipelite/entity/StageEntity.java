@@ -69,6 +69,14 @@ public class StageEntity {
   @Lob
   private String resultParams;
 
+  /**
+   * Creates a new stage.
+   *
+   * @param pipelineName the pipeline name
+   * @param processId the process id
+   * @param stage the stage
+   * @return the new stage
+   */
   public static StageEntity createExecution(String pipelineName, String processId, Stage stage) {
     StageEntity stageEntity = new StageEntity();
     stageEntity.setProcessId(processId);
@@ -78,6 +86,12 @@ public class StageEntity {
     return stageEntity;
   }
 
+  /**
+   * Called when the stage execution starts. This may allow asynchronous executors to continue
+   * executing an interrupted stage.
+   *
+   * @param stage the stage
+   */
   public void startExecution(Stage stage) {
     StageExecutor stageExecutor = stage.getExecutor();
     this.resultType = StageExecutorResultType.ACTIVE;
@@ -91,6 +105,11 @@ public class StageEntity {
     }
   }
 
+  /**
+   * Called when the stage execution ends.
+   *
+   * @param result the stage execution result
+   */
   public void endExecution(StageExecutorResult result) {
     this.resultType = result.getResultType();
     this.resultParams = result.attributesJson();
@@ -98,6 +117,7 @@ public class StageEntity {
     this.executionCount++;
   }
 
+  /** Called when the stage execution is reset. */
   public void resetExecution() {
     this.resultType = null;
     this.resultParams = null;

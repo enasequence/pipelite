@@ -10,21 +10,12 @@
  */
 package pipelite.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import pipelite.PipeliteTestConfiguration;
-import pipelite.UniqueStringGenerator;
-import pipelite.entity.StageEntity;
-import pipelite.entity.StageOutEntity;
-import pipelite.stage.Stage;
-import pipelite.stage.executor.EmptySyncStageExecutor;
-import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultType;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
@@ -33,49 +24,8 @@ class StageServiceHsqlTest {
 
   @Autowired StageService service;
 
-  private final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
-  private final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
-
   @Test
-  public void testCrud() {
-    String stageName = UniqueStringGenerator.randomStageName();
-    Stage stage =
-        Stage.builder()
-            .stageName(stageName)
-            .executor(new EmptySyncStageExecutor(StageExecutorResultType.SUCCESS))
-            .build();
-
-    // Create.
-
-    StageEntity stageEntity = service.getStage(PIPELINE_NAME, PROCESS_ID, stage);
-    assertThat(stageEntity).isEqualTo(stageEntity);
-    StageOutEntity stageOutEntity = StageOutEntity.startExecution(stageEntity);
-    service.saveStageOut(stageOutEntity);
-    assertThat(service.getSavedStageOut(stageEntity).get()).isEqualTo(stageOutEntity);
-
-    // Update.
-
-    StageExecutorResult result = new StageExecutorResult(StageExecutorResultType.ERROR);
-    result.setStdout("TEST3");
-    result.setStderr("TEST4");
-    stageEntity.endExecution(result);
-    stageOutEntity = StageOutEntity.endExecution(stageEntity, result);
-
-    service.saveStage(stageEntity);
-    service.saveStageOut(stageOutEntity);
-
-    assertThat(service.getSavedStage(PIPELINE_NAME, PROCESS_ID, stageName).get())
-        .isEqualTo(stageEntity);
-    StageOutEntity savedStageOutEntity = service.getSavedStageOut(stageEntity).get();
-    assertThat(savedStageOutEntity).isEqualTo(stageOutEntity);
-    assertThat(savedStageOutEntity.getStdOut()).isEqualTo("TEST3");
-    assertThat(savedStageOutEntity.getStdErr()).isEqualTo("TEST4");
-
-    // Delete.
-
-    service.delete(stageEntity);
-
-    assertThat(service.getSavedStage(PIPELINE_NAME, PROCESS_ID, stageName).isPresent()).isFalse();
-    assertThat(service.getSavedStageOut(stageEntity).isPresent()).isFalse();
+  public void lifecycle() {
+    new StageServiceTester(service).lifecycle();
   }
 }

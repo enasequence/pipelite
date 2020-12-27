@@ -62,31 +62,30 @@ public class StageService {
   }
 
   /**
-   * Returns the saved stage or creates a new one if it is missing. Called before stage execution
-   * starts. Asynchronous executors may continue executing an interrupted stage.
+   * Returns a saves stage if it exists or created a new one. Saves the stage.
    *
    * @param pipelineName the pipeline name
    * @param processId the process id
-   * @param stage the associated Stage class
-   * @return the saved or created stage
+   * @param stage the stage
+   * @return the saved or new stage
    */
-  public StageEntity getStage(String pipelineName, String processId, Stage stage) {
-    // Get saved stage if it exists.
-    Optional<StageEntity> stageEntity =
+  public StageEntity createExecution(String pipelineName, String processId, Stage stage) {
+    // Return saved stage if it exists.
+    Optional<StageEntity> savedStageEntity =
         repository.findById(new StageEntityId(processId, pipelineName, stage.getStageName()));
-    if (!stageEntity.isPresent()) {
-      // Save stage if it did not already exists.
-      stageEntity =
-          Optional.of(saveStage(StageEntity.createExecution(pipelineName, processId, stage)));
+    if (savedStageEntity.isPresent()) {
+      return savedStageEntity.get();
     }
-    return stageEntity.get();
+    StageEntity stageEntity = StageEntity.createExecution(pipelineName, processId, stage);
+    saveStage(stageEntity);
+    return stageEntity;
   }
 
   /**
-   * Called when the stage execution starts to save the stage. This may allow asynchronous executors
-   * to continue executing an interrupted stage.
+   * Called when the stage execution starts. This may allow asynchronous executors to continue
+   * executing an interrupted stage. Saves the stage.
    *
-   * @param stage the associated Stage class
+   * @param stage the stage
    */
   public void startExecution(Stage stage) {
     StageEntity stageEntity = stage.getStageEntity();
@@ -96,9 +95,9 @@ public class StageService {
   }
 
   /**
-   * Called when the stage execution ends.
+   * Called when the stage execution ends. Saves the stage.
    *
-   * @param stage the associated Stage class
+   * @param stage the stage
    * @param result the stage execution result
    */
   public void endExecution(Stage stage, StageExecutorResult result) {
@@ -110,9 +109,9 @@ public class StageService {
   }
 
   /**
-   * Called when the stage execution is reset.
+   * Called when the stage execution is reset. Saves the stage.
    *
-   * @param stage the associated Stage class
+   * @param stage the stage
    */
   public void resetExecution(Stage stage) {
     StageEntity stageEntity = stage.getStageEntity();
