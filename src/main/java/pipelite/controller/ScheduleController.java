@@ -115,6 +115,13 @@ public class ScheduleController {
         .pipelineName(s.getPipelineName())
         .cron(s.getCron())
         .description(s.getDescription())
+        .summary(
+            getSummary(
+                s.getActive(),
+                s.getStreakCompleted(),
+                s.getStreakFailed(),
+                s.getLastCompleted(),
+                relative))
         .startTime(startTime)
         .endTime(endTime)
         .nextTime(nextTime)
@@ -135,31 +142,33 @@ public class ScheduleController {
           .forEach(
               i -> {
                 String startTime =
-                        relative
-                                ? TimeUtils.humanReadableDuration(ZonedDateTime.now().minusHours(1))
-                                : TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(1));
+                    relative
+                        ? TimeUtils.humanReadableDuration(ZonedDateTime.now().minusHours(1))
+                        : TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(1));
                 String endTime =
-                        relative
-                                ? TimeUtils.humanReadableDuration(ZonedDateTime.now().minusHours(2))
-                                : TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(2));
+                    relative
+                        ? TimeUtils.humanReadableDuration(ZonedDateTime.now().minusHours(2))
+                        : TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(2));
                 String nextTime =
-                        relative
-                                ? TimeUtils.humanReadableDuration(ZonedDateTime.now().minusHours(3))
-                                : TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(3));
+                    relative
+                        ? TimeUtils.humanReadableDuration(ZonedDateTime.now().minusHours(3))
+                        : TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(3));
                 String lastCompleted =
-                        relative
-                                ? TimeUtils.humanReadableDuration(ZonedDateTime.now().minusHours(4))
-                                : TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(4));
+                    relative
+                        ? TimeUtils.humanReadableDuration(ZonedDateTime.now().minusHours(4))
+                        : TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(4));
                 String lastFailed =
-                        relative
-                                ? TimeUtils.humanReadableDuration(ZonedDateTime.now().minusHours(5))
-                                : TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(5));
+                    relative
+                        ? TimeUtils.humanReadableDuration(ZonedDateTime.now().minusHours(5))
+                        : TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(5));
                 list.add(
                     ScheduleInfo.builder()
                         .schedulerName(lorem.getFirstNameFemale())
                         .pipelineName(lorem.getCountry())
                         .cron(lorem.getWords(1))
                         .description(lorem.getWords(5))
+                        .summary(
+                            getSummary(true, 0, 1, ZonedDateTime.now().minusHours(1), relative))
                         .startTime(startTime)
                         .endTime(endTime)
                         .nextTime(nextTime)
@@ -172,5 +181,32 @@ public class ScheduleController {
                         .build());
               });
     }
+  }
+
+  public static String getSummary(
+      boolean active,
+      int streakCompleted,
+      int streakFailed,
+      ZonedDateTime lastCompleted,
+      boolean relative) {
+    if (!active) {
+      return "The schedule is inactive.";
+    }
+    String str = "";
+    if (streakFailed > 0) {
+      str += "Last " + streakFailed + " executions have failed. ";
+    }
+    if (streakCompleted > 0) {
+      str += "Last " + streakCompleted + " executions have completed. ";
+    }
+    if (lastCompleted != null) {
+      str += "Last successful execution was ";
+      str +=
+          relative
+              ? TimeUtils.humanReadableDuration(ZonedDateTime.now().minusHours(4)) + " ago"
+              : TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(4));
+      str += ".";
+    }
+    return str.trim();
   }
 }

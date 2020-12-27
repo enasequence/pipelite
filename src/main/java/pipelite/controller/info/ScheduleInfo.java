@@ -22,6 +22,7 @@ public class ScheduleInfo {
   private Integer failedStreak;
   private String cron;
   private String description;
+  private String summary;
   private String startTime;
   private String endTime;
   private String nextTime;
