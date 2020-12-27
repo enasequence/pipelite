@@ -15,11 +15,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 
-public class ProcessRunnerStatsCounterTest {
+public class ProcessRunnerCounterTest {
 
   @Test
   public void test() {
-    ProcessRunnerStatsCounter counter = new ProcessRunnerStatsCounter();
+    ProcessRunnerCounter counter = new ProcessRunnerCounter();
 
     Duration since = Duration.ofDays(1);
 

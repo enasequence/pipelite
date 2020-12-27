@@ -19,9 +19,9 @@ import pipelite.configuration.LauncherConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.launcher.process.creator.ProcessCreator;
 import pipelite.launcher.process.queue.ProcessQueue;
+import pipelite.launcher.process.runner.ProcessRunnerMetrics;
 import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
-import pipelite.launcher.process.runner.ProcessRunnerStats;
 import pipelite.lock.PipeliteLocker;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
@@ -42,7 +42,7 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
   private final int processCreateMaxSize;
   private final boolean shutdownIfIdle;
   private final ZonedDateTime startTime;
-  private final ProcessRunnerStats stats;
+  private final ProcessRunnerMetrics metrics;
 
   public PipeliteLauncher(
       LauncherConfiguration launcherConfiguration,
@@ -68,7 +68,7 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
     this.processCreateMaxSize = launcherConfiguration.getProcessCreateMaxSize();
     this.shutdownIfIdle = launcherConfiguration.isShutdownIfIdle();
     this.startTime = ZonedDateTime.now();
-    this.stats = new ProcessRunnerStats(this.pipelineName, meterRegistry);
+    this.metrics = new ProcessRunnerMetrics(this.pipelineName, meterRegistry);
   }
 
   @Override
@@ -86,7 +86,7 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
       runProcess(processQueue.nextAvailableProcess());
     }
 
-    purgeStats();
+    purgeMetrics();
   }
 
   @Override
@@ -106,9 +106,9 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
       runProcess(
           pipelineName,
           process,
-          (p, r) -> stats.addProcessRunnerResult(p.getProcessEntity().getState(), r));
+          (p, r) -> metrics.addProcessRunnerResult(p.getProcessEntity().getState(), r));
     } else {
-      stats.addProcessCreationFailed(1);
+      metrics.addProcessCreationFailed(1);
     }
   }
 
@@ -124,11 +124,11 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
     return processQueue.getQueuedProcessCount();
   }
 
-  public ProcessRunnerStats getStats() {
-    return stats;
+  public ProcessRunnerMetrics getMetrics() {
+    return metrics;
   }
 
-  private void purgeStats() {
-    stats.purge();
+  private void purgeMetrics() {
+    metrics.purge();
   }
 }

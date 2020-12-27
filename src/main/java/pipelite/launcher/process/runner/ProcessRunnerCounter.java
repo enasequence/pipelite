@@ -16,7 +16,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Simple time window counter. */
-public class ProcessRunnerStatsCounter {
+public class ProcessRunnerCounter {
   private final Set<Event> events = ConcurrentHashMap.newKeySet();
 
   public static class Event {

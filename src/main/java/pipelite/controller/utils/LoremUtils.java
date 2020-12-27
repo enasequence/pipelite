@@ -8,17 +8,11 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.repository;
+package pipelite.controller.utils;
 
-import java.util.List;
-import org.springframework.data.repository.CrudRepository;
-import org.springframework.stereotype.Repository;
-import pipelite.entity.ScheduleEntity;
+public class LoremUtils {
 
-@Repository
-public interface ScheduleRepository extends CrudRepository<ScheduleEntity, String> {
+  private LoremUtils() {}
 
-  List<ScheduleEntity> findBySchedulerName(String schedulerName);
-
-  List<ScheduleEntity> findBySchedulerNameAndActive(String schedulerName, boolean active);
+  public static final String PROFILE_NAME = "LoremIpsum";
 }

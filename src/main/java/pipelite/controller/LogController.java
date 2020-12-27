@@ -22,7 +22,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.controller.info.LogInfo;
-import pipelite.controller.test.LoremIpsumUtils;
+import pipelite.controller.utils.LoremUtils;
 import pipelite.entity.StageOutEntity;
 import pipelite.service.StageService;
 
@@ -66,7 +66,7 @@ public class LogController {
 
   public String getLoremIpsumLogs() {
     if (Arrays.stream(environment.getActiveProfiles())
-        .anyMatch(profile -> LoremIpsumUtils.PROFILE_NAME.equals(profile))) {
+        .anyMatch(profile -> LoremUtils.PROFILE_NAME.equals(profile))) {
       Lorem lorem = LoremIpsum.getInstance();
       return lorem.getWords(10000);
     }

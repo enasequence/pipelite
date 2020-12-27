@@ -29,8 +29,12 @@ public class TimeUtilsTest {
   @Test
   public void humanReadableDuration() {
     ZonedDateTime now = ZonedDateTime.now();
-    String dd =
-        Duration.between(now.minus(Duration.between(now, now.plusHours(100))), now).toString();
+
+    assertThat(TimeUtils.humanReadableDuration(Duration.ofSeconds(10))).isEqualTo("10s");
+    assertThat(TimeUtils.humanReadableDuration(Duration.ofMinutes(10))).isEqualTo("10m");
+    assertThat(TimeUtils.humanReadableDuration(Duration.ofHours(10))).isEqualTo("10h");
+    assertThat(TimeUtils.humanReadableDuration(Duration.ofDays(10))).isEqualTo("10d");
+
     assertThat(
             TimeUtils.humanReadableDuration(
                 now, now.minus(Duration.between(now, now.plusHours(100)))))

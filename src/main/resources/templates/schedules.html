@@ -12,14 +12,15 @@ $(document).ready( function () {
            dataSrc: ""
         },
         columns: [
-            // { data: "schedulerName" },
+            { data: "schedulerName" },
             { data: "pipelineName" },
+            { data: "active" },
             { data: "completedStreak" },
             { data: "failedStreak" },
             { data: "sinceLastCompleted" },
             { data: "sinceLastFailed" },
             { data: "sinceStartTime" },
-            { data: "untilNextStartTime" },
+            { data: "untilNextTime" },
             { data: "cron" },
             { data: "description" },
             { data: "processId" },
@@ -55,14 +56,15 @@ $(document).ready( function () {
            dataSrc: ""
         },
         columns: [
-            // { data: "schedulerName" },
+            { data: "schedulerName" },
             { data: "pipelineName" },
+            { data: "active" },
             { data: "completedStreak" },
             { data: "failedStreak" },
             { data: "lastCompleted" },
             { data: "lastFailed" },
             { data: "startTime" },
-            { data: "nextStartTime" },
+            { data: "nextTime" },
             { data: "cron" },
             { data: "description" },
             { data: "processId" },
@@ -137,8 +139,9 @@ $(document).ready( function () {
                 <table id="relativeTimeTable" class="table table-striped table-hover" style="width:100%">
                     <thead>
                     <tr>
-                        <!-- <th>Scheduler name</th> -->
+                        <th>Scheduler name</th>
                         <th>Pipeline name</th>
+                        <th>Active</th>
                         <th>Completed streak</th>
                         <th>Failed streak</th>
                         <th>Last completed</th>
@@ -157,8 +160,9 @@ $(document).ready( function () {
                 <table id="absoluteTimeTable" class="table table-striped table-hover" style="width:100%">
                     <thead>
                     <tr>
-                        <!-- <th>Scheduler name</th> -->
+                        <th>Scheduler name</th>
                         <th>Pipeline name</th>
+                        <th>Active</th>
                         <th>Completed streak</th>
                         <th>Failed streak</th>
                         <th>Last completed</th>

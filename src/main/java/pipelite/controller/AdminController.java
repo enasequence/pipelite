@@ -14,11 +14,14 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.time.Duration;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.metrics.MetricsEndpoint;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
 import pipelite.controller.info.AdminInfo;
+import pipelite.controller.utils.TimeUtils;
 
 @RestController
 @RequestMapping(value = "/admin")
@@ -26,6 +29,23 @@ import pipelite.controller.info.AdminInfo;
 public class AdminController {
 
   @Autowired Application application;
+  @Autowired MetricsEndpoint metricsEndpoint;
+
+  @GetMapping("/uptime")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(description = "Show the server uptime")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "OK"),
+        @ApiResponse(responseCode = "500", description = "Internal Server error")
+      })
+  public String uptime() {
+    long seconds =
+        (metricsEndpoint.metric("process.uptime", null).getMeasurements().get(0))
+            .getValue()
+            .longValue();
+    return TimeUtils.humanReadableDuration(Duration.ofSeconds(seconds));
+  }
 
   @GetMapping("/stop")
   @ResponseStatus(HttpStatus.OK)

@@ -47,7 +47,16 @@ $(document).ready(function() {
     $('.nav-item a[href="' +  location.pathname  + '"]').parent().addClass('active');
     $(this).parent().addClass('active').siblings().removeClass('active');
     // console.log('location.pathname:' + location.pathname);
+/*
+    // Show uptime.
+    setInterval(
+        function() {
+            $('#uptime').load('/pipelite/admin/uptime').fadeIn("slow");
+        }, 10000); // refresh every 10 seconds
+*/
 });
+
+
 
     </script>
 

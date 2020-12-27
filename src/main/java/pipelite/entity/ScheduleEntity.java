@@ -62,6 +62,10 @@ public class ScheduleEntity {
   @Column(name = "EXEC_DATE")
   private ZonedDateTime endTime;
 
+  /** Next execution time. */
+  @Column(name = "EXEC_NEXT")
+  private ZonedDateTime nextTime;
+
   /** Total execution count. */
   @Column(name = "EXEC_CNT", nullable = false)
   private int executionCount = 0;
@@ -82,10 +86,15 @@ public class ScheduleEntity {
   @Column(name = "STREAK_FAILED")
   private int streakFailed = 0;
 
+  public void scheduleExecution(ZonedDateTime nextStart) {
+    this.nextTime = nextStart;
+  }
+
   public void startExecution(String processId) {
     this.startTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.processId = processId;
     this.endTime = null;
+    this.nextTime = null;
   }
 
   public void endExecution(ProcessEntity processEntity) {

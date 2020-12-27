@@ -15,7 +15,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Duration;
 import pipelite.process.ProcessState;
 
-public class ProcessRunnerStats {
+public class ProcessRunnerMetrics {
 
   private static final Duration MAX_WINDOW = Duration.ofHours(24);
 
@@ -27,21 +27,15 @@ public class ProcessRunnerStats {
   private final Counter failedStageCount;
   private final Counter stageExceptionCount;
 
-  private final ProcessRunnerStatsCounter completedProcessWindowCount =
-      new ProcessRunnerStatsCounter();
-  private final ProcessRunnerStatsCounter failedProcessWindowCount =
-      new ProcessRunnerStatsCounter();
-  private final ProcessRunnerStatsCounter processExceptionWindowCount =
-      new ProcessRunnerStatsCounter();
-  private final ProcessRunnerStatsCounter processCreationFailedWindowCount =
-      new ProcessRunnerStatsCounter();
-  private final ProcessRunnerStatsCounter successfulStageWindowCount =
-      new ProcessRunnerStatsCounter();
-  private final ProcessRunnerStatsCounter failedStageWindowCount = new ProcessRunnerStatsCounter();
-  private final ProcessRunnerStatsCounter stageExceptionWindowCount =
-      new ProcessRunnerStatsCounter();
+  private final ProcessRunnerCounter completedProcessWindowCount = new ProcessRunnerCounter();
+  private final ProcessRunnerCounter failedProcessWindowCount = new ProcessRunnerCounter();
+  private final ProcessRunnerCounter processExceptionWindowCount = new ProcessRunnerCounter();
+  private final ProcessRunnerCounter processCreationFailedWindowCount = new ProcessRunnerCounter();
+  private final ProcessRunnerCounter successfulStageWindowCount = new ProcessRunnerCounter();
+  private final ProcessRunnerCounter failedStageWindowCount = new ProcessRunnerCounter();
+  private final ProcessRunnerCounter stageExceptionWindowCount = new ProcessRunnerCounter();
 
-  public ProcessRunnerStats(String pipelineName, MeterRegistry meterRegistry) {
+  public ProcessRunnerMetrics(String pipelineName, MeterRegistry meterRegistry) {
     completedProcessCount =
         meterRegistry.counter("pipelite.process.completed", "pipelineName", pipelineName);
     failedProcessCount =

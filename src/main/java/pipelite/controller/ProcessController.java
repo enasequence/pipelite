@@ -25,7 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
 import pipelite.controller.info.ProcessInfo;
-import pipelite.controller.test.LoremIpsumUtils;
+import pipelite.controller.utils.LoremUtils;
 import pipelite.controller.utils.TimeUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.launcher.process.runner.ProcessRunner;
@@ -117,7 +117,7 @@ public class ProcessController {
 
   public void getLoremIpsumProcesses(List<ProcessInfo> list) {
     if (Arrays.stream(environment.getActiveProfiles())
-        .anyMatch(profile -> LoremIpsumUtils.PROFILE_NAME.equals(profile))) {
+        .anyMatch(profile -> LoremUtils.PROFILE_NAME.equals(profile))) {
       Lorem lorem = LoremIpsum.getInstance();
       Random random = new Random();
       IntStream.range(1, 100)

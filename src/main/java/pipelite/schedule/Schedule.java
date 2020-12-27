@@ -82,6 +82,15 @@ public class Schedule {
     }
   }
 
+  /**
+   * Enables the schedule using the given launch time.
+   *
+   * @param launchTime the launch time
+   */
+  public void enable(ZonedDateTime launchTime) {
+    this.launchTime = launchTime;
+  }
+
   /** Disables the schedule. Sets the launch time to null. */
   public void disable() {
     launchTime = null;

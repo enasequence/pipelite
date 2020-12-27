@@ -26,11 +26,12 @@ public class ScheduleInfo {
   private String sinceStartTime;
   private String endTime;
   private String sinceEndTime;
-  private String nextStartTime;
-  private String untilNextStartTime;
+  private String nextTime;
+  private String untilNextTime;
   private String lastCompleted;
   private String sinceLastCompleted;
   private String lastFailed;
   private String sinceLastFailed;
+  private boolean active;
   private String processId;
 }

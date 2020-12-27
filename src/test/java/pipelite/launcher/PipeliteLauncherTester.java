@@ -31,7 +31,7 @@ import pipelite.configuration.StageConfiguration;
 import pipelite.configuration.WebConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
-import pipelite.launcher.process.runner.ProcessRunnerStats;
+import pipelite.launcher.process.runner.ProcessRunnerMetrics;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
@@ -193,21 +193,21 @@ public class PipeliteLauncherTester {
     }
   }
 
-  private void assertLauncherStats(PipeliteLauncher pipeliteLauncher, TestProcessFactory f) {
-    ProcessRunnerStats stats = pipeliteLauncher.getStats();
+  private void assertLauncherMetrics(PipeliteLauncher pipeliteLauncher, TestProcessFactory f) {
+    ProcessRunnerMetrics metrics = pipeliteLauncher.getMetrics();
 
-    assertThat(stats.getProcessCreationFailedCount()).isEqualTo(0);
-    assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
+    assertThat(metrics.getProcessCreationFailedCount()).isEqualTo(0);
+    assertThat(metrics.getProcessExceptionCount()).isEqualTo(0);
 
     if (f.stageTestResult != StageTestResult.SUCCESS) {
-      assertThat(stats.getFailedProcessCount()).isEqualTo(f.stageExecCnt.get() / f.stageCnt);
-      assertThat(stats.getFailedStageCount()).isEqualTo(f.stageExecCnt.get());
-      assertThat(stats.getSuccessfulStageCount()).isEqualTo(0L);
+      assertThat(metrics.getFailedProcessCount()).isEqualTo(f.stageExecCnt.get() / f.stageCnt);
+      assertThat(metrics.getFailedStageCount()).isEqualTo(f.stageExecCnt.get());
+      assertThat(metrics.getSuccessfulStageCount()).isEqualTo(0L);
 
     } else {
-      assertThat(stats.getCompletedProcessCount()).isEqualTo(f.stageExecCnt.get() / f.stageCnt);
-      assertThat(stats.getFailedStageCount()).isEqualTo(0L);
-      assertThat(stats.getSuccessfulStageCount()).isEqualTo(f.stageExecCnt.get());
+      assertThat(metrics.getCompletedProcessCount()).isEqualTo(f.stageExecCnt.get() / f.stageCnt);
+      assertThat(metrics.getFailedStageCount()).isEqualTo(0L);
+      assertThat(metrics.getSuccessfulStageCount()).isEqualTo(f.stageExecCnt.get());
     }
   }
 
@@ -271,7 +271,7 @@ public class PipeliteLauncherTester {
 
     assertThat(f.stageExecCnt.get() / f.stageCnt).isEqualTo(f.processCnt);
     assertThat(f.processIds.size()).isEqualTo(f.processCnt);
-    assertLauncherStats(pipeliteLauncher, f);
+    assertLauncherMetrics(pipeliteLauncher, f);
     for (String processId : f.processIds) {
       assertProcessEntity(f, processId);
       assertStageEntities(f, processId);

@@ -31,7 +31,7 @@ import pipelite.configuration.StageConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.entity.StageEntity;
-import pipelite.launcher.process.runner.ProcessRunnerStats;
+import pipelite.launcher.process.runner.ProcessRunnerMetrics;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessState;
@@ -213,23 +213,23 @@ public class PipeliteSchedulerTester {
             + launcherConfiguration.getSchedulerName());
   }
 
-  private void assertSchedulerStats(PipeliteScheduler pipeliteScheduler, TestProcessFactory f) {
+  private void assertSchedulerMetrics(PipeliteScheduler pipeliteScheduler, TestProcessFactory f) {
     String pipelineName = f.getPipelineName();
 
-    ProcessRunnerStats stats = pipeliteScheduler.getStats(pipelineName);
+    ProcessRunnerMetrics metrics = pipeliteScheduler.getMetrics(pipelineName);
 
-    assertThat(stats.getProcessCreationFailedCount()).isEqualTo(0);
-    assertThat(stats.getProcessExceptionCount()).isEqualTo(0);
+    assertThat(metrics.getProcessCreationFailedCount()).isEqualTo(0);
+    assertThat(metrics.getProcessExceptionCount()).isEqualTo(0);
 
     if (f.stageTestResult != StageTestResult.SUCCESS) {
-      assertThat(stats.getFailedProcessCount()).isEqualTo(f.stageExecCnt.get() / f.stageCnt);
-      assertThat(stats.getFailedStageCount()).isEqualTo(f.stageExecCnt.get());
-      assertThat(stats.getSuccessfulStageCount()).isEqualTo(0L);
+      assertThat(metrics.getFailedProcessCount()).isEqualTo(f.stageExecCnt.get() / f.stageCnt);
+      assertThat(metrics.getFailedStageCount()).isEqualTo(f.stageExecCnt.get());
+      assertThat(metrics.getSuccessfulStageCount()).isEqualTo(0L);
 
     } else {
-      assertThat(stats.getCompletedProcessCount()).isEqualTo(f.stageExecCnt.get() / f.stageCnt);
-      assertThat(stats.getFailedStageCount()).isEqualTo(0L);
-      assertThat(stats.getSuccessfulStageCount()).isEqualTo(f.stageExecCnt.get());
+      assertThat(metrics.getCompletedProcessCount()).isEqualTo(f.stageExecCnt.get() / f.stageCnt);
+      assertThat(metrics.getFailedStageCount()).isEqualTo(0L);
+      assertThat(metrics.getSuccessfulStageCount()).isEqualTo(f.stageExecCnt.get());
     }
   }
 
@@ -326,7 +326,7 @@ public class PipeliteSchedulerTester {
       for (TestProcessFactory f : testProcessFactories) {
         assertThat(f.stageExecCnt.get() / f.stageCnt).isEqualTo(f.processCnt);
         assertThat(f.processIds.size()).isEqualTo(f.processCnt);
-        assertSchedulerStats(pipeliteScheduler, f);
+        assertSchedulerMetrics(pipeliteScheduler, f);
         assertScheduleEntity(scheduleEntities, f);
         for (String processId : f.processIds) {
           assertProcessEntity(f, processId);

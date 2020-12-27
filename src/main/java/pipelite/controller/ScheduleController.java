@@ -28,10 +28,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
 import pipelite.controller.info.ScheduleInfo;
-import pipelite.controller.test.LoremIpsumUtils;
+import pipelite.controller.utils.LoremUtils;
 import pipelite.controller.utils.TimeUtils;
 import pipelite.entity.ScheduleEntity;
-import pipelite.launcher.PipeliteScheduler;
 import pipelite.service.ScheduleService;
 
 @RestController
@@ -54,49 +53,64 @@ public class ScheduleController {
   public List<ScheduleInfo> localSchedules() {
     List<ScheduleInfo> list = new ArrayList<>();
     application.getRunningSchedulers().stream()
-        .forEach(scheduler -> list.addAll(getLocalSchedules(scheduler)));
+        .forEach(scheduler -> list.addAll(getLocalSchedules(scheduler.getLauncherName())));
     getLoremIpsumSchedules(list);
     return list;
   }
 
-  public List<ScheduleInfo> getLocalSchedules(PipeliteScheduler scheduler) {
+  public List<ScheduleInfo> getLocalSchedules(String schedulerName) {
     List<ScheduleInfo> schedules = new ArrayList<>();
-    scheduler
-        .getSchedules()
-        .forEach(
-            s -> {
-              Optional<ScheduleEntity> o = scheduleService.geSavedSchedule(s.getPipelineName());
-              if (!o.isPresent()) {
-                return;
-              }
-              ScheduleEntity e = o.get();
-              schedules.add(
-                  ScheduleInfo.builder()
-                      .schedulerName(scheduler.getLauncherName())
-                      .pipelineName(e.getPipelineName())
-                      .cron(e.getCron())
-                      .description(e.getDescription())
-                      .startTime(TimeUtils.humanReadableDate(e.getStartTime()))
-                      .sinceStartTime(TimeUtils.humanReadableDuration(e.getStartTime()))
-                      .endTime(TimeUtils.humanReadableDate(e.getEndTime()))
-                      .sinceEndTime(TimeUtils.humanReadableDuration(e.getEndTime()))
-                      .nextStartTime(TimeUtils.humanReadableDate(s.getLaunchTime()))
-                      .untilNextStartTime(TimeUtils.humanReadableDuration(s.getLaunchTime()))
-                      .lastCompleted(TimeUtils.humanReadableDate(e.getLastCompleted()))
-                      .sinceLastCompleted(TimeUtils.humanReadableDuration(e.getLastCompleted()))
-                      .lastFailed(TimeUtils.humanReadableDate(e.getLastFailed()))
-                      .sinceLastFailed(TimeUtils.humanReadableDuration(e.getLastFailed()))
-                      .completedStreak(e.getStreakCompleted())
-                      .failedStreak(e.getStreakFailed())
-                      .processId(e.getProcessId())
-                      .build());
-            });
+    scheduleService.getSchedules(schedulerName).forEach(s -> schedules.add(getSchedule(s)));
     return schedules;
+  }
+
+  @GetMapping("/all")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(description = "All schedules")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "OK"),
+        @ApiResponse(responseCode = "500", description = "Internal Server error")
+      })
+  public List<ScheduleInfo> allSchedules() {
+    List<ScheduleInfo> list = new ArrayList<>();
+    list.addAll(getAllSchedules());
+    getLoremIpsumSchedules(list);
+    return list;
+  }
+
+  public List<ScheduleInfo> getAllSchedules() {
+    List<ScheduleInfo> schedules = new ArrayList<>();
+    scheduleService.getSchedules().forEach(s -> schedules.add(getSchedule(s)));
+    return schedules;
+  }
+
+  private ScheduleInfo getSchedule(ScheduleEntity s) {
+    return ScheduleInfo.builder()
+        .schedulerName(s.getSchedulerName())
+        .pipelineName(s.getPipelineName())
+        .cron(s.getCron())
+        .description(s.getDescription())
+        .startTime(TimeUtils.humanReadableDate(s.getStartTime()))
+        .sinceStartTime(TimeUtils.humanReadableDuration(s.getStartTime()))
+        .endTime(TimeUtils.humanReadableDate(s.getEndTime()))
+        .sinceEndTime(TimeUtils.humanReadableDuration(s.getEndTime()))
+        .nextTime(TimeUtils.humanReadableDate(s.getNextTime()))
+        .untilNextTime(TimeUtils.humanReadableDuration(s.getNextTime()))
+        .lastCompleted(TimeUtils.humanReadableDate(s.getLastCompleted()))
+        .sinceLastCompleted(TimeUtils.humanReadableDuration(s.getLastCompleted()))
+        .lastFailed(TimeUtils.humanReadableDate(s.getLastFailed()))
+        .sinceLastFailed(TimeUtils.humanReadableDuration(s.getLastFailed()))
+        .completedStreak(s.getStreakCompleted())
+        .failedStreak(s.getStreakFailed())
+        .active(s.getActive())
+        .processId(s.getProcessId())
+        .build();
   }
 
   public void getLoremIpsumSchedules(List<ScheduleInfo> list) {
     if (Arrays.stream(environment.getActiveProfiles())
-        .anyMatch(profile -> LoremIpsumUtils.PROFILE_NAME.equals(profile))) {
+        .anyMatch(profile -> LoremUtils.PROFILE_NAME.equals(profile))) {
       Lorem lorem = LoremIpsum.getInstance();
       IntStream.range(1, 100)
           .forEach(
@@ -114,14 +128,15 @@ public class ScheduleController {
                         .sinceStartTime(humanReadableDuration)
                         .endTime(humanReadableDate)
                         .sinceEndTime(humanReadableDuration)
-                        .nextStartTime(humanReadableDate)
-                        .untilNextStartTime(humanReadableDuration)
+                        .nextTime(humanReadableDate)
+                        .untilNextTime(humanReadableDuration)
                         .lastCompleted(humanReadableDate)
                         .sinceLastCompleted(humanReadableDuration)
                         .lastFailed(humanReadableDate)
                         .sinceLastFailed(humanReadableDuration)
                         .completedStreak(5)
                         .failedStreak(1)
+                        .active(true)
                         .processId(lorem.getWords(1))
                         .build());
               });

@@ -27,9 +27,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
 import pipelite.controller.info.PipelineInfo;
-import pipelite.controller.test.LoremIpsumUtils;
+import pipelite.controller.utils.LoremUtils;
 import pipelite.launcher.PipeliteLauncher;
-import pipelite.launcher.process.runner.ProcessRunnerStats;
+import pipelite.launcher.process.runner.ProcessRunnerMetrics;
 
 @RestController
 @RequestMapping(value = "/pipeline")
@@ -60,25 +60,25 @@ public class PipelineController {
       Collection<PipeliteLauncher> pipeliteLaunchers, Duration since) {
     List<PipelineInfo> pipelines = new ArrayList<>();
     for (PipeliteLauncher pipeliteLauncher : pipeliteLaunchers) {
-      ProcessRunnerStats stats = pipeliteLauncher.getStats();
+      ProcessRunnerMetrics metrics = pipeliteLauncher.getMetrics();
       pipelines.add(
           PipelineInfo.builder()
               .pipelineName(pipeliteLauncher.getPipelineName())
               .maxRunningProcessCount(pipeliteLauncher.getProcessParallelism())
               .runningProcessCount(pipeliteLauncher.getActiveProcessCount())
               .queuedProcessCount(pipeliteLauncher.getQueuedProcessCount())
-              .completedProcessCount(getStats(stats::getProcessCompletedCount, since))
-              .failedProcessCount(getStats(stats::getProcessFailedCount, since))
-              .processExceptionCount(getStats(stats::getProcessExceptionCount, since))
-              .successfulStageCount(getStats(stats::getStageSuccessCount, since))
-              .failedStageCount(getStats(stats::getStageFailedCount, since))
-              .stageExceptionCount(getStats(stats::getStageExceptionCount, since))
+              .completedProcessCount(getMetrics(metrics::getProcessCompletedCount, since))
+              .failedProcessCount(getMetrics(metrics::getProcessFailedCount, since))
+              .processExceptionCount(getMetrics(metrics::getProcessExceptionCount, since))
+              .successfulStageCount(getMetrics(metrics::getStageSuccessCount, since))
+              .failedStageCount(getMetrics(metrics::getStageFailedCount, since))
+              .stageExceptionCount(getMetrics(metrics::getStageExceptionCount, since))
               .build());
     }
     return pipelines;
   }
 
-  public static String getStats(Function<Duration, Double> func, Duration since) {
+  public static String getMetrics(Function<Duration, Double> func, Duration since) {
     DecimalFormat format = new DecimalFormat("#");
     return format.format(func.apply(since));
   }
@@ -87,7 +87,7 @@ public class PipelineController {
     Random random = new Random();
     Function<Duration, Double> randomCount = duration -> Double.valueOf(random.nextInt(100));
     if (Arrays.stream(environment.getActiveProfiles())
-        .anyMatch(profile -> LoremIpsumUtils.PROFILE_NAME.equals(profile))) {
+        .anyMatch(profile -> LoremUtils.PROFILE_NAME.equals(profile))) {
       Lorem lorem = LoremIpsum.getInstance();
       IntStream.range(1, 100)
           .forEach(
@@ -98,12 +98,12 @@ public class PipelineController {
                           .maxRunningProcessCount(random.nextInt(50))
                           .runningProcessCount(random.nextInt(10))
                           .queuedProcessCount(random.nextInt(100))
-                          .completedProcessCount(getStats(randomCount, since))
-                          .failedProcessCount(getStats(randomCount, since))
-                          .processExceptionCount(getStats(randomCount, since))
-                          .successfulStageCount(getStats(randomCount, since))
-                          .failedStageCount(getStats(randomCount, since))
-                          .stageExceptionCount(getStats(randomCount, since))
+                          .completedProcessCount(getMetrics(randomCount, since))
+                          .failedProcessCount(getMetrics(randomCount, since))
+                          .processExceptionCount(getMetrics(randomCount, since))
+                          .successfulStageCount(getMetrics(randomCount, since))
+                          .failedStageCount(getMetrics(randomCount, since))
+                          .stageExceptionCount(getMetrics(randomCount, since))
                           .build()));
     }
   }

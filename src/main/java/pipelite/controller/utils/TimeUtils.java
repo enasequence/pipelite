@@ -56,17 +56,28 @@ public class TimeUtils {
     if (dateTime1 == null || dateTime2 == null) {
       return null;
     }
-    Duration d = Duration.between(dateTime2, dateTime1);
-    if (d.isNegative()) {
-      d = Duration.between(dateTime1, dateTime2);
+    return humanReadableDuration(Duration.between(dateTime2, dateTime1));
+  }
+
+  /**
+   * Returns the duration between now and the date time as a [\d+d] [\d+h] [\d+m] [\d+s] formatted
+   * string.
+   *
+   * @param duration the duration
+   * @return the duration between now and the date time as a [\d+d] [\d+h] [\d+m] [\d+s] formatted
+   *     string
+   */
+  public static String humanReadableDuration(Duration duration) {
+    if (duration.isNegative()) {
+      duration = duration.negated();
     }
-    long days = d.toDays();
-    d = d.minusDays(days);
-    long hours = d.toHours();
-    d = d.minusHours(hours);
-    long minutes = d.toMinutes();
-    d = d.minusMinutes(minutes);
-    long seconds = d.getSeconds();
+    long days = duration.toDays();
+    duration = duration.minusDays(days);
+    long hours = duration.toHours();
+    duration = duration.minusHours(hours);
+    long minutes = duration.toMinutes();
+    duration = duration.minusMinutes(minutes);
+    long seconds = duration.getSeconds();
     return ((days == 0 ? "" : days + "d ")
             + (hours == 0 ? "" : hours + "h ")
             + (minutes == 0 ? "" : minutes + "m ")

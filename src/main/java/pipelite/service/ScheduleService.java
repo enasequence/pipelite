@@ -10,8 +10,11 @@
  */
 package pipelite.service;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
+
+import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -30,6 +33,14 @@ public class ScheduleService {
     this.repository = repository;
   }
 
+  public List<ScheduleEntity> getSchedules() {
+    return Lists.newArrayList(repository.findAll());
+  }
+
+  public List<ScheduleEntity> getSchedules(String schedulerName) {
+    return repository.findBySchedulerName(schedulerName);
+  }
+
   public List<ScheduleEntity> getActiveSchedules(String schedulerName) {
     return repository.findBySchedulerNameAndActive(schedulerName, true);
   }
@@ -44,6 +55,11 @@ public class ScheduleService {
 
   public void delete(ScheduleEntity scheduleEntity) {
     repository.delete(scheduleEntity);
+  }
+
+  public void scheduleExecution(ScheduleEntity scheduleEntity, ZonedDateTime nextStart) {
+    scheduleEntity.scheduleExecution(nextStart);
+    saveSchedule(scheduleEntity);
   }
 
   public ScheduleEntity startExecution(String pipelineName, String processId) {

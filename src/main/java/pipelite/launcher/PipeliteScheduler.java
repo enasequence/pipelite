@@ -26,9 +26,9 @@ import pipelite.cron.CronUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.exception.PipeliteException;
+import pipelite.launcher.process.runner.ProcessRunnerMetrics;
 import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
-import pipelite.launcher.process.runner.ProcessRunnerStats;
 import pipelite.lock.PipeliteLocker;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
@@ -49,7 +49,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   private final ProcessFactoryCache processFactoryCache;
   private final List<Schedule> schedules = Collections.synchronizedList(new ArrayList<>());
   private final Map<String, AtomicLong> maximumExecutions = new ConcurrentHashMap<>();
-  private final Map<String, ProcessRunnerStats> stats = new ConcurrentHashMap<>();
+  private final Map<String, ProcessRunnerMetrics> metrics = new ConcurrentHashMap<>();
   private final Duration scheduleRefreshFrequency;
   private ZonedDateTime scheduleValidUntil = ZonedDateTime.now();
   private MeterRegistry meterRegistry;
@@ -89,7 +89,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   protected void run() {
     refreshSchedules();
     executeSchedules();
-    purgeStats();
+    purgeMetrics();
   }
 
   protected void executeSchedules() {
@@ -167,10 +167,20 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
    * @param scheduleEntity the schedule entity
    */
   private void createSchedule(ScheduleEntity scheduleEntity) {
-    Schedule schedule = new Schedule(scheduleEntity.getPipelineName());
+    String pipelineName = scheduleEntity.getPipelineName();
     updateCron(scheduleEntity);
+    Schedule schedule = new Schedule(pipelineName);
     schedule.setCron(scheduleEntity.getCron());
-    schedule.enable();
+    if (scheduleEntity.getNextTime() != null) {
+      // Use previously assigned launch time. The launch time is removed when the process
+      // execution starts and assigned when the process execution finishes or here if the launch
+      // time has not been assigned.
+      schedule.enable(scheduleEntity.getNextTime());
+    } else {
+      // Evaluate the cron expression and assign the next launch time.
+      schedule.enable();
+      scheduleService.scheduleExecution(scheduleEntity, schedule.getLaunchTime());
+    }
     schedules.add(schedule);
   }
 
@@ -273,7 +283,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     Process process =
         ProcessFactory.create(processEntity, processFactoryCache.getProcessFactory(pipelineName));
     if (process == null) {
-      getStats(pipelineName).addProcessCreationFailed(1);
+      getMetrics(pipelineName).addProcessCreationFailed(1);
       logContext(log.atSevere(), pipelineName, processId).log("Failed to create scheduled process");
       return;
     }
@@ -285,9 +295,10 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
         pipelineName,
         process,
         (p, r) -> {
-          scheduleService.endExecution(pipelineName, processEntity);
+          ScheduleEntity scheduleEntity = scheduleService.endExecution(pipelineName, processEntity);
           schedule.enable();
-          getStats(pipelineName).addProcessRunnerResult(p.getProcessEntity().getState(), r);
+          scheduleService.scheduleExecution(scheduleEntity, schedule.getLaunchTime());
+          getMetrics(pipelineName).addProcessRunnerResult(p.getProcessEntity().getState(), r);
         });
   }
 
@@ -323,14 +334,14 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     this.maximumExecutions.get(pipelineName).set(maximumExecutions);
   }
 
-  public ProcessRunnerStats getStats(String pipelineName) {
-    stats.putIfAbsent(pipelineName, new ProcessRunnerStats(pipelineName, meterRegistry));
-    return stats.get(pipelineName);
+  public ProcessRunnerMetrics getMetrics(String pipelineName) {
+    metrics.putIfAbsent(pipelineName, new ProcessRunnerMetrics(pipelineName, meterRegistry));
+    return metrics.get(pipelineName);
   }
 
-  private void purgeStats() {
-    for (ProcessRunnerStats stats : stats.values()) {
-      stats.purge();
+  private void purgeMetrics() {
+    for (ProcessRunnerMetrics m : metrics.values()) {
+      m.purge();
     }
   }
 
