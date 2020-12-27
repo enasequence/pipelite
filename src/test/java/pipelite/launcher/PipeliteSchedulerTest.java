@@ -94,7 +94,7 @@ public class PipeliteSchedulerTest {
                 processFactoryService,
                 scheduleService,
                 processService,
-                () -> processRunnerPool,
+                processRunnerPool,
                 new SimpleMeterRegistry()));
     int maxExecution1 = 1;
     pipeliteScheduler.setMaximumExecutions(pipelineName1, maxExecution1);
@@ -194,7 +194,7 @@ public class PipeliteSchedulerTest {
                 processFactoryService,
                 scheduleService,
                 processService,
-                () -> processRunnerPool,
+                processRunnerPool,
                 new SimpleMeterRegistry()));
 
     pipeliteScheduler.setMaximumExecutions(pipelineName1, maxExecution1);
@@ -343,7 +343,7 @@ public class PipeliteSchedulerTest {
                 processFactoryService,
                 scheduleService,
                 processService,
-                () -> processRunnerPool,
+                processRunnerPool,
                 new SimpleMeterRegistry()));
     pipeliteScheduler.setMaximumExecutions(pipelineName1, maxExecution1);
     pipeliteScheduler.setMaximumExecutions(pipelineName2, maxExecution2);

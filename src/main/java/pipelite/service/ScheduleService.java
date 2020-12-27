@@ -59,12 +59,26 @@ public class ScheduleService {
     repository.delete(scheduleEntity);
   }
 
+  /**
+   * Called when the next execution time is set for the schedule. Sets the next execution time and
+   * saves the schedule.
+   *
+   * @param pipelineName the pipeline name
+   * @param nextTime the next execution time
+   */
   public void scheduleExecution(String pipelineName, ZonedDateTime nextTime) {
     ScheduleEntity scheduleEntity = getSavedSchedule(pipelineName).get();
     scheduleEntity.setNextTime(nextTime.truncatedTo(ChronoUnit.SECONDS));
     saveSchedule(scheduleEntity);
   }
 
+  /**
+   * Called when the schedule execution starts. Sets the execution start time and process id.
+   * Removes the execution end time and next execution time. Saves the schedule.
+   *
+   * @param pipelineName the pipeline name
+   * @param processId the process id
+   */
   public void startExecution(String pipelineName, String processId) {
     ScheduleEntity scheduleEntity = getSavedSchedule(pipelineName).get();
     scheduleEntity.setStartTime(ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS));
@@ -74,6 +88,12 @@ public class ScheduleService {
     saveSchedule(scheduleEntity);
   }
 
+  /**
+   * Called when the schedule execution ends. Sets the execution end, last completed and last failed
+   * times. Increases the execution count and sets the completed and failed streak.
+   *
+   * @param processEntity the process entity
+   */
   public void endExecution(ProcessEntity processEntity) {
     String pipelineName = processEntity.getPipelineName();
     ScheduleEntity scheduleEntity = getSavedSchedule(pipelineName).get();

@@ -52,6 +52,14 @@ public class ProcessEntity {
   @Column(name = "PRIORITY", nullable = false)
   private Integer priority = DEFAULT_PRIORITY;
 
+  /**
+   * Creates a new process.
+   *
+   * @param pipelineName the pipeline name
+   * @param processId the process id
+   * @param priority te process priority
+   * @return the new process
+   */
   public static ProcessEntity createExecution(
       String pipelineName, String processId, Integer priority) {
     ProcessEntity processEntity = new ProcessEntity();
@@ -63,12 +71,22 @@ public class ProcessEntity {
     return processEntity;
   }
 
+  /**
+   * Called when the process execution starts. Sets the process state to active and sets the
+   * execution start time.
+   */
   public void startExecution() {
     this.state = ProcessState.ACTIVE;
     this.startTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.endTime = null;
   }
 
+  /**
+   * Called when the process execution ends. Sets the process state and the execution end time.
+   * Increases the process execution count.
+   *
+   * @param state the process state
+   */
   public void endExecution(ProcessState state) {
     this.state = state;
     this.endTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);

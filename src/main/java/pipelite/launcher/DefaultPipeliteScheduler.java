@@ -44,16 +44,15 @@ public class DefaultPipeliteScheduler {
         processFactoryService,
         scheduleService,
         processService,
-        () ->
-            new DefaultProcessRunnerPool(
-                pipeliteLocker,
-                () ->
-                    new DefaultProcessRunner(
-                        launcherConfiguration,
-                        stageConfiguration,
-                        processService,
-                        stageService,
-                        mailService)),
+        new DefaultProcessRunnerPool(
+            pipeliteLocker,
+            () ->
+                new DefaultProcessRunner(
+                    launcherConfiguration,
+                    stageConfiguration,
+                    processService,
+                    stageService,
+                    mailService)),
         meterRegistry);
   }
 }

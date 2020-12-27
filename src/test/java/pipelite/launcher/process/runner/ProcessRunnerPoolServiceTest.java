@@ -14,60 +14,42 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.lock.PipeliteLocker;
-import pipelite.process.Process;
-import pipelite.process.ProcessState;
 
 public class ProcessRunnerPoolServiceTest {
 
   public static final String LAUNCHER_NAME = "LAUNCHER1";
 
-  private Supplier<ProcessRunner> processRunnerSupplier(ProcessState state) {
-    return () -> {
-      ProcessRunner processRunner = mock(ProcessRunner.class);
-      doAnswer(
-              I -> {
-                Process process = (Process) I.getArguments()[1];
-                process.getProcessEntity().endExecution(state);
-                return null;
-              })
-          .when(processRunner)
-          .runProcess(any(), any(), any());
-      return processRunner;
-    };
-  }
-
   @Test
-  public void lifecycle() {
-    AtomicLong lockCallCnt = new AtomicLong();
-    AtomicLong renewLockCallCnt = new AtomicLong();
-    AtomicLong runCallCnt = new AtomicLong();
-    AtomicLong unlockCallCnt = new AtomicLong();
+  public void locker() {
+    AtomicLong lockCnt = new AtomicLong();
+    AtomicLong renewLockCnt = new AtomicLong();
+    AtomicLong runCnt = new AtomicLong();
+    AtomicLong unlockCnt = new AtomicLong();
 
     LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
+
     PipeliteLocker locker = mock(PipeliteLocker.class);
     when(locker.getLauncherName()).thenReturn(LAUNCHER_NAME);
-
     doAnswer(
             I -> {
-              lockCallCnt.incrementAndGet();
+              lockCnt.incrementAndGet();
               return null;
             })
         .when(locker)
         .lock();
     doAnswer(
             I -> {
-              renewLockCallCnt.incrementAndGet();
+              renewLockCnt.incrementAndGet();
               return null;
             })
         .when(locker)
         .renewLock();
     doAnswer(
             I -> {
-              unlockCallCnt.incrementAndGet();
+              unlockCnt.incrementAndGet();
               return null;
             })
         .when(locker)
@@ -79,12 +61,10 @@ public class ProcessRunnerPoolServiceTest {
                 launcherConfiguration,
                 locker,
                 LAUNCHER_NAME,
-                () ->
-                    new DefaultProcessRunnerPool(
-                        locker, processRunnerSupplier(ProcessState.COMPLETED))) {
+                mock(DefaultProcessRunnerPool.class)) {
               @Override
               protected void run() {
-                runCallCnt.incrementAndGet();
+                runCnt.incrementAndGet();
               }
             });
     doReturn(true).when(processRunnerPoolService).isActive();
@@ -93,37 +73,37 @@ public class ProcessRunnerPoolServiceTest {
     assertThat(processRunnerPoolService.getActiveProcessCount()).isZero();
     assertThat(processRunnerPoolService.getActiveProcessRunners()).isEmpty();
 
-    assertThat(lockCallCnt.get()).isZero();
-    assertThat(renewLockCallCnt.get()).isZero();
-    assertThat(runCallCnt.get()).isZero();
-    assertThat(unlockCallCnt.get()).isZero();
+    assertThat(lockCnt.get()).isZero();
+    assertThat(renewLockCnt.get()).isZero();
+    assertThat(runCnt.get()).isZero();
+    assertThat(unlockCnt.get()).isZero();
 
     processRunnerPoolService.startUp();
 
-    assertThat(lockCallCnt.get()).isOne();
-    assertThat(renewLockCallCnt.get()).isZero();
-    assertThat(runCallCnt.get()).isZero();
-    assertThat(unlockCallCnt.get()).isZero();
+    assertThat(lockCnt.get()).isOne();
+    assertThat(renewLockCnt.get()).isZero();
+    assertThat(runCnt.get()).isZero();
+    assertThat(unlockCnt.get()).isZero();
 
     processRunnerPoolService.runOneIteration();
 
-    assertThat(lockCallCnt.get()).isOne();
-    assertThat(renewLockCallCnt.get()).isOne();
-    assertThat(runCallCnt.get()).isOne();
-    assertThat(unlockCallCnt.get()).isZero();
+    assertThat(lockCnt.get()).isOne();
+    assertThat(renewLockCnt.get()).isOne();
+    assertThat(runCnt.get()).isOne();
+    assertThat(unlockCnt.get()).isZero();
 
     processRunnerPoolService.runOneIteration();
 
-    assertThat(lockCallCnt.get()).isOne();
-    assertThat(renewLockCallCnt.get()).isEqualTo(2);
-    assertThat(runCallCnt.get()).isEqualTo(2);
-    assertThat(unlockCallCnt.get()).isZero();
+    assertThat(lockCnt.get()).isOne();
+    assertThat(renewLockCnt.get()).isEqualTo(2);
+    assertThat(runCnt.get()).isEqualTo(2);
+    assertThat(unlockCnt.get()).isZero();
 
     processRunnerPoolService.shutDown();
 
-    assertThat(lockCallCnt.get()).isOne();
-    assertThat(renewLockCallCnt.get()).isEqualTo(2);
-    assertThat(runCallCnt.get()).isEqualTo(2);
-    assertThat(unlockCallCnt.get()).isOne();
+    assertThat(lockCnt.get()).isOne();
+    assertThat(renewLockCnt.get()).isEqualTo(2);
+    assertThat(runCnt.get()).isEqualTo(2);
+    assertThat(unlockCnt.get()).isOne();
   }
 }

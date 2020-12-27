@@ -16,6 +16,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
 import pipelite.configuration.MailConfiguration;
+import pipelite.entity.ProcessEntity;
 import pipelite.process.Process;
 import pipelite.stage.Stage;
 
@@ -28,43 +29,49 @@ public class MailService {
   @Autowired(required = false)
   private JavaMailSender mailSender;
 
-  public void sendProcessExecutionMessage(String pipelineName, Process process) {
+  public void sendProcessExecutionMessage(Process process) {
     if (mailSender == null) {
       return;
     }
     SimpleMailMessage message = new SimpleMailMessage();
     message.setFrom(mailConfiguration.getFrom());
     message.setTo(mailConfiguration.getTo());
-    String subject = getProcessExecutionSubject(pipelineName, process);
+    String subject = getProcessExecutionSubject(process);
     message.setSubject(subject);
     String text = getExecutionBody(process, subject);
     message.setText(text);
     mailSender.send(message);
   }
 
-  public void sendStageExecutionMessage(String pipelineName, Process process, Stage stage) {
+  public void sendStageExecutionMessage(Process process, Stage stage) {
     if (mailSender == null) {
       return;
     }
     SimpleMailMessage message = new SimpleMailMessage();
     message.setFrom(mailConfiguration.getFrom());
     message.setTo(mailConfiguration.getTo());
-    String subject = getStageExecutionSubject(pipelineName, process, stage);
+    String subject = getStageExecutionSubject(process, stage);
     message.setSubject(subject);
     String text = getExecutionBody(process, subject);
     message.setText(text);
     mailSender.send(message);
   }
 
-  public String getProcessExecutionSubject(String pipelineName, Process process) {
+  public String getProcessExecutionSubject(Process process) {
+    ProcessEntity processEntity = process.getProcessEntity();
     String state = "";
-    if (process.getProcessEntity().getState() != null) {
-      state = process.getProcessEntity().getState().name();
+    if (processEntity.getState() != null) {
+      state = processEntity.getState().name();
     }
-    return "pipelite process (" + state + "): " + pipelineName + "/" + process.getProcessId();
+    return "pipelite process ("
+        + state
+        + "): "
+        + processEntity.getPipelineName()
+        + "/"
+        + process.getProcessId();
   }
 
-  public String getStageExecutionSubject(String pipelineName, Process process, Stage stage) {
+  public String getStageExecutionSubject(Process process, Stage stage) {
     String state = "";
     if (stage.getStageEntity() != null && stage.getStageEntity().getResultType() != null) {
       state = stage.getStageEntity().getResultType().name();
@@ -74,7 +81,7 @@ public class MailService {
     return "pipelite stage ("
         + state
         + "): "
-        + pipelineName
+        + process.getProcessEntity().getPipelineName()
         + "/"
         + process.getProcessId()
         + "/"

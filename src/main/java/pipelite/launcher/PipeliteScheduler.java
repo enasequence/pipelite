@@ -60,13 +60,13 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
       ProcessFactoryService processFactoryService,
       ScheduleService scheduleService,
       ProcessService processService,
-      Supplier<ProcessRunnerPool> processRunnerPoolSupplier,
+      ProcessRunnerPool processRunnerPool,
       MeterRegistry meterRegistry) {
     super(
         launcherConfiguration,
         pipeliteLocker,
         LauncherConfiguration.getSchedulerName(launcherConfiguration),
-        processRunnerPoolSupplier);
+        processRunnerPool);
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(processFactoryService, "Missing process factory service");
     Assert.notNull(scheduleService, "Missing schedule service");

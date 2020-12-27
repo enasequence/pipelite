@@ -172,21 +172,42 @@ public class ProcessService {
     return repository.save(processEntity);
   }
 
+  /**
+   * Creates and saves a new process.
+   *
+   * @param pipelineName the pipeline name
+   * @param processId the process id
+   * @param priority te process priority
+   * @return the new process
+   */
   public ProcessEntity createExecution(String pipelineName, String processId, Integer priority) {
     ProcessEntity processEntity = ProcessEntity.createExecution(pipelineName, processId, priority);
     return saveProcess(processEntity);
   }
 
+  /**
+   * Called when the process execution starts. Sets the process state to active and sets the
+   * execution start time. Saves the process.
+   *
+   * @param processEntity the process
+   */
   public void startExecution(ProcessEntity processEntity) {
     processEntity.startExecution();
     saveProcess(processEntity);
   }
 
-  public void endExecution(String pipelineName, Process process, ProcessState processState) {
+  /**
+   * Called when the process execution ends. Sets the process state and the execution end time.
+   * Increases the process execution count. Saves the process.
+   *
+   * @param process the process
+   * @param processState the process state
+   */
+  public void endExecution(Process process, ProcessState processState) {
     ProcessEntity processEntity = process.getProcessEntity();
     processEntity.endExecution(processState);
     saveProcess(processEntity);
-    mailService.sendProcessExecutionMessage(pipelineName, process);
+    mailService.sendProcessExecutionMessage(process);
   }
 
   /**

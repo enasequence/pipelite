@@ -82,7 +82,7 @@ public class PipeliteLauncherTest {
                 processFactory,
                 mock(ProcessCreator.class),
                 queue,
-                () -> mock(DefaultProcessRunnerPool.class),
+                mock(DefaultProcessRunnerPool.class),
                 new SimpleMeterRegistry()));
 
     launcher.startUp();
@@ -128,7 +128,7 @@ public class PipeliteLauncherTest {
                 mock(ProcessFactory.class),
                 mock(ProcessCreator.class),
                 queue,
-                () -> mock(DefaultProcessRunnerPool.class),
+                mock(DefaultProcessRunnerPool.class),
                 new SimpleMeterRegistry()));
 
     launcher.startUp();
@@ -175,7 +175,7 @@ public class PipeliteLauncherTest {
                 mock(ProcessFactory.class),
                 processCreator,
                 queue,
-                () -> mock(DefaultProcessRunnerPool.class),
+                mock(DefaultProcessRunnerPool.class),
                 new SimpleMeterRegistry()));
 
     launcher.startUp();

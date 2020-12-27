@@ -50,13 +50,9 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
       ProcessFactory processFactory,
       ProcessCreator processCreator,
       ProcessQueue processQueue,
-      Supplier<ProcessRunnerPool> processRunnerPoolSupplier,
+      ProcessRunnerPool processRunnerPool,
       MeterRegistry meterRegistry) {
-    super(
-        launcherConfiguration,
-        pipeliteLocker,
-        processQueue.getLauncherName(),
-        processRunnerPoolSupplier);
+    super(launcherConfiguration, pipeliteLocker, processQueue.getLauncherName(), processRunnerPool);
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(processFactory, "Missing process factory");
     Assert.notNull(processCreator, "Missing process creator");

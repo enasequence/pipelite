@@ -22,6 +22,7 @@ import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.launcher.PipeliteSchedulerOracleTest;
 import pipelite.process.Process;
+import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.executor.StageExecutorResultType;
 
@@ -50,11 +51,13 @@ public class MailServiceTest {
     StageEntity stageEntity =
         StageEntity.createExecution("PIPELINE_NAME", "PROCESS_ID", process.getStages().get(0));
     process.getStages().get(0).setStageEntity(stageEntity);
-    ProcessEntity processEntity =
-        ProcessEntity.createExecution(
-            "PIPELINE_NAME", "PROCESS_ID", ProcessEntity.DEFAULT_PRIORITY);
+    ProcessEntity processEntity = new ProcessEntity();
+    processEntity.setPipelineName("PIPELINE_NAME");
+    processEntity.setProcessId("PROCESS_ID");
+    processEntity.setState(ProcessState.PENDING);
+    processEntity.setPriority(5);
     process.setProcessEntity(processEntity);
-    assertThat(mailService.getProcessExecutionSubject("PIPELINE_NAME", process))
+    assertThat(mailService.getProcessExecutionSubject(process))
         .isEqualTo("pipelite process (PENDING): PIPELINE_NAME/PROCESS_ID");
     assertThat(mailService.getExecutionBody(process, "SUBJECT"))
         .isEqualTo(
@@ -91,13 +94,14 @@ public class MailServiceTest {
     StageEntity stageEntity =
         StageEntity.createExecution("PIPELINE_NAME", "PROCESS_ID", process.getStages().get(0));
     process.getStages().get(0).setStageEntity(stageEntity);
-    ProcessEntity processEntity =
-        ProcessEntity.createExecution(
-            "PIPELINE_NAME", "PROCESS_ID", ProcessEntity.DEFAULT_PRIORITY);
+    ProcessEntity processEntity = new ProcessEntity();
+    processEntity.setPipelineName("PIPELINE_NAME");
+    processEntity.setProcessId("PROCESS_ID");
+    processEntity.setState(ProcessState.PENDING);
+    processEntity.setPriority(5);
     process.setProcessEntity(processEntity);
-    assertThat(
-            mailService.getStageExecutionSubject(
-                "PIPELINE_NAME", process, process.getStages().get(0)))
+    process.setProcessEntity(processEntity);
+    assertThat(mailService.getStageExecutionSubject(process, process.getStages().get(0)))
         .isEqualTo("pipelite stage (PENDING): PIPELINE_NAME/PROCESS_ID/STAGE1");
     assertThat(mailService.getExecutionBody(process, "SUBJECT"))
         .isEqualTo(

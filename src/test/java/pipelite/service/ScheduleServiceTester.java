@@ -135,8 +135,8 @@ class ScheduleServiceTester {
     assertThat(s.getExecutionCount()).isEqualTo(1);
     assertThat(s.getNextTime()).isEqualTo(launchTime2);
     assertThat(s.getStartTime()).isAfterOrEqualTo(launchTime1);
-    assertThat(s.getEndTime()).isEqualTo(endTime1);
-    assertThat(s.getLastCompleted()).isEqualTo(endTime1);
+    assertThat(s.getEndTime()).isAfterOrEqualTo(endTime1);
+    assertThat(s.getLastCompleted()).isAfterOrEqualTo(endTime1);
     assertThat(s.getLastFailed()).isNull();
     assertThat(s.getStreakCompleted()).isEqualTo(1);
     assertThat(s.getStreakFailed()).isEqualTo(0);
@@ -183,8 +183,8 @@ class ScheduleServiceTester {
     assertThat(s.getExecutionCount()).isEqualTo(2);
     assertThat(s.getNextTime()).isNull();
     assertThat(s.getStartTime()).isAfterOrEqualTo(launchTime2);
-    assertThat(s.getEndTime()).isEqualTo(endTime2);
-    assertThat(s.getLastCompleted()).isEqualTo(endTime2);
+    assertThat(s.getEndTime()).isAfterOrEqualTo(endTime2);
+    assertThat(s.getLastCompleted()).isAfterOrEqualTo(endTime2);
     assertThat(s.getLastFailed()).isNull();
     assertThat(s.getStreakCompleted()).isEqualTo(2);
     assertThat(s.getStreakFailed()).isEqualTo(0);
@@ -203,8 +203,8 @@ class ScheduleServiceTester {
     assertThat(s.getExecutionCount()).isEqualTo(2);
     assertThat(s.getNextTime()).isEqualTo(launchTime3);
     assertThat(s.getStartTime()).isAfterOrEqualTo(launchTime2);
-    assertThat(s.getEndTime()).isEqualTo(endTime2);
-    assertThat(s.getLastCompleted()).isEqualTo(endTime2);
+    assertThat(s.getEndTime()).isAfterOrEqualTo(endTime2);
+    assertThat(s.getLastCompleted()).isAfterOrEqualTo(endTime2);
     assertThat(s.getLastFailed()).isNull();
     assertThat(s.getStreakCompleted()).isEqualTo(2);
     assertThat(s.getStreakFailed()).isEqualTo(0);
@@ -225,7 +225,7 @@ class ScheduleServiceTester {
     assertThat(s.getNextTime()).isNull();
     assertThat(s.getStartTime()).isAfterOrEqualTo(launchTime3);
     assertThat(s.getEndTime()).isNull();
-    assertThat(s.getLastCompleted()).isEqualTo(endTime2);
+    assertThat(s.getLastCompleted()).isAfterOrEqualTo(endTime2);
     assertThat(s.getLastFailed()).isNull();
     assertThat(s.getStreakCompleted()).isEqualTo(2);
     assertThat(s.getStreakFailed()).isEqualTo(0);
@@ -251,9 +251,9 @@ class ScheduleServiceTester {
     assertThat(s.getExecutionCount()).isEqualTo(3);
     assertThat(s.getNextTime()).isNull();
     assertThat(s.getStartTime()).isAfterOrEqualTo(launchTime3);
-    assertThat(s.getEndTime()).isEqualTo(endTime3);
-    assertThat(s.getLastCompleted()).isEqualTo(endTime2);
-    assertThat(s.getLastFailed()).isEqualTo(endTime3);
+    assertThat(s.getEndTime()).isAfterOrEqualTo(endTime3);
+    assertThat(s.getLastCompleted()).isAfterOrEqualTo(endTime2);
+    assertThat(s.getLastFailed()).isAfterOrEqualTo(endTime3);
     assertThat(s.getStreakCompleted()).isEqualTo(0);
     assertThat(s.getStreakFailed()).isEqualTo(1);
     assertThat(s.getProcessId()).isEqualTo(processId3);

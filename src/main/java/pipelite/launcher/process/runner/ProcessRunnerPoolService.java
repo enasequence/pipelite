@@ -31,21 +31,20 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
     implements ProcessRunnerPool {
 
   private final PipeliteLocker locker;
-  private final Supplier<ProcessRunnerPool> processRunnerPoolSupplier;
+  private final ProcessRunnerPool pool;
   private final Duration processLaunchFrequency;
-  private ProcessRunnerPool pool;
   private boolean shutdown;
 
   public ProcessRunnerPoolService(
       LauncherConfiguration launcherConfiguration,
       PipeliteLocker locker,
       String launcherName,
-      Supplier<ProcessRunnerPool> processRunnerPoolSupplier) {
+      ProcessRunnerPool pool) {
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(locker, "Missing locker");
-    Assert.notNull(processRunnerPoolSupplier, "Missing process runner pool supplier");
+    Assert.notNull(pool, "Missing process runner pool");
     this.locker = locker;
-    this.processRunnerPoolSupplier = processRunnerPoolSupplier;
+    this.pool = pool;
     this.processLaunchFrequency = launcherConfiguration.getProcessLaunchFrequency();
     this.locker.init(launcherName);
   }
@@ -59,7 +58,6 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
   protected void startUp() {
     log.atInfo().log("Starting up service: %s", getLauncherName());
     locker.lock();
-    pool = processRunnerPoolSupplier.get();
   }
 
   @Override
@@ -118,9 +116,6 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
     return locker.getLauncherName();
   }
 
-  {
-  }
-
   @Override
   public void runProcess(String pipelineName, Process process, ProcessRunnerCallback callback) {
     pool.runProcess(pipelineName, process, callback);
@@ -128,33 +123,21 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
 
   @Override
   public int getActiveProcessCount() {
-    if (pool == null) {
-      return 0;
-    }
     return pool.getActiveProcessCount();
   }
 
   @Override
   public List<ProcessRunner> getActiveProcessRunners() {
-    if (pool == null) {
-      return Collections.emptyList();
-    }
     return pool.getActiveProcessRunners();
   }
 
   @Override
   public boolean isPipelineActive(String pipelineName) {
-    if (pool == null) {
-      return false;
-    }
     return pool.isPipelineActive(pipelineName);
   }
 
   @Override
   public boolean isProcessActive(String pipelineName, String processId) {
-    if (pool == null) {
-      return false;
-    }
     return pool.isProcessActive(pipelineName, processId);
   }
 

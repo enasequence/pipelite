@@ -143,12 +143,12 @@ public class DefaultProcessRunner implements ProcessRunner {
               resetDependentStageExecution(process, stage);
               result.addStageSuccessCount(1);
             } else {
-              mailService.sendStageExecutionMessage(pipelineName, process, stage);
+              mailService.sendStageExecutionMessage(process, stage);
               result.addStageFailedCount(1);
             }
           } catch (Exception ex) {
             stageService.endExecution(stage, StageExecutorResult.error(ex));
-            mailService.sendStageExecutionMessage(pipelineName, process, stage);
+            mailService.sendStageExecutionMessage(process, stage);
             result.addStageExceptionCount(1);
             logContext(log.atSevere())
                 .withCause(ex)
@@ -182,7 +182,7 @@ public class DefaultProcessRunner implements ProcessRunner {
   private void endProcessExecution() {
     ProcessState processState = evaluateProcessState(process.getStages());
     logContext(log.atInfo()).log("Process execution finished: %s", processState.name());
-    processService.endExecution(pipelineName, process, processState);
+    processService.endExecution(process, processState);
   }
 
   /**

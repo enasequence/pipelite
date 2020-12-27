@@ -62,16 +62,15 @@ public class DefaultPipeliteLauncher {
         processFactory,
         processCreator,
         processQueue,
-        () ->
-            new DefaultProcessRunnerPool(
-                pipeliteLocker,
-                () ->
-                    new DefaultProcessRunner(
-                        launcherConfiguration,
-                        stageConfiguration,
-                        processService,
-                        stageService,
-                        mailService)),
+        new DefaultProcessRunnerPool(
+            pipeliteLocker,
+            () ->
+                new DefaultProcessRunner(
+                    launcherConfiguration,
+                    stageConfiguration,
+                    processService,
+                    stageService,
+                    mailService)),
         meterRegistry);
   }
 }
