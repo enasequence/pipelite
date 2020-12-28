@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.text.DecimalFormat;
 import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
 import pipelite.controller.info.PipelineInfo;
 import pipelite.controller.utils.LoremUtils;
+import pipelite.controller.utils.TimeUtils;
 import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.process.runner.ProcessRunnerMetrics;
 
@@ -73,6 +75,7 @@ public class PipelineController {
               .successfulStageCount(getMetrics(metrics::getStageSuccessCount, since))
               .failedStageCount(getMetrics(metrics::getStageFailedCount, since))
               .stageExceptionCount(getMetrics(metrics::getStageExceptionCount, since))
+              .uptime(TimeUtils.humanReadableDuration(pipeliteLauncher.getStartTime()))
               .build());
     }
     return pipelines;
@@ -104,6 +107,8 @@ public class PipelineController {
                           .successfulStageCount(getMetrics(randomCount, since))
                           .failedStageCount(getMetrics(randomCount, since))
                           .stageExceptionCount(getMetrics(randomCount, since))
+                          .uptime(
+                              TimeUtils.humanReadableDuration(ZonedDateTime.now().minusHours(1)))
                           .build()));
     }
   }

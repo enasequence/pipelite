@@ -26,4 +26,5 @@ public class PipelineInfo {
   private String successfulStageCount;
   private String failedStageCount;
   private String stageExceptionCount;
+  private String uptime;
 }

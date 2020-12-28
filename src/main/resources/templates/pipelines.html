@@ -9,6 +9,7 @@ $(document).ready( function () {
     $('#pipelinesTable').DataTable({
         columns: [
             { data: "pipelineName" },
+            { data: "uptime" },
             { data: "maxRunningProcessCount" },
             { data: "runningProcessCount",
                 render: function ( data, type, row, meta ) {
@@ -128,7 +129,8 @@ function show() {
             <thead>
             <tr>
                 <th>Pipeline</th>
-                <th>Max processes</th>
+                <th>Uptime</th>
+                <th>Maximum processes</th>
                 <th>Running processes</th>
                 <th>Completed processes</th>
                 <th>Failed processes</th>
