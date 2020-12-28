@@ -32,9 +32,9 @@ public class UIController {
     return "processes";
   }
 
-  @RequestMapping("/stages")
+  @RequestMapping("/process")
   public String stages() {
-    return "stages";
+    return "process";
   }
 
   @RequestMapping("/servers")

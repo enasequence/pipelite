@@ -55,7 +55,7 @@ public class ProcessService {
   }
 
   /**
-   * Returns pending processes for a pipeline in priority order.
+   * Returns pending processes in priority order.
    *
    * @param pipelineName the pipeline name
    * @param limit the maximum number of processes to return
@@ -70,11 +70,11 @@ public class ProcessService {
   }
 
   /**
-   * Returns active processes that are not locked for a pipeline in priority order.
+   * Returns available (unlocked) active processes in priority order.
    *
    * @param pipelineName the pipeline name
    * @param limit the maximum number of processes to return
-   * @return the active processes that are not locked for a pipeline in priority order
+   * @return available (unlocked) active processes in priority order
    */
   public List<ProcessEntity> getAvailableActiveProcesses(String pipelineName, int limit) {
     try (Stream<ProcessEntity> strm =
@@ -84,7 +84,7 @@ public class ProcessService {
   }
 
   /**
-   * Returns completed processes for a pipeline.
+   * Returns completed processes.
    *
    * @param pipelineName the pipeline name
    * @param limit the maximum number of processes to return
@@ -98,7 +98,7 @@ public class ProcessService {
   }
 
   /**
-   * Returns failed processes for a pipeline.
+   * Returns failed processes.
    *
    * @param pipelineName the pipeline name
    * @param limit the maximum number of processes to return
@@ -113,49 +113,30 @@ public class ProcessService {
   }
 
   /**
-   * Returns processes given optional pipeline name, process id and process state.
+   * Returns processes.
    *
    * @param pipelineName optional pipeline name
-   * @param processId optional process id
    * @param state optional process state
    * @param limit the maximum number of processes to return
-   * @return processes given optional pipeline name, process id and process state
+   * @return processes
    */
-  public List<ProcessEntity> getProcesses(
-      String pipelineName, String processId, ProcessState state, int limit) {
+  public List<ProcessEntity> getProcesses(String pipelineName, ProcessState state, int limit) {
     List<ProcessEntity> processes = new ArrayList<>();
-    // pipelineName processId state
-    // Y            Y         Y/N
-    if (pipelineName != null && processId != null) {
-      Optional<ProcessEntity> process = getSavedProcess(pipelineName, processId);
-      if (process.isPresent() && (state == null || state.equals(process.get().getState()))) {
-        processes.add(process.get());
-      }
-    }
-    // pipelineName processId state
-    // N            Y         Y/N
-    else if (pipelineName == null && processId != null) {
-      processes.addAll(
-          list(
-              repository
-                  .findAllByProcessId(processId)
-                  .filter(process -> state == null || state.equals(process.getState())),
-              limit));
-      // pipelineName processId state
-      // Y            N         Y
-    } else if (pipelineName != null && processId == null && state != null) {
+    // pipelineName state
+    // Y            Y
+    if (pipelineName != null && state != null) {
       processes.addAll(list(repository.findAllByPipelineNameAndState(pipelineName, state), limit));
-      // pipelineName processId state
-      // Y            N         N
-    } else if (pipelineName != null && processId == null && state == null) {
+      // pipelineName state
+      // Y            N
+    } else if (pipelineName != null && state == null) {
       processes.addAll(list(repository.findAllByPipelineName(pipelineName), limit));
-      // pipelineName processId state
-      // N            N         Y
-    } else if (pipelineName == null && processId == null && state != null) {
+      // pipelineName state
+      // N            Y
+    } else if (pipelineName == null && state != null) {
       processes.addAll(list(repository.findAllByState(state), limit));
     }
-    // pipelineName processId state
-    // N            N         N
+    // pipelineName state
+    // N            N
     else {
       processes.addAll(list(repository.findAllStream(), limit));
     }

@@ -33,7 +33,7 @@ import pipelite.launcher.process.runner.ProcessRunnerMetrics;
 
 @RestController
 @RequestMapping(value = "/pipeline")
-@Tag(name = "PipelineAPI", description = "Pipelite pipelines")
+@Tag(name = "PipelineAPI", description = "Pipelines")
 public class PipelineController {
 
   @Autowired Application application;

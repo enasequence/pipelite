@@ -141,23 +141,7 @@ class ProcessServiceTester {
     // Test with pipeline name.
 
     testProcessStateCount(
-        service.getProcesses(pipelineName, null /* processId */, null /* state*/, DEFAULT_LIMIT),
-        2,
-        2,
-        2,
-        2);
-
-    // Test with pipeline name and process id.
-
-    for (ProcessEntity process : processes) {
-      testProcessStateCount(
-          service.getProcesses(
-              pipelineName, process.getProcessId(), null /* state*/, DEFAULT_LIMIT),
-          process.getState().equals(ProcessState.COMPLETED) ? 1 : 0,
-          process.getState().equals(ProcessState.ACTIVE) ? 1 : 0,
-          process.getState().equals(ProcessState.FAILED) ? 1 : 0,
-          process.getState().equals(ProcessState.PENDING) ? 1 : 0);
-    }
+        service.getProcesses(pipelineName, null /* state*/, DEFAULT_LIMIT), 2, 2, 2, 2);
 
     // Test with pipeline name and state.
 
@@ -168,45 +152,11 @@ class ProcessServiceTester {
             ProcessState.FAILED,
             ProcessState.CANCELLED)) {
       testProcessStateCount(
-          service.getProcesses(pipelineName, null /* processId */, state, DEFAULT_LIMIT),
+          service.getProcesses(pipelineName, state, DEFAULT_LIMIT),
           state == ProcessState.COMPLETED ? 2 : 0,
           state == ProcessState.ACTIVE ? 2 : 0,
           state == ProcessState.FAILED ? 2 : 0,
           state == ProcessState.PENDING ? 2 : 0);
-    }
-
-    // Test with pipeline name, process id and state.
-
-    for (ProcessEntity process : processes) {
-      testProcessStateCount(
-          service.getProcesses(
-              pipelineName, process.getProcessId(), process.getState(), DEFAULT_LIMIT),
-          process.getState().equals(ProcessState.COMPLETED) ? 1 : 0,
-          process.getState().equals(ProcessState.ACTIVE) ? 1 : 0,
-          process.getState().equals(ProcessState.FAILED) ? 1 : 0,
-          process.getState().equals(ProcessState.PENDING) ? 1 : 0);
-    }
-
-    // Test with process id.
-
-    for (ProcessEntity process : processes) {
-      testProcessStateCount(
-          service.getProcesses(null, process.getProcessId(), null /* state*/, DEFAULT_LIMIT),
-          process.getState().equals(ProcessState.COMPLETED) ? 1 : 0,
-          process.getState().equals(ProcessState.ACTIVE) ? 1 : 0,
-          process.getState().equals(ProcessState.FAILED) ? 1 : 0,
-          process.getState().equals(ProcessState.PENDING) ? 1 : 0);
-    }
-
-    // Test with process id and state.
-
-    for (ProcessEntity process : processes) {
-      testProcessStateCount(
-          service.getProcesses(null, process.getProcessId(), process.getState(), DEFAULT_LIMIT),
-          process.getState().equals(ProcessState.COMPLETED) ? 1 : 0,
-          process.getState().equals(ProcessState.ACTIVE) ? 1 : 0,
-          process.getState().equals(ProcessState.FAILED) ? 1 : 0,
-          process.getState().equals(ProcessState.PENDING) ? 1 : 0);
     }
   }
 

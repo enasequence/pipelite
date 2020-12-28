@@ -8,11 +8,11 @@
 $(document).ready( function () {
     $('#schedulesTable').DataTable({
         columns: [
-            { data: "schedulerName" },
+            // { data: "schedulerName" },
             { data: "pipelineName" },
             { data: "processId",
                 render: function ( data, type, row, meta ) {
-                    var url = "/pipelite/ui/stages?pipelineName=" + row.pipelineName + "&processId=" + row.processId;
+                    var url = "/pipelite/ui/process?pipelineName=" + row.pipelineName + "&processId=" + row.processId;
                     return '<a href="' + url + '">' + row.processId + '</a>';
                 }
             },
@@ -51,37 +51,21 @@ $(document).ready( function () {
 // Show the table.
 function show() {
     var table = $('#schedulesTable').DataTable();
-    var scheduleScope = $( "#scheduleScope" ).val();
     var scheduleTime = $( "#scheduleTime" ).val();
 
-    // Show the title and badge.
-
-    $( "#title" ).text( $( "#scheduleScope option:selected" ).text() );
+    // Show the badge.
     $( "#scheduleTimeBadge" ).text( $( "#scheduleTime option:selected" ).text() );
 
     // Show the table.
-    var url = "/pipelite/schedule/";
-
-    if (scheduleScope == "local") {
-        url = url + "local";
-    }
-    if (scheduleScope == "all") {
-        url = url + "all";
-    }
+    var url = "/pipelite/schedule/local";
     if (scheduleTime == "relative") {
         url = url + "?relative=true";
     }
-
     console.log(url);
     $.get(url, function(data, status) {
         table.clear().rows.add(data).draw();
      });
 };
-
-
-
-
-
 
     </script>
 </head>
@@ -94,10 +78,6 @@ function show() {
     <div class="card-body">
         <h5 class="card-title">Select schedules</h5>
         <div class="form-inline m-2">
-            <select class="custom-select m-2" id="scheduleScope">
-                <option value="local" selected>Schedules in this server</option>
-                <option value="all">All schedules</option>
-            </select>
             <select class="custom-select m-2" id="scheduleTime">
                 <option value="relative" selected>Relative time</option>
                 <option value="absolute">Absolute time</option>
@@ -109,7 +89,7 @@ function show() {
 
 <div class="card m-2">
     <div class="card-body">
-        <h5 class="card-title" id="title"></h5>
+        <h5 class="card-title">Schedules running in this server</h5>
         <p class="card-text">
             <span class="badge badge-secondary" id="scheduleTimeBadge"></span>
         </p>
@@ -117,7 +97,6 @@ function show() {
         <table id="schedulesTable" class="table table-striped table-hover" style="width:100%">
             <thead>
             <tr>
-                <th>Scheduler</th>
                 <th>Pipeline</th>
                 <th>Process</th>
                 <th>Summary</th>

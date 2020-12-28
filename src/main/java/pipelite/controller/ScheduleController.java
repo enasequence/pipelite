@@ -34,7 +34,7 @@ import pipelite.service.ScheduleService;
 
 @RestController
 @RequestMapping(value = "/schedule")
-@Tag(name = "ScheduleAPI", description = "Pipelite schedules")
+@Tag(name = "ScheduleAPI", description = "Schedules")
 public class ScheduleController {
 
   @Autowired Application application;

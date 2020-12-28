@@ -48,7 +48,7 @@ public class StageController {
 
   @GetMapping("/{pipelineName}/{processId}")
   @ResponseStatus(HttpStatus.OK)
-  @Operation(description = "All running stagees")
+  @Operation(description = "Process stages")
   @ApiResponses(
       value = {
         @ApiResponse(responseCode = "200", description = "OK"),

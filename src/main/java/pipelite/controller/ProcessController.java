@@ -18,7 +18,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.stream.IntStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
@@ -36,71 +35,81 @@ import pipelite.service.ProcessService;
 
 @RestController
 @RequestMapping(value = "/process")
-@Tag(name = "ProcessAPI", description = "Pipelite processes")
+@Tag(name = "ProcessAPI", description = "Process")
 public class ProcessController {
-
   private static final int DEFAULT_LIMIT = 1000;
 
   @Autowired private Application application;
   @Autowired private Environment environment;
   @Autowired private ProcessService processService;
 
-  @GetMapping("/local")
+  @GetMapping("/{pipelineName}/{processId}")
   @ResponseStatus(HttpStatus.OK)
-  @Operation(
-      description =
-          "Processes running in this server given optional pipeline name, process id and state")
+  @Operation(description = "Process")
   @ApiResponses(
       value = {
         @ApiResponse(responseCode = "200", description = "OK"),
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
-  public List<ProcessInfo> localProcesses(
-      @RequestParam(required = false) String pipelineName,
-      @RequestParam(required = false) String processId) {
+  public List<ProcessInfo> process(
+      @PathVariable(value = "pipelineName") String pipelineName,
+      @PathVariable(value = "processId") String processId) {
     List<ProcessInfo> list = new ArrayList<>();
-    application.getRunningLaunchers().stream()
-        .forEach(launcher -> list.addAll(getLocalProcesses(launcher, pipelineName, processId)));
-    application.getRunningSchedulers().stream()
-        .forEach(launcher -> list.addAll(getLocalProcesses(launcher, pipelineName, processId)));
-    getLoremIpsumProcesses(list);
+    Optional<ProcessEntity> processEntity = processService.getSavedProcess(pipelineName, processId);
+    if (processEntity.isPresent()) {
+      list.add(getProcess(processEntity.get()));
+    }
+    getLoremIpsumProcess(list);
     return list;
   }
 
-  @GetMapping("/all")
+  @GetMapping("/local")
   @ResponseStatus(HttpStatus.OK)
-  @Operation(description = "All processes given optional pipeline name, process id and state")
+  @Operation(description = "Processes running in this server")
   @ApiResponses(
       value = {
         @ApiResponse(responseCode = "200", description = "OK"),
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
-  public List<ProcessInfo> allProcesses(
-      @RequestParam(required = false) String pipelineName,
-      @RequestParam(required = false) String processId,
-      @RequestParam(required = false) String state) {
+  public List<ProcessInfo> localProcesses(@RequestParam(required = false) String pipelineName) {
     List<ProcessInfo> list = new ArrayList<>();
-    processService.getProcesses(pipelineName, processId, ProcessState.valueOf(state), DEFAULT_LIMIT)
-        .stream()
-        .map(process -> getProcess(process))
-        .forEach(process -> list.add(process));
-    getLoremIpsumProcesses(list);
+    application.getRunningLaunchers().stream()
+        .forEach(launcher -> list.addAll(getLocalProcesses(launcher, pipelineName)));
+    application.getRunningSchedulers().stream()
+        .forEach(launcher -> list.addAll(getLocalProcesses(launcher, pipelineName)));
+    getLoremIpsumProcess(list);
     return list;
   }
 
   public static List<ProcessInfo> getLocalProcesses(
-      ProcessRunnerPoolService service, String pipelineName, String processId) {
+      ProcessRunnerPoolService service, String pipelineName) {
     List<ProcessInfo> processes = new ArrayList<>();
     for (ProcessRunner processRunner : service.getActiveProcessRunners()) {
       Process process = processRunner.getProcess();
       ProcessEntity processEntity = process.getProcessEntity();
-      if ((pipelineName == null || pipelineName.equals(processRunner.getPipelineName()))
-          || (processId == null || processId.equals(process.getProcessId()))) {
+      if (pipelineName == null || pipelineName.equals(processRunner.getPipelineName())) {
         ProcessInfo processInfo = getProcess(processEntity);
         processes.add(processInfo);
       }
     }
     return processes;
+  }
+
+  @GetMapping("/all")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(description = "All running processes")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "OK"),
+        @ApiResponse(responseCode = "500", description = "Internal Server error")
+      })
+  public List<ProcessInfo> allProcesses(@RequestParam(required = false) String pipelineName) {
+    List<ProcessInfo> list = new ArrayList<>();
+    processService.getProcesses(pipelineName, ProcessState.ACTIVE, DEFAULT_LIMIT).stream()
+        .map(process -> getProcess(process))
+        .forEach(process -> list.add(process));
+    getLoremIpsumProcess(list);
+    return list;
   }
 
   public static ProcessInfo getProcess(ProcessEntity processEntity) {
@@ -115,24 +124,21 @@ public class ProcessController {
         .build();
   }
 
-  public void getLoremIpsumProcesses(List<ProcessInfo> list) {
+  public void getLoremIpsumProcess(List<ProcessInfo> list) {
     if (Arrays.stream(environment.getActiveProfiles())
         .anyMatch(profile -> LoremUtils.PROFILE_NAME.equals(profile))) {
       Lorem lorem = LoremIpsum.getInstance();
       Random random = new Random();
-      IntStream.range(1, 100)
-          .forEach(
-              i ->
-                  list.add(
-                      ProcessInfo.builder()
-                          .pipelineName(lorem.getCountry())
-                          .processId(lorem.getWords(1))
-                          .state(lorem.getFirstNameMale())
-                          .startTime(TimeUtils.humanReadableDate(ZonedDateTime.now()))
-                          .endTime(TimeUtils.humanReadableDate(ZonedDateTime.now()))
-                          .executionCount(random.nextInt(10))
-                          .priority(random.nextInt(10))
-                          .build()));
+      list.add(
+          ProcessInfo.builder()
+              .pipelineName(lorem.getCountry())
+              .processId(lorem.getWords(1))
+              .state(lorem.getFirstNameMale())
+              .startTime(TimeUtils.humanReadableDate(ZonedDateTime.now()))
+              .endTime(TimeUtils.humanReadableDate(ZonedDateTime.now()))
+              .executionCount(random.nextInt(10))
+              .priority(random.nextInt(10))
+              .build());
     }
   }
 }
