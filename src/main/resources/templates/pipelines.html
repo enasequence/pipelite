@@ -10,7 +10,12 @@ $(document).ready( function () {
         columns: [
             { data: "pipelineName" },
             { data: "maxRunningProcessCount" },
-            { data: "runningProcessCount" },
+            { data: "runningProcessCount",
+                render: function ( data, type, row, meta ) {
+                    var url = "/pipelite/ui/processes?pipelineName=" + row.pipelineName;
+                    return '<a href="' + url + '">' + row.runningProcessCount + '</a>';
+                }
+            },
             { data: "completedProcessCount" },
             { data: "failedProcessCount" },
             { data: "processExceptionCount" },
@@ -18,11 +23,7 @@ $(document).ready( function () {
             { data: "successfulStageCount" },
             { data: "failedStageCount" },
             */
-            { data: "stageExceptionCount" },
-            {
-                "data": null,
-                "defaultContent": "<button class=\"btn btn-outline-secondary mr-2\">Processes</button>"
-            }
+            { data: "stageExceptionCount" }
         ],
         dom: 'frtBip',
         buttons: {
@@ -44,14 +45,6 @@ $(document).ready( function () {
            "zeroRecords": " "
         },
     })
-
-    // Process button is pressed.
-    $('#pipelinesTable tbody').on( 'click', 'button', function () {
-        var table = $('#pipelinesTable').DataTable();
-        var data = table.row( $(this).parents('tr') ).data();
-        var url = "/pipelite/ui/processes?pipelineName=" + data.pipelineName;
-        window.location.href = url;
-    });
 
     show();
 });
@@ -134,7 +127,7 @@ function show() {
             <!-- Header Table -->
             <thead>
             <tr>
-                <th>Pipeline name</th>
+                <th>Pipeline</th>
                 <th>Max processes</th>
                 <th>Running processes</th>
                 <th>Completed processes</th>
@@ -145,7 +138,6 @@ function show() {
                  <th>Failed stages</th>
                 -->
                 <th>Stage exceptions</th>
-                <th>Processes</th>
             </tr>
             </thead>
         </table>

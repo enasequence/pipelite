@@ -9,16 +9,17 @@ $(document).ready( function () {
     $('#processesTable').DataTable({
         columns: [
             { data: "pipelineName" },
-            { data: "processId" },
+            { data: "processId",
+                render: function ( data, type, row, meta ) {
+                    var url = "/pipelite/ui/stages?pipelineName=" + row.pipelineName + "&processId=" + row.processId;
+                    return '<a href="' + url + '">' + row.processId + '</a>';
+                }
+            },
             { data: "state" },
             { data: "startTime" },
             { data: "endTime" },
             { data: "executionCount" },
-            { data: "priority" },
-            {
-                "data": null,
-                "defaultContent": "<button class=\"btn btn-outline-secondary mr-2\">Stages</button>"
-            }
+            { data: "priority" }
         ],
         dom: 'frtBip',
         buttons: {
@@ -39,14 +40,6 @@ $(document).ready( function () {
         language : {
            "zeroRecords": " "
         },
-    });
-
-    // Stages button is pressed.
-    $('#processesTable tbody').on( 'click', 'button', function () {
-        var table = $('#processesTable').DataTable();
-        var data = table.row( $(this).parents('tr') ).data();
-        var url = "/pipelite/ui/stages?pipelineName=" + data.pipelineName + "&processId=" + data.processId;
-        window.location.href = url;
     });
 
     // Set up autocomplete for pipeline name.
@@ -181,7 +174,7 @@ function show() {
         <div class="form-inline m-2">
 
             <select class="custom-select m-2" id="processScope">
-                <option value="local" selected>Processes running in this server</option>
+                <option value="local" selected>Processes in this server</option>
                 <option value="allPending">Pending processes</option>
                 <option value="allActive">Active processes</option>
                 <option value="allFailed">Failed processes</option>
@@ -210,14 +203,13 @@ function show() {
         <table id="processesTable" class="table table-striped table-hover" style="width:100%">
             <thead>
             <tr>
-                <th>Pipeline name</th>
-                <th>Process id</th>
+                <th>Pipeline</th>
+                <th>Process</th>
                 <th>State</th>
                 <th>Start time</th>
                 <th>End time</th>
                 <th>Execution count</th>
                 <th>Priority</th>
-                <th>Stages</th>
             </tr>
             </thead>
         </table>
