@@ -255,11 +255,11 @@ public class PipeliteLauncherAsyncTester {
     new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
 
     ProcessRunnerMetrics metrics = pipeliteLauncher.getMetrics();
-    assertThat(metrics.getProcessExceptionCount()).isEqualTo(0);
-    assertThat(metrics.getCompletedProcessCount()).isEqualTo(PROCESS_CNT);
-    assertThat(metrics.getFailedProcessCount()).isZero();
-    assertThat(metrics.getFailedStageCount()).isEqualTo(0);
-    assertThat(metrics.getSuccessfulStageCount()).isEqualTo(PROCESS_CNT);
+    assertThat(metrics.getInternalErrorCount()).isEqualTo(0);
+    assertThat(metrics.getProcessCompletedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(metrics.getProcessFailedCount()).isZero();
+    assertThat(metrics.getStageFailedCount()).isEqualTo(0);
+    assertThat(metrics.getStageSuccessCount()).isEqualTo(PROCESS_CNT);
 
     assertThat(f.stageExecutor.submitCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(f.stageExecutor.pollCount.get()).isEqualTo(PROCESS_CNT);
@@ -272,11 +272,11 @@ public class PipeliteLauncherAsyncTester {
     new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
 
     ProcessRunnerMetrics metrics = pipeliteLauncher.getMetrics();
-    assertThat(metrics.getProcessExceptionCount()).isEqualTo(0);
-    assertThat(metrics.getCompletedProcessCount()).isZero();
-    assertThat(metrics.getFailedProcessCount()).isEqualTo(PROCESS_CNT);
-    assertThat(metrics.getFailedStageCount()).isEqualTo(PROCESS_CNT);
-    assertThat(metrics.getSuccessfulStageCount()).isEqualTo(0);
+    assertThat(metrics.getInternalErrorCount()).isEqualTo(0);
+    assertThat(metrics.getProcessCompletedCount()).isZero();
+    assertThat(metrics.getProcessFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(metrics.getStageFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(metrics.getStageSuccessCount()).isEqualTo(0);
 
     assertThat(f.stageExecutor.submitCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(f.stageExecutor.pollCount.get()).isEqualTo(0);
@@ -289,11 +289,11 @@ public class PipeliteLauncherAsyncTester {
     new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
 
     ProcessRunnerMetrics metrics = pipeliteLauncher.getMetrics();
-    assertThat(metrics.getProcessExceptionCount()).isEqualTo(0);
-    assertThat(metrics.getCompletedProcessCount()).isZero();
-    assertThat(metrics.getFailedProcessCount()).isEqualTo(PROCESS_CNT);
-    assertThat(metrics.getFailedStageCount()).isEqualTo(PROCESS_CNT);
-    assertThat(metrics.getSuccessfulStageCount()).isEqualTo(0);
+    assertThat(metrics.getInternalErrorCount()).isEqualTo(0);
+    assertThat(metrics.getProcessCompletedCount()).isZero();
+    assertThat(metrics.getProcessFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(metrics.getStageFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(metrics.getStageSuccessCount()).isEqualTo(0);
 
     assertThat(f.stageExecutor.submitCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(f.stageExecutor.pollCount.get()).isEqualTo(0);
@@ -306,11 +306,11 @@ public class PipeliteLauncherAsyncTester {
     new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
 
     ProcessRunnerMetrics metrics = pipeliteLauncher.getMetrics();
-    assertThat(metrics.getProcessExceptionCount()).isEqualTo(0);
-    assertThat(metrics.getCompletedProcessCount()).isZero();
-    assertThat(metrics.getFailedProcessCount()).isEqualTo(PROCESS_CNT);
-    assertThat(metrics.getFailedStageCount()).isEqualTo(PROCESS_CNT);
-    assertThat(metrics.getSuccessfulStageCount()).isEqualTo(0);
+    assertThat(metrics.getInternalErrorCount()).isEqualTo(0);
+    assertThat(metrics.getProcessCompletedCount()).isZero();
+    assertThat(metrics.getProcessFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(metrics.getStageFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(metrics.getStageSuccessCount()).isEqualTo(0);
 
     assertThat(f.stageExecutor.submitCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(f.stageExecutor.pollCount.get()).isEqualTo(PROCESS_CNT);
@@ -323,11 +323,11 @@ public class PipeliteLauncherAsyncTester {
     new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
 
     ProcessRunnerMetrics metrics = pipeliteLauncher.getMetrics();
-    assertThat(metrics.getProcessExceptionCount()).isEqualTo(0);
-    assertThat(metrics.getCompletedProcessCount()).isZero();
-    assertThat(metrics.getFailedProcessCount()).isEqualTo(PROCESS_CNT);
-    assertThat(metrics.getFailedStageCount()).isEqualTo(PROCESS_CNT);
-    assertThat(metrics.getSuccessfulStageCount()).isEqualTo(0);
+    assertThat(metrics.getInternalErrorCount()).isEqualTo(0);
+    assertThat(metrics.getProcessCompletedCount()).isZero();
+    assertThat(metrics.getProcessFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(metrics.getStageFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(metrics.getStageSuccessCount()).isEqualTo(0);
 
     assertThat(f.stageExecutor.submitCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(f.stageExecutor.pollCount.get()).isEqualTo(PROCESS_CNT);

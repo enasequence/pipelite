@@ -14,4 +14,8 @@ public class PipeliteException extends RuntimeException {
   public PipeliteException(String message) {
     super(message);
   }
+
+  public PipeliteException(String message, Throwable cause) {
+    super(message, cause);
+  }
 }

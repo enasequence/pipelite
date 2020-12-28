@@ -11,9 +11,11 @@
 package pipelite.process;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 import pipelite.entity.ProcessEntity;
+import pipelite.exception.PipeliteException;
 import pipelite.process.builder.ProcessBuilder;
 
 public class ProcessFactoryTest {
@@ -70,7 +72,11 @@ public class ProcessFactoryTest {
             return null;
           }
         };
-    Process process = ProcessFactory.create(processEntity, processFactory);
-    assertThat(process).isNull();
+
+    assertThrows(
+        PipeliteException.class,
+        () -> {
+          ProcessFactory.create(processEntity, processFactory);
+        });
   }
 }

@@ -73,10 +73,33 @@ public class DefaultProcessRunner implements ProcessRunner {
     this.stageLaunchFrequency = launcherConfiguration.getStageLaunchFrequency();
   }
 
-  // TODO: orphaned saved stages
-  /** Executes the process and sets the new process state. */
+  /**
+   * Executes the process. If an exception is thrown then it is caught and logged and the process
+   * runner callback is called after incrementing the internal error count of the returned
+   * ProcessRunnerResult.
+   *
+   * @param pipelineName the pipeline name
+   * @param process the process
+   * @param callback the process runner callback
+   */
   @Override
   public void runProcess(String pipelineName, Process process, ProcessRunnerCallback callback) {
+    ProcessRunnerResult result = new ProcessRunnerResult();
+    try {
+      runProcess(pipelineName, process, callback, result);
+    } catch (Exception ex) {
+      result.internalError();
+      logContext(log.atSevere()).withCause(ex).log("Unexpected exception when executing process");
+    } finally {
+      callback.accept(process, result);
+    }
+  }
+
+  public void runProcess(
+      String pipelineName,
+      Process process,
+      ProcessRunnerCallback callback,
+      ProcessRunnerResult result) {
     Assert.notNull(pipelineName, "Missing pipeline name");
     Assert.notNull(process, "Missing process");
     Assert.notNull(process.getProcessId(), "Missing process id");
@@ -90,12 +113,9 @@ public class DefaultProcessRunner implements ProcessRunner {
 
     logContext(log.atInfo()).log("Executing process");
 
-    ProcessRunnerResult result = new ProcessRunnerResult();
     startProcessExecution();
     executeProcess(result);
     endProcessExecution();
-    result.setProcessExecutionCount(1);
-    callback.accept(process, result);
   }
 
   private void executeProcess(ProcessRunnerResult result) {
@@ -141,18 +161,18 @@ public class DefaultProcessRunner implements ProcessRunner {
             stageService.endExecution(stage, stageExecutorResult);
             if (stageExecutorResult.isSuccess()) {
               resetDependentStageExecution(process, stage);
-              result.addStageSuccessCount(1);
+              result.stageSuccess();
             } else {
               mailService.sendStageExecutionMessage(process, stage);
-              result.addStageFailedCount(1);
+              result.stageFailed();
             }
           } catch (Exception ex) {
             stageService.endExecution(stage, StageExecutorResult.error(ex));
             mailService.sendStageExecutionMessage(process, stage);
-            result.addStageExceptionCount(1);
+            result.internalError();
             logContext(log.atSevere())
                 .withCause(ex)
-                .log("Unexpected exception when executing stage");
+                .log("Unexpected exception when executing stage %s", stage.getStageName());
           } finally {
             activeStages.remove(stage);
           }

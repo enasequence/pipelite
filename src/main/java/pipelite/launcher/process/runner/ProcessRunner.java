@@ -14,14 +14,15 @@ import java.time.ZonedDateTime;
 import pipelite.process.Process;
 
 public interface ProcessRunner {
+
   /**
-   * Runs a process.
+   * Executes the process.
    *
    * @param pipelineName the pipeline name
    * @param process the process
-   * @param callbacks the process execution callbacks
+   * @param callback the process runner callback
    */
-  void runProcess(String pipelineName, Process process, ProcessRunnerCallback callbacks);
+  void runProcess(String pipelineName, Process process, ProcessRunnerCallback callback);
 
   String getPipelineName();
 

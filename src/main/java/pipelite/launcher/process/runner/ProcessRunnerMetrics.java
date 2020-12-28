@@ -19,127 +19,102 @@ public class ProcessRunnerMetrics {
 
   private static final Duration MAX_WINDOW = Duration.ofHours(24);
 
-  private final Counter completedProcessCount;
-  private final Counter failedProcessCount;
-  private final Counter processExceptionCount;
-  private final Counter processCreationFailedCount;
-  private final Counter successfulStageCount;
-  private final Counter failedStageCount;
-  private final Counter stageExceptionCount;
+  private final Counter processCompletedCounter;
+  private final Counter processFailedCounter;
+  private final Counter stageSuccessCounter;
+  private final Counter stageFailedCounter;
+  private final Counter internalErrorCounter;
 
-  private final ProcessRunnerCounter completedProcessWindowCount = new ProcessRunnerCounter();
-  private final ProcessRunnerCounter failedProcessWindowCount = new ProcessRunnerCounter();
-  private final ProcessRunnerCounter processExceptionWindowCount = new ProcessRunnerCounter();
-  private final ProcessRunnerCounter processCreationFailedWindowCount = new ProcessRunnerCounter();
-  private final ProcessRunnerCounter successfulStageWindowCount = new ProcessRunnerCounter();
-  private final ProcessRunnerCounter failedStageWindowCount = new ProcessRunnerCounter();
-  private final ProcessRunnerCounter stageExceptionWindowCount = new ProcessRunnerCounter();
+  private final ProcessRunnerCounter processCompletedCustomCounter = new ProcessRunnerCounter();
+  private final ProcessRunnerCounter processFailedCustomCounter = new ProcessRunnerCounter();
+  private final ProcessRunnerCounter stageSuccessCustomCounter = new ProcessRunnerCounter();
+  private final ProcessRunnerCounter stageFailedCustomCounter = new ProcessRunnerCounter();
+  private final ProcessRunnerCounter internalErrorCustomCounter = new ProcessRunnerCounter();
 
   public ProcessRunnerMetrics(String pipelineName, MeterRegistry meterRegistry) {
-    completedProcessCount =
+    processCompletedCounter =
         meterRegistry.counter("pipelite.process.completed", "pipelineName", pipelineName);
-    failedProcessCount =
+    processFailedCounter =
         meterRegistry.counter("pipelite.process.failed", "pipelineName", pipelineName);
-    processExceptionCount =
-        meterRegistry.counter("pipelite.process.exception", "pipelineName", pipelineName);
-    processCreationFailedCount =
-        meterRegistry.counter("pipelite.process.creationFailed", "pipelineName", pipelineName);
-    failedStageCount = meterRegistry.counter("pipelite.stage.failed", "pipelineName", pipelineName);
-    successfulStageCount =
+    stageFailedCounter =
+        meterRegistry.counter("pipelite.stage.failed", "pipelineName", pipelineName);
+    stageSuccessCounter =
         meterRegistry.counter("pipelite.stage.success", "pipelineName", pipelineName);
-    stageExceptionCount =
-        meterRegistry.counter("pipelite.stage.exception", "pipelineName", pipelineName);
+    internalErrorCounter =
+        meterRegistry.counter("pipelite.stage.error", "pipelineName", pipelineName);
   }
 
-  public double getCompletedProcessCount() {
-    return completedProcessCount.count();
+  public double getProcessCompletedCount() {
+    return processCompletedCounter.count();
   }
 
-  public double getFailedProcessCount() {
-    return failedProcessCount.count();
+  public double getProcessFailedCount() {
+    return processFailedCounter.count();
   }
 
-  public double getProcessExceptionCount() {
-    return processExceptionCount.count();
+  public double getStageSuccessCount() {
+    return stageSuccessCounter.count();
   }
 
-  public double getProcessCreationFailedCount() {
-    return processCreationFailedCount.count();
+  public double getStageFailedCount() {
+    return stageFailedCounter.count();
   }
 
-  public double getSuccessfulStageCount() {
-    return successfulStageCount.count();
-  }
-
-  public double getFailedStageCount() {
-    return failedStageCount.count();
+  public double getInternalErrorCount() {
+    return internalErrorCounter.count();
   }
 
   public double getProcessCompletedCount(Duration since) {
-    return completedProcessWindowCount.getCount(since);
+    return processCompletedCustomCounter.getCount(since);
   }
 
   public double getProcessFailedCount(Duration since) {
-    return failedProcessWindowCount.getCount(since);
-  }
-
-  public double getProcessExceptionCount(Duration since) {
-    return processExceptionWindowCount.getCount(since);
-  }
-
-  public double getProcessCreationFailedCount(Duration since) {
-    return processCreationFailedWindowCount.getCount(since);
+    return processFailedCustomCounter.getCount(since);
   }
 
   public double getStageSuccessCount(Duration since) {
-    return successfulStageWindowCount.getCount(since);
+    return stageSuccessCustomCounter.getCount(since);
   }
 
   public double getStageFailedCount(Duration since) {
-    return failedStageWindowCount.getCount(since);
+    return stageFailedCustomCounter.getCount(since);
   }
 
-  public double getStageExceptionCount(Duration since) {
-    return failedStageWindowCount.getCount(since);
+  public double getInternalErrorCount(Duration since) {
+    return internalErrorCustomCounter.getCount(since);
   }
 
-  public void addProcessCreationFailed(double count) {
-    processCreationFailedCount.increment(count);
-    processCreationFailedWindowCount.increment(count);
+  public void internalError() {
+    internalErrorCounter.increment(1);
+    internalErrorCustomCounter.increment(1);
   }
 
-  public void addProcessRunnerResult(ProcessState state, ProcessRunnerResult result) {
-    if (result.getProcessExecutionCount() > 0) {
-      if (state == ProcessState.COMPLETED) {
-        completedProcessCount.increment(result.getProcessExecutionCount());
-        completedProcessWindowCount.increment(result.getProcessExecutionCount());
-      }
-      if (state == ProcessState.FAILED) {
-        failedProcessCount.increment(result.getProcessExecutionCount());
-        failedProcessWindowCount.increment(result.getProcessExecutionCount());
-      }
+  public void processRunnerResult(ProcessState state, ProcessRunnerResult result) {
+    if (state == ProcessState.COMPLETED) {
+      processCompletedCounter.increment(1);
+      processCompletedCustomCounter.increment(1);
     }
-    processExceptionCount.increment(result.getProcessExceptionCount());
-    processExceptionWindowCount.increment(result.getProcessExceptionCount());
-    successfulStageCount.increment(result.getStageSuccessCount());
-    successfulStageWindowCount.increment(result.getStageSuccessCount());
-    failedStageCount.increment(result.getStageFailedCount());
-    failedStageWindowCount.increment(result.getStageFailedCount());
-    stageExceptionCount.increment(result.getStageExceptionCount());
-    stageExceptionWindowCount.increment(result.getStageExceptionCount());
+    if (state == ProcessState.FAILED) {
+      processFailedCounter.increment(1);
+      processFailedCustomCounter.increment(1);
+    }
+    stageSuccessCounter.increment(result.getStageSuccessCount());
+    stageSuccessCustomCounter.increment(result.getStageSuccessCount());
+    stageFailedCounter.increment(result.getStageFailedCount());
+    stageFailedCustomCounter.increment(result.getStageFailedCount());
+    internalErrorCounter.increment(result.getInternalErrorCount());
+    internalErrorCustomCounter.increment(result.getInternalErrorCount());
   }
 
-  public void purge() {
-    purge(MAX_WINDOW);
+  public void purgeCustomCounters() {
+    purgeCustomCounters(MAX_WINDOW);
   }
 
-  public void purge(Duration since) {
-    completedProcessWindowCount.purge(since);
-    failedProcessWindowCount.purge(since);
-    processExceptionWindowCount.purge(since);
-    processCreationFailedWindowCount.purge(since);
-    successfulStageWindowCount.purge(since);
-    failedStageWindowCount.purge(since);
-    stageExceptionWindowCount.purge(since);
+  public void purgeCustomCounters(Duration since) {
+    processCompletedCustomCounter.purge(since);
+    processFailedCustomCounter.purge(since);
+    stageSuccessCustomCounter.purge(since);
+    stageFailedCustomCounter.purge(since);
+    internalErrorCustomCounter.purge(since);
   }
 }

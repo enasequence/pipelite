@@ -71,10 +71,9 @@ public class PipelineController {
               .queuedProcessCount(pipeliteLauncher.getQueuedProcessCount())
               .completedProcessCount(getMetrics(metrics::getProcessCompletedCount, since))
               .failedProcessCount(getMetrics(metrics::getProcessFailedCount, since))
-              .processExceptionCount(getMetrics(metrics::getProcessExceptionCount, since))
               .successfulStageCount(getMetrics(metrics::getStageSuccessCount, since))
               .failedStageCount(getMetrics(metrics::getStageFailedCount, since))
-              .stageExceptionCount(getMetrics(metrics::getStageExceptionCount, since))
+              .internalErrorCount(getMetrics(metrics::getInternalErrorCount, since))
               .uptime(TimeUtils.humanReadableDuration(pipeliteLauncher.getStartTime()))
               .build());
     }
@@ -103,10 +102,9 @@ public class PipelineController {
                           .queuedProcessCount(random.nextInt(100))
                           .completedProcessCount(getMetrics(randomCount, since))
                           .failedProcessCount(getMetrics(randomCount, since))
-                          .processExceptionCount(getMetrics(randomCount, since))
                           .successfulStageCount(getMetrics(randomCount, since))
                           .failedStageCount(getMetrics(randomCount, since))
-                          .stageExceptionCount(getMetrics(randomCount, since))
+                          .internalErrorCount(getMetrics(randomCount, since))
                           .uptime(
                               TimeUtils.humanReadableDuration(ZonedDateTime.now().minusHours(1)))
                           .build()));

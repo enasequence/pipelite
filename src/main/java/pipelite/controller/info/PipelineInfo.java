@@ -22,9 +22,8 @@ public class PipelineInfo {
   private Integer queuedProcessCount;
   private String completedProcessCount;
   private String failedProcessCount;
-  private String processExceptionCount;
   private String successfulStageCount;
   private String failedStageCount;
-  private String stageExceptionCount;
+  private String internalErrorCount;
   private String uptime;
 }

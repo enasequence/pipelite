@@ -42,11 +42,6 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
 
   private final Set<ActiveProcessRunner> active = ConcurrentHashMap.newKeySet();
 
-  /**
-   * Creates a default process runner pool.
-   *
-   * @param processRunnerSupplier the process runner supplier
-   */
   public DefaultProcessRunnerPool(
       PipeliteLocker pipeliteLocker, Supplier<ProcessRunner> processRunnerSupplier) {
     Assert.notNull(pipeliteLocker, "Missing pipelite locker");
@@ -55,12 +50,25 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
     this.processRunnerSupplier = processRunnerSupplier;
   }
 
+  /**
+   * Executes the process. Exceptions thrown by {@link
+   * pipelite.launcher.process.runner.ProcessRunner#runProcess} are caught and logged and the
+   * process runner callback is called after incrementing the internal error count of the returned
+   * ProcessRunnerResult.
+   *
+   * @param pipelineName the pipeline name
+   * @param process the process
+   * @param callback the process runner callback
+   */
   @Override
   public void runProcess(String pipelineName, Process process, ProcessRunnerCallback callback) {
     Assert.notNull(pipelineName, "Missing pipeline name");
     Assert.notNull(process, "Missing process");
+    Assert.notNull(process.getProcessId(), "Missing process id");
     Assert.notNull(callback, "Missing process runner callback");
+
     String processId = process.getProcessId();
+
     // Create process launcher.
     ProcessRunner processRunner = processRunnerSupplier.get();
     ActiveProcessRunner activeProcessRunner =
@@ -78,10 +86,8 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
           } catch (Exception ex) {
             logContext(log.atSevere(), pipelineName, processId)
                 .withCause(ex)
-                .log("Process runner exception");
-            ProcessRunnerResult result = new ProcessRunnerResult();
-            result.setProcessExceptionCount(1);
-            callback.accept(process, result);
+                .log("Unexpected exception when executing process");
+            callback.accept(process, new ProcessRunnerResult().internalError());
           } finally {
             // Unlock process.
             pipeliteLocker.unlockProcess(pipelineName, processId);

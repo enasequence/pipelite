@@ -96,14 +96,19 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
   }
 
   protected void runProcess(ProcessEntity processEntity) {
-    Process process = ProcessFactory.create(processEntity, processFactory);
+    Process process = null;
+    try {
+      process = ProcessFactory.create(processEntity, processFactory);
+    } catch (Exception ex) {
+      log.atSevere().withCause(ex).log(
+          "Unexpected exception when creating " + pipelineName + " process");
+      metrics.internalError();
+    }
     if (process != null) {
       runProcess(
           pipelineName,
           process,
-          (p, r) -> metrics.addProcessRunnerResult(p.getProcessEntity().getState(), r));
-    } else {
-      metrics.addProcessCreationFailed(1);
+          (p, r) -> metrics.processRunnerResult(p.getProcessEntity().getState(), r));
     }
   }
 
@@ -124,6 +129,6 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
   }
 
   private void purgeMetrics() {
-    metrics.purge();
+    metrics.purgeCustomCounters();
   }
 }

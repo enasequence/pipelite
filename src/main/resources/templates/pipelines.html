@@ -19,12 +19,11 @@ $(document).ready( function () {
             },
             { data: "completedProcessCount" },
             { data: "failedProcessCount" },
-            { data: "processExceptionCount" },
             /*
             { data: "successfulStageCount" },
             { data: "failedStageCount" },
             */
-            { data: "stageExceptionCount" }
+            { data: "internalErrorCount" }
         ],
         dom: 'frtBip',
         buttons: {
@@ -57,7 +56,7 @@ function show() {
     var since = $( "#since" ).val();
 
     // Show the filter badges.
-    var sinceBadgeText = "Reporting window: last ";
+    var sinceBadgeText = "Last ";
 
     var minutes = since % 60;
     var hours = (since-minutes)/60;
@@ -134,12 +133,11 @@ function show() {
                 <th>Running processes</th>
                 <th>Completed processes</th>
                 <th>Failed processes</th>
-                <th>Process exceptions</th>
                 <!--
                  <th>Completed stages</th>
                  <th>Failed stages</th>
                 -->
-                <th>Stage exceptions</th>
+                <th>Internal errors</th>
             </tr>
             </thead>
         </table>

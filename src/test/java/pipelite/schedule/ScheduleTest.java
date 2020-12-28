@@ -81,7 +81,7 @@ public class ScheduleTest {
     assertThat(schedule.getPipelineName()).isEqualTo(pipelineName);
     assertThat(schedule.isExecutable()).isFalse();
     assertThat(schedule.getLaunchTime()).isNotNull();
-    assertThat(schedule.getLaunchTime()).isAfter(second);
+    assertThat(schedule.getLaunchTime()).isAfterOrEqualTo(second);
     assertThat(schedule.getCron()).isEqualTo(cron);
 
     // Wait until the schedule is executable.
@@ -91,8 +91,8 @@ public class ScheduleTest {
     assertThat(schedule.getPipelineName()).isEqualTo(pipelineName);
     assertThat(schedule.isExecutable()).isTrue();
     assertThat(schedule.getLaunchTime()).isNotNull();
-    assertThat(schedule.getLaunchTime()).isAfter(second);
-    assertThat(schedule.getLaunchTime()).isBefore(ZonedDateTime.now());
+    assertThat(schedule.getLaunchTime()).isAfterOrEqualTo(second);
+    assertThat(schedule.getLaunchTime()).isBeforeOrEqualTo(ZonedDateTime.now());
     assertThat(schedule.getCron()).isEqualTo(cron);
   }
 }

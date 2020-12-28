@@ -279,13 +279,17 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     String processId = processEntity.getProcessId();
     logContext(log.atInfo(), pipelineName, processId).log("Executing scheduled process");
 
-    Process process =
-        ProcessFactory.create(processEntity, processFactoryCache.getProcessFactory(pipelineName));
-    if (process == null) {
-      getMetrics(pipelineName).addProcessCreationFailed(1);
-      logContext(log.atSevere(), pipelineName, processId).log("Failed to create scheduled process");
+    Process process;
+    try {
+      process =
+          ProcessFactory.create(processEntity, processFactoryCache.getProcessFactory(pipelineName));
+    } catch (Exception ex) {
+      log.atSevere().withCause(ex).log(
+          "Unexpected exception when creating " + pipelineName + " process");
+      getMetrics(pipelineName).internalError();
       return;
     }
+
     scheduleService.startExecution(pipelineName, processId);
     schedule.disable();
     maximumExecutions.get(pipelineName).decrementAndGet();
@@ -297,7 +301,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
           scheduleService.endExecution(processEntity);
           schedule.enable();
           scheduleService.scheduleExecution(pipelineName, schedule.getLaunchTime());
-          getMetrics(pipelineName).addProcessRunnerResult(p.getProcessEntity().getState(), r);
+          getMetrics(pipelineName).processRunnerResult(p.getProcessEntity().getState(), r);
         });
   }
 
@@ -340,7 +344,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
 
   private void purgeMetrics() {
     for (ProcessRunnerMetrics m : metrics.values()) {
-      m.purge();
+      m.purgeCustomCounters();
     }
   }
 

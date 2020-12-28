@@ -402,11 +402,11 @@ public class PipeliteLauncherFailureTester {
         && f.getSecondStageExecResult().isSuccess()
         && f.getThirdStageExecResult().isSuccess()
         && f.getFourthStageExecResult().isSuccess()) {
-      assertThat(pipeliteLauncher.getMetrics().getCompletedProcessCount()).isEqualTo(PROCESS_CNT);
-      assertThat(pipeliteLauncher.getMetrics().getFailedProcessCount()).isEqualTo(0);
+      assertThat(pipeliteLauncher.getMetrics().getProcessCompletedCount()).isEqualTo(PROCESS_CNT);
+      assertThat(pipeliteLauncher.getMetrics().getProcessFailedCount()).isEqualTo(0);
     } else {
-      assertThat(pipeliteLauncher.getMetrics().getCompletedProcessCount()).isEqualTo(0);
-      assertThat(pipeliteLauncher.getMetrics().getFailedProcessCount()).isEqualTo(PROCESS_CNT);
+      assertThat(pipeliteLauncher.getMetrics().getProcessCompletedCount()).isEqualTo(0);
+      assertThat(pipeliteLauncher.getMetrics().getProcessFailedCount()).isEqualTo(PROCESS_CNT);
     }
 
     int stageSuccessCount = 0;
@@ -424,9 +424,9 @@ public class PipeliteLauncherFailureTester {
         }
       }
     }
-    assertThat(pipeliteLauncher.getMetrics().getSuccessfulStageCount())
+    assertThat(pipeliteLauncher.getMetrics().getStageSuccessCount())
         .isEqualTo(stageSuccessCount);
-    assertThat(pipeliteLauncher.getMetrics().getFailedStageCount()).isEqualTo(stageFailedCount);
+    assertThat(pipeliteLauncher.getMetrics().getStageFailedCount()).isEqualTo(stageFailedCount);
   }
 
   public void testFirstStageFails() {

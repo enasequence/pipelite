@@ -10,210 +10,143 @@
  */
 package pipelite.launcher.process.runner;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import pipelite.process.ProcessState;
 
+import static org.assertj.core.api.Assertions.*;
+
 public class ProcessRunnerMetricsTest {
 
   @Test
-  public void addProcessCreationFailed() {
+  public void internalError() {
     ProcessRunnerMetrics metrics =
         new ProcessRunnerMetrics("PIPELINE_NAME", new SimpleMeterRegistry());
 
-    assertThat(metrics.getCompletedProcessCount()).isZero();
-    assertThat(metrics.getFailedProcessCount()).isZero();
-    assertThat(metrics.getProcessExceptionCount()).isZero();
-    assertThat(metrics.getProcessCreationFailedCount()).isZero();
-    assertThat(metrics.getSuccessfulStageCount()).isZero();
-    assertThat(metrics.getFailedStageCount()).isZero();
+    Duration since = Duration.ofDays(1);
+
+    assertThat(metrics.getInternalErrorCount()).isZero();
+    assertThat(metrics.getInternalErrorCount(since)).isZero();
+
+    metrics.internalError();
+
+    assertThat(metrics.getInternalErrorCount()).isOne();
+    assertThat(metrics.getInternalErrorCount(since)).isOne();
+
+    Duration now = Duration.ofMinutes(0);
+
+    assertThat(metrics.getInternalErrorCount()).isOne();
+    assertThat(metrics.getInternalErrorCount(now)).isZero();
+
+    metrics.purgeCustomCounters(now);
+
+    assertThat(metrics.getInternalErrorCount()).isOne();
+    assertThat(metrics.getInternalErrorCount(since)).isZero();
+  }
+
+  @Test
+  public void processRunnerResultCompleted() {
+    ProcessRunnerMetrics metrics =
+        new ProcessRunnerMetrics("PIPELINE_NAME", new SimpleMeterRegistry());
+
+    assertThat(metrics.getProcessCompletedCount()).isZero();
+    assertThat(metrics.getProcessFailedCount()).isZero();
+    assertThat(metrics.getStageSuccessCount()).isZero();
+    assertThat(metrics.getStageFailedCount()).isZero();
 
     Duration since = Duration.ofDays(1);
 
     assertThat(metrics.getProcessCompletedCount(since)).isZero();
     assertThat(metrics.getProcessFailedCount(since)).isZero();
-    assertThat(metrics.getProcessExceptionCount(since)).isZero();
-    assertThat(metrics.getProcessCreationFailedCount(since)).isZero();
     assertThat(metrics.getStageSuccessCount(since)).isZero();
     assertThat(metrics.getStageFailedCount(since)).isZero();
 
-    metrics.addProcessCreationFailed(10);
+    ProcessRunnerResult result = new ProcessRunnerResult();
+    result.stageSuccess();
+    result.stageFailed();
+    result.internalError();
+    metrics.processRunnerResult(ProcessState.COMPLETED, result);
 
-    assertThat(metrics.getCompletedProcessCount()).isZero();
-    assertThat(metrics.getFailedProcessCount()).isZero();
-    assertThat(metrics.getProcessExceptionCount()).isZero();
-    assertThat(metrics.getProcessCreationFailedCount()).isEqualTo(10);
-    assertThat(metrics.getSuccessfulStageCount()).isZero();
-    assertThat(metrics.getFailedStageCount()).isZero();
+    assertThat(metrics.getProcessCompletedCount()).isEqualTo(1);
+    assertThat(metrics.getProcessFailedCount()).isZero();
+    assertThat(metrics.getStageSuccessCount()).isEqualTo(1);
+    assertThat(metrics.getStageFailedCount()).isEqualTo(1);
 
-    assertThat(metrics.getProcessCompletedCount(since)).isZero();
+    assertThat(metrics.getProcessCompletedCount(since)).isEqualTo(1);
     assertThat(metrics.getProcessFailedCount(since)).isZero();
-    assertThat(metrics.getProcessExceptionCount(since)).isZero();
-    assertThat(metrics.getProcessCreationFailedCount(since)).isEqualTo(10);
-    assertThat(metrics.getStageSuccessCount(since)).isZero();
-    assertThat(metrics.getStageFailedCount(since)).isZero();
+    assertThat(metrics.getStageSuccessCount(since)).isEqualTo(1);
+    assertThat(metrics.getStageFailedCount(since)).isEqualTo(1);
 
     Duration now = Duration.ofMinutes(0);
 
     assertThat(metrics.getProcessCompletedCount(now)).isZero();
     assertThat(metrics.getProcessFailedCount(now)).isZero();
-    assertThat(metrics.getProcessExceptionCount(now)).isZero();
-    assertThat(metrics.getProcessCreationFailedCount(now)).isZero();
     assertThat(metrics.getStageSuccessCount(now)).isZero();
     assertThat(metrics.getStageFailedCount(now)).isZero();
 
-    metrics.purge(now);
+    metrics.purgeCustomCounters(now);
 
-    assertThat(metrics.getCompletedProcessCount()).isZero();
-    assertThat(metrics.getFailedProcessCount()).isZero();
-    assertThat(metrics.getProcessExceptionCount()).isZero();
-    assertThat(metrics.getProcessCreationFailedCount()).isEqualTo(10);
-    assertThat(metrics.getSuccessfulStageCount()).isZero();
-    assertThat(metrics.getFailedStageCount()).isZero();
+    assertThat(metrics.getProcessCompletedCount()).isEqualTo(1);
+    assertThat(metrics.getProcessFailedCount()).isZero();
+    assertThat(metrics.getStageSuccessCount()).isEqualTo(1);
+    assertThat(metrics.getStageFailedCount()).isEqualTo(1);
 
     assertThat(metrics.getProcessCompletedCount(since)).isZero();
     assertThat(metrics.getProcessFailedCount(since)).isZero();
-    assertThat(metrics.getProcessExceptionCount(since)).isZero();
-    assertThat(metrics.getProcessCreationFailedCount(since)).isZero();
     assertThat(metrics.getStageSuccessCount(since)).isZero();
     assertThat(metrics.getStageFailedCount(since)).isZero();
   }
 
   @Test
-  public void addCompletedProcessRunnerResult() {
+  public void processRunnerResultFailed() {
     ProcessRunnerMetrics metrics =
         new ProcessRunnerMetrics("PIPELINE_NAME", new SimpleMeterRegistry());
 
-    assertThat(metrics.getCompletedProcessCount()).isZero();
-    assertThat(metrics.getFailedProcessCount()).isZero();
-    assertThat(metrics.getProcessExceptionCount()).isZero();
-    assertThat(metrics.getProcessCreationFailedCount()).isZero();
-    assertThat(metrics.getSuccessfulStageCount()).isZero();
-    assertThat(metrics.getFailedStageCount()).isZero();
+    assertThat(metrics.getProcessCompletedCount()).isZero();
+    assertThat(metrics.getProcessFailedCount()).isZero();
+    assertThat(metrics.getStageSuccessCount()).isZero();
+    assertThat(metrics.getStageFailedCount()).isZero();
 
     Duration since = Duration.ofDays(1);
 
     assertThat(metrics.getProcessCompletedCount(since)).isZero();
     assertThat(metrics.getProcessFailedCount(since)).isZero();
-    assertThat(metrics.getProcessExceptionCount(since)).isZero();
-    assertThat(metrics.getProcessCreationFailedCount(since)).isZero();
     assertThat(metrics.getStageSuccessCount(since)).isZero();
     assertThat(metrics.getStageFailedCount(since)).isZero();
 
     ProcessRunnerResult result = new ProcessRunnerResult();
-    result.addStageSuccessCount(5L);
-    result.addStageFailedCount(10L);
-    result.setProcessExceptionCount(15);
-    result.setProcessExecutionCount(20);
-    metrics.addProcessRunnerResult(ProcessState.COMPLETED, result);
+    result.stageSuccess();
+    result.stageFailed();
+    result.internalError();
+    metrics.processRunnerResult(ProcessState.FAILED, result);
 
-    assertThat(metrics.getCompletedProcessCount()).isEqualTo(20);
-    assertThat(metrics.getFailedProcessCount()).isZero();
-    assertThat(metrics.getProcessExceptionCount()).isEqualTo(15);
-    assertThat(metrics.getProcessCreationFailedCount()).isZero();
-    assertThat(metrics.getSuccessfulStageCount()).isEqualTo(5);
-    assertThat(metrics.getFailedStageCount()).isEqualTo(10);
+    assertThat(metrics.getProcessCompletedCount()).isZero();
+    assertThat(metrics.getProcessFailedCount()).isEqualTo(1);
+    assertThat(metrics.getStageSuccessCount()).isEqualTo(1);
+    assertThat(metrics.getStageFailedCount()).isEqualTo(1);
 
-    assertThat(metrics.getProcessCompletedCount(since)).isEqualTo(20);
-    assertThat(metrics.getProcessFailedCount(since)).isZero();
-    assertThat(metrics.getProcessExceptionCount(since)).isEqualTo(15);
-    assertThat(metrics.getProcessCreationFailedCount(since)).isZero();
-    assertThat(metrics.getStageSuccessCount(since)).isEqualTo(5);
-    assertThat(metrics.getStageFailedCount(since)).isEqualTo(10);
+    assertThat(metrics.getProcessCompletedCount(since)).isZero();
+    assertThat(metrics.getProcessFailedCount(since)).isEqualTo(1);
+    assertThat(metrics.getStageSuccessCount(since)).isEqualTo(1);
+    assertThat(metrics.getStageFailedCount(since)).isEqualTo(1);
 
     Duration now = Duration.ofMinutes(0);
 
     assertThat(metrics.getProcessCompletedCount(now)).isZero();
     assertThat(metrics.getProcessFailedCount(now)).isZero();
-    assertThat(metrics.getProcessExceptionCount(now)).isZero();
-    assertThat(metrics.getProcessCreationFailedCount(now)).isZero();
     assertThat(metrics.getStageSuccessCount(now)).isZero();
     assertThat(metrics.getStageFailedCount(now)).isZero();
 
-    metrics.purge(now);
+    metrics.purgeCustomCounters(now);
 
-    assertThat(metrics.getCompletedProcessCount()).isEqualTo(20);
-    assertThat(metrics.getFailedProcessCount()).isZero();
-    assertThat(metrics.getProcessExceptionCount()).isEqualTo(15);
-    assertThat(metrics.getProcessCreationFailedCount()).isZero();
-    assertThat(metrics.getSuccessfulStageCount()).isEqualTo(5);
-    assertThat(metrics.getFailedStageCount()).isEqualTo(10);
+    assertThat(metrics.getProcessCompletedCount()).isZero();
+    assertThat(metrics.getProcessFailedCount()).isEqualTo(1);
+    assertThat(metrics.getStageSuccessCount()).isEqualTo(1);
+    assertThat(metrics.getStageFailedCount()).isEqualTo(1);
 
     assertThat(metrics.getProcessCompletedCount(since)).isZero();
     assertThat(metrics.getProcessFailedCount(since)).isZero();
-    assertThat(metrics.getProcessExceptionCount(since)).isZero();
-    assertThat(metrics.getProcessCreationFailedCount(since)).isZero();
-    assertThat(metrics.getStageSuccessCount(since)).isZero();
-    assertThat(metrics.getStageFailedCount(since)).isZero();
-  }
-
-  @Test
-  public void addFailedProcessRunnerResult() {
-    ProcessRunnerMetrics metrics =
-        new ProcessRunnerMetrics("PIPELINE_NAME", new SimpleMeterRegistry());
-
-    assertThat(metrics.getCompletedProcessCount()).isZero();
-    assertThat(metrics.getFailedProcessCount()).isZero();
-    assertThat(metrics.getProcessExceptionCount()).isZero();
-    assertThat(metrics.getProcessCreationFailedCount()).isZero();
-    assertThat(metrics.getSuccessfulStageCount()).isZero();
-    assertThat(metrics.getFailedStageCount()).isZero();
-
-    Duration since = Duration.ofDays(1);
-
-    assertThat(metrics.getProcessCompletedCount(since)).isZero();
-    assertThat(metrics.getProcessFailedCount(since)).isZero();
-    assertThat(metrics.getProcessExceptionCount(since)).isZero();
-    assertThat(metrics.getProcessCreationFailedCount(since)).isZero();
-    assertThat(metrics.getStageSuccessCount(since)).isZero();
-    assertThat(metrics.getStageFailedCount(since)).isZero();
-
-    ProcessRunnerResult result = new ProcessRunnerResult();
-    result.addStageSuccessCount(5L);
-    result.addStageFailedCount(10L);
-    result.setProcessExceptionCount(15);
-    result.setProcessExecutionCount(20);
-    metrics.addProcessRunnerResult(ProcessState.FAILED, result);
-
-    assertThat(metrics.getCompletedProcessCount()).isZero();
-    assertThat(metrics.getFailedProcessCount()).isEqualTo(20);
-    assertThat(metrics.getProcessExceptionCount()).isEqualTo(15);
-    assertThat(metrics.getProcessCreationFailedCount()).isZero();
-    assertThat(metrics.getSuccessfulStageCount()).isEqualTo(5);
-    assertThat(metrics.getFailedStageCount()).isEqualTo(10);
-
-    assertThat(metrics.getProcessCompletedCount(since)).isZero();
-    assertThat(metrics.getProcessFailedCount(since)).isEqualTo(20);
-    assertThat(metrics.getProcessExceptionCount(since)).isEqualTo(15);
-    assertThat(metrics.getProcessCreationFailedCount(since)).isZero();
-    assertThat(metrics.getStageSuccessCount(since)).isEqualTo(5);
-    assertThat(metrics.getStageFailedCount(since)).isEqualTo(10);
-
-    Duration now = Duration.ofMinutes(0);
-
-    assertThat(metrics.getProcessCompletedCount(now)).isZero();
-    assertThat(metrics.getProcessFailedCount(now)).isZero();
-    assertThat(metrics.getProcessExceptionCount(now)).isZero();
-    assertThat(metrics.getProcessCreationFailedCount(now)).isZero();
-    assertThat(metrics.getStageSuccessCount(now)).isZero();
-    assertThat(metrics.getStageFailedCount(now)).isZero();
-
-    metrics.purge(now);
-
-    assertThat(metrics.getCompletedProcessCount()).isZero();
-    assertThat(metrics.getFailedProcessCount()).isEqualTo(20);
-    assertThat(metrics.getProcessExceptionCount()).isEqualTo(15);
-    assertThat(metrics.getProcessCreationFailedCount()).isZero();
-    assertThat(metrics.getSuccessfulStageCount()).isEqualTo(5);
-    assertThat(metrics.getFailedStageCount()).isEqualTo(10);
-
-    assertThat(metrics.getProcessCompletedCount(since)).isZero();
-    assertThat(metrics.getProcessFailedCount(since)).isZero();
-    assertThat(metrics.getProcessExceptionCount(since)).isZero();
-    assertThat(metrics.getProcessCreationFailedCount(since)).isZero();
     assertThat(metrics.getStageSuccessCount(since)).isZero();
     assertThat(metrics.getStageFailedCount(since)).isZero();
   }

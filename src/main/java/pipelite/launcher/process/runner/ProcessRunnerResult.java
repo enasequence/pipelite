@@ -11,26 +11,25 @@
 package pipelite.launcher.process.runner;
 
 import java.util.concurrent.atomic.AtomicLong;
-import lombok.Data;
 
-@Data
 public class ProcessRunnerResult {
-  private long processExecutionCount;
-  private long processExceptionCount;
   private AtomicLong stageSuccessCount = new AtomicLong();
   private AtomicLong stageFailedCount = new AtomicLong();
-  private AtomicLong stageExceptionCount = new AtomicLong();
+  private AtomicLong internalErrorCount = new AtomicLong();
 
-  public void addStageSuccessCount(long count) {
-    this.stageSuccessCount.addAndGet(count);
+  public ProcessRunnerResult stageSuccess() {
+    this.stageSuccessCount.incrementAndGet();
+    return this;
   }
 
-  public void addStageFailedCount(long count) {
-    this.stageFailedCount.addAndGet(count);
+  public ProcessRunnerResult stageFailed() {
+    this.stageFailedCount.incrementAndGet();
+    return this;
   }
 
-  public void addStageExceptionCount(long count) {
-    this.stageExceptionCount.addAndGet(count);
+  public ProcessRunnerResult internalError() {
+    this.internalErrorCount.incrementAndGet();
+    return this;
   }
 
   public long getStageSuccessCount() {
@@ -41,7 +40,7 @@ public class ProcessRunnerResult {
     return stageFailedCount.get();
   }
 
-  public long getStageExceptionCount() {
-    return stageFailedCount.get();
+  public long getInternalErrorCount() {
+    return internalErrorCount.get();
   }
 }

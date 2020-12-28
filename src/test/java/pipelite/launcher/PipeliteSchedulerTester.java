@@ -218,18 +218,17 @@ public class PipeliteSchedulerTester {
 
     ProcessRunnerMetrics metrics = pipeliteScheduler.getMetrics(pipelineName);
 
-    assertThat(metrics.getProcessCreationFailedCount()).isEqualTo(0);
-    assertThat(metrics.getProcessExceptionCount()).isEqualTo(0);
+    assertThat(metrics.getInternalErrorCount()).isEqualTo(0);
 
     if (f.stageTestResult != StageTestResult.SUCCESS) {
-      assertThat(metrics.getFailedProcessCount()).isEqualTo(f.stageExecCnt.get() / f.stageCnt);
-      assertThat(metrics.getFailedStageCount()).isEqualTo(f.stageExecCnt.get());
-      assertThat(metrics.getSuccessfulStageCount()).isEqualTo(0L);
+      assertThat(metrics.getProcessFailedCount()).isEqualTo(f.stageExecCnt.get() / f.stageCnt);
+      assertThat(metrics.getStageFailedCount()).isEqualTo(f.stageExecCnt.get());
+      assertThat(metrics.getStageSuccessCount()).isEqualTo(0L);
 
     } else {
-      assertThat(metrics.getCompletedProcessCount()).isEqualTo(f.stageExecCnt.get() / f.stageCnt);
-      assertThat(metrics.getFailedStageCount()).isEqualTo(0L);
-      assertThat(metrics.getSuccessfulStageCount()).isEqualTo(f.stageExecCnt.get());
+      assertThat(metrics.getProcessCompletedCount()).isEqualTo(f.stageExecCnt.get() / f.stageCnt);
+      assertThat(metrics.getStageFailedCount()).isEqualTo(0L);
+      assertThat(metrics.getStageSuccessCount()).isEqualTo(f.stageExecCnt.get());
     }
   }
 

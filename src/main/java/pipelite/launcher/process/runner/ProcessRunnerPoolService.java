@@ -20,9 +20,8 @@ import pipelite.lock.PipeliteLocker;
 import pipelite.process.Process;
 
 /**
- * Abstract base class for services executing processes. AbstractScheduledService is used for
- * service lifecycle management, PipeliteLocker for lock management, and ProcessRunnerPool for
- * executing processes.
+ * Abstract base class for executing processes. Extends PipeliteService for lifecycle management.
+ * Uses PipeliteLocker for lock management and ProcessRunnerPool for executing processes.
  */
 @Flogger
 public abstract class ProcessRunnerPoolService extends PipeliteService

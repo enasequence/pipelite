@@ -12,6 +12,7 @@ package pipelite.process;
 
 import com.google.common.flogger.FluentLogger;
 import pipelite.entity.ProcessEntity;
+import pipelite.exception.PipeliteException;
 
 /** Creates new process instances for execution given process ids. */
 public interface ProcessFactory {
@@ -34,22 +35,43 @@ public interface ProcessFactory {
    * Creates a new process instance for execution given process id.
    *
    * @param processId the process id
-   * @return a new process instance for execution with the given process id
+   * @return a new process instance
    */
   Process create(String processId);
 
   FluentLogger log = FluentLogger.forEnclosingClass();
 
+  /**
+   * Creates a new process instance for execution.
+   *
+   * @param processEntity the process
+   * @param processFactory the process factory
+   * @return a new process instance
+   * @throws PipeliteException if the new process could not be created
+   */
   static Process create(ProcessEntity processEntity, ProcessFactory processFactory) {
     String processId = processEntity.getProcessId();
-    log.atInfo().log("Creating process: %s", processId);
-    // Create process.
-    Process process = processFactory.create(processId);
-    if (process == null) {
-      log.atSevere().log("Failed to create process: %s", processId);
-      return null;
+    String error = "Failed to create " + processFactory.getPipelineName() + " process " + processId;
+
+    try {
+      log.atInfo().log("Creating process: %s", processId);
+
+      Process process = processFactory.create(processId);
+
+      if (process == null) {
+        throw new PipeliteException(error + ". The returned process was null.");
+      }
+      if (process.getProcessId() == null) {
+        throw new PipeliteException(error + ". The returned process id was null.");
+      }
+      if (!process.getProcessId().equals(processId)) {
+        throw new PipeliteException(
+            error + ". The returned process id was " + process.getProcessId());
+      }
+      process.setProcessEntity(processEntity);
+      return process;
+    } catch (Exception ex) {
+      throw new PipeliteException(error, ex);
     }
-    process.setProcessEntity(processEntity);
-    return process;
   }
 }
