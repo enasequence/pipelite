@@ -78,10 +78,15 @@ public class TimeUtils {
     long minutes = duration.toMinutes();
     duration = duration.minusMinutes(minutes);
     long seconds = duration.getSeconds();
-    return ((days == 0 ? "" : days + "d ")
-            + (hours == 0 ? "" : hours + "h ")
-            + (minutes == 0 ? "" : minutes + "m ")
-            + (seconds == 0 ? "" : seconds + "s "))
-        .trim();
+    String str =
+        ((days == 0 ? "" : days + "d ")
+                + (hours == 0 ? "" : hours + "h ")
+                + (minutes == 0 ? "" : minutes + "m ")
+                + (seconds == 0 ? "" : seconds + "s "))
+            .trim();
+    if (str == null) {
+      str = "0s";
+    }
+    return str;
   }
 }

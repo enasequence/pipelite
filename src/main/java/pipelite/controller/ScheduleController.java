@@ -98,9 +98,10 @@ public class ScheduleController {
         relative
             ? TimeUtils.humanReadableDuration(s.getEndTime())
             : TimeUtils.humanReadableDate(s.getEndTime());
+    String nextTimeSign = s.getNextTime().isBefore(ZonedDateTime.now()) ? "-" : "";
     String nextTime =
         relative
-            ? TimeUtils.humanReadableDuration(s.getNextTime())
+            ? nextTimeSign + TimeUtils.humanReadableDuration(s.getNextTime())
             : TimeUtils.humanReadableDate(s.getNextTime());
     String lastCompleted =
         relative
@@ -197,13 +198,13 @@ public class ScheduleController {
       str += "Last " + streakFailed + " executions have failed. ";
     }
     if (streakCompleted > 0) {
-      str += "Last " + streakCompleted + " executions have completed. ";
+      str += "Last " + streakCompleted + " executions have succeeded. ";
     }
     if (lastCompleted != null) {
-      str += "Last successful execution was ";
+      str += "Last successful execution ";
       str +=
           relative
-              ? TimeUtils.humanReadableDuration(ZonedDateTime.now().minusHours(4)) + " ago"
+              ? "was " + TimeUtils.humanReadableDuration(ZonedDateTime.now().minusHours(4)) + " ago"
               : TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(4));
       str += ".";
     }
