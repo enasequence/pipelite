@@ -27,6 +27,24 @@ $(document).ready( function () {
         },
     });
 
+    $('#statusTable').DataTable({
+        columns: [
+            { data: "pipelineName" },
+            { data: "pendingCount" },
+            { data: "activeCount" },
+            { data: "completedCount" },
+            { data: "failedCount" }
+        ],
+        dom: 'tip',
+        orderCellsTop: true,
+        fixedHeader: true,
+        responsive: true,
+        language : {
+           "zeroRecords": " "
+        },
+    });
+
+
     // Show plot when tag is changed.
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
         show();
@@ -37,7 +55,8 @@ $(document).ready( function () {
 
 // Show the table and filter badges.
 function show() {
-    var table = $('#pipelinesTable').DataTable();
+    var pipelinesTable = $('#pipelinesTable').DataTable();
+    var statusTable = $('#statusTable').DataTable();
     var since = $( "#since" ).val();
     var plotType = $( "#plotType" ).val();
 
@@ -71,12 +90,17 @@ function show() {
     }
     $( "#sinceBadge" ).text(sinceBadgeText);
 
-    // Show the table.
-    var url = "/pipelite/pipeline/local";
-    console.log(url);
-    $.get(url, function(data, status) {
-        table.clear().rows.add(data).draw();
-     });
+    // Show the tables.
+    var pipelinesUrl = "/pipelite/pipeline/local";
+    console.log(pipelinesUrl);
+    $.get(pipelinesUrl, function(data, status) {
+        pipelinesTable.clear().rows.add(data).draw();
+    });
+    var statusUrl = "/pipelite/pipeline/local/status";
+    console.log(statusUrl);
+    $.get(statusUrl, function(data, status) {
+        statusTable.clear().rows.add(data).draw();
+    });
 
     // Show the plot.
     plot();
@@ -86,7 +110,7 @@ function show() {
 function plot() {
     var since = $( "#since" ).val();
     var plotType = $( "#plotType" ).val();
-     var url = "/pipelite/pipeline/local/plot?since=" + since + "&type=" + plotType + "&id=plot";
+     var url = "/pipelite/pipeline/local/plot/history?since=" + since + "&type=" + plotType + "&id=plot";
      console.log(url);
      $.getScript(url,
         function( data ) {
@@ -100,28 +124,52 @@ function plot() {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     </script>
 </head>
 
 <body>
 <div th:replace="fragments/navigation :: navigation"></div>
 
-<div class="mt-4">
+<div class="mt-4 mb-4 ml-2 mr-2">
     <ul class="nav nav-tabs justify-content-center" role="tablist">
         <li class="nav-item" role="presentation"><a class="nav-link active" data-toggle="tab" role="tab"
-                                                    href="#running">Running</a></li>
+                                                    href="#running">Local pipelines</a></li>
         <li class="nav-item" role="presentation"><a class="nav-link" data-toggle="tab" role="tab"
-                                                    href="#history">History</a>
+                                                    href="#history">Local history</a>
+        <li class="nav-item" role="presentation"><a class="nav-link" data-toggle="tab" role="tab"
+                                                    href="#status">Status</a>
         </li>
     </ul>
 </div>
-
 
 <div class="tab-content">
     <div id="running" class="tab-pane fade show active" role="tabpanel">
         <div class="card m-2">
             <div class="card-body">
-                <h5 class="card-title">Pipelines running in this server</h5>
+                <h5 class="card-title">Pipelines executed by this server</h5>
                 <table id="pipelinesTable" class="table table-striped table-hover" style="width:100%">
                     <!-- Header Table -->
                     <thead>
@@ -138,22 +186,14 @@ function plot() {
     <div id="history" class="tab-pane fade" role="tabpanel">
         <div class="card m-2">
             <div class="card-body">
-
-                <h5 class="card-title">Pipelines running history in this server</h5>
-
+                <h5 class="card-title">Select processes</h5>
                 <div class="form-inline m-2">
-
                     <select class="custom-select m-2" id="plotType">
-                        <!--
-                        <option value="5" selected>Last 5 minutes</option>
-                        <option value="15">Last 15 minutes</option>
-                        -->
                         <option value="running">Running processes</option>
                         <option value="completed">Completed processes</option>
                         <option value="failed">Failed processes</option>
                         <option value="error">Internal errors</option>
                     </select>
-
                     <select class="custom-select m-2" id="since">
                         <!--
                         <option value="5" selected>Last 5 minutes</option>
@@ -168,16 +208,37 @@ function plot() {
                         <option value="1440">Last 1 day</option>
                         <option value="10080">Last 7 days</option>
                     </select>
-
                     <button type="submit" class="btn btn-primary m-2" onclick="show()">Show report</button>
                 </div>
-
+            </div>
+        </div>
+        <div class="card m-2">
+            <div class="card-body">
+                <h5 class="card-title">Pipelines executed by this server</h5>
                 <h5 class="mb-4">
                     <span class="badge badge-secondary" id="plotTypeBadge"></span>
                     <span class="badge badge-secondary" id="sinceBadge"></span>
                 </h5>
-
                 <div id="plot"></div>
+            </div>
+        </div>
+    </div>
+    <div id="status" class="tab-pane fade" role="tabpanel">
+        <div class="card m-2">
+            <div class="card-body">
+                <h5 class="card-title">Pipeline status</h5>
+                <table id="statusTable" class="table table-striped table-hover" style="width:100%">
+                    <!-- Header Table -->
+                    <thead>
+                    <tr>
+                        <th>Pipeline</th>
+                        <th>Pending processes</th>
+                        <th>Active processes</th>
+                        <th>Completed processes</th>
+                        <th>Failed processes</th>
+                    </tr>
+                    </thead>
+                </table>
             </div>
         </div>
     </div>

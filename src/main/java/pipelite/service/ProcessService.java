@@ -13,10 +13,14 @@ package pipelite.service;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,12 +30,16 @@ import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.repository.ProcessRepository;
 
+import static java.util.stream.Collectors.groupingBy;
+
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 public class ProcessService {
 
   private final ProcessRepository repository;
   private final MailService mailService;
+
+  @Autowired JdbcTemplate jdbcTemplate;
 
   public ProcessService(
       @Autowired ProcessRepository repository, @Autowired MailService mailService) {
@@ -141,6 +149,54 @@ public class ProcessService {
       processes.addAll(list(repository.findAllStream(), limit));
     }
     return processes;
+  }
+
+  @Data
+  private static class ProcessStateRow {
+    String pipelineName;
+    ProcessState processState;
+    Long count;
+  }
+
+  @Data
+  public static class ProcessStateSummary {
+    String pipelineName;
+    long pendingCount;
+    long activeCount;
+    long completedCount;
+    long failedCount;
+  }
+
+  public List<ProcessStateSummary> getProcessStateSummary() {
+    List<ProcessStateSummary> list = new ArrayList<>();
+    String sql =
+        "SELECT pipeline_name, state, count(1) FROM PIPELITE_PROCESS GROUP BY pipeline_name, state";
+
+    Map<String, List<ProcessStateRow>> groupedByPipelineName =
+        jdbcTemplate.queryForList(sql, ProcessStateRow.class).stream()
+            .collect(groupingBy(ProcessStateRow::getPipelineName));
+
+    for (String pipelineName : groupedByPipelineName.keySet()) {
+      Map<ProcessState, List<ProcessStateRow>> groupedByState =
+          groupedByPipelineName.get(pipelineName).stream()
+              .collect(groupingBy(ProcessStateRow::getProcessState));
+
+      ProcessStateSummary stateSummary = new ProcessStateSummary();
+      if (groupedByState.containsKey(ProcessState.PENDING)) {
+        stateSummary.setPendingCount(groupedByState.get(ProcessState.PENDING).get(0).count);
+      }
+      if (groupedByState.containsKey(ProcessState.ACTIVE)) {
+        stateSummary.setActiveCount(groupedByState.get(ProcessState.ACTIVE).get(0).count);
+      }
+      if (groupedByState.containsKey(ProcessState.COMPLETED)) {
+        stateSummary.setCompletedCount(groupedByState.get(ProcessState.COMPLETED).get(0).count);
+      }
+      if (groupedByState.containsKey(ProcessState.FAILED)) {
+        stateSummary.setFailedCount(groupedByState.get(ProcessState.FAILED).get(0).count);
+      }
+      list.add(stateSummary);
+    }
+    return list;
   }
 
   /**

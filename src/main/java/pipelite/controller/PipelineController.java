@@ -24,12 +24,14 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
 import pipelite.controller.info.PipelineInfo;
+import pipelite.controller.info.PipelineStatusInfo;
 import pipelite.controller.utils.LoremUtils;
 import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.process.runner.ProcessRunnerResult;
@@ -37,6 +39,7 @@ import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.TimeSeriesMetrics;
 import pipelite.process.ProcessState;
+import pipelite.service.ProcessService;
 import tech.tablesaw.api.Table;
 import tech.tablesaw.plotly.components.Figure;
 
@@ -47,6 +50,7 @@ public class PipelineController {
 
   @Autowired Application application;
   @Autowired Environment environment;
+  @Autowired ProcessService processService;
   @Autowired PipeliteMetrics pipeliteMetrics;
 
   private static final int LOREM_IPSUM_PROCESSES = 5;
@@ -55,9 +59,7 @@ public class PipelineController {
 
   @GetMapping("/local")
   @ResponseStatus(HttpStatus.OK)
-  @Operation(
-      description =
-          "Pipelines running in this server including statistics within the given number of minutes")
+  @Operation(description = "Pipelines running in this server")
   @ApiResponses(
       value = {
         @ApiResponse(responseCode = "200", description = "OK"),
@@ -65,7 +67,7 @@ public class PipelineController {
       })
   public Collection<PipelineInfo> localPipelines() {
     List<PipelineInfo> list = getLocalPipelines(application.getRunningLaunchers());
-    getLoremIpsumPipelines(list);
+    getLoremIpsumLocalPipelines(list);
     return list;
   }
 
@@ -83,42 +85,91 @@ public class PipelineController {
     return pipelines;
   }
 
-  @GetMapping("/local/plot")
+  private void getLoremIpsumLocalPipelines(List<PipelineInfo> list) {
+    if (LoremUtils.isActiveProfile(environment)) {
+      Random random = new Random();
+      Lorem lorem = LoremIpsum.getInstance();
+      for (int i = 0; i < LOREM_IPSUM_PROCESSES; ++i) {
+        list.add(
+            PipelineInfo.builder()
+                .pipelineName(lorem.getCountry())
+                .maxRunningProcessCount(random.nextInt(50))
+                .runningProcessCount(random.nextInt(10))
+                .build());
+      }
+    }
+  }
+
+  @GetMapping("/local/status")
   @ResponseStatus(HttpStatus.OK)
-  @Operation(
-      description =
-          "Pipelines running in this server including statistics within the given number of minutes")
+  @Operation(description = "Status for pipelines running in this server")
   @ApiResponses(
       value = {
         @ApiResponse(responseCode = "200", description = "OK"),
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
-  public String localPlot(
+  public List<PipelineStatusInfo> localPipelinesStates() {
+    List<PipelineStatusInfo> list = getLocalPipelinesStates(application.getRunningLaunchers());
+    getLoremIpsumLocalPipelineStates(list);
+    return list;
+  }
+
+  public List<PipelineStatusInfo> getLocalPipelinesStates(
+      Collection<PipeliteLauncher> pipeliteLaunchers) {
+    List<PipelineStatusInfo> list = new ArrayList<>();
+    processService.getProcessStateSummary().stream()
+        .filter(
+            s ->
+                pipeliteLaunchers.stream()
+                    .anyMatch(v -> v.getPipelineName().equals(s.getPipelineName())))
+        .forEach(
+            s ->
+                list.add(
+                    PipelineStatusInfo.builder()
+                        .pipelineName(s.getPipelineName())
+                        .pendingCount(s.getPendingCount())
+                        .activeCount(s.getActiveCount())
+                        .completedCount(s.getCompletedCount())
+                        .failedCount(s.getFailedCount())
+                        .build()));
+    return list;
+  }
+
+  public void getLoremIpsumLocalPipelineStates(List<PipelineStatusInfo> list) {
+    Random random = new Random();
+    Lorem lorem = LoremIpsum.getInstance();
+    for (int i = 0; i < LOREM_IPSUM_PROCESSES; ++i) {
+      list.add(
+          PipelineStatusInfo.builder()
+              .pipelineName(lorem.getCountry())
+              .pendingCount((long) random.nextInt(10))
+              .activeCount((long) random.nextInt(10))
+              .completedCount((long) random.nextInt(10))
+              .failedCount((long) random.nextInt(10))
+              .build());
+    }
+  }
+
+  @GetMapping("/local/plot/history")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(description = "History plot for pipelines running in this server")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "OK"),
+        @ApiResponse(responseCode = "500", description = "Internal Server error")
+      })
+  public String localHistoryPlot(
       @RequestParam int since, @RequestParam String type, @RequestParam String id) {
     Duration duration = Duration.ofMinutes(since);
     if (LoremUtils.isActiveProfile(environment)) {
-      return getLoremIpsumPlot(duration, type, id);
+      return getLoremIpsumLocalHistoryPlot(duration, type, id);
     } else {
       Collection<PipeliteLauncher> pipeliteLaunchers = application.getRunningLaunchers();
-      return getPlot(pipeliteLaunchers, duration, type, id);
+      return getLocalHistoryPlot(pipeliteLaunchers, duration, type, id);
     }
   }
 
-  private String getPlot(
-      Collection<PipeliteLauncher> pipeliteLaunchers, Duration duration, String type, String id) {
-    Collection<Table> tables = new ArrayList<>();
-    ZonedDateTime since = ZonedDateTime.now().minus(duration);
-
-    for (PipeliteLauncher pipeliteLauncher : pipeliteLaunchers) {
-      PipelineMetrics metrics = pipeliteMetrics.pipeline(pipeliteLauncher.getPipelineName());
-      addTable(metrics, tables, since, type);
-    }
-
-    Figure figure = TimeSeriesMetrics.getPlot("", tables);
-    return getPlotJavaScript(figure, id);
-  }
-
-  public void addTable(
+  public void addLocalHistoryTable(
       PipelineMetrics metrics, Collection<Table> tables, ZonedDateTime since, String type) {
     switch (type) {
       case "running":
@@ -136,7 +187,39 @@ public class PipelineController {
     }
   }
 
-  private Collection<PipelineMetrics> getLoremIpsumMetrics(Duration duration) {
+  private String getLocalHistoryPlot(
+      Collection<PipeliteLauncher> pipeliteLaunchers, Duration duration, String type, String id) {
+    Collection<Table> tables = new ArrayList<>();
+    ZonedDateTime since = ZonedDateTime.now().minus(duration);
+
+    for (PipeliteLauncher pipeliteLauncher : pipeliteLaunchers) {
+      PipelineMetrics metrics = pipeliteMetrics.pipeline(pipeliteLauncher.getPipelineName());
+      addLocalHistoryTable(metrics, tables, since, type);
+    }
+
+    Figure figure = TimeSeriesMetrics.getPlot("", tables);
+    return TimeSeriesMetrics.getPlotJavaScript(figure, id);
+  }
+
+  private void addLoremIpsumHLocalistoryTable(
+      PipelineMetrics metrics, Collection<Table> tables, String type) {
+    switch (type) {
+      case "running":
+        tables.add(metrics.process().getRunningTimeSeries());
+        break;
+      case "completed":
+        tables.add(metrics.process().getCompletedTimeSeries());
+        break;
+      case "failed":
+        tables.add(metrics.process().getFailedTimeSeries());
+        break;
+      case "error":
+        tables.add(metrics.getInternalErrorTimeSeries());
+        break;
+    }
+  }
+
+  private Collection<PipelineMetrics> getLoremIpsumLocalHistoryMetrics(Duration duration) {
     int timeCount = 100;
     Collection<PipelineMetrics> list = new ArrayList<>();
 
@@ -157,44 +240,12 @@ public class PipelineController {
     return list;
   }
 
-  private void getLoremIpsumPipelines(List<PipelineInfo> list) {
-    if (LoremUtils.isActiveProfile(environment)) {
-      Random random = new Random();
-      Lorem lorem = LoremIpsum.getInstance();
-      for (int i = 0; i < LOREM_IPSUM_PROCESSES; ++i) {
-        list.add(
-            PipelineInfo.builder()
-                .pipelineName(lorem.getCountry())
-                .maxRunningProcessCount(random.nextInt(50))
-                .runningProcessCount(random.nextInt(10))
-                .build());
-      }
-    }
-  }
-
-  private String getLoremIpsumPlot(Duration duration, String type, String id) {
+  private String getLoremIpsumLocalHistoryPlot(Duration duration, String type, String id) {
     Collection<Table> tables = new ArrayList<>();
-    for (PipelineMetrics metrics : getLoremIpsumMetrics(duration)) {
-      addLoremIpsumTable(metrics, tables, type);
+    for (PipelineMetrics metrics : getLoremIpsumLocalHistoryMetrics(duration)) {
+      addLoremIpsumHLocalistoryTable(metrics, tables, type);
     }
     Figure figure = TimeSeriesMetrics.getPlot("", tables);
-    return getPlotJavaScript(figure, id);
-  }
-
-  private void addLoremIpsumTable(PipelineMetrics metrics, Collection<Table> tables, String type) {
-    switch (type) {
-      case "running":
-        tables.add(metrics.process().getRunningTimeSeries());
-        break;
-      case "completed":
-        tables.add(metrics.process().getCompletedTimeSeries());
-        break;
-      case "failed":
-        tables.add(metrics.process().getFailedTimeSeries());
-        break;
-      case "error":
-        tables.add(metrics.getInternalErrorTimeSeries());
-        break;
-    }
+    return TimeSeriesMetrics.getPlotJavaScript(figure, id);
   }
 }
