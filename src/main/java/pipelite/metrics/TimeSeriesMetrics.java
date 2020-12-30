@@ -111,7 +111,7 @@ public class TimeSeriesMetrics {
         .replaceFirst("</script>", "")
         .replaceFirst(
             "Plotly\\.newPlot\\(target_" + id + ", data, layout\\)",
-            "var config = {responsive: true}; Plotly.newPlot(target_"
+            "var config = {responsive: true, displayModeBar: false}; Plotly.newPlot(target_"
                 + id
                 + ", data, layout, config );");
   }
