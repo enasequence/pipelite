@@ -15,21 +15,19 @@ import java.util.List;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
+import pipelite.metrics.PipeliteMetrics;
 import pipelite.launcher.PipeliteService;
 import pipelite.lock.PipeliteLocker;
 import pipelite.process.Process;
 
-/**
- * Abstract base class for executing processes. Extends PipeliteService for lifecycle management.
- * Uses PipeliteLocker for lock management and ProcessRunnerPool for executing processes.
- */
+/** Abstract base class for executing processes. */
 @Flogger
 public abstract class ProcessRunnerPoolService extends PipeliteService
     implements ProcessRunnerPool {
 
   private final PipeliteLocker locker;
   private final ProcessRunnerPool pool;
-  private final Duration processLaunchFrequency;
+  private final Duration processRunnerFrequency;
   private boolean shutdown;
 
   public ProcessRunnerPoolService(
@@ -42,13 +40,13 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
     Assert.notNull(pool, "Missing process runner pool");
     this.locker = locker;
     this.pool = pool;
-    this.processLaunchFrequency = launcherConfiguration.getProcessLaunchFrequency();
+    this.processRunnerFrequency = launcherConfiguration.getProcessRunnerFrequency();
     this.locker.init(launcherName);
   }
 
   @Override
   protected Scheduler scheduler() {
-    return Scheduler.newFixedDelaySchedule(Duration.ZERO, processLaunchFrequency);
+    return Scheduler.newFixedDelaySchedule(Duration.ZERO, processRunnerFrequency);
   }
 
   @Override
@@ -67,6 +65,7 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
 
       try {
         run();
+        metrics().setRunningProcessesCount(pool.getActiveProcessRunners());
       } catch (Exception ex) {
         log.atSevere().withCause(ex).log(
             "Unexpected exception from service: %s", getLauncherName());
@@ -136,6 +135,11 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
   @Override
   public boolean isProcessActive(String pipelineName, String processId) {
     return pool.isProcessActive(pipelineName, processId);
+  }
+
+  @Override
+  public PipeliteMetrics metrics() {
+    return pool.metrics();
   }
 
   @Override

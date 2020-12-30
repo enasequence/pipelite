@@ -21,7 +21,8 @@ import pipelite.configuration.WebServerCustomizer;
       "pipelite.service",
       "pipelite.launcher",
       "pipelite.repository",
-      "pipelite.configuration"
+      "pipelite.configuration",
+      "pipelite.metrics"
     },
     excludeFilters =
         @ComponentScan.Filter(

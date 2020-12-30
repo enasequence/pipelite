@@ -12,7 +12,6 @@ package pipelite.launcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,7 +30,9 @@ import pipelite.configuration.StageConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.entity.StageEntity;
-import pipelite.launcher.process.runner.ProcessRunnerMetrics;
+import pipelite.metrics.PipelineMetrics;
+import pipelite.metrics.PipeliteMetrics;
+import pipelite.metrics.TimeSeriesMetrics;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessState;
@@ -61,7 +62,7 @@ public class PipeliteSchedulerTester {
   @Autowired private TestProcessFactory secondProcessFailure;
   @Autowired private TestProcessFactory firstProcessException;
   @Autowired private TestProcessFactory secondProcessException;
-  @Autowired private MeterRegistry meterRegistry;
+  @Autowired private PipeliteMetrics pipelineMetrics;
 
   @TestConfiguration
   static class TestConfig {
@@ -112,7 +113,7 @@ public class PipeliteSchedulerTester {
         scheduleService,
         stageService,
         mailService,
-        meterRegistry);
+        pipelineMetrics);
   }
 
   @Value
@@ -216,19 +217,34 @@ public class PipeliteSchedulerTester {
   private void assertSchedulerMetrics(PipeliteScheduler pipeliteScheduler, TestProcessFactory f) {
     String pipelineName = f.getPipelineName();
 
-    ProcessRunnerMetrics metrics = pipeliteScheduler.getMetrics(pipelineName);
+    PipelineMetrics pipelineMetrics = pipeliteScheduler.metrics().pipeline(pipelineName);
 
-    assertThat(metrics.getInternalErrorCount()).isEqualTo(0);
+    assertThat(pipelineMetrics.getInternalErrorCount()).isEqualTo(0);
+    assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.getInternalErrorTimeSeries()))
+        .isEqualTo(0);
 
     if (f.stageTestResult != StageTestResult.SUCCESS) {
-      assertThat(metrics.getProcessFailedCount()).isEqualTo(f.stageExecCnt.get() / f.stageCnt);
-      assertThat(metrics.getStageFailedCount()).isEqualTo(f.stageExecCnt.get());
-      assertThat(metrics.getStageSuccessCount()).isEqualTo(0L);
-
+      assertThat(pipelineMetrics.process().getFailedCount())
+          .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
+      assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(f.stageExecCnt.get());
+      assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(0L);
+      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getFailedTimeSeries()))
+          .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
+      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getFailedTimeSeries()))
+          .isEqualTo(f.stageExecCnt.get());
+      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getSuccessTimeSeries()))
+          .isEqualTo(0);
     } else {
-      assertThat(metrics.getProcessCompletedCount()).isEqualTo(f.stageExecCnt.get() / f.stageCnt);
-      assertThat(metrics.getStageFailedCount()).isEqualTo(0L);
-      assertThat(metrics.getStageSuccessCount()).isEqualTo(f.stageExecCnt.get());
+      assertThat(pipelineMetrics.process().getCompletedCount())
+          .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
+      assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(0L);
+      assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(f.stageExecCnt.get());
+      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getCompletedTimeSeries()))
+          .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
+      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getFailedTimeSeries()))
+          .isEqualTo(0);
+      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getSuccessTimeSeries()))
+          .isEqualTo(f.stageExecCnt.get());
     }
   }
 

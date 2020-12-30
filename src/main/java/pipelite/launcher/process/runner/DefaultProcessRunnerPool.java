@@ -16,12 +16,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
+import pipelite.metrics.PipeliteMetrics;
 import pipelite.launcher.PipeliteServiceManager;
 import pipelite.lock.PipeliteLocker;
 import pipelite.log.LogKey;
@@ -30,7 +32,8 @@ import pipelite.process.Process;
 @Flogger
 public class DefaultProcessRunnerPool implements ProcessRunnerPool {
   private final PipeliteLocker pipeliteLocker;
-  private final Supplier<ProcessRunner> processRunnerSupplier;
+  private final Function<String, ProcessRunner> processRunnerSupplier;
+  private final PipeliteMetrics metrics;
   private final ExecutorService executorService = Executors.newCachedThreadPool();
 
   @Value
@@ -43,11 +46,15 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
   private final Set<ActiveProcessRunner> active = ConcurrentHashMap.newKeySet();
 
   public DefaultProcessRunnerPool(
-      PipeliteLocker pipeliteLocker, Supplier<ProcessRunner> processRunnerSupplier) {
+      PipeliteLocker pipeliteLocker,
+      Function<String, ProcessRunner> processRunnerSupplier,
+      PipeliteMetrics metrics) {
     Assert.notNull(pipeliteLocker, "Missing pipelite locker");
     Assert.notNull(processRunnerSupplier, "Missing process runner supplier");
+    Assert.notNull(metrics, "Missing pipelite metrics");
     this.pipeliteLocker = pipeliteLocker;
     this.processRunnerSupplier = processRunnerSupplier;
+    this.metrics = metrics;
   }
 
   /**
@@ -62,6 +69,7 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
    */
   @Override
   public void runProcess(String pipelineName, Process process, ProcessRunnerCallback callback) {
+
     Assert.notNull(pipelineName, "Missing pipeline name");
     Assert.notNull(process, "Missing process");
     Assert.notNull(process.getProcessId(), "Missing process id");
@@ -70,7 +78,7 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
     String processId = process.getProcessId();
 
     // Create process launcher.
-    ProcessRunner processRunner = processRunnerSupplier.get();
+    ProcessRunner processRunner = processRunnerSupplier.apply(pipelineName);
     ActiveProcessRunner activeProcessRunner =
         new ActiveProcessRunner(pipelineName, processId, processRunner);
     active.add(activeProcessRunner);
@@ -82,12 +90,16 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
             if (!pipeliteLocker.lockProcess(pipelineName, processId)) {
               return;
             }
-            processRunner.runProcess(pipelineName, process, callback);
+            ProcessRunnerResult result = processRunner.runProcess(process);
+            metrics.pipeline(pipelineName).increment(process.getProcessEntity().getState(), result);
+            callback.accept(process, result);
           } catch (Exception ex) {
             logContext(log.atSevere(), pipelineName, processId)
                 .withCause(ex)
                 .log("Unexpected exception when executing process");
-            callback.accept(process, new ProcessRunnerResult().internalError());
+            ProcessRunnerResult result = new ProcessRunnerResult().internalError();
+            metrics.pipeline(pipelineName).increment(process.getProcessEntity().getState(), result);
+            callback.accept(process, result);
           } finally {
             // Unlock process.
             pipeliteLocker.unlockProcess(pipelineName, processId);
@@ -113,7 +125,12 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
   }
 
   public List<ProcessRunner> getActiveProcessRunners() {
-    return active.stream().map(a -> a.getProcessRunner()).collect(Collectors.toList());
+    return active.stream().map(ActiveProcessRunner::getProcessRunner).collect(Collectors.toList());
+  }
+
+  @Override
+  public PipeliteMetrics metrics() {
+    return metrics;
   }
 
   public void shutDown() {

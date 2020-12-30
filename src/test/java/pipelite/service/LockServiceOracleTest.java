@@ -18,7 +18,7 @@ import pipelite.PipeliteTestConfiguration;
 
 @SpringBootTest(
     classes = PipeliteTestConfiguration.class,
-    properties = {"pipelite.launcher.pipelineLockDuration=10s"})
+    properties = {"pipelite.launcher.lockDuration=10s"})
 @ActiveProfiles(value = {"oracle-test", "pipelite-test"})
 public class LockServiceOracleTest {
 

@@ -12,7 +12,6 @@ package pipelite.launcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,6 +32,8 @@ import pipelite.configuration.StageConfiguration;
 import pipelite.configuration.WebConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
+import pipelite.metrics.PipelineMetrics;
+import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
@@ -59,7 +60,7 @@ public class PipeliteLauncherFailureTester {
   @Autowired private StageService stageService;
   @Autowired private LockService lockService;
   @Autowired private MailService mailService;
-  @Autowired private SimpleMeterRegistry meterRegistry;
+  @Autowired private PipeliteMetrics metrics;
 
   @Autowired
   @Qualifier("firstStageFails")
@@ -180,7 +181,7 @@ public class PipeliteLauncherFailureTester {
         processService,
         stageService,
         mailService,
-        meterRegistry,
+        metrics,
         pipelineName);
   }
 
@@ -398,15 +399,16 @@ public class PipeliteLauncherFailureTester {
   }
 
   private void assertLauncherMetrics(PipeliteLauncher pipeliteLauncher, TestProcessFactory f) {
+    PipelineMetrics metrics = pipeliteLauncher.metrics().pipeline(f.getPipelineName());
     if (f.getFirstStageExecResult().isSuccess()
         && f.getSecondStageExecResult().isSuccess()
         && f.getThirdStageExecResult().isSuccess()
         && f.getFourthStageExecResult().isSuccess()) {
-      assertThat(pipeliteLauncher.getMetrics().getProcessCompletedCount()).isEqualTo(PROCESS_CNT);
-      assertThat(pipeliteLauncher.getMetrics().getProcessFailedCount()).isEqualTo(0);
+      assertThat(metrics.process().getCompletedCount()).isEqualTo(PROCESS_CNT);
+      assertThat(metrics.process().getFailedCount()).isEqualTo(0);
     } else {
-      assertThat(pipeliteLauncher.getMetrics().getProcessCompletedCount()).isEqualTo(0);
-      assertThat(pipeliteLauncher.getMetrics().getProcessFailedCount()).isEqualTo(PROCESS_CNT);
+      assertThat(metrics.process().getCompletedCount()).isEqualTo(0);
+      assertThat(metrics.process().getFailedCount()).isEqualTo(PROCESS_CNT);
     }
 
     int stageSuccessCount = 0;
@@ -424,9 +426,8 @@ public class PipeliteLauncherFailureTester {
         }
       }
     }
-    assertThat(pipeliteLauncher.getMetrics().getStageSuccessCount())
-        .isEqualTo(stageSuccessCount);
-    assertThat(pipeliteLauncher.getMetrics().getStageFailedCount()).isEqualTo(stageFailedCount);
+    assertThat(metrics.stage().getSuccessCount()).isEqualTo(stageSuccessCount);
+    assertThat(metrics.stage().getFailedCount()).isEqualTo(stageFailedCount);
   }
 
   public void testFirstStageFails() {

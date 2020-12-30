@@ -10,7 +10,6 @@
  */
 package pipelite;
 
-import io.micrometer.core.instrument.MeterRegistry;
 import java.util.*;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
@@ -25,6 +24,7 @@ import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
 import pipelite.configuration.WebConfiguration;
 import pipelite.launcher.*;
+import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.*;
 
 @Configuration
@@ -44,7 +44,7 @@ public class Application {
   @Autowired private LockService lockService;
   @Autowired private MailService mailService;
   @Autowired private ConfigurableApplicationContext applicationContext;
-  @Autowired private MeterRegistry meterRegistry;
+  @Autowired private PipeliteMetrics metrics;
 
   private PipeliteServiceManager serverManager;
   private List<PipeliteLauncher> launchers;
@@ -131,7 +131,7 @@ public class Application {
         scheduleService,
         stageService,
         mailService,
-        meterRegistry);
+            metrics);
   }
 
   private PipeliteLauncher createLauncher(String pipelineName) {
@@ -145,7 +145,7 @@ public class Application {
         processService,
         stageService,
         mailService,
-        meterRegistry,
+            metrics,
         pipelineName);
   }
 

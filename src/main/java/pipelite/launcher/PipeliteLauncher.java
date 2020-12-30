@@ -10,7 +10,6 @@
  */
 package pipelite.launcher;
 
-import io.micrometer.core.instrument.MeterRegistry;
 import java.time.ZonedDateTime;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
@@ -18,7 +17,6 @@ import pipelite.configuration.LauncherConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.launcher.process.creator.ProcessCreator;
 import pipelite.launcher.process.queue.ProcessQueue;
-import pipelite.launcher.process.runner.ProcessRunnerMetrics;
 import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
 import pipelite.lock.PipeliteLocker;
@@ -41,7 +39,6 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
   private final int processCreateMaxSize;
   private final boolean shutdownIfIdle;
   private final ZonedDateTime startTime;
-  private final ProcessRunnerMetrics metrics;
 
   public PipeliteLauncher(
       LauncherConfiguration launcherConfiguration,
@@ -49,9 +46,8 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
       ProcessFactory processFactory,
       ProcessCreator processCreator,
       ProcessQueue processQueue,
-      ProcessRunnerPool processRunnerPool,
-      MeterRegistry meterRegistry) {
-    super(launcherConfiguration, pipeliteLocker, processQueue.getLauncherName(), processRunnerPool);
+      ProcessRunnerPool pool) {
+    super(launcherConfiguration, pipeliteLocker, processQueue.getLauncherName(), pool);
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(processFactory, "Missing process factory");
     Assert.notNull(processCreator, "Missing process creator");
@@ -63,7 +59,6 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
     this.processCreateMaxSize = launcherConfiguration.getProcessCreateMaxSize();
     this.shutdownIfIdle = launcherConfiguration.isShutdownIfIdle();
     this.startTime = ZonedDateTime.now();
-    this.metrics = new ProcessRunnerMetrics(this.pipelineName, meterRegistry);
   }
 
   @Override
@@ -80,8 +75,6 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
     while (processQueue.isAvailableProcesses(this.getActiveProcessCount())) {
       runProcess(processQueue.nextAvailableProcess());
     }
-
-    purgeMetrics();
   }
 
   @Override
@@ -102,13 +95,10 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log(
           "Unexpected exception when creating " + pipelineName + " process");
-      metrics.internalError();
+      metrics().pipeline(pipelineName).incrementInternalErrorCount();
     }
     if (process != null) {
-      runProcess(
-          pipelineName,
-          process,
-          (p, r) -> metrics.processRunnerResult(p.getProcessEntity().getState(), r));
+      runProcess(pipelineName, process, (p, r) -> {});
     }
   }
 
@@ -122,13 +112,5 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
 
   public int getQueuedProcessCount() {
     return processQueue.getQueuedProcessCount();
-  }
-
-  public ProcessRunnerMetrics getMetrics() {
-    return metrics;
-  }
-
-  private void purgeMetrics() {
-    metrics.purgeCustomCounters();
   }
 }

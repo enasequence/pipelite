@@ -18,11 +18,10 @@ public interface ProcessRunner {
   /**
    * Executes the process.
    *
-   * @param pipelineName the pipeline name
    * @param process the process
-   * @param callback the process runner callback
+   * @return process runner result
    */
-  void runProcess(String pipelineName, Process process, ProcessRunnerCallback callback);
+  ProcessRunnerResult runProcess(Process process);
 
   String getPipelineName();
 

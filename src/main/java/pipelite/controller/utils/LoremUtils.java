@@ -10,9 +10,18 @@
  */
 package pipelite.controller.utils;
 
+import org.springframework.core.env.Environment;
+
+import java.util.Arrays;
+
 public class LoremUtils {
 
   private LoremUtils() {}
 
-  public static final String PROFILE_NAME = "test-lorem";
+  private static final String PROFILE_NAME = "test-lorem";
+
+  public static boolean isActiveProfile(Environment environment) {
+    return Arrays.stream(environment.getActiveProfiles())
+        .anyMatch(profile -> LoremUtils.PROFILE_NAME.equals(profile));
+  }
 }

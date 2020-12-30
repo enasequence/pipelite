@@ -28,8 +28,7 @@ import pipelite.UniqueStringGenerator;
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     classes = PipeliteTestConfiguration.class,
     properties = {
-      "pipelite.launcher.processLaunchFrequency=250ms",
-      "pipelite.launcher.stageLaunchFrequency=250ms"
+      "pipelite.launcher.processRunnerFrequency=250ms"
     })
 @ContextConfiguration(initializers = PipeliteSchedulerOracleTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"oracle-test", "pipelite-test"})

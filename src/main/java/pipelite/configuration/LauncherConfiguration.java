@@ -30,14 +30,13 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "pipelite.launcher")
 public class LauncherConfiguration {
 
-  private static final Duration DEFAULT_PIPELINE_LOCK_DURATION = Duration.ofMinutes(10);
-  private static final Duration DEFAULT_PROCESS_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
+  private static final Duration DEFAULT_LOCK_DURATION = Duration.ofMinutes(10);
+  private static final Duration DEFAULT_PROCESS_RUNNER_FREQUENCY = Duration.ofMinutes(1);
   private static final Duration DEFAULT_SCHEDULE_REFRESH_FREQUENCY = Duration.ofHours(4);
   private static final Duration DEFAULT_PROCESS_QUEUE_MAX_REFRESH_FREQUENCY = Duration.ofHours(6);
   private static final Duration DEFAULT_PROCESS_QUEUE_MIN_REFRESH_FREQUENCY = Duration.ofMinutes(5);
   private static final int DEFAULT_PROCESS_QUEUE_MAX_SIZE = 5000;
   private static final int DEFAULT_PROCESS_CREATE_MAX_SIZE = 5000;
-  private static final Duration DEFAULT_STAGE_LAUNCH_FREQUENCY = Duration.ofMinutes(1);
 
   public LauncherConfiguration() {}
 
@@ -57,19 +56,13 @@ public class LauncherConfiguration {
    * The duration after which {@link pipelite.launcher.PipeliteLauncher} and {@link
    * pipelite.launcher.PipeliteScheduler} created process locks expire unless they are renewed.
    */
-  private Duration pipelineLockDuration = DEFAULT_PIPELINE_LOCK_DURATION;
+  private Duration lockDuration = DEFAULT_LOCK_DURATION;
 
   /**
-   * The frequency for {@link pipelite.launcher.PipeliteLauncher} and {@link
-   * pipelite.launcher.PipeliteScheduler} to execute new processes.
+   * The running frequency for {@link pipelite.launcher.PipeliteLauncher} and {@link
+   * pipelite.launcher.PipeliteScheduler}.
    */
-  private Duration processLaunchFrequency = DEFAULT_PROCESS_LAUNCH_FREQUENCY;
-
-  /**
-   * The frequency for {@link pipelite.launcher.PipeliteLauncher} and {@link
-   * pipelite.launcher.PipeliteScheduler} to execute new process stages.
-   */
-  private Duration stageLaunchFrequency = DEFAULT_STAGE_LAUNCH_FREQUENCY;
+  private Duration processRunnerFrequency = DEFAULT_PROCESS_RUNNER_FREQUENCY;
 
   /**
    * The frequency for {@link pipelite.launcher.PipeliteScheduler} to refresh its process schedules.

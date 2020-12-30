@@ -47,9 +47,9 @@ public class DefaultProcessRunner implements ProcessRunner {
   private final ProcessService processService;
   private final StageService stageService;
   private final MailService mailService;
-  private final Duration stageLaunchFrequency;
+  private final String pipelineName;
+  private final Duration processRunnerFrequency;
   private final ExecutorService executorService = Executors.newCachedThreadPool();
-  private String pipelineName;
   private Process process;
   private String processId;
   private ZonedDateTime startTime;
@@ -59,54 +59,47 @@ public class DefaultProcessRunner implements ProcessRunner {
       StageConfiguration stageConfiguration,
       ProcessService processService,
       StageService stageService,
-      MailService mailService) {
+      MailService mailService,
+      String pipelineName) {
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(stageConfiguration, "Missing stage configuration");
     Assert.notNull(processService, "Missing process service");
     Assert.notNull(stageService, "Missing stage service");
     Assert.notNull(mailService, "Missing mail service");
+    Assert.notNull(pipelineName, "Missing pipeline name");
     this.launcherConfiguration = launcherConfiguration;
     this.stageConfiguration = stageConfiguration;
     this.processService = processService;
     this.stageService = stageService;
     this.mailService = mailService;
-    this.stageLaunchFrequency = launcherConfiguration.getStageLaunchFrequency();
+    this.pipelineName = pipelineName;
+    this.processRunnerFrequency = launcherConfiguration.getProcessRunnerFrequency();
   }
 
   /**
-   * Executes the process. If an exception is thrown then it is caught and logged and the process
-   * runner callback is called after incrementing the internal error count of the returned
-   * ProcessRunnerResult.
+   * Executes the process. If an exception is thrown then it is caught and logged after incrementing
+   * the internal error count of the returned ProcessRunnerResult.
    *
-   * @param pipelineName the pipeline name
    * @param process the process
-   * @param callback the process runner callback
+   * @return process runner result
    */
   @Override
-  public void runProcess(String pipelineName, Process process, ProcessRunnerCallback callback) {
+  public ProcessRunnerResult runProcess(Process process) {
     ProcessRunnerResult result = new ProcessRunnerResult();
     try {
-      runProcess(pipelineName, process, callback, result);
+      runProcess(process, result);
     } catch (Exception ex) {
       result.internalError();
       logContext(log.atSevere()).withCause(ex).log("Unexpected exception when executing process");
-    } finally {
-      callback.accept(process, result);
     }
+    return result;
   }
 
-  public void runProcess(
-      String pipelineName,
-      Process process,
-      ProcessRunnerCallback callback,
-      ProcessRunnerResult result) {
-    Assert.notNull(pipelineName, "Missing pipeline name");
+  public void runProcess(Process process, ProcessRunnerResult result) {
     Assert.notNull(process, "Missing process");
     Assert.notNull(process.getProcessId(), "Missing process id");
     Assert.notNull(process.getProcessEntity(), "Missing process entity");
-    Assert.notNull(callback, "Missing process runner callback");
 
-    this.pipelineName = pipelineName;
     this.process = process;
     this.processId = process.getProcessId();
     this.startTime = ZonedDateTime.now();
@@ -132,7 +125,7 @@ public class DefaultProcessRunner implements ProcessRunner {
 
       runStages(activeStages, executableStages, result);
 
-      if (!Time.wait(stageLaunchFrequency)) {
+      if (!Time.wait(processRunnerFrequency)) {
         executorService.shutdownNow();
         throw new PipeliteInterruptedException("Process launcher was interrupted");
       }

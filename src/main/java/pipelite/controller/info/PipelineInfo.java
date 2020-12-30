@@ -19,11 +19,4 @@ public class PipelineInfo {
   private String pipelineName;
   private Integer maxRunningProcessCount;
   private Integer runningProcessCount;
-  private Integer queuedProcessCount;
-  private String completedProcessCount;
-  private String failedProcessCount;
-  private String successfulStageCount;
-  private String failedStageCount;
-  private String internalErrorCount;
-  private String uptime;
 }

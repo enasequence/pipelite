@@ -125,8 +125,7 @@ public class ProcessController {
   }
 
   public void getLoremIpsumProcess(List<ProcessInfo> list) {
-    if (Arrays.stream(environment.getActiveProfiles())
-        .anyMatch(profile -> LoremUtils.PROFILE_NAME.equals(profile))) {
+    if (LoremUtils.isActiveProfile(environment)) {
       Lorem lorem = LoremIpsum.getInstance();
       Random random = new Random();
       list.add(

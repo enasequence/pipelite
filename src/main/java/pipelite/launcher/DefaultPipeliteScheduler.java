@@ -10,7 +10,6 @@
  */
 package pipelite.launcher;
 
-import io.micrometer.core.instrument.MeterRegistry;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.StageConfiguration;
 import pipelite.launcher.process.runner.DefaultProcessRunner;
@@ -18,6 +17,7 @@ import pipelite.launcher.process.runner.DefaultProcessRunnerPool;
 import pipelite.launcher.process.runner.ProcessRunnerType;
 import pipelite.lock.DefaultPipeliteLocker;
 import pipelite.lock.PipeliteLocker;
+import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.*;
 
 public class DefaultPipeliteScheduler {
@@ -33,7 +33,7 @@ public class DefaultPipeliteScheduler {
       ScheduleService scheduleService,
       StageService stageService,
       MailService mailService,
-      MeterRegistry meterRegistry) {
+      PipeliteMetrics metrics) {
 
     PipeliteLocker pipeliteLocker =
         new DefaultPipeliteLocker(lockService, ProcessRunnerType.SCHEDULER);
@@ -46,13 +46,14 @@ public class DefaultPipeliteScheduler {
         processService,
         new DefaultProcessRunnerPool(
             pipeliteLocker,
-            () ->
+            (pipelineName) ->
                 new DefaultProcessRunner(
                     launcherConfiguration,
                     stageConfiguration,
                     processService,
                     stageService,
-                    mailService)),
-        meterRegistry);
+                    mailService,
+                    pipelineName),
+            metrics));
   }
 }

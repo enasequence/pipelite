@@ -18,7 +18,7 @@ import pipelite.PipeliteTestConfiguration;
 
 @SpringBootTest(
     classes = PipeliteTestConfiguration.class,
-    properties = {"pipelite.launcher.pipelineLockDuration=5s"})
+    properties = {"pipelite.launcher.lockDuration=5s"})
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 public class LockServiceHsqlTest {
 

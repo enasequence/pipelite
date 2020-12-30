@@ -102,7 +102,6 @@ class ScheduleServiceTester {
     processEntity1.setPipelineName(pipelineName);
     processEntity1.setProcessId(processId1);
     processEntity1.setState(ProcessState.COMPLETED);
-    processEntity1.setEndTime(endTime1);
 
     service.endExecution(processEntity1);
 
@@ -114,7 +113,7 @@ class ScheduleServiceTester {
     assertThat(s.getExecutionCount()).isEqualTo(1);
     assertThat(s.getNextTime()).isNull();
     assertThat(s.getStartTime()).isAfterOrEqualTo(launchTime1);
-    assertThat(s.getEndTime()).isEqualTo(endTime1);
+    assertThat(s.getEndTime()).isAfterOrEqualTo(endTime1);
     assertThat(s.getLastCompleted()).isEqualTo(endTime1);
     assertThat(s.getLastFailed()).isNull();
     assertThat(s.getStreakCompleted()).isEqualTo(1);
@@ -170,7 +169,6 @@ class ScheduleServiceTester {
     processEntity2.setPipelineName(pipelineName);
     processEntity2.setProcessId(processId2);
     processEntity2.setState(ProcessState.COMPLETED);
-    processEntity2.setEndTime(endTime2);
 
     service.endExecution(processEntity2);
 
@@ -183,7 +181,7 @@ class ScheduleServiceTester {
     assertThat(s.getNextTime()).isNull();
     assertThat(s.getStartTime()).isAfterOrEqualTo(launchTime2);
     assertThat(s.getEndTime()).isAfterOrEqualTo(endTime2);
-    assertThat(s.getLastCompleted()).isAfterOrEqualTo(endTime2);
+    assertThat(s.getLastCompleted()).isEqualTo(s.getEndTime());
     assertThat(s.getLastFailed()).isNull();
     assertThat(s.getStreakCompleted()).isEqualTo(2);
     assertThat(s.getStreakFailed()).isEqualTo(0);
@@ -238,7 +236,6 @@ class ScheduleServiceTester {
     processEntity3.setPipelineName(pipelineName);
     processEntity3.setProcessId(processId3);
     processEntity3.setState(ProcessState.FAILED);
-    processEntity3.setEndTime(endTime3);
 
     service.endExecution(processEntity3);
 
@@ -252,7 +249,7 @@ class ScheduleServiceTester {
     assertThat(s.getStartTime()).isAfterOrEqualTo(launchTime3);
     assertThat(s.getEndTime()).isAfterOrEqualTo(endTime3);
     assertThat(s.getLastCompleted()).isAfterOrEqualTo(endTime2);
-    assertThat(s.getLastFailed()).isAfterOrEqualTo(endTime3);
+    assertThat(s.getLastFailed()).isEqualTo(s.getEndTime());
     assertThat(s.getStreakCompleted()).isEqualTo(0);
     assertThat(s.getStreakFailed()).isEqualTo(1);
     assertThat(s.getProcessId()).isEqualTo(processId3);

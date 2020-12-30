@@ -65,8 +65,7 @@ public class LogController {
   }
 
   public String getLoremIpsumLogs() {
-    if (Arrays.stream(environment.getActiveProfiles())
-        .anyMatch(profile -> LoremUtils.PROFILE_NAME.equals(profile))) {
+    if (LoremUtils.isActiveProfile(environment)) {
       Lorem lorem = LoremIpsum.getInstance();
       return lorem.getWords(10000);
     }

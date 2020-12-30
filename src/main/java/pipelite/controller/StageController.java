@@ -111,8 +111,7 @@ public class StageController {
   }
 
   public void getLoremIpsumStages(List<StageInfo> list) {
-    if (Arrays.stream(environment.getActiveProfiles())
-        .anyMatch(profile -> LoremUtils.PROFILE_NAME.equals(profile))) {
+    if (LoremUtils.isActiveProfile(environment)) {
       Lorem lorem = LoremIpsum.getInstance();
       AtomicReference<String> previousStageName = new AtomicReference<>();
       for (int i = 0; i < 10; ++i) {

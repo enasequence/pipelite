@@ -57,7 +57,7 @@ public class LockService {
     this.launcherLockRepository = launcherLockRepository;
     this.processLockRepository = processLockRepository;
     this.transactionManager = transactionManager;
-    this.lockDuration = launcherConfiguration.getPipelineLockDuration();
+    this.lockDuration = launcherConfiguration.getLockDuration();
   }
 
   /**

@@ -13,7 +13,6 @@ package pipelite.launcher;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
@@ -90,8 +89,7 @@ public class PipeliteSchedulerTest {
                 processFactoryService,
                 scheduleService,
                 processService,
-                processRunnerPool,
-                new SimpleMeterRegistry()));
+                processRunnerPool));
     int maxExecution1 = 1;
     pipeliteScheduler.setMaximumExecutions(pipelineName1, maxExecution1);
 
@@ -194,8 +192,7 @@ public class PipeliteSchedulerTest {
                 processFactoryService,
                 scheduleService,
                 processService,
-                processRunnerPool,
-                new SimpleMeterRegistry()));
+                processRunnerPool));
 
     pipeliteScheduler.setMaximumExecutions(pipelineName1, maxExecution1);
     pipeliteScheduler.setMaximumExecutions(pipelineName2, maxExecution2);
@@ -347,8 +344,7 @@ public class PipeliteSchedulerTest {
                 processFactoryService,
                 scheduleService,
                 processService,
-                processRunnerPool,
-                new SimpleMeterRegistry()));
+                processRunnerPool));
     pipeliteScheduler.setMaximumExecutions(pipelineName1, maxExecution1);
     pipeliteScheduler.setMaximumExecutions(pipelineName2, maxExecution2);
 

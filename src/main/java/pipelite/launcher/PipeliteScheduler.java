@@ -11,7 +11,7 @@
 package pipelite.launcher;
 
 import com.google.common.flogger.FluentLogger;
-import io.micrometer.core.instrument.MeterRegistry;
+
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -25,7 +25,6 @@ import pipelite.cron.CronUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.exception.PipeliteException;
-import pipelite.launcher.process.runner.ProcessRunnerMetrics;
 import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
 import pipelite.lock.PipeliteLocker;
@@ -48,10 +47,8 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   private final ProcessFactoryCache processFactoryCache;
   private final List<Schedule> schedules = Collections.synchronizedList(new ArrayList<>());
   private final Map<String, AtomicLong> maximumExecutions = new ConcurrentHashMap<>();
-  private final Map<String, ProcessRunnerMetrics> metrics = new ConcurrentHashMap<>();
   private final Duration scheduleRefreshFrequency;
   private ZonedDateTime scheduleValidUntil = ZonedDateTime.now();
-  private MeterRegistry meterRegistry;
 
   public PipeliteScheduler(
       LauncherConfiguration launcherConfiguration,
@@ -59,8 +56,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
       ProcessFactoryService processFactoryService,
       ScheduleService scheduleService,
       ProcessService processService,
-      ProcessRunnerPool processRunnerPool,
-      MeterRegistry meterRegistry) {
+      ProcessRunnerPool processRunnerPool) {
     super(
         launcherConfiguration,
         pipeliteLocker,
@@ -74,7 +70,6 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     this.scheduleService = scheduleService;
     this.processService = processService;
     this.scheduleRefreshFrequency = launcherConfiguration.getScheduleRefreshFrequency();
-    this.meterRegistry = meterRegistry;
   }
 
   @Override
@@ -88,7 +83,6 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   protected void run() {
     refreshSchedules();
     executeSchedules();
-    purgeMetrics();
   }
 
   protected void executeSchedules() {
@@ -286,7 +280,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log(
           "Unexpected exception when creating " + pipelineName + " process");
-      getMetrics(pipelineName).internalError();
+      metrics().pipeline(pipelineName).incrementInternalErrorCount();
       return;
     }
 
@@ -301,7 +295,6 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
           scheduleService.endExecution(processEntity);
           schedule.enable();
           scheduleService.scheduleExecution(pipelineName, schedule.getLaunchTime());
-          getMetrics(pipelineName).processRunnerResult(p.getProcessEntity().getState(), r);
         });
   }
 
@@ -335,17 +328,6 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   public void setMaximumExecutions(String pipelineName, long maximumExecutions) {
     this.maximumExecutions.putIfAbsent(pipelineName, new AtomicLong());
     this.maximumExecutions.get(pipelineName).set(maximumExecutions);
-  }
-
-  public ProcessRunnerMetrics getMetrics(String pipelineName) {
-    metrics.putIfAbsent(pipelineName, new ProcessRunnerMetrics(pipelineName, meterRegistry));
-    return metrics.get(pipelineName);
-  }
-
-  private void purgeMetrics() {
-    for (ProcessRunnerMetrics m : metrics.values()) {
-      m.purgeCustomCounters();
-    }
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {

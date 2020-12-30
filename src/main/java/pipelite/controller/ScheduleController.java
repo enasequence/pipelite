@@ -136,8 +136,7 @@ public class ScheduleController {
   }
 
   public void getLoremIpsumSchedules(List<ScheduleInfo> list, boolean relative) {
-    if (Arrays.stream(environment.getActiveProfiles())
-        .anyMatch(profile -> LoremUtils.PROFILE_NAME.equals(profile))) {
+    if (LoremUtils.isActiveProfile(environment)) {
       Lorem lorem = LoremIpsum.getInstance();
       IntStream.range(1, 100)
           .forEach(
