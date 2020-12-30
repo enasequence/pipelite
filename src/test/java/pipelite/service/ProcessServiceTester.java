@@ -189,4 +189,8 @@ class ProcessServiceTester {
     assertThat(counter.get(ProcessState.FAILED).get()).isEqualTo(failedCount);
     assertThat(counter.get(ProcessState.PENDING).get()).isEqualTo(pendingCount);
   }
+
+  public void testProcessStateSummary() {
+    service.getProcessStateSummary();
+  }
 }

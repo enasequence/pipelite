@@ -173,7 +173,23 @@ public class ProcessService {
         "SELECT pipeline_name, state, count(1) FROM PIPELITE_PROCESS GROUP BY pipeline_name, state";
 
     Map<String, List<ProcessStateRow>> groupedByPipelineName =
-        jdbcTemplate.queryForList(sql, ProcessStateRow.class).stream()
+        jdbcTemplate
+            .query(
+                sql,
+                (rs, rowNum) -> {
+                  ProcessState state = null;
+                  try {
+                    state = ProcessState.valueOf(rs.getString(2));
+                  } catch (IllegalArgumentException ex) {
+                    // Ignore unknown states
+                  }
+                  ProcessStateRow row = new ProcessStateRow();
+                  row.setPipelineName(rs.getString(1));
+                  row.setProcessState(state);
+                  row.setCount(rs.getLong(3));
+                  return row;
+                })
+            .stream()
             .collect(groupingBy(ProcessStateRow::getPipelineName));
 
     for (String pipelineName : groupedByPipelineName.keySet()) {
@@ -182,6 +198,7 @@ public class ProcessService {
               .collect(groupingBy(ProcessStateRow::getProcessState));
 
       ProcessStateSummary stateSummary = new ProcessStateSummary();
+      stateSummary.setPipelineName(pipelineName);
       if (groupedByState.containsKey(ProcessState.PENDING)) {
         stateSummary.setPendingCount(groupedByState.get(ProcessState.PENDING).get(0).count);
       }

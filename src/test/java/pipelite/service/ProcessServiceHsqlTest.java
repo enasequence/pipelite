@@ -47,4 +47,9 @@ class ProcessServiceHsqlTest {
   public void testGetProcesses() {
     new ProcessServiceTester(service).testGetProcesses();
   }
+
+  @Test
+  public void testProcessStateSummary() {
+    new ProcessServiceTester(service).testProcessStateSummary();
+  }
 }
