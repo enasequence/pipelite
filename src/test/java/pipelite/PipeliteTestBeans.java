@@ -8,19 +8,21 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.controller.utils;
+package pipelite;
 
-import java.util.Arrays;
-import org.springframework.core.env.Environment;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import pipelite.metrics.PipelineMetrics;
+import pipelite.metrics.PipeliteMetrics;
 
-public class LoremUtils {
+public class PipeliteTestBeans {
 
-  private LoremUtils() {}
+  private PipeliteTestBeans() {}
 
-  private static final String PROFILE_NAME = "test-lorem";
+  public static PipeliteMetrics pipeliteMetrics() {
+    return new PipeliteMetrics(new SimpleMeterRegistry());
+  }
 
-  public static boolean isActiveProfile(Environment environment) {
-    return Arrays.stream(environment.getActiveProfiles())
-        .anyMatch(profile -> LoremUtils.PROFILE_NAME.equals(profile));
+  public static PipelineMetrics pipelineMetrics(String pipelineName) {
+    return new PipelineMetrics(pipelineName, new SimpleMeterRegistry());
   }
 }

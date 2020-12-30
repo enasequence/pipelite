@@ -62,7 +62,7 @@ public class PipeliteSchedulerTester {
   @Autowired private TestProcessFactory secondProcessFailure;
   @Autowired private TestProcessFactory firstProcessException;
   @Autowired private TestProcessFactory secondProcessException;
-  @Autowired private PipeliteMetrics pipelineMetrics;
+  @Autowired private PipeliteMetrics metrics;
 
   @TestConfiguration
   static class TestConfig {
@@ -113,7 +113,7 @@ public class PipeliteSchedulerTester {
         scheduleService,
         stageService,
         mailService,
-        pipelineMetrics);
+        metrics);
   }
 
   @Value
@@ -214,10 +214,10 @@ public class PipeliteSchedulerTester {
             + launcherConfiguration.getSchedulerName());
   }
 
-  private void assertSchedulerMetrics(PipeliteScheduler pipeliteScheduler, TestProcessFactory f) {
+  private void assertSchedulerMetrics(TestProcessFactory f) {
     String pipelineName = f.getPipelineName();
 
-    PipelineMetrics pipelineMetrics = pipeliteScheduler.metrics().pipeline(pipelineName);
+    PipelineMetrics pipelineMetrics = metrics.pipeline(pipelineName);
 
     assertThat(pipelineMetrics.getInternalErrorCount()).isEqualTo(0);
     assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.getInternalErrorTimeSeries()))
@@ -341,7 +341,7 @@ public class PipeliteSchedulerTester {
       for (TestProcessFactory f : testProcessFactories) {
         assertThat(f.stageExecCnt.get() / f.stageCnt).isEqualTo(f.processCnt);
         assertThat(f.processIds.size()).isEqualTo(f.processCnt);
-        assertSchedulerMetrics(pipeliteScheduler, f);
+        assertSchedulerMetrics(f);
         assertScheduleEntity(scheduleEntities, f);
         for (String processId : f.processIds) {
           assertProcessEntity(f, processId);

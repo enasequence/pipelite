@@ -54,6 +54,7 @@ public class DefaultPipeliteScheduler {
                     stageService,
                     mailService,
                     pipelineName),
-            metrics));
+            metrics),
+        metrics);
   }
 }

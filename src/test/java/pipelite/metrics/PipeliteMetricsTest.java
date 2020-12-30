@@ -10,16 +10,16 @@
  */
 package pipelite.metrics;
 
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import org.junit.jupiter.api.Test;
-
 import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
+import pipelite.PipeliteTestBeans;
 
 public class PipeliteMetricsTest {
 
   @Test
   public void internalError() {
-    PipeliteMetrics metrics = new PipeliteMetrics(new SimpleMeterRegistry());
+    PipeliteMetrics metrics = PipeliteTestBeans.pipeliteMetrics();
 
     assertThat(metrics.getInternalErrorCount()).isZero();
     assertThat(metrics.getInternalErrorTimeSeries().rowCount()).isZero();

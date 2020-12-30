@@ -10,14 +10,14 @@
  */
 package pipelite.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.StageEntity;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.EmptySyncStageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class StageServiceTester {
 

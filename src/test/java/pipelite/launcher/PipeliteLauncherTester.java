@@ -58,6 +58,7 @@ public class PipeliteLauncherTester {
   @Autowired private LockService lockService;
   @Autowired private MailService mailService;
   @Autowired private PipeliteMetrics pipelineMetrics;
+  @Autowired private PipeliteMetrics metrics;
 
   @Autowired
   @Qualifier("processSuccess")
@@ -194,8 +195,8 @@ public class PipeliteLauncherTester {
     }
   }
 
-  private void assertLauncherMetrics(PipeliteLauncher pipeliteLauncher, TestProcessFactory f) {
-    PipelineMetrics pipelineMetrics = pipeliteLauncher.metrics().pipeline(f.getPipelineName());
+  private void assertLauncherMetrics(TestProcessFactory f) {
+    PipelineMetrics pipelineMetrics = metrics.pipeline(f.getPipelineName());
 
     assertThat(pipelineMetrics.getInternalErrorCount()).isEqualTo(0);
     assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.getInternalErrorTimeSeries()))
@@ -286,7 +287,7 @@ public class PipeliteLauncherTester {
 
     assertThat(f.stageExecCnt.get() / f.stageCnt).isEqualTo(f.processCnt);
     assertThat(f.processIds.size()).isEqualTo(f.processCnt);
-    assertLauncherMetrics(pipeliteLauncher, f);
+    assertLauncherMetrics(f);
     for (String processId : f.processIds) {
       assertProcessEntity(f, processId);
       assertStageEntities(f, processId);

@@ -18,6 +18,7 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import pipelite.PipeliteTestBeans;
 import pipelite.TestProcessFactory;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
@@ -27,6 +28,7 @@ import pipelite.launcher.process.runner.ProcessRunnerCallback;
 import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.launcher.process.runner.ProcessRunnerResult;
 import pipelite.lock.PipeliteLocker;
+import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.builder.ProcessBuilder;
@@ -81,6 +83,8 @@ public class PipeliteSchedulerTest {
 
     // Create pipelite scheduler.
 
+    PipeliteMetrics metrics = PipeliteTestBeans.pipeliteMetrics();
+
     PipeliteScheduler pipeliteScheduler =
         spy(
             new PipeliteScheduler(
@@ -89,7 +93,9 @@ public class PipeliteSchedulerTest {
                 processFactoryService,
                 scheduleService,
                 processService,
-                processRunnerPool));
+                processRunnerPool,
+                metrics));
+
     int maxExecution1 = 1;
     pipeliteScheduler.setMaximumExecutions(pipelineName1, maxExecution1);
 
@@ -184,6 +190,8 @@ public class PipeliteSchedulerTest {
 
     // Create pipelite scheduler.
 
+    PipeliteMetrics metrics = PipeliteTestBeans.pipeliteMetrics();
+
     PipeliteScheduler pipeliteScheduler =
         spy(
             new PipeliteScheduler(
@@ -192,7 +200,8 @@ public class PipeliteSchedulerTest {
                 processFactoryService,
                 scheduleService,
                 processService,
-                processRunnerPool));
+                processRunnerPool,
+                metrics));
 
     pipeliteScheduler.setMaximumExecutions(pipelineName1, maxExecution1);
     pipeliteScheduler.setMaximumExecutions(pipelineName2, maxExecution2);
@@ -336,6 +345,8 @@ public class PipeliteSchedulerTest {
 
     // Create pipelite scheduler.
 
+    PipeliteMetrics metrics = PipeliteTestBeans.pipeliteMetrics();
+
     PipeliteScheduler pipeliteScheduler =
         spy(
             new PipeliteScheduler(
@@ -344,7 +355,8 @@ public class PipeliteSchedulerTest {
                 processFactoryService,
                 scheduleService,
                 processService,
-                processRunnerPool));
+                processRunnerPool,
+                metrics));
     pipeliteScheduler.setMaximumExecutions(pipelineName1, maxExecution1);
     pipeliteScheduler.setMaximumExecutions(pipelineName2, maxExecution2);
 

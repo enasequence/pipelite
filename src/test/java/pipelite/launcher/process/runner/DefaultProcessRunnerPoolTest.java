@@ -15,16 +15,15 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-
 import java.time.ZonedDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
+import pipelite.PipeliteTestBeans;
 import pipelite.entity.ProcessEntity;
+import pipelite.lock.PipeliteLocker;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
-import pipelite.lock.PipeliteLocker;
 import pipelite.metrics.TimeSeriesMetrics;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
@@ -55,11 +54,11 @@ public class DefaultProcessRunnerPoolTest {
     PipeliteLocker locker = mock(PipeliteLocker.class);
     when(locker.lockProcess(any(), any())).thenReturn(true);
 
+    PipeliteMetrics metrics = PipeliteTestBeans.pipeliteMetrics();
+
     DefaultProcessRunnerPool pool =
         new DefaultProcessRunnerPool(
-            locker,
-            processRunnerSupplier(ProcessState.COMPLETED),
-            new PipeliteMetrics(new SimpleMeterRegistry()));
+            locker, processRunnerSupplier(ProcessState.COMPLETED), metrics);
 
     AtomicInteger runProcessCount = new AtomicInteger();
 
@@ -73,7 +72,7 @@ public class DefaultProcessRunnerPoolTest {
 
     pool.shutDown();
 
-    PipelineMetrics pipelineMetrics = pool.metrics().pipeline(PIPELINE_NAME);
+    PipelineMetrics pipelineMetrics = metrics.pipeline(PIPELINE_NAME);
 
     assertThat(runProcessCount.get()).isEqualTo(PROCESS_CNT);
 
@@ -107,11 +106,10 @@ public class DefaultProcessRunnerPoolTest {
     PipeliteLocker locker = mock(PipeliteLocker.class);
     when(locker.lockProcess(any(), any())).thenReturn(true);
 
+    PipeliteMetrics metrics = PipeliteTestBeans.pipeliteMetrics();
+
     DefaultProcessRunnerPool pool =
-        new DefaultProcessRunnerPool(
-            locker,
-            processRunnerSupplier(ProcessState.FAILED),
-            new PipeliteMetrics(new SimpleMeterRegistry()));
+        new DefaultProcessRunnerPool(locker, processRunnerSupplier(ProcessState.FAILED), metrics);
 
     AtomicInteger runProcessCount = new AtomicInteger();
 
@@ -125,7 +123,7 @@ public class DefaultProcessRunnerPoolTest {
 
     pool.shutDown();
 
-    PipelineMetrics pipelineMetrics = pool.metrics().pipeline(PIPELINE_NAME);
+    PipelineMetrics pipelineMetrics = metrics.pipeline(PIPELINE_NAME);
 
     assertThat(runProcessCount.get()).isEqualTo(PROCESS_CNT);
 
@@ -156,6 +154,9 @@ public class DefaultProcessRunnerPoolTest {
   public void testException() {
     PipeliteLocker locker = mock(PipeliteLocker.class);
     when(locker.lockProcess(any(), any())).thenReturn(true);
+
+    PipeliteMetrics metrics = PipeliteTestBeans.pipeliteMetrics();
+
     DefaultProcessRunnerPool pool =
         new DefaultProcessRunnerPool(
             locker,
@@ -164,7 +165,7 @@ public class DefaultProcessRunnerPoolTest {
               doThrow(new RuntimeException()).when(processRunner).runProcess(any());
               return processRunner;
             },
-            new PipeliteMetrics(new SimpleMeterRegistry()));
+            metrics);
 
     AtomicInteger runProcessCount = new AtomicInteger();
 
@@ -178,7 +179,7 @@ public class DefaultProcessRunnerPoolTest {
 
     pool.shutDown();
 
-    PipelineMetrics pipelineMetrics = pool.metrics().pipeline(PIPELINE_NAME);
+    PipelineMetrics pipelineMetrics = metrics.pipeline(PIPELINE_NAME);
 
     assertThat(runProcessCount.get()).isEqualTo(PROCESS_CNT);
 

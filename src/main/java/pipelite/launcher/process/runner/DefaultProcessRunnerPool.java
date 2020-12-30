@@ -18,15 +18,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
-import pipelite.metrics.PipeliteMetrics;
 import pipelite.launcher.PipeliteServiceManager;
 import pipelite.lock.PipeliteLocker;
 import pipelite.log.LogKey;
+import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 
 @Flogger
@@ -126,11 +125,6 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
 
   public List<ProcessRunner> getActiveProcessRunners() {
     return active.stream().map(ActiveProcessRunner::getProcessRunner).collect(Collectors.toList());
-  }
-
-  @Override
-  public PipeliteMetrics metrics() {
-    return metrics;
   }
 
   public void shutDown() {

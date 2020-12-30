@@ -316,7 +316,7 @@ public class PipeliteLauncherFailureTester {
     }
 
     assertThat(f.processIds.size()).isEqualTo(PROCESS_CNT);
-    assertLauncherMetrics(pipeliteLauncher, f);
+    assertLauncherMetrics(f);
     for (String processId : f.processIds) {
       assertProcessEntity(f, processId);
       assertStageEntities(f, processId);
@@ -398,17 +398,17 @@ public class PipeliteLauncherFailureTester {
     }
   }
 
-  private void assertLauncherMetrics(PipeliteLauncher pipeliteLauncher, TestProcessFactory f) {
-    PipelineMetrics metrics = pipeliteLauncher.metrics().pipeline(f.getPipelineName());
+  private void assertLauncherMetrics(TestProcessFactory f) {
+    PipelineMetrics pipelineMetrics = metrics.pipeline(f.getPipelineName());
     if (f.getFirstStageExecResult().isSuccess()
         && f.getSecondStageExecResult().isSuccess()
         && f.getThirdStageExecResult().isSuccess()
         && f.getFourthStageExecResult().isSuccess()) {
-      assertThat(metrics.process().getCompletedCount()).isEqualTo(PROCESS_CNT);
-      assertThat(metrics.process().getFailedCount()).isEqualTo(0);
+      assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(PROCESS_CNT);
+      assertThat(pipelineMetrics.process().getFailedCount()).isEqualTo(0);
     } else {
-      assertThat(metrics.process().getCompletedCount()).isEqualTo(0);
-      assertThat(metrics.process().getFailedCount()).isEqualTo(PROCESS_CNT);
+      assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(0);
+      assertThat(pipelineMetrics.process().getFailedCount()).isEqualTo(PROCESS_CNT);
     }
 
     int stageSuccessCount = 0;
@@ -426,8 +426,8 @@ public class PipeliteLauncherFailureTester {
         }
       }
     }
-    assertThat(metrics.stage().getSuccessCount()).isEqualTo(stageSuccessCount);
-    assertThat(metrics.stage().getFailedCount()).isEqualTo(stageFailedCount);
+    assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(stageSuccessCount);
+    assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(stageFailedCount);
   }
 
   public void testFirstStageFails() {

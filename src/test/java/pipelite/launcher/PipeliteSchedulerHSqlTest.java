@@ -27,9 +27,7 @@ import pipelite.UniqueStringGenerator;
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     classes = PipeliteTestConfiguration.class,
-    properties = {
-      "pipelite.launcher.processRunnerFrequency=250ms"
-    })
+    properties = {"pipelite.launcher.processRunnerFrequency=250ms"})
 @ContextConfiguration(initializers = PipeliteSchedulerHSqlTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 @DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)

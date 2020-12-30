@@ -19,9 +19,8 @@ import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
-
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
+import pipelite.PipeliteTestBeans;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.WebConfiguration;
@@ -31,7 +30,6 @@ import pipelite.launcher.process.queue.DefaultProcessQueue;
 import pipelite.launcher.process.runner.DefaultProcessRunnerPool;
 import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.lock.PipeliteLocker;
-import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
@@ -79,8 +77,8 @@ public class PipeliteLauncherTest {
     doReturn(processesEntities).when(queue).getAvailableActiveProcesses();
 
     ProcessRunnerPool pool = mock(ProcessRunnerPool.class);
-    PipeliteMetrics metrics = new PipeliteMetrics(new SimpleMeterRegistry());
-    when(pool.metrics()).thenReturn(metrics);
+
+    PipeliteMetrics metrics = PipeliteTestBeans.pipeliteMetrics();
 
     PipeliteLauncher launcher =
         spy(
@@ -90,7 +88,8 @@ public class PipeliteLauncherTest {
                 processFactory,
                 mock(ProcessCreator.class),
                 queue,
-                pool));
+                pool,
+                metrics));
 
     launcher.startUp();
     launcher.run();
@@ -128,8 +127,7 @@ public class PipeliteLauncherTest {
     doReturn(processesEntities).when(queue).getPendingProcesses();
 
     ProcessRunnerPool pool = mock(ProcessRunnerPool.class);
-    PipeliteMetrics metrics = new PipeliteMetrics(new SimpleMeterRegistry());
-    when(pool.metrics()).thenReturn(metrics);
+    PipeliteMetrics metrics = PipeliteTestBeans.pipeliteMetrics();
 
     PipeliteLauncher launcher =
         spy(
@@ -139,7 +137,8 @@ public class PipeliteLauncherTest {
                 mock(ProcessFactory.class),
                 mock(ProcessCreator.class),
                 queue,
-                pool));
+                pool,
+                metrics));
 
     launcher.startUp();
     launcher.run();
@@ -177,6 +176,8 @@ public class PipeliteLauncherTest {
                 processParallelism));
     when(queue.isFillQueue()).thenReturn(true);
 
+    PipeliteMetrics metrics = PipeliteTestBeans.pipeliteMetrics();
+
     PipeliteLauncher launcher =
         spy(
             new PipeliteLauncher(
@@ -185,7 +186,8 @@ public class PipeliteLauncherTest {
                 mock(ProcessFactory.class),
                 processCreator,
                 queue,
-                mock(DefaultProcessRunnerPool.class)));
+                mock(DefaultProcessRunnerPool.class),
+                metrics));
 
     launcher.startUp();
     launcher.run();

@@ -14,9 +14,8 @@ import com.google.common.util.concurrent.AtomicDouble;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import tech.tablesaw.api.Table;
-
 import java.time.ZonedDateTime;
+import tech.tablesaw.api.Table;
 
 public class ProcessMetrics {
 

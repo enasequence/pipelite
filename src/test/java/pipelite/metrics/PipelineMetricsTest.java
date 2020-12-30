@@ -10,29 +10,18 @@
  */
 package pipelite.metrics;
 
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
-import java.util.List;
+import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
+import pipelite.PipeliteTestBeans;
 import pipelite.launcher.process.runner.ProcessRunnerResult;
 import pipelite.process.ProcessState;
-import tech.tablesaw.api.Table;
-import tech.tablesaw.plotly.Plot;
-import tech.tablesaw.plotly.components.Figure;
-import tech.tablesaw.plotly.components.Layout;
-import tech.tablesaw.plotly.traces.ScatterTrace;
-import tech.tablesaw.table.TableSliceGroup;
-
-import static org.assertj.core.api.Assertions.*;
 
 public class PipelineMetricsTest {
 
   @Test
   public void internalError() {
-    PipelineMetrics metrics = new PipelineMetrics("PIPELINE_NAME", new SimpleMeterRegistry());
+    PipelineMetrics metrics = PipeliteTestBeans.pipelineMetrics("PIPELINE_NAME");
 
     assertThat(metrics.getInternalErrorCount()).isZero();
     assertThat(metrics.getInternalErrorTimeSeries().rowCount()).isZero();
@@ -47,7 +36,7 @@ public class PipelineMetricsTest {
 
   @Test
   public void processCompleted() {
-    PipelineMetrics metrics = new PipelineMetrics("PIPELINE_NAME", new SimpleMeterRegistry());
+    PipelineMetrics metrics = PipeliteTestBeans.pipelineMetrics("PIPELINE_NAME");
 
     assertThat(metrics.process().getCompletedCount()).isZero();
     assertThat(metrics.process().getFailedCount()).isZero();
@@ -76,7 +65,7 @@ public class PipelineMetricsTest {
 
   @Test
   public void processFailed() {
-    PipelineMetrics metrics = new PipelineMetrics("PIPELINE_NAME", new SimpleMeterRegistry());
+    PipelineMetrics metrics = PipeliteTestBeans.pipelineMetrics("PIPELINE_NAME");
 
     assertThat(metrics.process().getCompletedCount()).isZero();
     assertThat(metrics.process().getFailedCount()).isZero();

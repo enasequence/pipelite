@@ -12,12 +12,10 @@ package pipelite.metrics;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import java.time.ZonedDateTime;
 import pipelite.launcher.process.runner.ProcessRunnerResult;
 import pipelite.process.ProcessState;
 import tech.tablesaw.api.Table;
-
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 
 public class PipelineMetrics {
 

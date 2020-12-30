@@ -12,18 +12,16 @@ package pipelite.metrics;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import lombok.extern.flogger.Flogger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import pipelite.launcher.process.runner.ProcessRunner;
-import tech.tablesaw.api.Table;
-
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.extern.flogger.Flogger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import pipelite.launcher.process.runner.ProcessRunner;
+import tech.tablesaw.api.Table;
 
 @Component
 @Flogger

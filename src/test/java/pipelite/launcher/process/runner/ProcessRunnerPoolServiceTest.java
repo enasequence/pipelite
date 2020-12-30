@@ -15,8 +15,10 @@ import static org.mockito.Mockito.*;
 
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
+import pipelite.PipeliteTestBeans;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.lock.PipeliteLocker;
+import pipelite.metrics.PipeliteMetrics;
 
 public class ProcessRunnerPoolServiceTest {
 
@@ -55,13 +57,16 @@ public class ProcessRunnerPoolServiceTest {
         .when(locker)
         .unlock();
 
+    PipeliteMetrics metrics = PipeliteTestBeans.pipeliteMetrics();
+
     ProcessRunnerPoolService processRunnerPoolService =
         spy(
             new ProcessRunnerPoolService(
                 launcherConfiguration,
                 locker,
                 LAUNCHER_NAME,
-                mock(DefaultProcessRunnerPool.class)) {
+                mock(DefaultProcessRunnerPool.class),
+                metrics) {
               @Override
               protected void run() {
                 runCnt.incrementAndGet();

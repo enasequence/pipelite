@@ -11,8 +11,6 @@
 package pipelite.launcher.process.runner;
 
 import java.util.List;
-
-import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 
 public interface ProcessRunnerPool {
@@ -56,13 +54,6 @@ public interface ProcessRunnerPool {
    * @return true if the process is active.
    */
   boolean isProcessActive(String pipelineName, String processId);
-
-  /**
-   * Returns the metrics.
-   *
-   * @return the metrics
-   */
-  PipeliteMetrics metrics();
 
   /** Shuts down the process runner pool/ */
   void shutDown();

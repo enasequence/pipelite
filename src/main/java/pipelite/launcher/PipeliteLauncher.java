@@ -20,6 +20,7 @@ import pipelite.launcher.process.queue.ProcessQueue;
 import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
 import pipelite.lock.PipeliteLocker;
+import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 
@@ -46,8 +47,9 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
       ProcessFactory processFactory,
       ProcessCreator processCreator,
       ProcessQueue processQueue,
-      ProcessRunnerPool pool) {
-    super(launcherConfiguration, pipeliteLocker, processQueue.getLauncherName(), pool);
+      ProcessRunnerPool pool,
+      PipeliteMetrics metrics) {
+    super(launcherConfiguration, pipeliteLocker, processQueue.getLauncherName(), pool, metrics);
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(processFactory, "Missing process factory");
     Assert.notNull(processCreator, "Missing process creator");
@@ -95,7 +97,7 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log(
           "Unexpected exception when creating " + pipelineName + " process");
-      metrics().pipeline(pipelineName).incrementInternalErrorCount();
+      metrics.pipeline(pipelineName).incrementInternalErrorCount();
     }
     if (process != null) {
       runProcess(pipelineName, process, (p, r) -> {});

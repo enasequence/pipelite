@@ -11,7 +11,6 @@
 package pipelite.launcher;
 
 import com.google.common.flogger.FluentLogger;
-
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -29,6 +28,7 @@ import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
 import pipelite.lock.PipeliteLocker;
 import pipelite.log.LogKey;
+import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessFactoryCache;
@@ -56,12 +56,14 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
       ProcessFactoryService processFactoryService,
       ScheduleService scheduleService,
       ProcessService processService,
-      ProcessRunnerPool processRunnerPool) {
+      ProcessRunnerPool processRunnerPool,
+      PipeliteMetrics metrics) {
     super(
         launcherConfiguration,
         pipeliteLocker,
         LauncherConfiguration.getSchedulerName(launcherConfiguration),
-        processRunnerPool);
+        processRunnerPool,
+        metrics);
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(processFactoryService, "Missing process factory service");
     Assert.notNull(scheduleService, "Missing schedule service");
@@ -280,7 +282,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log(
           "Unexpected exception when creating " + pipelineName + " process");
-      metrics().pipeline(pipelineName).incrementInternalErrorCount();
+      metrics.pipeline(pipelineName).incrementInternalErrorCount();
       return;
     }
 

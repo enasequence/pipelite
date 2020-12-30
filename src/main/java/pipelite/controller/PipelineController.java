@@ -10,6 +10,8 @@
  */
 package pipelite.controller;
 
+import static pipelite.metrics.TimeSeriesMetrics.*;
+
 import com.thedeanda.lorem.Lorem;
 import com.thedeanda.lorem.LoremIpsum;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -22,7 +24,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
@@ -30,16 +31,14 @@ import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
 import pipelite.controller.info.PipelineInfo;
 import pipelite.controller.utils.LoremUtils;
+import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.process.runner.ProcessRunnerResult;
 import pipelite.metrics.PipelineMetrics;
-import pipelite.launcher.PipeliteLauncher;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.TimeSeriesMetrics;
 import pipelite.process.ProcessState;
 import tech.tablesaw.api.Table;
 import tech.tablesaw.plotly.components.Figure;
-
-import static pipelite.metrics.TimeSeriesMetrics.*;
 
 @RestController
 @RequestMapping(value = "/pipeline")

@@ -131,7 +131,7 @@ public class Application {
         scheduleService,
         stageService,
         mailService,
-            metrics);
+        metrics);
   }
 
   private PipeliteLauncher createLauncher(String pipelineName) {
@@ -145,7 +145,7 @@ public class Application {
         processService,
         stageService,
         mailService,
-            metrics,
+        metrics,
         pipelineName);
   }
 

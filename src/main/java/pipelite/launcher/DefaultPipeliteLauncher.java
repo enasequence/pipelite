@@ -72,6 +72,7 @@ public class DefaultPipeliteLauncher {
                     stageService,
                     mailService,
                     pipelineName1),
-            metrics));
+            metrics),
+        metrics);
   }
 }
