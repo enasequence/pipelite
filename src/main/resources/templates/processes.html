@@ -107,47 +107,60 @@ function show() {
 
 
 
+
     </script>
 </head>
 
 <body>
 <div th:replace="fragments/navigation :: navigation"></div>
 
-<div class="card m-2">
-    <div class="card-body">
-        <h5 class="card-title">Select processes</h5>
-
-        <div class="form-inline m-2">
-
-            <label class="mr-2" for="pipelineName">Pipeline</label>
-            <input type="text" class="form-control m-2" id="pipelineName">
-
-            <button type="submit" class="btn btn-primary m-2" onclick="show()">Show processes</button>
-        </div>
-    </div>
+<div class="mt-4 mb-4 ml-2 mr-2">
+    <ul class="nav nav-tabs justify-content-center" role="tablist">
+        <li class="nav-item" role="presentation"><a class="nav-link active" data-toggle="tab" role="tab"
+                                                    href="#running">Local processes</a></li>
+        </li>
+    </ul>
 </div>
 
-<div class="card m-2">
-    <div class="card-body">
-        <h5 class="card-title">Processes running in this server</h5>
+<div class="tab-content">
+    <div id="running" class="tab-pane fade show active" role="tabpanel">
+        <div class="card m-2">
+            <div class="card-body">
+                <h5 class="card-title">Select processes</h5>
 
-        <h5 class="mb-4">
-            <span class="badge badge-secondary" id="pipelineNameBadge"></span>
-        </h5>
+                <div class="form-inline m-2">
 
-        <table id="processesTable" class="table table-striped table-hover" style="width:100%">
-            <thead>
-            <tr>
-                <th>Pipeline</th>
-                <th>Process</th>
-                <th>Status</th>
-                <th>Start time</th>
-                <th>End time</th>
-                <th>Execution count</th>
-                <th>Priority</th>
-            </tr>
-            </thead>
-        </table>
+                    <label class="mr-2" for="pipelineName">Pipeline</label>
+                    <input type="text" class="form-control m-2" id="pipelineName">
+
+                    <button type="submit" class="btn btn-primary m-2" onclick="show()">Show processes</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card m-2">
+            <div class="card-body">
+                <h5 class="card-title">Processes running in this server</h5>
+
+                <h5 class="mb-4">
+                    <span class="badge badge-secondary" id="pipelineNameBadge"></span>
+                </h5>
+
+                <table id="processesTable" class="table table-striped table-hover" style="width:100%">
+                    <thead>
+                    <tr>
+                        <th>Pipeline</th>
+                        <th>Process</th>
+                        <th>Status</th>
+                        <th>Start time</th>
+                        <th>End time</th>
+                        <th>Execution count</th>
+                        <th>Priority</th>
+                    </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 </body>

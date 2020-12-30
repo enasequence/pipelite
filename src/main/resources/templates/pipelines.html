@@ -147,6 +147,7 @@ function plot() {
 
 
 
+
     </script>
 </head>
 
@@ -156,11 +157,11 @@ function plot() {
 <div class="mt-4 mb-4 ml-2 mr-2">
     <ul class="nav nav-tabs justify-content-center" role="tablist">
         <li class="nav-item" role="presentation"><a class="nav-link active" data-toggle="tab" role="tab"
-                                                    href="#running">Local pipelines</a></li>
+                                                    href="#running">Local processes</a></li>
         <li class="nav-item" role="presentation"><a class="nav-link" data-toggle="tab" role="tab"
                                                     href="#history">Local history</a>
         <li class="nav-item" role="presentation"><a class="nav-link" data-toggle="tab" role="tab"
-                                                    href="#status">Status</a>
+                                                    href="#status">All processes</a>
         </li>
     </ul>
 </div>
@@ -169,7 +170,7 @@ function plot() {
     <div id="running" class="tab-pane fade show active" role="tabpanel">
         <div class="card m-2">
             <div class="card-body">
-                <h5 class="card-title">Pipelines executed by this server</h5>
+                <h5 class="card-title">Processes running in this server</h5>
                 <table id="pipelinesTable" class="table table-striped table-hover" style="width:100%">
                     <!-- Header Table -->
                     <thead>
@@ -214,7 +215,7 @@ function plot() {
         </div>
         <div class="card m-2">
             <div class="card-body">
-                <h5 class="card-title">Pipelines executed by this server</h5>
+                <h5 class="card-title">Processes running in this server</h5>
                 <h5 class="mb-4">
                     <span class="badge badge-secondary" id="plotTypeBadge"></span>
                     <span class="badge badge-secondary" id="sinceBadge"></span>
@@ -226,7 +227,7 @@ function plot() {
     <div id="status" class="tab-pane fade" role="tabpanel">
         <div class="card m-2">
             <div class="card-body">
-                <h5 class="card-title">Pipeline status</h5>
+                <h5 class="card-title">All processes</h5>
                 <table id="statusTable" class="table table-striped table-hover" style="width:100%">
                     <!-- Header Table -->
                     <thead>

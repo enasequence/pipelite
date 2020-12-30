@@ -68,6 +68,8 @@ function show() {
 };
 
 
+
+
     </script>
 </head>
 
@@ -75,41 +77,53 @@ function show() {
 <div th:replace="fragments/navigation :: navigation"></div>
 
 
-<div class="card m-2">
-    <div class="card-body">
-        <h5 class="card-title">Select schedules</h5>
-        <div class="form-inline m-2">
-            <select class="custom-select m-2" id="scheduleTime">
-                <option value="relative" selected>Relative time</option>
-                <option value="absolute">Absolute time</option>
-            </select>
-            <button type="submit" class="btn btn-primary m-2" onclick="show()">Show schedules</button>
-        </div>
-    </div>
+<div class="mt-4 mb-4 ml-2 mr-2">
+    <ul class="nav nav-tabs justify-content-center" role="tablist">
+        <li class="nav-item" role="presentation"><a class="nav-link active" data-toggle="tab" role="tab"
+                                                    href="#running">Local schedules</a></li>
+        </li>
+    </ul>
 </div>
 
-<div class="card m-2">
-    <div class="card-body">
-        <h5 class="card-title">Schedules executed by this server</h5>
-        <h5 class="mb-4">
-            <span class="badge badge-secondary" id="scheduleTimeBadge"></span>
-        </h5>
+<div class="tab-content">
+    <div id="running" class="tab-pane fade show active" role="tabpanel">
+        <div class="card m-2">
+            <div class="card-body">
+                <h5 class="card-title">Select schedules</h5>
+                <div class="form-inline m-2">
+                    <select class="custom-select m-2" id="scheduleTime">
+                        <option value="relative" selected>Relative time</option>
+                        <option value="absolute">Absolute time</option>
+                    </select>
+                    <button type="submit" class="btn btn-primary m-2" onclick="show()">Show schedules</button>
+                </div>
+            </div>
+        </div>
 
-        <table id="schedulesTable" class="table table-striped table-hover" style="width:100%">
-            <thead>
-            <tr>
-                <th>Pipeline</th>
-                <th>Process</th>
-                <th>Summary</th>
-                <th>Last completed</th>
-                <th>Last failed</th>
-                <th>Last start</th>
-                <th>Next start</th>
-                <th>Cron</th>
-                <th>Description</th>
-            </tr>
-            </thead>
-        </table>
+        <div class="card m-2">
+            <div class="card-body">
+                <h5 class="card-title">Schedules running in this server</h5>
+                <h5 class="mb-4">
+                    <span class="badge badge-secondary" id="scheduleTimeBadge"></span>
+                </h5>
+
+                <table id="schedulesTable" class="table table-striped table-hover" style="width:100%">
+                    <thead>
+                    <tr>
+                        <th>Pipeline</th>
+                        <th>Process</th>
+                        <th>Summary</th>
+                        <th>Last completed</th>
+                        <th>Last failed</th>
+                        <th>Last start</th>
+                        <th>Next start</th>
+                        <th>Cron</th>
+                        <th>Description</th>
+                    </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 
