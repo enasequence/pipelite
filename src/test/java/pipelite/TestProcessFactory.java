@@ -14,23 +14,24 @@ import java.util.*;
 import java.util.concurrent.ForkJoinPool;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
+import pipelite.process.builder.ProcessBuilder;
 
 public class TestProcessFactory implements ProcessFactory {
   private final String pipelineName;
   private final Map<String, Process> processes = new HashMap<>();
-  private final int processParallelism;
+  private final int pipelineParallelism;
 
   public TestProcessFactory(
-      String pipelineName, Collection<Process> processes, int processParallelism) {
+      String pipelineName, Collection<Process> processes, int pipelineParallelism) {
     this.pipelineName = pipelineName;
     addProcesses(processes);
-    this.processParallelism = processParallelism;
+    this.pipelineParallelism = pipelineParallelism;
   }
 
   public TestProcessFactory(String pipelineName, Collection<Process> processes) {
     this.pipelineName = pipelineName;
     addProcesses(processes);
-    this.processParallelism = ForkJoinPool.getCommonPoolParallelism();
+    this.pipelineParallelism = ForkJoinPool.getCommonPoolParallelism();
     ;
   }
 
@@ -40,13 +41,13 @@ public class TestProcessFactory implements ProcessFactory {
   }
 
   @Override
-  public int getProcessParallelism() {
-    return processParallelism;
+  public int getPipelineParallelism() {
+    return pipelineParallelism;
   }
 
   @Override
-  public Process create(String processId) {
-    return processes.get(processId);
+  public Process create(ProcessBuilder builder) {
+    return processes.get(builder.getProcessId());
   }
 
   public void addProcesses(Collection<Process> processes) {

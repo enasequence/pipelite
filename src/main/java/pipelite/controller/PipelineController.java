@@ -82,7 +82,7 @@ public class PipelineController {
                 list.add(
                     PipelineInfo.builder()
                         .pipelineName(p.getPipelineName())
-                        .maxRunningCount(p.getProcessParallelism())
+                        .maxRunningCount(p.getPipelineParallelism())
                         .runningCount(p.getActiveProcessCount())
                         .build()));
     return list;

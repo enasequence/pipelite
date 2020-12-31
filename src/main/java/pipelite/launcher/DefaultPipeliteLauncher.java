@@ -55,7 +55,7 @@ public class DefaultPipeliteLauncher {
             launcherConfiguration,
             processService,
             pipelineName,
-            processFactory.getProcessParallelism());
+            processFactory.getPipelineParallelism());
     return new PipeliteLauncher(
         launcherConfiguration,
         pipeliteLocker,

@@ -153,19 +153,16 @@ public class PipeliteLauncherAsyncTester {
     }
 
     @Override
-    public int getProcessParallelism() {
+    public int getPipelineParallelism() {
       return 2;
     }
 
     @Override
-    public Process create(String processId) {
-      processIds.add(processId);
+    public Process create(ProcessBuilder builder) {
+      processIds.add(builder.getProcessId());
       StageExecutorParameters executorParams =
           StageExecutorParameters.builder().immediateRetries(0).maximumRetries(0).build();
-      return new ProcessBuilder(processId)
-          .execute("STAGE", executorParams)
-          .with(stageExecutor)
-          .build();
+      return builder.execute("STAGE", executorParams).with(stageExecutor).build();
     }
   }
 

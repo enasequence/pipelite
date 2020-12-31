@@ -24,6 +24,10 @@ public class ProcessBuilder {
     this.processId = processId;
   }
 
+  public String getProcessId() {
+    return processId;
+  }
+
   public StageBuilder execute(String stageName) {
     return new StageBuilder(
         this, stageName, Collections.emptyList(), StageExecutorParameters.builder().build());

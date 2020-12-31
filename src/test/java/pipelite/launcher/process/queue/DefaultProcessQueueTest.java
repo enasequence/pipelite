@@ -51,7 +51,7 @@ public class DefaultProcessQueueTest {
     final int getActiveProcessCnt = 100;
     final int getPendingProcessCnt = 50;
     final int processQueueMaxSize = 150;
-    final int processParallelism = 10;
+    final int pipelineParallelism = 10;
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     Duration refreshFrequency = Duration.ofDays(1);
     WebConfiguration webConfiguration = new WebConfiguration();
@@ -76,7 +76,7 @@ public class DefaultProcessQueueTest {
                 launcherConfiguration,
                 processService,
                 pipelineName,
-                processParallelism));
+                pipelineParallelism));
 
     assertThat(queue.isFillQueue()).isTrue();
     assertThat(queue.isAvailableProcesses(0)).isFalse();
@@ -94,8 +94,8 @@ public class DefaultProcessQueueTest {
 
     assertThat(queue.isFillQueue()).isFalse();
     assertThat(queue.isAvailableProcesses(0)).isTrue();
-    assertThat(queue.isAvailableProcesses(processParallelism - 1)).isTrue();
-    assertThat(queue.isAvailableProcesses(processParallelism)).isFalse();
+    assertThat(queue.isAvailableProcesses(pipelineParallelism - 1)).isTrue();
+    assertThat(queue.isAvailableProcesses(pipelineParallelism)).isFalse();
     assertThat(queue.getProcessQueueMaxValidUntil()).isAfter(processQueueMaxValidUntil);
     assertThat(queue.getProcessQueueMinValidUntil()).isAfter(processQueueMinValidUntil);
 

@@ -158,13 +158,13 @@ public class PipeliteLauncherTester {
     }
 
     @Override
-    public int getProcessParallelism() {
+    public int getPipelineParallelism() {
       return 5;
     }
 
     @Override
-    public Process create(String processId) {
-      processIds.add(processId);
+    public Process create(ProcessBuilder builder) {
+      processIds.add(builder.getProcessId());
       StageExecutorParameters executorParams =
           StageExecutorParameters.builder()
               .immediateRetries(0)
@@ -172,9 +172,8 @@ public class PipeliteLauncherTester {
               .timeout(Duration.ofSeconds(10))
               .build();
 
-      ProcessBuilder processBuilder = new ProcessBuilder(processId);
       for (int i = 0; i < stageCnt; ++i) {
-        processBuilder
+        builder
             .execute("STAGE" + i, executorParams)
             .with(
                 (pipelineName, processId1, stage) -> {
@@ -191,7 +190,7 @@ public class PipeliteLauncherTester {
                   throw new RuntimeException("Unexpected exception");
                 });
       }
-      return processBuilder.build();
+      return builder.build();
     }
   }
 

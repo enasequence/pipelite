@@ -27,6 +27,7 @@ public class ProcessFactoryTest {
   public void createSuccess() {
     ProcessEntity processEntity = new ProcessEntity();
     processEntity.setProcessId(PROCESS_ID);
+    processEntity.setPipelineName(PIPELINE_NAME);
     ProcessFactory processFactory =
         new ProcessFactory() {
           @Override
@@ -35,16 +36,16 @@ public class ProcessFactoryTest {
           }
 
           @Override
-          public int getProcessParallelism() {
+          public int getPipelineParallelism() {
             return 5;
           }
 
           @Override
-          public Process create(String processId) {
-            return new ProcessBuilder(processId).execute("STAGE1").withEmptySyncExecutor().build();
+          public Process create(ProcessBuilder builder) {
+            return builder.execute("STAGE1").withEmptySyncExecutor().build();
           }
         };
-    Process process = ProcessFactory.create(processEntity, processFactory);
+    Process process = ProcessFactoryHelper.create(processEntity, processFactory);
     assertThat(process).isNotNull();
     assertThat(process.getProcessId()).isEqualTo(PROCESS_ID);
     assertThat(process.getProcessEntity()).isNotNull();
@@ -63,12 +64,12 @@ public class ProcessFactoryTest {
           }
 
           @Override
-          public int getProcessParallelism() {
+          public int getPipelineParallelism() {
             return 5;
           }
 
           @Override
-          public Process create(String processId) {
+          public Process create(ProcessBuilder builder) {
             return null;
           }
         };
@@ -76,7 +77,7 @@ public class ProcessFactoryTest {
     assertThrows(
         PipeliteException.class,
         () -> {
-          ProcessFactory.create(processEntity, processFactory);
+          ProcessFactoryHelper.create(processEntity, processFactory);
         });
   }
 }

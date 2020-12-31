@@ -12,8 +12,8 @@ package pipelite.example;
 
 import org.springframework.stereotype.Component;
 import pipelite.process.Process;
-import pipelite.process.ProcessFactory;
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.process.ProcessFactory;
 
 @Component
 public class TestPipeline implements ProcessFactory {
@@ -27,12 +27,12 @@ public class TestPipeline implements ProcessFactory {
   }
 
   @Override
-  public int getProcessParallelism() {
+  public int getPipelineParallelism() {
     return PIPELINE_PARALLELISM;
   }
 
   @Override
-  public Process create(String processId) {
-    return new ProcessBuilder(processId).execute("STAGE").withEmptySyncExecutor().build();
+  public Process create(ProcessBuilder builder) {
+    return builder.execute("STAGE").withEmptySyncExecutor().build();
   }
 }

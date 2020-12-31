@@ -32,6 +32,7 @@ import pipelite.controller.utils.TimeUtils;
 import pipelite.entity.StageEntity;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
+import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.ProcessFactoryService;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
@@ -61,7 +62,7 @@ public class StageController {
     AtomicReference<Process> process = new AtomicReference<>();
     try {
       ProcessFactory processFactory = processFactoryService.create(pipelineName);
-      process.set(processFactory.create(processId));
+      process.set(processFactory.create(new ProcessBuilder(processId)));
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log(ex.getMessage());
     }

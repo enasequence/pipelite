@@ -34,7 +34,7 @@ public class DefaultProcessQueue implements ProcessQueue {
   private final Duration processQueueMaxRefreshFrequency;
   private final Duration processQueueMinRefreshFrequency;
   private final int processQueueMaxSize;
-  private final int processParallelism;
+  private final int pipelineParallelism;
   private final List<ProcessEntity> processQueue = Collections.synchronizedList(new ArrayList<>());
   private AtomicInteger processQueueIndex = new AtomicInteger();
   private ZonedDateTime processQueueMaxValidUntil = ZonedDateTime.now();
@@ -45,7 +45,7 @@ public class DefaultProcessQueue implements ProcessQueue {
       LauncherConfiguration launcherConfiguration,
       ProcessService processService,
       String pipelineName,
-      int processParallelism) {
+      int pipelineParallelism) {
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(pipelineName, "Missing pipeline name");
     this.processService = processService;
@@ -57,7 +57,7 @@ public class DefaultProcessQueue implements ProcessQueue {
     this.processQueueMinRefreshFrequency =
         launcherConfiguration.getProcessQueueMinRefreshFrequency();
     this.processQueueMaxSize = launcherConfiguration.getProcessQueueMaxSize();
-    this.processParallelism = (processParallelism < 1) ? 1 : processParallelism;
+    this.pipelineParallelism = (pipelineParallelism < 1) ? 1 : pipelineParallelism;
   }
 
   @Override
@@ -77,7 +77,7 @@ public class DefaultProcessQueue implements ProcessQueue {
         processQueue.size(),
         processQueueMaxValidUntil,
         processQueueMinValidUntil,
-        processParallelism);
+        pipelineParallelism);
   }
 
   /** Returns true if the process queue should be recreated. */
@@ -86,11 +86,11 @@ public class DefaultProcessQueue implements ProcessQueue {
       int processQueueSize,
       ZonedDateTime processQueueMaxValidUntil,
       ZonedDateTime processQueueMinValidUntil,
-      int processParallelism) {
+      int pipelineParallelism) {
     if (processQueueMinValidUntil.isAfter(ZonedDateTime.now())) {
       return false;
     }
-    return processQueueIndex >= processQueueSize - processParallelism + 1
+    return processQueueIndex >= processQueueSize - pipelineParallelism + 1
         || !processQueueMaxValidUntil.isAfter(ZonedDateTime.now());
   }
 
@@ -122,7 +122,7 @@ public class DefaultProcessQueue implements ProcessQueue {
 
   @Override
   public boolean isAvailableProcesses(int activeProcesses) {
-    return processQueueIndex.get() < processQueue.size() && activeProcesses < processParallelism;
+    return processQueueIndex.get() < processQueue.size() && activeProcesses < pipelineParallelism;
   }
 
   @Override

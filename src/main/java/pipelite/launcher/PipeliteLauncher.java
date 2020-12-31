@@ -23,6 +23,7 @@ import pipelite.lock.PipeliteLocker;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
+import pipelite.process.ProcessFactoryHelper;
 
 /**
  * Executes processes in parallel for one pipeline. New process instances are created using {@link
@@ -93,7 +94,7 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
   protected void runProcess(ProcessEntity processEntity) {
     Process process = null;
     try {
-      process = ProcessFactory.create(processEntity, processFactory);
+      process = ProcessFactoryHelper.create(processEntity, processFactory);
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log(
           "Unexpected exception when creating " + pipelineName + " process");
@@ -108,8 +109,8 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
     return pipelineName;
   }
 
-  public int getProcessParallelism() {
-    return processFactory.getProcessParallelism();
+  public int getPipelineParallelism() {
+    return processFactory.getPipelineParallelism();
   }
 
   public int getQueuedProcessCount() {

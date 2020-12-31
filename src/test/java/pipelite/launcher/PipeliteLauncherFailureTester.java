@@ -233,13 +233,13 @@ public class PipeliteLauncherFailureTester {
     }
 
     @Override
-    public int getProcessParallelism() {
+    public int getPipelineParallelism() {
       return 5;
     }
 
     @Override
-    public Process create(String processId) {
-      processIds.add(processId);
+    public Process create(ProcessBuilder builder) {
+      processIds.add(builder.getProcessId());
 
       StageExecutorParameters executorParams =
           StageExecutorParameters.builder()
@@ -248,7 +248,7 @@ public class PipeliteLauncherFailureTester {
               .timeout(Duration.ofSeconds(10))
               .build();
 
-      return new ProcessBuilder(processId)
+      return builder
           .execute("STAGE0", executorParams)
           .with(
               (pipelineName1, processId1, stage1) -> {

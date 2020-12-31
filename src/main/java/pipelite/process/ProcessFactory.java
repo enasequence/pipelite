@@ -10,17 +10,15 @@
  */
 package pipelite.process;
 
-import com.google.common.flogger.FluentLogger;
-import pipelite.entity.ProcessEntity;
-import pipelite.exception.PipeliteException;
+import pipelite.process.builder.ProcessBuilder;
 
-/** Creates new process instances for execution given process ids. */
+/** Creates processes to be executed. */
 public interface ProcessFactory {
 
   /**
    * Returns the pipeline name. The pipeline name must be unique.
    *
-   * @return the pipeine name
+   * @return the pipeline name
    */
   String getPipelineName();
 
@@ -29,49 +27,13 @@ public interface ProcessFactory {
    *
    * @return the maximum number of parallel process executions for the pipeline.
    */
-  int getProcessParallelism();
+  int getPipelineParallelism();
 
   /**
-   * Creates a new process instance for execution given process id.
+   * Creates a process.
    *
-   * @param processId the process id
-   * @return a new process instance
+   * @param builder the process builder
+   * @return the process
    */
-  Process create(String processId);
-
-  FluentLogger log = FluentLogger.forEnclosingClass();
-
-  /**
-   * Creates a new process instance for execution.
-   *
-   * @param processEntity the process
-   * @param processFactory the process factory
-   * @return a new process instance
-   * @throws PipeliteException if the new process could not be created
-   */
-  static Process create(ProcessEntity processEntity, ProcessFactory processFactory) {
-    String processId = processEntity.getProcessId();
-    String error = "Failed to create " + processFactory.getPipelineName() + " process " + processId;
-
-    try {
-      log.atInfo().log("Creating process: %s", processId);
-
-      Process process = processFactory.create(processId);
-
-      if (process == null) {
-        throw new PipeliteException(error + ". The returned process was null.");
-      }
-      if (process.getProcessId() == null) {
-        throw new PipeliteException(error + ". The returned process id was null.");
-      }
-      if (!process.getProcessId().equals(processId)) {
-        throw new PipeliteException(
-            error + ". The returned process id was " + process.getProcessId());
-      }
-      process.setProcessEntity(processEntity);
-      return process;
-    } catch (Exception ex) {
-      throw new PipeliteException(error, ex);
-    }
-  }
+  Process create(ProcessBuilder builder);
 }
