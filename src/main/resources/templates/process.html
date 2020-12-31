@@ -355,6 +355,10 @@ function copy() {
             <input type="text" class="form-control m-2" id="processId">
             <button type="submit" class="btn btn-primary m-2" onclick="show()">Show process</button>
         </div>
+        <h5 class="mb-4">
+            <span class="badge badge-secondary" id="pipelineNameBadge"></span>
+            <span class="badge badge-secondary" id="processIdBadge"></span>
+        </h5>
         <div class="alert alert-warning" style="display: none;" role="alert" id="alert">
         </div>
     </div>
@@ -364,11 +368,6 @@ function copy() {
     <div class="card-body">
 
         <h5 class="card-title">Process</h5>
-
-        <h5 class="mb-4">
-            <span class="badge badge-secondary" id="pipelineNameBadge"></span>
-            <span class="badge badge-secondary" id="processIdBadge"></span>
-        </h5>
 
         <table id="processTable" class="table table-striped table-hover" style="width:100%">
             <thead>

@@ -7,14 +7,14 @@
     <script>
 
 $(document).ready( function () {
-    $('#pipelinesTable').DataTable({
+    $('#runningTable').DataTable({
         columns: [
             { data: "pipelineName" },
-            { data: "maxRunningProcessCount" },
-            { data: "runningProcessCount",
+            { data: "maxRunningCount" },
+            { data: "runningCount",
                 render: function ( data, type, row, meta ) {
                     var url = "/pipelite/ui/processes?pipelineName=" + row.pipelineName;
-                    return '<a href="' + url + '">' + row.runningProcessCount + '</a>';
+                    return '<a href="' + url + '">' + row.runningCount + '</a>';
                 }
             }
         ],
@@ -27,7 +27,24 @@ $(document).ready( function () {
         },
     });
 
-    $('#statusTable').DataTable({
+    $('#localTable').DataTable({
+        columns: [
+            { data: "pipelineName" },
+            { data: "pendingCount" },
+            { data: "activeCount" },
+            { data: "completedCount" },
+            { data: "failedCount" }
+        ],
+        dom: 'tip',
+        orderCellsTop: true,
+        fixedHeader: true,
+        responsive: true,
+        language : {
+           "zeroRecords": " "
+        },
+    });
+
+    $('#allTable').DataTable({
         columns: [
             { data: "pipelineName" },
             { data: "pendingCount" },
@@ -55,51 +72,60 @@ $(document).ready( function () {
 
 // Show the table and filter badges.
 function show() {
-    var pipelinesTable = $('#pipelinesTable').DataTable();
-    var statusTable = $('#statusTable').DataTable();
-    var since = $( "#since" ).val();
-    var plotType = $( "#plotType" ).val();
+    var runningTable = $('#runningTable').DataTable();
+    var localTable = $('#localTable').DataTable();
+    var allTable = $('#allTable').DataTable();
+    var localHistoryType = $( "#localHistoryType" ).val();
+    var localHistorySince = $( "#localHistorySince" ).val();
 
     // Show the filter badges.
-    var plotTypeBadgeText =$( "#plotType option:selected" ).text();
-    $( "#plotTypeBadge" ).text(plotTypeBadgeText);
+    var localHistoryTypeText =$( "#localHistoryType option:selected" ).text();
+    $( "#localHistoryTypeBadge" ).text(localHistoryTypeText);
 
-    var sinceBadgeText = "Last ";
+    var runningHistorySinceText = "Last ";
 
-    var minutes = since % 60;
-    var hours = (since-minutes)/60 % 24;
-    var days = (since-minutes-hours*60)/60/24;
+    var minutes = runningHistorySince % 60;
+    var hours = (runningHistorySince-minutes)/60 % 24;
+    var days = (runningHistorySince-minutes-hours*60)/60/24;
 
     if (days == 1) {
-        sinceBadgeText = sinceBadgeText + days + " day ";
+        runningHistorySinceText = runningHistorySinceText + days + " day ";
     }
     if (days > 1) {
-        sinceBadgeText = sinceBadgeText + days + " days ";
+        runningHistorySinceText = runningHistorySinceText + days + " days ";
     }
     if (hours == 1) {
-        sinceBadgeText = sinceBadgeText + hours + " hour ";
+        runningHistorySinceText = runningHistorySinceText + hours + " hour ";
     }
     else if (hours > 1) {
-        sinceBadgeText = sinceBadgeText + hours + " hours ";
+        runningHistorySinceText = runningHistorySinceText + hours + " hours ";
     }
     if (minutes == 1) {
-        sinceBadgeText = sinceBadgeText + minutes + " minute";
+        runningHistorySinceText = runningHistorySinceText + minutes + " minute";
     }
     else if (minutes > 1) {
-        sinceBadgeText = sinceBadgeText + minutes + " minutes";
+        runningHistorySinceText = runningHistorySinceText + minutes + " minutes";
     }
-    $( "#sinceBadge" ).text(sinceBadgeText);
+    $( "#runningHistorySinceBadge" ).text(runningHistorySinceText);
 
     // Show the tables.
-    var pipelinesUrl = "/pipelite/pipeline/local";
-    console.log(pipelinesUrl);
-    $.get(pipelinesUrl, function(data, status) {
-        pipelinesTable.clear().rows.add(data).draw();
+
+    var runningUrl = "/pipelite/pipeline/run";
+    console.log(runningUrl);
+    $.get(runningUrl, function(data, status) {
+        runningTable.clear().rows.add(data).draw();
     });
-    var statusUrl = "/pipelite/pipeline/local/status";
-    console.log(statusUrl);
-    $.get(statusUrl, function(data, status) {
-        statusTable.clear().rows.add(data).draw();
+
+    var localUrl = "/pipelite/pipeline/local";
+    console.log(localUrl);
+    $.get(localUrl, function(data, status) {
+        localTable.clear().rows.add(data).draw();
+    });
+
+    var allUrl = "/pipelite/pipeline/all";
+    console.log(allUrl);
+    $.get(allUrl, function(data, status) {
+        allTable.clear().rows.add(data).draw();
     });
 
     // Show the plot.
@@ -108,43 +134,15 @@ function show() {
 
 // Show the plot.
 function plot() {
-    var since = $( "#since" ).val();
-    var plotType = $( "#plotType" ).val();
-     var url = "/pipelite/pipeline/local/plot/history?since=" + since + "&type=" + plotType + "&id=plot";
+    var runningHistorySince = $( "#runningHistorySince" ).val();
+    var runningHistoryType = $( "#runningHistoryType" ).val();
+     var url = "/pipelite/pipeline/run/history/plot?since=" + runningHistorySince + "&type=" + runningHistoryType + "&id=runningHistoryPlot";
      console.log(url);
      $.getScript(url,
         function( data ) {
             // console.log( data );
         });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -157,12 +155,14 @@ function plot() {
 <div class="mt-4 mb-4 ml-2 mr-2">
     <ul class="nav nav-tabs justify-content-center" role="tablist">
         <li class="nav-item" role="presentation"><a class="nav-link active" data-toggle="tab" role="tab"
-                                                    href="#running">Local processes</a></li>
+                                                    href="#running">Running processes</a></li>
         <li class="nav-item" role="presentation"><a class="nav-link" data-toggle="tab" role="tab"
-                                                    href="#history">Local history</a>
-        <li class="nav-item" role="presentation"><a class="nav-link" data-toggle="tab" role="tab"
-                                                    href="#status">All processes</a>
+                                                    href="#runningHistory">Running history</a>
         </li>
+        <li class="nav-item" role="presentation"><a class="nav-link" data-toggle="tab" role="tab"
+                                                    href="#local">Local processes</a>
+        <li class="nav-item" role="presentation"><a class="nav-link" data-toggle="tab" role="tab"
+                                                    href="#all">All processes</a>
     </ul>
 </div>
 
@@ -171,7 +171,7 @@ function plot() {
         <div class="card m-2">
             <div class="card-body">
                 <h5 class="card-title">Processes running in this server</h5>
-                <table id="pipelinesTable" class="table table-striped table-hover" style="width:100%">
+                <table id="runningTable" class="table table-striped table-hover" style="width:100%">
                     <!-- Header Table -->
                     <thead>
                     <tr>
@@ -184,18 +184,56 @@ function plot() {
             </div>
         </div>
     </div>
-    <div id="history" class="tab-pane fade" role="tabpanel">
+    <div id="local" class="tab-pane fade" role="tabpanel">
+        <div class="card m-2">
+            <div class="card-body">
+                <h5 class="card-title">Processes managed by this server</h5>
+                <table id="localTable" class="table table-striped table-hover" style="width:100%">
+                    <!-- Header Table -->
+                    <thead>
+                    <tr>
+                        <th>Pipeline</th>
+                        <th>Pending processes</th>
+                        <th>Active processes</th>
+                        <th>Completed processes</th>
+                        <th>Failed processes</th>
+                    </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div id="all" class="tab-pane fade" role="tabpanel">
+        <div class="card m-2">
+            <div class="card-body">
+                <h5 class="card-title">All processes</h5>
+                <table id="allTable" class="table table-striped table-hover" style="width:100%">
+                    <!-- Header Table -->
+                    <thead>
+                    <tr>
+                        <th>Pipeline</th>
+                        <th>Pending processes</th>
+                        <th>Active processes</th>
+                        <th>Completed processes</th>
+                        <th>Failed processes</th>
+                    </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div id="runningHistory" class="tab-pane fade" role="tabpanel">
         <div class="card m-2">
             <div class="card-body">
                 <h5 class="card-title">Select processes</h5>
                 <div class="form-inline m-2">
-                    <select class="custom-select m-2" id="plotType">
+                    <select class="custom-select m-2" id="runningHistoryType">
                         <option value="running">Running processes</option>
                         <option value="completed">Completed processes</option>
                         <option value="failed">Failed processes</option>
                         <option value="error">Internal errors</option>
                     </select>
-                    <select class="custom-select m-2" id="since">
+                    <select class="custom-select m-2" id="runningHistorySince">
                         <!--
                         <option value="5" selected>Last 5 minutes</option>
                         <option value="15">Last 15 minutes</option>
@@ -217,29 +255,10 @@ function plot() {
             <div class="card-body">
                 <h5 class="card-title">Processes running in this server</h5>
                 <h5 class="mb-4">
-                    <span class="badge badge-secondary" id="plotTypeBadge"></span>
-                    <span class="badge badge-secondary" id="sinceBadge"></span>
+                    <span class="badge badge-secondary" id="runningHistoryTypeBadge"></span>
+                    <span class="badge badge-secondary" id="runningHistorySinceBadge"></span>
                 </h5>
-                <div id="plot"></div>
-            </div>
-        </div>
-    </div>
-    <div id="status" class="tab-pane fade" role="tabpanel">
-        <div class="card m-2">
-            <div class="card-body">
-                <h5 class="card-title">All processes</h5>
-                <table id="statusTable" class="table table-striped table-hover" style="width:100%">
-                    <!-- Header Table -->
-                    <thead>
-                    <tr>
-                        <th>Pipeline</th>
-                        <th>Pending processes</th>
-                        <th>Active processes</th>
-                        <th>Completed processes</th>
-                        <th>Failed processes</th>
-                    </tr>
-                    </thead>
-                </table>
+                <div id="runningHistoryPlot"></div>
             </div>
         </div>
     </div>

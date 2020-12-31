@@ -11,7 +11,11 @@
 package pipelite.configuration;
 
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
 import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -109,4 +113,12 @@ public class LauncherConfiguration {
   public static String getSchedulerName(LauncherConfiguration launcherConfiguration) {
     return launcherConfiguration.getSchedulerName();
   }
+
+  public List<String> getPipelineNames() {
+      return
+          Arrays.stream(getPipelineName().split(","))
+                  .map(s -> s.trim())
+                  .collect(Collectors.toList());
+  }
+
 }

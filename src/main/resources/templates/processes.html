@@ -6,7 +6,7 @@
     <title>Processes</title>
     <script th:inline="javascript">
 $(document).ready( function () {
-    $('#processesTable').DataTable({
+    $('#runningTable').DataTable({
         columns: [
             { data: "pipelineName" },
             { data: "processId",
@@ -78,7 +78,7 @@ $(document).ready( function () {
 
 // Show the filter badge and table.
 function show() {
-    var processesTable = $('#processesTable').DataTable();
+    var runningTable = $('#runningTable').DataTable();
     var pipelineName = $( "#pipelineName" ).val();
 
     // Save pipeline name.
@@ -95,15 +95,16 @@ function show() {
     $( "#pipelineNameBadge" ).text(pipelineNameBadgeText);
 
     // Show the table.
-    var url = "/pipelite/process/local";
+    var runningUrl = "/pipelite/process/run";
     if (pipelineName) {
-        url = url + "?pipelineName=" + pipelineName + "&";
+        runningUrl = runningUrl + "?pipelineName=" + pipelineName + "&";
     }
-    console.log(url);
-    $.get(url, function(data, status) {
-        processesTable.clear().rows.add(data).draw();
+    console.log(runningUrl);
+    $.get(runningUrl, function(data, status) {
+        runningTable.clear().rows.add(data).draw();
      });
 };
+
 
 
 
@@ -117,7 +118,7 @@ function show() {
 <div class="mt-4 mb-4 ml-2 mr-2">
     <ul class="nav nav-tabs justify-content-center" role="tablist">
         <li class="nav-item" role="presentation"><a class="nav-link active" data-toggle="tab" role="tab"
-                                                    href="#running">Local processes</a></li>
+                                                    href="#running">Running processes</a></li>
         </li>
     </ul>
 </div>
@@ -135,6 +136,9 @@ function show() {
 
                     <button type="submit" class="btn btn-primary m-2" onclick="show()">Show processes</button>
                 </div>
+                <h5 class="mb-4">
+                    <span class="badge badge-secondary" id="pipelineNameBadge"></span>
+                </h5>
             </div>
         </div>
 
@@ -142,11 +146,7 @@ function show() {
             <div class="card-body">
                 <h5 class="card-title">Processes running in this server</h5>
 
-                <h5 class="mb-4">
-                    <span class="badge badge-secondary" id="pipelineNameBadge"></span>
-                </h5>
-
-                <table id="processesTable" class="table table-striped table-hover" style="width:100%">
+                <table id="runningTable" class="table table-striped table-hover" style="width:100%">
                     <thead>
                     <tr>
                         <th>Pipeline</th>

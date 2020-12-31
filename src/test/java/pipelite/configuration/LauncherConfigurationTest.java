@@ -21,7 +21,7 @@ import pipelite.PipeliteTestConfiguration;
 @SpringBootTest(
     classes = PipeliteTestConfiguration.class,
     properties = {
-      "pipelite.launcher.pipelineName=TEST1,TEST2",
+      "pipelite.launcher.pipelineName=TEST1, TEST2 ",
       "pipelite.launcher.schedulerName=TEST"
     })
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
@@ -31,7 +31,7 @@ public class LauncherConfigurationTest {
 
   @Test
   public void getPipelineName() {
-    assertThat(config.getPipelineName()).isEqualTo("TEST1,TEST2");
+    assertThat(config.getPipelineName()).isEqualTo("TEST1, TEST2 ");
   }
 
   @Test
@@ -45,5 +45,12 @@ public class LauncherConfigurationTest {
   public void getSchedulerName() {
     assertThat(config.getSchedulerName()).isEqualTo("TEST");
     assertThat(LauncherConfiguration.getSchedulerName(config)).isEqualTo("TEST");
+  }
+
+  @Test
+  public void getPipelineNames() {
+    assertThat(config.getPipelineNames().size()).isEqualTo(2);
+    assertThat(config.getPipelineNames().get(0)).isEqualTo("TEST1");
+    assertThat(config.getPipelineNames().get(1)).isEqualTo("TEST2");
   }
 }

@@ -63,7 +63,7 @@ public class ProcessController {
     return list;
   }
 
-  @GetMapping("/local")
+  @GetMapping("/run")
   @ResponseStatus(HttpStatus.OK)
   @Operation(description = "Processes running in this server")
   @ApiResponses(
@@ -71,17 +71,17 @@ public class ProcessController {
         @ApiResponse(responseCode = "200", description = "OK"),
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
-  public List<ProcessInfo> localProcesses(@RequestParam(required = false) String pipelineName) {
+  public List<ProcessInfo> runningProcesses(@RequestParam(required = false) String pipelineName) {
     List<ProcessInfo> list = new ArrayList<>();
     application.getRunningLaunchers().stream()
-        .forEach(launcher -> list.addAll(getLocalProcesses(launcher, pipelineName)));
+        .forEach(launcher -> list.addAll(getRunningProcesses(launcher, pipelineName)));
     application.getRunningSchedulers().stream()
-        .forEach(launcher -> list.addAll(getLocalProcesses(launcher, pipelineName)));
+        .forEach(launcher -> list.addAll(getRunningProcesses(launcher, pipelineName)));
     getLoremIpsumProcess(list);
     return list;
   }
 
-  public static List<ProcessInfo> getLocalProcesses(
+  private static List<ProcessInfo> getRunningProcesses(
       ProcessRunnerPoolService service, String pipelineName) {
     List<ProcessInfo> processes = new ArrayList<>();
     for (ProcessRunner processRunner : service.getActiveProcessRunners()) {
@@ -97,7 +97,7 @@ public class ProcessController {
 
   @GetMapping("/all")
   @ResponseStatus(HttpStatus.OK)
-  @Operation(description = "All running processes")
+  @Operation(description = "All processes")
   @ApiResponses(
       value = {
         @ApiResponse(responseCode = "200", description = "OK"),
@@ -112,7 +112,7 @@ public class ProcessController {
     return list;
   }
 
-  public static ProcessInfo getProcess(ProcessEntity processEntity) {
+  private static ProcessInfo getProcess(ProcessEntity processEntity) {
     return ProcessInfo.builder()
         .pipelineName(processEntity.getPipelineName())
         .processId(processEntity.getProcessId())
@@ -124,7 +124,7 @@ public class ProcessController {
         .build();
   }
 
-  public void getLoremIpsumProcess(List<ProcessInfo> list) {
+  private void getLoremIpsumProcess(List<ProcessInfo> list) {
     if (LoremUtils.isActiveProfile(environment)) {
       Lorem lorem = LoremIpsum.getInstance();
       Random random = new Random();

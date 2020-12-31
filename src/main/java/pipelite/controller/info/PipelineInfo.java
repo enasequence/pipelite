@@ -17,6 +17,10 @@ import lombok.Data;
 @Builder
 public class PipelineInfo {
   private String pipelineName;
-  private Integer maxRunningProcessCount;
-  private Integer runningProcessCount;
+  private Integer maxRunningCount;
+  private Integer runningCount;
+  private Long pendingCount;
+  private Long activeCount;
+  private Long completedCount;
+  private Long failedCount;
 }

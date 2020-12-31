@@ -25,6 +25,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
+import pipelite.configuration.LauncherConfiguration;
 import pipelite.controller.info.ScheduleInfo;
 import pipelite.controller.utils.LoremUtils;
 import pipelite.controller.utils.TimeUtils;
@@ -36,11 +37,12 @@ import pipelite.service.ScheduleService;
 @Tag(name = "ScheduleAPI", description = "Schedules")
 public class ScheduleController {
 
+  @Autowired LauncherConfiguration launcherConfiguration;
   @Autowired Application application;
   @Autowired Environment environment;
   @Autowired ScheduleService scheduleService;
 
-  @GetMapping("/local")
+  @GetMapping("/run")
   @ResponseStatus(HttpStatus.OK)
   @Operation(description = "Schedules running in this server")
   @ApiResponses(
@@ -48,22 +50,36 @@ public class ScheduleController {
         @ApiResponse(responseCode = "200", description = "OK"),
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
-  public List<ScheduleInfo> localSchedules(
+  public List<ScheduleInfo> runningSchedules(
       @RequestParam(required = false, defaultValue = "false") boolean relative) {
     List<ScheduleInfo> list = new ArrayList<>();
     application.getRunningSchedulers().stream()
-        .forEach(
-            scheduler -> list.addAll(getLocalSchedules(scheduler.getLauncherName(), relative)));
+        .forEach(scheduler -> list.addAll(getSchedules(scheduler.getLauncherName(), relative)));
     getLoremIpsumSchedules(list, relative);
     return list;
   }
 
-  public List<ScheduleInfo> getLocalSchedules(String schedulerName, boolean relative) {
+  private List<ScheduleInfo> getSchedules(String schedulerName, boolean relative) {
     List<ScheduleInfo> schedules = new ArrayList<>();
     scheduleService
         .getSchedules(schedulerName)
         .forEach(s -> schedules.add(getSchedule(s, relative)));
     return schedules;
+  }
+
+  @GetMapping("/local")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(description = "Schedules managed by this server")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "OK"),
+        @ApiResponse(responseCode = "500", description = "Internal Server error")
+      })
+  public List<ScheduleInfo> localSchedules(
+      @RequestParam(required = false, defaultValue = "false") boolean relative) {
+    List<ScheduleInfo> list = getSchedules(launcherConfiguration.getSchedulerName(), relative);
+    getLoremIpsumSchedules(list, relative);
+    return list;
   }
 
   @GetMapping("/all")
@@ -76,13 +92,12 @@ public class ScheduleController {
       })
   public List<ScheduleInfo> allSchedules(
       @RequestParam(required = false, defaultValue = "false") boolean relative) {
-    List<ScheduleInfo> list = new ArrayList<>();
-    list.addAll(getAllSchedules(relative));
+    List<ScheduleInfo> list = getAllSchedules(relative);
     getLoremIpsumSchedules(list, relative);
     return list;
   }
 
-  public List<ScheduleInfo> getAllSchedules(boolean relative) {
+  private List<ScheduleInfo> getAllSchedules(boolean relative) {
     List<ScheduleInfo> schedules = new ArrayList<>();
     scheduleService.getSchedules().forEach(s -> schedules.add(getSchedule(s, relative)));
     return schedules;
@@ -134,7 +149,7 @@ public class ScheduleController {
         .build();
   }
 
-  public void getLoremIpsumSchedules(List<ScheduleInfo> list, boolean relative) {
+  private void getLoremIpsumSchedules(List<ScheduleInfo> list, boolean relative) {
     if (LoremUtils.isActiveProfile(environment)) {
       Lorem lorem = LoremIpsum.getInstance();
       IntStream.range(1, 100)

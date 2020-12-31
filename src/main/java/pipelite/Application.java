@@ -93,10 +93,7 @@ public class Application {
       log.atInfo().log("Starting pipelite services");
       // Check pipeline names.
       if (launcherConfiguration.getPipelineName() != null) {
-        List<String> pipelineNames =
-            Arrays.stream(launcherConfiguration.getPipelineName().split(","))
-                .map(s -> s.trim())
-                .collect(Collectors.toList());
+        List<String> pipelineNames = launcherConfiguration.getPipelineNames();
         for (String pipelineName : pipelineNames) {
           processFactoryService.create(pipelineName);
         }
@@ -174,13 +171,6 @@ public class Application {
       return Collections.emptyList();
     }
     return Arrays.asList(scheduler);
-  }
-
-  public Collection<PipeliteService> getRunningServices() {
-    if (serverManager == null) {
-      return Collections.emptyList();
-    }
-    return serverManager.getServices();
   }
 
   public boolean isShutdown() {
