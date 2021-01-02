@@ -12,11 +12,13 @@ package pipelite.executor.cmd;
 
 import static pipelite.executor.cmd.CmdRunner.EXIT_CODE_SUCCESS;
 
+import lombok.Builder;
 import lombok.Getter;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 
 @Getter
+@Builder
 public class CmdRunnerResult {
   private final int exitCode;
   private final String stdout;
@@ -31,7 +33,7 @@ public class CmdRunnerResult {
     this.internalError = internalError;
   }
 
-  public StageExecutorResult getStageExecutorResult(String cmd, String host) {
+  public StageExecutorResult getStageExecutorResult(String cmd) {
     StageExecutorResult result;
     if (exitCode == EXIT_CODE_SUCCESS) {
       result = StageExecutorResult.success();
@@ -43,7 +45,6 @@ public class CmdRunnerResult {
     result.setInternalError(internalError);
     result.addAttribute(StageExecutorResultAttribute.EXIT_CODE, exitCode);
     result.addAttribute(StageExecutorResultAttribute.COMMAND, cmd);
-    result.addAttribute(StageExecutorResultAttribute.HOST, host);
     return result;
   }
 }

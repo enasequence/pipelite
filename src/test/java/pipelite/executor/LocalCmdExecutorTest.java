@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.*;
+import pipelite.stage.parameters.CmdExecutorParameters;
 
 public class LocalCmdExecutorTest {
 
@@ -24,17 +25,11 @@ public class LocalCmdExecutorTest {
 
   @Test
   public void test() {
-
     String stageName = UniqueStringGenerator.randomStageName();
 
-    StageExecutorParameters executorParams = StageExecutorParameters.builder().build();
-
-    Stage stage =
-        Stage.builder()
-            .stageName(stageName)
-            .executor(StageExecutor.createLocalCmdExecutor("echo test"))
-            .executorParams(executorParams)
-            .build();
+    CmdExecutor<CmdExecutorParameters> executor = StageExecutor.createLocalCmdExecutor("echo test");
+    executor.setExecutorParams(CmdExecutorParameters.builder().build());
+    Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
 
     StageExecutorResult result = stage.execute(PIPELINE_NAME, PROCESS_ID);
     assertThat(result.getResultType()).isEqualTo(StageExecutorResultType.SUCCESS);

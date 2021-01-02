@@ -64,7 +64,7 @@ public class DefaultProcessRunnerPoolTest {
 
     for (int i = 0; i < PROCESS_CNT; i++) {
       Process process =
-          new ProcessBuilder("PROCESS" + i).execute("STAGE1").withEmptySyncExecutor().build();
+          new ProcessBuilder("PROCESS" + i).execute("STAGE1").withCallExecutor().build();
       ProcessEntity processEntity = new ProcessEntity();
       process.setProcessEntity(processEntity);
       pool.runProcess(PIPELINE_NAME, process, (p, r) -> runProcessCount.incrementAndGet());
@@ -115,7 +115,7 @@ public class DefaultProcessRunnerPoolTest {
 
     for (int i = 0; i < PROCESS_CNT; i++) {
       Process process =
-          new ProcessBuilder("PROCESS" + i).execute("STAGE1").withEmptySyncExecutor().build();
+          new ProcessBuilder("PROCESS" + i).execute("STAGE1").withCallExecutor().build();
       ProcessEntity processEntity = new ProcessEntity();
       process.setProcessEntity(processEntity);
       pool.runProcess(PIPELINE_NAME, process, (p, r) -> runProcessCount.incrementAndGet());
@@ -171,7 +171,7 @@ public class DefaultProcessRunnerPoolTest {
 
     for (int i = 0; i < PROCESS_CNT; i++) {
       Process process =
-          new ProcessBuilder("PROCESS" + i).execute("STAGE1").withEmptySyncExecutor().build();
+          new ProcessBuilder("PROCESS" + i).execute("STAGE1").withCallExecutor().build();
       ProcessEntity processEntity = new ProcessEntity();
       process.setProcessEntity(processEntity);
       pool.runProcess(PIPELINE_NAME, process, (p, r) -> runProcessCount.incrementAndGet());

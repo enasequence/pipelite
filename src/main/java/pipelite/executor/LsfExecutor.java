@@ -23,16 +23,19 @@ import pipelite.executor.cmd.CmdRunner;
 import pipelite.executor.cmd.CmdRunnerResult;
 import pipelite.log.LogKey;
 import pipelite.stage.*;
+import pipelite.stage.executor.JsonSerializableExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.executor.StageExecutorResultType;
+import pipelite.stage.parameters.LsfExecutorParameters;
 import pipelite.time.Time;
 
-/** Executes a command using LSF. Must be serializable to json. */
+/** Executes a command using LSF. */
 @Flogger
 @Getter
 @Setter
-public class LsfCmdExecutor extends CmdExecutor {
+public class LsfExecutor extends CmdExecutor<LsfExecutorParameters>
+    implements JsonSerializableExecutor {
 
   private String jobId;
   private String stdoutFile;
@@ -74,9 +77,8 @@ public class LsfCmdExecutor extends CmdExecutor {
   private StageExecutorResult submit(String pipelineName, String processId, Stage stage) {
     startTime = ZonedDateTime.now();
 
-    if (!getWorkDir(pipelineName, processId, stage).isEmpty()) {
-      cmdRunner.execute(
-          MKDIR_CMD + getWorkDir(pipelineName, processId, stage), stage.getExecutorParams());
+    if (!getWorkDir(pipelineName, processId).isEmpty()) {
+      cmdRunner.execute(MKDIR_CMD + getWorkDir(pipelineName, processId), getExecutorParams());
     }
 
     StageExecutorResult result = super.execute(pipelineName, processId, stage);
@@ -99,12 +101,12 @@ public class LsfCmdExecutor extends CmdExecutor {
 
   private StageExecutorResult poll(String pipelineName, String processId, Stage stage) {
 
-    Duration timeout = stage.getExecutorParams().getTimeout();
+    Duration timeout = getExecutorParams().getTimeout();
 
     if (timeout != null && ZonedDateTime.now().isAfter(startTime.plus(timeout))) {
       logContext(log.atSevere(), pipelineName, processId, stage)
           .log("Maximum run time exceeded. Killing LSF job.");
-      cmdRunner.execute(BKILL_CMD + jobId, stage.getExecutorParams());
+      cmdRunner.execute(BKILL_CMD + jobId, getExecutorParams());
       reset();
       StageExecutorResult result = StageExecutorResult.error();
       result.setInternalError(StageExecutorResult.InternalError.CMD_TIMEOUT);
@@ -115,7 +117,7 @@ public class LsfCmdExecutor extends CmdExecutor {
         .log("Checking LSF job result using bjobs.");
 
     CmdRunnerResult bjobsCustomCmdRunnerResult =
-        cmdRunner.execute(BJOBS_CUSTOM_CMD + jobId, stage.getExecutorParams());
+        cmdRunner.execute(BJOBS_CUSTOM_CMD + jobId, getExecutorParams());
 
     StageExecutorResult result;
 
@@ -129,7 +131,7 @@ public class LsfCmdExecutor extends CmdExecutor {
           .log("Checking LSF job result using bhist.");
 
       CmdRunnerResult bhistCmdRunnerResult =
-          cmdRunner.execute(BHIST_CMD + jobId, stage.getExecutorParams());
+          cmdRunner.execute(BHIST_CMD + jobId, getExecutorParams());
 
       result = extractBjobsStandardResult(bhistCmdRunnerResult.getStdout());
       if (result == null) {
@@ -143,7 +145,7 @@ public class LsfCmdExecutor extends CmdExecutor {
 
     ZonedDateTime stdoutFileWaitStart = ZonedDateTime.now();
     while (stdoutFileWaitStart.plus(STDOUT_FILE_MAX_WAIT_TIME).isAfter(ZonedDateTime.now())
-        && !stdoutFileExists(cmdRunner, stdoutFile, stage)) {
+        && !stdoutFileExists(cmdRunner, stdoutFile)) {
 
       if (!Time.wait(STDOUT_FILE_POLL_WAIT_TIME)) {
         throw new PipeliteInterruptedException("LSF command executor was interrupted");
@@ -154,7 +156,8 @@ public class LsfCmdExecutor extends CmdExecutor {
         .log("Reading stdout file: %s", stdoutFile);
 
     try {
-      CmdRunnerResult stdoutCmdRunnerResult = writeFileToStdout(cmdRunner, stdoutFile, stage);
+      CmdRunnerResult stdoutCmdRunnerResult =
+          writeFileToStdout(cmdRunner, stdoutFile, getExecutorParams());
       result.setStdout(stdoutCmdRunnerResult.getStdout());
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Failed to read stdout file: %s", stdoutFile);
@@ -175,21 +178,21 @@ public class LsfCmdExecutor extends CmdExecutor {
     StringBuilder cmd = new StringBuilder();
     cmd.append(BSUB_CMD);
 
-    stdoutFile = getOutFile(pipelineName, processId, stage, "stdout");
+    stdoutFile = getOutFile(pipelineName, processId, stage.getStageName(), "stdout");
 
     // Write both stderr and stdout to the stdout file.
 
     addArgument(cmd, "-oo");
     addArgument(cmd, stdoutFile);
 
-    Integer cores = stage.getExecutorParams().getCores();
+    Integer cores = getExecutorParams().getCores();
     if (cores != null && cores > 0) {
       addArgument(cmd, "-n");
       addArgument(cmd, Integer.toString(cores));
     }
 
-    Integer memory = stage.getExecutorParams().getMemory();
-    Duration memoryTimeout = stage.getExecutorParams().getMemoryTimeout();
+    Integer memory = getExecutorParams().getMemory();
+    Duration memoryTimeout = getExecutorParams().getMemoryTimeout();
     if (memory != null && memory > 0) {
       addArgument(cmd, "-M");
       addArgument(cmd, Integer.toString(memory) + "M"); // Megabytes
@@ -204,7 +207,7 @@ public class LsfCmdExecutor extends CmdExecutor {
               + "]\"");
     }
 
-    Duration timeout = stage.getExecutorParams().getTimeout();
+    Duration timeout = getExecutorParams().getTimeout();
     if (timeout != null) {
       if (timeout.toMinutes() == 0) {
         timeout = Duration.ofMinutes(1);
@@ -213,7 +216,7 @@ public class LsfCmdExecutor extends CmdExecutor {
       addArgument(cmd, String.valueOf(timeout.toMinutes()));
     }
 
-    String queue = stage.getExecutorParams().getQueue();
+    String queue = getExecutorParams().getQueue();
     if (queue != null) {
       addArgument(cmd, "-q");
       addArgument(cmd, queue);
@@ -222,25 +225,25 @@ public class LsfCmdExecutor extends CmdExecutor {
     return cmd.toString();
   }
 
-  public static boolean stdoutFileExists(CmdRunner cmdRunner, String stdoutFile, Stage stage) {
+  public boolean stdoutFileExists(CmdRunner cmdRunner, String stdoutFile) {
     // Check if the stdout file exists. The file may not be immediately available after the job
     // execution finishes.
     return 0
         == cmdRunner
-            .execute("sh -c 'test -f " + stdoutFile + "'", stage.getExecutorParams())
+            .execute("sh -c 'test -f " + stdoutFile + "'", getExecutorParams())
             .getExitCode();
   }
 
   public static CmdRunnerResult writeFileToStdout(
-      CmdRunner cmdRunner, String stdoutFile, Stage stage) {
+      CmdRunner cmdRunner, String stdoutFile, LsfExecutorParameters executorParams) {
     // Execute through sh required by LocalRunner to direct output to stdout/err.
-    return cmdRunner.execute("sh -c 'cat " + stdoutFile + "'", stage.getExecutorParams());
+    return cmdRunner.execute("sh -c 'cat " + stdoutFile + "'", executorParams);
   }
 
   public static CmdRunnerResult writeFileToStderr(
-      CmdRunner cmdRunner, String stderrFile, Stage stage) {
+      CmdRunner cmdRunner, String stderrFile, LsfExecutorParameters executorParams) {
     // Execute through sh required by LocalRunner to direct output to stdout/err.
-    return cmdRunner.execute("sh -c 'cat " + stderrFile + " 1>&2'", stage.getExecutorParams());
+    return cmdRunner.execute("sh -c 'cat " + stderrFile + " 1>&2'", executorParams);
   }
 
   public static String extractBsubJobIdSubmitted(String str) {
@@ -305,6 +308,28 @@ public class LsfCmdExecutor extends CmdExecutor {
   private static void addArgument(StringBuilder cmd, String argument) {
     cmd.append(" ");
     cmd.append(argument);
+  }
+
+  public String getWorkDir(String pipelineName, String processId) {
+    if (getExecutorParams().getWorkDir() != null) {
+      String workDir = getExecutorParams().getWorkDir();
+      workDir = workDir.replace('\\', '/');
+      workDir = workDir.trim();
+      if (!workDir.endsWith("/")) {
+        workDir = workDir + "/";
+      }
+      return workDir + "pipelite/" + pipelineName + "/" + processId;
+    } else {
+      return "pipelite/" + pipelineName + "/" + processId;
+    }
+  }
+
+  public String getOutFile(String pipelineName, String processId, String stageName, String suffix) {
+    String workDir = getWorkDir(pipelineName, processId);
+    if (!workDir.endsWith("/")) {
+      workDir = workDir + "/";
+    }
+    return workDir + pipelineName + "_" + processId + "_" + stageName + "." + suffix;
   }
 
   private FluentLogger.Api logContext(

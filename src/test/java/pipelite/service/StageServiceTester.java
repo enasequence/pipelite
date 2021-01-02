@@ -14,10 +14,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.StageEntity;
+import pipelite.executor.CallExecutor;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.EmptySyncStageExecutor;
+import pipelite.stage.executor.AbstractExecutor;
+import pipelite.stage.executor.JsonSerializableExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
+import pipelite.stage.parameters.ExecutorParameters;
+
+import java.time.Duration;
 
 class StageServiceTester {
 
@@ -27,17 +32,39 @@ class StageServiceTester {
 
   private final StageService service;
 
+  public static class TestExecutor extends AbstractExecutor implements JsonSerializableExecutor {
+
+    private final StageExecutorResultType resultType;
+
+    public TestExecutor(StageExecutorResultType resultType) {
+      this.resultType = resultType;
+    }
+
+    @Override
+    public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
+      return null;
+    }
+
+    public StageExecutorResultType getResultType() {
+      return resultType;
+    }
+  }
+
   public void lifecycle() {
 
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     String processId = UniqueStringGenerator.randomProcessId();
     String stageName = UniqueStringGenerator.randomStageName();
 
-    Stage stage =
-        Stage.builder()
-            .stageName(stageName)
-            .executor(new EmptySyncStageExecutor(StageExecutorResultType.SUCCESS))
-            .build();
+    TestExecutor executor = new TestExecutor(StageExecutorResultType.SUCCESS);
+    executor.setExecutorParams(
+        ExecutorParameters.builder()
+            .immediateRetries(0)
+            .maximumRetries(1)
+            .timeout(Duration.ofSeconds(0))
+            .build());
+
+    Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
 
     // Create execution.
 
@@ -70,10 +97,16 @@ class StageServiceTester {
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNull();
     assertThat(stageEntity.getExecutorName())
-        .isEqualTo("pipelite.stage.executor.EmptySyncStageExecutor");
+        .isEqualTo("pipelite.service.StageServiceTester$TestExecutor");
     assertThat(stageEntity.getExecutorData())
         .isEqualTo("{\n" + "  \"resultType\" : \"SUCCESS\"\n" + "}");
-    assertThat(stageEntity.getExecutorParams()).isEqualTo("{ }");
+    assertThat(stageEntity.getExecutorParams())
+        .isEqualTo(
+            "{\n"
+                + "  \"timeout\" : 0,\n"
+                + "  \"maximumRetries\" : 1,\n"
+                + "  \"immediateRetries\" : 0\n"
+                + "}");
 
     assertThat(service.getSavedStage(pipelineName, processId, stageName).get())
         .isEqualTo(stageEntity);
@@ -97,10 +130,16 @@ class StageServiceTester {
     assertThat(stageEntity.getEndTime()).isNotNull();
     assertThat(stageEntity.getStartTime()).isBeforeOrEqualTo(stageEntity.getEndTime());
     assertThat(stageEntity.getExecutorName())
-        .isEqualTo("pipelite.stage.executor.EmptySyncStageExecutor");
+        .isEqualTo("pipelite.service.StageServiceTester$TestExecutor");
     assertThat(stageEntity.getExecutorData())
         .isEqualTo("{\n" + "  \"resultType\" : \"SUCCESS\"\n" + "}");
-    assertThat(stageEntity.getExecutorParams()).isEqualTo("{ }");
+    assertThat(stageEntity.getExecutorParams())
+        .isEqualTo(
+            "{\n"
+                + "  \"timeout\" : 0,\n"
+                + "  \"maximumRetries\" : 1,\n"
+                + "  \"immediateRetries\" : 0\n"
+                + "}");
 
     assertThat(service.getSavedStage(pipelineName, processId, stageName).get())
         .isEqualTo(stageEntity);
@@ -118,10 +157,16 @@ class StageServiceTester {
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNull();
     assertThat(stageEntity.getExecutorName())
-        .isEqualTo("pipelite.stage.executor.EmptySyncStageExecutor");
+        .isEqualTo("pipelite.service.StageServiceTester$TestExecutor");
     assertThat(stageEntity.getExecutorData())
         .isEqualTo("{\n" + "  \"resultType\" : \"SUCCESS\"\n" + "}");
-    assertThat(stageEntity.getExecutorParams()).isEqualTo("{ }");
+    assertThat(stageEntity.getExecutorParams())
+        .isEqualTo(
+            "{\n"
+                + "  \"timeout\" : 0,\n"
+                + "  \"maximumRetries\" : 1,\n"
+                + "  \"immediateRetries\" : 0\n"
+                + "}");
 
     assertThat(service.getSavedStage(pipelineName, processId, stageName).get())
         .isEqualTo(stageEntity);
@@ -145,10 +190,16 @@ class StageServiceTester {
     assertThat(stageEntity.getEndTime()).isNotNull();
     assertThat(stageEntity.getStartTime()).isBeforeOrEqualTo(stageEntity.getEndTime());
     assertThat(stageEntity.getExecutorName())
-        .isEqualTo("pipelite.stage.executor.EmptySyncStageExecutor");
+        .isEqualTo("pipelite.service.StageServiceTester$TestExecutor");
     assertThat(stageEntity.getExecutorData())
         .isEqualTo("{\n" + "  \"resultType\" : \"SUCCESS\"\n" + "}");
-    assertThat(stageEntity.getExecutorParams()).isEqualTo("{ }");
+    assertThat(stageEntity.getExecutorParams())
+        .isEqualTo(
+            "{\n"
+                + "  \"timeout\" : 0,\n"
+                + "  \"maximumRetries\" : 1,\n"
+                + "  \"immediateRetries\" : 0\n"
+                + "}");
 
     assertThat(service.getSavedStage(pipelineName, processId, stageName).get())
         .isEqualTo(stageEntity);

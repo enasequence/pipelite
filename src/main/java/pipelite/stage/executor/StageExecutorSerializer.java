@@ -15,6 +15,7 @@ import lombok.extern.flogger.Flogger;
 import pipelite.entity.StageEntity;
 import pipelite.log.LogKey;
 import pipelite.stage.Stage;
+import pipelite.stage.parameters.ExecutorParameters;
 
 @Flogger
 public class StageExecutorSerializer {
@@ -24,18 +25,19 @@ public class StageExecutorSerializer {
    * Deserialize stage executor and stage parameters to allow an asynchronous executor to continue
    * executing an active stage.
    */
-  public static Boolean deserializeExecution(Stage stage) {
+  public static <T extends ExecutorParameters> Boolean deserializeExecution(Stage stage) {
     StageEntity stageEntity = stage.getStageEntity();
     if (StageExecutorResultType.isActive(stageEntity.getResultType())
         && stageEntity.getExecutorName() != null
         && stageEntity.getExecutorData() != null
         && stageEntity.getExecutorParams() != null) {
       StageExecutor deserializedExecutor = deserializeExecutor(stage);
-      StageExecutorParameters deserializedExecutorParams = deserializeExecutorParameters(stage);
+      ExecutorParameters deserializedExecutorParams =
+          deserializeExecutorParameters(stage, deserializedExecutor.getExecutorParamsType());
       if (deserializedExecutor != null && deserializedExecutorParams != null) {
         logContext(log.atInfo(), stage).log("Using deserialized executor");
         stage.setExecutor(deserializedExecutor);
-        stage.setExecutorParams(deserializedExecutorParams);
+        deserializedExecutor.setExecutorParams(deserializedExecutorParams);
         return true;
       }
     }
@@ -46,8 +48,10 @@ public class StageExecutorSerializer {
   public static StageExecutor deserializeExecutor(Stage stage) {
     StageEntity stageEntity = stage.getStageEntity();
     try {
-      return StageExecutor.deserialize(
-          stageEntity.getExecutorName(), stageEntity.getExecutorData());
+      if (stage.getExecutor() instanceof JsonSerializableExecutor) {
+        return JsonSerializableExecutor.deserialize(
+            stageEntity.getExecutorName(), stageEntity.getExecutorData());
+      }
     } catch (Exception ex) {
       logContext(log.atSevere(), stage)
           .withCause(ex)
@@ -57,10 +61,11 @@ public class StageExecutorSerializer {
   }
 
   /** Deserialize stage executor parameters. */
-  public static StageExecutorParameters deserializeExecutorParameters(Stage stage) {
+  public static <T extends ExecutorParameters> T deserializeExecutorParameters(
+      Stage stage, Class<T> cls) {
     StageEntity stageEntity = stage.getStageEntity();
     try {
-      return StageExecutorParameters.deserialize(stageEntity.getExecutorParams());
+      return ExecutorParameters.deserialize(stageEntity.getExecutorParams(), cls);
     } catch (Exception ex) {
       logContext(log.atSevere(), stage)
           .withCause(ex)

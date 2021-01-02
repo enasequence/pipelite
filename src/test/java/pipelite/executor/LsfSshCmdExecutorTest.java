@@ -24,6 +24,7 @@ import pipelite.configuration.LsfTestConfiguration;
 import pipelite.exception.PipeliteInterruptedException;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.*;
+import pipelite.stage.parameters.LsfExecutorParameters;
 import pipelite.time.Time;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
@@ -38,24 +39,17 @@ public class LsfSshCmdExecutorTest {
   @Test
   public void test() {
 
-    LsfCmdExecutor executor = StageExecutor.createLsfSshCmdExecutor("echo test");
+    LsfExecutor executor = StageExecutor.createSshLsfExecutor("echo test");
+    executor.setExecutorParams(
+        LsfExecutorParameters.builder()
+            .host(lsfTestConfiguration.getHost())
+            .workDir(lsfTestConfiguration.getWorkDir())
+            .timeout(Duration.ofSeconds(60))
+            .build());
 
     String stageName = UniqueStringGenerator.randomStageName();
 
-    StageExecutorParameters executorParams =
-        StageExecutorParameters.builder()
-            .host(lsfTestConfiguration.getHost())
-            .workDir(lsfTestConfiguration.getWorkDir())
-            .pollFrequency(Duration.ofSeconds(5))
-            .timeout(Duration.ofSeconds(60))
-            .build();
-
-    Stage stage =
-        Stage.builder()
-            .stageName(stageName)
-            .executor(executor)
-            .executorParams(executorParams)
-            .build();
+    Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
 
     StageExecutorResult result = executor.execute(PIPELINE_NAME, PROCESS_ID, stage);
     assertThat(result.getResultType()).isEqualTo(StageExecutorResultType.ACTIVE);

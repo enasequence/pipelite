@@ -33,20 +33,21 @@ import pipelite.executor.cmd.SshCmdRunner;
 import pipelite.json.Json;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.*;
+import pipelite.stage.parameters.LsfExecutorParameters;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
-public class LsfCmdExecutorTest {
+public class LsfExecutorTest {
 
   @Autowired private LsfTestConfiguration lsfTestConfiguration;
 
   private final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
   private final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
 
-  private StageExecutorParameters executorParams() {
+  private LsfExecutorParameters executorParams() {
     try {
-      StageExecutorParameters executorParams =
-          StageExecutorParameters.builder()
+      LsfExecutorParameters executorParams =
+          LsfExecutorParameters.builder()
               .workDir(Files.createTempDirectory("TEMP").toString())
               .cores(1)
               .memory(1)
@@ -59,11 +60,10 @@ public class LsfCmdExecutorTest {
     }
   }
 
-  private Stage stage(StageExecutorParameters executorParams) {
+  private Stage createStage(LsfExecutor executor) {
     return Stage.builder()
         .stageName(UniqueStringGenerator.randomStageName())
-        .executor(new EmptySyncStageExecutor(StageExecutorResultType.SUCCESS))
-        .executorParams(executorParams)
+        .executor(executor)
         .build();
   }
 
@@ -71,51 +71,42 @@ public class LsfCmdExecutorTest {
     return result.getAttribute(StageExecutorResultAttribute.COMMAND);
   }
 
-  private static LsfCmdExecutor createExecutor() {
-    LsfCmdExecutor lsfCmdExecutor = new LsfCmdExecutor();
-    lsfCmdExecutor.setCmd("echo test");
-    lsfCmdExecutor.setCmdRunner(
+  private static LsfExecutor createExecutor(LsfExecutorParameters params) {
+    LsfExecutor lsfExecutor = new LsfExecutor();
+    lsfExecutor.setCmd("echo test");
+    lsfExecutor.setExecutorParams(params);
+    lsfExecutor.setCmdRunner(
         (cmd, executorParams) -> new CmdRunnerResult(0, "Job <13454> is submitted", "", null));
-    return lsfCmdExecutor;
+    return lsfExecutor;
   }
 
   @Test
-  public void testLocalCmdRunnerWriteFileToStdout() throws IOException {
-    Stage stage =
-        Stage.builder()
-            .stageName(UniqueStringGenerator.randomStageName())
-            .executor(new EmptySyncStageExecutor(StageExecutorResultType.SUCCESS))
-            .build();
-    stage.getExecutorParams().setHost(lsfTestConfiguration.getHost());
+  public void writeFileToStdout() throws IOException {
     File file = File.createTempFile("pipelite-test", "");
     file.createNewFile();
     Files.write(file.toPath(), "test".getBytes());
     CmdRunnerResult runnerResult =
-        LsfCmdExecutor.writeFileToStdout(new LocalCmdRunner(), file.getAbsolutePath(), stage);
+        LsfExecutor.writeFileToStdout(
+            new LocalCmdRunner(), file.getAbsolutePath(), LsfExecutorParameters.builder().build());
     assertThat(runnerResult.getStdout()).isEqualTo("test");
   }
 
   @Test
-  public void testLocalCmdRunnerWriteFileToStderr() throws IOException {
-    Stage stage =
-        Stage.builder()
-            .stageName(UniqueStringGenerator.randomStageName())
-            .executor(new EmptySyncStageExecutor(StageExecutorResultType.SUCCESS))
-            .build();
-    stage.getExecutorParams().setHost(lsfTestConfiguration.getHost());
+  public void writeFileToStderr() throws IOException {
     File file = File.createTempFile("pipelite-test", "");
     file.createNewFile();
     Files.write(file.toPath(), "test".getBytes());
     CmdRunnerResult runnerResult =
-        LsfCmdExecutor.writeFileToStderr(new LocalCmdRunner(), file.getAbsolutePath(), stage);
+        LsfExecutor.writeFileToStderr(
+            new LocalCmdRunner(), file.getAbsolutePath(), LsfExecutorParameters.builder().build());
     assertThat(runnerResult.getStderr()).isEqualTo("test");
   }
 
   @Test
   public void testCmdArguments() {
-    StageExecutorParameters executorParams = executorParams();
-    LsfCmdExecutor executor = createExecutor();
-    String cmd = getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, stage(executorParams)));
+    LsfExecutorParameters executorParams = executorParams();
+    LsfExecutor executor = createExecutor(executorParams);
+    String cmd = getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, createStage(executor)));
     assertTrue(cmd.contains(" -M 1M -R \"rusage[mem=1M:duration=1]\""));
     assertTrue(cmd.contains(" -n 1"));
     assertTrue(cmd.contains(" -q defaultQueue"));
@@ -124,32 +115,32 @@ public class LsfCmdExecutorTest {
 
   @Test
   public void testNoQueueCmdArgument() {
-    StageExecutorParameters executorParams = executorParams();
+    LsfExecutorParameters executorParams = executorParams();
     executorParams.setQueue(null);
-    LsfCmdExecutor executor = createExecutor();
+    LsfExecutor executor = createExecutor(executorParams);
 
-    String cmd = getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, stage(executorParams)));
+    String cmd = getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, createStage(executor)));
     assertFalse(cmd.contains("-q "));
   }
 
   @Test
   public void testQueueCmdArgument() {
-    StageExecutorParameters executorParams = executorParams();
+    LsfExecutorParameters executorParams = executorParams();
     executorParams.setQueue("queue");
-    LsfCmdExecutor executor = createExecutor();
+    LsfExecutor executor = createExecutor(executorParams);
 
-    String cmd = getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, stage(executorParams)));
+    String cmd = getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, createStage(executor)));
     assertTrue(cmd.contains("-q queue"));
   }
 
   @Test
   public void testMemoryAndCoresCmdArgument() {
-    StageExecutorParameters executorParams = executorParams();
+    LsfExecutorParameters executorParams = executorParams();
     executorParams.setMemory(2000);
     executorParams.setCores(12);
-    LsfCmdExecutor executor = createExecutor();
+    LsfExecutor executor = createExecutor(executorParams);
 
-    String cmd = getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, stage(executorParams)));
+    String cmd = getCommandline(executor.execute(PIPELINE_NAME, PROCESS_ID, createStage(executor)));
     assertTrue(cmd.contains(" -M 2000M -R \"rusage[mem=2000M:duration=1]\""));
     assertTrue(cmd.contains(" -n 12"));
     assertTrue(cmd.contains(" -q defaultQueue"));
@@ -159,37 +150,37 @@ public class LsfCmdExecutorTest {
   @Test
   public void testExtractJobIdSubmitted() {
     assertThat(
-            LsfCmdExecutor.extractBsubJobIdSubmitted(
+            LsfExecutor.extractBsubJobIdSubmitted(
                 "Job <2848143> is submitted to default queue <research-rh74>."))
         .isEqualTo("2848143");
 
-    assertThat(LsfCmdExecutor.extractBsubJobIdSubmitted("Job <2848143> is submitted "))
+    assertThat(LsfExecutor.extractBsubJobIdSubmitted("Job <2848143> is submitted "))
         .isEqualTo("2848143");
   }
 
   @Test
   public void testExtractJobIdNotFound() {
-    assertThat(LsfCmdExecutor.extractBjobsJobIdNotFound("Job <345654> is not found.")).isTrue();
-    assertThat(LsfCmdExecutor.extractBjobsJobIdNotFound("Job <345654> is not found")).isTrue();
-    assertThat(LsfCmdExecutor.extractBjobsJobIdNotFound("Job <345654> is ")).isFalse();
+    assertThat(LsfExecutor.extractBjobsJobIdNotFound("Job <345654> is not found.")).isTrue();
+    assertThat(LsfExecutor.extractBjobsJobIdNotFound("Job <345654> is not found")).isTrue();
+    assertThat(LsfExecutor.extractBjobsJobIdNotFound("Job <345654> is ")).isFalse();
   }
 
   @Test
   public void testExtractExitCode() {
-    assertThat(LsfCmdExecutor.extractBjobsExitCode("Exited with exit code 1")).isEqualTo("1");
-    assertThat(LsfCmdExecutor.extractBjobsExitCode("Exited with exit code 3.")).isEqualTo("3");
+    assertThat(LsfExecutor.extractBjobsExitCode("Exited with exit code 1")).isEqualTo("1");
+    assertThat(LsfExecutor.extractBjobsExitCode("Exited with exit code 3.")).isEqualTo("3");
   }
 
   @Test
   public void serializeNullCmdRunner() {
     String cmd = "echo test";
-    LsfCmdExecutor lsfCmdExecutor = StageExecutor.createLsfCmdExecutor(cmd, null);
-    lsfCmdExecutor.setJobId("test");
-    lsfCmdExecutor.setStdoutFile("test");
+    LsfExecutor lsfExecutor = StageExecutor.createLsfExecutor(cmd, null);
+    lsfExecutor.setJobId("test");
+    lsfExecutor.setStdoutFile("test");
     ZonedDateTime startTime =
         ZonedDateTime.of(LocalDateTime.of(2020, 1, 1, 1, 1), ZoneId.of("UTC"));
-    lsfCmdExecutor.setStartTime(startTime);
-    String json = Json.serialize(lsfCmdExecutor);
+    lsfExecutor.setStartTime(startTime);
+    String json = Json.serialize(lsfExecutor);
     assertThat(json)
         .isEqualTo(
             "{\n"
@@ -198,24 +189,24 @@ public class LsfCmdExecutorTest {
                 + "  \"stdoutFile\" : \"test\",\n"
                 + "  \"startTime\" : \"2020-01-01T01:01:00Z\"\n"
                 + "}");
-    LsfCmdExecutor deserializedLsfCmdExecutor = Json.deserialize(json, LsfCmdExecutor.class);
-    assertThat(deserializedLsfCmdExecutor.getCmd()).isEqualTo(cmd);
-    assertThat(deserializedLsfCmdExecutor.getCmdRunner()).isNull();
-    assertThat(deserializedLsfCmdExecutor.getJobId()).isEqualTo("test");
-    assertThat(deserializedLsfCmdExecutor.getStdoutFile()).isEqualTo("test");
-    assertThat(deserializedLsfCmdExecutor.getStartTime()).isEqualTo(startTime);
+    LsfExecutor deserializedLsfExecutor = Json.deserialize(json, LsfExecutor.class);
+    assertThat(deserializedLsfExecutor.getCmd()).isEqualTo(cmd);
+    assertThat(deserializedLsfExecutor.getCmdRunner()).isNull();
+    assertThat(deserializedLsfExecutor.getJobId()).isEqualTo("test");
+    assertThat(deserializedLsfExecutor.getStdoutFile()).isEqualTo("test");
+    assertThat(deserializedLsfExecutor.getStartTime()).isEqualTo(startTime);
   }
 
   @Test
   public void serializeLocalCmdRunner() {
     String cmd = "echo test";
-    LsfCmdExecutor lsfCmdExecutor = StageExecutor.createLsfLocalCmdExecutor(cmd);
-    lsfCmdExecutor.setJobId("test");
-    lsfCmdExecutor.setStdoutFile("test");
+    LsfExecutor lsfExecutor = StageExecutor.createLocalLsfExecutor(cmd);
+    lsfExecutor.setJobId("test");
+    lsfExecutor.setStdoutFile("test");
     ZonedDateTime startTime =
         ZonedDateTime.of(LocalDateTime.of(2020, 1, 1, 1, 1), ZoneId.of("UTC"));
-    lsfCmdExecutor.setStartTime(startTime);
-    String json = Json.serialize(lsfCmdExecutor);
+    lsfExecutor.setStartTime(startTime);
+    String json = Json.serialize(lsfExecutor);
     assertThat(json)
         .isEqualTo(
             "{\n"
@@ -225,24 +216,24 @@ public class LsfCmdExecutorTest {
                 + "  \"stdoutFile\" : \"test\",\n"
                 + "  \"startTime\" : \"2020-01-01T01:01:00Z\"\n"
                 + "}");
-    LsfCmdExecutor deserializedLsfCmdExecutor = Json.deserialize(json, LsfCmdExecutor.class);
-    assertThat(deserializedLsfCmdExecutor.getCmd()).isEqualTo(cmd);
-    assertThat(deserializedLsfCmdExecutor.getCmdRunner()).isInstanceOf(LocalCmdRunner.class);
-    assertThat(deserializedLsfCmdExecutor.getJobId()).isEqualTo("test");
-    assertThat(deserializedLsfCmdExecutor.getStdoutFile()).isEqualTo("test");
-    assertThat(deserializedLsfCmdExecutor.getStartTime()).isEqualTo(startTime);
+    LsfExecutor deserializedLsfExecutor = Json.deserialize(json, LsfExecutor.class);
+    assertThat(deserializedLsfExecutor.getCmd()).isEqualTo(cmd);
+    assertThat(deserializedLsfExecutor.getCmdRunner()).isInstanceOf(LocalCmdRunner.class);
+    assertThat(deserializedLsfExecutor.getJobId()).isEqualTo("test");
+    assertThat(deserializedLsfExecutor.getStdoutFile()).isEqualTo("test");
+    assertThat(deserializedLsfExecutor.getStartTime()).isEqualTo(startTime);
   }
 
   @Test
   public void serializeSshCmdRunner() {
     String cmd = "echo test";
-    LsfCmdExecutor lsfCmdExecutor = StageExecutor.createLsfSshCmdExecutor(cmd);
-    lsfCmdExecutor.setJobId("test");
-    lsfCmdExecutor.setStdoutFile("test");
+    LsfExecutor lsfExecutor = StageExecutor.createSshLsfExecutor(cmd);
+    lsfExecutor.setJobId("test");
+    lsfExecutor.setStdoutFile("test");
     ZonedDateTime startTime =
         ZonedDateTime.of(LocalDateTime.of(2020, 1, 1, 1, 1), ZoneId.of("UTC"));
-    lsfCmdExecutor.setStartTime(startTime);
-    String json = Json.serialize(lsfCmdExecutor);
+    lsfExecutor.setStartTime(startTime);
+    String json = Json.serialize(lsfExecutor);
     assertThat(json)
         .isEqualTo(
             "{\n"
@@ -252,11 +243,38 @@ public class LsfCmdExecutorTest {
                 + "  \"stdoutFile\" : \"test\",\n"
                 + "  \"startTime\" : \"2020-01-01T01:01:00Z\"\n"
                 + "}");
-    LsfCmdExecutor deserializedLsfCmdExecutor = Json.deserialize(json, LsfCmdExecutor.class);
-    assertThat(deserializedLsfCmdExecutor.getCmd()).isEqualTo(cmd);
-    assertThat(deserializedLsfCmdExecutor.getCmdRunner()).isInstanceOf(SshCmdRunner.class);
-    assertThat(deserializedLsfCmdExecutor.getJobId()).isEqualTo("test");
-    assertThat(deserializedLsfCmdExecutor.getStdoutFile()).isEqualTo("test");
-    assertThat(deserializedLsfCmdExecutor.getStartTime()).isEqualTo(startTime);
+    LsfExecutor deserializedLsfExecutor = Json.deserialize(json, LsfExecutor.class);
+    assertThat(deserializedLsfExecutor.getCmd()).isEqualTo(cmd);
+    assertThat(deserializedLsfExecutor.getCmdRunner()).isInstanceOf(SshCmdRunner.class);
+    assertThat(deserializedLsfExecutor.getJobId()).isEqualTo("test");
+    assertThat(deserializedLsfExecutor.getStdoutFile()).isEqualTo("test");
+    assertThat(deserializedLsfExecutor.getStartTime()).isEqualTo(startTime);
+  }
+
+  @Test
+  public void getWorkDir() {
+    LsfExecutor lsfExecutor = StageExecutor.createLocalLsfExecutor("");
+
+    lsfExecutor.setExecutorParams(LsfExecutorParameters.builder().workDir("WORKDIR").build());
+    assertThat(lsfExecutor.getWorkDir("PIPELINE_NAME", "PROCESS_ID"))
+        .isEqualTo("WORKDIR/pipelite/PIPELINE_NAME/PROCESS_ID");
+
+    lsfExecutor.setExecutorParams(LsfExecutorParameters.builder().workDir(null).build());
+    assertThat(lsfExecutor.getWorkDir("PIPELINE_NAME", "PROCESS_ID"))
+        .isEqualTo("pipelite/PIPELINE_NAME/PROCESS_ID");
+
+    lsfExecutor.setExecutorParams(
+        LsfExecutorParameters.builder().workDir("WORKDIR/DIR\\DIR/").build());
+    assertThat(lsfExecutor.getWorkDir("PIPELINE_NAME", "PROCESS_ID"))
+        .isEqualTo("WORKDIR/DIR/DIR/pipelite/PIPELINE_NAME/PROCESS_ID");
+  }
+
+  @Test
+  public void getOutFile() {
+    LsfExecutor lsfExecutor = StageExecutor.createLocalLsfExecutor("");
+
+    lsfExecutor.setExecutorParams(LsfExecutorParameters.builder().workDir("WORKDIR").build());
+    assertThat(lsfExecutor.getOutFile("PIPELINE_NAME", "PROCESS_ID", "STAGE", "out"))
+        .isEqualTo("WORKDIR/pipelite/PIPELINE_NAME/PROCESS_ID/PIPELINE_NAME_PROCESS_ID_STAGE.out");
   }
 }

@@ -20,17 +20,20 @@ import org.apache.commons.text.StringTokenizer;
 import org.apache.commons.text.matcher.StringMatcher;
 import org.apache.commons.text.matcher.StringMatcherFactory;
 import pipelite.executor.cmd.stream.KeepOldestByteArrayOutputStream;
-import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.parameters.CmdExecutorParameters;
+import pipelite.stage.parameters.ExecutorParameters;
 
 @Flogger
 public class LocalCmdRunner implements CmdRunner {
 
   @Override
-  public CmdRunnerResult execute(String cmd, StageExecutorParameters executorParams) {
+  public CmdRunnerResult execute(String cmd, CmdExecutorParameters executorParams) {
     if (cmd == null) {
-      return new CmdRunnerResult(
-          EXIT_CODE_ERROR, null, null, StageExecutorResult.InternalError.CMD_NULL);
+      return CmdRunnerResult.builder()
+          .exitCode(EXIT_CODE_ERROR)
+          .internalError(StageExecutorResult.InternalError.CMD_NULL)
+          .build();
     }
 
     StringTokenizer st = new StringTokenizer(cmd);
@@ -38,8 +41,10 @@ public class LocalCmdRunner implements CmdRunner {
     st.setQuoteMatcher(sm);
     List<String> args = st.getTokenList();
     if (args.isEmpty()) {
-      return new CmdRunnerResult(
-          EXIT_CODE_ERROR, null, null, StageExecutorResult.InternalError.CMD_EMPTY);
+      return CmdRunnerResult.builder()
+          .exitCode(EXIT_CODE_ERROR)
+          .internalError(StageExecutorResult.InternalError.CMD_EMPTY)
+          .build();
     }
 
     try {
@@ -69,12 +74,18 @@ public class LocalCmdRunner implements CmdRunner {
       log.atInfo().log("Executing system call: %s", cmd);
 
       int exitCode = apacheExecutor.execute(commandLine, executorParams.getEnv());
-      return new CmdRunnerResult(exitCode, getStream(stdoutStream), getStream(stderrStream), null);
+      return CmdRunnerResult.builder()
+          .exitCode(exitCode)
+          .stdout(getStream(stdoutStream))
+          .stderr(getStream(stderrStream))
+          .build();
 
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Failed system call: %s", cmd);
-      return new CmdRunnerResult(
-          EXIT_CODE_ERROR, null, null, StageExecutorResult.InternalError.CMD_EXCEPTION);
+      return CmdRunnerResult.builder()
+          .exitCode(EXIT_CODE_ERROR)
+          .internalError(StageExecutorResult.InternalError.CMD_EXCEPTION)
+          .build();
     }
   }
 

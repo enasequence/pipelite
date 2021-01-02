@@ -39,9 +39,9 @@ import pipelite.process.ProcessSource;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.*;
-import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
+import pipelite.stage.parameters.ExecutorParameters;
 
 @Component
 @Scope("prototype")
@@ -165,8 +165,8 @@ public class PipeliteLauncherTester {
     @Override
     public Process create(ProcessBuilder builder) {
       processIds.add(builder.getProcessId());
-      StageExecutorParameters executorParams =
-          StageExecutorParameters.builder()
+      ExecutorParameters executorParams =
+          ExecutorParameters.builder()
               .immediateRetries(0)
               .maximumRetries(0)
               .timeout(Duration.ofSeconds(10))
@@ -174,8 +174,8 @@ public class PipeliteLauncherTester {
 
       for (int i = 0; i < stageCnt; ++i) {
         builder
-            .execute("STAGE" + i, executorParams)
-            .with(
+            .execute("STAGE" + i)
+            .withCallExecutor(
                 (pipelineName, processId1, stage) -> {
                   stageExecCnt.incrementAndGet();
                   if (stageTestResult == StageTestResult.ERROR) {
@@ -188,7 +188,8 @@ public class PipeliteLauncherTester {
                     throw new RuntimeException("Expected exception");
                   }
                   throw new RuntimeException("Unexpected exception");
-                });
+                },
+                executorParams);
       }
       return builder.build();
     }
@@ -254,8 +255,8 @@ public class PipeliteLauncherTester {
       assertThat(stageEntity.getStartTime()).isNotNull();
       assertThat(stageEntity.getEndTime()).isNotNull();
       assertThat(stageEntity.getStartTime()).isBeforeOrEqualTo(stageEntity.getEndTime());
-      assertThat(stageEntity.getExecutorName()).startsWith(PipeliteLauncherTester.class.getName());
-      assertThat(stageEntity.getExecutorData()).isEqualTo("{ }");
+      assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.CallExecutor");
+      assertThat(stageEntity.getExecutorData()).isNull();
       assertThat(stageEntity.getExecutorParams())
           .isEqualTo(
               "{\n"

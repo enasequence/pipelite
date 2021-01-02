@@ -10,6 +10,7 @@
  */
 package pipelite.launcher;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,6 +27,7 @@ import pipelite.PipeliteTestConfiguration;
     })
 @ActiveProfiles(value = {"oracle-test", "pipelite-test"})
 @DirtiesContext
+@Tag("oracle-test")
 public class PipeliteLauncherOracleTest {
 
   @Autowired private PipeliteLauncherTester tester;

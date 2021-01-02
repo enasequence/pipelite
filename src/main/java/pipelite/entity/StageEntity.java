@@ -17,9 +17,11 @@ import lombok.*;
 import lombok.extern.flogger.Flogger;
 import pipelite.json.Json;
 import pipelite.stage.*;
+import pipelite.stage.executor.JsonSerializableExecutor;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
+import pipelite.stage.parameters.ExecutorParameters;
 
 @Entity
 @Table(name = "PIPELITE_STAGE")
@@ -99,9 +101,11 @@ public class StageEntity {
     this.startTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.endTime = null;
     this.executorName = stageExecutor.getClass().getName();
-    this.executorData = stageExecutor.serialize();
-    if (stage.getExecutorParams() != null) {
-      this.executorParams = stage.getExecutorParams().serialize();
+    if (stageExecutor instanceof JsonSerializableExecutor) {
+      this.executorData = ((JsonSerializableExecutor) stageExecutor).serialize();
+    }
+    if (stageExecutor.getExecutorParams() != null) {
+      this.executorParams = stageExecutor.getExecutorParams().serialize();
     }
   }
 

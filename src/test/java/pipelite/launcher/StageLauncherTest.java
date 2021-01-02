@@ -18,25 +18,30 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.StageConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
+import pipelite.executor.CallExecutor;
 import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
+import pipelite.stage.parameters.ExecutorParameters;
 
 public class StageLauncherTest {
 
-  private void testRunSyncExecutor(StageExecutorResultType resultType) {
+  private void callExecutor(StageExecutorResultType resultType) {
     StageConfiguration stageConfiguration = new StageConfiguration();
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     String processId = UniqueStringGenerator.randomProcessId();
     Process process =
         new ProcessBuilder(processId)
-            .execute(
-                "STAGE1",
-                StageExecutorParameters.builder().immediateRetries(3).maximumRetries(3).build())
-            .withEmptySyncExecutor(resultType)
+            .execute("STAGE1")
+            .withCallExecutor(
+                resultType,
+                ExecutorParameters.builder()
+                    .immediateRetries(3)
+                    .maximumRetries(3)
+                    .timeout(null)
+                    .build())
             .build();
     process.setProcessEntity(
         ProcessEntity.createExecution(pipelineName, processId, ProcessEntity.DEFAULT_PRIORITY));
@@ -49,23 +54,26 @@ public class StageLauncherTest {
     assertThat(stageLauncher.run().getResultType()).isEqualTo(resultType);
     verify(stageLauncher, times(0)).pollExecution();
     assertThat(stage.getStageEntity().getExecutorName())
-        .isEqualTo("pipelite.stage.executor.EmptySyncStageExecutor");
-    assertThat(stage.getStageEntity().getExecutorData())
-        .isEqualTo("{\n" + "  \"resultType\" : \"" + resultType.name() + "\"\n}");
+        .isEqualTo("pipelite.executor.CallExecutor");
+    assertThat(stage.getStageEntity().getExecutorData()).isNull();
     assertThat(stage.getStageEntity().getExecutorParams())
         .isEqualTo("{\n" + "  \"maximumRetries\" : 3,\n" + "  \"immediateRetries\" : 3\n" + "}");
   }
 
-  private void testRunAsyncExecutor(StageExecutorResultType resultType) {
+  private void asyncCallExecutor(StageExecutorResultType resultType) {
     StageConfiguration stageConfiguration = new StageConfiguration();
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     String processId = UniqueStringGenerator.randomProcessId();
     Process process =
         new ProcessBuilder(processId)
-            .execute(
-                "STAGE1",
-                StageExecutorParameters.builder().immediateRetries(3).maximumRetries(3).build())
-            .withEmptyAsyncExecutor(resultType)
+            .execute("STAGE1")
+            .withAsyncCallExecutor(
+                resultType,
+                ExecutorParameters.builder()
+                    .immediateRetries(3)
+                    .maximumRetries(3)
+                    .timeout(null)
+                    .build())
             .build();
     process.setProcessEntity(
         ProcessEntity.createExecution(pipelineName, processId, ProcessEntity.DEFAULT_PRIORITY));
@@ -80,65 +88,59 @@ public class StageLauncherTest {
     assertThat(stageLauncher.run().getResultType()).isEqualTo(resultType);
     verify(stageLauncher, times(1)).pollExecution();
     assertThat(stage.getStageEntity().getExecutorName())
-        .isEqualTo("pipelite.stage.executor.EmptyAsyncStageExecutor");
-    assertThat(stage.getStageEntity().getExecutorData())
-        .isEqualTo("{\n" + "  \"resultType\" : \"" + resultType.name() + "\"\n}");
+        .isEqualTo("pipelite.executor.CallExecutor");
+    assertThat(stage.getStageEntity().getExecutorData()).isNull();
     assertThat(stage.getStageEntity().getExecutorParams())
         .isEqualTo("{\n" + "  \"maximumRetries\" : 3,\n" + "  \"immediateRetries\" : 3\n" + "}");
   }
 
   @Test
-  public void run() {
-    testRunSyncExecutor(StageExecutorResultType.SUCCESS);
-    testRunSyncExecutor(StageExecutorResultType.ERROR);
-    testRunAsyncExecutor(StageExecutorResultType.SUCCESS);
-    testRunAsyncExecutor(StageExecutorResultType.ERROR);
+  public void callExecutor() {
+    callExecutor(StageExecutorResultType.SUCCESS);
+    callExecutor(StageExecutorResultType.ERROR);
+    asyncCallExecutor(StageExecutorResultType.SUCCESS);
+    asyncCallExecutor(StageExecutorResultType.ERROR);
   }
 
-  private void testMaximumRetries(Integer maximumRetries, int expectedMaximumRetries) {
+  private void maximumRetries(Integer maximumRetries, int expectedMaximumRetries) {
+    CallExecutor executor = new CallExecutor(StageExecutorResultType.SUCCESS);
+    executor.setExecutorParams(ExecutorParameters.builder().maximumRetries(maximumRetries).build());
     assertThat(
             StageLauncher.getMaximumRetries(
-                Stage.builder()
-                    .stageName("STAGE")
-                    .executor((pipelineName, processId, stage) -> StageExecutorResult.success())
-                    .executorParams(
-                        StageExecutorParameters.builder().maximumRetries(maximumRetries).build())
-                    .build()))
+                Stage.builder().stageName("STAGE").executor(executor).build()))
         .isEqualTo(expectedMaximumRetries);
   }
 
-  private void testImmediateRetries(
+  private void immediateRetries(
       Integer immediateRetries, Integer maximumRetries, int expectedImmediateRetries) {
+    CallExecutor executor = new CallExecutor(StageExecutorResultType.SUCCESS);
+    executor.setExecutorParams(
+        ExecutorParameters.builder()
+            .immediateRetries(immediateRetries)
+            .maximumRetries(maximumRetries)
+            .build());
     assertThat(
             StageLauncher.getImmediateRetries(
-                Stage.builder()
-                    .stageName("STAGE")
-                    .executor((pipelineName, processId, stage) -> StageExecutorResult.success())
-                    .executorParams(
-                        StageExecutorParameters.builder()
-                            .maximumRetries(maximumRetries)
-                            .immediateRetries(immediateRetries)
-                            .build())
-                    .build()))
+                Stage.builder().stageName("STAGE").executor(executor).build()))
         .isEqualTo(expectedImmediateRetries);
   }
 
   @Test
   public void maximumRetries() {
-    testMaximumRetries(1, 1);
-    testMaximumRetries(5, 5);
-    testMaximumRetries(null, StageConfiguration.DEFAULT_MAX_RETRIES);
+    maximumRetries(1, 1);
+    maximumRetries(5, 5);
+    maximumRetries(null, ExecutorParameters.DEFAULT_MAX_RETRIES);
   }
 
   @Test
   public void immediateRetries() {
-    testImmediateRetries(3, 6, 3);
-    testImmediateRetries(3, 2, 2);
-    testImmediateRetries(3, 0, 0);
-    testImmediateRetries(
+    immediateRetries(3, 6, 3);
+    immediateRetries(3, 2, 2);
+    immediateRetries(3, 0, 0);
+    immediateRetries(
         null,
-        StageConfiguration.DEFAULT_IMMEDIATE_RETRIES + 1,
-        StageConfiguration.DEFAULT_IMMEDIATE_RETRIES);
-    testImmediateRetries(null, null, StageConfiguration.DEFAULT_IMMEDIATE_RETRIES);
+        ExecutorParameters.DEFAULT_IMMEDIATE_RETRIES + 1,
+        ExecutorParameters.DEFAULT_IMMEDIATE_RETRIES);
+    immediateRetries(null, null, ExecutorParameters.DEFAULT_IMMEDIATE_RETRIES);
   }
 }

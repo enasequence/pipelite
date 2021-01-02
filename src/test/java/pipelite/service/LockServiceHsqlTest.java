@@ -10,6 +10,7 @@
  */
 package pipelite.service;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -20,6 +21,7 @@ import pipelite.PipeliteTestConfiguration;
     classes = PipeliteTestConfiguration.class,
     properties = {"pipelite.launcher.lockDuration=5s"})
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
+@Tag("hsql-test")
 public class LockServiceHsqlTest {
 
   @Autowired LockService service;

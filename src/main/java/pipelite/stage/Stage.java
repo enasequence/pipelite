@@ -18,7 +18,6 @@ import lombok.EqualsAndHashCode;
 import lombok.extern.flogger.Flogger;
 import pipelite.entity.StageEntity;
 import pipelite.stage.executor.StageExecutor;
-import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.stage.executor.StageExecutorResult;
 
 @Flogger
@@ -26,7 +25,6 @@ import pipelite.stage.executor.StageExecutorResult;
 public class Stage {
   private final String stageName;
   @EqualsAndHashCode.Exclude private StageExecutor executor;
-  @EqualsAndHashCode.Exclude private StageExecutorParameters executorParams;
   @EqualsAndHashCode.Exclude private final List<Stage> dependsOn;
   @EqualsAndHashCode.Exclude private StageEntity stageEntity;
   @EqualsAndHashCode.Exclude private AtomicInteger immediateExecutionCount = new AtomicInteger();
@@ -35,16 +33,10 @@ public class Stage {
   public Stage(
       String stageName,
       StageExecutor executor,
-      StageExecutorParameters executorParams,
       List<Stage> dependsOn) {
     this.stageName = stageName;
     this.executor = executor;
     this.dependsOn = dependsOn;
-    if (executorParams != null) {
-      this.executorParams = executorParams;
-    } else {
-      this.executorParams = StageExecutorParameters.builder().build();
-    }
 
     if (stageName == null || stageName.isEmpty()) {
       throw new IllegalArgumentException("Missing stage name");

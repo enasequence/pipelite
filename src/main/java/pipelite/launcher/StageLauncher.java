@@ -19,8 +19,8 @@ import pipelite.exception.PipeliteInterruptedException;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.ConfigurableStageExecutorParameters;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.time.Time;
 
 @Flogger
@@ -31,6 +31,8 @@ public class StageLauncher {
   private final String pipelineName;
   private final Process process;
   private final Stage stage;
+
+  private final static Duration POLL_FREQUENCY = Duration.ofMinutes(1);
 
   public StageLauncher(
       StageConfiguration stageConfiguration, String pipelineName, Process process, Stage stage) {
@@ -52,9 +54,10 @@ public class StageLauncher {
    * @return The maximum number of retries.
    */
   public static int getMaximumRetries(Stage stage) {
-    int maximumRetries = ConfigurableStageExecutorParameters.DEFAULT_MAX_RETRIES;
-    if (stage.getExecutorParams().getMaximumRetries() != null) {
-      maximumRetries = stage.getExecutorParams().getMaximumRetries();
+    ExecutorParameters executorParams = stage.getExecutor().getExecutorParams();
+    int maximumRetries = ExecutorParameters.DEFAULT_MAX_RETRIES;
+    if (executorParams.getMaximumRetries() != null) {
+      maximumRetries = executorParams.getMaximumRetries();
     }
     return Math.max(0, maximumRetries);
   }
@@ -65,9 +68,10 @@ public class StageLauncher {
    * @return The maximum number of immediate retries.
    */
   public static int getImmediateRetries(Stage stage) {
-    int immediateRetries = ConfigurableStageExecutorParameters.DEFAULT_IMMEDIATE_RETRIES;
-    if (stage.getExecutorParams().getImmediateRetries() != null) {
-      immediateRetries = stage.getExecutorParams().getImmediateRetries();
+    ExecutorParameters executorParams = stage.getExecutor().getExecutorParams();
+    int immediateRetries = ExecutorParameters.DEFAULT_IMMEDIATE_RETRIES;
+    if (executorParams.getImmediateRetries() != null) {
+      immediateRetries = executorParams.getImmediateRetries();
     }
     return Math.min(Math.max(0, immediateRetries), getMaximumRetries(stage));
   }
@@ -120,11 +124,7 @@ public class StageLauncher {
         break;
       }
 
-      Duration pollFrequency = stage.getExecutorParams().getPollFrequency();
-      if (pollFrequency == null) {
-        pollFrequency = ConfigurableStageExecutorParameters.DEFAULT_POLL_FREQUENCY;
-      }
-      if (!Time.wait(pollFrequency)) {
+      if (!Time.wait(POLL_FREQUENCY)) {
         throw new PipeliteInterruptedException("Stage launcher was interrupted");
       }
     }

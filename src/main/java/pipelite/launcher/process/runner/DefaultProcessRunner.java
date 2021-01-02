@@ -36,6 +36,7 @@ import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.executor.StageExecutorSerializer;
+import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.time.Time;
 
 /** Executes a process and returns the process state. */
@@ -184,8 +185,8 @@ public class DefaultProcessRunner implements ProcessRunner {
   }
 
   private void startStageExecution(Stage stage) {
-    // Use default executor parameters.
-    stage.getExecutorParams().add(stageConfiguration);
+    // Apply default executor parameters.
+    stage.getExecutor().getExecutorParams().applyDefaults(stageConfiguration);
     StageEntity stageEntity =
         stageService.createExecution(pipelineName, process.getProcessId(), stage);
     stage.setStageEntity(stageEntity);

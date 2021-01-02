@@ -42,7 +42,7 @@ public class ProcessFactoryTest {
 
           @Override
           public Process create(ProcessBuilder builder) {
-            return builder.execute("STAGE1").withEmptySyncExecutor().build();
+            return builder.execute("STAGE1").withCallExecutor().build();
           }
         };
     Process process = ProcessFactoryHelper.create(processEntity, processFactory);

@@ -23,8 +23,8 @@ import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.session.SessionHeartbeatController;
 import pipelite.executor.cmd.stream.KeepOldestByteArrayOutputStream;
-import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.parameters.CmdExecutorParameters;
 
 /** Executes a command over ssh. */
 @Flogger
@@ -35,14 +35,18 @@ public class SshCmdRunner implements CmdRunner {
   public static final int SSH_HEARTBEAT_SECONDS = 10;
 
   @Override
-  public CmdRunnerResult execute(String cmd, StageExecutorParameters executorParams) {
+  public CmdRunnerResult execute(String cmd, CmdExecutorParameters executorParams) {
     if (cmd == null) {
-      return new CmdRunnerResult(
-          EXIT_CODE_ERROR, null, null, StageExecutorResult.InternalError.CMD_NULL);
+      return CmdRunnerResult.builder()
+          .exitCode(EXIT_CODE_ERROR)
+          .internalError(StageExecutorResult.InternalError.CMD_NULL)
+          .build();
     }
     if (cmd.trim().isEmpty()) {
-      return new CmdRunnerResult(
-          EXIT_CODE_ERROR, null, null, StageExecutorResult.InternalError.CMD_EMPTY);
+      return CmdRunnerResult.builder()
+          .exitCode(EXIT_CODE_ERROR)
+          .internalError(StageExecutorResult.InternalError.CMD_EMPTY)
+          .build();
     }
 
     SshClient client = null;
@@ -82,8 +86,10 @@ public class SshCmdRunner implements CmdRunner {
 
         if (events.contains(ClientChannelEvent.TIMEOUT)) {
           log.atSevere().log("Failed ssh call because of timeout: %s", cmd);
-          return new CmdRunnerResult(
-              EXIT_CODE_ERROR, null, null, StageExecutorResult.InternalError.CMD_TIMEOUT);
+          return CmdRunnerResult.builder()
+              .exitCode(EXIT_CODE_ERROR)
+              .internalError(StageExecutorResult.InternalError.CMD_TIMEOUT)
+              .build();
         }
 
         int exitCode = channel.getExitStatus();
@@ -92,8 +98,10 @@ public class SshCmdRunner implements CmdRunner {
       }
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Failed ssh call: %s", cmd);
-      return new CmdRunnerResult(
-          EXIT_CODE_ERROR, null, null, StageExecutorResult.InternalError.CMD_EXCEPTION);
+      return CmdRunnerResult.builder()
+          .exitCode(EXIT_CODE_ERROR)
+          .internalError(StageExecutorResult.InternalError.CMD_EXCEPTION)
+          .build();
     } finally {
       if (client != null) {
         client.stop();

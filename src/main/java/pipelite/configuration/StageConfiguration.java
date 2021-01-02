@@ -18,8 +18,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.context.annotation.Configuration;
-import pipelite.stage.executor.ConfigurableStageExecutorParameters;
+import pipelite.stage.parameters.*;
 
 @Data
 @Builder
@@ -27,29 +28,14 @@ import pipelite.stage.executor.ConfigurableStageExecutorParameters;
 @AllArgsConstructor
 @Configuration
 @ConfigurationProperties(prefix = "pipelite.stage", ignoreInvalidFields = true)
-public class StageConfiguration implements ConfigurableStageExecutorParameters {
+public class StageConfiguration {
 
-  @Builder.Default private Duration timeout = DEFAULT_TIMEOUT;
+  @NestedConfigurationProperty
+  private AwsBatchExecutorParameters awsBatch;
 
-  @Builder.Default private Integer maximumRetries = DEFAULT_MAX_RETRIES;
+  @NestedConfigurationProperty
+  private LsfExecutorParameters lsf;
 
-  @Builder.Default private Integer immediateRetries = DEFAULT_IMMEDIATE_RETRIES;
-
-  @Builder.Default private Map<String, String> env = new HashMap<>();
-
-  private String workDir;
-
-  private Integer memory;
-
-  private Duration memoryTimeout;
-
-  private Integer cores;
-
-  private String host;
-
-  private String queue;
-
-  @Builder.Default private Duration pollFrequency = DEFAULT_POLL_FREQUENCY;
-
-  private String singularityImage;
+  @NestedConfigurationProperty
+  private CmdExecutorParameters cmd;
 }

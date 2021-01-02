@@ -23,6 +23,8 @@ import pipelite.configuration.SingularityTestConfiguration;
 import pipelite.configuration.SshTestConfiguration;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.*;
+import pipelite.stage.parameters.CmdExecutorParameters;
+import pipelite.stage.parameters.ExecutorParameters;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
@@ -39,16 +41,13 @@ public class SshCmdExecutorTest {
 
     String stageName = UniqueStringGenerator.randomStageName();
 
-    StageExecutorParameters executorParams = StageExecutorParameters.builder().build();
-    executorParams.setHost(sshTestConfiguration.getHost());
-    executorParams.setTimeout(Duration.ofSeconds(30));
-
-    Stage stage =
-        Stage.builder()
-            .stageName(stageName)
-            .executor(StageExecutor.createSshCmdExecutor("echo test"))
-            .executorParams(executorParams)
-            .build();
+    CmdExecutor<CmdExecutorParameters> executor = StageExecutor.createSshCmdExecutor("echo test");
+    executor.setExecutorParams(
+        CmdExecutorParameters.builder()
+            .host(sshTestConfiguration.getHost())
+            .timeout(Duration.ofSeconds(30))
+            .build());
+    Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
 
     StageExecutorResult result = stage.execute(PIPELINE_NAME, PROCESS_ID);
     // Ignore timeout errors.
@@ -64,19 +63,15 @@ public class SshCmdExecutorTest {
   @Test
   public void testSingularity() {
 
-    StageExecutorParameters executorParams = StageExecutorParameters.builder().build();
-    executorParams.setHost(singularityTestConfiguration.getHost());
-    executorParams.setSingularityImage("docker://enasequence/webin-cli");
-    executorParams.setTimeout(Duration.ofSeconds(30));
-
+    CmdExecutor<CmdExecutorParameters> executor = StageExecutor.createSshCmdExecutor("");
+    executor.setExecutorParams(
+        CmdExecutorParameters.builder()
+            .host(singularityTestConfiguration.getHost())
+            .singularityImage("docker://enasequence/webin-cli")
+            .timeout(Duration.ofSeconds(30))
+            .build());
     String stageName = "testStageName";
-
-    Stage stage =
-        Stage.builder()
-            .stageName(stageName)
-            .executor(StageExecutor.createSshCmdExecutor(""))
-            .executorParams(executorParams)
-            .build();
+    Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
 
     StageExecutorResult result = stage.execute(PIPELINE_NAME, PROCESS_ID);
     // Ignore timeout errors.

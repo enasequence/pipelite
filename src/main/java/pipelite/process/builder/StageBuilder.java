@@ -10,31 +10,38 @@
  */
 package pipelite.process.builder;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+
+import pipelite.executor.CallExecutor;
+import pipelite.executor.CmdExecutor;
+import pipelite.executor.LsfExecutor;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.*;
+import pipelite.stage.parameters.CmdExecutorParameters;
+import pipelite.stage.parameters.ExecutorParameters;
+import pipelite.stage.parameters.LsfExecutorParameters;
+
+import static pipelite.stage.executor.StageExecutorResultType.ACTIVE;
+import static pipelite.stage.executor.StageExecutorResultType.SUCCESS;
 
 public class StageBuilder {
   private final ProcessBuilder processBuilder;
   private final String stageName;
   private final List<String> dependsOnStageNames = new ArrayList<>();
-  private final StageExecutorParameters executorParams;
 
   public StageBuilder(
-      ProcessBuilder processBuilder,
-      String stageName,
-      Collection<String> dependsOnStageNames,
-      StageExecutorParameters executorParams) {
+      ProcessBuilder processBuilder, String stageName, Collection<String> dependsOnStageNames) {
     this.processBuilder = processBuilder;
     this.stageName = stageName;
     this.dependsOnStageNames.addAll(dependsOnStageNames);
-    this.executorParams = executorParams;
   }
 
   public ProcessBuilder with(StageExecutor executor) {
+    return with(executor, ExecutorParameters.builder().build());
+  }
+
+  public ProcessBuilder with(StageExecutor executor, ExecutorParameters params) {
+    executor.setExecutorParams(params);
     return addStage(executor);
   }
 
@@ -44,7 +51,19 @@ public class StageBuilder {
    * @param cmd the command line command to execute
    */
   public ProcessBuilder withLocalCmdExecutor(String cmd) {
-    return addStage(StageExecutor.createLocalCmdExecutor(cmd));
+    return withLocalCmdExecutor(cmd, new CmdExecutorParameters());
+  }
+
+  /**
+   * An executor that runs a command line command locally.
+   *
+   * @param cmd the command line command to execute
+   * @oaram params the executor parameters
+   */
+  public ProcessBuilder withLocalCmdExecutor(String cmd, CmdExecutorParameters params) {
+    CmdExecutor<CmdExecutorParameters> executor = StageExecutor.createLocalCmdExecutor(cmd);
+    executor.setExecutorParams(params);
+    return addStage(executor);
   }
 
   /**
@@ -53,7 +72,19 @@ public class StageBuilder {
    * @param cmd the command line command to execute
    */
   public ProcessBuilder withSshCmdExecutor(String cmd) {
-    return addStage(StageExecutor.createSshCmdExecutor(cmd));
+    return withSshCmdExecutor(cmd, new CmdExecutorParameters());
+  }
+
+  /**
+   * An executor that runs a command line command remotely over ssh.
+   *
+   * @param cmd the command line command to execute
+   * @oaram params the executor parameters
+   */
+  public ProcessBuilder withSshCmdExecutor(String cmd, CmdExecutorParameters params) {
+    CmdExecutor<CmdExecutorParameters> executor = StageExecutor.createSshCmdExecutor(cmd);
+    executor.setExecutorParams(params);
+    return addStage(executor);
   }
 
   /**
@@ -61,8 +92,20 @@ public class StageBuilder {
    *
    * @param cmd the command line command to execute
    */
-  public ProcessBuilder withLsfLocalCmdExecutor(String cmd) {
-    return addStage(StageExecutor.createLsfLocalCmdExecutor(cmd));
+  public ProcessBuilder withLocalLsfExecutor(String cmd) {
+    return withLocalLsfExecutor(cmd, new LsfExecutorParameters());
+  }
+
+  /**
+   * An executor that runs a command line command locally using LSF.
+   *
+   * @param cmd the command line command to execute
+   * @oaram params the executor parameters
+   */
+  public ProcessBuilder withLocalLsfExecutor(String cmd, LsfExecutorParameters params) {
+    LsfExecutor executor = StageExecutor.createLocalLsfExecutor(cmd);
+    executor.setExecutorParams(params);
+    return addStage(executor);
   }
 
   /**
@@ -70,36 +113,99 @@ public class StageBuilder {
    *
    * @param cmd the command line command to execute
    */
-  public ProcessBuilder withLsfSshCmdExecutor(String cmd) {
-    return addStage(StageExecutor.createLsfSshCmdExecutor(cmd));
+  public ProcessBuilder withSshLsfExecutor(String cmd) {
+    return withLocalLsfExecutor(cmd, new LsfExecutorParameters());
   }
 
   /**
-   * A synchronous executor that returns a stage execution result of the given result type.
+   * An executor that runs a command line command remotely over ssh using LSF.
+   *
+   * @param cmd the command line command to execute
+   * @oaram params the executor parameters
+   */
+  public ProcessBuilder withSshLsfExecutor(String cmd, LsfExecutorParameters params) {
+    LsfExecutor executor = StageExecutor.createSshLsfExecutor(cmd);
+    executor.setExecutorParams(params);
+    return addStage(executor);
+  }
+
+  /**
+   * An executor that calls the given action.
+   *
+   * @param action the stage execution action
+   */
+  public ProcessBuilder withCallExecutor(StageExecutorAction action) {
+    return withCallExecutor(action, ExecutorParameters.builder().build());
+  }
+
+  /**
+   * An executor that calls the given action.
+   *
+   * @param action the stage execution action
+   */
+  public ProcessBuilder withCallExecutor(StageExecutorAction action, ExecutorParameters params) {
+    CallExecutor executor = new CallExecutor(action);
+    executor.setExecutorParams(params);
+    return addStage(executor);
+  }
+
+  /**
+   * An executor that returns a stage execution result of the given result type.
    *
    * @param resultType the stage execution result type returned by the executor
    */
-  public ProcessBuilder withEmptySyncExecutor(StageExecutorResultType resultType) {
-    return addStage(new EmptySyncStageExecutor(resultType));
-  }
-
-  /** A synchronous executor that returns COMPLETED stage execution result. */
-  public ProcessBuilder withEmptySyncExecutor() {
-    return withEmptySyncExecutor(StageExecutorResultType.SUCCESS);
+  public ProcessBuilder withCallExecutor(StageExecutorResultType resultType) {
+    return withCallExecutor(resultType, ExecutorParameters.builder().build());
   }
 
   /**
-   * An asynchronous executor that returns a stage execution result of the given result type.
+   * An executor that returns a stage execution result of the given result type.
    *
-   * @param resultType the stage execution result returned by the executor
+   * @param resultType the stage execution result type returned by the executor
+   * @param params the executor parameters
    */
-  public ProcessBuilder withEmptyAsyncExecutor(StageExecutorResultType resultType) {
-    return addStage(new EmptyAsyncStageExecutor(resultType));
+  public ProcessBuilder withCallExecutor(
+      StageExecutorResultType resultType, ExecutorParameters params) {
+    CallExecutor executor = new CallExecutor(resultType);
+    executor.setExecutorParams(params);
+    return addStage(executor);
   }
 
-  /** An asynchronous executor that returns COMPLETED stage execution result. */
-  public ProcessBuilder withEmptyAsyncExecutor() {
-    return withEmptyAsyncExecutor(StageExecutorResultType.SUCCESS);
+  /** An executor that returns the stage execution result SUCCESS. */
+  public ProcessBuilder withCallExecutor() {
+    return withCallExecutor(StageExecutorResultType.SUCCESS);
+  }
+
+  /**
+   * An executor that first returns the stage execution result ACTIVE and then a stage execution
+   * result of the given result type.
+   *
+   * @param resultType the stage execution result returned by the executor after ACTIVE
+   */
+  public ProcessBuilder withAsyncCallExecutor(StageExecutorResultType resultType) {
+    return withAsyncCallExecutor(resultType, ExecutorParameters.builder().build());
+  }
+
+  /**
+   * An executor that first returns the stage execution result ACTIVE and then a stage execution
+   * result of the given result type.
+   *
+   * @param resultType the stage execution result returned by the executor after ACTIVE
+   * @param params the executor parameters
+   */
+  public ProcessBuilder withAsyncCallExecutor(
+      StageExecutorResultType resultType, ExecutorParameters params) {
+    CallExecutor executor = new CallExecutor(Arrays.asList(ACTIVE, resultType));
+    executor.setExecutorParams(params);
+    return addStage(executor);
+  }
+
+  /**
+   * An executor that first returns the stage execution result ACTIVE and then a stage execution
+   * result SUCCESS.
+   */
+  public ProcessBuilder withAsyncCallExecutor() {
+    return withAsyncCallExecutor(SUCCESS);
   }
 
   private ProcessBuilder addStage(StageExecutor executor) {
@@ -117,12 +223,7 @@ public class StageBuilder {
     }
 
     processBuilder.stages.add(
-        Stage.builder()
-            .stageName(stageName)
-            .executor(executor)
-            .dependsOn(dependsOn)
-            .executorParams(executorParams)
-            .build());
+        Stage.builder().stageName(stageName).executor(executor).dependsOn(dependsOn).build());
     return processBuilder;
   }
 }

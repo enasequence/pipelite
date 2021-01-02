@@ -12,6 +12,7 @@ package pipelite.launcher;
 
 import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -31,6 +32,7 @@ import pipelite.UniqueStringGenerator;
 @ContextConfiguration(initializers = PipeliteSchedulerOracleTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"oracle-test", "pipelite-test"})
 @DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
+@Tag("oracle-test")
 public class PipeliteSchedulerOracleTest {
 
   @Autowired PipeliteSchedulerTester tester;

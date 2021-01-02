@@ -11,36 +11,21 @@
 package pipelite.stage.executor;
 
 import pipelite.executor.CmdExecutor;
-import pipelite.executor.LsfCmdExecutor;
+import pipelite.executor.LsfExecutor;
 import pipelite.executor.cmd.CmdRunner;
 import pipelite.executor.cmd.LocalCmdRunner;
 import pipelite.executor.cmd.SshCmdRunner;
-import pipelite.json.Json;
-import pipelite.stage.Stage;
+import pipelite.stage.parameters.CmdExecutorParameters;
+import pipelite.stage.parameters.ExecutorParameters;
 
 /** Executes a stage. Must be serializable to json. */
-public interface StageExecutor {
+public interface StageExecutor<T extends ExecutorParameters> extends StageExecutorAction {
 
-  /**
-   * Called repeatedly to execute the stage until it is not ACTIVE. Only asynchronous executions are
-   * expected to return ACTIVE.
-   *
-   * @param pipelineName the pipeline name.
-   * @param processId the process id.
-   * @param stage the stage to be executed.
-   * @return stage execution result
-   */
-  StageExecutorResult execute(String pipelineName, String processId, Stage stage);
+  Class<T> getExecutorParamsType();
 
-  /** Serializes the executor to json. */
-  default String serialize() {
-    return Json.serialize(this);
-  }
+  T getExecutorParams();
 
-  /** Deserializes the executor from json. */
-  static StageExecutor deserialize(String className, String json) {
-    return Json.deserialize(json, className, StageExecutor.class);
-  }
+  void setExecutorParams(T executorParams);
 
   /**
    * Creates a command executor.
@@ -49,8 +34,8 @@ public interface StageExecutor {
    * @param cmdRunner the command runner
    * @return a command executor.
    */
-  static CmdExecutor createCmdExecutor(String cmd, CmdRunner cmdRunner) {
-    CmdExecutor cmdExecutor = new CmdExecutor();
+  static CmdExecutor<CmdExecutorParameters> createCmdExecutor(String cmd, CmdRunner cmdRunner) {
+    CmdExecutor<CmdExecutorParameters> cmdExecutor = new CmdExecutor<>();
     cmdExecutor.setCmd(cmd);
     cmdExecutor.setCmdRunner(cmdRunner);
     return cmdExecutor;
@@ -62,7 +47,7 @@ public interface StageExecutor {
    * @param cmd the command
    * @return an executor that executes the command on the local host.
    */
-  static CmdExecutor createLocalCmdExecutor(String cmd) {
+  static CmdExecutor<CmdExecutorParameters> createLocalCmdExecutor(String cmd) {
     return createCmdExecutor(cmd, new LocalCmdRunner());
   }
 
@@ -72,7 +57,7 @@ public interface StageExecutor {
    * @param cmd the command
    * @return an executor that connects to a remote host using ssh and executes the command.
    */
-  static CmdExecutor createSshCmdExecutor(String cmd) {
+  static CmdExecutor<CmdExecutorParameters> createSshCmdExecutor(String cmd) {
     return createCmdExecutor(cmd, new SshCmdRunner());
   }
 
@@ -83,11 +68,11 @@ public interface StageExecutor {
    * @param cmdRunner the command runner
    * @return an executor that executes the command using LSF.
    */
-  static LsfCmdExecutor createLsfCmdExecutor(String cmd, CmdRunner cmdRunner) {
-    LsfCmdExecutor lsfCmdExecutor = new LsfCmdExecutor();
-    lsfCmdExecutor.setCmd(cmd);
-    lsfCmdExecutor.setCmdRunner(cmdRunner);
-    return lsfCmdExecutor;
+  static LsfExecutor createLsfExecutor(String cmd, CmdRunner cmdRunner) {
+    LsfExecutor lsfExecutor = new LsfExecutor();
+    lsfExecutor.setCmd(cmd);
+    lsfExecutor.setCmdRunner(cmdRunner);
+    return lsfExecutor;
   }
 
   /**
@@ -96,8 +81,8 @@ public interface StageExecutor {
    * @param cmd the command
    * @return an executor that executes the command using LSF on the local host.
    */
-  static LsfCmdExecutor createLsfLocalCmdExecutor(String cmd) {
-    return createLsfCmdExecutor(cmd, new LocalCmdRunner());
+  static LsfExecutor createLocalLsfExecutor(String cmd) {
+    return createLsfExecutor(cmd, new LocalCmdRunner());
   }
 
   /**
@@ -108,7 +93,7 @@ public interface StageExecutor {
    * @return an executor that connects to a remote host using ssh and executes the command using
    *     LSF.
    */
-  static LsfCmdExecutor createLsfSshCmdExecutor(String cmd) {
-    return createLsfCmdExecutor(cmd, new SshCmdRunner());
+  static LsfExecutor createSshLsfExecutor(String cmd) {
+    return createLsfExecutor(cmd, new SshCmdRunner());
   }
 }

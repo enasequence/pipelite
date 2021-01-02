@@ -22,8 +22,8 @@ import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.stage.executor.StageExecutorResultType;
+import pipelite.stage.parameters.ExecutorParameters;
 
 public class DefaultProcessRunnerTest {
 
@@ -34,17 +34,17 @@ public class DefaultProcessRunnerTest {
       int secondStageExecutions,
       int maximumRetries,
       int immediateRetries) {
-    StageExecutorParameters executorParams =
-        StageExecutorParameters.builder()
+    ExecutorParameters executorParams =
+        ExecutorParameters.builder()
             .maximumRetries(maximumRetries)
             .immediateRetries(immediateRetries)
             .build();
     Process process =
         new ProcessBuilder("pipelite-test")
-            .execute("STAGE0", executorParams)
-            .with((pipelineName, processId, stage) -> null)
-            .execute("STAGE1", executorParams)
-            .with((pipelineName, processId, stage) -> null)
+            .execute("STAGE0")
+            .withCallExecutor((pipelineName, processId, stage) -> null, executorParams)
+            .execute("STAGE1")
+            .withCallExecutor((pipelineName, processId, stage) -> null, executorParams)
             .build();
     List<Stage> stages = new ArrayList<>();
 

@@ -11,9 +11,11 @@
 package pipelite.process.builder;
 
 import java.util.*;
+
+import pipelite.exception.PipeliteException;
 import pipelite.process.Process;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.StageExecutorParameters;
+import pipelite.stage.parameters.ExecutorParameters;
 
 public class ProcessBuilder {
 
@@ -29,62 +31,29 @@ public class ProcessBuilder {
   }
 
   public StageBuilder execute(String stageName) {
-    return new StageBuilder(
-        this, stageName, Collections.emptyList(), StageExecutorParameters.builder().build());
-  }
-
-  public StageBuilder execute(String stageName, StageExecutorParameters executorParams) {
-    return new StageBuilder(this, stageName, Collections.emptyList(), executorParams);
-  }
-
-  public StageBuilder executeAfter(String stageName, String dependsOnStageName) {
-    return new StageBuilder(
-        this,
-        stageName,
-        Arrays.asList(dependsOnStageName),
-        StageExecutorParameters.builder().build());
-  }
-
-  public StageBuilder executeAfter(String stageName, List<String> dependsOnStageName) {
-    return new StageBuilder(
-        this, stageName, dependsOnStageName, StageExecutorParameters.builder().build());
+    return new StageBuilder(this, stageName, Collections.emptyList());
   }
 
   public StageBuilder executeAfter(
-      String stageName, String dependsOnStageName, StageExecutorParameters executorParams) {
-    return new StageBuilder(this, stageName, Arrays.asList(dependsOnStageName), executorParams);
+      String stageName, String dependsOnStageName) {
+    return new StageBuilder(this, stageName, Arrays.asList(dependsOnStageName));
   }
 
   public StageBuilder executeAfter(
-      String stageName, List<String> dependsOnStageName, StageExecutorParameters executorParams) {
-    return new StageBuilder(this, stageName, dependsOnStageName, executorParams);
-  }
-
-  public StageBuilder executeAfterPrevious(String stageName) {
-    return new StageBuilder(
-        this,
-        stageName,
-        Arrays.asList(lastStage().getStageName()),
-        StageExecutorParameters.builder().build());
+      String stageName, List<String> dependsOnStageName) {
+    return new StageBuilder(this, stageName, dependsOnStageName);
   }
 
   public StageBuilder executeAfterPrevious(
-      String stageName, StageExecutorParameters executorParams) {
+      String stageName) {
     return new StageBuilder(
-        this, stageName, Arrays.asList(lastStage().getStageName()), executorParams);
+        this, stageName, Arrays.asList(lastStage().getStageName()));
   }
 
-  public StageBuilder executeAfterFirst(String stageName) {
+  public StageBuilder executeAfterFirst(
+      String stageName) {
     return new StageBuilder(
-        this,
-        stageName,
-        Arrays.asList(firstStage().getStageName()),
-        StageExecutorParameters.builder().build());
-  }
-
-  public StageBuilder executeAfterFirst(String stageName, StageExecutorParameters executorParams) {
-    return new StageBuilder(
-        this, stageName, Arrays.asList(firstStage().getStageName()), executorParams);
+        this, stageName, Arrays.asList(firstStage().getStageName()));
   }
 
   public Process build() {

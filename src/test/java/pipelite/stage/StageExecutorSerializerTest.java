@@ -16,8 +16,33 @@ import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import pipelite.entity.StageEntity;
 import pipelite.stage.executor.*;
+import pipelite.stage.parameters.ExecutorParameters;
 
 public class StageExecutorSerializerTest {
+
+  private static class TestExecutor extends AbstractExecutor implements JsonSerializableExecutor {
+
+    private StageExecutorResultType resultType;
+
+    public TestExecutor() {}
+
+    public TestExecutor(StageExecutorResultType resultType) {
+      this.resultType = resultType;
+    }
+
+    @Override
+    public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
+      return null;
+    }
+
+    public StageExecutorResultType getResultType() {
+      return resultType;
+    }
+
+    public void setResultType(StageExecutorResultType resultType) {
+      this.resultType = resultType;
+    }
+  }
 
   @Test
   public void deserializeExecutor() {
@@ -27,19 +52,20 @@ public class StageExecutorSerializerTest {
             StageExecutorResult.success(),
             StageExecutorResult.error())) {
       StageEntity stageEntity = new StageEntity();
-      stageEntity.setExecutorName(EmptySyncStageExecutor.class.getName());
+      stageEntity.setExecutorName(TestExecutor.class.getName());
       stageEntity.setExecutorData(
           "{\n" + "  \"resultType\" : \"" + result.getResultType().name() + "\"\n}");
       Stage stage =
           Stage.builder()
               .stageName("STAGE1")
-              .executor(new EmptySyncStageExecutor(result.getResultType()))
+              .executor(new TestExecutor(result.getResultType()))
               .build();
       stage.setStageEntity(stageEntity);
       StageExecutor deserializedExecutor = StageExecutorSerializer.deserializeExecutor(stage);
       assertThat(deserializedExecutor).isNotNull();
-      assertThat(deserializedExecutor)
-          .isEqualTo(new EmptySyncStageExecutor(result.getResultType()));
+      assertThat(stage.getExecutor()).isInstanceOf(TestExecutor.class);
+      assertThat(((TestExecutor) stage.getExecutor()).getResultType())
+          .isEqualTo(result.getResultType());
     }
   }
 
@@ -48,14 +74,12 @@ public class StageExecutorSerializerTest {
     StageEntity stageEntity = new StageEntity();
     stageEntity.setExecutorParams(
         "{\n" + "  \"maximumRetries\" : 3,\n" + "  \"immediateRetries\" : 3\n" + "}");
-    Stage stage =
-        Stage.builder()
-            .stageName("STAGE1")
-            .executor(new EmptySyncStageExecutor(StageExecutorResultType.SUCCESS))
-            .build();
+    TestExecutor executor = new TestExecutor(StageExecutorResultType.SUCCESS);
+    Stage stage = Stage.builder().stageName("STAGE1").executor(executor).build();
     stage.setStageEntity(stageEntity);
-    StageExecutorParameters deserializedExecutorParams =
-        StageExecutorSerializer.deserializeExecutorParameters(stage);
+    ExecutorParameters deserializedExecutorParams =
+        StageExecutorSerializer.deserializeExecutorParameters(
+            stage, executor.getExecutorParamsType());
     assertThat(deserializedExecutorParams).isNotNull();
     assertThat(deserializedExecutorParams.getImmediateRetries()).isEqualTo(3);
     assertThat(deserializedExecutorParams.getMaximumRetries()).isEqualTo(3);
@@ -72,21 +96,23 @@ public class StageExecutorSerializerTest {
       Stage stage =
           Stage.builder()
               .stageName("STAGE1")
-              .executor(new EmptySyncStageExecutor(result.getResultType()))
+              .executor(new TestExecutor(result.getResultType()))
               .build();
       stage.setStageEntity(stageEntity);
       stageEntity.startExecution(stage);
-      stageEntity.setExecutorName(EmptySyncStageExecutor.class.getName());
+      stageEntity.setExecutorName(TestExecutor.class.getName());
       stageEntity.setExecutorData(
           "{\n" + "  \"resultType\" : \"" + result.getResultType().name() + "\"\n}");
       stageEntity.setExecutorParams(
           "{\n" + "  \"maximumRetries\" : 3,\n" + "  \"immediateRetries\" : 3\n" + "}");
       assertThat(StageExecutorSerializer.deserializeExecution(stage)).isTrue();
       assertThat(stage.getExecutor()).isNotNull();
-      assertThat(stage.getExecutor()).isEqualTo(new EmptySyncStageExecutor(result.getResultType()));
-      assertThat(stage.getExecutorParams()).isNotNull();
-      assertThat(stage.getExecutorParams().getImmediateRetries()).isEqualTo(3);
-      assertThat(stage.getExecutorParams().getMaximumRetries()).isEqualTo(3);
+      assertThat(stage.getExecutor()).isInstanceOf(TestExecutor.class);
+      assertThat(((TestExecutor) stage.getExecutor()).getResultType())
+          .isEqualTo(result.getResultType());
+      assertThat(stage.getExecutor().getExecutorParams()).isNotNull();
+      assertThat(stage.getExecutor().getExecutorParams().getImmediateRetries()).isEqualTo(3);
+      assertThat(stage.getExecutor().getExecutorParams().getMaximumRetries()).isEqualTo(3);
     }
   }
 }

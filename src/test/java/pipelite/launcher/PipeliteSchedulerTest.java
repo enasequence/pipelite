@@ -51,7 +51,7 @@ public class PipeliteSchedulerTest {
   }
 
   private static Process testProcess(String processId) {
-    return new ProcessBuilder(processId).execute("STAGE").withEmptySyncExecutor().build();
+    return new ProcessBuilder(processId).execute("STAGE").withCallExecutor().build();
   }
 
   @Test

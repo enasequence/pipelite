@@ -40,9 +40,9 @@ import pipelite.process.ProcessSource;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.*;
-import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
+import pipelite.stage.parameters.ExecutorParameters;
 
 @Component
 @Scope("prototype")
@@ -241,38 +241,42 @@ public class PipeliteLauncherFailureTester {
     public Process create(ProcessBuilder builder) {
       processIds.add(builder.getProcessId());
 
-      StageExecutorParameters executorParams =
-          StageExecutorParameters.builder()
+      ExecutorParameters executorParams =
+          ExecutorParameters.builder()
               .immediateRetries(0)
               .maximumRetries(0)
               .timeout(Duration.ofSeconds(10))
               .build();
 
       return builder
-          .execute("STAGE0", executorParams)
-          .with(
+          .execute("STAGE0")
+          .withCallExecutor(
               (pipelineName1, processId1, stage1) -> {
                 firstStageExecCnt.incrementAndGet();
                 return firstStageExecResult;
-              })
-          .executeAfterPrevious("STAGE1", executorParams)
-          .with(
+              },
+              executorParams)
+          .executeAfterPrevious("STAGE1")
+          .withCallExecutor(
               (pipelineName1, processId1, stage1) -> {
                 secondStageExecCnt.incrementAndGet();
                 return secondStageExecResult;
-              })
-          .executeAfterPrevious("STAGE2", executorParams)
-          .with(
+              },
+              executorParams)
+          .executeAfterPrevious("STAGE2")
+          .withCallExecutor(
               (pipelineName1, processId1, stage1) -> {
                 thirdStageExecCnt.incrementAndGet();
                 return thirdStageExecResult;
-              })
-          .executeAfterPrevious("STAGE3", executorParams)
-          .with(
+              },
+              executorParams)
+          .executeAfterPrevious("STAGE3")
+          .withCallExecutor(
               (pipelineName1, processId1, stage1) -> {
                 fourthStageExecCnt.incrementAndGet();
                 return fourthStageExecResult;
-              })
+              },
+              executorParams)
           .build();
     }
   }
@@ -373,9 +377,8 @@ public class PipeliteLauncherFailureTester {
         assertThat(stageEntity.getStartTime()).isNotNull();
         assertThat(stageEntity.getEndTime()).isNotNull();
         assertThat(stageEntity.getStartTime()).isBeforeOrEqualTo(stageEntity.getEndTime());
-        assertThat(stageEntity.getExecutorName())
-            .startsWith(PipeliteLauncherFailureTester.class.getName());
-        assertThat(stageEntity.getExecutorData()).isEqualTo("{ }");
+        assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.CallExecutor");
+        assertThat(stageEntity.getExecutorData()).isNull();
         assertThat(stageEntity.getExecutorParams())
             .isEqualTo(
                 "{\n"

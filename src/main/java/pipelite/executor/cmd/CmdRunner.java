@@ -10,12 +10,12 @@
  */
 package pipelite.executor.cmd;
 
-import pipelite.stage.executor.StageExecutorParameters;
+import pipelite.stage.parameters.CmdExecutorParameters;
 
 public interface CmdRunner {
 
   int EXIT_CODE_SUCCESS = 0;
   int EXIT_CODE_ERROR = 1;
 
-  CmdRunnerResult execute(String cmd, StageExecutorParameters executorParams);
+  CmdRunnerResult execute(String cmd, CmdExecutorParameters executorParams);
 }

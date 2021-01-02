@@ -25,15 +25,18 @@ import lombok.Setter;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.cmd.*;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.StageExecutor;
+import pipelite.stage.executor.AbstractExecutor;
+import pipelite.stage.executor.JsonSerializableExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
+import pipelite.stage.parameters.CmdExecutorParameters;
 
 /** Executes a command. Must be serializable to json. */
 @Flogger
 @Getter
 @Setter
-public class CmdExecutor implements StageExecutor {
+public class CmdExecutor<T extends CmdExecutorParameters> extends AbstractExecutor<T>
+    implements JsonSerializableExecutor {
 
   /** The command to be executed. */
   private String cmd;
@@ -70,7 +73,7 @@ public class CmdExecutor implements StageExecutor {
     } else {
       prefixCmd = "";
     }
-    String singularityImage = stage.getExecutorParams().getSingularityImage();
+    String singularityImage = getExecutorParams().getSingularityImage();
     if (singularityImage != null) {
       prefixCmd += "singularity run " + singularityImage + " ";
     }
@@ -80,37 +83,14 @@ public class CmdExecutor implements StageExecutor {
   public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
     String fullCmd = getFullCmd(pipelineName, processId, stage);
     try {
-      CmdRunnerResult result = cmdRunner.execute(fullCmd, stage.getExecutorParams());
-      return result.getStageExecutorResult(fullCmd, stage.getExecutorParams().getHost());
+      CmdRunnerResult result = cmdRunner.execute(fullCmd, getExecutorParams());
+      return result.getStageExecutorResult(fullCmd);
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Failed call: %s", fullCmd);
       StageExecutorResult result = StageExecutorResult.error(ex);
       result.addAttribute(StageExecutorResultAttribute.COMMAND, fullCmd);
       return result;
     }
-  }
-
-  public static String getWorkDir(String pipelineName, String processId, Stage stage) {
-    if (stage.getExecutorParams().getWorkDir() != null) {
-      String workDir = stage.getExecutorParams().getWorkDir();
-      workDir = workDir.replace('\\', '/');
-      workDir = workDir.trim();
-      if (!workDir.endsWith("/")) {
-        workDir = workDir + "/";
-      }
-      return workDir + "pipelite/" + pipelineName + "/" + processId;
-    } else {
-      return "pipelite/" + pipelineName + "/" + processId;
-    }
-  }
-
-  public static String getOutFile(
-      String pipelineName, String processId, Stage stage, String suffix) {
-    String workDir = getWorkDir(pipelineName, processId, stage);
-    if (!workDir.endsWith("/")) {
-      workDir = workDir + "/";
-    }
-    return workDir + pipelineName + "_" + processId + "_" + stage.getStageName() + "." + suffix;
   }
 
   private static class CmdRunnerSerializer extends StdSerializer<CmdRunner> {

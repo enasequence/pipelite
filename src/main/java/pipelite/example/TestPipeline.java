@@ -33,6 +33,6 @@ public class TestPipeline implements ProcessFactory {
 
   @Override
   public Process create(ProcessBuilder builder) {
-    return builder.execute("STAGE").withEmptySyncExecutor().build();
+    return builder.execute("STAGE").withCallExecutor().build();
   }
 }

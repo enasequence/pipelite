@@ -34,9 +34,10 @@ import pipelite.process.ProcessSource;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.*;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.AbstractExecutor;
 import pipelite.stage.executor.StageExecutor;
-import pipelite.stage.executor.StageExecutorParameters;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.parameters.ExecutorParameters;
 
 @Component
 @Scope("prototype")
@@ -160,13 +161,13 @@ public class PipeliteLauncherAsyncTester {
     @Override
     public Process create(ProcessBuilder builder) {
       processIds.add(builder.getProcessId());
-      StageExecutorParameters executorParams =
-          StageExecutorParameters.builder().immediateRetries(0).maximumRetries(0).build();
-      return builder.execute("STAGE", executorParams).with(stageExecutor).build();
+      ExecutorParameters executorParams =
+          ExecutorParameters.builder().immediateRetries(0).maximumRetries(0).build();
+      return builder.execute("STAGE").with(stageExecutor, executorParams).build();
     }
   }
 
-  public abstract static class TestExecutor implements StageExecutor {
+  public abstract static class TestExecutor extends AbstractExecutor<ExecutorParameters> {
     public AtomicInteger submitCount = new AtomicInteger();
     public AtomicInteger pollCount = new AtomicInteger();
     private Set<String> submit = ConcurrentHashMap.newKeySet();

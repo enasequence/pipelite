@@ -13,22 +13,31 @@ package pipelite.entity;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.StageExecutor;
+import pipelite.stage.executor.AbstractExecutor;
+import pipelite.stage.executor.JsonSerializableExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
+import pipelite.stage.parameters.ExecutorParameters;
+
+import java.time.Duration;
 
 class StageEntityTest {
 
-  @Data
-  public static final class TestExecutor implements StageExecutor {
+  public static final class TestExecutor extends AbstractExecutor<ExecutorParameters>
+      implements JsonSerializableExecutor {
     private String test = "TEST_EXECUTOR_DATA";
 
     @Override
     public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
       return null;
+    }
+
+    public String getTest() {
+      return test;
     }
   }
 
@@ -38,9 +47,15 @@ class StageEntityTest {
     String processId = UniqueStringGenerator.randomProcessId();
     String stageName = UniqueStringGenerator.randomStageName();
 
-    TestExecutor testExecutor = new TestExecutor();
+    TestExecutor executor = new TestExecutor();
+    executor.setExecutorParams(
+        ExecutorParameters.builder()
+            .timeout(Duration.ofSeconds(0))
+            .immediateRetries(0)
+            .maximumRetries(0)
+            .build());
 
-    Stage stage = Stage.builder().stageName(stageName).executor(testExecutor).build();
+    Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
 
     // Create execution.
 
@@ -74,7 +89,13 @@ class StageEntityTest {
         .isEqualTo("pipelite.entity.StageEntityTest$TestExecutor");
     assertThat(stageEntity.getExecutorData())
         .isEqualTo("{\n" + "  \"test\" : \"TEST_EXECUTOR_DATA\"\n" + "}");
-    assertThat(stageEntity.getExecutorParams()).isEqualTo("{ }");
+    assertThat(stageEntity.getExecutorParams())
+        .isEqualTo(
+            "{\n"
+                + "  \"timeout\" : 0,\n"
+                + "  \"maximumRetries\" : 0,\n"
+                + "  \"immediateRetries\" : 0\n"
+                + "}");
 
     // End first execution.
 
@@ -98,7 +119,13 @@ class StageEntityTest {
         .isEqualTo("pipelite.entity.StageEntityTest$TestExecutor");
     assertThat(stageEntity.getExecutorData())
         .isEqualTo("{\n" + "  \"test\" : \"TEST_EXECUTOR_DATA\"\n" + "}");
-    assertThat(stageEntity.getExecutorParams()).isEqualTo("{ }");
+    assertThat(stageEntity.getExecutorParams())
+        .isEqualTo(
+            "{\n"
+                + "  \"timeout\" : 0,\n"
+                + "  \"maximumRetries\" : 0,\n"
+                + "  \"immediateRetries\" : 0\n"
+                + "}");
 
     // Start second execution.
 
@@ -116,7 +143,13 @@ class StageEntityTest {
         .isEqualTo("pipelite.entity.StageEntityTest$TestExecutor");
     assertThat(stageEntity.getExecutorData())
         .isEqualTo("{\n" + "  \"test\" : \"TEST_EXECUTOR_DATA\"\n" + "}");
-    assertThat(stageEntity.getExecutorParams()).isEqualTo("{ }");
+    assertThat(stageEntity.getExecutorParams())
+        .isEqualTo(
+            "{\n"
+                + "  \"timeout\" : 0,\n"
+                + "  \"maximumRetries\" : 0,\n"
+                + "  \"immediateRetries\" : 0\n"
+                + "}");
 
     // End second execution.
 
@@ -140,7 +173,13 @@ class StageEntityTest {
         .isEqualTo("pipelite.entity.StageEntityTest$TestExecutor");
     assertThat(stageEntity.getExecutorData())
         .isEqualTo("{\n" + "  \"test\" : \"TEST_EXECUTOR_DATA\"\n" + "}");
-    assertThat(stageEntity.getExecutorParams()).isEqualTo("{ }");
+    assertThat(stageEntity.getExecutorParams())
+        .isEqualTo(
+            "{\n"
+                + "  \"timeout\" : 0,\n"
+                + "  \"maximumRetries\" : 0,\n"
+                + "  \"immediateRetries\" : 0\n"
+                + "}");
 
     // Reset execution.
 

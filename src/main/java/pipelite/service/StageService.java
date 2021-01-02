@@ -23,6 +23,7 @@ import pipelite.repository.StageOutRepository;
 import pipelite.repository.StageRepository;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.parameters.ExecutorParameters;
 
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
