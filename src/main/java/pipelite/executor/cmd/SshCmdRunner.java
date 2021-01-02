@@ -23,7 +23,7 @@ import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.session.SessionHeartbeatController;
 import pipelite.executor.cmd.stream.KeepOldestByteArrayOutputStream;
-import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.InternalError;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
 /** Executes a command over ssh. */
@@ -36,16 +36,11 @@ public class SshCmdRunner implements CmdRunner {
 
   @Override
   public CmdRunnerResult execute(String cmd, CmdExecutorParameters executorParams) {
-    if (cmd == null) {
+    if (cmd == null || cmd.trim().isEmpty()) {
+      log.atSevere().log("No command to execute");
       return CmdRunnerResult.builder()
           .exitCode(EXIT_CODE_ERROR)
-          .internalError(StageExecutorResult.InternalError.CMD_NULL)
-          .build();
-    }
-    if (cmd.trim().isEmpty()) {
-      return CmdRunnerResult.builder()
-          .exitCode(EXIT_CODE_ERROR)
-          .internalError(StageExecutorResult.InternalError.CMD_EMPTY)
+          .internalError(InternalError.EXECUTE)
           .build();
     }
 
@@ -88,7 +83,7 @@ public class SshCmdRunner implements CmdRunner {
           log.atSevere().log("Failed ssh call because of timeout: %s", cmd);
           return CmdRunnerResult.builder()
               .exitCode(EXIT_CODE_ERROR)
-              .internalError(StageExecutorResult.InternalError.CMD_TIMEOUT)
+              .internalError(InternalError.TIMEOUT)
               .build();
         }
 
@@ -100,7 +95,7 @@ public class SshCmdRunner implements CmdRunner {
       log.atSevere().withCause(ex).log("Failed ssh call: %s", cmd);
       return CmdRunnerResult.builder()
           .exitCode(EXIT_CODE_ERROR)
-          .internalError(StageExecutorResult.InternalError.CMD_EXCEPTION)
+          .internalError(InternalError.EXECUTE)
           .build();
     } finally {
       if (client != null) {

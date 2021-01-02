@@ -20,7 +20,7 @@ import org.apache.commons.text.StringTokenizer;
 import org.apache.commons.text.matcher.StringMatcher;
 import org.apache.commons.text.matcher.StringMatcherFactory;
 import pipelite.executor.cmd.stream.KeepOldestByteArrayOutputStream;
-import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.InternalError;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
 @Flogger
@@ -29,9 +29,10 @@ public class LocalCmdRunner implements CmdRunner {
   @Override
   public CmdRunnerResult execute(String cmd, CmdExecutorParameters executorParams) {
     if (cmd == null) {
+      log.atSevere().log("No command to execute");
       return CmdRunnerResult.builder()
           .exitCode(EXIT_CODE_ERROR)
-          .internalError(StageExecutorResult.InternalError.CMD_NULL)
+          .internalError(InternalError.EXECUTE)
           .build();
     }
 
@@ -40,9 +41,10 @@ public class LocalCmdRunner implements CmdRunner {
     st.setQuoteMatcher(sm);
     List<String> args = st.getTokenList();
     if (args.isEmpty()) {
+      log.atSevere().log("No command to execute");
       return CmdRunnerResult.builder()
           .exitCode(EXIT_CODE_ERROR)
-          .internalError(StageExecutorResult.InternalError.CMD_EMPTY)
+          .internalError(InternalError.EXECUTE)
           .build();
     }
 
@@ -83,7 +85,7 @@ public class LocalCmdRunner implements CmdRunner {
       log.atSevere().withCause(ex).log("Failed system call: %s", cmd);
       return CmdRunnerResult.builder()
           .exitCode(EXIT_CODE_ERROR)
-          .internalError(StageExecutorResult.InternalError.CMD_EXCEPTION)
+          .internalError(InternalError.EXECUTE)
           .build();
     }
   }

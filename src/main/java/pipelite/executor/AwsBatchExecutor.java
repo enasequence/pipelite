@@ -10,19 +10,19 @@
  */
 package pipelite.executor;
 
-import com.amazonaws.services.batch.AWSBatch;
-import com.amazonaws.services.batch.AWSBatchClientBuilder;
 import com.amazonaws.services.batch.model.*;
 import com.google.common.flogger.FluentLogger;
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.Optional;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
+import pipelite.executor.service.ExecutorServiceFactory;
 import pipelite.log.LogKey;
+import pipelite.executor.service.AwsBatchExecutorService;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.InternalError;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.parameters.AwsBatchExecutorParameters;
@@ -34,8 +34,7 @@ import pipelite.stage.parameters.AwsBatchExecutorParameters;
 public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameters>
     implements JsonSerializableExecutor {
 
-  // TODO: batch poll requests
-  // TODO: capture lobs
+  // TODO: capture logs
   // TODO: error handling
 
   private SubmitJobResult submitJobResult;
@@ -53,7 +52,7 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
   private StageExecutorResult submit(String pipelineName, String processId, Stage stage) {
     startTime = ZonedDateTime.now();
 
-    AWSBatch client = getClient();
+    AwsBatchExecutorService.Client client = getClient();
 
     AwsBatchExecutorParameters params = getExecutorParams();
 
@@ -68,22 +67,25 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
                     .withAttemptDurationSeconds((int) params.getTimeout().getSeconds()));
     // TODO: .withContainerOverrides()
 
-    submitJobResult = client.submitJob(request);
-
-    //    TerminateJobResult terminateJob(TerminateJobRequest terminateJobRequest);
+    try {
+      submitJobResult = client.submitJob(request);
+    } catch (Exception ex) {
+      logContext(log.atSevere().withCause(ex), pipelineName, processId, stage)
+          .log("Unexpected exception from AWSBatch submit job.");
+      return StageExecutorResult.internalError(InternalError.SUBMIT);
+    }
 
     if (submitJobResult == null || submitJobResult.getJobId() == null) {
-      logContext(log.atSevere(), pipelineName, processId, stage).log("No AWSBatch submit job id.");
-      StageExecutorResult result = new StageExecutorResult(StageExecutorResultType.ERROR);
-      result.setInternalError(StageExecutorResult.InternalError.CMD_SUBMIT);
-      return result;
+      logContext(log.atSevere(), pipelineName, processId, stage)
+          .log("Missing AWSBatch submit job id.");
+      return StageExecutorResult.internalError(InternalError.SUBMIT);
     }
     return new StageExecutorResult(StageExecutorResultType.ACTIVE);
   }
 
   private StageExecutorResult poll(String pipelineName, String processId, Stage stage) {
 
-    AWSBatch client = getClient();
+    AwsBatchExecutorService.Client client = getClient();
 
     Duration timeout = getExecutorParams().getTimeout();
 
@@ -91,24 +93,34 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
       logContext(log.atSevere(), pipelineName, processId, stage)
           .log("Maximum run time exceeded. Killing AwsBatch job.");
 
-      client.terminateJob(
-          new TerminateJobRequest()
-              .withJobId(submitJobResult.getJobId())
-              .withReason("Job terminated by pipelite"));
-
-      StageExecutorResult result = StageExecutorResult.error();
-      result.setInternalError(StageExecutorResult.InternalError.CMD_TIMEOUT);
-      return result;
+      try {
+        client.terminateJob(getJobId());
+      } catch (Exception ex) {
+        logContext(log.atSevere().withCause(ex), pipelineName, processId, stage)
+            .log("Unexpected exception from AWSBatch terminate for job id %s", getJobId());
+        return StageExecutorResult.internalError(InternalError.TERMINATE);
+      }
+      return StageExecutorResult.internalError(InternalError.TIMEOUT);
     }
 
     logContext(log.atFine(), pipelineName, processId, stage).log("Checking AWSBatch job result.");
 
-    DescribeJobsResult jobResult =
-        client.describeJobs(new DescribeJobsRequest().withJobs(getJobId()));
-    Optional<JobDetail> jobDetail =
-        jobResult.getJobs().stream().filter(j -> j.getJobId().equals(getJobId())).findFirst();
+    JobDetail jobDetail;
+    try {
+      jobDetail = client.describeJob(getJobId());
 
-    String status = jobDetail.get().getStatus();
+      if (jobDetail == null || jobDetail.getStatus() == null) {
+        logContext(log.atSevere(), pipelineName, processId, stage)
+            .log("Missing AWSBatch job details for job id %s", getJobId());
+        return StageExecutorResult.internalError(InternalError.POLL);
+      }
+    } catch (Exception ex) {
+      logContext(log.atSevere().withCause(ex), pipelineName, processId, stage)
+          .log("Unexpected exception from AWSBatch terminate.");
+      return StageExecutorResult.internalError(InternalError.POLL);
+    }
+
+    String status = jobDetail.getStatus();
     switch (status) {
       case "SUCCEEDED":
         return StageExecutorResult.success();
@@ -136,13 +148,9 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
     return submitJobResult.getJobId();
   }
 
-  private AWSBatch getClient() {
-    AWSBatchClientBuilder builder = AWSBatchClientBuilder.standard();
-    String region = getExecutorParams().getRegion();
-    if (region != null) {
-      builder.setRegion(region);
-    }
-    return builder.build();
+  private AwsBatchExecutorService.Client getClient() {
+    return ExecutorServiceFactory.service(AwsBatchExecutorService.class)
+        .client(getExecutorParams().getRegion());
   }
 
   private FluentLogger.Api logContext(

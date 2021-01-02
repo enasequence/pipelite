@@ -23,8 +23,8 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import pipelite.TestProcessSource;
 import pipelite.UniqueStringGenerator;
+import pipelite.configuration.ExecutorConfiguration;
 import pipelite.configuration.LauncherConfiguration;
-import pipelite.configuration.StageConfiguration;
 import pipelite.configuration.WebConfiguration;
 import pipelite.executor.AbstractExecutor;
 import pipelite.metrics.PipelineMetrics;
@@ -47,7 +47,7 @@ public class PipeliteLauncherAsyncTester {
 
   @Autowired private WebConfiguration webConfiguration;
   @Autowired private LauncherConfiguration launcherConfiguration;
-  @Autowired private StageConfiguration stageConfiguration;
+  @Autowired private ExecutorConfiguration executorConfiguration;
   @Autowired private ProcessFactoryService processFactoryService;
   @Autowired private ProcessSourceService processSourceService;
   @Autowired private ScheduleService scheduleService;
@@ -123,7 +123,7 @@ public class PipeliteLauncherAsyncTester {
     return DefaultPipeliteLauncher.create(
         webConfiguration,
         launcherConfiguration,
-        stageConfiguration,
+        executorConfiguration,
         lockService,
         processFactoryService,
         processSourceService,

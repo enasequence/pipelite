@@ -23,6 +23,7 @@ import pipelite.configuration.SingularityTestConfiguration;
 import pipelite.configuration.SshTestConfiguration;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.*;
+import pipelite.stage.executor.InternalError;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
@@ -50,7 +51,7 @@ public class SshCmdExecutorTest {
 
     StageExecutorResult result = stage.execute(PIPELINE_NAME, PROCESS_ID);
     // Ignore timeout errors.
-    if (StageExecutorResult.InternalError.CMD_TIMEOUT == result.getInternalError()) {
+    if (InternalError.TIMEOUT == result.getInternalError()) {
       return;
     }
     assertThat(result.getResultType()).isEqualTo(StageExecutorResultType.SUCCESS);
@@ -74,7 +75,7 @@ public class SshCmdExecutorTest {
 
     StageExecutorResult result = stage.execute(PIPELINE_NAME, PROCESS_ID);
     // Ignore timeout errors.
-    if (StageExecutorResult.InternalError.CMD_TIMEOUT == result.getInternalError()) {
+    if (InternalError.TIMEOUT == result.getInternalError()) {
       return;
     }
     assertThat(result.getResultType()).isEqualTo(StageExecutorResultType.ERROR);

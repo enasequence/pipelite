@@ -26,16 +26,10 @@ public class StageExecutorResult {
   private StageExecutorResultType resultType;
   private String stdout;
   private String stderr;
-  private InternalError internalError;
-  private final Map<String, String> attributes = new HashMap<>();
 
-  public enum InternalError {
-    CMD_NULL,
-    CMD_EMPTY,
-    CMD_EXCEPTION,
-    CMD_TIMEOUT,
-    CMD_SUBMIT
-  }
+  private InternalError internalError;
+
+  private final Map<String, String> attributes = new HashMap<>();
 
   public StageExecutorResult(StageExecutorResultType resultType) {
     if (resultType == null) {
@@ -71,6 +65,12 @@ public class StageExecutorResult {
   public static StageExecutorResult error(Exception ex) {
     StageExecutorResult result = error();
     result.addExceptionAttribute(ex);
+    return result;
+  }
+
+  public static StageExecutorResult internalError(InternalError internalError) {
+    StageExecutorResult result = error();
+    result.internalError = internalError;
     return result;
   }
 

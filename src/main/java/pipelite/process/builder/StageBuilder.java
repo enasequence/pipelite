@@ -14,11 +14,14 @@ import static pipelite.stage.executor.StageExecutorResultType.ACTIVE;
 import static pipelite.stage.executor.StageExecutorResultType.SUCCESS;
 
 import java.util.*;
+
+import pipelite.executor.AwsBatchExecutor;
 import pipelite.executor.CallExecutor;
 import pipelite.executor.CmdExecutor;
 import pipelite.executor.LsfExecutor;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.*;
+import pipelite.stage.parameters.AwsBatchExecutorParameters;
 import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.stage.parameters.LsfExecutorParameters;
@@ -124,6 +127,17 @@ public class StageBuilder {
    */
   public ProcessBuilder withSshLsfExecutor(String cmd, LsfExecutorParameters params) {
     LsfExecutor executor = StageExecutor.createSshLsfExecutor(cmd);
+    executor.setExecutorParams(params);
+    return addStage(executor);
+  }
+
+  /**
+   * An executor that runs using AWSBatch.
+   *
+   * @oaram params the executor parameters
+   */
+  public ProcessBuilder withAwsBatchExecutor(AwsBatchExecutorParameters params) {
+    AwsBatchExecutor executor = StageExecutor.createAwsBatchExecutor();
     executor.setExecutorParams(params);
     return addStage(executor);
   }

@@ -23,6 +23,7 @@ import pipelite.executor.cmd.CmdRunner;
 import pipelite.executor.cmd.CmdRunnerResult;
 import pipelite.log.LogKey;
 import pipelite.stage.*;
+import pipelite.stage.executor.InternalError;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.executor.StageExecutorResultType;
@@ -90,8 +91,7 @@ public class LsfExecutor extends CmdExecutor<LsfExecutorParameters>
 
     if (jobId == null) {
       logContext(log.atSevere(), pipelineName, processId, stage).log("No LSF submit job id.");
-      result.setResultType(StageExecutorResultType.ERROR);
-      result.setInternalError(StageExecutorResult.InternalError.CMD_SUBMIT);
+      result = StageExecutorResult.internalError(InternalError.SUBMIT);
     } else {
       result.setResultType(StageExecutorResultType.ACTIVE);
     }
@@ -105,11 +105,15 @@ public class LsfExecutor extends CmdExecutor<LsfExecutorParameters>
     if (timeout != null && ZonedDateTime.now().isAfter(startTime.plus(timeout))) {
       logContext(log.atSevere(), pipelineName, processId, stage)
           .log("Maximum run time exceeded. Killing LSF job.");
-      cmdRunner.execute(BKILL_CMD + jobId, getExecutorParams());
+      try {
+        cmdRunner.execute(BKILL_CMD + jobId, getExecutorParams());
+      } catch (Exception ex) {
+        logContext(log.atSevere().withCause(ex), pipelineName, processId, stage)
+            .log("Unexpected exception when killing LSF job %s", getJobId());
+        return StageExecutorResult.internalError(InternalError.TERMINATE);
+      }
       reset();
-      StageExecutorResult result = StageExecutorResult.error();
-      result.setInternalError(StageExecutorResult.InternalError.CMD_TIMEOUT);
-      return result;
+      return StageExecutorResult.internalError(InternalError.TIMEOUT);
     }
 
     logContext(log.atFine(), pipelineName, processId, stage)

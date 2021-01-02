@@ -14,6 +14,7 @@ import static pipelite.executor.cmd.CmdRunner.EXIT_CODE_SUCCESS;
 
 import lombok.Builder;
 import lombok.Getter;
+import pipelite.stage.executor.InternalError;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 
@@ -23,10 +24,10 @@ public class CmdRunnerResult {
   private final int exitCode;
   private final String stdout;
   private final String stderr;
-  private final StageExecutorResult.InternalError internalError;
+  private final InternalError internalError;
 
   public CmdRunnerResult(
-      int exitCode, String stdout, String stderr, StageExecutorResult.InternalError internalError) {
+      int exitCode, String stdout, String stderr, InternalError internalError) {
     this.exitCode = exitCode;
     this.stdout = stdout;
     this.stderr = stderr;

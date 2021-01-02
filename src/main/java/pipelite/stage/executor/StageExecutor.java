@@ -10,6 +10,7 @@
  */
 package pipelite.stage.executor;
 
+import pipelite.executor.AwsBatchExecutor;
 import pipelite.executor.CmdExecutor;
 import pipelite.executor.LsfExecutor;
 import pipelite.executor.cmd.CmdRunner;
@@ -95,5 +96,14 @@ public interface StageExecutor<T extends ExecutorParameters> extends StageExecut
    */
   static LsfExecutor createSshLsfExecutor(String cmd) {
     return createLsfExecutor(cmd, new SshCmdRunner());
+  }
+
+  /**
+   * Creates an executor that uses AWSBatch.
+   *
+   * @return the executor that uses AWSBatch
+   */
+  static AwsBatchExecutor createAwsBatchExecutor() {
+    return new AwsBatchExecutor();
   }
 }

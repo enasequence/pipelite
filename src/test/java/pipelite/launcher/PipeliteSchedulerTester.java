@@ -25,8 +25,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import pipelite.UniqueStringGenerator;
+import pipelite.configuration.ExecutorConfiguration;
 import pipelite.configuration.LauncherConfiguration;
-import pipelite.configuration.StageConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.entity.StageEntity;
@@ -47,7 +47,7 @@ import pipelite.stage.parameters.ExecutorParameters;
 public class PipeliteSchedulerTester {
 
   @Autowired private LauncherConfiguration launcherConfiguration;
-  @Autowired private StageConfiguration stageConfiguration;
+  @Autowired private ExecutorConfiguration executorConfiguration;
   @Autowired private ProcessFactoryService processFactoryService;
   @Autowired private ProcessSourceService processSourceService;
   @Autowired private ScheduleService scheduleService;
@@ -106,7 +106,7 @@ public class PipeliteSchedulerTester {
   private PipeliteScheduler createPipeliteScheduler() {
     return DefaultPipeliteScheduler.create(
         launcherConfiguration,
-        stageConfiguration,
+        executorConfiguration,
         lockService,
         processFactoryService,
         processService,

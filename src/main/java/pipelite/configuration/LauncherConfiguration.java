@@ -19,6 +19,7 @@ import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Configuration for {@link pipelite.launcher.PipeliteLauncher} and {@link
@@ -31,6 +32,7 @@ import org.springframework.context.annotation.Configuration;
 @Data
 @Configuration
 @ConfigurationProperties(prefix = "pipelite.launcher")
+@EnableScheduling
 public class LauncherConfiguration {
 
   private static final Duration DEFAULT_LOCK_DURATION = Duration.ofMinutes(10);

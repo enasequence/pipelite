@@ -24,6 +24,7 @@ import pipelite.configuration.LsfTestConfiguration;
 import pipelite.exception.PipeliteInterruptedException;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.*;
+import pipelite.stage.executor.InternalError;
 import pipelite.stage.parameters.LsfExecutorParameters;
 import pipelite.time.Time;
 
@@ -69,7 +70,7 @@ public class SshLsfExecutorTest {
     }
 
     // Ignore timeout errors.
-    if (StageExecutorResult.InternalError.CMD_TIMEOUT == result.getInternalError()) {
+    if (InternalError.TIMEOUT == result.getInternalError()) {
       return;
     }
 

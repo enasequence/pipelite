@@ -24,32 +24,32 @@ import pipelite.PipeliteTestConfiguration;
 @SpringBootTest(
     classes = PipeliteTestConfiguration.class,
     properties = {
-      "pipelite.stage.cmd.host=TEST",
-      "pipelite.stage.cmd.immediateRetries=2",
-      "pipelite.stage.cmd.maximumRetries=3",
-      "pipelite.stage.cmd.timeout=10s",
-      "pipelite.stage.lsf.memory=1",
-      "pipelite.stage.lsf.cores=1",
-      "pipelite.stage.lsf.queue=TEST",
-      "pipelite.stage.lsf.memoryTimeout=15s",
-      "pipelite.stage.lsf.immediateRetries=2",
-      "pipelite.stage.lsf.maximumRetries=3",
-      "pipelite.stage.lsf.workdir=",
-      "pipelite.stage.lsf.timeout=10s",
-      "pipelite.stage.awsBatch.region=TEST",
-      "pipelite.stage.awsBatch.queue=TEST",
-      "pipelite.stage.awsBatch.jobDefinition=TEST",
-      "pipelite.stage.awsBatch.immediateRetries=2",
-      "pipelite.stage.awsBatch.maximumRetries=3",
-      "pipelite.stage.awsBatch.timeout=10s"
+      "pipelite.executor.cmd.host=TEST",
+      "pipelite.executor.cmd.immediateRetries=2",
+      "pipelite.executor.cmd.maximumRetries=3",
+      "pipelite.executor.cmd.timeout=10s",
+      "pipelite.executor.lsf.memory=1",
+      "pipelite.executor.lsf.cores=1",
+      "pipelite.executor.lsf.queue=TEST",
+      "pipelite.executor.lsf.memoryTimeout=15s",
+      "pipelite.executor.lsf.immediateRetries=2",
+      "pipelite.executor.lsf.maximumRetries=3",
+      "pipelite.executor.lsf.workdir=",
+      "pipelite.executor.lsf.timeout=10s",
+      "pipelite.executor.awsBatch.region=TEST",
+      "pipelite.executor.awsBatch.queue=TEST",
+      "pipelite.executor.awsBatch.jobDefinition=TEST",
+      "pipelite.executor.awsBatch.immediateRetries=2",
+      "pipelite.executor.awsBatch.maximumRetries=3",
+      "pipelite.executor.awsBatch.timeout=10s"
     })
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
-public class StageConfigurationTest {
+public class ExecutorConfigurationTest {
 
-  @Autowired StageConfiguration config;
+  @Autowired ExecutorConfiguration config;
 
   @Test
-  public void cmd() {
+  public void cmdProperties() {
     assertThat(config.getCmd().getHost()).isEqualTo("TEST");
     assertThat(config.getCmd().getImmediateRetries()).isEqualTo(2);
     assertThat(config.getCmd().getMaximumRetries()).isEqualTo(3);
@@ -57,7 +57,7 @@ public class StageConfigurationTest {
   }
 
   @Test
-  public void lsf() {
+  public void lsfProperties() {
     assertThat(config.getLsf().getMemory()).isEqualTo(1);
     assertThat(config.getLsf().getCores()).isEqualTo(1);
     assertThat(config.getLsf().getQueue()).isEqualTo("TEST");
@@ -70,7 +70,7 @@ public class StageConfigurationTest {
   }
 
   @Test
-  public void awsBatch() {
+  public void awsBatchProperties() {
     assertThat(config.getAwsBatch().getRegion()).isEqualTo("TEST");
     assertThat(config.getAwsBatch().getQueue()).isEqualTo("TEST");
     assertThat(config.getAwsBatch().getJobDefinition()).isEqualTo("TEST");
