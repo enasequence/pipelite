@@ -15,7 +15,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import pipelite.configuration.StageConfiguration;
+import pipelite.configuration.ExecutorConfiguration;
 
 @Data
 @NoArgsConstructor
@@ -38,8 +38,8 @@ public class LsfExecutorParameters extends CmdExecutorParameters {
   private String workDir;
 
   @Override
-  public void applyDefaults(StageConfiguration stageConfiguration) {
-    LsfExecutorParameters defaultParams = stageConfiguration.getLsf();
+  public void applyDefaults(ExecutorConfiguration executorConfiguration) {
+    LsfExecutorParameters defaultParams = executorConfiguration.getLsf();
     super.applyDefaults(defaultParams);
     applyDefault(this::getQueue, this::setQueue, defaultParams::getQueue);
     applyDefault(this::getCores, this::setCores, defaultParams::getCores);

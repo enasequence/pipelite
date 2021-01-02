@@ -20,8 +20,8 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import pipelite.configuration.ExecutorConfiguration;
 import pipelite.configuration.LauncherConfiguration;
-import pipelite.configuration.StageConfiguration;
 import pipelite.configuration.WebConfiguration;
 import pipelite.launcher.*;
 import pipelite.metrics.PipeliteMetrics;
@@ -35,7 +35,7 @@ public class Application {
 
   @Autowired private WebConfiguration webConfiguration;
   @Autowired private LauncherConfiguration launcherConfiguration;
-  @Autowired private StageConfiguration stageConfiguration;
+  @Autowired private ExecutorConfiguration executorConfiguration;
   @Autowired private ProcessFactoryService processFactoryService;
   @Autowired private ProcessSourceService processSourceService;
   @Autowired private ScheduleService scheduleService;
@@ -121,7 +121,7 @@ public class Application {
   private PipeliteScheduler createScheduler() {
     return DefaultPipeliteScheduler.create(
         launcherConfiguration,
-        stageConfiguration,
+        executorConfiguration,
         lockService,
         processFactoryService,
         processService,
@@ -135,7 +135,7 @@ public class Application {
     return DefaultPipeliteLauncher.create(
         webConfiguration,
         launcherConfiguration,
-        stageConfiguration,
+        executorConfiguration,
         lockService,
         processFactoryService,
         processSourceService,

@@ -24,8 +24,8 @@ import pipelite.stage.parameters.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Configuration
-@ConfigurationProperties(prefix = "pipelite.stage", ignoreInvalidFields = true)
-public class StageConfiguration {
+@ConfigurationProperties(prefix = "pipelite.executor", ignoreInvalidFields = true)
+public class ExecutorConfiguration {
 
   @NestedConfigurationProperty private AwsBatchExecutorParameters awsBatch;
 

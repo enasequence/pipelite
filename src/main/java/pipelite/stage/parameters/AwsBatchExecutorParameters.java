@@ -16,7 +16,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import pipelite.configuration.StageConfiguration;
+import pipelite.configuration.ExecutorConfiguration;
 
 @Data
 @NoArgsConstructor
@@ -40,8 +40,8 @@ public class AwsBatchExecutorParameters extends ExecutorParameters {
   private Map<String, String> jobParameters;
 
   @Override
-  public void applyDefaults(StageConfiguration stageConfiguration) {
-    AwsBatchExecutorParameters defaultParams = stageConfiguration.getAwsBatch();
+  public void applyDefaults(ExecutorConfiguration executorConfiguration) {
+    AwsBatchExecutorParameters defaultParams = executorConfiguration.getAwsBatch();
     super.applyDefaults(defaultParams);
     applyDefault(this::getRegion, this::setRegion, defaultParams::getRegion);
     applyDefault(this::getQueue, this::setQueue, defaultParams::getQueue);

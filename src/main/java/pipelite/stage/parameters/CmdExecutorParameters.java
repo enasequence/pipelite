@@ -15,7 +15,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import pipelite.configuration.StageConfiguration;
+import pipelite.configuration.ExecutorConfiguration;
 
 @Data
 @NoArgsConstructor
@@ -32,8 +32,8 @@ public class CmdExecutorParameters extends ExecutorParameters {
   /** The environmental variables. */
   private Map<String, String> env;
 
-  public void applyDefaults(StageConfiguration stageConfiguration) {
-    CmdExecutorParameters defaultParams = stageConfiguration.getCmd();
+  public void applyDefaults(ExecutorConfiguration executorConfiguration) {
+    CmdExecutorParameters defaultParams = executorConfiguration.getCmd();
     super.applyDefaults(defaultParams);
     applyDefault(this::getHost, this::setHost, defaultParams::getHost);
     applyDefault(

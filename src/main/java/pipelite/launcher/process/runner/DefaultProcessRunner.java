@@ -43,7 +43,7 @@ import pipelite.time.Time;
 public class DefaultProcessRunner implements ProcessRunner {
 
   private final LauncherConfiguration launcherConfiguration;
-  private final StageConfiguration stageConfiguration;
+  private final ExecutorConfiguration executorConfiguration;
   private final ProcessService processService;
   private final StageService stageService;
   private final MailService mailService;
@@ -56,19 +56,19 @@ public class DefaultProcessRunner implements ProcessRunner {
 
   public DefaultProcessRunner(
       LauncherConfiguration launcherConfiguration,
-      StageConfiguration stageConfiguration,
+      ExecutorConfiguration executorConfiguration,
       ProcessService processService,
       StageService stageService,
       MailService mailService,
       String pipelineName) {
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
-    Assert.notNull(stageConfiguration, "Missing stage configuration");
+    Assert.notNull(executorConfiguration, "Missing stage configuration");
     Assert.notNull(processService, "Missing process service");
     Assert.notNull(stageService, "Missing stage service");
     Assert.notNull(mailService, "Missing mail service");
     Assert.notNull(pipelineName, "Missing pipeline name");
     this.launcherConfiguration = launcherConfiguration;
-    this.stageConfiguration = stageConfiguration;
+    this.executorConfiguration = executorConfiguration;
     this.processService = processService;
     this.stageService = stageService;
     this.mailService = mailService;
@@ -142,7 +142,7 @@ public class DefaultProcessRunner implements ProcessRunner {
 
   private void runStage(Stage stage, Set<Stage> activeStages, ProcessRunnerResult result) {
     StageLauncher stageLauncher =
-        new StageLauncher(stageConfiguration, pipelineName, process, stage);
+        new StageLauncher(executorConfiguration, pipelineName, process, stage);
     activeStages.add(stage);
     executorService.execute(
         () -> {
@@ -185,7 +185,7 @@ public class DefaultProcessRunner implements ProcessRunner {
 
   private void startStageExecution(Stage stage) {
     // Apply default executor parameters.
-    stage.getExecutor().getExecutorParams().applyDefaults(stageConfiguration);
+    stage.getExecutor().getExecutorParams().applyDefaults(executorConfiguration);
     StageEntity stageEntity =
         stageService.createExecution(pipelineName, process.getProcessId(), stage);
     stage.setStageEntity(stageEntity);

@@ -91,7 +91,10 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
       logContext(log.atSevere(), pipelineName, processId, stage)
           .log("Maximum run time exceeded. Killing AwsBatch job.");
 
-      client.terminateJob(new TerminateJobRequest().withJobId(submitJobResult.getJobId()));
+      client.terminateJob(
+          new TerminateJobRequest()
+              .withJobId(submitJobResult.getJobId())
+              .withReason("Job terminated by pipelite"));
 
       StageExecutorResult result = StageExecutorResult.error();
       result.setInternalError(StageExecutorResult.InternalError.CMD_TIMEOUT);

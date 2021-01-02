@@ -18,7 +18,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.flogger.Flogger;
-import pipelite.configuration.StageConfiguration;
+import pipelite.configuration.ExecutorConfiguration;
 import pipelite.json.Json;
 
 /** Parameters shared by all executors. */
@@ -51,9 +51,9 @@ public class ExecutorParameters {
   /**
    * Override to apply default values from stage configuration.
    *
-   * @param stageConfiguration the stage configuration
+   * @param executorConfiguration the stage configuration
    */
-  public void applyDefaults(StageConfiguration stageConfiguration) {}
+  public void applyDefaults(ExecutorConfiguration executorConfiguration) {}
 
   /**
    * Call to apply default values from stage configuration.
