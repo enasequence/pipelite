@@ -8,13 +8,12 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.stage;
+package pipelite.stage.executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static pipelite.stage.executor.StageExecutorResultType.*;
 
 import org.junit.jupiter.api.Test;
-import pipelite.stage.executor.StageExecutorResultType;
 
 public class StageExecutorResultTypeTest {
   @Test

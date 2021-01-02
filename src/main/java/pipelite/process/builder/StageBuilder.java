@@ -10,8 +10,10 @@
  */
 package pipelite.process.builder;
 
-import java.util.*;
+import static pipelite.stage.executor.StageExecutorResultType.ACTIVE;
+import static pipelite.stage.executor.StageExecutorResultType.SUCCESS;
 
+import java.util.*;
 import pipelite.executor.CallExecutor;
 import pipelite.executor.CmdExecutor;
 import pipelite.executor.LsfExecutor;
@@ -20,9 +22,6 @@ import pipelite.stage.executor.*;
 import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.stage.parameters.LsfExecutorParameters;
-
-import static pipelite.stage.executor.StageExecutorResultType.ACTIVE;
-import static pipelite.stage.executor.StageExecutorResultType.SUCCESS;
 
 public class StageBuilder {
   private final ProcessBuilder processBuilder;
@@ -130,21 +129,22 @@ public class StageBuilder {
   }
 
   /**
-   * An executor that calls the given action.
+   * An executor that executes the given call.
    *
-   * @param action the stage execution action
+   * @param call the call to be executed
    */
-  public ProcessBuilder withCallExecutor(StageExecutorAction action) {
-    return withCallExecutor(action, ExecutorParameters.builder().build());
+  public ProcessBuilder withCallExecutor(StageExecutorCall call) {
+    return withCallExecutor(call, ExecutorParameters.builder().build());
   }
 
   /**
-   * An executor that calls the given action.
+   * An executor that executes the given call.
    *
-   * @param action the stage execution action
+   * @param call the call to be executed
+   * @oaram params the executor parameters
    */
-  public ProcessBuilder withCallExecutor(StageExecutorAction action, ExecutorParameters params) {
-    CallExecutor executor = new CallExecutor(action);
+  public ProcessBuilder withCallExecutor(StageExecutorCall call, ExecutorParameters params) {
+    CallExecutor executor = new CallExecutor(call);
     executor.setExecutorParams(params);
     return addStage(executor);
   }

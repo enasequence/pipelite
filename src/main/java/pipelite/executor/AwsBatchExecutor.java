@@ -14,21 +14,18 @@ import com.amazonaws.services.batch.AWSBatch;
 import com.amazonaws.services.batch.AWSBatchClientBuilder;
 import com.amazonaws.services.batch.model.*;
 import com.google.common.flogger.FluentLogger;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
 import pipelite.log.LogKey;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.AbstractExecutor;
-import pipelite.stage.executor.JsonSerializableExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.parameters.AwsBatchExecutorParameters;
-
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.Optional;
-import java.util.UUID;
 
 /** Executes a command using AWSBatch. */
 @Flogger

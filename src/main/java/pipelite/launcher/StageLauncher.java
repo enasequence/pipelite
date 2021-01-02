@@ -32,7 +32,7 @@ public class StageLauncher {
   private final Process process;
   private final Stage stage;
 
-  private final static Duration POLL_FREQUENCY = Duration.ofMinutes(1);
+  private static final Duration POLL_FREQUENCY = Duration.ofMinutes(1);
 
   public StageLauncher(
       StageConfiguration stageConfiguration, String pipelineName, Process process, Stage stage) {

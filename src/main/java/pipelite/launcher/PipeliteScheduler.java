@@ -30,8 +30,8 @@ import pipelite.lock.PipeliteLocker;
 import pipelite.log.LogKey;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
-import pipelite.process.ProcessFactoryHelper;
 import pipelite.process.ProcessFactoryCache;
+import pipelite.process.ProcessFactoryHelper;
 import pipelite.schedule.Schedule;
 import pipelite.service.*;
 
@@ -278,7 +278,8 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     Process process;
     try {
       process =
-          ProcessFactoryHelper.create(processEntity, processFactoryCache.getProcessFactory(pipelineName));
+          ProcessFactoryHelper.create(
+              processEntity, processFactoryCache.getProcessFactory(pipelineName));
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log(
           "Unexpected exception when creating " + pipelineName + " process");

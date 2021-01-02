@@ -10,29 +10,27 @@
  */
 package pipelite.executor;
 
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.Deque;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.AbstractExecutor;
-import pipelite.stage.executor.StageExecutorAction;
+import pipelite.stage.executor.StageExecutorCall;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.parameters.ExecutorParameters;
 
-import java.util.ArrayDeque;
-import java.util.Collection;
-import java.util.Deque;
-
 public class CallExecutor extends AbstractExecutor<ExecutorParameters> {
 
-  private final StageExecutorAction action;
+  private final StageExecutorCall call;
   private final Deque<StageExecutorResultType> resultTypes;
 
   /**
-   * Forwards execution to the provided action.
+   * Forwards execution to the provided call.
    *
-   * @param action the execution action
+   * @param call the execution call
    */
-  public CallExecutor(StageExecutorAction action) {
-    this.action = action;
+  public CallExecutor(StageExecutorCall call) {
+    this.call = call;
     this.resultTypes = null;
   }
 
@@ -42,7 +40,7 @@ public class CallExecutor extends AbstractExecutor<ExecutorParameters> {
    * @param resultType the result type
    */
   public CallExecutor(StageExecutorResultType resultType) {
-    this.action = (pipelineName, processId, stage) -> new StageExecutorResult(resultType);
+    this.call = (pipelineName, processId, stage) -> new StageExecutorResult(resultType);
     this.resultTypes = null;
   }
 
@@ -53,14 +51,14 @@ public class CallExecutor extends AbstractExecutor<ExecutorParameters> {
    * @param resultTypes the result types
    */
   public CallExecutor(Collection<StageExecutorResultType> resultTypes) {
-    this.action = null;
+    this.call = null;
     this.resultTypes = new ArrayDeque<>(resultTypes);
   }
 
   @Override
   public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
-    if (this.action != null) {
-      return action.execute(pipelineName, processId, stage);
+    if (this.call != null) {
+      return call.execute(pipelineName, processId, stage);
     }
 
     if (this.resultTypes == null) {

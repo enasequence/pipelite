@@ -13,6 +13,7 @@ package pipelite.stage.executor;
 import com.google.common.flogger.FluentLogger;
 import lombok.extern.flogger.Flogger;
 import pipelite.entity.StageEntity;
+import pipelite.executor.JsonSerializableExecutor;
 import pipelite.log.LogKey;
 import pipelite.stage.Stage;
 import pipelite.stage.parameters.ExecutorParameters;

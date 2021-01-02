@@ -36,7 +36,6 @@ import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.executor.StageExecutorSerializer;
-import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.time.Time;
 
 /** Executes a process and returns the process state. */

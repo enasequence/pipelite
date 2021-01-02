@@ -10,6 +10,8 @@
  */
 package pipelite.service;
 
+import static java.util.stream.Collectors.groupingBy;
+
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +19,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -29,8 +30,6 @@ import pipelite.entity.ProcessEntityId;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.repository.ProcessRepository;
-
-import static java.util.stream.Collectors.groupingBy;
 
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)

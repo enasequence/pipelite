@@ -15,13 +15,12 @@ import java.time.temporal.ChronoUnit;
 import javax.persistence.*;
 import lombok.*;
 import lombok.extern.flogger.Flogger;
+import pipelite.executor.JsonSerializableExecutor;
 import pipelite.json.Json;
 import pipelite.stage.*;
-import pipelite.stage.executor.JsonSerializableExecutor;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
-import pipelite.stage.parameters.ExecutorParameters;
 
 @Entity
 @Table(name = "PIPELITE_STAGE")

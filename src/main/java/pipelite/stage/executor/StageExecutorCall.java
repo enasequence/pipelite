@@ -8,20 +8,20 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.stage;
+package pipelite.stage.executor;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import pipelite.stage.Stage;
 
-import org.junit.jupiter.api.Test;
-import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultAttribute;
-
-public class StageExecutorResultTest {
-
-  @Test
-  public void getAttributesAsJson() {
-    StageExecutorResult result = StageExecutorResult.success();
-    result.addAttribute(StageExecutorResultAttribute.HOST, "test");
-    assertThat(result.attributesJson()).isEqualTo("{\n" + "  \"host\" : \"test\"\n" + "}");
-  }
+/** Executes a stage. */
+public interface StageExecutorCall {
+  /**
+   * Called repeatedly to execute the stage until it is not ACTIVE. Only asynchronous executions are
+   * expected to return ACTIVE.
+   *
+   * @param pipelineName the pipeline name.
+   * @param processId the process id.
+   * @param stage the stage to be executed.
+   * @return stage execution result
+   */
+  StageExecutorResult execute(String pipelineName, String processId, Stage stage);
 }

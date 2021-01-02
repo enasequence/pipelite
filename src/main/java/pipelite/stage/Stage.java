@@ -30,10 +30,7 @@ public class Stage {
   @EqualsAndHashCode.Exclude private AtomicInteger immediateExecutionCount = new AtomicInteger();
 
   @Builder
-  public Stage(
-      String stageName,
-      StageExecutor executor,
-      List<Stage> dependsOn) {
+  public Stage(String stageName, StageExecutor executor, List<Stage> dependsOn) {
     this.stageName = stageName;
     this.executor = executor;
     this.dependsOn = dependsOn;

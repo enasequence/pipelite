@@ -12,8 +12,8 @@ package pipelite.process;
 
 import lombok.extern.flogger.Flogger;
 import pipelite.entity.ProcessEntity;
-import pipelite.process.builder.ProcessBuilder;
 import pipelite.exception.PipeliteException;
+import pipelite.process.builder.ProcessBuilder;
 
 /** Creates processes using a process factory. */
 @Flogger

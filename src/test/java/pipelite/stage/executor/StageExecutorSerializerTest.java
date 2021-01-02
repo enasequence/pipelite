@@ -8,14 +8,16 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.stage;
+package pipelite.stage.executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import pipelite.entity.StageEntity;
-import pipelite.stage.executor.*;
+import pipelite.executor.AbstractExecutor;
+import pipelite.executor.JsonSerializableExecutor;
+import pipelite.stage.Stage;
 import pipelite.stage.parameters.ExecutorParameters;
 
 public class StageExecutorSerializerTest {

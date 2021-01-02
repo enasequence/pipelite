@@ -11,21 +11,15 @@
 package pipelite.stage.parameters;
 
 import com.google.common.base.Supplier;
+import java.time.Duration;
+import java.util.function.Consumer;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.flogger.Flogger;
 import pipelite.configuration.StageConfiguration;
-import pipelite.exception.PipeliteException;
-import pipelite.executor.AwsBatchExecutor;
-import pipelite.executor.CmdExecutor;
-import pipelite.executor.LsfExecutor;
 import pipelite.json.Json;
-import pipelite.stage.executor.StageExecutor;
-
-import java.time.Duration;
-import java.util.function.Consumer;
 
 /** Parameters shared by all executors. */
 @Data
@@ -54,7 +48,8 @@ public class ExecutorParameters {
     }
   }
 
-  /** Override to apply default values from stage configuration.
+  /**
+   * Override to apply default values from stage configuration.
    *
    * @param stageConfiguration the stage configuration
    */

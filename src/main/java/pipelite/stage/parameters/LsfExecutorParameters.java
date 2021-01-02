@@ -10,18 +10,17 @@
  */
 package pipelite.stage.parameters;
 
+import java.time.Duration;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import pipelite.configuration.StageConfiguration;
 
-import java.time.Duration;
-
 @Data
 @NoArgsConstructor
 @SuperBuilder
-@EqualsAndHashCode(callSuper=true)
+@EqualsAndHashCode(callSuper = true)
 public class LsfExecutorParameters extends CmdExecutorParameters {
 
   /** The queue name. */

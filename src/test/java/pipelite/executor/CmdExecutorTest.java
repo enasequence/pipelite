@@ -19,10 +19,7 @@ import pipelite.PipeliteTestConfiguration;
 import pipelite.executor.cmd.LocalCmdRunner;
 import pipelite.executor.cmd.SshCmdRunner;
 import pipelite.json.Json;
-import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
-import pipelite.stage.executor.StageExecutorResultType;
-import pipelite.stage.parameters.LsfExecutorParameters;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})

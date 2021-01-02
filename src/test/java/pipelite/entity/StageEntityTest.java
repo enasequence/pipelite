@@ -12,18 +12,15 @@ package pipelite.entity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
+import pipelite.executor.AbstractExecutor;
+import pipelite.executor.JsonSerializableExecutor;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.AbstractExecutor;
-import pipelite.stage.executor.JsonSerializableExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.parameters.ExecutorParameters;
-
-import java.time.Duration;
 
 class StageEntityTest {
 

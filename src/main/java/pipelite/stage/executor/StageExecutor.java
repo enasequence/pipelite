@@ -19,7 +19,7 @@ import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.ExecutorParameters;
 
 /** Executes a stage. Must be serializable to json. */
-public interface StageExecutor<T extends ExecutorParameters> extends StageExecutorAction {
+public interface StageExecutor<T extends ExecutorParameters> extends StageExecutorCall {
 
   Class<T> getExecutorParamsType();
 

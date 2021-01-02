@@ -26,7 +26,6 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
@@ -35,7 +34,6 @@ import pipelite.Application;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.controller.info.PipelineInfo;
 import pipelite.controller.utils.LoremUtils;
-import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.process.runner.ProcessRunnerResult;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;

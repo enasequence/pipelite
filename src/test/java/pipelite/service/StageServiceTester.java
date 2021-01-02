@@ -12,17 +12,15 @@ package pipelite.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Duration;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.StageEntity;
-import pipelite.executor.CallExecutor;
+import pipelite.executor.AbstractExecutor;
+import pipelite.executor.JsonSerializableExecutor;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.AbstractExecutor;
-import pipelite.stage.executor.JsonSerializableExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.parameters.ExecutorParameters;
-
-import java.time.Duration;
 
 class StageServiceTester {
 

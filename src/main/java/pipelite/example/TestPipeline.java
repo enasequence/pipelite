@@ -12,8 +12,8 @@ package pipelite.example;
 
 import org.springframework.stereotype.Component;
 import pipelite.process.Process;
-import pipelite.process.builder.ProcessBuilder;
 import pipelite.process.ProcessFactory;
+import pipelite.process.builder.ProcessBuilder;
 
 @Component
 public class TestPipeline implements ProcessFactory {

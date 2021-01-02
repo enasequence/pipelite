@@ -42,8 +42,7 @@ public class MailServiceTest {
 
   @Test
   public void sendProcessExecutionMessage() {
-    Process process =
-        new ProcessBuilder("PROCESS_ID").execute("STAGE1").withCallExecutor().build();
+    Process process = new ProcessBuilder("PROCESS_ID").execute("STAGE1").withCallExecutor().build();
     StageEntity stageEntity =
         StageEntity.createExecution("PIPELINE_NAME", "PROCESS_ID", process.getStages().get(0));
     process.getStages().get(0).setStageEntity(stageEntity);
@@ -82,8 +81,7 @@ public class MailServiceTest {
 
   @Test
   public void sendStageExecutionMessage() {
-    Process process =
-        new ProcessBuilder("PROCESS_ID").execute("STAGE1").withCallExecutor().build();
+    Process process = new ProcessBuilder("PROCESS_ID").execute("STAGE1").withCallExecutor().build();
     StageEntity stageEntity =
         StageEntity.createExecution("PIPELINE_NAME", "PROCESS_ID", process.getStages().get(0));
     process.getStages().get(0).setStageEntity(stageEntity);

@@ -29,7 +29,7 @@ import pipelite.time.Time;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
-public class LsfSshCmdExecutorTest {
+public class SshLsfExecutorTest {
 
   @Autowired LsfTestConfiguration lsfTestConfiguration;
 

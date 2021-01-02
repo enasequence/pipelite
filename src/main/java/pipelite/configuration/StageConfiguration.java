@@ -10,9 +10,6 @@
  */
 package pipelite.configuration;
 
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -30,12 +27,9 @@ import pipelite.stage.parameters.*;
 @ConfigurationProperties(prefix = "pipelite.stage", ignoreInvalidFields = true)
 public class StageConfiguration {
 
-  @NestedConfigurationProperty
-  private AwsBatchExecutorParameters awsBatch;
+  @NestedConfigurationProperty private AwsBatchExecutorParameters awsBatch;
 
-  @NestedConfigurationProperty
-  private LsfExecutorParameters lsf;
+  @NestedConfigurationProperty private LsfExecutorParameters lsf;
 
-  @NestedConfigurationProperty
-  private CmdExecutorParameters cmd;
+  @NestedConfigurationProperty private CmdExecutorParameters cmd;
 }
