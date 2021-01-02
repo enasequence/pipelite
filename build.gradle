@@ -134,13 +134,13 @@ publishing {
 }
 
 test {
-    systemProperty 'spring.profiles.active', 'pipelite-test,hsql-test'
+    systemProperty 'spring.profiles.active', 'test,hsql'
     useJUnitPlatform()
     outputs.upToDateWhen { false }
 }
 
 task testOracle(type: Test) {
-    systemProperty 'spring.profiles.active', 'pipelite-test,oracle-test'
+    systemProperty 'spring.profiles.active', 'test,oracle'
     useJUnitPlatform()
     outputs.upToDateWhen { false }
     group = 'verification'

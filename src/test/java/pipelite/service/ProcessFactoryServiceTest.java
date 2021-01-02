@@ -26,7 +26,6 @@ import pipelite.UniqueStringGenerator;
 import pipelite.process.ProcessFactory;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
-@ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 public class ProcessFactoryServiceTest {
 
   @Autowired ProcessFactoryService processFactoryService;

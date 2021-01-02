@@ -25,7 +25,6 @@ import pipelite.UniqueStringGenerator;
 import pipelite.process.ProcessSource;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
-@ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 public class ProcessSourceServiceTest {
 
   @Autowired ProcessSourceService processSourceService;

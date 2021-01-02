@@ -61,7 +61,7 @@ public class ScheduleTest {
     assertThat(schedule.isExecutable()).isTrue();
     assertThat(schedule.getLaunchTime()).isNotNull();
     assertThat(schedule.getLaunchTime()).isAfter(first);
-    assertThat(schedule.getLaunchTime()).isBefore(ZonedDateTime.now());
+    assertThat(schedule.getLaunchTime()).isBeforeOrEqualTo(ZonedDateTime.now());
     assertThat(schedule.getCron()).isEqualTo(cron);
 
     // Disable the schedule.

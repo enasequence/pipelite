@@ -32,7 +32,6 @@ import pipelite.process.builder.ProcessBuilder;
       "pipelite.mail.from=pipelite-noreply@ebi.ac.uk",
       "pipelite.mail.to=rasko@ebi.ac.uk"
     })
-@ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 public class MailServiceTest {
 
   @Autowired MailService mailService;

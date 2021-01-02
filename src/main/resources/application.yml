@@ -1,15 +1,15 @@
 spring:
-    config:
-        activate:
-            on-profile: test
+  config:
+    activate:
+      on-profile: test
 pipelite:
-    datasource:
-        driverClassName: org.hsqldb.jdbc.JDBCDriver
-        url: 'jdbc:hsqldb:mem:testdb;DB_CLOSE_DELAY: -1'
-        username: sa
-        password:
-        maxActive: 25
-        ddlAuto: create
-        dialect: org.hibernate.dialect.HSQLDialect
-    launcher:
-        pipelineName: testPipeline
+  datasource:
+    driverClassName: org.hsqldb.jdbc.JDBCDriver
+    url: 'jdbc:hsqldb:mem:testdb;DB_CLOSE_DELAY: -1'
+    username: sa
+    password:
+    maxActive: 25
+    ddlAuto: create
+    dialect: org.hibernate.dialect.HSQLDialect
+  launcher:
+    pipelineName: testPipeline

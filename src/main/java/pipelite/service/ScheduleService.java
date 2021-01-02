@@ -94,17 +94,18 @@ public class ScheduleService {
    * @param processEntity the process entity
    */
   public void endExecution(ProcessEntity processEntity) {
+    ZonedDateTime now = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     String pipelineName = processEntity.getPipelineName();
     ScheduleEntity scheduleEntity = getSavedSchedule(pipelineName).get();
-    scheduleEntity.setEndTime(ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS));
+    scheduleEntity.setEndTime(now);
     scheduleEntity.setExecutionCount(scheduleEntity.getExecutionCount() + 1);
     if (processEntity.getState() == ProcessState.COMPLETED) {
-      scheduleEntity.setLastCompleted(ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS));
+      scheduleEntity.setLastCompleted(now);
       scheduleEntity.setStreakCompleted(scheduleEntity.getStreakCompleted() + 1);
       scheduleEntity.setStreakFailed(0);
     }
     if (processEntity.getState() == ProcessState.FAILED) {
-      scheduleEntity.setLastFailed(ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS));
+      scheduleEntity.setLastFailed(now);
       scheduleEntity.setStreakCompleted(0);
       scheduleEntity.setStreakFailed(scheduleEntity.getStreakFailed() + 1);
     }

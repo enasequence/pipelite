@@ -27,7 +27,6 @@ import pipelite.stage.executor.InternalError;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
-@ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 public class SshCmdExecutorTest {
 
   @Autowired SshTestConfiguration sshTestConfiguration;

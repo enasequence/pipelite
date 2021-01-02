@@ -43,7 +43,6 @@ import pipelite.PipeliteTestConfiguration;
       "pipelite.executor.awsBatch.maximumRetries=3",
       "pipelite.executor.awsBatch.timeout=10s"
     })
-@ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 public class ExecutorConfigurationTest {
 
   @Autowired ExecutorConfiguration config;

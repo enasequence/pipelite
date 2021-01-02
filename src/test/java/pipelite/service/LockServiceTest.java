@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(
     classes = PipeliteTestConfiguration.class,
-    properties = {"pipelite.launcher.lockDuration=5s"})
+    properties = {"pipelite.launcher.lockDuration=10s"})
 public class LockServiceTest {
 
   @Autowired LockService service;

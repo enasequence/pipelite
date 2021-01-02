@@ -24,7 +24,6 @@ import pipelite.PipeliteTestConfiguration;
       "pipelite.launcher.pipelineName=TEST1, TEST2 ",
       "pipelite.launcher.schedulerName=TEST"
     })
-@ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 public class LauncherConfigurationTest {
 
   @Autowired LauncherConfiguration config;
