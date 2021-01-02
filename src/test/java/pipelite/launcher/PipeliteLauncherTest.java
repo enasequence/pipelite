@@ -10,36 +10,332 @@
  */
 package pipelite.launcher;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
-import static org.mockito.internal.verification.VerificationModeFactory.times;
-
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.ForkJoinPool;
+import lombok.Value;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestBeans;
+import pipelite.PipeliteTestConfiguration;
+import pipelite.TestProcessSource;
 import pipelite.UniqueStringGenerator;
+import pipelite.configuration.ExecutorConfiguration;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.WebConfiguration;
 import pipelite.entity.ProcessEntity;
+import pipelite.entity.StageEntity;
 import pipelite.launcher.process.creator.ProcessCreator;
 import pipelite.launcher.process.queue.DefaultProcessQueue;
 import pipelite.launcher.process.runner.DefaultProcessRunnerPool;
 import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.lock.PipeliteLocker;
+import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
+import pipelite.metrics.TimeSeriesMetrics;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
+import pipelite.process.ProcessSource;
+import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.*;
+import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultType;
+import pipelite.stage.parameters.ExecutorParameters;
 
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.internal.verification.VerificationModeFactory.times;
+
+@SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    classes = PipeliteTestConfiguration.class,
+    properties = {
+      "pipelite.launcher.processRunnerFrequency=250ms",
+      "pipelite.launcher.shutdownIfIdle=true"
+    })
+@DirtiesContext
 public class PipeliteLauncherTest {
 
+  @Autowired private WebConfiguration webConfiguration;
+  @Autowired private LauncherConfiguration launcherConfiguration;
+  @Autowired private ExecutorConfiguration executorConfiguration;
+  @Autowired private ProcessFactoryService processFactoryService;
+  @Autowired private ProcessSourceService processSourceService;
+  @Autowired private ScheduleService scheduleService;
+  @Autowired private ProcessService processService;
+  @Autowired private StageService stageService;
+  @Autowired private LockService lockService;
+  @Autowired private MailService mailService;
+  @Autowired private PipeliteMetrics pipelineMetrics;
+  @Autowired private PipeliteMetrics metrics;
+
+  @Autowired
+  @Qualifier("processSuccess")
+  private TestProcessFactory processSuccess;
+
+  @Autowired
+  @Qualifier("processFailure")
+  private TestProcessFactory processFailure;
+
+  @Autowired
+  @Qualifier("processException")
+  private TestProcessFactory processException;
+
+  @TestConfiguration
+  static class TestConfig {
+    @Bean("processSuccess")
+    @Primary
+    public TestProcessFactory processSuccess() {
+      return new TestProcessFactory("processSuccess", 4, 2, StageTestResult.SUCCESS);
+    }
+
+    @Bean("processFailure")
+    public TestProcessFactory processFailure() {
+      return new TestProcessFactory("processFailure", 4, 2, StageTestResult.ERROR);
+    }
+
+    @Bean("processException")
+    public TestProcessFactory processException() {
+      return new TestProcessFactory("processException", 4, 2, StageTestResult.EXCEPTION);
+    }
+
+    @Bean
+    public ProcessSource processSuccessSource(
+        @Autowired @Qualifier("processSuccess") TestProcessFactory f) {
+      return new TestProcessSource(f.getPipelineName(), f.processCnt);
+    }
+
+    @Bean
+    public ProcessSource processFailureSource(
+        @Autowired @Qualifier("processFailure") TestProcessFactory f) {
+      return new TestProcessSource(f.getPipelineName(), f.processCnt);
+    }
+
+    @Bean
+    public ProcessSource processExceptionSource(
+        @Autowired @Qualifier("processException") TestProcessFactory f) {
+      return new TestProcessSource(f.getPipelineName(), f.processCnt);
+    }
+  }
+
+  private enum StageTestResult {
+    SUCCESS,
+    ERROR,
+    EXCEPTION
+  }
+
+  private PipeliteLauncher createPipeliteLauncher(String pipelineName) {
+    return DefaultPipeliteLauncher.create(
+        webConfiguration,
+        launcherConfiguration,
+        executorConfiguration,
+        lockService,
+        processFactoryService,
+        processSourceService,
+        processService,
+        stageService,
+        mailService,
+        pipelineMetrics,
+        pipelineName);
+  }
+
+  @Value
+  public static class TestProcessFactory implements ProcessFactory {
+    private final String pipelineName;
+    public final int processCnt;
+    public final int stageCnt;
+    public final StageTestResult stageTestResult;
+    public final List<String> processIds = Collections.synchronizedList(new ArrayList<>());
+    public final AtomicLong stageExecCnt = new AtomicLong();
+
+    public TestProcessFactory(
+        String pipelineNamePrefix, int processCnt, int stageCnt, StageTestResult stageTestResult) {
+      this.pipelineName = pipelineNamePrefix + "_" + UniqueStringGenerator.randomPipelineName();
+      this.processCnt = processCnt;
+      this.stageCnt = stageCnt;
+      this.stageTestResult = stageTestResult;
+    }
+
+    public void reset() {
+      processIds.clear();
+      stageExecCnt.set(0L);
+    }
+
+    @Override
+    public String getPipelineName() {
+      return pipelineName;
+    }
+
+    @Override
+    public int getPipelineParallelism() {
+      return 5;
+    }
+
+    @Override
+    public Process create(ProcessBuilder builder) {
+      processIds.add(builder.getProcessId());
+      ExecutorParameters executorParams =
+          ExecutorParameters.builder()
+              .immediateRetries(0)
+              .maximumRetries(0)
+              .timeout(Duration.ofSeconds(10))
+              .build();
+
+      for (int i = 0; i < stageCnt; ++i) {
+        builder
+            .execute("STAGE" + i)
+            .withCallExecutor(
+                (pipelineName, processId1, stage) -> {
+                  stageExecCnt.incrementAndGet();
+                  if (stageTestResult == StageTestResult.ERROR) {
+                    return StageExecutorResult.error();
+                  }
+                  if (stageTestResult == StageTestResult.SUCCESS) {
+                    return StageExecutorResult.success();
+                  }
+                  if (stageTestResult == StageTestResult.EXCEPTION) {
+                    throw new RuntimeException("Expected exception");
+                  }
+                  throw new RuntimeException("Unexpected exception");
+                },
+                executorParams);
+      }
+      return builder.build();
+    }
+  }
+
+  private void assertLauncherMetrics(TestProcessFactory f) {
+    PipelineMetrics pipelineMetrics = metrics.pipeline(f.getPipelineName());
+
+    assertThat(pipelineMetrics.getInternalErrorCount()).isEqualTo(0);
+    assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.getInternalErrorTimeSeries()))
+        .isEqualTo(0);
+
+    if (f.stageTestResult != StageTestResult.SUCCESS) {
+      assertThat(pipelineMetrics.process().getFailedCount())
+          .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
+      assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(f.stageExecCnt.get());
+      assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(0L);
+      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getFailedTimeSeries()))
+          .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
+      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getFailedTimeSeries()))
+          .isEqualTo(f.stageExecCnt.get());
+      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getSuccessTimeSeries()))
+          .isEqualTo(0);
+    } else {
+      assertThat(pipelineMetrics.process().getCompletedCount())
+          .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
+      assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(0L);
+      assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(f.stageExecCnt.get());
+      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getCompletedTimeSeries()))
+          .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
+      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getFailedTimeSeries()))
+          .isEqualTo(0);
+      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getSuccessTimeSeries()))
+          .isEqualTo(f.stageExecCnt.get());
+    }
+  }
+
+  private void assertProcessEntity(TestProcessFactory f, String processId) {
+    String pipelineName = f.getPipelineName();
+
+    ProcessEntity processEntity =
+        processService.getSavedProcess(f.getPipelineName(), processId).get();
+    assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
+    assertThat(processEntity.getProcessId()).isEqualTo(processId);
+    assertThat(processEntity.getExecutionCount()).isEqualTo(1);
+    if (f.stageTestResult != StageTestResult.SUCCESS) {
+      assertThat(processEntity.getState())
+          .isEqualTo(ProcessState.FAILED); // no re-executions allowed
+    } else {
+      assertThat(processEntity.getState()).isEqualTo(ProcessState.COMPLETED);
+    }
+  }
+
+  private void assertStageEntities(TestProcessFactory f, String processId) {
+    String pipelineName = f.getPipelineName();
+
+    for (int i = 0; i < f.stageCnt; ++i) {
+      StageEntity stageEntity =
+          stageService.getSavedStage(f.getPipelineName(), processId, "STAGE" + i).get();
+      assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
+      assertThat(stageEntity.getProcessId()).isEqualTo(processId);
+      assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
+      assertThat(stageEntity.getStartTime()).isNotNull();
+      assertThat(stageEntity.getEndTime()).isNotNull();
+      assertThat(stageEntity.getStartTime()).isBeforeOrEqualTo(stageEntity.getEndTime());
+      assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.CallExecutor");
+      assertThat(stageEntity.getExecutorData()).isNull();
+      assertThat(stageEntity.getExecutorParams())
+          .isEqualTo(
+              "{\n"
+                  + "  \"timeout\" : 10000,\n"
+                  + "  \"maximumRetries\" : 0,\n"
+                  + "  \"immediateRetries\" : 0\n"
+                  + "}");
+
+      if (f.stageTestResult == StageTestResult.ERROR) {
+        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.ERROR);
+        assertThat(stageEntity.getResultParams()).isNull();
+      } else if (f.stageTestResult == StageTestResult.EXCEPTION) {
+        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.ERROR);
+        assertThat(stageEntity.getResultParams())
+            .contains("exception\" : \"java.lang.RuntimeException: Expected exception");
+      } else {
+        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.SUCCESS);
+        assertThat(stageEntity.getResultParams()).isNull();
+      }
+    }
+  }
+
+  private void test(TestProcessFactory f) {
+    PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
+    new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
+
+    assertThat(pipeliteLauncher.getActiveProcessRunners().size()).isEqualTo(0);
+
+    assertThat(f.stageExecCnt.get() / f.stageCnt).isEqualTo(f.processCnt);
+    assertThat(f.processIds.size()).isEqualTo(f.processCnt);
+    assertLauncherMetrics(f);
+    for (String processId : f.processIds) {
+      assertProcessEntity(f, processId);
+      assertStageEntities(f, processId);
+    }
+  }
+
   @Test
-  public void runProcess() {
+  public void testSuccess() {
+    test(processSuccess);
+  }
+
+  @Test
+  public void testFailure() {
+    test(processFailure);
+  }
+
+  @Test
+  public void testException() {
+    test(processException);
+  }
+
+  @Test
+  public void testRunProcess() {
     final int processCnt = 100;
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     WebConfiguration webConfiguration = new WebConfiguration();

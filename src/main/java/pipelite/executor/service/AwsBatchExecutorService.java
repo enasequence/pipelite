@@ -4,6 +4,7 @@ import com.amazonaws.services.batch.AWSBatch;
 import com.amazonaws.services.batch.AWSBatchClientBuilder;
 import com.amazonaws.services.batch.model.*;
 import lombok.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import pipelite.time.Time;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.groupingBy;
 
 @Service
+@Lazy
 public class AwsBatchExecutorService implements ExecutorService {
 
   private static final Duration POLL_FREQUENCY = Duration.ofSeconds(10);
@@ -28,29 +30,29 @@ public class AwsBatchExecutorService implements ExecutorService {
 
     public SubmitJobResult submitJob(SubmitJobRequest request) {
       // TODO: exception handling
-      return clientCache.get(this).submitJob(request);
+      return awsBatch(this).submitJob(request);
     }
 
     public void terminateJob(String jobId) {
       // TODO: exception handling
-      clientCache
-          .get(this)
+      awsBatch(this)
           .terminateJob(
               new TerminateJobRequest().withJobId(jobId).withReason("Job terminated by pipelite"));
     }
 
     public JobDetail describeJob(String jobId) {
-      Optional<JobDetail> jobDetail = jobDetailCache.get(jobId);
+      JobDetailCacheKey key = new JobDetailCacheKey(jobId, this);
+      Optional<JobDetail> jobDetail = jobDetailCache.get(key);
       if (jobDetail != null && jobDetail.isPresent()) {
-        jobDetailCache.remove(jobId);
+        jobDetailCache.remove(key);
         return jobDetail.get();
       }
-      jobDetailCache.put(new DescribeJob(jobId, this), Optional.empty());
+      jobDetailCache.put(key, Optional.empty());
       while (true) {
         Time.wait(POLL_FREQUENCY);
-        jobDetail = jobDetailCache.get(jobId);
+        jobDetail = jobDetailCache.get(key);
         if (jobDetail != null && jobDetail.isPresent()) {
-          jobDetailCache.remove(jobId);
+          jobDetailCache.remove(key);
           return jobDetail.get();
         }
       }
@@ -58,14 +60,25 @@ public class AwsBatchExecutorService implements ExecutorService {
   }
 
   @Value
-  public class DescribeJob {
+  public class ClientCacheValue {
+    private final Client client;
+    private final AWSBatch awsBatch;
+  }
+
+  @Value
+  public class JobDetailCacheKey {
     private final String jobId;
     private final Client client;
   }
 
-  private final Map<Client, AWSBatch> clientCache = new ConcurrentHashMap<>();
+  private final Map<Client, ClientCacheValue> clientCache = new ConcurrentHashMap<>();
 
-  private final Map<DescribeJob, Optional<JobDetail>> jobDetailCache = new ConcurrentHashMap<>();
+  private final Map<JobDetailCacheKey, Optional<JobDetail>> jobDetailCache =
+      new ConcurrentHashMap<>();
+
+  private AWSBatch awsBatch(Client client) {
+    return clientCache.get(client).getAwsBatch();
+  }
 
   /**
    * Caches clients for pipeline name and stage name.
@@ -83,42 +96,43 @@ public class AwsBatchExecutorService implements ExecutorService {
    * @return the cached client
    */
   public Client client(String region) {
-    Client client = this.new Client(region);
-    clientCache.computeIfAbsent(client, this::addClient);
-    return client;
+    ClientCacheValue clientCacheValue =
+        clientCache.computeIfAbsent(this.new Client(region), this::createClientCacheValue);
+    return clientCacheValue.client;
   }
 
-  private AWSBatch addClient(Client client) {
+  private ClientCacheValue createClientCacheValue(Client client) {
     AWSBatchClientBuilder builder = AWSBatchClientBuilder.standard();
     if (client.getRegion() != null) {
       builder.setRegion(client.getRegion());
     }
-    return builder.build();
+    return new ClientCacheValue(client, builder.build());
   }
 
   @Scheduled(fixedDelay = 10000) // Every 10 seconds
-  public void task() {
+  public void run() {
     // TODO: exception handling
-    Map<Client, List<DescribeJob>> byClient =
+    Map<Client, List<JobDetailCacheKey>> byClient =
         jobDetailCache.entrySet().stream()
             .filter(e -> !e.getValue().isPresent())
             .map(e -> e.getKey())
-            .collect(groupingBy(DescribeJob::getClient));
+            .collect(groupingBy(JobDetailCacheKey::getClient));
 
     byClient.forEach(
         (client, describeJobs) -> {
           List<String> jobIds =
               describeJobs.stream().map(j -> j.getJobId()).collect(Collectors.toList());
           DescribeJobsResult jobResult =
-              clientCache.get(client).describeJobs(new DescribeJobsRequest().withJobs(jobIds));
+              awsBatch(client).describeJobs(new DescribeJobsRequest().withJobs(jobIds));
           jobResult
               .getJobs()
               .forEach(
                   j -> {
-                    DescribeJob describeJob = new DescribeJob(j.getJobId(), client);
-                    Optional<JobDetail> jobDetail = jobDetailCache.get(describeJob);
+                    JobDetailCacheKey jobDetailCacheKey =
+                        new JobDetailCacheKey(j.getJobId(), client);
+                    Optional<JobDetail> jobDetail = jobDetailCache.get(jobDetailCacheKey);
                     if (jobDetail != null) {
-                      jobDetailCache.put(describeJob, Optional.of(j));
+                      jobDetailCache.put(jobDetailCacheKey, Optional.of(j));
                     }
                   });
         });

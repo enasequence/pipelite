@@ -8,26 +8,30 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.service;
+package pipelite.executor.service;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 import pipelite.PipeliteTestConfiguration;
 
-@SpringBootTest(classes = PipeliteTestConfiguration.class)
-@ActiveProfiles(value = {"hsql-test", "pipelite-test"})
-@Transactional
-@Tag("hsql-test")
-class ScheduleServiceHsqlTest {
+import static org.assertj.core.api.Assertions.assertThat;
 
-  @Autowired ScheduleService service;
+@Tag("aws-test")
+@SpringBootTest(classes = PipeliteTestConfiguration.class)
+public class AwsBatchExecutorServiceTest {
+
+  @Autowired AwsBatchExecutorService service;
 
   @Test
-  public void lifecycle() {
-    new ScheduleServiceTester(service).lifecycle();
+  @Disabled
+  public void client() {
+    assertThat(service.client("region1")).isSameAs(service.client("region1"));
+    assertThat(service.client("region2")).isSameAs(service.client("region2"));
+    assertThat(service.client("region1")).isNotSameAs(service.client("region2"));
+    assertThat(service.client(null)).isSameAs(service.client(null));
+    assertThat(service.client(null)).isNotSameAs(service.client("region1"));
   }
 }

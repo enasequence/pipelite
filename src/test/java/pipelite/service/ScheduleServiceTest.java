@@ -10,24 +10,31 @@
  */
 package pipelite.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
+import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.process.ProcessState;
 
-class ScheduleServiceTester {
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 
-  public ScheduleServiceTester(ScheduleService service) {
-    this.service = service;
-  }
+import static org.assertj.core.api.Assertions.assertThat;
 
-  private final ScheduleService service;
+@SpringBootTest(classes = PipeliteTestConfiguration.class)
+@Transactional
+class ScheduleServiceTest {
 
+  @Autowired ScheduleService service;
+
+  @Test
   public void lifecycle() {
     String schedulerName = UniqueStringGenerator.randomSchedulerName();
     String pipelineName = UniqueStringGenerator.randomPipelineName();

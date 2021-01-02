@@ -16,11 +16,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
-import pipelite.launcher.PipeliteSchedulerOracleTest;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
@@ -34,7 +32,6 @@ import pipelite.process.builder.ProcessBuilder;
       "pipelite.mail.from=pipelite-noreply@ebi.ac.uk",
       "pipelite.mail.to=rasko@ebi.ac.uk"
     })
-@ContextConfiguration(initializers = PipeliteSchedulerOracleTest.TestContextInitializer.class)
 @ActiveProfiles(value = {"hsql-test", "pipelite-test"})
 public class MailServiceTest {
 

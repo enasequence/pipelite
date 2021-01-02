@@ -10,9 +10,13 @@
  */
 package pipelite.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.time.Duration;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
+import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.StageEntity;
 import pipelite.executor.AbstractExecutor;
@@ -22,13 +26,15 @@ import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.parameters.ExecutorParameters;
 
-class StageServiceTester {
+import java.time.Duration;
 
-  public StageServiceTester(StageService service) {
-    this.service = service;
-  }
+import static org.assertj.core.api.Assertions.assertThat;
 
-  private final StageService service;
+@SpringBootTest(classes = PipeliteTestConfiguration.class)
+@Transactional
+class StageServiceTest {
+
+  @Autowired StageService service;
 
   public static class TestExecutor extends AbstractExecutor implements JsonSerializableExecutor {
 
@@ -48,6 +54,7 @@ class StageServiceTester {
     }
   }
 
+  @Test
   public void lifecycle() {
 
     String pipelineName = UniqueStringGenerator.randomPipelineName();
@@ -95,7 +102,7 @@ class StageServiceTester {
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNull();
     assertThat(stageEntity.getExecutorName())
-        .isEqualTo("pipelite.service.StageServiceTester$TestExecutor");
+        .isEqualTo("pipelite.service.StageServiceTest$TestExecutor");
     assertThat(stageEntity.getExecutorData())
         .isEqualTo("{\n" + "  \"resultType\" : \"SUCCESS\"\n" + "}");
     assertThat(stageEntity.getExecutorParams())
@@ -128,7 +135,7 @@ class StageServiceTester {
     assertThat(stageEntity.getEndTime()).isNotNull();
     assertThat(stageEntity.getStartTime()).isBeforeOrEqualTo(stageEntity.getEndTime());
     assertThat(stageEntity.getExecutorName())
-        .isEqualTo("pipelite.service.StageServiceTester$TestExecutor");
+        .isEqualTo("pipelite.service.StageServiceTest$TestExecutor");
     assertThat(stageEntity.getExecutorData())
         .isEqualTo("{\n" + "  \"resultType\" : \"SUCCESS\"\n" + "}");
     assertThat(stageEntity.getExecutorParams())
@@ -155,7 +162,7 @@ class StageServiceTester {
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNull();
     assertThat(stageEntity.getExecutorName())
-        .isEqualTo("pipelite.service.StageServiceTester$TestExecutor");
+        .isEqualTo("pipelite.service.StageServiceTest$TestExecutor");
     assertThat(stageEntity.getExecutorData())
         .isEqualTo("{\n" + "  \"resultType\" : \"SUCCESS\"\n" + "}");
     assertThat(stageEntity.getExecutorParams())
@@ -188,7 +195,7 @@ class StageServiceTester {
     assertThat(stageEntity.getEndTime()).isNotNull();
     assertThat(stageEntity.getStartTime()).isBeforeOrEqualTo(stageEntity.getEndTime());
     assertThat(stageEntity.getExecutorName())
-        .isEqualTo("pipelite.service.StageServiceTester$TestExecutor");
+        .isEqualTo("pipelite.service.StageServiceTest$TestExecutor");
     assertThat(stageEntity.getExecutorData())
         .isEqualTo("{\n" + "  \"resultType\" : \"SUCCESS\"\n" + "}");
     assertThat(stageEntity.getExecutorParams())

@@ -10,17 +10,16 @@
  */
 package pipelite.launcher;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Value;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.PipeliteTestConfiguration;
 import pipelite.TestProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ExecutorConfiguration;
@@ -39,9 +38,24 @@ import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
 
-@Component
-@Scope("prototype")
-public class PipeliteLauncherAsyncTester {
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    classes = PipeliteTestConfiguration.class,
+    properties = {
+      "pipelite.launcher.processRunnerFrequency=250ms",
+      "pipelite.launcher.shutdownIfIdle=true"
+    })
+@DirtiesContext
+public class PipeliteLauncherAsyncTest {
 
   private static final int PROCESS_CNT = 2;
 
@@ -246,6 +260,7 @@ public class PipeliteLauncherAsyncTester {
     }
   }
 
+  @Test
   public void testSubmitSuccessPollSuccess() {
     TestProcessFactory<SubmitSuccessPollSuccessExecutor> f = submitSuccessPollSuccess;
 
@@ -263,6 +278,7 @@ public class PipeliteLauncherAsyncTester {
     assertThat(f.stageExecutor.pollCount.get()).isEqualTo(PROCESS_CNT);
   }
 
+  @Test
   public void testSubmitError() {
     TestProcessFactory<SubmitErrorExecutor> f = submitError;
 
@@ -280,6 +296,7 @@ public class PipeliteLauncherAsyncTester {
     assertThat(f.stageExecutor.pollCount.get()).isEqualTo(0);
   }
 
+  @Test
   public void testSubmitException() {
     TestProcessFactory<SubmitExceptionExecutor> f = submitException;
 
@@ -297,6 +314,7 @@ public class PipeliteLauncherAsyncTester {
     assertThat(f.stageExecutor.pollCount.get()).isEqualTo(0);
   }
 
+  @Test
   public void testPollError() {
     TestProcessFactory<PollErrorExecutor> f = pollError;
 
@@ -314,6 +332,7 @@ public class PipeliteLauncherAsyncTester {
     assertThat(f.stageExecutor.pollCount.get()).isEqualTo(PROCESS_CNT);
   }
 
+  @Test
   public void testPollException() {
     TestProcessFactory<PollExceptionExecutor> f = pollException;
 

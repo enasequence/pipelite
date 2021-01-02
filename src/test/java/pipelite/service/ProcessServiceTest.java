@@ -10,26 +10,33 @@
  */
 package pipelite.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.transaction.annotation.Transactional;
+import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.ProcessEntity;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 
-class ProcessServiceTester {
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SpringBootTest(classes = PipeliteTestConfiguration.class)
+@Transactional
+@DirtiesContext
+class ProcessServiceTest {
 
   private static final int DEFAULT_LIMIT = Integer.MAX_VALUE;
 
-  public ProcessServiceTester(ProcessService service) {
-    this.service = service;
-  }
+  @Autowired ProcessService service;
 
-  private final ProcessService service;
-
+  @Test
   public void lifecycle() {
 
     String pipelineName = UniqueStringGenerator.randomPipelineName();
@@ -74,6 +81,7 @@ class ProcessServiceTester {
     assertThat(service.getSavedProcess(pipelineName, processId).get()).isEqualTo(processEntity);
   }
 
+  @Test
   public void testGetActiveCompletedFailedPendingProcessesWithSamePriority() {
     String pipelineName = UniqueStringGenerator.randomPipelineName();
 
@@ -95,6 +103,7 @@ class ProcessServiceTester {
     assertThat(service.getPendingProcesses(pipelineName, DEFAULT_LIMIT)).hasSize(2);
   }
 
+  @Test
   public void testGetActiveCompletedFailedPendingProcessesWithDifferentPriority() {
     String pipelineName = UniqueStringGenerator.randomPipelineName();
 
@@ -123,6 +132,7 @@ class ProcessServiceTester {
         .isSortedAccordingTo(Comparator.comparingInt(ProcessEntity::getPriority).reversed());
   }
 
+  @Test
   public void testGetProcesses() {
     String pipelineName = UniqueStringGenerator.randomPipelineName();
 
@@ -189,6 +199,7 @@ class ProcessServiceTester {
     assertThat(counter.get(ProcessState.PENDING).get()).isEqualTo(pendingCount);
   }
 
+  @Test
   public void testProcessStateSummary() {
     service.getProcessStateSummary();
   }

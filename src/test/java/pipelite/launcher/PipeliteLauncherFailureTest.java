@@ -10,21 +10,18 @@
  */
 package pipelite.launcher;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 import lombok.Value;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.PipeliteTestConfiguration;
 import pipelite.TestProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ExecutorConfiguration;
@@ -44,9 +41,23 @@ import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.parameters.ExecutorParameters;
 
-@Component
-@Scope("prototype")
-public class PipeliteLauncherFailureTester {
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    classes = PipeliteTestConfiguration.class,
+    properties = {
+      "pipelite.launcher.processRunnerFrequency=250ms",
+      "pipelite.launcher.shutdownIfIdle=true"
+    })
+@DirtiesContext
+public class PipeliteLauncherFailureTest {
 
   private static final int PROCESS_CNT = 1;
 
@@ -433,22 +444,27 @@ public class PipeliteLauncherFailureTester {
     assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(stageFailedCount);
   }
 
+  @Test
   public void testFirstStageFails() {
     test(firstStageFails, firstStageFailsSource);
   }
 
+  @Test
   public void testSecondStageFails() {
     test(secondStageFails, secondStageFailsSource);
   }
 
+  @Test
   public void testThirdStageFails() {
     test(thirdStageFails, thirdStageFailsSource);
   }
 
+  @Test
   public void testFourthStageFails() {
     test(fourthStageFails, fourthStageFailsSource);
   }
 
+  @Test
   public void testNoStageFails() {
     test(noStageFails, noStageFailsSource);
   }

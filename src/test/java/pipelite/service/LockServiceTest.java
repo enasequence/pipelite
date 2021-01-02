@@ -10,20 +10,33 @@
  */
 package pipelite.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.time.Duration;
-import java.time.ZonedDateTime;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.LauncherLockEntity;
 import pipelite.launcher.process.runner.ProcessRunnerType;
 import pipelite.time.Time;
 
-public class LockServiceTester {
+import java.time.Duration;
+import java.time.ZonedDateTime;
 
-  public static void testLauncherLocks(LockService service) {
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@SpringBootTest(
+    classes = PipeliteTestConfiguration.class,
+    properties = {"pipelite.launcher.lockDuration=5s"})
+public class LockServiceTest {
+
+  @Autowired LockService service;
+
+  @Test
+  public void testLauncherLocks() {
     String launcherName1 = UniqueStringGenerator.randomLauncherName();
     String launcherName2 = UniqueStringGenerator.randomLauncherName();
 
@@ -79,7 +92,8 @@ public class LockServiceTester {
     assertThat(service.getLauncherLocksByLauncherName(launcherName2).size()).isZero();
   }
 
-  public static void testProcessLocks(LockService service) {
+  @Test
+  public void testProcessLocks() {
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     String launcherName1 = UniqueStringGenerator.randomLauncherName();
     String launcherName2 = UniqueStringGenerator.randomLauncherName();
@@ -136,7 +150,8 @@ public class LockServiceTester {
   }
 
   // Test fails if the lock is not created and checked for the first time within the lock duration.
-  public static void testRemoveExpiredLauncherLock(LockService service) {
+  @Test
+  public void testRemoveExpiredLauncherLock() {
     String launcherName1 = UniqueStringGenerator.randomLauncherName();
     String launcherName2 = UniqueStringGenerator.randomLauncherName();
 
@@ -158,7 +173,8 @@ public class LockServiceTester {
   }
 
   // Test fails if the lock is not created and checked for the first time within the lock duration.
-  public static void testRemoveExpiredProcessLock(LockService service) {
+  @Test
+  public void testRemoveExpiredProcessLock() {
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     String launcherName1 = UniqueStringGenerator.randomLauncherName();
     String launcherName2 = UniqueStringGenerator.randomLauncherName();
