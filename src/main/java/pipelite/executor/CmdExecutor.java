@@ -45,31 +45,31 @@ public class CmdExecutor<T extends CmdExecutorParameters> extends AbstractExecut
   protected CmdRunner cmdRunner;
 
   /**
-   * Returns an optional prefix command.
+   * Returns an optional dispatcher command.
    *
    * @param pipelineName the pipeline name
    * @param processId the process id
    * @param stage the stage
-   * @return an optional prefix command
+   * @return an optional dispatcher command
    */
-  public String getPrefixCmd(String pipelineName, String processId, Stage stage) {
+  public String getDispatcherCmd(String pipelineName, String processId, Stage stage) {
     return null;
   }
 
   /**
-   * Returns the full command after all modifications including the optional prefix command.
+   * Returns the command to execute.
    *
    * @param pipelineName the pipeline name
    * @param processId the process id
    * @param stage the stage
-   * @return the full command after all modifications including the optional prefix command
+   * @return the command to execute
    */
-  public String getFullCmd(String pipelineName, String processId, Stage stage) {
-    String prefixCmd = getPrefixCmd(pipelineName, processId, stage);
-    if (prefixCmd != null) {
-      prefixCmd = prefixCmd + " ";
+  public String getCmd(String pipelineName, String processId, Stage stage) {
+    String dispatcherCmd = getDispatcherCmd(pipelineName, processId, stage);
+    if (dispatcherCmd != null) {
+      dispatcherCmd = dispatcherCmd + " ";
     } else {
-      prefixCmd = "";
+      dispatcherCmd = "";
     }
 
     /*
@@ -79,11 +79,11 @@ public class CmdExecutor<T extends CmdExecutorParameters> extends AbstractExecut
     }
     */
 
-    return prefixCmd + cmd;
+    return dispatcherCmd + cmd;
   }
 
   public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
-    String fullCmd = getFullCmd(pipelineName, processId, stage);
+    String fullCmd = getCmd(pipelineName, processId, stage);
     try {
       CmdRunnerResult result = cmdRunner.execute(fullCmd, getExecutorParams());
       return result.getStageExecutorResult(fullCmd);

@@ -41,11 +41,11 @@ public class SimpleLsfExecutorFilesTest {
   }
 
   @Test
-  public void getOutFile() {
+  public void outFile() {
     SimpleLsfExecutor executor = new SimpleLsfExecutor();
-
     executor.setExecutorParams(SimpleLsfExecutorParameters.builder().workDir("WORKDIR").build());
-    assertThat(executor.getOutFile("PIPELINE_NAME", "PROCESS_ID", "STAGE", "out"))
+    executor.setOutFile("PIPELINE_NAME", "PROCESS_ID", "STAGE");
+    assertThat(executor.getOutFile())
         .isEqualTo("WORKDIR/pipelite/PIPELINE_NAME/PROCESS_ID/PIPELINE_NAME_PROCESS_ID_STAGE.out");
   }
 

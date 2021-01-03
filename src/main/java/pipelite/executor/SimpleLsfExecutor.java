@@ -11,17 +11,11 @@
 package pipelite.executor;
 
 import java.time.Duration;
-import java.time.ZonedDateTime;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
-import pipelite.exception.PipeliteInterruptedException;
-import pipelite.executor.cmd.CmdRunner;
-import pipelite.executor.cmd.CmdRunnerResult;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
-import pipelite.time.Time;
 
 /** Executes a command using LSF. */
 @Flogger
@@ -29,23 +23,16 @@ import pipelite.time.Time;
 @Setter
 public class SimpleLsfExecutor extends AbstractLsfExecutor<SimpleLsfExecutorParameters> {
 
-  private static final Duration STDOUT_FILE_POLL_TIMEOUT = Duration.ofMinutes(5);
-  private static final Duration STDOUT_FILE_POLL_FREQUENCY = Duration.ofSeconds(10);
-
-  private String stdoutFile;
-
   @Override
-  public final String getPrefixCmd(String pipelineName, String processId, Stage stage) {
+  public final String getDispatcherCmd(String pipelineName, String processId, Stage stage) {
 
     StringBuilder cmd = new StringBuilder();
     cmd.append(BSUB_CMD);
 
-    stdoutFile = getOutFile(pipelineName, processId, stage.getStageName(), "stdout");
-
     // Write both stderr and stdout to the stdout file.
 
     addArgument(cmd, "-oo");
-    addArgument(cmd, stdoutFile);
+    addArgument(cmd, getOutFile());
 
     Integer cpu = getExecutorParams().getCpu();
     if (cpu != null && cpu > 0) {
@@ -88,42 +75,5 @@ public class SimpleLsfExecutor extends AbstractLsfExecutor<SimpleLsfExecutorPara
   }
 
   @Override
-  protected void beforeExecute(String pipelineName, String processId, Stage stage) {}
-
-  @Override
-  protected void afterExecute(
-      String pipelineName, String processId, Stage stage, StageExecutorResult result) {
-
-    // Check if the stdout file exists. The file may not be immediately available after the job
-    // execution finishes.
-
-    ZonedDateTime waitUntil = ZonedDateTime.now().plus(STDOUT_FILE_POLL_TIMEOUT);
-    try {
-      while (!stdoutFileExists(cmdRunner, stdoutFile)) {
-        Time.waitUntil(STDOUT_FILE_POLL_FREQUENCY, waitUntil);
-      }
-    } catch (PipeliteInterruptedException ex) {
-      return;
-    }
-
-    logContext(log.atFine(), pipelineName, processId, stage)
-        .log("Reading stdout file: %s", stdoutFile);
-
-    try {
-      CmdRunnerResult stdoutCmdRunnerResult =
-          writeFileToStdout(cmdRunner, stdoutFile, getExecutorParams());
-      result.setStdout(stdoutCmdRunnerResult.getStdout());
-    } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Failed to read stdout file: %s", stdoutFile);
-    }
-  }
-
-  private boolean stdoutFileExists(CmdRunner cmdRunner, String stdoutFile) {
-    // Check if the stdout file exists. The file may not be immediately available after the job
-    // execution finishes.
-    return 0
-        == cmdRunner
-            .execute("sh -c 'test -f " + stdoutFile + "'", getExecutorParams())
-            .getExitCode();
-  }
+  protected void beforeSubmit(String pipelineName, String processId, Stage stage) {}
 }

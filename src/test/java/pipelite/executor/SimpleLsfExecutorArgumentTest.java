@@ -40,7 +40,7 @@ public class SimpleLsfExecutorArgumentTest {
   }
 
   @Test
-  public void memoryAndMemoryDurationAndCpuAndQueueAndWorkDir() throws IOException {
+  public void test() throws IOException {
     SimpleLsfExecutorParameters executorParams =
         SimpleLsfExecutorParameters.builder()
             .workDir(Files.createTempDirectory("TEMP").toString())
@@ -51,7 +51,9 @@ public class SimpleLsfExecutorArgumentTest {
             .build();
 
     SimpleLsfExecutor executor = createExecutor(executorParams);
-    String cmd = executor.getFullCmd(PIPELINE_NAME, PROCESS_ID, createStage(executor));
+    Stage stage = createStage(executor);
+    executor.setOutFile(PIPELINE_NAME, PROCESS_ID, stage.getStageName());
+    String cmd = executor.getCmd(PIPELINE_NAME, PROCESS_ID, stage);
     assertTrue(cmd.contains(" -M 1M -R \"rusage[mem=1M:duration=1]\""));
     assertTrue(cmd.contains(" -n 2"));
     assertTrue(cmd.contains(" -q TEST"));

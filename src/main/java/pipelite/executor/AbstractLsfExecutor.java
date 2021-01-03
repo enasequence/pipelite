@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
+import pipelite.exception.PipeliteInterruptedException;
 import pipelite.executor.cmd.CmdRunner;
 import pipelite.executor.cmd.CmdRunnerResult;
 import pipelite.log.LogKey;
@@ -27,6 +28,7 @@ import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.parameters.CmdExecutorParameters;
+import pipelite.time.Time;
 
 /** Executes a command using LSF. */
 @Flogger
@@ -37,6 +39,10 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters> exten
 
   private String jobId;
   private ZonedDateTime startTime;
+  private String outFile;
+
+  private static final Duration STDOUT_FILE_POLL_TIMEOUT = Duration.ofMinutes(5);
+  private static final Duration STDOUT_FILE_POLL_FREQUENCY = Duration.ofSeconds(10);
 
   protected static final String BSUB_CMD = "bsub";
   private static final String BJOBS_STANDARD_CMD = "bjobs -l ";
@@ -60,9 +66,17 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters> exten
   private static final int BJOBS_AVG_MEM = 4;
   private static final int BJOBS_HOST = 5;
 
+  protected abstract void beforeSubmit(String pipelineName, String processId, Stage stage);
+
   @Override
   public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
     if (jobId == null) {
+      try {
+        setOutFile(pipelineName, processId, stage.getStageName());
+        beforeSubmit(pipelineName, processId, stage);
+      } catch (Exception ex) {
+        return StageExecutorResult.internalError(InternalError.SUBMIT);
+      }
       return submit(pipelineName, processId, stage);
     }
 
@@ -74,12 +88,6 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters> exten
 
     if (!getWorkDir(pipelineName, processId).isEmpty()) {
       cmdRunner.execute(MKDIR_CMD + getWorkDir(pipelineName, processId), getExecutorParams());
-    }
-
-    try {
-      beforeExecute(pipelineName, processId, stage);
-    } catch (Exception ex) {
-      return StageExecutorResult.internalError(InternalError.SUBMIT);
     }
 
     StageExecutorResult result = super.execute(pipelineName, processId, stage);
@@ -144,15 +152,46 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters> exten
       }
     }
 
-    afterExecute(pipelineName, processId, stage, result);
-
+    String stdout = getStdout(pipelineName, processId, stage);
+    result.setStdout(stdout);
     return result;
   }
 
-  protected abstract void beforeExecute(String pipelineName, String processId, Stage stage);
+  protected String getStdout(String pipelineName, String processId, Stage stage) {
 
-  protected abstract void afterExecute(
-      String pipelineName, String processId, Stage stage, StageExecutorResult result);
+    // Check if the stdout file exists. The file may not be immediately available after the job
+    // execution finishes.
+
+    ZonedDateTime waitUntil = ZonedDateTime.now().plus(STDOUT_FILE_POLL_TIMEOUT);
+    try {
+      while (!stdoutFileExists(cmdRunner, outFile)) {
+        Time.waitUntil(STDOUT_FILE_POLL_FREQUENCY, waitUntil);
+      }
+    } catch (PipeliteInterruptedException ex) {
+      return null;
+    }
+
+    logContext(log.atFine(), pipelineName, processId, stage)
+        .log("Reading stdout file: %s", outFile);
+
+    try {
+      CmdRunnerResult stdoutCmdRunnerResult =
+          writeFileToStdout(cmdRunner, outFile, getExecutorParams());
+      return stdoutCmdRunnerResult.getStdout();
+    } catch (Exception ex) {
+      log.atSevere().withCause(ex).log("Failed to read stdout file: %s", outFile);
+      return null;
+    }
+  }
+
+  private boolean stdoutFileExists(CmdRunner cmdRunner, String stdoutFile) {
+    // Check if the stdout file exists. The file may not be immediately available after the job
+    // execution finishes.
+    return 0
+        == cmdRunner
+            .execute("sh -c 'test -f " + stdoutFile + "'", getExecutorParams())
+            .getExitCode();
+  }
 
   private void reset() {
     jobId = null;
@@ -261,12 +300,29 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters> exten
     }
   }
 
-  public String getOutFile(String pipelineName, String processId, String stageName, String suffix) {
+  /**
+   * Sets the output file path in the working directory for stdout and stderr.
+   *
+   * @param pipelineName the pipeline name
+   * @param processId the process id
+   * @param stageName the stage name
+   * @return the output file path
+   */
+  protected void setOutFile(String pipelineName, String processId, String stageName) {
     String workDir = getWorkDir(pipelineName, processId);
     if (!workDir.endsWith("/")) {
       workDir = workDir + "/";
     }
-    return workDir + pipelineName + "_" + processId + "_" + stageName + "." + suffix;
+    outFile = workDir + pipelineName + "_" + processId + "_" + stageName + "." + "out";
+  }
+
+  /**
+   * Returns the output file path.
+   *
+   * @return the output file path
+   */
+  public String getOutFile() {
+    return outFile;
   }
 
   protected FluentLogger.Api logContext(

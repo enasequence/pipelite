@@ -17,7 +17,12 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import pipelite.configuration.ExecutorConfiguration;
 
-/** LSF executor parameters. For more information please refer to LSF documentation. */
+/**
+ * LSF executor parameters given using a job definition file and job definition parameters. The job
+ * definition parameters replace values in the job definition file. In addition, the working
+ * directory must be specified. Stdout and stderr will be concatenated and written into the working
+ * directory. For more information please refer to the LSF documentation.
+ */
 @Data
 @NoArgsConstructor
 @SuperBuilder

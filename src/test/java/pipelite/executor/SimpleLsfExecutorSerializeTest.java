@@ -28,7 +28,7 @@ public class SimpleLsfExecutorSerializeTest {
     String cmd = "echo test";
     SimpleLsfExecutor executor = StageExecutor.createLocalSimpleLsfExecutor(cmd);
     executor.setJobId("test");
-    executor.setStdoutFile("test");
+    executor.setOutFile("test");
     ZonedDateTime startTime =
         ZonedDateTime.of(LocalDateTime.of(2020, 1, 1, 1, 1), ZoneId.of("UTC"));
     executor.setStartTime(startTime);
@@ -40,13 +40,13 @@ public class SimpleLsfExecutorSerializeTest {
                 + "  \"cmdRunner\" : \"pipelite.executor.cmd.LocalCmdRunner\",\n"
                 + "  \"jobId\" : \"test\",\n"
                 + "  \"startTime\" : \"2020-01-01T01:01:00Z\",\n"
-                + "  \"stdoutFile\" : \"test\"\n"
+                + "  \"outFile\" : \"test\"\n"
                 + "}");
     SimpleLsfExecutor deserializedLsfExecutor = Json.deserialize(json, SimpleLsfExecutor.class);
     assertThat(deserializedLsfExecutor.getCmd()).isEqualTo(cmd);
     assertThat(deserializedLsfExecutor.getCmdRunner()).isInstanceOf(LocalCmdRunner.class);
     assertThat(deserializedLsfExecutor.getJobId()).isEqualTo("test");
-    assertThat(deserializedLsfExecutor.getStdoutFile()).isEqualTo("test");
+    assertThat(deserializedLsfExecutor.getOutFile()).isEqualTo("test");
     assertThat(deserializedLsfExecutor.getStartTime()).isEqualTo(startTime);
   }
 
@@ -55,7 +55,7 @@ public class SimpleLsfExecutorSerializeTest {
     String cmd = "echo test";
     SimpleLsfExecutor executor = StageExecutor.createSshSimpleLsfExecutor(cmd);
     executor.setJobId("test");
-    executor.setStdoutFile("test");
+    executor.setOutFile("test");
     ZonedDateTime startTime =
         ZonedDateTime.of(LocalDateTime.of(2020, 1, 1, 1, 1), ZoneId.of("UTC"));
     executor.setStartTime(startTime);
@@ -67,13 +67,13 @@ public class SimpleLsfExecutorSerializeTest {
                 + "  \"cmdRunner\" : \"pipelite.executor.cmd.SshCmdRunner\",\n"
                 + "  \"jobId\" : \"test\",\n"
                 + "  \"startTime\" : \"2020-01-01T01:01:00Z\",\n"
-                + "  \"stdoutFile\" : \"test\"\n"
+                + "  \"outFile\" : \"test\"\n"
                 + "}");
     SimpleLsfExecutor deserializedLsfExecutor = Json.deserialize(json, SimpleLsfExecutor.class);
     assertThat(deserializedLsfExecutor.getCmd()).isEqualTo(cmd);
     assertThat(deserializedLsfExecutor.getCmdRunner()).isInstanceOf(SshCmdRunner.class);
     assertThat(deserializedLsfExecutor.getJobId()).isEqualTo("test");
-    assertThat(deserializedLsfExecutor.getStdoutFile()).isEqualTo("test");
+    assertThat(deserializedLsfExecutor.getOutFile()).isEqualTo("test");
     assertThat(deserializedLsfExecutor.getStartTime()).isEqualTo(startTime);
   }
 }
