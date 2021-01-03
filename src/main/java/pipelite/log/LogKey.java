@@ -17,9 +17,6 @@ public class LogKey {
 
   private LogKey() {}
 
-  public static final MetadataKey<String> UNLOCKER_NAME =
-      MetadataKey.single("unlocker_name", String.class);
-
   public static final MetadataKey<String> LAUNCHER_NAME =
       MetadataKey.single("launcher_name", String.class);
 

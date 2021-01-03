@@ -63,9 +63,7 @@ public class SshLsfExecutorTest {
       if (!result.isActive()) {
         break;
       }
-      if (!Time.wait(5, TimeUnit.SECONDS)) {
-        throw new PipeliteInterruptedException("Stage launcher was interrupted");
-      }
+      Time.wait(Duration.ofSeconds(5));
     }
 
     // Ignore timeout errors.

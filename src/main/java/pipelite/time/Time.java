@@ -10,8 +10,10 @@
  */
 package pipelite.time;
 
+import pipelite.exception.PipeliteInterruptedException;
+
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
+import java.time.ZonedDateTime;
 
 public class Time {
 
@@ -20,33 +22,35 @@ public class Time {
   /**
    * Waits the given duration.
    *
-   * @param duration the duration
-   * @param timeUnit the time unit
-   * @return true if the wait was not interrupted
+   * @param duration the wait duration
+   * @throws pipelite.exception.PipeliteInterruptedException if the wait was interrupted
    */
-  public static boolean wait(long duration, TimeUnit timeUnit) {
+  public static void wait(Duration duration) {
     try {
-      timeUnit.sleep(duration);
-      return true;
+      Thread.sleep(duration.toMillis());
     } catch (InterruptedException ex) {
       Thread.interrupted();
-      return false;
+      throw new PipeliteInterruptedException("Wait interrupted");
     }
   }
 
   /**
-   * Waits the given duration.
+   * Waits the given duration but not past the given given time.
    *
-   * @param duration the duration
-   * @return true if the wait was not interrupted
+   * @param duration the wait duration
+   * @param until wait only if the current time is not past the given time
+   * @throws pipelite.exception.PipeliteInterruptedException if the wait was interrupted or if the current time
+   *     was past the given time
    */
-  public static boolean wait(Duration duration) {
+  public static void waitUntil(Duration duration, ZonedDateTime until) {
+    if (ZonedDateTime.now().isAfter(until)) {
+      throw new PipeliteInterruptedException("Wait timeout");
+    }
     try {
       Thread.sleep(duration.toMillis());
-      return true;
     } catch (InterruptedException ex) {
       Thread.interrupted();
-      return false;
+      throw new PipeliteInterruptedException("Wait interrupted");
     }
   }
 }

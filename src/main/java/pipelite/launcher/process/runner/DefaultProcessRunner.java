@@ -23,7 +23,7 @@ import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.*;
 import pipelite.entity.StageEntity;
-import pipelite.exception.PipeliteInterruptedException;
+import pipelite.exception.PipeliteException;
 import pipelite.launcher.StageLauncher;
 import pipelite.launcher.dependency.DependencyResolver;
 import pipelite.log.LogKey;
@@ -125,9 +125,10 @@ public class DefaultProcessRunner implements ProcessRunner {
 
       runStages(activeStages, executableStages, result);
 
-      if (!Time.wait(processRunnerFrequency)) {
+      try {
+        Time.wait(processRunnerFrequency);
+      } catch (PipeliteException ex) {
         executorService.shutdownNow();
-        throw new PipeliteInterruptedException("Process launcher was interrupted");
       }
     }
   }

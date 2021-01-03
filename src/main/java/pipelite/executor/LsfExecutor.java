@@ -18,7 +18,6 @@ import java.util.regex.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
-import pipelite.exception.PipeliteInterruptedException;
 import pipelite.executor.cmd.CmdRunner;
 import pipelite.executor.cmd.CmdRunnerResult;
 import pipelite.log.LogKey;
@@ -62,8 +61,8 @@ public class LsfExecutor extends CmdExecutor<LsfExecutorParameters>
   private static final int BJOBS_MAX_MEM = 3;
   private static final int BJOBS_AVG_MEM = 4;
   private static final int BJOBS_HOST = 5;
-  private static final Duration STDOUT_FILE_MAX_WAIT_TIME = Duration.ofMinutes(5);
-  private static final Duration STDOUT_FILE_POLL_WAIT_TIME = Duration.ofSeconds(10);
+  private static final Duration STDOUT_FILE_POLL_TIMEOUT = Duration.ofMinutes(5);
+  private static final Duration STDOUT_FILE_POLL_FREQUENCY = Duration.ofSeconds(10);
 
   @Override
   public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
@@ -146,13 +145,9 @@ public class LsfExecutor extends CmdExecutor<LsfExecutorParameters>
     // Check if the stdout file exists. The file may not be immediately available after the job
     // execution finishes.
 
-    ZonedDateTime stdoutFileWaitStart = ZonedDateTime.now();
-    while (stdoutFileWaitStart.plus(STDOUT_FILE_MAX_WAIT_TIME).isAfter(ZonedDateTime.now())
-        && !stdoutFileExists(cmdRunner, stdoutFile)) {
-
-      if (!Time.wait(STDOUT_FILE_POLL_WAIT_TIME)) {
-        throw new PipeliteInterruptedException("LSF command executor was interrupted");
-      }
+    ZonedDateTime waitUntil = ZonedDateTime.now().plus(STDOUT_FILE_POLL_TIMEOUT);
+    while (!stdoutFileExists(cmdRunner, stdoutFile)) {
+      Time.waitUntil(STDOUT_FILE_POLL_FREQUENCY, waitUntil);
     }
 
     logContext(log.atFine(), pipelineName, processId, stage)

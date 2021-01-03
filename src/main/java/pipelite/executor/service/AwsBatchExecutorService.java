@@ -3,138 +3,116 @@ package pipelite.executor.service;
 import com.amazonaws.services.batch.AWSBatch;
 import com.amazonaws.services.batch.AWSBatchClientBuilder;
 import com.amazonaws.services.batch.model.*;
+import lombok.EqualsAndHashCode;
 import lombok.Value;
+import lombok.extern.flogger.Flogger;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import pipelite.executor.RetryTask;
+import pipelite.executor.RetryTaskAggregator;
 import pipelite.time.Time;
 
 import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.groupingBy;
 
 @Service
 @Lazy
+@Flogger
 public class AwsBatchExecutorService implements ExecutorService {
 
   private static final Duration POLL_FREQUENCY = Duration.ofSeconds(10);
+  private static final Duration POLL_TIMEOUT = Duration.ofSeconds(30);
+  private static final int DESCRIBE_JOB_AGGREGATOR_LIMIT = 100;
+  private static final RetryTemplate retryTemplate = RetryTask.fixed(Duration.ofSeconds(5), 3);
 
   @Value
-  public class Client {
-    private final String region;
+  public static class Client {
+    private final AWSBatch awsBatch;
+
+    @EqualsAndHashCode.Exclude
+    private final RetryTaskAggregator<String, JobDetail> describeJobAggregator =
+        new RetryTaskAggregator<>(
+            this::describeJobCallback, retryTemplate, DESCRIBE_JOB_AGGREGATOR_LIMIT);
 
     public SubmitJobResult submitJob(SubmitJobRequest request) {
-      // TODO: exception handling
-      return awsBatch(this).submitJob(request);
+      return retryTemplate.execute(r -> awsBatch.submitJob(request));
     }
 
     public void terminateJob(String jobId) {
-      // TODO: exception handling
-      awsBatch(this)
-          .terminateJob(
-              new TerminateJobRequest().withJobId(jobId).withReason("Job terminated by pipelite"));
+      retryTemplate.execute(
+          r ->
+              awsBatch.terminateJob(
+                  new TerminateJobRequest()
+                      .withJobId(jobId)
+                      .withReason("Job terminated by pipelite")));
     }
 
     public JobDetail describeJob(String jobId) {
-      JobDetailCacheKey key = new JobDetailCacheKey(jobId, this);
-      Optional<JobDetail> jobDetail = jobDetailCache.get(key);
-      if (jobDetail != null && jobDetail.isPresent()) {
-        jobDetailCache.remove(key);
-        return jobDetail.get();
+      Optional<JobDetail> result = describeJobAggregator.getResult(jobId);
+      if (result == null) {
+        describeJobAggregator.addRequest(jobId);
+      } else if (result.isPresent()) {
+        describeJobAggregator.removeRequest(jobId);
+        return result.get();
       }
-      jobDetailCache.put(key, Optional.empty());
+      ZonedDateTime waitUntil = ZonedDateTime.now().plus(POLL_TIMEOUT);
       while (true) {
-        Time.wait(POLL_FREQUENCY);
-        jobDetail = jobDetailCache.get(key);
-        if (jobDetail != null && jobDetail.isPresent()) {
-          jobDetailCache.remove(key);
-          return jobDetail.get();
+        Time.waitUntil(POLL_FREQUENCY, waitUntil);
+        result = describeJobAggregator.getResult(jobId);
+        if (result != null && result.isPresent()) {
+          describeJobAggregator.removeRequest(jobId);
+          return result.get();
         }
       }
     }
+
+    public void makeAggregatorRequests() {
+      describeJobAggregator.makeRequests();
+    }
+
+    public Map<String, JobDetail> describeJobCallback(List<String> jobIds) {
+      Map<String, JobDetail> result = new HashMap<>();
+      DescribeJobsResult jobResult =
+          awsBatch.describeJobs(new DescribeJobsRequest().withJobs(jobIds));
+      jobResult.getJobs().forEach(j -> result.put(j.getJobId(), j));
+      return result;
+    }
   }
 
   @Value
-  public class ClientCacheValue {
-    private final Client client;
-    private final AWSBatch awsBatch;
+  private class ClientKey {
+    private final String region;
   }
 
-  @Value
-  public class JobDetailCacheKey {
-    private final String jobId;
-    private final Client client;
-  }
-
-  private final Map<Client, ClientCacheValue> clientCache = new ConcurrentHashMap<>();
-
-  private final Map<JobDetailCacheKey, Optional<JobDetail>> jobDetailCache =
-      new ConcurrentHashMap<>();
-
-  private AWSBatch awsBatch(Client client) {
-    return clientCache.get(client).getAwsBatch();
-  }
+  private final Map<ClientKey, Client> clientCache = new ConcurrentHashMap<>();
 
   /**
-   * Caches clients for pipeline name and stage name.
+   * Returns a cached client or creates a new one.
    *
-   * @return the cached client
-   */
-  public Client client() {
-    return client(null);
-  }
-
-  /**
-   * Caches clients for pipeline name and stage name.
-   *
-   * @param region the region
+   * @parem region the optional AWS region
    * @return the cached client
    */
   public Client client(String region) {
-    ClientCacheValue clientCacheValue =
-        clientCache.computeIfAbsent(this.new Client(region), this::createClientCacheValue);
-    return clientCacheValue.client;
-  }
-
-  private ClientCacheValue createClientCacheValue(Client client) {
-    AWSBatchClientBuilder builder = AWSBatchClientBuilder.standard();
-    if (client.getRegion() != null) {
-      builder.setRegion(client.getRegion());
-    }
-    return new ClientCacheValue(client, builder.build());
+    return clientCache.computeIfAbsent(
+        new ClientKey(region),
+        k -> {
+          AWSBatchClientBuilder builder = AWSBatchClientBuilder.standard();
+          if (region != null) {
+            builder.setRegion(region);
+          }
+          return new Client(builder.build());
+        });
   }
 
   @Scheduled(fixedDelay = 10000) // Every 10 seconds
-  public void run() {
-    // TODO: exception handling
-    Map<Client, List<JobDetailCacheKey>> byClient =
-        jobDetailCache.entrySet().stream()
-            .filter(e -> !e.getValue().isPresent())
-            .map(e -> e.getKey())
-            .collect(groupingBy(JobDetailCacheKey::getClient));
-
-    byClient.forEach(
-        (client, describeJobs) -> {
-          List<String> jobIds =
-              describeJobs.stream().map(j -> j.getJobId()).collect(Collectors.toList());
-          DescribeJobsResult jobResult =
-              awsBatch(client).describeJobs(new DescribeJobsRequest().withJobs(jobIds));
-          jobResult
-              .getJobs()
-              .forEach(
-                  j -> {
-                    JobDetailCacheKey jobDetailCacheKey =
-                        new JobDetailCacheKey(j.getJobId(), client);
-                    Optional<JobDetail> jobDetail = jobDetailCache.get(jobDetailCacheKey);
-                    if (jobDetail != null) {
-                      jobDetailCache.put(jobDetailCacheKey, Optional.of(j));
-                    }
-                  });
-        });
+  public void makeAggregatorRequests() {
+    clientCache.values().forEach(client -> client.makeAggregatorRequests());
   }
 }

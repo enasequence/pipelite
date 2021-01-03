@@ -126,10 +126,7 @@ public class StageLauncher {
         result = StageExecutorResult.error(ex);
         break;
       }
-
-      if (!Time.wait(POLL_FREQUENCY)) {
-        throw new PipeliteInterruptedException("Stage launcher was interrupted");
-      }
+      Time.wait(POLL_FREQUENCY);
     }
     return result;
   }

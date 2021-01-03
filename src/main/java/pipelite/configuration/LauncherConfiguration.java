@@ -19,6 +19,7 @@ import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
@@ -33,6 +34,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @Configuration
 @ConfigurationProperties(prefix = "pipelite.launcher")
 @EnableScheduling
+@EnableRetry
 public class LauncherConfiguration {
 
   private static final Duration DEFAULT_LOCK_DURATION = Duration.ofMinutes(10);
