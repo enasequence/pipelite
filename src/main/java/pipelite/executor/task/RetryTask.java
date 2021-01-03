@@ -1,4 +1,4 @@
-package pipelite.executor;
+package pipelite.executor.task;
 
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.backoff.FixedBackOffPolicy;

@@ -28,8 +28,7 @@ import pipelite.stage.parameters.*;
 public class ExecutorConfiguration {
 
   @NestedConfigurationProperty private AwsBatchExecutorParameters awsBatch;
-
   @NestedConfigurationProperty private LsfExecutorParameters lsf;
-
+  @NestedConfigurationProperty private SimpleLsfExecutorParameters simpleLsf;
   @NestedConfigurationProperty private CmdExecutorParameters cmd;
 }

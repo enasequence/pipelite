@@ -21,15 +21,14 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LsfTestConfiguration;
-import pipelite.exception.PipeliteInterruptedException;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.*;
 import pipelite.stage.executor.InternalError;
-import pipelite.stage.parameters.LsfExecutorParameters;
+import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 import pipelite.time.Time;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
-public class SshLsfExecutorTest {
+public class SshSimpleLsfExecutorTest {
 
   @Autowired LsfTestConfiguration lsfTestConfiguration;
 
@@ -39,9 +38,9 @@ public class SshLsfExecutorTest {
   @Test
   public void test() {
 
-    LsfExecutor executor = StageExecutor.createSshLsfExecutor("echo test");
+    SimpleLsfExecutor executor = StageExecutor.createSshSimpleLsfExecutor("echo test");
     executor.setExecutorParams(
-        LsfExecutorParameters.builder()
+        SimpleLsfExecutorParameters.builder()
             .host(lsfTestConfiguration.getHost())
             .workDir(lsfTestConfiguration.getWorkDir())
             .timeout(Duration.ofSeconds(60))

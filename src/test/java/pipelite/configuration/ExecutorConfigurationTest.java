@@ -16,8 +16,8 @@ import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfiguration;
+import pipelite.stage.parameters.LsfExecutorParameters;
 
 // TODO: move to and test YAML
 
@@ -28,17 +28,20 @@ import pipelite.PipeliteTestConfiguration;
       "pipelite.executor.cmd.immediateRetries=2",
       "pipelite.executor.cmd.maximumRetries=3",
       "pipelite.executor.cmd.timeout=10s",
-      "pipelite.executor.lsf.memory=1",
-      "pipelite.executor.lsf.cores=1",
-      "pipelite.executor.lsf.queue=TEST",
-      "pipelite.executor.lsf.memoryTimeout=15s",
-      "pipelite.executor.lsf.immediateRetries=2",
-      "pipelite.executor.lsf.maximumRetries=3",
+      "pipelite.executor.lsf.definition=TEST",
+      "pipelite.executor.lsf.format=YAML",
       "pipelite.executor.lsf.workdir=",
-      "pipelite.executor.lsf.timeout=10s",
+      "pipelite.executor.simpleLsf.memory=1",
+      "pipelite.executor.simpleLsf.cpu=1",
+      "pipelite.executor.simpleLsf.queue=TEST",
+      "pipelite.executor.simpleLsf.memoryTimeout=15s",
+      "pipelite.executor.simpleLsf.immediateRetries=2",
+      "pipelite.executor.simpleLsf.maximumRetries=3",
+      "pipelite.executor.simpleLsf.workdir=",
+      "pipelite.executor.simpleLsf.timeout=10s",
       "pipelite.executor.awsBatch.region=TEST",
       "pipelite.executor.awsBatch.queue=TEST",
-      "pipelite.executor.awsBatch.jobDefinition=TEST",
+      "pipelite.executor.awsBatch.definition=TEST",
       "pipelite.executor.awsBatch.immediateRetries=2",
       "pipelite.executor.awsBatch.maximumRetries=3",
       "pipelite.executor.awsBatch.timeout=10s"
@@ -57,24 +60,25 @@ public class ExecutorConfigurationTest {
 
   @Test
   public void lsfProperties() {
-    assertThat(config.getLsf().getMemory()).isEqualTo(1);
-    assertThat(config.getLsf().getCores()).isEqualTo(1);
-    assertThat(config.getLsf().getQueue()).isEqualTo("TEST");
-    assertThat(config.getLsf().getMemoryTimeout().toMillis() / 1000L).isEqualTo(15);
-    assertThat(config.getLsf().getImmediateRetries()).isEqualTo(2);
-    assertThat(config.getLsf().getImmediateRetries()).isEqualTo(2);
-    assertThat(config.getLsf().getMaximumRetries()).isEqualTo(3);
-    assertThat(config.getLsf().getWorkDir()).isBlank();
-    assertThat(config.getLsf().getTimeout()).isEqualTo(Duration.ofSeconds(10));
+    assertThat(config.getLsf().getDefinition()).isEqualTo("TEST");
+    assertThat(config.getLsf().getFormat()).isEqualTo(LsfExecutorParameters.Format.YAML);
+    assertThat(config.getSimpleLsf().getWorkDir()).isBlank();
+    assertThat(config.getSimpleLsf().getMemory()).isEqualTo(1);
+    assertThat(config.getSimpleLsf().getCpu()).isEqualTo(1);
+    assertThat(config.getSimpleLsf().getQueue()).isEqualTo("TEST");
+    assertThat(config.getSimpleLsf().getMemoryTimeout().toMillis() / 1000L).isEqualTo(15);
+    assertThat(config.getSimpleLsf().getImmediateRetries()).isEqualTo(2);
+    assertThat(config.getSimpleLsf().getImmediateRetries()).isEqualTo(2);
+    assertThat(config.getSimpleLsf().getMaximumRetries()).isEqualTo(3);
+    assertThat(config.getSimpleLsf().getWorkDir()).isBlank();
+    assertThat(config.getSimpleLsf().getTimeout()).isEqualTo(Duration.ofSeconds(10));
   }
 
   @Test
   public void awsBatchProperties() {
     assertThat(config.getAwsBatch().getRegion()).isEqualTo("TEST");
     assertThat(config.getAwsBatch().getQueue()).isEqualTo("TEST");
-    assertThat(config.getAwsBatch().getJobDefinition()).isEqualTo("TEST");
-    // TODO: test map using YAML
-    // assertThat(config.getAwsBatch().getJobParameters()).isEqualTo("TEST");
+    assertThat(config.getAwsBatch().getDefinition()).isEqualTo("TEST");
     assertThat(config.getAwsBatch().getImmediateRetries()).isEqualTo(2);
     assertThat(config.getAwsBatch().getMaximumRetries()).isEqualTo(3);
     assertThat(config.getAwsBatch().getTimeout()).isEqualTo(Duration.ofSeconds(10));

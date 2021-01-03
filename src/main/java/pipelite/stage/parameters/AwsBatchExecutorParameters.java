@@ -10,7 +10,6 @@
  */
 package pipelite.stage.parameters;
 
-import java.util.HashMap;
 import java.util.Map;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,26 +17,24 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import pipelite.configuration.ExecutorConfiguration;
 
+/** AWDBatch executor parameters. For more information please refer to AWSBatch documentation. */
 @Data
 @NoArgsConstructor
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class AwsBatchExecutorParameters extends ExecutorParameters {
 
-  /** The optional region name. */
+  /** The AWS region name. */
   private String region;
 
-  /** The queue name. */
+  /** The AWSBatch job queue. */
   private String queue;
 
-  /** The job definition name, name:revision, or ARN. */
-  private String jobDefinition;
+  /** The AWSBatch job definition name, name:revision or ARN. */
+  private String definition;
 
-  /**
-   * The job parameters. These parameters replace parameter substitution placeholders and override
-   * corresponding parameter defaults in the job definition.
-   */
-  private Map<String, String> jobParameters;
+  /** The AWSBatch job definition parameters applied to the job definition by AWSBatch. */
+  private Map<String, String> parameters;
 
   @Override
   public void applyDefaults(ExecutorConfiguration executorConfiguration) {
@@ -45,16 +42,7 @@ public class AwsBatchExecutorParameters extends ExecutorParameters {
     super.applyDefaults(defaultParams);
     applyDefault(this::getRegion, this::setRegion, defaultParams::getRegion);
     applyDefault(this::getQueue, this::setQueue, defaultParams::getQueue);
-    applyDefault(this::getJobDefinition, this::setJobDefinition, defaultParams::getJobDefinition);
-    if (jobParameters == null) {
-      jobParameters = new HashMap<>();
-    }
-    if (defaultParams != null && defaultParams.jobParameters != null) {
-      for (String key : defaultParams.jobParameters.keySet()) {
-        if (!jobParameters.containsKey(key)) {
-          jobParameters.put(key, defaultParams.jobParameters.get(key));
-        }
-      }
-    }
+    applyDefault(this::getDefinition, this::setDefinition, defaultParams::getDefinition);
+    applyMapDefaults(parameters, defaultParams.parameters);
   }
 }

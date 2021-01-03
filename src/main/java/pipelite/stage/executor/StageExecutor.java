@@ -13,6 +13,7 @@ package pipelite.stage.executor;
 import pipelite.executor.AwsBatchExecutor;
 import pipelite.executor.CmdExecutor;
 import pipelite.executor.LsfExecutor;
+import pipelite.executor.SimpleLsfExecutor;
 import pipelite.executor.cmd.CmdRunner;
 import pipelite.executor.cmd.LocalCmdRunner;
 import pipelite.executor.cmd.SshCmdRunner;
@@ -96,6 +97,42 @@ public interface StageExecutor<T extends ExecutorParameters> extends StageExecut
    */
   static LsfExecutor createSshLsfExecutor(String cmd) {
     return createLsfExecutor(cmd, new SshCmdRunner());
+  }
+
+  /**
+   * Creates an executor that executes the command using LSF.
+   *
+   * @param cmd the command
+   * @param cmdRunner the command runner
+   * @return an executor that executes the command using LSF.
+   */
+  static SimpleLsfExecutor createSimpleLsfExecutor(String cmd, CmdRunner cmdRunner) {
+    SimpleLsfExecutor lsfExecutor = new SimpleLsfExecutor();
+    lsfExecutor.setCmd(cmd);
+    lsfExecutor.setCmdRunner(cmdRunner);
+    return lsfExecutor;
+  }
+
+  /**
+   * Creates an executor that executes the command using LSF on the local host.
+   *
+   * @param cmd the command
+   * @return an executor that executes the command using LSF on the local host.
+   */
+  static SimpleLsfExecutor createLocalSimpleLsfExecutor(String cmd) {
+    return createSimpleLsfExecutor(cmd, new LocalCmdRunner());
+  }
+
+  /**
+   * Creates an executor that connects to a remote host using ssh and executes the command using
+   * LSF.
+   *
+   * @param cmd the command
+   * @return an executor that connects to a remote host using ssh and executes the command using
+   *     LSF.
+   */
+  static SimpleLsfExecutor createSshSimpleLsfExecutor(String cmd) {
+    return createSimpleLsfExecutor(cmd, new SshCmdRunner());
   }
 
   /**

@@ -60,8 +60,8 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
         new SubmitJobRequest()
             .withJobName(getJobName(pipelineName, processId, stage))
             .withJobQueue(params.getQueue())
-            .withJobDefinition(params.getJobDefinition())
-            .withParameters(params.getJobParameters())
+            .withJobDefinition(params.getDefinition())
+            .withParameters(params.getParameters())
             .withTimeout(
                 new JobTimeout()
                     .withAttemptDurationSeconds((int) params.getTimeout().getSeconds()));

@@ -10,41 +10,45 @@
  */
 package pipelite.stage.parameters;
 
-import java.time.Duration;
+import java.util.Map;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import pipelite.configuration.ExecutorConfiguration;
 
+/** LSF executor parameters. For more information please refer to LSF documentation. */
 @Data
 @NoArgsConstructor
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class LsfExecutorParameters extends CmdExecutorParameters {
+  public enum Format {
+    YAML,
+    JSON,
+    JSDL
+  };
 
-  /** The queue name. */
-  private String queue;
+  /** The LSF job definition file. */
+  private String definition;
 
-  /** The number of requested cores. */
-  private Integer cores;
+  /** The LSF job definition file format. */
+  private Format format;
 
-  /** The amount of requested memory in MBytes. */
-  private Integer memory;
-
-  private Duration memoryTimeout;
-
-  /** The working directory. */
-  private String workDir;
+  /**
+   * The LSF job definition parameters applied to the job definition file. The key is the parameter
+   * placeholder that if found in the job definition file will be replaced with the corresponding
+   * value.
+   */
+  private Map<String, String> parameters;
 
   @Override
   public void applyDefaults(ExecutorConfiguration executorConfiguration) {
     LsfExecutorParameters defaultParams = executorConfiguration.getLsf();
     super.applyDefaults(defaultParams);
-    applyDefault(this::getQueue, this::setQueue, defaultParams::getQueue);
-    applyDefault(this::getCores, this::setCores, defaultParams::getCores);
-    applyDefault(this::getMemory, this::setMemory, defaultParams::getMemory);
-    applyDefault(this::getMemoryTimeout, this::setMemoryTimeout, defaultParams::getMemoryTimeout);
-    applyDefault(this::getWorkDir, this::setWorkDir, defaultParams::getWorkDir);
+    applyDefault(this::getDefinition, this::setDefinition, defaultParams::getDefinition);
+    applyDefault(this::getFormat, this::setFormat, defaultParams::getFormat);
+    applyMapDefaults(parameters, defaultParams.parameters);
   }
 }

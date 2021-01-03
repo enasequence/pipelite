@@ -10,8 +10,8 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import pipelite.executor.RetryTask;
-import pipelite.executor.RetryTaskAggregator;
+import pipelite.executor.task.RetryTask;
+import pipelite.executor.task.RetryTaskAggregator;
 import pipelite.time.Time;
 
 import java.time.Duration;

@@ -1,6 +1,5 @@
-package pipelite.executor;
+package pipelite.executor.task;
 
-import com.google.common.collect.Maps;
 import org.springframework.retry.support.RetryTemplate;
 
 import java.util.List;

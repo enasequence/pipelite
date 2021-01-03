@@ -59,6 +59,7 @@ public class SshCmdExecutorTest {
     assertThat(result.getStdout()).isEqualTo("test\n");
   }
 
+  /*
   @Test
   public void testSingularity() {
 
@@ -83,4 +84,5 @@ public class SshCmdExecutorTest {
     assertThat(result.getStdout()).contains("Creating container runtime...");
     assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("2");
   }
+   */
 }

@@ -1,7 +1,9 @@
-package pipelite.executor;
+package pipelite.executor.task;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.retry.support.RetryTemplate;
+import pipelite.executor.task.RetryTask;
+import pipelite.executor.task.RetryTaskAggregator;
 
 import java.time.Duration;
 import java.util.List;

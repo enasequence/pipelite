@@ -12,6 +12,8 @@ package pipelite.stage.parameters;
 
 import com.google.common.base.Supplier;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 import lombok.Builder;
 import lombok.Data;
@@ -46,6 +48,20 @@ public class ExecutorParameters {
     if (thisGetter.get() == null) {
       thisSetter.accept(defaultGetter.get());
     }
+  }
+
+  public static <K, V> Map<K, V> applyMapDefaults(Map<K, V> params, Map<K, V> defaultParams) {
+    if (params == null) {
+      params = new HashMap<>();
+    }
+    if (defaultParams != null) {
+      for (K key : defaultParams.keySet()) {
+        if (!params.containsKey(key)) {
+          params.put(key, defaultParams.get(key));
+        }
+      }
+    }
+    return params;
   }
 
   /**

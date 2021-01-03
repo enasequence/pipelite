@@ -71,10 +71,14 @@ public class CmdExecutor<T extends CmdExecutorParameters> extends AbstractExecut
     } else {
       prefixCmd = "";
     }
+
+    /*
     String singularityImage = getExecutorParams().getSingularityImage();
     if (singularityImage != null) {
       prefixCmd += "singularity run " + singularityImage + " ";
     }
+    */
+
     return prefixCmd + cmd;
   }
 
