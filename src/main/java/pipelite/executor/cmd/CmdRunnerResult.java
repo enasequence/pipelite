@@ -26,8 +26,7 @@ public class CmdRunnerResult {
   private final String stderr;
   private final InternalError internalError;
 
-  public CmdRunnerResult(
-      int exitCode, String stdout, String stderr, InternalError internalError) {
+  public CmdRunnerResult(int exitCode, String stdout, String stderr, InternalError internalError) {
     this.exitCode = exitCode;
     this.stdout = stdout;
     this.stderr = stderr;

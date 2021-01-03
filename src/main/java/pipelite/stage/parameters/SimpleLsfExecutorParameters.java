@@ -10,13 +10,12 @@
  */
 package pipelite.stage.parameters;
 
+import java.time.Duration;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import pipelite.configuration.ExecutorConfiguration;
-
-import java.time.Duration;
 
 /**
  * Simple LSF executor parameters. Only some LSF options are available. For more information please

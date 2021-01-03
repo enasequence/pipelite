@@ -10,18 +10,16 @@
  */
 package pipelite.executor;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import pipelite.PipeliteTestConfiguration;
 import pipelite.executor.cmd.LocalCmdRunner;
 import pipelite.executor.cmd.SshCmdRunner;
 import pipelite.json.Json;
 import pipelite.stage.executor.StageExecutor;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class SimpleLsfExecutorSerializeTest {
 

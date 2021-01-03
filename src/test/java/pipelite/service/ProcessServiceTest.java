@@ -10,6 +10,10 @@
  */
 package pipelite.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,11 +25,6 @@ import pipelite.entity.ProcessEntity;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
-
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @Transactional

@@ -11,6 +11,10 @@
 package pipelite.executor;
 
 import com.google.common.flogger.FluentLogger;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
@@ -23,11 +27,6 @@ import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.parameters.CmdExecutorParameters;
-
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /** Executes a command using LSF. */
 @Flogger

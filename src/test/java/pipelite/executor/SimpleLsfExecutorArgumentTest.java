@@ -10,16 +10,15 @@
  */
 package pipelite.executor;
 
-import org.junit.jupiter.api.Test;
-import pipelite.UniqueStringGenerator;
-import pipelite.stage.Stage;
-import pipelite.stage.parameters.SimpleLsfExecutorParameters;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
+import pipelite.UniqueStringGenerator;
+import pipelite.stage.Stage;
+import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 
 public class SimpleLsfExecutorArgumentTest {
 

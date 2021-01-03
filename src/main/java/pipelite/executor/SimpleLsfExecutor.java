@@ -10,18 +10,18 @@
  */
 package pipelite.executor;
 
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
+import pipelite.exception.PipeliteInterruptedException;
 import pipelite.executor.cmd.CmdRunner;
 import pipelite.executor.cmd.CmdRunnerResult;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 import pipelite.time.Time;
-
-import java.time.Duration;
-import java.time.ZonedDateTime;
 
 /** Executes a command using LSF. */
 @Flogger
@@ -93,12 +93,17 @@ public class SimpleLsfExecutor extends AbstractLsfExecutor<SimpleLsfExecutorPara
   @Override
   protected void afterExecute(
       String pipelineName, String processId, Stage stage, StageExecutorResult result) {
+
     // Check if the stdout file exists. The file may not be immediately available after the job
     // execution finishes.
 
     ZonedDateTime waitUntil = ZonedDateTime.now().plus(STDOUT_FILE_POLL_TIMEOUT);
-    while (!stdoutFileExists(cmdRunner, stdoutFile)) {
-      Time.waitUntil(STDOUT_FILE_POLL_FREQUENCY, waitUntil);
+    try {
+      while (!stdoutFileExists(cmdRunner, stdoutFile)) {
+        Time.waitUntil(STDOUT_FILE_POLL_FREQUENCY, waitUntil);
+      }
+    } catch (PipeliteInterruptedException ex) {
+      return;
     }
 
     logContext(log.atFine(), pipelineName, processId, stage)

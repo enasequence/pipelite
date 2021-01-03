@@ -10,11 +10,12 @@
  */
 package pipelite.service;
 
-import org.junit.jupiter.api.Tag;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
@@ -25,10 +26,6 @@ import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.parameters.ExecutorParameters;
-
-import java.time.Duration;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @Transactional

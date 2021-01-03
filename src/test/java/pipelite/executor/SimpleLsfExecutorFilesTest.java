@@ -10,16 +10,15 @@
  */
 package pipelite.executor;
 
-import org.junit.jupiter.api.Test;
-import pipelite.executor.cmd.CmdRunnerResult;
-import pipelite.executor.cmd.LocalCmdRunner;
-import pipelite.stage.parameters.SimpleLsfExecutorParameters;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
+import pipelite.executor.cmd.CmdRunnerResult;
+import pipelite.executor.cmd.LocalCmdRunner;
+import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 
 public class SimpleLsfExecutorFilesTest {
 

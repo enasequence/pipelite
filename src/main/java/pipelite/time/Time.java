@@ -10,10 +10,9 @@
  */
 package pipelite.time;
 
-import pipelite.exception.PipeliteInterruptedException;
-
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import pipelite.exception.PipeliteInterruptedException;
 
 public class Time {
 
@@ -39,8 +38,8 @@ public class Time {
    *
    * @param duration the wait duration
    * @param until wait only if the current time is not past the given time
-   * @throws pipelite.exception.PipeliteInterruptedException if the wait was interrupted or if the current time
-   *     was past the given time
+   * @throws pipelite.exception.PipeliteInterruptedException if the wait was interrupted or if the
+   *     current time was past the given time
    */
   public static void waitUntil(Duration duration, ZonedDateTime until) {
     if (ZonedDateTime.now().isAfter(until)) {

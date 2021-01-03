@@ -15,7 +15,6 @@ import java.time.Duration;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.ExecutorConfiguration;
-import pipelite.exception.PipeliteInterruptedException;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.stage.Stage;

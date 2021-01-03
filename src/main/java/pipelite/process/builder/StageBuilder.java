@@ -14,7 +14,6 @@ import static pipelite.stage.executor.StageExecutorResultType.ACTIVE;
 import static pipelite.stage.executor.StageExecutorResultType.SUCCESS;
 
 import java.util.*;
-
 import pipelite.executor.AwsBatchExecutor;
 import pipelite.executor.CallExecutor;
 import pipelite.executor.CmdExecutor;

@@ -10,23 +10,20 @@
  */
 package pipelite.service;
 
-import org.junit.jupiter.api.Tag;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.LauncherLockEntity;
 import pipelite.launcher.process.runner.ProcessRunnerType;
 import pipelite.time.Time;
-
-import java.time.Duration;
-import java.time.ZonedDateTime;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(
     classes = PipeliteTestConfiguration.class,
