@@ -5,12 +5,10 @@ spring:
 pipelite:
   test:
     lsf:
-      host: noah-login
+      host: codon-login
       workdir: pipelite-test
-    singularity:
-      host: noah-login
     ssh:
-      host: localhost
+      host: codon-login
 ---
 spring:
   config:

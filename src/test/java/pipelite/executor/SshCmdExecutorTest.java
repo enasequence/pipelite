@@ -18,7 +18,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.SingularityTestConfiguration;
 import pipelite.configuration.SshTestConfiguration;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.*;
@@ -29,7 +28,6 @@ import pipelite.stage.parameters.CmdExecutorParameters;
 public class SshCmdExecutorTest {
 
   @Autowired SshTestConfiguration sshTestConfiguration;
-  @Autowired SingularityTestConfiguration singularityTestConfiguration;
 
   private static final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
   private static final String PROCESS_ID = UniqueStringGenerator.randomProcessId();

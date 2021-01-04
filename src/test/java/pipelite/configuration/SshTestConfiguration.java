@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Configuration;
 
 @Data
 @Configuration
-@ConfigurationProperties(prefix = "pipelite.test.singularity")
+@ConfigurationProperties(prefix = "pipelite.test.ssh")
 public class SshTestConfiguration {
   private String host;
 }
