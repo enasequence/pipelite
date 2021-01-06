@@ -27,8 +27,10 @@ import pipelite.time.Time;
 
 @SpringBootTest(
     classes = PipeliteTestConfiguration.class,
-    properties = {"pipelite.launcher.lockDuration=10s"})
+    properties = {"pipelite.launcher.lockDuration=15s"})
 public class LockServiceTest {
+
+  private static Duration LOCK_DURATION = Duration.ofSeconds(15);
 
   @Autowired LockService service;
 
@@ -51,14 +53,12 @@ public class LockServiceTest {
     assertThat(launcherLock1.getLauncherId()).isGreaterThan(0);
     assertThat(launcherLock1.getLauncherName()).isEqualTo(launcherName1);
     assertThat(launcherLock1.getExpiry())
-        .isAfterOrEqualTo(
-            ZonedDateTime.now().plus(service.getLockDuration()).minus(Duration.ofSeconds(10)));
+        .isAfterOrEqualTo(ZonedDateTime.now().plus(service.getLockDuration()).minus(LOCK_DURATION));
 
     assertThat(launcherLock2.getLauncherId()).isGreaterThan(0);
     assertThat(launcherLock2.getLauncherName()).isEqualTo(launcherName2);
     assertThat(launcherLock2.getExpiry())
-        .isAfterOrEqualTo(
-            ZonedDateTime.now().plus(service.getLockDuration()).minus(Duration.ofSeconds(10)));
+        .isAfterOrEqualTo(ZonedDateTime.now().plus(service.getLockDuration()).minus(LOCK_DURATION));
 
     assertThat(launcherLock1.getLauncherId()).isLessThan(launcherLock2.getLauncherId());
 

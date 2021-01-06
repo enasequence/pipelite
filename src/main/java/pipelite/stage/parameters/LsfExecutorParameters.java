@@ -34,7 +34,7 @@ public class LsfExecutorParameters extends CmdExecutorParameters {
     JSDL
   };
 
-  /** The LSF job definition file. */
+  /** The LSF job definition file URL. */
   private String definition;
 
   /** The LSF job definition file format. */
@@ -54,5 +54,15 @@ public class LsfExecutorParameters extends CmdExecutorParameters {
     applyDefault(this::getDefinition, this::setDefinition, defaultParams::getDefinition);
     applyDefault(this::getFormat, this::setFormat, defaultParams::getFormat);
     applyMapDefaults(parameters, defaultParams.parameters);
+  }
+
+  @Override
+  public void validate() {
+    super.validate();
+    validateNotNull(definition, "definition");
+    validateNotNull(format, "format");
+    if (definition != null) {
+      validateUrl(definition, "definition");
+    }
   }
 }

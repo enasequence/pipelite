@@ -11,6 +11,10 @@
 package pipelite.stage.parameters;
 
 import com.google.common.base.Supplier;
+
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,6 +25,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.flogger.Flogger;
 import pipelite.configuration.ExecutorConfiguration;
+import pipelite.exception.PipeliteException;
 import pipelite.json.Json;
 
 /** Parameters shared by all executors. */
@@ -80,6 +85,50 @@ public class ExecutorParameters {
     applyDefault(this::getTimeout, this::setTimeout, params::getTimeout);
     applyDefault(this::getMaximumRetries, this::setMaximumRetries, params::getMaximumRetries);
     applyDefault(this::getImmediateRetries, this::setImmediateRetries, params::getImmediateRetries);
+  }
+
+  /** Validates the parameters after applying defaults. */
+  public void validate() {
+    validateNotNull(timeout, "timeout");
+    validateNotNull(maximumRetries, "maximumRetries");
+    validateNotNull(immediateRetries, "immediateRetries");
+  }
+
+  protected static <T> T validateNotNull(T value, String name) {
+    if (value == null) {
+      throw new PipeliteException("Missing " + name + " parameter");
+    }
+    return value;
+  }
+
+  public static Path validatePath(String path, String name) {
+    try {
+      return Paths.get(path).normalize();
+    } catch (Exception e) {
+      throw new PipeliteException("Invalid " + name + " parameter path: " + path);
+    }
+  }
+
+  public static URL validateUrl(String url, String name) {
+    validateNotNull(url, name);
+    try {
+      // Try to create a URL.
+      new URL(url).openConnection().connect();
+      return new URL(url);
+    } catch (Exception e1) {
+      // Try to create a resource URL.
+      try {
+        // Remove leading '/'.
+        url = url.replaceFirst("^/+", "");
+        URL resourceUrl = ExecutorParameters.class.getClassLoader().getResource(url);
+        if (resourceUrl == null) {
+          throw new PipeliteException("Invalid " + name + " parameter url: " + url);
+        }
+        return resourceUrl;
+      } catch (Exception e2) {
+        throw new PipeliteException("Invalid " + name + " parameter url: " + url);
+      }
+    }
   }
 
   /** Serializes the executor to json. */

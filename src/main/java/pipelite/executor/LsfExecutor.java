@@ -13,8 +13,17 @@ package pipelite.executor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
+import pipelite.exception.PipeliteException;
+import pipelite.executor.cmd.CmdRunnerUtils;
 import pipelite.stage.*;
+import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.stage.parameters.LsfExecutorParameters;
+
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Paths;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 /** Executes a command using LSF. */
 @Flogger
@@ -25,8 +34,10 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
 
   private String definitionFile;
 
+  private static final String JOB_FILE_SUFFIX = ".job";
+
   @Override
-  public final String getDispatcherCmd(String pipelineName, String processId, Stage stage) {
+  public final String getSubmitCmd(String pipelineName, String processId, Stage stage) {
 
     StringBuilder cmd = new StringBuilder();
     cmd.append(BSUB_CMD);
@@ -54,8 +65,42 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
 
   @Override
   protected void beforeSubmit(String pipelineName, String processId, Stage stage) {
-    // TODO: copy definition file into the working directory unless
-    // getExecutorParams().getDefinition() already points there
-    definitionFile = "TODO";
+    setDefinitionFile(pipelineName, processId, stage);
+    URL definitionUrl =
+        ExecutorParameters.validateUrl(getExecutorParams().getDefinition(), "definition");
+    String definition = CmdRunnerUtils.read(definitionUrl);
+    definition = applyDefinitionParameters(definition, getExecutorParams().getParameters());
+    try {
+      getCmdRunner().writeFile(definition, Paths.get(definitionFile), getExecutorParams());
+    } catch (IOException ex) {
+      throw new PipeliteException(ex);
+    }
+  }
+
+  @Override
+  protected void afterSubmit(String pipelineName, String processId, Stage stage) {
+    /*
+    try {
+      getCmdRunner().deleteFile(Paths.get(definitionFile), getExecutorParams());
+    } catch (IOException ex) {
+      throw new PipeliteException(ex);
+    }
+    */
+  }
+  public String setDefinitionFile(String pipelineName, String processId, Stage stage) {
+    definitionFile =
+        getWorkDir(pipelineName, processId)
+            .resolve(stage.getStageName() + JOB_FILE_SUFFIX)
+            .toString();
+    return definitionFile;
+  }
+
+  public String applyDefinitionParameters(String definition, Map<String, String> params) {
+    if (params == null) {
+      return definition;
+    }
+    AtomicReference<String> str = new AtomicReference<>(definition);
+    params.entrySet().forEach(e -> str.set(str.get().replace(e.getKey(), e.getValue())));
+    return str.get();
   }
 }

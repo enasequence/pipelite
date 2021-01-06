@@ -42,7 +42,15 @@ public class AwsBatchExecutorParameters extends ExecutorParameters {
     super.applyDefaults(defaultParams);
     applyDefault(this::getRegion, this::setRegion, defaultParams::getRegion);
     applyDefault(this::getQueue, this::setQueue, defaultParams::getQueue);
-    applyDefault(this::getDefinition, this::setDefinition, defaultParams::getDefinition);
+    applyDefault(
+        this::getDefinition, this::setDefinition, defaultParams::getDefinition);
     applyMapDefaults(parameters, defaultParams.parameters);
+  }
+
+  @Override
+  public void validate() {
+    super.validate();
+    validateNotNull(queue, "queue");
+    validateNotNull(definition, "definition");
   }
 }

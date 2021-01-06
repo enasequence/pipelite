@@ -10,10 +10,11 @@
  */
 package pipelite.executor.cmd;
 
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
+import java.nio.file.*;
 import java.time.Duration;
 import java.util.List;
+
 import lombok.extern.flogger.Flogger;
 import org.apache.commons.exec.*;
 import org.apache.commons.text.StringTokenizer;
@@ -87,6 +88,29 @@ public class LocalCmdRunner implements CmdRunner {
           .exitCode(EXIT_CODE_ERROR)
           .internalError(InternalError.EXECUTE)
           .build();
+    }
+  }
+
+  @Override
+  public void writeFile(String str, Path path, CmdExecutorParameters executorParams)
+      throws IOException {
+    log.atInfo().log("Writing file %s", path);
+    try {
+      CmdRunnerUtils.write(str, new FileOutputStream(path.toFile()));
+    } catch (IOException ex) {
+      log.atSevere().withCause(ex).log("Failed to write file " + path);
+      throw ex;
+    }
+  }
+
+  @Override
+  public void deleteFile(Path path, CmdExecutorParameters executorParams) throws IOException {
+    log.atInfo().log("Deleting file %s", path);
+    try {
+      Files.delete(path);
+    } catch (IOException ex) {
+      log.atSevere().log("Failed to delete file %s", path);
+      throw ex;
     }
   }
 

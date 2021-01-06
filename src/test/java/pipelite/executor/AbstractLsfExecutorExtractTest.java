@@ -14,32 +14,33 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
-public class SimpleLsfExecutorExtractTest {
+public class AbstractLsfExecutorExtractTest {
 
   @Test
   public void extractBsubJobIdSubmitted() {
     assertThat(
-            SimpleLsfExecutor.extractBsubJobIdSubmitted(
+            AbstractLsfExecutor.extractBsubJobIdSubmitted(
                 "Job <2848143> is submitted to default queue <research-rh74>."))
         .isEqualTo("2848143");
-    assertThat(SimpleLsfExecutor.extractBsubJobIdSubmitted("Job <2848143> is submitted "))
+    assertThat(AbstractLsfExecutor.extractBsubJobIdSubmitted("Job <2848143> is submitted "))
         .isEqualTo("2848143");
-    assertThat(SimpleLsfExecutor.extractBsubJobIdSubmitted("INVALID")).isNull();
+    assertThat(AbstractLsfExecutor.extractBsubJobIdSubmitted("INVALID")).isNull();
   }
 
   @Test
   public void extractBjobsJobIdNotFound() {
-    assertThat(SimpleLsfExecutor.extractBjobsJobIdNotFound("Job <345654> is not found.")).isTrue();
-    assertThat(SimpleLsfExecutor.extractBjobsJobIdNotFound("Job <345654> is not found")).isTrue();
-    assertThat(SimpleLsfExecutor.extractBjobsJobIdNotFound("Job <345654> is ")).isFalse();
-    assertThat(SimpleLsfExecutor.extractBjobsJobIdNotFound("INVALID")).isFalse();
+    assertThat(AbstractLsfExecutor.extractBjobsJobIdNotFound("Job <345654> is not found."))
+        .isTrue();
+    assertThat(AbstractLsfExecutor.extractBjobsJobIdNotFound("Job <345654> is not found")).isTrue();
+    assertThat(AbstractLsfExecutor.extractBjobsJobIdNotFound("Job <345654> is ")).isFalse();
+    assertThat(AbstractLsfExecutor.extractBjobsJobIdNotFound("INVALID")).isFalse();
   }
 
   @Test
   public void extractBjobsExitCode() {
-    assertThat(SimpleLsfExecutor.extractBjobsExitCode("Exited with exit code 1")).isEqualTo("1");
-    assertThat(SimpleLsfExecutor.extractBjobsExitCode("Exited with exit code 3.")).isEqualTo("3");
-    assertThat(SimpleLsfExecutor.extractBjobsExitCode("INVALID")).isNull();
+    assertThat(AbstractLsfExecutor.extractBjobsExitCode("Exited with exit code 1")).isEqualTo("1");
+    assertThat(AbstractLsfExecutor.extractBjobsExitCode("Exited with exit code 3.")).isEqualTo("3");
+    assertThat(AbstractLsfExecutor.extractBjobsExitCode("INVALID")).isNull();
   }
 
   // TODO:

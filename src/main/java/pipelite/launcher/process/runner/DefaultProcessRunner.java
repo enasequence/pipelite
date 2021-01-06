@@ -187,6 +187,7 @@ public class DefaultProcessRunner implements ProcessRunner {
   private void startStageExecution(Stage stage) {
     // Apply default executor parameters.
     stage.getExecutor().getExecutorParams().applyDefaults(executorConfiguration);
+    stage.getExecutor().getExecutorParams().validate();
     StageEntity stageEntity =
         stageService.createExecution(pipelineName, process.getProcessId(), stage);
     stage.setStageEntity(stageEntity);

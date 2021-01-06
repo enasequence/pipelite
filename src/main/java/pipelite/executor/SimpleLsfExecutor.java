@@ -24,7 +24,7 @@ import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 public class SimpleLsfExecutor extends AbstractLsfExecutor<SimpleLsfExecutorParameters> {
 
   @Override
-  public final String getDispatcherCmd(String pipelineName, String processId, Stage stage) {
+  public final String getSubmitCmd(String pipelineName, String processId, Stage stage) {
 
     StringBuilder cmd = new StringBuilder();
     cmd.append(BSUB_CMD);
@@ -73,7 +73,4 @@ public class SimpleLsfExecutor extends AbstractLsfExecutor<SimpleLsfExecutorPara
 
     return cmd.toString();
   }
-
-  @Override
-  protected void beforeSubmit(String pipelineName, String processId, Stage stage) {}
 }

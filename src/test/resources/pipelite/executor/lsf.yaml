@@ -1,0 +1,6 @@
+resource:
+  n: 1
+  R: rusage[mem=100M:duration=1]
+limit:
+  M: 100M
+command: echo test

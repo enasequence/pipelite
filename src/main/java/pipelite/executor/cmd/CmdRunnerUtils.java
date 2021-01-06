@@ -10,8 +10,13 @@
  */
 package pipelite.executor.cmd;
 
+import com.google.common.io.CharStreams;
+import pipelite.exception.PipeliteException;
+
 import static org.apache.commons.exec.util.StringUtils.isQuoted;
 
+import java.io.*;
+import java.net.URL;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,5 +31,34 @@ public class CmdRunnerUtils {
       return argument;
     }
     return "'" + argument.replaceAll("'", "") + "'";
+  }
+
+  public static String read(URL url) {
+    try {
+      return read(url.openStream());
+    } catch (IOException ex) {
+      throw new PipeliteException(ex);
+    }
+  }
+
+  public static String read(InputStream strm) {
+    try (Reader reader = new InputStreamReader(strm)) {
+      return CharStreams.toString(reader);
+    } catch (IOException ex) {
+      throw new PipeliteException(ex);
+    }
+  }
+
+  public static void write(String str, OutputStream out) throws IOException {
+    out.write(str.getBytes());
+    out.flush();
+  }
+
+  public static void write(InputStream in, OutputStream out) throws IOException {
+    byte[] buf = new byte[8192];
+    int length;
+    while ((length = in.read(buf)) > 0) {
+      out.write(buf, 0, length);
+    }
   }
 }

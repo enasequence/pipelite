@@ -10,6 +10,7 @@
  */
 package pipelite.executor;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -20,43 +21,36 @@ import pipelite.UniqueStringGenerator;
 import pipelite.stage.Stage;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 
-public class SimpleLsfExecutorArgumentTest {
+public class SimpleLsfExecutorSubmitCmdTest {
 
-  private final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
-  private final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
-
-  private static SimpleLsfExecutor createExecutor(SimpleLsfExecutorParameters params) {
-    SimpleLsfExecutor executor = new SimpleLsfExecutor();
-    executor.setCmd("");
-    executor.setExecutorParams(params);
-    return executor;
-  }
-
-  private Stage createStage(SimpleLsfExecutor executor) {
-    return Stage.builder()
-        .stageName(UniqueStringGenerator.randomStageName())
-        .executor(executor)
-        .build();
-  }
+  private final String PIPELINE_NAME = "PIPELINE_NAME";
+  private final String PROCESS_ID = "PROCESS_ID";
+  private final String STAGE_NAME = "STAGE_NAME";
 
   @Test
   public void test() throws IOException {
-    SimpleLsfExecutorParameters executorParams =
+
+    SimpleLsfExecutor executor = new SimpleLsfExecutor();
+    executor.setCmd("test");
+    executor.setExecutorParams(
         SimpleLsfExecutorParameters.builder()
             .workDir(Files.createTempDirectory("TEMP").toString())
             .cpu(2)
             .memory(1)
             .memoryTimeout(Duration.ofMinutes(1))
             .queue("TEST")
-            .build();
+            .timeout(Duration.ofMinutes(1))
+            .build());
 
-    SimpleLsfExecutor executor = createExecutor(executorParams);
-    Stage stage = createStage(executor);
-    executor.setOutFile(PIPELINE_NAME, PROCESS_ID, stage.getStageName());
+    Stage stage = Stage.builder().stageName(STAGE_NAME).executor(executor).build();
+
+    String outFile = executor.setOutFile(PIPELINE_NAME, PROCESS_ID, stage.getStageName());
     String cmd = executor.getCmd(PIPELINE_NAME, PROCESS_ID, stage);
-    assertTrue(cmd.contains(" -M 1M -R \"rusage[mem=1M:duration=1]\""));
-    assertTrue(cmd.contains(" -n 2"));
-    assertTrue(cmd.contains(" -q TEST"));
-    assertTrue(cmd.contains(" -oo " + executorParams.getWorkDir()));
+
+    assertThat(cmd)
+        .isEqualTo(
+            "bsub -oo "
+                + outFile
+                + " -n 2 -M 1M -R \"rusage[mem=1M:duration=1]\" -W 1 -q TEST test");
   }
 }

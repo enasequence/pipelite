@@ -10,17 +10,20 @@
  */
 package pipelite.executor.cmd;
 
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
 import lombok.extern.flogger.Flogger;
 import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.channel.ClientChannel;
 import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.session.ClientSession;
+import org.apache.sshd.client.subsystem.sftp.SftpClient;
+import org.apache.sshd.client.subsystem.sftp.impl.DefaultSftpClientFactory;
 import org.apache.sshd.common.session.SessionHeartbeatController;
 import pipelite.executor.cmd.stream.KeepOldestByteArrayOutputStream;
 import pipelite.stage.executor.InternalError;
@@ -31,8 +34,15 @@ import pipelite.stage.parameters.CmdExecutorParameters;
 public class SshCmdRunner implements CmdRunner {
 
   public static final int SSH_PORT = 22;
-  public static final int SSH_VERIFY_SECONDS = 60;
+  public static final int SSH_VERIFY_TIMEOUT = 60;
   public static final int SSH_HEARTBEAT_SECONDS = 10;
+
+  private static final SshClient sshClient;
+
+  static {
+    sshClient = SshClient.setUpDefaultClient();
+    sshClient.start();
+  }
 
   @Override
   public CmdRunnerResult execute(String cmd, CmdExecutorParameters executorParams) {
@@ -44,64 +54,89 @@ public class SshCmdRunner implements CmdRunner {
           .build();
     }
 
-    SshClient client = null;
+    log.atInfo().log("Executing ssh call: %s", cmd);
 
-    try {
-      String user = System.getProperty("user.name");
+    try (ClientSession session = createSession(executorParams)) {
+      authSession(session);
 
-      log.atInfo().log("Executing ssh call: %s", cmd);
+      ClientChannel channel = session.createExecChannel(cmd, null, executorParams.getEnv());
 
       OutputStream stdoutStream = new KeepOldestByteArrayOutputStream();
       OutputStream stderrStream = new KeepOldestByteArrayOutputStream();
+      channel.setOut(stdoutStream);
+      channel.setErr(stderrStream);
 
-      client = SshClient.setUpDefaultClient();
+      channel.open().verify(SSH_VERIFY_TIMEOUT, TimeUnit.SECONDS);
 
-      client.start();
-
-      try (ClientSession session =
-          client
-              .connect(user, executorParams.getHost(), SSH_PORT)
-              .verify(SSH_VERIFY_SECONDS, TimeUnit.SECONDS)
-              .getSession()) {
-
-        session.auth().verify(SSH_VERIFY_SECONDS, TimeUnit.SECONDS);
-
-        session.setSessionHeartbeat(
-            SessionHeartbeatController.HeartbeatType.IGNORE,
-            Duration.ofSeconds(SSH_HEARTBEAT_SECONDS));
-
-        ClientChannel channel = session.createExecChannel(cmd, null, executorParams.getEnv());
-        channel.setOut(stdoutStream);
-        channel.setErr(stderrStream);
-
-        channel.open().verify(SSH_VERIFY_SECONDS, TimeUnit.SECONDS);
-
-        Set<ClientChannelEvent> events =
-            channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), executorParams.getTimeout());
-
-        if (events.contains(ClientChannelEvent.TIMEOUT)) {
-          log.atSevere().log("Failed ssh call because of timeout: %s", cmd);
-          return CmdRunnerResult.builder()
-              .exitCode(EXIT_CODE_ERROR)
-              .internalError(InternalError.TIMEOUT)
-              .build();
-        }
-
-        int exitCode = channel.getExitStatus();
-        return new CmdRunnerResult(
-            exitCode, getStream(stdoutStream), getStream(stderrStream), null);
+      Set<ClientChannelEvent> events =
+          channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), executorParams.getTimeout());
+      if (events.contains(ClientChannelEvent.TIMEOUT)) {
+        log.atSevere().log("Failed ssh call because of timeout: %s", cmd);
+        return CmdRunnerResult.builder()
+            .exitCode(EXIT_CODE_ERROR)
+            .internalError(InternalError.TIMEOUT)
+            .build();
       }
+
+      int exitCode = channel.getExitStatus();
+      return new CmdRunnerResult(exitCode, getStream(stdoutStream), getStream(stderrStream), null);
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Failed ssh call: %s", cmd);
       return CmdRunnerResult.builder()
           .exitCode(EXIT_CODE_ERROR)
           .internalError(InternalError.EXECUTE)
           .build();
-    } finally {
-      if (client != null) {
-        client.stop();
-      }
     }
+  }
+
+  @Override
+  public void writeFile(String str, Path path, CmdExecutorParameters executorParams)
+      throws IOException {
+    log.atInfo().log("Writing file %s", path);
+    try (ClientSession session = createSession(executorParams)) {
+      authSession(session);
+      try (SftpClient sftpClient = DefaultSftpClientFactory.INSTANCE.createSftpClient(session)) {
+        CmdRunnerUtils.write(
+            str,
+            sftpClient.write(
+                path.toString(),
+                SftpClient.OpenMode.Write,
+                SftpClient.OpenMode.Create,
+                SftpClient.OpenMode.Truncate));
+      }
+    } catch (IOException ex) {
+      log.atSevere().withCause(ex).log("Failed to write file " + path);
+      throw ex;
+    }
+  }
+
+  @Override
+  public void deleteFile(Path path, CmdExecutorParameters executorParams) throws IOException {
+    log.atInfo().log("Deleting file %s", path);
+    try (ClientSession session = createSession(executorParams)) {
+      authSession(session);
+      try (ClientChannel channel = session.createExecChannel("rm -f " + path, null, null)) {
+        channel.open().verify(SSH_VERIFY_TIMEOUT, TimeUnit.SECONDS);
+        channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), SSH_VERIFY_TIMEOUT);
+      }
+    } catch (IOException ex) {
+      log.atSevere().log("Failed to delete file %s", path);
+      throw ex;
+    }
+  }
+
+  private ClientSession createSession(CmdExecutorParameters executorParams) throws IOException {
+    String user = System.getProperty("user.name");
+    return sshClient
+        .connect(user, executorParams.getHost(), SSH_PORT)
+        .verify(SSH_VERIFY_TIMEOUT, TimeUnit.SECONDS)
+        .getSession();
+  }
+
+  private void authSession(ClientSession session) throws IOException {
+    session.auth().verify(SSH_VERIFY_TIMEOUT, TimeUnit.SECONDS);
+    session.setSessionHeartbeat(
+        SessionHeartbeatController.HeartbeatType.IGNORE, Duration.ofSeconds(SSH_HEARTBEAT_SECONDS));
   }
 
   private String getStream(OutputStream stdoutStream) {

@@ -12,10 +12,39 @@ package pipelite.executor.cmd;
 
 import pipelite.stage.parameters.CmdExecutorParameters;
 
+import java.io.IOException;
+import java.nio.file.Path;
+
 public interface CmdRunner {
 
   int EXIT_CODE_SUCCESS = 0;
   int EXIT_CODE_ERROR = 1;
 
+  /**
+   * Executes a command.
+   *
+   * @param cmd the command to execute
+   * @param executorParams the executor parameters
+   * @return the command execution result
+   */
   CmdRunnerResult execute(String cmd, CmdExecutorParameters executorParams);
+
+  /**
+   * Writes string to a file.
+   *
+   * @param str the string
+   * @param path the file
+   * @param executorParams the executor parameters
+   * @throws java.io.IOException
+   */
+  void writeFile(String str, Path path, CmdExecutorParameters executorParams) throws IOException;
+
+  /**
+   * Deletes a file.
+   *
+   * @param path the file path
+   * @param executorParams the executor parameters
+   * @throws java.io.IOException
+   */
+  void deleteFile(Path path, CmdExecutorParameters executorParams) throws IOException;
 }

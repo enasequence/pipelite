@@ -10,9 +10,6 @@
  */
 package pipelite.executor;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -20,13 +17,17 @@ import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LsfTestConfiguration;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.*;
 import pipelite.stage.executor.InternalError;
-import pipelite.stage.parameters.SimpleLsfExecutorParameters;
+import pipelite.stage.executor.*;
+import pipelite.stage.parameters.LsfExecutorParameters;
 import pipelite.time.Time;
 
+import java.time.Duration;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
-public class SshSimpleLsfExecutorTest {
+public class SshLsfExecutorTest {
 
   @Autowired LsfTestConfiguration lsfTestConfiguration;
 
@@ -36,12 +37,14 @@ public class SshSimpleLsfExecutorTest {
   @Test
   public void test() {
 
-    SimpleLsfExecutor executor = StageExecutor.createSshSimpleLsfExecutor("echo test");
+    LsfExecutor executor = StageExecutor.createSshLsfExecutor("");
     executor.setExecutorParams(
-        SimpleLsfExecutorParameters.builder()
+        LsfExecutorParameters.builder()
             .host(lsfTestConfiguration.getHost())
             .workDir(lsfTestConfiguration.getWorkDir())
             .timeout(Duration.ofSeconds(60))
+            .definition("pipelite/executor/lsf.yaml")
+            .format(LsfExecutorParameters.Format.YAML)
             .build());
 
     String stageName = UniqueStringGenerator.randomStageName();
@@ -51,7 +54,6 @@ public class SshSimpleLsfExecutorTest {
     StageExecutorResult result = executor.execute(PIPELINE_NAME, PROCESS_ID, stage);
     assertThat(result.getResultType()).isEqualTo(StageExecutorResultType.ACTIVE);
     assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).startsWith("bsub");
-    assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).endsWith("echo test");
     assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
     assertThat(result.getStdout()).contains("is submitted to default queue");
 

@@ -39,4 +39,12 @@ public class CmdExecutorParameters extends ExecutorParameters {
     applyDefault(this::getWorkDir, this::setWorkDir, defaultParams::getWorkDir);
     applyMapDefaults(env, defaultParams.env);
   }
+
+  @Override
+  public void validate() {
+    super.validate();
+    if (workDir != null) {
+      validatePath(workDir, "workDir");
+    }
+  }
 }

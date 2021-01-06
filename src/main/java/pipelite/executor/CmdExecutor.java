@@ -23,6 +23,7 @@ import java.io.IOException;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
+import pipelite.exception.PipeliteException;
 import pipelite.executor.cmd.*;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
@@ -65,32 +66,37 @@ public class CmdExecutor<T extends CmdExecutorParameters> extends AbstractExecut
    * @return the command to execute
    */
   public String getCmd(String pipelineName, String processId, Stage stage) {
-    String dispatcherCmd = getDispatcherCmd(pipelineName, processId, stage);
-    if (dispatcherCmd != null) {
-      dispatcherCmd = dispatcherCmd + " ";
-    } else {
-      dispatcherCmd = "";
-    }
+    try {
+      String dispatcherCmd = getDispatcherCmd(pipelineName, processId, stage);
+      if (dispatcherCmd != null) {
+        dispatcherCmd = dispatcherCmd + " ";
+      } else {
+        dispatcherCmd = "";
+      }
 
-    /*
-    String singularityImage = getExecutorParams().getSingularityImage();
-    if (singularityImage != null) {
-      prefixCmd += "singularity run " + singularityImage + " ";
-    }
-    */
+      /*
+      String singularityImage = getExecutorParams().getSingularityImage();
+      if (singularityImage != null) {
+        prefixCmd += "singularity run " + singularityImage + " ";
+      }
+      */
 
-    return dispatcherCmd + cmd;
+      return dispatcherCmd + cmd;
+    } catch (Exception ex) {
+      throw new PipeliteException(
+          "Unexpected exception when constructing command for pipeline %s" + pipelineName);
+    }
   }
 
   public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
-    String fullCmd = getCmd(pipelineName, processId, stage);
     try {
-      CmdRunnerResult result = cmdRunner.execute(fullCmd, getExecutorParams());
-      return result.getStageExecutorResult(fullCmd);
+      String cmd = getCmd(pipelineName, processId, stage);
+      CmdRunnerResult result = cmdRunner.execute(cmd, getExecutorParams());
+      return result.getStageExecutorResult(cmd);
     } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Failed call: %s", fullCmd);
+      log.atSevere().withCause(ex).log("Failed call: %s", cmd);
       StageExecutorResult result = StageExecutorResult.error(ex);
-      result.addAttribute(StageExecutorResultAttribute.COMMAND, fullCmd);
+      result.addAttribute(StageExecutorResultAttribute.COMMAND, cmd);
       return result;
     }
   }

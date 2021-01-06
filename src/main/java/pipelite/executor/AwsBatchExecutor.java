@@ -35,7 +35,6 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
     implements JsonSerializableExecutor {
 
   // TODO: capture logs
-  // TODO: error handling
 
   private SubmitJobResult submitJobResult;
   private ZonedDateTime startTime;

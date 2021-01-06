@@ -12,22 +12,55 @@ package pipelite.executor.cmd;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import pipelite.stage.parameters.ExecutorParameters;
 
 public class CmdRunnerUtilsTest {
 
   @Test
-  public void testQuoteArgument() {
+  public void quoteArgument() {
     assertThat(CmdRunnerUtils.quoteArgument("test")).isEqualTo("'test'");
     assertThat(CmdRunnerUtils.quoteArgument("'test'")).isEqualTo("'test'");
     assertThat(CmdRunnerUtils.quoteArgument("-i")).isEqualTo("-i");
   }
 
   @Test
-  public void testQuoteArguments() {
+  public void quoteArguments() {
     List<String> arguments = Arrays.asList("arg1", "arg2", "-i");
     assertThat(CmdRunnerUtils.quoteArguments(arguments)).isEqualTo("'arg1' 'arg2' -i");
+  }
+
+  @Test
+  public void readUrl() {
+    // https
+
+    assertThat(CmdRunnerUtils.read(ExecutorParameters.validateUrl("https://www.ebi.ac.uk", "test")))
+        .contains("EMBL-EBI");
+
+    // resource
+
+    String text =
+        "resource:\n"
+            + "  n: 1\n"
+            + "  R: rusage[mem=100M:duration=1]\n"
+            + "limit:\n"
+            + "  M: 100M\n"
+            + "command: echo test\n";
+    assertThat(
+            CmdRunnerUtils.read(
+                ExecutorParameters.validateUrl("pipelite/executor/lsf.yaml", "test")))
+        .isEqualTo(text);
+  }
+
+  @Test
+  public void write() throws IOException {
+    String str = "test";
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    CmdRunnerUtils.write(str, out);
+    assertThat(new String(out.toByteArray())).isEqualTo(str);
   }
 }
