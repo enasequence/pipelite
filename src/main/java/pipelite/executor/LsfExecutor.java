@@ -10,6 +10,11 @@
  */
 package pipelite.executor;
 
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Paths;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
@@ -18,12 +23,6 @@ import pipelite.executor.cmd.CmdRunnerUtils;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.stage.parameters.LsfExecutorParameters;
-
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Paths;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 /** Executes a command using LSF. */
 @Flogger

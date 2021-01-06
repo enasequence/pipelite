@@ -11,7 +11,6 @@
 package pipelite.stage.parameters;
 
 import com.google.common.base.Supplier;
-
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;

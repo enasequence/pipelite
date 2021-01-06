@@ -198,7 +198,7 @@ public class PipeliteLauncherTest {
         builder
             .execute("STAGE" + i)
             .withCallExecutor(
-                    (request) -> {
+                (request) -> {
                   stageExecCnt.incrementAndGet();
                   if (stageTestResult == StageTestResult.ERROR) {
                     return StageExecutorResult.error();

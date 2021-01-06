@@ -10,15 +10,14 @@
  */
 package pipelite.executor;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
+import java.io.IOException;
+import java.nio.file.Files;
 import org.junit.jupiter.api.Test;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.LsfExecutorParameters;
-
-import java.io.IOException;
-import java.nio.file.Files;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 public class LsfExecutorSubmitCmdTest {
 

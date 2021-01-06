@@ -77,7 +77,8 @@ public class ExecutorConfigurationTest {
   @Test
   public void awsBatchProperties() {
     assertThat(config.getAwsBatch().getRegion()).isEqualTo("TEST");
-    assertThat(config.getAwsBatch().getQueue()).isEqualTo("TEST");assertThat(config.getAwsBatch().getDefinition()).isEqualTo("TEST");
+    assertThat(config.getAwsBatch().getQueue()).isEqualTo("TEST");
+    assertThat(config.getAwsBatch().getDefinition()).isEqualTo("TEST");
     assertThat(config.getAwsBatch().getImmediateRetries()).isEqualTo(2);
     assertThat(config.getAwsBatch().getMaximumRetries()).isEqualTo(3);
     assertThat(config.getAwsBatch().getTimeout()).isEqualTo(Duration.ofSeconds(10));

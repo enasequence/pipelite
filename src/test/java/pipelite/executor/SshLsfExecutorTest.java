@@ -10,6 +10,9 @@
  */
 package pipelite.executor;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,14 +20,10 @@ import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LsfTestConfiguration;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.InternalError;
 import pipelite.stage.executor.*;
+import pipelite.stage.executor.InternalError;
 import pipelite.stage.parameters.LsfExecutorParameters;
 import pipelite.time.Time;
-
-import java.time.Duration;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 public class SshLsfExecutorTest {

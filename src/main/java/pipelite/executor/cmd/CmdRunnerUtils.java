@@ -10,15 +10,14 @@
  */
 package pipelite.executor.cmd;
 
-import com.google.common.io.CharStreams;
-import pipelite.exception.PipeliteException;
-
 import static org.apache.commons.exec.util.StringUtils.isQuoted;
 
+import com.google.common.io.CharStreams;
 import java.io.*;
 import java.net.URL;
 import java.util.List;
 import java.util.stream.Collectors;
+import pipelite.exception.PipeliteException;
 
 public class CmdRunnerUtils {
 

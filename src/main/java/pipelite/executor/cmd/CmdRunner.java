@@ -10,10 +10,9 @@
  */
 package pipelite.executor.cmd;
 
-import pipelite.stage.parameters.CmdExecutorParameters;
-
 import java.io.IOException;
 import java.nio.file.Path;
+import pipelite.stage.parameters.CmdExecutorParameters;
 
 public interface CmdRunner {
 

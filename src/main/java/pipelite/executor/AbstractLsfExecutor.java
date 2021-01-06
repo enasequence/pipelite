@@ -10,9 +10,7 @@
  */
 package pipelite.executor;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.flogger.FluentLogger;
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;

@@ -47,11 +47,11 @@ public class SshSimpleLsfExecutorTest {
     String stageName = UniqueStringGenerator.randomStageName();
     Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
     StageExecutorRequest request =
-            StageExecutorRequest.builder()
-                    .pipelineName(PIPELINE_NAME)
-                    .processId(PROCESS_ID)
-                    .stage(stage)
-                    .build();
+        StageExecutorRequest.builder()
+            .pipelineName(PIPELINE_NAME)
+            .processId(PROCESS_ID)
+            .stage(stage)
+            .build();
 
     StageExecutorResult result = executor.execute(request);
     assertThat(result.getResultType()).isEqualTo(StageExecutorResultType.ACTIVE);

@@ -16,7 +16,6 @@ import java.time.Duration;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
 import lombok.extern.flogger.Flogger;
 import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.channel.ClientChannel;
