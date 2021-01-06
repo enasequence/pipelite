@@ -19,7 +19,6 @@ import org.apache.commons.exec.*;
 import org.apache.commons.text.StringTokenizer;
 import org.apache.commons.text.matcher.StringMatcher;
 import org.apache.commons.text.matcher.StringMatcherFactory;
-import pipelite.executor.cmd.stream.KeepOldestByteArrayOutputStream;
 import pipelite.stage.executor.InternalError;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
@@ -53,8 +52,9 @@ public class LocalCmdRunner implements CmdRunner {
       if (args.size() > 1) {
         commandLine.addArguments(args.subList(1, args.size()).toArray(new String[0]), false);
       }
-      OutputStream stdoutStream = new KeepOldestByteArrayOutputStream();
-      OutputStream stderrStream = new KeepOldestByteArrayOutputStream();
+
+      OutputStream stdoutStream = new ByteArrayOutputStream();
+      OutputStream stderrStream = new ByteArrayOutputStream();
 
       Executor apacheExecutor = new DefaultExecutor();
 

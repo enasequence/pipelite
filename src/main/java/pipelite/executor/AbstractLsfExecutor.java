@@ -220,13 +220,11 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters> exten
   public static CmdRunnerResult writeFileToStdout(
       CmdRunner cmdRunner, String stdoutFile, CmdExecutorParameters executorParams) {
     // Execute through sh required by LocalRunner to direct output to stdout/err.
-    return cmdRunner.execute("sh -c 'cat " + stdoutFile + "'", executorParams);
-  }
-
-  public static CmdRunnerResult writeFileToStderr(
-      CmdRunner cmdRunner, String stderrFile, CmdExecutorParameters executorParams) {
-    // Execute through sh required by LocalRunner to direct output to stdout/err.
-    return cmdRunner.execute("sh -c 'cat " + stderrFile + " 1>&2'", executorParams);
+    int logBytes = CmdExecutorParameters.DEFAULT_LOG_BYTES;
+    if (executorParams.getLogBytes() > 0) {
+      logBytes = executorParams.getLogBytes();
+    }
+    return cmdRunner.execute("sh -c 'tail -c " + logBytes + " " + stdoutFile + "'", executorParams);
   }
 
   public static String extractBsubJobIdSubmitted(String str) {

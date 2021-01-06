@@ -24,7 +24,6 @@ import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.client.subsystem.sftp.SftpClient;
 import org.apache.sshd.client.subsystem.sftp.impl.DefaultSftpClientFactory;
 import org.apache.sshd.common.session.SessionHeartbeatController;
-import pipelite.executor.cmd.stream.KeepOldestByteArrayOutputStream;
 import pipelite.stage.executor.InternalError;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
@@ -60,8 +59,8 @@ public class SshCmdRunner implements CmdRunner {
 
       ClientChannel channel = session.createExecChannel(cmd, null, executorParams.getEnv());
 
-      OutputStream stdoutStream = new KeepOldestByteArrayOutputStream();
-      OutputStream stderrStream = new KeepOldestByteArrayOutputStream();
+      OutputStream stdoutStream = new ByteArrayOutputStream();
+      OutputStream stderrStream = new ByteArrayOutputStream();
       channel.setOut(stdoutStream);
       channel.setErr(stderrStream);
 

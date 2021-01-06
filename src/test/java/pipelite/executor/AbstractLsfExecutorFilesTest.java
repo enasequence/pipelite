@@ -78,15 +78,4 @@ public class AbstractLsfExecutorFilesTest {
             new LocalCmdRunner(), file.getAbsolutePath(), CmdExecutorParameters.builder().build());
     assertThat(runnerResult.getStdout()).isEqualTo("test");
   }
-
-  @Test
-  public void writeFileToStderr() throws IOException {
-    File file = File.createTempFile("pipelite-test", "");
-    file.createNewFile();
-    Files.write(file.toPath(), "test".getBytes());
-    CmdRunnerResult runnerResult =
-        AbstractLsfExecutor.writeFileToStderr(
-            new LocalCmdRunner(), file.getAbsolutePath(), CmdExecutorParameters.builder().build());
-    assertThat(runnerResult.getStderr()).isEqualTo("test");
-  }
 }

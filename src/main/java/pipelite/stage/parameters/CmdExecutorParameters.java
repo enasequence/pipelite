@@ -11,6 +11,8 @@
 package pipelite.stage.parameters;
 
 import java.util.Map;
+
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -23,6 +25,8 @@ import pipelite.configuration.ExecutorConfiguration;
 @EqualsAndHashCode(callSuper = true)
 public class CmdExecutorParameters extends ExecutorParameters {
 
+  public static final int DEFAULT_LOG_BYTES = 1024 * 1024;
+
   /** The remote host. */
   private String host;
 
@@ -32,11 +36,15 @@ public class CmdExecutorParameters extends ExecutorParameters {
   /** The working directory for stdout and stderr files and job definition files. */
   private String workDir;
 
+  /** The maximum number of last bytes to preserve from log streams. */
+  @Builder.Default private int logBytes = DEFAULT_LOG_BYTES;
+
   public void applyDefaults(ExecutorConfiguration executorConfiguration) {
     CmdExecutorParameters defaultParams = executorConfiguration.getCmd();
     super.applyDefaults(defaultParams);
     applyDefault(this::getHost, this::setHost, defaultParams::getHost);
     applyDefault(this::getWorkDir, this::setWorkDir, defaultParams::getWorkDir);
+    applyDefault(this::getLogBytes, this::setLogBytes, defaultParams::getLogBytes);
     applyMapDefaults(env, defaultParams.env);
   }
 
