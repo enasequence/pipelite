@@ -24,8 +24,7 @@ import pipelite.json.Json;
 public class StageExecutorResult {
 
   private StageExecutorResultType resultType;
-  private String stdout;
-  private String stderr;
+  private String stageLog;
 
   private InternalError internalError;
 

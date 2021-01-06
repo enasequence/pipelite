@@ -18,8 +18,8 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageEntityId;
-import pipelite.entity.StageOutEntity;
-import pipelite.repository.StageOutRepository;
+import pipelite.entity.StageLogEntity;
+import pipelite.repository.StageLogRepository;
 import pipelite.repository.StageRepository;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
@@ -29,10 +29,10 @@ import pipelite.stage.executor.StageExecutorResult;
 public class StageService {
 
   private final StageRepository repository;
-  private final StageOutRepository outRepository;
+  private final StageLogRepository outRepository;
 
   public StageService(
-      @Autowired StageRepository repository, @Autowired StageOutRepository outRepository) {
+      @Autowired StageRepository repository, @Autowired StageLogRepository outRepository) {
     this.repository = repository;
     this.outRepository = outRepository;
   }
@@ -91,7 +91,7 @@ public class StageService {
     StageEntity stageEntity = stage.getStageEntity();
     stageEntity.startExecution(stage);
     saveStage(stageEntity);
-    saveStageOut(StageOutEntity.startExecution(stageEntity));
+    saveStageLog(StageLogEntity.startExecution(stageEntity));
   }
 
   /**
@@ -105,7 +105,7 @@ public class StageService {
     StageEntity stageEntity = stage.getStageEntity();
     stageEntity.endExecution(result);
     saveStage(stageEntity);
-    saveStageOut(StageOutEntity.endExecution(stageEntity, result));
+    saveStageLog(StageLogEntity.endExecution(stageEntity, result));
   }
 
   /**
@@ -117,7 +117,7 @@ public class StageService {
     StageEntity stageEntity = stage.getStageEntity();
     stageEntity.resetExecution();
     saveStage(stageEntity);
-    saveStageOut(StageOutEntity.resetExecution(stageEntity));
+    saveStageLog(StageLogEntity.resetExecution(stageEntity));
   }
 
   /**
@@ -126,8 +126,8 @@ public class StageService {
    * @param stageEntity the stage
    * @return the saved stage output
    */
-  public Optional<StageOutEntity> getSavedStageOut(StageEntity stageEntity) {
-    return getSavedStageOut(
+  public Optional<StageLogEntity> getSavedStageLog(StageEntity stageEntity) {
+    return getSavedStageLog(
         stageEntity.getPipelineName(), stageEntity.getProcessId(), stageEntity.getStageName());
   }
 
@@ -139,7 +139,7 @@ public class StageService {
    * @param stageName the stage name
    * @return the saved stage output
    */
-  public Optional<StageOutEntity> getSavedStageOut(
+  public Optional<StageLogEntity> getSavedStageLog(
       String pipelineName, String processId, String stageName) {
     return outRepository.findById(new StageEntityId(processId, pipelineName, stageName));
   }
@@ -157,11 +157,11 @@ public class StageService {
   /**
    * Saves the stage output.
    *
-   * @param stageOutEntity the stage output to save
+   * @param stageLogEntity the stage logs to save
    * @return the saved stage output
    */
-  public StageOutEntity saveStageOut(StageOutEntity stageOutEntity) {
-    return outRepository.save(stageOutEntity);
+  public StageLogEntity saveStageLog(StageLogEntity stageLogEntity) {
+    return outRepository.save(stageLogEntity);
   }
 
   /**

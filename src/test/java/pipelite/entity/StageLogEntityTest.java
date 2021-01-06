@@ -19,7 +19,7 @@ import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
 
-class StageOutEntityTest {
+class StageLogEntityTest {
 
   @Test
   public void lifecycle() {
@@ -36,33 +36,29 @@ class StageOutEntityTest {
     // Create execution.
 
     StageEntity stageEntity = StageEntity.createExecution(pipelineName, processId, stage);
-    StageOutEntity stageOutEntity = StageOutEntity.startExecution(stageEntity);
+    StageLogEntity stageLogEntity = StageLogEntity.startExecution(stageEntity);
 
-    assertThat(stageOutEntity.getPipelineName()).isEqualTo(pipelineName);
-    assertThat(stageOutEntity.getProcessId()).isEqualTo(processId);
-    assertThat(stageOutEntity.getStageName()).isEqualTo(stageName);
-    assertThat(stageOutEntity.getStdOut()).isNull();
-    assertThat(stageOutEntity.getStdErr()).isNull();
+    assertThat(stageLogEntity.getPipelineName()).isEqualTo(pipelineName);
+    assertThat(stageLogEntity.getProcessId()).isEqualTo(processId);
+    assertThat(stageLogEntity.getStageName()).isEqualTo(stageName);
+    assertThat(stageLogEntity.getStageLog()).isNull();
 
     // End execution.
 
     StageExecutorResult result = new StageExecutorResult(StageExecutorResultType.ERROR);
-    result.setStdout("TEST3");
-    result.setStderr("TEST4");
-    stageOutEntity = StageOutEntity.endExecution(stageEntity, result);
-    assertThat(stageOutEntity.getPipelineName()).isEqualTo(pipelineName);
-    assertThat(stageOutEntity.getProcessId()).isEqualTo(processId);
-    assertThat(stageOutEntity.getStageName()).isEqualTo(stageName);
-    assertThat(stageOutEntity.getStdOut()).isEqualTo("TEST3");
-    assertThat(stageOutEntity.getStdErr()).isEqualTo("TEST4");
+    result.setStageLog("TEST3");
+    stageLogEntity = StageLogEntity.endExecution(stageEntity, result);
+    assertThat(stageLogEntity.getPipelineName()).isEqualTo(pipelineName);
+    assertThat(stageLogEntity.getProcessId()).isEqualTo(processId);
+    assertThat(stageLogEntity.getStageName()).isEqualTo(stageName);
+    assertThat(stageLogEntity.getStageLog()).isEqualTo("TEST3");
 
     // Reset execution.
 
-    stageOutEntity = StageOutEntity.resetExecution(stageEntity);
-    assertThat(stageOutEntity.getPipelineName()).isEqualTo(pipelineName);
-    assertThat(stageOutEntity.getProcessId()).isEqualTo(processId);
-    assertThat(stageOutEntity.getStageName()).isEqualTo(stageName);
-    assertThat(stageOutEntity.getStdOut()).isNull();
-    assertThat(stageOutEntity.getStdErr()).isNull();
+    stageLogEntity = StageLogEntity.resetExecution(stageEntity);
+    assertThat(stageLogEntity.getPipelineName()).isEqualTo(pipelineName);
+    assertThat(stageLogEntity.getProcessId()).isEqualTo(processId);
+    assertThat(stageLogEntity.getStageName()).isEqualTo(stageName);
+    assertThat(stageLogEntity.getStageLog()).isNull();
   }
 }

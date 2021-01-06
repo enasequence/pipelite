@@ -58,7 +58,7 @@ public class SshSimpleLsfExecutorTest {
     assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).startsWith("bsub");
     assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).endsWith("echo test");
     assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
-    assertThat(result.getStdout()).contains("is submitted to default queue");
+    assertThat(result.getStageLog()).contains("is submitted to default queue");
 
     while (true) {
       result = executor.execute(request);
@@ -75,6 +75,6 @@ public class SshSimpleLsfExecutorTest {
 
     assertThat(result.getResultType()).isEqualTo(StageExecutorResultType.SUCCESS);
     assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
-    assertThat(result.getStdout()).contains("test\n");
+    assertThat(result.getStageLog()).contains("test\n");
   }
 }

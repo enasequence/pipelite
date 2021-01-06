@@ -23,7 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.controller.info.LogInfo;
 import pipelite.controller.utils.LoremUtils;
-import pipelite.entity.StageOutEntity;
+import pipelite.entity.StageLogEntity;
 import pipelite.service.StageService;
 
 @RestController
@@ -47,16 +47,10 @@ public class LogController {
       @PathVariable(value = "processId") String processId,
       @PathVariable(value = "stageName") String stageName) {
     LogInfo logInfo = new LogInfo();
-    Optional<StageOutEntity> stageOutEntity =
-        stageService.getSavedStageOut(pipelineName, processId, stageName);
-    logInfo.setLog("");
-    if (stageOutEntity.isPresent()) {
-      if (stageOutEntity.get().getStdErr() != null) {
-        logInfo.setLog(logInfo.getLog() + stageOutEntity.get().getStdErr());
-      }
-      if (stageOutEntity.get().getStdOut() != null) {
-        logInfo.setLog(logInfo.getLog() + stageOutEntity.get().getStdOut());
-      }
+    Optional<StageLogEntity> stageLogEntity =
+        stageService.getSavedStageLog(pipelineName, processId, stageName);
+    if (stageLogEntity.isPresent()) {
+      logInfo.setLog(stageLogEntity.get().getStageLog());
     }
     if (getLoremIpsumLogs() != null) {
       logInfo.setLog(logInfo.getLog() + getLoremIpsumLogs());

@@ -13,7 +13,7 @@ package pipelite.repository;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import pipelite.entity.StageEntityId;
-import pipelite.entity.StageOutEntity;
+import pipelite.entity.StageLogEntity;
 
 @Repository
-public interface StageOutRepository extends CrudRepository<StageOutEntity, StageEntityId> {}
+public interface StageLogRepository extends CrudRepository<StageLogEntity, StageEntityId> {}

@@ -117,12 +117,8 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters> exten
     if (result.isError()) {
       return result;
     }
-    String stdout = result.getStdout();
-    String stderr = result.getStderr();
-    jobId = extractBsubJobIdSubmitted(stdout);
-    if (jobId == null) {
-      jobId = extractBsubJobIdSubmitted(stderr);
-    }
+    String stageLog = result.getStageLog();
+    jobId = extractBsubJobIdSubmitted(stageLog);
 
     if (jobId == null) {
       logContext(log.atSevere(), request).log("No LSF submit job id.");
@@ -177,7 +173,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters> exten
     }
 
     String stdout = getStdout(request);
-    result.setStdout(stdout);
+    result.setStageLog(stdout);
     return result;
   }
 

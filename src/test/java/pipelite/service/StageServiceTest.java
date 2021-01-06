@@ -118,9 +118,6 @@ class StageServiceTest {
 
     StageExecutorResult firstExecutionResult =
         new StageExecutorResult(StageExecutorResultType.ERROR);
-    firstExecutionResult.setStdout("TEST3");
-    firstExecutionResult.setStderr("TEST4");
-
     service.endExecution(stage, firstExecutionResult);
 
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
@@ -178,9 +175,6 @@ class StageServiceTest {
 
     StageExecutorResult secondExecutionResult =
         new StageExecutorResult(StageExecutorResultType.SUCCESS);
-    secondExecutionResult.setStdout("TEST5");
-    secondExecutionResult.setStderr("TEST6");
-
     service.endExecution(stage, secondExecutionResult);
 
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);

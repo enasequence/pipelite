@@ -40,8 +40,7 @@ public class CmdRunnerResult {
     } else {
       result = StageExecutorResult.error();
     }
-    result.setStdout(stdout);
-    result.setStderr(stderr);
+    result.setStageLog((stdout != null ? stdout : "") + (stderr != null ? stderr : ""));
     result.setInternalError(internalError);
     result.addAttribute(StageExecutorResultAttribute.EXIT_CODE, exitCode);
     result.addAttribute(StageExecutorResultAttribute.COMMAND, cmd);

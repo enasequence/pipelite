@@ -340,3 +340,14 @@ end;
 create public synonym pipelite_process_lock for pipelite_process_lock;
 create public synonym pipelite_launcher_lock for pipelite_launcher_lock;
 
+create table pipelite_stage_log (
+    pipeline_name varchar2(64) NOT NULL, 
+	process_id varchar2(64) NOT NULL, 
+	stage_name varchar2(255) NOT NULL,
+	stage_log clob,
+    constraint pk_pipelite_stage_log primary key (pipeline_name, process_id, stage_name)
+);
+
+create public synonym pipelite_stage_log for pipelite_stage_log;
+
+// TODO: grants

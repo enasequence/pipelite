@@ -35,6 +35,6 @@ public class LocalCmdExecutorTest {
     assertThat(result.getResultType()).isEqualTo(StageExecutorResultType.SUCCESS);
     assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).isEqualTo("echo test");
     assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
-    assertThat(result.getStdout()).isEqualTo("test\n");
+    assertThat(result.getStageLog()).contains("test\n");
   }
 }
