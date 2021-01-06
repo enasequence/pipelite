@@ -25,7 +25,7 @@ import lombok.Setter;
 import lombok.extern.flogger.Flogger;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.cmd.*;
-import pipelite.stage.Stage;
+import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.CmdExecutorParameters;
@@ -48,26 +48,22 @@ public class CmdExecutor<T extends CmdExecutorParameters> extends AbstractExecut
   /**
    * Returns an optional dispatcher command.
    *
-   * @param pipelineName the pipeline name
-   * @param processId the process id
-   * @param stage the stage
+   * @param request the execution request
    * @return an optional dispatcher command
    */
-  public String getDispatcherCmd(String pipelineName, String processId, Stage stage) {
+  public String getDispatcherCmd(StageExecutorRequest request) {
     return null;
   }
 
   /**
    * Returns the command to execute.
    *
-   * @param pipelineName the pipeline name
-   * @param processId the process id
-   * @param stage the stage
+   * @param request the execution request
    * @return the command to execute
    */
-  public String getCmd(String pipelineName, String processId, Stage stage) {
+  public String getCmd(StageExecutorRequest request) {
     try {
-      String dispatcherCmd = getDispatcherCmd(pipelineName, processId, stage);
+      String dispatcherCmd = getDispatcherCmd(request);
       if (dispatcherCmd != null) {
         dispatcherCmd = dispatcherCmd + " ";
       } else {
@@ -84,13 +80,13 @@ public class CmdExecutor<T extends CmdExecutorParameters> extends AbstractExecut
       return dispatcherCmd + cmd;
     } catch (Exception ex) {
       throw new PipeliteException(
-          "Unexpected exception when constructing command for pipeline %s" + pipelineName);
+          "Unexpected exception when constructing command for pipeline %s" + request);
     }
   }
 
-  public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
+  public StageExecutorResult execute(StageExecutorRequest request) {
     try {
-      String cmd = getCmd(pipelineName, processId, stage);
+      String cmd = getCmd(request);
       CmdRunnerResult result = cmdRunner.execute(cmd, getExecutorParams());
       return result.getStageExecutorResult(cmd);
     } catch (Exception ex) {

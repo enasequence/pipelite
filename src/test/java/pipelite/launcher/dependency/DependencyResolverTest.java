@@ -414,11 +414,11 @@ public class DependencyResolverTest {
     Process process =
         new ProcessBuilder("test")
             .execute("STAGE0")
-            .withCallExecutor((pipelineName, processId, stage) -> null)
+            .withCallExecutor((request) -> null)
             .execute("STAGE1")
-            .withCallExecutor((pipelineName, processId, stage) -> null)
+            .withCallExecutor((request) -> null)
             .executeAfter("STAGE2", Arrays.asList("STAGE0", "STAGE1"))
-            .withCallExecutor((pipelineName, processId, stage) -> null)
+            .withCallExecutor((request) -> null)
             .build();
     List<Stage> stages = new ArrayList<>();
     Stage firstStage = process.getStages().get(0);

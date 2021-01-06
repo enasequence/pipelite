@@ -18,6 +18,7 @@ import lombok.EqualsAndHashCode;
 import lombok.extern.flogger.Flogger;
 import pipelite.entity.StageEntity;
 import pipelite.stage.executor.StageExecutor;
+import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 
 @Flogger
@@ -44,7 +45,12 @@ public class Stage {
   }
 
   public StageExecutorResult execute(String pipelineName, String processId) {
-    return executor.execute(pipelineName, processId, this);
+    return executor.execute(
+        StageExecutorRequest.builder()
+            .pipelineName(pipelineName)
+            .processId(processId)
+            .stage(this)
+            .build());
   }
 
   public int getImmediateExecutionCount() {

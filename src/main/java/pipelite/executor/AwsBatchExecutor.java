@@ -21,8 +21,8 @@ import lombok.extern.flogger.Flogger;
 import pipelite.executor.service.AwsBatchExecutorService;
 import pipelite.executor.service.ExecutorServiceFactory;
 import pipelite.log.LogKey;
-import pipelite.stage.Stage;
 import pipelite.stage.executor.InternalError;
+import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.parameters.AwsBatchExecutorParameters;
@@ -40,24 +40,24 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
   private ZonedDateTime startTime;
 
   @Override
-  public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
+  public StageExecutorResult execute(StageExecutorRequest request) {
     if (submitJobResult == null) {
-      return submit(pipelineName, processId, stage);
+      return submit(request);
     }
 
-    return poll(pipelineName, processId, stage);
+    return poll(request);
   }
 
-  private StageExecutorResult submit(String pipelineName, String processId, Stage stage) {
+  private StageExecutorResult submit(StageExecutorRequest request) {
     startTime = ZonedDateTime.now();
 
     AwsBatchExecutorService.Client client = getClient();
 
     AwsBatchExecutorParameters params = getExecutorParams();
 
-    SubmitJobRequest request =
+    SubmitJobRequest submitJobRequest =
         new SubmitJobRequest()
-            .withJobName(getJobName(pipelineName, processId, stage))
+            .withJobName(getJobName(request))
             .withJobQueue(params.getQueue())
             .withJobDefinition(params.getDefinition())
             .withParameters(params.getParameters())
@@ -67,54 +67,52 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
     // TODO: .withContainerOverrides()
 
     try {
-      submitJobResult = client.submitJob(request);
+      submitJobResult = client.submitJob(submitJobRequest);
     } catch (Exception ex) {
-      logContext(log.atSevere().withCause(ex), pipelineName, processId, stage)
+      logContext(log.atSevere().withCause(ex), request)
           .log("Unexpected exception from AWSBatch submit job.");
       return StageExecutorResult.internalError(InternalError.SUBMIT);
     }
 
     if (submitJobResult == null || submitJobResult.getJobId() == null) {
-      logContext(log.atSevere(), pipelineName, processId, stage)
-          .log("Missing AWSBatch submit job id.");
+      logContext(log.atSevere(), request).log("Missing AWSBatch submit job id.");
       return StageExecutorResult.internalError(InternalError.SUBMIT);
     }
     return new StageExecutorResult(StageExecutorResultType.ACTIVE);
   }
 
-  private StageExecutorResult poll(String pipelineName, String processId, Stage stage) {
+  private StageExecutorResult poll(StageExecutorRequest request) {
 
     AwsBatchExecutorService.Client client = getClient();
 
     Duration timeout = getExecutorParams().getTimeout();
 
     if (timeout != null && ZonedDateTime.now().isAfter(startTime.plus(timeout))) {
-      logContext(log.atSevere(), pipelineName, processId, stage)
-          .log("Maximum run time exceeded. Killing AwsBatch job.");
+      logContext(log.atSevere(), request).log("Maximum run time exceeded. Killing AwsBatch job.");
 
       try {
         client.terminateJob(getJobId());
       } catch (Exception ex) {
-        logContext(log.atSevere().withCause(ex), pipelineName, processId, stage)
+        logContext(log.atSevere().withCause(ex), request)
             .log("Unexpected exception from AWSBatch terminate for job id %s", getJobId());
         return StageExecutorResult.internalError(InternalError.TERMINATE);
       }
       return StageExecutorResult.internalError(InternalError.TIMEOUT);
     }
 
-    logContext(log.atFine(), pipelineName, processId, stage).log("Checking AWSBatch job result.");
+    logContext(log.atFine(), request).log("Checking AWSBatch job result.");
 
     JobDetail jobDetail;
     try {
       jobDetail = client.describeJob(getJobId());
 
       if (jobDetail == null || jobDetail.getStatus() == null) {
-        logContext(log.atSevere(), pipelineName, processId, stage)
+        logContext(log.atSevere(), request)
             .log("Missing AWSBatch job details for job id %s", getJobId());
         return StageExecutorResult.internalError(InternalError.POLL);
       }
     } catch (Exception ex) {
-      logContext(log.atSevere().withCause(ex), pipelineName, processId, stage)
+      logContext(log.atSevere().withCause(ex), request)
           .log("Unexpected exception from AWSBatch terminate.");
       return StageExecutorResult.internalError(InternalError.POLL);
     }
@@ -130,8 +128,15 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
     }
   }
 
-  private String getJobName(String pipelineName, String processId, Stage stage) {
-    String jobName = "pipelite" + '_' + pipelineName + '_' + processId + '_' + stage;
+  private String getJobName(StageExecutorRequest request) {
+    String jobName =
+        "pipelite"
+            + '_'
+            + request.getPipelineName()
+            + '_'
+            + request.getProcessId()
+            + '_'
+            + request.getStage().getStageName();
     // The first character must be alphanumeric. Up to 128 letters (uppercase
     // and lowercase), numbers, hyphens, and underscores are allowed.
     if (jobName.matches(".*[^a-zA-Z0-9\\-_].*") || jobName.length() > 128) {
@@ -152,10 +157,9 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
         .client(getExecutorParams().getRegion());
   }
 
-  private FluentLogger.Api logContext(
-      FluentLogger.Api log, String pipelineName, String processId, Stage stage) {
-    return log.with(LogKey.PIPELINE_NAME, pipelineName)
-        .with(LogKey.PROCESS_ID, processId)
-        .with(LogKey.STAGE_NAME, stage.getStageName());
+  private FluentLogger.Api logContext(FluentLogger.Api log, StageExecutorRequest request) {
+    return log.with(LogKey.PIPELINE_NAME, request.getPipelineName())
+        .with(LogKey.PROCESS_ID, request.getProcessId())
+        .with(LogKey.STAGE_NAME, request.getStage().getStageName());
   }
 }

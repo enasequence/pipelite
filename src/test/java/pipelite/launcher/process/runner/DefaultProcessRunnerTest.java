@@ -42,9 +42,9 @@ public class DefaultProcessRunnerTest {
     Process process =
         new ProcessBuilder("pipelite-test")
             .execute("STAGE0")
-            .withCallExecutor((pipelineName, processId, stage) -> null, executorParams)
+            .withCallExecutor((request) -> null, executorParams)
             .execute("STAGE1")
-            .withCallExecutor((pipelineName, processId, stage) -> null, executorParams)
+            .withCallExecutor((request) -> null, executorParams)
             .build();
     List<Stage> stages = new ArrayList<>();
 

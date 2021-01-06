@@ -199,7 +199,7 @@ public class PipeliteSchedulerTest {
         builder
             .execute("STAGE" + i)
             .withCallExecutor(
-                (pipelineName, processId1, stage) -> {
+                    (request) -> {
                   stageExecCnt.incrementAndGet();
                   if (stageTestResult == StageTestResult.ERROR) {
                     return StageExecutorResult.error();

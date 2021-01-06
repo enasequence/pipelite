@@ -10,18 +10,14 @@
  */
 package pipelite.stage.executor;
 
-import pipelite.stage.Stage;
-
 /** Executes a stage. */
 public interface StageExecutorCall {
   /**
    * Called repeatedly to execute the stage until it is not ACTIVE. Only asynchronous executions are
    * expected to return ACTIVE.
    *
-   * @param pipelineName the pipeline name.
-   * @param processId the process id.
-   * @param stage the stage to be executed.
+   * @param request the execution request
    * @return stage execution result
    */
-  StageExecutorResult execute(String pipelineName, String processId, Stage stage);
+  StageExecutorResult execute(StageExecutorRequest request);
 }

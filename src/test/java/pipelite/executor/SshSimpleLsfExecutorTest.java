@@ -45,10 +45,15 @@ public class SshSimpleLsfExecutorTest {
             .build());
 
     String stageName = UniqueStringGenerator.randomStageName();
-
     Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
+    StageExecutorRequest request =
+            StageExecutorRequest.builder()
+                    .pipelineName(PIPELINE_NAME)
+                    .processId(PROCESS_ID)
+                    .stage(stage)
+                    .build();
 
-    StageExecutorResult result = executor.execute(PIPELINE_NAME, PROCESS_ID, stage);
+    StageExecutorResult result = executor.execute(request);
     assertThat(result.getResultType()).isEqualTo(StageExecutorResultType.ACTIVE);
     assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).startsWith("bsub");
     assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).endsWith("echo test");
@@ -56,7 +61,7 @@ public class SshSimpleLsfExecutorTest {
     assertThat(result.getStdout()).contains("is submitted to default queue");
 
     while (true) {
-      result = executor.execute(PIPELINE_NAME, PROCESS_ID, stage);
+      result = executor.execute(request);
       if (!result.isActive()) {
         break;
       }

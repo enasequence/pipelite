@@ -33,7 +33,7 @@ public class StageExecutorSerializerTest {
     }
 
     @Override
-    public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
+    public StageExecutorResult execute(StageExecutorRequest request) {
       return null;
     }
 

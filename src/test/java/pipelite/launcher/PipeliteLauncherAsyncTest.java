@@ -39,8 +39,8 @@ import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.*;
-import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
+import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
 
@@ -194,8 +194,8 @@ public class PipeliteLauncherAsyncTest {
 
   public static class SubmitSuccessPollSuccessExecutor extends TestExecutor {
     @Override
-    public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
-      if (!isSubmitted(processId)) {
+    public StageExecutorResult execute(StageExecutorRequest request) {
+      if (!isSubmitted(request.getProcessId())) {
         submitCount.incrementAndGet();
         return StageExecutorResult.active();
       } else {
@@ -207,8 +207,8 @@ public class PipeliteLauncherAsyncTest {
 
   public static class SubmitErrorExecutor extends TestExecutor {
     @Override
-    public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
-      if (!isSubmitted(processId)) {
+    public StageExecutorResult execute(StageExecutorRequest request) {
+      if (!isSubmitted(request.getProcessId())) {
         submitCount.incrementAndGet();
         return StageExecutorResult.error();
       } else {
@@ -220,8 +220,8 @@ public class PipeliteLauncherAsyncTest {
 
   public static class SubmitExceptionExecutor extends TestExecutor {
     @Override
-    public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
-      if (!isSubmitted(processId)) {
+    public StageExecutorResult execute(StageExecutorRequest request) {
+      if (!isSubmitted(request.getProcessId())) {
         submitCount.incrementAndGet();
         throw new RuntimeException("Expected exception from submit");
       } else {
@@ -233,8 +233,8 @@ public class PipeliteLauncherAsyncTest {
 
   public static class PollErrorExecutor extends TestExecutor {
     @Override
-    public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
-      if (!isSubmitted(processId)) {
+    public StageExecutorResult execute(StageExecutorRequest request) {
+      if (!isSubmitted(request.getProcessId())) {
         submitCount.incrementAndGet();
         return StageExecutorResult.active();
       } else {
@@ -246,8 +246,8 @@ public class PipeliteLauncherAsyncTest {
 
   public static class PollExceptionExecutor extends TestExecutor {
     @Override
-    public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
-      if (!isSubmitted(processId)) {
+    public StageExecutorResult execute(StageExecutorRequest request) {
+      if (!isSubmitted(request.getProcessId())) {
         submitCount.incrementAndGet();
         return StageExecutorResult.active();
       } else {

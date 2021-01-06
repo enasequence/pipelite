@@ -15,6 +15,7 @@ import pipelite.exception.PipeliteException;
 import pipelite.executor.cmd.CmdRunnerResult;
 import pipelite.executor.cmd.LocalCmdRunner;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
 import java.io.File;
@@ -28,7 +29,7 @@ public class AbstractLsfExecutorFilesTest {
 
   private static class TestLsfExecutor extends AbstractLsfExecutor<CmdExecutorParameters> {
     @Override
-    protected String getSubmitCmd(String pipelineName, String processId, Stage stage) {
+    protected String getSubmitCmd(StageExecutorRequest request) {
       throw new PipeliteException("");
     }
   }
@@ -36,32 +37,36 @@ public class AbstractLsfExecutorFilesTest {
   @Test
   public void getWorkDir() {
     TestLsfExecutor executor = new TestLsfExecutor();
+    Stage stage = Stage.builder().stageName("STAGE_NAME").executor(executor).build();
+    StageExecutorRequest request =
+        StageExecutorRequest.builder()
+            .pipelineName("PIPELINE_NAME")
+            .processId("PROCESS_ID")
+            .stage(stage)
+            .build();
+    CmdExecutorParameters params = CmdExecutorParameters.builder().workDir("WORKDIR").build();
 
-    executor.setExecutorParams(CmdExecutorParameters.builder().workDir("WORKDIR").build());
-    assertThat(executor.getWorkDir("PIPELINE_NAME", "PROCESS_ID"))
+    assertThat(AbstractLsfExecutor.getWorkDir(request, params))
         .isEqualTo(Paths.get("WORKDIR/pipelite/PIPELINE_NAME/PROCESS_ID"));
 
-    executor.setExecutorParams(CmdExecutorParameters.builder().workDir(null).build());
-    assertThat(executor.getWorkDir("PIPELINE_NAME", "PROCESS_ID"))
-        .isEqualTo(Paths.get("pipelite/PIPELINE_NAME/PROCESS_ID"));
-
-    executor.setExecutorParams(CmdExecutorParameters.builder().workDir("WORKDIR/DIR/DIR/").build());
-    assertThat(executor.getWorkDir("PIPELINE_NAME", "PROCESS_ID"))
-        .isEqualTo(Paths.get("WORKDIR/DIR/DIR/pipelite/PIPELINE_NAME/PROCESS_ID"));
-
-    executor.setExecutorParams(CmdExecutorParameters.builder().workDir(null).build());
-    assertThat(executor.getWorkDir("PIPELINE_NAME", "PROCESS_ID"))
+    assertThat(AbstractLsfExecutor.getWorkDir(request, null))
         .isEqualTo(Paths.get("pipelite/PIPELINE_NAME/PROCESS_ID"));
   }
 
   @Test
   public void outFile() {
     TestLsfExecutor executor = new TestLsfExecutor();
+    Stage stage = Stage.builder().stageName("STAGE_NAME").executor(executor).build();
+    StageExecutorRequest request =
+        StageExecutorRequest.builder()
+            .pipelineName("PIPELINE_NAME")
+            .processId("PROCESS_ID")
+            .stage(stage)
+            .build();
+    CmdExecutorParameters params = CmdExecutorParameters.builder().workDir("WORKDIR").build();
 
-    executor.setExecutorParams(CmdExecutorParameters.builder().workDir("WORKDIR").build());
-    executor.setOutFile("PIPELINE_NAME", "PROCESS_ID", "STAGE");
-    assertThat(executor.getOutFile())
-        .isEqualTo("WORKDIR/pipelite/PIPELINE_NAME/PROCESS_ID/STAGE.out");
+    assertThat(AbstractLsfExecutor.getOutFile(request, params))
+        .isEqualTo("WORKDIR/pipelite/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.out");
   }
 
   @Test

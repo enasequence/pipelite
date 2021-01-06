@@ -259,28 +259,28 @@ public class PipeliteLauncherFailureTest {
       return builder
           .execute("STAGE0")
           .withCallExecutor(
-              (pipelineName1, processId1, stage1) -> {
+                  (pipelineName1) -> {
                 firstStageExecCnt.incrementAndGet();
                 return firstStageExecResult;
               },
               executorParams)
           .executeAfterPrevious("STAGE1")
           .withCallExecutor(
-              (pipelineName1, processId1, stage1) -> {
+                  (pipelineName1) -> {
                 secondStageExecCnt.incrementAndGet();
                 return secondStageExecResult;
               },
               executorParams)
           .executeAfterPrevious("STAGE2")
           .withCallExecutor(
-              (pipelineName1, processId1, stage1) -> {
+                  (pipelineName1) -> {
                 thirdStageExecCnt.incrementAndGet();
                 return thirdStageExecResult;
               },
               executorParams)
           .executeAfterPrevious("STAGE3")
           .withCallExecutor(
-              (pipelineName1, processId1, stage1) -> {
+                  (pipelineName1) -> {
                 fourthStageExecCnt.incrementAndGet();
                 return fourthStageExecResult;
               },

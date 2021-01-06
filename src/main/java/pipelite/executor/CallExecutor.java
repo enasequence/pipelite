@@ -13,8 +13,9 @@ package pipelite.executor;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
-import pipelite.stage.Stage;
+
 import pipelite.stage.executor.StageExecutorCall;
+import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.parameters.ExecutorParameters;
@@ -40,7 +41,7 @@ public class CallExecutor extends AbstractExecutor<ExecutorParameters> {
    * @param resultType the result type
    */
   public CallExecutor(StageExecutorResultType resultType) {
-    this.call = (pipelineName, processId, stage) -> new StageExecutorResult(resultType);
+    this.call = (request) -> new StageExecutorResult(resultType);
     this.resultTypes = null;
   }
 
@@ -56,9 +57,9 @@ public class CallExecutor extends AbstractExecutor<ExecutorParameters> {
   }
 
   @Override
-  public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
+  public StageExecutorResult execute(StageExecutorRequest request) {
     if (this.call != null) {
-      return call.execute(pipelineName, processId, stage);
+      return call.execute(request);
     }
 
     if (this.resultTypes == null) {

@@ -18,6 +18,7 @@ import pipelite.configuration.ExecutorConfiguration;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.time.Time;
@@ -87,7 +88,15 @@ public class StageLauncher {
     logContext(log.atInfo()).log("Executing stage");
     StageExecutorResult result;
     try {
-      result = stage.getExecutor().execute(pipelineName, process.getProcessId(), stage);
+      result =
+          stage
+              .getExecutor()
+              .execute(
+                  StageExecutorRequest.builder()
+                      .pipelineName(pipelineName)
+                      .processId(process.getProcessId())
+                      .stage(stage)
+                      .build());
       if (result.isActive()) {
         // If the execution state is active then the executor is asynchronous.
         result = pollExecution();
@@ -116,7 +125,15 @@ public class StageLauncher {
     while (true) {
       try {
         logContext(log.atInfo()).log("Waiting asynchronous stage execution to complete");
-        result = stage.getExecutor().execute(pipelineName, process.getProcessId(), stage);
+        result =
+            stage
+                .getExecutor()
+                .execute(
+                    StageExecutorRequest.builder()
+                        .pipelineName(pipelineName)
+                        .processId(process.getProcessId())
+                        .stage(stage)
+                        .build());
         if (!result.isActive()) {
           // The asynchronous stage execution has completed.
           break;

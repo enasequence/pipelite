@@ -14,7 +14,7 @@ import java.time.Duration;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
-import pipelite.stage.Stage;
+import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 
 /** Executes a command using LSF. */
@@ -24,7 +24,7 @@ import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 public class SimpleLsfExecutor extends AbstractLsfExecutor<SimpleLsfExecutorParameters> {
 
   @Override
-  public final String getSubmitCmd(String pipelineName, String processId, Stage stage) {
+  public final String getSubmitCmd(StageExecutorRequest request) {
 
     StringBuilder cmd = new StringBuilder();
     cmd.append(BSUB_CMD);

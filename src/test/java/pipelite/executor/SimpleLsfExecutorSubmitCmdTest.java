@@ -17,8 +17,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
-import pipelite.UniqueStringGenerator;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 
 public class SimpleLsfExecutorSubmitCmdTest {
@@ -32,7 +32,7 @@ public class SimpleLsfExecutorSubmitCmdTest {
 
     SimpleLsfExecutor executor = new SimpleLsfExecutor();
     executor.setCmd("test");
-    executor.setExecutorParams(
+    SimpleLsfExecutorParameters params =
         SimpleLsfExecutorParameters.builder()
             .workDir(Files.createTempDirectory("TEMP").toString())
             .cpu(2)
@@ -40,12 +40,19 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .memoryTimeout(Duration.ofMinutes(1))
             .queue("TEST")
             .timeout(Duration.ofMinutes(1))
-            .build());
+            .build();
+    executor.setExecutorParams(params);
 
     Stage stage = Stage.builder().stageName(STAGE_NAME).executor(executor).build();
-
-    String outFile = executor.setOutFile(PIPELINE_NAME, PROCESS_ID, stage.getStageName());
-    String cmd = executor.getCmd(PIPELINE_NAME, PROCESS_ID, stage);
+    StageExecutorRequest request =
+        StageExecutorRequest.builder()
+            .pipelineName(PIPELINE_NAME)
+            .processId(PROCESS_ID)
+            .stage(stage)
+            .build();
+    String outFile = AbstractLsfExecutor.getOutFile(request, params);
+    executor.setOutFile(outFile);
+    String cmd = executor.getCmd(request);
 
     assertThat(cmd)
         .isEqualTo(

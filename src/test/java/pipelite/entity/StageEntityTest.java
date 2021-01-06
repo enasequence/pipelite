@@ -18,6 +18,7 @@ import pipelite.UniqueStringGenerator;
 import pipelite.executor.AbstractExecutor;
 import pipelite.executor.JsonSerializableExecutor;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.parameters.ExecutorParameters;
@@ -29,7 +30,7 @@ class StageEntityTest {
     private String test = "TEST_EXECUTOR_DATA";
 
     @Override
-    public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
+    public StageExecutorResult execute(StageExecutorRequest request) {
       return null;
     }
 

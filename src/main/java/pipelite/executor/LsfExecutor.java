@@ -15,7 +15,7 @@ import lombok.Setter;
 import lombok.extern.flogger.Flogger;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.cmd.CmdRunnerUtils;
-import pipelite.stage.*;
+import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.stage.parameters.LsfExecutorParameters;
 
@@ -37,7 +37,7 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
   private static final String JOB_FILE_SUFFIX = ".job";
 
   @Override
-  public final String getSubmitCmd(String pipelineName, String processId, Stage stage) {
+  public final String getSubmitCmd(StageExecutorRequest request) {
 
     StringBuilder cmd = new StringBuilder();
     cmd.append(BSUB_CMD);
@@ -64,8 +64,8 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
   }
 
   @Override
-  protected void beforeSubmit(String pipelineName, String processId, Stage stage) {
-    setDefinitionFile(pipelineName, processId, stage);
+  protected void beforeSubmit(StageExecutorRequest request) {
+    definitionFile = getDefinitionFile(request, getExecutorParams());
     URL definitionUrl =
         ExecutorParameters.validateUrl(getExecutorParams().getDefinition(), "definition");
     String definition = CmdRunnerUtils.read(definitionUrl);
@@ -78,7 +78,7 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
   }
 
   @Override
-  protected void afterSubmit(String pipelineName, String processId, Stage stage) {
+  protected void afterSubmit(StageExecutorRequest request) {
     /*
     try {
       getCmdRunner().deleteFile(Paths.get(definitionFile), getExecutorParams());
@@ -87,12 +87,16 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
     }
     */
   }
-  public String setDefinitionFile(String pipelineName, String processId, Stage stage) {
-    definitionFile =
-        getWorkDir(pipelineName, processId)
-            .resolve(stage.getStageName() + JOB_FILE_SUFFIX)
-            .toString();
-    return definitionFile;
+
+  public void setDefinitionFile(String definitionFile) {
+    this.definitionFile = definitionFile;
+  }
+
+  public static <T extends LsfExecutorParameters> String getDefinitionFile(
+      StageExecutorRequest context, T params) {
+    return getWorkDir(context, params)
+        .resolve(context.getStage().getStageName() + JOB_FILE_SUFFIX)
+        .toString();
   }
 
   public String applyDefinitionParameters(String definition, Map<String, String> params) {

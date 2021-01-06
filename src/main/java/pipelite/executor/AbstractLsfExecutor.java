@@ -10,6 +10,7 @@
  */
 package pipelite.executor;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.flogger.FluentLogger;
 
 import java.nio.file.Path;
@@ -25,11 +26,8 @@ import pipelite.exception.PipeliteInterruptedException;
 import pipelite.executor.cmd.CmdRunner;
 import pipelite.executor.cmd.CmdRunnerResult;
 import pipelite.log.LogKey;
-import pipelite.stage.Stage;
+import pipelite.stage.executor.*;
 import pipelite.stage.executor.InternalError;
-import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultAttribute;
-import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.time.Time;
@@ -72,31 +70,31 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters> exten
   private static final int BJOBS_HOST = 5;
 
   @Override
-  public final String getDispatcherCmd(String pipelineName, String processId, Stage stage) {
-    return getSubmitCmd(pipelineName, processId, stage);
+  public final String getDispatcherCmd(StageExecutorRequest request) {
+    return getSubmitCmd(request);
   }
 
-  protected abstract String getSubmitCmd(String pipelineName, String processId, Stage stage);
+  protected abstract String getSubmitCmd(StageExecutorRequest request);
 
-  protected void beforeSubmit(String pipelineName, String processId, Stage stage) {}
+  protected void beforeSubmit(StageExecutorRequest request) {}
 
-  protected void afterSubmit(String pipelineName, String processId, Stage stage) {}
+  protected void afterSubmit(StageExecutorRequest request) {}
 
   @Override
-  public StageExecutorResult execute(String pipelineName, String processId, Stage stage) {
+  public StageExecutorResult execute(StageExecutorRequest request) {
     if (jobId == null) {
       try {
         startTime = ZonedDateTime.now();
-        StageExecutorResult result = createWorkDir(pipelineName, processId);
+        StageExecutorResult result = createWorkDir(request);
         if (result.isError()) {
           return result;
         }
-        beforeSubmit(pipelineName, processId, stage);
-        result = submit(pipelineName, processId, stage);
+        beforeSubmit(request);
+        result = submit(request);
         try {
-          afterSubmit(pipelineName, processId, stage);
+          afterSubmit(request);
         } catch (Exception ex) {
-          logContext(log.atSevere().withCause(ex), pipelineName, processId, stage)
+          logContext(log.atSevere().withCause(ex), request)
               .log("Unexpected exception after submit.");
         }
         return result;
@@ -105,19 +103,19 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters> exten
       }
     }
 
-    return poll(pipelineName, processId, stage);
+    return poll(request);
   }
 
-  private StageExecutorResult createWorkDir(String pipelineName, String processId) {
-    String cmd = MKDIR_CMD + getWorkDir(pipelineName, processId);
+  private StageExecutorResult createWorkDir(StageExecutorRequest request) {
+    String cmd = MKDIR_CMD + getWorkDir(request, getExecutorParams());
     return cmdRunner.execute(cmd, getExecutorParams()).getStageExecutorResult(cmd);
   }
 
-  private StageExecutorResult submit(String pipelineName, String processId, Stage stage) {
+  private StageExecutorResult submit(StageExecutorRequest request) {
 
-    setOutFile(pipelineName, processId, stage.getStageName());
+    outFile = getOutFile(request, getExecutorParams());
 
-    StageExecutorResult result = super.execute(pipelineName, processId, stage);
+    StageExecutorResult result = super.execute(request);
     if (result.isError()) {
       return result;
     }
@@ -129,26 +127,25 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters> exten
     }
 
     if (jobId == null) {
-      logContext(log.atSevere(), pipelineName, processId, stage).log("No LSF submit job id.");
+      logContext(log.atSevere(), request).log("No LSF submit job id.");
       result = StageExecutorResult.internalError(InternalError.SUBMIT);
     } else {
-      logContext(log.atInfo(), pipelineName, processId, stage).log("LSF submit job id: %s", jobId);
+      logContext(log.atInfo(), request).log("LSF submit job id: %s", jobId);
       result.setResultType(StageExecutorResultType.ACTIVE);
     }
     return result;
   }
 
-  private StageExecutorResult poll(String pipelineName, String processId, Stage stage) {
+  private StageExecutorResult poll(StageExecutorRequest request) {
 
     Duration timeout = getExecutorParams().getTimeout();
 
     if (timeout != null && ZonedDateTime.now().isAfter(startTime.plus(timeout))) {
-      logContext(log.atSevere(), pipelineName, processId, stage)
-          .log("Maximum run time exceeded. Killing LSF job.");
+      logContext(log.atSevere(), request).log("Maximum run time exceeded. Killing LSF job.");
       try {
         cmdRunner.execute(BKILL_CMD + jobId, getExecutorParams());
       } catch (Exception ex) {
-        logContext(log.atSevere().withCause(ex), pipelineName, processId, stage)
+        logContext(log.atSevere().withCause(ex), request)
             .log("Unexpected exception when killing LSF job %s", getJobId());
         return StageExecutorResult.internalError(InternalError.TERMINATE);
       }
@@ -156,8 +153,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters> exten
       return StageExecutorResult.internalError(InternalError.TIMEOUT);
     }
 
-    logContext(log.atFine(), pipelineName, processId, stage)
-        .log("Checking LSF job result using bjobs.");
+    logContext(log.atFine(), request).log("Checking LSF job result using bjobs.");
 
     CmdRunnerResult bjobsCustomCmdRunnerResult =
         cmdRunner.execute(BJOBS_CUSTOM_CMD + jobId, getExecutorParams());
@@ -170,8 +166,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters> exten
         return result;
       }
     } else {
-      logContext(log.atFine(), pipelineName, processId, stage)
-          .log("Checking LSF job result using bhist.");
+      logContext(log.atFine(), request).log("Checking LSF job result using bhist.");
 
       CmdRunnerResult bhistCmdRunnerResult =
           cmdRunner.execute(BHIST_CMD + jobId, getExecutorParams());
@@ -183,12 +178,12 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters> exten
       }
     }
 
-    String stdout = getStdout(pipelineName, processId, stage);
+    String stdout = getStdout(request);
     result.setStdout(stdout);
     return result;
   }
 
-  protected String getStdout(String pipelineName, String processId, Stage stage) {
+  protected String getStdout(StageExecutorRequest request) {
 
     // Check if the stdout file exists. The file may not be immediately available after the job
     // execution finishes.
@@ -202,8 +197,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters> exten
       return null;
     }
 
-    logContext(log.atFine(), pipelineName, processId, stage)
-        .log("Reading stdout file: %s", outFile);
+    logContext(log.atFine(), request).log("Reading stdout file: %s", outFile);
 
     try {
       CmdRunnerResult stdoutCmdRunnerResult =
@@ -317,30 +311,36 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters> exten
     cmd.append(argument);
   }
 
-  public Path getWorkDir(String pipelineName, String processId) {
+  public static <T extends CmdExecutorParameters> Path getWorkDir(
+      StageExecutorRequest request, T params) {
     Path path;
-    if (getExecutorParams() != null && getExecutorParams().getWorkDir() != null) {
+    if (params != null && params.getWorkDir() != null) {
       path =
-          ExecutorParameters.validatePath(getExecutorParams().getWorkDir(), "workDir")
+          ExecutorParameters.validatePath(params.getWorkDir(), "workDir")
               .resolve("pipelite")
               .normalize();
     } else {
       path = Paths.get("pipelite");
     }
-    return path.resolve(pipelineName).resolve(processId);
+    return path.resolve(request.getPipelineName()).resolve(request.getProcessId());
+  }
+
+  public void setOutFile(String outFile) {
+    this.outFile = outFile;
   }
 
   /**
-   * Sets the output file in the working directory for stdout and stderr.
+   * Returns the output file in the working directory for stdout and stderr.
    *
-   * @param pipelineName the pipeline name
-   * @param processId the process id
-   * @param stageName the stage name
+   * @param request the pipeline name
+   * @param params the execution parameters
    * @return the output file path
    */
-  protected String setOutFile(String pipelineName, String processId, String stageName) {
-    outFile = getWorkDir(pipelineName, processId).resolve(stageName + OUT_FILE_SUFFIX).toString();
-    return outFile;
+  public static <T extends CmdExecutorParameters> String getOutFile(
+      StageExecutorRequest request, T params) {
+    return getWorkDir(request, params)
+        .resolve(request.getStage().getStageName() + OUT_FILE_SUFFIX)
+        .toString();
   }
 
   /**
@@ -352,10 +352,9 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters> exten
     return outFile;
   }
 
-  protected FluentLogger.Api logContext(
-      FluentLogger.Api log, String pipelineName, String processId, Stage stage) {
-    return log.with(LogKey.PIPELINE_NAME, pipelineName)
-        .with(LogKey.PROCESS_ID, processId)
-        .with(LogKey.STAGE_NAME, stage.getStageName());
+  protected FluentLogger.Api logContext(FluentLogger.Api log, StageExecutorRequest request) {
+    return log.with(LogKey.PIPELINE_NAME, request.getPipelineName())
+        .with(LogKey.PROCESS_ID, request.getProcessId())
+        .with(LogKey.STAGE_NAME, request.getStage().getStageName());
   }
 }

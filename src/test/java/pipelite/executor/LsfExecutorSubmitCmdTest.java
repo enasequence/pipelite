@@ -12,6 +12,7 @@ package pipelite.executor;
 
 import org.junit.jupiter.api.Test;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.LsfExecutorParameters;
 
 import java.io.IOException;
@@ -29,18 +30,26 @@ public class LsfExecutorSubmitCmdTest {
   public void test() throws IOException {
     LsfExecutor executor = new LsfExecutor();
     executor.setCmd("test");
-    executor.setExecutorParams(
+    LsfExecutorParameters params =
         LsfExecutorParameters.builder()
             .workDir(Files.createTempDirectory("TEMP").toString())
             .definition("pipelite/executor/lsf.yaml")
             .format(LsfExecutorParameters.Format.YAML)
-            .build());
+            .build();
+    executor.setExecutorParams(params);
     Stage stage = Stage.builder().stageName(STAGE_NAME).executor(executor).build();
+    StageExecutorRequest request =
+        StageExecutorRequest.builder()
+            .pipelineName(PIPELINE_NAME)
+            .processId(PROCESS_ID)
+            .stage(stage)
+            .build();
 
-    String outFile = executor.setOutFile(PIPELINE_NAME, PROCESS_ID, stage.getStageName());
-    String definitionFile = executor.setDefinitionFile(PIPELINE_NAME, PROCESS_ID, stage);
-
-    String cmd = executor.getCmd(PIPELINE_NAME, PROCESS_ID, stage);
+    String outFile = AbstractLsfExecutor.getOutFile(request, params);
+    String definitionFile = LsfExecutor.getDefinitionFile(request, params);
+    executor.setOutFile(outFile);
+    executor.setDefinitionFile(definitionFile);
+    String cmd = executor.getCmd(request);
     assertThat(cmd).isEqualTo("bsub -oo " + outFile + " -yaml " + definitionFile + " test");
   }
 }
