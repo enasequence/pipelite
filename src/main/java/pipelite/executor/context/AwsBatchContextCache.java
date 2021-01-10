@@ -12,27 +12,45 @@ package pipelite.executor.context;
 
 import com.amazonaws.services.batch.AWSBatch;
 import com.amazonaws.services.batch.AWSBatchClientBuilder;
+import com.amazonaws.services.batch.model.JobDetail;
+import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.AwsBatchExecutor;
+import pipelite.executor.task.DefaultFixedRetryTaskAggregator;
 
-/** Cache of contexts for operations that can be shared between AWSBatch executors. */
+/** Context for tasks that can be shared between AWSBatch executors. */
 @Flogger
 public class AwsBatchContextCache
-    extends SharedExecutorContextCache<AwsBatchExecutor, AwsBatchContextId, AwsBatchContext> {
+    extends SharedContextCache<
+        AwsBatchExecutor, AwsBatchContextCache.ContextId, AwsBatchContextCache.Context> {
 
-  @Override
-  protected AwsBatchContextId createSharedContextId(AwsBatchExecutor executor) {
-    return new AwsBatchContextId(executor.getExecutorParams().getRegion());
+  @Value
+  public static final class ContextId {
+    private final String region;
   }
 
-  @Override
-  protected AwsBatchContext createSharedContext(AwsBatchExecutor executor) {
-    AWSBatchClientBuilder awsBuilder = AWSBatchClientBuilder.standard();
-    String region = executor.getExecutorParams().getRegion();
-    if (region != null) {
-      awsBuilder.setRegion(region);
+  public static final class Context extends SharedContextCache.Context<AWSBatch> {
+    public final DefaultFixedRetryTaskAggregator<String, JobDetail, AWSBatch> describeJobs;
+
+    public Context(AWSBatch awsBatch) {
+      super(awsBatch);
+      describeJobs =
+          new DefaultFixedRetryTaskAggregator<>(100, awsBatch, AwsBatchExecutor::describeJobs);
     }
-    AWSBatch awsBatch = awsBuilder.build();
-    return new AwsBatchContext(awsBatch);
+  }
+
+  public AwsBatchContextCache() {
+    super(
+        e -> {
+          AWSBatchClientBuilder awsBuilder = AWSBatchClientBuilder.standard();
+          String region = e.getExecutorParams().getRegion();
+          if (region != null) {
+            awsBuilder.setRegion(region);
+          }
+          return new AwsBatchContextCache.Context(awsBuilder.build());
+        },
+        e -> new AwsBatchContextCache.ContextId(e.getExecutorParams().getRegion()));
+    registerMakeRequests(
+        () -> getContexts().forEach(context -> context.describeJobs.makeRequests()));
   }
 }

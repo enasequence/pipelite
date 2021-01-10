@@ -39,13 +39,16 @@ public class RetryTaskAggregator<Request, Result, ExecutorContext> {
   private final RetryTaskAggregatorCallback<Request, Result, ExecutorContext> task;
 
   /**
-   * Aggregates requests and calls the task to return results with retries using {@link
-   * RetryTemplate}.
+   * Aggregates requests into a list, passes the list to the given task and expects the task to
+   * return a map of completed requests and results. Completed requests are removed once they been
+   * returned by {@link RetryTaskAggregator#getResult}.
    *
-   * @param retryTemplate the retry template used to call the task
-   * @param requestTimeout the task execution timeout
-   * @param requestLimit the maximum number of requests to give to the task at once
-   * @param task the task that will be given a list of requests to return as a map of requests
+   * @param retryTemplate the retry template used in {@link RetryTaskAggregator#makeRequests}
+   * @param requestTimeout the timeout for a task being executed by {@link
+   *     RetryTaskAggregator#makeRequests}
+   * @param requestLimit the maximum number of requests {@link * RetryTaskAggregator#makeRequests}
+   *     will sent to the task at once
+   * @param task the task that is called by {@link * RetryTaskAggregator#makeRequests}
    */
   public RetryTaskAggregator(
       RetryTemplate retryTemplate,
@@ -134,7 +137,7 @@ public class RetryTaskAggregator<Request, Result, ExecutorContext> {
     return false;
   }
 
-  public void removeRequest(Request request) {
+  protected void removeRequest(Request request) {
     this.requests.remove(request);
     this.noResults.remove(request);
   }

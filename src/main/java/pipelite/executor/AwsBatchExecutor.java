@@ -20,7 +20,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
 import pipelite.exception.PipeliteException;
-import pipelite.executor.context.AwsBatchContext;
 import pipelite.executor.context.AwsBatchContextCache;
 import pipelite.executor.task.RetryTask;
 import pipelite.log.LogKey;
@@ -40,10 +39,11 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
 
   private SubmitJobResult submitJobResult;
 
-  private static final AwsBatchContextCache sharedContextCache = new AwsBatchContextCache();
+  private static final AwsBatchContextCache sharedContextCache =
+      new AwsBatchContextCache();
 
-  private AwsBatchContext getSharedContext() {
-    return sharedContextCache.getSharedContext(this);
+  private AwsBatchContextCache.Context getSharedContext() {
+    return sharedContextCache.getContext(this);
   }
 
   @Override
@@ -59,7 +59,7 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
   public void terminate() {
     TerminateJobRequest terminateJobRequest =
         new TerminateJobRequest().withJobId(getJobId()).withReason("Job terminated by pipelite");
-    RetryTask.DEFAULT_FIXED.execute(
+    RetryTask.DEFAULT_FIXED_RETRY.execute(
         r -> getSharedContext().get().terminateJob(terminateJobRequest));
   }
 
@@ -79,7 +79,8 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
     // TODO: .withContainerOverrides()
 
     submitJobResult =
-        RetryTask.DEFAULT_FIXED.execute(r -> getSharedContext().get().submitJob(submitJobRequest));
+        RetryTask.DEFAULT_FIXED_RETRY.execute(
+            r -> getSharedContext().get().submitJob(submitJobRequest));
 
     if (submitJobResult == null || submitJobResult.getJobId() == null) {
       throw new PipeliteException("Missing AWSBatch submit job id.");
@@ -89,7 +90,7 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
 
   private StageExecutorResult poll(StageExecutorRequest request) {
     logContext(log.atFine(), request).log("Checking AWSBatch job result.");
-    Optional<JobDetail> jobDetail = getSharedContext().describeJob(getJobId());
+    Optional<JobDetail> jobDetail = getSharedContext().describeJobs.getResult(getJobId());
     if (jobDetail == null || !jobDetail.isPresent() || jobDetail.get().getStatus() == null) {
       return StageExecutorResult.active();
     }

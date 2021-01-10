@@ -10,8 +10,42 @@
  */
 package pipelite.executor.context;
 
+import lombok.Value;
 import lombok.extern.flogger.Flogger;
-import pipelite.stage.parameters.LsfExecutorParameters;
+import pipelite.executor.AbstractLsfExecutor;
+import pipelite.executor.cmd.CmdRunner;
+import pipelite.executor.task.DefaultFixedRetryTaskAggregator;
+import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.parameters.CmdExecutorParameters;
 
 @Flogger
-public class LsfContextCache extends AbstractLsfContextCache<LsfExecutorParameters> {}
+public class LsfContextCache
+    extends SharedContextCache<
+        AbstractLsfExecutor<CmdExecutorParameters>,
+        LsfContextCache.ContextId,
+        LsfContextCache.Context> {
+
+  @Value
+  public static final class ContextId {
+    private final String host;
+  }
+
+  public static final class Context extends SharedContextCache.Context<CmdRunner> {
+    public final DefaultFixedRetryTaskAggregator<String, StageExecutorResult, CmdRunner>
+        describeJobs;
+
+    public Context(CmdRunner cmdRunner) {
+      super(cmdRunner);
+      describeJobs =
+          new DefaultFixedRetryTaskAggregator<>(100, cmdRunner, AbstractLsfExecutor::describeJobs);
+    }
+  }
+
+  public LsfContextCache() {
+    super(
+        e -> new LsfContextCache.Context(CmdRunner.create(e.getExecutorParams())),
+        e -> new LsfContextCache.ContextId(e.getExecutorParams().getHost()));
+    registerMakeRequests(
+        () -> getContexts().forEach(context -> context.describeJobs.makeRequests()));
+  }
+}

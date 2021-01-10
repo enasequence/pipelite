@@ -38,7 +38,9 @@ public class RetryTask {
     return retryTemplate.execute(r -> task.execute(context));
   }
 
-  public static final RetryTemplate DEFAULT_FIXED = RetryTask.fixed(Duration.ofSeconds(5), 3);
+  public static final RetryTemplate DEFAULT_FIXED_RETRY = RetryTask.fixed(Duration.ofSeconds(5), 3);
+  public static final RetryTemplate DEFAULT_EXPONENTIAL_RETRY =
+      RetryTask.exponential(Duration.ofSeconds(1), Duration.ofSeconds(15), 3.8, 3);
 
   public static final RetryTemplate fixed(Duration backoff, int attempts) {
     RetryTemplate retryTemplate = new RetryTemplate();

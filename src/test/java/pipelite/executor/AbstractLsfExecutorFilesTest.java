@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.cmd.CmdRunner;
 import pipelite.executor.cmd.LocalCmdRunner;
-import pipelite.executor.context.AbstractLsfContext;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
@@ -31,11 +30,6 @@ public class AbstractLsfExecutorFilesTest {
   private static class TestLsfExecutor extends AbstractLsfExecutor<CmdExecutorParameters> {
     @Override
     public String getSubmitCmd(StageExecutorRequest request) {
-      throw new PipeliteException("");
-    }
-
-    @Override
-    protected AbstractLsfContext getSharedContext() {
       throw new PipeliteException("");
     }
   }

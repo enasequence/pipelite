@@ -33,15 +33,15 @@ public class AwsBatchContextCacheTest {
   @Disabled
   public void test() {
     AwsBatchContextCache cache = new AwsBatchContextCache();
-    assertThat(cache.getSharedContext(executor("region1")))
-        .isSameAs(cache.getSharedContext(executor("region1")));
-    assertThat(cache.getSharedContext(executor("region2")))
-        .isSameAs(cache.getSharedContext(executor("region2")));
-    assertThat(cache.getSharedContext(executor("region1")))
-        .isNotSameAs(cache.getSharedContext(executor("region2")));
-    assertThat(cache.getSharedContext(executor(null)))
-        .isSameAs(cache.getSharedContext(executor(null)));
-    assertThat(cache.getSharedContext(executor(null)))
-        .isNotSameAs(cache.getSharedContext(executor("region1")));
+    assertThat(cache.getContext(executor("region1")))
+        .isSameAs(cache.getContext(executor("region1")));
+    assertThat(cache.getContext(executor("region2")))
+        .isSameAs(cache.getContext(executor("region2")));
+    assertThat(cache.getContext(executor("region1")))
+        .isNotSameAs(cache.getContext(executor("region2")));
+    assertThat(cache.getContext(executor(null)))
+        .isSameAs(cache.getContext(executor(null)));
+    assertThat(cache.getContext(executor(null)))
+        .isNotSameAs(cache.getContext(executor("region1")));
   }
 }
