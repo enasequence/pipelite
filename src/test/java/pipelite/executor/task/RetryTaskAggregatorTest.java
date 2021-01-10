@@ -19,9 +19,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import org.springframework.retry.support.RetryTemplate;
-import pipelite.exception.PipeliteException;
 import pipelite.exception.PipeliteTimeoutException;
-import pipelite.executor.AbstractLsfExecutor;
 import pipelite.time.Time;
 
 public class RetryTaskAggregatorTest {

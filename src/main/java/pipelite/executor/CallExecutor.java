@@ -13,7 +13,6 @@ package pipelite.executor;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
-
 import pipelite.stage.executor.StageExecutorCall;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
@@ -69,6 +68,5 @@ public class CallExecutor extends AbstractExecutor<ExecutorParameters> {
   }
 
   @Override
-  public void terminate() {
-  }
+  public void terminate() {}
 }

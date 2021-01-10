@@ -91,7 +91,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
 
   private static final String BHIST_CMD = "bhist -l ";
   private static final Pattern BHIST_EXIT_CODE_PATTERN =
-          Pattern.compile("Exited with exit code (\\d+)");
+      Pattern.compile("Exited with exit code (\\d+)");
 
   /**
    * Returns the submit command.
@@ -306,14 +306,22 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
       result.setResultType(StageExecutorResultType.ERROR);
       result
           .getAttributes()
-          .put(StageExecutorResultAttribute.EXIT_CODE, String.valueOf(column[BJOBS_COLUMN_EXIT_CODE]));
+          .put(
+              StageExecutorResultAttribute.EXIT_CODE,
+              String.valueOf(column[BJOBS_COLUMN_EXIT_CODE]));
     }
 
     if (!result.isActive()) {
       result.getAttributes().put(StageExecutorResultAttribute.EXEC_HOST, column[BJOBS_COLUMN_HOST]);
-      result.getAttributes().put(StageExecutorResultAttribute.CPU_TIME, column[BJOBS_COLUMN_CPU_TIME]);
-      result.getAttributes().put(StageExecutorResultAttribute.MAX_MEM, column[BJOBS_COLUMN_MAX_MEM]);
-      result.getAttributes().put(StageExecutorResultAttribute.AVG_MEM, column[BJOBS_COLUMN_AVG_MEM]);
+      result
+          .getAttributes()
+          .put(StageExecutorResultAttribute.CPU_TIME, column[BJOBS_COLUMN_CPU_TIME]);
+      result
+          .getAttributes()
+          .put(StageExecutorResultAttribute.MAX_MEM, column[BJOBS_COLUMN_MAX_MEM]);
+      result
+          .getAttributes()
+          .put(StageExecutorResultAttribute.AVG_MEM, column[BJOBS_COLUMN_AVG_MEM]);
     }
 
     return new BjobsResult(jobId, result);

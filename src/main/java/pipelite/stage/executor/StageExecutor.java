@@ -26,9 +26,7 @@ public interface StageExecutor<T extends ExecutorParameters> extends StageExecut
 
   void setExecutorParams(T executorParams);
 
-  /** Terminates the current active execution.
-   *
-   */
+  /** Terminates the current active execution. */
   void terminate();
 
   /**

@@ -10,14 +10,13 @@
  */
 package pipelite.executor.context;
 
-import pipelite.stage.executor.StageExecutor;
-import pipelite.time.Time;
-
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import pipelite.stage.executor.StageExecutor;
+import pipelite.time.Time;
 
 /**
  * Cache for shared execution contexts. Returns cached context or creates new one if a context does
@@ -61,14 +60,15 @@ public abstract class SharedContextCache<
     this.contextFactory = contextFactory;
     this.contextIdFactory = contextIdFactory;
     new Thread(
-        () -> {
-          while (true) {
-            Time.wait(POLL_FREQUENCY);
-            if (makeRequests != null) {
-              makeRequests.run();
-            }
-          }
-        }).start();
+            () -> {
+              while (true) {
+                Time.wait(POLL_FREQUENCY);
+                if (makeRequests != null) {
+                  makeRequests.run();
+                }
+              }
+            })
+        .start();
   }
 
   protected void registerMakeRequests(Runnable makeRequests) {

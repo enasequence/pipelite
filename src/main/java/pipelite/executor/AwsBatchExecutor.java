@@ -13,9 +13,7 @@ package pipelite.executor;
 import com.amazonaws.services.batch.AWSBatch;
 import com.amazonaws.services.batch.model.*;
 import com.google.common.flogger.FluentLogger;
-
 import java.util.*;
-
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
@@ -39,8 +37,7 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
 
   private SubmitJobResult submitJobResult;
 
-  private static final AwsBatchContextCache sharedContextCache =
-      new AwsBatchContextCache();
+  private static final AwsBatchContextCache sharedContextCache = new AwsBatchContextCache();
 
   private AwsBatchContextCache.Context getSharedContext() {
     return sharedContextCache.getContext(this);
@@ -79,8 +76,7 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
     // TODO: .withContainerOverrides()
 
     submitJobResult =
-        RetryTask.DEFAULT_FIXED.execute(
-            r -> getSharedContext().get().submitJob(submitJobRequest));
+        RetryTask.DEFAULT_FIXED.execute(r -> getSharedContext().get().submitJob(submitJobRequest));
 
     if (submitJobResult == null || submitJobResult.getJobId() == null) {
       throw new PipeliteException("Missing AWSBatch submit job id.");

@@ -54,8 +54,7 @@ public class RetryTaskTest {
   public void exponentialThrows() {
     int attempts = 3;
     AtomicInteger cnt = new AtomicInteger();
-    RetryTemplate retry =
-        RetryTask.exp(Duration.ofMillis(1), Duration.ofMillis(10), 2.0, attempts);
+    RetryTemplate retry = RetryTask.exp(Duration.ofMillis(1), Duration.ofMillis(10), 2.0, attempts);
     assertThrows(
         RuntimeException.class,
         () -> {
@@ -72,8 +71,7 @@ public class RetryTaskTest {
   public void exponentialSuccess() {
     int attempts = 3;
     AtomicInteger cnt = new AtomicInteger();
-    RetryTemplate retry =
-        RetryTask.exp(Duration.ofMillis(1), Duration.ofMillis(10), 2.0, attempts);
+    RetryTemplate retry = RetryTask.exp(Duration.ofMillis(1), Duration.ofMillis(10), 2.0, attempts);
     retry.execute(
         r -> {
           cnt.incrementAndGet();

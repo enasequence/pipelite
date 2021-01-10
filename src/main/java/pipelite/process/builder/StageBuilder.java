@@ -14,7 +14,6 @@ import static pipelite.stage.executor.StageExecutorResultType.ACTIVE;
 import static pipelite.stage.executor.StageExecutorResultType.SUCCESS;
 
 import java.util.*;
-
 import pipelite.executor.*;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.*;
@@ -115,9 +114,7 @@ public class StageBuilder {
     return addStage(executor);
   }
 
-  /**
-   * An executor that runs using AWSBatch.
-   */
+  /** An executor that runs using AWSBatch. */
   public ProcessBuilder withAwsBatchExecutor() {
     return withAwsBatchExecutor(AwsBatchExecutorParameters.builder().build());
   }

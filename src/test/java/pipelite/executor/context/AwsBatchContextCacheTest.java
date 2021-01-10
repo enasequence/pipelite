@@ -39,9 +39,7 @@ public class AwsBatchContextCacheTest {
         .isSameAs(cache.getContext(executor("region2")));
     assertThat(cache.getContext(executor("region1")))
         .isNotSameAs(cache.getContext(executor("region2")));
-    assertThat(cache.getContext(executor(null)))
-        .isSameAs(cache.getContext(executor(null)));
-    assertThat(cache.getContext(executor(null)))
-        .isNotSameAs(cache.getContext(executor("region1")));
+    assertThat(cache.getContext(executor(null))).isSameAs(cache.getContext(executor(null)));
+    assertThat(cache.getContext(executor(null))).isNotSameAs(cache.getContext(executor("region1")));
   }
 }

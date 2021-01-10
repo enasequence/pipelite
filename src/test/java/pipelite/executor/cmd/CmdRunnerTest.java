@@ -10,17 +10,20 @@
  */
 package pipelite.executor.cmd;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.Test;
 import pipelite.stage.parameters.CmdExecutorParameters;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class CmdRunnerTest {
 
   @Test
   public void create() {
-    assertThat(CmdRunner.create(CmdExecutorParameters.builder().host("test").build())).isInstanceOf(SshCmdRunner.class);
-    assertThat(CmdRunner.create(CmdExecutorParameters.builder().host(null).build())).isInstanceOf(LocalCmdRunner.class);
-    assertThat(CmdRunner.create(CmdExecutorParameters.builder().host("").build())).isInstanceOf(LocalCmdRunner.class);
+    assertThat(CmdRunner.create(CmdExecutorParameters.builder().host("test").build()))
+        .isInstanceOf(SshCmdRunner.class);
+    assertThat(CmdRunner.create(CmdExecutorParameters.builder().host(null).build()))
+        .isInstanceOf(LocalCmdRunner.class);
+    assertThat(CmdRunner.create(CmdExecutorParameters.builder().host("").build()))
+        .isInstanceOf(LocalCmdRunner.class);
   }
 }

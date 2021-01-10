@@ -13,11 +13,10 @@ package pipelite.executor;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import pipelite.exception.PipeliteException;
 import pipelite.stage.executor.StageExecutorResult;
-
-import java.util.List;
 
 public class AbstractLsfExecutorExtractTest {
 

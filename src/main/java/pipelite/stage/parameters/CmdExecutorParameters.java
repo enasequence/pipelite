@@ -11,7 +11,6 @@
 package pipelite.stage.parameters;
 
 import java.util.Map;
-
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

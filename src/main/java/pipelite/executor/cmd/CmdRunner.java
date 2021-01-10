@@ -11,7 +11,6 @@
 package pipelite.executor.cmd;
 
 import java.nio.file.Path;
-
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.CmdExecutorParameters;
