@@ -59,7 +59,7 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
   public void terminate() {
     TerminateJobRequest terminateJobRequest =
         new TerminateJobRequest().withJobId(getJobId()).withReason("Job terminated by pipelite");
-    RetryTask.DEFAULT_FIXED_RETRY.execute(
+    RetryTask.DEFAULT_FIXED.execute(
         r -> getSharedContext().get().terminateJob(terminateJobRequest));
   }
 
@@ -79,7 +79,7 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
     // TODO: .withContainerOverrides()
 
     submitJobResult =
-        RetryTask.DEFAULT_FIXED_RETRY.execute(
+        RetryTask.DEFAULT_FIXED.execute(
             r -> getSharedContext().get().submitJob(submitJobRequest));
 
     if (submitJobResult == null || submitJobResult.getJobId() == null) {

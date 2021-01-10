@@ -69,7 +69,7 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
     final String definition =
         applyDefinitionParameters(
             CmdRunnerUtils.read(definitionUrl), getExecutorParams().getParameters());
-    RetryTask.DEFAULT_FIXED_RETRY.execute(
+    RetryTask.DEFAULT_FIXED.execute(
         r -> {
           getCmdRunner().writeFile(definition, Paths.get(definitionFile));
           return null;

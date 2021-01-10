@@ -4,13 +4,13 @@ import org.springframework.retry.support.RetryTemplate;
 
 import java.time.Duration;
 
-public class DefaultExponentialRetryTaskAggregator<Request, Result, ExecutorContext>
+public class DefaultExpRetryTaskAggregator<Request, Result, ExecutorContext>
     extends RetryTaskAggregator<Request, Result, ExecutorContext> {
 
   public static final Duration DEFAULT_REQUEST_TIMEOUT = Duration.ofMinutes(10);
-  public static final RetryTemplate DEFAULT_REQUEST_RETRY = RetryTask.DEFAULT_EXPONENTIAL_RETRY;
+  public static final RetryTemplate DEFAULT_REQUEST_RETRY = RetryTask.DEFAULT_EXP;
 
-  public DefaultExponentialRetryTaskAggregator(
+  public DefaultExpRetryTaskAggregator(
       int requestLimit,
       ExecutorContext executorContext,
       RetryTaskAggregatorCallback<Request, Result, ExecutorContext> task) {

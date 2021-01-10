@@ -16,14 +16,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import pipelite.exception.PipeliteException;
 import pipelite.exception.PipeliteInterruptedException;
@@ -53,39 +51,47 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
   /** The LSF output file. */
   private String outFile;
 
-  private static final LsfContextCache sharedContextCache =
-      new LsfContextCache();
+  private static final LsfContextCache sharedContextCache = new LsfContextCache();
 
   protected LsfContextCache.Context getSharedContext() {
     return sharedContextCache.getContext((AbstractLsfExecutor<CmdExecutorParameters>) this);
+  }
+
+  @Value
+  protected static class BjobsResult {
+    String jobId;
+    StageExecutorResult result;
   }
 
   private static final String OUT_FILE_SUFFIX = ".out";
   private static final Duration OUT_FILE_POLL_TIMEOUT = Duration.ofMinutes(5);
   private static final Duration OUT_FILE_POLL_FREQUENCY = Duration.ofSeconds(10);
 
-  protected static final String BSUB_CMD = "bsub";
-  private static final String BJOBS_STANDARD_CMD = "bjobs -l ";
-  private static final String BJOBS_CUSTOM_CMD =
-      "bjobs -o \"jobid stat exit_code cpu_used max_mem avg_mem exec_host delimiter='|'\" -noheader ";
-  private static final String BHIST_CMD = "bhist -l ";
-  private static final String BKILL_CMD = "bkill ";
   private static final String MKDIR_CMD = "mkdir -p ";
+
+  protected static final String BSUB_CMD = "bsub";
+
+  private static final String BKILL_CMD = "bkill ";
+
+  private static final String BJOBS_CMD =
+      "bjobs -o \"jobid stat exit_code cpu_used max_mem avg_mem exec_host delimiter='|'\" -noheader ";
   private static final Pattern BSUB_JOB_ID_SUBMITTED_PATTERN =
       Pattern.compile("Job <(\\d+)\\> is submitted");
   private static final Pattern BJOBS_JOB_ID_NOT_FOUND_PATTERN =
       Pattern.compile("Job <(\\d+)\\> is not found");
-  private static final Pattern BJOBS_EXIT_CODE_PATTERN =
-      Pattern.compile("Exited with exit code (\\d+)");
   private static final String BJOBS_STATUS_DONE = "DONE";
   private static final String BJOBS_STATUS_EXIT = "EXIT";
-  private static final int BJOBS_JOB_ID = 0;
-  private static final int BJOBS_STATUS = 1;
-  private static final int BJOBS_EXIT_CODE = 2;
-  private static final int BJOBS_CPU_TIME = 3;
-  private static final int BJOBS_MAX_MEM = 4;
-  private static final int BJOBS_AVG_MEM = 5;
-  private static final int BJOBS_HOST = 6;
+  private static final int BJOBS_COLUMN_JOB_ID = 0;
+  private static final int BJOBS_COLUMN_STATUS = 1;
+  private static final int BJOBS_COLUMN_EXIT_CODE = 2;
+  private static final int BJOBS_COLUMN_CPU_TIME = 3;
+  private static final int BJOBS_COLUMN_MAX_MEM = 4;
+  private static final int BJOBS_COLUMN_AVG_MEM = 5;
+  private static final int BJOBS_COLUMN_HOST = 6;
+
+  private static final String BHIST_CMD = "bhist -l ";
+  private static final Pattern BHIST_EXIT_CODE_PATTERN =
+          Pattern.compile("Exited with exit code (\\d+)");
 
   /**
    * Returns the submit command.
@@ -121,20 +127,17 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
 
   @Override
   public void terminate() {
-    RetryTask.DEFAULT_FIXED_RETRY.execute(r -> getCmdRunner().execute(BKILL_CMD + jobId));
+    RetryTask.DEFAULT_FIXED.execute(r -> bkill(getCmdRunner(), jobId));
   }
 
   private StageExecutorResult submit(StageExecutorRequest request) {
     StageExecutorResult result =
-        RetryTask.DEFAULT_FIXED_RETRY.execute(r -> getCmdRunner().execute(getSubmitCmd(request)));
+        RetryTask.DEFAULT_FIXED.execute(r -> getCmdRunner().execute(getSubmitCmd(request)));
     if (result.isError()) {
       return result;
     }
 
     jobId = extractBsubJobIdSubmitted(result.getStageLog());
-    if (jobId == null) {
-      throw new PipeliteException("No LSF submit job id.");
-    }
 
     logContext(log.atInfo(), request).log("LSF submit job id: %s", jobId);
     result.setResultType(StageExecutorResultType.ACTIVE);
@@ -152,48 +155,51 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
     return result.get();
   }
 
+  private static String bjobs(CmdRunner cmdRunner, List<String> jobIds) {
+    String str = String.join(" ", jobIds);
+    log.atFine().log("Checking LSF job results using bjobs: " + str);
+    StageExecutorResult result = cmdRunner.execute(BJOBS_CMD + str);
+    if (result.isError()) {
+      throw new PipeliteException("Failed to check LSF job results using bjobs.");
+    }
+    return result.getStageLog();
+  }
+
+  private static StageExecutorResult bhist(CmdRunner cmdRunner, String jobId) {
+    log.atWarning().log("Checking LSF job result using bhist: " + jobId);
+    StageExecutorResult bhistResult = cmdRunner.execute(BHIST_CMD + jobId);
+    return extractBhistResult(bhistResult.getStageLog());
+  }
+
+  private static StageExecutorResult bkill(CmdRunner cmdRunner, String jobId) {
+    log.atWarning().log("Terminating LSF job using bkill: " + jobId);
+    return cmdRunner.execute(BKILL_CMD + jobId);
+  }
+
   public static Map<String, StageExecutorResult> describeJobs(
       List<String> jobIds, CmdRunner cmdRunner) {
-    log.atFine().log("Checking LSF job results using bjobs.");
+    log.atFine().log("Checking LSF job results.");
 
     Map<String, StageExecutorResult> results = new HashMap<>();
 
-    StageExecutorResult bjobsResult =
-        cmdRunner.execute(BJOBS_CUSTOM_CMD + String.join(" ", jobIds));
+    String str = bjobs(cmdRunner, jobIds);
 
-    if (bjobsResult.isError()) {
-      throw new PipeliteException("Failed to check LSF job results using bjobs.");
-    }
-    for (String line : bjobsResult.getStageLog().split("\\r?\\n")) {
-      String jobIdNotFound = extractBjobsJobIdNotFound(line);
-      if (jobIdNotFound == null) {
-        StageExecutorResult result = extractBjobsCustomResult(line);
-        if (result != null && !result.isActive()) {
-          String jobId = result.getAttribute(StageExecutorResultAttribute.JOB_ID);
-          if (jobId != null) {
-            results.put(jobId, result);
-          } else {
-            log.atSevere().log("Missing LSF bjobs job id: " + line);
-          }
-        }
-      } else {
-        log.atWarning().log("Checking LSF job result using bhist: " + jobIdNotFound);
+    List<BjobsResult> bjobsResults = extractBjobsResults(str);
+    bjobsResults.stream()
+        .filter(r -> r.getJobId() != null && r.getResult() != null)
+        .forEach(r -> results.put(r.getJobId(), r.getResult()));
 
-        StageExecutorResult bhistResult = cmdRunner.execute(BHIST_CMD + jobIdNotFound);
-        StageExecutorResult result = extractBjobsStandardResult(bhistResult.getStageLog());
-        if (result == null) {
-          results.put(jobIdNotFound, StageExecutorResult.error());
-        } else {
-          results.put(jobIdNotFound, result);
-        }
-      }
-    }
+    // Attempt to recover missing jobs statuses. This will only ever be done
+    // once and if it fails the execution will be marked as failed.
+    bjobsResults.stream()
+        .filter(r -> r.getJobId() != null && r.getResult() == null)
+        .forEach(r -> results.put(r.getJobId(), bhist(cmdRunner, r.getJobId())));
 
     return results;
   }
 
   private StageExecutorResult createWorkDir(StageExecutorRequest request) {
-    return RetryTask.DEFAULT_FIXED_RETRY.execute(
+    return RetryTask.DEFAULT_FIXED.execute(
         r -> getCmdRunner().execute(MKDIR_CMD + getWorkDir(request, getExecutorParams())));
   }
 
@@ -224,7 +230,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
     // Check if the stdout file exists. The file may not be immediately available after the job
     // execution finishes.
     StageExecutorResult result =
-        RetryTask.DEFAULT_FIXED_RETRY.execute(
+        RetryTask.DEFAULT_FIXED.execute(
             r -> getCmdRunner().execute("sh -c 'test -f " + stdoutFile + "'"));
     return result.isSuccess();
   }
@@ -236,7 +242,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
         (executorParams.getLogBytes() > 0)
             ? executorParams.getLogBytes()
             : CmdExecutorParameters.DEFAULT_LOG_BYTES;
-    return RetryTask.DEFAULT_FIXED_RETRY.execute(
+    return RetryTask.DEFAULT_FIXED.execute(
         r -> cmdRunner.execute("sh -c 'tail -c " + logBytes + " " + stdoutFile + "'"));
   }
 
@@ -246,7 +252,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
       m.find();
       return m.group(1);
     } catch (Exception ex) {
-      return null;
+      throw new PipeliteException("No LSF submit job id.");
     }
   }
 
@@ -260,9 +266,9 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
     }
   }
 
-  public static String extractBjobsExitCode(String str) {
+  public static String extractBhistExitCode(String str) {
     try {
-      Matcher m = BJOBS_EXIT_CODE_PATTERN.matcher(str);
+      Matcher m = BHIST_EXIT_CODE_PATTERN.matcher(str);
       m.find();
       return m.group(1);
     } catch (Exception ex) {
@@ -270,39 +276,52 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
     }
   }
 
-  private static StageExecutorResult extractBjobsCustomResult(String str) {
-    String[] column = str.split("\\|");
-    if (column.length != 7) {
-      log.atSevere().log("Unexpected LSF bjobs output: " + str);
-      return null;
+  public static List<BjobsResult> extractBjobsResults(String str) {
+    List<BjobsResult> results = new ArrayList<>();
+    for (String line : str.split("\\r?\\n")) {
+      String jobId = extractBjobsJobIdNotFound(line);
+      if (jobId != null) {
+        results.add(new BjobsResult(jobId, null));
+      } else {
+        results.add(extractBjobsResult(line));
+      }
     }
-
-    StageExecutorResult result = null;
-    Integer exitCode = null;
-    if (column[BJOBS_STATUS].equals(BJOBS_STATUS_DONE)) {
-      result = StageExecutorResult.success();
-      exitCode = 0;
-    } else if (column[BJOBS_STATUS].equals(BJOBS_STATUS_EXIT)) {
-      result = StageExecutorResult.error();
-      exitCode = Integer.valueOf(column[BJOBS_EXIT_CODE]);
-    }
-
-    if (result != null) {
-      result.getAttributes().put(StageExecutorResultAttribute.JOB_ID, column[BJOBS_JOB_ID]);
-      result.getAttributes().put(StageExecutorResultAttribute.EXIT_CODE, String.valueOf(exitCode));
-      result.getAttributes().put(StageExecutorResultAttribute.EXEC_HOST, column[BJOBS_HOST]);
-      result.getAttributes().put(StageExecutorResultAttribute.CPU_TIME, column[BJOBS_CPU_TIME]);
-      result.getAttributes().put(StageExecutorResultAttribute.MAX_MEM, column[BJOBS_MAX_MEM]);
-      result.getAttributes().put(StageExecutorResultAttribute.AVG_MEM, column[BJOBS_AVG_MEM]);
-      return result;
-    }
-
-    return StageExecutorResult.active();
+    return results;
   }
 
-  private static StageExecutorResult extractBjobsStandardResult(String str) {
+  public static BjobsResult extractBjobsResult(String str) {
+    String[] column = str.split("\\|");
+    if (column.length != 7) {
+      throw new PipeliteException("Unexpected LSF bjobs output: " + str);
+    }
+
+    StageExecutorResult result = StageExecutorResult.active();
+    String jobId = column[BJOBS_COLUMN_JOB_ID];
+    result.getAttributes().put(StageExecutorResultAttribute.JOB_ID, jobId);
+
+    if (column[BJOBS_COLUMN_STATUS].equals(BJOBS_STATUS_DONE)) {
+      result.setResultType(StageExecutorResultType.SUCCESS);
+      result.getAttributes().put(StageExecutorResultAttribute.EXIT_CODE, String.valueOf(0));
+    } else if (column[BJOBS_COLUMN_STATUS].equals(BJOBS_STATUS_EXIT)) {
+      result.setResultType(StageExecutorResultType.ERROR);
+      result
+          .getAttributes()
+          .put(StageExecutorResultAttribute.EXIT_CODE, String.valueOf(column[BJOBS_COLUMN_EXIT_CODE]));
+    }
+
+    if (!result.isActive()) {
+      result.getAttributes().put(StageExecutorResultAttribute.EXEC_HOST, column[BJOBS_COLUMN_HOST]);
+      result.getAttributes().put(StageExecutorResultAttribute.CPU_TIME, column[BJOBS_COLUMN_CPU_TIME]);
+      result.getAttributes().put(StageExecutorResultAttribute.MAX_MEM, column[BJOBS_COLUMN_MAX_MEM]);
+      result.getAttributes().put(StageExecutorResultAttribute.AVG_MEM, column[BJOBS_COLUMN_AVG_MEM]);
+    }
+
+    return new BjobsResult(jobId, result);
+  }
+
+  public static StageExecutorResult extractBhistResult(String str) {
     if (str == null) {
-      return null;
+      return StageExecutorResult.error();
     }
     if (str.contains("Done successfully")) {
       StageExecutorResult result = StageExecutorResult.success();
@@ -310,12 +329,12 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
       return result;
     }
     if (str.contains("Completed <exit>")) {
-      int exitCode = Integer.valueOf(extractBjobsExitCode(str));
+      int exitCode = Integer.valueOf(extractBhistExitCode(str));
       StageExecutorResult result = StageExecutorResult.error();
       result.getAttributes().put(StageExecutorResultAttribute.EXIT_CODE, String.valueOf(exitCode));
       return result;
     }
-    return null;
+    return StageExecutorResult.error();
   }
 
   protected static void addArgument(StringBuilder cmd, String argument) {
