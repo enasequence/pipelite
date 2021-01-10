@@ -153,6 +153,7 @@ public class DefaultProcessRunner implements ProcessRunner {
             }
             StageExecutorResult stageExecutorResult = stageLauncher.run();
             stageService.endExecution(stage, stageExecutorResult);
+            stageService.endExecutionStageLog(stage, stageExecutorResult);
             if (stageExecutorResult.isSuccess()) {
               resetDependentStageExecution(process, stage);
               result.incrementStageSuccess();
@@ -165,6 +166,7 @@ public class DefaultProcessRunner implements ProcessRunner {
                 .withCause(ex)
                 .log("Unexpected exception when executing stage %s", stage.getStageName());
             stageService.endExecution(stage, StageExecutorResult.internalError(ex));
+            stageService.endExecutionStageLog(stage, StageExecutorResult.internalError(ex));
             mailService.sendStageExecutionMessage(process, stage);
             result.incrementStageFailed();
             result.incrementInternalError();

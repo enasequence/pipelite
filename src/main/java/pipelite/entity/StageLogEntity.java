@@ -20,7 +20,7 @@ import pipelite.stage.executor.StageExecutorResult;
 
 @Entity
 @Table(name = "PIPELITE_STAGE_LOG")
-@IdClass(StageEntityId.class)
+@IdClass(StageLogEntityId.class)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

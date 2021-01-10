@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageEntityId;
 import pipelite.entity.StageLogEntity;
+import pipelite.entity.StageLogEntityId;
 import pipelite.repository.StageLogRepository;
 import pipelite.repository.StageRepository;
 import pipelite.stage.Stage;
@@ -105,6 +106,16 @@ public class StageService {
     StageEntity stageEntity = stage.getStageEntity();
     stageEntity.endExecution(result);
     saveStage(stageEntity);
+  }
+
+  /**
+   * Called when the stage execution ends. Saves the stage log.
+   *
+   * @param stage the stage
+   * @param result the stage execution result
+   */
+  public void endExecutionStageLog(Stage stage, StageExecutorResult result) {
+    StageEntity stageEntity = stage.getStageEntity();
     saveStageLog(StageLogEntity.endExecution(stageEntity, result));
   }
 
@@ -141,7 +152,7 @@ public class StageService {
    */
   public Optional<StageLogEntity> getSavedStageLog(
       String pipelineName, String processId, String stageName) {
-    return outRepository.findById(new StageEntityId(processId, pipelineName, stageName));
+    return outRepository.findById(new StageLogEntityId(processId, pipelineName, stageName));
   }
 
   /**

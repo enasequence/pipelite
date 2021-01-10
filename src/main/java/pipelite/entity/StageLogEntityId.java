@@ -8,12 +8,20 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.repository;
+package pipelite.entity;
 
-import org.springframework.data.repository.CrudRepository;
-import org.springframework.stereotype.Repository;
-import pipelite.entity.StageLogEntity;
-import pipelite.entity.StageLogEntityId;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Repository
-public interface StageLogRepository extends CrudRepository<StageLogEntity, StageLogEntityId> {}
+import java.io.Serializable;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class StageLogEntityId implements Serializable {
+
+  private String processId;
+  private String pipelineName;
+  private String stageName;
+}
