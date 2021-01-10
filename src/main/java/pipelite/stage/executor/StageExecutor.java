@@ -14,9 +14,6 @@ import pipelite.executor.AwsBatchExecutor;
 import pipelite.executor.CmdExecutor;
 import pipelite.executor.LsfExecutor;
 import pipelite.executor.SimpleLsfExecutor;
-import pipelite.executor.cmd.CmdRunner;
-import pipelite.executor.cmd.LocalCmdRunner;
-import pipelite.executor.cmd.SshCmdRunner;
 import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.ExecutorParameters;
 
@@ -29,116 +26,51 @@ public interface StageExecutor<T extends ExecutorParameters> extends StageExecut
 
   void setExecutorParams(T executorParams);
 
+  /** Terminates the current active execution.
+   *
+   */
+  void terminate();
+
   /**
-   * Creates a command executor.
+   * Creates a command executor that executes commands locally or on a remote host using ssh.
    *
    * @param cmd the command
-   * @param cmdRunner the command runner
-   * @return a command executor.
+   * @return the command executor
    */
-  static CmdExecutor<CmdExecutorParameters> createCmdExecutor(String cmd, CmdRunner cmdRunner) {
+  static CmdExecutor<CmdExecutorParameters> createCmdExecutor(String cmd) {
     CmdExecutor<CmdExecutorParameters> cmdExecutor = new CmdExecutor<>();
     cmdExecutor.setCmd(cmd);
-    cmdExecutor.setCmdRunner(cmdRunner);
     return cmdExecutor;
   }
 
   /**
-   * Creates an executor that executes the command on the local host.
+   * Creates an executor that executes the command using LSF locally or on a remote host using ssh.
    *
    * @param cmd the command
-   * @return an executor that executes the command on the local host.
+   * @return the command executor
    */
-  static CmdExecutor<CmdExecutorParameters> createLocalCmdExecutor(String cmd) {
-    return createCmdExecutor(cmd, new LocalCmdRunner());
-  }
-
-  /**
-   * Creates an executor that connects to a remote host using ssh and executes the command.
-   *
-   * @param cmd the command
-   * @return an executor that connects to a remote host using ssh and executes the command.
-   */
-  static CmdExecutor<CmdExecutorParameters> createSshCmdExecutor(String cmd) {
-    return createCmdExecutor(cmd, new SshCmdRunner());
-  }
-
-  /**
-   * Creates an executor that executes the command using LSF.
-   *
-   * @param cmd the command
-   * @param cmdRunner the command runner
-   * @return an executor that executes the command using LSF.
-   */
-  static LsfExecutor createLsfExecutor(String cmd, CmdRunner cmdRunner) {
+  static LsfExecutor createLsfExecutor(String cmd) {
     LsfExecutor lsfExecutor = new LsfExecutor();
     lsfExecutor.setCmd(cmd);
-    lsfExecutor.setCmdRunner(cmdRunner);
     return lsfExecutor;
   }
 
   /**
-   * Creates an executor that executes the command using LSF on the local host.
+   * Creates an executor that executes the command using LSF locally or on a remote host using ssh.
    *
    * @param cmd the command
-   * @return an executor that executes the command using LSF on the local host.
+   * @return the command executor
    */
-  static LsfExecutor createLocalLsfExecutor(String cmd) {
-    return createLsfExecutor(cmd, new LocalCmdRunner());
-  }
-
-  /**
-   * Creates an executor that connects to a remote host using ssh and executes the command using
-   * LSF.
-   *
-   * @param cmd the command
-   * @return an executor that connects to a remote host using ssh and executes the command using
-   *     LSF.
-   */
-  static LsfExecutor createSshLsfExecutor(String cmd) {
-    return createLsfExecutor(cmd, new SshCmdRunner());
-  }
-
-  /**
-   * Creates an executor that executes the command using LSF.
-   *
-   * @param cmd the command
-   * @param cmdRunner the command runner
-   * @return an executor that executes the command using LSF.
-   */
-  static SimpleLsfExecutor createSimpleLsfExecutor(String cmd, CmdRunner cmdRunner) {
+  static SimpleLsfExecutor createSimpleLsfExecutor(String cmd) {
     SimpleLsfExecutor lsfExecutor = new SimpleLsfExecutor();
     lsfExecutor.setCmd(cmd);
-    lsfExecutor.setCmdRunner(cmdRunner);
     return lsfExecutor;
-  }
-
-  /**
-   * Creates an executor that executes the command using LSF on the local host.
-   *
-   * @param cmd the command
-   * @return an executor that executes the command using LSF on the local host.
-   */
-  static SimpleLsfExecutor createLocalSimpleLsfExecutor(String cmd) {
-    return createSimpleLsfExecutor(cmd, new LocalCmdRunner());
-  }
-
-  /**
-   * Creates an executor that connects to a remote host using ssh and executes the command using
-   * LSF.
-   *
-   * @param cmd the command
-   * @return an executor that connects to a remote host using ssh and executes the command using
-   *     LSF.
-   */
-  static SimpleLsfExecutor createSshSimpleLsfExecutor(String cmd) {
-    return createSimpleLsfExecutor(cmd, new SshCmdRunner());
   }
 
   /**
    * Creates an executor that uses AWSBatch.
    *
-   * @return the executor that uses AWSBatch
+   * @return the command executor
    */
   static AwsBatchExecutor createAwsBatchExecutor() {
     return new AwsBatchExecutor();

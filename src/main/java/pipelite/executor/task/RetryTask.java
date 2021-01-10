@@ -11,15 +11,34 @@
 package pipelite.executor.task;
 
 import java.time.Duration;
+
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.backoff.FixedBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 
-/** Creates retry templates. */
+/** Executes a task with retries using {@link RetryTemplate}. */
 public class RetryTask {
 
-  private RetryTask() {}
+  private final RetryTemplate retryTemplate;
+
+  public RetryTask(RetryTemplate retryTemplate) {
+    this.retryTemplate = retryTemplate;
+  }
+
+  /**
+   * Executes a task with retries using {@link RetryTemplate}.
+   *
+   * @param context the execution context
+   * @param task the operation to execute
+   * @return the result of a successful task
+   */
+  public <Context, T, E extends Throwable> T execute(
+      RetryTaskCallback<Context, T, E> task, Context context) throws E {
+    return retryTemplate.execute(r -> task.execute(context));
+  }
+
+  public static final RetryTemplate DEFAULT_FIXED = RetryTask.fixed(Duration.ofSeconds(5), 3);
 
   public static final RetryTemplate fixed(Duration backoff, int attempts) {
     RetryTemplate retryTemplate = new RetryTemplate();

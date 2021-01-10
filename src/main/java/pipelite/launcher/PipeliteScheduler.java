@@ -289,13 +289,13 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
 
     scheduleService.startExecution(pipelineName, processId);
     schedule.disable();
-    maximumExecutions.get(pipelineName).decrementAndGet();
 
     runProcess(
         pipelineName,
         process,
         (p, r) -> {
           scheduleService.endExecution(processEntity);
+          maximumExecutions.get(pipelineName).decrementAndGet();
           schedule.enable();
           scheduleService.scheduleExecution(pipelineName, schedule.getLaunchTime());
         });

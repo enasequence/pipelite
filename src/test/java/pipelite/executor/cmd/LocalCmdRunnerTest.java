@@ -15,24 +15,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
+import pipelite.stage.parameters.CmdExecutorParameters;
 
 public class LocalCmdRunnerTest {
 
   @Test
   public void writeFile() throws Exception {
-    LocalCmdRunner cmdRunner = new LocalCmdRunner();
+    LocalCmdRunner cmdRunner = new LocalCmdRunner(CmdExecutorParameters.builder().build());
     String str = "test";
     Path tempFile = Files.createTempFile("test", "'test");
-    cmdRunner.writeFile(str, tempFile, null);
+    cmdRunner.writeFile(str, tempFile);
     assertThat(new String(Files.readAllBytes(tempFile))).isEqualTo(str);
   }
 
   @Test
   public void deleteFile() throws Exception {
-    LocalCmdRunner cmdRunner = new LocalCmdRunner();
+    LocalCmdRunner cmdRunner = new LocalCmdRunner(CmdExecutorParameters.builder().build());
     Path tempFile = Files.createTempFile("test", "'test");
     assertThat(tempFile).exists();
-    cmdRunner.deleteFile(tempFile, null);
+    cmdRunner.deleteFile(tempFile);
     assertThat(tempFile).doesNotExist();
   }
 }

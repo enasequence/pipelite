@@ -24,7 +24,8 @@ import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.client.subsystem.sftp.SftpClient;
 import org.apache.sshd.client.subsystem.sftp.impl.DefaultSftpClientFactory;
 import org.apache.sshd.common.session.SessionHeartbeatController;
-import pipelite.stage.executor.InternalError;
+import pipelite.exception.PipeliteException;
+import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
 /** Executes a command over ssh. */
@@ -37,19 +38,21 @@ public class SshCmdRunner implements CmdRunner {
 
   private static final SshClient sshClient;
 
+  private final CmdExecutorParameters executorParams;
+
+  public SshCmdRunner(CmdExecutorParameters executorParams) {
+    this.executorParams = executorParams;
+  }
+
   static {
     sshClient = SshClient.setUpDefaultClient();
     sshClient.start();
   }
 
   @Override
-  public CmdRunnerResult execute(String cmd, CmdExecutorParameters executorParams) {
+  public StageExecutorResult execute(String cmd) {
     if (cmd == null || cmd.trim().isEmpty()) {
-      log.atSevere().log("No command to execute");
-      return CmdRunnerResult.builder()
-          .exitCode(EXIT_CODE_ERROR)
-          .internalError(InternalError.EXECUTE)
-          .build();
+      throw new PipeliteException("No command to execute");
     }
 
     log.atInfo().log("Executing ssh call: %s", cmd);
@@ -69,27 +72,19 @@ public class SshCmdRunner implements CmdRunner {
       Set<ClientChannelEvent> events =
           channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), executorParams.getTimeout());
       if (events.contains(ClientChannelEvent.TIMEOUT)) {
-        log.atSevere().log("Failed ssh call because of timeout: %s", cmd);
-        return CmdRunnerResult.builder()
-            .exitCode(EXIT_CODE_ERROR)
-            .internalError(InternalError.TIMEOUT)
-            .build();
+        throw new PipeliteException("Failed to execute ssh call because of timeout: " + cmd);
       }
 
       int exitCode = channel.getExitStatus();
-      return new CmdRunnerResult(exitCode, getStream(stdoutStream), getStream(stderrStream), null);
+      return CmdRunner.result(cmd, exitCode, getStream(stdoutStream), getStream(stderrStream));
+
     } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Failed ssh call: %s", cmd);
-      return CmdRunnerResult.builder()
-          .exitCode(EXIT_CODE_ERROR)
-          .internalError(InternalError.EXECUTE)
-          .build();
+      throw new PipeliteException("Failed to execute ssh call: " + cmd, ex);
     }
   }
 
   @Override
-  public void writeFile(String str, Path path, CmdExecutorParameters executorParams)
-      throws IOException {
+  public void writeFile(String str, Path path) {
     log.atInfo().log("Writing file %s", path);
     try (ClientSession session = createSession(executorParams)) {
       authSession(session);
@@ -103,13 +98,12 @@ public class SshCmdRunner implements CmdRunner {
                 SftpClient.OpenMode.Truncate));
       }
     } catch (IOException ex) {
-      log.atSevere().withCause(ex).log("Failed to write file " + path);
-      throw ex;
+      throw new PipeliteException("Failed to write file " + path, ex);
     }
   }
 
   @Override
-  public void deleteFile(Path path, CmdExecutorParameters executorParams) throws IOException {
+  public void deleteFile(Path path) {
     log.atInfo().log("Deleting file %s", path);
     try (ClientSession session = createSession(executorParams)) {
       authSession(session);
@@ -118,8 +112,7 @@ public class SshCmdRunner implements CmdRunner {
         channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), SSH_VERIFY_TIMEOUT);
       }
     } catch (IOException ex) {
-      log.atSevere().log("Failed to delete file %s", path);
-      throw ex;
+      throw new PipeliteException("Failed to delete file " + path, ex);
     }
   }
 

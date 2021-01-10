@@ -21,7 +21,6 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.SshTestConfiguration;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.*;
-import pipelite.stage.executor.InternalError;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
@@ -37,7 +36,7 @@ public class SshCmdExecutorTest {
 
     String stageName = UniqueStringGenerator.randomStageName();
 
-    CmdExecutor<CmdExecutorParameters> executor = StageExecutor.createSshCmdExecutor("echo test");
+    CmdExecutor<CmdExecutorParameters> executor = StageExecutor.createCmdExecutor("echo test");
     executor.setExecutorParams(
         CmdExecutorParameters.builder()
             .host(sshTestConfiguration.getHost())
@@ -47,7 +46,7 @@ public class SshCmdExecutorTest {
 
     StageExecutorResult result = stage.execute(PIPELINE_NAME, PROCESS_ID);
     // Ignore timeout errors.
-    if (InternalError.TIMEOUT == result.getInternalError()) {
+    if (result.isTimeoutError()) {
       return;
     }
     assertThat(result.getResultType()).isEqualTo(StageExecutorResultType.SUCCESS);

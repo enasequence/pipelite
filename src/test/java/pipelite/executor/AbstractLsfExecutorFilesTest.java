@@ -18,17 +18,24 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
 import pipelite.exception.PipeliteException;
-import pipelite.executor.cmd.CmdRunnerResult;
+import pipelite.executor.cmd.CmdRunner;
 import pipelite.executor.cmd.LocalCmdRunner;
+import pipelite.executor.context.AbstractLsfContext;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorRequest;
+import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
 public class AbstractLsfExecutorFilesTest {
 
   private static class TestLsfExecutor extends AbstractLsfExecutor<CmdExecutorParameters> {
     @Override
-    protected String getSubmitCmd(StageExecutorRequest request) {
+    public String getSubmitCmd(StageExecutorRequest request) {
+      throw new PipeliteException("");
+    }
+
+    @Override
+    protected AbstractLsfContext getSharedContext() {
       throw new PipeliteException("");
     }
   }
@@ -73,9 +80,11 @@ public class AbstractLsfExecutorFilesTest {
     File file = File.createTempFile("pipelite-test", "");
     file.createNewFile();
     Files.write(file.toPath(), "test".getBytes());
-    CmdRunnerResult runnerResult =
+
+    CmdRunner cmdRunner = new LocalCmdRunner(CmdExecutorParameters.builder().build());
+    StageExecutorResult result =
         AbstractLsfExecutor.writeFileToStdout(
-            new LocalCmdRunner(), file.getAbsolutePath(), CmdExecutorParameters.builder().build());
-    assertThat(runnerResult.getStdout()).isEqualTo("test");
+            cmdRunner, file.getAbsolutePath(), CmdExecutorParameters.builder().build());
+    assertThat(result.getStageLog()).isEqualTo("test");
   }
 }

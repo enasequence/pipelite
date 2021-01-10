@@ -34,6 +34,9 @@ class StageEntityTest {
       return null;
     }
 
+    @Override
+    public void terminate() {}
+
     public String getTest() {
       return test;
     }

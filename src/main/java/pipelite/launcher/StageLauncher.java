@@ -12,9 +12,12 @@ package pipelite.launcher;
 
 import com.google.common.flogger.FluentLogger;
 import java.time.Duration;
+import java.time.ZonedDateTime;
+
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.ExecutorConfiguration;
+import pipelite.exception.PipeliteException;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.stage.Stage;
@@ -31,6 +34,7 @@ public class StageLauncher {
   private final String pipelineName;
   private final Process process;
   private final Stage stage;
+  private final ZonedDateTime timeout;
 
   private static final Duration POLL_FREQUENCY = Duration.ofMinutes(1);
 
@@ -39,16 +43,30 @@ public class StageLauncher {
       String pipelineName,
       Process process,
       Stage stage) {
-    this.executorConfiguration = executorConfiguration;
-    this.pipelineName = pipelineName;
-    this.process = process;
-    this.stage = stage;
     Assert.notNull(executorConfiguration, "Missing stage configuration");
     Assert.notNull(pipelineName, "Missing pipeline name");
     Assert.notNull(process, "Missing process");
     Assert.notNull(process.getProcessEntity(), "Missing process entity");
     Assert.notNull(stage, "Missing stage");
     Assert.notNull(stage.getStageEntity(), "Missing stage entity");
+    this.executorConfiguration = executorConfiguration;
+    this.pipelineName = pipelineName;
+    this.process = process;
+    this.stage = stage;
+    this.timeout = ZonedDateTime.now().plus(getTimeout(stage));
+  }
+
+  /**
+   * Returns the stage execution timeout.
+   *
+   * @return The stage execution timeout.
+   */
+  public static Duration getTimeout(Stage stage) {
+    ExecutorParameters executorParams = stage.getExecutor().getExecutorParams();
+    if (executorParams.getTimeout() != null) {
+      return executorParams.getTimeout();
+    }
+    return ExecutorParameters.DEFAULT_TIMEOUT;
   }
 
   /**
@@ -83,6 +101,7 @@ public class StageLauncher {
    * Executes the stage and returns the stage execution result.
    *
    * @return The stage execution result.
+   * @throws PipeliteException if could not execute the stage
    */
   public StageExecutorResult run() {
     logContext(log.atInfo()).log("Executing stage");
@@ -102,15 +121,14 @@ public class StageLauncher {
         result = pollExecution();
       }
     } catch (Exception ex) {
-      result = StageExecutorResult.error(ex);
+      throw new PipeliteException(ex);
     }
     if (result.isSuccess()) {
       logContext(log.atInfo()).log("Stage execution succeeded");
     } else if (result.isError()) {
       logContext(log.atSevere()).log("Stage execution failed");
     } else {
-      logContext(log.atSevere()).log("Unexpected stage execution result type");
-      throw new RuntimeException("Unexpected stage execution result type");
+      throw new PipeliteException("Unexpected stage execution result type");
     }
     return result;
   }
@@ -125,26 +143,29 @@ public class StageLauncher {
     while (true) {
       try {
         logContext(log.atInfo()).log("Waiting asynchronous stage execution to complete");
-        result =
-            stage
-                .getExecutor()
-                .execute(
-                    StageExecutorRequest.builder()
-                        .pipelineName(pipelineName)
-                        .processId(process.getProcessId())
-                        .stage(stage)
-                        .build());
+        result = stage.execute(pipelineName, process.getProcessId());
         if (!result.isActive()) {
           // The asynchronous stage execution has completed.
-          break;
+          return result;
         }
       } catch (Exception ex) {
-        result = StageExecutorResult.error(ex);
-        break;
+        logContext(log.atSevere().withCause(ex)).log("Unexpected exception when polling job.");
+        throw new PipeliteException(ex);
       }
-      Time.wait(POLL_FREQUENCY);
+
+      if (ZonedDateTime.now().isAfter(timeout)) {
+        logContext(log.atSevere()).log("Maximum run time exceeded. Terminating job.");
+        try {
+          stage.getExecutor().terminate();
+        } catch (Exception ex) {
+          logContext(log.atSevere().withCause(ex))
+              .log("Unexpected exception when terminating job.");
+          throw new PipeliteException(ex);
+        }
+        return StageExecutorResult.timeoutError();
+      }
+      Time.waitUntil(POLL_FREQUENCY, timeout);
     }
-    return result;
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {

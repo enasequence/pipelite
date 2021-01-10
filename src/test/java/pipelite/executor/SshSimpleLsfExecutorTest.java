@@ -21,7 +21,6 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LsfTestConfiguration;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.*;
-import pipelite.stage.executor.InternalError;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 import pipelite.time.Time;
 
@@ -35,8 +34,7 @@ public class SshSimpleLsfExecutorTest {
 
   @Test
   public void test() {
-
-    SimpleLsfExecutor executor = StageExecutor.createSshSimpleLsfExecutor("echo test");
+    SimpleLsfExecutor executor = StageExecutor.createSimpleLsfExecutor("echo test");
     executor.setExecutorParams(
         SimpleLsfExecutorParameters.builder()
             .host(lsfTestConfiguration.getHost())
@@ -69,7 +67,7 @@ public class SshSimpleLsfExecutorTest {
     }
 
     // Ignore timeout errors.
-    if (InternalError.TIMEOUT == result.getInternalError()) {
+    if (result.isTimeoutError()) {
       return;
     }
 

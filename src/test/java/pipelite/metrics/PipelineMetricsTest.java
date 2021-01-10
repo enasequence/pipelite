@@ -48,9 +48,9 @@ public class PipelineMetricsTest {
     assertThat(TimeSeriesMetrics.getCount(metrics.stage().getFailedTimeSeries())).isZero();
 
     ProcessRunnerResult result = new ProcessRunnerResult();
-    result.stageSuccess();
-    result.stageFailed();
-    result.internalError();
+    result.incrementStageSuccess();
+    result.incrementStageFailed();
+    result.incrementInternalError();
     metrics.increment(ProcessState.COMPLETED, result);
 
     assertThat(metrics.process().getCompletedCount()).isEqualTo(1);
@@ -77,9 +77,9 @@ public class PipelineMetricsTest {
     assertThat(TimeSeriesMetrics.getCount(metrics.stage().getFailedTimeSeries())).isZero();
 
     ProcessRunnerResult result = new ProcessRunnerResult();
-    result.stageSuccess();
-    result.stageFailed();
-    result.internalError();
+    result.incrementStageSuccess();
+    result.incrementStageFailed();
+    result.incrementInternalError();
     metrics.increment(ProcessState.FAILED, result);
 
     assertThat(metrics.process().getCompletedCount()).isZero();

@@ -17,17 +17,17 @@ public class ProcessRunnerResult {
   private AtomicLong stageFailedCount = new AtomicLong();
   private AtomicLong internalErrorCount = new AtomicLong();
 
-  public ProcessRunnerResult stageSuccess() {
+  public ProcessRunnerResult incrementStageSuccess() {
     this.stageSuccessCount.incrementAndGet();
     return this;
   }
 
-  public ProcessRunnerResult stageFailed() {
+  public ProcessRunnerResult incrementStageFailed() {
     this.stageFailedCount.incrementAndGet();
     return this;
   }
 
-  public ProcessRunnerResult internalError() {
+  public ProcessRunnerResult incrementInternalError() {
     this.internalErrorCount.incrementAndGet();
     return this;
   }

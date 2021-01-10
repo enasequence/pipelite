@@ -8,37 +8,26 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.executor;
+package pipelite.executor.context;
 
-import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.flogger.Flogger;
-import pipelite.executor.cmd.*;
-import pipelite.stage.executor.StageExecutorRequest;
-import pipelite.stage.executor.StageExecutorResult;
+import pipelite.executor.AbstractLsfExecutor;
+import pipelite.executor.cmd.CmdRunner;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
-/** Executes a command. Must be serializable to json. */
+/** Cache of contexts for operations that can be shared between LSF executors. */
 @Flogger
-@Getter
-@Setter
-public class CmdExecutor<T extends CmdExecutorParameters> extends AbstractExecutor<T>
-    implements JsonSerializableExecutor {
-
-  /** The command to be executed. */
-  private String cmd;
+public class AbstractLsfContextCache<T extends CmdExecutorParameters>
+    extends SharedExecutorContextCache<
+        AbstractLsfExecutor<T>, AbstractLsfContextId, AbstractLsfContext> {
 
   @Override
-  public StageExecutorResult execute(StageExecutorRequest request) {
-    CmdRunner cmdRunner = CmdRunner.create(getExecutorParams());
-    return cmdRunner.execute(cmd);
+  protected AbstractLsfContextId createSharedContextId(AbstractLsfExecutor<T> executor) {
+    return new AbstractLsfContextId(executor.getExecutorParams().getHost());
   }
 
   @Override
-  public void terminate() {}
-
-  @Override
-  public String toString() {
-    return serialize();
+  protected AbstractLsfContext createSharedContext(AbstractLsfExecutor<T> executor) {
+    return new AbstractLsfContext(CmdRunner.create(executor.getExecutorParams()));
   }
 }

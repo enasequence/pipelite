@@ -41,6 +41,7 @@ import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.WebConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
+import pipelite.entity.StageLogEntity;
 import pipelite.launcher.process.creator.ProcessCreator;
 import pipelite.launcher.process.queue.DefaultProcessQueue;
 import pipelite.launcher.process.runner.DefaultProcessRunnerPool;
@@ -220,10 +221,6 @@ public class PipeliteLauncherTest {
   private void assertLauncherMetrics(TestProcessFactory f) {
     PipelineMetrics pipelineMetrics = metrics.pipeline(f.getPipelineName());
 
-    assertThat(pipelineMetrics.getInternalErrorCount()).isEqualTo(0);
-    assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.getInternalErrorTimeSeries()))
-        .isEqualTo(0);
-
     if (f.stageTestResult != StageTestResult.SUCCESS) {
       assertThat(pipelineMetrics.process().getFailedCount())
           .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
@@ -271,6 +268,8 @@ public class PipeliteLauncherTest {
     for (int i = 0; i < f.stageCnt; ++i) {
       StageEntity stageEntity =
           stageService.getSavedStage(f.getPipelineName(), processId, "STAGE" + i).get();
+      StageLogEntity stageLogEntity =
+          stageService.getSavedStageLog(f.getPipelineName(), processId, "STAGE" + i).get();
       assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
       assertThat(stageEntity.getProcessId()).isEqualTo(processId);
       assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
@@ -292,8 +291,9 @@ public class PipeliteLauncherTest {
         assertThat(stageEntity.getResultParams()).isNull();
       } else if (f.stageTestResult == StageTestResult.EXCEPTION) {
         assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.ERROR);
-        assertThat(stageEntity.getResultParams())
-            .contains("exception\" : \"java.lang.RuntimeException: Expected exception");
+        assertThat(stageLogEntity.getStageLog())
+            .contains(
+                "pipelite.exception.PipeliteException: java.lang.RuntimeException: Expected exception");
       } else {
         assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.SUCCESS);
         assertThat(stageEntity.getResultParams()).isNull();

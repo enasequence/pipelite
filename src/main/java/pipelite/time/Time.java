@@ -42,14 +42,18 @@ public class Time {
    *     current time was past the given time
    */
   public static void waitUntil(Duration duration, ZonedDateTime until) {
-    if (ZonedDateTime.now().isAfter(until)) {
-      throw new PipeliteInterruptedException("Wait timeout");
-    }
-    try {
-      Thread.sleep(duration.toMillis());
-    } catch (InterruptedException ex) {
-      Thread.interrupted();
-      throw new PipeliteInterruptedException("Wait interrupted");
+    if (until == null) {
+      wait(duration);
+    } else {
+      if (ZonedDateTime.now().isAfter(until)) {
+        throw new PipeliteInterruptedException("Wait timeout");
+      }
+      try {
+        Thread.sleep(duration.toMillis());
+      } catch (InterruptedException ex) {
+        Thread.interrupted();
+        throw new PipeliteInterruptedException("Wait interrupted");
+      }
     }
   }
 }

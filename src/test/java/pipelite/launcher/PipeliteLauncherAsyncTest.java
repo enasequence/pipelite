@@ -51,7 +51,7 @@ import pipelite.stage.parameters.ExecutorParameters;
       "pipelite.launcher.processRunnerFrequency=250ms",
       "pipelite.launcher.shutdownIfIdle=true"
     })
-@DirtiesContext
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class PipeliteLauncherAsyncTest {
 
   private static final int PROCESS_CNT = 2;
@@ -190,6 +190,9 @@ public class PipeliteLauncherAsyncTest {
       }
       return true;
     }
+
+    @Override
+    public void terminate() {}
   }
 
   public static class SubmitSuccessPollSuccessExecutor extends TestExecutor {
@@ -283,6 +286,7 @@ public class PipeliteLauncherAsyncTest {
     new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
 
     PipelineMetrics pipelineMetrics = metrics.pipeline(f.getPipelineName());
+
     assertThat(pipelineMetrics.getInternalErrorCount()).isEqualTo(0);
     assertThat(pipelineMetrics.process().getCompletedCount()).isZero();
     assertThat(pipelineMetrics.process().getFailedCount()).isEqualTo(PROCESS_CNT);
@@ -301,7 +305,7 @@ public class PipeliteLauncherAsyncTest {
     new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
 
     PipelineMetrics pipelineMetrics = metrics.pipeline(f.getPipelineName());
-    assertThat(pipelineMetrics.getInternalErrorCount()).isEqualTo(0);
+    assertThat(pipelineMetrics.getInternalErrorCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipelineMetrics.process().getCompletedCount()).isZero();
     assertThat(pipelineMetrics.process().getFailedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(PROCESS_CNT);
@@ -337,7 +341,7 @@ public class PipeliteLauncherAsyncTest {
     new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
 
     PipelineMetrics pipelineMetrics = metrics.pipeline(f.getPipelineName());
-    assertThat(pipelineMetrics.getInternalErrorCount()).isEqualTo(0);
+    assertThat(pipelineMetrics.getInternalErrorCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipelineMetrics.process().getCompletedCount()).isZero();
     assertThat(pipelineMetrics.process().getFailedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(PROCESS_CNT);

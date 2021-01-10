@@ -12,12 +12,7 @@ package pipelite.executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import org.junit.jupiter.api.Test;
-import pipelite.executor.cmd.LocalCmdRunner;
-import pipelite.executor.cmd.SshCmdRunner;
 import pipelite.json.Json;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
@@ -26,9 +21,9 @@ import pipelite.stage.executor.StageExecutorRequest;
 public class LsfExecutorSerializeTest {
 
   @Test
-  public void localLsfExecutor() {
+  public void test() {
     String cmd = "echo test";
-    LsfExecutor executor = StageExecutor.createLocalLsfExecutor(cmd);
+    LsfExecutor executor = StageExecutor.createLsfExecutor(cmd);
     Stage stage = Stage.builder().stageName("STAGE_NAME").executor(executor).build();
     StageExecutorRequest request =
         StageExecutorRequest.builder()
@@ -40,68 +35,21 @@ public class LsfExecutorSerializeTest {
     executor.setJobId("test");
     executor.setOutFile(AbstractLsfExecutor.getOutFile(request, null));
     executor.setDefinitionFile(LsfExecutor.getDefinitionFile(request, null));
-    ZonedDateTime startTime =
-        ZonedDateTime.of(LocalDateTime.of(2020, 1, 1, 1, 1), ZoneId.of("UTC"));
-    executor.setStartTime(startTime);
     String json = Json.serialize(executor);
     assertThat(json)
         .isEqualTo(
             "{\n"
                 + "  \"cmd\" : \"echo test\",\n"
-                + "  \"cmdRunner\" : \"pipelite.executor.cmd.LocalCmdRunner\",\n"
                 + "  \"jobId\" : \"test\",\n"
-                + "  \"startTime\" : \"2020-01-01T01:01:00Z\",\n"
                 + "  \"outFile\" : \"pipelite/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.out\",\n"
                 + "  \"definitionFile\" : \"pipelite/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.job\"\n"
                 + "}");
     LsfExecutor deserializedLsfExecutor = Json.deserialize(json, LsfExecutor.class);
     assertThat(deserializedLsfExecutor.getCmd()).isEqualTo(cmd);
-    assertThat(deserializedLsfExecutor.getCmdRunner()).isInstanceOf(LocalCmdRunner.class);
     assertThat(deserializedLsfExecutor.getJobId()).isEqualTo("test");
     assertThat(deserializedLsfExecutor.getOutFile())
         .isEqualTo("pipelite/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.out");
     assertThat(deserializedLsfExecutor.getDefinitionFile())
         .isEqualTo("pipelite/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.job");
-    assertThat(deserializedLsfExecutor.getStartTime()).isEqualTo(startTime);
-  }
-
-  @Test
-  public void sshLsfExecutor() {
-    String cmd = "echo test";
-    LsfExecutor executor = StageExecutor.createSshLsfExecutor(cmd);
-    Stage stage = Stage.builder().stageName("STAGE_NAME").executor(executor).build();
-    StageExecutorRequest request =
-        StageExecutorRequest.builder()
-            .pipelineName("PIPELINE_NAME")
-            .processId("PROCESS_ID")
-            .stage(stage)
-            .build();
-
-    executor.setJobId("test");
-    executor.setOutFile(AbstractLsfExecutor.getOutFile(request, null));
-    executor.setDefinitionFile(LsfExecutor.getDefinitionFile(request, null));
-    ZonedDateTime startTime =
-        ZonedDateTime.of(LocalDateTime.of(2020, 1, 1, 1, 1), ZoneId.of("UTC"));
-    executor.setStartTime(startTime);
-    String json = Json.serialize(executor);
-    assertThat(json)
-        .isEqualTo(
-            "{\n"
-                + "  \"cmd\" : \"echo test\",\n"
-                + "  \"cmdRunner\" : \"pipelite.executor.cmd.SshCmdRunner\",\n"
-                + "  \"jobId\" : \"test\",\n"
-                + "  \"startTime\" : \"2020-01-01T01:01:00Z\",\n"
-                + "  \"outFile\" : \"pipelite/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.out\",\n"
-                + "  \"definitionFile\" : \"pipelite/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.job\"\n"
-                + "}");
-    LsfExecutor deserializedLsfExecutor = Json.deserialize(json, LsfExecutor.class);
-    assertThat(deserializedLsfExecutor.getCmd()).isEqualTo(cmd);
-    assertThat(deserializedLsfExecutor.getCmdRunner()).isInstanceOf(SshCmdRunner.class);
-    assertThat(deserializedLsfExecutor.getJobId()).isEqualTo("test");
-    assertThat(deserializedLsfExecutor.getOutFile())
-        .isEqualTo("pipelite/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.out");
-    assertThat(deserializedLsfExecutor.getDefinitionFile())
-        .isEqualTo("pipelite/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.job");
-    assertThat(deserializedLsfExecutor.getStartTime()).isEqualTo(startTime);
   }
 }

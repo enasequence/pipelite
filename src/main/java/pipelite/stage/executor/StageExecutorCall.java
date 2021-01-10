@@ -11,6 +11,7 @@
 package pipelite.stage.executor;
 
 /** Executes a stage. */
+@FunctionalInterface
 public interface StageExecutorCall {
   /**
    * Called repeatedly to execute the stage until it is not ACTIVE. Only asynchronous executions are

@@ -8,6 +8,10 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.executor.service;
+package pipelite.executor.context;
 
-public interface ExecutorService {}
+import lombok.extern.flogger.Flogger;
+import pipelite.stage.parameters.SimpleLsfExecutorParameters;
+
+@Flogger
+public class SimpleLsfContextCache extends AbstractLsfContextCache<SimpleLsfExecutorParameters> {}

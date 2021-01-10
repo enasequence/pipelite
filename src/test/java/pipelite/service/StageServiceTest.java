@@ -47,6 +47,9 @@ class StageServiceTest {
       return null;
     }
 
+    @Override
+    public void terminate() {}
+
     public StageExecutorResultType getResultType() {
       return resultType;
     }

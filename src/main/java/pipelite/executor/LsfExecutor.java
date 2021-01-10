@@ -10,7 +10,6 @@
  */
 package pipelite.executor;
 
-import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -18,8 +17,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
-import pipelite.exception.PipeliteException;
 import pipelite.executor.cmd.CmdRunnerUtils;
+import pipelite.executor.context.AbstractLsfContext;
+import pipelite.executor.context.LsfContextCache;
+import pipelite.executor.task.RetryTask;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.stage.parameters.LsfExecutorParameters;
@@ -34,6 +35,13 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
   private String definitionFile;
 
   private static final String JOB_FILE_SUFFIX = ".job";
+
+  private static final LsfContextCache sharedContextCache = new LsfContextCache();
+
+  @Override
+  protected AbstractLsfContext getSharedContext() {
+    return sharedContextCache.getSharedContext(this);
+  }
 
   @Override
   public final String getSubmitCmd(StageExecutorRequest request) {
@@ -59,7 +67,7 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
         break;
     }
     addArgument(cmd, definitionFile);
-    return cmd.toString();
+    return cmd.toString() + " " + getCmd();
   }
 
   @Override
@@ -67,24 +75,14 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
     definitionFile = getDefinitionFile(request, getExecutorParams());
     URL definitionUrl =
         ExecutorParameters.validateUrl(getExecutorParams().getDefinition(), "definition");
-    String definition = CmdRunnerUtils.read(definitionUrl);
-    definition = applyDefinitionParameters(definition, getExecutorParams().getParameters());
-    try {
-      getCmdRunner().writeFile(definition, Paths.get(definitionFile), getExecutorParams());
-    } catch (IOException ex) {
-      throw new PipeliteException(ex);
-    }
-  }
-
-  @Override
-  protected void afterSubmit(StageExecutorRequest request) {
-    /*
-    try {
-      getCmdRunner().deleteFile(Paths.get(definitionFile), getExecutorParams());
-    } catch (IOException ex) {
-      throw new PipeliteException(ex);
-    }
-    */
+    final String definition =
+        applyDefinitionParameters(
+            CmdRunnerUtils.read(definitionUrl), getExecutorParams().getParameters());
+    RetryTask.DEFAULT_FIXED.execute(
+        r -> {
+          getCmdRunner().writeFile(definition, Paths.get(definitionFile));
+          return null;
+        });
   }
 
   public void setDefinitionFile(String definitionFile) {

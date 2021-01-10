@@ -14,6 +14,8 @@ import java.time.Duration;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
+import pipelite.executor.context.AbstractLsfContext;
+import pipelite.executor.context.SimpleLsfContextCache;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 
@@ -22,6 +24,13 @@ import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 @Getter
 @Setter
 public class SimpleLsfExecutor extends AbstractLsfExecutor<SimpleLsfExecutorParameters> {
+
+  private static final SimpleLsfContextCache sharedContextCache = new SimpleLsfContextCache();
+
+  @Override
+  protected AbstractLsfContext getSharedContext() {
+    return sharedContextCache.getSharedContext(this);
+  }
 
   @Override
   public final String getSubmitCmd(StageExecutorRequest request) {
@@ -71,6 +80,6 @@ public class SimpleLsfExecutor extends AbstractLsfExecutor<SimpleLsfExecutorPara
       addArgument(cmd, queue);
     }
 
-    return cmd.toString();
+    return cmd.toString() + " " + getCmd();
   }
 }

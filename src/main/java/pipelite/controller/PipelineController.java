@@ -237,7 +237,7 @@ public class PipelineController {
       PipelineMetrics metrics = new PipelineMetrics("pipeline" + i, new SimpleMeterRegistry());
       for (int j = 0; j < timeCount; ++j) {
         ProcessRunnerResult r = new ProcessRunnerResult();
-        r.stageSuccess();
+        r.incrementStageSuccess();
         ZonedDateTime now = since.plus(increment.multipliedBy(j + 1));
         metrics.process().setRunningCount(i, now);
         metrics.increment(ProcessState.COMPLETED, r, now);

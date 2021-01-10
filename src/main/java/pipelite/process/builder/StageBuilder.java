@@ -14,16 +14,11 @@ import static pipelite.stage.executor.StageExecutorResultType.ACTIVE;
 import static pipelite.stage.executor.StageExecutorResultType.SUCCESS;
 
 import java.util.*;
-import pipelite.executor.AwsBatchExecutor;
-import pipelite.executor.CallExecutor;
-import pipelite.executor.CmdExecutor;
-import pipelite.executor.LsfExecutor;
+
+import pipelite.executor.*;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.*;
-import pipelite.stage.parameters.AwsBatchExecutorParameters;
-import pipelite.stage.parameters.CmdExecutorParameters;
-import pipelite.stage.parameters.ExecutorParameters;
-import pipelite.stage.parameters.LsfExecutorParameters;
+import pipelite.stage.parameters.*;
 
 public class StageBuilder {
   private final ProcessBuilder processBuilder;
@@ -47,87 +42,66 @@ public class StageBuilder {
   }
 
   /**
-   * An executor that runs a command line command locally.
-   *
-   * @param cmd the command line command to execute
-   */
-  public ProcessBuilder withLocalCmdExecutor(String cmd) {
-    return withLocalCmdExecutor(cmd, new CmdExecutorParameters());
-  }
-
-  /**
-   * An executor that runs a command line command locally.
+   * An executor that runs a command line command locally or on a remote host using ssh.
    *
    * @param cmd the command line command to execute
    * @oaram params the executor parameters
    */
-  public ProcessBuilder withLocalCmdExecutor(String cmd, CmdExecutorParameters params) {
-    CmdExecutor<CmdExecutorParameters> executor = StageExecutor.createLocalCmdExecutor(cmd);
+  public ProcessBuilder withCmdExecutor(String cmd, CmdExecutorParameters params) {
+    CmdExecutor<CmdExecutorParameters> executor = StageExecutor.createCmdExecutor(cmd);
     executor.setExecutorParams(params);
     return addStage(executor);
   }
 
   /**
-   * An executor that runs a command line command remotely over ssh.
+   * An executor that runs a command line command locally or on a remote host using ssh.
    *
    * @param cmd the command line command to execute
    */
-  public ProcessBuilder withSshCmdExecutor(String cmd) {
-    return withSshCmdExecutor(cmd, new CmdExecutorParameters());
+  public ProcessBuilder withCmdExecutor(String cmd) {
+    return withCmdExecutor(cmd, new CmdExecutorParameters());
   }
 
   /**
-   * An executor that runs a command line command remotely over ssh.
+   * An executor that runs a command line command using LSF locally or on a remote host using ssh.
    *
    * @param cmd the command line command to execute
    * @oaram params the executor parameters
    */
-  public ProcessBuilder withSshCmdExecutor(String cmd, CmdExecutorParameters params) {
-    CmdExecutor<CmdExecutorParameters> executor = StageExecutor.createSshCmdExecutor(cmd);
+  public ProcessBuilder withLsfExecutor(String cmd, LsfExecutorParameters params) {
+    LsfExecutor executor = StageExecutor.createLsfExecutor(cmd);
     executor.setExecutorParams(params);
     return addStage(executor);
   }
 
   /**
-   * An executor that runs a command line command locally using LSF.
+   * An executor that runs a command line command using LSF locally or on a remote host using ssh.
    *
    * @param cmd the command line command to execute
    */
-  public ProcessBuilder withLocalLsfExecutor(String cmd) {
-    return withLocalLsfExecutor(cmd, new LsfExecutorParameters());
+  public ProcessBuilder withLsfExecutor(String cmd) {
+    return withLsfExecutor(cmd, new LsfExecutorParameters());
   }
 
   /**
-   * An executor that runs a command line command locally using LSF.
+   * An executor that runs a command line command using LSF locally or on a remote host using ssh.
    *
    * @param cmd the command line command to execute
    * @oaram params the executor parameters
    */
-  public ProcessBuilder withLocalLsfExecutor(String cmd, LsfExecutorParameters params) {
-    LsfExecutor executor = StageExecutor.createLocalLsfExecutor(cmd);
+  public ProcessBuilder withSimpleLsfExecutor(String cmd, SimpleLsfExecutorParameters params) {
+    SimpleLsfExecutor executor = StageExecutor.createSimpleLsfExecutor(cmd);
     executor.setExecutorParams(params);
     return addStage(executor);
   }
 
   /**
-   * An executor that runs a command line command remotely over ssh using LSF.
+   * An executor that runs a command line command using LSF locally or on a remote host using ssh.
    *
    * @param cmd the command line command to execute
    */
-  public ProcessBuilder withSshLsfExecutor(String cmd) {
-    return withLocalLsfExecutor(cmd, new LsfExecutorParameters());
-  }
-
-  /**
-   * An executor that runs a command line command remotely over ssh using LSF.
-   *
-   * @param cmd the command line command to execute
-   * @oaram params the executor parameters
-   */
-  public ProcessBuilder withSshLsfExecutor(String cmd, LsfExecutorParameters params) {
-    LsfExecutor executor = StageExecutor.createSshLsfExecutor(cmd);
-    executor.setExecutorParams(params);
-    return addStage(executor);
+  public ProcessBuilder witSimpleLsfExecutor(String cmd) {
+    return withSimpleLsfExecutor(cmd, new SimpleLsfExecutorParameters());
   }
 
   /**
@@ -141,6 +115,12 @@ public class StageBuilder {
     return addStage(executor);
   }
 
+  /**
+   * An executor that runs using AWSBatch.
+   */
+  public ProcessBuilder withAwsBatchExecutor() {
+    return withAwsBatchExecutor(AwsBatchExecutorParameters.builder().build());
+  }
   /**
    * An executor that executes the given call.
    *

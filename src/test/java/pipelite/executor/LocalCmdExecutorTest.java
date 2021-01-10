@@ -27,7 +27,7 @@ public class LocalCmdExecutorTest {
   public void test() {
     String stageName = UniqueStringGenerator.randomStageName();
 
-    CmdExecutor<CmdExecutorParameters> executor = StageExecutor.createLocalCmdExecutor("echo test");
+    CmdExecutor<CmdExecutorParameters> executor = StageExecutor.createCmdExecutor("echo test");
     executor.setExecutorParams(CmdExecutorParameters.builder().build());
     Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
 

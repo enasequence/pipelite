@@ -51,9 +51,8 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .build();
     String outFile = AbstractLsfExecutor.getOutFile(request, params);
     executor.setOutFile(outFile);
-    String cmd = executor.getCmd(request);
-
-    assertThat(cmd)
+    String submitCmd = executor.getSubmitCmd(request);
+    assertThat(submitCmd)
         .isEqualTo(
             "bsub -oo "
                 + outFile

@@ -10,22 +10,28 @@
  */
 package pipelite.executor;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.flogger.FluentLogger;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
+import pipelite.exception.PipeliteException;
 import pipelite.exception.PipeliteInterruptedException;
 import pipelite.executor.cmd.CmdRunner;
-import pipelite.executor.cmd.CmdRunnerResult;
+import pipelite.executor.context.*;
+import pipelite.executor.task.RetryTask;
 import pipelite.log.LogKey;
 import pipelite.stage.executor.*;
-import pipelite.stage.executor.InternalError;
 import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.time.Time;
@@ -34,12 +40,20 @@ import pipelite.time.Time;
 @Flogger
 @Getter
 @Setter
-public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters> extends CmdExecutor<T>
-    implements JsonSerializableExecutor {
+@JsonIgnoreProperties({"cmdRunner"})
+public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
+    extends AbstractExecutor<T> implements JsonSerializableExecutor {
 
+  /** The command to be executed. */
+  private String cmd;
+
+  /** The JSF job id. */
   private String jobId;
-  private ZonedDateTime startTime;
+
+  /** The LSF output file. */
   private String outFile;
+
+  protected abstract AbstractLsfContext getSharedContext();
 
   private static final String OUT_FILE_SUFFIX = ".out";
   private static final Duration OUT_FILE_POLL_TIMEOUT = Duration.ofMinutes(5);
@@ -48,7 +62,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters> exten
   protected static final String BSUB_CMD = "bsub";
   private static final String BJOBS_STANDARD_CMD = "bjobs -l ";
   private static final String BJOBS_CUSTOM_CMD =
-      "bjobs -o \"stat exit_code cpu_used max_mem avg_mem exec_host delimiter='|'\" -noheader ";
+      "bjobs -o \"jobid stat exit_code cpu_used max_mem avg_mem exec_host delimiter='|'\" -noheader ";
   private static final String BHIST_CMD = "bhist -l ";
   private static final String BKILL_CMD = "bkill ";
   private static final String MKDIR_CMD = "mkdir -p ";
@@ -60,171 +74,165 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters> exten
       Pattern.compile("Exited with exit code (\\d+)");
   private static final String BJOBS_STATUS_DONE = "DONE";
   private static final String BJOBS_STATUS_EXIT = "EXIT";
-  private static final int BJOBS_STATUS = 0;
-  private static final int BJOBS_EXIT_CODE = 1;
-  private static final int BJOBS_CPU_TIME = 2;
-  private static final int BJOBS_MAX_MEM = 3;
-  private static final int BJOBS_AVG_MEM = 4;
-  private static final int BJOBS_HOST = 5;
+  private static final int BJOBS_JOB_ID = 0;
+  private static final int BJOBS_STATUS = 1;
+  private static final int BJOBS_EXIT_CODE = 2;
+  private static final int BJOBS_CPU_TIME = 3;
+  private static final int BJOBS_MAX_MEM = 4;
+  private static final int BJOBS_AVG_MEM = 5;
+  private static final int BJOBS_HOST = 6;
 
-  @Override
-  public final String getDispatcherCmd(StageExecutorRequest request) {
-    return getSubmitCmd(request);
+  /**
+   * Returns the submit command.
+   *
+   * @return the submit command.
+   */
+  public abstract String getSubmitCmd(StageExecutorRequest request);
+
+  /**
+   * Returns the command runner.
+   *
+   * @return the command runner.
+   */
+  public CmdRunner getCmdRunner() {
+    return CmdRunner.create(getExecutorParams());
   }
 
-  protected abstract String getSubmitCmd(StageExecutorRequest request);
-
   protected void beforeSubmit(StageExecutorRequest request) {}
-
-  protected void afterSubmit(StageExecutorRequest request) {}
 
   @Override
   public StageExecutorResult execute(StageExecutorRequest request) {
     if (jobId == null) {
-      try {
-        startTime = ZonedDateTime.now();
-        StageExecutorResult result = createWorkDir(request);
-        if (result.isError()) {
-          return result;
-        }
-        beforeSubmit(request);
-        result = submit(request);
-        try {
-          afterSubmit(request);
-        } catch (Exception ex) {
-          logContext(log.atSevere().withCause(ex), request)
-              .log("Unexpected exception after submit.");
-        }
+      StageExecutorResult result = createWorkDir(request);
+      if (result.isError()) {
         return result;
-      } catch (Exception ex) {
-        return StageExecutorResult.internalError(InternalError.SUBMIT);
       }
+      beforeSubmit(request);
+      outFile = getOutFile(request, getExecutorParams());
+      return submit(request);
     }
-
     return poll(request);
   }
 
-  private StageExecutorResult createWorkDir(StageExecutorRequest request) {
-    String cmd = MKDIR_CMD + getWorkDir(request, getExecutorParams());
-    return cmdRunner.execute(cmd, getExecutorParams()).getStageExecutorResult(cmd);
+  @Override
+  public void terminate() {
+    RetryTask.DEFAULT_FIXED.execute(r -> getCmdRunner().execute(BKILL_CMD + jobId));
   }
 
   private StageExecutorResult submit(StageExecutorRequest request) {
-
-    outFile = getOutFile(request, getExecutorParams());
-
-    StageExecutorResult result = super.execute(request);
+    StageExecutorResult result =
+        RetryTask.DEFAULT_FIXED.execute(r -> getCmdRunner().execute(getSubmitCmd(request)));
     if (result.isError()) {
       return result;
     }
-    String stageLog = result.getStageLog();
-    jobId = extractBsubJobIdSubmitted(stageLog);
 
+    jobId = extractBsubJobIdSubmitted(result.getStageLog());
     if (jobId == null) {
-      logContext(log.atSevere(), request).log("No LSF submit job id.");
-      result = StageExecutorResult.internalError(InternalError.SUBMIT);
-    } else {
-      logContext(log.atInfo(), request).log("LSF submit job id: %s", jobId);
-      result.setResultType(StageExecutorResultType.ACTIVE);
+      throw new PipeliteException("No LSF submit job id.");
     }
+
+    logContext(log.atInfo(), request).log("LSF submit job id: %s", jobId);
+    result.setResultType(StageExecutorResultType.ACTIVE);
     return result;
   }
 
   private StageExecutorResult poll(StageExecutorRequest request) {
-
-    Duration timeout = getExecutorParams().getTimeout();
-
-    if (timeout != null && ZonedDateTime.now().isAfter(startTime.plus(timeout))) {
-      logContext(log.atSevere(), request).log("Maximum run time exceeded. Killing LSF job.");
-      try {
-        cmdRunner.execute(BKILL_CMD + jobId, getExecutorParams());
-      } catch (Exception ex) {
-        logContext(log.atSevere().withCause(ex), request)
-            .log("Unexpected exception when killing LSF job %s", getJobId());
-        return StageExecutorResult.internalError(InternalError.TERMINATE);
-      }
-      reset();
-      return StageExecutorResult.internalError(InternalError.TIMEOUT);
-    }
-
     logContext(log.atFine(), request).log("Checking LSF job result using bjobs.");
 
-    CmdRunnerResult bjobsCustomCmdRunnerResult =
-        cmdRunner.execute(BJOBS_CUSTOM_CMD + jobId, getExecutorParams());
+    Optional<StageExecutorResult> result = getSharedContext().describeJob(jobId);
+    if (result == null || !result.isPresent()) {
+      return StageExecutorResult.active();
+    }
+    result.get().setStageLog(readOutFile(request));
+    return result.get();
+  }
 
-    StageExecutorResult result;
+  public static Map<String, StageExecutorResult> describeJobs(
+      List<String> jobIds, CmdRunner cmdRunner) {
+    log.atFine().log("Checking LSF job results using bjobs.");
 
-    if (!extractBjobsJobIdNotFound(bjobsCustomCmdRunnerResult.getStdout())) {
-      result = extractBjobsCustomResult(bjobsCustomCmdRunnerResult.getStdout());
-      if (result.isActive()) {
-        return result;
-      }
-    } else {
-      logContext(log.atFine(), request).log("Checking LSF job result using bhist.");
+    Map<String, StageExecutorResult> results = new HashMap<>();
 
-      CmdRunnerResult bhistCmdRunnerResult =
-          cmdRunner.execute(BHIST_CMD + jobId, getExecutorParams());
+    StageExecutorResult bjobsResult =
+        cmdRunner.execute(BJOBS_CUSTOM_CMD + String.join(" ", jobIds));
 
-      result = extractBjobsStandardResult(bhistCmdRunnerResult.getStdout());
-      if (result == null) {
-        reset();
-        result = StageExecutorResult.error();
+    if (bjobsResult.isError()) {
+      throw new PipeliteException("Failed to check LSF job results using bjobs.");
+    }
+    for (String line : bjobsResult.getStageLog().split("\\r?\\n")) {
+      String jobIdNotFound = extractBjobsJobIdNotFound(line);
+      if (jobIdNotFound == null) {
+        StageExecutorResult result = extractBjobsCustomResult(line);
+        if (result != null && !result.isActive()) {
+          String jobId = result.getAttribute(StageExecutorResultAttribute.JOB_ID);
+          if (jobId != null) {
+            results.put(jobId, result);
+          } else {
+            log.atSevere().log("Missing LSF bjobs job id: " + line);
+          }
+        }
+      } else {
+        log.atWarning().log("Checking LSF job result using bhist: " + jobIdNotFound);
+
+        StageExecutorResult bhistResult = cmdRunner.execute(BHIST_CMD + jobIdNotFound);
+        StageExecutorResult result = extractBjobsStandardResult(bhistResult.getStageLog());
+        if (result == null) {
+          results.put(jobIdNotFound, StageExecutorResult.error());
+        } else {
+          results.put(jobIdNotFound, result);
+        }
       }
     }
 
-    String stdout = getStdout(request);
-    result.setStageLog(stdout);
-    return result;
+    return results;
   }
 
-  protected String getStdout(StageExecutorRequest request) {
+  private StageExecutorResult createWorkDir(StageExecutorRequest request) {
+    return RetryTask.DEFAULT_FIXED.execute(
+        r -> getCmdRunner().execute(MKDIR_CMD + getWorkDir(request, getExecutorParams())));
+  }
+
+  protected String readOutFile(StageExecutorRequest request) {
+    logContext(log.atFine(), request).log("Reading LSF out file: %s", outFile);
 
     // Check if the stdout file exists. The file may not be immediately available after the job
     // execution finishes.
-
-    ZonedDateTime waitUntil = ZonedDateTime.now().plus(OUT_FILE_POLL_TIMEOUT);
+    ZonedDateTime timeout = ZonedDateTime.now().plus(OUT_FILE_POLL_TIMEOUT);
     try {
-      while (!stdoutFileExists(cmdRunner, outFile)) {
-        Time.waitUntil(OUT_FILE_POLL_FREQUENCY, waitUntil);
+      while (!stdoutFileExists(outFile)) {
+        Time.waitUntil(OUT_FILE_POLL_FREQUENCY, timeout);
       }
     } catch (PipeliteInterruptedException ex) {
       return null;
     }
 
-    logContext(log.atFine(), request).log("Reading stdout file: %s", outFile);
-
     try {
-      CmdRunnerResult stdoutCmdRunnerResult =
-          writeFileToStdout(cmdRunner, outFile, getExecutorParams());
-      return stdoutCmdRunnerResult.getStdout();
+      StageExecutorResult result = writeFileToStdout(getCmdRunner(), outFile, getExecutorParams());
+      return result.getStageLog();
     } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Failed to read stdout file: %s", outFile);
+      log.atSevere().withCause(ex).log("Failed to read LSF out file: %s", outFile);
       return null;
     }
   }
 
-  private boolean stdoutFileExists(CmdRunner cmdRunner, String stdoutFile) {
+  private boolean stdoutFileExists(String stdoutFile) {
     // Check if the stdout file exists. The file may not be immediately available after the job
     // execution finishes.
-    return 0
-        == cmdRunner
-            .execute("sh -c 'test -f " + stdoutFile + "'", getExecutorParams())
-            .getExitCode();
+    StageExecutorResult result =
+        RetryTask.DEFAULT_FIXED.execute(
+            r -> getCmdRunner().execute("sh -c 'test -f " + stdoutFile + "'"));
+    return result.isSuccess();
   }
 
-  private void reset() {
-    jobId = null;
-    startTime = null;
-  }
-
-  public static CmdRunnerResult writeFileToStdout(
+  public static StageExecutorResult writeFileToStdout(
       CmdRunner cmdRunner, String stdoutFile, CmdExecutorParameters executorParams) {
     // Execute through sh required by LocalRunner to direct output to stdout/err.
-    int logBytes = CmdExecutorParameters.DEFAULT_LOG_BYTES;
-    if (executorParams.getLogBytes() > 0) {
-      logBytes = executorParams.getLogBytes();
-    }
-    return cmdRunner.execute("sh -c 'tail -c " + logBytes + " " + stdoutFile + "'", executorParams);
+    int logBytes =
+        (executorParams.getLogBytes() > 0)
+            ? executorParams.getLogBytes()
+            : CmdExecutorParameters.DEFAULT_LOG_BYTES;
+    return RetryTask.DEFAULT_FIXED.execute(
+        r -> cmdRunner.execute("sh -c 'tail -c " + logBytes + " " + stdoutFile + "'"));
   }
 
   public static String extractBsubJobIdSubmitted(String str) {
@@ -237,12 +245,13 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters> exten
     }
   }
 
-  public static boolean extractBjobsJobIdNotFound(String str) {
+  public static String extractBjobsJobIdNotFound(String str) {
     try {
       Matcher m = BJOBS_JOB_ID_NOT_FOUND_PATTERN.matcher(str);
-      return m.find();
+      m.find();
+      return m.group(1);
     } catch (Exception ex) {
-      return false;
+      return null;
     }
   }
 
@@ -256,25 +265,30 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters> exten
     }
   }
 
-  private StageExecutorResult extractBjobsCustomResult(String str) {
-    String[] bjobs = str.split("\\|");
+  private static StageExecutorResult extractBjobsCustomResult(String str) {
+    String[] column = str.split("\\|");
+    if (column.length != 7) {
+      log.atSevere().log("Unexpected LSF bjobs output: " + str);
+      return null;
+    }
 
-    int exitCode = 0;
     StageExecutorResult result = null;
-
-    if (bjobs[BJOBS_STATUS].equals(BJOBS_STATUS_DONE)) {
+    Integer exitCode = null;
+    if (column[BJOBS_STATUS].equals(BJOBS_STATUS_DONE)) {
       result = StageExecutorResult.success();
-    } else if (bjobs[BJOBS_STATUS].equals(BJOBS_STATUS_EXIT)) {
-      exitCode = Integer.valueOf(bjobs[BJOBS_EXIT_CODE]);
+      exitCode = 0;
+    } else if (column[BJOBS_STATUS].equals(BJOBS_STATUS_EXIT)) {
       result = StageExecutorResult.error();
+      exitCode = Integer.valueOf(column[BJOBS_EXIT_CODE]);
     }
 
     if (result != null) {
+      result.getAttributes().put(StageExecutorResultAttribute.JOB_ID, column[BJOBS_JOB_ID]);
       result.getAttributes().put(StageExecutorResultAttribute.EXIT_CODE, String.valueOf(exitCode));
-      result.getAttributes().put(StageExecutorResultAttribute.EXEC_HOST, bjobs[BJOBS_HOST]);
-      result.getAttributes().put(StageExecutorResultAttribute.CPU_TIME, bjobs[BJOBS_CPU_TIME]);
-      result.getAttributes().put(StageExecutorResultAttribute.MAX_MEM, bjobs[BJOBS_MAX_MEM]);
-      result.getAttributes().put(StageExecutorResultAttribute.AVG_MEM, bjobs[BJOBS_AVG_MEM]);
+      result.getAttributes().put(StageExecutorResultAttribute.EXEC_HOST, column[BJOBS_HOST]);
+      result.getAttributes().put(StageExecutorResultAttribute.CPU_TIME, column[BJOBS_CPU_TIME]);
+      result.getAttributes().put(StageExecutorResultAttribute.MAX_MEM, column[BJOBS_MAX_MEM]);
+      result.getAttributes().put(StageExecutorResultAttribute.AVG_MEM, column[BJOBS_AVG_MEM]);
       return result;
     }
 
@@ -282,19 +296,20 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters> exten
   }
 
   private static StageExecutorResult extractBjobsStandardResult(String str) {
+    if (str == null) {
+      return null;
+    }
     if (str.contains("Done successfully")) {
       StageExecutorResult result = StageExecutorResult.success();
       result.getAttributes().put(StageExecutorResultAttribute.EXIT_CODE, "0");
       return result;
     }
-
     if (str.contains("Completed <exit>")) {
       int exitCode = Integer.valueOf(extractBjobsExitCode(str));
       StageExecutorResult result = StageExecutorResult.error();
       result.getAttributes().put(StageExecutorResultAttribute.EXIT_CODE, String.valueOf(exitCode));
       return result;
     }
-
     return null;
   }
 

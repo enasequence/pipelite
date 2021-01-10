@@ -26,7 +26,11 @@ public class StageExecutorResult {
   private StageExecutorResultType resultType;
   private String stageLog;
 
-  private InternalError internalError;
+  /** True if an internal error has been registered. */
+  private boolean internalError;
+
+  /** True if an timeout error has been registered. */
+  private boolean timeoutError;
 
   private final Map<String, String> attributes = new HashMap<>();
 
@@ -61,15 +65,29 @@ public class StageExecutorResult {
     return new StageExecutorResult(StageExecutorResultType.ERROR);
   }
 
-  public static StageExecutorResult error(Exception ex) {
+  /**
+   * Creates an internal error. The exception stack trace is written to the stage log.
+   *
+   * @param ex the exception
+   * @return the stage execution result
+   */
+  public static StageExecutorResult internalError(Exception ex) {
     StageExecutorResult result = error();
-    result.addExceptionAttribute(ex);
+    result.internalError = true;
+    StringWriter str = new StringWriter();
+    ex.printStackTrace(new PrintWriter(str));
+    result.setStageLog(str.toString());
     return result;
   }
 
-  public static StageExecutorResult internalError(InternalError internalError) {
+  /**
+   * Creates an timeout error.
+   *
+   * @return the stage execution result
+   */
+  public static StageExecutorResult timeoutError() {
     StageExecutorResult result = error();
-    result.internalError = internalError;
+    result.timeoutError = true;
     return result;
   }
 
@@ -82,16 +100,6 @@ public class StageExecutorResult {
       return;
     }
     attributes.put(key, value.toString());
-  }
-
-  private void addExceptionAttribute(Exception value) {
-    if (value == null) {
-      return;
-    }
-    StringWriter stackTrace = new StringWriter();
-    PrintWriter pw = new PrintWriter(stackTrace);
-    value.printStackTrace(pw);
-    addAttribute(StageExecutorResultAttribute.EXCEPTION, stackTrace.toString());
   }
 
   public String attributesJson() {

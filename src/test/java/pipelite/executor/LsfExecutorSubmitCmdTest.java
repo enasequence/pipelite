@@ -48,7 +48,7 @@ public class LsfExecutorSubmitCmdTest {
     String definitionFile = LsfExecutor.getDefinitionFile(request, params);
     executor.setOutFile(outFile);
     executor.setDefinitionFile(definitionFile);
-    String cmd = executor.getCmd(request);
-    assertThat(cmd).isEqualTo("bsub -oo " + outFile + " -yaml " + definitionFile + " test");
+    String submitCmd = executor.getSubmitCmd(request);
+    assertThat(submitCmd).isEqualTo("bsub -oo " + outFile + " -yaml " + definitionFile + " test");
   }
 }

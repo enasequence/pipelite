@@ -19,20 +19,23 @@ import org.apache.commons.exec.*;
 import org.apache.commons.text.StringTokenizer;
 import org.apache.commons.text.matcher.StringMatcher;
 import org.apache.commons.text.matcher.StringMatcherFactory;
-import pipelite.stage.executor.InternalError;
+import pipelite.exception.PipeliteException;
+import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
 @Flogger
 public class LocalCmdRunner implements CmdRunner {
 
+  private final CmdExecutorParameters executorParams;
+
+  public LocalCmdRunner(CmdExecutorParameters executorParams) {
+    this.executorParams = executorParams;
+  }
+
   @Override
-  public CmdRunnerResult execute(String cmd, CmdExecutorParameters executorParams) {
+  public StageExecutorResult execute(String cmd) {
     if (cmd == null) {
-      log.atSevere().log("No command to execute");
-      return CmdRunnerResult.builder()
-          .exitCode(EXIT_CODE_ERROR)
-          .internalError(InternalError.EXECUTE)
-          .build();
+      throw new PipeliteException("No command to execute");
     }
 
     StringTokenizer st = new StringTokenizer(cmd);
@@ -40,11 +43,7 @@ public class LocalCmdRunner implements CmdRunner {
     st.setQuoteMatcher(sm);
     List<String> args = st.getTokenList();
     if (args.isEmpty()) {
-      log.atSevere().log("No command to execute");
-      return CmdRunnerResult.builder()
-          .exitCode(EXIT_CODE_ERROR)
-          .internalError(InternalError.EXECUTE)
-          .build();
+      throw new PipeliteException("No command to execute");
     }
 
     try {
@@ -72,44 +71,33 @@ public class LocalCmdRunner implements CmdRunner {
                     : ExecuteWatchdog.INFINITE_TIMEOUT));
       }
 
-      log.atInfo().log("Executing system call: %s", cmd);
+      log.atInfo().log("Executing local call: %s", cmd);
 
       int exitCode = apacheExecutor.execute(commandLine, executorParams.getEnv());
-      return CmdRunnerResult.builder()
-          .exitCode(exitCode)
-          .stdout(getStream(stdoutStream))
-          .stderr(getStream(stderrStream))
-          .build();
+      return CmdRunner.result(cmd, exitCode, getStream(stdoutStream), getStream(stderrStream));
 
     } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Failed system call: %s", cmd);
-      return CmdRunnerResult.builder()
-          .exitCode(EXIT_CODE_ERROR)
-          .internalError(InternalError.EXECUTE)
-          .build();
+      throw new PipeliteException("Failed to execute local call: " + cmd, ex);
     }
   }
 
   @Override
-  public void writeFile(String str, Path path, CmdExecutorParameters executorParams)
-      throws IOException {
+  public void writeFile(String str, Path path) {
     log.atInfo().log("Writing file %s", path);
     try {
       CmdRunnerUtils.write(str, new FileOutputStream(path.toFile()));
     } catch (IOException ex) {
-      log.atSevere().withCause(ex).log("Failed to write file " + path);
-      throw ex;
+      throw new PipeliteException("Failed to write file " + path, ex);
     }
   }
 
   @Override
-  public void deleteFile(Path path, CmdExecutorParameters executorParams) throws IOException {
+  public void deleteFile(Path path) {
     log.atInfo().log("Deleting file %s", path);
     try {
       Files.delete(path);
     } catch (IOException ex) {
-      log.atSevere().log("Failed to delete file %s", path);
-      throw ex;
+      throw new PipeliteException("Failed to delete file " + path, ex);
     }
   }
 

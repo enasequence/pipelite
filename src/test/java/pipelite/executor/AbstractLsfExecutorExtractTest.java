@@ -30,10 +30,11 @@ public class AbstractLsfExecutorExtractTest {
   @Test
   public void extractBjobsJobIdNotFound() {
     assertThat(AbstractLsfExecutor.extractBjobsJobIdNotFound("Job <345654> is not found."))
-        .isTrue();
-    assertThat(AbstractLsfExecutor.extractBjobsJobIdNotFound("Job <345654> is not found")).isTrue();
-    assertThat(AbstractLsfExecutor.extractBjobsJobIdNotFound("Job <345654> is ")).isFalse();
-    assertThat(AbstractLsfExecutor.extractBjobsJobIdNotFound("INVALID")).isFalse();
+        .isEqualTo("345654");
+    assertThat(AbstractLsfExecutor.extractBjobsJobIdNotFound("Job <345654> is not found"))
+        .isEqualTo("345654");
+    assertThat(AbstractLsfExecutor.extractBjobsJobIdNotFound("Job <345654> is ")).isNull();
+    assertThat(AbstractLsfExecutor.extractBjobsJobIdNotFound("INVALID")).isNull();
   }
 
   @Test

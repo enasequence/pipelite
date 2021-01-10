@@ -10,18 +10,20 @@
  */
 package pipelite.executor;
 
+import com.amazonaws.services.batch.AWSBatch;
 import com.amazonaws.services.batch.model.*;
 import com.google.common.flogger.FluentLogger;
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.UUID;
+
+import java.util.*;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
-import pipelite.executor.service.AwsBatchExecutorService;
-import pipelite.executor.service.ExecutorServiceFactory;
+import pipelite.exception.PipeliteException;
+import pipelite.executor.context.AwsBatchContext;
+import pipelite.executor.context.AwsBatchContextCache;
+import pipelite.executor.task.RetryTask;
 import pipelite.log.LogKey;
-import pipelite.stage.executor.InternalError;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
@@ -37,7 +39,12 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
   // TODO: capture logs
 
   private SubmitJobResult submitJobResult;
-  private ZonedDateTime startTime;
+
+  private static final AwsBatchContextCache sharedContextCache = new AwsBatchContextCache();
+
+  private AwsBatchContext getSharedContext() {
+    return sharedContextCache.getSharedContext(this);
+  }
 
   @Override
   public StageExecutorResult execute(StageExecutorRequest request) {
@@ -48,13 +55,18 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
     return poll(request);
   }
 
-  private StageExecutorResult submit(StageExecutorRequest request) {
-    startTime = ZonedDateTime.now();
+  @Override
+  public void terminate() {
+    TerminateJobRequest terminateJobRequest =
+        new TerminateJobRequest().withJobId(getJobId()).withReason("Job terminated by pipelite");
+    RetryTask.DEFAULT_FIXED.execute(
+        r -> getSharedContext().get().terminateJob(terminateJobRequest));
+  }
 
-    AwsBatchExecutorService.Client client = getClient();
+  private StageExecutorResult submit(StageExecutorRequest request) {
+    logContext(log.atFine(), request).log("Submitting AWSBatch job.");
 
     AwsBatchExecutorParameters params = getExecutorParams();
-
     SubmitJobRequest submitJobRequest =
         new SubmitJobRequest()
             .withJobName(getJobName(request))
@@ -66,59 +78,22 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
                     .withAttemptDurationSeconds((int) params.getTimeout().getSeconds()));
     // TODO: .withContainerOverrides()
 
-    try {
-      submitJobResult = client.submitJob(submitJobRequest);
-    } catch (Exception ex) {
-      logContext(log.atSevere().withCause(ex), request)
-          .log("Unexpected exception from AWSBatch submit job.");
-      return StageExecutorResult.internalError(InternalError.SUBMIT);
-    }
+    submitJobResult =
+        RetryTask.DEFAULT_FIXED.execute(r -> getSharedContext().get().submitJob(submitJobRequest));
 
     if (submitJobResult == null || submitJobResult.getJobId() == null) {
-      logContext(log.atSevere(), request).log("Missing AWSBatch submit job id.");
-      return StageExecutorResult.internalError(InternalError.SUBMIT);
+      throw new PipeliteException("Missing AWSBatch submit job id.");
     }
     return new StageExecutorResult(StageExecutorResultType.ACTIVE);
   }
 
   private StageExecutorResult poll(StageExecutorRequest request) {
-
-    AwsBatchExecutorService.Client client = getClient();
-
-    Duration timeout = getExecutorParams().getTimeout();
-
-    if (timeout != null && ZonedDateTime.now().isAfter(startTime.plus(timeout))) {
-      logContext(log.atSevere(), request).log("Maximum run time exceeded. Killing AwsBatch job.");
-
-      try {
-        client.terminateJob(getJobId());
-      } catch (Exception ex) {
-        logContext(log.atSevere().withCause(ex), request)
-            .log("Unexpected exception from AWSBatch terminate for job id %s", getJobId());
-        return StageExecutorResult.internalError(InternalError.TERMINATE);
-      }
-      return StageExecutorResult.internalError(InternalError.TIMEOUT);
-    }
-
     logContext(log.atFine(), request).log("Checking AWSBatch job result.");
-
-    JobDetail jobDetail;
-    try {
-      jobDetail = client.describeJob(getJobId());
-
-      if (jobDetail == null || jobDetail.getStatus() == null) {
-        logContext(log.atSevere(), request)
-            .log("Missing AWSBatch job details for job id %s", getJobId());
-        return StageExecutorResult.internalError(InternalError.POLL);
-      }
-    } catch (Exception ex) {
-      logContext(log.atSevere().withCause(ex), request)
-          .log("Unexpected exception from AWSBatch terminate.");
-      return StageExecutorResult.internalError(InternalError.POLL);
+    Optional<JobDetail> jobDetail = getSharedContext().describeJob(getJobId());
+    if (jobDetail == null || !jobDetail.isPresent() || jobDetail.get().getStatus() == null) {
+      return StageExecutorResult.active();
     }
-
-    String status = jobDetail.getStatus();
-    switch (status) {
+    switch (jobDetail.get().getStatus()) {
       case "SUCCEEDED":
         return StageExecutorResult.success();
       case "FAILED":
@@ -126,6 +101,14 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
       default:
         return StageExecutorResult.active();
     }
+  }
+
+  public static Map<String, JobDetail> describeJobs(List<String> jobIds, AWSBatch awsBatch) {
+    Map<String, JobDetail> results = new HashMap<>();
+    DescribeJobsResult jobResult =
+        awsBatch.describeJobs(new DescribeJobsRequest().withJobs(jobIds));
+    jobResult.getJobs().forEach(j -> results.put(j.getJobId(), j));
+    return results;
   }
 
   private String getJobName(StageExecutorRequest request) {
@@ -150,11 +133,6 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
       return null;
     }
     return submitJobResult.getJobId();
-  }
-
-  private AwsBatchExecutorService.Client getClient() {
-    return ExecutorServiceFactory.service(AwsBatchExecutorService.class)
-        .client(getExecutorParams().getRegion());
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log, StageExecutorRequest request) {

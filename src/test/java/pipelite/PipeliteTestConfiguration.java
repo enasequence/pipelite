@@ -19,7 +19,6 @@ import pipelite.configuration.WebServerCustomizer;
 @ComponentScan(
     basePackages = {
       "pipelite.service",
-      "pipelite.executor.service",
       "pipelite.launcher",
       "pipelite.repository",
       "pipelite.configuration",

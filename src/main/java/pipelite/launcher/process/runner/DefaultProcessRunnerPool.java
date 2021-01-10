@@ -96,7 +96,7 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
             logContext(log.atSevere(), pipelineName, processId)
                 .withCause(ex)
                 .log("Unexpected exception when executing process");
-            ProcessRunnerResult result = new ProcessRunnerResult().internalError();
+            ProcessRunnerResult result = new ProcessRunnerResult().incrementInternalError();
             metrics.pipeline(pipelineName).increment(process.getProcessEntity().getState(), result);
             callback.accept(process, result);
           } finally {

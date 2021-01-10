@@ -10,40 +10,66 @@
  */
 package pipelite.executor.cmd;
 
-import java.io.IOException;
 import java.nio.file.Path;
+
+import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
 public interface CmdRunner {
 
   int EXIT_CODE_SUCCESS = 0;
-  int EXIT_CODE_ERROR = 1;
 
   /**
    * Executes a command.
    *
    * @param cmd the command to execute
-   * @param executorParams the executor parameters
-   * @return the command execution result
+   * @return the execution result
    */
-  CmdRunnerResult execute(String cmd, CmdExecutorParameters executorParams);
+  StageExecutorResult execute(String cmd);
 
   /**
    * Writes string to a file.
    *
    * @param str the string
    * @param path the file
-   * @param executorParams the executor parameters
    * @throws java.io.IOException
    */
-  void writeFile(String str, Path path, CmdExecutorParameters executorParams) throws IOException;
+  void writeFile(String str, Path path);
 
   /**
    * Deletes a file.
    *
    * @param path the file path
-   * @param executorParams the executor parameters
    * @throws java.io.IOException
    */
-  void deleteFile(Path path, CmdExecutorParameters executorParams) throws IOException;
+  void deleteFile(Path path);
+
+  /**
+   * Returns execution result.
+   *
+   * @param cmd the command to execute
+   * @param exitCode the exit code
+   * @param stdout the stdout
+   * @param stderr the stderr
+   * @return the execution result
+   */
+  static StageExecutorResult result(String cmd, int exitCode, String stdout, String stderr) {
+    StageExecutorResult result =
+        (exitCode == EXIT_CODE_SUCCESS)
+            ? StageExecutorResult.success()
+            : StageExecutorResult.error();
+    result.addAttribute(StageExecutorResultAttribute.COMMAND, cmd);
+    result.addAttribute(StageExecutorResultAttribute.EXIT_CODE, exitCode);
+    result.setStageLog((stdout != null ? stdout : "") + (stderr != null ? stderr : ""));
+    return result;
+  }
+
+  static CmdRunner create(CmdExecutorParameters executorParams) {
+    if (executorParams.getHost() != null && !executorParams.getHost().trim().isEmpty()) {
+      return new SshCmdRunner(executorParams);
+    } else {
+      return new LocalCmdRunner(executorParams);
+    }
+  }
 }

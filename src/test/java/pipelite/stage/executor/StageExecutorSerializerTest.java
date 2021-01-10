@@ -37,6 +37,9 @@ public class StageExecutorSerializerTest {
       return null;
     }
 
+    @Override
+    public void terminate() {}
+
     public StageExecutorResultType getResultType() {
       return resultType;
     }

@@ -89,7 +89,7 @@ public class DefaultProcessRunner implements ProcessRunner {
     try {
       runProcess(process, result);
     } catch (Exception ex) {
-      result.internalError();
+      result.incrementInternalError();
       logContext(log.atSevere()).withCause(ex).log("Unexpected exception when executing process");
     }
     return result;
@@ -155,18 +155,19 @@ public class DefaultProcessRunner implements ProcessRunner {
             stageService.endExecution(stage, stageExecutorResult);
             if (stageExecutorResult.isSuccess()) {
               resetDependentStageExecution(process, stage);
-              result.stageSuccess();
+              result.incrementStageSuccess();
             } else {
               mailService.sendStageExecutionMessage(process, stage);
-              result.stageFailed();
+              result.incrementStageFailed();
             }
           } catch (Exception ex) {
-            stageService.endExecution(stage, StageExecutorResult.error(ex));
-            mailService.sendStageExecutionMessage(process, stage);
-            result.internalError();
             logContext(log.atSevere())
                 .withCause(ex)
                 .log("Unexpected exception when executing stage %s", stage.getStageName());
+            stageService.endExecution(stage, StageExecutorResult.internalError(ex));
+            mailService.sendStageExecutionMessage(process, stage);
+            result.incrementStageFailed();
+            result.incrementInternalError();
           } finally {
             activeStages.remove(stage);
           }
