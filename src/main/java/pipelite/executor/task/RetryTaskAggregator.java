@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import lombok.extern.flogger.Flogger;
 import org.springframework.retry.support.RetryTemplate;
 import pipelite.exception.PipeliteTimeoutException;
 
@@ -28,11 +29,12 @@ import pipelite.exception.PipeliteTimeoutException;
  * @param <Result> The result type.
  * @param <ExecutorContext>> The execution context.
  */
+@Flogger
 public class RetryTaskAggregator<Request, Result, ExecutorContext> {
 
   private final RetryTemplate retryTemplate;
   private final Map<Request, Optional<Result>> requests = new ConcurrentHashMap<>();
-  private final Map<Request, ZonedDateTime> noResults = new ConcurrentHashMap<>();
+  private final Map<Request, ZonedDateTime> requestTimes = new ConcurrentHashMap<>();
   private final Duration requestTimeout;
   private final int requestLimit;
   private final ExecutorContext executorContext;
@@ -65,35 +67,38 @@ public class RetryTaskAggregator<Request, Result, ExecutorContext> {
 
   protected void addRequest(Request request) {
     requests.put(request, Optional.empty());
+    requestTimes.put(request, ZonedDateTime.now());
   }
 
   public void makeRequests() {
-    List<Request> pendingRequests = getPendingRequests(requestLimit);
+    List<Request> pendingRequests = getPendingRequests();
     while (!pendingRequests.isEmpty()) {
-      final List<Request> applyRequests = pendingRequests;
-      retryTemplate.execute(
-          r -> {
-            Map<Request, Result> results = task.execute(applyRequests, executorContext);
-            // Set results for the requests.
-            results.entrySet().stream()
-                .filter(e -> e.getKey() != null && e.getValue() != null)
-                .forEach(e -> requests.put(e.getKey(), Optional.of(e.getValue())));
-            // Set first time when we failed to get a result for a request.
-            applyRequests.stream()
-                .filter(applyRequest -> !results.containsKey(applyRequest))
-                .filter(applyRequest -> !noResults.containsKey(applyRequest))
-                .forEach(applyRequest -> noResults.put(applyRequest, ZonedDateTime.now()));
-            return null;
-          });
-      pendingRequests = getPendingRequests(requestLimit);
+      int toIndex = Math.min(requestLimit, pendingRequests.size());
+      final List<Request> applyRequests = pendingRequests.subList(0, toIndex);
+      try {
+        retryTemplate.execute(
+            r -> {
+              Map<Request, Result> results = task.execute(applyRequests, executorContext);
+              // Set results for the requests.
+              results.entrySet().stream()
+                  .filter(e -> e.getKey() != null && e.getValue() != null)
+                  .forEach(e -> requests.put(e.getKey(), Optional.of(e.getValue())));
+              return null;
+            });
+      } catch (Exception ex) {
+        log.atSevere().withCause(ex).log("Unexpected exception in RetryTaskAggregator");
+      }
+      if (toIndex == pendingRequests.size()) {
+        return;
+      }
+      pendingRequests = pendingRequests.subList(toIndex, pendingRequests.size());
     }
   }
 
-  protected List<Request> getPendingRequests(int requestLimit) {
+  protected List<Request> getPendingRequests() {
     return requests.entrySet().stream()
         .filter(e -> !e.getValue().isPresent())
         .map(e -> e.getKey())
-        .limit(requestLimit)
         .collect(Collectors.toList());
   }
 
@@ -130,16 +135,16 @@ public class RetryTaskAggregator<Request, Result, ExecutorContext> {
    * @return true if the request has timed out.
    */
   public boolean isTimeout(Request request) {
-    ZonedDateTime since = this.noResults.get(request);
-    if (since != null) {
-      return Duration.between(ZonedDateTime.now(), since).abs().compareTo(requestTimeout) > 1;
+    ZonedDateTime requestTime = this.requestTimes.get(request);
+    if (requestTime != null) {
+      return requestTime.plus(requestTimeout).isBefore(ZonedDateTime.now());
     }
     return false;
   }
 
   protected void removeRequest(Request request) {
     this.requests.remove(request);
-    this.noResults.remove(request);
+    this.requestTimes.remove(request);
   }
 
   public boolean isRequest(Request request) {
