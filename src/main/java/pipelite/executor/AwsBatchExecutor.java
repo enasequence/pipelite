@@ -86,25 +86,35 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
 
   private StageExecutorResult poll(StageExecutorRequest request) {
     logContext(log.atFine(), request).log("Checking AWSBatch job result.");
-    Optional<JobDetail> jobDetail = getSharedContext().describeJobs.getResult(getJobId());
-    if (jobDetail == null || !jobDetail.isPresent() || jobDetail.get().getStatus() == null) {
+    Optional<StageExecutorResult> result = getSharedContext().describeJobs.getResult(getJobId());
+    if (result == null || !result.isPresent()) {
       return StageExecutorResult.active();
     }
-    switch (jobDetail.get().getStatus()) {
-      case "SUCCEEDED":
-        return StageExecutorResult.success();
-      case "FAILED":
-        return StageExecutorResult.error();
-      default:
-        return StageExecutorResult.active();
-    }
+    return result.get();
   }
 
-  public static Map<String, JobDetail> describeJobs(List<String> jobIds, AWSBatch awsBatch) {
-    Map<String, JobDetail> results = new HashMap<>();
+  public static Map<String, StageExecutorResult> describeJobs(
+      List<String> jobIds, AWSBatch awsBatch) {
+    Map<String, StageExecutorResult> results = new HashMap<>();
     DescribeJobsResult jobResult =
         awsBatch.describeJobs(new DescribeJobsRequest().withJobs(jobIds));
-    jobResult.getJobs().forEach(j -> results.put(j.getJobId(), j));
+    jobResult
+        .getJobs()
+        .forEach(
+            j -> {
+              StageExecutorResult result;
+              switch (j.getStatus()) {
+                case "SUCCEEDED":
+                  result = StageExecutorResult.success();
+                  break;
+                case "FAILED":
+                  result = StageExecutorResult.error();
+                  break;
+                default:
+                  result = StageExecutorResult.active();
+              }
+              results.put(j.getJobId(), result);
+            });
     return results;
   }
 

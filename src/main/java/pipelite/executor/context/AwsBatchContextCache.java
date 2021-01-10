@@ -17,6 +17,7 @@ import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.AwsBatchExecutor;
 import pipelite.executor.task.DefaultFixedRetryTaskAggregator;
+import pipelite.stage.executor.StageExecutorResult;
 
 /** Context for tasks that can be shared between AWSBatch executors. */
 @Flogger
@@ -30,7 +31,8 @@ public class AwsBatchContextCache
   }
 
   public static final class Context extends SharedContextCache.Context<AWSBatch> {
-    public final DefaultFixedRetryTaskAggregator<String, JobDetail, AWSBatch> describeJobs;
+    public final DefaultFixedRetryTaskAggregator<String, StageExecutorResult, AWSBatch>
+        describeJobs;
 
     public Context(AWSBatch awsBatch) {
       super(awsBatch);
