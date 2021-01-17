@@ -50,6 +50,7 @@ public class DefaultProcessRunner implements ProcessRunner {
   private final String pipelineName;
   private final Duration processRunnerFrequency;
   private final ExecutorService executorService = Executors.newCachedThreadPool();
+  private final Map<Stage, StageLauncher> activeStages = new ConcurrentHashMap<>();
   private Process process;
   private String processId;
   private ZonedDateTime startTime;
@@ -112,18 +113,18 @@ public class DefaultProcessRunner implements ProcessRunner {
   }
 
   private void executeProcess(ProcessRunnerResult result) {
-    Set<Stage> activeStages = ConcurrentHashMap.newKeySet();
     while (true) {
       logContext(log.atFine()).log("Executing stages");
       List<Stage> executableStages =
-          DependencyResolver.getImmediatelyExecutableStages(process.getStages(), activeStages);
+          DependencyResolver.getImmediatelyExecutableStages(
+              process.getStages(), activeStages.keySet());
 
       if (activeStages.isEmpty() && executableStages.isEmpty()) {
         logContext(log.atInfo()).log("No more executable stages");
         break;
       }
 
-      runStages(activeStages, executableStages, result);
+      runStages(executableStages, result);
 
       try {
         Time.wait(processRunnerFrequency);
@@ -133,18 +134,14 @@ public class DefaultProcessRunner implements ProcessRunner {
     }
   }
 
-  private void runStages(
-      Set<Stage> activeStages, List<Stage> executableStages, ProcessRunnerResult result) {
-    executableStages.forEach(
-        stage -> {
-          runStage(stage, activeStages, result);
-        });
+  private void runStages(List<Stage> executableStages, ProcessRunnerResult result) {
+    executableStages.forEach(stage -> runStage(stage, result));
   }
 
-  private void runStage(Stage stage, Set<Stage> activeStages, ProcessRunnerResult result) {
+  private void runStage(Stage stage, ProcessRunnerResult result) {
     StageLauncher stageLauncher =
         new StageLauncher(executorConfiguration, pipelineName, process, stage);
-    activeStages.add(stage);
+    activeStages.put(stage, stageLauncher);
     executorService.execute(
         () -> {
           try {
@@ -259,6 +256,11 @@ public class DefaultProcessRunner implements ProcessRunner {
   @Override
   public ZonedDateTime getStartTime() {
     return startTime;
+  }
+
+  @Override
+  public void terminate() {
+    activeStages.values().forEach(stageLauncher -> stageLauncher.terminate());
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {

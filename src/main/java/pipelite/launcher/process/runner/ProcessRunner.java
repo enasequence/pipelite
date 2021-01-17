@@ -30,4 +30,6 @@ public interface ProcessRunner {
   Process getProcess();
 
   ZonedDateTime getStartTime();
+
+  void terminate();
 }

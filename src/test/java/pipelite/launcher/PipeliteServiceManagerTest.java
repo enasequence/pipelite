@@ -47,6 +47,10 @@ public class PipeliteServiceManagerTest {
       }
     }
 
+    @Override
+    public void terminate() {
+    }
+
     public long getSchedulerCnt() {
       return schedulerCnt.get();
     }

@@ -142,6 +142,11 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
   }
 
   @Override
+  public void terminate() {
+    pool.terminate();
+  }
+
+  @Override
   public void shutDown() {
     try {
       log.atInfo().log("Shutting down service: %s", getLauncherName());

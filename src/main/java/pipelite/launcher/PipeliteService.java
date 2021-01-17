@@ -15,4 +15,7 @@ import com.google.common.util.concurrent.AbstractScheduledService;
 public abstract class PipeliteService extends AbstractScheduledService {
   @Override
   public abstract String serviceName();
+
+  /** Terminates all running processes. */
+  public abstract void terminate();
 }

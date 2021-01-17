@@ -13,6 +13,7 @@ package pipelite.launcher;
 import com.google.common.flogger.FluentLogger;
 import java.time.Duration;
 import java.time.ZonedDateTime;
+
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.ExecutorConfiguration;
@@ -165,6 +166,10 @@ public class StageLauncher {
       }
       Time.waitUntil(POLL_FREQUENCY, timeout);
     }
+  }
+
+  public void terminate() {
+    stage.getExecutor().terminate();
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {

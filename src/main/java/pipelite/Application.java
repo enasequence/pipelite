@@ -68,6 +68,18 @@ public class Application {
     scheduler = null;
   }
 
+  /** Stops all services and terminates all running processes. */
+  @PreDestroy
+  public synchronized void kill() {
+    log.atInfo().log("Terminating all running processes");
+    if (serverManager != null) {
+      for (PipeliteService service : serverManager.getServices()) {
+        service.terminate();
+      }
+    }
+    stop();
+  }
+
   /** Restarts all services. */
   public synchronized void restart() {
     log.atInfo().log("Restarting pipelite services");
