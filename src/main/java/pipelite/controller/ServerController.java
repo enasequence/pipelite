@@ -15,9 +15,14 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+
+import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,7 +30,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
-import pipelite.Application;
 import pipelite.configuration.WebSecurityConfiguration;
 import pipelite.controller.info.ServerInfo;
 import pipelite.service.ServerService;
@@ -33,9 +37,9 @@ import pipelite.service.ServerService;
 @RestController
 @RequestMapping(value = "/server")
 @Tag(name = "ServerAPI", description = "Pipelite servers")
+@Flogger
 public class ServerController {
 
-  @Autowired private Application application;
   @Autowired private ServerService serverService;
 
   @GetMapping("/")
@@ -59,6 +63,7 @@ public class ServerController {
                       serviceUrl,
                       isHealthy(server.getHost(), server.getPort(), server.getContextPath())));
             });
+    list.forEach(a -> log.atInfo().log(a.toString()));
     return list;
   }
 
@@ -74,8 +79,12 @@ public class ServerController {
 
   private boolean isHealthy(String host, Integer port, String path) {
     try {
-      RestTemplate restTemplate = new RestTemplate();
+      RestTemplateBuilder restTemplateBuilder = new RestTemplateBuilder();
+      restTemplateBuilder.setConnectTimeout(Duration.ofSeconds(2));
+      restTemplateBuilder.setReadTimeout(Duration.ofSeconds(4));
+      RestTemplate restTemplate = restTemplateBuilder.build();
       String healthUrl = getUrl(host, port, path + "/" + WebSecurityConfiguration.HEALTH_ENDPOINT);
+      log.atInfo().log("health check url: " + healthUrl);
       JsonNode resp = restTemplate.getForObject(healthUrl, JsonNode.class);
       if (resp.get("status").asText().equalsIgnoreCase("UP")) {
         return true;
