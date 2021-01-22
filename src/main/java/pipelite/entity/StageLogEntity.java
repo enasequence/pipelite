@@ -19,7 +19,7 @@ import pipelite.json.Json;
 import pipelite.stage.executor.StageExecutorResult;
 
 @Entity
-@Table(name = "PIPELITE_STAGE_LOG")
+@Table(name = "PIPELITE2_STAGE_LOG")
 @IdClass(StageLogEntityId.class)
 @Data
 @NoArgsConstructor

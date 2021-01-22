@@ -23,7 +23,7 @@ import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
 
 @Entity
-@Table(name = "PIPELITE_STAGE")
+@Table(name = "PIPELITE2_STAGE")
 @IdClass(StageEntityId.class)
 @Data
 @NoArgsConstructor
@@ -48,7 +48,7 @@ public class StageEntity {
   @Column(name = "EXEC_START")
   private ZonedDateTime startTime;
 
-  @Column(name = "EXEC_DATE")
+  @Column(name = "EXEC_END")
   private ZonedDateTime endTime;
 
   @Column(name = "EXEC_NAME")

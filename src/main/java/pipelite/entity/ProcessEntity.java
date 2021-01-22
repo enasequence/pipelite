@@ -18,7 +18,7 @@ import pipelite.json.Json;
 import pipelite.process.ProcessState;
 
 @Entity
-@Table(name = "PIPELITE_PROCESS")
+@Table(name = "PIPELITE2_PROCESS")
 @IdClass(ProcessEntityId.class)
 @Data
 @NoArgsConstructor
@@ -46,7 +46,7 @@ public class ProcessEntity {
   @Column(name = "EXEC_START")
   private ZonedDateTime startTime;
 
-  @Column(name = "EXEC_DATE")
+  @Column(name = "EXEC_END")
   private ZonedDateTime endTime;
 
   @Column(name = "PRIORITY", nullable = false)

@@ -23,7 +23,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NamedNativeQuery(
     name = "ServerEntity.findServers",
-    query = "SELECT DISTINCT HOST, PORT, CONTEXT_PATH FROM PIPELITE_LAUNCHER_LOCK",
+    query = "SELECT DISTINCT HOST, PORT, CONTEXT_PATH FROM PIPELITE2_LAUNCHER_LOCK",
     resultClass = ServerEntity.class)
 public class ServerEntity implements Serializable {
   @Id

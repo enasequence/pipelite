@@ -169,7 +169,7 @@ public class ProcessService {
   public List<ProcessStateSummary> getProcessStateSummary() {
     List<ProcessStateSummary> list = new ArrayList<>();
     String sql =
-        "SELECT pipeline_name, state, count(1) FROM PIPELITE_PROCESS GROUP BY pipeline_name, state";
+        "SELECT PIPELINE_NAME, STATE, COUNT(1) FROM PIPELITE2_PROCESS GROUP BY PIPELINE_NAME, STATE";
 
     Map<String, List<ProcessStateRow>> groupedByPipelineName =
         jdbcTemplate

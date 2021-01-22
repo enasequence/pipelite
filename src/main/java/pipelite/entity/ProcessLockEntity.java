@@ -16,7 +16,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "PIPELITE_PROCESS_LOCK")
+@Table(name = "PIPELITE2_PROCESS_LOCK")
 @IdClass(ProcessLockEntityId.class)
 @Data
 @NoArgsConstructor

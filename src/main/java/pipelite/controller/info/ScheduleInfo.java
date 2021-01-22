@@ -18,16 +18,16 @@ import lombok.Value;
 public class ScheduleInfo {
   private String schedulerName;
   private String pipelineName;
-  private Integer completedStreak;
-  private Integer failedStreak;
   private String cron;
   private String description;
+  private boolean active;
+  private String processId;
   private String summary;
   private String startTime;
   private String endTime;
   private String nextTime;
   private String lastCompleted;
   private String lastFailed;
-  private boolean active;
-  private String processId;
+  private Integer completedStreak;
+  private Integer failedStreak;
 }

@@ -18,15 +18,15 @@ import lombok.NoArgsConstructor;
 import pipelite.launcher.process.runner.ProcessRunnerType;
 
 @Entity
-@Table(name = "PIPELITE_LAUNCHER_LOCK")
+@Table(name = "PIPELITE2_LAUNCHER_LOCK")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@SequenceGenerator(name = "PIPELITE_LAUNCHER_LOCK_SEQ", initialValue = 1, allocationSize = 1)
+@SequenceGenerator(name = "PIPELITE2_LAUNCHER_LOCK_SEQ", initialValue = 1, allocationSize = 1)
 public class LauncherLockEntity {
   @Id
   @Column(name = "LAUNCHER_ID")
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "PIPELITE_LAUNCHER_LOCK_SEQ")
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "PIPELITE2_LAUNCHER_LOCK_SEQ")
   private Long launcherId;
 
   @Column(name = "LAUNCHER_NAME", unique = true, nullable = false)

@@ -19,7 +19,7 @@ import lombok.extern.flogger.Flogger;
 import pipelite.entity.converter.BooleanConverter;
 
 @Entity
-@Table(name = "PIPELITE_SCHEDULE")
+@Table(name = "PIPELITE2_SCHEDULE")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -57,7 +57,7 @@ public class ScheduleEntity {
   private ZonedDateTime startTime;
 
   /** Last execution end date. */
-  @Column(name = "EXEC_DATE")
+  @Column(name = "EXEC_END")
   private ZonedDateTime endTime;
 
   /** Next execution time. */
