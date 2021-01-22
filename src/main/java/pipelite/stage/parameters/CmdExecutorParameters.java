@@ -29,6 +29,9 @@ public class CmdExecutorParameters extends ExecutorParameters {
   /** The remote host. */
   private String host;
 
+  /** The user used to connect to the remote host. */
+  private String user;
+
   /** The environmental variables. */
   private Map<String, String> env;
 
@@ -42,6 +45,7 @@ public class CmdExecutorParameters extends ExecutorParameters {
     CmdExecutorParameters defaultParams = executorConfiguration.getCmd();
     super.applyDefaults(defaultParams);
     applyDefault(this::getHost, this::setHost, defaultParams::getHost);
+    applyDefault(this::getUser, this::setUser, defaultParams::getUser);
     applyDefault(this::getWorkDir, this::setWorkDir, defaultParams::getWorkDir);
     applyDefault(this::getLogBytes, this::setLogBytes, defaultParams::getLogBytes);
     applyMapDefaults(env, defaultParams.env);

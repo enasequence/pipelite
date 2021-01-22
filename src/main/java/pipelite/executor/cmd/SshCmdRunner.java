@@ -117,7 +117,10 @@ public class SshCmdRunner implements CmdRunner {
   }
 
   private ClientSession createSession(CmdExecutorParameters executorParams) throws IOException {
-    String user = System.getProperty("user.name");
+    String user =
+        executorParams.getUser() != null
+            ? executorParams.getUser()
+            : System.getProperty("user.name");
     return sshClient
         .connect(user, executorParams.getHost(), SSH_PORT)
         .verify(SSH_VERIFY_TIMEOUT, TimeUnit.SECONDS)
