@@ -196,9 +196,9 @@ public class DependencyResolverTest {
         stageEntity.startExecution(stage);
         stageEntity.endExecution(StageExecutorResult.error());
         stage.incrementImmediateExecutionCount();
-        stages.add(stage);
       }
       stageNumber++;
+      stages.add(stage);
     }
     testExecutableStages(stages, Arrays.asList(), Arrays.asList(), Arrays.asList());
   }
@@ -225,11 +225,12 @@ public class DependencyResolverTest {
         stageEntity.startExecution(stage);
         stageEntity.endExecution(StageExecutorResult.error());
         stage.incrementImmediateExecutionCount();
-        stages.add(stage);
       }
       stageNumber++;
+      stages.add(stage);
     }
-    testExecutableStages(stages, Arrays.asList(), Arrays.asList(), Arrays.asList());
+    testExecutableStages(
+        stages, Arrays.asList(), Arrays.asList(), Arrays.asList("STAGE1", "STAGE2", "STAGE3"));
   }
 
   @Test
@@ -254,12 +255,15 @@ public class DependencyResolverTest {
         stageEntity.startExecution(stage);
         stageEntity.endExecution(StageExecutorResult.error());
         stage.incrementImmediateExecutionCount();
-        stages.add(stage);
       }
       stageNumber++;
+      stages.add(stage);
     }
-    testExecutableStages(stages, Arrays.asList(), Arrays.asList("STAGE1"), Arrays.asList("STAGE1"));
-    testExecutableStages(stages, Arrays.asList("STAGE1"), Arrays.asList(), Arrays.asList("STAGE1"));
+    testExecutableStages(
+        stages,
+        Arrays.asList(),
+        Arrays.asList("STAGE1"),
+        Arrays.asList("STAGE1", "STAGE2", "STAGE3"));
   }
 
   /**

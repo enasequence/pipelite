@@ -18,7 +18,7 @@ import pipelite.stage.executor.StageExecutorResultType;
 
 public class DependencyResolver {
 
-  private DependencyResolver() {};
+  private DependencyResolver() {}
 
   /**
    * Returns the list of stages that depend on this stage directly or transitively.
@@ -134,26 +134,18 @@ public class DependencyResolver {
       // Stage can't be executed because it has already been executed successfully.
       return false;
     }
-    if (stageEntity.getExecutionCount() > StageLauncher.getMaximumRetries(stage)
-        || stage.getImmediateExecutionCount() > StageLauncher.getImmediateRetries(stage)) {
+    if (stageEntity.getExecutionCount() > StageLauncher.getMaximumRetries(stage)) {
       // Stage can't be executed because it has already been executed the maximum number of times.
       return false;
     }
     for (Stage dependsOn : getDependsOnStages(stages, stage)) {
-      if (dependsOn.getStageEntity().getResultType() == StageExecutorResultType.SUCCESS) {
-        // Stage can be executed because the stage it depends on has been executed successfully.
-        continue;
-      }
-      if (dependsOn.getStageEntity().getExecutionCount()
-              <= StageLauncher.getMaximumRetries(dependsOn)
-          || dependsOn.getImmediateExecutionCount()
-              <= StageLauncher.getImmediateRetries(dependsOn)) {
+      if (dependsOn.getStageEntity().getResultType() == StageExecutorResultType.ERROR
+          && dependsOn.getStageEntity().getExecutionCount()
+              > StageLauncher.getMaximumRetries(dependsOn)) {
         // Stage can be executed because the stage it depends on has not been executed the maximum
         // number of times.
-        continue;
+        return false;
       }
-      // Stage can't be executed.
-      return false;
     }
     // Stage can be executed.
     return true;
@@ -170,6 +162,10 @@ public class DependencyResolver {
   public static boolean isImmediatelyExecutableStage(
       List<Stage> stages, Collection<Stage> active, Stage stage) {
     if (!isEventuallyExecutableStage(stages, stage)) {
+      return false;
+    }
+    if (stage.getImmediateExecutionCount() > StageLauncher.getImmediateRetries(stage)) {
+      // Stage can't be executed because it has already been executed the maximum number of times.
       return false;
     }
     if (active.contains(stage)) {

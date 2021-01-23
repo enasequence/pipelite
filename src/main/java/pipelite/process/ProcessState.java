@@ -15,6 +15,5 @@ public enum ProcessState {
   ACTIVE,
   COMPLETED,
   FAILED,
-  CANCELLED,
-  INACTIVE // TODO: remove
+  CANCELLED
 }
