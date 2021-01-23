@@ -20,6 +20,7 @@ import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LsfTestConfiguration;
 import pipelite.stage.Stage;
+import pipelite.stage.StageState;
 import pipelite.stage.executor.*;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 import pipelite.time.Time;
@@ -52,7 +53,7 @@ public class SshSimpleLsfExecutorTest {
             .build();
 
     StageExecutorResult result = executor.execute(request);
-    assertThat(result.getResultType()).isEqualTo(StageExecutorResultType.ACTIVE);
+    assertThat(result.getStageState()).isEqualTo(StageState.ACTIVE);
     assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).startsWith("bsub");
     assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).endsWith("echo test");
     assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
@@ -71,7 +72,7 @@ public class SshSimpleLsfExecutorTest {
       return;
     }
 
-    assertThat(result.getResultType()).isEqualTo(StageExecutorResultType.SUCCESS);
+    assertThat(result.getStageState()).isEqualTo(StageState.SUCCESS);
     assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
     assertThat(result.getStageLog()).contains("test\n");
   }

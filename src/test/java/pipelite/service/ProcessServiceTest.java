@@ -50,7 +50,7 @@ class ProcessServiceTest {
     assertThat(processEntity.getExecutionCount()).isEqualTo(0);
     assertThat(processEntity.getStartTime()).isNull();
     assertThat(processEntity.getEndTime()).isNull();
-    assertThat(processEntity.getState()).isEqualTo(ProcessState.PENDING);
+    assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.PENDING);
 
     service.startExecution(processEntity);
 
@@ -60,7 +60,7 @@ class ProcessServiceTest {
     assertThat(processEntity.getExecutionCount()).isEqualTo(0);
     assertThat(processEntity.getStartTime()).isNotNull();
     assertThat(processEntity.getEndTime()).isNull();
-    assertThat(processEntity.getState()).isEqualTo(ProcessState.ACTIVE);
+    assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.ACTIVE);
 
     assertThat(service.getSavedProcess(pipelineName, processId).get()).isEqualTo(processEntity);
 
@@ -75,7 +75,7 @@ class ProcessServiceTest {
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);
     assertThat(processEntity.getStartTime()).isNotNull();
     assertThat(processEntity.getEndTime()).isNotNull();
-    assertThat(processEntity.getState()).isEqualTo(ProcessState.COMPLETED);
+    assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.COMPLETED);
 
     assertThat(service.getSavedProcess(pipelineName, processId).get()).isEqualTo(processEntity);
   }
@@ -172,7 +172,7 @@ class ProcessServiceTest {
     ProcessEntity processEntity =
         ProcessEntity.createExecution(
             pipelineName, UniqueStringGenerator.randomProcessId(), priority);
-    processEntity.setState(state);
+    processEntity.setProcessState(state);
     processEntity.setExecutionCount(0);
     return service.saveProcess(processEntity);
   }
@@ -190,7 +190,7 @@ class ProcessServiceTest {
     counter.put(ProcessState.PENDING, new AtomicInteger());
     processes.forEach(
         process -> {
-          counter.get(process.getState()).incrementAndGet();
+          counter.get(process.getProcessState()).incrementAndGet();
         });
     assertThat(counter.get(ProcessState.COMPLETED).get()).isEqualTo(completedCount);
     assertThat(counter.get(ProcessState.ACTIVE).get()).isEqualTo(activeCount);

@@ -99,12 +99,12 @@ public class ScheduleService {
     ScheduleEntity scheduleEntity = getSavedSchedule(pipelineName).get();
     scheduleEntity.setEndTime(now);
     scheduleEntity.setExecutionCount(scheduleEntity.getExecutionCount() + 1);
-    if (processEntity.getState() == ProcessState.COMPLETED) {
+    if (processEntity.getProcessState() == ProcessState.COMPLETED) {
       scheduleEntity.setLastCompleted(now);
       scheduleEntity.setStreakCompleted(scheduleEntity.getStreakCompleted() + 1);
       scheduleEntity.setStreakFailed(0);
     }
-    if (processEntity.getState() == ProcessState.FAILED) {
+    if (processEntity.getProcessState() == ProcessState.FAILED) {
       scheduleEntity.setLastFailed(now);
       scheduleEntity.setStreakCompleted(0);
       scheduleEntity.setStreakFailed(scheduleEntity.getStreakFailed() + 1);

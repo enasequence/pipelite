@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.stage.Stage;
+import pipelite.stage.StageState;
 import pipelite.stage.executor.*;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
@@ -32,7 +33,7 @@ public class LocalCmdExecutorTest {
     Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
 
     StageExecutorResult result = stage.execute(PIPELINE_NAME, PROCESS_ID);
-    assertThat(result.getResultType()).isEqualTo(StageExecutorResultType.SUCCESS);
+    assertThat(result.getStageState()).isEqualTo(StageState.SUCCESS);
     assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).isEqualTo("echo test");
     assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
     assertThat(result.getStageLog()).contains("test\n");

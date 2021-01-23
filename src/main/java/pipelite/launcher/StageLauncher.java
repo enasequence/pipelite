@@ -133,7 +133,7 @@ public class StageLauncher {
     } else if (result.isError()) {
       logContext(log.atSevere()).log("Stage execution failed");
     } else {
-      throw new PipeliteException("Unexpected stage execution result type");
+      throw new PipeliteException("Unexpected stage execution result");
     }
     return result;
   }
@@ -181,7 +181,7 @@ public class StageLauncher {
     return log.with(LogKey.PIPELINE_NAME, pipelineName)
         .with(LogKey.PROCESS_ID, process.getProcessId())
         .with(LogKey.STAGE_NAME, stage.getStageName())
-        .with(LogKey.STAGE_EXECUTOR_RESULT_TYPE, stage.getStageEntity().getResultType())
+        .with(LogKey.STAGE_STATE, stage.getStageEntity().getStageState())
         .with(LogKey.STAGE_EXECUTION_COUNT, stage.getStageEntity().getExecutionCount());
   }
 }

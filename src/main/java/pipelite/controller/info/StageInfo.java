@@ -20,7 +20,7 @@ public class StageInfo {
   private String pipelineName;
   private String processId;
   private String stageName;
-  private String resultType;
+  private String stageState;
   private String startTime;
   private String endTime;
   private String executionTime;

@@ -105,7 +105,7 @@ class ScheduleServiceTest {
     ProcessEntity processEntity1 = new ProcessEntity();
     processEntity1.setPipelineName(pipelineName);
     processEntity1.setProcessId(processId1);
-    processEntity1.setState(ProcessState.COMPLETED);
+    processEntity1.setProcessState(ProcessState.COMPLETED);
 
     service.endExecution(processEntity1);
 
@@ -172,7 +172,7 @@ class ScheduleServiceTest {
     ProcessEntity processEntity2 = new ProcessEntity();
     processEntity2.setPipelineName(pipelineName);
     processEntity2.setProcessId(processId2);
-    processEntity2.setState(ProcessState.COMPLETED);
+    processEntity2.setProcessState(ProcessState.COMPLETED);
 
     service.endExecution(processEntity2);
 
@@ -239,7 +239,7 @@ class ScheduleServiceTest {
     ProcessEntity processEntity3 = new ProcessEntity();
     processEntity3.setPipelineName(pipelineName);
     processEntity3.setProcessId(processId3);
-    processEntity3.setState(ProcessState.FAILED);
+    processEntity3.setProcessState(ProcessState.FAILED);
 
     service.endExecution(processEntity3);
 

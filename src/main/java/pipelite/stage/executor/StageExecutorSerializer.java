@@ -16,6 +16,7 @@ import pipelite.entity.StageEntity;
 import pipelite.executor.JsonSerializableExecutor;
 import pipelite.log.LogKey;
 import pipelite.stage.Stage;
+import pipelite.stage.StageState;
 import pipelite.stage.parameters.ExecutorParameters;
 
 @Flogger
@@ -28,7 +29,7 @@ public class StageExecutorSerializer {
    */
   public static <T extends ExecutorParameters> Boolean deserializeExecution(Stage stage) {
     StageEntity stageEntity = stage.getStageEntity();
-    if (StageExecutorResultType.isActive(stageEntity.getResultType())
+    if (StageState.isActive(stageEntity.getStageState())
         && stageEntity.getExecutorName() != null
         && stageEntity.getExecutorData() != null
         && stageEntity.getExecutorParams() != null) {

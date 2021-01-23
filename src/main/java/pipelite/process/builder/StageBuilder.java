@@ -10,12 +10,13 @@
  */
 package pipelite.process.builder;
 
-import static pipelite.stage.executor.StageExecutorResultType.ACTIVE;
-import static pipelite.stage.executor.StageExecutorResultType.SUCCESS;
+import static pipelite.stage.StageState.ACTIVE;
+import static pipelite.stage.StageState.SUCCESS;
 
 import java.util.*;
 import pipelite.executor.*;
 import pipelite.stage.Stage;
+import pipelite.stage.StageState;
 import pipelite.stage.executor.*;
 import pipelite.stage.parameters.*;
 
@@ -140,52 +141,49 @@ public class StageBuilder {
   }
 
   /**
-   * An executor that returns a stage execution result of the given result type.
+   * An executor that returns a stage execution result of the given stage state.
    *
-   * @param resultType the stage execution result type returned by the executor
+   * @param stageState the stage state returned by the executor
    */
-  public ProcessBuilder withCallExecutor(StageExecutorResultType resultType) {
-    return withCallExecutor(resultType, ExecutorParameters.builder().build());
+  public ProcessBuilder withCallExecutor(StageState stageState) {
+    return withCallExecutor(stageState, ExecutorParameters.builder().build());
   }
 
   /**
-   * An executor that returns a stage execution result of the given result type.
+   * An executor that returns a stage execution result of the given stage state.
    *
-   * @param resultType the stage execution result type returned by the executor
+   * @param stageState the stage state returned by the executor
    * @param params the executor parameters
    */
-  public ProcessBuilder withCallExecutor(
-      StageExecutorResultType resultType, ExecutorParameters params) {
-    CallExecutor executor = new CallExecutor(resultType);
+  public ProcessBuilder withCallExecutor(StageState stageState, ExecutorParameters params) {
+    CallExecutor executor = new CallExecutor(stageState);
     executor.setExecutorParams(params);
     return addStage(executor);
   }
 
   /** An executor that returns the stage execution result SUCCESS. */
   public ProcessBuilder withCallExecutor() {
-    return withCallExecutor(StageExecutorResultType.SUCCESS);
+    return withCallExecutor(StageState.SUCCESS);
   }
 
   /**
-   * An executor that first returns the stage execution result ACTIVE and then a stage execution
-   * result of the given result type.
+   * An executor that first returns the stage state ACTIVE and then the give stage state.
    *
-   * @param resultType the stage execution result returned by the executor after ACTIVE
+   * @param stageState the stage state returned by the executor after ACTIVE
    */
-  public ProcessBuilder withAsyncCallExecutor(StageExecutorResultType resultType) {
-    return withAsyncCallExecutor(resultType, ExecutorParameters.builder().build());
+  public ProcessBuilder withAsyncCallExecutor(StageState stageState) {
+    return withAsyncCallExecutor(stageState, ExecutorParameters.builder().build());
   }
 
   /**
    * An executor that first returns the stage execution result ACTIVE and then a stage execution
    * result of the given result type.
    *
-   * @param resultType the stage execution result returned by the executor after ACTIVE
+   * @param stageState the stage execution result returned by the executor after ACTIVE
    * @param params the executor parameters
    */
-  public ProcessBuilder withAsyncCallExecutor(
-      StageExecutorResultType resultType, ExecutorParameters params) {
-    CallExecutor executor = new CallExecutor(Arrays.asList(ACTIVE, resultType));
+  public ProcessBuilder withAsyncCallExecutor(StageState stageState, ExecutorParameters params) {
+    CallExecutor executor = new CallExecutor(Arrays.asList(ACTIVE, stageState));
     executor.setExecutorParams(params);
     return addStage(executor);
   }

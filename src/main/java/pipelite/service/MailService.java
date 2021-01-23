@@ -60,8 +60,8 @@ public class MailService {
   public String getProcessExecutionSubject(Process process) {
     ProcessEntity processEntity = process.getProcessEntity();
     String state = "";
-    if (processEntity.getState() != null) {
-      state = processEntity.getState().name();
+    if (processEntity.getProcessState() != null) {
+      state = processEntity.getProcessState().name();
     }
     return "pipelite process ("
         + state
@@ -74,7 +74,7 @@ public class MailService {
   public String getStageExecutionSubject(Process process, Stage stage) {
     String state = "";
     if (stage.getStageEntity() != null) {
-      state = stage.getStageEntity().getResultType().name();
+      state = stage.getStageEntity().getStageState().name();
     }
     return "pipelite stage ("
         + state

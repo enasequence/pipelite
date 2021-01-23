@@ -17,13 +17,14 @@ import java.util.Map;
 import lombok.*;
 import lombok.extern.flogger.Flogger;
 import pipelite.json.Json;
+import pipelite.stage.StageState;
 
 @Getter
 @Setter
 @Flogger
 public class StageExecutorResult {
 
-  private StageExecutorResultType resultType;
+  private StageState stageState;
   private String stageLog;
 
   /** True if an internal error has been registered. */
@@ -34,35 +35,35 @@ public class StageExecutorResult {
 
   private final Map<String, String> attributes = new HashMap<>();
 
-  public StageExecutorResult(StageExecutorResultType resultType) {
-    if (resultType == null) {
-      throw new IllegalArgumentException("Missing result type");
+  public StageExecutorResult(StageState stageState) {
+    if (stageState == null) {
+      throw new IllegalArgumentException("Missing stage state");
     }
-    this.resultType = resultType;
+    this.stageState = stageState;
   }
 
   public boolean isActive() {
-    return StageExecutorResultType.isActive(resultType);
+    return StageState.isActive(stageState);
   }
 
   public boolean isSuccess() {
-    return StageExecutorResultType.isSuccess(resultType);
+    return StageState.isSuccess(stageState);
   }
 
   public boolean isError() {
-    return StageExecutorResultType.isError(resultType);
+    return StageState.isError(stageState);
   }
 
   public static StageExecutorResult active() {
-    return new StageExecutorResult(StageExecutorResultType.ACTIVE);
+    return new StageExecutorResult(StageState.ACTIVE);
   }
 
   public static StageExecutorResult success() {
-    return new StageExecutorResult(StageExecutorResultType.SUCCESS);
+    return new StageExecutorResult(StageState.SUCCESS);
   }
 
   public static StageExecutorResult error() {
-    return new StageExecutorResult(StageExecutorResultType.ERROR);
+    return new StageExecutorResult(StageState.ERROR);
   }
 
   /**

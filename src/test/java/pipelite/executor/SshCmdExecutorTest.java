@@ -20,6 +20,7 @@ import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.SshTestConfiguration;
 import pipelite.stage.Stage;
+import pipelite.stage.StageState;
 import pipelite.stage.executor.*;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
@@ -49,7 +50,7 @@ public class SshCmdExecutorTest {
     if (result.isTimeoutError()) {
       return;
     }
-    assertThat(result.getResultType()).isEqualTo(StageExecutorResultType.SUCCESS);
+    assertThat(result.getStageState()).isEqualTo(StageState.SUCCESS);
     assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).isEqualTo("echo test");
     assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
     assertThat(result.getStageLog()).contains("test\n");
@@ -74,7 +75,7 @@ public class SshCmdExecutorTest {
     if (InternalError.TIMEOUT == result.getInternalError()) {
       return;
     }
-    assertThat(result.getResultType()).isEqualTo(StageExecutorResultType.ERROR);
+    assertThat(result.getStageState()).isEqualTo(StageExecutorstageState.ERROR);
     assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND))
         .isEqualTo("singularity run docker://enasequence/webin-cli ");
     assertThat(result.getStdout()).contains("Creating container runtime...");

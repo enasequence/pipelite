@@ -13,16 +13,16 @@ package pipelite.executor;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
+import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorCall;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.parameters.ExecutorParameters;
 
 public class CallExecutor extends AbstractExecutor<ExecutorParameters> {
 
   private final StageExecutorCall call;
-  private final Deque<StageExecutorResultType> resultTypes;
+  private final Deque<StageState> stageStates;
 
   /**
    * Forwards execution to the provided call.
@@ -31,28 +31,28 @@ public class CallExecutor extends AbstractExecutor<ExecutorParameters> {
    */
   public CallExecutor(StageExecutorCall call) {
     this.call = call;
-    this.resultTypes = null;
+    this.stageStates = null;
   }
 
   /**
-   * When executed returns an execution result with the given result type.
+   * When executed returns an execution result with stage state.
    *
-   * @param resultType the result type
+   * @param stageState the stage state
    */
-  public CallExecutor(StageExecutorResultType resultType) {
-    this.call = (request) -> new StageExecutorResult(resultType);
-    this.resultTypes = null;
+  public CallExecutor(StageState stageState) {
+    this.call = (request) -> new StageExecutorResult(stageState);
+    this.stageStates = null;
   }
 
   /**
    * When executed returns an execution result of the given result types. Once all result types have
    * been returned returns null.
    *
-   * @param resultTypes the result types
+   * @param stageStates the result types
    */
-  public CallExecutor(Collection<StageExecutorResultType> resultTypes) {
+  public CallExecutor(Collection<StageState> stageStates) {
     this.call = null;
-    this.resultTypes = new ArrayDeque<>(resultTypes);
+    this.stageStates = new ArrayDeque<>(stageStates);
   }
 
   @Override
@@ -61,10 +61,10 @@ public class CallExecutor extends AbstractExecutor<ExecutorParameters> {
       return call.execute(request);
     }
 
-    if (this.resultTypes == null) {
+    if (this.stageStates == null) {
       return null;
     }
-    return new StageExecutorResult(resultTypes.pollFirst());
+    return new StageExecutorResult(stageStates.pollFirst());
   }
 
   @Override

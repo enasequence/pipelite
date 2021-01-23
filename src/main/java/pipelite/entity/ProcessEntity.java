@@ -38,7 +38,7 @@ public class ProcessEntity {
 
   @Enumerated(EnumType.STRING)
   @Column(name = "STATE", length = 15, nullable = false)
-  private ProcessState state;
+  private ProcessState processState;
 
   @Column(name = "EXEC_CNT", nullable = false)
   private Integer executionCount = 0;
@@ -67,7 +67,7 @@ public class ProcessEntity {
     processEntity.setPipelineName(pipelineName);
     processEntity.setPriority(getBoundedPriority(priority));
     processEntity.setExecutionCount(0);
-    processEntity.setState(ProcessState.PENDING);
+    processEntity.setProcessState(ProcessState.PENDING);
     return processEntity;
   }
 
@@ -76,7 +76,7 @@ public class ProcessEntity {
    * execution start time.
    */
   public void startExecution() {
-    this.state = ProcessState.ACTIVE;
+    this.processState = ProcessState.ACTIVE;
     this.startTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.endTime = null;
   }
@@ -88,7 +88,7 @@ public class ProcessEntity {
    * @param state the process state
    */
   public void endExecution(ProcessState state) {
-    this.state = state;
+    this.processState = state;
     this.endTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     ++executionCount;
   }

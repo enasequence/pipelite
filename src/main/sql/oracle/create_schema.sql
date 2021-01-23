@@ -272,13 +272,13 @@ create table pipelite2_stage
     pipeline_name      varchar2(64) not null,
     process_id         varchar2(64) not null,
     stage_name         varchar2(256) not null,
+    state              varchar2(15) not null,
     exec_start         date,
     exec_end           date,
     exec_cnt           number(5,0) default 0 not null,
     exec_name          varchar2(256),
     exec_data          clob,
     exec_params        clob,
-    exec_result_type   varchar2(64) not null,
     exec_result_params clob,
     audit_time         date default sysdate not null
 ) tablespace &table_tablespace;
@@ -293,7 +293,7 @@ primary key (process_id, stage_name, pipeline_name) using index pk_pipelite2_sta
 ;
 
 alter table pipelite2_stage add constraint ck_pipelite2_stage_result
-check ( exec_result_type in ('PENDING', 'ACTIVE', 'SUCCESS', 'ERROR') )
+check ( state in ('PENDING', 'ACTIVE', 'SUCCESS', 'ERROR') )
 ;
 
 -- @formatter:on
@@ -303,13 +303,13 @@ create table pipelite2_stage_audit
     pipeline_name      varchar2(64),
     process_id         varchar2(64),
     stage_name         varchar2(256),
+    state              varchar2(15),
     exec_start         date,
     exec_end           date,
     exec_cnt           number(5,0),
     exec_name          varchar2(256),
     exec_data          clob,
     exec_params        clob,
-    exec_result_type   varchar2(64),
     exec_result_params clob,
     audit_time         date,
     to_audit_time      date,
@@ -339,13 +339,13 @@ begin
         pipeline_name,
         process_id,
         stage_name,
+        state,
         exec_start,
         exec_end,
         exec_cnt,
         exec_name,
         exec_data,
         exec_params,
-        exec_result_type,
         exec_result_params,
         audit_time,
         audit_stmt
@@ -355,13 +355,13 @@ begin
         :old.pipeline_name,
         :old.process_id,
         :old.stage_name,
+        :old.state,
         :old.exec_start,
         :old.exec_end,
         :old.exec_cnt,
         :old.exec_name,
         :old.exec_data,
         :old.exec_params,
-        :old.exec_result_type,
         :old.exec_result_params,
         :old.audit_time,
         audit_stmt

@@ -29,7 +29,7 @@ $(document).ready(function() {
             { data: "pipelineName", visible: false, searchable: false },
             { data: "processId", visible: false, searchable: false },
             { data: "stageName" },
-            { data: "resultType" },
+            { data: "stageState" },
             { data: "startTime" },
             { data: "endTime" },
             { data: "executionTime" },
@@ -229,13 +229,13 @@ function plot() {
 
         // Set nodes
         data.forEach(function(stage) {
-            if (stage.resultType == "SUCCESS") {
+            if (stage.stageState == "SUCCESS") {
                g.setNode(stage.stageName, { label: stage.stageName, class: "stageSuccess" });
             }
-            else if (stage.resultType == "ERROR") {
+            else if (stage.stageState == "ERROR") {
                g.setNode(stage.stageName, { label: stage.stageName, class: "stageError" });
             }
-            else if (stage.resultType == "ACTIVE") {
+            else if (stage.stageState == "ACTIVE") {
                g.setNode(stage.stageName, { label: stage.stageName, class: "stageActive" });
             }
             else {

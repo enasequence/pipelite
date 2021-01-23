@@ -90,14 +90,18 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
               return;
             }
             ProcessRunnerResult result = processRunner.runProcess(process);
-            metrics.pipeline(pipelineName).increment(process.getProcessEntity().getState(), result);
+            metrics
+                .pipeline(pipelineName)
+                .increment(process.getProcessEntity().getProcessState(), result);
             callback.accept(process, result);
           } catch (Exception ex) {
             logContext(log.atSevere(), pipelineName, processId)
                 .withCause(ex)
                 .log("Unexpected exception when executing process");
             ProcessRunnerResult result = new ProcessRunnerResult().incrementInternalError();
-            metrics.pipeline(pipelineName).increment(process.getProcessEntity().getState(), result);
+            metrics
+                .pipeline(pipelineName)
+                .increment(process.getProcessEntity().getProcessState(), result);
             callback.accept(process, result);
           } finally {
             // Unlock process.

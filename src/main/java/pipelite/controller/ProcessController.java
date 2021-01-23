@@ -116,7 +116,7 @@ public class ProcessController {
     return ProcessInfo.builder()
         .pipelineName(processEntity.getPipelineName())
         .processId(processEntity.getProcessId())
-        .state(processEntity.getState().name())
+        .state(processEntity.getProcessState().name())
         .startTime(TimeUtils.humanReadableDate(processEntity.getStartTime()))
         .endTime(TimeUtils.humanReadableDate(processEntity.getEndTime()))
         .executionCount(processEntity.getExecutionCount())

@@ -12,7 +12,6 @@ package pipelite.launcher.dependency;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
 import pipelite.stage.Stage;
 
 public class DependencyResolver {

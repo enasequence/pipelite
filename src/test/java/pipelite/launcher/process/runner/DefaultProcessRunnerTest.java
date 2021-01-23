@@ -11,7 +11,7 @@
 package pipelite.launcher.process.runner;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static pipelite.stage.executor.StageExecutorResultType.*;
+import static pipelite.stage.StageState.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +22,7 @@ import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.StageExecutorResultType;
+import pipelite.stage.StageState;
 import pipelite.stage.parameters.ExecutorParameters;
 
 public class DefaultProcessRunnerTest {
@@ -68,9 +68,7 @@ public class DefaultProcessRunnerTest {
   }
 
   private void evaluateProcessStateNoRetries(
-      StageExecutorResultType firstStageState,
-      StageExecutorResultType secondStageState,
-      ProcessState state) {
+      StageState firstStageState, StageState secondStageState, ProcessState state) {
     int firstStageExecutions = firstStageState != null ? 1 : 0;
     int secondStageExecutions = secondStageState != null ? 1 : 0;
     List<Stage> stages =
@@ -80,9 +78,7 @@ public class DefaultProcessRunnerTest {
   }
 
   private void evaluateProcessStateWithRetries(
-      StageExecutorResultType firstStageState,
-      StageExecutorResultType secondStageState,
-      ProcessState state) {
+      StageState firstStageState, StageState secondStageState, ProcessState state) {
     int firstStageExecutions = firstStageState != null ? 1 : 0;
     int secondStageExecutions = secondStageState != null ? 1 : 0;
     List<Stage> stages =
@@ -92,8 +88,8 @@ public class DefaultProcessRunnerTest {
   }
 
   public static List<Stage> getTwoIndependentStages(
-      StageExecutorResultType firstStageState,
-      StageExecutorResultType secondStageState,
+      StageState firstStageState,
+      StageState secondStageState,
       int firstStageExecutions,
       int secondStageExecutions,
       int maximumRetries,
@@ -115,7 +111,7 @@ public class DefaultProcessRunnerTest {
     Stage firstStage = process.getStages().get(0);
     StageEntity firstStageEntity = new StageEntity();
     firstStage.setStageEntity(firstStageEntity);
-    firstStageEntity.setResultType(firstStageState);
+    firstStageEntity.setStageState(firstStageState);
     firstStageEntity.setExecutionCount(firstStageExecutions);
     for (int i = 0; i < firstStageExecutions; ++i) {
       firstStage.incrementImmediateExecutionCount();
@@ -125,7 +121,7 @@ public class DefaultProcessRunnerTest {
     Stage secondStage = process.getStages().get(1);
     StageEntity secondStageEntity = new StageEntity();
     secondStage.setStageEntity(secondStageEntity);
-    secondStageEntity.setResultType(secondStageState);
+    secondStageEntity.setStageState(secondStageState);
     secondStageEntity.setExecutionCount(secondStageExecutions);
     for (int i = 0; i < secondStageExecutions; ++i) {
       secondStage.incrementImmediateExecutionCount();

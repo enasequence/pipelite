@@ -18,9 +18,9 @@ import lombok.extern.flogger.Flogger;
 import pipelite.executor.JsonSerializableExecutor;
 import pipelite.json.Json;
 import pipelite.stage.*;
+import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultType;
 
 @Entity
 @Table(name = "PIPELITE2_STAGE")
@@ -42,6 +42,10 @@ public class StageEntity {
   @Column(name = "STAGE_NAME")
   private String stageName;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "STATE", length = 15, nullable = false)
+  private StageState stageState;
+
   @Column(name = "EXEC_CNT", nullable = false)
   private int executionCount = 0;
 
@@ -62,10 +66,6 @@ public class StageEntity {
   @Lob
   private String executorParams;
 
-  @Enumerated(EnumType.STRING)
-  @Column(name = "EXEC_RESULT_TYPE", length = 15, nullable = false)
-  private StageExecutorResultType resultType;
-
   @Column(name = "EXEC_RESULT_PARAMS", columnDefinition = "CLOB")
   @Lob
   private String resultParams;
@@ -80,7 +80,7 @@ public class StageEntity {
    */
   public static StageEntity createExecution(String pipelineName, String processId, Stage stage) {
     StageEntity stageEntity = new StageEntity();
-    stageEntity.setResultType(StageExecutorResultType.PENDING);
+    stageEntity.setStageState(StageState.PENDING);
     stageEntity.setProcessId(processId);
     stageEntity.setPipelineName(pipelineName);
     stageEntity.setStageName(stage.getStageName());
@@ -95,7 +95,7 @@ public class StageEntity {
    */
   public void startExecution(Stage stage) {
     StageExecutor stageExecutor = stage.getExecutor();
-    this.resultType = StageExecutorResultType.ACTIVE;
+    this.stageState = StageState.ACTIVE;
     this.resultParams = null;
     this.startTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.endTime = null;
@@ -126,7 +126,7 @@ public class StageEntity {
    * @param result the stage execution result
    */
   public void endExecution(StageExecutorResult result) {
-    this.resultType = result.getResultType();
+    this.stageState = result.getStageState();
     this.resultParams = result.attributesJson();
     this.endTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.executionCount++;
@@ -134,7 +134,7 @@ public class StageEntity {
 
   /** Called when the stage execution is reset. */
   public void resetExecution() {
-    this.resultType = StageExecutorResultType.PENDING;
+    this.stageState = StageState.PENDING;
     this.resultParams = null;
     this.startTime = null;
     this.endTime = null;

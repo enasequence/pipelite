@@ -32,7 +32,7 @@ class ProcessEntityTest {
     assertThat(processEntity.getExecutionCount()).isEqualTo(0);
     assertThat(processEntity.getStartTime()).isNull();
     assertThat(processEntity.getEndTime()).isNull();
-    assertThat(processEntity.getState()).isEqualTo(ProcessState.PENDING);
+    assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.PENDING);
 
     processEntity.startExecution();
 
@@ -42,7 +42,7 @@ class ProcessEntityTest {
     assertThat(processEntity.getExecutionCount()).isEqualTo(0);
     assertThat(processEntity.getStartTime()).isNotNull();
     assertThat(processEntity.getEndTime()).isNull();
-    assertThat(processEntity.getState()).isEqualTo(ProcessState.ACTIVE);
+    assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.ACTIVE);
 
     processEntity.endExecution(ProcessState.COMPLETED);
 
@@ -52,7 +52,7 @@ class ProcessEntityTest {
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);
     assertThat(processEntity.getStartTime()).isNotNull();
     assertThat(processEntity.getEndTime()).isNotNull();
-    assertThat(processEntity.getState()).isEqualTo(ProcessState.COMPLETED);
+    assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.COMPLETED);
   }
 
   @Test

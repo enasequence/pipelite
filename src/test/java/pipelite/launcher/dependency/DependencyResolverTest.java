@@ -13,11 +13,10 @@ package pipelite.launcher.dependency;
 import static org.assertj.core.api.Assertions.assertThat;
 import static pipelite.launcher.dependency.DependencyResolver.isEventuallyExecutableStage;
 import static pipelite.launcher.dependency.DependencyResolver.isImmediatelyExecutableStage;
-import static pipelite.stage.executor.StageExecutorResultType.*;
+import static pipelite.stage.StageState.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.StageEntity;
@@ -25,15 +24,15 @@ import pipelite.executor.CallExecutor;
 import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.Stage;
+import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.parameters.ExecutorParameters;
 
 public class DependencyResolverTest {
 
   @Test
   public void allActivePendingDependOnPrevious() {
-    for (StageExecutorResultType resultType : EnumSet.of(ACTIVE, PENDING)) {
+    for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
 
       ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
       Process process =
@@ -48,7 +47,7 @@ public class DependencyResolverTest {
       List<Stage> stages = process.getStages();
       for (Stage stage : process.getStages()) {
         StageEntity stageEntity = new StageEntity();
-        stageEntity.setResultType(resultType);
+        stageEntity.setStageState(stageState);
         stage.setStageEntity(stageEntity);
         stageEntity.startExecution(stage);
       }
@@ -73,7 +72,7 @@ public class DependencyResolverTest {
 
   @Test
   public void allActivePendingOthersDependOnFirstAllActive() {
-    for (StageExecutorResultType resultType : EnumSet.of(ACTIVE, PENDING)) {
+    for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
       ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
       Process process =
           builder
@@ -87,7 +86,7 @@ public class DependencyResolverTest {
       List<Stage> stages = process.getStages();
       for (Stage stage : process.getStages()) {
         StageEntity stageEntity = new StageEntity();
-        stageEntity.setResultType(resultType);
+        stageEntity.setStageState(stageState);
         stage.setStageEntity(stageEntity);
         stageEntity.startExecution(stage);
       }
@@ -112,7 +111,7 @@ public class DependencyResolverTest {
 
   @Test
   public void othersActivePendingDependOnFirstThatSucceeded() {
-    for (StageExecutorResultType resultType : EnumSet.of(ACTIVE, PENDING)) {
+    for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
 
       ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
       Process process =
@@ -133,7 +132,7 @@ public class DependencyResolverTest {
           stageEntity.startExecution(stage);
           stageEntity.endExecution(StageExecutorResult.success());
         } else {
-          stageEntity.setResultType(resultType);
+          stageEntity.setStageState(stageState);
         }
         stageNumber++;
       }
@@ -158,7 +157,7 @@ public class DependencyResolverTest {
 
   @Test
   public void othersActivePendingDependOnFirstThatFailedMaximum() {
-    for (StageExecutorResultType resultType : EnumSet.of(ACTIVE, PENDING)) {
+    for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
 
       ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
       Process process =
@@ -180,7 +179,7 @@ public class DependencyResolverTest {
           stageEntity.endExecution(StageExecutorResult.error());
           stage.incrementImmediateExecutionCount();
         } else {
-          stageEntity.setResultType(resultType);
+          stageEntity.setStageState(stageState);
         }
         stageNumber++;
       }
@@ -205,7 +204,7 @@ public class DependencyResolverTest {
 
   @Test
   public void othersActivePendingDependOnFirstThatFailedImmediate() {
-    for (StageExecutorResultType resultType : EnumSet.of(ACTIVE, PENDING)) {
+    for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
 
       ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
       Process process =
@@ -228,7 +227,7 @@ public class DependencyResolverTest {
           stageEntity.endExecution(StageExecutorResult.error());
           stage.incrementImmediateExecutionCount();
         } else {
-          stageEntity.setResultType(resultType);
+          stageEntity.setStageState(stageState);
         }
         stageNumber++;
       }
@@ -253,7 +252,7 @@ public class DependencyResolverTest {
 
   @Test
   public void othersActivePendingIndependentOneError() {
-    for (StageExecutorResultType resultType : EnumSet.of(ACTIVE, PENDING)) {
+    for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
       ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
       Process process =
           builder
@@ -275,7 +274,7 @@ public class DependencyResolverTest {
           stageEntity.endExecution(StageExecutorResult.error());
           stage.incrementImmediateExecutionCount();
         } else {
-          stageEntity.setResultType(resultType);
+          stageEntity.setStageState(stageState);
         }
         stageNumber++;
       }
@@ -300,7 +299,7 @@ public class DependencyResolverTest {
 
   @Test
   public void othersActivePendingIndependentOneFailedImmediate() {
-    for (StageExecutorResultType resultType : EnumSet.of(ACTIVE, PENDING)) {
+    for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
       ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
       Process process =
           builder
@@ -324,7 +323,7 @@ public class DependencyResolverTest {
           stageEntity.endExecution(StageExecutorResult.error());
           stage.incrementImmediateExecutionCount();
         } else {
-          stageEntity.setResultType(resultType);
+          stageEntity.setStageState(stageState);
         }
         stageNumber++;
       }
@@ -353,7 +352,7 @@ public class DependencyResolverTest {
 
   @Test
   public void othersActivePendingIndependentOneFailedMaximum() {
-    for (StageExecutorResultType resultType : EnumSet.of(ACTIVE, PENDING)) {
+    for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
       ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
       Process process =
           builder
@@ -377,7 +376,7 @@ public class DependencyResolverTest {
           stageEntity.endExecution(StageExecutorResult.error());
           stage.incrementImmediateExecutionCount();
         } else {
-          stageEntity.setResultType(resultType);
+          stageEntity.setStageState(stageState);
         }
         stageNumber++;
       }
@@ -405,7 +404,7 @@ public class DependencyResolverTest {
 
   @Test
   public void allActivePendingOthersDependOnPrevious() {
-    for (StageExecutorResultType resultType : EnumSet.of(ACTIVE, PENDING)) {
+    for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
       ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
       Process process =
           builder
@@ -421,7 +420,7 @@ public class DependencyResolverTest {
       List<Stage> stages = process.getStages();
       for (Stage stage : stages) {
         stage.setStageEntity(new StageEntity());
-        stage.getStageEntity().setResultType(resultType);
+        stage.getStageEntity().setStageState(stageState);
       }
       assertGetDependsOnStagesIsTrue(stages, "STAGE1", Arrays.asList());
       assertGetDependsOnStagesIsTrue(stages, "STAGE2", Arrays.asList("STAGE1"));
@@ -447,7 +446,7 @@ public class DependencyResolverTest {
 
   @Test
   public void allActivePendingOthersDependOnFirstTransitively() {
-    for (StageExecutorResultType resultType : EnumSet.of(ACTIVE, PENDING)) {
+    for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
       ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
       Process process =
           builder
@@ -463,7 +462,7 @@ public class DependencyResolverTest {
       List<Stage> stages = process.getStages();
       for (Stage stage : stages) {
         stage.setStageEntity(new StageEntity());
-        stage.getStageEntity().setResultType(resultType);
+        stage.getStageEntity().setStageState(stageState);
       }
       assertGetDependsOnStagesIsTrue(stages, "STAGE1", Arrays.asList());
       assertGetDependsOnStagesIsTrue(stages, "STAGE2", Arrays.asList("STAGE1"));
@@ -530,18 +529,18 @@ public class DependencyResolverTest {
     }
   }
 
-  /** Returns a single stage with the given result type, execution counts and retries. */
+  /** Returns a single stage with the given stage state, execution counts and retries. */
   private List<Stage> getStage(
-      StageExecutorResultType resultType,
+      StageState stageState,
       int executionCount,
       int immediateCount,
       int maximumRetries,
       int immediateRetries) {
     StageEntity stageEntity = new StageEntity();
     stageEntity.setExecutionCount(executionCount);
-    stageEntity.setResultType(resultType);
+    stageEntity.setStageState(stageState);
 
-    CallExecutor executor = new CallExecutor(StageExecutorResultType.SUCCESS);
+    CallExecutor executor = new CallExecutor(StageState.SUCCESS);
     executor.setExecutorParams(
         ExecutorParameters.builder()
             .immediateRetries(immediateRetries)

@@ -56,8 +56,8 @@ import pipelite.process.ProcessSource;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.*;
+import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.parameters.ExecutorParameters;
 
 @SpringBootTest(
@@ -255,10 +255,10 @@ public class PipeliteLauncherTest {
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);
     if (f.stageTestResult != StageTestResult.SUCCESS) {
-      assertThat(processEntity.getState())
+      assertThat(processEntity.getProcessState())
           .isEqualTo(ProcessState.FAILED); // no re-executions allowed
     } else {
-      assertThat(processEntity.getState()).isEqualTo(ProcessState.COMPLETED);
+      assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.COMPLETED);
     }
   }
 
@@ -287,15 +287,15 @@ public class PipeliteLauncherTest {
                   + "}");
 
       if (f.stageTestResult == StageTestResult.ERROR) {
-        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.ERROR);
+        assertThat(stageEntity.getStageState()).isEqualTo(StageState.ERROR);
         assertThat(stageEntity.getResultParams()).isNull();
       } else if (f.stageTestResult == StageTestResult.EXCEPTION) {
-        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.ERROR);
+        assertThat(stageEntity.getStageState()).isEqualTo(StageState.ERROR);
         assertThat(stageLogEntity.getStageLog())
             .contains(
                 "pipelite.exception.PipeliteException: java.lang.RuntimeException: Expected exception");
       } else {
-        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.SUCCESS);
+        assertThat(stageEntity.getStageState()).isEqualTo(StageState.SUCCESS);
         assertThat(stageEntity.getResultParams()).isNull();
       }
     }

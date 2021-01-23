@@ -23,13 +23,13 @@ import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
+import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.parameters.ExecutorParameters;
 
 public class StageLauncherTest {
 
-  private void callExecutor(StageExecutorResultType resultType) {
+  private void callExecutor(StageState stageState) {
     ExecutorConfiguration executorConfiguration = new ExecutorConfiguration();
     StageService stageService = mock(StageService.class);
     String pipelineName = UniqueStringGenerator.randomPipelineName();
@@ -38,7 +38,7 @@ public class StageLauncherTest {
         new ProcessBuilder(processId)
             .execute("STAGE1")
             .withCallExecutor(
-                resultType,
+                stageState,
                 ExecutorParameters.builder()
                     .immediateRetries(3)
                     .maximumRetries(3)
@@ -53,7 +53,7 @@ public class StageLauncherTest {
     stage.getStageEntity().startExecution(stage);
     StageLauncher stageLauncher =
         spy(new StageLauncher(executorConfiguration, stageService, pipelineName, process, stage));
-    assertThat(stageLauncher.run().getResultType()).isEqualTo(resultType);
+    assertThat(stageLauncher.run().getStageState()).isEqualTo(stageState);
     verify(stageLauncher, times(0)).pollExecution();
     assertThat(stage.getStageEntity().getExecutorName())
         .isEqualTo("pipelite.executor.CallExecutor");
@@ -62,7 +62,7 @@ public class StageLauncherTest {
         .isEqualTo("{\n" + "  \"maximumRetries\" : 3,\n" + "  \"immediateRetries\" : 3\n" + "}");
   }
 
-  private void asyncCallExecutor(StageExecutorResultType resultType) {
+  private void asyncCallExecutor(StageState stageState) {
     ExecutorConfiguration executorConfiguration = new ExecutorConfiguration();
     StageService stageService = mock(StageService.class);
     String pipelineName = UniqueStringGenerator.randomPipelineName();
@@ -71,7 +71,7 @@ public class StageLauncherTest {
         new ProcessBuilder(processId)
             .execute("STAGE1")
             .withAsyncCallExecutor(
-                resultType,
+                stageState,
                 ExecutorParameters.builder()
                     .immediateRetries(3)
                     .maximumRetries(3)
@@ -88,7 +88,7 @@ public class StageLauncherTest {
     stage.getStageEntity().startExecution(stage);
     StageLauncher stageLauncher =
         spy(new StageLauncher(executorConfiguration, stageService, pipelineName, process, stage));
-    assertThat(stageLauncher.run().getResultType()).isEqualTo(resultType);
+    assertThat(stageLauncher.run().getStageState()).isEqualTo(stageState);
     verify(stageLauncher, times(1)).pollExecution();
     assertThat(stage.getStageEntity().getExecutorName())
         .isEqualTo("pipelite.executor.CallExecutor");
@@ -99,14 +99,14 @@ public class StageLauncherTest {
 
   @Test
   public void callExecutor() {
-    callExecutor(StageExecutorResultType.SUCCESS);
-    callExecutor(StageExecutorResultType.ERROR);
-    asyncCallExecutor(StageExecutorResultType.SUCCESS);
-    asyncCallExecutor(StageExecutorResultType.ERROR);
+    callExecutor(StageState.SUCCESS);
+    callExecutor(StageState.ERROR);
+    asyncCallExecutor(StageState.SUCCESS);
+    asyncCallExecutor(StageState.ERROR);
   }
 
   private void maximumRetries(Integer maximumRetries, int expectedMaximumRetries) {
-    CallExecutor executor = new CallExecutor(StageExecutorResultType.SUCCESS);
+    CallExecutor executor = new CallExecutor(StageState.SUCCESS);
     executor.setExecutorParams(ExecutorParameters.builder().maximumRetries(maximumRetries).build());
     assertThat(
             StageLauncher.getMaximumRetries(
@@ -116,7 +116,7 @@ public class StageLauncherTest {
 
   private void immediateRetries(
       Integer immediateRetries, Integer maximumRetries, int expectedImmediateRetries) {
-    CallExecutor executor = new CallExecutor(StageExecutorResultType.SUCCESS);
+    CallExecutor executor = new CallExecutor(StageState.SUCCESS);
     executor.setExecutorParams(
         ExecutorParameters.builder()
             .immediateRetries(immediateRetries)

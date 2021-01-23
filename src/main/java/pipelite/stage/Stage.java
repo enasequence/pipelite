@@ -21,7 +21,6 @@ import pipelite.launcher.StageLauncher;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultType;
 
 @Flogger
 @Data
@@ -64,15 +63,15 @@ public class Stage {
   }
 
   public boolean isActive() {
-    return stageEntity.getResultType() == StageExecutorResultType.ACTIVE;
+    return stageEntity.getStageState() == StageState.ACTIVE;
   }
 
   public boolean isError() {
-    return stageEntity.getResultType() == StageExecutorResultType.ERROR;
+    return stageEntity.getStageState() == StageState.ERROR;
   }
 
   public boolean isSuccess() {
-    return stageEntity.getResultType() == StageExecutorResultType.SUCCESS;
+    return stageEntity.getStageState() == StageState.SUCCESS;
   }
 
   /**

@@ -21,9 +21,9 @@ import pipelite.exception.PipeliteException;
 import pipelite.executor.context.AwsBatchContextCache;
 import pipelite.executor.task.RetryTask;
 import pipelite.log.LogKey;
+import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.parameters.AwsBatchExecutorParameters;
 
 /** Executes a command using AWSBatch. */
@@ -81,7 +81,7 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
     if (submitJobResult == null || submitJobResult.getJobId() == null) {
       throw new PipeliteException("Missing AWSBatch submit job id.");
     }
-    return new StageExecutorResult(StageExecutorResultType.ACTIVE);
+    return new StageExecutorResult(StageState.ACTIVE);
   }
 
   private StageExecutorResult poll(StageExecutorRequest request) {

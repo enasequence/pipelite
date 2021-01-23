@@ -70,7 +70,7 @@ public class ProcessService {
    */
   public List<ProcessEntity> getPendingProcesses(String pipelineName, int limit) {
     try (Stream<ProcessEntity> strm =
-        repository.findAllByPipelineNameAndStateOrderByPriorityDesc(
+        repository.findAllByPipelineNameAndProcessStateOrderByPriorityDesc(
             pipelineName, ProcessState.PENDING)) {
       return list(strm, limit);
     }
@@ -99,7 +99,7 @@ public class ProcessService {
    */
   public List<ProcessEntity> getCompletedProcesses(String pipelineName, int limit) {
     try (Stream<ProcessEntity> strm =
-        repository.findAllByPipelineNameAndState(pipelineName, ProcessState.COMPLETED)) {
+        repository.findAllByPipelineNameAndProcessState(pipelineName, ProcessState.COMPLETED)) {
       return list(strm, limit);
     }
   }
@@ -113,7 +113,7 @@ public class ProcessService {
    */
   public List<ProcessEntity> getFailedProcesses(String pipelineName, int limit) {
     try (Stream<ProcessEntity> strm =
-        repository.findAllByPipelineNameAndStateOrderByPriorityDesc(
+        repository.findAllByPipelineNameAndProcessStateOrderByPriorityDesc(
             pipelineName, ProcessState.FAILED)) {
       return list(strm, limit);
     }
@@ -132,7 +132,8 @@ public class ProcessService {
     // pipelineName state
     // Y            Y
     if (pipelineName != null && state != null) {
-      processes.addAll(list(repository.findAllByPipelineNameAndState(pipelineName, state), limit));
+      processes.addAll(
+          list(repository.findAllByPipelineNameAndProcessState(pipelineName, state), limit));
       // pipelineName state
       // Y            N
     } else if (pipelineName != null && state == null) {
@@ -140,7 +141,7 @@ public class ProcessService {
       // pipelineName state
       // N            Y
     } else if (pipelineName == null && state != null) {
-      processes.addAll(list(repository.findAllByState(state), limit));
+      processes.addAll(list(repository.findAllByProcessState(state), limit));
     }
     // pipelineName state
     // N            N
@@ -192,23 +193,24 @@ public class ProcessService {
             .collect(groupingBy(ProcessStateRow::getPipelineName));
 
     for (String pipelineName : groupedByPipelineName.keySet()) {
-      Map<ProcessState, List<ProcessStateRow>> groupedByState =
+      Map<ProcessState, List<ProcessStateRow>> groupedByProcessState =
           groupedByPipelineName.get(pipelineName).stream()
               .collect(groupingBy(ProcessStateRow::getProcessState));
 
       ProcessStateSummary stateSummary = new ProcessStateSummary();
       stateSummary.setPipelineName(pipelineName);
-      if (groupedByState.containsKey(ProcessState.PENDING)) {
-        stateSummary.setPendingCount(groupedByState.get(ProcessState.PENDING).get(0).count);
+      if (groupedByProcessState.containsKey(ProcessState.PENDING)) {
+        stateSummary.setPendingCount(groupedByProcessState.get(ProcessState.PENDING).get(0).count);
       }
-      if (groupedByState.containsKey(ProcessState.ACTIVE)) {
-        stateSummary.setActiveCount(groupedByState.get(ProcessState.ACTIVE).get(0).count);
+      if (groupedByProcessState.containsKey(ProcessState.ACTIVE)) {
+        stateSummary.setActiveCount(groupedByProcessState.get(ProcessState.ACTIVE).get(0).count);
       }
-      if (groupedByState.containsKey(ProcessState.COMPLETED)) {
-        stateSummary.setCompletedCount(groupedByState.get(ProcessState.COMPLETED).get(0).count);
+      if (groupedByProcessState.containsKey(ProcessState.COMPLETED)) {
+        stateSummary.setCompletedCount(
+            groupedByProcessState.get(ProcessState.COMPLETED).get(0).count);
       }
-      if (groupedByState.containsKey(ProcessState.FAILED)) {
-        stateSummary.setFailedCount(groupedByState.get(ProcessState.FAILED).get(0).count);
+      if (groupedByProcessState.containsKey(ProcessState.FAILED)) {
+        stateSummary.setFailedCount(groupedByProcessState.get(ProcessState.FAILED).get(0).count);
       }
       list.add(stateSummary);
     }

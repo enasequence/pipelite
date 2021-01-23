@@ -29,6 +29,7 @@ import pipelite.executor.cmd.CmdRunner;
 import pipelite.executor.context.*;
 import pipelite.executor.task.RetryTask;
 import pipelite.log.LogKey;
+import pipelite.stage.StageState;
 import pipelite.stage.executor.*;
 import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.ExecutorParameters;
@@ -140,7 +141,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
     jobId = extractBsubJobIdSubmitted(result.getStageLog());
 
     logContext(log.atInfo(), request).log("LSF submit job id: %s", jobId);
-    result.setResultType(StageExecutorResultType.ACTIVE);
+    result.setStageState(StageState.ACTIVE);
     return result;
   }
 
@@ -300,10 +301,10 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
     result.getAttributes().put(StageExecutorResultAttribute.JOB_ID, jobId);
 
     if (column[BJOBS_COLUMN_STATUS].equals(BJOBS_STATUS_DONE)) {
-      result.setResultType(StageExecutorResultType.SUCCESS);
+      result.setStageState(StageState.SUCCESS);
       result.getAttributes().put(StageExecutorResultAttribute.EXIT_CODE, String.valueOf(0));
     } else if (column[BJOBS_COLUMN_STATUS].equals(BJOBS_STATUS_EXIT)) {
-      result.setResultType(StageExecutorResultType.ERROR);
+      result.setStageState(StageState.ERROR);
       result
           .getAttributes()
           .put(

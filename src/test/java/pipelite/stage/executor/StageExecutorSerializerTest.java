@@ -18,18 +18,19 @@ import pipelite.entity.StageEntity;
 import pipelite.executor.AbstractExecutor;
 import pipelite.executor.JsonSerializableExecutor;
 import pipelite.stage.Stage;
+import pipelite.stage.StageState;
 import pipelite.stage.parameters.ExecutorParameters;
 
 public class StageExecutorSerializerTest {
 
   private static class TestExecutor extends AbstractExecutor implements JsonSerializableExecutor {
 
-    private StageExecutorResultType resultType;
+    private StageState stageState;
 
     public TestExecutor() {}
 
-    public TestExecutor(StageExecutorResultType resultType) {
-      this.resultType = resultType;
+    public TestExecutor(StageState stageState) {
+      this.stageState = stageState;
     }
 
     @Override
@@ -40,12 +41,12 @@ public class StageExecutorSerializerTest {
     @Override
     public void terminate() {}
 
-    public StageExecutorResultType getResultType() {
-      return resultType;
+    public StageState getStageState() {
+      return stageState;
     }
 
-    public void setResultType(StageExecutorResultType resultType) {
-      this.resultType = resultType;
+    public void setStageState(StageState stageState) {
+      this.stageState = stageState;
     }
   }
 
@@ -59,18 +60,18 @@ public class StageExecutorSerializerTest {
       StageEntity stageEntity = new StageEntity();
       stageEntity.setExecutorName(TestExecutor.class.getName());
       stageEntity.setExecutorData(
-          "{\n" + "  \"resultType\" : \"" + result.getResultType().name() + "\"\n}");
+          "{\n" + "  \"stageState\" : \"" + result.getStageState().name() + "\"\n}");
       Stage stage =
           Stage.builder()
               .stageName("STAGE1")
-              .executor(new TestExecutor(result.getResultType()))
+              .executor(new TestExecutor(result.getStageState()))
               .build();
       stage.setStageEntity(stageEntity);
       StageExecutor deserializedExecutor = StageExecutorSerializer.deserializeExecutor(stage);
       assertThat(deserializedExecutor).isNotNull();
       assertThat(stage.getExecutor()).isInstanceOf(TestExecutor.class);
-      assertThat(((TestExecutor) stage.getExecutor()).getResultType())
-          .isEqualTo(result.getResultType());
+      assertThat(((TestExecutor) stage.getExecutor()).getStageState())
+          .isEqualTo(result.getStageState());
     }
   }
 
@@ -79,7 +80,7 @@ public class StageExecutorSerializerTest {
     StageEntity stageEntity = new StageEntity();
     stageEntity.setExecutorParams(
         "{\n" + "  \"maximumRetries\" : 3,\n" + "  \"immediateRetries\" : 3\n" + "}");
-    TestExecutor executor = new TestExecutor(StageExecutorResultType.SUCCESS);
+    TestExecutor executor = new TestExecutor(StageState.SUCCESS);
     Stage stage = Stage.builder().stageName("STAGE1").executor(executor).build();
     stage.setStageEntity(stageEntity);
     ExecutorParameters deserializedExecutorParams =
@@ -101,20 +102,20 @@ public class StageExecutorSerializerTest {
       Stage stage =
           Stage.builder()
               .stageName("STAGE1")
-              .executor(new TestExecutor(result.getResultType()))
+              .executor(new TestExecutor(result.getStageState()))
               .build();
       stage.setStageEntity(stageEntity);
       stageEntity.startExecution(stage);
       stageEntity.setExecutorName(TestExecutor.class.getName());
       stageEntity.setExecutorData(
-          "{\n" + "  \"resultType\" : \"" + result.getResultType().name() + "\"\n}");
+          "{\n" + "  \"stageState\" : \"" + result.getStageState().name() + "\"\n}");
       stageEntity.setExecutorParams(
           "{\n" + "  \"maximumRetries\" : 3,\n" + "  \"immediateRetries\" : 3\n" + "}");
       assertThat(StageExecutorSerializer.deserializeExecution(stage)).isTrue();
       assertThat(stage.getExecutor()).isNotNull();
       assertThat(stage.getExecutor()).isInstanceOf(TestExecutor.class);
-      assertThat(((TestExecutor) stage.getExecutor()).getResultType())
-          .isEqualTo(result.getResultType());
+      assertThat(((TestExecutor) stage.getExecutor()).getStageState())
+          .isEqualTo(result.getStageState());
       assertThat(stage.getExecutor().getExecutorParams()).isNotNull();
       assertThat(stage.getExecutor().getExecutorParams().getImmediateRetries()).isEqualTo(3);
       assertThat(stage.getExecutor().getExecutorParams().getMaximumRetries()).isEqualTo(3);

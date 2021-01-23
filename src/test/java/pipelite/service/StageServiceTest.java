@@ -23,9 +23,9 @@ import pipelite.entity.StageEntity;
 import pipelite.executor.AbstractExecutor;
 import pipelite.executor.JsonSerializableExecutor;
 import pipelite.stage.Stage;
+import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.parameters.ExecutorParameters;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
@@ -36,10 +36,10 @@ class StageServiceTest {
 
   public static class TestExecutor extends AbstractExecutor implements JsonSerializableExecutor {
 
-    private final StageExecutorResultType resultType;
+    private final StageState stageState;
 
-    public TestExecutor(StageExecutorResultType resultType) {
-      this.resultType = resultType;
+    public TestExecutor(StageState stageState) {
+      this.stageState = stageState;
     }
 
     @Override
@@ -50,8 +50,8 @@ class StageServiceTest {
     @Override
     public void terminate() {}
 
-    public StageExecutorResultType getResultType() {
-      return resultType;
+    public StageState getStageState() {
+      return stageState;
     }
   }
 
@@ -62,7 +62,7 @@ class StageServiceTest {
     String processId = UniqueStringGenerator.randomProcessId();
     String stageName = UniqueStringGenerator.randomStageName();
 
-    TestExecutor executor = new TestExecutor(StageExecutorResultType.SUCCESS);
+    TestExecutor executor = new TestExecutor(StageState.SUCCESS);
     executor.setExecutorParams(
         ExecutorParameters.builder()
             .immediateRetries(0)
@@ -82,7 +82,7 @@ class StageServiceTest {
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getExecutionCount()).isEqualTo(0);
-    assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.PENDING);
+    assertThat(stageEntity.getStageState()).isEqualTo(StageState.PENDING);
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNull();
     assertThat(stageEntity.getEndTime()).isNull();
@@ -98,14 +98,14 @@ class StageServiceTest {
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getExecutionCount()).isEqualTo(0);
-    assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.ACTIVE);
+    assertThat(stageEntity.getStageState()).isEqualTo(StageState.ACTIVE);
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNull();
     assertThat(stageEntity.getExecutorName())
         .isEqualTo("pipelite.service.StageServiceTest$TestExecutor");
     assertThat(stageEntity.getExecutorData())
-        .isEqualTo("{\n" + "  \"resultType\" : \"SUCCESS\"\n" + "}");
+        .isEqualTo("{\n" + "  \"stageState\" : \"SUCCESS\"\n" + "}");
     assertThat(stageEntity.getExecutorParams())
         .isEqualTo(
             "{\n"
@@ -119,15 +119,14 @@ class StageServiceTest {
 
     // End first execution.
 
-    StageExecutorResult firstExecutionResult =
-        new StageExecutorResult(StageExecutorResultType.ERROR);
+    StageExecutorResult firstExecutionResult = new StageExecutorResult(StageState.ERROR);
     service.endExecution(stage, firstExecutionResult);
 
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
-    assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.ERROR);
+    assertThat(stageEntity.getStageState()).isEqualTo(StageState.ERROR);
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNotNull();
@@ -135,7 +134,7 @@ class StageServiceTest {
     assertThat(stageEntity.getExecutorName())
         .isEqualTo("pipelite.service.StageServiceTest$TestExecutor");
     assertThat(stageEntity.getExecutorData())
-        .isEqualTo("{\n" + "  \"resultType\" : \"SUCCESS\"\n" + "}");
+        .isEqualTo("{\n" + "  \"stageState\" : \"SUCCESS\"\n" + "}");
     assertThat(stageEntity.getExecutorParams())
         .isEqualTo(
             "{\n"
@@ -155,14 +154,14 @@ class StageServiceTest {
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
-    assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.ACTIVE);
+    assertThat(stageEntity.getStageState()).isEqualTo(StageState.ACTIVE);
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNull();
     assertThat(stageEntity.getExecutorName())
         .isEqualTo("pipelite.service.StageServiceTest$TestExecutor");
     assertThat(stageEntity.getExecutorData())
-        .isEqualTo("{\n" + "  \"resultType\" : \"SUCCESS\"\n" + "}");
+        .isEqualTo("{\n" + "  \"stageState\" : \"SUCCESS\"\n" + "}");
     assertThat(stageEntity.getExecutorParams())
         .isEqualTo(
             "{\n"
@@ -176,15 +175,14 @@ class StageServiceTest {
 
     // End second execution.
 
-    StageExecutorResult secondExecutionResult =
-        new StageExecutorResult(StageExecutorResultType.SUCCESS);
+    StageExecutorResult secondExecutionResult = new StageExecutorResult(StageState.SUCCESS);
     service.endExecution(stage, secondExecutionResult);
 
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getExecutionCount()).isEqualTo(2);
-    assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.SUCCESS);
+    assertThat(stageEntity.getStageState()).isEqualTo(StageState.SUCCESS);
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNotNull();
@@ -192,7 +190,7 @@ class StageServiceTest {
     assertThat(stageEntity.getExecutorName())
         .isEqualTo("pipelite.service.StageServiceTest$TestExecutor");
     assertThat(stageEntity.getExecutorData())
-        .isEqualTo("{\n" + "  \"resultType\" : \"SUCCESS\"\n" + "}");
+        .isEqualTo("{\n" + "  \"stageState\" : \"SUCCESS\"\n" + "}");
     assertThat(stageEntity.getExecutorParams())
         .isEqualTo(
             "{\n"
@@ -212,7 +210,7 @@ class StageServiceTest {
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getExecutionCount()).isEqualTo(0);
-    assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.PENDING);
+    assertThat(stageEntity.getStageState()).isEqualTo(StageState.PENDING);
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNull();
     assertThat(stageEntity.getEndTime()).isNull();

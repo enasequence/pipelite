@@ -10,7 +10,7 @@
  */
 package pipelite.launcher.process.runner;
 
-import static pipelite.stage.executor.StageExecutorResultType.*;
+import static pipelite.stage.StageState.*;
 
 import com.google.common.flogger.FluentLogger;
 import java.time.Duration;
@@ -33,8 +33,8 @@ import pipelite.service.MailService;
 import pipelite.service.ProcessService;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
+import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.executor.StageExecutorSerializer;
 import pipelite.time.Time;
 
@@ -209,8 +209,8 @@ public class DefaultProcessRunner implements ProcessRunner {
     int errorCount = 0;
     for (Stage stage : stages) {
       StageEntity stageEntity = stage.getStageEntity();
-      StageExecutorResultType resultType = stageEntity.getResultType();
-      if (resultType == SUCCESS) {
+      StageState stageState = stageEntity.getStageState();
+      if (stageState == SUCCESS) {
         continue;
       }
       if (DependencyResolver.isEventuallyExecutableStage(stages, stage)) {
@@ -232,7 +232,7 @@ public class DefaultProcessRunner implements ProcessRunner {
    */
   private void resetDependentStageExecution(Process process, Stage from) {
     for (Stage stage : DependencyResolver.getDependentStages(process.getStages(), from)) {
-      if (stage.getStageEntity().getResultType() != PENDING) {
+      if (stage.getStageEntity().getStageState() != PENDING) {
         stageService.resetExecution(stage);
       }
     }

@@ -8,27 +8,27 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.stage.executor;
+package pipelite.stage;
 
-public enum StageExecutorResultType {
+public enum StageState {
   PENDING,
   ACTIVE,
   SUCCESS,
   ERROR;
 
-  public static boolean isPending(StageExecutorResultType resultType) {
-    return resultType == PENDING;
+  public static boolean isPending(StageState stageState) {
+    return stageState == PENDING;
   }
 
-  public static boolean isActive(StageExecutorResultType resultType) {
-    return resultType == ACTIVE;
+  public static boolean isActive(StageState stageState) {
+    return stageState == ACTIVE;
   }
 
-  public static boolean isError(StageExecutorResultType resultType) {
-    return resultType == ERROR;
+  public static boolean isError(StageState stageState) {
+    return stageState == ERROR;
   }
 
-  public static boolean isSuccess(StageExecutorResultType resultType) {
-    return resultType == SUCCESS;
+  public static boolean isSuccess(StageState stageState) {
+    return stageState == SUCCESS;
   }
 }

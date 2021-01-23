@@ -42,8 +42,8 @@ import pipelite.process.ProcessSource;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.*;
+import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultType;
 import pipelite.stage.parameters.ExecutorParameters;
 
 @SpringBootTest(
@@ -344,9 +344,9 @@ public class PipeliteLauncherFailureTest {
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);
     if (f.stageTestResult == StageTestResult.NO_ERROR) {
-      assertThat(processEntity.getState()).isEqualTo(ProcessState.COMPLETED);
+      assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.COMPLETED);
     } else {
-      assertThat(processEntity.getState())
+      assertThat(processEntity.getProcessState())
           .isEqualTo(ProcessState.FAILED); // no re-executions allowed
     }
   }
@@ -375,7 +375,7 @@ public class PipeliteLauncherFailureTest {
         assertThat(stageEntity.getExecutorName()).isNull();
         assertThat(stageEntity.getExecutorData()).isNull();
         assertThat(stageEntity.getExecutorParams()).isNull();
-        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.PENDING);
+        assertThat(stageEntity.getStageState()).isEqualTo(StageState.PENDING);
         assertThat(stageEntity.getResultParams()).isNull();
       } else {
 
@@ -399,10 +399,10 @@ public class PipeliteLauncherFailureTest {
             || (i == 1 && f.stageTestResult == StageTestResult.SECOND_ERROR)
             || (i == 2 && f.stageTestResult == StageTestResult.THIRD_ERROR)
             || (i == 3 && f.stageTestResult == StageTestResult.FOURTH_ERROR)) {
-          assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.ERROR);
+          assertThat(stageEntity.getStageState()).isEqualTo(StageState.ERROR);
           assertThat(stageEntity.getResultParams()).isNull();
         } else {
-          assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.SUCCESS);
+          assertThat(stageEntity.getStageState()).isEqualTo(StageState.SUCCESS);
           assertThat(stageEntity.getResultParams()).isNull();
         }
       }
