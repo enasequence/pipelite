@@ -120,7 +120,7 @@ public class Application {
     }
     if (serverManager.getServiceCount() == 0) {
       log.atSevere().log("No pipelite services configured");
-      shutDown();
+      // shutDown();
     }
   }
 
