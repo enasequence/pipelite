@@ -12,14 +12,17 @@ package pipelite.configuration;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.util.Arrays;
 import java.util.HashMap;
 import javax.sql.DataSource;
 import lombok.Data;
 import lombok.extern.flogger.Flogger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -38,6 +41,8 @@ public class RepositoryConfiguration {
 
   private static final int DEFAULT_MAX_ACTIVE = 10;
 
+  @Autowired Environment environment;
+
   private String driverClassName;
   private String url;
   private String username;
@@ -45,6 +50,8 @@ public class RepositoryConfiguration {
   private String ddlAuto;
   private String dialect;
   private Integer maxActive;
+  /** Uses an in memory database if a valid repository configuration has not been provided. */
+  private boolean test;
 
   // Better error reporting for required properties.
   private boolean checkRequiredProperties() {
@@ -65,6 +72,19 @@ public class RepositoryConfiguration {
       log.atSevere().log("Missing required pipelite property: pipelite.repository.password");
       isValid = false;
     }
+
+    if (!isValid && (test || isTestProfile())) {
+      log.atSevere().log("Using an in memory database unsuitable for production purposes.");
+      this.driverClassName = "org.hsqldb.jdbc.JDBCDriver";
+      this.url = "jdbc:hsqldb:mem:testdb;DB_CLOSE_DELAY: -1";
+      this.username = "sa";
+      this.password = "";
+      this.maxActive = 25;
+      this.ddlAuto = "create";
+      this.dialect = "org.hibernate.dialect.HSQLDialect";
+      return true;
+    }
+
     return isValid;
   }
 
@@ -117,5 +137,10 @@ public class RepositoryConfiguration {
     JpaTransactionManager transactionManager = new JpaTransactionManager();
     transactionManager.setEntityManagerFactory(pipeliteEntityManager().getObject());
     return transactionManager;
+  }
+
+  private boolean isTestProfile() {
+    return Arrays.stream(environment.getActiveProfiles())
+        .anyMatch(profile -> "test".equals(profile));
   }
 }

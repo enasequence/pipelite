@@ -10,7 +10,7 @@ plugins {
 }
 
 group = 'pipelite'
-version = '1.0.45'
+version = '1.0.46'
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
 
@@ -27,8 +27,8 @@ task sourceJar(type: Jar) {
     archiveClassifier = 'sources'
 }
 
-artifacts {
-    archives sourceJar
+java {
+    withSourcesJar()
 }
 
 spotless {
