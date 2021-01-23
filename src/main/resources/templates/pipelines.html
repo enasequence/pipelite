@@ -75,12 +75,12 @@ function show() {
     var runningTable = $('#runningTable').DataTable();
     var localTable = $('#localTable').DataTable();
     var allTable = $('#allTable').DataTable();
-    var localHistoryType = $( "#localHistoryType" ).val();
-    var localHistorySince = $( "#localHistorySince" ).val();
+    var runningHistoryType = $( "#runningHistoryType" ).val();
+    var runningHistorySince = $( "#runningHistorySince" ).val();
 
     // Show the filter badges.
-    var localHistoryTypeText =$( "#localHistoryType option:selected" ).text();
-    $( "#localHistoryTypeBadge" ).text(localHistoryTypeText);
+    var runningHistoryTypeText =$( "#runningHistoryType option:selected" ).text();
+    $( "#runningHistoryTypeBadge" ).text(runningHistoryTypeText);
 
     var runningHistorySinceText = "Last ";
 
