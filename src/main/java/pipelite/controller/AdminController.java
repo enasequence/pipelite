@@ -64,15 +64,14 @@ public class AdminController {
   @ResponseStatus(HttpStatus.OK)
   @Operation(description = "Stop all pipelite services and terminate all running processes")
   @ApiResponses(
-          value = {
-                  @ApiResponse(responseCode = "200", description = "OK"),
-                  @ApiResponse(responseCode = "500", description = "Internal Server error")
-          })
+      value = {
+        @ApiResponse(responseCode = "200", description = "OK"),
+        @ApiResponse(responseCode = "500", description = "Internal Server error")
+      })
   public AdminInfo kill() {
     new Thread(() -> application.kill()).start();
     return new AdminInfo("Stopping all pipelite services and terminating all running processes");
   }
-
 
   @GetMapping("/restart")
   @ResponseStatus(HttpStatus.OK)

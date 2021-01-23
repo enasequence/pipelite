@@ -23,16 +23,18 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class SwaggerConfiguration {
 
-    @Autowired
-    WebConfiguration webConfiguration;
+  @Autowired WebConfiguration webConfiguration;
 
-    @Bean
-    public OpenAPI openAPI() {
-        return new OpenAPI()
-                .addServersItem(new Server().url(webConfiguration.getContextPath()))
-                .components(new Components().addSecuritySchemes("basicScheme",
-                        new SecurityScheme().type(SecurityScheme.Type.HTTP).scheme("basic")))
-                .addSecurityItem(new SecurityRequirement().addList("basicScheme"))
-                .info(new Info().version("1").title("Pipelite launcher and scheduler services"));
-    }
+  @Bean
+  public OpenAPI openAPI() {
+    return new OpenAPI()
+        .addServersItem(new Server().url(webConfiguration.getContextPath()))
+        .components(
+            new Components()
+                .addSecuritySchemes(
+                    "basicScheme",
+                    new SecurityScheme().type(SecurityScheme.Type.HTTP).scheme("basic")))
+        .addSecurityItem(new SecurityRequirement().addList("basicScheme"))
+        .info(new Info().version("1").title("Pipelite launcher and scheduler services"));
+  }
 }

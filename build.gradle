@@ -10,7 +10,7 @@ plugins {
 }
 
 group = 'pipelite'
-version = '1.0.44'
+version = '1.0.45'
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
 
@@ -20,12 +20,15 @@ bootJar {
 
 jar {
     enabled = true
-    from sourceSets.main.delombokTask
 }
 
 task sourceJar(type: Jar) {
     from sourceSets.main.delombokTask
     archiveClassifier = 'sources'
+}
+
+artifacts {
+    archives sourceJar
 }
 
 spotless {
@@ -116,7 +119,6 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
-            artifact tasks.sourceJar
         }
     }
     repositories {

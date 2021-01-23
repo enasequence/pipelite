@@ -12,7 +12,6 @@ package pipelite.executor.context;
 
 import com.amazonaws.services.batch.AWSBatch;
 import com.amazonaws.services.batch.AWSBatchClientBuilder;
-import com.amazonaws.services.batch.model.JobDetail;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.AwsBatchExecutor;

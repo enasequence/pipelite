@@ -99,7 +99,7 @@ public class StageBuilder {
    *
    * @param cmd the command line command to execute
    */
-  public ProcessBuilder witSimpleLsfExecutor(String cmd) {
+  public ProcessBuilder withSimpleLsfExecutor(String cmd) {
     return withSimpleLsfExecutor(cmd, new SimpleLsfExecutorParameters());
   }
 
