@@ -103,19 +103,13 @@ public class Application {
     launchers = new ArrayList<>();
     try {
       log.atInfo().log("Starting pipelite services");
-      // Check pipeline names.
-      if (launcherConfiguration.getPipelineName() != null) {
-        List<String> pipelineNames = launcherConfiguration.getPipelineNames();
-        for (String pipelineName : pipelineNames) {
-          processFactoryService.create(pipelineName);
-        }
-        // Create services.
-        for (String pipelineName : pipelineNames) {
-          PipeliteLauncher launcher = createLauncher(pipelineName);
-          launchers.add(launcher);
-          serverManager.addService(launcher);
-        }
+      // Create pipelite launchers.
+      for (String pipelineName : processFactoryService.getPipelineNames()) {
+        PipeliteLauncher launcher = createLauncher(pipelineName);
+        launchers.add(launcher);
+        serverManager.addService(launcher);
       }
+      // Create scheduler.
       if (launcherConfiguration.getSchedulerName() != null) {
         scheduler = createScheduler();
         serverManager.addService(scheduler);

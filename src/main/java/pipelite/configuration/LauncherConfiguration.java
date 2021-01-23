@@ -11,10 +11,7 @@
 package pipelite.configuration;
 
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -46,12 +43,6 @@ public class LauncherConfiguration {
   private static final int DEFAULT_PROCESS_CREATE_MAX_SIZE = 5000;
 
   public LauncherConfiguration() {}
-
-  /**
-   * An optional comma separated list of {@link pipelite.launcher.PipeliteLauncher} pipeline names.
-   * {@link pipelite.launcher.PipeliteLauncher} executes processes in parallel for one pipeline.
-   */
-  private String pipelineName;
 
   /**
    * An optional {@link pipelite.launcher.PipeliteScheduler} name. {@link
@@ -115,11 +106,5 @@ public class LauncherConfiguration {
 
   public static String getSchedulerName(LauncherConfiguration launcherConfiguration) {
     return launcherConfiguration.getSchedulerName();
-  }
-
-  public List<String> getPipelineNames() {
-    return Arrays.stream(getPipelineName().split(","))
-        .map(s -> s.trim())
-        .collect(Collectors.toList());
   }
 }

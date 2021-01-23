@@ -13,6 +13,7 @@ package pipelite.service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,15 @@ public class ProcessFactoryService {
       }
       map.put(factory.getPipelineName(), factory);
     }
+  }
+
+  /**
+   * Returns the pipelines names for registered process factories.
+   *
+   * @return pipelines names for registered process factories
+   */
+  public List<String> getPipelineNames() {
+    return map.keySet().stream().collect(Collectors.toList());
   }
 
   /**
