@@ -50,6 +50,9 @@ public class LsfExecutorParameters extends CmdExecutorParameters {
   @Override
   public void applyDefaults(ExecutorConfiguration executorConfiguration) {
     LsfExecutorParameters defaultParams = executorConfiguration.getLsf();
+    if (defaultParams == null) {
+      return;
+    }
     super.applyDefaults(defaultParams);
     applyDefault(this::getDefinition, this::setDefinition, defaultParams::getDefinition);
     applyDefault(this::getFormat, this::setFormat, defaultParams::getFormat);

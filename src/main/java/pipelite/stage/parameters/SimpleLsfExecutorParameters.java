@@ -42,6 +42,9 @@ public class SimpleLsfExecutorParameters extends CmdExecutorParameters {
   @Override
   public void applyDefaults(ExecutorConfiguration executorConfiguration) {
     SimpleLsfExecutorParameters defaultParams = executorConfiguration.getSimpleLsf();
+    if (defaultParams == null) {
+      return;
+    }
     super.applyDefaults(defaultParams);
     applyDefault(this::getQueue, this::setQueue, defaultParams::getQueue);
     applyDefault(this::getCpu, this::setCpu, defaultParams::getCpu);

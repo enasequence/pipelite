@@ -39,6 +39,9 @@ public class AwsBatchExecutorParameters extends ExecutorParameters {
   @Override
   public void applyDefaults(ExecutorConfiguration executorConfiguration) {
     AwsBatchExecutorParameters defaultParams = executorConfiguration.getAwsBatch();
+    if (defaultParams == null) {
+      return;
+    }
     super.applyDefaults(defaultParams);
     applyDefault(this::getRegion, this::setRegion, defaultParams::getRegion);
     applyDefault(this::getQueue, this::setQueue, defaultParams::getQueue);

@@ -43,6 +43,9 @@ public class CmdExecutorParameters extends ExecutorParameters {
 
   public void applyDefaults(ExecutorConfiguration executorConfiguration) {
     CmdExecutorParameters defaultParams = executorConfiguration.getCmd();
+    if (defaultParams == null) {
+      return;
+    }
     super.applyDefaults(defaultParams);
     applyDefault(this::getHost, this::setHost, defaultParams::getHost);
     applyDefault(this::getUser, this::setUser, defaultParams::getUser);

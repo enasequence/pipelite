@@ -81,6 +81,9 @@ public class ExecutorParameters {
    * @param params executor parameters extracted from stage configuration
    */
   protected void applyDefaults(ExecutorParameters params) {
+    if (params == null) {
+      return;
+    }
     applyDefault(this::getTimeout, this::setTimeout, params::getTimeout);
     applyDefault(this::getMaximumRetries, this::setMaximumRetries, params::getMaximumRetries);
     applyDefault(this::getImmediateRetries, this::setImmediateRetries, params::getImmediateRetries);
