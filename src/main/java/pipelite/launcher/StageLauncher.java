@@ -37,7 +37,7 @@ public class StageLauncher {
   private final Stage stage;
   private final ZonedDateTime timeout;
 
-  private static final Duration POLL_FREQUENCY = Duration.ofMinutes(1);
+  private static final Duration POLL_FREQUENCY = Duration.ofSeconds(10);
 
   public StageLauncher(
       ExecutorConfiguration executorConfiguration,

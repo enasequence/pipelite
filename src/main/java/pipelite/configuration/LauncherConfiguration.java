@@ -35,7 +35,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class LauncherConfiguration {
 
   private static final Duration DEFAULT_LOCK_DURATION = Duration.ofMinutes(10);
-  private static final Duration DEFAULT_PROCESS_RUNNER_FREQUENCY = Duration.ofMinutes(1);
+  private static final Duration DEFAULT_PROCESS_RUNNER_FREQUENCY = Duration.ofSeconds(10);
   private static final Duration DEFAULT_SCHEDULE_REFRESH_FREQUENCY = Duration.ofHours(4);
   private static final Duration DEFAULT_PROCESS_QUEUE_MAX_REFRESH_FREQUENCY = Duration.ofHours(6);
   private static final Duration DEFAULT_PROCESS_QUEUE_MIN_REFRESH_FREQUENCY = Duration.ofMinutes(5);
