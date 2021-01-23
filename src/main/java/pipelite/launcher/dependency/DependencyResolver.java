@@ -11,10 +11,9 @@
 package pipelite.launcher.dependency;
 
 import java.util.*;
-import pipelite.entity.StageEntity;
-import pipelite.launcher.StageLauncher;
+import java.util.stream.Collectors;
+
 import pipelite.stage.Stage;
-import pipelite.stage.executor.StageExecutorResultType;
 
 public class DependencyResolver {
 
@@ -93,13 +92,9 @@ public class DependencyResolver {
    *     results of all stages in the process
    */
   public static List<Stage> getEventuallyExecutableStages(List<Stage> stages) {
-    List<Stage> executableStages = new ArrayList<>();
-    for (Stage stage : stages) {
-      if (isEventuallyExecutableStage(stages, stage)) {
-        executableStages.add(stage);
-      }
-    }
-    return executableStages;
+    return stages.stream()
+        .filter(stage -> isEventuallyExecutableStage(stages, stage))
+        .collect(Collectors.toList());
   }
   /**
    * Returns the list of stages that can be immediately executed.
@@ -110,13 +105,9 @@ public class DependencyResolver {
    */
   public static List<Stage> getImmediatelyExecutableStages(
       List<Stage> stages, Collection<Stage> active) {
-    List<Stage> executableStages = new ArrayList<>();
-    for (Stage stage : stages) {
-      if (isImmediatelyExecutableStage(stages, active, stage)) {
-        executableStages.add(stage);
-      }
-    }
-    return executableStages;
+    return stages.stream()
+        .filter(stage -> isImmediatelyExecutableStage(stages, active, stage))
+        .collect(Collectors.toList());
   }
 
   /**
@@ -129,21 +120,20 @@ public class DependencyResolver {
    *     all stages in the process
    */
   public static boolean isEventuallyExecutableStage(List<Stage> stages, Stage stage) {
-    StageEntity stageEntity = stage.getStageEntity();
-    if (stageEntity.getResultType() == StageExecutorResultType.SUCCESS) {
-      // Stage can't be executed because it has already been executed successfully.
+    if (stage.isSuccess()) {
+      // Stage can't be executed as it has already been executed successfully.
       return false;
     }
-    if (stageEntity.getExecutionCount() > StageLauncher.getMaximumRetries(stage)) {
-      // Stage can't be executed because it has already been executed the maximum number of times.
-      return false;
+    if (stage.isError()) {
+      // Stage that has previously failed execution can be executed if it has not been retried the
+      // maximum number of times.
+      return stage.hasMaximumRetriesLeft();
     }
+    // Stage is pending or active.
     for (Stage dependsOn : getDependsOnStages(stages, stage)) {
-      if (dependsOn.getStageEntity().getResultType() == StageExecutorResultType.ERROR
-          && dependsOn.getStageEntity().getExecutionCount()
-              > StageLauncher.getMaximumRetries(dependsOn)) {
-        // Stage can be executed because the stage it depends on has not been executed the maximum
-        // number of times.
+      if (dependsOn.isError() && !dependsOn.hasMaximumRetriesLeft()) {
+        // Stage can't be executed if it depends on a stage that has been retried the maximum number
+        // of times.
         return false;
       }
     }
@@ -161,54 +151,30 @@ public class DependencyResolver {
    */
   public static boolean isImmediatelyExecutableStage(
       List<Stage> stages, Collection<Stage> active, Stage stage) {
-    if (!isEventuallyExecutableStage(stages, stage)) {
-      return false;
-    }
-    if (stage.getImmediateExecutionCount() > StageLauncher.getImmediateRetries(stage)) {
-      // Stage can't be executed because it has already been executed the maximum number of times.
-      return false;
-    }
     if (active.contains(stage)) {
-      // Stage can't be executed because it is already being currently executed.
+      // Stage can't be executed as it is currently being executed.
       return false;
     }
-    if (isDependsOnStagesAnyActive(stages, active, stage)) {
-      // Stage can't be executed because it depends on stages that are currently being executed.
+
+    List<Stage> dependsOnStages = getDependsOnStages(stages, stage);
+
+    if (dependsOnStages.stream().anyMatch(s -> active.contains(s))) {
+      // Stage can't be executed as it depends on stages that are currently being executed.
       return false;
     }
-    // Stage can be executed if all the stages it depends on have been successfully executed.
-    return isDependsOnStagesAllSuccess(stages, stage);
-  }
 
-  /**
-   * Returns true if any of the stages the stage depends on are active.
-   *
-   * @param stages all stages
-   * @param active active stages that are currently being executed
-   * @param stage the stage of interest
-   * @return true if any of the stages the stage depends on are active
-   */
-  public static boolean isDependsOnStagesAnyActive(
-      List<Stage> stages, Collection<Stage> active, Stage stage) {
-    for (Stage dependsOn : getDependsOnStages(stages, stage)) {
-      if (active.contains(dependsOn)) {
-        return true;
-      }
+    if (!isEventuallyExecutableStage(stages, stage)) {
+      // Stage can't be executed as it is not eventually executable.
+      return false;
     }
-    return false;
-  }
 
-  /**
-   * Returns true if all of the stages the stage depends on have been successfully executed.
-   *
-   * @param stages all stages
-   * @param stage the stage of interest
-   * @return true if all of the stages the stage depends on have been successfully executed
-   */
-  public static boolean isDependsOnStagesAllSuccess(List<Stage> stages, Stage stage) {
-    return getDependsOnStages(stages, stage).stream()
-            .filter(s -> s.getStageEntity().getResultType() != StageExecutorResultType.SUCCESS)
-            .count()
-        == 0;
+    if (stage.isError()) {
+      // Stage that has previously failed execution can be executed if it has not been retried the
+      // maximum number of times.
+      return stage.hasImmediateRetriesLeft();
+    }
+
+    // Stage can be executed if all stages it depends on have been executed successfully.
+    return dependsOnStages.stream().allMatch(s -> s.isSuccess());
   }
 }
