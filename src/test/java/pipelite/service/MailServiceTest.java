@@ -69,7 +69,8 @@ public class MailServiceTest {
                 + "  \"processId\" : \"PROCESS_ID\",\n"
                 + "  \"pipelineName\" : \"PIPELINE_NAME\",\n"
                 + "  \"stageName\" : \"STAGE1\",\n"
-                + "  \"executionCount\" : 0\n"
+                + "  \"executionCount\" : 0,\n"
+                + "  \"resultType\" : \"PENDING\"\n"
                 + "}\n");
     // mailService.sendProcessExecutionMessage("PIPELINE_NAME", process);
   }
@@ -109,7 +110,8 @@ public class MailServiceTest {
                 + "  \"processId\" : \"PROCESS_ID\",\n"
                 + "  \"pipelineName\" : \"PIPELINE_NAME\",\n"
                 + "  \"stageName\" : \"STAGE1\",\n"
-                + "  \"executionCount\" : 0\n"
+                + "  \"executionCount\" : 0,\n"
+                + "  \"resultType\" : \"PENDING\"\n"
                 + "}\n");
     // mailService.sendStageExecutionMessage("PIPELINE_NAME", process, process.getStages().get(0));
   }

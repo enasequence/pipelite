@@ -63,7 +63,7 @@ public class StageEntity {
   private String executorParams;
 
   @Enumerated(EnumType.STRING)
-  @Column(name = "EXEC_RESULT_TYPE", length = 15)
+  @Column(name = "EXEC_RESULT_TYPE", length = 15, nullable = false)
   private StageExecutorResultType resultType;
 
   @Column(name = "EXEC_RESULT_PARAMS", columnDefinition = "CLOB")
@@ -80,6 +80,7 @@ public class StageEntity {
    */
   public static StageEntity createExecution(String pipelineName, String processId, Stage stage) {
     StageEntity stageEntity = new StageEntity();
+    stageEntity.setResultType(StageExecutorResultType.PENDING);
     stageEntity.setProcessId(processId);
     stageEntity.setPipelineName(pipelineName);
     stageEntity.setStageName(stage.getStageName());
@@ -133,7 +134,7 @@ public class StageEntity {
 
   /** Called when the stage execution is reset. */
   public void resetExecution() {
-    this.resultType = null;
+    this.resultType = StageExecutorResultType.PENDING;
     this.resultParams = null;
     this.startTime = null;
     this.endTime = null;

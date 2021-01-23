@@ -232,7 +232,7 @@ public class DefaultProcessRunner implements ProcessRunner {
    */
   private void resetDependentStageExecution(Process process, Stage from) {
     for (Stage stage : DependencyResolver.getDependentStages(process.getStages(), from)) {
-      if (stage.getStageEntity().getResultType() != null) {
+      if (stage.getStageEntity().getResultType() != PENDING) {
         stageService.resetExecution(stage);
       }
     }

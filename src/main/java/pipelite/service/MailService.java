@@ -73,10 +73,8 @@ public class MailService {
 
   public String getStageExecutionSubject(Process process, Stage stage) {
     String state = "";
-    if (stage.getStageEntity() != null && stage.getStageEntity().getResultType() != null) {
+    if (stage.getStageEntity() != null) {
       state = stage.getStageEntity().getResultType().name();
-    } else {
-      state = "PENDING";
     }
     return "pipelite stage ("
         + state

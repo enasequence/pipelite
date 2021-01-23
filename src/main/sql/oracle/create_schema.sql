@@ -4,8 +4,8 @@
 -- define index_tablespace = 'era_ind';
 
 create sequence pipelite2_launcher_lock_seq
-increment by 1
-start with 1;
+    increment by 1
+    start with 1;
 
 create table pipelite2_launcher_lock
 (
@@ -15,7 +15,7 @@ create table pipelite2_launcher_lock
     host          varchar2(256) not null,
     port          number(5,0) not null,
     context_path  varchar2(256) not null,
-    expiry        timestamp not null,
+    expiry        timestamp            not null,
     audit_time    date default sysdate not null
 ) tablespace &table_tablespace;
 
@@ -278,7 +278,7 @@ create table pipelite2_stage
     exec_name          varchar2(256),
     exec_data          clob,
     exec_params        clob,
-    exec_result_type   varchar2(64),
+    exec_result_type   varchar2(64) not null,
     exec_result_params clob,
     audit_time         date default sysdate not null
 ) tablespace &table_tablespace;
@@ -293,7 +293,7 @@ primary key (process_id, stage_name, pipeline_name) using index pk_pipelite2_sta
 ;
 
 alter table pipelite2_stage add constraint ck_pipelite2_stage_result
-check ( exec_result_type is null or exec_result_type in ('ACTIVE', 'SUCCESS', 'ERROR') )
+check ( exec_result_type in ('PENDING', 'ACTIVE', 'SUCCESS', 'ERROR') )
 ;
 
 -- @formatter:on

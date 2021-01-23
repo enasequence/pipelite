@@ -11,9 +11,14 @@
 package pipelite.stage.executor;
 
 public enum StageExecutorResultType {
+  PENDING,
   ACTIVE,
   SUCCESS,
   ERROR;
+
+  public static boolean isPending(StageExecutorResultType resultType) {
+    return resultType == PENDING;
+  }
 
   public static boolean isActive(StageExecutorResultType resultType) {
     return resultType == ACTIVE;

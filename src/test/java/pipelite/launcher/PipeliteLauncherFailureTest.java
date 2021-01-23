@@ -375,7 +375,7 @@ public class PipeliteLauncherFailureTest {
         assertThat(stageEntity.getExecutorName()).isNull();
         assertThat(stageEntity.getExecutorData()).isNull();
         assertThat(stageEntity.getExecutorParams()).isNull();
-        assertThat(stageEntity.getResultType()).isNull();
+        assertThat(stageEntity.getResultType()).isEqualTo(StageExecutorResultType.PENDING);
         assertThat(stageEntity.getResultParams()).isNull();
       } else {
 
