@@ -40,7 +40,7 @@ public class LauncherConfiguration {
   private static final Duration DEFAULT_PROCESS_QUEUE_MAX_REFRESH_FREQUENCY = Duration.ofHours(6);
   private static final Duration DEFAULT_PROCESS_QUEUE_MIN_REFRESH_FREQUENCY = Duration.ofMinutes(5);
   private static final int DEFAULT_PROCESS_QUEUE_MAX_SIZE = 5000;
-  private static final int DEFAULT_PROCESS_CREATE_MAX_SIZE = 5000;
+  private static final int DEFAULT_PROCESS_CREATE_MAX_SIZE = 1000;
 
   public LauncherConfiguration() {}
 
