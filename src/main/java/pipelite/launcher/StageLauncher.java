@@ -19,6 +19,7 @@ import pipelite.configuration.ExecutorConfiguration;
 import pipelite.exception.PipeliteException;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
+import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
@@ -30,6 +31,7 @@ import pipelite.time.Time;
 public class StageLauncher {
 
   private final ExecutorConfiguration executorConfiguration;
+  private final StageService stageService;
   private final String pipelineName;
   private final Process process;
   private final Stage stage;
@@ -39,16 +41,19 @@ public class StageLauncher {
 
   public StageLauncher(
       ExecutorConfiguration executorConfiguration,
+      StageService stageService,
       String pipelineName,
       Process process,
       Stage stage) {
     Assert.notNull(executorConfiguration, "Missing stage configuration");
+    Assert.notNull(stageService, "Missing stage service");
     Assert.notNull(pipelineName, "Missing pipeline name");
     Assert.notNull(process, "Missing process");
     Assert.notNull(process.getProcessEntity(), "Missing process entity");
     Assert.notNull(stage, "Missing stage");
     Assert.notNull(stage.getStageEntity(), "Missing stage entity");
     this.executorConfiguration = executorConfiguration;
+    this.stageService = stageService;
     this.pipelineName = pipelineName;
     this.process = process;
     this.stage = stage;
@@ -116,6 +121,7 @@ public class StageLauncher {
                       .stage(stage)
                       .build());
       if (result.isActive()) {
+        stageService.startAsyncExecution(stage);
         // If the execution state is active then the executor is asynchronous.
         result = pollExecution();
       }

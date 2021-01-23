@@ -21,6 +21,7 @@ import pipelite.entity.StageEntity;
 import pipelite.executor.CallExecutor;
 import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultType;
@@ -30,6 +31,7 @@ public class StageLauncherTest {
 
   private void callExecutor(StageExecutorResultType resultType) {
     ExecutorConfiguration executorConfiguration = new ExecutorConfiguration();
+    StageService stageService = mock(StageService.class);
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     String processId = UniqueStringGenerator.randomProcessId();
     Process process =
@@ -50,7 +52,7 @@ public class StageLauncherTest {
     stage.setStageEntity(StageEntity.createExecution(pipelineName, processId, stage));
     stage.getStageEntity().startExecution(stage);
     StageLauncher stageLauncher =
-        spy(new StageLauncher(executorConfiguration, pipelineName, process, stage));
+        spy(new StageLauncher(executorConfiguration, stageService, pipelineName, process, stage));
     assertThat(stageLauncher.run().getResultType()).isEqualTo(resultType);
     verify(stageLauncher, times(0)).pollExecution();
     assertThat(stage.getStageEntity().getExecutorName())
@@ -62,6 +64,7 @@ public class StageLauncherTest {
 
   private void asyncCallExecutor(StageExecutorResultType resultType) {
     ExecutorConfiguration executorConfiguration = new ExecutorConfiguration();
+    StageService stageService = mock(StageService.class);
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     String processId = UniqueStringGenerator.randomProcessId();
     Process process =
@@ -84,7 +87,7 @@ public class StageLauncherTest {
     stage.getStageEntity().endExecution(StageExecutorResult.error());
     stage.getStageEntity().startExecution(stage);
     StageLauncher stageLauncher =
-        spy(new StageLauncher(executorConfiguration, pipelineName, process, stage));
+        spy(new StageLauncher(executorConfiguration, stageService, pipelineName, process, stage));
     assertThat(stageLauncher.run().getResultType()).isEqualTo(resultType);
     verify(stageLauncher, times(1)).pollExecution();
     assertThat(stage.getStageEntity().getExecutorName())

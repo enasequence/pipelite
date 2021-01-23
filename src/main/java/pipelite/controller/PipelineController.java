@@ -142,19 +142,21 @@ public class PipelineController {
   }
 
   private void getLoremIpsumPipelines(List<PipelineInfo> list) {
-    Random random = new Random();
-    Lorem lorem = LoremIpsum.getInstance();
-    for (int i = 0; i < LOREM_IPSUM_PROCESSES; ++i) {
-      list.add(
-          PipelineInfo.builder()
-              .pipelineName(lorem.getCountry())
-              .maxRunningCount(random.nextInt(10))
-              .runningCount(random.nextInt(10))
-              .pendingCount((long) random.nextInt(10))
-              .activeCount((long) random.nextInt(10))
-              .completedCount((long) random.nextInt(10))
-              .failedCount((long) random.nextInt(10))
-              .build());
+    if (LoremUtils.isActiveProfile(environment)) {
+      Random random = new Random();
+      Lorem lorem = LoremIpsum.getInstance();
+      for (int i = 0; i < LOREM_IPSUM_PROCESSES; ++i) {
+        list.add(
+            PipelineInfo.builder()
+                .pipelineName(lorem.getCountry())
+                .maxRunningCount(random.nextInt(10))
+                .runningCount(random.nextInt(10))
+                .pendingCount((long) random.nextInt(10))
+                .activeCount((long) random.nextInt(10))
+                .completedCount((long) random.nextInt(10))
+                .failedCount((long) random.nextInt(10))
+                .build());
+      }
     }
   }
 

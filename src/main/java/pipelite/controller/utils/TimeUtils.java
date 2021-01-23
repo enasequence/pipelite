@@ -28,6 +28,9 @@ public class TimeUtils {
    * @return the date time as a yyyy-MM-dd'T'HH:mm:ssX formatted string
    */
   public static String humanReadableDate(ZonedDateTime dateTime) {
+    if (dateTime == null) {
+      return null;
+    }
     return dateTime.format(dateTimeFormatter);
   }
 
@@ -40,6 +43,9 @@ public class TimeUtils {
    *     string
    */
   public static String humanReadableDuration(ZonedDateTime dateTime) {
+    if (dateTime == null) {
+      return null;
+    }
     return humanReadableDuration(dateTime, ZonedDateTime.now());
   }
 

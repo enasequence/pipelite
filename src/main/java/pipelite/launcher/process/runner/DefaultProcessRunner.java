@@ -140,7 +140,7 @@ public class DefaultProcessRunner implements ProcessRunner {
 
   private void runStage(Stage stage, ProcessRunnerResult result) {
     StageLauncher stageLauncher =
-        new StageLauncher(executorConfiguration, pipelineName, process, stage);
+        new StageLauncher(executorConfiguration, stageService, pipelineName, process, stage);
     activeStages.put(stage, stageLauncher);
     executorService.execute(
         () -> {

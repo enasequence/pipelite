@@ -83,8 +83,7 @@ public class StageService {
   }
 
   /**
-   * Called when the stage execution starts. This may allow asynchronous executors to continue
-   * executing an interrupted stage. Saves the stage.
+   * Called when the stage execution starts. Saves the stage.
    *
    * @param stage the stage
    */
@@ -93,6 +92,17 @@ public class StageService {
     stageEntity.startExecution(stage);
     saveStage(stageEntity);
     saveStageLog(StageLogEntity.startExecution(stageEntity));
+  }
+
+  /**
+   * Called when the asynchronous stage execution starts. Saves the stage.
+   *
+   * @param stage the stage
+   */
+  public void startAsyncExecution(Stage stage) {
+    StageEntity stageEntity = stage.getStageEntity();
+    stageEntity.startAsyncExecution(stage);
+    saveStage(stageEntity);
   }
 
   /**

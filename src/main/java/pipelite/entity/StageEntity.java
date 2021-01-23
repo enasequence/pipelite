@@ -88,8 +88,7 @@ public class StageEntity {
   }
 
   /**
-   * Called when the stage execution starts. This may allow asynchronous executors to continue
-   * executing an interrupted stage.
+   * Called when the stage execution starts.
    *
    * @param stage the stage
    */
@@ -105,6 +104,18 @@ public class StageEntity {
     }
     if (stageExecutor.getExecutorParams() != null) {
       this.executorParams = stageExecutor.getExecutorParams().serialize();
+    }
+  }
+
+  /**
+   * Called when the asynchronous stage execution starts to save stage executor data.
+   *
+   * @param stage the stage
+   */
+  public void startAsyncExecution(Stage stage) {
+    StageExecutor stageExecutor = stage.getExecutor();
+    if (stageExecutor instanceof JsonSerializableExecutor) {
+      this.executorData = ((JsonSerializableExecutor) stageExecutor).serialize();
     }
   }
 

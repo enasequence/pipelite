@@ -43,7 +43,7 @@ $(document).ready( function () {
     });
 
     // Set up autocomplete for pipeline name.
-    var url = "/pipelite/process/local";
+    var url = "/pipelite/process/run";
     $.get(url, function(data, status) {
 
         var pipelineNames = data.map(function (obj) {
