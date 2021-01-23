@@ -39,7 +39,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 @Flogger
 public class RepositoryConfiguration {
 
-  private static final int DEFAULT_MAX_ACTIVE = 10;
+  private static final int DEFAULT_MAX_ACTIVE = 25;
 
   @Autowired Environment environment;
 

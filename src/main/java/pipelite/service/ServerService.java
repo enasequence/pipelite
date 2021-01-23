@@ -14,12 +14,13 @@ import java.util.List;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import pipelite.entity.ServerEntity;
 import pipelite.repository.ServerRepository;
 
 @Service
-@Transactional
+@Transactional(propagation = Propagation.REQUIRES_NEW)
 @Flogger
 public class ServerService {
 

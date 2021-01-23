@@ -47,7 +47,7 @@ public class DefaultPipeliteLocker implements PipeliteLocker {
   public void lock() {
     Assert.notNull(launcherName, "Missing launcher name");
     log.atInfo().log("Locking launcher: " + launcherName);
-    lock = lockService.lockLauncher(launcherName, launcherType);
+    lock = LockService.lockLauncher(lockService, launcherName, launcherType);
     if (lock == null) {
       throw new RuntimeException("Could not lock launcher " + launcherName);
     }
@@ -83,7 +83,7 @@ public class DefaultPipeliteLocker implements PipeliteLocker {
     Assert.notNull(lock, "Missing lock");
     Assert.notNull(pipelineName, "Missing pipeline name");
     Assert.notNull(processId, "Missing process id");
-    return lockService.lockProcess(lock, pipelineName, processId);
+    return LockService.lockProcess(lockService, lock, pipelineName, processId);
   }
 
   @Override

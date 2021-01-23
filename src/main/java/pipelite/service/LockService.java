@@ -16,15 +16,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.WebConfiguration;
 import pipelite.entity.LauncherLockEntity;
@@ -39,51 +38,45 @@ import pipelite.repository.ProcessLockRepository;
 @Flogger
 public class LockService {
 
-  private final LauncherConfiguration launcherConfiguration;
   private final WebConfiguration webConfiguration;
   private final LauncherLockRepository launcherLockRepository;
   private final ProcessLockRepository processLockRepository;
-  private final PlatformTransactionManager transactionManager;
   private Duration lockDuration;
 
   public LockService(
-      @Autowired LauncherConfiguration launcherConfiguration,
       @Autowired WebConfiguration webConfiguration,
+      @Autowired LauncherConfiguration launcherConfiguration,
       @Autowired LauncherLockRepository launcherLockRepository,
-      @Autowired ProcessLockRepository processLockRepository,
-      @Autowired PlatformTransactionManager transactionManager) {
-    this.launcherConfiguration = launcherConfiguration;
+      @Autowired ProcessLockRepository processLockRepository) {
     this.webConfiguration = webConfiguration;
     this.launcherLockRepository = launcherLockRepository;
     this.processLockRepository = processLockRepository;
-    this.transactionManager = transactionManager;
     this.lockDuration = launcherConfiguration.getLockDuration();
   }
 
   /**
    * Locks the launcher.
    *
+   * @param lockService the lock service
    * @param launcherName the launcher name
    * @param launcherType the launcher type
    * @return the launcher lock or null if the lock could not be created.
    */
-  public LauncherLockEntity lockLauncher(String launcherName, ProcessRunnerType launcherType) {
-    // Use transaction template to catch DataIntegrityViolationException thrown during commit.
-    TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
-    transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+  public static LauncherLockEntity lockLauncher(
+      LockService lockService, String launcherName, ProcessRunnerType launcherType) {
+    Assert.notNull(lockService, "Missing lock service");
+    // Catch DataIntegrityViolationException that my be thrown during commit.
     try {
-      return transactionTemplate.execute(status -> lockLauncherThrows(launcherName, launcherType));
+      return lockService.lockLauncherThrowsDataIntegrityViolationException(
+          launcherName, launcherType);
     } catch (DataIntegrityViolationException ex) {
       // Locking a launcher may throw DataIntegrityViolationException during commit.
-      log.atSevere()
-          .with(LogKey.LAUNCHER_NAME, launcherName)
-          // .withCause(ex)
-          .log("Failed to lock launcher");
+      log.atSevere().with(LogKey.LAUNCHER_NAME, launcherName).log("Failed to lock launcher");
       return null;
     }
   }
 
-  private LauncherLockEntity lockLauncherThrows(
+  public LauncherLockEntity lockLauncherThrowsDataIntegrityViolationException(
       String launcherName, ProcessRunnerType launcherType) {
     log.atInfo().with(LogKey.LAUNCHER_NAME, launcherName).log("Attempting to lock launcher");
     removeExpiredLauncherLock(launcherName);
@@ -174,19 +167,22 @@ public class LockService {
   /**
    * Locks the process.
    *
+   * @param lockService the lock service
    * @param launcherLock the launcher lock
    * @param pipelineName the pipeline name
    * @param processId the process id
    * @return true if successful.
    */
-  public boolean lockProcess(
-      LauncherLockEntity launcherLock, String pipelineName, String processId) {
-    // Use transaction template to catch DataIntegrityViolationException thrown during commit.
-    TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
-    transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+  public static boolean lockProcess(
+      LockService lockService,
+      LauncherLockEntity launcherLock,
+      String pipelineName,
+      String processId) {
+    Assert.notNull(lockService, "Missing lock service");
+    // Catch DataIntegrityViolationException that my be thrown during commit.
     try {
-      return transactionTemplate.execute(
-          status -> lockProcessThrows(launcherLock, pipelineName, processId));
+      return lockService.lockProcessThrowsDataIntegrityViolationException(
+          launcherLock, pipelineName, processId);
     } catch (DataIntegrityViolationException ex) {
       // Locking a process may throw DataIntegrityViolationException during commit.
       log.atSevere()
@@ -199,13 +195,13 @@ public class LockService {
     }
   }
 
-  private boolean lockProcessThrows(
+  public boolean lockProcessThrowsDataIntegrityViolationException(
       LauncherLockEntity launcherLock, String pipelineName, String processId) {
     log.atInfo()
         .with(LogKey.LAUNCHER_NAME, launcherLock.getLauncherName())
         .with(LogKey.PIPELINE_NAME, pipelineName)
         .with(LogKey.PROCESS_ID, processId)
-        .log("Attempting to lock process");
+        .log("Attempting to lock process:");
     removeExpiredProcessLock(pipelineName, processId);
 
     if (isProcessLocked(pipelineName, processId)) {

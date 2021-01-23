@@ -27,7 +27,7 @@ public class DefaultPipeliteLockerTest {
   public void lifecycle() {
     LockService lockService = mock(LockService.class);
     LauncherLockEntity lock = new LauncherLockEntity();
-    when(lockService.lockLauncher(LAUNCHER_NAME, ProcessRunnerType.LAUNCHER))
+    when(LockService.lockLauncher(lockService, LAUNCHER_NAME, ProcessRunnerType.LAUNCHER))
         .thenAnswer((launcherName) -> lock);
     when(lockService.relockLauncher(lock)).thenAnswer((launcherName) -> true);
     PipeliteLocker locker = new DefaultPipeliteLocker(lockService, ProcessRunnerType.LAUNCHER);
@@ -48,7 +48,8 @@ public class DefaultPipeliteLockerTest {
   public void lockThrows() {
     LockService lockService = mock(LockService.class);
     RuntimeException ex = new RuntimeException("Expected exception");
-    when(lockService.lockLauncher(LAUNCHER_NAME, ProcessRunnerType.LAUNCHER)).thenThrow(ex);
+    when(LockService.lockLauncher(lockService, LAUNCHER_NAME, ProcessRunnerType.LAUNCHER))
+        .thenThrow(ex);
     PipeliteLocker locker = new DefaultPipeliteLocker(lockService, ProcessRunnerType.LAUNCHER);
     locker.init(LAUNCHER_NAME);
     assertThatThrownBy(() -> locker.lock()).isSameAs(ex);
@@ -60,7 +61,7 @@ public class DefaultPipeliteLockerTest {
     LockService lockService = mock(LockService.class);
     RuntimeException ex = new RuntimeException("Expected exception");
     LauncherLockEntity lock = new LauncherLockEntity();
-    when(lockService.lockLauncher(LAUNCHER_NAME, ProcessRunnerType.LAUNCHER))
+    when(LockService.lockLauncher(lockService, LAUNCHER_NAME, ProcessRunnerType.LAUNCHER))
         .thenAnswer((launcherName) -> lock);
     when(lockService.relockLauncher(lock)).thenThrow(ex);
     PipeliteLocker locker = new DefaultPipeliteLocker(lockService, ProcessRunnerType.LAUNCHER);
@@ -76,7 +77,7 @@ public class DefaultPipeliteLockerTest {
     LockService lockService = mock(LockService.class);
     RuntimeException ex = new RuntimeException("Expected exception");
     LauncherLockEntity lock = new LauncherLockEntity();
-    when(lockService.lockLauncher(LAUNCHER_NAME, ProcessRunnerType.LAUNCHER))
+    when(LockService.lockLauncher(lockService, LAUNCHER_NAME, ProcessRunnerType.LAUNCHER))
         .thenAnswer((launcherName) -> lock);
     when(lockService.relockLauncher(lock)).thenAnswer((launcherName) -> true);
     doThrow(ex).when(lockService).unlockLauncher(lock);
