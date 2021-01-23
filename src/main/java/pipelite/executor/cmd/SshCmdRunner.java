@@ -33,7 +33,7 @@ import pipelite.stage.parameters.CmdExecutorParameters;
 public class SshCmdRunner implements CmdRunner {
 
   public static final int SSH_PORT = 22;
-  public static final int SSH_VERIFY_TIMEOUT = 60;
+  public static final int SSH_VERIFY_TIMEOUT = 120;
   public static final int SSH_HEARTBEAT_SECONDS = 10;
 
   private static final SshClient sshClient;
