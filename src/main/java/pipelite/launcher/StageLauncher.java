@@ -147,7 +147,7 @@ public class StageLauncher {
     StageExecutorResult result;
     while (true) {
       try {
-        logContext(log.atInfo()).log("Waiting asynchronous stage execution to complete");
+        logContext(log.atFine()).log("Waiting asynchronous stage execution to complete");
         result = stage.execute(pipelineName, process.getProcessId());
         if (!result.isActive()) {
           // The asynchronous stage execution has completed.

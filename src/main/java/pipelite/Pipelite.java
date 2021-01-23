@@ -35,6 +35,7 @@ public class Pipelite {
    */
   public static ConfigurableApplicationContext run(String[] args) {
     SpringApplication application = new SpringApplication(Application.class);
+    application.setAdditionalProfiles("pipelite");
     application.setDefaultProperties(getDefaultProperties());
     return application.run(args);
   }
