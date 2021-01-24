@@ -161,7 +161,7 @@ public class DefaultProcessRunner implements ProcessRunner {
           } catch (Exception ex) {
             logContext(log.atSevere())
                 .withCause(ex)
-                .log("Unexpected exception when executing stage %s", stage.getStageName());
+                .log("Exception when executing stage %s", stage.getStageName());
             stageService.endExecution(stage, StageExecutorResult.internalError(ex));
             stageService.endExecutionStageLog(stage, StageExecutorResult.internalError(ex));
             mailService.sendStageExecutionMessage(process, stage);

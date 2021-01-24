@@ -17,6 +17,8 @@ import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.ExecutorConfiguration;
 import pipelite.exception.PipeliteException;
+import pipelite.exception.PipeliteInterruptedException;
+import pipelite.exception.PipeliteTimeoutException;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.service.StageService;
@@ -125,6 +127,8 @@ public class StageLauncher {
         // If the execution state is active then the executor is asynchronous.
         result = pollExecution();
       }
+    } catch (PipeliteException ex) {
+      throw ex;
     } catch (Exception ex) {
       throw new PipeliteException(ex);
     }
@@ -153,11 +157,19 @@ public class StageLauncher {
           // The asynchronous stage execution has completed.
           return result;
         }
+      } catch (PipeliteTimeoutException ex) {
+        logContext(log.atSevere()).log("Task timeout");
+        throw ex;
+      } catch (PipeliteInterruptedException ex) {
+        logContext(log.atSevere()).log("Task interrupted");
+        throw ex;
+      } catch (PipeliteException ex) {
+        logContext(log.atSevere().withCause(ex)).log("Unexpected exception when polling job.");
+        throw ex;
       } catch (Exception ex) {
         logContext(log.atSevere().withCause(ex)).log("Unexpected exception when polling job.");
         throw new PipeliteException(ex);
       }
-
       if (ZonedDateTime.now().isAfter(timeout)) {
         logContext(log.atSevere()).log("Maximum run time exceeded. Terminating job.");
         try {
