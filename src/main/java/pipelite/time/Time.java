@@ -13,6 +13,7 @@ package pipelite.time;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import pipelite.exception.PipeliteInterruptedException;
+import pipelite.exception.PipeliteTimeoutException;
 
 public class Time {
 
@@ -34,7 +35,7 @@ public class Time {
   }
 
   /**
-   * Waits the given duration but not past the given given time.
+   * Waits the given duration but not past the given time.
    *
    * @param duration the wait duration
    * @param until wait only if the current time is not past the given time
@@ -46,7 +47,7 @@ public class Time {
       wait(duration);
     } else {
       if (ZonedDateTime.now().isAfter(until)) {
-        throw new PipeliteInterruptedException("Wait timeout");
+        throw new PipeliteTimeoutException("Wait timeout");
       }
       try {
         Thread.sleep(duration.toMillis());
