@@ -44,11 +44,9 @@ public class AbstractLsfExecutorExtractTest {
 
   @Test
   public void extractDefaultLsfJobExitCode() {
-    assertThat(AbstractLsfExecutor.extractDefaultLsfJobExitCode("Exited with exit code 1"))
-        .isEqualTo(1);
-    assertThat(AbstractLsfExecutor.extractDefaultLsfJobExitCode("Exited with exit code 3."))
-        .isEqualTo(3);
-    assertThat(AbstractLsfExecutor.extractDefaultLsfJobExitCode("INVALID")).isNull();
+    assertThat(AbstractLsfExecutor.extracLsfJobExitCode("Exited with exit code 1")).isEqualTo(1);
+    assertThat(AbstractLsfExecutor.extracLsfJobExitCode("Exited with exit code 3.")).isEqualTo(3);
+    assertThat(AbstractLsfExecutor.extracLsfJobExitCode("INVALID")).isNull();
   }
 
   @Test
@@ -108,9 +106,9 @@ public class AbstractLsfExecutorExtractTest {
   }
 
   @Test
-  public void extractDefaultLsfJobResultError() {
+  public void extractLsfJobResultBhistError() {
     StageExecutorResult result =
-        AbstractLsfExecutor.extractDefaultLsfJobResult(
+        AbstractLsfExecutor.extractLsfJobResult(
             "Summary of time in seconds spent in various states:\n"
                 + "JOBID   USER    JOB_NAME  PEND    PSUSP   RUN     USUSP   SSUSP   UNKWN   TOTAL\n"
                 + "873209  rasko   fdfs      1       0       0       0       0       0       1\n"
@@ -142,10 +140,10 @@ public class AbstractLsfExecutorExtractTest {
   }
 
   @Test
-  public void extractDefaultLsfJobResultSuccess() {
+  public void extractLsfJobResultBhistSuccess() {
     StageExecutorResult result =
         result =
-            AbstractLsfExecutor.extractDefaultLsfJobResult(
+            AbstractLsfExecutor.extractLsfJobResult(
                 "Job <872795>, User <rasko>, Project <default>, Command <echo hello>, Esub <esub\n"
                     + "                     >\n"
                     + "Sun Jan 10 17:47:38: Submitted from host <noah-login-01>, to Queue <research-rh\n"
@@ -171,9 +169,96 @@ public class AbstractLsfExecutorExtractTest {
   }
 
   @Test
-  public void extractDefaultLsfJobResultNull() {
-    assertThat(AbstractLsfExecutor.extractDefaultLsfJobResult(null)).isNull();
-    assertThat(AbstractLsfExecutor.extractDefaultLsfJobResult("")).isNull();
-    assertThat(AbstractLsfExecutor.extractDefaultLsfJobResult("invalid")).isNull();
+  public void extractLsfJobResultOutFileError() {
+    StageExecutorResult result =
+        AbstractLsfExecutor.extractLsfJobResult(
+            "\n"
+                + "\n"
+                + "Job <dfsddf> was submitted from host <noah-login-02> by user <rasko> in cluster <EBI> at Sun Jan 24 18:06:13 2021\n"
+                + "Job was executed on host(s) <hx-noah-24-04>, in queue <research-rh74>, as user <rasko> in cluster <EBI> at Sun Jan 24 18:06:14 2021\n"
+                + "</homes/rasko> was used as the home directory.\n"
+                + "</homes/rasko> was used as the working directory.\n"
+                + "Started at Sun Jan 24 18:06:14 2021\n"
+                + "Terminated at Sun Jan 24 18:06:14 2021\n"
+                + "Results reported at Sun Jan 24 18:06:14 2021\n"
+                + "\n"
+                + "Your job looked like:\n"
+                + "\n"
+                + "------------------------------------------------------------\n"
+                + "# LSBATCH: User input\n"
+                + "dfsddf\n"
+                + "------------------------------------------------------------\n"
+                + "\n"
+                + "Exited with exit code 127.\n"
+                + "\n"
+                + "Resource usage summary:\n"
+                + "\n"
+                + "    CPU time :                                   0.03 sec.\n"
+                + "    Max Memory :                                 -\n"
+                + "    Average Memory :                             -\n"
+                + "    Total Requested Memory :                     -\n"
+                + "    Delta Memory :                               -\n"
+                + "    Max Swap :                                   -\n"
+                + "    Max Processes :                              -\n"
+                + "    Max Threads :                                -\n"
+                + "    Run time :                                   0 sec.\n"
+                + "    Turnaround time :                            1 sec.\n"
+                + "\n"
+                + "The output (if any) follows:\n"
+                + "\n"
+                + "/ebi/lsf/ebi-spool2/01/1611511573.6138156: line 8: dfsddf: command not found\n"
+                + "\n");
+    assertThat(result.isError()).isTrue();
+  }
+
+  @Test
+  public void extractLsfJobResultOutFileSuccess() {
+    StageExecutorResult result =
+        result =
+            AbstractLsfExecutor.extractLsfJobResult(
+                "\n"
+                    + "\n"
+                    + "Job <echo test> was submitted from host <noah-login-02> by user <rasko> in cluster <EBI> at Sun Jan 24 18:03:50 2021\n"
+                    + "Job was executed on host(s) <hx-noah-51-01>, in queue <research-rh74>, as user <rasko> in cluster <EBI> at Sun Jan 24 18:03:51 2021\n"
+                    + "</homes/rasko> was used as the home directory.\n"
+                    + "</homes/rasko> was used as the working directory.\n"
+                    + "Started at Sun Jan 24 18:03:51 2021\n"
+                    + "Terminated at Sun Jan 24 18:03:51 2021\n"
+                    + "Results reported at Sun Jan 24 18:03:51 2021\n"
+                    + "\n"
+                    + "Your job looked like:\n"
+                    + "\n"
+                    + "------------------------------------------------------------\n"
+                    + "# LSBATCH: User input\n"
+                    + "echo test\n"
+                    + "------------------------------------------------------------\n"
+                    + "\n"
+                    + "Successfully completed.\n"
+                    + "\n"
+                    + "Resource usage summary:\n"
+                    + "\n"
+                    + "    CPU time :                                   0.01 sec.\n"
+                    + "    Max Memory :                                 -\n"
+                    + "    Average Memory :                             -\n"
+                    + "    Total Requested Memory :                     -\n"
+                    + "    Delta Memory :                               -\n"
+                    + "    Max Swap :                                   -\n"
+                    + "    Max Processes :                              -\n"
+                    + "    Max Threads :                                -\n"
+                    + "    Run time :                                   0 sec.\n"
+                    + "    Turnaround time :                            1 sec.\n"
+                    + "\n"
+                    + "The output (if any) follows:\n"
+                    + "\n"
+                    + "test\n"
+                    + "\n");
+    assertThat(result.isSuccess()).isTrue();
+  }
+
+  @Test
+  public void extractLsfJobResultNull() {
+    assertThat(AbstractLsfExecutor.extractLsfJobResult(null)).isNull();
+    assertThat(AbstractLsfExecutor.extractLsfJobResult("")).isNull();
+    assertThat(AbstractLsfExecutor.extractLsfJobResult("invalid")).isNull();
   }
 }
