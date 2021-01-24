@@ -122,13 +122,13 @@ public class LockService {
    * @return true if successful.
    */
   public boolean relockLauncher(LauncherLockEntity launcherLock) {
-    log.atInfo()
+    log.atFine()
         .with(LogKey.LAUNCHER_NAME, launcherLock.getLauncherName())
         .log("Attempting to relock launcher");
     try {
       launcherLock.setExpiry(ZonedDateTime.now().plus(lockDuration));
       launcherLockRepository.save(launcherLock);
-      log.atInfo()
+      log.atFine()
           .with(LogKey.LAUNCHER_NAME, launcherLock.getLauncherName())
           .log("Relock launcher");
       return true;
@@ -256,7 +256,7 @@ public class LockService {
    */
   public boolean unlockProcess(
       LauncherLockEntity launcherLock, String pipelineName, String processId) {
-    log.atInfo()
+    log.atFine()
         .with(LogKey.LAUNCHER_NAME, launcherLock.getLauncherName())
         .with(LogKey.PIPELINE_NAME, pipelineName)
         .with(LogKey.PROCESS_ID, processId)
@@ -267,7 +267,7 @@ public class LockService {
       processLock.setPipelineName(pipelineName);
       processLock.setProcessId(processId);
       processLockRepository.delete(processLock);
-      log.atInfo()
+      log.atFine()
           .with(LogKey.LAUNCHER_NAME, launcherLock.getLauncherName())
           .with(LogKey.PIPELINE_NAME, pipelineName)
           .with(LogKey.PROCESS_ID, processId)
