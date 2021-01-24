@@ -15,15 +15,15 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import pipelite.ProcessSource;
 import pipelite.exception.PipeliteException;
-import pipelite.process.ProcessSource;
 
 @Service
-public class ProcessSourceService {
+public class RegisteredProcessSourceService {
 
   private final Map<String, ProcessSource> map = new HashMap<>();
 
-  public ProcessSourceService(@Autowired List<ProcessSource> sources) {
+  public RegisteredProcessSourceService(@Autowired List<ProcessSource> sources) {
     for (ProcessSource source : sources) {
       if (map.containsKey(source.getPipelineName())) {
         throw new PipeliteException("Non-unique pipeline: " + source.getPipelineName());

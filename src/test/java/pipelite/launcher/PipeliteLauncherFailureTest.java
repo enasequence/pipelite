@@ -61,7 +61,7 @@ public class PipeliteLauncherFailureTest {
   @Autowired private LauncherConfiguration launcherConfiguration;
   @Autowired private ExecutorConfiguration executorConfiguration;
   @Autowired private RegisteredPipelineService registeredPipelineService;
-  @Autowired private ProcessSourceService processSourceService;
+  @Autowired private RegisteredProcessSourceService registeredProcessSourceService;
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
   @Autowired private LockService lockService;
@@ -183,7 +183,7 @@ public class PipeliteLauncherFailureTest {
         executorConfiguration,
         lockService,
         registeredPipelineService,
-        processSourceService,
+        registeredProcessSourceService,
         processService,
         stageService,
         mailService,

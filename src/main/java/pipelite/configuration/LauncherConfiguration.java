@@ -18,6 +18,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import pipelite.Pipeline;
+import pipelite.ProcessSource;
 
 /**
  * Configuration for {@link pipelite.launcher.PipeliteLauncher} and {@link
@@ -80,7 +81,7 @@ public class LauncherConfiguration {
 
   /**
    * The maximum number of new processes created by {@link pipelite.launcher.PipeliteLauncher} using
-   * using {@link pipelite.process.ProcessSource} before new processes are executed.
+   * using {@link ProcessSource} before new processes are executed.
    */
   private int processCreateMaxSize = DEFAULT_PROCESS_CREATE_MAX_SIZE;
 

@@ -10,8 +10,8 @@
  */
 package pipelite.launcher.process.creator;
 
+import pipelite.ProcessSource;
 import pipelite.entity.ProcessEntity;
-import pipelite.process.ProcessSource;
 
 public interface ProcessCreator {
 

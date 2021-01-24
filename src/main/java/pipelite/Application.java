@@ -38,7 +38,7 @@ public class Application {
   @Autowired private ExecutorConfiguration executorConfiguration;
   @Autowired private RegisteredPipelineService registeredPipelineService;
   @Autowired private RegisteredSchedulerService registeredSchedulerService;
-  @Autowired private ProcessSourceService processSourceService;
+  @Autowired private RegisteredProcessSourceService registeredProcessSourceService;
   @Autowired private ScheduleService scheduleService;
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
@@ -148,7 +148,7 @@ public class Application {
         executorConfiguration,
         lockService,
         registeredPipelineService,
-        processSourceService,
+        registeredProcessSourceService,
         processService,
         stageService,
         mailService,

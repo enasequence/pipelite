@@ -13,7 +13,7 @@ package pipelite;
 import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 
-/** Implement this interface to register a pipelite pipeline in this service. */
+/** Implement this interface to register a pipeline to be executed by pipelite. */
 public interface Pipeline {
 
   /**

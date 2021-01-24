@@ -15,6 +15,7 @@ import java.util.UUID;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.Pipeline;
+import pipelite.ProcessSource;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.WebConfiguration;
 import pipelite.entity.ProcessEntity;
@@ -29,7 +30,7 @@ import pipelite.process.Process;
 /**
  * Executes processes in parallel for one pipeline. New process instances are created using {@link
  * Pipeline} for process ids waiting to be executed. New process ids are provided by {@link
- * pipelite.process.ProcessSource} or they are inserted into the PIPELITE_PROCESS table.
+ * ProcessSource} or they are inserted into the PIPELITE_PROCESS table.
  */
 @Flogger
 public class PipeliteLauncher extends ProcessRunnerPoolService {

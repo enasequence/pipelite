@@ -14,9 +14,9 @@ import com.google.common.flogger.FluentLogger;
 import java.util.Optional;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
+import pipelite.ProcessSource;
 import pipelite.entity.ProcessEntity;
 import pipelite.log.LogKey;
-import pipelite.process.ProcessSource;
 import pipelite.service.ProcessService;
 
 @Flogger

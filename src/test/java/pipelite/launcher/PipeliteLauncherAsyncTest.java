@@ -27,6 +27,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.test.annotation.DirtiesContext;
 import pipelite.Pipeline;
 import pipelite.PipeliteTestConfiguration;
+import pipelite.ProcessSource;
 import pipelite.TestProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ExecutorConfiguration;
@@ -36,7 +37,6 @@ import pipelite.executor.AbstractExecutor;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
-import pipelite.process.ProcessSource;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.*;
 import pipelite.stage.executor.StageExecutor;
@@ -60,8 +60,7 @@ public class PipeliteLauncherAsyncTest {
   @Autowired private LauncherConfiguration launcherConfiguration;
   @Autowired private ExecutorConfiguration executorConfiguration;
   @Autowired private RegisteredPipelineService registeredPipelineService;
-  @Autowired private ProcessSourceService processSourceService;
-  @Autowired private ScheduleService scheduleService;
+  @Autowired private RegisteredProcessSourceService registeredProcessSourceService;
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
   @Autowired private LockService lockService;
@@ -136,7 +135,7 @@ public class PipeliteLauncherAsyncTest {
         executorConfiguration,
         lockService,
         registeredPipelineService,
-        processSourceService,
+        registeredProcessSourceService,
         processService,
         stageService,
         mailService,

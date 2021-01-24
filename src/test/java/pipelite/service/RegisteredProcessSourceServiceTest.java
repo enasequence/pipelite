@@ -19,15 +19,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import pipelite.PipeliteTestConfiguration;
+import pipelite.ProcessSource;
 import pipelite.TestProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.exception.PipeliteException;
-import pipelite.process.ProcessSource;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
-public class ProcessSourceServiceTest {
+public class RegisteredProcessSourceServiceTest {
 
-  @Autowired ProcessSourceService processSourceService;
+  @Autowired RegisteredProcessSourceService registeredProcessSourceService;
 
   private static final String PIPELINE_NAME_1 = UniqueStringGenerator.randomPipelineName();
   private static final String PIPELINE_NAME_2 = UniqueStringGenerator.randomPipelineName();
@@ -48,16 +48,16 @@ public class ProcessSourceServiceTest {
 
   @Test
   public void test() {
-    assertThat(processSourceService.create(PIPELINE_NAME_1).getPipelineName())
+    assertThat(registeredProcessSourceService.create(PIPELINE_NAME_1).getPipelineName())
         .isEqualTo(PIPELINE_NAME_1);
-    assertThat(processSourceService.create(PIPELINE_NAME_2).getPipelineName())
+    assertThat(registeredProcessSourceService.create(PIPELINE_NAME_2).getPipelineName())
         .isEqualTo(PIPELINE_NAME_2);
-    assertThat(processSourceService.create(PIPELINE_NAME_3)).isNull();
+    assertThat(registeredProcessSourceService.create(PIPELINE_NAME_3)).isNull();
     assertThatExceptionOfType(PipeliteException.class)
-        .isThrownBy(() -> processSourceService.create(null))
+        .isThrownBy(() -> registeredProcessSourceService.create(null))
         .withMessage("Missing pipeline name");
     assertThatExceptionOfType(PipeliteException.class)
-        .isThrownBy(() -> processSourceService.create(""))
+        .isThrownBy(() -> registeredProcessSourceService.create(""))
         .withMessage("Missing pipeline name");
   }
 }

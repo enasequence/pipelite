@@ -10,7 +10,7 @@
  */
 package pipelite;
 
-/** Implement this interface to register a pipelite scheduler in this service. */
+/** Implement this interface to register a scheduler to be executed by pipelite. */
 public interface Scheduler {
 
   /**

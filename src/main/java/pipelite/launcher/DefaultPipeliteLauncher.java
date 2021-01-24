@@ -36,7 +36,7 @@ public class DefaultPipeliteLauncher {
       ExecutorConfiguration executorConfiguration,
       LockService lockService,
       RegisteredPipelineService registeredPipelineService,
-      ProcessSourceService processSourceService,
+      RegisteredProcessSourceService registeredProcessSourceService,
       ProcessService processService,
       StageService stageService,
       MailService mailService,
@@ -48,7 +48,7 @@ public class DefaultPipeliteLauncher {
     Pipeline pipeline = registeredPipelineService.getPipeline(pipelineName);
     ProcessCreator processCreator =
         new DefaultProcessCreator(
-            processSourceService.create(pipelineName), processService, pipelineName);
+            registeredProcessSourceService.create(pipelineName), processService, pipelineName);
     ProcessQueue processQueue =
         new DefaultProcessQueue(
             webConfiguration,
