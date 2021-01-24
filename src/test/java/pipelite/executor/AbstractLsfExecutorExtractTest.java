@@ -55,8 +55,8 @@ public class AbstractLsfExecutorExtractTest {
   public void extractBjobsResult() {
     AbstractLsfExecutor.JobResult result =
         AbstractLsfExecutor.extractBjobsResult("861487|PEND|-|-|-|-|-\n");
-    assertThat(result.getJobId()).isEqualTo("861487");
-    assertThat(result.getResult().isActive()).isTrue();
+    assertThat(result.jobId).isEqualTo("861487");
+    assertThat(result.result.isActive()).isTrue();
   }
 
   @Test
@@ -65,12 +65,12 @@ public class AbstractLsfExecutorExtractTest {
         AbstractLsfExecutor.extractBjobsResults(
             "861487|PEND|-|-|-|-|-\n" + "861488|PEND|-|-|-|-|-\n" + "861489|PEND|-|-|-|-|-");
     assertThat(result.size()).isEqualTo(3);
-    assertThat(result.get(0).getJobId()).isEqualTo("861487");
-    assertThat(result.get(1).getJobId()).isEqualTo("861488");
-    assertThat(result.get(2).getJobId()).isEqualTo("861489");
-    assertThat(result.get(0).getResult().isActive()).isTrue();
-    assertThat(result.get(1).getResult().isActive()).isTrue();
-    assertThat(result.get(2).getResult().isActive()).isTrue();
+    assertThat(result.get(0).jobId).isEqualTo("861487");
+    assertThat(result.get(1).jobId).isEqualTo("861488");
+    assertThat(result.get(2).jobId).isEqualTo("861489");
+    assertThat(result.get(0).result.isActive()).isTrue();
+    assertThat(result.get(1).result.isActive()).isTrue();
+    assertThat(result.get(2).result.isActive()).isTrue();
 
     result =
         AbstractLsfExecutor.extractBjobsResults(
@@ -79,12 +79,12 @@ public class AbstractLsfExecutorExtractTest {
                 + "872795|DONE|-|0.0 second(s)|-|-|hx-noah-05-14\n");
 
     assertThat(result.size()).isEqualTo(3);
-    assertThat(result.get(0).getJobId()).isEqualTo("872793");
-    assertThat(result.get(1).getJobId()).isEqualTo("872794");
-    assertThat(result.get(2).getJobId()).isEqualTo("872795");
-    assertThat(result.get(0).getResult().isSuccess()).isTrue();
-    assertThat(result.get(1).getResult().isSuccess()).isTrue();
-    assertThat(result.get(2).getResult().isSuccess()).isTrue();
+    assertThat(result.get(0).jobId).isEqualTo("872793");
+    assertThat(result.get(1).jobId).isEqualTo("872794");
+    assertThat(result.get(2).jobId).isEqualTo("872795");
+    assertThat(result.get(0).result.isSuccess()).isTrue();
+    assertThat(result.get(1).result.isSuccess()).isTrue();
+    assertThat(result.get(2).result.isSuccess()).isTrue();
 
     result =
         AbstractLsfExecutor.extractBjobsResults(
@@ -95,16 +95,16 @@ public class AbstractLsfExecutorExtractTest {
                 + "Job <6065212> is not found\n");
 
     assertThat(result.size()).isEqualTo(5);
-    assertThat(result.get(0).getJobId()).isEqualTo("873206");
-    assertThat(result.get(1).getJobId()).isEqualTo("873207");
-    assertThat(result.get(2).getJobId()).isEqualTo("6065212");
-    assertThat(result.get(3).getJobId()).isEqualTo("873209");
-    assertThat(result.get(4).getJobId()).isEqualTo("6065212");
-    assertThat(result.get(0).getResult().isError()).isTrue();
-    assertThat(result.get(1).getResult().isError()).isTrue();
-    assertThat(result.get(2).getResult()).isNull();
-    assertThat(result.get(3).getResult().isError()).isTrue();
-    assertThat(result.get(4).getResult()).isNull();
+    assertThat(result.get(0).jobId).isEqualTo("873206");
+    assertThat(result.get(1).jobId).isEqualTo("873207");
+    assertThat(result.get(2).jobId).isEqualTo("6065212");
+    assertThat(result.get(3).jobId).isEqualTo("873209");
+    assertThat(result.get(4).jobId).isEqualTo("6065212");
+    assertThat(result.get(0).result.isError()).isTrue();
+    assertThat(result.get(1).result.isError()).isTrue();
+    assertThat(result.get(2).result).isNull();
+    assertThat(result.get(3).result.isError()).isTrue();
+    assertThat(result.get(4).result).isNull();
   }
 
   @Test

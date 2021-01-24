@@ -59,10 +59,9 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
     return sharedContextCache.getContext((AbstractLsfExecutor<CmdExecutorParameters>) this);
   }
 
-  @Value
   protected static class JobResult {
-    String jobId;
-    StageExecutorResult result;
+    public String jobId;
+    public StageExecutorResult result;
   }
 
   private static final String OUT_FILE_SUFFIX = ".out";
@@ -189,64 +188,59 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
     Map<String, LsfContextCache.Request> requestMap = new HashMap<>();
     requests.stream().forEach(request -> requestMap.put(request.getJobId(), request));
 
-    // Create a map for job id -> StageExecutorResult.
-    Map<String, StageExecutorResult> resultMap = new HashMap<>();
-
     List<String> jobIds = requests.stream().map(r -> r.getJobId()).collect(Collectors.toList());
 
     // Attempt to get job results using bjobs.
     String str = bjobs(cmdRunner, jobIds);
     List<JobResult> jobResults = extractBjobsResults(str);
-    jobResults.stream()
-        .filter(r -> r.getJobId() != null && r.getResult() != null)
-        .forEach(r -> resultMap.put(r.getJobId(), r.getResult()));
 
     // Attempt to recover missing job result using bhist. This will only ever be done
     // once and if it fails the job is considered failed as well.
     jobResults.stream()
-        .filter(r -> r.getJobId() != null && r.getResult() == null)
+        .filter(r -> r.jobId != null && r.result == null)
         .forEach(
             r -> {
-              StageExecutorResult executorResult = bhist(cmdRunner, r.getJobId());
+              StageExecutorResult executorResult = bhist(cmdRunner, r.jobId);
               if (executorResult != null) {
-                log.atInfo().log("Recovered job result using LSF bhist for job: " + r.getJobId());
-                resultMap.put(r.getJobId(), executorResult);
+                log.atInfo().log("Recovered job result using LSF bhist for job: " + r.jobId);
+                r.result = executorResult;
               } else {
                 log.atWarning().log(
-                    "Could not recover job result using LSF bhist for job: " + r.getJobId());
+                    "Could not recover job result using LSF bhist for job: " + r.jobId);
               }
             });
 
     // Attempt to recover missing job result from the output file. This will only ever be done
     // once and if it fails the job is considered failed as well.
     jobResults.stream()
-        .filter(r -> r.getJobId() != null && r.getResult() == null)
+        .filter(r -> r.jobId != null && r.result == null)
         .forEach(
             r -> {
-              String outFile = requestMap.get(r.getJobId()).getOutFile();
+              String outFile = requestMap.get(r.jobId).getOutFile();
               StageExecutorResult executorResult = extractOutFileResult(cmdRunner, outFile);
               if (executorResult != null) {
                 log.atInfo().log(
                     "Recovered job result from LSF output file "
                         + outFile
                         + " for job: "
-                        + r.getJobId());
-                resultMap.put(r.getJobId(), executorResult);
+                        + r.jobId);
+                r.result = executorResult;
               } else {
                 log.atWarning().log(
                     "Could not recover job result from LSF output file "
                         + outFile
                         + "  for job: "
-                        + r.getJobId());
+                        + r.jobId);
                 log.atWarning().log(
-                    "Considering LSF job failed as could not extract result for job: "
-                        + r.getJobId());
-                resultMap.put(r.getJobId(), StageExecutorResult.error());
+                    "Considering LSF job failed as could not extract result for job: " + r.jobId);
+                r.result = StageExecutorResult.error();
               }
             });
 
     Map<LsfContextCache.Request, StageExecutorResult> result = new HashMap<>();
-    jobResults.stream().forEach(r -> result.put(requestMap.get(r.getJobId()), r.getResult()));
+    jobResults.stream()
+        .filter(r -> r.jobId != null && r.result != null)
+        .forEach(r -> result.put(requestMap.get(r.jobId), r.result));
     return result;
   }
 
@@ -342,7 +336,9 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
       String jobId = extractBjobsJobIdNotFound(line);
       if (jobId != null) {
         log.atWarning().log("LSF bsubs job not found: " + jobId);
-        results.add(new JobResult(jobId, null));
+        JobResult jobResult = new JobResult();
+        jobResult.jobId = jobId;
+        results.add(jobResult);
       } else {
         results.add(extractBjobsResult(line));
       }
@@ -385,7 +381,10 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
           .put(StageExecutorResultAttribute.AVG_MEM, column[BJOBS_COLUMN_AVG_MEM]);
     }
 
-    return new JobResult(jobId, result);
+    JobResult jobResult = new JobResult();
+    jobResult.jobId = jobId;
+    jobResult.result = result;
+    return jobResult;
   }
 
   /**
