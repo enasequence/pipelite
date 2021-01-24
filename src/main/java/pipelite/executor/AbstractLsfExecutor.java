@@ -319,11 +319,11 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
    * Extracts exit code from default LSF bjobs, bhist or output file result. Returns null if the
    * exit code could not be extracted.
    */
-  public static String extractDefaultLsfJobExitCode(String str) {
+  public static Integer extractDefaultLsfJobExitCode(String str) {
     try {
       Matcher m = DEFAULT_EXIT_CODE_PATTERN.matcher(str);
       m.find();
-      return m.group(1);
+      return Integer.valueOf(m.group(1));
     } catch (Exception ex) {
       return null;
     }
@@ -399,8 +399,9 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
       result.getAttributes().put(StageExecutorResultAttribute.EXIT_CODE, "0");
       return result;
     }
-    if (str.contains("Completed <exit>")) {
-      int exitCode = Integer.valueOf(extractDefaultLsfJobExitCode(str));
+
+    Integer exitCode = extractDefaultLsfJobExitCode(str);
+    if (exitCode != null) {
       StageExecutorResult result = StageExecutorResult.error();
       result.getAttributes().put(StageExecutorResultAttribute.EXIT_CODE, String.valueOf(exitCode));
       return result;

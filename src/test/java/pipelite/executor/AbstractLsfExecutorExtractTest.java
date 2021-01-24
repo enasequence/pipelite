@@ -45,9 +45,9 @@ public class AbstractLsfExecutorExtractTest {
   @Test
   public void extractDefaultLsfJobExitCode() {
     assertThat(AbstractLsfExecutor.extractDefaultLsfJobExitCode("Exited with exit code 1"))
-        .isEqualTo("1");
+        .isEqualTo(1);
     assertThat(AbstractLsfExecutor.extractDefaultLsfJobExitCode("Exited with exit code 3."))
-        .isEqualTo("3");
+        .isEqualTo(3);
     assertThat(AbstractLsfExecutor.extractDefaultLsfJobExitCode("INVALID")).isNull();
   }
 
@@ -142,7 +142,7 @@ public class AbstractLsfExecutorExtractTest {
   }
 
   @Test
-  public void extractDefaultLsfJobResultuccess() {
+  public void extractDefaultLsfJobResultSuccess() {
     StageExecutorResult result =
         result =
             AbstractLsfExecutor.extractDefaultLsfJobResult(
