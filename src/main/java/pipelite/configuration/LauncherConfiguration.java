@@ -11,20 +11,19 @@
 package pipelite.configuration;
 
 import java.time.Duration;
-import java.util.UUID;
 import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import pipelite.Pipeline;
 
 /**
  * Configuration for {@link pipelite.launcher.PipeliteLauncher} and {@link
  * pipelite.launcher.PipeliteScheduler}. {@link pipelite.launcher.PipeliteLauncher} executes
  * processes in parallel for one pipeline. {@link pipelite.launcher.PipeliteScheduler} executes
- * non-parallel processes using cron schedules. Processes are created using {@link
- * pipelite.process.ProcessFactory}.
+ * non-parallel processes using cron schedules. Processes are created using {@link Pipeline}.
  */
 @Flogger
 @Data
@@ -43,12 +42,6 @@ public class LauncherConfiguration {
   private static final int DEFAULT_PROCESS_CREATE_MAX_SIZE = 1000;
 
   public LauncherConfiguration() {}
-
-  /**
-   * An optional {@link pipelite.launcher.PipeliteScheduler} name. {@link
-   * pipelite.launcher.PipeliteScheduler} executes non-parallel processes using cron schedules.
-   */
-  private String schedulerName;
 
   /**
    * The duration after which {@link pipelite.launcher.PipeliteLauncher} and {@link
@@ -93,18 +86,4 @@ public class LauncherConfiguration {
 
   /** The {@link pipelite.launcher.PipeliteLauncher} can optionally be shut down if idle. */
   private boolean shutdownIfIdle;
-
-  public static String getLauncherName(String pipelineName, int port) {
-    return pipelineName
-        + "@"
-        + WebConfiguration.getCanonicalHostName()
-        + ":"
-        + port
-        + ":"
-        + UUID.randomUUID();
-  }
-
-  public static String getSchedulerName(LauncherConfiguration launcherConfiguration) {
-    return launcherConfiguration.getSchedulerName();
-  }
 }

@@ -13,6 +13,7 @@ package pipelite.executor;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -34,6 +35,7 @@ public class SshLsfExecutorTest {
   private final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
 
   @Test
+  @Disabled
   public void test() {
 
     LsfExecutor executor = StageExecutor.createLsfExecutor("");

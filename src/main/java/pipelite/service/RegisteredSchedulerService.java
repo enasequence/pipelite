@@ -13,36 +13,34 @@ package pipelite.service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import pipelite.Scheduler;
 import pipelite.exception.PipeliteException;
-import pipelite.process.ProcessSource;
 
 @Service
-public class ProcessSourceService {
+@Flogger
+public class RegisteredSchedulerService {
 
-  private final Map<String, ProcessSource> map = new HashMap<>();
+  private final Map<String, Scheduler> map = new HashMap<>();
 
-  public ProcessSourceService(@Autowired List<ProcessSource> sources) {
-    for (ProcessSource source : sources) {
-      if (map.containsKey(source.getPipelineName())) {
-        throw new PipeliteException("Non-unique pipeline: " + source.getPipelineName());
+  public RegisteredSchedulerService(@Autowired List<Scheduler> schedulers) {
+    for (Scheduler scheduler : schedulers) {
+      if (map.containsKey(scheduler.getSchedulerName())) {
+        throw new PipeliteException("Non-unique schedule: " + scheduler.getSchedulerName());
       }
-      map.put(source.getPipelineName(), source);
+      map.put(scheduler.getSchedulerName(), scheduler);
     }
   }
 
   /**
-   * Creates a process source.
+   * Returns the registered scheduler names.
    *
-   * @param pipelineName the pipeline name. A pipeline is identified by its name.
-   * @return the process source for the pipeline.
-   * @throws PipeliteException if the pipeline name is null or empty.
+   * @return the registered scheduler names
    */
-  public ProcessSource create(String pipelineName) {
-    if (pipelineName == null || pipelineName.trim().isEmpty()) {
-      throw new PipeliteException("Missing pipeline name");
-    }
-    return map.get(pipelineName);
+  public List<String> getSchedulerNames() {
+    return map.keySet().stream().collect(Collectors.toList());
   }
 }

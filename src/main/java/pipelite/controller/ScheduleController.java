@@ -19,17 +19,18 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
-import pipelite.configuration.LauncherConfiguration;
 import pipelite.controller.info.ScheduleInfo;
 import pipelite.controller.utils.LoremUtils;
 import pipelite.controller.utils.TimeUtils;
 import pipelite.entity.ScheduleEntity;
+import pipelite.service.RegisteredSchedulerService;
 import pipelite.service.ScheduleService;
 
 @RestController
@@ -37,10 +38,10 @@ import pipelite.service.ScheduleService;
 @Tag(name = "ScheduleAPI", description = "Schedules")
 public class ScheduleController {
 
-  @Autowired LauncherConfiguration launcherConfiguration;
   @Autowired Application application;
   @Autowired Environment environment;
   @Autowired ScheduleService scheduleService;
+  @Autowired RegisteredSchedulerService registeredSchedulerService;
 
   @GetMapping("/run")
   @ResponseStatus(HttpStatus.OK)
@@ -52,18 +53,22 @@ public class ScheduleController {
       })
   public List<ScheduleInfo> runningSchedules(
       @RequestParam(required = false, defaultValue = "false") boolean relative) {
-    List<ScheduleInfo> list = new ArrayList<>();
-    application.getRunningSchedulers().stream()
-        .forEach(scheduler -> list.addAll(getSchedules(scheduler.getLauncherName(), relative)));
+    List<String> schedulerNames =
+        application.getRunningSchedulers().stream()
+            .map(s -> s.getLauncherName())
+            .collect(Collectors.toList());
+    List<ScheduleInfo> list = getSchedules(schedulerNames, relative);
     getLoremIpsumSchedules(list, relative);
     return list;
   }
 
-  private List<ScheduleInfo> getSchedules(String schedulerName, boolean relative) {
+  private List<ScheduleInfo> getSchedules(List<String> schedulerNames, boolean relative) {
     List<ScheduleInfo> schedules = new ArrayList<>();
-    scheduleService
-        .getSchedules(schedulerName)
-        .forEach(s -> schedules.add(getSchedule(s, relative)));
+    schedulerNames.forEach(
+        schedulerName ->
+            scheduleService
+                .getSchedules(schedulerName)
+                .forEach(s -> schedules.add(getSchedule(s, relative))));
     return schedules;
   }
 
@@ -77,7 +82,8 @@ public class ScheduleController {
       })
   public List<ScheduleInfo> localSchedules(
       @RequestParam(required = false, defaultValue = "false") boolean relative) {
-    List<ScheduleInfo> list = getSchedules(launcherConfiguration.getSchedulerName(), relative);
+    List<String> schedulerNames = registeredSchedulerService.getSchedulerNames();
+    List<ScheduleInfo> list = getSchedules(schedulerNames, relative);
     getLoremIpsumSchedules(list, relative);
     return list;
   }

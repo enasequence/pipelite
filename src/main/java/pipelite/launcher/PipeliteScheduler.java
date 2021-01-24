@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
+import pipelite.Pipeline;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.cron.CronUtils;
 import pipelite.entity.ProcessEntity;
@@ -30,21 +31,19 @@ import pipelite.lock.PipeliteLocker;
 import pipelite.log.LogKey;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
-import pipelite.process.ProcessFactoryCache;
-import pipelite.process.ProcessFactoryHelper;
 import pipelite.schedule.Schedule;
 import pipelite.service.*;
 
 /**
  * Schedules non-parallel processes using cron expressions. New process instances are created using
- * {@link pipelite.process.ProcessFactory}.
+ * {@link Pipeline}.
  */
 @Flogger
 public class PipeliteScheduler extends ProcessRunnerPoolService {
 
   private final ScheduleService scheduleService;
   private final ProcessService processService;
-  private final ProcessFactoryCache processFactoryCache;
+  private final PipelineCache pipelineCache;
   private final List<Schedule> schedules = Collections.synchronizedList(new ArrayList<>());
   private final Map<String, AtomicLong> maximumExecutions = new ConcurrentHashMap<>();
   private final Duration scheduleRefreshFrequency;
@@ -53,22 +52,18 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   public PipeliteScheduler(
       LauncherConfiguration launcherConfiguration,
       PipeliteLocker pipeliteLocker,
-      ProcessFactoryService processFactoryService,
+      RegisteredPipelineService registeredPipelineService,
       ScheduleService scheduleService,
       ProcessService processService,
       ProcessRunnerPool processRunnerPool,
-      PipeliteMetrics metrics) {
-    super(
-        launcherConfiguration,
-        pipeliteLocker,
-        LauncherConfiguration.getSchedulerName(launcherConfiguration),
-        processRunnerPool,
-        metrics);
+      PipeliteMetrics metrics,
+      String schedulerName) {
+    super(launcherConfiguration, pipeliteLocker, processRunnerPool, metrics, schedulerName);
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
-    Assert.notNull(processFactoryService, "Missing process factory service");
+    Assert.notNull(registeredPipelineService, "Missing pipeline service");
     Assert.notNull(scheduleService, "Missing schedule service");
     Assert.notNull(processService, "Missing process service");
-    this.processFactoryCache = new ProcessFactoryCache(processFactoryService);
+    this.pipelineCache = new PipelineCache(registeredPipelineService);
     this.scheduleService = scheduleService;
     this.processService = processService;
     this.scheduleRefreshFrequency = launcherConfiguration.getScheduleRefreshFrequency();
@@ -277,9 +272,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
 
     Process process;
     try {
-      process =
-          ProcessFactoryHelper.create(
-              processEntity, processFactoryCache.getProcessFactory(pipelineName));
+      process = PipelineHelper.create(processEntity, pipelineCache.getPipeline(pipelineName));
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log(
           "Unexpected exception when creating " + pipelineName + " process");

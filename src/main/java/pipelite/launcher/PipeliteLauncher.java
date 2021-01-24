@@ -11,9 +11,12 @@
 package pipelite.launcher;
 
 import java.time.ZonedDateTime;
+import java.util.UUID;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
+import pipelite.Pipeline;
 import pipelite.configuration.LauncherConfiguration;
+import pipelite.configuration.WebConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.launcher.process.creator.ProcessCreator;
 import pipelite.launcher.process.queue.ProcessQueue;
@@ -22,20 +25,17 @@ import pipelite.launcher.process.runner.ProcessRunnerPoolService;
 import pipelite.lock.PipeliteLocker;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
-import pipelite.process.ProcessFactory;
-import pipelite.process.ProcessFactoryHelper;
 
 /**
  * Executes processes in parallel for one pipeline. New process instances are created using {@link
- * pipelite.process.ProcessFactory} for process ids waiting to be executed. New process ids are
- * provided by {@link pipelite.process.ProcessSource} or they are inserted into the PIPELITE_PROCESS
- * table.
+ * Pipeline} for process ids waiting to be executed. New process ids are provided by {@link
+ * pipelite.process.ProcessSource} or they are inserted into the PIPELITE_PROCESS table.
  */
 @Flogger
 public class PipeliteLauncher extends ProcessRunnerPoolService {
 
   private final String pipelineName;
-  private final ProcessFactory processFactory;
+  private final Pipeline pipeline;
   private final ProcessCreator processCreator;
   private final ProcessQueue processQueue;
   private final int processCreateMaxSize;
@@ -45,17 +45,17 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
   public PipeliteLauncher(
       LauncherConfiguration launcherConfiguration,
       PipeliteLocker pipeliteLocker,
-      ProcessFactory processFactory,
+      Pipeline pipeline,
       ProcessCreator processCreator,
       ProcessQueue processQueue,
       ProcessRunnerPool pool,
       PipeliteMetrics metrics) {
-    super(launcherConfiguration, pipeliteLocker, processQueue.getLauncherName(), pool, metrics);
+    super(launcherConfiguration, pipeliteLocker, pool, metrics, processQueue.getLauncherName());
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
-    Assert.notNull(processFactory, "Missing process factory");
+    Assert.notNull(pipeline, "Missing pipeline");
     Assert.notNull(processCreator, "Missing process creator");
     Assert.notNull(processQueue, "Missing process queue");
-    this.processFactory = processFactory;
+    this.pipeline = pipeline;
     this.processCreator = processCreator;
     this.processQueue = processQueue;
     this.pipelineName = processQueue.getPipelineName();
@@ -94,7 +94,7 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
   protected void runProcess(ProcessEntity processEntity) {
     Process process = null;
     try {
-      process = ProcessFactoryHelper.create(processEntity, processFactory);
+      process = PipelineHelper.create(processEntity, pipeline);
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log(
           "Unexpected exception when creating " + pipelineName + " process");
@@ -110,10 +110,20 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
   }
 
   public int getPipelineParallelism() {
-    return processFactory.getPipelineParallelism();
+    return pipeline.getPipelineParallelism();
   }
 
   public int getQueuedProcessCount() {
     return processQueue.getQueuedProcessCount();
+  }
+
+  public static String getLauncherName(String pipelineName, int port) {
+    return pipelineName
+        + "@"
+        + WebConfiguration.getCanonicalHostName()
+        + ":"
+        + port
+        + ":"
+        + UUID.randomUUID();
   }
 }

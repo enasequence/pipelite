@@ -26,15 +26,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.util.TestPropertyValues;
-import org.springframework.context.ApplicationContextInitializer;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ContextConfiguration;
-import pipelite.PipeliteTestBeans;
-import pipelite.PipeliteTestConfiguration;
-import pipelite.UniqueStringGenerator;
+import pipelite.*;
 import pipelite.configuration.ExecutorConfiguration;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.entity.ProcessEntity;
@@ -49,7 +43,6 @@ import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.TimeSeriesMetrics;
 import pipelite.process.Process;
-import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.*;
@@ -62,68 +55,58 @@ import pipelite.time.Time;
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     classes = PipeliteTestConfiguration.class,
     properties = {"pipelite.launcher.processRunnerFrequency=250ms"})
-@ContextConfiguration(initializers = PipeliteSchedulerTest.TestContextInitializer.class)
 @DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
 public class PipeliteSchedulerTest {
 
-  public static class TestContextInitializer
-      implements ApplicationContextInitializer<ConfigurableApplicationContext> {
-    @Override
-    public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
-      TestPropertyValues.of(
-              "pipelite.launcher.schedulerName=" + UniqueStringGenerator.randomSchedulerName())
-          .applyTo(configurableApplicationContext.getEnvironment());
-    }
-  }
+  private static final String SCHEDULER_NAME = UniqueStringGenerator.randomSchedulerName();
 
   @Autowired private LauncherConfiguration launcherConfiguration;
   @Autowired private ExecutorConfiguration executorConfiguration;
-  @Autowired private ProcessFactoryService processFactoryService;
-  @Autowired private ProcessSourceService processSourceService;
+  @Autowired private RegisteredPipelineService registeredPipelineService;
   @Autowired private ScheduleService scheduleService;
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
   @Autowired private LockService lockService;
   @Autowired private MailService mailService;
 
-  @Autowired private TestProcessFactory firstProcessSuccess;
-  @Autowired private TestProcessFactory secondProcessSuccess;
-  @Autowired private TestProcessFactory firstProcessFailure;
-  @Autowired private TestProcessFactory secondProcessFailure;
-  @Autowired private TestProcessFactory firstProcessException;
-  @Autowired private TestProcessFactory secondProcessException;
+  @Autowired private TestPipeline firstProcessSuccess;
+  @Autowired private TestPipeline secondProcessSuccess;
+  @Autowired private TestPipeline firstProcessFailure;
+  @Autowired private TestPipeline secondProcessFailure;
+  @Autowired private TestPipeline firstProcessException;
+  @Autowired private TestPipeline secondProcessException;
   @Autowired private PipeliteMetrics metrics;
 
   @TestConfiguration
   static class TestConfig {
     @Bean
-    public ProcessFactory firstProcessSuccess() {
-      return new TestProcessFactory("firstProcessSuccess", 2, 1, 2, StageTestResult.SUCCESS);
+    public Pipeline firstProcessSuccess() {
+      return new TestPipeline("firstProcessSuccess", 2, 1, 2, StageTestResult.SUCCESS);
     }
 
     @Bean
-    public ProcessFactory secondProcessSuccess() {
-      return new TestProcessFactory("secondProcessSuccess", 1, 2, 4, StageTestResult.SUCCESS);
+    public Pipeline secondProcessSuccess() {
+      return new TestPipeline("secondProcessSuccess", 1, 2, 4, StageTestResult.SUCCESS);
     }
 
     @Bean
-    public ProcessFactory firstProcessFailure() {
-      return new TestProcessFactory("firstProcessFailure", 2, 1, 2, StageTestResult.ERROR);
+    public Pipeline firstProcessFailure() {
+      return new TestPipeline("firstProcessFailure", 2, 1, 2, StageTestResult.ERROR);
     }
 
     @Bean
-    public ProcessFactory secondProcessFailure() {
-      return new TestProcessFactory("secondProcessFailure", 1, 2, 4, StageTestResult.ERROR);
+    public Pipeline secondProcessFailure() {
+      return new TestPipeline("secondProcessFailure", 1, 2, 4, StageTestResult.ERROR);
     }
 
     @Bean
-    public ProcessFactory firstProcessException() {
-      return new TestProcessFactory("firstProcessException", 2, 1, 2, StageTestResult.EXCEPTION);
+    public Pipeline firstProcessException() {
+      return new TestPipeline("firstProcessException", 2, 1, 2, StageTestResult.EXCEPTION);
     }
 
     @Bean
-    public ProcessFactory secondProcessException() {
-      return new TestProcessFactory("secondProcessException", 1, 2, 4, StageTestResult.EXCEPTION);
+    public Pipeline secondProcessException() {
+      return new TestPipeline("secondProcessException", 1, 2, 4, StageTestResult.EXCEPTION);
     }
   }
 
@@ -138,16 +121,17 @@ public class PipeliteSchedulerTest {
         launcherConfiguration,
         executorConfiguration,
         lockService,
-        processFactoryService,
+        registeredPipelineService,
         processService,
         scheduleService,
         stageService,
         mailService,
-        metrics);
+        metrics,
+        SCHEDULER_NAME);
   }
 
   @Value
-  public static class TestProcessFactory implements ProcessFactory {
+  public static class TestPipeline implements Pipeline {
     private final String pipelineName;
     public final int processCnt;
     public final int stageCnt;
@@ -157,7 +141,7 @@ public class PipeliteSchedulerTest {
     public final List<String> processIds = Collections.synchronizedList(new ArrayList<>());
     public final AtomicLong stageExecCnt = new AtomicLong();
 
-    public TestProcessFactory(
+    public TestPipeline(
         String pipelineNamePrefix,
         int processCnt,
         int stageCnt,
@@ -187,7 +171,7 @@ public class PipeliteSchedulerTest {
     }
 
     @Override
-    public Process create(ProcessBuilder builder) {
+    public Process createProcess(ProcessBuilder builder) {
       processIds.add(builder.getProcessId());
       ExecutorParameters executorParams =
           ExecutorParameters.builder()
@@ -219,10 +203,10 @@ public class PipeliteSchedulerTest {
     }
   }
 
-  private void saveSchedule(TestProcessFactory testProcessFactory) {
+  private void saveSchedule(TestPipeline testProcessFactory) {
     ScheduleEntity schedule = new ScheduleEntity();
     schedule.setCron(testProcessFactory.cron);
-    schedule.setSchedulerName(launcherConfiguration.getSchedulerName());
+    schedule.setSchedulerName(SCHEDULER_NAME);
     schedule.setPipelineName(testProcessFactory.pipelineName);
     schedule.setActive(true);
     scheduleService.saveSchedule(schedule);
@@ -230,10 +214,10 @@ public class PipeliteSchedulerTest {
         "saved schedule for pipeline: "
             + testProcessFactory.pipelineName
             + ", scheduler: "
-            + launcherConfiguration.getSchedulerName());
+            + SCHEDULER_NAME);
   }
 
-  private void deleteSchedule(TestProcessFactory testProcessFactory) {
+  private void deleteSchedule(TestPipeline testProcessFactory) {
     ScheduleEntity schedule = new ScheduleEntity();
     schedule.setPipelineName(testProcessFactory.pipelineName);
     scheduleService.delete(schedule);
@@ -241,10 +225,10 @@ public class PipeliteSchedulerTest {
         "deleted schedule for pipeline: "
             + testProcessFactory.pipelineName
             + ", scheduler: "
-            + launcherConfiguration.getSchedulerName());
+            + SCHEDULER_NAME);
   }
 
-  private void assertSchedulerMetrics(TestProcessFactory f) {
+  private void assertSchedulerMetrics(TestPipeline f) {
     String pipelineName = f.getPipelineName();
 
     PipelineMetrics pipelineMetrics = metrics.pipeline(pipelineName);
@@ -274,7 +258,7 @@ public class PipeliteSchedulerTest {
     }
   }
 
-  private void assertScheduleEntity(List<ScheduleEntity> scheduleEntities, TestProcessFactory f) {
+  private void assertScheduleEntity(List<ScheduleEntity> scheduleEntities, TestPipeline f) {
     String pipelineName = f.getPipelineName();
 
     assertThat(
@@ -287,8 +271,7 @@ public class PipeliteSchedulerTest {
             .filter(e -> e.getPipelineName().equals(f.getPipelineName()))
             .findFirst()
             .get();
-    assertThat(scheduleEntity.getSchedulerName())
-        .isEqualTo(launcherConfiguration.getSchedulerName());
+    assertThat(scheduleEntity.getSchedulerName()).isEqualTo(SCHEDULER_NAME);
     assertThat(scheduleEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(scheduleEntity.getProcessId()).isNotNull();
     assertThat(scheduleEntity.getExecutionCount()).isEqualTo(f.processCnt);
@@ -299,7 +282,7 @@ public class PipeliteSchedulerTest {
         .isEqualTo("every " + f.schedulerSeconds + " seconds");
   }
 
-  private void assertProcessEntity(TestProcessFactory f, String processId) {
+  private void assertProcessEntity(TestPipeline f, String processId) {
     String pipelineName = f.getPipelineName();
 
     ProcessEntity processEntity =
@@ -315,7 +298,7 @@ public class PipeliteSchedulerTest {
     }
   }
 
-  private void assertStageEntities(TestProcessFactory f, String processId) {
+  private void assertStageEntities(TestPipeline f, String processId) {
     String pipelineName = f.getPipelineName();
 
     for (int i = 0; i < f.stageCnt; ++i) {
@@ -354,10 +337,10 @@ public class PipeliteSchedulerTest {
     }
   }
 
-  private void test(List<TestProcessFactory> testProcessFactories) {
+  private void test(List<TestPipeline> testProcessFactories) {
     PipeliteScheduler pipeliteScheduler = createPipeliteScheduler();
     try {
-      for (TestProcessFactory f : testProcessFactories) {
+      for (TestPipeline f : testProcessFactories) {
         f.reset();
         saveSchedule(f);
         pipeliteScheduler.setMaximumExecutions(f.getPipelineName(), f.processCnt);
@@ -365,9 +348,8 @@ public class PipeliteSchedulerTest {
       new PipeliteServiceManager().addService(pipeliteScheduler).runSync();
 
       assertThat(pipeliteScheduler.getActiveProcessRunners().size()).isEqualTo(0);
-      List<ScheduleEntity> scheduleEntities =
-          scheduleService.getActiveSchedules(launcherConfiguration.getSchedulerName());
-      for (TestProcessFactory f : testProcessFactories) {
+      List<ScheduleEntity> scheduleEntities = scheduleService.getActiveSchedules(SCHEDULER_NAME);
+      for (TestPipeline f : testProcessFactories) {
         assertThat(f.stageExecCnt.get() / f.stageCnt).isEqualTo(f.processCnt);
         assertThat(f.processIds.size()).isEqualTo(f.processCnt);
         assertSchedulerMetrics(f);
@@ -379,7 +361,7 @@ public class PipeliteSchedulerTest {
       }
 
     } finally {
-      for (TestProcessFactory f : testProcessFactories) {
+      for (TestPipeline f : testProcessFactories) {
         deleteSchedule(f);
       }
     }
@@ -435,7 +417,6 @@ public class PipeliteSchedulerTest {
     // Create launcher configuration with schedule refresh frequency.
 
     LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
-    launcherConfiguration.setSchedulerName(launcherName);
 
     // Create schedule that has invalid cron.
 
@@ -445,7 +426,7 @@ public class PipeliteSchedulerTest {
     scheduleEntity1.setCron(cron1);
 
     PipeliteLocker pipeliteLocker = mock(PipeliteLocker.class);
-    ProcessFactoryService processFactoryService = mock(ProcessFactoryService.class);
+    RegisteredPipelineService registeredPipelineService = mock(RegisteredPipelineService.class);
     ScheduleService scheduleService = mock(ScheduleService.class);
     ProcessService processService = mock(ProcessService.class);
     ProcessRunnerPool processRunnerPool = mock(ProcessRunnerPool.class);
@@ -463,11 +444,12 @@ public class PipeliteSchedulerTest {
             new PipeliteScheduler(
                 launcherConfiguration,
                 pipeliteLocker,
-                processFactoryService,
+                registeredPipelineService,
                 scheduleService,
                 processService,
                 processRunnerPool,
-                metrics));
+                metrics,
+                SCHEDULER_NAME));
 
     int maxExecution1 = 1;
     pipeliteScheduler.setMaximumExecutions(pipelineName1, maxExecution1);
@@ -497,7 +479,6 @@ public class PipeliteSchedulerTest {
 
     Duration scheduleRefreshFrequency = Duration.ofSeconds(5);
     LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
-    launcherConfiguration.setSchedulerName(launcherName);
     launcherConfiguration.setScheduleRefreshFrequency(scheduleRefreshFrequency);
 
     // Create two schedules.
@@ -513,15 +494,13 @@ public class PipeliteSchedulerTest {
     scheduleEntity2.setCron(cron2);
 
     PipeliteLocker pipeliteLocker = mock(PipeliteLocker.class);
-    ProcessFactoryService processFactoryService = mock(ProcessFactoryService.class);
+    RegisteredPipelineService registeredPipelineService = mock(RegisteredPipelineService.class);
     ScheduleService scheduleService = mock(ScheduleService.class);
 
-    ProcessFactory processFactory1 =
-        new pipelite.TestProcessFactory(pipelineName1, Arrays.asList(testProcess("1")));
-    ProcessFactory processFactory2 =
-        new pipelite.TestProcessFactory(pipelineName2, Arrays.asList(testProcess("1")));
-    doAnswer(I -> processFactory1).when(processFactoryService).create(eq(pipelineName1));
-    doAnswer(I -> processFactory2).when(processFactoryService).create(eq(pipelineName2));
+    Pipeline pipeline1 = new pipelite.TestPipeline(pipelineName1, Arrays.asList(testProcess("1")));
+    Pipeline pipeline2 = new pipelite.TestPipeline(pipelineName2, Arrays.asList(testProcess("1")));
+    doAnswer(I -> pipeline1).when(registeredPipelineService).getPipeline(eq(pipelineName1));
+    doAnswer(I -> pipeline2).when(registeredPipelineService).getPipeline(eq(pipelineName2));
 
     // Return schedules from the schedule service.
 
@@ -570,11 +549,12 @@ public class PipeliteSchedulerTest {
             new PipeliteScheduler(
                 launcherConfiguration,
                 pipeliteLocker,
-                processFactoryService,
+                registeredPipelineService,
                 scheduleService,
                 processService,
                 processRunnerPool,
-                metrics));
+                metrics,
+                SCHEDULER_NAME));
 
     pipeliteScheduler.setMaximumExecutions(pipelineName1, maxExecution1);
     pipeliteScheduler.setMaximumExecutions(pipelineName2, maxExecution2);
@@ -643,7 +623,6 @@ public class PipeliteSchedulerTest {
 
     Duration scheduleRefreshFrequency = Duration.ofSeconds(5);
     LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
-    launcherConfiguration.setSchedulerName(launcherName);
     launcherConfiguration.setScheduleRefreshFrequency(scheduleRefreshFrequency);
 
     // Create two schedules with start time and process id to allow processes to resume.
@@ -668,15 +647,15 @@ public class PipeliteSchedulerTest {
     scheduleEntity2.setCron(cron2);
 
     PipeliteLocker pipeliteLocker = mock(PipeliteLocker.class);
-    ProcessFactoryService processFactoryService = mock(ProcessFactoryService.class);
+    RegisteredPipelineService registeredPipelineService = mock(RegisteredPipelineService.class);
     ScheduleService scheduleService = mock(ScheduleService.class);
 
-    ProcessFactory processFactory1 =
-        new pipelite.TestProcessFactory(pipelineName1, Arrays.asList(testProcess(processId1)));
-    ProcessFactory processFactory2 =
-        new pipelite.TestProcessFactory(pipelineName2, Arrays.asList(testProcess(processId2)));
-    doAnswer(I -> processFactory1).when(processFactoryService).create(eq(pipelineName1));
-    doAnswer(I -> processFactory2).when(processFactoryService).create(eq(pipelineName2));
+    Pipeline pipeline1 =
+        new pipelite.TestPipeline(pipelineName1, Arrays.asList(testProcess(processId1)));
+    Pipeline pipeline2 =
+        new pipelite.TestPipeline(pipelineName2, Arrays.asList(testProcess(processId2)));
+    doAnswer(I -> pipeline1).when(registeredPipelineService).getPipeline(eq(pipelineName1));
+    doAnswer(I -> pipeline2).when(registeredPipelineService).getPipeline(eq(pipelineName2));
 
     // Return schedules from the schedule service.
 
@@ -725,11 +704,12 @@ public class PipeliteSchedulerTest {
             new PipeliteScheduler(
                 launcherConfiguration,
                 pipeliteLocker,
-                processFactoryService,
+                registeredPipelineService,
                 scheduleService,
                 processService,
                 processRunnerPool,
-                metrics));
+                metrics,
+                SCHEDULER_NAME));
     pipeliteScheduler.setMaximumExecutions(pipelineName1, maxExecution1);
     pipeliteScheduler.setMaximumExecutions(pipelineName2, maxExecution2);
 

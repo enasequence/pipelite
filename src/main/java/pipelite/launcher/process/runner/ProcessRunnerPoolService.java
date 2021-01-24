@@ -34,9 +34,9 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
   public ProcessRunnerPoolService(
       LauncherConfiguration launcherConfiguration,
       PipeliteLocker locker,
-      String launcherName,
       ProcessRunnerPool pool,
-      PipeliteMetrics metrics) {
+      PipeliteMetrics metrics,
+      String launcherName) {
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(locker, "Missing locker");
     Assert.notNull(pool, "Missing process runner pool");

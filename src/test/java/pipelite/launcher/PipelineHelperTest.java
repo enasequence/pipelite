@@ -8,17 +8,19 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.process;
+package pipelite.launcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
+import pipelite.Pipeline;
 import pipelite.entity.ProcessEntity;
 import pipelite.exception.PipeliteException;
+import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 
-public class ProcessFactoryTest {
+public class PipelineHelperTest {
 
   private static String PIPELINE_NAME = "PIPELINE1";
   private static String PROCESS_ID = "PROCESS1";
@@ -28,8 +30,8 @@ public class ProcessFactoryTest {
     ProcessEntity processEntity = new ProcessEntity();
     processEntity.setProcessId(PROCESS_ID);
     processEntity.setPipelineName(PIPELINE_NAME);
-    ProcessFactory processFactory =
-        new ProcessFactory() {
+    Pipeline pipeline =
+        new Pipeline() {
           @Override
           public String getPipelineName() {
             return PIPELINE_NAME;
@@ -41,11 +43,11 @@ public class ProcessFactoryTest {
           }
 
           @Override
-          public Process create(ProcessBuilder builder) {
+          public Process createProcess(ProcessBuilder builder) {
             return builder.execute("STAGE1").withCallExecutor().build();
           }
         };
-    Process process = ProcessFactoryHelper.create(processEntity, processFactory);
+    Process process = PipelineHelper.create(processEntity, pipeline);
     assertThat(process).isNotNull();
     assertThat(process.getProcessId()).isEqualTo(PROCESS_ID);
     assertThat(process.getProcessEntity()).isNotNull();
@@ -56,8 +58,8 @@ public class ProcessFactoryTest {
   public void createFailed() {
     ProcessEntity processEntity = new ProcessEntity();
     processEntity.setProcessId(PROCESS_ID);
-    ProcessFactory processFactory =
-        new ProcessFactory() {
+    Pipeline pipeline =
+        new Pipeline() {
           @Override
           public String getPipelineName() {
             return PIPELINE_NAME;
@@ -69,7 +71,7 @@ public class ProcessFactoryTest {
           }
 
           @Override
-          public Process create(ProcessBuilder builder) {
+          public Process createProcess(ProcessBuilder builder) {
             return null;
           }
         };
@@ -77,7 +79,7 @@ public class ProcessFactoryTest {
     assertThrows(
         PipeliteException.class,
         () -> {
-          ProcessFactoryHelper.create(processEntity, processFactory);
+          PipelineHelper.create(processEntity, pipeline);
         });
   }
 }

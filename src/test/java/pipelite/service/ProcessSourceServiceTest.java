@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Bean;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.TestProcessSource;
 import pipelite.UniqueStringGenerator;
+import pipelite.exception.PipeliteException;
 import pipelite.process.ProcessSource;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
@@ -52,10 +53,10 @@ public class ProcessSourceServiceTest {
     assertThat(processSourceService.create(PIPELINE_NAME_2).getPipelineName())
         .isEqualTo(PIPELINE_NAME_2);
     assertThat(processSourceService.create(PIPELINE_NAME_3)).isNull();
-    assertThatExceptionOfType(ProcessSourceServiceException.class)
+    assertThatExceptionOfType(PipeliteException.class)
         .isThrownBy(() -> processSourceService.create(null))
         .withMessage("Missing pipeline name");
-    assertThatExceptionOfType(ProcessSourceServiceException.class)
+    assertThatExceptionOfType(PipeliteException.class)
         .isThrownBy(() -> processSourceService.create(""))
         .withMessage("Missing pipeline name");
   }

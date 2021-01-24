@@ -17,48 +17,47 @@ import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import pipelite.process.ProcessFactory;
+import pipelite.Pipeline;
+import pipelite.exception.PipeliteException;
 
 @Service
 @Flogger
-public class ProcessFactoryService {
+public class RegisteredPipelineService {
 
-  private final Map<String, ProcessFactory> map = new HashMap<>();
+  private final Map<String, Pipeline> map = new HashMap<>();
 
-  public ProcessFactoryService(@Autowired List<ProcessFactory> factories) {
-    for (ProcessFactory factory : factories) {
-      if (map.containsKey(factory.getPipelineName())) {
-        throw new ProcessFactoryServiceException(
-            "Non-unique pipeline: " + factory.getPipelineName());
+  public RegisteredPipelineService(@Autowired List<Pipeline> pipelines) {
+    for (Pipeline pipeline : pipelines) {
+      if (map.containsKey(pipeline.getPipelineName())) {
+        throw new PipeliteException("Non-unique pipeline: " + pipeline.getPipelineName());
       }
-      map.put(factory.getPipelineName(), factory);
+      map.put(pipeline.getPipelineName(), pipeline);
     }
   }
 
   /**
-   * Returns the pipelines names for registered process factories.
+   * Returns the registered pipeline names.
    *
-   * @return pipelines names for registered process factories
+   * @return the registered pipeline names
    */
   public List<String> getPipelineNames() {
     return map.keySet().stream().collect(Collectors.toList());
   }
 
   /**
-   * Creates a process factory.
+   * Returns a registered pipeline.
    *
    * @param pipelineName the pipeline name. A pipeline is identified by its name.
-   * @return the process factory for the pipeline.
-   * @throws ProcessFactoryServiceException if the pipeline is not supported by this factory or if
-   *     the pipeline name is null or empty.
+   * @return the registered pipeline.
+   * @throws PipeliteException if the pipeline was not found
    */
-  public ProcessFactory create(String pipelineName) {
+  public Pipeline getPipeline(String pipelineName) {
     if (pipelineName == null || pipelineName.trim().isEmpty()) {
-      throw new ProcessFactoryServiceException("Missing pipeline name");
+      throw new PipeliteException("Missing pipeline name");
     }
     if (!map.containsKey(pipelineName)) {
       log.atSevere().log("Unknown pipeline: " + pipelineName);
-      throw new ProcessFactoryServiceException("Unknown pipeline: " + pipelineName);
+      throw new PipeliteException("Unknown pipeline: " + pipelineName);
     }
     return map.get(pipelineName);
   }

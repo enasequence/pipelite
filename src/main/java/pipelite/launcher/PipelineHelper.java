@@ -8,37 +8,39 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.process;
+package pipelite.launcher;
 
 import lombok.extern.flogger.Flogger;
+import pipelite.Pipeline;
 import pipelite.entity.ProcessEntity;
 import pipelite.exception.PipeliteException;
+import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 
-/** Creates processes using a process factory. */
+/** Creates processes. */
 @Flogger
-public class ProcessFactoryHelper {
+public class PipelineHelper {
 
-  private ProcessFactoryHelper() {}
+  private PipelineHelper() {}
 
   /**
    * Creates a process.
    *
    * @param processId the process id
-   * @param processFactory the process factory
+   * @param pipeline the pipeline
    * @return the process
    * @throws PipeliteException if the new process could not be created
    */
-  public static Process create(String processId, ProcessFactory processFactory) {
+  public static Process create(String processId, Pipeline pipeline) {
     if (processId == null) {
       throw new PipeliteException("Failed to create process. Missing process id.");
     }
 
-    if (processFactory == null) {
-      throw new PipeliteException("Failed to create process. Missing process factory.");
+    if (pipeline == null) {
+      throw new PipeliteException("Failed to create process. Missing pipeline.");
     }
 
-    String pipelineName = processFactory.getPipelineName();
+    String pipelineName = pipeline.getPipelineName();
 
     if (pipelineName == null) {
       throw new PipeliteException("Failed to create process. Missing pipeline name.");
@@ -47,14 +49,14 @@ public class ProcessFactoryHelper {
     try {
       log.atInfo().log("Creating %s process %s", pipelineName, processId);
 
-      Process process = processFactory.create(new ProcessBuilder(processId));
+      Process process = pipeline.createProcess(new ProcessBuilder(processId));
       if (process == null) {
         throw new PipeliteException(
             "Failed to create "
                 + pipelineName
                 + " process "
                 + processId
-                + ". Factory returned a null process.");
+                + ". Pipeline returned a null process.");
       }
       return process;
     } catch (Exception ex) {
@@ -68,11 +70,11 @@ public class ProcessFactoryHelper {
    * Creates a process.
    *
    * @param processEntity the process entity
-   * @param processFactory the process factory
+   * @param pipeline the pipeline
    * @return the process
    * @throws PipeliteException if the new process could not be created
    */
-  public static Process create(ProcessEntity processEntity, ProcessFactory processFactory) {
+  public static Process create(ProcessEntity processEntity, Pipeline pipeline) {
     if (processEntity == null) {
       throw new PipeliteException("Failed to create process. Missing process entity.");
     }
@@ -83,19 +85,18 @@ public class ProcessFactoryHelper {
       throw new PipeliteException("Failed to create process. Missing process id.");
     }
 
-    if (processFactory == null) {
-      throw new PipeliteException(
-          "Failed to create process " + processId + ". Missing process factory.");
+    if (pipeline == null) {
+      throw new PipeliteException("Failed to create process " + processId + ". Missing pipeline.");
     }
 
-    String pipelineName = processFactory.getPipelineName();
+    String pipelineName = pipeline.getPipelineName();
 
     if (pipelineName == null) {
       throw new PipeliteException(
           "Failed to create process " + processId + ". Missing pipeline name.");
     }
 
-    if (!processFactory.getPipelineName().equals(processEntity.getPipelineName())) {
+    if (!pipeline.getPipelineName().equals(processEntity.getPipelineName())) {
       throw new PipeliteException(
           "Failed to create "
               + pipelineName
@@ -105,7 +106,7 @@ public class ProcessFactoryHelper {
               + processEntity.getPipelineName());
     }
 
-    Process process = create(processId, processFactory);
+    Process process = create(processId, pipeline);
     process.setProcessEntity(processEntity);
     return process;
   }

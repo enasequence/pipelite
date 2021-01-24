@@ -28,12 +28,13 @@ public class DefaultPipeliteScheduler {
       LauncherConfiguration launcherConfiguration,
       ExecutorConfiguration executorConfiguration,
       LockService lockService,
-      ProcessFactoryService processFactoryService,
+      RegisteredPipelineService registeredPipelineService,
       ProcessService processService,
       ScheduleService scheduleService,
       StageService stageService,
       MailService mailService,
-      PipeliteMetrics metrics) {
+      PipeliteMetrics metrics,
+      String schedulerName) {
 
     PipeliteLocker pipeliteLocker =
         new DefaultPipeliteLocker(lockService, ProcessRunnerType.SCHEDULER);
@@ -41,7 +42,7 @@ public class DefaultPipeliteScheduler {
     return new PipeliteScheduler(
         launcherConfiguration,
         pipeliteLocker,
-        processFactoryService,
+        registeredPipelineService,
         scheduleService,
         processService,
         new DefaultProcessRunnerPool(
@@ -55,6 +56,7 @@ public class DefaultPipeliteScheduler {
                     mailService,
                     pipelineName),
             metrics),
-        metrics);
+        metrics,
+        schedulerName);
   }
 }

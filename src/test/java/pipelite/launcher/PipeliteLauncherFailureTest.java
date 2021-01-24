@@ -26,6 +26,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.test.annotation.DirtiesContext;
+import pipelite.Pipeline;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.TestProcessSource;
 import pipelite.UniqueStringGenerator;
@@ -37,8 +38,6 @@ import pipelite.entity.StageEntity;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
-import pipelite.process.ProcessFactory;
-import pipelite.process.ProcessSource;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.*;
@@ -61,9 +60,8 @@ public class PipeliteLauncherFailureTest {
   @Autowired private WebConfiguration webConfiguration;
   @Autowired private LauncherConfiguration launcherConfiguration;
   @Autowired private ExecutorConfiguration executorConfiguration;
-  @Autowired private ProcessFactoryService processFactoryService;
+  @Autowired private RegisteredPipelineService registeredPipelineService;
   @Autowired private ProcessSourceService processSourceService;
-  @Autowired private ScheduleService scheduleService;
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
   @Autowired private LockService lockService;
@@ -72,23 +70,23 @@ public class PipeliteLauncherFailureTest {
 
   @Autowired
   @Qualifier("firstStageFails")
-  private TestProcessFactory firstStageFails;
+  private TestPipeline firstStageFails;
 
   @Autowired
   @Qualifier("secondStageFails")
-  private TestProcessFactory secondStageFails;
+  private TestPipeline secondStageFails;
 
   @Autowired
   @Qualifier("thirdStageFails")
-  private TestProcessFactory thirdStageFails;
+  private TestPipeline thirdStageFails;
 
   @Autowired
   @Qualifier("fourthStageFails")
-  private TestProcessFactory fourthStageFails;
+  private TestPipeline fourthStageFails;
 
   @Autowired
   @Qualifier("noStageFails")
-  private TestProcessFactory noStageFails;
+  private TestPipeline noStageFails;
 
   @Autowired
   @Qualifier("firstStageFailsSource")
@@ -114,58 +112,58 @@ public class PipeliteLauncherFailureTest {
   static class TestConfig {
     @Bean("firstStageFails")
     @Primary
-    public TestProcessFactory firstStageFails() {
-      return new TestProcessFactory(StageTestResult.FIRST_ERROR);
+    public TestPipeline firstStageFails() {
+      return new TestPipeline(StageTestResult.FIRST_ERROR);
     }
 
     @Bean("secondStageFails")
-    public ProcessFactory secondStageFails() {
-      return new TestProcessFactory(StageTestResult.SECOND_ERROR);
+    public TestPipeline secondStageFails() {
+      return new TestPipeline(StageTestResult.SECOND_ERROR);
     }
 
     @Bean("thirdStageFails")
-    public ProcessFactory thirdStageFails() {
-      return new TestProcessFactory(StageTestResult.THIRD_ERROR);
+    public TestPipeline thirdStageFails() {
+      return new TestPipeline(StageTestResult.THIRD_ERROR);
     }
 
     @Bean("fourthStageFails")
-    public ProcessFactory fourthStageFails() {
-      return new TestProcessFactory(StageTestResult.FOURTH_ERROR);
+    public TestPipeline fourthStageFails() {
+      return new TestPipeline(StageTestResult.FOURTH_ERROR);
     }
 
     @Bean("noStageFails")
-    public ProcessFactory noStageFails() {
-      return new TestProcessFactory(StageTestResult.NO_ERROR);
+    public TestPipeline noStageFails() {
+      return new TestPipeline(StageTestResult.NO_ERROR);
     }
 
     @Bean("firstStageFailsSource")
     @Primary
-    public ProcessSource firstStageFailsSource(
-        @Autowired @Qualifier("firstStageFails") TestProcessFactory f) {
+    public TestProcessSource firstStageFailsSource(
+        @Autowired @Qualifier("firstStageFails") TestPipeline f) {
       return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
     }
 
     @Bean("secondStageFailsSource")
-    public ProcessSource secondStageFailsSource(
-        @Autowired @Qualifier("secondStageFails") TestProcessFactory f) {
+    public TestProcessSource secondStageFailsSource(
+        @Autowired @Qualifier("secondStageFails") TestPipeline f) {
       return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
     }
 
     @Bean("thirdStageFailsSource")
-    public ProcessSource thirdStageFailsSource(
-        @Autowired @Qualifier("thirdStageFails") TestProcessFactory f) {
+    public TestProcessSource thirdStageFailsSource(
+        @Autowired @Qualifier("thirdStageFails") TestPipeline f) {
       return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
     }
 
     @Bean("fourthStageFailsSource")
-    public ProcessSource fourthStageFailsSource(
-        @Autowired @Qualifier("fourthStageFails") TestProcessFactory f) {
+    public TestProcessSource fourthStageFailsSource(
+        @Autowired @Qualifier("fourthStageFails") TestPipeline f) {
       return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
     }
 
     @Bean("noStageFailsSource")
-    public ProcessSource noStageFailsSource(
-        @Autowired @Qualifier("noStageFails") TestProcessFactory f) {
+    public TestProcessSource noStageFailsSource(
+        @Autowired @Qualifier("noStageFails") TestPipeline f) {
       return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
     }
   }
@@ -184,7 +182,7 @@ public class PipeliteLauncherFailureTest {
         launcherConfiguration,
         executorConfiguration,
         lockService,
-        processFactoryService,
+        registeredPipelineService,
         processSourceService,
         processService,
         stageService,
@@ -194,7 +192,7 @@ public class PipeliteLauncherFailureTest {
   }
 
   @Value
-  public static class TestProcessFactory implements ProcessFactory {
+  public static class TestPipeline implements Pipeline {
     private final String pipelineName = UniqueStringGenerator.randomPipelineName();
     private final StageTestResult stageTestResult;
     public final List<String> processIds = Collections.synchronizedList(new ArrayList<>());
@@ -207,7 +205,7 @@ public class PipeliteLauncherFailureTest {
     public final AtomicLong thirdStageExecCnt = new AtomicLong();
     public final AtomicLong fourthStageExecCnt = new AtomicLong();
 
-    public TestProcessFactory(StageTestResult stageTestResult) {
+    public TestPipeline(StageTestResult stageTestResult) {
       this.stageTestResult = stageTestResult;
       this.firstStageExecResult =
           stageTestResult == StageTestResult.FIRST_ERROR
@@ -246,7 +244,7 @@ public class PipeliteLauncherFailureTest {
     }
 
     @Override
-    public Process create(ProcessBuilder builder) {
+    public Process createProcess(ProcessBuilder builder) {
       processIds.add(builder.getProcessId());
 
       ExecutorParameters executorParams =
@@ -294,7 +292,7 @@ public class PipeliteLauncherFailureTest {
     return pipeliteLauncher;
   }
 
-  public void test(TestProcessFactory f, TestProcessSource s) {
+  public void test(TestPipeline f, TestProcessSource s) {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher(f.getPipelineName());
     new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
 
@@ -335,7 +333,7 @@ public class PipeliteLauncherFailureTest {
     }
   }
 
-  private void assertProcessEntity(TestProcessFactory f, String processId) {
+  private void assertProcessEntity(TestPipeline f, String processId) {
     String pipelineName = f.getPipelineName();
 
     ProcessEntity processEntity =
@@ -351,7 +349,7 @@ public class PipeliteLauncherFailureTest {
     }
   }
 
-  private void assertStageEntities(TestProcessFactory f, String processId) {
+  private void assertStageEntities(TestPipeline f, String processId) {
     String pipelineName = f.getPipelineName();
 
     int stageCnt = 4;
@@ -409,7 +407,7 @@ public class PipeliteLauncherFailureTest {
     }
   }
 
-  private void assertLauncherMetrics(TestProcessFactory f) {
+  private void assertLauncherMetrics(TestPipeline f) {
     PipelineMetrics pipelineMetrics = metrics.pipeline(f.getPipelineName());
     if (f.getFirstStageExecResult().isSuccess()
         && f.getSecondStageExecResult().isSuccess()

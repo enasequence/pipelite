@@ -32,6 +32,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.test.annotation.DirtiesContext;
+import pipelite.Pipeline;
 import pipelite.PipeliteTestBeans;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.TestProcessSource;
@@ -51,7 +52,6 @@ import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.TimeSeriesMetrics;
 import pipelite.process.Process;
-import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessSource;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
@@ -73,9 +73,8 @@ public class PipeliteLauncherTest {
   @Autowired private WebConfiguration webConfiguration;
   @Autowired private LauncherConfiguration launcherConfiguration;
   @Autowired private ExecutorConfiguration executorConfiguration;
-  @Autowired private ProcessFactoryService processFactoryService;
+  @Autowired private RegisteredPipelineService registeredPipelineService;
   @Autowired private ProcessSourceService processSourceService;
-  @Autowired private ScheduleService scheduleService;
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
   @Autowired private LockService lockService;
@@ -85,49 +84,49 @@ public class PipeliteLauncherTest {
 
   @Autowired
   @Qualifier("processSuccess")
-  private TestProcessFactory processSuccess;
+  private TestPipeline processSuccess;
 
   @Autowired
   @Qualifier("processFailure")
-  private TestProcessFactory processFailure;
+  private TestPipeline processFailure;
 
   @Autowired
   @Qualifier("processException")
-  private TestProcessFactory processException;
+  private TestPipeline processException;
 
   @TestConfiguration
   static class TestConfig {
     @Bean("processSuccess")
     @Primary
-    public TestProcessFactory processSuccess() {
-      return new TestProcessFactory("processSuccess", 4, 2, StageTestResult.SUCCESS);
+    public TestPipeline processSuccess() {
+      return new TestPipeline("processSuccess", 4, 2, StageTestResult.SUCCESS);
     }
 
     @Bean("processFailure")
-    public TestProcessFactory processFailure() {
-      return new TestProcessFactory("processFailure", 4, 2, StageTestResult.ERROR);
+    public TestPipeline processFailure() {
+      return new TestPipeline("processFailure", 4, 2, StageTestResult.ERROR);
     }
 
     @Bean("processException")
-    public TestProcessFactory processException() {
-      return new TestProcessFactory("processException", 4, 2, StageTestResult.EXCEPTION);
+    public TestPipeline processException() {
+      return new TestPipeline("processException", 4, 2, StageTestResult.EXCEPTION);
     }
 
     @Bean
     public ProcessSource processSuccessSource(
-        @Autowired @Qualifier("processSuccess") TestProcessFactory f) {
+        @Autowired @Qualifier("processSuccess") TestPipeline f) {
       return new TestProcessSource(f.getPipelineName(), f.processCnt);
     }
 
     @Bean
     public ProcessSource processFailureSource(
-        @Autowired @Qualifier("processFailure") TestProcessFactory f) {
+        @Autowired @Qualifier("processFailure") TestPipeline f) {
       return new TestProcessSource(f.getPipelineName(), f.processCnt);
     }
 
     @Bean
     public ProcessSource processExceptionSource(
-        @Autowired @Qualifier("processException") TestProcessFactory f) {
+        @Autowired @Qualifier("processException") TestPipeline f) {
       return new TestProcessSource(f.getPipelineName(), f.processCnt);
     }
   }
@@ -144,7 +143,7 @@ public class PipeliteLauncherTest {
         launcherConfiguration,
         executorConfiguration,
         lockService,
-        processFactoryService,
+        registeredPipelineService,
         processSourceService,
         processService,
         stageService,
@@ -154,7 +153,7 @@ public class PipeliteLauncherTest {
   }
 
   @Value
-  public static class TestProcessFactory implements ProcessFactory {
+  public static class TestPipeline implements Pipeline {
     private final String pipelineName;
     public final int processCnt;
     public final int stageCnt;
@@ -162,7 +161,7 @@ public class PipeliteLauncherTest {
     public final List<String> processIds = Collections.synchronizedList(new ArrayList<>());
     public final AtomicLong stageExecCnt = new AtomicLong();
 
-    public TestProcessFactory(
+    public TestPipeline(
         String pipelineNamePrefix, int processCnt, int stageCnt, StageTestResult stageTestResult) {
       this.pipelineName = pipelineNamePrefix + "_" + UniqueStringGenerator.randomPipelineName();
       this.processCnt = processCnt;
@@ -186,7 +185,7 @@ public class PipeliteLauncherTest {
     }
 
     @Override
-    public Process create(ProcessBuilder builder) {
+    public Process createProcess(ProcessBuilder builder) {
       processIds.add(builder.getProcessId());
       ExecutorParameters executorParams =
           ExecutorParameters.builder()
@@ -218,7 +217,7 @@ public class PipeliteLauncherTest {
     }
   }
 
-  private void assertLauncherMetrics(TestProcessFactory f) {
+  private void assertLauncherMetrics(TestPipeline f) {
     PipelineMetrics pipelineMetrics = metrics.pipeline(f.getPipelineName());
 
     if (f.stageTestResult != StageTestResult.SUCCESS) {
@@ -246,7 +245,7 @@ public class PipeliteLauncherTest {
     }
   }
 
-  private void assertProcessEntity(TestProcessFactory f, String processId) {
+  private void assertProcessEntity(TestPipeline f, String processId) {
     String pipelineName = f.getPipelineName();
 
     ProcessEntity processEntity =
@@ -262,7 +261,7 @@ public class PipeliteLauncherTest {
     }
   }
 
-  private void assertStageEntities(TestProcessFactory f, String processId) {
+  private void assertStageEntities(TestPipeline f, String processId) {
     String pipelineName = f.getPipelineName();
 
     for (int i = 0; i < f.stageCnt; ++i) {
@@ -301,7 +300,7 @@ public class PipeliteLauncherTest {
     }
   }
 
-  private void test(TestProcessFactory f) {
+  private void test(TestPipeline f) {
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
     new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
 
@@ -339,8 +338,8 @@ public class PipeliteLauncherTest {
     LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
     int pipelineParallelism = ForkJoinPool.getCommonPoolParallelism();
 
-    ProcessFactory processFactory =
-        new ProcessFactory() {
+    Pipeline pipeline =
+        new Pipeline() {
           @Override
           public String getPipelineName() {
             return pipelineName;
@@ -352,7 +351,7 @@ public class PipeliteLauncherTest {
           }
 
           @Override
-          public Process create(ProcessBuilder builder) {
+          public Process createProcess(ProcessBuilder builder) {
             return mock(Process.class);
           }
         };
@@ -364,7 +363,7 @@ public class PipeliteLauncherTest {
                 launcherConfiguration,
                 mock(ProcessService.class),
                 pipelineName,
-                processFactory.getPipelineParallelism()));
+                pipeline.getPipelineParallelism()));
 
     List<ProcessEntity> processesEntities =
         Collections.nCopies(processCnt, mock(ProcessEntity.class));
@@ -379,7 +378,7 @@ public class PipeliteLauncherTest {
             new PipeliteLauncher(
                 launcherConfiguration,
                 mock(PipeliteLocker.class),
-                processFactory,
+                pipeline,
                 mock(ProcessCreator.class),
                 queue,
                 pool,
@@ -428,7 +427,7 @@ public class PipeliteLauncherTest {
             new PipeliteLauncher(
                 launcherConfiguration,
                 mock(PipeliteLocker.class),
-                mock(ProcessFactory.class),
+                mock(Pipeline.class),
                 mock(ProcessCreator.class),
                 queue,
                 pool,
@@ -477,7 +476,7 @@ public class PipeliteLauncherTest {
             new PipeliteLauncher(
                 launcherConfiguration,
                 mock(PipeliteLocker.class),
-                mock(ProcessFactory.class),
+                mock(Pipeline.class),
                 processCreator,
                 queue,
                 mock(DefaultProcessRunnerPool.class),
@@ -488,5 +487,12 @@ public class PipeliteLauncherTest {
 
     verify(launcher, times(1)).run();
     verify(processCreator, times(1)).createProcesses(processCnt);
+  }
+
+  @Test
+  public void getLauncherName() {
+    String hostName = WebConfiguration.getCanonicalHostName();
+    assertThat(PipeliteLauncher.getLauncherName("TEST", 8080))
+        .startsWith("TEST@" + hostName + ":8080:");
   }
 }

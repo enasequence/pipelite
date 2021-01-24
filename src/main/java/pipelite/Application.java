@@ -36,7 +36,8 @@ public class Application {
   @Autowired private WebConfiguration webConfiguration;
   @Autowired private LauncherConfiguration launcherConfiguration;
   @Autowired private ExecutorConfiguration executorConfiguration;
-  @Autowired private ProcessFactoryService processFactoryService;
+  @Autowired private RegisteredPipelineService registeredPipelineService;
+  @Autowired private RegisteredSchedulerService registeredSchedulerService;
   @Autowired private ProcessSourceService processSourceService;
   @Autowired private ScheduleService scheduleService;
   @Autowired private ProcessService processService;
@@ -48,7 +49,7 @@ public class Application {
 
   private PipeliteServiceManager serverManager;
   private List<PipeliteLauncher> launchers;
-  private PipeliteScheduler scheduler;
+  private List<PipeliteScheduler> schedulers;
   private boolean shutdown;
 
   @PostConstruct
@@ -65,7 +66,7 @@ public class Application {
       serverManager.shutdown();
     }
     launchers = null;
-    scheduler = null;
+    schedulers = null;
   }
 
   /** Stops all services and terminates all running processes. */
@@ -101,17 +102,19 @@ public class Application {
     }
     serverManager = new PipeliteServiceManager();
     launchers = new ArrayList<>();
+    schedulers = new ArrayList<>();
     try {
       log.atInfo().log("Starting pipelite services");
-      // Create pipelite launchers.
-      for (String pipelineName : processFactoryService.getPipelineNames()) {
+      // Create pipelines.
+      for (String pipelineName : registeredPipelineService.getPipelineNames()) {
         PipeliteLauncher launcher = createLauncher(pipelineName);
         launchers.add(launcher);
         serverManager.addService(launcher);
       }
-      // Create scheduler.
-      if (launcherConfiguration.getSchedulerName() != null) {
-        scheduler = createScheduler();
+      // Create schedulers.
+      for (String schedulerName : registeredSchedulerService.getSchedulerNames()) {
+        PipeliteScheduler scheduler = createScheduler(schedulerName);
+        schedulers.add(scheduler);
         serverManager.addService(scheduler);
       }
     } catch (Exception ex) {
@@ -124,17 +127,18 @@ public class Application {
     }
   }
 
-  private PipeliteScheduler createScheduler() {
+  private PipeliteScheduler createScheduler(String schedulerName) {
     return DefaultPipeliteScheduler.create(
         launcherConfiguration,
         executorConfiguration,
         lockService,
-        processFactoryService,
+        registeredPipelineService,
         processService,
         scheduleService,
         stageService,
         mailService,
-        metrics);
+        metrics,
+        schedulerName);
   }
 
   private PipeliteLauncher createLauncher(String pipelineName) {
@@ -143,7 +147,7 @@ public class Application {
         launcherConfiguration,
         executorConfiguration,
         lockService,
-        processFactoryService,
+        registeredPipelineService,
         processSourceService,
         processService,
         stageService,
@@ -173,10 +177,9 @@ public class Application {
   }
 
   public Collection<PipeliteScheduler> getRunningSchedulers() {
-    if (scheduler == null || !scheduler.isRunning()) {
-      return Collections.emptyList();
-    }
-    return Arrays.asList(scheduler);
+    return schedulers.stream()
+        .filter(scheduler -> scheduler.isRunning())
+        .collect(Collectors.toList());
   }
 
   public boolean isShutdown() {

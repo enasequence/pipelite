@@ -10,6 +10,7 @@
  */
 package pipelite.launcher;
 
+import pipelite.Pipeline;
 import pipelite.configuration.ExecutorConfiguration;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.WebConfiguration;
@@ -23,7 +24,6 @@ import pipelite.launcher.process.runner.ProcessRunnerType;
 import pipelite.lock.DefaultPipeliteLocker;
 import pipelite.lock.PipeliteLocker;
 import pipelite.metrics.PipeliteMetrics;
-import pipelite.process.ProcessFactory;
 import pipelite.service.*;
 
 public class DefaultPipeliteLauncher {
@@ -35,7 +35,7 @@ public class DefaultPipeliteLauncher {
       LauncherConfiguration launcherConfiguration,
       ExecutorConfiguration executorConfiguration,
       LockService lockService,
-      ProcessFactoryService processFactoryService,
+      RegisteredPipelineService registeredPipelineService,
       ProcessSourceService processSourceService,
       ProcessService processService,
       StageService stageService,
@@ -45,7 +45,7 @@ public class DefaultPipeliteLauncher {
 
     PipeliteLocker pipeliteLocker =
         new DefaultPipeliteLocker(lockService, ProcessRunnerType.LAUNCHER);
-    ProcessFactory processFactory = processFactoryService.create(pipelineName);
+    Pipeline pipeline = registeredPipelineService.getPipeline(pipelineName);
     ProcessCreator processCreator =
         new DefaultProcessCreator(
             processSourceService.create(pipelineName), processService, pipelineName);
@@ -55,11 +55,11 @@ public class DefaultPipeliteLauncher {
             launcherConfiguration,
             processService,
             pipelineName,
-            processFactory.getPipelineParallelism());
+            pipeline.getPipelineParallelism());
     return new PipeliteLauncher(
         launcherConfiguration,
         pipeliteLocker,
-        processFactory,
+        pipeline,
         processCreator,
         processQueue,
         new DefaultProcessRunnerPool(

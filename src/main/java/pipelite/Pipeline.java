@@ -8,32 +8,33 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.process;
+package pipelite;
 
+import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 
-/** Creates processes to be executed. */
-public interface ProcessFactory {
+/** Implement this interface to register a pipelite pipeline in this service. */
+public interface Pipeline {
 
   /**
-   * Returns the pipeline name. The pipeline name must be unique.
+   * Returns the pipeline name. The name must be unique.
    *
    * @return the pipeline name
    */
   String getPipelineName();
 
   /**
-   * Returns the maximum number of parallel process executions for the pipeline.
+   * Returns the maximum number of parallel process executions.
    *
-   * @return the maximum number of parallel process executions for the pipeline.
+   * @return the maximum number of parallel process executions
    */
   int getPipelineParallelism();
 
   /**
-   * Creates a process.
+   * Creates a process to be executed by pipelite.
    *
    * @param builder the process builder
    * @return the process
    */
-  Process create(ProcessBuilder builder);
+  Process createProcess(ProcessBuilder builder);
 }

@@ -39,8 +39,8 @@ import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.TimeSeriesMetrics;
 import pipelite.process.ProcessState;
-import pipelite.service.ProcessFactoryService;
 import pipelite.service.ProcessService;
+import pipelite.service.RegisteredPipelineService;
 import tech.tablesaw.api.Table;
 import tech.tablesaw.plotly.components.Figure;
 
@@ -53,7 +53,7 @@ public class PipelineController {
   @Autowired Application application;
   @Autowired Environment environment;
   @Autowired ProcessService processService;
-  @Autowired ProcessFactoryService processFactoryService;
+  @Autowired RegisteredPipelineService registeredPipelineService;
   @Autowired PipeliteMetrics pipeliteMetrics;
 
   private static final int LOREM_IPSUM_PROCESSES = 5;
@@ -103,7 +103,7 @@ public class PipelineController {
   }
 
   private List<PipelineInfo> getLocalPipelines() {
-    List<String> pipelineNames = processFactoryService.getPipelineNames();
+    List<String> pipelineNames = registeredPipelineService.getPipelineNames();
     return getPipelines(
         processService.getProcessStateSummary().stream()
             .filter(s -> pipelineNames.contains(s.getPipelineName())));

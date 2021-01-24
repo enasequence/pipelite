@@ -13,22 +13,20 @@ package pipelite;
 import java.util.*;
 import java.util.concurrent.ForkJoinPool;
 import pipelite.process.Process;
-import pipelite.process.ProcessFactory;
 import pipelite.process.builder.ProcessBuilder;
 
-public class TestProcessFactory implements ProcessFactory {
+public class TestPipeline implements Pipeline {
   private final String pipelineName;
   private final Map<String, Process> processes = new HashMap<>();
   private final int pipelineParallelism;
 
-  public TestProcessFactory(
-      String pipelineName, Collection<Process> processes, int pipelineParallelism) {
+  public TestPipeline(String pipelineName, Collection<Process> processes, int pipelineParallelism) {
     this.pipelineName = pipelineName;
     addProcesses(processes);
     this.pipelineParallelism = pipelineParallelism;
   }
 
-  public TestProcessFactory(String pipelineName, Collection<Process> processes) {
+  public TestPipeline(String pipelineName, Collection<Process> processes) {
     this.pipelineName = pipelineName;
     addProcesses(processes);
     this.pipelineParallelism = ForkJoinPool.getCommonPoolParallelism();
@@ -46,7 +44,7 @@ public class TestProcessFactory implements ProcessFactory {
   }
 
   @Override
-  public Process create(ProcessBuilder builder) {
+  public Process createProcess(ProcessBuilder builder) {
     return processes.get(builder.getProcessId());
   }
 

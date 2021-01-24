@@ -8,14 +8,15 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.service;
+package pipelite;
 
-public class ProcessSourceServiceException extends RuntimeException {
-  public ProcessSourceServiceException(String message) {
-    super(message);
-  }
+/** Implement this interface to register a pipelite scheduler in this service. */
+public interface Scheduler {
 
-  public ProcessSourceServiceException(String message, Throwable cause) {
-    super(message, cause);
-  }
+  /**
+   * Returns the scheduler name. The name must be unique.
+   *
+   * @return the scheduler name
+   */
+  String getSchedulerName();
 }

@@ -26,14 +26,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import pipelite.Pipeline;
 import pipelite.controller.info.StageInfo;
 import pipelite.controller.utils.LoremUtils;
 import pipelite.controller.utils.TimeUtils;
 import pipelite.entity.StageEntity;
 import pipelite.process.Process;
-import pipelite.process.ProcessFactory;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.service.ProcessFactoryService;
+import pipelite.service.RegisteredPipelineService;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
 
@@ -44,7 +44,7 @@ import pipelite.stage.Stage;
 public class StageController {
 
   @Autowired StageService stageService;
-  @Autowired ProcessFactoryService processFactoryService;
+  @Autowired RegisteredPipelineService registeredPipelineService;
   @Autowired Environment environment;
 
   @GetMapping("/{pipelineName}/{processId}")
@@ -61,8 +61,8 @@ public class StageController {
     List<StageInfo> list = new ArrayList<>();
     AtomicReference<Process> process = new AtomicReference<>();
     try {
-      ProcessFactory processFactory = processFactoryService.create(pipelineName);
-      process.set(processFactory.create(new ProcessBuilder(processId)));
+      Pipeline pipeline = registeredPipelineService.getPipeline(pipelineName);
+      process.set(pipeline.createProcess(new ProcessBuilder(processId)));
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log(ex.getMessage());
     }

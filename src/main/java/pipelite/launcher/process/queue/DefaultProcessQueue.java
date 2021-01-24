@@ -22,6 +22,7 @@ import org.springframework.util.Assert;
 import pipelite.configuration.LauncherConfiguration;
 import pipelite.configuration.WebConfiguration;
 import pipelite.entity.ProcessEntity;
+import pipelite.launcher.PipeliteLauncher;
 import pipelite.log.LogKey;
 import pipelite.service.ProcessService;
 
@@ -49,8 +50,7 @@ public class DefaultProcessQueue implements ProcessQueue {
     Assert.notNull(launcherConfiguration, "Missing launcher configuration");
     Assert.notNull(pipelineName, "Missing pipeline name");
     this.processService = processService;
-    this.launcherName =
-        LauncherConfiguration.getLauncherName(pipelineName, webConfiguration.getPort());
+    this.launcherName = PipeliteLauncher.getLauncherName(pipelineName, webConfiguration.getPort());
     this.pipelineName = pipelineName;
     this.processQueueMaxRefreshFrequency =
         launcherConfiguration.getProcessQueueMaxRefreshFrequency();

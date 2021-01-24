@@ -64,9 +64,9 @@ public class ProcessRunnerPoolServiceTest {
             new ProcessRunnerPoolService(
                 launcherConfiguration,
                 locker,
-                LAUNCHER_NAME,
                 mock(DefaultProcessRunnerPool.class),
-                metrics) {
+                metrics,
+                LAUNCHER_NAME) {
               @Override
               protected void run() {
                 runCnt.incrementAndGet();
