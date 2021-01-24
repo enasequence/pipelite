@@ -48,6 +48,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
     extends AbstractExecutor<T> implements JsonSerializableExecutor {
 
   private static final int JOB_RECOVERY_PARALLELISM = 10;
+  private static final int JOB_RECOVERY_LOG_BYTES = 5 * 1024;
   private static final Duration JOB_RECOVERY_TIMEOUT = Duration.ofMinutes(10);
   private static final Duration JOB_RECOVERY_POLL_FREQUENCY = Duration.ofSeconds(5);
 
@@ -224,31 +225,39 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
       List<JobResult> jobResults) {
     log.atInfo().log("Recovering LSF job results.");
 
-    AtomicInteger count = new AtomicInteger();
-    ZonedDateTime until = ZonedDateTime.now().plus(JOB_RECOVERY_TIMEOUT);
+    AtomicInteger remainingCount = new AtomicInteger();
+    AtomicInteger attemptedCount = new AtomicInteger();
+    AtomicInteger recoveredCount = new AtomicInteger();
+    ZonedDateTime start = ZonedDateTime.now();
+    ZonedDateTime until = start.plus(JOB_RECOVERY_TIMEOUT);
     ExecutorService executorService = Executors.newFixedThreadPool(JOB_RECOVERY_PARALLELISM);
     try {
       jobResults.stream()
           .filter(r -> r.jobId != null && r.result == null)
           .forEach(
               r -> {
-                count.incrementAndGet();
+                attemptedCount.incrementAndGet();
+                remainingCount.incrementAndGet();
                 executorService.submit(
                     () -> {
                       try {
                         // Attempt to recover missing job result using bhist.
-                        if (!recoverJobBhist(cmdRunner, r)) {
+                        if (recoverJobBhist(cmdRunner, r)) {
+                          recoveredCount.incrementAndGet();
+                        } else {
                           // Attempt to recover missing job result using output file.
-                          recoverJobOutputFile(cmdRunner, r, requestMap);
+                          if (recoverJobOutFile(cmdRunner, r, requestMap)) {
+                            recoveredCount.incrementAndGet();
+                          }
                         }
                       } finally {
-                        count.decrementAndGet();
+                        remainingCount.decrementAndGet();
                       }
                     });
               });
 
       try {
-        while (count.get() > 0) {
+        while (remainingCount.get() > 0) {
           Time.waitUntil(JOB_RECOVERY_POLL_FREQUENCY, until);
         }
       } catch (PipeliteTimeoutException ex) {
@@ -257,6 +266,15 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
     } finally {
       executorService.shutdownNow();
     }
+
+    log.atInfo().log(
+        "Finished recovering LSF job results in "
+            + (Duration.between(ZonedDateTime.now(), start).abs().toMillis() / 1000)
+            + " seconds. Recovered "
+            + recoveredCount.get()
+            + " out of "
+            + attemptedCount.get()
+            + " jobs.");
   }
 
   private static boolean recoverJobBhist(CmdRunner cmdRunner, JobResult jobResult) {
@@ -272,7 +290,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
     }
   }
 
-  private static boolean recoverJobOutputFile(
+  private static boolean recoverJobOutFile(
       CmdRunner cmdRunner, JobResult jobResult, Map<String, LsfContextCache.Request> requestMap) {
     String outFile = requestMap.get(jobResult.jobId).getOutFile();
     StageExecutorResult executorResult = extractOutFileResult(cmdRunner, outFile);
@@ -468,7 +486,8 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
 
     // Extract the job execution result from the out file. The format
     // is the same as in the bhist result.
-    CmdExecutorParameters executorParams = CmdExecutorParameters.builder().build();
+    CmdExecutorParameters executorParams =
+        CmdExecutorParameters.builder().logBytes(JOB_RECOVERY_LOG_BYTES).build();
     String str = readOutFile(cmdRunner, outFile, executorParams);
     return extractLsfJobResult(str);
   }
