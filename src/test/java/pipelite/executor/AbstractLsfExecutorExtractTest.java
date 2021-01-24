@@ -43,10 +43,12 @@ public class AbstractLsfExecutorExtractTest {
   }
 
   @Test
-  public void extractBhistExitCode() {
-    assertThat(AbstractLsfExecutor.extractBhistExitCode("Exited with exit code 1")).isEqualTo("1");
-    assertThat(AbstractLsfExecutor.extractBhistExitCode("Exited with exit code 3.")).isEqualTo("3");
-    assertThat(AbstractLsfExecutor.extractBhistExitCode("INVALID")).isNull();
+  public void extractDefaultLsfJobExitCode() {
+    assertThat(AbstractLsfExecutor.extractDefaultLsfJobExitCode("Exited with exit code 1"))
+        .isEqualTo("1");
+    assertThat(AbstractLsfExecutor.extractDefaultLsfJobExitCode("Exited with exit code 3."))
+        .isEqualTo("3");
+    assertThat(AbstractLsfExecutor.extractDefaultLsfJobExitCode("INVALID")).isNull();
   }
 
   @Test
@@ -106,9 +108,9 @@ public class AbstractLsfExecutorExtractTest {
   }
 
   @Test
-  public void extractBhistResult() {
+  public void extractDefaultLsfJobResultError() {
     StageExecutorResult result =
-        AbstractLsfExecutor.extractBhistResult(
+        AbstractLsfExecutor.extractDefaultLsfJobResult(
             "Summary of time in seconds spent in various states:\n"
                 + "JOBID   USER    JOB_NAME  PEND    PSUSP   RUN     USUSP   SSUSP   UNKWN   TOTAL\n"
                 + "873209  rasko   fdfs      1       0       0       0       0       0       1\n"
@@ -137,30 +139,41 @@ public class AbstractLsfExecutorExtractTest {
                 + "  PEND     PSUSP    RUN      USUSP    SSUSP    UNKWN    TOTAL\n"
                 + "  1        0        0        0        0        0        1");
     assertThat(result.isError()).isTrue();
+  }
 
-    result =
-        AbstractLsfExecutor.extractBhistResult(
-            "Job <872795>, User <rasko>, Project <default>, Command <echo hello>, Esub <esub\n"
-                + "                     >\n"
-                + "Sun Jan 10 17:47:38: Submitted from host <noah-login-01>, to Queue <research-rh\n"
-                + "                     74>, CWD <$HOME>, Requested Resources <rusage[numcpus=1:du\n"
-                + "                     ration=480]>;\n"
-                + "Sun Jan 10 17:47:39: Dispatched to <hx-noah-05-14>, Effective RES_REQ <select[t\n"
-                + "                     ype == local] order[r15s:pg] rusage[numcpus=1.00:duration=\n"
-                + "                     8h:decay=0] span[hosts=1] >;\n"
-                + "Sun Jan 10 17:47:39: Starting (Pid 110245);\n"
-                + "Sun Jan 10 17:47:39: Running with execution home </homes/rasko>, Execution CWD\n"
-                + "                     </homes/rasko>, Execution Pid <110245>;\n"
-                + "Sun Jan 10 17:47:39: Done successfully. The CPU time used is 0.0 seconds;\n"
-                + "Sun Jan 10 17:47:40: Post job process done successfully;\n"
-                + "\n"
-                + "\n"
-                + " CORELIMIT\n"
-                + "      0 M\n"
-                + "\n"
-                + "Summary of time in seconds spent in various states by  Sun Jan 10 17:47:40\n"
-                + "  PEND     PSUSP    RUN      USUSP    SSUSP    UNKWN    TOTAL\n"
-                + "  1        0        0        0        0        0        1");
+  @Test
+  public void extractDefaultLsfJobResultuccess() {
+    StageExecutorResult result =
+        result =
+            AbstractLsfExecutor.extractDefaultLsfJobResult(
+                "Job <872795>, User <rasko>, Project <default>, Command <echo hello>, Esub <esub\n"
+                    + "                     >\n"
+                    + "Sun Jan 10 17:47:38: Submitted from host <noah-login-01>, to Queue <research-rh\n"
+                    + "                     74>, CWD <$HOME>, Requested Resources <rusage[numcpus=1:du\n"
+                    + "                     ration=480]>;\n"
+                    + "Sun Jan 10 17:47:39: Dispatched to <hx-noah-05-14>, Effective RES_REQ <select[t\n"
+                    + "                     ype == local] order[r15s:pg] rusage[numcpus=1.00:duration=\n"
+                    + "                     8h:decay=0] span[hosts=1] >;\n"
+                    + "Sun Jan 10 17:47:39: Starting (Pid 110245);\n"
+                    + "Sun Jan 10 17:47:39: Running with execution home </homes/rasko>, Execution CWD\n"
+                    + "                     </homes/rasko>, Execution Pid <110245>;\n"
+                    + "Sun Jan 10 17:47:39: Done successfully. The CPU time used is 0.0 seconds;\n"
+                    + "Sun Jan 10 17:47:40: Post job process done successfully;\n"
+                    + "\n"
+                    + "\n"
+                    + " CORELIMIT\n"
+                    + "      0 M\n"
+                    + "\n"
+                    + "Summary of time in seconds spent in various states by  Sun Jan 10 17:47:40\n"
+                    + "  PEND     PSUSP    RUN      USUSP    SSUSP    UNKWN    TOTAL\n"
+                    + "  1        0        0        0        0        0        1");
     assertThat(result.isSuccess()).isTrue();
+  }
+
+  @Test
+  public void extractDefaultLsfJobResultNull() {
+    assertThat(AbstractLsfExecutor.extractDefaultLsfJobResult(null)).isNull();
+    assertThat(AbstractLsfExecutor.extractDefaultLsfJobResult("")).isNull();
+    assertThat(AbstractLsfExecutor.extractDefaultLsfJobResult("invalid")).isNull();
   }
 }

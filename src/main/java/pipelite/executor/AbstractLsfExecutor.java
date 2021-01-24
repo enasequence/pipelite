@@ -92,7 +92,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
   private static final int BJOBS_COLUMN_HOST = 6;
 
   private static final String BHIST_CMD = "bhist -l ";
-  private static final Pattern BHIST_EXIT_CODE_PATTERN =
+  private static final Pattern DEFAULT_EXIT_CODE_PATTERN =
       Pattern.compile("Exited with exit code (\\d+)");
 
   /**
@@ -166,10 +166,14 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
     return result.getStageLog();
   }
 
+  /**
+   * Returns stage execution result using bhist or null if bhist did not return execution status for
+   * the job.
+   */
   private static StageExecutorResult bhist(CmdRunner cmdRunner, String jobId) {
     log.atWarning().log("Checking LSF job result using bhist: " + jobId);
     StageExecutorResult bhistResult = cmdRunner.execute(BHIST_CMD + jobId);
-    return extractBhistResult(bhistResult.getStageLog());
+    return extractDefaultLsfJobResult(bhistResult.getStageLog());
   }
 
   private static StageExecutorResult bkill(CmdRunner cmdRunner, String jobId) {
@@ -197,21 +201,49 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
         .filter(r -> r.getJobId() != null && r.getResult() != null)
         .forEach(r -> resultMap.put(r.getJobId(), r.getResult()));
 
-    // Attempt to recover missing job results using bhist. This will only ever be done
-    // once and if it fails the job is considered failed as well.
-    jobResults.stream()
-        .filter(r -> r.getJobId() != null && r.getResult() == null)
-        .forEach(r -> resultMap.put(r.getJobId(), bhist(cmdRunner, r.getJobId())));
-
-    // Attempt to recover missing job results from the output file. This will only ever be done
+    // Attempt to recover missing job result using bhist. This will only ever be done
     // once and if it fails the job is considered failed as well.
     jobResults.stream()
         .filter(r -> r.getJobId() != null && r.getResult() == null)
         .forEach(
-            r ->
-                resultMap.put(
-                    r.getJobId(),
-                    extractOutFileResult(cmdRunner, requestMap.get(r.getJobId()).getOutFile())));
+            r -> {
+              StageExecutorResult executorResult = bhist(cmdRunner, r.getJobId());
+              if (executorResult != null) {
+                log.atInfo().log("Recovered job result using LSF bhist for job: " + r.getJobId());
+                resultMap.put(r.getJobId(), executorResult);
+              } else {
+                log.atWarning().log(
+                    "Could not recover job result using LSF bhist for job: " + r.getJobId());
+              }
+            });
+
+    // Attempt to recover missing job result from the output file. This will only ever be done
+    // once and if it fails the job is considered failed as well.
+    jobResults.stream()
+        .filter(r -> r.getJobId() != null && r.getResult() == null)
+        .forEach(
+            r -> {
+              String outFile = requestMap.get(r.getJobId()).getOutFile();
+              StageExecutorResult executorResult = extractOutFileResult(cmdRunner, outFile);
+              if (executorResult != null) {
+                log.atInfo().log(
+                    "Recovered job result from LSF output file "
+                        + outFile
+                        + " for job: "
+                        + r.getJobId());
+                resultMap.put(r.getJobId(), executorResult);
+              } else {
+                log.atWarning().log(
+                    "Could not recover job result from LSF output file "
+                        + outFile
+                        + "  for job: "
+                        + r.getJobId());
+                log.atWarning().log(
+                    "Considering LSF job failed as could not extract result for job: "
+                        + r.getJobId());
+                resultMap.put(r.getJobId(), StageExecutorResult.error());
+              }
+            });
 
     Map<LsfContextCache.Request, StageExecutorResult> result = new HashMap<>();
     jobResults.stream().forEach(r -> result.put(requestMap.get(r.getJobId()), r.getResult()));
@@ -290,9 +322,13 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
     }
   }
 
-  public static String extractBhistExitCode(String str) {
+  /**
+   * Extracts exit code from default LSF bjobs, bhist or output file result. Returns null if the
+   * exit code could not be extracted.
+   */
+  public static String extractDefaultLsfJobExitCode(String str) {
     try {
-      Matcher m = BHIST_EXIT_CODE_PATTERN.matcher(str);
+      Matcher m = DEFAULT_EXIT_CODE_PATTERN.matcher(str);
       m.find();
       return m.group(1);
     } catch (Exception ex) {
@@ -305,6 +341,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
     for (String line : str.split("\\r?\\n")) {
       String jobId = extractBjobsJobIdNotFound(line);
       if (jobId != null) {
+        log.atWarning().log("LSF bsubs job not found: " + jobId);
         results.add(new JobResult(jobId, null));
       } else {
         results.add(extractBjobsResult(line));
@@ -351,10 +388,13 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
     return new JobResult(jobId, result);
   }
 
-  public static StageExecutorResult extractBhistResult(String str) {
-    // Extract the job execution result from the bhist output.
+  /**
+   * Extracts job execution result from default LSF bjobs, bhist or output file result. Returns null
+   * if the result could not be extracted.
+   */
+  public static StageExecutorResult extractDefaultLsfJobResult(String str) {
     if (str == null) {
-      return StageExecutorResult.error();
+      return null;
     }
     if (str.contains("Done successfully")) {
       StageExecutorResult result = StageExecutorResult.success();
@@ -362,12 +402,12 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
       return result;
     }
     if (str.contains("Completed <exit>")) {
-      int exitCode = Integer.valueOf(extractBhistExitCode(str));
+      int exitCode = Integer.valueOf(extractDefaultLsfJobExitCode(str));
       StageExecutorResult result = StageExecutorResult.error();
       result.getAttributes().put(StageExecutorResultAttribute.EXIT_CODE, String.valueOf(exitCode));
       return result;
     }
-    return StageExecutorResult.error();
+    return null;
   }
 
   public static StageExecutorResult extractOutFileResult(CmdRunner cmdRunner, String outFile) {
@@ -377,7 +417,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
     // is the same as in the bhist result.
     CmdExecutorParameters executorParams = CmdExecutorParameters.builder().build();
     String str = readOutFile(cmdRunner, outFile, executorParams);
-    return extractBhistResult(str);
+    return extractDefaultLsfJobResult(str);
   }
 
   protected static void addArgument(StringBuilder cmd, String argument) {
