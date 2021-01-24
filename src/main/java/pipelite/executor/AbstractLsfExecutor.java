@@ -159,10 +159,8 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
   private static String bjobs(CmdRunner cmdRunner, List<String> jobIds) {
     String str = String.join(" ", jobIds);
     log.atFine().log("Checking LSF job results using bjobs: " + str);
+    // Ignore exit code as bjobs returns 255 if some of the jobs are not found.
     StageExecutorResult result = cmdRunner.execute(BJOBS_CMD + str);
-    if (result.isError()) {
-      throw new PipeliteException("Failed to check LSF job results using bjobs.");
-    }
     return result.getStageLog();
   }
 
