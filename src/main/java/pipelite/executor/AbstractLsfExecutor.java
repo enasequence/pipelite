@@ -19,6 +19,8 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.Value;
@@ -59,7 +61,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
   }
 
   @Value
-  protected static class BjobsResult {
+  protected static class JobResult {
     String jobId;
     StageExecutorResult result;
   }
@@ -148,7 +150,8 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
   private StageExecutorResult poll(StageExecutorRequest request) {
     logContext(log.atFine(), request).log("Checking LSF job result using bjobs.");
 
-    Optional<StageExecutorResult> result = getSharedContext().describeJobs.getResult(jobId);
+    Optional<StageExecutorResult> result =
+        getSharedContext().describeJobs.getResult(new LsfContextCache.Request(jobId, outFile));
     if (result == null || !result.isPresent()) {
       return StageExecutorResult.active();
     }
@@ -175,26 +178,45 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
     return cmdRunner.execute(BKILL_CMD + jobId);
   }
 
-  public static Map<String, StageExecutorResult> describeJobs(
-      List<String> jobIds, CmdRunner cmdRunner) {
+  public static Map<LsfContextCache.Request, StageExecutorResult> describeJobs(
+      List<LsfContextCache.Request> requests, CmdRunner cmdRunner) {
     log.atFine().log("Checking LSF job results.");
 
-    Map<String, StageExecutorResult> results = new HashMap<>();
+    // Create a map for job id -> LsfContextCache.Request.
+    Map<String, LsfContextCache.Request> requestMap = new HashMap<>();
+    requests.stream().forEach(request -> requestMap.put(request.getJobId(), request));
 
+    // Create a map for job id -> StageExecutorResult.
+    Map<String, StageExecutorResult> resultMap = new HashMap<>();
+
+    List<String> jobIds = requests.stream().map(r -> r.getJobId()).collect(Collectors.toList());
+
+    // Attempt to get job results using bjobs.
     String str = bjobs(cmdRunner, jobIds);
-
-    List<BjobsResult> bjobsResults = extractBjobsResults(str);
-    bjobsResults.stream()
+    List<JobResult> jobResults = extractBjobsResults(str);
+    jobResults.stream()
         .filter(r -> r.getJobId() != null && r.getResult() != null)
-        .forEach(r -> results.put(r.getJobId(), r.getResult()));
+        .forEach(r -> resultMap.put(r.getJobId(), r.getResult()));
 
-    // Attempt to recover missing jobs statuses. This will only ever be done
-    // once and if it fails the execution will be marked as failed.
-    bjobsResults.stream()
+    // Attempt to recover missing job results using bhist. This will only ever be done
+    // once and if it fails the job is considered failed as well.
+    jobResults.stream()
         .filter(r -> r.getJobId() != null && r.getResult() == null)
-        .forEach(r -> results.put(r.getJobId(), bhist(cmdRunner, r.getJobId())));
+        .forEach(r -> resultMap.put(r.getJobId(), bhist(cmdRunner, r.getJobId())));
 
-    return results;
+    // Attempt to recover missing job results from the output file. This will only ever be done
+    // once and if it fails the job is considered failed as well.
+    jobResults.stream()
+        .filter(r -> r.getJobId() != null && r.getResult() == null)
+        .forEach(
+            r ->
+                resultMap.put(
+                    r.getJobId(),
+                    extractOutFileResult(cmdRunner, requestMap.get(r.getJobId()).getOutFile())));
+
+    Map<LsfContextCache.Request, StageExecutorResult> result = new HashMap<>();
+    jobResults.stream().forEach(r -> result.put(requestMap.get(r.getJobId()), r.getResult()));
+    return result;
   }
 
   private StageExecutorResult createWorkDir(StageExecutorRequest request) {
@@ -205,7 +227,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
   protected String readOutFile(StageExecutorRequest request) {
     logContext(log.atFine(), request).log("Reading LSF out file: %s", outFile);
 
-    // Check if the stdout file exists. The file may not be immediately available after the job
+    // Check if the out file exists. The file may not be immediately available after the job
     // execution finishes.
     ZonedDateTime timeout = ZonedDateTime.now().plus(OUT_FILE_POLL_TIMEOUT);
     try {
@@ -215,9 +237,13 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
     } catch (PipeliteInterruptedException ex) {
       return null;
     }
+    return readOutFile(getCmdRunner(), outFile, getExecutorParams());
+  }
 
+  private static String readOutFile(
+      CmdRunner cmdRunner, String outFile, CmdExecutorParameters executorParams) {
     try {
-      StageExecutorResult result = writeFileToStdout(getCmdRunner(), outFile, getExecutorParams());
+      StageExecutorResult result = writeFileToStdout(cmdRunner, outFile, executorParams);
       return result.getStageLog();
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Failed to read LSF out file: %s", outFile);
@@ -275,12 +301,12 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
     }
   }
 
-  public static List<BjobsResult> extractBjobsResults(String str) {
-    List<BjobsResult> results = new ArrayList<>();
+  public static List<JobResult> extractBjobsResults(String str) {
+    List<JobResult> results = new ArrayList<>();
     for (String line : str.split("\\r?\\n")) {
       String jobId = extractBjobsJobIdNotFound(line);
       if (jobId != null) {
-        results.add(new BjobsResult(jobId, null));
+        results.add(new JobResult(jobId, null));
       } else {
         results.add(extractBjobsResult(line));
       }
@@ -288,7 +314,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
     return results;
   }
 
-  public static BjobsResult extractBjobsResult(String str) {
+  public static JobResult extractBjobsResult(String str) {
     String[] column = str.split("\\|");
     if (column.length != 7) {
       throw new PipeliteException("Unexpected LSF bjobs output: " + str);
@@ -323,10 +349,11 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
           .put(StageExecutorResultAttribute.AVG_MEM, column[BJOBS_COLUMN_AVG_MEM]);
     }
 
-    return new BjobsResult(jobId, result);
+    return new JobResult(jobId, result);
   }
 
   public static StageExecutorResult extractBhistResult(String str) {
+    // Extract the job execution result from the bhist output.
     if (str == null) {
       return StageExecutorResult.error();
     }
@@ -342,6 +369,16 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
       return result;
     }
     return StageExecutorResult.error();
+  }
+
+  public static StageExecutorResult extractOutFileResult(CmdRunner cmdRunner, String outFile) {
+    log.atWarning().log("Checking LSF job result from out file: " + outFile);
+
+    // Extract the job execution result from the out file. The format
+    // is the same as in the bhist result.
+    CmdExecutorParameters executorParams = CmdExecutorParameters.builder().build();
+    String str = readOutFile(cmdRunner, outFile, executorParams);
+    return extractBhistResult(str);
   }
 
   protected static void addArgument(StringBuilder cmd, String argument) {

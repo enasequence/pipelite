@@ -51,7 +51,7 @@ public class AbstractLsfExecutorExtractTest {
 
   @Test
   public void extractBjobsResult() {
-    AbstractLsfExecutor.BjobsResult result =
+    AbstractLsfExecutor.JobResult result =
         AbstractLsfExecutor.extractBjobsResult("861487|PEND|-|-|-|-|-\n");
     assertThat(result.getJobId()).isEqualTo("861487");
     assertThat(result.getResult().isActive()).isTrue();
@@ -59,7 +59,7 @@ public class AbstractLsfExecutorExtractTest {
 
   @Test
   public void extractBjobsResults() {
-    List<AbstractLsfExecutor.BjobsResult> result =
+    List<AbstractLsfExecutor.JobResult> result =
         AbstractLsfExecutor.extractBjobsResults(
             "861487|PEND|-|-|-|-|-\n" + "861488|PEND|-|-|-|-|-\n" + "861489|PEND|-|-|-|-|-");
     assertThat(result.size()).isEqualTo(3);

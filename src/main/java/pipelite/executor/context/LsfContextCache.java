@@ -10,6 +10,7 @@
  */
 package pipelite.executor.context;
 
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.AbstractLsfExecutor;
@@ -26,12 +27,18 @@ public class LsfContextCache
         LsfContextCache.Context> {
 
   @Value
+  public static final class Request {
+    private final String jobId;
+    @EqualsAndHashCode.Exclude private final String outFile;
+  }
+
+  @Value
   public static final class ContextId {
     private final String host;
   }
 
   public static final class Context extends SharedContextCache.Context<CmdRunner> {
-    public final DefaultFixedRetryTaskAggregator<String, StageExecutorResult, CmdRunner>
+    public final DefaultFixedRetryTaskAggregator<Request, StageExecutorResult, CmdRunner>
         describeJobs;
 
     public Context(CmdRunner cmdRunner) {
