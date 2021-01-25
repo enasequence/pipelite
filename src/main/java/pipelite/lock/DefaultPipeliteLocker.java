@@ -46,7 +46,7 @@ public class DefaultPipeliteLocker implements PipeliteLocker {
   @Override
   public void lock() {
     Assert.notNull(launcherName, "Missing launcher name");
-    log.atInfo().log("Locking launcher: " + launcherName);
+    log.atFine().log("Locking launcher: " + launcherName);
     lock = LockService.lockLauncher(lockService, launcherName, launcherType);
     if (lock == null) {
       throw new RuntimeException("Could not lock launcher " + launcherName);
@@ -56,7 +56,7 @@ public class DefaultPipeliteLocker implements PipeliteLocker {
   @Override
   public void renewLock() {
     Assert.notNull(lock, "Missing lock");
-    log.atInfo().log("Re-locking launcher: " + launcherName);
+    log.atFine().log("Re-locking launcher: " + launcherName);
     if (!lockService.relockLauncher(lock)) {
       throw new RuntimeException("Could not re-lock launcher " + launcherName);
     }
@@ -65,7 +65,7 @@ public class DefaultPipeliteLocker implements PipeliteLocker {
   @Override
   public void unlock() {
     Assert.notNull(lock, "Missing lock");
-    log.atInfo().log("Unlocking launcher: " + launcherName);
+    log.atFine().log("Unlocking launcher: " + launcherName);
     try {
       unlock(lockService, lock);
     } catch (Exception ex) {
