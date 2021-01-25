@@ -10,38 +10,59 @@
  */
 package pipelite.service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import pipelite.Pipeline;
+import pipelite.ScheduledPipeline;
 import pipelite.exception.PipeliteException;
 
 @Service
 @Flogger
 public class RegisteredPipelineService {
 
-  private final Map<String, Pipeline> map = new HashMap<>();
+  private final Map<String, Pipeline> scheduledPipelineMap = new HashMap<>();
+  private final Map<String, Pipeline> nonScheduledPipelineMap = new HashMap<>();
 
   public RegisteredPipelineService(@Autowired List<Pipeline> pipelines) {
+    Set<String> pipelineNames = new HashSet<>();
     for (Pipeline pipeline : pipelines) {
-      if (map.containsKey(pipeline.getPipelineName())) {
-        throw new PipeliteException("Non-unique pipeline: " + pipeline.getPipelineName());
+      String pipelineName = pipeline.getPipelineName();
+      if (pipelineName == null || pipelineName.trim().isEmpty()) {
+        throw new PipeliteException("Missing pipeline name");
       }
-      map.put(pipeline.getPipelineName(), pipeline);
+      if (pipelineNames.contains(pipelineName)) {
+        throw new PipeliteException("Non-unique pipeline: " + pipelineName);
+      }
+      pipelineNames.add(pipelineName);
+      Map<String, Pipeline> map;
+      if (pipeline instanceof ScheduledPipeline) {
+        map = scheduledPipelineMap;
+      } else {
+        map = nonScheduledPipelineMap;
+      }
+      map.put(pipelineName, pipeline);
     }
   }
 
   /**
-   * Returns the registered pipeline names.
+   * Returns the registered non scheduled pipeline names.
+   *
+   * @return the registered non scheduled pipeline names
+   */
+  public List<String> getNonScheduledPipelineNames() {
+    return nonScheduledPipelineMap.keySet().stream().collect(Collectors.toList());
+  }
+
+  /**
+   * Returns the registered scheduled pipeline names.
    *
    * @return the registered pipeline names
    */
-  public List<String> getPipelineNames() {
-    return map.keySet().stream().collect(Collectors.toList());
+  public List<String> getScheduledPipelineNames() {
+    return scheduledPipelineMap.keySet().stream().collect(Collectors.toList());
   }
 
   /**
@@ -55,10 +76,12 @@ public class RegisteredPipelineService {
     if (pipelineName == null || pipelineName.trim().isEmpty()) {
       throw new PipeliteException("Missing pipeline name");
     }
-    if (!map.containsKey(pipelineName)) {
-      log.atSevere().log("Unknown pipeline: " + pipelineName);
-      throw new PipeliteException("Unknown pipeline: " + pipelineName);
+    if (scheduledPipelineMap.containsKey(pipelineName)) {
+      return scheduledPipelineMap.get(pipelineName);
     }
-    return map.get(pipelineName);
+    if (nonScheduledPipelineMap.containsKey(pipelineName)) {
+      return nonScheduledPipelineMap.get(pipelineName);
+    }
+    throw new PipeliteException("Unknown pipeline: " + pipelineName);
   }
 }

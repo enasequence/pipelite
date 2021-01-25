@@ -105,13 +105,13 @@ public class Application {
     schedulers = new ArrayList<>();
     try {
       log.atInfo().log("Starting pipelite services");
-      // Create pipelines.
-      for (String pipelineName : registeredPipelineService.getPipelineNames()) {
+      // Create launchers for non-scheduled pipelines.
+      for (String pipelineName : registeredPipelineService.getNonScheduledPipelineNames()) {
         PipeliteLauncher launcher = createLauncher(pipelineName);
         launchers.add(launcher);
         serverManager.addService(launcher);
       }
-      // Create schedulers.
+      // Create schedulers for scheduled pipelines.
       for (String schedulerName : registeredSchedulerService.getSchedulerNames()) {
         PipeliteScheduler scheduler = createScheduler(schedulerName);
         schedulers.add(scheduler);
