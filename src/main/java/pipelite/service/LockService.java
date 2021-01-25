@@ -77,7 +77,7 @@ public class LockService {
 
   public LauncherLockEntity lockLauncherThrowsDataIntegrityViolationException(
       String launcherName, ProcessRunnerType launcherType) {
-    log.atInfo().with(LogKey.LAUNCHER_NAME, launcherName).log("Attempting to lock launcher");
+    log.atFine().with(LogKey.LAUNCHER_NAME, launcherName).log("Attempting to lock launcher");
     removeExpiredLauncherLock(launcherName);
     LauncherLockEntity launcherLock = new LauncherLockEntity();
     launcherLock.setLauncherName(launcherName);
@@ -93,7 +93,7 @@ public class LockService {
           .log("Failed to lock launcher: missing launcher id");
       return null;
     }
-    log.atInfo().with(LogKey.LAUNCHER_NAME, launcherName).log("Locked launcher");
+    log.atFine().with(LogKey.LAUNCHER_NAME, launcherName).log("Locked launcher");
     return launcherLock;
   }
 
@@ -147,12 +147,12 @@ public class LockService {
    * @param launcherLock the launcher lock
    */
   public void unlockLauncher(LauncherLockEntity launcherLock) {
-    log.atInfo()
+    log.atFine()
         .with(LogKey.LAUNCHER_NAME, launcherLock.getLauncherName())
         .log("Attempting to unlock launcher");
     try {
       launcherLockRepository.delete(launcherLock);
-      log.atInfo()
+      log.atFine()
           .with(LogKey.LAUNCHER_NAME, launcherLock.getLauncherName())
           .log("Unlocked launcher");
     } catch (Exception ex) {
@@ -196,7 +196,7 @@ public class LockService {
 
   public boolean lockProcessThrowsDataIntegrityViolationException(
       LauncherLockEntity launcherLock, String pipelineName, String processId) {
-    log.atInfo()
+    log.atFine()
         .with(LogKey.LAUNCHER_NAME, launcherLock.getLauncherName())
         .with(LogKey.PIPELINE_NAME, pipelineName)
         .with(LogKey.PROCESS_ID, processId)
@@ -212,7 +212,7 @@ public class LockService {
     processLock.setPipelineName(pipelineName);
     processLock.setProcessId(processId);
     processLockRepository.save(processLock);
-    log.atInfo()
+    log.atFine()
         .with(LogKey.LAUNCHER_NAME, launcherLock.getLauncherName())
         .with(LogKey.PIPELINE_NAME, pipelineName)
         .with(LogKey.PROCESS_ID, processId)
@@ -290,12 +290,12 @@ public class LockService {
    * @param launcherLock the launcher lock
    */
   public void unlockProcesses(LauncherLockEntity launcherLock) {
-    log.atInfo()
+    log.atFine()
         .with(LogKey.LAUNCHER_NAME, launcherLock.getLauncherName())
         .log("Attempting to unlock processes");
     try {
       processLockRepository.deleteByLauncherId(launcherLock.getLauncherId());
-      log.atInfo()
+      log.atFine()
           .with(LogKey.LAUNCHER_NAME, launcherLock.getLauncherName())
           .log("Unlock processes");
     } catch (Exception ex) {
