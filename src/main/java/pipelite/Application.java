@@ -37,7 +37,6 @@ public class Application {
   @Autowired private LauncherConfiguration launcherConfiguration;
   @Autowired private ExecutorConfiguration executorConfiguration;
   @Autowired private RegisteredPipelineService registeredPipelineService;
-  @Autowired private RegisteredSchedulerService registeredSchedulerService;
   @Autowired private RegisteredProcessSourceService registeredProcessSourceService;
   @Autowired private ScheduleService scheduleService;
   @Autowired private ProcessService processService;
@@ -105,14 +104,14 @@ public class Application {
     schedulers = new ArrayList<>();
     try {
       log.atInfo().log("Starting pipelite services");
-      // Create launchers for non-scheduled pipelines.
-      for (String pipelineName : registeredPipelineService.getNonScheduledPipelineNames()) {
+      // Create launchers for unscheduled pipelines.
+      for (String pipelineName : registeredPipelineService.getUnScheduledPipelineNames()) {
         PipeliteLauncher launcher = createLauncher(pipelineName);
         launchers.add(launcher);
         serverManager.addService(launcher);
       }
       // Create schedulers for scheduled pipelines.
-      for (String schedulerName : registeredSchedulerService.getSchedulerNames()) {
+      for (String schedulerName : registeredPipelineService.getSchedulerNames()) {
         PipeliteScheduler scheduler = createScheduler(schedulerName);
         schedulers.add(scheduler);
         serverManager.addService(scheduler);

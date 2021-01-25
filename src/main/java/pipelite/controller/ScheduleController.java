@@ -30,7 +30,7 @@ import pipelite.controller.info.ScheduleInfo;
 import pipelite.controller.utils.LoremUtils;
 import pipelite.controller.utils.TimeUtils;
 import pipelite.entity.ScheduleEntity;
-import pipelite.service.RegisteredSchedulerService;
+import pipelite.service.RegisteredPipelineService;
 import pipelite.service.ScheduleService;
 
 @RestController
@@ -41,7 +41,7 @@ public class ScheduleController {
   @Autowired Application application;
   @Autowired Environment environment;
   @Autowired ScheduleService scheduleService;
-  @Autowired RegisteredSchedulerService registeredSchedulerService;
+  @Autowired RegisteredPipelineService registeredPipelineService;
 
   @GetMapping("/run")
   @ResponseStatus(HttpStatus.OK)
@@ -82,7 +82,7 @@ public class ScheduleController {
       })
   public List<ScheduleInfo> localSchedules(
       @RequestParam(required = false, defaultValue = "false") boolean relative) {
-    List<String> schedulerNames = registeredSchedulerService.getSchedulerNames();
+    List<String> schedulerNames = registeredPipelineService.getSchedulerNames();
     List<ScheduleInfo> list = getSchedules(schedulerNames, relative);
     getLoremIpsumSchedules(list, relative);
     return list;

@@ -103,7 +103,7 @@ public class PipelineController {
   }
 
   private List<PipelineInfo> getLocalPipelines() {
-    List<String> pipelineNames = registeredPipelineService.getNonScheduledPipelineNames();
+    List<String> pipelineNames = registeredPipelineService.getUnScheduledPipelineNames();
     return getPipelines(
         processService.getProcessStateSummary().stream()
             .filter(s -> pipelineNames.contains(s.getPipelineName())));
