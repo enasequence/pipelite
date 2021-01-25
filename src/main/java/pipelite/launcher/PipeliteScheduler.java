@@ -165,10 +165,10 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
       // Use previously assigned launch time. The launch time is removed when the process
       // execution starts and assigned when the process execution finishes or here if the launch
       // time has not been assigned.
-      schedule.enable(scheduleEntity.getNextTime());
+      schedule.setLaunchTime(scheduleEntity.getNextTime());
     } else {
       // Evaluate the cron expression and assign the next launch time.
-      schedule.enable();
+      schedule.setLaunchTime(schedule.getNextLaunchTime());
       scheduleService.scheduleExecution(pipelineName, schedule.getLaunchTime());
     }
     schedules.add(schedule);
@@ -292,16 +292,21 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
                     .setMaximumRetries(StageLauncher.getImmediateRetries(stage)));
 
     scheduleService.startExecution(pipelineName, processId);
-    schedule.disable();
+    schedule.setLaunchTime(null);
 
     runProcess(
         pipelineName,
         process,
         (p, r) -> {
-          scheduleService.endExecution(processEntity);
-          schedule.enable();
-          scheduleService.scheduleExecution(pipelineName, schedule.getLaunchTime());
-          decreaseMaximumExecutions(pipelineName);
+          ZonedDateTime nextLaunchTime = schedule.getNextLaunchTime();
+          try {
+            scheduleService.endExecution(processEntity, nextLaunchTime);
+          } catch (Exception ex) {
+            log.atSevere().log("Failed to end execution for scheduled pipeline: " + pipelineName);
+          } finally {
+            schedule.setLaunchTime(nextLaunchTime);
+            decreaseMaximumExecutions(pipelineName);
+          }
         });
   }
 

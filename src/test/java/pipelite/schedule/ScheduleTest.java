@@ -45,7 +45,7 @@ public class ScheduleTest {
     // Enable.
     ZonedDateTime first = ZonedDateTime.now();
 
-    schedule.enable();
+    schedule.setLaunchTime(schedule.getNextLaunchTime());
 
     assertThat(schedule.getPipelineName()).isEqualTo(pipelineName);
     assertThat(schedule.isExecutable()).isFalse();
@@ -66,7 +66,7 @@ public class ScheduleTest {
 
     // Disable the schedule.
 
-    schedule.disable();
+    schedule.setLaunchTime(null);
 
     assertThat(schedule.getPipelineName()).isEqualTo(pipelineName);
     assertThat(schedule.isExecutable()).isFalse();
@@ -76,7 +76,7 @@ public class ScheduleTest {
     // Enable.
     ZonedDateTime second = ZonedDateTime.now();
 
-    schedule.enable();
+    schedule.setLaunchTime(schedule.getNextLaunchTime());
 
     assertThat(schedule.getPipelineName()).isEqualTo(pipelineName);
     assertThat(schedule.isExecutable()).isFalse();

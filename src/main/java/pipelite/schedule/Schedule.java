@@ -65,35 +65,34 @@ public class Schedule {
   }
 
   /**
-   * Returns the launch time.
+   * Returns the current launch time.
    *
-   * @return the launch time
+   * @return the current launch time
    */
   public ZonedDateTime getLaunchTime() {
     return launchTime;
   }
 
-  /** Enables the schedule. Sets the launch time using the cron expression. */
-  public void enable() {
-    if (cron != null) {
-      launchTime = CronUtils.launchTime(cron);
-    } else {
-      launchTime = null;
-    }
-  }
-
   /**
-   * Enables the schedule using the given launch time.
+   * Sets the current launch time.
    *
-   * @param launchTime the launch time
+   * @param launchTime the current launch time
    */
-  public void enable(ZonedDateTime launchTime) {
+  public void setLaunchTime(ZonedDateTime launchTime) {
     this.launchTime = launchTime;
   }
 
-  /** Disables the schedule. Sets the launch time to null. */
-  public void disable() {
-    launchTime = null;
+  /**
+   * Returns the next launch time.
+   *
+   * @return the next launch time
+   */
+  public ZonedDateTime getNextLaunchTime() {
+    if (cron != null) {
+      return CronUtils.launchTime(cron);
+    } else {
+      return null;
+    }
   }
 
   @Override

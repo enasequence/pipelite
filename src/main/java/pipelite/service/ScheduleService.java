@@ -23,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 import pipelite.controller.utils.TimeUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
-import pipelite.exception.PipeliteException;
 import pipelite.process.ProcessState;
 import pipelite.repository.ScheduleRepository;
 
@@ -70,14 +69,8 @@ public class ScheduleService {
    * @param nextTime the next execution time
    */
   public void scheduleExecution(String pipelineName, ZonedDateTime nextTime) {
-    nextTime = nextTime.truncatedTo(ChronoUnit.SECONDS);
-    log.atInfo().log(
-        "Next scheduled execution time for "
-            + pipelineName
-            + " is "
-            + TimeUtils.humanReadableDate(nextTime));
     ScheduleEntity scheduleEntity = getSavedSchedule(pipelineName).get();
-    scheduleEntity.setNextTime(nextTime);
+    scheduleEntity.setNextTime(truncateNextTime(pipelineName, nextTime));
     saveSchedule(scheduleEntity);
   }
 
@@ -103,25 +96,35 @@ public class ScheduleService {
    * times. Increases the execution count and sets the completed and failed streak.
    *
    * @param processEntity the process entity
+   * @param nextTime the next execution time
    */
-  public void endExecution(ProcessEntity processEntity) {
-    ZonedDateTime now = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+  public void endExecution(ProcessEntity processEntity, ZonedDateTime nextTime) {
     String pipelineName = processEntity.getPipelineName();
     log.atInfo().log("Ending scheduled process execution: " + pipelineName);
+    ZonedDateTime now = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     ScheduleEntity scheduleEntity = getSavedSchedule(pipelineName).get();
     scheduleEntity.setEndTime(now);
+    scheduleEntity.setNextTime(truncateNextTime(pipelineName, nextTime));
     scheduleEntity.setExecutionCount(scheduleEntity.getExecutionCount() + 1);
     if (processEntity.getProcessState() == ProcessState.COMPLETED) {
       scheduleEntity.setLastCompleted(now);
       scheduleEntity.setStreakCompleted(scheduleEntity.getStreakCompleted() + 1);
       scheduleEntity.setStreakFailed(0);
-    } else if (processEntity.getProcessState() == ProcessState.FAILED) {
+    } else {
       scheduleEntity.setLastFailed(now);
       scheduleEntity.setStreakCompleted(0);
       scheduleEntity.setStreakFailed(scheduleEntity.getStreakFailed() + 1);
-    } else {
-      throw new PipeliteException("Unexpected process state: " + processEntity.getProcessState());
     }
     saveSchedule(scheduleEntity);
+  }
+
+  private ZonedDateTime truncateNextTime(String pipelineName, ZonedDateTime nextTime) {
+    nextTime = nextTime.truncatedTo(ChronoUnit.SECONDS);
+    log.atInfo().log(
+        "Next scheduled execution time for "
+            + pipelineName
+            + " is "
+            + TimeUtils.humanReadableDate(nextTime));
+    return nextTime;
   }
 }

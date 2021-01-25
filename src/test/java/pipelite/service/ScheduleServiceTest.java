@@ -35,7 +35,7 @@ class ScheduleServiceTest {
   public void lifecycle() {
     String schedulerName = UniqueStringGenerator.randomSchedulerName();
     String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String cron = "0/1 * * * * ?"; // every secondx§x§
+    String cron = "0/1 * * * * ?"; // every second
 
     ScheduleEntity scheduleEntity = new ScheduleEntity();
     scheduleEntity.setSchedulerName(schedulerName);
@@ -59,8 +59,8 @@ class ScheduleServiceTest {
 
     // Schedule first execution.
 
-    ZonedDateTime launchTime1 = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
-    service.scheduleExecution(pipelineName, launchTime1);
+    ZonedDateTime nextTime1 = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    service.scheduleExecution(pipelineName, nextTime1);
 
     ScheduleEntity s = service.getSavedSchedule(pipelineName).get();
     assertThat(s.getSchedulerName()).isEqualTo(schedulerName);
@@ -68,7 +68,7 @@ class ScheduleServiceTest {
     assertThat(s.getCron()).isEqualTo(cron);
     assertThat(s.getActive()).isTrue();
     assertThat(s.getExecutionCount()).isEqualTo(0);
-    assertThat(s.getNextTime()).isEqualTo(launchTime1);
+    assertThat(s.getNextTime()).isEqualTo(nextTime1);
     assertThat(s.getStartTime()).isNull();
     assertThat(s.getEndTime()).isNull();
     assertThat(s.getLastCompleted()).isNull();
@@ -90,7 +90,7 @@ class ScheduleServiceTest {
     assertThat(s.getActive()).isTrue();
     assertThat(s.getExecutionCount()).isEqualTo(0);
     assertThat(s.getNextTime()).isNull();
-    assertThat(s.getStartTime()).isAfterOrEqualTo(launchTime1);
+    assertThat(s.getStartTime()).isAfterOrEqualTo(nextTime1);
     assertThat(s.getEndTime()).isNull();
     assertThat(s.getLastCompleted()).isNull();
     assertThat(s.getLastFailed()).isNull();
@@ -107,7 +107,8 @@ class ScheduleServiceTest {
     processEntity1.setProcessId(processId1);
     processEntity1.setProcessState(ProcessState.COMPLETED);
 
-    service.endExecution(processEntity1);
+    ZonedDateTime nextTime2 = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    service.endExecution(processEntity1, nextTime2);
 
     s = service.getSavedSchedule(pipelineName).get();
     assertThat(s.getSchedulerName()).isEqualTo(schedulerName);
@@ -115,30 +116,10 @@ class ScheduleServiceTest {
     assertThat(s.getCron()).isEqualTo(cron);
     assertThat(s.getActive()).isTrue();
     assertThat(s.getExecutionCount()).isEqualTo(1);
-    assertThat(s.getNextTime()).isNull();
-    assertThat(s.getStartTime()).isAfterOrEqualTo(launchTime1);
+    assertThat(s.getNextTime()).isEqualTo(nextTime2);
+    assertThat(s.getStartTime()).isAfterOrEqualTo(nextTime1);
     assertThat(s.getEndTime()).isAfterOrEqualTo(endTime1);
     assertThat(s.getLastCompleted()).isEqualTo(endTime1);
-    assertThat(s.getLastFailed()).isNull();
-    assertThat(s.getStreakCompleted()).isEqualTo(1);
-    assertThat(s.getStreakFailed()).isEqualTo(0);
-    assertThat(s.getProcessId()).isEqualTo(processId1);
-
-    // Schedule second execution.
-
-    ZonedDateTime launchTime2 = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
-    service.scheduleExecution(pipelineName, launchTime2);
-
-    s = service.getSavedSchedule(pipelineName).get();
-    assertThat(s.getSchedulerName()).isEqualTo(schedulerName);
-    assertThat(s.getPipelineName()).isEqualTo(pipelineName);
-    assertThat(s.getCron()).isEqualTo(cron);
-    assertThat(s.getActive()).isTrue();
-    assertThat(s.getExecutionCount()).isEqualTo(1);
-    assertThat(s.getNextTime()).isEqualTo(launchTime2);
-    assertThat(s.getStartTime()).isAfterOrEqualTo(launchTime1);
-    assertThat(s.getEndTime()).isAfterOrEqualTo(endTime1);
-    assertThat(s.getLastCompleted()).isAfterOrEqualTo(endTime1);
     assertThat(s.getLastFailed()).isNull();
     assertThat(s.getStreakCompleted()).isEqualTo(1);
     assertThat(s.getStreakFailed()).isEqualTo(0);
@@ -157,7 +138,7 @@ class ScheduleServiceTest {
     assertThat(s.getActive()).isTrue();
     assertThat(s.getExecutionCount()).isEqualTo(1);
     assertThat(s.getNextTime()).isNull();
-    assertThat(s.getStartTime()).isAfterOrEqualTo(launchTime2);
+    assertThat(s.getStartTime()).isAfterOrEqualTo(nextTime2);
     assertThat(s.getEndTime()).isNull();
     assertThat(s.getLastCompleted()).isEqualTo(endTime1);
     assertThat(s.getLastFailed()).isNull();
@@ -174,7 +155,8 @@ class ScheduleServiceTest {
     processEntity2.setProcessId(processId2);
     processEntity2.setProcessState(ProcessState.COMPLETED);
 
-    service.endExecution(processEntity2);
+    ZonedDateTime nextTime3 = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    service.endExecution(processEntity2, nextTime3);
 
     s = service.getSavedSchedule(pipelineName).get();
     assertThat(s.getSchedulerName()).isEqualTo(schedulerName);
@@ -182,30 +164,10 @@ class ScheduleServiceTest {
     assertThat(s.getCron()).isEqualTo(cron);
     assertThat(s.getActive()).isTrue();
     assertThat(s.getExecutionCount()).isEqualTo(2);
-    assertThat(s.getNextTime()).isNull();
-    assertThat(s.getStartTime()).isAfterOrEqualTo(launchTime2);
+    assertThat(s.getNextTime()).isEqualTo(nextTime3);
+    assertThat(s.getStartTime()).isAfterOrEqualTo(nextTime2);
     assertThat(s.getEndTime()).isAfterOrEqualTo(endTime2);
     assertThat(s.getLastCompleted()).isEqualTo(s.getEndTime());
-    assertThat(s.getLastFailed()).isNull();
-    assertThat(s.getStreakCompleted()).isEqualTo(2);
-    assertThat(s.getStreakFailed()).isEqualTo(0);
-    assertThat(s.getProcessId()).isEqualTo(processId2);
-
-    // Schedule third execution.
-
-    ZonedDateTime launchTime3 = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
-    service.scheduleExecution(pipelineName, launchTime3);
-
-    s = service.getSavedSchedule(pipelineName).get();
-    assertThat(s.getSchedulerName()).isEqualTo(schedulerName);
-    assertThat(s.getPipelineName()).isEqualTo(pipelineName);
-    assertThat(s.getCron()).isEqualTo(cron);
-    assertThat(s.getActive()).isTrue();
-    assertThat(s.getExecutionCount()).isEqualTo(2);
-    assertThat(s.getNextTime()).isEqualTo(launchTime3);
-    assertThat(s.getStartTime()).isAfterOrEqualTo(launchTime2);
-    assertThat(s.getEndTime()).isAfterOrEqualTo(endTime2);
-    assertThat(s.getLastCompleted()).isAfterOrEqualTo(endTime2);
     assertThat(s.getLastFailed()).isNull();
     assertThat(s.getStreakCompleted()).isEqualTo(2);
     assertThat(s.getStreakFailed()).isEqualTo(0);
@@ -224,7 +186,7 @@ class ScheduleServiceTest {
     assertThat(s.getActive()).isTrue();
     assertThat(s.getExecutionCount()).isEqualTo(2);
     assertThat(s.getNextTime()).isNull();
-    assertThat(s.getStartTime()).isAfterOrEqualTo(launchTime3);
+    assertThat(s.getStartTime()).isAfterOrEqualTo(nextTime3);
     assertThat(s.getEndTime()).isNull();
     assertThat(s.getLastCompleted()).isAfterOrEqualTo(endTime2);
     assertThat(s.getLastFailed()).isNull();
@@ -241,7 +203,8 @@ class ScheduleServiceTest {
     processEntity3.setProcessId(processId3);
     processEntity3.setProcessState(ProcessState.FAILED);
 
-    service.endExecution(processEntity3);
+    ZonedDateTime nextTime4 = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    service.endExecution(processEntity3, nextTime4);
 
     s = service.getSavedSchedule(pipelineName).get();
     assertThat(s.getSchedulerName()).isEqualTo(schedulerName);
@@ -249,8 +212,8 @@ class ScheduleServiceTest {
     assertThat(s.getCron()).isEqualTo(cron);
     assertThat(s.getActive()).isTrue();
     assertThat(s.getExecutionCount()).isEqualTo(3);
-    assertThat(s.getNextTime()).isNull();
-    assertThat(s.getStartTime()).isAfterOrEqualTo(launchTime3);
+    assertThat(s.getNextTime()).isEqualTo(nextTime4);
+    assertThat(s.getStartTime()).isAfterOrEqualTo(nextTime3);
     assertThat(s.getEndTime()).isAfterOrEqualTo(endTime3);
     assertThat(s.getLastCompleted()).isAfterOrEqualTo(endTime2);
     assertThat(s.getLastFailed()).isEqualTo(s.getEndTime());
