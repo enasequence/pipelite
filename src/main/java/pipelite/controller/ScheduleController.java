@@ -118,11 +118,14 @@ public class ScheduleController {
         relative
             ? TimeUtils.humanReadableDuration(s.getEndTime())
             : TimeUtils.humanReadableDate(s.getEndTime());
-    String nextTimeSign = s.getNextTime().isBefore(ZonedDateTime.now()) ? "-" : "";
-    String nextTime =
-        relative
-            ? nextTimeSign + TimeUtils.humanReadableDuration(s.getNextTime())
-            : TimeUtils.humanReadableDate(s.getNextTime());
+    String nextTime = null;
+    if (s.getNextTime() != null) {
+      String nextTimeSign = s.getNextTime().isBefore(ZonedDateTime.now()) ? "-" : "";
+      nextTime =
+          relative
+              ? nextTimeSign + TimeUtils.humanReadableDuration(s.getNextTime())
+              : TimeUtils.humanReadableDate(s.getNextTime());
+    }
     String lastCompleted =
         relative
             ? TimeUtils.humanReadableDuration(s.getLastCompleted())
