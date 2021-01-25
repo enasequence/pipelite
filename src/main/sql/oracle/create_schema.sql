@@ -160,7 +160,7 @@ create table pipelite2_schedule
     scheduler_name   varchar2(256) not null,
     cron             varchar2(256) not null,
     description      varchar2(256),
-    active           char(1) default 'Y'     not null,
+    active           char(1) default 'Y' not null,
     process_id       varchar2(64),
     exec_start       date,
     exec_end         date,
