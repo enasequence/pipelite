@@ -226,8 +226,10 @@ public class ScheduleController {
       str += "Last successful execution ";
       str +=
           relative
-              ? "was " + TimeUtils.humanReadableDuration(ZonedDateTime.now().minusHours(4)) + " ago"
-              : TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(4));
+              ? "was "
+                  + TimeUtils.humanReadableDuration(ZonedDateTime.now(), lastCompleted)
+                  + " ago"
+              : TimeUtils.humanReadableDate(lastCompleted);
       str += ".";
     }
     return str.trim();

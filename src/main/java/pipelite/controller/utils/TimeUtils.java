@@ -74,9 +74,7 @@ public class TimeUtils {
    *     string
    */
   public static String humanReadableDuration(Duration duration) {
-    if (duration.isNegative()) {
-      duration = duration.negated();
-    }
+    duration = duration.abs();
     long days = duration.toDays();
     duration = duration.minusDays(days);
     long hours = duration.toHours();

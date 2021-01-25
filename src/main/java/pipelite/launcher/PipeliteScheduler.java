@@ -280,6 +280,17 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
       return;
     }
 
+    // Scheduled pipelines support only immediate retries. Set the maximum retries
+    // to the number of immediate retries.
+    process
+        .getStages()
+        .forEach(
+            stage ->
+                stage
+                    .getExecutor()
+                    .getExecutorParams()
+                    .setMaximumRetries(StageLauncher.getImmediateRetries(stage)));
+
     scheduleService.startExecution(pipelineName, processId);
     schedule.disable();
 

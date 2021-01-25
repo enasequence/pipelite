@@ -15,16 +15,20 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
+import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import pipelite.controller.utils.TimeUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
+import pipelite.exception.PipeliteException;
 import pipelite.process.ProcessState;
 import pipelite.repository.ScheduleRepository;
 
 @Service
+@Flogger
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 public class ScheduleService {
 
@@ -66,8 +70,14 @@ public class ScheduleService {
    * @param nextTime the next execution time
    */
   public void scheduleExecution(String pipelineName, ZonedDateTime nextTime) {
+    nextTime = nextTime.truncatedTo(ChronoUnit.SECONDS);
+    log.atInfo().log(
+        "Next scheduled execution time for "
+            + pipelineName
+            + " is "
+            + TimeUtils.humanReadableDate(nextTime));
     ScheduleEntity scheduleEntity = getSavedSchedule(pipelineName).get();
-    scheduleEntity.setNextTime(nextTime.truncatedTo(ChronoUnit.SECONDS));
+    scheduleEntity.setNextTime(nextTime);
     saveSchedule(scheduleEntity);
   }
 
@@ -103,11 +113,12 @@ public class ScheduleService {
       scheduleEntity.setLastCompleted(now);
       scheduleEntity.setStreakCompleted(scheduleEntity.getStreakCompleted() + 1);
       scheduleEntity.setStreakFailed(0);
-    }
-    if (processEntity.getProcessState() == ProcessState.FAILED) {
+    } else if (processEntity.getProcessState() == ProcessState.FAILED) {
       scheduleEntity.setLastFailed(now);
       scheduleEntity.setStreakCompleted(0);
       scheduleEntity.setStreakFailed(scheduleEntity.getStreakFailed() + 1);
+    } else {
+      throw new PipeliteException("Unexpected process state: " + processEntity.getProcessState());
     }
     saveSchedule(scheduleEntity);
   }
