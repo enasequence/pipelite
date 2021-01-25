@@ -12,8 +12,11 @@ $(document).ready( function () {
             { data: "pipelineName" },
             { data: "processId",
                 render: function ( data, type, row, meta ) {
-                    var url = "/pipelite/ui/process?pipelineName=" + row.pipelineName + "&processId=" + row.processId;
-                    return '<a href="' + url + '">' + row.processId + '</a>';
+                    if (row.processId) {
+                        var url = "/pipelite/ui/process?pipelineName=" + row.pipelineName + "&processId=" + row.processId;
+                        return '<a href="' + url + '">' + row.processId + '</a>';
+                    }
+                    return '';
                 }
             },
             { data: "summary" },
