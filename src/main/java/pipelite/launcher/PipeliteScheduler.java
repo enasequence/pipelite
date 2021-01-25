@@ -299,9 +299,9 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
         process,
         (p, r) -> {
           scheduleService.endExecution(processEntity);
-          maximumExecutions.get(pipelineName).decrementAndGet();
           schedule.enable();
           scheduleService.scheduleExecution(pipelineName, schedule.getLaunchTime());
+          decreaseMaximumExecutions(pipelineName);
         });
   }
 
@@ -328,8 +328,14 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
         // Must not have exceeded maximum executions.
         .filter(
             s ->
-                maximumExecutions.get(s.getPipelineName()) == null
+                !maximumExecutions.containsKey(s.getPipelineName())
                     || maximumExecutions.get(s.getPipelineName()).get() > 0);
+  }
+
+  private void decreaseMaximumExecutions(String pipelineName) {
+    if (maximumExecutions.containsKey(pipelineName)) {
+      maximumExecutions.get(pipelineName).decrementAndGet();
+    }
   }
 
   public void setMaximumExecutions(String pipelineName, long maximumExecutions) {

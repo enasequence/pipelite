@@ -89,6 +89,7 @@ public class ScheduleService {
    * @param processId the process id
    */
   public void startExecution(String pipelineName, String processId) {
+    log.atInfo().log("Starting scheduled process execution: " + pipelineName);
     ScheduleEntity scheduleEntity = getSavedSchedule(pipelineName).get();
     scheduleEntity.setStartTime(ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS));
     scheduleEntity.setProcessId(processId);
@@ -106,6 +107,7 @@ public class ScheduleService {
   public void endExecution(ProcessEntity processEntity) {
     ZonedDateTime now = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     String pipelineName = processEntity.getPipelineName();
+    log.atInfo().log("Ending scheduled process execution: " + pipelineName);
     ScheduleEntity scheduleEntity = getSavedSchedule(pipelineName).get();
     scheduleEntity.setEndTime(now);
     scheduleEntity.setExecutionCount(scheduleEntity.getExecutionCount() + 1);
