@@ -14,6 +14,7 @@ import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.AdvancedConfiguration;
 import pipelite.entity.ServiceLockEntity;
+import pipelite.exception.PipeliteException;
 import pipelite.service.LockService;
 import pipelite.time.Time;
 
@@ -39,9 +40,18 @@ public class DefaultPipeliteLocker implements PipeliteLocker {
     this.renewLockThread =
         new Thread(
             () -> {
-              while (true) {
-                Time.wait(lockFrequency);
-                this.renewLock();
+              while (!Thread.interrupted()) {
+                try {
+                  Time.wait(lockFrequency);
+                } catch (Exception ex) {
+                  log.atInfo().log("Service lock renewal interrupted");
+                  break;
+                }
+                try {
+                  this.renewLock();
+                } catch (Exception ex) {
+                  log.atInfo().log("Unexpected exception when renewing service lock");
+                }
               }
             });
     this.renewLockThread.start();
@@ -49,11 +59,12 @@ public class DefaultPipeliteLocker implements PipeliteLocker {
 
   @Override
   public void close() {
-    this.renewLockThread.stop();
-    if (lock == null) {
-      return;
+    if (this.renewLockThread != null) {
+      this.renewLockThread.interrupt();
     }
-    unlockService();
+    if (lock != null) {
+      unlockService();
+    }
   }
 
   @Override
@@ -90,7 +101,7 @@ public class DefaultPipeliteLocker implements PipeliteLocker {
   private void renewLock() {
     log.atFine().log("Re-locking service: " + serviceName);
     if (!lockService.relockService(lock)) {
-      throw new RuntimeException("Could not re-lock service: " + serviceName);
+      throw new PipeliteException("Could not re-lock service: " + serviceName);
     }
   }
 
