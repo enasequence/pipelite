@@ -15,26 +15,22 @@ import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.retry.annotation.EnableRetry;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import pipelite.Pipeline;
 import pipelite.ProcessSource;
 
 /**
- * Configuration for {@link pipelite.launcher.PipeliteLauncher} and {@link
+ * Advanced configuration for {@link pipelite.launcher.PipeliteLauncher} and {@link
  * pipelite.launcher.PipeliteScheduler}. {@link pipelite.launcher.PipeliteLauncher} executes
  * processes in parallel for one pipeline. {@link pipelite.launcher.PipeliteScheduler} executes
- * non-parallel processes using cron schedules. Processes are created using {@link Pipeline}.
+ * non-parallel processes using cron schedules.
  */
 @Flogger
 @Data
 @Configuration
-@ConfigurationProperties(prefix = "pipelite.launcher")
-@EnableScheduling
-@EnableRetry
-public class LauncherConfiguration {
+@ConfigurationProperties(prefix = "pipelite.advanced")
+public class AdvancedConfiguration {
 
-  private static final Duration DEFAULT_LOCK_DURATION = Duration.ofMinutes(10);
+  public static final Duration DEFAULT_LOCK_FREQUENCY = Duration.ofMinutes(5);
+  public static final Duration DEFAULT_LOCK_DURATION = Duration.ofMinutes(60);
   private static final Duration DEFAULT_PROCESS_RUNNER_FREQUENCY = Duration.ofSeconds(10);
   private static final Duration DEFAULT_SCHEDULE_REFRESH_FREQUENCY = Duration.ofHours(4);
   private static final Duration DEFAULT_PROCESS_QUEUE_MAX_REFRESH_FREQUENCY = Duration.ofHours(6);
@@ -42,11 +38,13 @@ public class LauncherConfiguration {
   private static final int DEFAULT_PROCESS_QUEUE_MAX_SIZE = 5000;
   private static final int DEFAULT_PROCESS_CREATE_MAX_SIZE = 1000;
 
-  public LauncherConfiguration() {}
+  public AdvancedConfiguration() {}
+
+  /** The frequency of renewing service locks. */
+  private Duration lockFrequency = DEFAULT_LOCK_FREQUENCY;
 
   /**
-   * The duration after which {@link pipelite.launcher.PipeliteLauncher} and {@link
-   * pipelite.launcher.PipeliteScheduler} created process locks expire unless they are renewed.
+   * The duration after which service and process locks expire unless the service lock is renewed.
    */
   private Duration lockDuration = DEFAULT_LOCK_DURATION;
 

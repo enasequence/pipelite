@@ -14,7 +14,7 @@ import java.time.Duration;
 import java.util.List;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
-import pipelite.configuration.LauncherConfiguration;
+import pipelite.configuration.AdvancedConfiguration;
 import pipelite.launcher.PipeliteService;
 import pipelite.lock.PipeliteLocker;
 import pipelite.metrics.PipeliteMetrics;
@@ -32,20 +32,18 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
   private boolean shutdown;
 
   public ProcessRunnerPoolService(
-      LauncherConfiguration launcherConfiguration,
+      AdvancedConfiguration advancedConfiguration,
       PipeliteLocker locker,
       ProcessRunnerPool pool,
-      PipeliteMetrics metrics,
-      String launcherName) {
-    Assert.notNull(launcherConfiguration, "Missing launcher configuration");
+      PipeliteMetrics metrics) {
+    Assert.notNull(advancedConfiguration, "Missing launcher configuration");
     Assert.notNull(locker, "Missing locker");
     Assert.notNull(pool, "Missing process runner pool");
     Assert.notNull(metrics, "Missing metrics");
     this.locker = locker;
     this.pool = pool;
     this.metrics = metrics;
-    this.processRunnerFrequency = launcherConfiguration.getProcessRunnerFrequency();
-    this.locker.init(launcherName);
+    this.processRunnerFrequency = advancedConfiguration.getProcessRunnerFrequency();
   }
 
   @Override
@@ -55,28 +53,23 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
 
   @Override
   protected void startUp() {
-    log.atInfo().log("Starting up service: %s", getLauncherName());
-    locker.lock();
+    log.atInfo().log("Starting up service: %s", serviceName());
   }
 
   @Override
   protected void runOneIteration() {
     if (isActive()) {
-      log.atFine().log("Running service: %s", getLauncherName());
-
-      // Renew lock to avoid lock expiry.
-      locker.renewLock();
+      log.atFine().log("Running service: %s", serviceName());
 
       try {
         run();
         metrics.setRunningProcessesCount(pool.getActiveProcessRunners());
       } catch (Exception ex) {
-        log.atSevere().withCause(ex).log(
-            "Unexpected exception from service: %s", getLauncherName());
+        log.atSevere().withCause(ex).log("Unexpected exception from service: %s", serviceName());
       }
 
       if (pool.getActiveProcessCount() == 0 && shutdownIfIdle()) {
-        log.atInfo().log("Stopping idle service: %s", getLauncherName());
+        log.atInfo().log("Stopping idle service: %s", serviceName());
         shutdown = true;
         stopAsync();
       }
@@ -105,15 +98,6 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
    */
   protected boolean shutdownIfIdle() {
     return false;
-  }
-
-  @Override
-  public String serviceName() {
-    return getLauncherName();
-  }
-
-  public String getLauncherName() {
-    return locker.getLauncherName();
   }
 
   @Override
@@ -148,12 +132,8 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
 
   @Override
   public void shutDown() {
-    try {
-      log.atInfo().log("Shutting down service: %s", getLauncherName());
-      pool.shutDown();
-      log.atInfo().log("Service has been shut down: %s", getLauncherName());
-    } finally {
-      locker.unlock();
-    }
+    log.atInfo().log("Shutting down service: %s", serviceName());
+    pool.shutDown();
+    log.atInfo().log("Service has been shut down: %s", serviceName());
   }
 }

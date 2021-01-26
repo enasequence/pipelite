@@ -11,11 +11,10 @@
 package pipelite.launcher;
 
 import pipelite.configuration.ExecutorConfiguration;
-import pipelite.configuration.LauncherConfiguration;
+import pipelite.configuration.AdvancedConfiguration;
+import pipelite.configuration.ServiceConfiguration;
 import pipelite.launcher.process.runner.DefaultProcessRunner;
 import pipelite.launcher.process.runner.DefaultProcessRunnerPool;
-import pipelite.launcher.process.runner.ProcessRunnerType;
-import pipelite.lock.DefaultPipeliteLocker;
 import pipelite.lock.PipeliteLocker;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.*;
@@ -25,22 +24,20 @@ public class DefaultPipeliteScheduler {
   private DefaultPipeliteScheduler() {}
 
   public static PipeliteScheduler create(
-      LauncherConfiguration launcherConfiguration,
-      ExecutorConfiguration executorConfiguration,
-      LockService lockService,
-      RegisteredPipelineService registeredPipelineService,
-      ProcessService processService,
-      ScheduleService scheduleService,
-      StageService stageService,
-      MailService mailService,
-      PipeliteMetrics metrics,
-      String schedulerName) {
-
-    PipeliteLocker pipeliteLocker =
-        new DefaultPipeliteLocker(lockService, ProcessRunnerType.SCHEDULER);
+          ServiceConfiguration serviceConfiguration,
+          AdvancedConfiguration advancedConfiguration,
+          ExecutorConfiguration executorConfiguration,
+          PipeliteLocker pipeliteLocker,
+          RegisteredPipelineService registeredPipelineService,
+          ProcessService processService,
+          ScheduleService scheduleService,
+          StageService stageService,
+          MailService mailService,
+          PipeliteMetrics metrics) {
 
     return new PipeliteScheduler(
-        launcherConfiguration,
+            serviceConfiguration,
+        advancedConfiguration,
         pipeliteLocker,
         registeredPipelineService,
         scheduleService,
@@ -49,14 +46,13 @@ public class DefaultPipeliteScheduler {
             pipeliteLocker,
             (pipelineName) ->
                 new DefaultProcessRunner(
-                    launcherConfiguration,
+                    advancedConfiguration,
                     executorConfiguration,
                     processService,
                     stageService,
                     mailService,
                     pipelineName),
             metrics),
-        metrics,
-        schedulerName);
+        metrics);
   }
 }

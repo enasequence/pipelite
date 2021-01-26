@@ -11,6 +11,7 @@
 package pipelite.configuration;
 
 import java.net.InetAddress;
+import java.util.UUID;
 import javax.annotation.PostConstruct;
 import lombok.Data;
 import lombok.extern.flogger.Flogger;
@@ -19,10 +20,10 @@ import org.springframework.context.annotation.Configuration;
 
 @Data
 @Configuration
-@ConfigurationProperties(prefix = "pipelite.web")
+@ConfigurationProperties(prefix = "pipelite.service")
 @Flogger
 /** Pipelite web service configuration. */
-public class WebConfiguration {
+public class ServiceConfiguration {
 
   public static final String DEFAULT_CONTEXT_PATH = "/pipelite";
   public static final int DEFAULT_PORT = 8083;
@@ -59,6 +60,8 @@ public class WebConfiguration {
     }
   }
 
+  private String name;
+
   /** The pipelite web server port number. */
   private Integer port = DEFAULT_PORT;
 
@@ -70,4 +73,15 @@ public class WebConfiguration {
 
   /** The pipelite web server password. */
   private String password = "pipelite";
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public String getName() {
+    if (name != null && !name.trim().isEmpty()) {
+      return name;
+    }
+    return ServiceConfiguration.getCanonicalHostName() + ":" + port + ":" + UUID.randomUUID();
+  }
 }

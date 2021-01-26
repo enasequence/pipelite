@@ -12,70 +12,86 @@ package pipelite.lock;
 
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
-import pipelite.entity.LauncherLockEntity;
-import pipelite.launcher.process.runner.ProcessRunnerType;
+import pipelite.configuration.AdvancedConfiguration;
+import pipelite.entity.ServiceLockEntity;
 import pipelite.service.LockService;
+import pipelite.time.Time;
+
+import java.time.Duration;
 
 @Flogger
-/** The default launcher locker. */
 public class DefaultPipeliteLocker implements PipeliteLocker {
 
   private final LockService lockService;
-  private final ProcessRunnerType launcherType;
-  private String launcherName;
-  private LauncherLockEntity lock;
+  private final String serviceName;
+  private final ServiceLockEntity lock;
+  private final Thread renewLockThread;
 
-  public DefaultPipeliteLocker(LockService lockService, ProcessRunnerType launcherType) {
-    Assert.notNull(lockService, "Missing locker service");
-    Assert.notNull(launcherType, "Missing process launcher type");
+  public DefaultPipeliteLocker(
+      AdvancedConfiguration advancedConfiguration, LockService lockService, String serviceName) {
+    Assert.notNull(advancedConfiguration, "Missing advanced configuration");
+    Assert.notNull(lockService, "Missing lock service");
+    Assert.notNull(serviceName, "Missing service name");
     this.lockService = lockService;
-    this.launcherType = launcherType;
+    this.serviceName = serviceName;
+    this.lock = lockService();
+    Duration lockFrequency = getLockFrequency(advancedConfiguration);
+    this.renewLockThread =
+        new Thread(
+            () -> {
+              while (true) {
+                Time.wait(lockFrequency);
+                this.renewLock();
+              }
+            });
+    this.renewLockThread.start();
   }
 
   @Override
-  public void init(String launcherName) {
-    Assert.notNull(launcherName, "Missing launcher name");
-    this.launcherName = launcherName;
-  }
-
-  @Override
-  public String getLauncherName() {
-    return launcherName;
-  }
-
-  @Override
-  public void lock() {
-    Assert.notNull(launcherName, "Missing launcher name");
-    log.atFine().log("Locking launcher: " + launcherName);
-    lock = LockService.lockLauncher(lockService, launcherName, launcherType);
+  public void close() {
+    this.renewLockThread.stop();
     if (lock == null) {
-      throw new RuntimeException("Could not lock launcher " + launcherName);
+      return;
     }
+    unlockService();
   }
 
   @Override
-  public void renewLock() {
-    Assert.notNull(lock, "Missing lock");
-    log.atFine().log("Re-locking launcher: " + launcherName);
-    if (!lockService.relockLauncher(lock)) {
-      throw new RuntimeException("Could not re-lock launcher " + launcherName);
-    }
+  public String getServiceName() {
+    return serviceName;
   }
 
-  @Override
-  public void unlock() {
-    Assert.notNull(lock, "Missing lock");
-    log.atFine().log("Unlocking launcher: " + launcherName);
+  private Duration getLockFrequency(AdvancedConfiguration advancedConfiguration) {
+    return advancedConfiguration.getLockFrequency() != null
+        ? advancedConfiguration.getLockFrequency()
+        : AdvancedConfiguration.DEFAULT_LOCK_FREQUENCY;
+  }
+
+  private ServiceLockEntity lockService() {
+    Assert.notNull(serviceName, "Missing service name");
+    log.atFine().log("Locking service: " + serviceName);
+    ServiceLockEntity lock = LockService.lockService(lockService, serviceName);
+    if (lock == null) {
+      throw new RuntimeException("Could not lock service " + serviceName);
+    }
+    return lock;
+  }
+
+  private void unlockService() {
     try {
-      unlock(lockService, lock);
+      log.atFine().log("Unlocking service: " + serviceName);
+      lockService.unlockProcesses(lock);
+      lockService.unlockService(lock);
     } catch (Exception ex) {
-      log.atSevere().log("Failed to unlock launcher: " + launcherName);
+      log.atSevere().log("Failed to unlock service: " + serviceName);
     }
   }
 
-  public static void unlock(LockService lockService, LauncherLockEntity lock) {
-    lockService.unlockProcesses(lock);
-    lockService.unlockLauncher(lock);
+  private void renewLock() {
+    log.atFine().log("Re-locking service: " + serviceName);
+    if (!lockService.relockService(lock)) {
+      throw new RuntimeException("Could not re-lock service: " + serviceName);
+    }
   }
 
   @Override
@@ -95,7 +111,7 @@ public class DefaultPipeliteLocker implements PipeliteLocker {
   }
 
   @Override
-  public LauncherLockEntity getLock() {
+  public ServiceLockEntity getLock() {
     return lock;
   }
 }

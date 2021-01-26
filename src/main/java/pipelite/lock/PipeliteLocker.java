@@ -10,56 +10,32 @@
  */
 package pipelite.lock;
 
-import pipelite.entity.LauncherLockEntity;
+import pipelite.entity.ServiceLockEntity;
 
 /**
- * Manages launcher locks. Launcher locks prevent two launchers with the same name from being
- * executed at the same time. Launcher lock may expire. If it does then the launcher lock and any
- * associated process locks will be removed by the PipeliteUnlocker. Lock expiry can be prevented by
- * renewing the launcher lock.
+ * Manages locks. Service locks prevent services with the same name from being executed at the same
+ * time while process locks prevent more than one instance of a process being executed at the same
+ * time. Service locks may expire. If they do then the service lock and any associated process locks
+ * will be removed. Lock expiry can be prevented by renewing the service lock.
  */
-public interface PipeliteLocker {
+public interface PipeliteLocker extends AutoCloseable {
 
   /**
-   * Initialises the locker. Must be called before calling any other methods.
+   * Returns the service name.
    *
-   * @param launcherName the unique launcher name
+   * @return the service name
    */
-  void init(String launcherName);
+  String getServiceName();
 
   /**
-   * Returns the launcher name.
-   *
-   * @return the launcher name
-   */
-  String getLauncherName();
-
-  /**
-   * Locks the launcher.
-   *
-   * @throws RuntimeException if the launcher could not be locked
-   */
-  void lock();
-
-  /**
-   * Renews the launcher lock.
-   *
-   * @throws RuntimeException if the launcher lock could not be renewed
-   */
-  void renewLock();
-
-  /** Removes locks associated with the launcher. */
-  void unlock();
-
-  /**
-   * Locks a process associated with this launcher.
+   * Locks a process.
    *
    * @return false if the process could not be locked
    */
   boolean lockProcess(String pipelineName, String processId);
 
   /**
-   * Unlocks a process associated with this launcher.
+   * Unlocks a process.
    *
    * @param pipelineName the pipeline name
    * @param processId the process id
@@ -67,9 +43,9 @@ public interface PipeliteLocker {
   void unlockProcess(String pipelineName, String processId);
 
   /**
-   * Returns the lock.
+   * Returns the service lock.
    *
-   * @return the lock
+   * @return the service lock
    */
-  LauncherLockEntity getLock();
+  ServiceLockEntity getLock();
 }

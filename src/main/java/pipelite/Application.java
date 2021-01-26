@@ -21,8 +21,8 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import pipelite.configuration.ExecutorConfiguration;
-import pipelite.configuration.LauncherConfiguration;
-import pipelite.configuration.WebConfiguration;
+import pipelite.configuration.AdvancedConfiguration;
+import pipelite.configuration.ServiceConfiguration;
 import pipelite.launcher.*;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.*;
@@ -33,22 +33,22 @@ import pipelite.service.*;
 @Flogger
 public class Application {
 
-  @Autowired private WebConfiguration webConfiguration;
-  @Autowired private LauncherConfiguration launcherConfiguration;
+  @Autowired private ServiceConfiguration serviceConfiguration;
+  @Autowired private AdvancedConfiguration advancedConfiguration;
   @Autowired private ExecutorConfiguration executorConfiguration;
   @Autowired private RegisteredPipelineService registeredPipelineService;
   @Autowired private RegisteredProcessSourceService registeredProcessSourceService;
+  @Autowired private PipeliteLockerService pipeliteLockerService;
   @Autowired private ScheduleService scheduleService;
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
-  @Autowired private LockService lockService;
   @Autowired private MailService mailService;
   @Autowired private ConfigurableApplicationContext applicationContext;
   @Autowired private PipeliteMetrics metrics;
 
   private PipeliteServiceManager serverManager;
-  private List<PipeliteLauncher> launchers;
-  private List<PipeliteScheduler> schedulers;
+  private final List<PipeliteLauncher> launchers = new ArrayList<>();
+  private final List<PipeliteScheduler> schedulers = new ArrayList<>();
   private boolean shutdown;
 
   @PostConstruct
@@ -64,8 +64,8 @@ public class Application {
     if (serverManager != null) {
       serverManager.shutdown();
     }
-    launchers = null;
-    schedulers = null;
+    launchers.clear();
+    schedulers.clear();
   }
 
   /** Stops all services and terminates all running processes. */
@@ -100,19 +100,19 @@ public class Application {
       return;
     }
     serverManager = new PipeliteServiceManager();
-    launchers = new ArrayList<>();
-    schedulers = new ArrayList<>();
+    launchers.clear();
+    schedulers.clear();
     try {
       log.atInfo().log("Starting pipelite services");
       // Create launchers for unscheduled pipelines.
-      for (String pipelineName : registeredPipelineService.getUnScheduledPipelineNames()) {
+      for (String pipelineName : registeredPipelineService.getPipelineNames()) {
         PipeliteLauncher launcher = createLauncher(pipelineName);
         launchers.add(launcher);
         serverManager.addService(launcher);
       }
-      // Create schedulers for scheduled pipelines.
-      for (String schedulerName : registeredPipelineService.getSchedulerNames()) {
-        PipeliteScheduler scheduler = createScheduler(schedulerName);
+      // Create scheduler for scheduled pipelines.
+      if (registeredPipelineService.isScheduler()) {
+        PipeliteScheduler scheduler = createScheduler();
         schedulers.add(scheduler);
         serverManager.addService(scheduler);
       }
@@ -126,26 +126,26 @@ public class Application {
     }
   }
 
-  private PipeliteScheduler createScheduler(String schedulerName) {
+  private PipeliteScheduler createScheduler() {
     return DefaultPipeliteScheduler.create(
-        launcherConfiguration,
+        serviceConfiguration,
+        advancedConfiguration,
         executorConfiguration,
-        lockService,
+        pipeliteLockerService.getPipeliteLocker(),
         registeredPipelineService,
         processService,
         scheduleService,
         stageService,
         mailService,
-        metrics,
-        schedulerName);
+        metrics);
   }
 
   private PipeliteLauncher createLauncher(String pipelineName) {
     return DefaultPipeliteLauncher.create(
-        webConfiguration,
-        launcherConfiguration,
+        serviceConfiguration,
+        advancedConfiguration,
         executorConfiguration,
-        lockService,
+        pipeliteLockerService.getPipeliteLocker(),
         registeredPipelineService,
         registeredProcessSourceService,
         processService,
@@ -177,8 +177,12 @@ public class Application {
 
   public Collection<PipeliteScheduler> getRunningSchedulers() {
     return schedulers.stream()
-        .filter(scheduler -> scheduler.isRunning())
+        .filter(pipeliteScheduler -> pipeliteScheduler.isRunning())
         .collect(Collectors.toList());
+  }
+
+  public boolean isRunningScheduler() {
+    return !schedulers.isEmpty();
   }
 
   public boolean isShutdown() {

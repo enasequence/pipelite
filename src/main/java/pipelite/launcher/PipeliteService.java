@@ -13,8 +13,19 @@ package pipelite.launcher;
 import com.google.common.util.concurrent.AbstractScheduledService;
 
 public abstract class PipeliteService extends AbstractScheduledService {
+
+  /** AbstractScheduledService service name. */
   @Override
-  public abstract String serviceName();
+  protected final String serviceName() {
+    return getLauncherName();
+  }
+
+  /**
+   * Returns the process launcher name.
+   *
+   * @return the process launcher name.
+   */
+  public abstract String getLauncherName();
 
   /** Terminates all running processes. */
   public abstract void terminate();

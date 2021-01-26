@@ -21,6 +21,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
+import pipelite.cron.CronUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.process.ProcessState;
@@ -33,27 +34,28 @@ class ScheduleServiceTest {
 
   @Test
   public void lifecycle() {
-    String schedulerName = UniqueStringGenerator.randomSchedulerName();
+    String serviceName = UniqueStringGenerator.randomServiceName();
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     String cron = "0/1 * * * * ?"; // every second
+    String description = CronUtils.describe(cron);
 
     ScheduleEntity scheduleEntity = new ScheduleEntity();
-    scheduleEntity.setSchedulerName(schedulerName);
+    scheduleEntity.setServiceName(serviceName);
     scheduleEntity.setPipelineName(pipelineName);
     scheduleEntity.setCron(cron);
-    scheduleEntity.setActive(true);
+    scheduleEntity.setDescription(description);
 
     service.saveSchedule(scheduleEntity);
 
     // Get all schedules.
 
-    List<ScheduleEntity> schedules = service.getSchedules(schedulerName);
+    List<ScheduleEntity> schedules = service.getSchedules(serviceName);
     assertThat(schedules.size()).isEqualTo(1);
     assertThat(schedules.get(0)).isEqualTo(scheduleEntity);
 
     // Get active schedules.
 
-    List<ScheduleEntity> activeSchedules = service.getActiveSchedules(schedulerName);
+    List<ScheduleEntity> activeSchedules = service.getSchedules(serviceName);
     assertThat(activeSchedules.size()).isEqualTo(1);
     assertThat(activeSchedules.get(0)).isEqualTo(scheduleEntity);
 
@@ -63,10 +65,10 @@ class ScheduleServiceTest {
     service.scheduleExecution(pipelineName, nextTime1);
 
     ScheduleEntity s = service.getSavedSchedule(pipelineName).get();
-    assertThat(s.getSchedulerName()).isEqualTo(schedulerName);
+    assertThat(s.getServiceName()).isEqualTo(serviceName);
     assertThat(s.getPipelineName()).isEqualTo(pipelineName);
     assertThat(s.getCron()).isEqualTo(cron);
-    assertThat(s.getActive()).isTrue();
+    assertThat(s.getDescription()).isEqualTo(description);
     assertThat(s.getExecutionCount()).isEqualTo(0);
     assertThat(s.getNextTime()).isEqualTo(nextTime1);
     assertThat(s.getStartTime()).isNull();
@@ -84,10 +86,10 @@ class ScheduleServiceTest {
     service.startExecution(pipelineName, processId1);
 
     s = service.getSavedSchedule(pipelineName).get();
-    assertThat(s.getSchedulerName()).isEqualTo(schedulerName);
+    assertThat(s.getServiceName()).isEqualTo(serviceName);
     assertThat(s.getPipelineName()).isEqualTo(pipelineName);
     assertThat(s.getCron()).isEqualTo(cron);
-    assertThat(s.getActive()).isTrue();
+    assertThat(s.getDescription()).isEqualTo(description);
     assertThat(s.getExecutionCount()).isEqualTo(0);
     assertThat(s.getNextTime()).isNull();
     assertThat(s.getStartTime()).isAfterOrEqualTo(nextTime1);
@@ -111,10 +113,10 @@ class ScheduleServiceTest {
     service.endExecution(processEntity1, nextTime2);
 
     s = service.getSavedSchedule(pipelineName).get();
-    assertThat(s.getSchedulerName()).isEqualTo(schedulerName);
+    assertThat(s.getServiceName()).isEqualTo(serviceName);
     assertThat(s.getPipelineName()).isEqualTo(pipelineName);
     assertThat(s.getCron()).isEqualTo(cron);
-    assertThat(s.getActive()).isTrue();
+    assertThat(s.getDescription()).isEqualTo(description);
     assertThat(s.getExecutionCount()).isEqualTo(1);
     assertThat(s.getNextTime()).isEqualTo(nextTime2);
     assertThat(s.getStartTime()).isAfterOrEqualTo(nextTime1);
@@ -132,10 +134,10 @@ class ScheduleServiceTest {
     service.startExecution(pipelineName, processId2);
 
     s = service.getSavedSchedule(pipelineName).get();
-    assertThat(s.getSchedulerName()).isEqualTo(schedulerName);
+    assertThat(s.getServiceName()).isEqualTo(serviceName);
     assertThat(s.getPipelineName()).isEqualTo(pipelineName);
     assertThat(s.getCron()).isEqualTo(cron);
-    assertThat(s.getActive()).isTrue();
+    assertThat(s.getDescription()).isEqualTo(description);
     assertThat(s.getExecutionCount()).isEqualTo(1);
     assertThat(s.getNextTime()).isNull();
     assertThat(s.getStartTime()).isAfterOrEqualTo(nextTime2);
@@ -159,10 +161,10 @@ class ScheduleServiceTest {
     service.endExecution(processEntity2, nextTime3);
 
     s = service.getSavedSchedule(pipelineName).get();
-    assertThat(s.getSchedulerName()).isEqualTo(schedulerName);
+    assertThat(s.getServiceName()).isEqualTo(serviceName);
     assertThat(s.getPipelineName()).isEqualTo(pipelineName);
     assertThat(s.getCron()).isEqualTo(cron);
-    assertThat(s.getActive()).isTrue();
+    assertThat(s.getDescription()).isEqualTo(description);
     assertThat(s.getExecutionCount()).isEqualTo(2);
     assertThat(s.getNextTime()).isEqualTo(nextTime3);
     assertThat(s.getStartTime()).isAfterOrEqualTo(nextTime2);
@@ -180,10 +182,10 @@ class ScheduleServiceTest {
     service.startExecution(pipelineName, processId3);
 
     s = service.getSavedSchedule(pipelineName).get();
-    assertThat(s.getSchedulerName()).isEqualTo(schedulerName);
+    assertThat(s.getServiceName()).isEqualTo(serviceName);
     assertThat(s.getPipelineName()).isEqualTo(pipelineName);
     assertThat(s.getCron()).isEqualTo(cron);
-    assertThat(s.getActive()).isTrue();
+    assertThat(s.getDescription()).isEqualTo(description);
     assertThat(s.getExecutionCount()).isEqualTo(2);
     assertThat(s.getNextTime()).isNull();
     assertThat(s.getStartTime()).isAfterOrEqualTo(nextTime3);
@@ -207,10 +209,10 @@ class ScheduleServiceTest {
     service.endExecution(processEntity3, nextTime4);
 
     s = service.getSavedSchedule(pipelineName).get();
-    assertThat(s.getSchedulerName()).isEqualTo(schedulerName);
+    assertThat(s.getServiceName()).isEqualTo(serviceName);
     assertThat(s.getPipelineName()).isEqualTo(pipelineName);
     assertThat(s.getCron()).isEqualTo(cron);
-    assertThat(s.getActive()).isTrue();
+    assertThat(s.getDescription()).isEqualTo(description);
     assertThat(s.getExecutionCount()).isEqualTo(3);
     assertThat(s.getNextTime()).isEqualTo(nextTime4);
     assertThat(s.getStartTime()).isAfterOrEqualTo(nextTime3);

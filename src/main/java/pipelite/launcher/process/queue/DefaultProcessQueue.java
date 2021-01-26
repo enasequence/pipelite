@@ -10,27 +10,21 @@
  */
 package pipelite.launcher.process.queue;
 
-import com.google.common.flogger.FluentLogger;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import lombok.extern.flogger.Flogger;
+
 import org.springframework.util.Assert;
-import pipelite.configuration.LauncherConfiguration;
-import pipelite.configuration.WebConfiguration;
+import pipelite.configuration.AdvancedConfiguration;
 import pipelite.entity.ProcessEntity;
-import pipelite.launcher.PipeliteLauncher;
-import pipelite.log.LogKey;
 import pipelite.service.ProcessService;
 
-@Flogger
 public class DefaultProcessQueue implements ProcessQueue {
 
   private final ProcessService processService;
-  private final String launcherName;
   private final String pipelineName;
   private final Duration processQueueMaxRefreshFrequency;
   private final Duration processQueueMinRefreshFrequency;
@@ -42,27 +36,20 @@ public class DefaultProcessQueue implements ProcessQueue {
   private ZonedDateTime processQueueMinValidUntil = ZonedDateTime.now();
 
   public DefaultProcessQueue(
-      WebConfiguration webConfiguration,
-      LauncherConfiguration launcherConfiguration,
+      AdvancedConfiguration advancedConfiguration,
       ProcessService processService,
       String pipelineName,
       int pipelineParallelism) {
-    Assert.notNull(launcherConfiguration, "Missing launcher configuration");
+    Assert.notNull(advancedConfiguration, "Missing launcher configuration");
     Assert.notNull(pipelineName, "Missing pipeline name");
     this.processService = processService;
-    this.launcherName = PipeliteLauncher.getLauncherName(pipelineName, webConfiguration.getPort());
     this.pipelineName = pipelineName;
     this.processQueueMaxRefreshFrequency =
-        launcherConfiguration.getProcessQueueMaxRefreshFrequency();
+        advancedConfiguration.getProcessQueueMaxRefreshFrequency();
     this.processQueueMinRefreshFrequency =
-        launcherConfiguration.getProcessQueueMinRefreshFrequency();
-    this.processQueueMaxSize = launcherConfiguration.getProcessQueueMaxSize();
+        advancedConfiguration.getProcessQueueMinRefreshFrequency();
+    this.processQueueMaxSize = advancedConfiguration.getProcessQueueMaxSize();
     this.pipelineParallelism = (pipelineParallelism < 1) ? 1 : pipelineParallelism;
-  }
-
-  @Override
-  public String getLauncherName() {
-    return launcherName;
   }
 
   @Override
@@ -100,7 +87,6 @@ public class DefaultProcessQueue implements ProcessQueue {
       return 0;
     }
     int processCnt = 0;
-    logContext(log.atInfo()).log("Queuing processes");
     // Clear process queue.
     processQueueIndex.set(0);
     processQueue.clear();
@@ -150,9 +136,5 @@ public class DefaultProcessQueue implements ProcessQueue {
 
   public ZonedDateTime getProcessQueueMinValidUntil() {
     return processQueueMinValidUntil;
-  }
-
-  private FluentLogger.Api logContext(FluentLogger.Api log) {
-    return log.with(LogKey.LAUNCHER_NAME, launcherName).with(LogKey.PIPELINE_NAME, pipelineName);
   }
 }

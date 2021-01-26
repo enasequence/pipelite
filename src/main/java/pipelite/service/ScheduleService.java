@@ -41,12 +41,8 @@ public class ScheduleService {
     return Lists.newArrayList(repository.findAll());
   }
 
-  public List<ScheduleEntity> getSchedules(String schedulerName) {
-    return repository.findBySchedulerName(schedulerName);
-  }
-
-  public List<ScheduleEntity> getActiveSchedules(String schedulerName) {
-    return repository.findBySchedulerNameAndActive(schedulerName, true);
+  public List<ScheduleEntity> getSchedules(String serviceName) {
+    return repository.findByServiceName(serviceName);
   }
 
   public Optional<ScheduleEntity> getSavedSchedule(String pipelineName) {

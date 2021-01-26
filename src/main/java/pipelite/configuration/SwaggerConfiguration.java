@@ -23,12 +23,13 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class SwaggerConfiguration {
 
-  @Autowired WebConfiguration webConfiguration;
+  @Autowired
+  ServiceConfiguration serviceConfiguration;
 
   @Bean
   public OpenAPI openAPI() {
     return new OpenAPI()
-        .addServersItem(new Server().url(webConfiguration.getContextPath()))
+        .addServersItem(new Server().url(serviceConfiguration.getContextPath()))
         .components(
             new Components()
                 .addSecuritySchemes(

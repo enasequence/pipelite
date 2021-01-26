@@ -28,7 +28,8 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
   public static final String HEALTH_ENDPOINT = "/actuator/health";
 
-  @Autowired WebConfiguration webConfiguration;
+  @Autowired
+  ServiceConfiguration serviceConfiguration;
 
   @Bean
   public UserDetailsService userDetailsService() {
@@ -36,8 +37,8 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
     InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
     manager.createUser(
         users
-            .username(webConfiguration.getUsername())
-            .password(webConfiguration.getPassword())
+            .username(serviceConfiguration.getUsername())
+            .password(serviceConfiguration.getPassword())
             .roles("ADMIN")
             .build());
     return manager;

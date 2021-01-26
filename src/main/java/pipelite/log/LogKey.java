@@ -17,6 +17,9 @@ public class LogKey {
 
   private LogKey() {}
 
+  public static final MetadataKey<String> SERVICE_NAME =
+          MetadataKey.single("service_name", String.class);
+
   public static final MetadataKey<String> LAUNCHER_NAME =
       MetadataKey.single("launcher_name", String.class);
 

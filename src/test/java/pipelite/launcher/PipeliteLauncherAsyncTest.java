@@ -31,8 +31,8 @@ import pipelite.ProcessSource;
 import pipelite.TestProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ExecutorConfiguration;
-import pipelite.configuration.LauncherConfiguration;
-import pipelite.configuration.WebConfiguration;
+import pipelite.configuration.AdvancedConfiguration;
+import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.AbstractExecutor;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
@@ -48,22 +48,22 @@ import pipelite.stage.parameters.ExecutorParameters;
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     classes = PipeliteTestConfiguration.class,
     properties = {
-      "pipelite.launcher.processRunnerFrequency=250ms",
-      "pipelite.launcher.shutdownIfIdle=true"
+      "pipelite.advanced.processRunnerFrequency=250ms",
+      "pipelite.advanced.shutdownIfIdle=true"
     })
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class PipeliteLauncherAsyncTest {
 
   private static final int PROCESS_CNT = 2;
 
-  @Autowired private WebConfiguration webConfiguration;
-  @Autowired private LauncherConfiguration launcherConfiguration;
+  @Autowired private ServiceConfiguration serviceConfiguration;
+  @Autowired private AdvancedConfiguration advancedConfiguration;
   @Autowired private ExecutorConfiguration executorConfiguration;
   @Autowired private RegisteredPipelineService registeredPipelineService;
   @Autowired private RegisteredProcessSourceService registeredProcessSourceService;
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
-  @Autowired private LockService lockService;
+  @Autowired private PipeliteLockerService pipeliteLockerService;
   @Autowired private MailService mailService;
   @Autowired private PipeliteMetrics metrics;
 
@@ -130,10 +130,10 @@ public class PipeliteLauncherAsyncTest {
 
   private PipeliteLauncher createPipeliteLauncher(String pipelineName) {
     return DefaultPipeliteLauncher.create(
-        webConfiguration,
-        launcherConfiguration,
+        serviceConfiguration,
+        advancedConfiguration,
         executorConfiguration,
-        lockService,
+        pipeliteLockerService.getPipeliteLocker(),
         registeredPipelineService,
         registeredProcessSourceService,
         processService,

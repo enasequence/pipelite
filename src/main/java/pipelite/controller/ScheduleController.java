@@ -19,18 +19,17 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
+import pipelite.configuration.ServiceConfiguration;
 import pipelite.controller.info.ScheduleInfo;
 import pipelite.controller.utils.LoremUtils;
 import pipelite.controller.utils.TimeUtils;
 import pipelite.entity.ScheduleEntity;
-import pipelite.service.RegisteredPipelineService;
 import pipelite.service.ScheduleService;
 
 @RestController
@@ -40,8 +39,8 @@ public class ScheduleController {
 
   @Autowired Application application;
   @Autowired Environment environment;
+  @Autowired ServiceConfiguration serviceConfiguration;
   @Autowired ScheduleService scheduleService;
-  @Autowired RegisteredPipelineService registeredPipelineService;
 
   @GetMapping("/run")
   @ResponseStatus(HttpStatus.OK)
@@ -53,22 +52,17 @@ public class ScheduleController {
       })
   public List<ScheduleInfo> runningSchedules(
       @RequestParam(required = false, defaultValue = "false") boolean relative) {
-    List<String> schedulerNames =
-        application.getRunningSchedulers().stream()
-            .map(s -> s.getLauncherName())
-            .collect(Collectors.toList());
-    List<ScheduleInfo> list = getSchedules(schedulerNames, relative);
+    List<ScheduleInfo> list = new ArrayList<>();
+    if (application.isRunningScheduler()) {
+      list.addAll(getSchedules(serviceConfiguration.getName(), relative));
+    }
     getLoremIpsumSchedules(list, relative);
     return list;
   }
 
-  private List<ScheduleInfo> getSchedules(List<String> schedulerNames, boolean relative) {
+  private List<ScheduleInfo> getSchedules(String serviceName, boolean relative) {
     List<ScheduleInfo> schedules = new ArrayList<>();
-    schedulerNames.forEach(
-        schedulerName ->
-            scheduleService
-                .getSchedules(schedulerName)
-                .forEach(s -> schedules.add(getSchedule(s, relative))));
+    scheduleService.getSchedules(serviceName).forEach(s -> schedules.add(getSchedule(s, relative)));
     return schedules;
   }
 
@@ -82,8 +76,7 @@ public class ScheduleController {
       })
   public List<ScheduleInfo> localSchedules(
       @RequestParam(required = false, defaultValue = "false") boolean relative) {
-    List<String> schedulerNames = registeredPipelineService.getSchedulerNames();
-    List<ScheduleInfo> list = getSchedules(schedulerNames, relative);
+    List<ScheduleInfo> list = getSchedules(serviceConfiguration.getName(), relative);
     getLoremIpsumSchedules(list, relative);
     return list;
   }
@@ -135,17 +128,12 @@ public class ScheduleController {
             ? TimeUtils.humanReadableDuration(s.getLastFailed())
             : TimeUtils.humanReadableDate(s.getLastFailed());
     return ScheduleInfo.builder()
-        .schedulerName(s.getSchedulerName())
+        .serviceName(s.getServiceName())
         .pipelineName(s.getPipelineName())
         .cron(s.getCron())
         .description(s.getDescription())
         .summary(
-            getSummary(
-                s.getActive(),
-                s.getStreakCompleted(),
-                s.getStreakFailed(),
-                s.getLastCompleted(),
-                relative))
+            getSummary(s.getStreakCompleted(), s.getStreakFailed(), s.getLastCompleted(), relative))
         .startTime(startTime)
         .endTime(endTime)
         .nextTime(nextTime)
@@ -153,7 +141,6 @@ public class ScheduleController {
         .lastFailed(lastFailed)
         .completedStreak(s.getStreakCompleted())
         .failedStreak(s.getStreakFailed())
-        .active(s.getActive())
         .processId(s.getProcessId())
         .build();
   }
@@ -186,12 +173,11 @@ public class ScheduleController {
                         : TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(5));
                 list.add(
                     ScheduleInfo.builder()
-                        .schedulerName(lorem.getFirstNameFemale())
+                        .serviceName(lorem.getFirstNameFemale())
                         .pipelineName(lorem.getCountry())
                         .cron(lorem.getWords(1))
                         .description(lorem.getWords(5))
-                        .summary(
-                            getSummary(true, 0, 1, ZonedDateTime.now().minusHours(1), relative))
+                        .summary(getSummary(0, 1, ZonedDateTime.now().minusHours(1), relative))
                         .startTime(startTime)
                         .endTime(endTime)
                         .nextTime(nextTime)
@@ -199,7 +185,6 @@ public class ScheduleController {
                         .lastFailed(lastFailed)
                         .completedStreak(5)
                         .failedStreak(1)
-                        .active(true)
                         .processId(lorem.getWords(1))
                         .build());
               });
@@ -207,14 +192,7 @@ public class ScheduleController {
   }
 
   public static String getSummary(
-      boolean active,
-      int streakCompleted,
-      int streakFailed,
-      ZonedDateTime lastCompleted,
-      boolean relative) {
-    if (!active) {
-      return "The schedule is inactive.";
-    }
+      int streakCompleted, int streakFailed, ZonedDateTime lastCompleted, boolean relative) {
     String str = "";
     if (streakFailed > 0) {
       str += "Last " + streakFailed + " executions have failed. ";

@@ -20,7 +20,8 @@ import java.util.stream.Stream;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.Pipeline;
-import pipelite.configuration.LauncherConfiguration;
+import pipelite.configuration.AdvancedConfiguration;
+import pipelite.configuration.ServiceConfiguration;
 import pipelite.cron.CronUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
@@ -47,26 +48,33 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   private final List<Schedule> schedules = Collections.synchronizedList(new ArrayList<>());
   private final Map<String, AtomicLong> maximumExecutions = new ConcurrentHashMap<>();
   private final Duration scheduleRefreshFrequency;
+  private final String serviceName;
   private ZonedDateTime scheduleValidUntil = ZonedDateTime.now();
 
   public PipeliteScheduler(
-      LauncherConfiguration launcherConfiguration,
+      ServiceConfiguration serviceConfiguration,
+      AdvancedConfiguration advancedConfiguration,
       PipeliteLocker pipeliteLocker,
       RegisteredPipelineService registeredPipelineService,
       ScheduleService scheduleService,
       ProcessService processService,
       ProcessRunnerPool processRunnerPool,
-      PipeliteMetrics metrics,
-      String schedulerName) {
-    super(launcherConfiguration, pipeliteLocker, processRunnerPool, metrics, schedulerName);
-    Assert.notNull(launcherConfiguration, "Missing launcher configuration");
+      PipeliteMetrics metrics) {
+    super(advancedConfiguration, pipeliteLocker, processRunnerPool, metrics);
+    Assert.notNull(advancedConfiguration, "Missing launcher configuration");
     Assert.notNull(registeredPipelineService, "Missing pipeline service");
     Assert.notNull(scheduleService, "Missing schedule service");
     Assert.notNull(processService, "Missing process service");
     this.pipelineCache = new PipelineCache(registeredPipelineService);
     this.scheduleService = scheduleService;
     this.processService = processService;
-    this.scheduleRefreshFrequency = launcherConfiguration.getScheduleRefreshFrequency();
+    this.scheduleRefreshFrequency = advancedConfiguration.getScheduleRefreshFrequency();
+    this.serviceName = serviceConfiguration.getName();
+  }
+
+  @Override
+  public String getLauncherName() {
+    return serviceName + "@scheduler";
   }
 
   @Override
@@ -117,8 +125,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     logContext(log.atInfo()).log("Refreshing schedules");
     scheduleValidUntil = ZonedDateTime.now().plus(scheduleRefreshFrequency);
 
-    Collection<ScheduleEntity> scheduleEntities =
-        scheduleService.getActiveSchedules(getLauncherName());
+    Collection<ScheduleEntity> scheduleEntities = scheduleService.getSchedules(serviceName);
 
     for (ScheduleEntity scheduleEntity : scheduleEntities) {
       Optional<Schedule> schedule = findSchedule(scheduleEntity);

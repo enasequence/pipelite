@@ -32,8 +32,8 @@ public class ScheduleEntity {
   private String pipelineName;
 
   /** Scheduler name. */
-  @Column(name = "SCHEDULER_NAME", nullable = false)
-  private String schedulerName;
+  @Column(name = "SERVICE_NAME", nullable = false)
+  private String serviceName;
 
   /** Cron expression. */
   @Column(name = "CRON", nullable = false)
@@ -42,11 +42,6 @@ public class ScheduleEntity {
   /** Cron expression description. */
   @Column(name = "DESCRIPTION")
   private String description;
-
-  /** Is the schedule active. */
-  @Column(name = "ACTIVE")
-  @Convert(converter = BooleanConverter.class)
-  private Boolean active;
 
   /** Last execution process id. */
   @Column(name = "PROCESS_ID")

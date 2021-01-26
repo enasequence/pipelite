@@ -39,8 +39,8 @@ import pipelite.ProcessSource;
 import pipelite.TestProcessSource;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ExecutorConfiguration;
-import pipelite.configuration.LauncherConfiguration;
-import pipelite.configuration.WebConfiguration;
+import pipelite.configuration.AdvancedConfiguration;
+import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageLogEntity;
@@ -64,20 +64,20 @@ import pipelite.stage.parameters.ExecutorParameters;
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     classes = PipeliteTestConfiguration.class,
     properties = {
-      "pipelite.launcher.processRunnerFrequency=250ms",
-      "pipelite.launcher.shutdownIfIdle=true"
+      "pipelite.advanced.processRunnerFrequency=250ms",
+      "pipelite.advanced.shutdownIfIdle=true"
     })
 @DirtiesContext
 public class PipeliteLauncherTest {
 
-  @Autowired private WebConfiguration webConfiguration;
-  @Autowired private LauncherConfiguration launcherConfiguration;
+  @Autowired private ServiceConfiguration serviceConfiguration;
+  @Autowired private AdvancedConfiguration advancedConfiguration;
   @Autowired private ExecutorConfiguration executorConfiguration;
   @Autowired private RegisteredPipelineService registeredPipelineService;
   @Autowired private RegisteredProcessSourceService registeredProcessSourceService;
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
-  @Autowired private LockService lockService;
+  @Autowired private PipeliteLockerService pipeliteLockerService;
   @Autowired private MailService mailService;
   @Autowired private PipeliteMetrics pipelineMetrics;
   @Autowired private PipeliteMetrics metrics;
@@ -139,10 +139,10 @@ public class PipeliteLauncherTest {
 
   private PipeliteLauncher createPipeliteLauncher(String pipelineName) {
     return DefaultPipeliteLauncher.create(
-        webConfiguration,
-        launcherConfiguration,
+        serviceConfiguration,
+        advancedConfiguration,
         executorConfiguration,
-        lockService,
+        pipeliteLockerService.getPipeliteLocker(),
         registeredPipelineService,
         registeredProcessSourceService,
         processService,
@@ -334,8 +334,8 @@ public class PipeliteLauncherTest {
   public void testRunProcess() {
     final int processCnt = 100;
     String pipelineName = UniqueStringGenerator.randomPipelineName();
-    WebConfiguration webConfiguration = new WebConfiguration();
-    LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
+    ServiceConfiguration serviceConfiguration = new ServiceConfiguration();
+    AdvancedConfiguration advancedConfiguration = new AdvancedConfiguration();
     int pipelineParallelism = ForkJoinPool.getCommonPoolParallelism();
 
     Pipeline pipeline =
@@ -359,8 +359,7 @@ public class PipeliteLauncherTest {
     DefaultProcessQueue queue =
         spy(
             new DefaultProcessQueue(
-                webConfiguration,
-                launcherConfiguration,
+                    advancedConfiguration,
                 mock(ProcessService.class),
                 pipelineName,
                 pipeline.getPipelineParallelism()));
@@ -376,7 +375,8 @@ public class PipeliteLauncherTest {
     PipeliteLauncher launcher =
         spy(
             new PipeliteLauncher(
-                launcherConfiguration,
+                serviceConfiguration,
+                advancedConfiguration,
                 mock(PipeliteLocker.class),
                 pipeline,
                 mock(ProcessCreator.class),
@@ -396,17 +396,16 @@ public class PipeliteLauncherTest {
     final int processCnt = 100;
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     Duration refreshFrequency = Duration.ofDays(1);
-    WebConfiguration webConfiguration = new WebConfiguration();
-    LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
-    launcherConfiguration.setProcessQueueMaxRefreshFrequency(refreshFrequency);
-    launcherConfiguration.setProcessQueueMinRefreshFrequency(refreshFrequency);
+    ServiceConfiguration serviceConfiguration = new ServiceConfiguration();
+    AdvancedConfiguration advancedConfiguration = new AdvancedConfiguration();
+    advancedConfiguration.setProcessQueueMaxRefreshFrequency(refreshFrequency);
+    advancedConfiguration.setProcessQueueMinRefreshFrequency(refreshFrequency);
     int pipelineParallelism = ForkJoinPool.getCommonPoolParallelism();
 
     DefaultProcessQueue queue =
         spy(
             new DefaultProcessQueue(
-                webConfiguration,
-                launcherConfiguration,
+                    advancedConfiguration,
                 mock(ProcessService.class),
                 pipelineName,
                 pipelineParallelism));
@@ -425,7 +424,8 @@ public class PipeliteLauncherTest {
     PipeliteLauncher launcher =
         spy(
             new PipeliteLauncher(
-                launcherConfiguration,
+                serviceConfiguration,
+                advancedConfiguration,
                 mock(PipeliteLocker.class),
                 mock(Pipeline.class),
                 mock(ProcessCreator.class),
@@ -453,17 +453,16 @@ public class PipeliteLauncherTest {
   public void testCreateProcess() {
     final int processCnt = 100;
     String pipelineName = UniqueStringGenerator.randomPipelineName();
-    WebConfiguration webConfiguration = new WebConfiguration();
-    LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
-    launcherConfiguration.setProcessCreateMaxSize(100);
+    ServiceConfiguration serviceConfiguration = new ServiceConfiguration();
+    AdvancedConfiguration advancedConfiguration = new AdvancedConfiguration();
+    advancedConfiguration.setProcessCreateMaxSize(100);
     int pipelineParallelism = ForkJoinPool.getCommonPoolParallelism();
 
     ProcessCreator processCreator = mock(ProcessCreator.class);
     DefaultProcessQueue queue =
         spy(
             new DefaultProcessQueue(
-                webConfiguration,
-                launcherConfiguration,
+                    advancedConfiguration,
                 mock(ProcessService.class),
                 pipelineName,
                 pipelineParallelism));
@@ -474,7 +473,8 @@ public class PipeliteLauncherTest {
     PipeliteLauncher launcher =
         spy(
             new PipeliteLauncher(
-                launcherConfiguration,
+                serviceConfiguration,
+                advancedConfiguration,
                 mock(PipeliteLocker.class),
                 mock(Pipeline.class),
                 processCreator,
@@ -487,12 +487,5 @@ public class PipeliteLauncherTest {
 
     verify(launcher, times(1)).run();
     verify(processCreator, times(1)).createProcesses(processCnt);
-  }
-
-  @Test
-  public void getLauncherName() {
-    String hostName = WebConfiguration.getCanonicalHostName();
-    assertThat(PipeliteLauncher.getLauncherName("TEST", 8080))
-        .startsWith("TEST@" + hostName + ":8080:");
   }
 }

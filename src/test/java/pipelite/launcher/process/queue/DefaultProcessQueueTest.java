@@ -21,8 +21,8 @@ import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.LauncherConfiguration;
-import pipelite.configuration.WebConfiguration;
+import pipelite.configuration.AdvancedConfiguration;
+import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.service.ProcessService;
 
@@ -54,11 +54,11 @@ public class DefaultProcessQueueTest {
     final int pipelineParallelism = 10;
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     Duration refreshFrequency = Duration.ofDays(1);
-    WebConfiguration webConfiguration = new WebConfiguration();
-    LauncherConfiguration launcherConfiguration = new LauncherConfiguration();
-    launcherConfiguration.setProcessQueueMaxRefreshFrequency(refreshFrequency);
-    launcherConfiguration.setProcessQueueMinRefreshFrequency(refreshFrequency);
-    launcherConfiguration.setProcessQueueMaxSize(processQueueMaxSize);
+    ServiceConfiguration serviceConfiguration = new ServiceConfiguration();
+    AdvancedConfiguration advancedConfiguration = new AdvancedConfiguration();
+    advancedConfiguration.setProcessQueueMaxRefreshFrequency(refreshFrequency);
+    advancedConfiguration.setProcessQueueMinRefreshFrequency(refreshFrequency);
+    advancedConfiguration.setProcessQueueMaxSize(processQueueMaxSize);
 
     ProcessService processService = mock(ProcessService.class);
 
@@ -72,8 +72,7 @@ public class DefaultProcessQueueTest {
     DefaultProcessQueue queue =
         spy(
             new DefaultProcessQueue(
-                webConfiguration,
-                launcherConfiguration,
+                    advancedConfiguration,
                 processService,
                 pipelineName,
                 pipelineParallelism));

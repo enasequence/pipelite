@@ -16,11 +16,10 @@ import lombok.Value;
 @Value
 @Builder
 public class ScheduleInfo {
-  private String schedulerName;
+  private String serviceName;
   private String pipelineName;
   private String cron;
   private String description;
-  private boolean active;
   private String processId;
   private String summary;
   private String startTime;

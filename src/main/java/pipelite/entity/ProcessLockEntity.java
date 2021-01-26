@@ -23,8 +23,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ProcessLockEntity {
 
-  @Column(name = "LAUNCHER_ID", nullable = false)
-  private Long launcherId;
+  @Column(name = "SERVICE_ID", nullable = false)
+  private Long serviceId;
 
   @Id
   @Column(name = "PIPELINE_NAME")

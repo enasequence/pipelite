@@ -15,25 +15,21 @@ import javax.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import pipelite.launcher.process.runner.ProcessRunnerType;
 
 @Entity
-@Table(name = "PIPELITE2_LAUNCHER_LOCK")
+@Table(name = "PIPELITE2_SERVICE_LOCK")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@SequenceGenerator(name = "PIPELITE2_LAUNCHER_LOCK_SEQ", initialValue = 1, allocationSize = 1)
-public class LauncherLockEntity {
+@SequenceGenerator(name = "PIPELITE2_SERVICE_LOCK_SEQ", initialValue = 1, allocationSize = 1)
+public class ServiceLockEntity {
   @Id
-  @Column(name = "LAUNCHER_ID")
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "PIPELITE2_LAUNCHER_LOCK_SEQ")
-  private Long launcherId;
+  @Column(name = "SERVICE_ID")
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "PIPELITE2_SERVICE_LOCK_SEQ")
+  private Long serviceId;
 
-  @Column(name = "LAUNCHER_NAME", unique = true, nullable = false)
-  private String launcherName;
-
-  @Column(name = "LAUNCHER_TYPE", nullable = false)
-  private ProcessRunnerType launcherType;
+  @Column(name = "SERVICE_NAME", unique = true, nullable = false)
+  private String serviceName;
 
   @Column(name = "HOST", nullable = false)
   private String host;

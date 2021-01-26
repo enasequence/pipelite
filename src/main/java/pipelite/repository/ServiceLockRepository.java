@@ -8,13 +8,17 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite;
+package pipelite.repository;
 
-/** Implement this interface to register a scheduled pipeline to be executed by pipelite. */
-public interface ScheduledPipeline extends Pipeline {
+import java.time.ZonedDateTime;
+import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import pipelite.entity.ServiceLockEntity;
 
-  @Override
-  default int getPipelineParallelism() {
-    return 1;
-  }
+@Repository
+public interface ServiceLockRepository extends JpaRepository<ServiceLockEntity, Long> {
+  Optional<ServiceLockEntity> findByServiceName(String serviceName);
+
+  Long deleteByServiceNameAndExpiryLessThanEqual(String serviceName, ZonedDateTime expiry);
 }

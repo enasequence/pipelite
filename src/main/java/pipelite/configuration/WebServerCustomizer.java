@@ -19,11 +19,12 @@ import org.springframework.stereotype.Component;
 public class WebServerCustomizer
     implements WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> {
 
-  @Autowired WebConfiguration webConfiguration;
+  @Autowired
+  ServiceConfiguration serviceConfiguration;
 
   @Override
   public void customize(ConfigurableServletWebServerFactory factory) {
-    factory.setPort(webConfiguration.getPort());
-    factory.setContextPath(webConfiguration.getContextPath());
+    factory.setPort(serviceConfiguration.getPort());
+    factory.setContextPath(serviceConfiguration.getContextPath());
   }
 }

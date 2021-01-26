@@ -11,13 +11,12 @@
 package pipelite.launcher;
 
 import java.time.ZonedDateTime;
-import java.util.UUID;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.Pipeline;
 import pipelite.ProcessSource;
-import pipelite.configuration.LauncherConfiguration;
-import pipelite.configuration.WebConfiguration;
+import pipelite.configuration.AdvancedConfiguration;
+import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.launcher.process.creator.ProcessCreator;
 import pipelite.launcher.process.queue.ProcessQueue;
@@ -42,17 +41,19 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
   private final int processCreateMaxSize;
   private final boolean shutdownIfIdle;
   private final ZonedDateTime startTime;
+  private final String serviceName;
 
   public PipeliteLauncher(
-      LauncherConfiguration launcherConfiguration,
+      ServiceConfiguration serviceConfiguration,
+      AdvancedConfiguration advancedConfiguration,
       PipeliteLocker pipeliteLocker,
       Pipeline pipeline,
       ProcessCreator processCreator,
       ProcessQueue processQueue,
       ProcessRunnerPool pool,
       PipeliteMetrics metrics) {
-    super(launcherConfiguration, pipeliteLocker, pool, metrics, processQueue.getLauncherName());
-    Assert.notNull(launcherConfiguration, "Missing launcher configuration");
+    super(advancedConfiguration, pipeliteLocker, pool, metrics);
+    Assert.notNull(advancedConfiguration, "Missing launcher configuration");
     Assert.notNull(pipeline, "Missing pipeline");
     Assert.notNull(processCreator, "Missing process creator");
     Assert.notNull(processQueue, "Missing process queue");
@@ -60,9 +61,15 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
     this.processCreator = processCreator;
     this.processQueue = processQueue;
     this.pipelineName = processQueue.getPipelineName();
-    this.processCreateMaxSize = launcherConfiguration.getProcessCreateMaxSize();
-    this.shutdownIfIdle = launcherConfiguration.isShutdownIfIdle();
+    this.processCreateMaxSize = advancedConfiguration.getProcessCreateMaxSize();
+    this.shutdownIfIdle = advancedConfiguration.isShutdownIfIdle();
     this.startTime = ZonedDateTime.now();
+    this.serviceName = serviceConfiguration.getName();
+  }
+
+  @Override
+  public String getLauncherName() {
+    return serviceName + "@pipeline@" + pipelineName;
   }
 
   @Override
@@ -116,15 +123,5 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
 
   public int getQueuedProcessCount() {
     return processQueue.getQueuedProcessCount();
-  }
-
-  public static String getLauncherName(String pipelineName, int port) {
-    return pipelineName
-        + "@"
-        + WebConfiguration.getCanonicalHostName()
-        + ":"
-        + port
-        + ":"
-        + UUID.randomUUID();
   }
 }

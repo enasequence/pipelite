@@ -8,17 +8,15 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.repository;
+package pipelite;
 
-import java.time.ZonedDateTime;
-import java.util.Optional;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-import pipelite.entity.LauncherLockEntity;
+/** Implement this interface to register a scheduled pipeline to be executed by pipelite. */
+public interface Schedule extends Pipeline {
 
-@Repository
-public interface LauncherLockRepository extends JpaRepository<LauncherLockEntity, Long> {
-  Optional<LauncherLockEntity> findByLauncherName(String launcherName);
+  String getCron();
 
-  Long deleteByLauncherNameAndExpiryLessThanEqual(String launcherName, ZonedDateTime expiry);
+  @Override
+  default int getPipelineParallelism() {
+    return 1;
+  }
 }

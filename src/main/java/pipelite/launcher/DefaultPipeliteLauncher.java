@@ -12,16 +12,14 @@ package pipelite.launcher;
 
 import pipelite.Pipeline;
 import pipelite.configuration.ExecutorConfiguration;
-import pipelite.configuration.LauncherConfiguration;
-import pipelite.configuration.WebConfiguration;
+import pipelite.configuration.AdvancedConfiguration;
+import pipelite.configuration.ServiceConfiguration;
 import pipelite.launcher.process.creator.DefaultProcessCreator;
 import pipelite.launcher.process.creator.ProcessCreator;
 import pipelite.launcher.process.queue.DefaultProcessQueue;
 import pipelite.launcher.process.queue.ProcessQueue;
 import pipelite.launcher.process.runner.DefaultProcessRunner;
 import pipelite.launcher.process.runner.DefaultProcessRunnerPool;
-import pipelite.launcher.process.runner.ProcessRunnerType;
-import pipelite.lock.DefaultPipeliteLocker;
 import pipelite.lock.PipeliteLocker;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.*;
@@ -31,33 +29,31 @@ public class DefaultPipeliteLauncher {
   private DefaultPipeliteLauncher() {}
 
   public static PipeliteLauncher create(
-      WebConfiguration webConfiguration,
-      LauncherConfiguration launcherConfiguration,
-      ExecutorConfiguration executorConfiguration,
-      LockService lockService,
-      RegisteredPipelineService registeredPipelineService,
-      RegisteredProcessSourceService registeredProcessSourceService,
-      ProcessService processService,
-      StageService stageService,
-      MailService mailService,
-      PipeliteMetrics metrics,
-      String pipelineName) {
+          ServiceConfiguration serviceConfiguration,
+          AdvancedConfiguration advancedConfiguration,
+          ExecutorConfiguration executorConfiguration,
+          PipeliteLocker pipeliteLocker,
+          RegisteredPipelineService registeredPipelineService,
+          RegisteredProcessSourceService registeredProcessSourceService,
+          ProcessService processService,
+          StageService stageService,
+          MailService mailService,
+          PipeliteMetrics metrics,
+          String pipelineName) {
 
-    PipeliteLocker pipeliteLocker =
-        new DefaultPipeliteLocker(lockService, ProcessRunnerType.LAUNCHER);
     Pipeline pipeline = registeredPipelineService.getPipeline(pipelineName);
     ProcessCreator processCreator =
         new DefaultProcessCreator(
             registeredProcessSourceService.create(pipelineName), processService, pipelineName);
     ProcessQueue processQueue =
         new DefaultProcessQueue(
-            webConfiguration,
-            launcherConfiguration,
+                advancedConfiguration,
             processService,
             pipelineName,
             pipeline.getPipelineParallelism());
     return new PipeliteLauncher(
-        launcherConfiguration,
+            serviceConfiguration,
+        advancedConfiguration,
         pipeliteLocker,
         pipeline,
         processCreator,
@@ -66,7 +62,7 @@ public class DefaultPipeliteLauncher {
             pipeliteLocker,
             (pipelineName1) ->
                 new DefaultProcessRunner(
-                    launcherConfiguration,
+                    advancedConfiguration,
                     executorConfiguration,
                     processService,
                     stageService,

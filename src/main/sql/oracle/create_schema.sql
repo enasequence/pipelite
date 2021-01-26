@@ -3,15 +3,14 @@
 -- define table_tablespace = 'era_tab';
 -- define index_tablespace = 'era_ind';
 
-create sequence pipelite2_launcher_lock_seq
+create sequence pipelite2_service_lock_seq
     increment by 1
     start with 1;
 
-create table pipelite2_launcher_lock
+create table pipelite2_service_lock
 (
-    launcher_id   number(15,0) not null,
-    launcher_name varchar2(256) not null,
-    launcher_type varchar2(64) not null,
+    service_id   number(15,0) not null,
+    service_name varchar2(256) not null,
     host          varchar2(256) not null,
     port          number(5,0) not null,
     context_path  varchar2(256) not null,
@@ -21,18 +20,18 @@ create table pipelite2_launcher_lock
 
 -- @formatter:off
 
-create unique index pk_pipelite2_launcher_lock on pipelite2_launcher_lock (launcher_id)
+create unique index pk_pipelite2_service_lock on pipelite2_service_lock (service_id)
 tablespace &index_tablespace;
 
-alter table pipelite2_launcher_lock add constraint pk_pipelite2_launcher_lock
-primary key (launcher_id) using index pk_pipelite2_launcher_lock
+alter table pipelite2_service_lock add constraint pk_pipelite2_service_lock
+primary key (service_id) using index pk_pipelite2_service_lock
 ;
 
-create unique index uk_pipelite2_launcher_lock on pipelite2_launcher_lock (launcher_name)
+create unique index uk_pipelite2_service_lock on pipelite2_service_lock (service_name)
 tablespace &index_tablespace;
 
-alter table pipelite2_launcher_lock add constraint uk_pipelite2_launcher_lock
-unique (launcher_name) using index uk_pipelite2_launcher_lock
+alter table pipelite2_service_lock add constraint uk_pipelite2_service_lock
+unique (service_name) using index uk_pipelite2_service_lock
 ;
 
 -- @formatter:on
@@ -137,7 +136,7 @@ end;
 
 create table pipelite2_process_lock
 (
-    launcher_id   number(15,0) not null,
+    service_id   number(15,0) not null,
     pipeline_name varchar2(64) not null,
     process_id    varchar2(256) not null,
     audit_time    date default sysdate not null
@@ -157,10 +156,9 @@ primary key (process_id, pipeline_name) using index pk_pipelite2_process_lock
 create table pipelite2_schedule
 (
     pipeline_name    varchar2(64) not null,
-    scheduler_name   varchar2(256) not null,
+    service_name   varchar2(256) not null,
     cron             varchar2(256) not null,
     description      varchar2(256),
-    active           char(1) default 'Y' not null,
     process_id       varchar2(64),
     exec_start       date,
     exec_end         date,
@@ -170,7 +168,7 @@ create table pipelite2_schedule
     last_failed      date,
     streak_completed number(10,0) default 0 not null,
     streak_failed    number(10,0) default 0 not null,
-    audit_time       date    default sysdate not null
+    audit_time       date default sysdate not null
 ) tablespace &table_tablespace;
 
 -- @formatter:off
@@ -187,10 +185,9 @@ primary key (pipeline_name) using index pk_pipelite2_schedule
 create table pipelite2_schedule_audit
 (
     pipeline_name    varchar2(64),
-    scheduler_name   varchar2(256),
+    service_name   varchar2(256),
     cron             varchar2(256),
     description      varchar2(256),
-    active           char(1),
     process_id       varchar2(64),
     exec_start       date,
     exec_end         date,
@@ -226,10 +223,9 @@ begin
     if updating or deleting then
         insert into pipelite2_schedule_audit (
             pipeline_name,
-            scheduler_name,
+            service_name,
             cron,
             description,
-            active,
             process_id,
             exec_start,
             exec_end,
@@ -245,10 +241,9 @@ begin
         values
         (
             :old.pipeline_name,
-            :old.scheduler_name,
+            :old.service_name,
             :old.cron,
             :old.description,
-            :old.active,
             :old.process_id,
             :old.exec_start,
             :old.exec_end,

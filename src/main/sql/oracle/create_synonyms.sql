@@ -1,4 +1,4 @@
-create public synonym pipelite2_launcher_lock for pipelite2_launcher_lock;
+create public synonym pipelite2_service_lock for pipelite2_service_lock;
 create public synonym pipelite2_process for pipelite2_process;
 create public synonym pipelite2_process_audit for pipelite2_process_audit;
 create public synonym pipelite2_process_lock for pipelite2_process_lock;

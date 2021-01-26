@@ -42,7 +42,7 @@ import pipelite.time.Time;
 @Flogger
 public class DefaultProcessRunner implements ProcessRunner {
 
-  private final LauncherConfiguration launcherConfiguration;
+  private final AdvancedConfiguration advancedConfiguration;
   private final ExecutorConfiguration executorConfiguration;
   private final ProcessService processService;
   private final StageService stageService;
@@ -56,25 +56,25 @@ public class DefaultProcessRunner implements ProcessRunner {
   private ZonedDateTime startTime;
 
   public DefaultProcessRunner(
-      LauncherConfiguration launcherConfiguration,
-      ExecutorConfiguration executorConfiguration,
-      ProcessService processService,
-      StageService stageService,
-      MailService mailService,
-      String pipelineName) {
-    Assert.notNull(launcherConfiguration, "Missing launcher configuration");
+          AdvancedConfiguration advancedConfiguration,
+          ExecutorConfiguration executorConfiguration,
+          ProcessService processService,
+          StageService stageService,
+          MailService mailService,
+          String pipelineName) {
+    Assert.notNull(advancedConfiguration, "Missing launcher configuration");
     Assert.notNull(executorConfiguration, "Missing stage configuration");
     Assert.notNull(processService, "Missing process service");
     Assert.notNull(stageService, "Missing stage service");
     Assert.notNull(mailService, "Missing mail service");
     Assert.notNull(pipelineName, "Missing pipeline name");
-    this.launcherConfiguration = launcherConfiguration;
+    this.advancedConfiguration = advancedConfiguration;
     this.executorConfiguration = executorConfiguration;
     this.processService = processService;
     this.stageService = stageService;
     this.mailService = mailService;
     this.pipelineName = pipelineName;
-    this.processRunnerFrequency = launcherConfiguration.getProcessRunnerFrequency();
+    this.processRunnerFrequency = advancedConfiguration.getProcessRunnerFrequency();
   }
 
   /**

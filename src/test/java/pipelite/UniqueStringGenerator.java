@@ -14,8 +14,8 @@ import java.util.UUID;
 
 public class UniqueStringGenerator {
 
-  public static String randomSchedulerName() {
-    return "scheduler:" + id();
+  public static String randomServiceName() {
+    return "service:" + id();
   }
 
   public static String randomLauncherName() {

@@ -31,7 +31,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
-import pipelite.configuration.LauncherConfiguration;
+import pipelite.configuration.AdvancedConfiguration;
 import pipelite.controller.info.PipelineInfo;
 import pipelite.controller.utils.LoremUtils;
 import pipelite.launcher.process.runner.ProcessRunnerResult;
@@ -49,7 +49,8 @@ import tech.tablesaw.plotly.components.Figure;
 @Tag(name = "PipelineAPI", description = "Pipelines")
 public class PipelineController {
 
-  @Autowired LauncherConfiguration launcherConfiguration;
+  @Autowired
+  AdvancedConfiguration advancedConfiguration;
   @Autowired Application application;
   @Autowired Environment environment;
   @Autowired ProcessService processService;
@@ -103,7 +104,7 @@ public class PipelineController {
   }
 
   private List<PipelineInfo> getLocalPipelines() {
-    List<String> pipelineNames = registeredPipelineService.getUnScheduledPipelineNames();
+    List<String> pipelineNames = registeredPipelineService.getPipelineNames();
     return getPipelines(
         processService.getProcessStateSummary().stream()
             .filter(s -> pipelineNames.contains(s.getPipelineName())));

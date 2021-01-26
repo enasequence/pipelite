@@ -15,13 +15,6 @@ import pipelite.entity.ProcessEntity;
 public interface ProcessQueue {
 
   /**
-   * Returns the launcher name.
-   *
-   * @return the launcher name
-   */
-  String getLauncherName();
-
-  /**
    * Returns the pipeline name.
    *
    * @return the pipeline name

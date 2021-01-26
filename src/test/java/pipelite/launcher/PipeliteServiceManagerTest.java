@@ -30,7 +30,7 @@ public class PipeliteServiceManagerTest {
     }
 
     @Override
-    public String serviceName() {
+    public String getLauncherName() {
       return UniqueStringGenerator.randomLauncherName();
     }
 
