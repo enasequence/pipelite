@@ -45,8 +45,7 @@ public class PipeliteLockerService {
   @PostConstruct
   private void init() {
     pipeliteLocker =
-        new DefaultPipeliteLocker(
-            advancedConfiguration, lockService, serviceConfiguration.getName());
+        new DefaultPipeliteLocker(serviceConfiguration, advancedConfiguration, lockService);
   }
 
   @PreDestroy

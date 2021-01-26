@@ -14,6 +14,7 @@ import java.time.Duration;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.AdvancedConfiguration;
+import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.ServiceLockEntity;
 import pipelite.exception.PipeliteException;
 import pipelite.service.LockService;
@@ -28,13 +29,16 @@ public class DefaultPipeliteLocker implements PipeliteLocker {
   private final Thread renewLockThread;
 
   public DefaultPipeliteLocker(
-      AdvancedConfiguration advancedConfiguration, LockService lockService, String serviceName) {
+      ServiceConfiguration serviceConfiguration,
+      AdvancedConfiguration advancedConfiguration,
+      LockService lockService) {
+    Assert.notNull(serviceConfiguration, "Missing service configuration");
     Assert.notNull(advancedConfiguration, "Missing advanced configuration");
     Assert.notNull(lockService, "Missing lock service");
-    Assert.notNull(serviceName, "Missing service name");
     this.lockService = lockService;
-    this.serviceName = serviceName;
-    this.lock = lockService();
+    this.serviceName = serviceConfiguration.getName();
+    Assert.notNull(serviceName, "Missing service name");
+    this.lock = lockService(serviceConfiguration.isForce());
     Duration lockFrequency = getLockFrequency(advancedConfiguration);
     this.renewLockThread =
         new Thread(
@@ -77,10 +81,14 @@ public class DefaultPipeliteLocker implements PipeliteLocker {
         : AdvancedConfiguration.DEFAULT_LOCK_FREQUENCY;
   }
 
-  private ServiceLockEntity lockService() {
-    Assert.notNull(serviceName, "Missing service name");
+  private ServiceLockEntity lockService(boolean force) {
     log.atFine().log("Locking service: " + serviceName);
     ServiceLockEntity lock = LockService.lockService(lockService, serviceName);
+    if (lock == null && force) {
+      log.atWarning().log("Forcing locking service: " + serviceName);
+      unlockService();
+      lock = LockService.lockService(lockService, serviceName);
+    }
     if (lock == null) {
       throw new RuntimeException("Could not lock service " + serviceName);
     }

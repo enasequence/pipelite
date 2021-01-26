@@ -73,6 +73,9 @@ public class ServiceConfiguration {
   /** The pipelite web server password. */
   private String password = "pipelite";
 
+  /** Forces the service to start by removing all service locks first if necessary. */
+  private boolean force;
+
   public void setName(String name) {
     this.name = name;
   }
