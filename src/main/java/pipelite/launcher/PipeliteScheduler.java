@@ -11,7 +11,6 @@
 package pipelite.launcher;
 
 import com.google.common.flogger.FluentLogger;
-import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.*;
@@ -22,7 +21,6 @@ import org.springframework.util.Assert;
 import pipelite.Pipeline;
 import pipelite.configuration.AdvancedConfiguration;
 import pipelite.configuration.ServiceConfiguration;
-import pipelite.cron.CronUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.exception.PipeliteException;
@@ -32,7 +30,6 @@ import pipelite.lock.PipeliteLocker;
 import pipelite.log.LogKey;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
-import pipelite.schedule.Schedule;
 import pipelite.service.*;
 
 /**
@@ -45,11 +42,10 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   private final ScheduleService scheduleService;
   private final ProcessService processService;
   private final PipelineCache pipelineCache;
-  private final List<Schedule> schedules = Collections.synchronizedList(new ArrayList<>());
+  private final List<PipeliteSchedulerSchedule> schedules =
+      Collections.synchronizedList(new ArrayList<>());
   private final Map<String, AtomicLong> maximumExecutions = new ConcurrentHashMap<>();
-  private final Duration scheduleRefreshFrequency;
   private final String serviceName;
-  private ZonedDateTime scheduleValidUntil = ZonedDateTime.now();
 
   public PipeliteScheduler(
       ServiceConfiguration serviceConfiguration,
@@ -68,7 +64,6 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     this.pipelineCache = new PipelineCache(registeredPipelineService);
     this.scheduleService = scheduleService;
     this.processService = processService;
-    this.scheduleRefreshFrequency = advancedConfiguration.getScheduleRefreshFrequency();
     this.serviceName = serviceConfiguration.getName();
   }
 
@@ -80,13 +75,12 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   @Override
   protected void startUp() {
     super.startUp();
-    refreshSchedules();
+    loadSchedules();
     resumeSchedules();
   }
 
   @Override
   protected void run() {
-    refreshSchedules();
     executeSchedules();
   }
 
@@ -108,56 +102,14 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
         || maximumExecutions.values().stream().anyMatch(r -> r.get() > 0));
   }
 
-  /**
-   * Returns true the if the schedules should be refreshed. The refresh frequency is defined by
-   * scheduleRefreshFrequency.
-   *
-   * @return true the if the schedules should be refreshed
-   */
-  public boolean isRefreshSchedules() {
-    return schedules.isEmpty() || !scheduleValidUntil.isAfter(ZonedDateTime.now());
-  }
-
-  protected void refreshSchedules() {
-    if (!isRefreshSchedules()) {
-      return;
-    }
-    logContext(log.atInfo()).log("Refreshing schedules");
-    scheduleValidUntil = ZonedDateTime.now().plus(scheduleRefreshFrequency);
-
+  private void loadSchedules() {
+    logContext(log.atInfo()).log("Loading schedules");
     Collection<ScheduleEntity> scheduleEntities = scheduleService.getSchedules(serviceName);
-
     for (ScheduleEntity scheduleEntity : scheduleEntities) {
-      Optional<Schedule> schedule = findSchedule(scheduleEntity);
-      if (schedule.isPresent()) {
-        // Refresh existing schedule.
-        refreshSchedule(schedule.get(), scheduleEntity);
-      } else {
-        // Create new schedule.
-        createSchedule(scheduleEntity);
-      }
-    }
-    for (Schedule schedule : schedules) {
-      Optional<ScheduleEntity> scheduleEntity = findScheduleEntity(scheduleEntities, schedule);
-      if (!scheduleEntity.isPresent()) {
-        // Remove deleted schedule.
-        schedules.remove(schedule);
-      }
+      createSchedule(scheduleEntity);
     }
   }
 
-  private Optional<ScheduleEntity> findScheduleEntity(
-      Collection<ScheduleEntity> scheduleEntities, Schedule schedule) {
-    return scheduleEntities.stream()
-        .filter(s -> s.getPipelineName().equals(schedule.getPipelineName()))
-        .findFirst();
-  }
-
-  private Optional<Schedule> findSchedule(ScheduleEntity scheduleEntity) {
-    return schedules.stream()
-        .filter(s -> s.getPipelineName().equals(scheduleEntity.getPipelineName()))
-        .findFirst();
-  }
   /**
    * Creates and enables the schedule.
    *
@@ -165,8 +117,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
    */
   private void createSchedule(ScheduleEntity scheduleEntity) {
     String pipelineName = scheduleEntity.getPipelineName();
-    updateCron(scheduleEntity);
-    Schedule schedule = new Schedule(pipelineName);
+    PipeliteSchedulerSchedule schedule = new PipeliteSchedulerSchedule(pipelineName);
     schedule.setCron(scheduleEntity.getCron());
     if (scheduleEntity.getNextTime() != null) {
       // Use previously assigned launch time. The launch time is removed when the process
@@ -181,29 +132,6 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     schedules.add(schedule);
   }
 
-  /**
-   * Refreshes the schedule.
-   *
-   * @param scheduleEntity the schedule entity
-   */
-  private void refreshSchedule(Schedule schedule, ScheduleEntity scheduleEntity) {
-    updateCron(scheduleEntity);
-    schedule.setCron(scheduleEntity.getCron());
-  }
-
-  /**
-   * Updates the cron description if it has changed.
-   *
-   * @param scheduleEntity the schedule entity
-   */
-  private void updateCron(ScheduleEntity scheduleEntity) {
-    String description = CronUtils.describe(scheduleEntity.getCron());
-    if (!description.equals(scheduleEntity.getDescription())) {
-      scheduleEntity.setDescription(description);
-      scheduleService.saveSchedule(scheduleEntity);
-    }
-  }
-
   protected void resumeSchedules() {
     getSchedules()
         .forEach(
@@ -216,7 +144,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
             });
   }
 
-  protected void resumeSchedule(Schedule schedule) {
+  protected void resumeSchedule(PipeliteSchedulerSchedule schedule) {
     String pipelineName = schedule.getPipelineName();
     ScheduleEntity scheduleEntity = scheduleService.getSavedSchedule(pipelineName).get();
     if (!scheduleEntity.isResumeProcess()) {
@@ -237,7 +165,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
         scheduleEntity.getPipelineName(), scheduleEntity.getProcessId());
   }
 
-  private ProcessEntity createProcessEntity(Schedule schedule) {
+  private ProcessEntity createProcessEntity(PipeliteSchedulerSchedule schedule) {
     String pipelineName = schedule.getPipelineName();
     ScheduleEntity scheduleEntity = scheduleService.getSavedSchedule(pipelineName).get();
 
@@ -272,7 +200,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     }
   }
 
-  protected void executeSchedule(Schedule schedule, ProcessEntity processEntity) {
+  protected void executeSchedule(PipeliteSchedulerSchedule schedule, ProcessEntity processEntity) {
     String pipelineName = processEntity.getPipelineName();
     String processId = processEntity.getProcessId();
     logContext(log.atInfo(), pipelineName, processId).log("Executing scheduled process");
@@ -322,7 +250,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
    *
    * @return the schedules
    */
-  public List<Schedule> getSchedules() {
+  public List<PipeliteSchedulerSchedule> getSchedules() {
     return schedules;
   }
 
@@ -331,7 +259,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
    *
    * @return schedules that can be executed
    */
-  private Stream<Schedule> getExecutableSchedules() {
+  protected Stream<PipeliteSchedulerSchedule> getExecutableSchedules() {
     return getSchedules().stream()
         // Must be executable.
         .filter(s -> s.isExecutable())

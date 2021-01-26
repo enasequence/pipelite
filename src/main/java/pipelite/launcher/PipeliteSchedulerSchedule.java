@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.schedule;
+package pipelite.launcher;
 
 import java.time.ZonedDateTime;
 import lombok.extern.flogger.Flogger;
@@ -23,12 +23,12 @@ import pipelite.cron.CronUtils;
  * execution completes.
  */
 @Flogger
-public class Schedule {
+public class PipeliteSchedulerSchedule {
   private final String pipelineName;
   private String cron;
   private ZonedDateTime launchTime;
 
-  public Schedule(String pipelineName) {
+  public PipeliteSchedulerSchedule(String pipelineName) {
     Assert.notNull(pipelineName, "Missing pipeline name");
     this.pipelineName = pipelineName;
   }
@@ -99,7 +99,7 @@ public class Schedule {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    Schedule schedule = (Schedule) o;
+    PipeliteSchedulerSchedule schedule = (PipeliteSchedulerSchedule) o;
     return pipelineName.equals(schedule.pipelineName);
   }
 

@@ -55,11 +55,6 @@ public class AdvancedConfiguration {
   private Duration processRunnerFrequency = DEFAULT_PROCESS_RUNNER_FREQUENCY;
 
   /**
-   * The frequency for {@link pipelite.launcher.PipeliteScheduler} to refresh its process schedules.
-   */
-  private Duration scheduleRefreshFrequency = DEFAULT_SCHEDULE_REFRESH_FREQUENCY;
-
-  /**
    * The maximum frequency for {@link pipelite.launcher.PipeliteLauncher} to refresh its process
    * execution queue.
    */

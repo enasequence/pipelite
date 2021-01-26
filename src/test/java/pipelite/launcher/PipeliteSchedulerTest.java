@@ -283,8 +283,6 @@ public class PipeliteSchedulerTest {
     assertThat(scheduleEntity.getCron()).isEqualTo(f.cron);
     assertThat(scheduleEntity.getStartTime()).isNotNull();
     assertThat(scheduleEntity.getEndTime()).isNotNull();
-    assertThat(scheduleEntity.getDescription())
-        .isEqualTo("every " + f.schedulerSeconds + " seconds");
   }
 
   private void assertProcessEntity(TestPipeline f, String processId) {
@@ -481,9 +479,7 @@ public class PipeliteSchedulerTest {
 
     // Create launcher configuration with schedule refresh frequency.
 
-    Duration scheduleRefreshFrequency = Duration.ofSeconds(5);
     AdvancedConfiguration advancedConfiguration = new AdvancedConfiguration();
-    advancedConfiguration.setScheduleRefreshFrequency(scheduleRefreshFrequency);
 
     // Create two schedules.
 
@@ -563,22 +559,9 @@ public class PipeliteSchedulerTest {
     pipeliteScheduler.setMaximumExecutions(pipelineName1, maxExecution1);
     pipeliteScheduler.setMaximumExecutions(pipelineName2, maxExecution2);
 
-    // Check that there are no schedules yet and that new schedules can be created.
-
-    assertThat(pipeliteScheduler.isRefreshSchedules()).isTrue();
-
-    // Create new schedules. The schedules are not immediately executable. The schedules are not
-    // allowed to be immediately refreshed.
+    // Load schedules.
 
     pipeliteScheduler.startUp();
-
-    assertThat(pipeliteScheduler.isRefreshSchedules()).isFalse();
-
-    // Wait for the two schedules to be allowed to be refreshed.
-
-    Time.wait(scheduleRefreshFrequency.plusMillis(1));
-
-    assertThat(pipeliteScheduler.isRefreshSchedules()).isTrue();
 
     ZonedDateTime launchTime1 = pipeliteScheduler.getSchedules().get(0).getLaunchTime();
     ZonedDateTime launchTime2 = pipeliteScheduler.getSchedules().get(1).getLaunchTime();
@@ -587,18 +570,12 @@ public class PipeliteSchedulerTest {
 
     verify(processRunnerPool, times(0)).runProcess(any(), any(), any());
 
-    // Refresh the schedules and check that the launch times do not change. The schedules are not
-    // allowed to be immediately refreshed.
-
-    pipeliteScheduler.refreshSchedules();
-
-    assertThat(pipeliteScheduler.isRefreshSchedules()).isFalse();
-
-    assertThat(launchTime1).isEqualTo(pipeliteScheduler.getSchedules().get(0).getLaunchTime());
-    assertThat(launchTime2).isEqualTo(pipeliteScheduler.getSchedules().get(1).getLaunchTime());
-
     // Run the scheduler and check that the launch times have been updated. The schedules are not be
     // immediately executable or pending.
+
+    while (pipeliteScheduler.getExecutableSchedules().count() < 2) {
+      Time.wait(Duration.ofMillis(100));
+    }
 
     pipeliteScheduler.run();
 
@@ -624,9 +601,7 @@ public class PipeliteSchedulerTest {
 
     // Create launcher configuration with schedule refresh frequency.
 
-    Duration scheduleRefreshFrequency = Duration.ofSeconds(5);
     AdvancedConfiguration advancedConfiguration = new AdvancedConfiguration();
-    advancedConfiguration.setScheduleRefreshFrequency(scheduleRefreshFrequency);
 
     // Create two schedules with start time and process id to allow processes to resume.
 
@@ -715,10 +690,6 @@ public class PipeliteSchedulerTest {
                 metrics));
     pipeliteScheduler.setMaximumExecutions(pipelineName1, maxExecution1);
     pipeliteScheduler.setMaximumExecutions(pipelineName2, maxExecution2);
-
-    // Check that there are no schedules yet and that new schedules can be created.
-
-    assertThat(pipeliteScheduler.isRefreshSchedules()).isTrue();
 
     // Resume the two processes, check that they are immediately executed
     // and that they are scheduled for a later execution.

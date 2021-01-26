@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.schedule;
+package pipelite.launcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -17,14 +17,14 @@ import java.time.ZonedDateTime;
 import org.junit.jupiter.api.Test;
 import pipelite.time.Time;
 
-public class ScheduleTest {
+public class PipeliteSchedulerScheduleTest {
 
   @Test
   public void lifecycle() {
     String pipelineName = "test";
     String cron = "0/1 * * * * ?"; // every second
 
-    Schedule schedule = new Schedule(pipelineName);
+    PipeliteSchedulerSchedule schedule = new PipeliteSchedulerSchedule(pipelineName);
 
     // Empty schedule.
 
