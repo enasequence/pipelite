@@ -49,8 +49,7 @@ import tech.tablesaw.plotly.components.Figure;
 @Tag(name = "PipelineAPI", description = "Pipelines")
 public class PipelineController {
 
-  @Autowired
-  AdvancedConfiguration advancedConfiguration;
+  @Autowired AdvancedConfiguration advancedConfiguration;
   @Autowired Application application;
   @Autowired Environment environment;
   @Autowired ProcessService processService;

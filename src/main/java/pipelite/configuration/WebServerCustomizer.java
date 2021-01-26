@@ -19,8 +19,7 @@ import org.springframework.stereotype.Component;
 public class WebServerCustomizer
     implements WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> {
 
-  @Autowired
-  ServiceConfiguration serviceConfiguration;
+  @Autowired ServiceConfiguration serviceConfiguration;
 
   @Override
   public void customize(ConfigurableServletWebServerFactory factory) {

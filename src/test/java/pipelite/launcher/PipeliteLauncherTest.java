@@ -38,8 +38,8 @@ import pipelite.PipeliteTestConfiguration;
 import pipelite.ProcessSource;
 import pipelite.TestProcessSource;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.ExecutorConfiguration;
 import pipelite.configuration.AdvancedConfiguration;
+import pipelite.configuration.ExecutorConfiguration;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
@@ -359,7 +359,7 @@ public class PipeliteLauncherTest {
     DefaultProcessQueue queue =
         spy(
             new DefaultProcessQueue(
-                    advancedConfiguration,
+                advancedConfiguration,
                 mock(ProcessService.class),
                 pipelineName,
                 pipeline.getPipelineParallelism()));
@@ -405,7 +405,7 @@ public class PipeliteLauncherTest {
     DefaultProcessQueue queue =
         spy(
             new DefaultProcessQueue(
-                    advancedConfiguration,
+                advancedConfiguration,
                 mock(ProcessService.class),
                 pipelineName,
                 pipelineParallelism));
@@ -462,7 +462,7 @@ public class PipeliteLauncherTest {
     DefaultProcessQueue queue =
         spy(
             new DefaultProcessQueue(
-                    advancedConfiguration,
+                advancedConfiguration,
                 mock(ProcessService.class),
                 pipelineName,
                 pipelineParallelism));

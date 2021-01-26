@@ -10,6 +10,8 @@
  */
 package pipelite.service;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,9 +21,6 @@ import pipelite.configuration.AdvancedConfiguration;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.lock.DefaultPipeliteLocker;
 import pipelite.lock.PipeliteLocker;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)

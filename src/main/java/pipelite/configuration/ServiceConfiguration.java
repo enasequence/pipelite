@@ -11,7 +11,6 @@
 package pipelite.configuration;
 
 import java.net.InetAddress;
-import java.util.UUID;
 import javax.annotation.PostConstruct;
 import lombok.Data;
 import lombok.extern.flogger.Flogger;
@@ -82,6 +81,6 @@ public class ServiceConfiguration {
     if (name != null && !name.trim().isEmpty()) {
       return name;
     }
-    return ServiceConfiguration.getCanonicalHostName() + ":" + port + ":" + UUID.randomUUID();
+    return ServiceConfiguration.getCanonicalHostName() + ":" + port;
   }
 }

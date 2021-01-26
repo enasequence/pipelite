@@ -23,8 +23,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class SwaggerConfiguration {
 
-  @Autowired
-  ServiceConfiguration serviceConfiguration;
+  @Autowired ServiceConfiguration serviceConfiguration;
 
   @Bean
   public OpenAPI openAPI() {

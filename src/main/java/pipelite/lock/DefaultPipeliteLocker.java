@@ -10,6 +10,7 @@
  */
 package pipelite.lock;
 
+import java.time.Duration;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.AdvancedConfiguration;
@@ -17,8 +18,6 @@ import pipelite.entity.ServiceLockEntity;
 import pipelite.exception.PipeliteException;
 import pipelite.service.LockService;
 import pipelite.time.Time;
-
-import java.time.Duration;
 
 @Flogger
 public class DefaultPipeliteLocker implements PipeliteLocker {

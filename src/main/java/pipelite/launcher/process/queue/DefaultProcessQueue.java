@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.springframework.util.Assert;
 import pipelite.configuration.AdvancedConfiguration;
 import pipelite.entity.ProcessEntity;

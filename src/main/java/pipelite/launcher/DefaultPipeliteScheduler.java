@@ -10,8 +10,8 @@
  */
 package pipelite.launcher;
 
-import pipelite.configuration.ExecutorConfiguration;
 import pipelite.configuration.AdvancedConfiguration;
+import pipelite.configuration.ExecutorConfiguration;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.launcher.process.runner.DefaultProcessRunner;
 import pipelite.launcher.process.runner.DefaultProcessRunnerPool;
@@ -24,19 +24,19 @@ public class DefaultPipeliteScheduler {
   private DefaultPipeliteScheduler() {}
 
   public static PipeliteScheduler create(
-          ServiceConfiguration serviceConfiguration,
-          AdvancedConfiguration advancedConfiguration,
-          ExecutorConfiguration executorConfiguration,
-          PipeliteLocker pipeliteLocker,
-          RegisteredPipelineService registeredPipelineService,
-          ProcessService processService,
-          ScheduleService scheduleService,
-          StageService stageService,
-          MailService mailService,
-          PipeliteMetrics metrics) {
+      ServiceConfiguration serviceConfiguration,
+      AdvancedConfiguration advancedConfiguration,
+      ExecutorConfiguration executorConfiguration,
+      PipeliteLocker pipeliteLocker,
+      RegisteredPipelineService registeredPipelineService,
+      ProcessService processService,
+      ScheduleService scheduleService,
+      StageService stageService,
+      MailService mailService,
+      PipeliteMetrics metrics) {
 
     return new PipeliteScheduler(
-            serviceConfiguration,
+        serviceConfiguration,
         advancedConfiguration,
         pipeliteLocker,
         registeredPipelineService,

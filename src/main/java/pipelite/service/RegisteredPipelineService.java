@@ -72,7 +72,7 @@ public class RegisteredPipelineService {
                   scheduleService.getSavedSchedule(pipelineName);
               if (!savedScheduleEntity.isPresent()) {
                 log.atInfo().log("New pipeline schedule: " + pipelineName);
-                saveSchedule(serviceConfiguration, scheduleService, schedule);
+                saveSchedule(serviceName, scheduleService, schedule);
               } else {
                 String registeredServiceName = savedScheduleEntity.get().getServiceName();
                 if (!registeredServiceName.equals(serviceName)) {
@@ -87,23 +87,21 @@ public class RegisteredPipelineService {
                 }
                 if (!savedScheduleEntity.get().getCron().equals(schedule.getCron())) {
                   log.atInfo().log("New cron for pipeline schedule: " + pipelineName);
-                  saveSchedule(serviceConfiguration, scheduleService, schedule);
+                  saveSchedule(serviceName, scheduleService, schedule);
                 }
               }
             });
   }
 
   private void saveSchedule(
-      ServiceConfiguration serviceConfiguration,
-      ScheduleService scheduleService,
-      Schedule schedule) {
+      String serviceName, ScheduleService scheduleService, Schedule schedule) {
     log.atInfo().log("Saving pipeline schedule: " + schedule.getPipelineName());
     try {
       ScheduleEntity scheduleEntity = new ScheduleEntity();
       scheduleEntity.setCron(schedule.getCron());
       scheduleEntity.setDescription(CronUtils.describe(schedule.getCron()));
       scheduleEntity.setPipelineName(schedule.getPipelineName());
-      scheduleEntity.setServiceName(serviceConfiguration.getName());
+      scheduleEntity.setServiceName(serviceName);
       scheduleService.saveSchedule(scheduleEntity);
     } catch (Exception ex) {
       throw new PipeliteException(

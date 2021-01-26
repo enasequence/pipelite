@@ -56,12 +56,12 @@ public class DefaultProcessRunner implements ProcessRunner {
   private ZonedDateTime startTime;
 
   public DefaultProcessRunner(
-          AdvancedConfiguration advancedConfiguration,
-          ExecutorConfiguration executorConfiguration,
-          ProcessService processService,
-          StageService stageService,
-          MailService mailService,
-          String pipelineName) {
+      AdvancedConfiguration advancedConfiguration,
+      ExecutorConfiguration executorConfiguration,
+      ProcessService processService,
+      StageService stageService,
+      MailService mailService,
+      String pipelineName) {
     Assert.notNull(advancedConfiguration, "Missing launcher configuration");
     Assert.notNull(executorConfiguration, "Missing stage configuration");
     Assert.notNull(processService, "Missing process service");

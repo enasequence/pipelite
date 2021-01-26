@@ -11,8 +11,8 @@
 package pipelite.launcher;
 
 import pipelite.Pipeline;
-import pipelite.configuration.ExecutorConfiguration;
 import pipelite.configuration.AdvancedConfiguration;
+import pipelite.configuration.ExecutorConfiguration;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.launcher.process.creator.DefaultProcessCreator;
 import pipelite.launcher.process.creator.ProcessCreator;
@@ -29,17 +29,17 @@ public class DefaultPipeliteLauncher {
   private DefaultPipeliteLauncher() {}
 
   public static PipeliteLauncher create(
-          ServiceConfiguration serviceConfiguration,
-          AdvancedConfiguration advancedConfiguration,
-          ExecutorConfiguration executorConfiguration,
-          PipeliteLocker pipeliteLocker,
-          RegisteredPipelineService registeredPipelineService,
-          RegisteredProcessSourceService registeredProcessSourceService,
-          ProcessService processService,
-          StageService stageService,
-          MailService mailService,
-          PipeliteMetrics metrics,
-          String pipelineName) {
+      ServiceConfiguration serviceConfiguration,
+      AdvancedConfiguration advancedConfiguration,
+      ExecutorConfiguration executorConfiguration,
+      PipeliteLocker pipeliteLocker,
+      RegisteredPipelineService registeredPipelineService,
+      RegisteredProcessSourceService registeredProcessSourceService,
+      ProcessService processService,
+      StageService stageService,
+      MailService mailService,
+      PipeliteMetrics metrics,
+      String pipelineName) {
 
     Pipeline pipeline = registeredPipelineService.getPipeline(pipelineName);
     ProcessCreator processCreator =
@@ -47,12 +47,9 @@ public class DefaultPipeliteLauncher {
             registeredProcessSourceService.create(pipelineName), processService, pipelineName);
     ProcessQueue processQueue =
         new DefaultProcessQueue(
-                advancedConfiguration,
-            processService,
-            pipelineName,
-            pipeline.getPipelineParallelism());
+            advancedConfiguration, processService, pipelineName, pipeline.getPipelineParallelism());
     return new PipeliteLauncher(
-            serviceConfiguration,
+        serviceConfiguration,
         advancedConfiguration,
         pipeliteLocker,
         pipeline,

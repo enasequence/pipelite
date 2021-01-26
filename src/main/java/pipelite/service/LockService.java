@@ -25,11 +25,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 import pipelite.configuration.AdvancedConfiguration;
 import pipelite.configuration.ServiceConfiguration;
-import pipelite.entity.ServiceLockEntity;
 import pipelite.entity.ProcessLockEntity;
+import pipelite.entity.ServiceLockEntity;
 import pipelite.log.LogKey;
-import pipelite.repository.ServiceLockRepository;
 import pipelite.repository.ProcessLockRepository;
+import pipelite.repository.ServiceLockRepository;
 
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)

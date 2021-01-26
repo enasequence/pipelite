@@ -72,10 +72,7 @@ public class DefaultProcessQueueTest {
     DefaultProcessQueue queue =
         spy(
             new DefaultProcessQueue(
-                    advancedConfiguration,
-                processService,
-                pipelineName,
-                pipelineParallelism));
+                advancedConfiguration, processService, pipelineName, pipelineParallelism));
 
     assertThat(queue.isFillQueue()).isTrue();
     assertThat(queue.isAvailableProcesses(0)).isFalse();

@@ -28,8 +28,7 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
   public static final String HEALTH_ENDPOINT = "/actuator/health";
 
-  @Autowired
-  ServiceConfiguration serviceConfiguration;
+  @Autowired ServiceConfiguration serviceConfiguration;
 
   @Bean
   public UserDetailsService userDetailsService() {
