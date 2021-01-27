@@ -36,7 +36,7 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
   private final ExecutorService executorService = Executors.newCachedThreadPool();
 
   @Value
-  public class ActiveProcessRunner {
+  public static class ActiveProcessRunner {
     private final String pipelineName;
     private final String processId;
     @EqualsAndHashCode.Exclude private final ProcessRunner processRunner;

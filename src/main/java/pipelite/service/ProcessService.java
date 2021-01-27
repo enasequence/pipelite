@@ -136,11 +136,11 @@ public class ProcessService {
           list(repository.findAllByPipelineNameAndProcessState(pipelineName, state), limit));
       // pipelineName state
       // Y            N
-    } else if (pipelineName != null && state == null) {
+    } else if (pipelineName != null) {
       processes.addAll(list(repository.findAllByPipelineName(pipelineName), limit));
       // pipelineName state
       // N            Y
-    } else if (pipelineName == null && state != null) {
+    } else if (state != null) {
       processes.addAll(list(repository.findAllByProcessState(state), limit));
     }
     // pipelineName state

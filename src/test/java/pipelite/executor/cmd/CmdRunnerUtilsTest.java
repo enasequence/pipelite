@@ -61,6 +61,6 @@ public class CmdRunnerUtilsTest {
     String str = "test";
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     CmdRunnerUtils.write(str, out);
-    assertThat(new String(out.toByteArray())).isEqualTo(str);
+    assertThat(out.toString()).isEqualTo(str);
   }
 }

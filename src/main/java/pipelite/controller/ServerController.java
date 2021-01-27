@@ -84,12 +84,13 @@ public class ServerController {
       String healthUrl = getUrl(host, port, path + "/" + WebSecurityConfiguration.HEALTH_ENDPOINT);
       log.atInfo().log("health check url: " + healthUrl);
       JsonNode resp = restTemplate.getForObject(healthUrl, JsonNode.class);
-      if (resp.get("status").asText().equalsIgnoreCase("UP")) {
-        return true;
+      JsonNode status = resp.get("status");
+      if (status == null || status.asText() == null) {
+        return false;
       }
+      return status.asText().equalsIgnoreCase("UP");
     } catch (Exception ex) {
       return false;
     }
-    return false;
   }
 }

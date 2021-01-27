@@ -34,13 +34,15 @@ public class StageExecutorSerializer {
         && stageEntity.getExecutorData() != null
         && stageEntity.getExecutorParams() != null) {
       StageExecutor deserializedExecutor = deserializeExecutor(stage);
-      ExecutorParameters deserializedExecutorParams =
-          deserializeExecutorParameters(stage, deserializedExecutor.getExecutorParamsType());
-      if (deserializedExecutor != null && deserializedExecutorParams != null) {
-        logContext(log.atInfo(), stage).log("Using deserialized executor");
-        stage.setExecutor(deserializedExecutor);
-        deserializedExecutor.setExecutorParams(deserializedExecutorParams);
-        return true;
+      if (deserializedExecutor != null) {
+        ExecutorParameters deserializedExecutorParams =
+            deserializeExecutorParameters(stage, deserializedExecutor.getExecutorParamsType());
+        if (deserializedExecutorParams != null) {
+          logContext(log.atInfo(), stage).log("Using deserialized executor");
+          stage.setExecutor(deserializedExecutor);
+          deserializedExecutor.setExecutorParams(deserializedExecutorParams);
+          return true;
+        }
       }
     }
     return false;

@@ -25,7 +25,7 @@ public class ServiceConfigurationTest {
   @Test
   public void getName() {
     String hostName = ServiceConfiguration.getCanonicalHostName();
-    Integer port = ServiceConfiguration.DEFAULT_PORT;
+    int port = ServiceConfiguration.DEFAULT_PORT;
     assertThat(serviceConfiguration.getName()).isEqualTo(hostName + ":" + port);
   }
 }

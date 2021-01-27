@@ -85,7 +85,7 @@ public class Json {
    */
   public static <T> T deserialize(String json, Class<T> clazz) {
     try {
-      return (T) mapper.readValue(json, clazz);
+      return mapper.readValue(json, clazz);
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Failed to deserialize json");
       throw new RuntimeException(ex);
@@ -100,7 +100,7 @@ public class Json {
    */
   public static <T> T deserializeSafely(String json, Class<T> clazz) {
     try {
-      return (T) mapper.readValue(json, clazz);
+      return mapper.readValue(json, clazz);
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Failed to deserialize json");
       return null;
