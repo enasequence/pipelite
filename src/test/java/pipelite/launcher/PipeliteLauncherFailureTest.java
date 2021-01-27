@@ -27,10 +27,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
-import pipelite.Pipeline;
-import pipelite.PipeliteTestConfiguration;
-import pipelite.TestProcessSource;
-import pipelite.UniqueStringGenerator;
+import pipelite.*;
 import pipelite.configuration.AdvancedConfiguration;
 import pipelite.configuration.ExecutorConfiguration;
 import pipelite.configuration.ServiceConfiguration;
@@ -62,7 +59,6 @@ public class PipeliteLauncherFailureTest {
   @Autowired private AdvancedConfiguration advancedConfiguration;
   @Autowired private ExecutorConfiguration executorConfiguration;
   @Autowired private RegisteredPipelineService registeredPipelineService;
-  @Autowired private RegisteredProcessSourceService registeredProcessSourceService;
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
   @Autowired private PipeliteLockerService pipeliteLockerService;
@@ -88,26 +84,6 @@ public class PipeliteLauncherFailureTest {
   @Autowired
   @Qualifier("noStageFails")
   private TestPipeline noStageFails;
-
-  @Autowired
-  @Qualifier("firstStageFailsSource")
-  private TestProcessSource firstStageFailsSource;
-
-  @Autowired
-  @Qualifier("secondStageFailsSource")
-  public TestProcessSource secondStageFailsSource;
-
-  @Autowired
-  @Qualifier("thirdStageFailsSource")
-  public TestProcessSource thirdStageFailsSource;
-
-  @Autowired
-  @Qualifier("fourthStageFailsSource")
-  public TestProcessSource fourthStageFailsSource;
-
-  @Autowired
-  @Qualifier("noStageFailsSource")
-  public TestProcessSource noStageFailsSource;
 
   @TestConfiguration
   static class TestConfig {
@@ -136,37 +112,6 @@ public class PipeliteLauncherFailureTest {
     public TestPipeline noStageFails() {
       return new TestPipeline(StageTestResult.NO_ERROR);
     }
-
-    @Bean("firstStageFailsSource")
-    @Primary
-    public TestProcessSource firstStageFailsSource(
-        @Autowired @Qualifier("firstStageFails") TestPipeline f) {
-      return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
-    }
-
-    @Bean("secondStageFailsSource")
-    public TestProcessSource secondStageFailsSource(
-        @Autowired @Qualifier("secondStageFails") TestPipeline f) {
-      return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
-    }
-
-    @Bean("thirdStageFailsSource")
-    public TestProcessSource thirdStageFailsSource(
-        @Autowired @Qualifier("thirdStageFails") TestPipeline f) {
-      return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
-    }
-
-    @Bean("fourthStageFailsSource")
-    public TestProcessSource fourthStageFailsSource(
-        @Autowired @Qualifier("fourthStageFails") TestPipeline f) {
-      return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
-    }
-
-    @Bean("noStageFailsSource")
-    public TestProcessSource noStageFailsSource(
-        @Autowired @Qualifier("noStageFails") TestPipeline f) {
-      return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
-    }
   }
 
   private enum StageTestResult {
@@ -184,7 +129,6 @@ public class PipeliteLauncherFailureTest {
         executorConfiguration,
         pipeliteLockerService.getPipeliteLocker(),
         registeredPipelineService,
-        registeredProcessSourceService,
         processService,
         stageService,
         mailService,
@@ -193,9 +137,11 @@ public class PipeliteLauncherFailureTest {
   }
 
   @Value
-  public static class TestPipeline implements Pipeline {
+  public static class TestPipeline implements PrioritizedPipeline {
     private final String pipelineName =
         UniqueStringGenerator.randomPipelineName(PipeliteLauncherFailureTest.class);
+    public final PrioritizedPipelineTestHelper helper =
+        new PrioritizedPipelineTestHelper(PROCESS_CNT);
     private final StageTestResult stageTestResult;
     public final List<String> processIds = Collections.synchronizedList(new ArrayList<>());
     private StageExecutorResult firstStageExecResult;
@@ -225,14 +171,6 @@ public class PipeliteLauncherFailureTest {
           stageTestResult == StageTestResult.FOURTH_ERROR
               ? StageExecutorResult.error()
               : StageExecutorResult.success();
-    }
-
-    public void reset() {
-      processIds.clear();
-      firstStageExecCnt.set(0);
-      secondStageExecCnt.set(0);
-      thirdStageExecCnt.set(0);
-      fourthStageExecCnt.set(0);
     }
 
     @Override
@@ -287,6 +225,16 @@ public class PipeliteLauncherFailureTest {
               executorParams)
           .build();
     }
+
+    @Override
+    public NextProcess nextProcess() {
+      return helper.nextProcess();
+    }
+
+    @Override
+    public void confirmProcess(String processId) {
+      helper.confirmProcess(processId);
+    }
   }
 
   private PipeliteLauncher pipeliteLauncher(String pipelineName) {
@@ -294,44 +242,44 @@ public class PipeliteLauncherFailureTest {
     return pipeliteLauncher;
   }
 
-  public void test(TestPipeline f, TestProcessSource s) {
-    PipeliteLauncher pipeliteLauncher = pipeliteLauncher(f.getPipelineName());
+  public void test(TestPipeline testPipeline) {
+    PipeliteLauncher pipeliteLauncher = pipeliteLauncher(testPipeline.getPipelineName());
     new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
 
     assertThat(pipeliteLauncher.getActiveProcessRunners().size()).isEqualTo(0);
 
-    assertThat(s.getNewProcesses()).isEqualTo(0);
-    assertThat(s.getReturnedProcesses()).isEqualTo(PROCESS_CNT);
-    assertThat(s.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
-    assertThat(s.getRejectedProcesses()).isEqualTo(0);
+    assertThat(testPipeline.helper.getNewProcesses()).isEqualTo(0);
+    assertThat(testPipeline.helper.getReturnedProcesses()).isEqualTo(PROCESS_CNT);
+    assertThat(testPipeline.helper.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
+    assertThat(testPipeline.helper.getRejectedProcesses()).isEqualTo(0);
 
-    if (f.stageTestResult == StageTestResult.FIRST_ERROR) {
-      assertThat(f.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
-      assertThat(f.secondStageExecCnt.get()).isEqualTo(0);
-      assertThat(f.thirdStageExecCnt.get()).isEqualTo(0);
-      assertThat(f.fourthStageExecCnt.get()).isEqualTo(0);
-    } else if (f.stageTestResult == StageTestResult.SECOND_ERROR) {
-      assertThat(f.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
-      assertThat(f.secondStageExecCnt.get()).isEqualTo(PROCESS_CNT);
-      assertThat(f.thirdStageExecCnt.get()).isEqualTo(0);
-      assertThat(f.fourthStageExecCnt.get()).isEqualTo(0);
-    } else if (f.stageTestResult == StageTestResult.THIRD_ERROR) {
-      assertThat(f.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
-      assertThat(f.secondStageExecCnt.get()).isEqualTo(PROCESS_CNT);
-      assertThat(f.thirdStageExecCnt.get()).isEqualTo(PROCESS_CNT);
-      assertThat(f.fourthStageExecCnt.get()).isEqualTo(0);
+    if (testPipeline.stageTestResult == StageTestResult.FIRST_ERROR) {
+      assertThat(testPipeline.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(testPipeline.secondStageExecCnt.get()).isEqualTo(0);
+      assertThat(testPipeline.thirdStageExecCnt.get()).isEqualTo(0);
+      assertThat(testPipeline.fourthStageExecCnt.get()).isEqualTo(0);
+    } else if (testPipeline.stageTestResult == StageTestResult.SECOND_ERROR) {
+      assertThat(testPipeline.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(testPipeline.secondStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(testPipeline.thirdStageExecCnt.get()).isEqualTo(0);
+      assertThat(testPipeline.fourthStageExecCnt.get()).isEqualTo(0);
+    } else if (testPipeline.stageTestResult == StageTestResult.THIRD_ERROR) {
+      assertThat(testPipeline.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(testPipeline.secondStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(testPipeline.thirdStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(testPipeline.fourthStageExecCnt.get()).isEqualTo(0);
     } else {
-      assertThat(f.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
-      assertThat(f.secondStageExecCnt.get()).isEqualTo(PROCESS_CNT);
-      assertThat(f.thirdStageExecCnt.get()).isEqualTo(PROCESS_CNT);
-      assertThat(f.fourthStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(testPipeline.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(testPipeline.secondStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(testPipeline.thirdStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(testPipeline.fourthStageExecCnt.get()).isEqualTo(PROCESS_CNT);
     }
 
-    assertThat(f.processIds.size()).isEqualTo(PROCESS_CNT);
-    assertLauncherMetrics(f);
-    for (String processId : f.processIds) {
-      assertProcessEntity(f, processId);
-      assertStageEntities(f, processId);
+    assertThat(testPipeline.processIds.size()).isEqualTo(PROCESS_CNT);
+    assertLauncherMetrics(testPipeline);
+    for (String processId : testPipeline.processIds) {
+      assertProcessEntity(testPipeline, processId);
+      assertStageEntities(testPipeline, processId);
     }
   }
 
@@ -443,26 +391,26 @@ public class PipeliteLauncherFailureTest {
 
   @Test
   public void testFirstStageFails() {
-    test(firstStageFails, firstStageFailsSource);
+    test(firstStageFails);
   }
 
   @Test
   public void testSecondStageFails() {
-    test(secondStageFails, secondStageFailsSource);
+    test(secondStageFails);
   }
 
   @Test
   public void testThirdStageFails() {
-    test(thirdStageFails, thirdStageFailsSource);
+    test(thirdStageFails);
   }
 
   @Test
   public void testFourthStageFails() {
-    test(fourthStageFails, fourthStageFailsSource);
+    test(fourthStageFails);
   }
 
   @Test
   public void testNoStageFails() {
-    test(noStageFails, noStageFailsSource);
+    test(noStageFails);
   }
 }

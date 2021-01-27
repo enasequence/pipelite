@@ -26,11 +26,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
-import pipelite.Pipeline;
-import pipelite.PipeliteTestConfiguration;
-import pipelite.ProcessSource;
-import pipelite.TestProcessSource;
-import pipelite.UniqueStringGenerator;
+import pipelite.*;
 import pipelite.configuration.AdvancedConfiguration;
 import pipelite.configuration.ExecutorConfiguration;
 import pipelite.configuration.ServiceConfiguration;
@@ -61,7 +57,6 @@ public class PipeliteLauncherAsyncTest {
   @Autowired private AdvancedConfiguration advancedConfiguration;
   @Autowired private ExecutorConfiguration executorConfiguration;
   @Autowired private RegisteredPipelineService registeredPipelineService;
-  @Autowired private RegisteredProcessSourceService registeredProcessSourceService;
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
   @Autowired private PipeliteLockerService pipeliteLockerService;
@@ -101,32 +96,6 @@ public class PipeliteLauncherAsyncTest {
     public TestPipeline<PollExceptionExecutor> pollException() {
       return new TestPipeline<>(new PollExceptionExecutor());
     }
-
-    @Bean
-    public ProcessSource submitSuccessPollSuccessSource(
-        @Autowired TestPipeline<SubmitSuccessPollSuccessExecutor> f) {
-      return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
-    }
-
-    @Bean
-    public ProcessSource submitErrorSource(@Autowired TestPipeline<SubmitErrorExecutor> f) {
-      return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
-    }
-
-    @Bean
-    public ProcessSource submitExceptionSource(@Autowired TestPipeline<SubmitExceptionExecutor> f) {
-      return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
-    }
-
-    @Bean
-    public ProcessSource pollErrorSource(@Autowired TestPipeline<PollErrorExecutor> f) {
-      return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
-    }
-
-    @Bean
-    public ProcessSource pollExceptionSource(@Autowired TestPipeline<PollExceptionExecutor> f) {
-      return new TestProcessSource(f.getPipelineName(), PROCESS_CNT);
-    }
   }
 
   private PipeliteLauncher createPipeliteLauncher(String pipelineName) {
@@ -136,7 +105,6 @@ public class PipeliteLauncherAsyncTest {
         executorConfiguration,
         pipeliteLockerService.getPipeliteLocker(),
         registeredPipelineService,
-        registeredProcessSourceService,
         processService,
         stageService,
         mailService,
@@ -145,18 +113,16 @@ public class PipeliteLauncherAsyncTest {
   }
 
   @Value
-  public static class TestPipeline<T extends StageExecutor> implements Pipeline {
+  public static class TestPipeline<T extends StageExecutor> implements PrioritizedPipeline {
     private final String pipelineName =
         UniqueStringGenerator.randomPipelineName(PipeliteLauncherAsyncTest.class);
     private final T stageExecutor;
+    private final PrioritizedPipelineTestHelper helper =
+        new PrioritizedPipelineTestHelper(PROCESS_CNT);
     public final List<String> processIds = Collections.synchronizedList(new ArrayList<>());
 
     public TestPipeline(T stageExecutor) {
       this.stageExecutor = stageExecutor;
-    }
-
-    public void reset() {
-      processIds.clear();
     }
 
     @Override
@@ -175,6 +141,16 @@ public class PipeliteLauncherAsyncTest {
       ExecutorParameters executorParams =
           ExecutorParameters.builder().immediateRetries(0).maximumRetries(0).build();
       return builder.execute("STAGE").with(stageExecutor, executorParams).build();
+    }
+
+    @Override
+    public NextProcess nextProcess() {
+      return helper.nextProcess();
+    }
+
+    @Override
+    public void confirmProcess(String processId) {
+      helper.confirmProcess(processId);
     }
   }
 

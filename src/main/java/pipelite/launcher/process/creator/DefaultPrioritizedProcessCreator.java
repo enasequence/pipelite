@@ -14,40 +14,40 @@ import com.google.common.flogger.FluentLogger;
 import java.util.Optional;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
-import pipelite.ProcessSource;
+import pipelite.PrioritizedPipeline;
 import pipelite.entity.ProcessEntity;
 import pipelite.log.LogKey;
 import pipelite.service.ProcessService;
 
 @Flogger
-public class DefaultProcessCreator implements ProcessCreator {
+public class DefaultPrioritizedProcessCreator implements PrioritizedProcessCreator {
 
-  private final ProcessSource processSource;
+  private final PrioritizedPipeline prioritizedPipeline;
   private final ProcessService processService;
   private final String pipelineName;
 
-  public DefaultProcessCreator(
-      ProcessSource processSource, ProcessService processService, String pipelineName) {
+  public DefaultPrioritizedProcessCreator(
+      PrioritizedPipeline prioritizedPipeline, ProcessService processService) {
     Assert.notNull(processService, "Missing process service");
-    Assert.notNull(pipelineName, "Missing pipeline name");
-    this.processSource = processSource;
+    this.prioritizedPipeline = prioritizedPipeline;
     this.processService = processService;
-    this.pipelineName = pipelineName;
+    this.pipelineName = prioritizedPipeline.getPipelineName();
+    Assert.notNull(this.pipelineName, "Missing pipeline name");
   }
 
   @Override
   public int createProcesses(int processCnt) {
-    int createCnt = 0;
-    if (processSource == null) {
-      return createCnt;
+    if (prioritizedPipeline == null) {
+      return 0;
     }
+    int createCnt = 0;
     logContext(log.atInfo()).log("Creating new processes");
     while (processCnt-- > 0) {
-      ProcessSource.NewProcess newProcess = processSource.next();
-      if (newProcess == null) {
+      PrioritizedPipeline.NextProcess nextProcess = prioritizedPipeline.nextProcess();
+      if (nextProcess == null) {
         return createCnt;
       }
-      if (createProcess(newProcess) != null) {
+      if (createProcess(nextProcess) != null) {
         createCnt++;
       }
     }
@@ -56,8 +56,8 @@ public class DefaultProcessCreator implements ProcessCreator {
   }
 
   @Override
-  public ProcessEntity createProcess(ProcessSource.NewProcess newProcess) {
-    String processId = newProcess.getProcessId();
+  public ProcessEntity createProcess(PrioritizedPipeline.NextProcess nextProcess) {
+    String processId = nextProcess.getProcessId();
     if (processId == null || processId.trim().isEmpty()) {
       logContext(log.atWarning()).log("New process does not have process id");
       return null;
@@ -72,13 +72,13 @@ public class DefaultProcessCreator implements ProcessCreator {
     } else {
       logContext(log.atInfo(), trimmedProcessId).log("Creating new process");
       processEntity =
-          processService.createExecution(pipelineName, trimmedProcessId, newProcess.getPriority());
+          processService.createExecution(pipelineName, trimmedProcessId, nextProcess.getPriority());
       if (processEntity == null) {
-        logContext(log.atInfo(), trimmedProcessId).log("Failed to create process");
+        logContext(log.atSevere(), trimmedProcessId).log("Failed to create process");
         throw new RuntimeException("Failed to create process: " + trimmedProcessId);
       }
     }
-    processSource.accept(processId);
+    prioritizedPipeline.confirmProcess(processId);
     return processEntity;
   }
 

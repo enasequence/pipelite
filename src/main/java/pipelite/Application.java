@@ -37,7 +37,6 @@ public class Application {
   @Autowired private AdvancedConfiguration advancedConfiguration;
   @Autowired private ExecutorConfiguration executorConfiguration;
   @Autowired private RegisteredPipelineService registeredPipelineService;
-  @Autowired private RegisteredProcessSourceService registeredProcessSourceService;
   @Autowired private PipeliteLockerService pipeliteLockerService;
   @Autowired private ScheduleService scheduleService;
   @Autowired private ProcessService processService;
@@ -147,8 +146,7 @@ public class Application {
         executorConfiguration,
         pipeliteLockerService.getPipeliteLocker(),
         registeredPipelineService,
-        registeredProcessSourceService,
-        processService,
+            processService,
         stageService,
         mailService,
         metrics,

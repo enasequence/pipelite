@@ -11,11 +11,13 @@
 package pipelite.launcher;
 
 import pipelite.Pipeline;
+import pipelite.PrioritizedPipeline;
 import pipelite.configuration.AdvancedConfiguration;
 import pipelite.configuration.ExecutorConfiguration;
 import pipelite.configuration.ServiceConfiguration;
-import pipelite.launcher.process.creator.DefaultProcessCreator;
-import pipelite.launcher.process.creator.ProcessCreator;
+import pipelite.exception.PipeliteException;
+import pipelite.launcher.process.creator.DefaultPrioritizedProcessCreator;
+import pipelite.launcher.process.creator.PrioritizedProcessCreator;
 import pipelite.launcher.process.queue.DefaultProcessQueue;
 import pipelite.launcher.process.queue.ProcessQueue;
 import pipelite.launcher.process.runner.DefaultProcessRunner;
@@ -34,7 +36,6 @@ public class DefaultPipeliteLauncher {
       ExecutorConfiguration executorConfiguration,
       PipeliteLocker pipeliteLocker,
       RegisteredPipelineService registeredPipelineService,
-      RegisteredProcessSourceService registeredProcessSourceService,
       ProcessService processService,
       StageService stageService,
       MailService mailService,
@@ -43,9 +44,15 @@ public class DefaultPipeliteLauncher {
 
     Pipeline pipeline =
         registeredPipelineService.getRegisteredPipeline(pipelineName, Pipeline.class);
-    ProcessCreator processCreator =
-        new DefaultProcessCreator(
-            registeredProcessSourceService.create(pipelineName), processService, pipelineName);
+    if (pipeline == null) {
+      throw new PipeliteException("Missing pipeline: " + pipelineName);
+    }
+    PrioritizedProcessCreator prioritizedProcessCreator =
+        new DefaultPrioritizedProcessCreator(
+            registeredPipelineService.getRegisteredPipeline(
+                pipelineName, PrioritizedPipeline.class),
+            processService
+        );
     ProcessQueue processQueue =
         new DefaultProcessQueue(
             advancedConfiguration, processService, pipelineName, pipeline.getPipelineParallelism());
@@ -54,7 +61,7 @@ public class DefaultPipeliteLauncher {
         advancedConfiguration,
         pipeliteLocker,
         pipeline,
-        processCreator,
+        prioritizedProcessCreator,
         processQueue,
         new DefaultProcessRunnerPool(
             pipeliteLocker,

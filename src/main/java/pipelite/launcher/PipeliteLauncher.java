@@ -14,11 +14,10 @@ import java.time.ZonedDateTime;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.Pipeline;
-import pipelite.ProcessSource;
 import pipelite.configuration.AdvancedConfiguration;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.ProcessEntity;
-import pipelite.launcher.process.creator.ProcessCreator;
+import pipelite.launcher.process.creator.PrioritizedProcessCreator;
 import pipelite.launcher.process.queue.ProcessQueue;
 import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
@@ -37,7 +36,7 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
 
   private final String pipelineName;
   private final Pipeline pipeline;
-  private final ProcessCreator processCreator;
+  private final PrioritizedProcessCreator prioritizedProcessCreator;
   private final ProcessQueue processQueue;
   private final int processCreateMaxSize;
   private final boolean shutdownIfIdle;
@@ -49,17 +48,17 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
       AdvancedConfiguration advancedConfiguration,
       PipeliteLocker pipeliteLocker,
       Pipeline pipeline,
-      ProcessCreator processCreator,
+      PrioritizedProcessCreator prioritizedProcessCreator,
       ProcessQueue processQueue,
       ProcessRunnerPool pool,
       PipeliteMetrics metrics) {
     super(advancedConfiguration, pipeliteLocker, pool, metrics);
     Assert.notNull(advancedConfiguration, "Missing launcher configuration");
     Assert.notNull(pipeline, "Missing pipeline");
-    Assert.notNull(processCreator, "Missing process creator");
+    Assert.notNull(prioritizedProcessCreator, "Missing process creator");
     Assert.notNull(processQueue, "Missing process queue");
     this.pipeline = pipeline;
-    this.processCreator = processCreator;
+    this.prioritizedProcessCreator = prioritizedProcessCreator;
     this.processQueue = processQueue;
     this.pipelineName = processQueue.getPipelineName();
     this.processCreateMaxSize = advancedConfiguration.getProcessCreateMaxSize();
@@ -81,7 +80,7 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
   @Override
   protected void run() {
     if (processQueue.isFillQueue()) {
-      processCreator.createProcesses(processCreateMaxSize);
+      prioritizedProcessCreator.createProcesses(processCreateMaxSize);
       processQueue.fillQueue();
     }
     while (processQueue.isAvailableProcesses(this.getActiveProcessCount())) {

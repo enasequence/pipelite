@@ -12,30 +12,28 @@ package pipelite;
 
 import lombok.Value;
 
-/** Implement this interface to register a process source to be used by pipelite. */
-public interface ProcessSource {
-
-  String getPipelineName();
+/** Implement this interface to register a prioritized pipeline to be executed by pipelite. */
+public interface PrioritizedPipeline extends Pipeline {
 
   @Value
-  class NewProcess {
+  class NextProcess {
     private final String processId;
     private final Integer priority;
 
-    public NewProcess(String processId, Integer priority) {
+    public NextProcess(String processId, Integer priority) {
       this.processId = processId;
       this.priority = priority;
     }
 
-    public NewProcess(String processId) {
+    public NextProcess(String processId) {
       this.processId = processId;
       this.priority = null;
     }
   }
 
-  /** Returns the next new process to be executed. */
-  NewProcess next();
+  /** Returns the next process to be executed. */
+  NextProcess nextProcess();
 
-  /** Confirms that the new process has been accepted. */
-  void accept(String processId);
+  /** Confirms that the process has been accepted. */
+  void confirmProcess(String processId);
 }

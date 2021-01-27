@@ -15,7 +15,6 @@ import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
-import pipelite.ProcessSource;
 
 /**
  * Advanced configuration for {@link pipelite.launcher.PipeliteLauncher} and {@link

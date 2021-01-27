@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import pipelite.Pipeline;
+import pipelite.PrioritizedPipeline;
 import pipelite.RegisteredPipeline;
 import pipelite.Schedule;
 import pipelite.configuration.ServiceConfiguration;
@@ -31,6 +32,7 @@ public class RegisteredPipelineService {
 
   private final Map<String, Schedule> scheduleMap = new HashMap<>();
   private final Map<String, Pipeline> pipelineMap = new HashMap<>();
+  private final Map<String, PrioritizedPipeline> prioritizedPipelineMap = new HashMap<>();
   private final ServiceConfiguration serviceConfiguration;
   private final ScheduleService scheduleService;
   private final String serviceName;
@@ -62,9 +64,14 @@ public class RegisteredPipelineService {
                   + pipelineName);
         }
         scheduleMap.put(pipelineName, schedule);
-      } else {
+      }
+      if (registeredPipeline instanceof Pipeline) {
         Pipeline pipeline = (Pipeline) registeredPipeline;
         pipelineMap.put(pipelineName, pipeline);
+      }
+      if (registeredPipeline instanceof PrioritizedPipeline) {
+        PrioritizedPipeline pipeline = (PrioritizedPipeline) registeredPipeline;
+        prioritizedPipelineMap.put(pipelineName, pipeline);
       }
     }
 
@@ -207,6 +214,10 @@ public class RegisteredPipelineService {
       throw new PipeliteException("Missing pipeline name");
     }
 
+    if (PrioritizedPipeline.class.equals(cls)) {
+      return (T) prioritizedPipelineMap.get(pipelineName);
+    }
+
     if (Pipeline.class.equals(cls)) {
       return (T) pipelineMap.get(pipelineName);
     }
@@ -215,6 +226,6 @@ public class RegisteredPipelineService {
       return (T) scheduleMap.get(pipelineName);
     }
 
-    throw new PipeliteException("Unknown pipeline: " + pipelineName);
+    return null;
   }
 }

@@ -14,30 +14,23 @@ import com.google.common.util.concurrent.Monitor;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class TestProcessSource implements ProcessSource {
+public class PrioritizedPipelineTestHelper {
 
-  private final String pipelineName;
   private final Set<String> newProcesses = ConcurrentHashMap.newKeySet();
   private final Set<String> returnedProcesses = ConcurrentHashMap.newKeySet();
   private final Set<String> acceptedProcesses = ConcurrentHashMap.newKeySet();
   private final Set<String> rejectedProcesses = ConcurrentHashMap.newKeySet();
 
-  public TestProcessSource(String pipelineName, int processCnt) {
-    this.pipelineName = pipelineName;
+  public PrioritizedPipelineTestHelper(int processCnt) {
     for (int i = 0; i < processCnt; ++i) {
-      newProcesses.add(i + "_" + UniqueStringGenerator.randomProcessId(TestProcessSource.class));
+      newProcesses.add(
+          i + "_" + UniqueStringGenerator.randomProcessId(PrioritizedPipelineTestHelper.class));
     }
-  }
-
-  @Override
-  public String getPipelineName() {
-    return pipelineName;
   }
 
   private final Monitor monitor = new Monitor();
 
-  @Override
-  public NewProcess next() {
+  public PrioritizedPipeline.NextProcess nextProcess() {
     monitor.enter();
     try {
       if (newProcesses.isEmpty()) {
@@ -46,14 +39,13 @@ public class TestProcessSource implements ProcessSource {
       String processId = newProcesses.iterator().next();
       returnedProcesses.add(processId);
       newProcesses.remove(processId);
-      return new NewProcess(processId);
+      return new PrioritizedPipeline.NextProcess(processId);
     } finally {
       monitor.leave();
     }
   }
 
-  @Override
-  public void accept(String processId) {
+  public void confirmProcess(String processId) {
     monitor.enter();
     try {
       acceptedProcesses.add(processId);

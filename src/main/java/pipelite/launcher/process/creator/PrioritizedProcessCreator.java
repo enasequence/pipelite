@@ -10,24 +10,24 @@
  */
 package pipelite.launcher.process.creator;
 
-import pipelite.ProcessSource;
+import pipelite.PrioritizedPipeline;
 import pipelite.entity.ProcessEntity;
 
-public interface ProcessCreator {
+public interface PrioritizedProcessCreator {
 
   /**
-   * Creates and saves new processes using a process source.
+   * Creates and saves prioritized processes.
    *
-   * @param processCnt the number or requested processes
+   * @param processCnt the number of requested processes to create
    * @return the number of created processes
    */
   int createProcesses(int processCnt);
 
   /**
-   * Creates and saves a new process.
+   * Creates and saves one prioritized process.
    *
-   * @param newProcess the new process from process source
+   * @param nextProcess the next process
    * @return the created process or null if it could not be created
    */
-  ProcessEntity createProcess(ProcessSource.NewProcess newProcess);
+  ProcessEntity createProcess(PrioritizedPipeline.NextProcess nextProcess);
 }
