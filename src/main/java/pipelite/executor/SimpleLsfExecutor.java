@@ -44,7 +44,7 @@ public class SimpleLsfExecutor extends AbstractLsfExecutor<SimpleLsfExecutorPara
     Duration memoryTimeout = getExecutorParams().getMemoryTimeout();
     if (memory != null && memory > 0) {
       addArgument(cmd, "-M");
-      addArgument(cmd, Integer.toString(memory) + "M"); // Megabytes
+      addArgument(cmd, memory + "M"); // Megabytes
       addArgument(cmd, "-R");
       addArgument(
           cmd,

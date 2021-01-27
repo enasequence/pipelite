@@ -110,7 +110,6 @@ public class LocalCmdRunner implements CmdRunner {
       return value;
     } catch (IOException e) {
       return null;
-    } finally {
     }
   }
 }

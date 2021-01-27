@@ -22,18 +22,15 @@ public class StageTest {
   public void constructorThrowsMissingExecutorException() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> {
-          Stage.builder().stageName("TEST").executor(null).build();
-        });
+        () -> Stage.builder().stageName("TEST").executor(null).build());
   }
 
   @Test
   public void constructorThrowsMissingStageNameException() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> {
-          Stage.builder().stageName(null).executor(new CallExecutor(StageState.SUCCESS)).build();
-        });
+        () ->
+            Stage.builder().stageName(null).executor(new CallExecutor(StageState.SUCCESS)).build());
   }
 
   @Test

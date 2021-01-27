@@ -57,10 +57,6 @@ public class ProcessRunnerCounter {
    * @param since the start of the time window
    */
   public void purge(Duration since) {
-    for (Event event : events) {
-      if (!event.time.isAfter(ZonedDateTime.now().minus(since))) {
-        events.remove(event);
-      }
-    }
+    events.removeIf(event -> !event.time.isAfter(ZonedDateTime.now().minus(since)));
   }
 }

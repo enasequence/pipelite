@@ -27,13 +27,12 @@ public class RetryTaskTest {
     RetryTemplate retry = RetryTask.fixed(Duration.ofMillis(1), attempts);
     assertThrows(
         RuntimeException.class,
-        () -> {
-          retry.execute(
-              r -> {
-                cnt.incrementAndGet();
-                throw new RuntimeException();
-              });
-        });
+        () ->
+            retry.execute(
+                r -> {
+                  cnt.incrementAndGet();
+                  throw new RuntimeException();
+                }));
     assertThat(cnt.get()).isEqualTo(attempts);
   }
 
@@ -57,13 +56,12 @@ public class RetryTaskTest {
     RetryTemplate retry = RetryTask.exp(Duration.ofMillis(1), Duration.ofMillis(10), 2.0, attempts);
     assertThrows(
         RuntimeException.class,
-        () -> {
-          retry.execute(
-              r -> {
-                cnt.incrementAndGet();
-                throw new RuntimeException();
-              });
-        });
+        () ->
+            retry.execute(
+                r -> {
+                  cnt.incrementAndGet();
+                  throw new RuntimeException();
+                }));
     assertThat(cnt.get()).isEqualTo(attempts);
   }
 

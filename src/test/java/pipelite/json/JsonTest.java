@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 public class JsonTest {
 
   private static class A {
-    public HashMap<String, String> map = new HashMap<>();
+    public final HashMap<String, String> map = new HashMap<>();
   }
 
   @Test

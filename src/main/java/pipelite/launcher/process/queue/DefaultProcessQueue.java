@@ -30,7 +30,7 @@ public class DefaultProcessQueue implements ProcessQueue {
   private final int processQueueMaxSize;
   private final int pipelineParallelism;
   private final List<ProcessEntity> processQueue = Collections.synchronizedList(new ArrayList<>());
-  private AtomicInteger processQueueIndex = new AtomicInteger();
+  private final AtomicInteger processQueueIndex = new AtomicInteger();
   private ZonedDateTime processQueueMaxValidUntil = ZonedDateTime.now();
   private ZonedDateTime processQueueMinValidUntil = ZonedDateTime.now();
 
@@ -48,7 +48,7 @@ public class DefaultProcessQueue implements ProcessQueue {
     this.processQueueMinRefreshFrequency =
         advancedConfiguration.getProcessQueueMinRefreshFrequency();
     this.processQueueMaxSize = advancedConfiguration.getProcessQueueMaxSize();
-    this.pipelineParallelism = (pipelineParallelism < 1) ? 1 : pipelineParallelism;
+    this.pipelineParallelism = Math.max(pipelineParallelism, 1);
   }
 
   @Override

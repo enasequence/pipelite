@@ -13,9 +13,9 @@ package pipelite.launcher.process.runner;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class ProcessRunnerResult {
-  private AtomicLong stageSuccessCount = new AtomicLong();
-  private AtomicLong stageFailedCount = new AtomicLong();
-  private AtomicLong internalErrorCount = new AtomicLong();
+  private final AtomicLong stageSuccessCount = new AtomicLong();
+  private final AtomicLong stageFailedCount = new AtomicLong();
+  private final AtomicLong internalErrorCount = new AtomicLong();
 
   public ProcessRunnerResult incrementStageSuccess() {
     this.stageSuccessCount.incrementAndGet();

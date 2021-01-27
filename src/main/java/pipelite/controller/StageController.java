@@ -67,7 +67,8 @@ public class StageController {
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log(ex.getMessage());
     }
-    stageService.getSavedStages(pipelineName, processId).stream()
+    stageService
+        .getSavedStages(pipelineName, processId)
         .forEach(stageEntity -> list.add(getStage(stageEntity, process.get())));
     getLoremIpsumStages(list);
     return list;

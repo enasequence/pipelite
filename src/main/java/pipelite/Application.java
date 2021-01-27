@@ -146,7 +146,7 @@ public class Application {
         executorConfiguration,
         pipeliteLockerService.getPipeliteLocker(),
         registeredPipelineService,
-            processService,
+        processService,
         stageService,
         mailService,
         metrics,

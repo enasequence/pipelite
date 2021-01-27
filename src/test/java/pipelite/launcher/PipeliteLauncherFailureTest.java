@@ -238,8 +238,7 @@ public class PipeliteLauncherFailureTest {
   }
 
   private PipeliteLauncher pipeliteLauncher(String pipelineName) {
-    PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(pipelineName);
-    return pipeliteLauncher;
+    return createPipeliteLauncher(pipelineName);
   }
 
   public void test(TestPipeline testPipeline) {

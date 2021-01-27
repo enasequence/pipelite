@@ -27,7 +27,7 @@ class StageEntityTest {
 
   public static final class TestExecutor extends AbstractExecutor<ExecutorParameters>
       implements JsonSerializableExecutor {
-    private String test = "TEST_EXECUTOR_DATA";
+    private static final String test = "TEST_EXECUTOR_DATA";
 
     @Override
     public StageExecutorResult execute(StageExecutorRequest request) {

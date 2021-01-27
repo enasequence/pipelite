@@ -190,10 +190,7 @@ class ProcessServiceTest {
     counter.put(ProcessState.ACTIVE, new AtomicInteger());
     counter.put(ProcessState.FAILED, new AtomicInteger());
     counter.put(ProcessState.PENDING, new AtomicInteger());
-    processes.forEach(
-        process -> {
-          counter.get(process.getProcessState()).incrementAndGet();
-        });
+    processes.forEach(process -> counter.get(process.getProcessState()).incrementAndGet());
     assertThat(counter.get(ProcessState.COMPLETED).get()).isEqualTo(completedCount);
     assertThat(counter.get(ProcessState.ACTIVE).get()).isEqualTo(activeCount);
     assertThat(counter.get(ProcessState.FAILED).get()).isEqualTo(failedCount);

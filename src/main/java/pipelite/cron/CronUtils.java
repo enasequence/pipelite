@@ -19,6 +19,7 @@ import com.cronutils.model.time.ExecutionTime;
 import com.cronutils.parser.CronParser;
 import java.time.ZonedDateTime;
 import java.util.Locale;
+import java.util.Optional;
 import lombok.extern.flogger.Flogger;
 
 @Flogger
@@ -43,11 +44,11 @@ public abstract class CronUtils {
   private static Cron parse(String cron) {
     try {
       return unixParser.parse(cron);
-    } catch (Exception ex) {
+    } catch (Exception ignored) {
     }
     try {
       return quartzParser.parse(cron);
-    } catch (Exception ex) {
+    } catch (Exception ignored) {
     }
     throw new IllegalArgumentException("Invalid cron expression " + cron);
   }
@@ -92,6 +93,10 @@ public abstract class CronUtils {
       return null;
     }
     ExecutionTime executionTime = ExecutionTime.forCron(parse(cron));
-    return executionTime.nextExecution(ZonedDateTime.now()).get();
+    Optional<ZonedDateTime> next = executionTime.nextExecution(ZonedDateTime.now());
+    if (next.isPresent()) {
+      return next.get();
+    }
+    return null;
   }
 }

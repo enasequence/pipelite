@@ -72,8 +72,8 @@ public class AdvancedConfiguration {
   private int processQueueMaxSize = DEFAULT_PROCESS_QUEUE_MAX_SIZE;
 
   /**
-   * The maximum number of new processes created by {@link pipelite.launcher.PipeliteLauncher} using
-   * using {@link ProcessSource} before new processes are executed.
+   * The maximum number of new processes created by {@link pipelite.launcher.PipeliteLauncher} at
+   * one go.
    */
   private int processCreateMaxSize = DEFAULT_PROCESS_CREATE_MAX_SIZE;
 

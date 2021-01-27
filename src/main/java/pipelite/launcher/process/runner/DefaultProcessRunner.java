@@ -42,7 +42,6 @@ import pipelite.time.Time;
 @Flogger
 public class DefaultProcessRunner implements ProcessRunner {
 
-  private final AdvancedConfiguration advancedConfiguration;
   private final ExecutorConfiguration executorConfiguration;
   private final ProcessService processService;
   private final StageService stageService;
@@ -68,7 +67,6 @@ public class DefaultProcessRunner implements ProcessRunner {
     Assert.notNull(stageService, "Missing stage service");
     Assert.notNull(mailService, "Missing mail service");
     Assert.notNull(pipelineName, "Missing pipeline name");
-    this.advancedConfiguration = advancedConfiguration;
     this.executorConfiguration = executorConfiguration;
     this.processService = processService;
     this.stageService = stageService;
@@ -139,8 +137,7 @@ public class DefaultProcessRunner implements ProcessRunner {
   }
 
   private void runStage(Stage stage, ProcessRunnerResult result) {
-    StageLauncher stageLauncher =
-        new StageLauncher(executorConfiguration, stageService, pipelineName, process, stage);
+    StageLauncher stageLauncher = new StageLauncher(stageService, pipelineName, process, stage);
     activeStages.put(stage, stageLauncher);
     executorService.execute(
         () -> {

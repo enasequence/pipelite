@@ -36,7 +36,7 @@ public class LockService {
   private final ServiceConfiguration serviceConfiguration;
   private final ServiceLockRepository serviceLockRepository;
   private final ProcessLockRepository processLockRepository;
-  private Duration lockDuration;
+  private final Duration lockDuration;
 
   public LockService(
       @Autowired ServiceConfiguration serviceConfiguration,

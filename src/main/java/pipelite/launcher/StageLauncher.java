@@ -15,7 +15,6 @@ import java.time.Duration;
 import java.time.ZonedDateTime;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
-import pipelite.configuration.ExecutorConfiguration;
 import pipelite.exception.PipeliteException;
 import pipelite.exception.PipeliteInterruptedException;
 import pipelite.exception.PipeliteTimeoutException;
@@ -32,7 +31,6 @@ import pipelite.time.Time;
 /** Executes a stage and returns the stage execution result. */
 public class StageLauncher {
 
-  private final ExecutorConfiguration executorConfiguration;
   private final StageService stageService;
   private final String pipelineName;
   private final Process process;
@@ -42,19 +40,13 @@ public class StageLauncher {
   private static final Duration POLL_FREQUENCY = Duration.ofSeconds(10);
 
   public StageLauncher(
-      ExecutorConfiguration executorConfiguration,
-      StageService stageService,
-      String pipelineName,
-      Process process,
-      Stage stage) {
-    Assert.notNull(executorConfiguration, "Missing stage configuration");
+      StageService stageService, String pipelineName, Process process, Stage stage) {
     Assert.notNull(stageService, "Missing stage service");
     Assert.notNull(pipelineName, "Missing pipeline name");
     Assert.notNull(process, "Missing process");
     Assert.notNull(process.getProcessEntity(), "Missing process entity");
     Assert.notNull(stage, "Missing stage");
     Assert.notNull(stage.getStageEntity(), "Missing stage entity");
-    this.executorConfiguration = executorConfiguration;
     this.stageService = stageService;
     this.pipelineName = pipelineName;
     this.process = process;

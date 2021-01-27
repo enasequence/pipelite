@@ -73,9 +73,11 @@ public class ProcessController {
       })
   public List<ProcessInfo> runningProcesses(@RequestParam(required = false) String pipelineName) {
     List<ProcessInfo> list = new ArrayList<>();
-    application.getRunningLaunchers().stream()
+    application
+        .getRunningLaunchers()
         .forEach(launcher -> list.addAll(getRunningProcesses(launcher, pipelineName)));
-    application.getRunningSchedulers().stream()
+    application
+        .getRunningSchedulers()
         .forEach(launcher -> list.addAll(getRunningProcesses(launcher, pipelineName)));
     getLoremIpsumProcess(list);
     return list;

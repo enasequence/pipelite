@@ -16,7 +16,6 @@ import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.AdvancedConfiguration;
 import pipelite.launcher.PipeliteService;
-import pipelite.lock.PipeliteLocker;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 
@@ -25,7 +24,6 @@ import pipelite.process.Process;
 public abstract class ProcessRunnerPoolService extends PipeliteService
     implements ProcessRunnerPool {
 
-  private final PipeliteLocker locker;
   private final ProcessRunnerPool pool;
   protected final PipeliteMetrics metrics;
   private final Duration processRunnerFrequency;
@@ -33,14 +31,11 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
 
   public ProcessRunnerPoolService(
       AdvancedConfiguration advancedConfiguration,
-      PipeliteLocker locker,
       ProcessRunnerPool pool,
       PipeliteMetrics metrics) {
     Assert.notNull(advancedConfiguration, "Missing launcher configuration");
-    Assert.notNull(locker, "Missing locker");
     Assert.notNull(pool, "Missing process runner pool");
     Assert.notNull(metrics, "Missing metrics");
-    this.locker = locker;
     this.pool = pool;
     this.metrics = metrics;
     this.processRunnerFrequency = advancedConfiguration.getProcessRunnerFrequency();
@@ -89,7 +84,7 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
    * Implement to runs one iteration of the service. If an exception is thrown the exception will be
    * logged and run will be called again after a fixed delay.
    */
-  protected abstract void run() throws Exception;
+  protected abstract void run();
 
   /**
    * Override to allow an idle launcher to be shut down.

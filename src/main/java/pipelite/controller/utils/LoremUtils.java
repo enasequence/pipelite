@@ -20,7 +20,6 @@ public class LoremUtils {
   private static final String PROFILE_NAME = "test-lorem";
 
   public static boolean isActiveProfile(Environment environment) {
-    return Arrays.stream(environment.getActiveProfiles())
-        .anyMatch(profile -> LoremUtils.PROFILE_NAME.equals(profile));
+    return Arrays.asList(environment.getActiveProfiles()).contains(LoremUtils.PROFILE_NAME);
   }
 }

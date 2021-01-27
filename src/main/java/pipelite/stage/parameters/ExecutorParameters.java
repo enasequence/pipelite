@@ -54,7 +54,7 @@ public class ExecutorParameters {
     }
   }
 
-  public static <K, V> Map<K, V> applyMapDefaults(Map<K, V> params, Map<K, V> defaultParams) {
+  public static <K, V> void applyMapDefaults(Map<K, V> params, Map<K, V> defaultParams) {
     if (params == null) {
       params = new HashMap<>();
     }
@@ -65,7 +65,6 @@ public class ExecutorParameters {
         }
       }
     }
-    return params;
   }
 
   /**

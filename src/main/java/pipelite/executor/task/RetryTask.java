@@ -19,17 +19,13 @@ import org.springframework.retry.support.RetryTemplate;
 /** Executes a task with retries using {@link RetryTemplate}. */
 public class RetryTask {
 
-  private final RetryTemplate retryTemplate;
-
-  public RetryTask(RetryTemplate retryTemplate) {
-    this.retryTemplate = retryTemplate;
-  }
+  private RetryTask() {}
 
   public static final RetryTemplate DEFAULT_FIXED = RetryTask.fixed(Duration.ofSeconds(5), 3);
   public static final RetryTemplate DEFAULT_EXP =
       RetryTask.exp(Duration.ofSeconds(1), Duration.ofSeconds(15), 3.8, 3);
 
-  public static final RetryTemplate fixed(Duration backoff, int attempts) {
+  public static RetryTemplate fixed(Duration backoff, int attempts) {
     RetryTemplate retryTemplate = new RetryTemplate();
     FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
     backOffPolicy.setBackOffPeriod(backoff.toMillis());
@@ -40,7 +36,7 @@ public class RetryTask {
     return retryTemplate;
   }
 
-  public static final RetryTemplate exp(
+  public static RetryTemplate exp(
       Duration minBackoff, Duration maxBackoff, Double multiplier, int attempts) {
     RetryTemplate retryTemplate = new RetryTemplate();
     ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();

@@ -21,8 +21,8 @@ import pipelite.process.builder.ProcessBuilder;
 
 public class ProcessFactoryTest {
 
-  private static String PIPELINE_NAME = "PIPELINE1";
-  private static String PROCESS_ID = "PROCESS1";
+  private static final String PIPELINE_NAME = "PIPELINE1";
+  private static final String PROCESS_ID = "PROCESS1";
 
   @Test
   public void createSuccess() {
@@ -75,10 +75,6 @@ public class ProcessFactoryTest {
           }
         };
 
-    assertThrows(
-        PipeliteException.class,
-        () -> {
-          ProcessFactory.create(processEntity, pipeline);
-        });
+    assertThrows(PipeliteException.class, () -> ProcessFactory.create(processEntity, pipeline));
   }
 }

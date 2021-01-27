@@ -92,7 +92,7 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
       return definition;
     }
     AtomicReference<String> str = new AtomicReference<>(definition);
-    params.entrySet().forEach(e -> str.set(str.get().replace(e.getKey(), e.getValue())));
+    params.forEach((key, value) -> str.set(str.get().replace(key, value)));
     return str.get();
   }
 }

@@ -45,7 +45,7 @@ public class StageBuilder {
    * An executor that runs a command line command locally or on a remote host using ssh.
    *
    * @param cmd the command line command to execute
-   * @oaram params the executor parameters
+   * @param params the executor parameters
    */
   public ProcessBuilder withCmdExecutor(String cmd, CmdExecutorParameters params) {
     CmdExecutor<CmdExecutorParameters> executor = StageExecutor.createCmdExecutor(cmd);
@@ -66,7 +66,7 @@ public class StageBuilder {
    * An executor that runs a command line command using LSF locally or on a remote host using ssh.
    *
    * @param cmd the command line command to execute
-   * @oaram params the executor parameters
+   * @param params the executor parameters
    */
   public ProcessBuilder withLsfExecutor(String cmd, LsfExecutorParameters params) {
     LsfExecutor executor = StageExecutor.createLsfExecutor(cmd);
@@ -87,7 +87,7 @@ public class StageBuilder {
    * An executor that runs a command line command using LSF locally or on a remote host using ssh.
    *
    * @param cmd the command line command to execute
-   * @oaram params the executor parameters
+   * @param params the executor parameters
    */
   public ProcessBuilder withSimpleLsfExecutor(String cmd, SimpleLsfExecutorParameters params) {
     SimpleLsfExecutor executor = StageExecutor.createSimpleLsfExecutor(cmd);
@@ -107,7 +107,7 @@ public class StageBuilder {
   /**
    * An executor that runs using AWSBatch.
    *
-   * @oaram params the executor parameters
+   * @param params the executor parameters
    */
   public ProcessBuilder withAwsBatchExecutor(AwsBatchExecutorParameters params) {
     AwsBatchExecutor executor = StageExecutor.createAwsBatchExecutor();
@@ -132,7 +132,7 @@ public class StageBuilder {
    * An executor that executes the given call.
    *
    * @param call the call to be executed
-   * @oaram params the executor parameters
+   * @param params the executor parameters
    */
   public ProcessBuilder withCallExecutor(StageExecutorCall call, ExecutorParameters params) {
     CallExecutor executor = new CallExecutor(call);

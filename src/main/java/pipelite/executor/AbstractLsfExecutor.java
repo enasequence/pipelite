@@ -30,11 +30,13 @@ import pipelite.exception.PipeliteException;
 import pipelite.exception.PipeliteInterruptedException;
 import pipelite.exception.PipeliteTimeoutException;
 import pipelite.executor.cmd.CmdRunner;
-import pipelite.executor.context.*;
+import pipelite.executor.context.LsfContextCache;
 import pipelite.executor.task.RetryTask;
 import pipelite.log.LogKey;
 import pipelite.stage.StageState;
-import pipelite.stage.executor.*;
+import pipelite.stage.executor.StageExecutorRequest;
+import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.time.Time;
@@ -196,7 +198,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
 
     // Create a map for job id -> LsfContextCache.Request.
     Map<String, LsfContextCache.Request> requestMap = new HashMap<>();
-    requests.stream().forEach(request -> requestMap.put(request.getJobId(), request));
+    requests.forEach(request -> requestMap.put(request.getJobId(), request));
 
     // Get job results using bjobs.
     List<String> jobIds = requests.stream().map(r -> r.getJobId()).collect(Collectors.toList());
@@ -367,7 +369,9 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
   public static String extractBsubJobIdSubmitted(String str) {
     try {
       Matcher m = BSUB_JOB_ID_SUBMITTED_PATTERN.matcher(str);
-      m.find();
+      if (!m.find()) {
+        throw new PipeliteException("No LSF submit job id.");
+      }
       return m.group(1);
     } catch (Exception ex) {
       throw new PipeliteException("No LSF submit job id.");
@@ -377,8 +381,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
   public static String extractBjobsJobIdNotFound(String str) {
     try {
       Matcher m = BJOBS_JOB_ID_NOT_FOUND_PATTERN.matcher(str);
-      m.find();
-      return m.group(1);
+      return m.find() ? m.group(1) : null;
     } catch (Exception ex) {
       return null;
     }
@@ -391,8 +394,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
   public static Integer extracLsfJobExitCode(String str) {
     try {
       Matcher m = LSF_EXIT_CODE_PATTERN.matcher(str);
-      m.find();
-      return Integer.valueOf(m.group(1));
+      return m.find() ? Integer.valueOf(m.group(1)) : null;
     } catch (Exception ex) {
       return null;
     }

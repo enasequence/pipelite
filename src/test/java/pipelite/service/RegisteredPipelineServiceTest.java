@@ -13,9 +13,6 @@ package pipelite.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import java.util.Collections;
-
-import org.checkerframework.checker.units.qual.A;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -52,14 +49,17 @@ public class RegisteredPipelineServiceTest {
   public static class TestPipeline implements Pipeline {
     private final String pipelineName =
         UniqueStringGenerator.randomPipelineName(RegisteredPipelineServiceTest.class);
+
     @Override
     public int getPipelineParallelism() {
       return 1;
     }
+
     @Override
     public String getPipelineName() {
       return pipelineName;
     }
+
     @Override
     public Process createProcess(ProcessBuilder builder) {
       return null;

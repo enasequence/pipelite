@@ -97,7 +97,7 @@ public class RepositoryConfiguration {
 
     LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
     em.setDataSource(pipeliteDataSource());
-    em.setPackagesToScan(new String[] {"pipelite.entity"});
+    em.setPackagesToScan("pipelite.entity");
 
     HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
     em.setJpaVendorAdapter(vendorAdapter);
@@ -127,8 +127,7 @@ public class RepositoryConfiguration {
     hikariConfig.setMaximumPoolSize(maxActive);
     hikariConfig.setPoolName("pipeliteConnectionPool");
     hikariConfig.setAutoCommit(false);
-    HikariDataSource dataSource = new HikariDataSource(hikariConfig);
-    return dataSource;
+    return new HikariDataSource(hikariConfig);
   }
 
   @Primary
@@ -140,7 +139,6 @@ public class RepositoryConfiguration {
   }
 
   private boolean isTestProfile() {
-    return Arrays.stream(environment.getActiveProfiles())
-        .anyMatch(profile -> "test".equals(profile));
+    return Arrays.asList(environment.getActiveProfiles()).contains("test");
   }
 }

@@ -84,7 +84,8 @@ public class DefaultPipeliteLocker implements PipeliteLocker {
     log.atFine().log("Locking service: " + serviceName);
     ServiceLockEntity lock = LockService.lockService(lockService, serviceName, lockId);
     if (lock == null && force) {
-      log.atWarning().log("Forceful startup requested. Removing existing locks for service: " + serviceName);
+      log.atWarning().log(
+          "Forceful startup requested. Removing existing locks for service: " + serviceName);
       unlockService();
       lock = LockService.lockService(lockService, serviceName, lockId);
     }

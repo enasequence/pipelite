@@ -76,7 +76,8 @@ public class PipelineController {
 
   private List<PipelineInfo> getRunningProcesses() {
     List<PipelineInfo> list = new ArrayList<>();
-    application.getRunningLaunchers().stream()
+    application
+        .getRunningLaunchers()
         .forEach(
             p ->
                 list.add(
@@ -182,7 +183,8 @@ public class PipelineController {
     Collection<Table> tables = new ArrayList<>();
     ZonedDateTime since = ZonedDateTime.now().minus(duration);
 
-    application.getRunningLaunchers().stream()
+    application
+        .getRunningLaunchers()
         .forEach(
             p -> {
               PipelineMetrics metrics = pipeliteMetrics.pipeline(p.getPipelineName());

@@ -18,7 +18,6 @@ import lombok.extern.flogger.Flogger;
 import pipelite.executor.JsonSerializableExecutor;
 import pipelite.json.Json;
 import pipelite.stage.*;
-import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 

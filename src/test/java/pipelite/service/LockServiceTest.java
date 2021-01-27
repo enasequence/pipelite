@@ -34,7 +34,7 @@ import pipelite.time.Time;
     properties = {"pipelite.advanced.lockDuration=15s"})
 public class LockServiceTest {
 
-  private static Duration LOCK_DURATION = Duration.ofSeconds(15);
+  private static final Duration LOCK_DURATION = Duration.ofSeconds(15);
 
   @Autowired LockService service;
 

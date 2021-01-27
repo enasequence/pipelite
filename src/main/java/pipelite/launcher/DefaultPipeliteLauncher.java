@@ -51,8 +51,7 @@ public class DefaultPipeliteLauncher {
         new DefaultPrioritizedProcessCreator(
             registeredPipelineService.getRegisteredPipeline(
                 pipelineName, PrioritizedPipeline.class),
-            processService
-        );
+            processService);
     ProcessQueue processQueue =
         new DefaultProcessQueue(
             advancedConfiguration, processService, pipelineName, pipeline.getPipelineParallelism());

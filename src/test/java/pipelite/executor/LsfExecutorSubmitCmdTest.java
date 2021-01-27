@@ -21,9 +21,9 @@ import pipelite.stage.parameters.LsfExecutorParameters;
 
 public class LsfExecutorSubmitCmdTest {
 
-  private final String PIPELINE_NAME = "PIPELINE_NAME";
-  private final String PROCESS_ID = "PROCESS_ID";
-  private final String STAGE_NAME = "STAGE_NAME";
+  private static final String PIPELINE_NAME = "PIPELINE_NAME";
+  private static final String PROCESS_ID = "PROCESS_ID";
+  private static final String STAGE_NAME = "STAGE_NAME";
 
   @Test
   public void test() throws IOException {

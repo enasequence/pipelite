@@ -10,7 +10,9 @@
  */
 package pipelite.executor.cmd;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.EnumSet;
@@ -139,9 +141,8 @@ public class SshCmdRunner implements CmdRunner {
       stdoutStream.flush();
       value = stdoutStream.toString();
       stdoutStream.close();
-    } catch (IOException e) {
-    } finally {
-      return value;
+    } catch (IOException ignored) {
     }
+    return value;
   }
 }

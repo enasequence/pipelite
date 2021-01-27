@@ -52,7 +52,7 @@ public class StageLauncherTest {
     stage.setStageEntity(StageEntity.createExecution(pipelineName, processId, stage));
     stage.getStageEntity().startExecution(stage);
     StageLauncher stageLauncher =
-        spy(new StageLauncher(executorConfiguration, stageService, pipelineName, process, stage));
+        spy(new StageLauncher(stageService, pipelineName, process, stage));
     assertThat(stageLauncher.run().getStageState()).isEqualTo(stageState);
     verify(stageLauncher, times(0)).pollExecution();
     assertThat(stage.getStageEntity().getExecutorName())
@@ -87,7 +87,7 @@ public class StageLauncherTest {
     stage.getStageEntity().endExecution(StageExecutorResult.error());
     stage.getStageEntity().startExecution(stage);
     StageLauncher stageLauncher =
-        spy(new StageLauncher(executorConfiguration, stageService, pipelineName, process, stage));
+        spy(new StageLauncher(stageService, pipelineName, process, stage));
     assertThat(stageLauncher.run().getStageState()).isEqualTo(stageState);
     verify(stageLauncher, times(1)).pollExecution();
     assertThat(stage.getStageEntity().getExecutorName())

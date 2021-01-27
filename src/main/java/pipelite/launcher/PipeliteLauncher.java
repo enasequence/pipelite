@@ -27,9 +27,8 @@ import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 
 /**
- * Executes processes in parallel for one pipeline. New process instances are created using {@link
- * Pipeline} for process ids waiting to be executed. New process ids are provided by {@link
- * ProcessSource} or they are inserted into the PIPELITE_PROCESS table.
+ * Executes processes in parallel for one pipeline. New process instances are created using for
+ * process ids waiting to be executed.
  */
 @Flogger
 public class PipeliteLauncher extends ProcessRunnerPoolService {
@@ -52,7 +51,7 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
       ProcessQueue processQueue,
       ProcessRunnerPool pool,
       PipeliteMetrics metrics) {
-    super(advancedConfiguration, pipeliteLocker, pool, metrics);
+    super(advancedConfiguration, pool, metrics);
     Assert.notNull(advancedConfiguration, "Missing launcher configuration");
     Assert.notNull(pipeline, "Missing pipeline");
     Assert.notNull(prioritizedProcessCreator, "Missing process creator");

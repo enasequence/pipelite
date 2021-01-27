@@ -94,12 +94,7 @@ public class PipeliteMetrics {
     Map<String, Integer> counts = new HashMap<>();
     processRunners.forEach(
         r -> {
-          Integer count = counts.get(r.getPipelineName());
-          if (count != null) {
-            counts.put(r.getPipelineName(), count + 1);
-          } else {
-            counts.put(r.getPipelineName(), 1);
-          }
+          counts.merge(r.getPipelineName(), 1, Integer::sum);
         });
     counts.forEach(
         (pipelineName, count) -> pipeline(pipelineName).process().setRunningCount(count, now));

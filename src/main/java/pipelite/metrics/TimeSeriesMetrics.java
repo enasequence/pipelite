@@ -137,7 +137,6 @@ public class TimeSeriesMetrics {
               .mode(ScatterTrace.Mode.LINE)
               .build());
     }
-    Figure figure = new Figure(layout, traces.toArray(new ScatterTrace[traces.size()]));
-    return figure;
+    return new Figure(layout, traces.toArray(new ScatterTrace[traces.size()]));
   }
 }

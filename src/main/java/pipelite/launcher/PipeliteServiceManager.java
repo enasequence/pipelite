@@ -86,7 +86,7 @@ public class PipeliteServiceManager {
     }
     try {
       manager.stopAsync().awaitStopped(STOP_WAIT_MAX_SECONDS, TimeUnit.SECONDS);
-    } catch (TimeoutException timeout) {
+    } catch (TimeoutException ignored) {
     }
     log.atInfo().log("Stopped pipelite services");
   }

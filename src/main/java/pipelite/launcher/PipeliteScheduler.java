@@ -58,7 +58,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
       ProcessService processService,
       ProcessRunnerPool processRunnerPool,
       PipeliteMetrics metrics) {
-    super(advancedConfiguration, pipeliteLocker, processRunnerPool, metrics);
+    super(advancedConfiguration, processRunnerPool, metrics);
     Assert.notNull(advancedConfiguration, "Missing launcher configuration");
     Assert.notNull(registeredPipelineService, "Missing pipeline service");
     Assert.notNull(scheduleService, "Missing schedule service");
@@ -198,7 +198,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
       return "1";
     }
     try {
-      return String.valueOf(Long.valueOf(lastProcessId) + 1);
+      return String.valueOf(Long.parseLong(lastProcessId) + 1);
     } catch (Exception ex) {
       throw new PipeliteException("Invalid process id " + lastProcessId);
     }

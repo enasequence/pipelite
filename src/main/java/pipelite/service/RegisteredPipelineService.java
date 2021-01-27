@@ -11,7 +11,6 @@
 package pipelite.service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -79,7 +78,8 @@ public class RegisteredPipelineService {
   }
 
   private void saveSchedules() {
-    scheduleMap.values().stream()
+    scheduleMap
+        .values()
         .forEach(
             schedule -> {
               String pipelineName = schedule.getPipelineName();
@@ -161,7 +161,7 @@ public class RegisteredPipelineService {
    * @return the registered pipeline names
    */
   public List<String> getPipelineNames() {
-    return pipelineMap.keySet().stream().collect(Collectors.toList());
+    return new ArrayList<>(pipelineMap.keySet());
   }
 
   /**
@@ -170,7 +170,7 @@ public class RegisteredPipelineService {
    * @return the registered scheduled pipeline names
    */
   public List<String> getScheduleNames() {
-    return scheduleMap.keySet().stream().collect(Collectors.toList());
+    return new ArrayList<>(scheduleMap.keySet());
   }
 
   /**

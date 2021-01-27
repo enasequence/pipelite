@@ -32,7 +32,6 @@ public interface CmdRunner {
    *
    * @param str the string
    * @param path the file
-   * @throws java.io.IOException
    */
   void writeFile(String str, Path path);
 
@@ -40,7 +39,6 @@ public interface CmdRunner {
    * Deletes a file.
    *
    * @param path the file path
-   * @throws java.io.IOException
    */
   void deleteFile(Path path);
 
