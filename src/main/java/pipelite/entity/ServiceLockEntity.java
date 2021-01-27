@@ -21,12 +21,11 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@SequenceGenerator(name = "PIPELITE2_SERVICE_LOCK_SEQ", initialValue = 1, allocationSize = 1)
 public class ServiceLockEntity {
+
   @Id
-  @Column(name = "SERVICE_ID")
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "PIPELITE2_SERVICE_LOCK_SEQ")
-  private Long serviceId;
+  @Column(name = "LOCK_ID", length = 36)
+  private String lockId;
 
   @Column(name = "SERVICE_NAME", unique = true, nullable = false)
   private String serviceName;

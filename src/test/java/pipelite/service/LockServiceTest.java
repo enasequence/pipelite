@@ -26,6 +26,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.ServiceLockEntity;
+import pipelite.lock.PipeliteLocker;
 import pipelite.time.Time;
 
 @SpringBootTest(
@@ -42,7 +43,9 @@ public class LockServiceTest {
   @Test
   public void testParallelLockProcess() throws Exception {
     String serviceName1 = UniqueStringGenerator.randomServiceName();
-    ServiceLockEntity serviceLock1 = LockService.lockService(service, serviceName1);
+
+    String lockId1 = PipeliteLocker.createLockId();
+    ServiceLockEntity serviceLock1 = LockService.lockService(service, serviceName1, lockId1);
 
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     ExecutorService executorService = Executors.newFixedThreadPool(500);
@@ -67,52 +70,37 @@ public class LockServiceTest {
     String serviceName1 = UniqueStringGenerator.randomServiceName();
     String serviceName2 = UniqueStringGenerator.randomServiceName();
 
-    service.getServiceLocksByServiceName(serviceName1).forEach(s -> service.unlockService(s));
-    service.getServiceLocksByServiceName(serviceName2).forEach(s -> service.unlockService(s));
+    String lockId1 = PipeliteLocker.createLockId();
+    String lockId2 = PipeliteLocker.createLockId();
 
-    ServiceLockEntity serviceLock1 = LockService.lockService(service, serviceName1);
-    ServiceLockEntity serviceLock2 = LockService.lockService(service, serviceName2);
+    service.unlockService(serviceName1);
+    service.unlockService(serviceName2);
 
-    ZonedDateTime expiry1 = serviceLock1.getExpiry();
-    ZonedDateTime expiry2 = serviceLock2.getExpiry();
+    ServiceLockEntity serviceLock1 = LockService.lockService(service, serviceName1, lockId1);
+    ServiceLockEntity serviceLock2 = LockService.lockService(service, serviceName2, lockId2);
 
-    assertThat(serviceLock1.getServiceId()).isGreaterThan(0);
     assertThat(serviceLock1.getServiceName()).isEqualTo(serviceName1);
     assertThat(serviceLock1.getExpiry())
         .isAfterOrEqualTo(ZonedDateTime.now().plus(service.getLockDuration()).minus(LOCK_DURATION));
 
-    assertThat(serviceLock2.getServiceId()).isGreaterThan(0);
     assertThat(serviceLock2.getServiceName()).isEqualTo(serviceName2);
     assertThat(serviceLock2.getExpiry())
         .isAfterOrEqualTo(ZonedDateTime.now().plus(service.getLockDuration()).minus(LOCK_DURATION));
 
-    assertThat(serviceLock1.getServiceId()).isLessThan(serviceLock2.getServiceId());
-
-    assertThat(service.getServiceLocksByServiceName(serviceName1).size()).isOne();
-    assertThat(service.getServiceLocksByServiceName(serviceName2).size()).isOne();
-    assertThat(service.getServiceLocksByServiceName(serviceName1).get(0).getServiceId())
-        .isEqualTo(serviceLock1.getServiceId());
-    assertThat(service.getServiceLocksByServiceName(serviceName2).get(0).getServiceId())
-        .isEqualTo(serviceLock2.getServiceId());
+    assertThat(service.isServiceLocked(serviceName1)).isTrue();
+    assertThat(service.isServiceLocked(serviceName2)).isTrue();
 
     assertTrue(service.relockService(serviceLock1));
     assertTrue(service.relockService(serviceLock2));
 
-    assertThat(service.getServiceLocksByServiceName(serviceName1).size()).isOne();
-    assertThat(service.getServiceLocksByServiceName(serviceName2).size()).isOne();
-    assertThat(service.getServiceLocksByServiceName(serviceName1).get(0).getServiceId())
-        .isEqualTo(serviceLock1.getServiceId());
-    assertThat(service.getServiceLocksByServiceName(serviceName2).get(0).getServiceId())
-        .isEqualTo(serviceLock2.getServiceId());
-    assertThat(service.getServiceLocksByServiceName(serviceName1).get(0).getExpiry())
-        .isAfterOrEqualTo(expiry1);
-    assertThat(service.getServiceLocksByServiceName(serviceName2).get(0).getExpiry())
-        .isAfterOrEqualTo(expiry2);
+    assertThat(service.isServiceLocked(serviceName1)).isTrue();
+    assertThat(service.isServiceLocked(serviceName2)).isTrue();
 
-    service.unlockService(serviceLock1);
-    service.unlockService(serviceLock2);
-    assertThat(service.getServiceLocksByServiceName(serviceName1).size()).isZero();
-    assertThat(service.getServiceLocksByServiceName(serviceName2).size()).isZero();
+    service.unlockService(serviceName1);
+    service.unlockService(serviceName2);
+
+    assertThat(service.isServiceLocked(serviceName1)).isFalse();
+    assertThat(service.isServiceLocked(serviceName2)).isFalse();
   }
 
   @Test
@@ -121,11 +109,14 @@ public class LockServiceTest {
     String serviceName1 = UniqueStringGenerator.randomServiceName();
     String serviceName2 = UniqueStringGenerator.randomServiceName();
 
-    service.getServiceLocksByServiceName(serviceName1).forEach(s -> service.unlockService(s));
-    service.getServiceLocksByServiceName(serviceName2).forEach(s -> service.unlockService(s));
+    service.unlockService(serviceName1);
+    service.unlockService(serviceName2);
 
-    ServiceLockEntity serviceLock1 = LockService.lockService(service, serviceName1);
-    ServiceLockEntity serviceLock2 = LockService.lockService(service, serviceName2);
+    String lockId1 = PipeliteLocker.createLockId();
+    String lockId2 = PipeliteLocker.createLockId();
+
+    ServiceLockEntity serviceLock1 = LockService.lockService(service, serviceName1, lockId1);
+    ServiceLockEntity serviceLock2 = LockService.lockService(service, serviceName2, lockId2);
 
     assertTrue(LockService.lockProcess(service, serviceLock1, pipelineName, "1"));
     assertTrue(service.isProcessLocked(pipelineName, "1"));
@@ -155,14 +146,14 @@ public class LockServiceTest {
     assertTrue(service.isProcessLocked(pipelineName, "3"));
     assertFalse(service.isProcessLocked(pipelineName, "4"));
 
-    service.unlockProcesses(serviceLock1);
+    service.unlockProcesses(serviceName1);
 
     assertFalse(service.isProcessLocked(pipelineName, "1"));
     assertFalse(service.isProcessLocked(pipelineName, "2"));
     assertTrue(service.isProcessLocked(pipelineName, "3"));
     assertFalse(service.isProcessLocked(pipelineName, "4"));
 
-    service.unlockProcesses(serviceLock2);
+    service.unlockProcesses(serviceName2);
 
     assertFalse(service.isProcessLocked(pipelineName, "1"));
     assertFalse(service.isProcessLocked(pipelineName, "2"));
@@ -174,37 +165,47 @@ public class LockServiceTest {
   @Test
   public void testRemoveExpiredServiceLock() {
     String serviceName1 = UniqueStringGenerator.randomServiceName();
-    String serviceName2 = UniqueStringGenerator.randomServiceName();
 
-    service.getServiceLocksByServiceName(serviceName1).forEach(s -> service.unlockService(s));
-    service.getServiceLocksByServiceName(serviceName2).forEach(s -> service.unlockService(s));
+    service.unlockService(serviceName1);
 
-    assertThat(LockService.lockService(service, serviceName1)).isNotNull();
+    String lockId1 = PipeliteLocker.createLockId();
+    String lockId2 = PipeliteLocker.createLockId();
+
+    ServiceLockEntity serviceLockEntity1 = LockService.lockService(service, serviceName1, lockId1);
+    assertThat(serviceLockEntity1).isNotNull();
     assertThat(service.isServiceLocked(serviceName1)).isTrue();
 
     // Expired lock will not be removed.
-    assertThat(LockService.lockService(service, serviceName1)).isNull();
+    ServiceLockEntity serviceLockEntity2 = LockService.lockService(service, serviceName1, lockId2);
+    assertThat(serviceLockEntity2).isNull();
     assertThat(service.isServiceLocked(serviceName1)).isTrue();
 
     Time.wait(service.getLockDuration());
 
     // Expired lock will be removed.
-    assertThat(LockService.lockService(service, serviceName1)).isNotNull();
+    ServiceLockEntity serviceLockEntity3 = LockService.lockService(service, serviceName1, lockId2);
+    assertThat(serviceLockEntity3).isNotNull();
     assertThat(service.isServiceLocked(serviceName1)).isTrue();
+    assertThat(serviceLockEntity3.getExpiry()).isAfter(serviceLockEntity1.getExpiry());
   }
 
-  // Test fails if the lock is not created and checked for the first time within the lock duration.
   @Test
   public void testRemoveExpiredProcessLock() {
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     String serviceName1 = UniqueStringGenerator.randomServiceName();
     String serviceName2 = UniqueStringGenerator.randomServiceName();
 
-    service.getServiceLocksByServiceName(serviceName1).forEach(s -> service.unlockService(s));
-    service.getServiceLocksByServiceName(serviceName2).forEach(s -> service.unlockService(s));
+    service.unlockService(serviceName1);
+    service.unlockService(serviceName2);
 
-    ServiceLockEntity serviceLock1 = LockService.lockService(service, serviceName1);
-    ServiceLockEntity serviceLock2 = LockService.lockService(service, serviceName2);
+    assertThat(service.isServiceLocked(serviceName1)).isFalse();
+    assertThat(service.isServiceLocked(serviceName2)).isFalse();
+
+    String lockId1 = PipeliteLocker.createLockId();
+    String lockId2 = PipeliteLocker.createLockId();
+
+    ServiceLockEntity serviceLock1 = LockService.lockService(service, serviceName1, lockId1);
+    ServiceLockEntity serviceLock2 = LockService.lockService(service, serviceName2, lockId2);
 
     assertThat(service.isServiceLocked(serviceName1)).isTrue();
     assertThat(service.isServiceLocked(serviceName2)).isTrue();
@@ -222,8 +223,10 @@ public class LockServiceTest {
 
     Time.wait(service.getLockDuration());
 
-    // Expired lock will be removed.
+    // Renew lock.
     service.relockService(serviceLock2);
+
+    // Expired lock will be removed.
     assertThat(LockService.lockProcess(service, serviceLock2, pipelineName, processId)).isTrue();
     assertThat(service.isProcessLocked(pipelineName, processId)).isTrue();
   }

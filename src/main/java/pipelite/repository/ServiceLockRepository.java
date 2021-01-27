@@ -17,8 +17,10 @@ import org.springframework.stereotype.Repository;
 import pipelite.entity.ServiceLockEntity;
 
 @Repository
-public interface ServiceLockRepository extends JpaRepository<ServiceLockEntity, Long> {
+public interface ServiceLockRepository extends JpaRepository<ServiceLockEntity, String> {
   Optional<ServiceLockEntity> findByServiceName(String serviceName);
+
+  Long deleteByServiceName(String serviceName);
 
   Long deleteByServiceNameAndExpiryLessThanEqual(String serviceName, ZonedDateTime expiry);
 }

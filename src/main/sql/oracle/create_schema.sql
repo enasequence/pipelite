@@ -3,28 +3,24 @@
 -- define table_tablespace = 'era_tab';
 -- define index_tablespace = 'era_ind';
 
-create sequence pipelite2_service_lock_seq
-    increment by 1
-    start with 1;
-
 create table pipelite2_service_lock
 (
-    service_id   number(15,0) not null,
+    lock_id      varchar2(36) not null,
     service_name varchar2(256) not null,
-    host          varchar2(256) not null,
-    port          number(5,0) not null,
-    context_path  varchar2(256) not null,
-    expiry        timestamp            not null,
-    audit_time    date default sysdate not null
+    host         varchar2(256) not null,
+    port         number(5,0) not null,
+    context_path varchar2(256) not null,
+    expiry       timestamp            not null,
+    audit_time   date default sysdate not null
 ) tablespace &table_tablespace;
 
 -- @formatter:off
 
-create unique index pk_pipelite2_service_lock on pipelite2_service_lock (service_id)
+create unique index pk_pipelite2_service_lock on pipelite2_service_lock (lock_id)
 tablespace &index_tablespace;
 
 alter table pipelite2_service_lock add constraint pk_pipelite2_service_lock
-primary key (service_id) using index pk_pipelite2_service_lock
+primary key (lock_id) using index pk_pipelite2_service_lock
 ;
 
 create unique index uk_pipelite2_service_lock on pipelite2_service_lock (service_name)
@@ -136,7 +132,7 @@ end;
 
 create table pipelite2_process_lock
 (
-    service_id   number(15,0) not null,
+    service_name  varchar2(256) not null,
     pipeline_name varchar2(64) not null,
     process_id    varchar2(256) not null,
     audit_time    date default sysdate not null
@@ -156,7 +152,7 @@ primary key (process_id, pipeline_name) using index pk_pipelite2_process_lock
 create table pipelite2_schedule
 (
     pipeline_name    varchar2(64) not null,
-    service_name   varchar2(256) not null,
+    service_name     varchar2(256) not null,
     cron             varchar2(256) not null,
     description      varchar2(256),
     process_id       varchar2(64),
@@ -185,7 +181,7 @@ primary key (pipeline_name) using index pk_pipelite2_schedule
 create table pipelite2_schedule_audit
 (
     pipeline_name    varchar2(64),
-    service_name   varchar2(256),
+    service_name     varchar2(256),
     cron             varchar2(256),
     description      varchar2(256),
     process_id       varchar2(64),

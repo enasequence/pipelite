@@ -14,6 +14,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,7 @@ import pipelite.lock.PipeliteLocker;
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 @Flogger
+@Lazy
 public class PipeliteLockerService {
 
   private final ServiceConfiguration serviceConfiguration;

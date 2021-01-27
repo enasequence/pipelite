@@ -22,7 +22,7 @@ public interface ProcessLockRepository
 
   Optional<ProcessLockEntity> findByPipelineNameAndProcessId(String pipelineName, String processId);
 
-  Long deleteByServiceId(Long serviceId);
+  Long deleteByServiceName(String serviceName);
 
   Long deleteByPipelineNameAndProcessId(String pipelineName, String processId);
 }

@@ -32,6 +32,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ContextConfiguration;
 import pipelite.Pipeline;
 import pipelite.PipeliteTestBeans;
 import pipelite.PipeliteTestConfiguration;
@@ -67,6 +68,7 @@ import pipelite.stage.parameters.ExecutorParameters;
       "pipelite.advanced.processRunnerFrequency=250ms",
       "pipelite.advanced.shutdownIfIdle=true"
     })
+@ContextConfiguration(initializers = PipeliteTestConfiguration.TestContextInitializer.class)
 @DirtiesContext
 public class PipeliteLauncherTest {
 

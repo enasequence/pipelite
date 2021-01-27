@@ -11,6 +11,9 @@
 package pipelite;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.test.util.TestPropertyValues;
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import pipelite.configuration.WebServerCustomizer;
@@ -28,4 +31,15 @@ import pipelite.configuration.WebServerCustomizer;
         @ComponentScan.Filter(
             type = FilterType.ASSIGNABLE_TYPE,
             classes = {WebServerCustomizer.class}))
-public class PipeliteTestConfiguration {}
+public class PipeliteTestConfiguration {
+
+  /** Creates a unique service name for PipeliteLockerService. */
+  public static class TestContextInitializer
+      implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+    @Override
+    public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
+      TestPropertyValues.of("pipelite.service.name=" + UniqueStringGenerator.randomServiceName())
+          .applyTo(configurableApplicationContext.getEnvironment());
+    }
+  }
+}

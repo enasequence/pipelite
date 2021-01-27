@@ -27,6 +27,7 @@ public class DefaultPipeliteLocker implements PipeliteLocker {
   private final String serviceName;
   private final ServiceLockEntity lock;
   private final Thread renewLockThread;
+  private final String lockId = PipeliteLocker.createLockId();
 
   public DefaultPipeliteLocker(
       ServiceConfiguration serviceConfiguration,
@@ -65,9 +66,7 @@ public class DefaultPipeliteLocker implements PipeliteLocker {
     if (this.renewLockThread != null) {
       this.renewLockThread.interrupt();
     }
-    if (lock != null) {
-      unlockService();
-    }
+    unlockService();
   }
 
   @Override
@@ -83,11 +82,11 @@ public class DefaultPipeliteLocker implements PipeliteLocker {
 
   private ServiceLockEntity lockService(boolean force) {
     log.atFine().log("Locking service: " + serviceName);
-    ServiceLockEntity lock = LockService.lockService(lockService, serviceName);
+    ServiceLockEntity lock = LockService.lockService(lockService, serviceName, lockId);
     if (lock == null && force) {
-      log.atWarning().log("Forcing locking service: " + serviceName);
+      log.atWarning().log("Forcefully locking service: " + serviceName);
       unlockService();
-      lock = LockService.lockService(lockService, serviceName);
+      lock = LockService.lockService(lockService, serviceName, lockId);
     }
     if (lock == null) {
       throw new RuntimeException("Could not lock service " + serviceName);
@@ -98,8 +97,8 @@ public class DefaultPipeliteLocker implements PipeliteLocker {
   private void unlockService() {
     try {
       log.atFine().log("Unlocking service: " + serviceName);
-      lockService.unlockProcesses(lock);
-      lockService.unlockService(lock);
+      lockService.unlockProcesses(serviceName);
+      lockService.unlockService(serviceName);
     } catch (Exception ex) {
       log.atSevere().log("Failed to unlock service: " + serviceName);
     }
@@ -126,10 +125,5 @@ public class DefaultPipeliteLocker implements PipeliteLocker {
     Assert.notNull(pipelineName, "Missing pipeline name");
     Assert.notNull(processId, "Missing process id");
     lockService.unlockProcess(lock, pipelineName, processId);
-  }
-
-  @Override
-  public ServiceLockEntity getLock() {
-    return lock;
   }
 }

@@ -26,9 +26,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.util.TestPropertyValues;
-import org.springframework.context.ApplicationContextInitializer;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -60,18 +57,9 @@ import pipelite.time.Time;
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     classes = PipeliteTestConfiguration.class,
     properties = {"pipelite.advanced.processRunnerFrequency=250ms"})
-@ContextConfiguration(initializers = PipeliteSchedulerTest.TestContextInitializer.class)
+@ContextConfiguration(initializers = PipeliteTestConfiguration.TestContextInitializer.class)
 @DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
 public class PipeliteSchedulerTest {
-
-  public static class TestContextInitializer
-      implements ApplicationContextInitializer<ConfigurableApplicationContext> {
-    @Override
-    public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
-      TestPropertyValues.of("pipelite.service.name=" + UniqueStringGenerator.randomServiceName())
-          .applyTo(configurableApplicationContext.getEnvironment());
-    }
-  }
 
   @Autowired private ServiceConfiguration serviceConfiguration;
   @Autowired private AdvancedConfiguration advancedConfiguration;

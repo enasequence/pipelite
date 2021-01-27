@@ -10,7 +10,7 @@
  */
 package pipelite.lock;
 
-import pipelite.entity.ServiceLockEntity;
+import java.util.UUID;
 
 /**
  * Manages locks. Service locks prevent services with the same name from being executed at the same
@@ -43,9 +43,11 @@ public interface PipeliteLocker extends AutoCloseable {
   void unlockProcess(String pipelineName, String processId);
 
   /**
-   * Returns the service lock.
+   * Creates a new service lock id.
    *
-   * @return the service lock
+   * @return a new service lock id
    */
-  ServiceLockEntity getLock();
+  static String createLockId() {
+    return UUID.randomUUID().toString();
+  }
 }

@@ -12,9 +12,6 @@ package pipelite.service;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,36 +54,34 @@ public class LockService {
    *
    * @param lockService the lock service
    * @param serviceName the service name
+   * @param lockId the unique service lock id
    * @return the service lock or null if the lock could not be created.
    */
-  public static ServiceLockEntity lockService(LockService lockService, String serviceName) {
+  public static ServiceLockEntity lockService(
+      LockService lockService, String serviceName, String lockId) {
     Assert.notNull(lockService, "Missing lock service");
     // Catch DataIntegrityViolationException that my be thrown during commit.
     try {
-      return lockService.lockServiceThrowsDataIntegrityViolationException(serviceName);
+      return lockService.lockServiceThrowsDataIntegrityViolationException(serviceName, lockId);
     } catch (DataIntegrityViolationException ex) {
-      // Locking a launcher may throw DataIntegrityViolationException during commit.
+      // Locking the service may throw DataIntegrityViolationException during commit.
       log.atSevere().with(LogKey.SERVICE_NAME, serviceName).log("Failed to lock service");
       return null;
     }
   }
 
-  public ServiceLockEntity lockServiceThrowsDataIntegrityViolationException(String serviceName) {
+  public ServiceLockEntity lockServiceThrowsDataIntegrityViolationException(
+      String serviceName, String lockId) {
     log.atFine().with(LogKey.SERVICE_NAME, serviceName).log("Attempting to lock service");
     removeExpiredServiceLock(serviceName);
     ServiceLockEntity serviceLock = new ServiceLockEntity();
+    serviceLock.setLockId(lockId);
     serviceLock.setServiceName(serviceName);
     serviceLock.setExpiry(ZonedDateTime.now().plus(lockDuration));
     serviceLock.setHost(ServiceConfiguration.getCanonicalHostName());
     serviceLock.setPort(serviceConfiguration.getPort());
     serviceLock.setContextPath(serviceConfiguration.getContextPath());
     serviceLock = serviceLockRepository.save(serviceLock);
-    if (serviceLock.getServiceId() == null) {
-      log.atSevere()
-          .with(LogKey.SERVICE_NAME, serviceName)
-          .log("Failed to lock service: missing service id");
-      return null;
-    }
     log.atFine().with(LogKey.SERVICE_NAME, serviceName).log("Locked service");
     return serviceLock;
   }
@@ -116,17 +111,16 @@ public class LockService {
    * @return true if successful.
    */
   public boolean relockService(ServiceLockEntity serviceLock) {
-    log.atFine()
-        .with(LogKey.SERVICE_NAME, serviceLock.getServiceName())
-        .log("Attempting to relock service");
+    String serviceName = serviceLock.getServiceName();
+    log.atFine().with(LogKey.SERVICE_NAME, serviceName).log("Attempting to relock service");
     try {
       serviceLock.setExpiry(ZonedDateTime.now().plus(lockDuration));
       serviceLockRepository.save(serviceLock);
-      log.atFine().with(LogKey.SERVICE_NAME, serviceLock.getServiceName()).log("Relocked service");
+      log.atFine().with(LogKey.SERVICE_NAME, serviceName).log("Relocked service");
       return true;
     } catch (Exception ex) {
       log.atSevere()
-          .with(LogKey.SERVICE_NAME, serviceLock.getServiceName())
+          .with(LogKey.SERVICE_NAME, serviceName)
           .withCause(ex)
           .log("Failed to relock service");
       return false;
@@ -136,18 +130,16 @@ public class LockService {
   /**
    * Unlocks the service.
    *
-   * @param serviceLock the service lock
+   * @param serviceName the service name
    */
-  public void unlockService(ServiceLockEntity serviceLock) {
-    log.atFine()
-        .with(LogKey.SERVICE_NAME, serviceLock.getServiceName())
-        .log("Attempting to unlock service");
+  public void unlockService(String serviceName) {
+    log.atFine().with(LogKey.SERVICE_NAME, serviceName).log("Attempting to unlock service");
     try {
-      serviceLockRepository.delete(serviceLock);
-      log.atFine().with(LogKey.SERVICE_NAME, serviceLock.getServiceName()).log("Unlocked service");
+      serviceLockRepository.deleteByServiceName(serviceName);
+      log.atFine().with(LogKey.SERVICE_NAME, serviceName).log("Unlocked service");
     } catch (Exception ex) {
       log.atSevere()
-          .with(LogKey.SERVICE_NAME, serviceLock.getServiceName())
+          .with(LogKey.SERVICE_NAME, serviceName)
           .withCause(ex)
           .log("Failed to unlock service");
     }
@@ -168,6 +160,7 @@ public class LockService {
       String pipelineName,
       String processId) {
     Assert.notNull(lockService, "Missing lock service");
+    String serviceName = serviceLock.getServiceName();
     // Catch DataIntegrityViolationException that my be thrown during commit.
     try {
       return lockService.lockProcessThrowsDataIntegrityViolationException(
@@ -175,7 +168,7 @@ public class LockService {
     } catch (DataIntegrityViolationException ex) {
       // Locking a process may throw DataIntegrityViolationException during commit.
       log.atSevere()
-          .with(LogKey.SERVICE_NAME, serviceLock.getServiceName())
+          .with(LogKey.SERVICE_NAME, serviceName)
           .with(LogKey.PIPELINE_NAME, pipelineName)
           .with(LogKey.PROCESS_ID, processId)
           // .withCause(ex)
@@ -186,54 +179,55 @@ public class LockService {
 
   public boolean lockProcessThrowsDataIntegrityViolationException(
       ServiceLockEntity serviceLock, String pipelineName, String processId) {
+    String serviceName = serviceLock.getServiceName();
     log.atFine()
-        .with(LogKey.SERVICE_NAME, serviceLock.getServiceName())
+        .with(LogKey.SERVICE_NAME, serviceName)
         .with(LogKey.PIPELINE_NAME, pipelineName)
         .with(LogKey.PROCESS_ID, processId)
         .log("Attempting to lock process:");
-    removeExpiredProcessLock(pipelineName, processId);
 
-    if (isProcessLocked(pipelineName, processId)) {
-      return false;
+    Optional<ProcessLockEntity> processLock =
+        processLockRepository.findByPipelineNameAndProcessId(pipelineName, processId);
+
+    if (!processLock.isPresent()) {
+      // The process is not locked.
+      // Create process lock.
+      lockProcess(pipelineName, processId, serviceName);
+      return true;
     }
 
+    if (processLock.get().getServiceName().equals(serviceName)) {
+      // The process is already locked by the same service.
+      return true;
+    }
+
+    Optional<ServiceLockEntity> processServiceLock =
+        serviceLockRepository.findByServiceName(processLock.get().getServiceName());
+
+    if (!processServiceLock.isPresent()
+        || !processServiceLock.get().getExpiry().isAfter(ZonedDateTime.now())) {
+      // Remove process lock as service lock does not exist.
+      // Remove process lock as service lock has expired.
+      // Create process lock.
+      processLockRepository.deleteByPipelineNameAndProcessId(pipelineName, processId);
+      lockProcess(pipelineName, processId, serviceName);
+      return true;
+    }
+
+    return false;
+  }
+
+  private void lockProcess(String pipelineName, String processId, String serviceName) {
     ProcessLockEntity processLock = new ProcessLockEntity();
-    processLock.setServiceId(serviceLock.getServiceId());
+    processLock.setServiceName(serviceName);
     processLock.setPipelineName(pipelineName);
     processLock.setProcessId(processId);
     processLockRepository.save(processLock);
     log.atFine()
-        .with(LogKey.SERVICE_NAME, serviceLock.getServiceName())
+        .with(LogKey.SERVICE_NAME, serviceName)
         .with(LogKey.PIPELINE_NAME, pipelineName)
         .with(LogKey.PROCESS_ID, processId)
         .log("Locked process");
-    return true;
-  }
-
-  /**
-   * Remove expired process lock.
-   *
-   * @param pipelineName the pipeline name
-   * @param processId the process id
-   * @return true if an expired process lock was removed
-   */
-  private boolean removeExpiredProcessLock(String pipelineName, String processId) {
-    Optional<ProcessLockEntity> processLock =
-        processLockRepository.findByPipelineNameAndProcessId(pipelineName, processId);
-    if (!processLock.isPresent()) {
-      return false;
-    }
-    Optional<ServiceLockEntity> serviceLock =
-        serviceLockRepository.findById(processLock.get().getServiceId());
-    if (!serviceLock.isPresent()) {
-      // Remove process lock as service lock does not exist.
-      return processLockRepository.deleteByPipelineNameAndProcessId(pipelineName, processId) > 0;
-    }
-    if (!serviceLock.get().getExpiry().isAfter(ZonedDateTime.now())) {
-      // Remove process lock as service lock has expired.
-      return processLockRepository.deleteByPipelineNameAndProcessId(pipelineName, processId) > 0;
-    }
-    return false;
   }
 
   /**
@@ -246,26 +240,27 @@ public class LockService {
    */
   public boolean unlockProcess(
       ServiceLockEntity serviceLock, String pipelineName, String processId) {
+    String serviceName = serviceLock.getServiceName();
     log.atFine()
-        .with(LogKey.SERVICE_NAME, serviceLock.getServiceName())
+        .with(LogKey.SERVICE_NAME, serviceName)
         .with(LogKey.PIPELINE_NAME, pipelineName)
         .with(LogKey.PROCESS_ID, processId)
         .log("Attempting to unlock process");
     try {
       ProcessLockEntity processLock = new ProcessLockEntity();
-      processLock.setServiceId(serviceLock.getServiceId());
+      processLock.setServiceName(serviceName);
       processLock.setPipelineName(pipelineName);
       processLock.setProcessId(processId);
       processLockRepository.delete(processLock);
       log.atFine()
-          .with(LogKey.SERVICE_NAME, serviceLock.getServiceName())
+          .with(LogKey.SERVICE_NAME, serviceName)
           .with(LogKey.PIPELINE_NAME, pipelineName)
           .with(LogKey.PROCESS_ID, processId)
           .log("Unlocked process");
       return true;
     } catch (Exception ex) {
       log.atSevere()
-          .with(LogKey.SERVICE_NAME, serviceLock.getServiceName())
+          .with(LogKey.SERVICE_NAME, serviceName)
           .with(LogKey.PIPELINE_NAME, pipelineName)
           .with(LogKey.PROCESS_ID, processId)
           .withCause(ex)
@@ -277,18 +272,16 @@ public class LockService {
   /**
    * Unlocks the processes associated with a launcher.
    *
-   * @param serviceLock the service lock
+   * @param serviceName the service name
    */
-  public void unlockProcesses(ServiceLockEntity serviceLock) {
-    log.atFine()
-        .with(LogKey.SERVICE_NAME, serviceLock.getServiceName())
-        .log("Attempting to unlock processes");
+  public void unlockProcesses(String serviceName) {
+    log.atFine().with(LogKey.SERVICE_NAME, serviceName).log("Attempting to unlock processes");
     try {
-      processLockRepository.deleteByServiceId(serviceLock.getServiceId());
-      log.atFine().with(LogKey.SERVICE_NAME, serviceLock.getServiceName()).log("Unlock processes");
+      processLockRepository.deleteByServiceName(serviceName);
+      log.atFine().with(LogKey.SERVICE_NAME, serviceName).log("Unlocked processes");
     } catch (Exception ex) {
       log.atSevere()
-          .with(LogKey.SERVICE_NAME, serviceLock.getServiceName())
+          .with(LogKey.SERVICE_NAME, serviceName)
           .withCause(ex)
           .log("Failed to unlock processes");
     }
@@ -309,7 +302,7 @@ public class LockService {
   }
 
   /**
-   * Returns true if the process is locked.
+   * Returns true if the process is locked and the lock has not expired.
    *
    * @param pipelineName the pipeline name
    * @param processId the process id
@@ -319,14 +312,17 @@ public class LockService {
     Optional<ProcessLockEntity> processLock =
         processLockRepository.findByPipelineNameAndProcessId(pipelineName, processId);
     if (!processLock.isPresent()) {
+      // There is no process lock.
       return false;
     }
     Optional<ServiceLockEntity> serviceLock =
-        serviceLockRepository.findById(processLock.get().getServiceId());
-    if (!serviceLock.isPresent()) {
+        serviceLockRepository.findByServiceName(processLock.get().getServiceName());
+    if (!serviceLock.isPresent() || !serviceLock.get().getExpiry().isAfter(ZonedDateTime.now())) {
+      // The service lock does not exist.
+      // The service lock has expired.
       return false;
     }
-    return serviceLock.get().getExpiry().isAfter(ZonedDateTime.now());
+    return true;
   }
 
   /**
@@ -336,13 +332,5 @@ public class LockService {
    */
   public Duration getLockDuration() {
     return lockDuration;
-  }
-
-  public List<ServiceLockEntity> getServiceLocksByServiceName(String serviceName) {
-    Optional<ServiceLockEntity> lock = serviceLockRepository.findByServiceName(serviceName);
-    if (lock.isPresent()) {
-      return Arrays.asList(lock.get());
-    }
-    return Collections.emptyList();
   }
 }
