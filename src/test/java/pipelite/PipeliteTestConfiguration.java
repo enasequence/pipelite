@@ -38,7 +38,10 @@ public class PipeliteTestConfiguration {
       implements ApplicationContextInitializer<ConfigurableApplicationContext> {
     @Override
     public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
-      TestPropertyValues.of("pipelite.service.name=" + UniqueStringGenerator.randomServiceName())
+      TestPropertyValues.of(
+              "pipelite.service.name="
+                  + UniqueStringGenerator.randomServiceName(PipeliteTestConfiguration.class),
+              "pipelite.service.force=true")
           .applyTo(configurableApplicationContext.getEnvironment());
     }
   }

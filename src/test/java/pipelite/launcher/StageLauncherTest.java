@@ -32,8 +32,8 @@ public class StageLauncherTest {
   private void callExecutor(StageState stageState) {
     ExecutorConfiguration executorConfiguration = new ExecutorConfiguration();
     StageService stageService = mock(StageService.class);
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
+    String pipelineName = UniqueStringGenerator.randomPipelineName(StageLauncherTest.class);
+    String processId = UniqueStringGenerator.randomProcessId(StageLauncherTest.class);
     Process process =
         new ProcessBuilder(processId)
             .execute("STAGE1")
@@ -65,8 +65,8 @@ public class StageLauncherTest {
   private void asyncCallExecutor(StageState stageState) {
     ExecutorConfiguration executorConfiguration = new ExecutorConfiguration();
     StageService stageService = mock(StageService.class);
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
+    String pipelineName = UniqueStringGenerator.randomPipelineName(StageLauncherTest.class);
+    String processId = UniqueStringGenerator.randomProcessId(StageLauncherTest.class);
     Process process =
         new ProcessBuilder(processId)
             .execute("STAGE1")

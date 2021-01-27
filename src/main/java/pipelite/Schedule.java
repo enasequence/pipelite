@@ -11,12 +11,12 @@
 package pipelite;
 
 /** Implement this interface to register a scheduled pipeline to be executed by pipelite. */
-public interface Schedule extends Pipeline {
+public interface Schedule extends RegisteredPipeline {
 
+  /**
+   * Returns the cron expression for the scheduled pipeline.
+   *
+   * @return the cron expression for the scheduled pipeline.
+   */
   String getCron();
-
-  @Override
-  default int getPipelineParallelism() {
-    return 1;
-  }
 }

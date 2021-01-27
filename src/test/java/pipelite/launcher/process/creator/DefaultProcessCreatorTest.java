@@ -25,7 +25,7 @@ public class DefaultProcessCreatorTest {
   @Test
   public void test() {
     final int processCnt = 100;
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String pipelineName = UniqueStringGenerator.randomPipelineName(DefaultProcessCreatorTest.class);
     ProcessService service = mock(ProcessService.class);
     DefaultProcessCreator creator =
         spy(

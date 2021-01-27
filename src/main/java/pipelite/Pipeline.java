@@ -10,31 +10,13 @@
  */
 package pipelite;
 
-import pipelite.process.Process;
-import pipelite.process.builder.ProcessBuilder;
-
 /** Implement this interface to register a pipeline to be executed by pipelite. */
-public interface Pipeline {
+public interface Pipeline extends RegisteredPipeline {
 
   /**
-   * Returns the pipeline name. The name must be unique.
-   *
-   * @return the pipeline name
-   */
-  String getPipelineName();
-
-  /**
-   * Returns the maximum number of parallel process executions.
+   * The maximum number of parallel process executions.
    *
    * @return the maximum number of parallel process executions
    */
   int getPipelineParallelism();
-
-  /**
-   * Creates a process to be executed by pipelite.
-   *
-   * @param builder the process builder
-   * @return the process
-   */
-  Process createProcess(ProcessBuilder builder);
 }

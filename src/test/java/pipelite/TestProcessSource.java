@@ -25,7 +25,7 @@ public class TestProcessSource implements ProcessSource {
   public TestProcessSource(String pipelineName, int processCnt) {
     this.pipelineName = pipelineName;
     for (int i = 0; i < processCnt; ++i) {
-      newProcesses.add(i + "_" + UniqueStringGenerator.randomProcessId());
+      newProcesses.add(i + "_" + UniqueStringGenerator.randomProcessId(TestProcessSource.class));
     }
   }
 

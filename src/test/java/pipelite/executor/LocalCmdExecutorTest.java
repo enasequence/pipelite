@@ -21,8 +21,10 @@ import pipelite.stage.parameters.CmdExecutorParameters;
 
 public class LocalCmdExecutorTest {
 
-  private final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
-  private final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
+  private final String PIPELINE_NAME =
+      UniqueStringGenerator.randomPipelineName(LocalCmdExecutorTest.class);
+  private final String PROCESS_ID =
+      UniqueStringGenerator.randomProcessId(LocalCmdExecutorTest.class);
 
   @Test
   public void test() {

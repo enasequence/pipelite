@@ -19,7 +19,8 @@ import pipelite.process.builder.ProcessBuilder;
 
 public class ProcessBuilderTest {
 
-  private static final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
+  private static final String PROCESS_ID =
+      UniqueStringGenerator.randomProcessId(ProcessBuilderTest.class);
 
   @Test
   public void test() {

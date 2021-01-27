@@ -31,8 +31,9 @@ public class SshLsfExecutorTest {
 
   @Autowired LsfTestConfiguration lsfTestConfiguration;
 
-  private final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
-  private final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
+  private final String PIPELINE_NAME =
+      UniqueStringGenerator.randomPipelineName(SshLsfExecutorTest.class);
+  private final String PROCESS_ID = UniqueStringGenerator.randomProcessId(SshLsfExecutorTest.class);
 
   @Test
   @Disabled

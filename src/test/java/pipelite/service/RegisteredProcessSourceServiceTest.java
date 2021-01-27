@@ -29,9 +29,12 @@ public class RegisteredProcessSourceServiceTest {
 
   @Autowired RegisteredProcessSourceService registeredProcessSourceService;
 
-  private static final String PIPELINE_NAME_1 = UniqueStringGenerator.randomPipelineName();
-  private static final String PIPELINE_NAME_2 = UniqueStringGenerator.randomPipelineName();
-  private static final String PIPELINE_NAME_3 = UniqueStringGenerator.randomPipelineName();
+  private static final String PIPELINE_NAME_1 =
+      UniqueStringGenerator.randomPipelineName(RegisteredProcessSourceServiceTest.class);
+  private static final String PIPELINE_NAME_2 =
+      UniqueStringGenerator.randomPipelineName(RegisteredProcessSourceServiceTest.class);
+  private static final String PIPELINE_NAME_3 =
+      UniqueStringGenerator.randomPipelineName(RegisteredProcessSourceServiceTest.class);
 
   @TestConfiguration
   static class TestConfig {

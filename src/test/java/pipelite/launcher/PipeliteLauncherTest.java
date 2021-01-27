@@ -62,7 +62,6 @@ import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
 
 @SpringBootTest(
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     classes = PipeliteTestConfiguration.class,
     properties = {
       "pipelite.advanced.processRunnerFrequency=250ms",
@@ -101,17 +100,17 @@ public class PipeliteLauncherTest {
     @Bean("processSuccess")
     @Primary
     public TestPipeline processSuccess() {
-      return new TestPipeline("processSuccess", 4, 2, StageTestResult.SUCCESS);
+      return new TestPipeline(4, 2, StageTestResult.SUCCESS);
     }
 
     @Bean("processFailure")
     public TestPipeline processFailure() {
-      return new TestPipeline("processFailure", 4, 2, StageTestResult.ERROR);
+      return new TestPipeline(4, 2, StageTestResult.ERROR);
     }
 
     @Bean("processException")
     public TestPipeline processException() {
-      return new TestPipeline("processException", 4, 2, StageTestResult.EXCEPTION);
+      return new TestPipeline(4, 2, StageTestResult.EXCEPTION);
     }
 
     @Bean
@@ -163,17 +162,12 @@ public class PipeliteLauncherTest {
     public final List<String> processIds = Collections.synchronizedList(new ArrayList<>());
     public final AtomicLong stageExecCnt = new AtomicLong();
 
-    public TestPipeline(
-        String pipelineNamePrefix, int processCnt, int stageCnt, StageTestResult stageTestResult) {
-      this.pipelineName = pipelineNamePrefix + "_" + UniqueStringGenerator.randomPipelineName();
+    public TestPipeline(int processCnt, int stageCnt, StageTestResult stageTestResult) {
+      this.pipelineName = UniqueStringGenerator.randomPipelineName(PipeliteLauncherTest.class);
+      ;
       this.processCnt = processCnt;
       this.stageCnt = stageCnt;
       this.stageTestResult = stageTestResult;
-    }
-
-    public void reset() {
-      processIds.clear();
-      stageExecCnt.set(0L);
     }
 
     @Override
@@ -335,7 +329,7 @@ public class PipeliteLauncherTest {
   @Test
   public void testRunProcess() {
     final int processCnt = 100;
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String pipelineName = UniqueStringGenerator.randomPipelineName(PipeliteLauncherTest.class);
     ServiceConfiguration serviceConfiguration = new ServiceConfiguration();
     AdvancedConfiguration advancedConfiguration = new AdvancedConfiguration();
     int pipelineParallelism = ForkJoinPool.getCommonPoolParallelism();
@@ -396,7 +390,7 @@ public class PipeliteLauncherTest {
   @Test
   public void testQueueProcesses() {
     final int processCnt = 100;
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String pipelineName = UniqueStringGenerator.randomPipelineName(PipeliteLauncherTest.class);
     Duration refreshFrequency = Duration.ofDays(1);
     ServiceConfiguration serviceConfiguration = new ServiceConfiguration();
     AdvancedConfiguration advancedConfiguration = new AdvancedConfiguration();
@@ -454,7 +448,7 @@ public class PipeliteLauncherTest {
   @Test
   public void testCreateProcess() {
     final int processCnt = 100;
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String pipelineName = UniqueStringGenerator.randomPipelineName(PipeliteLauncherTest.class);
     ServiceConfiguration serviceConfiguration = new ServiceConfiguration();
     AdvancedConfiguration advancedConfiguration = new AdvancedConfiguration();
     advancedConfiguration.setProcessCreateMaxSize(100);

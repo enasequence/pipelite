@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.Pipeline;
+import pipelite.Schedule;
 import pipelite.configuration.AdvancedConfiguration;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.ProcessEntity;
@@ -30,6 +31,7 @@ import pipelite.lock.PipeliteLocker;
 import pipelite.log.LogKey;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
+import pipelite.process.ProcessFactory;
 import pipelite.service.*;
 
 /**
@@ -41,7 +43,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
 
   private final ScheduleService scheduleService;
   private final ProcessService processService;
-  private final PipelineCache pipelineCache;
+  private final ScheduleCache scheduleCache;
   private final List<PipeliteSchedulerSchedule> schedules =
       Collections.synchronizedList(new ArrayList<>());
   private final Map<String, AtomicLong> maximumExecutions = new ConcurrentHashMap<>();
@@ -61,7 +63,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     Assert.notNull(registeredPipelineService, "Missing pipeline service");
     Assert.notNull(scheduleService, "Missing schedule service");
     Assert.notNull(processService, "Missing process service");
-    this.pipelineCache = new PipelineCache(registeredPipelineService);
+    this.scheduleCache = new ScheduleCache(registeredPipelineService);
     this.scheduleService = scheduleService;
     this.processService = processService;
     this.serviceName = serviceConfiguration.getName();
@@ -89,9 +91,11 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
         .forEach(
             s -> {
               try {
-                executeSchedule(s, createProcessEntity(s));
+                executeSchedule(s, createProcessEntity(s), false);
               } catch (Exception ex) {
-                logContext(log.atSevere(), s.getPipelineName()).log("Could not execute schedule");
+                logContext(log.atSevere(), s.getPipelineName())
+                    .withCause(ex)
+                    .log("Could not execute schedule");
               }
             });
   }
@@ -156,7 +160,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
       logContext(log.atSevere(), pipelineName, scheduleEntity.getProcessId())
           .log("Could not resume schedule because process does not exist");
     } else {
-      executeSchedule(schedule, processEntity.get());
+      executeSchedule(schedule, processEntity.get(), true);
     }
   }
 
@@ -200,23 +204,89 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     }
   }
 
-  protected void executeSchedule(PipeliteSchedulerSchedule schedule, ProcessEntity processEntity) {
+  protected void executeSchedule(
+      PipeliteSchedulerSchedule pipeliteSchedulerSchedule,
+      ProcessEntity processEntity,
+      boolean isResume) {
     String pipelineName = processEntity.getPipelineName();
     String processId = processEntity.getProcessId();
     logContext(log.atInfo(), pipelineName, processId).log("Executing scheduled process");
 
-    Process process;
-    try {
-      process = PipelineHelper.create(processEntity, pipelineCache.getPipeline(pipelineName));
-    } catch (Exception ex) {
-      log.atSevere().withCause(ex).log(
-          "Unexpected exception when creating " + pipelineName + " process");
-      metrics.pipeline(pipelineName).incrementInternalErrorCount();
+    Schedule schedule = getSchedule(pipelineName);
+    if (schedule == null) {
       return;
     }
 
-    // Scheduled pipelines support only immediate retries. Set the maximum retries
-    // to the number of immediate retries.
+    Process process = getProcess(processEntity, pipelineName, schedule);
+    if (process == null) {
+      return;
+    }
+
+    setMaximumRetries(process);
+
+    if (!isResume) {
+      scheduleService.startExecution(pipelineName, processId);
+    }
+
+    pipeliteSchedulerSchedule.setLaunchTime(null);
+
+    runProcess(
+        pipelineName,
+        process,
+        (p, r) -> {
+          ZonedDateTime nextLaunchTime = pipeliteSchedulerSchedule.getNextLaunchTime();
+          try {
+            scheduleService.endExecution(processEntity, nextLaunchTime);
+          } catch (Exception ex) {
+            log.atSevere().log("Failed to end execution for scheduled pipeline: " + pipelineName);
+          } finally {
+            pipeliteSchedulerSchedule.setLaunchTime(nextLaunchTime);
+            decreaseMaximumExecutions(pipelineName);
+          }
+        });
+  }
+
+  private Process getProcess(ProcessEntity processEntity, String pipelineName, Schedule schedule) {
+    Process process;
+    try {
+      process = ProcessFactory.create(processEntity, schedule);
+    } catch (Exception ex) {
+      log.atSevere().withCause(ex).log(
+          "Unexpected exception when creating process for pipeline " + pipelineName);
+      metrics.pipeline(pipelineName).incrementInternalErrorCount();
+      return null;
+    }
+    if (process == null) {
+      log.atSevere().log("Failed to create a process for pipeline: " + pipelineName);
+      metrics.pipeline(pipelineName).incrementInternalErrorCount();
+      return null;
+    }
+    return process;
+  }
+
+  private Schedule getSchedule(String pipelineName) {
+    Schedule schedule;
+    try {
+      schedule = scheduleCache.getSchedule(pipelineName);
+    } catch (Exception ex) {
+      log.atSevere().withCause(ex).log(
+          "Unexpected exception when creating schedule for pipeline: " + pipelineName);
+      metrics.pipeline(pipelineName).incrementInternalErrorCount();
+      return null;
+    }
+    if (schedule == null) {
+      log.atSevere().log("Failed to create a schedule for pipeline: " + pipelineName);
+      metrics.pipeline(pipelineName).incrementInternalErrorCount();
+      return null;
+    }
+    return schedule;
+  }
+
+  /**
+   * Scheduled pipelines support only immediate retries. Set the maximum retries to the number of
+   * immediate retries.
+   */
+  private void setMaximumRetries(Process process) {
     process
         .getStages()
         .forEach(
@@ -225,24 +295,6 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
                     .getExecutor()
                     .getExecutorParams()
                     .setMaximumRetries(StageLauncher.getImmediateRetries(stage)));
-
-    scheduleService.startExecution(pipelineName, processId);
-    schedule.setLaunchTime(null);
-
-    runProcess(
-        pipelineName,
-        process,
-        (p, r) -> {
-          ZonedDateTime nextLaunchTime = schedule.getNextLaunchTime();
-          try {
-            scheduleService.endExecution(processEntity, nextLaunchTime);
-          } catch (Exception ex) {
-            log.atSevere().log("Failed to end execution for scheduled pipeline: " + pipelineName);
-          } finally {
-            schedule.setLaunchTime(nextLaunchTime);
-            decreaseMaximumExecutions(pipelineName);
-          }
-        });
   }
 
   /**

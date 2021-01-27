@@ -31,7 +31,7 @@ public class PipeliteServiceManagerTest {
 
     @Override
     public String getLauncherName() {
-      return UniqueStringGenerator.randomLauncherName();
+      return UniqueStringGenerator.randomLauncherName(PipeliteServiceManagerTest.class);
     }
 
     @Override

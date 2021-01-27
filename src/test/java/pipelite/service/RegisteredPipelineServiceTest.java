@@ -14,53 +14,102 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.util.Collections;
+
+import org.checkerframework.checker.units.qual.A;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import pipelite.Pipeline;
-import pipelite.PipeliteTestConfiguration;
-import pipelite.TestPipeline;
-import pipelite.UniqueStringGenerator;
+import org.springframework.test.context.ContextConfiguration;
+import pipelite.*;
 import pipelite.exception.PipeliteException;
+import pipelite.process.Process;
+import pipelite.process.builder.ProcessBuilder;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
+@ContextConfiguration(initializers = PipeliteTestConfiguration.TestContextInitializer.class)
 public class RegisteredPipelineServiceTest {
 
   @Autowired RegisteredPipelineService registeredPipelineService;
 
-  private static final String PIPELINE_NAME_1 = UniqueStringGenerator.randomPipelineName();
-  private static final String PIPELINE_NAME_2 = UniqueStringGenerator.randomPipelineName();
-  private static final String PIPELINE_NAME_3 = UniqueStringGenerator.randomPipelineName();
+  @Autowired TestPipeline pipeline1;
+  @Autowired TestPipeline pipeline2;
 
   @TestConfiguration
-  static class TestConfig {
+  public static class TestConfig {
     @Bean
-    public Pipeline firstProcessFactory() {
-      return new TestPipeline(PIPELINE_NAME_1, Collections.emptyList());
+    public TestPipeline pipeline1() {
+      return new TestPipeline();
     }
 
     @Bean
-    public Pipeline secondProcessFactory() {
-      return new TestPipeline(PIPELINE_NAME_2, Collections.emptyList());
+    public TestPipeline pipeline2() {
+      return new TestPipeline();
+    }
+  }
+
+  public static class TestPipeline implements Pipeline {
+    private final String pipelineName =
+        UniqueStringGenerator.randomPipelineName(RegisteredPipelineServiceTest.class);
+    @Override
+    public int getPipelineParallelism() {
+      return 1;
+    }
+    @Override
+    public String getPipelineName() {
+      return pipelineName;
+    }
+    @Override
+    public Process createProcess(ProcessBuilder builder) {
+      return null;
     }
   }
 
   @Test
-  public void test() {
-    assertThat(registeredPipelineService.getPipeline(PIPELINE_NAME_1).getPipelineName())
-        .isEqualTo(PIPELINE_NAME_1);
-    assertThat(registeredPipelineService.getPipeline(PIPELINE_NAME_2).getPipelineName())
-        .isEqualTo(PIPELINE_NAME_2);
+  public void getRegisteredPipeline() {
+    assertThat(
+            registeredPipelineService
+                .getRegisteredPipeline(pipeline1.getPipelineName())
+                .getPipelineName())
+        .isEqualTo(pipeline1.getPipelineName());
+    assertThat(
+            registeredPipelineService
+                .getRegisteredPipeline(pipeline2.getPipelineName())
+                .getPipelineName())
+        .isEqualTo(pipeline2.getPipelineName());
+
+    assertThat(
+            registeredPipelineService
+                .getRegisteredPipeline(pipeline1.getPipelineName(), Pipeline.class)
+                .getPipelineName())
+        .isEqualTo(pipeline1.getPipelineName());
+    assertThat(
+            registeredPipelineService
+                .getRegisteredPipeline(pipeline2.getPipelineName(), Pipeline.class)
+                .getPipelineName())
+        .isEqualTo(pipeline2.getPipelineName());
+
+    assertThat(
+            registeredPipelineService.getRegisteredPipeline(
+                pipeline1.getPipelineName(), Schedule.class))
+        .isNull();
+    assertThat(
+            registeredPipelineService.getRegisteredPipeline(
+                pipeline2.getPipelineName(), Schedule.class))
+        .isNull();
+
     assertThatExceptionOfType(PipeliteException.class)
-        .isThrownBy(() -> registeredPipelineService.getPipeline(null))
+        .isThrownBy(() -> registeredPipelineService.getRegisteredPipeline(null))
         .withMessage("Missing pipeline name");
     assertThatExceptionOfType(PipeliteException.class)
-        .isThrownBy(() -> registeredPipelineService.getPipeline(""))
+        .isThrownBy(() -> registeredPipelineService.getRegisteredPipeline(""))
         .withMessage("Missing pipeline name");
     assertThatExceptionOfType(PipeliteException.class)
-        .isThrownBy(() -> registeredPipelineService.getPipeline(PIPELINE_NAME_3))
+        .isThrownBy(
+            () ->
+                registeredPipelineService.getRegisteredPipeline(
+                    UniqueStringGenerator.randomPipelineName(RegisteredPipelineServiceTest.class)))
         .withMessageStartingWith("Unknown pipeline");
   }
 }

@@ -52,7 +52,7 @@ public class DefaultProcessQueueTest {
     final int getPendingProcessCnt = 50;
     final int processQueueMaxSize = 150;
     final int pipelineParallelism = 10;
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String pipelineName = UniqueStringGenerator.randomPipelineName(DefaultProcessQueueTest.class);
     Duration refreshFrequency = Duration.ofDays(1);
     ServiceConfiguration serviceConfiguration = new ServiceConfiguration();
     AdvancedConfiguration advancedConfiguration = new AdvancedConfiguration();

@@ -14,25 +14,29 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
-import pipelite.Pipeline;
+import pipelite.Schedule;
 import pipelite.service.RegisteredPipelineService;
 
 @Flogger
-public class PipelineCache {
+public class ScheduleCache {
 
   private final RegisteredPipelineService service;
-  private final Map<String, Pipeline> cache = new ConcurrentHashMap<>();
+  private final Map<String, Schedule> cache = new ConcurrentHashMap<>();
 
-  public PipelineCache(RegisteredPipelineService service) {
+  public ScheduleCache(RegisteredPipelineService service) {
     Assert.notNull(service, "Missing registered pipeline service");
     this.service = service;
   }
 
-  public Pipeline getPipeline(String pipelineName) {
+  public Schedule getSchedule(String pipelineName) {
     if (cache.containsKey(pipelineName)) {
       return cache.get(pipelineName);
     }
-    cache.putIfAbsent(pipelineName, service.getPipeline(pipelineName));
+    Schedule schedule = service.getRegisteredPipeline(pipelineName, Schedule.class);
+    if (schedule == null) {
+      return null;
+    }
+    cache.putIfAbsent(pipelineName, schedule);
     return cache.get(pipelineName);
   }
 }

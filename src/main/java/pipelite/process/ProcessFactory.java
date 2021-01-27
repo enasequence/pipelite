@@ -8,48 +8,46 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.process;
 
 import lombok.extern.flogger.Flogger;
-import pipelite.Pipeline;
+import pipelite.RegisteredPipeline;
 import pipelite.entity.ProcessEntity;
 import pipelite.exception.PipeliteException;
-import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 
-/** Creates processes. */
 @Flogger
-public class PipelineHelper {
+public class ProcessFactory {
 
-  private PipelineHelper() {}
+  private ProcessFactory() {}
 
   /**
    * Creates a process.
    *
    * @param processId the process id
-   * @param pipeline the pipeline
+   * @param registeredPipeline the registered pipeline
    * @return the process
    * @throws PipeliteException if the new process could not be created
    */
-  public static Process create(String processId, Pipeline pipeline) {
+  public static Process create(String processId, RegisteredPipeline registeredPipeline) {
     if (processId == null) {
       throw new PipeliteException("Failed to create process. Missing process id.");
     }
 
-    if (pipeline == null) {
-      throw new PipeliteException("Failed to create process. Missing pipeline.");
+    if (registeredPipeline == null) {
+      throw new PipeliteException("Failed to create process. Missing registered pipeline.");
     }
 
-    String pipelineName = pipeline.getPipelineName();
+    String pipelineName = registeredPipeline.getPipelineName();
 
     if (pipelineName == null) {
       throw new PipeliteException("Failed to create process. Missing pipeline name.");
     }
 
     try {
-      log.atInfo().log("Creating %s process %s", pipelineName, processId);
+      log.atFine().log("Creating %s process %s", pipelineName, processId);
 
-      Process process = pipeline.createProcess(new ProcessBuilder(processId));
+      Process process = registeredPipeline.createProcess(new ProcessBuilder(processId));
       if (process == null) {
         throw new PipeliteException(
             "Failed to create "
@@ -70,11 +68,11 @@ public class PipelineHelper {
    * Creates a process.
    *
    * @param processEntity the process entity
-   * @param pipeline the pipeline
+   * @param registeredPipeline the registered pipeline
    * @return the process
    * @throws PipeliteException if the new process could not be created
    */
-  public static Process create(ProcessEntity processEntity, Pipeline pipeline) {
+  public static Process create(ProcessEntity processEntity, RegisteredPipeline registeredPipeline) {
     if (processEntity == null) {
       throw new PipeliteException("Failed to create process. Missing process entity.");
     }
@@ -85,18 +83,19 @@ public class PipelineHelper {
       throw new PipeliteException("Failed to create process. Missing process id.");
     }
 
-    if (pipeline == null) {
-      throw new PipeliteException("Failed to create process " + processId + ". Missing pipeline.");
+    if (registeredPipeline == null) {
+      throw new PipeliteException(
+          "Failed to create process " + processId + ". Missing registered pipeline.");
     }
 
-    String pipelineName = pipeline.getPipelineName();
+    String pipelineName = registeredPipeline.getPipelineName();
 
     if (pipelineName == null) {
       throw new PipeliteException(
           "Failed to create process " + processId + ". Missing pipeline name.");
     }
 
-    if (!pipeline.getPipelineName().equals(processEntity.getPipelineName())) {
+    if (!registeredPipeline.getPipelineName().equals(processEntity.getPipelineName())) {
       throw new PipeliteException(
           "Failed to create "
               + pipelineName
@@ -106,7 +105,7 @@ public class PipelineHelper {
               + processEntity.getPipelineName());
     }
 
-    Process process = create(processId, pipeline);
+    Process process = create(processId, registeredPipeline);
     process.setProcessEntity(processEntity);
     return process;
   }

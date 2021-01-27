@@ -34,8 +34,8 @@ class ScheduleServiceTest {
 
   @Test
   public void lifecycle() {
-    String serviceName = UniqueStringGenerator.randomServiceName();
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String serviceName = UniqueStringGenerator.randomServiceName(ScheduleServiceTest.class);
+    String pipelineName = UniqueStringGenerator.randomPipelineName(ScheduleServiceTest.class);
     String cron = "0/1 * * * * ?"; // every second
     String description = CronUtils.describe(cron);
 

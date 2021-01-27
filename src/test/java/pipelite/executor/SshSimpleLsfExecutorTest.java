@@ -30,8 +30,10 @@ public class SshSimpleLsfExecutorTest {
 
   @Autowired LsfTestConfiguration lsfTestConfiguration;
 
-  private final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
-  private final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
+  private final String PIPELINE_NAME =
+      UniqueStringGenerator.randomPipelineName(SshSimpleLsfExecutorTest.class);
+  private final String PROCESS_ID =
+      UniqueStringGenerator.randomProcessId(SshSimpleLsfExecutorTest.class);
 
   @Test
   public void test() {

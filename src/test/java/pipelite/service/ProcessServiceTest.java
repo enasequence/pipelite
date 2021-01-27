@@ -38,8 +38,8 @@ class ProcessServiceTest {
   @Test
   public void lifecycle() {
 
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
+    String pipelineName = UniqueStringGenerator.randomPipelineName(ProcessServiceTest.class);
+    String processId = UniqueStringGenerator.randomProcessId(ProcessServiceTest.class);
     int priority = 1;
 
     ProcessEntity processEntity = service.createExecution(pipelineName, processId, priority);
@@ -82,7 +82,7 @@ class ProcessServiceTest {
 
   @Test
   public void testGetActiveCompletedFailedPendingProcessesWithSamePriority() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String pipelineName = UniqueStringGenerator.randomPipelineName(ProcessServiceTest.class);
 
     saveProcess(pipelineName, ProcessState.ACTIVE, 1);
     saveProcess(pipelineName, ProcessState.ACTIVE, 1);
@@ -104,7 +104,7 @@ class ProcessServiceTest {
 
   @Test
   public void testGetActiveCompletedFailedPendingProcessesWithDifferentPriority() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String pipelineName = UniqueStringGenerator.randomPipelineName(ProcessServiceTest.class);
 
     saveProcess(pipelineName, ProcessState.ACTIVE, 1);
     saveProcess(pipelineName, ProcessState.ACTIVE, 2);
@@ -133,7 +133,7 @@ class ProcessServiceTest {
 
   @Test
   public void testGetProcesses() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String pipelineName = UniqueStringGenerator.randomPipelineName(ProcessServiceTest.class);
 
     List<ProcessEntity> processes =
         Arrays.asList(
@@ -171,7 +171,9 @@ class ProcessServiceTest {
   private ProcessEntity saveProcess(String pipelineName, ProcessState state, int priority) {
     ProcessEntity processEntity =
         ProcessEntity.createExecution(
-            pipelineName, UniqueStringGenerator.randomProcessId(), priority);
+            pipelineName,
+            UniqueStringGenerator.randomProcessId(ProcessServiceTest.class),
+            priority);
     processEntity.setProcessState(state);
     processEntity.setExecutionCount(0);
     return service.saveProcess(processEntity);

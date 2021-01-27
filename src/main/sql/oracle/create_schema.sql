@@ -34,8 +34,8 @@ unique (service_name) using index uk_pipelite2_service_lock
 
 create table pipelite2_process
 (
-    pipeline_name varchar2(64) not null,
-    process_id    varchar2(64) not null,
+    pipeline_name varchar2(256) not null,
+    process_id    varchar2(256) not null,
     priority      number (1,0) not null,
     state         varchar2(15) not null,
     exec_cnt      number (5,0) not null,
@@ -65,8 +65,8 @@ tablespace &index_tablespace;
 
 create table pipelite2_process_audit
 (
-    pipeline_name varchar2(64),
-    process_id    varchar2(64),
+    pipeline_name varchar2(256),
+    process_id    varchar2(256),
     priority      number (1,0),
     state         varchar2(15),
     exec_cnt      number (5,0),
@@ -133,7 +133,7 @@ end;
 create table pipelite2_process_lock
 (
     service_name  varchar2(256) not null,
-    pipeline_name varchar2(64) not null,
+    pipeline_name varchar2(256) not null,
     process_id    varchar2(256) not null,
     audit_time    date default sysdate not null
 ) tablespace &table_tablespace;
@@ -151,11 +151,11 @@ primary key (process_id, pipeline_name) using index pk_pipelite2_process_lock
 
 create table pipelite2_schedule
 (
-    pipeline_name    varchar2(64) not null,
+    pipeline_name    varchar2(256) not null,
     service_name     varchar2(256) not null,
     cron             varchar2(256) not null,
     description      varchar2(256),
-    process_id       varchar2(64),
+    process_id       varchar2(256),
     exec_start       date,
     exec_end         date,
     exec_cnt         number(10,0) default 0 not null,
@@ -180,11 +180,11 @@ primary key (pipeline_name) using index pk_pipelite2_schedule
 
 create table pipelite2_schedule_audit
 (
-    pipeline_name    varchar2(64),
+    pipeline_name    varchar2(256),
     service_name     varchar2(256),
     cron             varchar2(256),
     description      varchar2(256),
-    process_id       varchar2(64),
+    process_id       varchar2(256),
     exec_start       date,
     exec_end         date,
     exec_cnt         number(10,0),
@@ -260,8 +260,8 @@ end;
 
 create table pipelite2_stage
 (
-    pipeline_name      varchar2(64) not null,
-    process_id         varchar2(64) not null,
+    pipeline_name      varchar2(256) not null,
+    process_id         varchar2(256) not null,
     stage_name         varchar2(256) not null,
     state              varchar2(15) not null,
     exec_start         date,
@@ -291,8 +291,8 @@ check ( state in ('PENDING', 'ACTIVE', 'SUCCESS', 'ERROR') )
 
 create table pipelite2_stage_audit
 (
-    pipeline_name      varchar2(64),
-    process_id         varchar2(64),
+    pipeline_name      varchar2(256),
+    process_id         varchar2(256),
     stage_name         varchar2(256),
     state              varchar2(15),
     exec_start         date,
@@ -365,8 +365,8 @@ end;
 
 create table pipelite2_stage_log
 (
-    pipeline_name varchar2(64) not null,
-    process_id    varchar2(64) not null,
+    pipeline_name varchar2(256) not null,
+    process_id    varchar2(256) not null,
     stage_name    varchar2(255) not null,
     stage_log     clob,
     audit_time    date default sysdate not null

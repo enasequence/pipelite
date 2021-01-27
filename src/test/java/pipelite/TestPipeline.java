@@ -14,23 +14,17 @@ import java.util.*;
 import java.util.concurrent.ForkJoinPool;
 import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.service.RegisteredPipelineServiceTest;
 
 public class TestPipeline implements Pipeline {
-  private final String pipelineName;
+  private final String pipelineName =
+      UniqueStringGenerator.randomPipelineName(RegisteredPipelineServiceTest.class);
   private final Map<String, Process> processes = new HashMap<>();
   private final int pipelineParallelism;
 
-  public TestPipeline(String pipelineName, Collection<Process> processes, int pipelineParallelism) {
-    this.pipelineName = pipelineName;
-    addProcesses(processes);
-    this.pipelineParallelism = pipelineParallelism;
-  }
-
-  public TestPipeline(String pipelineName, Collection<Process> processes) {
-    this.pipelineName = pipelineName;
+  public TestPipeline(Collection<Process> processes) {
     addProcesses(processes);
     this.pipelineParallelism = ForkJoinPool.getCommonPoolParallelism();
-    ;
   }
 
   @Override

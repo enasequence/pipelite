@@ -41,7 +41,8 @@ public class DefaultPipeliteLauncher {
       PipeliteMetrics metrics,
       String pipelineName) {
 
-    Pipeline pipeline = registeredPipelineService.getPipeline(pipelineName);
+    Pipeline pipeline =
+        registeredPipelineService.getRegisteredPipeline(pipelineName, Pipeline.class);
     ProcessCreator processCreator =
         new DefaultProcessCreator(
             registeredProcessSourceService.create(pipelineName), processService, pipelineName);

@@ -58,8 +58,8 @@ class StageServiceTest {
   @Test
   public void lifecycle() {
 
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
+    String pipelineName = UniqueStringGenerator.randomPipelineName(StageServiceTest.class);
+    String processId = UniqueStringGenerator.randomProcessId(StageServiceTest.class);
     String stageName = UniqueStringGenerator.randomStageName();
 
     TestExecutor executor = new TestExecutor(StageState.SUCCESS);

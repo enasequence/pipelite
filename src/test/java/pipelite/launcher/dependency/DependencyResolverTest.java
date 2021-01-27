@@ -34,7 +34,8 @@ public class DependencyResolverTest {
   public void allActivePendingDependOnPrevious() {
     for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
 
-      ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
+      ProcessBuilder builder =
+          new ProcessBuilder(UniqueStringGenerator.randomProcessId(DependencyResolverTest.class));
       Process process =
           builder
               .execute("STAGE1")
@@ -73,7 +74,8 @@ public class DependencyResolverTest {
   @Test
   public void allActivePendingOthersDependOnFirstAllActive() {
     for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
-      ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
+      ProcessBuilder builder =
+          new ProcessBuilder(UniqueStringGenerator.randomProcessId(DependencyResolverTest.class));
       Process process =
           builder
               .execute("STAGE1")
@@ -113,7 +115,8 @@ public class DependencyResolverTest {
   public void othersActivePendingDependOnFirstThatSucceeded() {
     for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
 
-      ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
+      ProcessBuilder builder =
+          new ProcessBuilder(UniqueStringGenerator.randomProcessId(DependencyResolverTest.class));
       Process process =
           builder
               .execute("STAGE1")
@@ -159,7 +162,8 @@ public class DependencyResolverTest {
   public void othersActivePendingDependOnFirstThatFailedMaximum() {
     for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
 
-      ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
+      ProcessBuilder builder =
+          new ProcessBuilder(UniqueStringGenerator.randomProcessId(DependencyResolverTest.class));
       Process process =
           builder
               .execute("STAGE1")
@@ -206,7 +210,8 @@ public class DependencyResolverTest {
   public void othersActivePendingDependOnFirstThatFailedImmediate() {
     for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
 
-      ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
+      ProcessBuilder builder =
+          new ProcessBuilder(UniqueStringGenerator.randomProcessId(DependencyResolverTest.class));
       Process process =
           builder
               .execute("STAGE1")
@@ -253,7 +258,8 @@ public class DependencyResolverTest {
   @Test
   public void othersActivePendingIndependentOneError() {
     for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
-      ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
+      ProcessBuilder builder =
+          new ProcessBuilder(UniqueStringGenerator.randomProcessId(DependencyResolverTest.class));
       Process process =
           builder
               .execute("STAGE1")
@@ -300,7 +306,8 @@ public class DependencyResolverTest {
   @Test
   public void othersActivePendingIndependentOneFailedImmediate() {
     for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
-      ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
+      ProcessBuilder builder =
+          new ProcessBuilder(UniqueStringGenerator.randomProcessId(DependencyResolverTest.class));
       Process process =
           builder
               .execute("STAGE1")
@@ -353,7 +360,8 @@ public class DependencyResolverTest {
   @Test
   public void othersActivePendingIndependentOneFailedMaximum() {
     for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
-      ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
+      ProcessBuilder builder =
+          new ProcessBuilder(UniqueStringGenerator.randomProcessId(DependencyResolverTest.class));
       Process process =
           builder
               .execute("STAGE1")
@@ -405,7 +413,8 @@ public class DependencyResolverTest {
   @Test
   public void allActivePendingOthersDependOnPrevious() {
     for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
-      ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
+      ProcessBuilder builder =
+          new ProcessBuilder(UniqueStringGenerator.randomProcessId(DependencyResolverTest.class));
       Process process =
           builder
               .execute("STAGE1")
@@ -447,7 +456,8 @@ public class DependencyResolverTest {
   @Test
   public void allActivePendingOthersDependOnFirstTransitively() {
     for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
-      ProcessBuilder builder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
+      ProcessBuilder builder =
+          new ProcessBuilder(UniqueStringGenerator.randomProcessId(DependencyResolverTest.class));
       Process process =
           builder
               .execute("STAGE1")

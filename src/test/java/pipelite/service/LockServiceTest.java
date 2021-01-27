@@ -42,12 +42,12 @@ public class LockServiceTest {
 
   @Test
   public void testParallelLockProcess() throws Exception {
-    String serviceName1 = UniqueStringGenerator.randomServiceName();
+    String serviceName1 = UniqueStringGenerator.randomServiceName(LockServiceTest.class);
 
     String lockId1 = PipeliteLocker.createLockId();
     ServiceLockEntity serviceLock1 = LockService.lockService(service, serviceName1, lockId1);
 
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String pipelineName = UniqueStringGenerator.randomPipelineName(LockServiceTest.class);
     ExecutorService executorService = Executors.newFixedThreadPool(500);
     for (int i = 0; i < 500; ++i) {
       executorService.submit(
@@ -57,7 +57,7 @@ public class LockServiceTest {
                         service,
                         serviceLock1,
                         pipelineName,
-                        UniqueStringGenerator.randomProcessId()))
+                        UniqueStringGenerator.randomProcessId(LockServiceTest.class)))
                 .isEqualTo(true);
           });
     }
@@ -67,8 +67,8 @@ public class LockServiceTest {
 
   @Test
   public void testServiceLocks() {
-    String serviceName1 = UniqueStringGenerator.randomServiceName();
-    String serviceName2 = UniqueStringGenerator.randomServiceName();
+    String serviceName1 = UniqueStringGenerator.randomServiceName(LockServiceTest.class);
+    String serviceName2 = UniqueStringGenerator.randomServiceName(LockServiceTest.class);
 
     String lockId1 = PipeliteLocker.createLockId();
     String lockId2 = PipeliteLocker.createLockId();
@@ -105,9 +105,9 @@ public class LockServiceTest {
 
   @Test
   public void testProcessLocks() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String serviceName1 = UniqueStringGenerator.randomServiceName();
-    String serviceName2 = UniqueStringGenerator.randomServiceName();
+    String pipelineName = UniqueStringGenerator.randomPipelineName(LockServiceTest.class);
+    String serviceName1 = UniqueStringGenerator.randomServiceName(LockServiceTest.class);
+    String serviceName2 = UniqueStringGenerator.randomServiceName(LockServiceTest.class);
 
     service.unlockService(serviceName1);
     service.unlockService(serviceName2);
@@ -164,7 +164,7 @@ public class LockServiceTest {
   // Test fails if the lock is not created and checked for the first time within the lock duration.
   @Test
   public void testRemoveExpiredServiceLock() {
-    String serviceName1 = UniqueStringGenerator.randomServiceName();
+    String serviceName1 = UniqueStringGenerator.randomServiceName(LockServiceTest.class);
 
     service.unlockService(serviceName1);
 
@@ -191,9 +191,9 @@ public class LockServiceTest {
 
   @Test
   public void testRemoveExpiredProcessLock() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String serviceName1 = UniqueStringGenerator.randomServiceName();
-    String serviceName2 = UniqueStringGenerator.randomServiceName();
+    String pipelineName = UniqueStringGenerator.randomPipelineName(LockServiceTest.class);
+    String serviceName1 = UniqueStringGenerator.randomServiceName(LockServiceTest.class);
+    String serviceName2 = UniqueStringGenerator.randomServiceName(LockServiceTest.class);
 
     service.unlockService(serviceName1);
     service.unlockService(serviceName2);

@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.process;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -17,10 +17,9 @@ import org.junit.jupiter.api.Test;
 import pipelite.Pipeline;
 import pipelite.entity.ProcessEntity;
 import pipelite.exception.PipeliteException;
-import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 
-public class PipelineHelperTest {
+public class ProcessFactoryTest {
 
   private static String PIPELINE_NAME = "PIPELINE1";
   private static String PROCESS_ID = "PROCESS1";
@@ -47,7 +46,7 @@ public class PipelineHelperTest {
             return builder.execute("STAGE1").withCallExecutor().build();
           }
         };
-    Process process = PipelineHelper.create(processEntity, pipeline);
+    Process process = ProcessFactory.create(processEntity, pipeline);
     assertThat(process).isNotNull();
     assertThat(process.getProcessId()).isEqualTo(PROCESS_ID);
     assertThat(process.getProcessEntity()).isNotNull();
@@ -79,7 +78,7 @@ public class PipelineHelperTest {
     assertThrows(
         PipeliteException.class,
         () -> {
-          PipelineHelper.create(processEntity, pipeline);
+          ProcessFactory.create(processEntity, pipeline);
         });
   }
 }

@@ -47,7 +47,6 @@ import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
 
 @SpringBootTest(
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     classes = PipeliteTestConfiguration.class,
     properties = {
       "pipelite.advanced.processRunnerFrequency=250ms",
@@ -195,7 +194,8 @@ public class PipeliteLauncherFailureTest {
 
   @Value
   public static class TestPipeline implements Pipeline {
-    private final String pipelineName = UniqueStringGenerator.randomPipelineName();
+    private final String pipelineName =
+        UniqueStringGenerator.randomPipelineName(PipeliteLauncherFailureTest.class);
     private final StageTestResult stageTestResult;
     public final List<String> processIds = Collections.synchronizedList(new ArrayList<>());
     private StageExecutorResult firstStageExecResult;

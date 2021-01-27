@@ -29,8 +29,10 @@ public class SshCmdExecutorTest {
 
   @Autowired SshTestConfiguration sshTestConfiguration;
 
-  private static final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
-  private static final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
+  private static final String PIPELINE_NAME =
+      UniqueStringGenerator.randomPipelineName(SshCmdExecutorTest.class);
+  private static final String PROCESS_ID =
+      UniqueStringGenerator.randomProcessId(SshCmdExecutorTest.class);
 
   @Test
   public void test() {
