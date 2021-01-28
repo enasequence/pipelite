@@ -78,22 +78,20 @@
 
 <div class="card m-2">
     <div class="card-body">
-        <h5 class="card-title">Select time display</h5>
+        <h5 class="card-title">Schedules running in this server</h5>
+
         <div class="form-inline m-2">
+            <label for="scheduleTime">Time display</label>
             <select class="custom-select m-2" id="scheduleTime">
                 <option value="relative" selected>Relative time</option>
                 <option value="absolute">Absolute time</option>
             </select>
             <button type="submit" class="btn btn-primary m-2" onclick="show()">Show schedules</button>
         </div>
-    </div>
-    <h5 class="mb-4">
-        <span class="badge badge-secondary" id="scheduleTimeBadge"></span>
-    </h5>
-</div>
-<div class="card m-2">
-    <div class="card-body">
-        <h5 class="card-title">Schedules running in this server</h5>
+        <h5 class="mb-4">
+            <span class="badge badge-secondary" id="scheduleTimeBadge"></span>
+        </h5>
+
 
         <table id="schedulesTable" class="table table-striped table-hover" style="width:100%">
             <thead>
