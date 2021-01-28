@@ -10,8 +10,6 @@
  */
 package pipelite.controller;
 
-import static pipelite.metrics.TimeSeriesMetrics.*;
-
 import com.thedeanda.lorem.Lorem;
 import com.thedeanda.lorem.LoremIpsum;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -19,21 +17,15 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
-import pipelite.configuration.AdvancedConfiguration;
+import pipelite.Pipeline;
 import pipelite.controller.info.PipelineInfo;
 import pipelite.controller.utils.LoremUtils;
+import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.process.runner.ProcessRunnerResult;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
@@ -44,12 +36,20 @@ import pipelite.service.RegisteredPipelineService;
 import tech.tablesaw.api.Table;
 import tech.tablesaw.plotly.components.Figure;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static pipelite.metrics.TimeSeriesMetrics.getTimeSeries;
+
 @RestController
 @RequestMapping(value = "/pipeline")
 @Tag(name = "PipelineAPI", description = "Pipelines")
 public class PipelineController {
 
-  @Autowired AdvancedConfiguration advancedConfiguration;
   @Autowired Application application;
   @Autowired Environment environment;
   @Autowired ProcessService processService;
@@ -60,7 +60,7 @@ public class PipelineController {
   private static final ZonedDateTime LOREM_IPSUM_SINCE =
       ZonedDateTime.of(LocalDateTime.of(2020, 1, 1, 1, 0), ZoneId.of("UTC"));
 
-  @GetMapping("/run")
+  @GetMapping("/")
   @ResponseStatus(HttpStatus.OK)
   @Operation(description = "Processes running in this server")
   @ApiResponses(
@@ -68,77 +68,43 @@ public class PipelineController {
         @ApiResponse(responseCode = "200", description = "OK"),
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
-  public Collection<PipelineInfo> runningProcesses() {
-    List<PipelineInfo> list = getRunningProcesses();
+  public Collection<PipelineInfo> processes() {
+    List<PipelineInfo> list =
+        getPipelines(
+            registeredPipelineService.getRegisteredPipelines(Pipeline.class),
+            application.getRunningLaunchers(),
+            processService.getProcessStateSummary());
     getLoremIpsumPipelines(list);
     return list;
   }
 
-  private List<PipelineInfo> getRunningProcesses() {
-    List<PipelineInfo> list = new ArrayList<>();
-    application
-        .getRunningLaunchers()
-        .forEach(
-            p ->
-                list.add(
-                    PipelineInfo.builder()
-                        .pipelineName(p.getPipelineName())
-                        .maxRunningCount(p.getPipelineParallelism())
-                        .runningCount(p.getActiveProcessCount())
-                        .build()));
-    return list;
-  }
+  private List<PipelineInfo> getPipelines(
+      Collection<Pipeline> pipelines,
+      Collection<PipeliteLauncher> pipeliteLaunchers,
+      List<ProcessService.ProcessStateSummary> summaries) {
 
-  @GetMapping("/local")
-  @ResponseStatus(HttpStatus.OK)
-  @Operation(description = "Pipelines managed by this server")
-  @ApiResponses(
-      value = {
-        @ApiResponse(responseCode = "200", description = "OK"),
-        @ApiResponse(responseCode = "500", description = "Internal Server error")
-      })
-  public Collection<PipelineInfo> localPipelines() {
-    List<PipelineInfo> list = getLocalPipelines();
-    getLoremIpsumPipelines(list);
-    return list;
-  }
+    Map<String, PipeliteLauncher> runningMap = new HashMap<>();
+    pipeliteLaunchers.forEach(s -> runningMap.put(s.getPipelineName(), s));
 
-  private List<PipelineInfo> getLocalPipelines() {
-    List<String> pipelineNames = registeredPipelineService.getPipelineNames();
-    return getPipelines(
-        processService.getProcessStateSummary().stream()
-            .filter(s -> pipelineNames.contains(s.getPipelineName())));
-  }
+    Map<String, ProcessService.ProcessStateSummary> summaryMap = new HashMap<>();
+    summaries.forEach(s -> summaryMap.put(s.getPipelineName(), s));
 
-  @GetMapping("/all")
-  @ResponseStatus(HttpStatus.OK)
-  @Operation(description = "All pipelines")
-  @ApiResponses(
-      value = {
-        @ApiResponse(responseCode = "200", description = "OK"),
-        @ApiResponse(responseCode = "500", description = "Internal Server error")
-      })
-  public List<PipelineInfo> allPipelines() {
-    List<PipelineInfo> list = getAllPipelines();
-    getLoremIpsumPipelines(list);
-    return list;
-  }
-
-  private List<PipelineInfo> getAllPipelines() {
-    return getPipelines(processService.getProcessStateSummary().stream());
-  }
-
-  private List<PipelineInfo> getPipelines(Stream<ProcessService.ProcessStateSummary> summaries) {
-    return summaries
+    return pipelines.stream()
         .map(
-            s ->
-                PipelineInfo.builder()
-                    .pipelineName(s.getPipelineName())
-                    .pendingCount(s.getPendingCount())
-                    .activeCount(s.getActiveCount())
-                    .completedCount(s.getCompletedCount())
-                    .failedCount(s.getFailedCount())
-                    .build())
+            pipeline -> {
+              PipeliteLauncher pipeliteLauncher = runningMap.get(pipeline.getPipelineName());
+              ProcessService.ProcessStateSummary summary =
+                  summaryMap.get(pipeline.getPipelineName());
+              return PipelineInfo.builder()
+                  .pipelineName(pipeline.getPipelineName())
+                  .maxRunningCount(pipeline.getPipelineParallelism())
+                  .runningCount(pipeliteLauncher.getActiveProcessCount())
+                  .pendingCount(summary.getPendingCount())
+                  .activeCount(summary.getActiveCount())
+                  .completedCount(summary.getCompletedCount())
+                  .failedCount(summary.getFailedCount())
+                  .build();
+            })
         .collect(Collectors.toList());
   }
 

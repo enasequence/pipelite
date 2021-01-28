@@ -10,7 +10,6 @@
  */
 package pipelite.service;
 
-import java.util.*;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -23,6 +22,8 @@ import pipelite.configuration.ServiceConfiguration;
 import pipelite.cron.CronUtils;
 import pipelite.entity.ScheduleEntity;
 import pipelite.exception.PipeliteException;
+
+import java.util.*;
 
 @Service
 @Lazy
@@ -227,5 +228,27 @@ public class RegisteredPipelineService {
     }
 
     return null;
+  }
+
+  /**
+   * Returns registered pipelines.
+   *
+   * @return the registered pipelines.
+   */
+  public <T extends RegisteredPipeline> Collection<T> getRegisteredPipelines(Class<T> cls) {
+
+    if (PrioritizedPipeline.class.equals(cls)) {
+      return (Collection<T>) prioritizedPipelineMap.values();
+    }
+
+    if (Pipeline.class.equals(cls)) {
+      return (Collection<T>) pipelineMap.values();
+    }
+
+    if (Schedule.class.equals(cls)) {
+      return (Collection<T>) scheduleMap.values();
+    }
+
+    return Collections.emptyList();
   }
 }

@@ -3,148 +3,100 @@
       xmlns:th="http://www.thymeleaf.org">
 <head>
     <div th:replace="fragments/header :: header"></div>
-    <title>Pipelines</title>
+    <title>Pipelines running in this server</title>
     <script>
 
-$(document).ready( function () {
-    $('#runningTable').DataTable({
-        columns: [
-            { data: "pipelineName" },
-            { data: "maxRunningCount" },
-            { data: "runningCount",
-                render: function ( data, type, row, meta ) {
-                    var url = "/pipelite/ui/processes?pipelineName=" + row.pipelineName;
-                    return '<a href="' + url + '">' + row.runningCount + '</a>';
-                }
-            }
-        ],
-        dom: 'tip',
-        orderCellsTop: true,
-        fixedHeader: true,
-        responsive: true,
-        language : {
-           "zeroRecords": " "
-        },
-    });
+        $(document).ready(function () {
+            $('#pipelinesTable').DataTable({
+                columns: [
+                    {data: "pipelineName"},
+                    {data: "maxRunningCount"},
+                    {
+                        data: "runningCount",
+                        render: function (data, type, row, meta) {
+                            var url = "/pipelite/ui/processes?pipelineName=" + row.pipelineName;
+                            return '<a href="' + url + '">' + row.runningCount + '</a>';
+                        }
+                    },
+                    {data: "pendingCount"},
+                    {data: "activeCount"},
+                    {data: "completedCount"},
+                    {data: "failedCount"}
+                ],
+                dom: 'tip',
+                orderCellsTop: true,
+                fixedHeader: true,
+                responsive: true,
+                language: {
+                    "zeroRecords": " "
+                },
+            });
 
-    $('#localTable').DataTable({
-        columns: [
-            { data: "pipelineName" },
-            { data: "pendingCount" },
-            { data: "activeCount" },
-            { data: "completedCount" },
-            { data: "failedCount" }
-        ],
-        dom: 'tip',
-        orderCellsTop: true,
-        fixedHeader: true,
-        responsive: true,
-        language : {
-           "zeroRecords": " "
-        },
-    });
+            // Show plot when tag is changed.
+            $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+                show();
+            });
 
-    $('#allTable').DataTable({
-        columns: [
-            { data: "pipelineName" },
-            { data: "pendingCount" },
-            { data: "activeCount" },
-            { data: "completedCount" },
-            { data: "failedCount" }
-        ],
-        dom: 'tip',
-        orderCellsTop: true,
-        fixedHeader: true,
-        responsive: true,
-        language : {
-           "zeroRecords": " "
-        },
-    });
-
-
-    // Show plot when tag is changed.
-    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-        show();
-    });
-
-    show();
-});
-
-// Show the table and filter badges.
-function show() {
-    var runningTable = $('#runningTable').DataTable();
-    var localTable = $('#localTable').DataTable();
-    var allTable = $('#allTable').DataTable();
-    var runningHistoryType = $( "#runningHistoryType" ).val();
-    var runningHistorySince = $( "#runningHistorySince" ).val();
-
-    // Show the filter badges.
-    var runningHistoryTypeText =$( "#runningHistoryType option:selected" ).text();
-    $( "#runningHistoryTypeBadge" ).text(runningHistoryTypeText);
-
-    var runningHistorySinceText = "Last ";
-
-    var minutes = runningHistorySince % 60;
-    var hours = (runningHistorySince-minutes)/60 % 24;
-    var days = (runningHistorySince-minutes-hours*60)/60/24;
-
-    if (days == 1) {
-        runningHistorySinceText = runningHistorySinceText + days + " day ";
-    }
-    if (days > 1) {
-        runningHistorySinceText = runningHistorySinceText + days + " days ";
-    }
-    if (hours == 1) {
-        runningHistorySinceText = runningHistorySinceText + hours + " hour ";
-    }
-    else if (hours > 1) {
-        runningHistorySinceText = runningHistorySinceText + hours + " hours ";
-    }
-    if (minutes == 1) {
-        runningHistorySinceText = runningHistorySinceText + minutes + " minute";
-    }
-    else if (minutes > 1) {
-        runningHistorySinceText = runningHistorySinceText + minutes + " minutes";
-    }
-    $( "#runningHistorySinceBadge" ).text(runningHistorySinceText);
-
-    // Show the tables.
-
-    var runningUrl = "/pipelite/pipeline/run";
-    console.log(runningUrl);
-    $.get(runningUrl, function(data, status) {
-        runningTable.clear().rows.add(data).draw();
-    });
-
-    var localUrl = "/pipelite/pipeline/local";
-    console.log(localUrl);
-    $.get(localUrl, function(data, status) {
-        localTable.clear().rows.add(data).draw();
-    });
-
-    var allUrl = "/pipelite/pipeline/all";
-    console.log(allUrl);
-    $.get(allUrl, function(data, status) {
-        allTable.clear().rows.add(data).draw();
-    });
-
-    // Show the plot.
-    plot();
-}
-
-// Show the plot.
-function plot() {
-    var runningHistorySince = $( "#runningHistorySince" ).val();
-    var runningHistoryType = $( "#runningHistoryType" ).val();
-     var url = "/pipelite/pipeline/run/history/plot?since=" + runningHistorySince + "&type=" + runningHistoryType + "&id=runningHistoryPlot";
-     console.log(url);
-     $.getScript(url,
-        function( data ) {
-            // console.log( data );
+            show();
         });
-}
 
+        // Show the table and filter badges.
+        function show() {
+            var pipelinesTable = $('#pipelinesTable').DataTable();
+            var runningHistoryType = $("#runningHistoryType").val();
+            var runningHistorySince = $("#runningHistorySince").val();
 
+            // Show the filter badges.
+            var runningHistoryTypeText = $("#runningHistoryType option:selected").text();
+            $("#runningHistoryTypeBadge").text(runningHistoryTypeText);
+
+            var runningHistorySinceText = "Last ";
+
+            var minutes = runningHistorySince % 60;
+            var hours = (runningHistorySince - minutes) / 60 % 24;
+            var days = (runningHistorySince - minutes - hours * 60) / 60 / 24;
+
+            if (days == 1) {
+                runningHistorySinceText = runningHistorySinceText + days + " day ";
+            }
+            if (days > 1) {
+                runningHistorySinceText = runningHistorySinceText + days + " days ";
+            }
+            if (hours == 1) {
+                runningHistorySinceText = runningHistorySinceText + hours + " hour ";
+            } else if (hours > 1) {
+                runningHistorySinceText = runningHistorySinceText + hours + " hours ";
+            }
+            if (minutes == 1) {
+                runningHistorySinceText = runningHistorySinceText + minutes + " minute";
+            } else if (minutes > 1) {
+                runningHistorySinceText = runningHistorySinceText + minutes + " minutes";
+            }
+            $("#runningHistorySinceBadge").text(runningHistorySinceText);
+
+            // Show the tables.
+
+            var url = "/pipelite/pipeline/";
+            console.log(url);
+            $.get(url, function (data, status) {
+                pipelinesTable.clear().rows.add(data).draw();
+            });
+
+            // Show the plot.
+            plot();
+        }
+
+        // Show the plot.
+        function plot() {
+            var runningHistorySince = $("#runningHistorySince").val();
+            var runningHistoryType = $("#runningHistoryType").val();
+            var url = "/pipelite/pipeline/run/history/plot?since=" + runningHistorySince + "&type=" + runningHistoryType + "&id=runningHistoryPlot";
+            console.log(url);
+            $.getScript(url,
+                function (data) {
+                    // console.log( data );
+                });
+        }
 
     </script>
 </head>
@@ -152,116 +104,58 @@ function plot() {
 <body>
 <div th:replace="fragments/navigation :: navigation"></div>
 
-<div class="mt-4 mb-4 ml-2 mr-2">
-    <ul class="nav nav-tabs justify-content-center" role="tablist">
-        <li class="nav-item" role="presentation"><a class="nav-link active" data-toggle="tab" role="tab"
-                                                    href="#running">Running processes</a></li>
-        <li class="nav-item" role="presentation"><a class="nav-link" data-toggle="tab" role="tab"
-                                                    href="#runningHistory">Running history</a>
-        </li>
-        <li class="nav-item" role="presentation"><a class="nav-link" data-toggle="tab" role="tab"
-                                                    href="#local">Local processes</a>
-        <li class="nav-item" role="presentation"><a class="nav-link" data-toggle="tab" role="tab"
-                                                    href="#all">All processes</a>
-    </ul>
-</div>
 
-<div class="tab-content">
-    <div id="running" class="tab-pane fade show active" role="tabpanel">
-        <div class="card m-2">
-            <div class="card-body">
-                <h5 class="card-title">Processes running in this server</h5>
-                <table id="runningTable" class="table table-striped table-hover" style="width:100%">
-                    <!-- Header Table -->
-                    <thead>
-                    <tr>
-                        <th>Pipeline</th>
-                        <th>Maximum processes</th>
-                        <th>Running processes</th>
-                    </tr>
-                    </thead>
-                </table>
-            </div>
+<div class="card m-2">
+    <div class="card-body">
+        <h5 class="card-title">Pipelines running in this server</h5>
+        <table id="pipelinesTable" class="table table-striped table-hover" style="width:100%">
+            <!-- Header Table -->
+            <thead>
+            <tr>
+                <th>Pipeline</th>
+                <th>Maximum processes</th>
+                <th>Running processes</th>
+                <th>Pending processes</th>
+                <th>Active processes</th>
+                <th>Completed processes</th>
+                <th>Failed processes</th>
+            </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+<div class="card m-2">
+    <div class="card-body">
+        <div class="form-inline m-2">
+            <select class="custom-select m-2" id="runningHistoryType">
+                <option value="running">Running processes</option>
+                <option value="completed">Completed processes</option>
+                <option value="failed">Failed processes</option>
+                <option value="error">Internal errors</option>
+            </select>
+            <select class="custom-select m-2" id="runningHistorySince">
+                <!--
+                <option value="5" selected>Last 5 minutes</option>
+                <option value="15">Last 15 minutes</option>
+                -->
+                <option value="30">Last 30 minutes</option>
+                <option value="60">Last 1 hour</option>
+                <option value="120">Last 2 hours</option>
+                <option value="240">Last 4 hours</option>
+                <option value="480">Last 8 hours</option>
+                <option value="720">Last 12 hours</option>
+                <option value="1440">Last 1 day</option>
+                <option value="10080">Last 7 days</option>
+            </select>
+            <button type="submit" class="btn btn-primary m-2" onclick="show()">Show report</button>
         </div>
     </div>
-    <div id="local" class="tab-pane fade" role="tabpanel">
-        <div class="card m-2">
-            <div class="card-body">
-                <h5 class="card-title">Processes managed by this server</h5>
-                <table id="localTable" class="table table-striped table-hover" style="width:100%">
-                    <!-- Header Table -->
-                    <thead>
-                    <tr>
-                        <th>Pipeline</th>
-                        <th>Pending processes</th>
-                        <th>Active processes</th>
-                        <th>Completed processes</th>
-                        <th>Failed processes</th>
-                    </tr>
-                    </thead>
-                </table>
-            </div>
-        </div>
-    </div>
-    <div id="all" class="tab-pane fade" role="tabpanel">
-        <div class="card m-2">
-            <div class="card-body">
-                <h5 class="card-title">All processes</h5>
-                <table id="allTable" class="table table-striped table-hover" style="width:100%">
-                    <!-- Header Table -->
-                    <thead>
-                    <tr>
-                        <th>Pipeline</th>
-                        <th>Pending processes</th>
-                        <th>Active processes</th>
-                        <th>Completed processes</th>
-                        <th>Failed processes</th>
-                    </tr>
-                    </thead>
-                </table>
-            </div>
-        </div>
-    </div>
-    <div id="runningHistory" class="tab-pane fade" role="tabpanel">
-        <div class="card m-2">
-            <div class="card-body">
-                <h5 class="card-title">Select processes</h5>
-                <div class="form-inline m-2">
-                    <select class="custom-select m-2" id="runningHistoryType">
-                        <option value="running">Running processes</option>
-                        <option value="completed">Completed processes</option>
-                        <option value="failed">Failed processes</option>
-                        <option value="error">Internal errors</option>
-                    </select>
-                    <select class="custom-select m-2" id="runningHistorySince">
-                        <!--
-                        <option value="5" selected>Last 5 minutes</option>
-                        <option value="15">Last 15 minutes</option>
-                        -->
-                        <option value="30">Last 30 minutes</option>
-                        <option value="60">Last 1 hour</option>
-                        <option value="120">Last 2 hours</option>
-                        <option value="240">Last 4 hours</option>
-                        <option value="480">Last 8 hours</option>
-                        <option value="720">Last 12 hours</option>
-                        <option value="1440">Last 1 day</option>
-                        <option value="10080">Last 7 days</option>
-                    </select>
-                    <button type="submit" class="btn btn-primary m-2" onclick="show()">Show report</button>
-                </div>
-            </div>
-        </div>
-        <div class="card m-2">
-            <div class="card-body">
-                <h5 class="card-title">Processes running in this server</h5>
-                <h5 class="mb-4">
-                    <span class="badge badge-secondary" id="runningHistoryTypeBadge"></span>
-                    <span class="badge badge-secondary" id="runningHistorySinceBadge"></span>
-                </h5>
-                <div id="runningHistoryPlot"></div>
-            </div>
-        </div>
-    </div>
+
+    <h5 class="mb-4">
+        <span class="badge badge-secondary" id="runningHistoryTypeBadge"></span>
+        <span class="badge badge-secondary" id="runningHistorySinceBadge"></span>
+    </h5>
+    <div id="runningHistoryPlot"></div>
 </div>
 
 </body>
