@@ -3,167 +3,72 @@
       xmlns:th="http://www.thymeleaf.org">
 <head>
     <div th:replace="fragments/header :: header"></div>
-    <title>Schedules</title>
+    <title>Schedules running in this server</title>
     <script>
-$(document).ready( function () {
-    $('#runningTable').DataTable({
-        columns: [
-            // { data: "serviceName" },
-            { data: "pipelineName" },
-            { data: "processId",
-                render: function ( data, type, row, meta ) {
-                    if (row.processId) {
-                        var url = "/pipelite/ui/process?pipelineName=" + row.pipelineName + "&processId=" + row.processId;
-                        return '<a href="' + url + '">' + row.processId + '</a>';
+        $(document).ready(function () {
+            $('#schedulesTable').DataTable({
+                columns: [
+                    {data: "pipelineName"},
+                    {data: "cron"},
+                    {data: "description"},
+                    {
+                        data: "processId",
+                        render: function (data, type, row, meta) {
+                            if (row.processId) {
+                                var url = "/pipelite/ui/process?pipelineName=" + row.pipelineName + "&processId=" + row.processId;
+                                return '<a href="' + url + '">' + row.processId + '</a>';
+                            }
+                            return '';
+                        }
+                    },
+                    {data: "startTime"},
+                    {data: "nextTime"},
+                    {data: "lastCompleted"},
+                    {data: "lastFailed"}
+                ],
+                dom: 'frtBip',
+                buttons: {
+                    buttons: [
+                        {extend: 'copy', className: 'btn btn-outline-secondary'},
+                        {extend: 'csv', className: 'btn btn-outline-secondary'},
+                        {extend: 'excel', className: 'btn btn-outline-secondary'}
+                    ],
+                    dom: {
+                        button: {
+                            className: 'btn'
+                        }
                     }
-                    return '';
-                }
-            },
-            { data: "summary" },
-            { data: "lastCompleted" },
-            { data: "lastFailed" },
-            { data: "startTime" },
-            { data: "nextTime" },
-            { data: "cron" },
-            { data: "description" }
-        ],
-        dom: 'frtBip',
-        buttons: {
-            buttons: [
-                { extend: 'copy', className: 'btn btn-outline-secondary' },
-                { extend: 'csv', className: 'btn btn-outline-secondary' },
-                { extend: 'excel', className: 'btn btn-outline-secondary' }
-            ],
-            dom: {
-    		  button: {
-	    	    className: 'btn'
-	          }
+                },
+                orderCellsTop: true,
+                fixedHeader: true,
+                responsive: true,
+                language: {
+                    "zeroRecords": " "
+                },
+            });
+
+            show();
+        });
+
+        // Show the tables.
+        function show() {
+            var schedulesTable = $('#schedulesTable').DataTable();
+            var scheduleTime = $("#scheduleTime").val();
+
+            // Show the badge.
+            $("#scheduleTimeBadge").text($("#scheduleTime option:selected").text());
+
+            // Show the tables.
+
+            var url = "/pipelite/schedule/";
+            if (scheduleTime == "relative") {
+                url = url + "?relative=true";
             }
-        },
-        orderCellsTop: true,
-        fixedHeader: true,
-        responsive: true,
-        language : {
-           "zeroRecords": " "
-        },
-    });
-
-    $('#localTable').DataTable({
-        columns: [
-            // { data: "serviceName" },
-            { data: "pipelineName" },
-            { data: "processId",
-                render: function ( data, type, row, meta ) {
-                    var url = "/pipelite/ui/process?pipelineName=" + row.pipelineName + "&processId=" + row.processId;
-                    return '<a href="' + url + '">' + row.processId + '</a>';
-                }
-            },
-            { data: "summary" },
-            { data: "lastCompleted" },
-            { data: "lastFailed" },
-            { data: "startTime" },
-            { data: "nextTime" },
-            { data: "cron" },
-            { data: "description" }
-        ],
-        dom: 'frtBip',
-        buttons: {
-            buttons: [
-                { extend: 'copy', className: 'btn btn-outline-secondary' },
-                { extend: 'csv', className: 'btn btn-outline-secondary' },
-                { extend: 'excel', className: 'btn btn-outline-secondary' }
-            ],
-            dom: {
-    		  button: {
-	    	    className: 'btn'
-	          }
-            }
-        },
-        orderCellsTop: true,
-        fixedHeader: true,
-        responsive: true,
-        language : {
-           "zeroRecords": " "
-        },
-    });
-
-    $('#allTable').DataTable({
-        columns: [
-            { data: "serviceName" },
-            { data: "pipelineName" },
-            { data: "processId" },
-            { data: "summary" },
-            { data: "lastCompleted" },
-            { data: "lastFailed" },
-            { data: "startTime" },
-            { data: "nextTime" },
-            { data: "cron" },
-            { data: "description" }
-        ],
-        dom: 'frtBip',
-        buttons: {
-            buttons: [
-                { extend: 'copy', className: 'btn btn-outline-secondary' },
-                { extend: 'csv', className: 'btn btn-outline-secondary' },
-                { extend: 'excel', className: 'btn btn-outline-secondary' }
-            ],
-            dom: {
-    		  button: {
-	    	    className: 'btn'
-	          }
-            }
-        },
-        orderCellsTop: true,
-        fixedHeader: true,
-        responsive: true,
-        language : {
-           "zeroRecords": " "
-        },
-    });
-
-  show();
-});
-
-// Show the tables.
-function show() {
-    var runningTable = $('#runningTable').DataTable();
-    var localTable = $('#localTable').DataTable();
-    var allTable = $('#allTable').DataTable();
-    var scheduleTime = $( "#scheduleTime" ).val();
-
-    // Show the badge.
-    $( "#scheduleTimeBadge" ).text( $( "#scheduleTime option:selected" ).text() );
-
-    // Show the tables.
-
-    var runningUrl = "/pipelite/schedule/run";
-    if (scheduleTime == "relative") {
-        runningUrl = runningUrl + "?relative=true";
-    }
-    console.log(runningUrl);
-    $.get(runningUrl, function(data, status) {
-        runningTable.clear().rows.add(data).draw();
-     });
-
-    var localUrl = "/pipelite/schedule/local";
-    if (scheduleTime == "relative") {
-        localUrl = localUrl + "?relative=true";
-    }
-    console.log(localUrl);
-    $.get(localUrl, function(data, status) {
-        localTable.clear().rows.add(data).draw();
-     });
-
-    var allUrl = "/pipelite/schedule/all";
-    if (scheduleTime == "relative") {
-        allUrl = allUrl + "?relative=true";
-    }
-    console.log(allUrl);
-    $.get(allUrl, function(data, status) {
-        allTable.clear().rows.add(data).draw();
-     });
-};
-
+            console.log(url);
+            $.get(url, function (data, status) {
+                schedulesTable.clear().rows.add(data).draw();
+            });
+        };
 
     </script>
 </head>
@@ -171,24 +76,9 @@ function show() {
 <body>
 <div th:replace="fragments/navigation :: navigation"></div>
 
-
-<div class="mt-4 mb-4 ml-2 mr-2">
-    <ul class="nav nav-tabs justify-content-center" role="tablist">
-        <li class="nav-item" role="presentation"><a class="nav-link active" data-toggle="tab" role="tab"
-                                                    href="#running">Running schedules</a></li>
-        </li>
-        <li class="nav-item" role="presentation"><a class="nav-link" data-toggle="tab" role="tab"
-                                                    href="#local">Local schedules</a></li>
-        </li>
-        <li class="nav-item" role="presentation"><a class="nav-link" data-toggle="tab" role="tab"
-                                                    href="#all">All schedules</a></li>
-        </li>
-    </ul>
-</div>
-
 <div class="card m-2">
     <div class="card-body">
-        <h5 class="card-title">Select schedules</h5>
+        <h5 class="card-title">Select time display</h5>
         <div class="form-inline m-2">
             <select class="custom-select m-2" id="scheduleTime">
                 <option value="relative" selected>Relative time</option>
@@ -203,66 +93,22 @@ function show() {
 </div>
 <div class="card m-2">
     <div class="card-body">
-        <div class="tab-content">
-            <div id="running" class="tab-pane fade show active" role="tabpanel">
-                <h5 class="card-title">Schedules running in this server</h5>
+        <h5 class="card-title">Schedules running in this server</h5>
 
-                <table id="runningTable" class="table table-striped table-hover" style="width:100%">
-                    <thead>
-                    <tr>
-                        <th>Pipeline</th>
-                        <th>Process</th>
-                        <th>Summary</th>
-                        <th>Last completed</th>
-                        <th>Last failed</th>
-                        <th>Last start</th>
-                        <th>Next start</th>
-                        <th>Cron</th>
-                        <th>Description</th>
-                    </tr>
-                    </thead>
-                </table>
-            </div>
-            <div id="local" class="tab-pane fade" role="tabpanel">
-                <h5 class="card-title">Schedules managed by this server</h5>
-
-                <table id="localTable" class="table table-striped table-hover" style="width:100%">
-                    <thead>
-                    <tr>
-                        <th>Pipeline</th>
-                        <th>Process</th>
-                        <th>Summary</th>
-                        <th>Last completed</th>
-                        <th>Last failed</th>
-                        <th>Last start</th>
-                        <th>Next start</th>
-                        <th>Cron</th>
-                        <th>Description</th>
-                    </tr>
-                    </thead>
-                </table>
-            </div>
-            <div id="all" class="tab-pane fade" role="tabpanel">
-                <h5 class="card-title">All schedules</h5>
-
-                <table id="allTable" class="table table-striped table-hover" style="width:100%">
-                    <thead>
-                    <tr>
-                        <th>Service</th>
-                        <th>Pipeline</th>
-                        <th>Process</th>
-                        <th>Summary</th>
-                        <th>Last completed</th>
-                        <th>Last failed</th>
-                        <th>Last start</th>
-                        <th>Next start</th>
-                        <th>Cron</th>
-                        <th>Description</th>
-                    </tr>
-                    </thead>
-                </table>
-            </div>
-        </div>
+        <table id="schedulesTable" class="table table-striped table-hover" style="width:100%">
+            <thead>
+            <tr>
+                <th>Pipeline</th>
+                <th>Cron</th>
+                <th>Description</th>
+                <th>Running process</th>
+                <th>Start time</th>
+                <th>Next time</th>
+                <th>Last completed</th>
+                <th>Last failed</th>
+            </tr>
+            </thead>
+        </table>
     </div>
 </div>
 

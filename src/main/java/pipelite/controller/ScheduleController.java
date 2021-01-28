@@ -16,10 +16,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.IntStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
@@ -32,6 +28,11 @@ import pipelite.controller.utils.TimeUtils;
 import pipelite.entity.ScheduleEntity;
 import pipelite.service.ScheduleService;
 
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.IntStream;
+
 @RestController
 @RequestMapping(value = "/schedule")
 @Tag(name = "ScheduleAPI", description = "Schedules")
@@ -42,20 +43,17 @@ public class ScheduleController {
   @Autowired ServiceConfiguration serviceConfiguration;
   @Autowired ScheduleService scheduleService;
 
-  @GetMapping("/run")
+  @GetMapping("/")
   @ResponseStatus(HttpStatus.OK)
-  @Operation(description = "Schedules running in this server")
+  @Operation(description = "Schedules in this server")
   @ApiResponses(
       value = {
         @ApiResponse(responseCode = "200", description = "OK"),
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
-  public List<ScheduleInfo> runningSchedules(
+  public List<ScheduleInfo> schedules(
       @RequestParam(required = false, defaultValue = "false") boolean relative) {
-    List<ScheduleInfo> list = new ArrayList<>();
-    if (application.isRunningScheduler()) {
-      list.addAll(getSchedules(serviceConfiguration.getName(), relative));
-    }
+    List<ScheduleInfo> list = getSchedules(serviceConfiguration.getName(), relative);
     getLoremIpsumSchedules(list, relative);
     return list;
   }
@@ -63,42 +61,6 @@ public class ScheduleController {
   private List<ScheduleInfo> getSchedules(String serviceName, boolean relative) {
     List<ScheduleInfo> schedules = new ArrayList<>();
     scheduleService.getSchedules(serviceName).forEach(s -> schedules.add(getSchedule(s, relative)));
-    return schedules;
-  }
-
-  @GetMapping("/local")
-  @ResponseStatus(HttpStatus.OK)
-  @Operation(description = "Schedules managed by this server")
-  @ApiResponses(
-      value = {
-        @ApiResponse(responseCode = "200", description = "OK"),
-        @ApiResponse(responseCode = "500", description = "Internal Server error")
-      })
-  public List<ScheduleInfo> localSchedules(
-      @RequestParam(required = false, defaultValue = "false") boolean relative) {
-    List<ScheduleInfo> list = getSchedules(serviceConfiguration.getName(), relative);
-    getLoremIpsumSchedules(list, relative);
-    return list;
-  }
-
-  @GetMapping("/all")
-  @ResponseStatus(HttpStatus.OK)
-  @Operation(description = "All schedules")
-  @ApiResponses(
-      value = {
-        @ApiResponse(responseCode = "200", description = "OK"),
-        @ApiResponse(responseCode = "500", description = "Internal Server error")
-      })
-  public List<ScheduleInfo> allSchedules(
-      @RequestParam(required = false, defaultValue = "false") boolean relative) {
-    List<ScheduleInfo> list = getAllSchedules(relative);
-    getLoremIpsumSchedules(list, relative);
-    return list;
-  }
-
-  private List<ScheduleInfo> getAllSchedules(boolean relative) {
-    List<ScheduleInfo> schedules = new ArrayList<>();
-    scheduleService.getSchedules().forEach(s -> schedules.add(getSchedule(s, relative)));
     return schedules;
   }
 
@@ -132,8 +94,6 @@ public class ScheduleController {
         .pipelineName(s.getPipelineName())
         .cron(s.getCron())
         .description(s.getDescription())
-        .summary(
-            getSummary(s.getStreakCompleted(), s.getStreakFailed(), s.getLastCompleted(), relative))
         .startTime(startTime)
         .endTime(endTime)
         .nextTime(nextTime)
@@ -177,7 +137,6 @@ public class ScheduleController {
                         .pipelineName(lorem.getCountry())
                         .cron(lorem.getWords(1))
                         .description(lorem.getWords(5))
-                        .summary(getSummary(0, 1, ZonedDateTime.now().minusHours(1), relative))
                         .startTime(startTime)
                         .endTime(endTime)
                         .nextTime(nextTime)
@@ -189,27 +148,5 @@ public class ScheduleController {
                         .build());
               });
     }
-  }
-
-  public static String getSummary(
-      int streakCompleted, int streakFailed, ZonedDateTime lastCompleted, boolean relative) {
-    String str = "";
-    if (streakFailed > 0) {
-      str += "Last " + streakFailed + " executions have failed. ";
-    }
-    if (streakCompleted > 0) {
-      str += "Last " + streakCompleted + " executions have succeeded. ";
-    }
-    if (lastCompleted != null) {
-      str += "Last successful execution ";
-      str +=
-          relative
-              ? "was "
-                  + TimeUtils.humanReadableDuration(ZonedDateTime.now(), lastCompleted)
-                  + " ago"
-              : TimeUtils.humanReadableDate(lastCompleted);
-      str += ".";
-    }
-    return str.trim();
   }
 }

@@ -21,7 +21,6 @@ public class ScheduleInfo {
   private String cron;
   private String description;
   private String processId;
-  private String summary;
   private String startTime;
   private String endTime;
   private String nextTime;
