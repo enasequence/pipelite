@@ -16,8 +16,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.time.ZonedDateTime;
-import java.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
@@ -30,8 +28,14 @@ import pipelite.entity.ProcessEntity;
 import pipelite.launcher.process.runner.ProcessRunner;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
 import pipelite.process.Process;
-import pipelite.process.ProcessState;
 import pipelite.service.ProcessService;
+
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import java.util.stream.IntStream;
 
 @RestController
 @RequestMapping(value = "/process")
@@ -59,11 +63,11 @@ public class ProcessController {
     if (processEntity.isPresent()) {
       list.add(getProcess(processEntity.get()));
     }
-    getLoremIpsumProcess(list);
+    getLoremIpsumProcesses(list);
     return list;
   }
 
-  @GetMapping("/run")
+  @GetMapping("/")
   @ResponseStatus(HttpStatus.OK)
   @Operation(description = "Processes running in this server")
   @ApiResponses(
@@ -71,19 +75,19 @@ public class ProcessController {
         @ApiResponse(responseCode = "200", description = "OK"),
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
-  public List<ProcessInfo> runningProcesses(@RequestParam(required = false) String pipelineName) {
+  public List<ProcessInfo> processes(@RequestParam(required = false) String pipelineName) {
     List<ProcessInfo> list = new ArrayList<>();
     application
         .getRunningLaunchers()
-        .forEach(launcher -> list.addAll(getRunningProcesses(launcher, pipelineName)));
+        .forEach(launcher -> list.addAll(getProcesses(launcher, pipelineName)));
     application
         .getRunningSchedulers()
-        .forEach(launcher -> list.addAll(getRunningProcesses(launcher, pipelineName)));
-    getLoremIpsumProcess(list);
+        .forEach(launcher -> list.addAll(getProcesses(launcher, pipelineName)));
+    getLoremIpsumProcesses(list);
     return list;
   }
 
-  private static List<ProcessInfo> getRunningProcesses(
+  private static List<ProcessInfo> getProcesses(
       ProcessRunnerPoolService service, String pipelineName) {
     List<ProcessInfo> processes = new ArrayList<>();
     for (ProcessRunner processRunner : service.getActiveProcessRunners()) {
@@ -95,23 +99,6 @@ public class ProcessController {
       }
     }
     return processes;
-  }
-
-  @GetMapping("/all")
-  @ResponseStatus(HttpStatus.OK)
-  @Operation(description = "All processes")
-  @ApiResponses(
-      value = {
-        @ApiResponse(responseCode = "200", description = "OK"),
-        @ApiResponse(responseCode = "500", description = "Internal Server error")
-      })
-  public List<ProcessInfo> allProcesses(@RequestParam(required = false) String pipelineName) {
-    List<ProcessInfo> list = new ArrayList<>();
-    processService.getProcesses(pipelineName, ProcessState.ACTIVE, DEFAULT_LIMIT).stream()
-        .map(process -> getProcess(process))
-        .forEach(process -> list.add(process));
-    getLoremIpsumProcess(list);
-    return list;
   }
 
   private static ProcessInfo getProcess(ProcessEntity processEntity) {
@@ -126,20 +113,24 @@ public class ProcessController {
         .build();
   }
 
-  private void getLoremIpsumProcess(List<ProcessInfo> list) {
+  private void getLoremIpsumProcesses(List<ProcessInfo> list) {
     if (LoremUtils.isActiveProfile(environment)) {
-      Lorem lorem = LoremIpsum.getInstance();
-      Random random = new Random();
-      list.add(
-          ProcessInfo.builder()
-              .pipelineName(lorem.getCountry())
-              .processId(lorem.getWords(1))
-              .state(lorem.getFirstNameMale())
-              .startTime(TimeUtils.humanReadableDate(ZonedDateTime.now()))
-              .endTime(TimeUtils.humanReadableDate(ZonedDateTime.now()))
-              .executionCount(random.nextInt(10))
-              .priority(random.nextInt(10))
-              .build());
+      IntStream.range(1, 100)
+          .forEach(
+              i -> {
+                Lorem lorem = LoremIpsum.getInstance();
+                Random random = new Random();
+                list.add(
+                    ProcessInfo.builder()
+                        .pipelineName(lorem.getCountry())
+                        .processId(lorem.getWords(1))
+                        .state(lorem.getFirstNameMale())
+                        .startTime(TimeUtils.humanReadableDate(ZonedDateTime.now()))
+                        .endTime(TimeUtils.humanReadableDate(ZonedDateTime.now()))
+                        .executionCount(random.nextInt(10))
+                        .priority(random.nextInt(10))
+                        .build());
+              });
     }
   }
 }
