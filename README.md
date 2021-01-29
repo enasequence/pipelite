@@ -125,11 +125,11 @@ public class MySchedule implements Pipelite.Schedule {
 
 The following dependency types are supported by the ProcessBuilder:
 
-- execute(String stageName): the stage 'stageName' is not dependent on any other stage
-- executeAfter(String stageName, String dependsOnStageName): the stage 'stageName' depends on stage 'dependsOnStageName' and will be executed only after 'dependsOnStageName' has completed successfully
-- executeAfter(String stageName, List<String> dependsOnStageName): the stage 'stageName' depends on a list of stages 'dependsOnStageName' and will be executed only after all 'dependsOnStageName' stages has completed successfully
-- executeAfterPrevious(String stageName): the stage 'stageName' depends on the previous stage declared in the ProcessBuilder and will be executed only after it has completed successfully
-- executeAfterFirst(String stageName):  the stage 'stageName' depends on the first stage declared in the ProcessBuilder and will be executed only after it has completed successfully
+- ```execute(String stageName)```: the stage 'stageName' is not dependent on any other stage
+- ```executeAfter(String stageName, String dependsOnStageName)```: the stage 'stageName' depends on stage 'dependsOnStageName' and will be executed only after 'dependsOnStageName' has completed successfully
+- ```executeAfter(String stageName, List<String> dependsOnStageName)```: the stage 'stageName' depends on a list of stages 'dependsOnStageName' and will be executed only after all 'dependsOnStageName' stages has completed successfully
+- ```executeAfterPrevious(String stageName)```: the stage 'stageName' depends on the previous stage declared in the ProcessBuilder and will be executed only after it has completed successfully
+- ```executeAfterFirst(String stageName)```:  the stage 'stageName' depends on the first stage declared in the ProcessBuilder and will be executed only after it has completed successfully
 
 ### Pipelite configuration parameters
 
