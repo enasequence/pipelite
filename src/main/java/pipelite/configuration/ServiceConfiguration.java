@@ -67,7 +67,7 @@ public class ServiceConfiguration {
   /** The pipelite web server context path. */
   private String contextPath = DEFAULT_CONTEXT_PATH;
 
-  /** The pipelite web server password. */
+  /** The pipelite web server username. */
   private String username = "pipelite";
 
   /** The pipelite web server password. */
