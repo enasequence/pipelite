@@ -10,6 +10,8 @@
  */
 package pipelite.controller;
 
+import static pipelite.metrics.TimeSeriesMetrics.getTimeSeries;
+
 import com.thedeanda.lorem.Lorem;
 import com.thedeanda.lorem.LoremIpsum;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -17,6 +19,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
@@ -35,15 +43,6 @@ import pipelite.service.ProcessService;
 import pipelite.service.RegisteredPipelineService;
 import tech.tablesaw.api.Table;
 import tech.tablesaw.plotly.components.Figure;
-
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static pipelite.metrics.TimeSeriesMetrics.getTimeSeries;
 
 @RestController
 @RequestMapping(value = "/pipeline")
@@ -92,12 +91,11 @@ public class PipelineController {
     return pipelines.stream()
         .map(
             pipeline -> {
-              PipeliteLauncher pipeliteLauncher = runningMap.get(pipeline.getPipelineName());
-              ProcessService.ProcessStateSummary summary =
-                  summaryMap.get(pipeline.getPipelineName());
+              PipeliteLauncher pipeliteLauncher = runningMap.get(pipeline.pipelineName());
+              ProcessService.ProcessStateSummary summary = summaryMap.get(pipeline.pipelineName());
               return PipelineInfo.builder()
-                  .pipelineName(pipeline.getPipelineName())
-                  .maxRunningCount(pipeline.getPipelineParallelism())
+                  .pipelineName(pipeline.pipelineName())
+                  .maxRunningCount(pipeline.configurePipeline().pipelineParallelism())
                   .runningCount(pipeliteLauncher.getActiveProcessCount())
                   .pendingCount(summary.getPendingCount())
                   .activeCount(summary.getActiveCount())

@@ -10,6 +10,7 @@
  */
 package pipelite.service;
 
+import java.util.*;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -22,8 +23,6 @@ import pipelite.configuration.ServiceConfiguration;
 import pipelite.cron.CronUtils;
 import pipelite.entity.ScheduleEntity;
 import pipelite.exception.PipeliteException;
-
-import java.util.*;
 
 @Service
 @Lazy
@@ -46,36 +45,49 @@ public class RegisteredPipelineService {
     this.serviceName = serviceConfiguration.getName();
     Set<String> pipelineNames = new HashSet<>();
     for (RegisteredPipeline registeredPipeline : registeredPipelines) {
-      String pipelineName = registeredPipeline.getPipelineName();
-      if (pipelineName == null || pipelineName.trim().isEmpty()) {
-        throw new PipeliteException("Missing pipeline name");
-      }
-      if (pipelineNames.contains(pipelineName)) {
-        throw new PipeliteException("Non-unique pipeline name: " + pipelineName);
-      }
-      pipelineNames.add(pipelineName);
-      if (registeredPipeline instanceof Schedule) {
-        Schedule schedule = (Schedule) registeredPipeline;
-        if (!CronUtils.validate(schedule.getCron())) {
-          throw new PipeliteException(
-              "Invalid cron expression '"
-                  + schedule.getCron()
-                  + "' for pipeline schedule: "
-                  + pipelineName);
-        }
-        scheduleMap.put(pipelineName, schedule);
-      }
-      if (registeredPipeline instanceof Pipeline) {
-        Pipeline pipeline = (Pipeline) registeredPipeline;
-        pipelineMap.put(pipelineName, pipeline);
-      }
-      if (registeredPipeline instanceof PrioritizedPipeline) {
-        PrioritizedPipeline pipeline = (PrioritizedPipeline) registeredPipeline;
-        prioritizedPipelineMap.put(pipelineName, pipeline);
-      }
+      registerPipeline(pipelineNames, registeredPipeline);
     }
-
     saveSchedules();
+  }
+
+  private void registerPipeline(Set<String> pipelineNames, RegisteredPipeline registeredPipeline) {
+    String pipelineName = registeredPipeline.pipelineName();
+    if (pipelineName == null || pipelineName.trim().isEmpty()) {
+      throw new PipeliteException("Missing pipeline name");
+    }
+    if (pipelineNames.contains(pipelineName)) {
+      throw new PipeliteException("Non-unique pipeline name: " + pipelineName);
+    }
+    pipelineNames.add(pipelineName);
+    if (registeredPipeline instanceof Schedule) {
+      Schedule schedule = (Schedule) registeredPipeline;
+      String cron = schedule.configurePipeline().cron();
+      if (cron == null) {
+        throw new PipeliteException(
+            "Missing cron expression for pipeline schedule: " + pipelineName);
+      }
+      if (!CronUtils.validate(cron)) {
+        throw new PipeliteException(
+            "Invalid cron expression '" + cron + "' for pipeline schedule: " + pipelineName);
+      }
+      scheduleMap.put(pipelineName, schedule);
+    }
+    if (registeredPipeline instanceof Pipeline) {
+      Pipeline pipeline = (Pipeline) registeredPipeline;
+      int pipelineParallelism = pipeline.configurePipeline().pipelineParallelism();
+      if (pipelineParallelism < 1) {
+        throw new PipeliteException(
+            "Invalid pipeline parallelism '"
+                + pipelineParallelism
+                + "' for pipeline: "
+                + pipelineName);
+      }
+      pipelineMap.put(pipelineName, pipeline);
+    }
+    if (registeredPipeline instanceof PrioritizedPipeline) {
+      PrioritizedPipeline pipeline = (PrioritizedPipeline) registeredPipeline;
+      prioritizedPipelineMap.put(pipelineName, pipeline);
+    }
   }
 
   private void saveSchedules() {
@@ -83,7 +95,7 @@ public class RegisteredPipelineService {
         .values()
         .forEach(
             schedule -> {
-              String pipelineName = schedule.getPipelineName();
+              String pipelineName = schedule.pipelineName();
 
               Optional<ScheduleEntity> savedScheduleEntity =
                   scheduleService.getSavedSchedule(pipelineName);
@@ -93,16 +105,17 @@ public class RegisteredPipelineService {
               } else {
                 String registeredCron = savedScheduleEntity.get().getCron();
                 String registeredServiceName = savedScheduleEntity.get().getServiceName();
-                boolean isCronChanged = !registeredCron.equals(schedule.getCron());
+                String cron = schedule.configurePipeline().cron();
+                boolean isCronChanged = !registeredCron.equals(cron);
                 boolean isServiceNameChanged = !registeredServiceName.equals(serviceName);
 
                 if (isCronChanged) {
                   log.atInfo().log(
-                      "Cron changed for pipeline schedule: " + schedule.getPipelineName());
+                      "Cron changed for pipeline schedule: " + schedule.pipelineName());
                 }
                 if (isServiceNameChanged) {
                   log.atInfo().log(
-                      "Service name changed for pipeline schedule: " + schedule.getPipelineName());
+                      "Service name changed for pipeline schedule: " + schedule.pipelineName());
                 }
 
                 if (isServiceNameChanged && !serviceConfiguration.isForce()) {
@@ -124,17 +137,15 @@ public class RegisteredPipelineService {
                 }
 
                 if (isCronChanged || isServiceNameChanged) {
-                  log.atInfo().log("Updating pipeline schedule: " + schedule.getPipelineName());
+                  log.atInfo().log("Updating pipeline schedule: " + schedule.pipelineName());
                   try {
-                    savedScheduleEntity.get().setCron(schedule.getCron());
-                    savedScheduleEntity
-                        .get()
-                        .setDescription(CronUtils.describe(schedule.getCron()));
+                    savedScheduleEntity.get().setCron(cron);
+                    savedScheduleEntity.get().setDescription(CronUtils.describe(cron));
                     savedScheduleEntity.get().setServiceName(serviceName);
                     scheduleService.saveSchedule(savedScheduleEntity.get());
                   } catch (Exception ex) {
                     throw new PipeliteException(
-                        "Failed to update pipeline schedule: " + schedule.getPipelineName(), ex);
+                        "Failed to update pipeline schedule: " + schedule.pipelineName(), ex);
                   }
                 }
               }
@@ -142,17 +153,18 @@ public class RegisteredPipelineService {
   }
 
   private void createSchedule(Schedule schedule) {
-    log.atInfo().log("Creating pipeline schedule: " + schedule.getPipelineName());
+    log.atInfo().log("Creating pipeline schedule: " + schedule.pipelineName());
     try {
+      String cron = schedule.configurePipeline().cron();
       ScheduleEntity scheduleEntity = new ScheduleEntity();
-      scheduleEntity.setCron(schedule.getCron());
-      scheduleEntity.setDescription(CronUtils.describe(schedule.getCron()));
-      scheduleEntity.setPipelineName(schedule.getPipelineName());
+      scheduleEntity.setCron(cron);
+      scheduleEntity.setDescription(CronUtils.describe(cron));
+      scheduleEntity.setPipelineName(schedule.pipelineName());
       scheduleEntity.setServiceName(serviceName);
       scheduleService.saveSchedule(scheduleEntity);
     } catch (Exception ex) {
       throw new PipeliteException(
-          "Failed to create pipeline schedule: " + schedule.getPipelineName(), ex);
+          "Failed to create pipeline schedule: " + schedule.pipelineName(), ex);
     }
   }
 
