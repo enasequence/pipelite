@@ -133,7 +133,6 @@ public class MySchedule implements Pipelite.Schedule {
 - pipelite.service.password: the pipelite web service password. Default value: pipelite
 - pipelite.service.force: forces the pipelite service to start by removing all service locks and by updating service
   names attached to schedules if necessary. Default value: false
-- pipelite.mail.
 
 #### Mail parameters
 
@@ -158,33 +157,25 @@ public class MySchedule implements Pipelite.Schedule {
 - pipelite.datasource.ddlAuto: see Hibernate hbm2ddl.auto options
 - pipelite.datasource.dialect: see Hibernate dialect options
 - pipelite.datasource.maxActive: maximum number of active database connections. Default value: 25
-- pipelite.datasource.test: if set to true then uses an in memory database unsuitable for production purposes
+- pipelite.datasource.test: if set to true then uses an in memory database unsuitable for production purposes. Default
+  value: false
 
 #### Advanced parameters
 
-public static final Duration DEFAULT_LOCK_FREQUENCY = Duration.ofMinutes(5); public static final Duration
-DEFAULT_LOCK_DURATION = Duration.ofMinutes(60); private static final Duration DEFAULT_PROCESS_RUNNER_FREQUENCY =
-Duration.ofSeconds(10); private static final Duration DEFAULT_SCHEDULE_REFRESH_FREQUENCY = Duration.ofHours(4); private
-static final Duration DEFAULT_PROCESS_QUEUE_MAX_REFRESH_FREQUENCY = Duration.ofHours(6); private static final Duration
-DEFAULT_PROCESS_QUEUE_MIN_REFRESH_FREQUENCY = Duration.ofMinutes(5); private static final int
-DEFAULT_PROCESS_QUEUE_MAX_SIZE = 5000; private static final int DEFAULT_PROCESS_CREATE_MAX_SIZE = 1000;
-
-public AdvancedConfiguration() {}
-
-- pipelite.advanced.lockFrequency: the frequency of renewing service locks. Default value: 5 minutes.
+- pipelite.advanced.lockFrequency: the frequency of renewing service locks. Default value: 5 minutes
 - pipelite.advanced.lockDuration: the duration after which service and process locks expire unless the service lock is
-  renewed. Default value: 60 minutes.
+  renewed. Default value: 60 minutes
 - pipelite.advanced.processRunnerFrequency: the running frequency for executing new processes. Default value: 10
-  seconds.
+  seconds
 - pipelite.advanced.processQueueMaxRefreshFrequency: the maximum frequency for pipeline execution queue to be refreshed
-  to allow process re-prioritisation. Default value: 6 hours.
+  to allow process re-prioritisation. Default value: 6 hours
 - pipelite.advanced.processQueueMinRefreshFrequency: the minimum frequency for pipeline execution queue to be refreshed
-  to allow process re-prioritisation. Default value: 5 minutes.
+  to allow process re-prioritisation. Default value: 5 minutes
 - pipelite.advanced.processQueueMaxSize: The maximum size of pipeline execution queue. Default value: 5000
 - pipelite.advanced.processCreateMaxSize: The maximum number of processes created from a process source at one time.
-  Default value: 1000.
+  Default value: 1000
 
 #### Test profiles
 
-- if Spring active profiles contain 'test' then uses an in memory database unsuitable for production purposes
-- if Spring active profiles contain 'test-lorem' then generates test content for the web interface
+- if Spring active profiles contain 'test' then uses an in memory database unsuitable for production purposes.
+- if Spring active profiles contain 'test-lorem' then generates test content for the web interface.
