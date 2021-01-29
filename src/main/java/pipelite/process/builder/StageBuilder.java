@@ -17,7 +17,8 @@ import java.util.*;
 import pipelite.executor.*;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
-import pipelite.stage.executor.*;
+import pipelite.stage.executor.StageExecutor;
+import pipelite.stage.executor.StageExecutorCall;
 import pipelite.stage.parameters.*;
 
 public class StageBuilder {
@@ -141,7 +142,7 @@ public class StageBuilder {
   }
 
   /**
-   * An executor that returns a stage execution result of the given stage state.
+   * A test executor that behaves like a synchronous executor and returns the given stage state.
    *
    * @param stageState the stage state returned by the executor
    */
@@ -150,7 +151,7 @@ public class StageBuilder {
   }
 
   /**
-   * An executor that returns a stage execution result of the given stage state.
+   * A test executor that behaves like a synchronous executor and returns the given stage state.
    *
    * @param stageState the stage state returned by the executor
    * @param params the executor parameters
@@ -161,25 +162,26 @@ public class StageBuilder {
     return addStage(executor);
   }
 
-  /** An executor that returns the stage execution result SUCCESS. */
+  /** A test executor that behaves like a synchronous executor and returns stage state SUCCESS. */
   public ProcessBuilder withCallExecutor() {
     return withCallExecutor(StageState.SUCCESS);
   }
 
   /**
-   * An executor that first returns the stage state ACTIVE and then the give stage state.
+   * A test executor that behaves like an asynchronous executor by returning ACTIVE stage state when
+   * called for the first time and then returning the given stage state for subsequent calls.
    *
-   * @param stageState the stage state returned by the executor after ACTIVE
+   * @param stageState the stage state returned after returning ACTIVE
    */
   public ProcessBuilder withAsyncCallExecutor(StageState stageState) {
     return withAsyncCallExecutor(stageState, ExecutorParameters.builder().build());
   }
 
   /**
-   * An executor that first returns the stage execution result ACTIVE and then a stage execution
-   * result of the given result type.
+   * A test executor that behaves like an asynchronous executor by returning ACTIVE stage state when
+   * called for the first time and then returning the given stage state for subsequent calls.
    *
-   * @param stageState the stage execution result returned by the executor after ACTIVE
+   * @param stageState the stage state returned after returning ACTIVE
    * @param params the executor parameters
    */
   public ProcessBuilder withAsyncCallExecutor(StageState stageState, ExecutorParameters params) {
@@ -189,8 +191,8 @@ public class StageBuilder {
   }
 
   /**
-   * An executor that first returns the stage execution result ACTIVE and then a stage execution
-   * result SUCCESS.
+   * A test executor that behaves like an asynchronous executor by returning ACTIVE stage state when
+   * called for the first time and then returning the stage state SUCCESS.
    */
   public ProcessBuilder withAsyncCallExecutor() {
     return withAsyncCallExecutor(SUCCESS);

@@ -126,10 +126,32 @@ public class MySchedule implements Pipelite.Schedule {
 The following dependency types are supported by the ProcessBuilder:
 
 - ```execute(String stageName)```: the stage 'stageName' is not dependent on any other stage
-- ```executeAfter(String stageName, String dependsOnStageName)```: the stage 'stageName' depends on stage 'dependsOnStageName' and will be executed only after 'dependsOnStageName' has completed successfully
-- ```executeAfter(String stageName, List<String> dependsOnStageName)```: the stage 'stageName' depends on a list of stages 'dependsOnStageName' and will be executed only after all 'dependsOnStageName' stages has completed successfully
-- ```executeAfterPrevious(String stageName)```: the stage 'stageName' depends on the previous stage declared in the ProcessBuilder and will be executed only after it has completed successfully
-- ```executeAfterFirst(String stageName)```:  the stage 'stageName' depends on the first stage declared in the ProcessBuilder and will be executed only after it has completed successfully
+- ```executeAfter(String stageName, String dependsOnStageName)```: the stage 'stageName' depends on stage '
+  dependsOnStageName' and will be executed only after 'dependsOnStageName' has completed successfully
+- ```executeAfter(String stageName, List<String> dependsOnStageName)```: the stage 'stageName' depends on a list of
+  stages 'dependsOnStageName' and will be executed only after all 'dependsOnStageName' stages has completed successfully
+- ```executeAfterPrevious(String stageName)```: the stage 'stageName' depends on the previous stage declared in the
+  ProcessBuilder and will be executed only after it has completed successfully
+- ```executeAfterFirst(String stageName)```:  the stage 'stageName' depends on the first stage declared in the
+  ProcessBuilder and will be executed only after it has completed successfully
+
+### Pipelite stage executor backends
+
+The following executor backends are supported by the ProcessBuilder:
+
+- ```withCmdExecutor```: a local or ssh command executor. Ssh will be used if ```host``` has been set
+  in ```CmdExecutorParameters```.
+- ```withLsfExecutor```: an LSF executor that uses YAML configuration files with parameter placeholders. Ssh will be
+  used if ```host``` has been set in ```LsfExecutorParameters```.
+- ```withSimpleLsfExecutor```: an LSF executor that uses a small subset of common LSF parameters. Ssh will be used
+  if ```host``` has been set in ```SimpleLsfExecutorParameters```.
+- ```withAwsBatchExecutor```: an experimental AwsBatch executor that uses JSON configuration files with parameter
+  placeholders.
+- ```with```: any executor that implements the ```StageExecutor``` interface.
+- ```withCallExecutor```: any executor that implements the ```StageExecutorCall``` interface.
+- ```withCallExecutor```: A test executor that behaves like a synchronous executor and returns the given stage state.
+- ```withAsyncCallExecutor```: A test executor that behaves like an asynchronous executor by returning ACTIVE stage
+  state when called for the first time and then returning the given stage state for subsequent calls.
 
 ### Pipelite configuration parameters
 
@@ -175,8 +197,7 @@ The following dependency types are supported by the ProcessBuilder:
 - pipelite.advanced.lockFrequency: the frequency of renewing service locks. Default value: 5 minutes
 - pipelite.advanced.lockDuration: the duration after which service and process locks expire unless the service lock is
   renewed. Default value: 60 minutes
-- pipelite.advanced.processRunnerFrequency: the running frequency for executing new processes. Default value: 10
-  seconds
+- pipelite.advanced.processRunnerFrequency: the running frequency for executing new processes. Default value: 10 seconds
 - pipelite.advanced.processQueueMaxRefreshFrequency: the maximum frequency for pipeline execution queue to be refreshed
   to allow process re-prioritisation. Default value: 6 hours
 - pipelite.advanced.processQueueMinRefreshFrequency: the minimum frequency for pipeline execution queue to be refreshed
