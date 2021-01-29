@@ -24,7 +24,10 @@ import pipelite.launcher.process.runner.DefaultProcessRunner;
 import pipelite.launcher.process.runner.DefaultProcessRunnerPool;
 import pipelite.lock.PipeliteLocker;
 import pipelite.metrics.PipeliteMetrics;
-import pipelite.service.*;
+import pipelite.service.MailService;
+import pipelite.service.ProcessService;
+import pipelite.service.RegisteredPipelineService;
+import pipelite.service.StageService;
 
 public class DefaultPipeliteLauncher {
 
@@ -54,7 +57,10 @@ public class DefaultPipeliteLauncher {
             processService);
     ProcessQueue processQueue =
         new DefaultProcessQueue(
-            advancedConfiguration, processService, pipelineName, pipeline.getPipelineParallelism());
+            advancedConfiguration,
+            processService,
+            pipelineName,
+            pipeline.configurePipeline().pipelineParallelism());
     return new PipeliteLauncher(
         serviceConfiguration,
         advancedConfiguration,

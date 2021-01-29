@@ -26,8 +26,8 @@ public interface PrioritizedProcessCreator {
   /**
    * Creates and saves one prioritized process.
    *
-   * @param nextProcess the next process
+   * @param prioritizedProcess the next process
    * @return the created process or null if it could not be created
    */
-  ProcessEntity createProcess(PrioritizedPipeline.NextProcess nextProcess);
+  ProcessEntity createProcess(PrioritizedPipeline.PrioritizedProcess prioritizedProcess);
 }

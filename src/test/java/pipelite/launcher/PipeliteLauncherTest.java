@@ -46,7 +46,6 @@ import pipelite.lock.PipeliteLocker;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.TimeSeriesMetrics;
-import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.*;
@@ -145,17 +144,17 @@ public class PipeliteLauncherTest {
     }
 
     @Override
-    public String getPipelineName() {
+    public String pipelineName() {
       return pipelineName;
     }
 
     @Override
-    public int getPipelineParallelism() {
-      return 5;
+    public Options configurePipeline() {
+      return new Options().pipelineParallelism(5);
     }
 
     @Override
-    public Process createProcess(ProcessBuilder builder) {
+    public void configureProcess(ProcessBuilder builder) {
       processIds.add(builder.getProcessId());
       ExecutorParameters executorParams =
           ExecutorParameters.builder()
@@ -183,11 +182,10 @@ public class PipeliteLauncherTest {
                 },
                 executorParams);
       }
-      return builder.build();
     }
 
     @Override
-    public NextProcess nextProcess() {
+    public PrioritizedProcess nextProcess() {
       return helper.nextProcess();
     }
 
@@ -198,7 +196,7 @@ public class PipeliteLauncherTest {
   }
 
   private void assertLauncherMetrics(TestPipeline f) {
-    PipelineMetrics pipelineMetrics = metrics.pipeline(f.getPipelineName());
+    PipelineMetrics pipelineMetrics = metrics.pipeline(f.pipelineName());
 
     if (f.stageTestResult != StageTestResult.SUCCESS) {
       assertThat(pipelineMetrics.process().getFailedCount())
@@ -226,10 +224,9 @@ public class PipeliteLauncherTest {
   }
 
   private void assertProcessEntity(TestPipeline f, String processId) {
-    String pipelineName = f.getPipelineName();
+    String pipelineName = f.pipelineName();
 
-    ProcessEntity processEntity =
-        processService.getSavedProcess(f.getPipelineName(), processId).get();
+    ProcessEntity processEntity = processService.getSavedProcess(f.pipelineName(), processId).get();
     assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);
@@ -242,13 +239,13 @@ public class PipeliteLauncherTest {
   }
 
   private void assertStageEntities(TestPipeline f, String processId) {
-    String pipelineName = f.getPipelineName();
+    String pipelineName = f.pipelineName();
 
     for (int i = 0; i < f.stageCnt; ++i) {
       StageEntity stageEntity =
-          stageService.getSavedStage(f.getPipelineName(), processId, "STAGE" + i).get();
+          stageService.getSavedStage(f.pipelineName(), processId, "STAGE" + i).get();
       StageLogEntity stageLogEntity =
-          stageService.getSavedStageLog(f.getPipelineName(), processId, "STAGE" + i).get();
+          stageService.getSavedStageLog(f.pipelineName(), processId, "STAGE" + i).get();
       assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
       assertThat(stageEntity.getProcessId()).isEqualTo(processId);
       assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
@@ -281,7 +278,7 @@ public class PipeliteLauncherTest {
   }
 
   private void test(TestPipeline f) {
-    PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.getPipelineName());
+    PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.pipelineName());
     new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
 
     assertThat(pipeliteLauncher.getActiveProcessRunners().size()).isEqualTo(0);
@@ -321,19 +318,17 @@ public class PipeliteLauncherTest {
     Pipeline pipeline =
         new Pipeline() {
           @Override
-          public String getPipelineName() {
+          public String pipelineName() {
             return pipelineName;
           }
 
           @Override
-          public int getPipelineParallelism() {
-            return pipelineParallelism;
+          public Options configurePipeline() {
+            return new Options().pipelineParallelism(pipelineParallelism);
           }
 
           @Override
-          public Process createProcess(ProcessBuilder builder) {
-            return mock(Process.class);
-          }
+          public void configureProcess(ProcessBuilder builder) {}
         };
 
     DefaultProcessQueue queue =
@@ -342,7 +337,7 @@ public class PipeliteLauncherTest {
                 advancedConfiguration,
                 mock(ProcessService.class),
                 pipelineName,
-                pipeline.getPipelineParallelism()));
+                pipeline.configurePipeline().pipelineParallelism()));
 
     List<ProcessEntity> processesEntities =
         Collections.nCopies(processCnt, mock(ProcessEntity.class));

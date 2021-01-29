@@ -31,7 +31,7 @@ public class DefaultPrioritizedProcessCreator implements PrioritizedProcessCreat
     Assert.notNull(processService, "Missing process service");
     this.prioritizedPipeline = prioritizedPipeline;
     this.processService = processService;
-    this.pipelineName = prioritizedPipeline.getPipelineName();
+    this.pipelineName = prioritizedPipeline.pipelineName();
     Assert.notNull(this.pipelineName, "Missing pipeline name");
   }
 
@@ -43,11 +43,11 @@ public class DefaultPrioritizedProcessCreator implements PrioritizedProcessCreat
     int createCnt = 0;
     logContext(log.atInfo()).log("Creating new processes");
     while (processCnt-- > 0) {
-      PrioritizedPipeline.NextProcess nextProcess = prioritizedPipeline.nextProcess();
-      if (nextProcess == null) {
+      PrioritizedPipeline.PrioritizedProcess prioritizedProcess = prioritizedPipeline.nextProcess();
+      if (prioritizedProcess == null) {
         return createCnt;
       }
-      if (createProcess(nextProcess) != null) {
+      if (createProcess(prioritizedProcess) != null) {
         createCnt++;
       }
     }
@@ -56,8 +56,8 @@ public class DefaultPrioritizedProcessCreator implements PrioritizedProcessCreat
   }
 
   @Override
-  public ProcessEntity createProcess(PrioritizedPipeline.NextProcess nextProcess) {
-    String processId = nextProcess.getProcessId();
+  public ProcessEntity createProcess(PrioritizedPipeline.PrioritizedProcess prioritizedProcess) {
+    String processId = prioritizedProcess.getProcessId();
     if (processId == null || processId.trim().isEmpty()) {
       logContext(log.atWarning()).log("New process does not have process id");
       return null;
@@ -72,7 +72,8 @@ public class DefaultPrioritizedProcessCreator implements PrioritizedProcessCreat
     } else {
       logContext(log.atInfo(), trimmedProcessId).log("Creating new process");
       processEntity =
-          processService.createExecution(pipelineName, trimmedProcessId, nextProcess.getPriority());
+          processService.createExecution(
+              pipelineName, trimmedProcessId, prioritizedProcess.getPriority().getInt());
       if (processEntity == null) {
         logContext(log.atSevere(), trimmedProcessId).log("Failed to create process");
         throw new RuntimeException("Failed to create process: " + trimmedProcessId);

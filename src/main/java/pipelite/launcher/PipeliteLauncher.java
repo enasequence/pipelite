@@ -117,7 +117,7 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
   }
 
   public int getPipelineParallelism() {
-    return pipeline.getPipelineParallelism();
+    return pipeline.configurePipeline().pipelineParallelism();
   }
 
   public int getQueuedProcessCount() {

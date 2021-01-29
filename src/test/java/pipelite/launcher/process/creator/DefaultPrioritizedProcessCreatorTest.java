@@ -19,7 +19,6 @@ import pipelite.PrioritizedPipeline;
 import pipelite.PrioritizedPipelineTestHelper;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.ProcessEntity;
-import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.ProcessService;
 
@@ -34,17 +33,17 @@ public class DefaultPrioritizedProcessCreatorTest {
         new PrioritizedPipelineTestHelper(PROCESS_CNT);
 
     @Override
-    public String getPipelineName() {
+    public String pipelineName() {
       return pipelineName;
     }
 
     @Override
-    public int getPipelineParallelism() {
-      return 1;
+    public Options configurePipeline() {
+      return new Options().pipelineParallelism(1);
     }
 
     @Override
-    public NextProcess nextProcess() {
+    public PrioritizedProcess nextProcess() {
       return helper.nextProcess();
     }
 
@@ -54,9 +53,7 @@ public class DefaultPrioritizedProcessCreatorTest {
     }
 
     @Override
-    public Process createProcess(ProcessBuilder builder) {
-      return null;
-    }
+    public void configureProcess(ProcessBuilder builder) {}
   }
 
   @Test

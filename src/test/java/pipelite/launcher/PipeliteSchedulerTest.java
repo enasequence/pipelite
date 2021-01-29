@@ -17,7 +17,10 @@ import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFOR
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.Value;
@@ -29,7 +32,10 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
-import pipelite.*;
+import pipelite.PipeliteTestBeans;
+import pipelite.PipeliteTestConfiguration;
+import pipelite.Schedule;
+import pipelite.UniqueStringGenerator;
 import pipelite.configuration.AdvancedConfiguration;
 import pipelite.configuration.ExecutorConfiguration;
 import pipelite.configuration.ServiceConfiguration;
@@ -168,17 +174,17 @@ public class PipeliteSchedulerTest {
     }
 
     @Override
-    public String getPipelineName() {
+    public String pipelineName() {
       return pipelineName;
     }
 
     @Override
-    public String getCron() {
-      return cron;
+    public Options configurePipeline() {
+      return new Options().cron(cron);
     }
 
     @Override
-    public Process createProcess(ProcessBuilder builder) {
+    public void configureProcess(ProcessBuilder builder) {
       processIds.add(builder.getProcessId());
       ExecutorParameters executorParams =
           ExecutorParameters.builder()
@@ -206,7 +212,6 @@ public class PipeliteSchedulerTest {
                 },
                 executorParams);
       }
-      return builder.build();
     }
   }
 
@@ -227,7 +232,7 @@ public class PipeliteSchedulerTest {
   }
 
   private void assertSchedulerMetrics(TestSchedule f) {
-    String pipelineName = f.getPipelineName();
+    String pipelineName = f.pipelineName();
 
     PipelineMetrics pipelineMetrics = metrics.pipeline(pipelineName);
 
@@ -257,16 +262,16 @@ public class PipeliteSchedulerTest {
   }
 
   private void assertScheduleEntity(List<ScheduleEntity> scheduleEntities, TestSchedule f) {
-    String pipelineName = f.getPipelineName();
+    String pipelineName = f.pipelineName();
 
     assertThat(
             scheduleEntities.stream()
-                .filter(e -> e.getPipelineName().equals(f.getPipelineName()))
+                .filter(e -> e.getPipelineName().equals(f.pipelineName()))
                 .count())
         .isEqualTo(1);
     ScheduleEntity scheduleEntity =
         scheduleEntities.stream()
-            .filter(e -> e.getPipelineName().equals(f.getPipelineName()))
+            .filter(e -> e.getPipelineName().equals(f.pipelineName()))
             .findFirst()
             .get();
     assertThat(scheduleEntity.getServiceName()).isEqualTo(serviceConfiguration.getName());
@@ -279,10 +284,9 @@ public class PipeliteSchedulerTest {
   }
 
   private void assertProcessEntity(TestSchedule f, String processId) {
-    String pipelineName = f.getPipelineName();
+    String pipelineName = f.pipelineName();
 
-    ProcessEntity processEntity =
-        processService.getSavedProcess(f.getPipelineName(), processId).get();
+    ProcessEntity processEntity = processService.getSavedProcess(f.pipelineName(), processId).get();
     assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);
@@ -295,13 +299,13 @@ public class PipeliteSchedulerTest {
   }
 
   private void assertStageEntities(TestSchedule f, String processId) {
-    String pipelineName = f.getPipelineName();
+    String pipelineName = f.pipelineName();
 
     for (int i = 0; i < f.stageCnt; ++i) {
       StageEntity stageEntity =
-          stageService.getSavedStage(f.getPipelineName(), processId, "STAGE" + i).get();
+          stageService.getSavedStage(f.pipelineName(), processId, "STAGE" + i).get();
       StageLogEntity stageLogEntity =
-          stageService.getSavedStageLog(f.getPipelineName(), processId, "STAGE" + i).get();
+          stageService.getSavedStageLog(f.pipelineName(), processId, "STAGE" + i).get();
       assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
       assertThat(stageEntity.getProcessId()).isEqualTo(processId);
       assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
@@ -339,7 +343,7 @@ public class PipeliteSchedulerTest {
       for (TestSchedule f : testProcessFactories) {
         f.reset();
         saveSchedule(f);
-        pipeliteScheduler.setMaximumExecutions(f.getPipelineName(), f.processCnt);
+        pipeliteScheduler.setMaximumExecutions(f.pipelineName(), f.processCnt);
       }
       new PipeliteServiceManager().addService(pipeliteScheduler).runSync();
 
@@ -474,10 +478,8 @@ public class PipeliteSchedulerTest {
     ZonedDateTime startTime1 = ZonedDateTime.now().minusHours(1).truncatedTo(ChronoUnit.SECONDS);
     ZonedDateTime startTime2 = ZonedDateTime.now().minusHours(1).truncatedTo(ChronoUnit.SECONDS);
 
-    ScheduleEntity scheduleEntity1 =
-        scheduleService.getSavedSchedule(resume1.getPipelineName()).get();
-    ScheduleEntity scheduleEntity2 =
-        scheduleService.getSavedSchedule(resume2.getPipelineName()).get();
+    ScheduleEntity scheduleEntity1 = scheduleService.getSavedSchedule(resume1.pipelineName()).get();
+    ScheduleEntity scheduleEntity2 = scheduleService.getSavedSchedule(resume2.pipelineName()).get();
     scheduleEntity1.setStartTime(startTime1);
     scheduleEntity2.setStartTime(startTime2);
     String processId1 = "1";
@@ -488,9 +490,9 @@ public class PipeliteSchedulerTest {
     scheduleService.saveSchedule(scheduleEntity2);
 
     ProcessEntity processEntity1 =
-        ProcessEntity.createExecution(resume1.getPipelineName(), processId1, 5);
+        ProcessEntity.createExecution(resume1.pipelineName(), processId1, 5);
     ProcessEntity processEntity2 =
-        ProcessEntity.createExecution(resume2.getPipelineName(), processId2, 5);
+        ProcessEntity.createExecution(resume2.pipelineName(), processId2, 5);
     processService.saveProcess(processEntity1);
     processService.saveProcess(processEntity2);
 
@@ -510,8 +512,8 @@ public class PipeliteSchedulerTest {
                 mailService,
                 metrics));
 
-    pipeliteScheduler.setMaximumExecutions(resume1.getPipelineName(), maxExecution1);
-    pipeliteScheduler.setMaximumExecutions(resume2.getPipelineName(), maxExecution2);
+    pipeliteScheduler.setMaximumExecutions(resume1.pipelineName(), maxExecution1);
+    pipeliteScheduler.setMaximumExecutions(resume2.pipelineName(), maxExecution2);
 
     // Resume the two processes, check that they are immediately executed
     // and that they are scheduled for a later execution.
@@ -522,8 +524,8 @@ public class PipeliteSchedulerTest {
       Time.wait(Duration.ofMillis(100));
     }
 
-    scheduleEntity1 = scheduleService.getSavedSchedule(resume1.getPipelineName()).get();
-    scheduleEntity2 = scheduleService.getSavedSchedule(resume2.getPipelineName()).get();
+    scheduleEntity1 = scheduleService.getSavedSchedule(resume1.pipelineName()).get();
+    scheduleEntity2 = scheduleService.getSavedSchedule(resume2.pipelineName()).get();
     assertThat(scheduleEntity1.getStartTime()).isEqualTo(startTime1);
     assertThat(scheduleEntity2.getStartTime()).isEqualTo(startTime2);
     assertThat(scheduleEntity1.getEndTime()).isAfter(startTime1);

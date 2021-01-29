@@ -10,13 +10,16 @@
  */
 package pipelite;
 
-/** Implement this interface to register a scheduled pipeline to be executed by pipelite. */
-public interface Schedule extends RegisteredPipeline {
+import lombok.Data;
+import lombok.experimental.Accessors;
 
-  /**
-   * Returns the cron expression for the scheduled pipeline.
-   *
-   * @return the cron expression for the scheduled pipeline.
-   */
-  String getCron();
+/** A scheduled pipeline to be executed by pipelite. */
+public interface Schedule extends RegisteredPipeline<Schedule.Options> {
+
+  @Data
+  @Accessors(fluent = true)
+  class Options {
+    /** The cron expression for the scheduled pipeline. */
+    private String cron;
+  }
 }

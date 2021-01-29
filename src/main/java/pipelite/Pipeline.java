@@ -10,13 +10,16 @@
  */
 package pipelite;
 
-/** Implement this interface to register a pipeline to be executed by pipelite. */
-public interface Pipeline extends RegisteredPipeline {
+import lombok.Data;
+import lombok.experimental.Accessors;
 
-  /**
-   * The maximum number of parallel process executions.
-   *
-   * @return the maximum number of parallel process executions
-   */
-  int getPipelineParallelism();
+/** A parallel pipeline to be executed by pipelite. */
+public interface Pipeline extends RegisteredPipeline<Pipeline.Options> {
+
+  @Data
+  @Accessors(fluent = true)
+  class Options {
+    /** The maximum number of parallel process executions. Default value is 1. */
+    private int pipelineParallelism = 1;
+  }
 }

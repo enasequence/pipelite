@@ -32,20 +32,21 @@ public class ProcessFactoryTest {
     Pipeline pipeline =
         new Pipeline() {
           @Override
-          public String getPipelineName() {
+          public String pipelineName() {
             return PIPELINE_NAME;
           }
 
           @Override
-          public int getPipelineParallelism() {
-            return 5;
+          public Options configurePipeline() {
+            return new Options().pipelineParallelism(5);
           }
 
           @Override
-          public Process createProcess(ProcessBuilder builder) {
-            return builder.execute("STAGE1").withCallExecutor().build();
+          public void configureProcess(ProcessBuilder builder) {
+            builder.execute("STAGE1").withCallExecutor();
           }
         };
+
     Process process = ProcessFactory.create(processEntity, pipeline);
     assertThat(process).isNotNull();
     assertThat(process.getProcessId()).isEqualTo(PROCESS_ID);
@@ -60,19 +61,17 @@ public class ProcessFactoryTest {
     Pipeline pipeline =
         new Pipeline() {
           @Override
-          public String getPipelineName() {
+          public String pipelineName() {
             return PIPELINE_NAME;
           }
 
           @Override
-          public int getPipelineParallelism() {
-            return 5;
+          public Options configurePipeline() {
+            return new Options().pipelineParallelism(5);
           }
 
           @Override
-          public Process createProcess(ProcessBuilder builder) {
-            return null;
-          }
+          public void configureProcess(ProcessBuilder builder) {}
         };
 
     assertThrows(PipeliteException.class, () -> ProcessFactory.create(processEntity, pipeline));

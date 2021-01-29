@@ -10,25 +10,39 @@
  */
 package pipelite;
 
-import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 
-public interface RegisteredPipeline {
+/**
+ * Configures a pipeline to be executed by Pipelite. Pipelines are identified by a unique name and
+ * configured using {@link RegisteredPipeline#configurePipeline}. Pipeline executions are called
+ * processes and are configured using {@link RegisteredPipeline#configureProcess}.
+ */
+public interface RegisteredPipeline<PipelineOptions> {
 
   /**
    * A unique name for the pipeline.
    *
    * @return a unique name for the pipeline
    */
-  String getPipelineName();
+  String pipelineName();
 
   /**
-   * A process to be executed. Executable pipeline instances are called processes. A process is
-   * identified by a unique process id. Processes are composed of stages that are defined using the
-   * provided process builder. The process builder has been initialised with the unique process id.
+   * Configures the pipeline by returning pipeline type specific configuration options.
    *
-   * @param builder the process builder
-   * @return a process to be executed
+   * @return the pipeline configuration options
    */
-  Process createProcess(ProcessBuilder builder);
+  PipelineOptions configurePipeline();
+
+  /**
+   * Configures the processes to be executed for the pipeline. Processes are identified by a unique
+   * process id and are configured using the provided {@link ProcessBuilder}. The {@link
+   * ProcessBuilder} has been initialised with the process id. A process consists of one or more
+   * stages. When a stage depends on others then it is executed after the stages it depends on have
+   * been executed successfully. Each stage is configured to use one of the available execution
+   * backends. A process execution is considered completed after all stages have been successfully
+   * executed.
+   *
+   * @param builder a builder to configure the processes for the pipeline
+   */
+  void configureProcess(ProcessBuilder builder);
 }

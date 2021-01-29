@@ -12,28 +12,56 @@ package pipelite;
 
 import lombok.Value;
 
-/** Implement this interface to register a prioritized pipeline to be executed by pipelite. */
+/** A prioritized parallel pipeline to be executed by pipelite. */
 public interface PrioritizedPipeline extends Pipeline {
 
-  @Value
-  class NextProcess {
-    private final String processId;
-    private final Integer priority;
+  enum Priority {
+    LOWEST(1),
+    LOW(3),
+    DEFAULT(5),
+    HIGH(7),
+    HIGHEST(9);
 
-    public NextProcess(String processId, Integer priority) {
+    Priority(int priority) {
+      this.priority = priority;
+    }
+
+    final int priority;
+
+    public int getInt() {
+      return priority;
+    }
+  }
+
+  @Value
+  class PrioritizedProcess {
+    private final String processId;
+    private final Priority priority;
+
+    public PrioritizedProcess(String processId, Priority priority) {
       this.processId = processId;
       this.priority = priority;
     }
 
-    public NextProcess(String processId) {
+    public PrioritizedProcess(String processId) {
       this.processId = processId;
-      this.priority = null;
+      this.priority = Priority.DEFAULT;
     }
   }
 
-  /** Returns the next process to be executed. */
-  NextProcess nextProcess();
+  /**
+   * Return the next process to be executed or null if there are no more processes to execute. If
+   * the same process id is returned more than once all but the first are ignored.
+   *
+   * @return the next process to be executed or null if there are no more processes to execute
+   */
+  PrioritizedProcess nextProcess();
 
-  /** Confirms that the process has been accepted. */
+  /**
+   * A confirmation that the {@link PrioritizedPipeline#nextProcess} has been successful.
+   *
+   * @param processId the process id of the process for which {@link
+   *     PrioritizedPipeline#nextProcess} has been successful
+   */
   void confirmProcess(String processId);
 }

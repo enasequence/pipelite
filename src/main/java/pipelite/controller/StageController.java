@@ -18,7 +18,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
@@ -63,7 +65,9 @@ public class StageController {
     try {
       RegisteredPipeline registeredPipeline =
           registeredPipelineService.getRegisteredPipeline(pipelineName);
-      process.set(registeredPipeline.createProcess(new ProcessBuilder(processId)));
+      ProcessBuilder processBuilder = new ProcessBuilder(processId);
+      registeredPipeline.configureProcess(processBuilder);
+      process.set(processBuilder.build());
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log(ex.getMessage());
     }

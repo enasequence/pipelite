@@ -21,7 +21,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ContextConfiguration;
 import pipelite.*;
 import pipelite.exception.PipeliteException;
-import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
@@ -51,52 +50,50 @@ public class RegisteredPipelineServiceTest {
         UniqueStringGenerator.randomPipelineName(RegisteredPipelineServiceTest.class);
 
     @Override
-    public int getPipelineParallelism() {
-      return 1;
+    public Options configurePipeline() {
+      return new Options().pipelineParallelism(1);
     }
 
     @Override
-    public String getPipelineName() {
+    public String pipelineName() {
       return pipelineName;
     }
 
     @Override
-    public Process createProcess(ProcessBuilder builder) {
-      return null;
-    }
+    public void configureProcess(ProcessBuilder builder) {}
   }
 
   @Test
   public void getRegisteredPipeline() {
     assertThat(
             registeredPipelineService
-                .getRegisteredPipeline(pipeline1.getPipelineName())
-                .getPipelineName())
-        .isEqualTo(pipeline1.getPipelineName());
+                .getRegisteredPipeline(pipeline1.pipelineName())
+                .pipelineName())
+        .isEqualTo(pipeline1.pipelineName());
     assertThat(
             registeredPipelineService
-                .getRegisteredPipeline(pipeline2.getPipelineName())
-                .getPipelineName())
-        .isEqualTo(pipeline2.getPipelineName());
+                .getRegisteredPipeline(pipeline2.pipelineName())
+                .pipelineName())
+        .isEqualTo(pipeline2.pipelineName());
 
     assertThat(
             registeredPipelineService
-                .getRegisteredPipeline(pipeline1.getPipelineName(), Pipeline.class)
-                .getPipelineName())
-        .isEqualTo(pipeline1.getPipelineName());
+                .getRegisteredPipeline(pipeline1.pipelineName(), Pipeline.class)
+                .pipelineName())
+        .isEqualTo(pipeline1.pipelineName());
     assertThat(
             registeredPipelineService
-                .getRegisteredPipeline(pipeline2.getPipelineName(), Pipeline.class)
-                .getPipelineName())
-        .isEqualTo(pipeline2.getPipelineName());
+                .getRegisteredPipeline(pipeline2.pipelineName(), Pipeline.class)
+                .pipelineName())
+        .isEqualTo(pipeline2.pipelineName());
 
     assertThat(
             registeredPipelineService.getRegisteredPipeline(
-                pipeline1.getPipelineName(), Schedule.class))
+                pipeline1.pipelineName(), Schedule.class))
         .isNull();
     assertThat(
             registeredPipelineService.getRegisteredPipeline(
-                pipeline2.getPipelineName(), Schedule.class))
+                pipeline2.pipelineName(), Schedule.class))
         .isNull();
 
     assertThatExceptionOfType(PipeliteException.class)

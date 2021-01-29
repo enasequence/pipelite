@@ -38,7 +38,7 @@ public class ProcessFactory {
       throw new PipeliteException("Failed to create process. Missing registered pipeline.");
     }
 
-    String pipelineName = registeredPipeline.getPipelineName();
+    String pipelineName = registeredPipeline.pipelineName();
 
     if (pipelineName == null) {
       throw new PipeliteException("Failed to create process. Missing pipeline name.");
@@ -47,7 +47,9 @@ public class ProcessFactory {
     try {
       log.atFine().log("Creating %s process %s", pipelineName, processId);
 
-      Process process = registeredPipeline.createProcess(new ProcessBuilder(processId));
+      ProcessBuilder processBuilder = new ProcessBuilder(processId);
+      registeredPipeline.configureProcess(processBuilder);
+      Process process = processBuilder.build();
       if (process == null) {
         throw new PipeliteException(
             "Failed to create "
@@ -88,14 +90,14 @@ public class ProcessFactory {
           "Failed to create process " + processId + ". Missing registered pipeline.");
     }
 
-    String pipelineName = registeredPipeline.getPipelineName();
+    String pipelineName = registeredPipeline.pipelineName();
 
     if (pipelineName == null) {
       throw new PipeliteException(
           "Failed to create process " + processId + ". Missing pipeline name.");
     }
 
-    if (!registeredPipeline.getPipelineName().equals(processEntity.getPipelineName())) {
+    if (!registeredPipeline.pipelineName().equals(processEntity.getPipelineName())) {
       throw new PipeliteException(
           "Failed to create "
               + pipelineName

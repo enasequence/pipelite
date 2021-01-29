@@ -30,7 +30,7 @@ public class PrioritizedPipelineTestHelper {
 
   private final Monitor monitor = new Monitor();
 
-  public PrioritizedPipeline.NextProcess nextProcess() {
+  public PrioritizedPipeline.PrioritizedProcess nextProcess() {
     monitor.enter();
     try {
       if (newProcesses.isEmpty()) {
@@ -39,7 +39,7 @@ public class PrioritizedPipelineTestHelper {
       String processId = newProcesses.iterator().next();
       returnedProcesses.add(processId);
       newProcesses.remove(processId);
-      return new PrioritizedPipeline.NextProcess(processId);
+      return new PrioritizedPipeline.PrioritizedProcess(processId);
     } finally {
       monitor.leave();
     }

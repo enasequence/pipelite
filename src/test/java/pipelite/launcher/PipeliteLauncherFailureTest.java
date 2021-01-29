@@ -27,7 +27,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
-import pipelite.*;
+import pipelite.PipeliteTestConfiguration;
+import pipelite.PrioritizedPipeline;
+import pipelite.PrioritizedPipelineTestHelper;
+import pipelite.UniqueStringGenerator;
 import pipelite.configuration.AdvancedConfiguration;
 import pipelite.configuration.ExecutorConfiguration;
 import pipelite.configuration.ServiceConfiguration;
@@ -35,7 +38,6 @@ import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
-import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.*;
@@ -174,17 +176,17 @@ public class PipeliteLauncherFailureTest {
     }
 
     @Override
-    public String getPipelineName() {
+    public String pipelineName() {
       return pipelineName;
     }
 
     @Override
-    public int getPipelineParallelism() {
-      return 5;
+    public Options configurePipeline() {
+      return new Options().pipelineParallelism(5);
     }
 
     @Override
-    public Process createProcess(ProcessBuilder builder) {
+    public void configureProcess(ProcessBuilder builder) {
       processIds.add(builder.getProcessId());
 
       ExecutorParameters executorParams =
@@ -194,7 +196,7 @@ public class PipeliteLauncherFailureTest {
               .timeout(Duration.ofSeconds(10))
               .build();
 
-      return builder
+      builder
           .execute("STAGE0")
           .withCallExecutor(
               (pipelineName1) -> {
@@ -222,12 +224,11 @@ public class PipeliteLauncherFailureTest {
                 fourthStageExecCnt.incrementAndGet();
                 return fourthStageExecResult;
               },
-              executorParams)
-          .build();
+              executorParams);
     }
 
     @Override
-    public NextProcess nextProcess() {
+    public PrioritizedProcess nextProcess() {
       return helper.nextProcess();
     }
 
@@ -242,7 +243,7 @@ public class PipeliteLauncherFailureTest {
   }
 
   public void test(TestPipeline testPipeline) {
-    PipeliteLauncher pipeliteLauncher = pipeliteLauncher(testPipeline.getPipelineName());
+    PipeliteLauncher pipeliteLauncher = pipeliteLauncher(testPipeline.pipelineName());
     new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
 
     assertThat(pipeliteLauncher.getActiveProcessRunners().size()).isEqualTo(0);
@@ -283,10 +284,9 @@ public class PipeliteLauncherFailureTest {
   }
 
   private void assertProcessEntity(TestPipeline f, String processId) {
-    String pipelineName = f.getPipelineName();
+    String pipelineName = f.pipelineName();
 
-    ProcessEntity processEntity =
-        processService.getSavedProcess(f.getPipelineName(), processId).get();
+    ProcessEntity processEntity = processService.getSavedProcess(f.pipelineName(), processId).get();
     assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);
@@ -299,12 +299,12 @@ public class PipeliteLauncherFailureTest {
   }
 
   private void assertStageEntities(TestPipeline f, String processId) {
-    String pipelineName = f.getPipelineName();
+    String pipelineName = f.pipelineName();
 
     int stageCnt = 4;
     for (int i = 0; i < stageCnt; ++i) {
       StageEntity stageEntity =
-          stageService.getSavedStage(f.getPipelineName(), processId, "STAGE" + i).get();
+          stageService.getSavedStage(f.pipelineName(), processId, "STAGE" + i).get();
 
       assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
       assertThat(stageEntity.getProcessId()).isEqualTo(processId);
@@ -357,7 +357,7 @@ public class PipeliteLauncherFailureTest {
   }
 
   private void assertLauncherMetrics(TestPipeline f) {
-    PipelineMetrics pipelineMetrics = metrics.pipeline(f.getPipelineName());
+    PipelineMetrics pipelineMetrics = metrics.pipeline(f.pipelineName());
     if (f.getFirstStageExecResult().isSuccess()
         && f.getSecondStageExecResult().isSuccess()
         && f.getThirdStageExecResult().isSuccess()
