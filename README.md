@@ -210,3 +210,79 @@ The following executor backends are supported by the ProcessBuilder:
 
 - if Spring active profiles contain 'test' then uses an in memory database unsuitable for production purposes.
 - if Spring active profiles contain 'test-lorem' then generates test content for the web interface.
+
+### Pipelte database schema
+
+#### PIPELITE2_SCHEDULE table
+
+The Pipeline schedules are stored in this table with associated execution information.
+
+- SERVICE_NAME: The Pipeline service name
+- PIPELINE_NAME: the pipeline name
+- CRON: the cron schedule
+- DESCRIPTION: a human readable description of the cron schedule
+- PROCESS_ID: running process id
+- EXEC_START: last execution start date
+- EXEC_END: last execution end date
+- EXEC_NEXT: next scheduled execution start time
+- EXEC_CNT: number of executions
+- LAST_COMPLETED: time when the schedule was last executed successfully
+- LAST_FAILED: time when the schedule last failed
+- STREAK_COMPLETED: number of uninterrupted successful executions
+- STREAK_FAILED: number of uninterrupted failed executions
+
+#### PIPELITE2_PROCESS table
+
+The Pipeline processes are stored in this table with associated execution information.
+
+- PIPELINE_NAME: the pipeline name
+- PROCESS_ID: the process id
+- STATE: process state PENDING, ACTIVE, FAILED, COMPLETED, CANCELLED
+- EXEC_CNT: number of executions
+- EXEC_START: execution start time
+- EXEC_END: execution end time
+- PRIORITY: process priority from 0 (lowest) to 9 (highest)
+
+#### PIPELITE2_STAGE table
+
+The Pipeline process stages are stored in this table with associated execution information.
+
+- PIPELINE_NAME: the pipeline name
+- PROCESS_ID: the process id
+- STAGE_NAME: the stage name
+- STATE: stage state PENDING, ACTIVE, SUCCESS, ERROR
+- EXEC_CNT: number of executions
+- EXEC_START: execution start time
+- EXEC_END: execution end time
+- EXEC_NAME: the stage executor name
+- EXEC_DATA: the stage executor data
+- EXEC_PARAMS: the stage executor parameters
+- EXEC_RESULT_PARAMS: the stage executor result parameters
+
+#### PIPELITE2_STAGE_LOG table
+
+The Pipeline process stage logs are stored in this table.
+
+- PIPELINE_NAME: the pipeline name
+- PROCESS_ID: the process id
+- STAGE_NAME: the stage name
+- STAGE_LOG: the configured number of last bytes of the stdout and stderr output of the stage execution
+
+#### PIPELITE2_SERVICE_LOCK table
+
+This table contains Pipelite service locks. Only one service with a given name is permitted to be running at one time.
+
+- LOCK_ID: a unique lock id
+- SERVICE_NAME: The Pipeline service name
+- HOST: the Pipeline service host
+- PORT: the Pipeline service port
+- CONTEXT_PATH: the Pipeline service context path
+- EXPIRY: The Pipeline service lock expiry time
+
+#### PIPELITE2_PROCESS_LOCK table
+
+This table contains Pipelite process locks. Each process is allowed to be executed only by one service at one time.
+
+- SERVICE_NAME: The Pipeline service name
+- PIPELINE_NAME: the pipeline name
+- PROCESS_ID: the process id
