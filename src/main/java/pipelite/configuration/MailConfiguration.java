@@ -33,7 +33,7 @@ public class MailConfiguration {
       log.atWarning().log("Missing optional pipelite property: pipelite.mail.host");
     }
     if (port == null) {
-      log.atWarning().log("Missing optional pipelite property: ppipelite.mail.host");
+      log.atWarning().log("Missing optional pipelite property: ppipelite.mail.port");
     }
     if (from == null) {
       log.atWarning().log("Missing optional pipelite property: pipelite.mail.from");
@@ -59,6 +59,10 @@ public class MailConfiguration {
   private Boolean starttls;
   private String username;
   private String password;
+  private boolean processFailed = true;
+  private boolean processCompleted;
+  private boolean stageError = true;
+  private boolean stageSuccess;
 
   @Bean
   @ConditionalOnProperty({

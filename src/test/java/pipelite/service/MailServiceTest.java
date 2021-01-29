@@ -24,13 +24,7 @@ import pipelite.process.builder.ProcessBuilder;
 
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    classes = PipeliteTestConfiguration.class,
-    properties = {
-      "pipelite.mail.host=outgoing.ebi.ac.uk",
-      "pipelite.mail.port=587",
-      "pipelite.mail.from=pipelite-noreply@ebi.ac.uk",
-      "pipelite.mail.to=rasko@ebi.ac.uk"
-    })
+    classes = PipeliteTestConfiguration.class)
 public class MailServiceTest {
 
   @Autowired MailService mailService;
@@ -48,7 +42,7 @@ public class MailServiceTest {
     processEntity.setPriority(5);
     process.setProcessEntity(processEntity);
     assertThat(mailService.getProcessExecutionSubject(process))
-        .isEqualTo("pipelite process (PENDING): PIPELINE_NAME/PROCESS_ID");
+        .isEqualTo("Pipelite process (PENDING): PIPELINE_NAME/PROCESS_ID");
     assertThat(mailService.getExecutionBody(process, "SUBJECT"))
         .isEqualTo(
             "SUBJECT\n"
@@ -72,7 +66,6 @@ public class MailServiceTest {
                 + "  \"stageState\" : \"PENDING\",\n"
                 + "  \"executionCount\" : 0\n"
                 + "}\n");
-    // mailService.sendProcessExecutionMessage("PIPELINE_NAME", process);
   }
 
   @Test
@@ -89,7 +82,7 @@ public class MailServiceTest {
     process.setProcessEntity(processEntity);
     process.setProcessEntity(processEntity);
     assertThat(mailService.getStageExecutionSubject(process, process.getStages().get(0)))
-        .isEqualTo("pipelite stage (PENDING): PIPELINE_NAME/PROCESS_ID/STAGE1");
+        .isEqualTo("Pipelite stage (PENDING): PIPELINE_NAME/PROCESS_ID/STAGE1");
     assertThat(mailService.getExecutionBody(process, "SUBJECT"))
         .isEqualTo(
             "SUBJECT\n"
@@ -113,6 +106,5 @@ public class MailServiceTest {
                 + "  \"stageState\" : \"PENDING\",\n"
                 + "  \"executionCount\" : 0\n"
                 + "}\n");
-    // mailService.sendStageExecutionMessage("PIPELINE_NAME", process, process.getStages().get(0));
   }
 }
