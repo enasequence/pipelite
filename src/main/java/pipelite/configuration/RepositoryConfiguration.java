@@ -139,6 +139,6 @@ public class RepositoryConfiguration {
   }
 
   private boolean isTestProfile() {
-    return Arrays.asList(environment.getActiveProfiles()).contains("test");
+    return Arrays.asList(environment.getActiveProfiles()).contains("pipelite-test");
   }
 }

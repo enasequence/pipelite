@@ -16,12 +16,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.stream.IntStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
@@ -35,6 +29,12 @@ import pipelite.launcher.process.runner.ProcessRunner;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
 import pipelite.process.Process;
 import pipelite.service.ProcessService;
+
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
 
 @RestController
 @RequestMapping(value = "/process")
@@ -62,7 +62,7 @@ public class ProcessController {
     if (processEntity.isPresent()) {
       list.add(getProcess(processEntity.get()));
     }
-    getLoremIpsumProcesses(list);
+    getLoremIpsumProcess(list);
     return list;
   }
 
@@ -82,7 +82,7 @@ public class ProcessController {
     application
         .getRunningSchedulers()
         .forEach(launcher -> list.addAll(getProcesses(launcher, pipelineName)));
-    getLoremIpsumProcesses(list);
+    getLoremIpsumProcess(list);
     return list;
   }
 
@@ -112,24 +112,20 @@ public class ProcessController {
         .build();
   }
 
-  private void getLoremIpsumProcesses(List<ProcessInfo> list) {
+  private void getLoremIpsumProcess(List<ProcessInfo> list) {
     if (LoremUtils.isActiveProfile(environment)) {
-      IntStream.range(1, 100)
-          .forEach(
-              i -> {
-                Lorem lorem = LoremIpsum.getInstance();
-                Random random = new Random();
-                list.add(
-                    ProcessInfo.builder()
-                        .pipelineName(lorem.getCountry())
-                        .processId(lorem.getWords(1))
-                        .state(lorem.getFirstNameMale())
-                        .startTime(TimeUtils.humanReadableDate(ZonedDateTime.now()))
-                        .endTime(TimeUtils.humanReadableDate(ZonedDateTime.now()))
-                        .executionCount(random.nextInt(10))
-                        .priority(random.nextInt(10))
-                        .build());
-              });
+      Lorem lorem = LoremIpsum.getInstance();
+      Random random = new Random();
+      list.add(
+          ProcessInfo.builder()
+              .pipelineName(lorem.getCountry())
+              .processId(lorem.getWords(1))
+              .state(lorem.getFirstNameMale())
+              .startTime(TimeUtils.humanReadableDate(ZonedDateTime.now()))
+              .endTime(TimeUtils.humanReadableDate(ZonedDateTime.now()))
+              .executionCount(random.nextInt(10))
+              .priority(random.nextInt(10))
+              .build());
     }
   }
 }

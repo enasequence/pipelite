@@ -18,6 +18,6 @@ public class RootController {
 
   @RequestMapping("/")
   public String ui() {
-    return "redirect:/ui/processes";
+    return "redirect:/ui/schedules";
   }
 }

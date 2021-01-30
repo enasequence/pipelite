@@ -277,8 +277,8 @@ where the value is not overriden in ```ProcessBuilder```.
 
 #### Test profiles
 
-- if Spring active profiles contain 'test' then uses an in memory database unsuitable for production purposes.
-- if Spring active profiles contain 'test-lorem' then generates test content for the web interface.
+- if Spring active profiles contain 'pipelite-test' then uses an in memory database unsuitable for production purposes.
+- if Spring active profiles contain 'pipelite-lorem' then generates test content for the web interface.
 
 ### Database schema
 

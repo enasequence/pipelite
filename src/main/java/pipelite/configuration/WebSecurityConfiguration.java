@@ -64,7 +64,7 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
         .authenticated()
         .and()
         .formLogin()
-        .defaultSuccessUrl("/ui/processes", true)
+        .defaultSuccessUrl("/ui/schedules", true)
         .loginPage("/login")
         .permitAll()
         .and()

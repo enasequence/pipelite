@@ -6,317 +6,325 @@
     <title>Process</title>
     <script th:inline="javascript">
 
-$(document).ready(function() {
-    $('#processTable').DataTable({
-        columns: [
-            // { data: "pipelineName" },
-            // { data: "processId" },
-            { data: "state" },
-            { data: "startTime" },
-            { data: "endTime" },
-            { data: "executionCount" },
-            { data: "priority" }
-        ],
-        dom: 't',
-        responsive: true,
-        language : {
-           "zeroRecords": " "
-        },
-    });
+        $(document).ready(function () {
+            $('#processTable').DataTable({
+                columns: [
+                    // { data: "pipelineName" },
+                    // { data: "processId" },
+                    {data: "state"},
+                    {
+                        data: "startTime",
+                        render: function (data) {
+                            return moment(data).format('YYYY/MM/DD hh:mm:ss');
+                        }
+                    },
+                    {
+                        data: "endTime",
+                        render: function (data) {
+                            return moment(data).format('YYYY/MM/DD hh:mm:ss');
+                        }
+                    },
+                    {data: "executionCount"},
+                    {data: "priority"}
+                ],
+                dom: 't',
+                responsive: true,
+                language: {
+                    "zeroRecords": " "
+                },
+            });
 
-    $('#stagesStatusTable').DataTable({
-        columns: [
-            { data: "pipelineName", visible: false, searchable: false },
-            { data: "processId", visible: false, searchable: false },
-            { data: "stageName" },
-            { data: "stageState" },
-            { data: "startTime" },
-            { data: "endTime" },
-            { data: "executionTime" },
-            { data: "executionCount" },
-            {
-                "data": null,
-                "defaultContent": "<button class=\"btn btn-outline-secondary mr-2\">Logs</button>"
-            }
-        ],
-        dom: 'tBip',
-        buttons: {
-            buttons: [
-                { extend: 'copy', className: 'btn btn-outline-secondary' },
-                { extend: 'csv', className: 'btn btn-outline-secondary' },
-                { extend: 'excel', className: 'btn btn-outline-secondary' }
-            ],
-            dom: {
-    		  button: {
-	    	    className: 'btn'
-	          }
-            }
-        },
-        orderCellsTop: true,
-        fixedHeader: true,
-        responsive: true,
-        language : {
-           "zeroRecords": " "
-        },
-    });
+            $('#stagesStatusTable').DataTable({
+                columns: [
+                    {data: "pipelineName", visible: false, searchable: false},
+                    {data: "processId", visible: false, searchable: false},
+                    {data: "stageName"},
+                    {data: "stageState"},
+                    {
+                        data: "startTime",
+                        render: function (data) {
+                            return moment(data).format('YYYY/MM/DD hh:mm:ss');
+                        }
+                    },
+                    {
+                        data: "endTime",
+                        render: function (data) {
+                            return moment(data).format('YYYY/MM/DD hh:mm:ss');
+                        }
+                    },
+                    {data: "executionTime"},
+                    {data: "executionCount"},
+                    {
+                        "data": null,
+                        "defaultContent": "<button class=\"btn btn-outline-secondary mr-2\">Logs</button>"
+                    }
+                ],
+                dom: 'tBip',
+                buttons: {
+                    buttons: [
+                        {extend: 'copy', className: 'btn btn-outline-secondary'},
+                        {extend: 'csv', className: 'btn btn-outline-secondary'},
+                        {extend: 'excel', className: 'btn btn-outline-secondary'}
+                    ],
+                    dom: {
+                        button: {
+                            className: 'btn'
+                        }
+                    }
+                },
+                orderCellsTop: true,
+                fixedHeader: true,
+                responsive: true,
+                language: {
+                    "zeroRecords": " "
+                },
+            });
 
-    $('#stagesDataTable').DataTable({
-        columns: [
-            { data: "pipelineName", visible: false, searchable: false },
-            { data: "processId", visible: false, searchable: false },
-            { data: "stageName" },
-            { data: "executorName" },
-            { data: "executorData" },
-            { data: "executorParams" },
-            { data: "resultParams" },
-        ],
-        dom: 'tBip',
-        buttons: {
-            buttons: [
-                { extend: 'copy', className: 'btn btn-outline-secondary' },
-                { extend: 'csv', className: 'btn btn-outline-secondary' },
-                { extend: 'excel', className: 'btn btn-outline-secondary' }
-            ],
-            dom: {
-    		  button: {
-	    	    className: 'btn'
-	          }
-            }
-        },
-        orderCellsTop: true,
-        fixedHeader: true,
-        responsive: true,
-        language : {
-           "zeroRecords": " "
-        },
-    });
+            $('#stagesDataTable').DataTable({
+                columns: [
+                    {data: "pipelineName", visible: false, searchable: false},
+                    {data: "processId", visible: false, searchable: false},
+                    {data: "stageName"},
+                    {data: "executorName"},
+                    {data: "executorData"},
+                    {data: "executorParams"},
+                    {data: "resultParams"},
+                ],
+                dom: 'tBip',
+                buttons: {
+                    buttons: [
+                        {extend: 'copy', className: 'btn btn-outline-secondary'},
+                        {extend: 'csv', className: 'btn btn-outline-secondary'},
+                        {extend: 'excel', className: 'btn btn-outline-secondary'}
+                    ],
+                    dom: {
+                        button: {
+                            className: 'btn'
+                        }
+                    }
+                },
+                orderCellsTop: true,
+                fixedHeader: true,
+                responsive: true,
+                language: {
+                    "zeroRecords": " "
+                },
+            });
 
-    // Logs button is pressed.
-    $('#stagesStatusTable tbody').on( 'click', 'button', function () {
-        var table = $('#stagesStatusTable').DataTable();
-        var data = table.row( $(this).parents('tr') ).data();
-        var url =  "/pipelite/log/" + window.pipelineName + "/" + window.processId + "/" + data.stageName + "/";
-        console.log(url);
-        $.get(url, function(data, status) {
-                $( "#logsText" ).text( data.log );
-                $('#logsModal').modal('show');
-         });
-    } );
-
-    // Set up autocomplete for pipeline name.
-    var url = "/pipelite/process/run";
-    $.get(url, function(data, status) {
-
-        var pipelineNames = data.map(function (obj) {
-            return obj.pipelineName;
-        });
-        function onlyUnique(value, index, self) {
-            return self.indexOf(value) === index;
-        }
-        pipelineNames = pipelineNames.filter(onlyUnique);
-
-        $( "#pipelineName" ).autocomplete({
-          source: pipelineNames,
-          minLength: 0,
-          open: function() {
-            $( this ).removeClass( "ui-corner-all" ).addClass( "ui-corner-top" );
-          },
-          close: function() {
-            $( this ).removeClass( "ui-corner-top" ).addClass( "ui-corner-all" );
-          }
-        });
-    });
-
-    // Show tables and graph.
-    var urlParams = new URLSearchParams(window.location.search);
-    var pipelineName = urlParams.get("pipelineName");
-    var processId = urlParams.get("processId");
-    // console.log("url parameter pipelineName:" + pipelineName);
-    // console.log("url parameter processId:" + processId);
-    if (pipelineName && processId) {
-       $( "#pipelineName" ).val(pipelineName);
-       $( "#processId" ).val(processId);
-        show();
-    }
-
-    // Show graph when tag is changed.
-    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-        $('svg').remove();
-        plot();
- });
-});
-
-// Show the filter badges, tables and graph.
-function show() {
-    var pipelineName = $( "#pipelineName" ).val();
-    var processId = $( "#processId" ).val();
-
-    if (pipelineName && processId) {
-        console.log("show");
-
-        $( "#alert" ).hide();
-
-        // Save pipeline name and processId.
-        window.pipelineName = pipelineName;
-        window.processId = processId;
-
-        // Show the filter badges.
-        var pipelineNameBadgeText;
-        var processIdBadgeText;
-        if (pipelineName) {
-            pipelineNameBadgeText = "Pipeline:" + pipelineName;
-        }
-        else {
-            pipelineNameBadgeText = "";
-        }
-        if (processId) {
-            processIdBadgeText = "Process:" + processId;
-        }
-        else {
-            processIdBadgeText = "";
-        }
-        $( "#pipelineNameBadge" ).text(pipelineNameBadgeText);
-        $( "#processIdBadge" ).text(processIdBadgeText);
-
-        // Show the tables.
-        var processTable = $('#processTable').DataTable();
-        var stagesStatusTable = $('#stagesStatusTable').DataTable();
-        var stagesDataTable = $('#stagesDataTable').DataTable();
-
-        var processUrl =  "/pipelite/process/" + window.pipelineName + "/" + processId + "/";
-        console.log(processUrl);
-        $.get(processUrl, function(data, status) {
-            processTable.clear().rows.add(data).draw();
-         });
-
-        var stagesUrl =  "/pipelite/stage/" + window.pipelineName + "/" + processId + "/";
-        console.log(stagesUrl);
-        $.get(stagesUrl, function(data, status) {
-            stagesStatusTable.clear().rows.add(data).draw();
-            stagesDataTable.clear().rows.add(data).draw();
-         });
-
-        // Show the graph.
-        plot();
-    }
-    else {
-        $( "#alert" ).text("Please provide pipeline name and process id");
-        $( "#alert" ).show();
-    }
-};
-
-// Show graph.
-function plot() {
-
-    var minWidth = 100;
-    var fullWidth = $("#stagesGraph").width();
-    if (fullWidth < minWidth) {
-       return;
-    }
-    var fullHeight = 500;
-    $("#stagesGraph").height(fullHeight);
-
-    var url =  "/pipelite/stage/" + window.pipelineName + "/" + window.processId + "/";
-    console.log(url);
-    $.get(url, function(data, status) {
-        var g = new dagreD3.graphlib.Graph()
-          .setGraph({
-              ranksep: 20,
-              nodesep: 20,
-              rankdir: "LR"
-          })
-          .setDefaultEdgeLabel(function() { return {}; });
-
-        // Set nodes
-        data.forEach(function(stage) {
-            if (stage.stageState == "SUCCESS") {
-               g.setNode(stage.stageName, { label: stage.stageName, class: "stageSuccess" });
-            }
-            else if (stage.stageState == "ERROR") {
-               g.setNode(stage.stageName, { label: stage.stageName, class: "stageError" });
-            }
-            else if (stage.stageState == "ACTIVE") {
-               g.setNode(stage.stageName, { label: stage.stageName, class: "stageActive" });
-            }
-            else {
-               g.setNode(stage.stageName, { label: stage.stageName });
-            }
-        });
-
-        // Set edges
-        data.forEach(function(stage) {
-            stage.dependsOnStage.forEach(function(dependsOnStage) {
-                g.setEdge(dependsOnStage, stage.stageName, {
-                // label: "depends on"
+            // Logs button is pressed.
+            $('#stagesStatusTable tbody').on('click', 'button', function () {
+                var table = $('#stagesStatusTable').DataTable();
+                var data = table.row($(this).parents('tr')).data();
+                var url = "/pipelite/log/" + window.pipelineName + "/" + window.processId + "/" + data.stageName + "/";
+                console.log(url);
+                $.get(url, function (data, status) {
+                    $("#logsText").text(data.log);
+                    $('#logsModal').modal('show');
                 });
+            });
+
+            // Set up autocomplete for pipeline name.
+            var url = "/pipelite/process/run";
+            $.get(url, function (data, status) {
+
+                var pipelineNames = data.map(function (obj) {
+                    return obj.pipelineName;
+                });
+
+                function onlyUnique(value, index, self) {
+                    return self.indexOf(value) === index;
+                }
+
+                pipelineNames = pipelineNames.filter(onlyUnique);
+
+                $("#pipelineName").autocomplete({
+                    source: pipelineNames,
+                    minLength: 0,
+                    open: function () {
+                        $(this).removeClass("ui-corner-all").addClass("ui-corner-top");
+                    },
+                    close: function () {
+                        $(this).removeClass("ui-corner-top").addClass("ui-corner-all");
+                    }
+                });
+            });
+
+            // Show tables and graph.
+            var urlParams = new URLSearchParams(window.location.search);
+            var pipelineName = urlParams.get("pipelineName");
+            var processId = urlParams.get("processId");
+            // console.log("url parameter pipelineName:" + pipelineName);
+            // console.log("url parameter processId:" + processId);
+            if (pipelineName && processId) {
+                $("#pipelineName").val(pipelineName);
+                $("#processId").val(processId);
+                show();
+            }
+
+            // Show graph when tag is changed.
+            $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+                $('svg').remove();
+                plot();
             });
         });
 
-        // Set some general styles
-        g.nodes().forEach(function(v) {
-          var node = g.node(v);
-          node.rx = node.ry = 5;
-        });
+        // Show the filter badges, tables and graph.
+        function show() {
+            var pipelineName = $("#pipelineName").val();
+            var processId = $("#processId").val();
 
-        // Add some custom colors based on state
-        // g.node('CLOSED').style = "fill: #f77";
-        // g.node('ESTAB').style = "fill: #7f7";
+            if (pipelineName && processId) {
+                console.log("show");
 
-        var svg = d3.select("#stagesGraph").append("svg")
-           .attr("width", fullWidth)
-           .attr("height", fullHeight);
-        var svgGroup = svg.append("g");
+                $("#alert").hide();
 
-        var render = new dagreD3.render();
-        render(d3.select("svg g"), g);
+                // Save pipeline name and processId.
+                window.pipelineName = pipelineName;
+                window.processId = processId;
 
-        var paddingPercent = 0.95;
-        var svgGroupBounds = svgGroup.node().getBBox();
-        var width = svgGroupBounds.width,
-            height = svgGroupBounds.height;
+                // Show the filter badges.
+                var pipelineNameBadgeText;
+                var processIdBadgeText;
+                if (pipelineName) {
+                    pipelineNameBadgeText = "Pipeline:" + pipelineName;
+                } else {
+                    pipelineNameBadgeText = "";
+                }
+                if (processId) {
+                    processIdBadgeText = "Process:" + processId;
+                } else {
+                    processIdBadgeText = "";
+                }
+                $("#pipelineNameBadge").text(pipelineNameBadgeText);
+                $("#processIdBadge").text(processIdBadgeText);
 
-        var midX = svgGroupBounds.x + width / 2,
-            midY = svgGroupBounds.y + height / 2;
-        var maxScale = 1;
-        var minScale = 0.75;
-        var scale = (paddingPercent || 0.75) / Math.max(width / fullWidth, height / fullHeight);
-        if(scale > maxScale) {
-           scale = maxScale;
-        }
-        if(scale < minScale) {
-           scale = minScale;
-        }
-        var leftMargin = 10;
-        var translate = [leftMargin /*fullWidth / 2 - scale * midX*/, fullHeight / 2 - scale * midY];
-        // console.log("scale: " + scale);
-        // console.log("translate: " + translate);
-        svgGroup.attr('transform',
-            'translate(' + translate + ')' +
-            'scale(' + scale + ')');
-     });
-};
+                // Show the tables.
+                var processTable = $('#processTable').DataTable();
+                var stagesStatusTable = $('#stagesStatusTable').DataTable();
+                var stagesDataTable = $('#stagesDataTable').DataTable();
+
+                var processUrl = "/pipelite/process/" + window.pipelineName + "/" + processId + "/";
+                console.log(processUrl);
+                $.get(processUrl, function (data, status) {
+                    processTable.clear().rows.add(data).draw();
+                });
+
+                var stagesUrl = "/pipelite/stage/" + window.pipelineName + "/" + processId + "/";
+                console.log(stagesUrl);
+                $.get(stagesUrl, function (data, status) {
+                    stagesStatusTable.clear().rows.add(data).draw();
+                    stagesDataTable.clear().rows.add(data).draw();
+                });
+
+                // Show the graph.
+                plot();
+            } else {
+                $("#alert").text("Please provide pipeline name and process id");
+                $("#alert").show();
+            }
+        };
+
+        // Show graph.
+        function plot() {
+
+            var minWidth = 100;
+            var fullWidth = $("#stagesGraph").width();
+            if (fullWidth < minWidth) {
+                return;
+            }
+            var fullHeight = 500;
+            $("#stagesGraph").height(fullHeight);
+
+            var url = "/pipelite/stage/" + window.pipelineName + "/" + window.processId + "/";
+            console.log(url);
+            $.get(url, function (data, status) {
+                var g = new dagreD3.graphlib.Graph()
+                    .setGraph({
+                        ranksep: 20,
+                        nodesep: 20,
+                        rankdir: "LR"
+                    })
+                    .setDefaultEdgeLabel(function () {
+                        return {};
+                    });
+
+                // Set nodes
+                data.forEach(function (stage) {
+                    if (stage.stageState == "SUCCESS") {
+                        g.setNode(stage.stageName, {label: stage.stageName, class: "stageSuccess"});
+                    } else if (stage.stageState == "ERROR") {
+                        g.setNode(stage.stageName, {label: stage.stageName, class: "stageError"});
+                    } else if (stage.stageState == "ACTIVE") {
+                        g.setNode(stage.stageName, {label: stage.stageName, class: "stageActive"});
+                    } else {
+                        g.setNode(stage.stageName, {label: stage.stageName});
+                    }
+                });
+
+                // Set edges
+                data.forEach(function (stage) {
+                    stage.dependsOnStage.forEach(function (dependsOnStage) {
+                        g.setEdge(dependsOnStage, stage.stageName, {
+                            // label: "depends on"
+                        });
+                    });
+                });
+
+                // Set some general styles
+                g.nodes().forEach(function (v) {
+                    var node = g.node(v);
+                    node.rx = node.ry = 5;
+                });
+
+                // Add some custom colors based on state
+                // g.node('CLOSED').style = "fill: #f77";
+                // g.node('ESTAB').style = "fill: #7f7";
+
+                var svg = d3.select("#stagesGraph").append("svg")
+                    .attr("width", fullWidth)
+                    .attr("height", fullHeight);
+                var svgGroup = svg.append("g");
+
+                var render = new dagreD3.render();
+                render(d3.select("svg g"), g);
+
+                var paddingPercent = 0.95;
+                var svgGroupBounds = svgGroup.node().getBBox();
+                var width = svgGroupBounds.width,
+                    height = svgGroupBounds.height;
+
+                var midX = svgGroupBounds.x + width / 2,
+                    midY = svgGroupBounds.y + height / 2;
+                var maxScale = 1;
+                var minScale = 0.75;
+                var scale = (paddingPercent || 0.75) / Math.max(width / fullWidth, height / fullHeight);
+                if (scale > maxScale) {
+                    scale = maxScale;
+                }
+                if (scale < minScale) {
+                    scale = minScale;
+                }
+                var leftMargin = 10;
+                var translate = [leftMargin /*fullWidth / 2 - scale * midX*/, fullHeight / 2 - scale * midY];
+                // console.log("scale: " + scale);
+                // console.log("translate: " + translate);
+                svgGroup.attr('transform',
+                    'translate(' + translate + ')' +
+                    'scale(' + scale + ')');
+            });
+        };
 
 
-// Copy logs.
-function copy() {
-    var range = document.createRange();
+        // Copy logs.
+        function copy() {
+            var range = document.createRange();
 
-    range.selectNode(document.getElementById("logsText"));
-    window.getSelection().removeAllRanges(); // clear current selection
-    window.getSelection().addRange(range); // to select text
-    document.execCommand("copy");
-    window.getSelection().removeAllRanges();// to deselect
-};
-
-
-
-
-
-
-
-
-
-
+            range.selectNode(document.getElementById("logsText"));
+            window.getSelection().removeAllRanges(); // clear current selection
+            window.getSelection().addRange(range); // to select text
+            document.execCommand("copy");
+            window.getSelection().removeAllRanges();// to deselect
+        };
 
 
     </script>

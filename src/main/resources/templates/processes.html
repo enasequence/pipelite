@@ -17,8 +17,18 @@
                         }
                     },
                     {data: "state"},
-                    {data: "startTime"},
-                    {data: "endTime"},
+                    {
+                        data: "startTime",
+                        render: function (data) {
+                            return moment(data).format('YYYY/MM/DD hh:mm:ss');
+                        }
+                    },
+                    {
+                        data: "endTime",
+                        render: function (data) {
+                            return moment(data).format('YYYY/MM/DD hh:mm:ss');
+                        }
+                    },
                     {data: "executionCount"},
                     {data: "priority"}
                 ],

@@ -17,7 +17,7 @@ public class LoremUtils {
 
   private LoremUtils() {}
 
-  private static final String PROFILE_NAME = "test-lorem";
+  private static final String PROFILE_NAME = "pipelite-lorem";
 
   public static boolean isActiveProfile(Environment environment) {
     return Arrays.asList(environment.getActiveProfiles()).contains(LoremUtils.PROFILE_NAME);
