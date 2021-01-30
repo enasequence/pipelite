@@ -11,6 +11,11 @@
 package pipelite.launcher;
 
 import com.google.common.flogger.FluentLogger;
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.Pipeline;
@@ -30,12 +35,6 @@ import pipelite.service.InternalErrorService;
 import pipelite.service.ProcessService;
 import pipelite.service.RegisteredPipelineService;
 import pipelite.service.ScheduleService;
-
-import java.time.ZonedDateTime;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Stream;
 
 /**
  * Schedules non-parallel processes using cron expressions. New process instances are created using
@@ -104,7 +103,6 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
                   logContext(log.atSevere(), s.getPipelineName())
                       .withCause(ex)
                       .log("Unexpected exception when running schedule: " + s.getPipelineName());
-                  metrics.pipeline(s.getPipelineName()).incrementInternalErrorCount();
                   internalErrorService.saveInternalError(
                       serviceName, s.getPipelineName(), this.getClass(), ex);
                 }
@@ -115,7 +113,6 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
       logContext(log.atSevere())
           .withCause(ex)
           .log("Unexpected exception when running scheduler: " + serviceName);
-      metrics.incrementInternalErrorCount();
       internalErrorService.saveInternalError(serviceName, null, this.getClass(), ex);
     }
   }
@@ -237,7 +234,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
       return;
     }
 
-    Process process = getProcess(processEntity, pipelineName, schedule);
+    Process process = getProcess(processEntity, schedule);
     if (process == null) {
       return;
     }
@@ -266,38 +263,14 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
         });
   }
 
-  private Process getProcess(ProcessEntity processEntity, String pipelineName, Schedule schedule) {
-    Process process;
-    try {
-      process = ProcessFactory.create(processEntity, schedule);
-    } catch (Exception ex) {
-      log.atSevere().withCause(ex).log(
-          "Unexpected exception when creating process for pipeline " + pipelineName);
-      metrics.pipeline(pipelineName).incrementInternalErrorCount();
-      return null;
-    }
-    if (process == null) {
-      log.atSevere().log("Failed to create a process for pipeline: " + pipelineName);
-      metrics.pipeline(pipelineName).incrementInternalErrorCount();
-      return null;
-    }
-    return process;
+  private Process getProcess(ProcessEntity processEntity, Schedule schedule) {
+    return ProcessFactory.create(processEntity, schedule);
   }
 
   private Schedule getSchedule(String pipelineName) {
-    Schedule schedule;
-    try {
-      schedule = scheduleCache.getSchedule(pipelineName);
-    } catch (Exception ex) {
-      log.atSevere().withCause(ex).log(
-          "Unexpected exception when creating schedule for pipeline: " + pipelineName);
-      metrics.pipeline(pipelineName).incrementInternalErrorCount();
-      return null;
-    }
+    Schedule schedule = scheduleCache.getSchedule(pipelineName);
     if (schedule == null) {
-      log.atSevere().log("Failed to create a schedule for pipeline: " + pipelineName);
-      metrics.pipeline(pipelineName).incrementInternalErrorCount();
-      return null;
+      throw new PipeliteException("Failed to create a schedule for pipeline: " + pipelineName);
     }
     return schedule;
   }

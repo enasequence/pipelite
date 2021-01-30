@@ -11,7 +11,8 @@
 package pipelite.launcher.process.runner;
 
 import com.google.common.flogger.FluentLogger;
-import java.util.*;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -22,14 +23,18 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
+import pipelite.configuration.ServiceConfiguration;
 import pipelite.launcher.PipeliteServiceManager;
 import pipelite.lock.PipeliteLocker;
 import pipelite.log.LogKey;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
+import pipelite.service.InternalErrorService;
 
 @Flogger
 public class DefaultProcessRunnerPool implements ProcessRunnerPool {
+  private final String serviceName;
+  private final InternalErrorService internalErrorService;
   private final PipeliteLocker pipeliteLocker;
   private final Function<String, ProcessRunner> processRunnerSupplier;
   private final PipeliteMetrics metrics;
@@ -45,22 +50,25 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
   private final Set<ActiveProcessRunner> active = ConcurrentHashMap.newKeySet();
 
   public DefaultProcessRunnerPool(
+      ServiceConfiguration serviceConfiguration,
+      InternalErrorService internalErrorService,
       PipeliteLocker pipeliteLocker,
       Function<String, ProcessRunner> processRunnerSupplier,
       PipeliteMetrics metrics) {
+    Assert.notNull(serviceConfiguration, "Missing service configuration");
     Assert.notNull(pipeliteLocker, "Missing pipelite locker");
+    Assert.notNull(internalErrorService, "Missing internal error service");
     Assert.notNull(processRunnerSupplier, "Missing process runner supplier");
     Assert.notNull(metrics, "Missing pipelite metrics");
+    this.serviceName = serviceConfiguration.getName();
+    this.internalErrorService = internalErrorService;
     this.pipeliteLocker = pipeliteLocker;
     this.processRunnerSupplier = processRunnerSupplier;
     this.metrics = metrics;
   }
 
   /**
-   * Executes the process. Exceptions thrown by {@link
-   * pipelite.launcher.process.runner.ProcessRunner#runProcess} are caught and logged and the
-   * process runner callback is called after incrementing the internal error count of the returned
-   * ProcessRunnerResult.
+   * Executes the process.
    *
    * @param pipelineName the pipeline name
    * @param process the process
@@ -92,12 +100,14 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
             }
             result = processRunner.runProcess(process);
           } catch (Exception ex) {
+            // Catching exceptions here to allow other processes to continue execution.
             logContext(log.atSevere(), pipelineName, processId)
                 .withCause(ex)
                 .log("Unexpected exception when executing process");
+            internalErrorService.saveInternalError(serviceName, pipelineName, this.getClass(), ex);
           } finally {
             if (result == null) {
-              result = new ProcessRunnerResult().incrementInternalError();
+              result = new ProcessRunnerResult();
             }
             metrics
                 .pipeline(pipelineName)

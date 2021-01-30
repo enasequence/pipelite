@@ -15,7 +15,6 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ProcessRunnerResult {
   private final AtomicLong stageSuccessCount = new AtomicLong();
   private final AtomicLong stageFailedCount = new AtomicLong();
-  private final AtomicLong internalErrorCount = new AtomicLong();
 
   public ProcessRunnerResult incrementStageSuccess() {
     this.stageSuccessCount.incrementAndGet();
@@ -27,20 +26,11 @@ public class ProcessRunnerResult {
     return this;
   }
 
-  public ProcessRunnerResult incrementInternalError() {
-    this.internalErrorCount.incrementAndGet();
-    return this;
-  }
-
   public long getStageSuccessCount() {
     return stageSuccessCount.get();
   }
 
   public long getStageFailedCount() {
     return stageFailedCount.get();
-  }
-
-  public long getInternalErrorCount() {
-    return internalErrorCount.get();
   }
 }

@@ -10,12 +10,11 @@
  */
 package pipelite.entity;
 
+import java.time.ZonedDateTime;
+import javax.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import javax.persistence.*;
-import java.time.ZonedDateTime;
 
 @Entity
 @Table(name = "PIPELITE2_INTERNAL_ERROR")

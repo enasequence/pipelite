@@ -10,6 +10,7 @@
  */
 package pipelite.launcher;
 
+import java.time.ZonedDateTime;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.Pipeline;
@@ -24,8 +25,6 @@ import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.service.InternalErrorService;
-
-import java.time.ZonedDateTime;
 
 /**
  * Executes processes in parallel for one pipeline. New process instances are created using for
@@ -95,7 +94,6 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
       // Catching exceptions here in case they have not already been caught.
       log.atSevere().withCause(ex).log(
           "Unexpected exception when running pipeline: " + pipelineName);
-      metrics.pipeline(pipelineName).incrementInternalErrorCount();
       internalErrorService.saveInternalError(serviceName, pipelineName, this.getClass(), ex);
     }
   }
@@ -121,7 +119,6 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
       // Catching exceptions here to allow other processes to continue execution.
       log.atSevere().withCause(ex).log(
           "Unexpected exception when running pipeline: " + pipelineName);
-      metrics.pipeline(pipelineName).incrementInternalErrorCount();
       internalErrorService.saveInternalError(serviceName, pipelineName, this.getClass(), ex);
     }
   }

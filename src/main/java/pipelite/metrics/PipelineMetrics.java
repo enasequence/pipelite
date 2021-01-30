@@ -57,7 +57,6 @@ public class PipelineMetrics {
       processMetrics.incrementFailedCount(now);
     }
     stageMetrics.increment(result, now);
-    incrementInternalErrorCount(result.getInternalErrorCount());
   }
 
   public double getInternalErrorCount() {
@@ -75,15 +74,6 @@ public class PipelineMetrics {
   /** Increment internal error count. */
   public void incrementInternalErrorCount() {
     incrementInternalErrorCount(1, ZonedDateTime.now());
-  }
-
-  /**
-   * Increment internal error count.
-   *
-   * @param count the number of internal errors
-   */
-  public void incrementInternalErrorCount(long count) {
-    incrementInternalErrorCount(count, ZonedDateTime.now());
   }
 
   public void incrementInternalErrorCount(long count, ZonedDateTime now) {

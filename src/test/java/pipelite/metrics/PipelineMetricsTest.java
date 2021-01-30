@@ -13,7 +13,7 @@ package pipelite.metrics;
 import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
-import pipelite.PipeliteTestBeans;
+import pipelite.PipeliteMetricsTestFactory;
 import pipelite.launcher.process.runner.ProcessRunnerResult;
 import pipelite.process.ProcessState;
 
@@ -21,7 +21,7 @@ public class PipelineMetricsTest {
 
   @Test
   public void internalError() {
-    PipelineMetrics metrics = PipeliteTestBeans.pipelineMetrics("PIPELINE_NAME");
+    PipelineMetrics metrics = PipeliteMetricsTestFactory.pipelineMetrics("PIPELINE_NAME");
 
     assertThat(metrics.getInternalErrorCount()).isZero();
     assertThat(metrics.getInternalErrorTimeSeries().rowCount()).isZero();
@@ -36,7 +36,7 @@ public class PipelineMetricsTest {
 
   @Test
   public void processCompleted() {
-    PipelineMetrics metrics = PipeliteTestBeans.pipelineMetrics("PIPELINE_NAME");
+    PipelineMetrics metrics = PipeliteMetricsTestFactory.pipelineMetrics("PIPELINE_NAME");
 
     assertThat(metrics.process().getCompletedCount()).isZero();
     assertThat(metrics.process().getFailedCount()).isZero();
@@ -50,7 +50,6 @@ public class PipelineMetricsTest {
     ProcessRunnerResult result = new ProcessRunnerResult();
     result.incrementStageSuccess();
     result.incrementStageFailed();
-    result.incrementInternalError();
     metrics.increment(ProcessState.COMPLETED, result);
 
     assertThat(metrics.process().getCompletedCount()).isEqualTo(1);
@@ -65,7 +64,7 @@ public class PipelineMetricsTest {
 
   @Test
   public void processFailed() {
-    PipelineMetrics metrics = PipeliteTestBeans.pipelineMetrics("PIPELINE_NAME");
+    PipelineMetrics metrics = PipeliteMetricsTestFactory.pipelineMetrics("PIPELINE_NAME");
 
     assertThat(metrics.process().getCompletedCount()).isZero();
     assertThat(metrics.process().getFailedCount()).isZero();
@@ -79,7 +78,6 @@ public class PipelineMetricsTest {
     ProcessRunnerResult result = new ProcessRunnerResult();
     result.incrementStageSuccess();
     result.incrementStageFailed();
-    result.incrementInternalError();
     metrics.increment(ProcessState.FAILED, result);
 
     assertThat(metrics.process().getCompletedCount()).isZero();

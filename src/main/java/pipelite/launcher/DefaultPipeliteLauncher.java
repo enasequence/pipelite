@@ -67,11 +67,15 @@ public class DefaultPipeliteLauncher {
         prioritizedProcessCreator,
         processQueue,
         new DefaultProcessRunnerPool(
+            serviceConfiguration,
+            internalErrorService,
             pipeliteLocker,
             (pipelineName1) ->
                 new DefaultProcessRunner(
+                    serviceConfiguration,
                     advancedConfiguration,
                     executorConfiguration,
+                    internalErrorService,
                     processService,
                     stageService,
                     mailService,

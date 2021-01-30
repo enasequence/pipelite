@@ -13,13 +13,13 @@ package pipelite.metrics;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import pipelite.PipeliteTestBeans;
+import pipelite.PipeliteMetricsTestFactory;
 
 public class PipeliteMetricsTest {
 
   @Test
   public void internalError() {
-    PipeliteMetrics metrics = PipeliteTestBeans.pipeliteMetrics();
+    PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
 
     assertThat(metrics.getInternalErrorCount()).isZero();
     assertThat(metrics.getInternalErrorTimeSeries().rowCount()).isZero();

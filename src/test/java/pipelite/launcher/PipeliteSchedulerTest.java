@@ -32,7 +32,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
-import pipelite.PipeliteTestBeans;
+import pipelite.PipeliteMetricsTestFactory;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.Schedule;
 import pipelite.UniqueStringGenerator;
@@ -439,7 +439,7 @@ public class PipeliteSchedulerTest {
 
     // Create pipelite scheduler.
 
-    PipeliteMetrics metrics = PipeliteTestBeans.pipeliteMetrics();
+    PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
 
     PipeliteScheduler pipeliteScheduler =
         spy(

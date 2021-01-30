@@ -10,18 +10,22 @@
  */
 package pipelite.launcher.process.runner;
 
-import static pipelite.stage.StageState.*;
+import static pipelite.stage.StageState.PENDING;
+import static pipelite.stage.StageState.SUCCESS;
 
 import com.google.common.flogger.FluentLogger;
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
-import pipelite.configuration.*;
+import pipelite.configuration.AdvancedConfiguration;
+import pipelite.configuration.ExecutorConfiguration;
+import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.StageEntity;
 import pipelite.exception.PipeliteException;
 import pipelite.launcher.StageLauncher;
@@ -29,6 +33,7 @@ import pipelite.launcher.dependency.DependencyResolver;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
+import pipelite.service.InternalErrorService;
 import pipelite.service.MailService;
 import pipelite.service.ProcessService;
 import pipelite.service.StageService;
@@ -42,7 +47,9 @@ import pipelite.time.Time;
 @Flogger
 public class DefaultProcessRunner implements ProcessRunner {
 
+  private final String serviceName;
   private final ExecutorConfiguration executorConfiguration;
+  private final InternalErrorService internalErrorService;
   private final ProcessService processService;
   private final StageService stageService;
   private final MailService mailService;
@@ -55,19 +62,25 @@ public class DefaultProcessRunner implements ProcessRunner {
   private ZonedDateTime startTime;
 
   public DefaultProcessRunner(
+      ServiceConfiguration serviceConfiguration,
       AdvancedConfiguration advancedConfiguration,
       ExecutorConfiguration executorConfiguration,
+      InternalErrorService internalErrorService,
       ProcessService processService,
       StageService stageService,
       MailService mailService,
       String pipelineName) {
+    Assert.notNull(serviceConfiguration, "Missing service configuration");
     Assert.notNull(advancedConfiguration, "Missing advanced configuration");
     Assert.notNull(executorConfiguration, "Missing stage configuration");
+    Assert.notNull(internalErrorService, "Missing internal error service");
     Assert.notNull(processService, "Missing process service");
     Assert.notNull(stageService, "Missing stage service");
     Assert.notNull(mailService, "Missing mail service");
     Assert.notNull(pipelineName, "Missing pipeline name");
+    this.serviceName = serviceConfiguration.getName();
     this.executorConfiguration = executorConfiguration;
+    this.internalErrorService = internalErrorService;
     this.processService = processService;
     this.stageService = stageService;
     this.mailService = mailService;
@@ -76,8 +89,7 @@ public class DefaultProcessRunner implements ProcessRunner {
   }
 
   /**
-   * Executes the process. If an exception is thrown then it is caught and logged after incrementing
-   * the internal error count of the returned ProcessRunnerResult.
+   * Executes the process.
    *
    * @param process the process
    * @return process runner result
@@ -85,12 +97,7 @@ public class DefaultProcessRunner implements ProcessRunner {
   @Override
   public ProcessRunnerResult runProcess(Process process) {
     ProcessRunnerResult result = new ProcessRunnerResult();
-    try {
-      runProcess(process, result);
-    } catch (Exception ex) {
-      result.incrementInternalError();
-      logContext(log.atSevere()).withCause(ex).log("Unexpected exception when executing process");
-    }
+    runProcess(process, result);
     return result;
   }
 
@@ -158,12 +165,13 @@ public class DefaultProcessRunner implements ProcessRunner {
           } catch (Exception ex) {
             logContext(log.atSevere())
                 .withCause(ex)
-                .log("Exception when executing stage %s", stage.getStageName());
+                .log("Unexpected exception when executing stage %s", stage.getStageName());
+            // Catching exceptions here to allow other stages to continue execution.
             stageService.endExecution(stage, StageExecutorResult.internalError(ex));
             stageService.endExecutionStageLog(stage, StageExecutorResult.internalError(ex));
             mailService.sendStageExecutionMessage(process, stage);
             result.incrementStageFailed();
-            result.incrementInternalError();
+            internalErrorService.saveInternalError(serviceName, pipelineName, this.getClass(), ex);
           } finally {
             activeStages.remove(stage);
           }

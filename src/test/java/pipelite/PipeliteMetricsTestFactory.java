@@ -14,9 +14,9 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 
-public class PipeliteTestBeans {
+public class PipeliteMetricsTestFactory {
 
-  private PipeliteTestBeans() {}
+  private PipeliteMetricsTestFactory() {}
 
   public static PipeliteMetrics pipeliteMetrics() {
     return new PipeliteMetrics(new SimpleMeterRegistry());

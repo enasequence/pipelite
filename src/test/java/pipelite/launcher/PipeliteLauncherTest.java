@@ -42,7 +42,6 @@ import pipelite.launcher.process.creator.PrioritizedProcessCreator;
 import pipelite.launcher.process.queue.DefaultProcessQueue;
 import pipelite.launcher.process.runner.DefaultProcessRunnerPool;
 import pipelite.launcher.process.runner.ProcessRunnerPool;
-import pipelite.lock.PipeliteLocker;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.TimeSeriesMetrics;
@@ -347,7 +346,7 @@ public class PipeliteLauncherTest {
 
     ProcessRunnerPool pool = mock(ProcessRunnerPool.class);
 
-    PipeliteMetrics metrics = PipeliteTestBeans.pipeliteMetrics();
+    PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
 
     PipeliteLauncher launcher =
         spy(
@@ -396,7 +395,7 @@ public class PipeliteLauncherTest {
     doReturn(processesEntities).when(queue).getPendingProcesses();
 
     ProcessRunnerPool pool = mock(ProcessRunnerPool.class);
-    PipeliteMetrics metrics = PipeliteTestBeans.pipeliteMetrics();
+    PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
 
     PipeliteLauncher launcher =
         spy(
@@ -445,7 +444,7 @@ public class PipeliteLauncherTest {
                 pipelineParallelism));
     when(queue.isFillQueue()).thenReturn(true);
 
-    PipeliteMetrics metrics = PipeliteTestBeans.pipeliteMetrics();
+    PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
 
     PipeliteLauncher launcher =
         spy(

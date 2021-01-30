@@ -44,11 +44,15 @@ public class DefaultPipeliteScheduler {
         scheduleService,
         processService,
         new DefaultProcessRunnerPool(
+            serviceConfiguration,
+            internalErrorService,
             pipeliteLocker,
             (pipelineName) ->
                 new DefaultProcessRunner(
+                    serviceConfiguration,
                     advancedConfiguration,
                     executorConfiguration,
+                    internalErrorService,
                     processService,
                     stageService,
                     mailService,
