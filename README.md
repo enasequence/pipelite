@@ -1,6 +1,32 @@
 Pipelite workflow manager
 =======
 
+- [Pipelite workflow manager](#pipelite-workflow-manager)
+  + [Overview](#overview)
+  + [How to start up Pipelite](#how-to-start-up-pipelite)
+  + [How to configure Pipelite schedules](#how-to-configure-pipelite-schedules)
+    - [SimpleLsfExecutor example](#simplelsfexecutor-example)
+  + [Pipelite stage dependency types](#pipelite-stage-dependency-types)
+  + [Pipelite stage executor backends](#pipelite-stage-executor-backends)
+  + [Pipelite configuration parameters](#pipelite-configuration-parameters)
+    - [Executor parameters](#executor-parameters)
+      * [Cmd executor parameters](#cmd-executor-parameters)
+      * [Simple LSF executor parameters](#simple-lsf-executor-parameters)
+      * [LSF executor parameters](#lsf-executor-parameters)
+      * [AwsBatch executor parameters](#awsbatch-executor-parameters)
+    - [Service parameters](#service-parameters)
+    - [Mail parameters](#mail-parameters)
+    - [Database parameters](#database-parameters)
+    - [Advanced parameters](#advanced-parameters)
+    - [Test profiles](#test-profiles)
+  + [Pipelte database schema](#pipelte-database-schema)
+    - [PIPELITE2_SCHEDULE table](#pipelite2-schedule-table)
+    - [PIPELITE2_PROCESS table](#pipelite2-process-table)
+    - [PIPELITE2_STAGE table](#pipelite2-stage-table)
+    - [PIPELITE2_STAGE_LOG table](#pipelite2-stage-log-table)
+    - [PIPELITE2_SERVICE_LOCK table](#pipelite2-service-lock-table)
+    - [PIPELITE2_PROCESS_LOCK table](#pipelite2-process-lock-table)
+  
 ### Overview
 
 Pipelite is a workflow manager that executes pipelines or schedules. Pipelines are used for parallel executions of
