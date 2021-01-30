@@ -4,11 +4,11 @@ Pipelite workflow manager
 - [Pipelite workflow manager](#pipelite-workflow-manager)
   + [Overview](#overview)
   + [How to start up Pipelite](#how-to-start-up-pipelite)
-  + [How to configure Pipelite schedules](#how-to-configure-pipelite-schedules)
+  + [How to configure schedules](#how-to-configure-schedules)
     - [SimpleLsfExecutor example](#simplelsfexecutor-example)
-  + [Pipelite stage dependency types](#pipelite-stage-dependency-types)
-  + [Pipelite stage executor backends](#pipelite-stage-executor-backends)
-  + [Pipelite configuration parameters](#pipelite-configuration-parameters)
+  + [Stage dependency types](#stage-dependency-types)
+  + [Stage executor backends](#stage-executor-backends)
+  + [Configuration parameters](#configuration-parameters)
     - [Executor parameters](#executor-parameters)
       * [Cmd executor parameters](#cmd-executor-parameters)
       * [Simple LSF executor parameters](#simple-lsf-executor-parameters)
@@ -19,7 +19,7 @@ Pipelite workflow manager
     - [Database parameters](#database-parameters)
     - [Advanced parameters](#advanced-parameters)
     - [Test profiles](#test-profiles)
-  + [Pipelte database schema](#pipelte-database-schema)
+  + [Database schema](#database-schema)
     - [PIPELITE2_SCHEDULE table](#pipelite2-schedule-table)
     - [PIPELITE2_PROCESS table](#pipelite2-process-table)
     - [PIPELITE2_STAGE table](#pipelite2-stage-table)
@@ -67,7 +67,7 @@ public class Application {
 }
 ```
 
-### How to configure Pipelite schedules
+### How to configure schedules
 
 Schedules are used for executing processes according to a cron schedule.
 
@@ -147,7 +147,7 @@ public class MySchedule implements Pipelite.Schedule {
 }
 ```
 
-### Pipelite stage dependency types
+### Stage dependency types
 
 The following dependency types are supported by the ProcessBuilder:
 
@@ -161,7 +161,7 @@ The following dependency types are supported by the ProcessBuilder:
 - ```executeAfterFirst(String stageName)```:  the stage 'stageName' depends on the first stage declared in the
   ProcessBuilder and will be executed only after it has completed successfully
 
-### Pipelite stage executor backends
+### Stage executor backends
 
 The following executor backends are supported by the ProcessBuilder:
 
@@ -179,7 +179,7 @@ The following executor backends are supported by the ProcessBuilder:
 - ```withAsyncCallExecutor```: A test executor that behaves like an asynchronous executor by returning ACTIVE stage
   state when called for the first time and then returning the given stage state for subsequent calls.
 
-### Pipelite configuration parameters
+### Configuration parameters
 
 #### Executor parameters
 
@@ -280,7 +280,7 @@ where the value is not overriden in ```ProcessBuilder```.
 - if Spring active profiles contain 'test' then uses an in memory database unsuitable for production purposes.
 - if Spring active profiles contain 'test-lorem' then generates test content for the web interface.
 
-### Pipelte database schema
+### Database schema
 
 #### PIPELITE2_SCHEDULE table
 
