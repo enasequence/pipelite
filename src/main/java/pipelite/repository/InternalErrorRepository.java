@@ -8,29 +8,11 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.entity;
+package pipelite.repository;
 
-import javax.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
+import pipelite.entity.InternalErrorEntity;
 
-@Entity
-@Table(name = "PIPELITE2_PROCESS_LOCK")
-@IdClass(ProcessLockEntityId.class)
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class ProcessLockEntity {
-
-  @Column(name = "SERVICE_NAME", nullable = false, length = 256)
-  private String serviceName;
-
-  @Id
-  @Column(name = "PIPELINE_NAME", length = 256)
-  private String pipelineName;
-
-  @Id
-  @Column(name = "PROCESS_ID", length = 256)
-  private String processId;
-}
+@Repository
+public interface InternalErrorRepository extends CrudRepository<InternalErrorEntity, String> {}

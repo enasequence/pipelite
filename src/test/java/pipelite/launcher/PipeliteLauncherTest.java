@@ -66,6 +66,7 @@ public class PipeliteLauncherTest {
   @Autowired private ServiceConfiguration serviceConfiguration;
   @Autowired private AdvancedConfiguration advancedConfiguration;
   @Autowired private ExecutorConfiguration executorConfiguration;
+  @Autowired private InternalErrorService internalErrorService;
   @Autowired private RegisteredPipelineService registeredPipelineService;
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
@@ -117,6 +118,7 @@ public class PipeliteLauncherTest {
         advancedConfiguration,
         executorConfiguration,
         pipeliteLockerService.getPipeliteLocker(),
+        internalErrorService,
         registeredPipelineService,
         processService,
         stageService,
@@ -352,7 +354,7 @@ public class PipeliteLauncherTest {
             new PipeliteLauncher(
                 serviceConfiguration,
                 advancedConfiguration,
-                mock(PipeliteLocker.class),
+                internalErrorService,
                 pipeline,
                 mock(PrioritizedProcessCreator.class),
                 queue,
@@ -401,7 +403,7 @@ public class PipeliteLauncherTest {
             new PipeliteLauncher(
                 serviceConfiguration,
                 advancedConfiguration,
-                mock(PipeliteLocker.class),
+                internalErrorService,
                 mock(Pipeline.class),
                 mock(PrioritizedProcessCreator.class),
                 queue,
@@ -450,7 +452,7 @@ public class PipeliteLauncherTest {
             new PipeliteLauncher(
                 serviceConfiguration,
                 advancedConfiguration,
-                mock(PipeliteLocker.class),
+                internalErrorService,
                 mock(Pipeline.class),
                 prioritizedProcessCreator,
                 queue,

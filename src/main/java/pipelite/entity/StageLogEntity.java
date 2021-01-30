@@ -10,13 +10,14 @@
  */
 package pipelite.entity;
 
-import javax.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.flogger.Flogger;
 import pipelite.json.Json;
 import pipelite.stage.executor.StageExecutorResult;
+
+import javax.persistence.*;
 
 @Entity
 @Table(name = "PIPELITE2_STAGE_LOG")
@@ -28,15 +29,15 @@ import pipelite.stage.executor.StageExecutorResult;
 public class StageLogEntity {
 
   @Id
-  @Column(name = "PROCESS_ID")
+  @Column(name = "PROCESS_ID", length = 256)
   private String processId;
 
   @Id
-  @Column(name = "PIPELINE_NAME")
+  @Column(name = "PIPELINE_NAME", length = 256)
   private String pipelineName;
 
   @Id
-  @Column(name = "STAGE_NAME")
+  @Column(name = "STAGE_NAME", length = 256)
   private String stageName;
 
   @Column(name = "STAGE_LOG", columnDefinition = "CLOB")

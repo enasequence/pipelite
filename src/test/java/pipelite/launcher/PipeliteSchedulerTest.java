@@ -67,6 +67,7 @@ public class PipeliteSchedulerTest {
   @Autowired private ServiceConfiguration serviceConfiguration;
   @Autowired private AdvancedConfiguration advancedConfiguration;
   @Autowired private ExecutorConfiguration executorConfiguration;
+  @Autowired private InternalErrorService internalErrorService;
   @Autowired private RegisteredPipelineService registeredPipelineService;
   @Autowired private ScheduleService scheduleService;
   @Autowired private ProcessService processService;
@@ -139,6 +140,7 @@ public class PipeliteSchedulerTest {
         advancedConfiguration,
         executorConfiguration,
         pipeliteLockerService.getPipeliteLocker(),
+        internalErrorService,
         registeredPipelineService,
         processService,
         scheduleService,
@@ -414,7 +416,7 @@ public class PipeliteSchedulerTest {
   public void testInvalidCron() {
     String pipelineName1 = UniqueStringGenerator.randomPipelineName(PipeliteLauncherTest.class);
 
-    // Create launcher configuration with schedule refresh frequency.
+    // Create advanced configuration with schedule refresh frequency.
 
     AdvancedConfiguration advancedConfiguration = new AdvancedConfiguration();
 
@@ -444,7 +446,7 @@ public class PipeliteSchedulerTest {
             new PipeliteScheduler(
                 serviceConfiguration,
                 advancedConfiguration,
-                pipeliteLocker,
+                internalErrorService,
                 registeredPipelineService,
                 scheduleService,
                 processService,
@@ -505,6 +507,7 @@ public class PipeliteSchedulerTest {
                 advancedConfiguration,
                 executorConfiguration,
                 pipeliteLocker,
+                internalErrorService,
                 registeredPipelineService,
                 processService,
                 scheduleService,

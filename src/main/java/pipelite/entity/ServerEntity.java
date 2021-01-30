@@ -27,13 +27,13 @@ import lombok.NoArgsConstructor;
     resultClass = ServerEntity.class)
 public class ServerEntity implements Serializable {
   @Id
-  @Column(name = "HOST")
+  @Column(name = "HOST", length = 256)
   private String host;
 
   @Id
   @Column(name = "PORT")
   private Integer port;
 
-  @Column(name = "CONTEXT_PATH")
+  @Column(name = "CONTEXT_PATH", length = 256)
   private String contextPath;
 }

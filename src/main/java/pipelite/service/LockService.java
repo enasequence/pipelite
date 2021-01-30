@@ -10,9 +10,6 @@
  */
 package pipelite.service;
 
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.Optional;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -25,8 +22,13 @@ import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.ProcessLockEntity;
 import pipelite.entity.ServiceLockEntity;
 import pipelite.log.LogKey;
+import pipelite.metrics.PipeliteMetrics;
 import pipelite.repository.ProcessLockRepository;
 import pipelite.repository.ServiceLockRepository;
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.Optional;
 
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -34,18 +36,24 @@ import pipelite.repository.ServiceLockRepository;
 public class LockService {
 
   private final ServiceConfiguration serviceConfiguration;
+  private final InternalErrorService internalErrorService;
   private final ServiceLockRepository serviceLockRepository;
   private final ProcessLockRepository processLockRepository;
+  private final PipeliteMetrics metrics;
   private final Duration lockDuration;
 
   public LockService(
       @Autowired ServiceConfiguration serviceConfiguration,
+      @Autowired InternalErrorService internalErrorService,
       @Autowired AdvancedConfiguration advancedConfiguration,
       @Autowired ServiceLockRepository serviceLockRepository,
-      @Autowired ProcessLockRepository processLockRepository) {
+      @Autowired ProcessLockRepository processLockRepository,
+      @Autowired PipeliteMetrics metrics) {
     this.serviceConfiguration = serviceConfiguration;
+    this.internalErrorService = internalErrorService;
     this.serviceLockRepository = serviceLockRepository;
     this.processLockRepository = processLockRepository;
+    this.metrics = metrics;
     this.lockDuration = advancedConfiguration.getLockDuration();
   }
 
@@ -119,10 +127,16 @@ public class LockService {
       log.atFine().with(LogKey.SERVICE_NAME, serviceName).log("Relocked service");
       return true;
     } catch (Exception ex) {
+      log.atSevere().withCause(ex).log(
+          "Unexpected exception when relocking service: " + serviceName);
+      metrics.incrementInternalErrorCount();
+      internalErrorService.saveInternalError(serviceName, null, this.getClass(), ex);
+
       log.atSevere()
           .with(LogKey.SERVICE_NAME, serviceName)
           .withCause(ex)
           .log("Failed to relock service");
+
       return false;
     }
   }

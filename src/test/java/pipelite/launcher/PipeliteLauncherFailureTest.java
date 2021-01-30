@@ -60,6 +60,7 @@ public class PipeliteLauncherFailureTest {
   @Autowired private ServiceConfiguration serviceConfiguration;
   @Autowired private AdvancedConfiguration advancedConfiguration;
   @Autowired private ExecutorConfiguration executorConfiguration;
+  @Autowired private InternalErrorService internalErrorService;
   @Autowired private RegisteredPipelineService registeredPipelineService;
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
@@ -130,6 +131,7 @@ public class PipeliteLauncherFailureTest {
         advancedConfiguration,
         executorConfiguration,
         pipeliteLockerService.getPipeliteLocker(),
+        internalErrorService,
         registeredPipelineService,
         processService,
         stageService,

@@ -36,6 +36,7 @@ public class Application {
   @Autowired private ServiceConfiguration serviceConfiguration;
   @Autowired private AdvancedConfiguration advancedConfiguration;
   @Autowired private ExecutorConfiguration executorConfiguration;
+  @Autowired private InternalErrorService internalErrorService;
   @Autowired private RegisteredPipelineService registeredPipelineService;
   @Autowired private PipeliteLockerService pipeliteLockerService;
   @Autowired private ScheduleService scheduleService;
@@ -131,6 +132,7 @@ public class Application {
         advancedConfiguration,
         executorConfiguration,
         pipeliteLockerService.getPipeliteLocker(),
+        internalErrorService,
         registeredPipelineService,
         processService,
         scheduleService,
@@ -145,6 +147,7 @@ public class Application {
         advancedConfiguration,
         executorConfiguration,
         pipeliteLockerService.getPipeliteLocker(),
+        internalErrorService,
         registeredPipelineService,
         processService,
         stageService,

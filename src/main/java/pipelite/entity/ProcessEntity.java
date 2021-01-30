@@ -29,11 +29,11 @@ public class ProcessEntity {
   public static final int MAX_PRIORITY = 9;
 
   @Id
-  @Column(name = "PROCESS_ID")
+  @Column(name = "PROCESS_ID", length = 256)
   private String processId;
 
   @Id
-  @Column(name = "PIPELINE_NAME")
+  @Column(name = "PIPELINE_NAME", length = 256)
   private String pipelineName;
 
   @Enumerated(EnumType.STRING)

@@ -31,7 +31,7 @@ public class ScheduleEntity {
   private String pipelineName;
 
   /** Scheduler name. */
-  @Column(name = "SERVICE_NAME", nullable = false)
+  @Column(name = "SERVICE_NAME", nullable = false, length = 256)
   private String serviceName;
 
   /** Cron expression. */
@@ -39,11 +39,11 @@ public class ScheduleEntity {
   private String cron;
 
   /** Cron expression description. */
-  @Column(name = "DESCRIPTION")
+  @Column(name = "DESCRIPTION", length = 256)
   private String description;
 
   /** Last execution process id. */
-  @Column(name = "PROCESS_ID")
+  @Column(name = "PROCESS_ID", length = 256)
   private String processId;
 
   /** Last execution start date. */

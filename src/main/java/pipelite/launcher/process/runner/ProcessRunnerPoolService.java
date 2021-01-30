@@ -33,7 +33,7 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
       AdvancedConfiguration advancedConfiguration,
       ProcessRunnerPool pool,
       PipeliteMetrics metrics) {
-    Assert.notNull(advancedConfiguration, "Missing launcher configuration");
+    Assert.notNull(advancedConfiguration, "Missing advanced configuration");
     Assert.notNull(pool, "Missing process runner pool");
     Assert.notNull(metrics, "Missing metrics");
     this.pool = pool;

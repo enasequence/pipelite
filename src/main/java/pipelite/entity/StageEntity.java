@@ -10,16 +10,19 @@
  */
 package pipelite.entity;
 
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
-import javax.persistence.*;
-import lombok.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.JsonSerializableExecutor;
 import pipelite.json.Json;
-import pipelite.stage.*;
+import pipelite.stage.Stage;
+import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
+
+import javax.persistence.*;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 
 @Entity
 @Table(name = "PIPELITE2_STAGE")
@@ -30,15 +33,15 @@ import pipelite.stage.executor.StageExecutorResult;
 public class StageEntity {
 
   @Id
-  @Column(name = "PROCESS_ID")
+  @Column(name = "PROCESS_ID", length = 256)
   private String processId;
 
   @Id
-  @Column(name = "PIPELINE_NAME")
+  @Column(name = "PIPELINE_NAME", length = 256)
   private String pipelineName;
 
   @Id
-  @Column(name = "STAGE_NAME")
+  @Column(name = "STAGE_NAME", length = 256)
   private String stageName;
 
   @Enumerated(EnumType.STRING)

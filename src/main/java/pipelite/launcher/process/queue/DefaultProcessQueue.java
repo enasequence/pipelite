@@ -39,7 +39,7 @@ public class DefaultProcessQueue implements ProcessQueue {
       ProcessService processService,
       String pipelineName,
       int pipelineParallelism) {
-    Assert.notNull(advancedConfiguration, "Missing launcher configuration");
+    Assert.notNull(advancedConfiguration, "Missing advanced configuration");
     Assert.notNull(pipelineName, "Missing pipeline name");
     this.processService = processService;
     this.pipelineName = pipelineName;

@@ -382,3 +382,27 @@ primary key (process_id, stage_name, pipeline_name) using index pk_pipelite2_sta
 ;
 
 -- @formatter:on
+
+
+create table pipelite2_internal_error
+(
+    error_id      varchar2(36) not null,
+    service_name  varchar2(256) not null,
+    pipeline_name varchar2(256),
+    class_name    varchar2(256) not null,
+    error_time    date not null,
+    error_message clob,
+    error_log     clob,
+    audit_time    date default sysdate not null
+) tablespace &table_tablespace;
+
+-- @formatter:off
+
+create unique index pk_pipelite2_internal_error on pipelite2_internal_error (error_id)
+tablespace &index_tablespace;
+
+alter table pipelite2_internal_error add constraint pk_pipelite2_internal_error
+    primary key (error_id) using index pk_pipelite2_internal_error
+;
+
+-- @formatter:on

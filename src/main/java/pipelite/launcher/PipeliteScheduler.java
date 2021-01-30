@@ -11,11 +11,6 @@
 package pipelite.launcher;
 
 import com.google.common.flogger.FluentLogger;
-import java.time.ZonedDateTime;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Stream;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.Pipeline;
@@ -27,12 +22,20 @@ import pipelite.entity.ScheduleEntity;
 import pipelite.exception.PipeliteException;
 import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
-import pipelite.lock.PipeliteLocker;
 import pipelite.log.LogKey;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
-import pipelite.service.*;
+import pipelite.service.InternalErrorService;
+import pipelite.service.ProcessService;
+import pipelite.service.RegisteredPipelineService;
+import pipelite.service.ScheduleService;
+
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 
 /**
  * Schedules non-parallel processes using cron expressions. New process instances are created using
@@ -41,6 +44,7 @@ import pipelite.service.*;
 @Flogger
 public class PipeliteScheduler extends ProcessRunnerPoolService {
 
+  private final InternalErrorService internalErrorService;
   private final ScheduleService scheduleService;
   private final ProcessService processService;
   private final ScheduleCache scheduleCache;
@@ -52,17 +56,19 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   public PipeliteScheduler(
       ServiceConfiguration serviceConfiguration,
       AdvancedConfiguration advancedConfiguration,
-      PipeliteLocker pipeliteLocker,
+      InternalErrorService internalErrorService,
       RegisteredPipelineService registeredPipelineService,
       ScheduleService scheduleService,
       ProcessService processService,
       ProcessRunnerPool processRunnerPool,
       PipeliteMetrics metrics) {
     super(advancedConfiguration, processRunnerPool, metrics);
-    Assert.notNull(advancedConfiguration, "Missing launcher configuration");
+    Assert.notNull(internalErrorService, "Missing internal error service");
+    Assert.notNull(advancedConfiguration, "Missing advanced configuration");
     Assert.notNull(registeredPipelineService, "Missing pipeline service");
     Assert.notNull(scheduleService, "Missing schedule service");
     Assert.notNull(processService, "Missing process service");
+    this.internalErrorService = internalErrorService;
     this.scheduleCache = new ScheduleCache(registeredPipelineService);
     this.scheduleService = scheduleService;
     this.processService = processService;
@@ -87,17 +93,31 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   }
 
   protected void executeSchedules() {
-    getExecutableSchedules()
-        .forEach(
-            s -> {
-              try {
-                executeSchedule(s, createProcessEntity(s), false);
-              } catch (Exception ex) {
-                logContext(log.atSevere(), s.getPipelineName())
-                    .withCause(ex)
-                    .log("Could not execute schedule");
-              }
-            });
+    try {
+      getExecutableSchedules()
+          .forEach(
+              s -> {
+                try {
+                  executeSchedule(s, createProcessEntity(s), false);
+                } catch (Exception ex) {
+                  // Catching exceptions here to allow other schedules to continue execution.
+                  logContext(log.atSevere(), s.getPipelineName())
+                      .withCause(ex)
+                      .log("Unexpected exception when running schedule: " + s.getPipelineName());
+                  metrics.pipeline(s.getPipelineName()).incrementInternalErrorCount();
+                  internalErrorService.saveInternalError(
+                      serviceName, s.getPipelineName(), this.getClass(), ex);
+                }
+              });
+
+    } catch (Exception ex) {
+      // Catching exceptions here in case they have not already been caught.
+      logContext(log.atSevere())
+          .withCause(ex)
+          .log("Unexpected exception when running scheduler: " + serviceName);
+      metrics.incrementInternalErrorCount();
+      internalErrorService.saveInternalError(serviceName, null, this.getClass(), ex);
+    }
   }
 
   @Override

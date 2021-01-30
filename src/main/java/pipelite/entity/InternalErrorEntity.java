@@ -10,35 +10,41 @@
  */
 package pipelite.entity;
 
-import java.time.ZonedDateTime;
-import javax.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.persistence.*;
+import java.time.ZonedDateTime;
+
 @Entity
-@Table(name = "PIPELITE2_SERVICE_LOCK")
+@Table(name = "PIPELITE2_INTERNAL_ERROR")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ServiceLockEntity {
+public class InternalErrorEntity {
 
   @Id
-  @Column(name = "LOCK_ID", length = 36)
-  private String lockId;
+  @Column(name = "ERROR_ID", length = 36)
+  private String errorId;
 
-  @Column(name = "SERVICE_NAME", unique = true, nullable = false, length = 256)
+  @Column(name = "SERVICE_NAME", nullable = false, length = 256)
   private String serviceName;
 
-  @Column(name = "HOST", nullable = false, length = 256)
-  private String host;
+  @Column(name = "PIPELINE_NAME", length = 256)
+  private String pipelineName;
 
-  @Column(name = "PORT", nullable = false, length = 256)
-  private Integer port;
+  @Column(name = "CLASS_NAME", nullable = false, length = 256)
+  private String className;
 
-  @Column(name = "CONTEXT_PATH", nullable = false, length = 256)
-  private String contextPath;
+  @Column(name = "ERROR_TIME", nullable = false)
+  private ZonedDateTime errorTime;
 
-  @Column(name = "EXPIRY", nullable = false)
-  private ZonedDateTime expiry;
+  @Column(name = "ERROR_MESSAGE", columnDefinition = "CLOB")
+  @Lob
+  private String errorMessage;
+
+  @Column(name = "ERROR_LOG", columnDefinition = "CLOB")
+  @Lob
+  private String errorLog;
 }

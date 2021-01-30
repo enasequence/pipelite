@@ -10,7 +10,6 @@
  */
 package pipelite.launcher;
 
-import java.time.ZonedDateTime;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.Pipeline;
@@ -21,10 +20,12 @@ import pipelite.launcher.process.creator.PrioritizedProcessCreator;
 import pipelite.launcher.process.queue.ProcessQueue;
 import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
-import pipelite.lock.PipeliteLocker;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
+import pipelite.service.InternalErrorService;
+
+import java.time.ZonedDateTime;
 
 /**
  * Executes processes in parallel for one pipeline. New process instances are created using for
@@ -33,6 +34,7 @@ import pipelite.process.ProcessFactory;
 @Flogger
 public class PipeliteLauncher extends ProcessRunnerPoolService {
 
+  private final InternalErrorService internalErrorService;
   private final String pipelineName;
   private final Pipeline pipeline;
   private final PrioritizedProcessCreator prioritizedProcessCreator;
@@ -45,17 +47,20 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
   public PipeliteLauncher(
       ServiceConfiguration serviceConfiguration,
       AdvancedConfiguration advancedConfiguration,
-      PipeliteLocker pipeliteLocker,
+      InternalErrorService internalErrorService,
       Pipeline pipeline,
       PrioritizedProcessCreator prioritizedProcessCreator,
       ProcessQueue processQueue,
       ProcessRunnerPool pool,
       PipeliteMetrics metrics) {
     super(advancedConfiguration, pool, metrics);
-    Assert.notNull(advancedConfiguration, "Missing launcher configuration");
+    Assert.notNull(serviceConfiguration, "Missing service configuration");
+    Assert.notNull(advancedConfiguration, "Missing advanced configuration");
+    Assert.notNull(internalErrorService, "Missing internal error service");
     Assert.notNull(pipeline, "Missing pipeline");
     Assert.notNull(prioritizedProcessCreator, "Missing process creator");
     Assert.notNull(processQueue, "Missing process queue");
+    this.internalErrorService = internalErrorService;
     this.pipeline = pipeline;
     this.prioritizedProcessCreator = prioritizedProcessCreator;
     this.processQueue = processQueue;
@@ -78,12 +83,20 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
 
   @Override
   protected void run() {
-    if (processQueue.isFillQueue()) {
-      prioritizedProcessCreator.createProcesses(processCreateMaxSize);
-      processQueue.fillQueue();
-    }
-    while (processQueue.isAvailableProcesses(this.getActiveProcessCount())) {
-      runProcess(processQueue.nextAvailableProcess());
+    try {
+      if (processQueue.isFillQueue()) {
+        prioritizedProcessCreator.createProcesses(processCreateMaxSize);
+        processQueue.fillQueue();
+      }
+      while (processQueue.isAvailableProcesses(this.getActiveProcessCount())) {
+        runProcess(processQueue.nextAvailableProcess());
+      }
+    } catch (Exception ex) {
+      // Catching exceptions here in case they have not already been caught.
+      log.atSevere().withCause(ex).log(
+          "Unexpected exception when running pipeline: " + pipelineName);
+      metrics.pipeline(pipelineName).incrementInternalErrorCount();
+      internalErrorService.saveInternalError(serviceName, pipelineName, this.getClass(), ex);
     }
   }
 
@@ -99,16 +112,17 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
   }
 
   protected void runProcess(ProcessEntity processEntity) {
-    Process process = null;
     try {
-      process = ProcessFactory.create(processEntity, pipeline);
+      Process process = ProcessFactory.create(processEntity, pipeline);
+      if (process != null) {
+        runProcess(pipelineName, process, (p, r) -> {});
+      }
     } catch (Exception ex) {
+      // Catching exceptions here to allow other processes to continue execution.
       log.atSevere().withCause(ex).log(
-          "Unexpected exception when creating " + pipelineName + " process");
+          "Unexpected exception when running pipeline: " + pipelineName);
       metrics.pipeline(pipelineName).incrementInternalErrorCount();
-    }
-    if (process != null) {
-      runProcess(pipelineName, process, (p, r) -> {});
+      internalErrorService.saveInternalError(serviceName, pipelineName, this.getClass(), ex);
     }
   }
 

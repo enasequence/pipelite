@@ -28,6 +28,7 @@ public class DefaultPipeliteScheduler {
       AdvancedConfiguration advancedConfiguration,
       ExecutorConfiguration executorConfiguration,
       PipeliteLocker pipeliteLocker,
+      InternalErrorService internalErrorService,
       RegisteredPipelineService registeredPipelineService,
       ProcessService processService,
       ScheduleService scheduleService,
@@ -38,7 +39,7 @@ public class DefaultPipeliteScheduler {
     return new PipeliteScheduler(
         serviceConfiguration,
         advancedConfiguration,
-        pipeliteLocker,
+        internalErrorService,
         registeredPipelineService,
         scheduleService,
         processService,

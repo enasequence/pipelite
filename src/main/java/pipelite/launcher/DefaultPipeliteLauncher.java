@@ -24,10 +24,7 @@ import pipelite.launcher.process.runner.DefaultProcessRunner;
 import pipelite.launcher.process.runner.DefaultProcessRunnerPool;
 import pipelite.lock.PipeliteLocker;
 import pipelite.metrics.PipeliteMetrics;
-import pipelite.service.MailService;
-import pipelite.service.ProcessService;
-import pipelite.service.RegisteredPipelineService;
-import pipelite.service.StageService;
+import pipelite.service.*;
 
 public class DefaultPipeliteLauncher {
 
@@ -38,6 +35,7 @@ public class DefaultPipeliteLauncher {
       AdvancedConfiguration advancedConfiguration,
       ExecutorConfiguration executorConfiguration,
       PipeliteLocker pipeliteLocker,
+      InternalErrorService internalErrorService,
       RegisteredPipelineService registeredPipelineService,
       ProcessService processService,
       StageService stageService,
@@ -64,7 +62,7 @@ public class DefaultPipeliteLauncher {
     return new PipeliteLauncher(
         serviceConfiguration,
         advancedConfiguration,
-        pipeliteLocker,
+        internalErrorService,
         pipeline,
         prioritizedProcessCreator,
         processQueue,

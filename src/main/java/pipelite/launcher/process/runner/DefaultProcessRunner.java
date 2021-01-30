@@ -61,7 +61,7 @@ public class DefaultProcessRunner implements ProcessRunner {
       StageService stageService,
       MailService mailService,
       String pipelineName) {
-    Assert.notNull(advancedConfiguration, "Missing launcher configuration");
+    Assert.notNull(advancedConfiguration, "Missing advanced configuration");
     Assert.notNull(executorConfiguration, "Missing stage configuration");
     Assert.notNull(processService, "Missing process service");
     Assert.notNull(stageService, "Missing stage service");
