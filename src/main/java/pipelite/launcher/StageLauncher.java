@@ -11,11 +11,11 @@
 package pipelite.launcher;
 
 import com.google.common.flogger.FluentLogger;
-import java.time.Duration;
-import java.time.ZonedDateTime;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.exception.PipeliteException;
+import pipelite.exception.PipeliteInterruptedException;
+import pipelite.exception.PipeliteTimeoutException;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.service.StageService;
@@ -25,6 +25,9 @@ import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.time.Time;
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
 
 @Flogger
 /** Executes a stage and returns the stage execution result. */
@@ -148,23 +151,27 @@ public class StageLauncher {
           // The asynchronous stage execution has completed.
           return result;
         }
-      } catch (PipeliteException ex) {
-        throw ex;
       } catch (Exception ex) {
-        throw new PipeliteException("Unexpected exception when executing stage", ex);
+        throw new PipeliteException(
+            "Unexpected exception when waiting for asynchronous stage execution to complete", ex);
       }
-      if (ZonedDateTime.now().isAfter(timeout)) {
-        logContext(log.atSevere()).log("Maximum run time exceeded. Terminating job.");
-        try {
-          stage.getExecutor().terminate();
-        } catch (PipeliteException ex) {
-          throw ex;
-        } catch (Exception ex) {
-          throw new PipeliteException("Unexpected exception when terminating job.", ex);
-        }
+
+      try {
+        Time.waitUntil(POLL_FREQUENCY, timeout);
+      } catch (PipeliteTimeoutException ex) {
+        logContext(log.atSevere())
+            .log("Maximum stage execution time exceeded. Terminating stage execution.");
+        stage.getExecutor().terminate();
         return StageExecutorResult.timeoutError();
+      } catch (PipeliteInterruptedException ex) {
+        logContext(log.atSevere())
+            .log("Stage execution was interrupted. Terminating stage execution.");
+        stage.getExecutor().terminate();
+        return StageExecutorResult.interruptedError();
+      } catch (Exception ex) {
+        throw new PipeliteException(
+            "Unexpected exception when waiting for asynchronous stage execution to complete", ex);
       }
-      Time.waitUntil(POLL_FREQUENCY, timeout);
     }
   }
 

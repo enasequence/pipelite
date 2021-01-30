@@ -10,14 +10,16 @@
  */
 package pipelite.stage.executor;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.flogger.Flogger;
+import pipelite.json.Json;
+import pipelite.stage.StageState;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.*;
-import lombok.extern.flogger.Flogger;
-import pipelite.json.Json;
-import pipelite.stage.StageState;
 
 @Getter
 @Setter
@@ -32,6 +34,9 @@ public class StageExecutorResult {
 
   /** True if an timeout error has been registered. */
   private boolean timeoutError;
+
+  /** True if an interrupted error has been registered. */
+  private boolean interruptedError;
 
   private final Map<String, String> attributes = new HashMap<>();
 
@@ -89,6 +94,17 @@ public class StageExecutorResult {
   public static StageExecutorResult timeoutError() {
     StageExecutorResult result = error();
     result.timeoutError = true;
+    return result;
+  }
+
+  /**
+   * Creates an interrupted error.
+   *
+   * @return the stage execution result
+   */
+  public static StageExecutorResult interruptedError() {
+    StageExecutorResult result = error();
+    result.interruptedError = true;
     return result;
   }
 

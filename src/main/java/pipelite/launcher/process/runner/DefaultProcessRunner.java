@@ -10,17 +10,7 @@
  */
 package pipelite.launcher.process.runner;
 
-import static pipelite.stage.StageState.PENDING;
-import static pipelite.stage.StageState.SUCCESS;
-
 import com.google.common.flogger.FluentLogger;
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.AdvancedConfiguration;
@@ -33,12 +23,26 @@ import pipelite.launcher.dependency.DependencyResolver;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
-import pipelite.service.*;
+import pipelite.service.InternalErrorService;
+import pipelite.service.MailService;
+import pipelite.service.ProcessService;
+import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorSerializer;
 import pipelite.time.Time;
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static pipelite.stage.StageState.PENDING;
+import static pipelite.stage.StageState.SUCCESS;
 
 /** Executes a process and returns the process state. */
 @Flogger
@@ -164,8 +168,9 @@ public class DefaultProcessRunner implements ProcessRunner {
                 .withCause(ex)
                 .log("Unexpected exception when executing stage %s", stage.getStageName());
             // Catching exceptions here to allow other stages to continue execution.
-            stageService.endExecution(stage, StageExecutorResult.internalError(ex));
-            stageService.endExecutionStageLog(stage, StageExecutorResult.internalError(ex));
+            StageExecutorResult exceptionResult = StageExecutorResult.internalError(ex);
+            stageService.endExecution(stage, exceptionResult);
+            stageService.endExecutionStageLog(stage, exceptionResult);
             mailService.sendStageExecutionMessage(process, stage);
             result.incrementStageFailed();
             internalErrorService.saveInternalError(serviceName, pipelineName, this.getClass(), ex);
