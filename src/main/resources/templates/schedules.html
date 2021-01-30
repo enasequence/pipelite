@@ -24,25 +24,41 @@
                     {
                         data: "startTime",
                         render: function (data) {
-                            return moment(data).format('YYYY/MM/DD hh:mm:ss');
+                            if (data) {
+                                return moment(data).format('YYYY/MM/DD hh:mm:ss');
+                            } else {
+                                return '';
+                            }
                         }
                     },
                     {
                         data: "nextTime",
                         render: function (data) {
-                            return moment(data).format('YYYY/MM/DD hh:mm:ss');
+                            if (data) {
+                                return moment(data).format('YYYY/MM/DD hh:mm:ss');
+                            } else {
+                                return '';
+                            }
                         }
                     },
                     {
                         data: "lastCompleted",
                         render: function (data) {
-                            return moment(data).format('YYYY/MM/DD hh:mm:ss');
+                            if (data) {
+                                return moment(data).format('YYYY/MM/DD hh:mm:ss');
+                            } else {
+                                return '';
+                            }
                         }
                     },
                     {
                         data: "lastFailed",
                         render: function (data) {
-                            return moment(data).format('YYYY/MM/DD hh:mm:ss');
+                            if (data) {
+                                return moment(data).format('YYYY/MM/DD hh:mm:ss');
+                            } else {
+                                return '';
+                            }
                         }
                     }
                 ],

@@ -20,13 +20,21 @@
                     {
                         data: "startTime",
                         render: function (data) {
-                            return moment(data).format('YYYY/MM/DD hh:mm:ss');
+                            if (data) {
+                                return moment(data).format('YYYY/MM/DD hh:mm:ss');
+                            } else {
+                                return '';
+                            }
                         }
                     },
                     {
                         data: "endTime",
                         render: function (data) {
-                            return moment(data).format('YYYY/MM/DD hh:mm:ss');
+                            if (data) {
+                                return moment(data).format('YYYY/MM/DD hh:mm:ss');
+                            } else {
+                                return '';
+                            }
                         }
                     },
                     {data: "executionCount"},
