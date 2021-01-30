@@ -35,10 +35,10 @@ public class CmdExecutorParameters extends ExecutorParameters {
   /** The environmental variables. */
   private Map<String, String> env;
 
-  /** The working directory for stdout and stderr files and job definition files. */
+  /** The working directory where the output file and job definition files are written. */
   private String workDir;
 
-  /** The maximum number of last bytes to preserve from log streams. */
+  /** The number of last bytes from the output file saved in the stage log. */
   @Builder.Default private int logBytes = DEFAULT_LOG_BYTES;
 
   public void applyDefaults(ExecutorConfiguration executorConfiguration) {

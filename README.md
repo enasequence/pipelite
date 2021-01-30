@@ -155,6 +155,49 @@ The following executor backends are supported by the ProcessBuilder:
 
 ### Pipelite configuration parameters
 
+#### Executor parameters
+
+Executor parameters provide default values for all ```ProcessBuilder``` stage parameters and are used in cases
+where the value is not overriden in ```ProcessBuilder```.
+
+##### Cmd executor parameters
+
+- pipelite.executor.cmd.host: the remote host. Ssh will be used if the ```host``` has been set.
+- pipelite.executor.cmd.user: the user used to connect to the remote host. Default value: the user who restarted the Pipelite service
+- pipelite.executor.cmd.env: the environmental variables passed to the command executor
+- pipelite.executor.cmd.workDir: the working directory where the output file and job definition files are written
+- pipelite.executor.cmd.logBytes: the number of last bytes from the output file saved in the stage log
+
+##### Simple LSF executor parameters
+
+- pipelite.executor.simpleLsf.host: the remote host. Ssh will be used if the ```host``` has been set.
+- pipelite.executor.simpleLsf.user: the user used to connect to the remote host. Default value: user who restarted the Pipelite service
+- pipelite.executor.simpleLsf.env: the environmental variables passed to the command executor
+- pipelite.executor.simpleLsf.workDir: the working directory where the output file and job definition files are written
+- pipelite.executor.simpleLsf.logBytes: the number of last bytes from the output file saved in the stage log
+- pipelite.executor.simpleLsf.queue: the queue name
+- pipelite.executor.simpleLsf.cpu: the number of requested cpus (-n option)
+- pipelite.executor.simpleLsf.memory: the amount of requested memory in MBytes (-M and -R rusage[mem=] option)
+- pipelite.executor.simpleLsf.memoryTimeout: the LSF memory duration (-R rusage[mem=:duration=] option)
+
+##### LSF executor parameters
+
+- pipelite.executor.lsf.host: the remote host. Ssh will be used if the ```host``` has been set.
+- pipelite.executor.lsf.user: the user used to connect to the remote host. Default value: user who restarted the Pipelite service
+- pipelite.executor.lsf.env: the environmental variables passed to the command executor
+- pipelite.executor.lsf.workDir: the working directory where the output file and job definition files are written
+- pipelite.executor.lsf.logBytes: the number of last bytes from the output file saved in the stage log
+- pipelite.executor.lsf.definition: the job definition resource name, file name or URL
+- pipelite.executor.lsf.format: the job definition file format: YAML, JSON, or JSDL
+- pipelite.executor.lsf.parameters: the job definition parameters applied to the job definition file. The key is the parameter placeholder that if found in the job definition file will be replaced with the corresponding value.
+
+##### AwsBatch executor parameters
+
+- pipelite.executor.awsBatch.region: the AWS region name
+- pipelite.executor.awsBatch.queue: the job queue
+- pipelite.executor.awsBatch.definition: The job definition name, name:revision or ARN
+- pipelite.executor.awsBatch.parameters: the job definition parameters applied to the job definition by AWSBatch
+
 #### Service parameters
 
 - pipelite.service.name: the name of the pipeline service. Only one service with the same name can be active at one
