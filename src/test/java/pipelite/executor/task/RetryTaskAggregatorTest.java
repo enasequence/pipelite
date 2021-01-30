@@ -11,7 +11,7 @@
 package pipelite.executor.task;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -19,15 +19,18 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import org.springframework.retry.support.RetryTemplate;
-import pipelite.exception.PipeliteTimeoutException;
-import pipelite.time.Time;
+import pipelite.configuration.ServiceConfiguration;
+import pipelite.service.InternalErrorService;
 
 public class RetryTaskAggregatorTest {
 
   @Test
   public void success() {
-    RetryTemplate retryTemplate = RetryTask.fixed(Duration.ofMillis(1), 3);
-    Duration requestTimeout = Duration.ofSeconds(10);
+    RetryTemplate retryTemplate =
+        RetryTask.retryTemplate(
+            RetryTask.fixedBackoffPolicy(Duration.ofMillis(1)),
+            RetryTask.maxAttemptsRetryPolicy(3));
+
     int requestLimit = 10;
     int requestTotalCnt = 100;
 
@@ -44,7 +47,13 @@ public class RetryTaskAggregatorTest {
     String context = "test";
 
     final RetryTaskAggregator aggregator =
-        new RetryTaskAggregator(retryTemplate, requestTimeout, requestLimit, context, task);
+        new RetryTaskAggregator(
+            mock(ServiceConfiguration.class),
+            mock(InternalErrorService.class),
+            retryTemplate,
+            requestLimit,
+            context,
+            task);
 
     IntStream.range(0, requestTotalCnt).forEach(i -> aggregator.addRequest(i));
 
@@ -69,69 +78,11 @@ public class RetryTaskAggregatorTest {
   }
 
   @Test
-  public void errorWithTimeout() {
-    RetryTemplate retryTemplate = RetryTask.fixed(Duration.ofMillis(1), 1);
-    Duration requestTimeout = Duration.ofSeconds(1);
-    int requestLimit = 10;
-    int requestTotalCnt = 100;
-
-    AtomicInteger taskCnt = new AtomicInteger();
-    AtomicInteger requestCnt = new AtomicInteger();
-
-    RetryTaskAggregatorCallback<Integer, String, String> task =
-        (requestList, context) -> {
-          taskCnt.incrementAndGet();
-          requestCnt.addAndGet(requestList.size());
-          throw new RuntimeException("Expected exception");
-        };
-
-    String context = "test";
-
-    final RetryTaskAggregator aggregator =
-        new RetryTaskAggregator(retryTemplate, requestTimeout, requestLimit, context, task);
-
-    IntStream.range(0, requestTotalCnt).forEach(i -> aggregator.addRequest(i));
-
-    assertThat(aggregator.getPendingRequests().size()).isEqualTo(requestTotalCnt);
-
-    aggregator.makeRequests();
-
-    assertThat(taskCnt.get()).isEqualTo(requestTotalCnt / requestLimit);
-    assertThat(requestCnt.get()).isEqualTo(requestTotalCnt);
-
-    // All tasks should still be pending.
-    assertThat(aggregator.getPendingRequests().size()).isEqualTo(requestTotalCnt);
-
-    Time.wait(Duration.ofSeconds(2));
-
-    // All tasks should still be pending.
-    assertThat(aggregator.getPendingRequests().size()).isEqualTo(requestTotalCnt);
-
-    // Timeout does not affect makeRequests.
-    aggregator.makeRequests();
-
-    assertThat(taskCnt.get()).isEqualTo(2 * requestTotalCnt / requestLimit);
-    assertThat(requestCnt.get()).isEqualTo(2 * requestTotalCnt);
-
-    // Timeout does not affect pending requests.
-    assertThat(aggregator.getPendingRequests().size()).isEqualTo(requestTotalCnt);
-
-    // Check that the results throw a timeout exception.
-    IntStream.range(0, requestTotalCnt)
-        .forEach(
-            i -> assertThrows(PipeliteTimeoutException.class, () -> aggregator.getResult(i).get()));
-
-    // Check that the pending queue is now empty.
-    assertThat(aggregator.getPendingRequests().size()).isZero();
-
-    // Check that the requests have been removed.
-    IntStream.range(0, requestTotalCnt).forEach(i -> assertThat(aggregator.isRequest(i)).isFalse());
-  }
-
-  @Test
   public void errorWithRetry() {
-    RetryTemplate retryTemplate = RetryTask.fixed(Duration.ofMillis(1), 3);
-    Duration requestTimeout = Duration.ofSeconds(1);
+    RetryTemplate retryTemplate =
+        RetryTask.retryTemplate(
+            RetryTask.fixedBackoffPolicy(Duration.ofMillis(1)),
+            RetryTask.maxAttemptsRetryPolicy(3));
     int requestLimit = 10;
     int requestTotalCnt = 100;
 
@@ -148,7 +99,13 @@ public class RetryTaskAggregatorTest {
     String context = "test";
 
     final RetryTaskAggregator aggregator =
-        new RetryTaskAggregator(retryTemplate, requestTimeout, requestLimit, context, task);
+        new RetryTaskAggregator(
+            mock(ServiceConfiguration.class),
+            mock(InternalErrorService.class),
+            retryTemplate,
+            requestLimit,
+            context,
+            task);
 
     IntStream.range(0, requestTotalCnt).forEach(i -> aggregator.addRequest(i));
 

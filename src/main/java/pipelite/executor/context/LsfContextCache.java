@@ -13,9 +13,11 @@ package pipelite.executor.context;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
+import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.AbstractLsfExecutor;
 import pipelite.executor.cmd.CmdRunner;
-import pipelite.executor.task.DefaultFixedRetryTaskAggregator;
+import pipelite.executor.task.RetryTaskAggregator;
+import pipelite.service.InternalErrorService;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
@@ -38,19 +40,31 @@ public class LsfContextCache
   }
 
   public static final class Context extends SharedContextCache.Context<CmdRunner> {
-    public final DefaultFixedRetryTaskAggregator<Request, StageExecutorResult, CmdRunner>
-        describeJobs;
+    public final RetryTaskAggregator<Request, StageExecutorResult, CmdRunner> describeJobs;
 
-    public Context(CmdRunner cmdRunner) {
+    public Context(
+        CmdRunner cmdRunner,
+        ServiceConfiguration serviceConfiguration,
+        InternalErrorService internalErrorService) {
       super(cmdRunner);
       describeJobs =
-          new DefaultFixedRetryTaskAggregator<>(100, cmdRunner, AbstractLsfExecutor::describeJobs);
+          new RetryTaskAggregator<>(
+              serviceConfiguration,
+              internalErrorService,
+              100,
+              cmdRunner,
+              AbstractLsfExecutor::describeJobs);
     }
   }
 
-  public LsfContextCache() {
+  public LsfContextCache(
+      ServiceConfiguration serviceConfiguration, InternalErrorService internalErrorService) {
     super(
-        e -> new LsfContextCache.Context(CmdRunner.create(e.getExecutorParams())),
+        e ->
+            new LsfContextCache.Context(
+                CmdRunner.create(e.getExecutorParams()),
+                serviceConfiguration,
+                internalErrorService),
         e -> new LsfContextCache.ContextId(e.getExecutorParams().getHost()));
     registerMakeRequests(
         () -> getContexts().forEach(context -> context.describeJobs.makeRequests()));

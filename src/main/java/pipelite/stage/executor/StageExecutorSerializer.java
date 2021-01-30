@@ -26,6 +26,9 @@ public class StageExecutorSerializer {
   /**
    * Deserialize stage executor and stage parameters to allow an asynchronous executor to continue
    * executing an active stage.
+   *
+   * @oaran stage the stage being executed
+   * @return true if the executor was deserialized
    */
   public static <T extends ExecutorParameters> Boolean deserializeExecution(Stage stage) {
     StageEntity stageEntity = stage.getStageEntity();

@@ -19,9 +19,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.LsfTestConfiguration;
+import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
-import pipelite.stage.executor.*;
+import pipelite.stage.executor.StageExecutor;
+import pipelite.stage.executor.StageExecutorRequest;
+import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 import pipelite.time.Time;
 
@@ -29,6 +33,7 @@ import pipelite.time.Time;
 public class SshSimpleLsfExecutorTest {
 
   @Autowired LsfTestConfiguration lsfTestConfiguration;
+  @Autowired StageService stageService;
 
   private final String PIPELINE_NAME =
       UniqueStringGenerator.randomPipelineName(SshSimpleLsfExecutorTest.class);
@@ -54,6 +59,7 @@ public class SshSimpleLsfExecutorTest {
             .stage(stage)
             .build();
 
+    executor.prepareExecute(stageService.getExecutorContextCache());
     StageExecutorResult result = executor.execute(request);
     assertThat(result.getStageState()).isEqualTo(StageState.ACTIVE);
     assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).startsWith("bsub");

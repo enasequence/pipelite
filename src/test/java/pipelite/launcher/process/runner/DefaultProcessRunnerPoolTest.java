@@ -10,6 +10,13 @@
  */
 package pipelite.launcher.process.runner;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
+import static org.mockito.internal.verification.VerificationModeFactory.times;
+
+import java.time.ZonedDateTime;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import pipelite.PipeliteMetricsTestFactory;
 import pipelite.configuration.ServiceConfiguration;
@@ -23,14 +30,6 @@ import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.repository.InternalErrorRepository;
 import pipelite.service.InternalErrorService;
-
-import java.time.ZonedDateTime;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
-import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 public class DefaultProcessRunnerPoolTest {
 

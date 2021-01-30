@@ -11,11 +11,14 @@
 package pipelite.executor.context;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.AwsBatchExecutor;
+import pipelite.service.InternalErrorService;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.parameters.AwsBatchExecutorParameters;
 
@@ -32,7 +35,9 @@ public class AwsBatchContextCacheTest {
   @Test
   @Disabled
   public void test() {
-    AwsBatchContextCache cache = new AwsBatchContextCache();
+    AwsBatchContextCache cache =
+        new AwsBatchContextCache(
+            mock(ServiceConfiguration.class), mock(InternalErrorService.class));
     assertThat(cache.getContext(executor("region1")))
         .isSameAs(cache.getContext(executor("region1")));
     assertThat(cache.getContext(executor("region2")))

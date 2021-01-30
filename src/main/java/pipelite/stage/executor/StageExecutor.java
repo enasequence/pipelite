@@ -26,6 +26,13 @@ public interface StageExecutor<T extends ExecutorParameters> extends StageExecut
 
   void setExecutorParams(T executorParams);
 
+  /**
+   * Prepares stage executor for execution.
+   *
+   * @param executorContextCache stage executor context cache
+   */
+  void prepareExecute(StageExecutorContextCache executorContextCache);
+
   /** Terminates the current active execution. */
   void terminate();
 

@@ -24,7 +24,11 @@ public class RetryTaskTest {
   public void fixedThrows() {
     int attempts = 3;
     AtomicInteger cnt = new AtomicInteger();
-    RetryTemplate retry = RetryTask.fixed(Duration.ofMillis(1), attempts);
+    RetryTemplate retry =
+        RetryTask.retryTemplate(
+            RetryTask.fixedBackoffPolicy(Duration.ofMillis(1)),
+            RetryTask.maxAttemptsRetryPolicy(attempts));
+
     assertThrows(
         RuntimeException.class,
         () ->
@@ -40,7 +44,11 @@ public class RetryTaskTest {
   public void fixedSuccess() {
     int attempts = 3;
     AtomicInteger cnt = new AtomicInteger();
-    RetryTemplate retry = RetryTask.fixed(Duration.ofMillis(1), attempts);
+    RetryTemplate retry =
+        RetryTask.retryTemplate(
+            RetryTask.fixedBackoffPolicy(Duration.ofMillis(1)),
+            RetryTask.maxAttemptsRetryPolicy(attempts));
+
     retry.execute(
         r -> {
           cnt.incrementAndGet();
@@ -53,7 +61,11 @@ public class RetryTaskTest {
   public void exponentialThrows() {
     int attempts = 3;
     AtomicInteger cnt = new AtomicInteger();
-    RetryTemplate retry = RetryTask.exp(Duration.ofMillis(1), Duration.ofMillis(10), 2.0, attempts);
+    RetryTemplate retry =
+        RetryTask.retryTemplate(
+            RetryTask.expBackoffPolicy(Duration.ofMillis(1), Duration.ofMillis(10), 2.0),
+            RetryTask.maxAttemptsRetryPolicy(attempts));
+
     assertThrows(
         RuntimeException.class,
         () ->
@@ -69,7 +81,11 @@ public class RetryTaskTest {
   public void exponentialSuccess() {
     int attempts = 3;
     AtomicInteger cnt = new AtomicInteger();
-    RetryTemplate retry = RetryTask.exp(Duration.ofMillis(1), Duration.ofMillis(10), 2.0, attempts);
+    RetryTemplate retry =
+        RetryTask.retryTemplate(
+            RetryTask.expBackoffPolicy(Duration.ofMillis(1), Duration.ofMillis(10), 2.0),
+            RetryTask.maxAttemptsRetryPolicy(attempts));
+
     retry.execute(
         r -> {
           cnt.incrementAndGet();

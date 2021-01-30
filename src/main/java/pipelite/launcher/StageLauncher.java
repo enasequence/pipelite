@@ -16,12 +16,11 @@ import java.time.ZonedDateTime;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.exception.PipeliteException;
-import pipelite.exception.PipeliteInterruptedException;
-import pipelite.exception.PipeliteTimeoutException;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
@@ -105,15 +104,15 @@ public class StageLauncher {
     logContext(log.atInfo()).log("Executing stage");
     StageExecutorResult result;
     try {
+      StageExecutor stageExecutor = stage.getExecutor();
+      stageExecutor.prepareExecute(stageService.getExecutorContextCache());
       result =
-          stage
-              .getExecutor()
-              .execute(
-                  StageExecutorRequest.builder()
-                      .pipelineName(pipelineName)
-                      .processId(process.getProcessId())
-                      .stage(stage)
-                      .build());
+          stageExecutor.execute(
+              StageExecutorRequest.builder()
+                  .pipelineName(pipelineName)
+                  .processId(process.getProcessId())
+                  .stage(stage)
+                  .build());
       if (result.isActive()) {
         stageService.startAsyncExecution(stage);
         // If the execution state is active then the executor is asynchronous.
@@ -149,27 +148,19 @@ public class StageLauncher {
           // The asynchronous stage execution has completed.
           return result;
         }
-      } catch (PipeliteTimeoutException ex) {
-        logContext(log.atSevere()).log("Task timeout");
-        throw ex;
-      } catch (PipeliteInterruptedException ex) {
-        logContext(log.atSevere()).log("Task interrupted");
-        throw ex;
       } catch (PipeliteException ex) {
-        logContext(log.atSevere().withCause(ex)).log("Unexpected exception when polling job.");
         throw ex;
       } catch (Exception ex) {
-        logContext(log.atSevere().withCause(ex)).log("Unexpected exception when polling job.");
-        throw new PipeliteException(ex);
+        throw new PipeliteException("Unexpected exception when executing stage", ex);
       }
       if (ZonedDateTime.now().isAfter(timeout)) {
         logContext(log.atSevere()).log("Maximum run time exceeded. Terminating job.");
         try {
           stage.getExecutor().terminate();
+        } catch (PipeliteException ex) {
+          throw ex;
         } catch (Exception ex) {
-          logContext(log.atSevere().withCause(ex))
-              .log("Unexpected exception when terminating job.");
-          throw new PipeliteException(ex);
+          throw new PipeliteException("Unexpected exception when terminating job.", ex);
         }
         return StageExecutorResult.timeoutError();
       }

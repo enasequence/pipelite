@@ -37,10 +37,8 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
 
   private SubmitJobResult submitJobResult;
 
-  private static final AwsBatchContextCache sharedContextCache = new AwsBatchContextCache();
-
   private AwsBatchContextCache.Context getSharedContext() {
-    return sharedContextCache.getContext(this);
+    return getExecutorContextCache().awsBatch.getContext(this);
   }
 
   @Override
@@ -55,9 +53,12 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
   @Override
   public void terminate() {
     TerminateJobRequest terminateJobRequest =
-        new TerminateJobRequest().withJobId(getJobId()).withReason("Job terminated by pipelite");
-    RetryTask.DEFAULT_FIXED.execute(
-        r -> getSharedContext().get().terminateJob(terminateJobRequest));
+        new TerminateJobRequest()
+            .withJobId(getDescribeJobRequest())
+            .withReason("Job terminated by pipelite");
+    RetryTask.DEFAULT.execute(r -> getSharedContext().get().terminateJob(terminateJobRequest));
+    // Remove request because the execution is being terminated.
+    getSharedContext().describeJobs.removeRequest(getDescribeJobRequest());
   }
 
   private StageExecutorResult submit(StageExecutorRequest request) {
@@ -76,7 +77,7 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
     // TODO: .withContainerOverrides()
 
     submitJobResult =
-        RetryTask.DEFAULT_FIXED.execute(r -> getSharedContext().get().submitJob(submitJobRequest));
+        RetryTask.DEFAULT.execute(r -> getSharedContext().get().submitJob(submitJobRequest));
 
     if (submitJobResult == null || submitJobResult.getJobId() == null) {
       throw new PipeliteException("Missing AWSBatch submit job id.");
@@ -86,7 +87,8 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
 
   private StageExecutorResult poll(StageExecutorRequest request) {
     logContext(log.atFine(), request).log("Checking AWSBatch job result.");
-    Optional<StageExecutorResult> result = getSharedContext().describeJobs.getResult(getJobId());
+    Optional<StageExecutorResult> result =
+        getSharedContext().describeJobs.getResult(getDescribeJobRequest());
     if (result == null || !result.isPresent()) {
       return StageExecutorResult.active();
     }
@@ -135,7 +137,7 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
     return jobName;
   }
 
-  private String getJobId() {
+  private String getDescribeJobRequest() {
     if (submitJobResult == null) {
       return null;
     }

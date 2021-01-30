@@ -10,8 +10,6 @@
  */
 package pipelite.executor.task;
 
-import java.time.Duration;
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -19,7 +17,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.retry.support.RetryTemplate;
+import org.springframework.util.Assert;
+import pipelite.configuration.ServiceConfiguration;
 import pipelite.exception.PipeliteTimeoutException;
+import pipelite.service.InternalErrorService;
 
 /**
  * Aggregates requests and executes tasks with retries using {@link RetryTemplate}.
@@ -31,10 +32,10 @@ import pipelite.exception.PipeliteTimeoutException;
 @Flogger
 public class RetryTaskAggregator<Request, Result, ExecutorContext> {
 
+  private final InternalErrorService internalErrorService;
+  private final String serviceName;
   private final RetryTemplate retryTemplate;
   private final Map<Request, Optional<Result>> requests = new ConcurrentHashMap<>();
-  private final Map<Request, ZonedDateTime> requestTimes = new ConcurrentHashMap<>();
-  private final Duration requestTimeout;
   private final int requestLimit;
   private final ExecutorContext executorContext;
   private final RetryTaskAggregatorCallback<Request, Result, ExecutorContext> task;
@@ -45,28 +46,53 @@ public class RetryTaskAggregator<Request, Result, ExecutorContext> {
    * returned by {@link RetryTaskAggregator#getResult}.
    *
    * @param retryTemplate the retry template used in {@link RetryTaskAggregator#makeRequests}
-   * @param requestTimeout the timeout for a task being executed by {@link
-   *     RetryTaskAggregator#makeRequests}
    * @param requestLimit the maximum number of requests {@link * RetryTaskAggregator#makeRequests}
    *     will sent to the task at once
    * @param task the task that is called by {@link * RetryTaskAggregator#makeRequests}
    */
   public RetryTaskAggregator(
+      ServiceConfiguration serviceConfiguration,
+      InternalErrorService internalErrorService,
       RetryTemplate retryTemplate,
-      Duration requestTimeout,
       int requestLimit,
       ExecutorContext executorContext,
       RetryTaskAggregatorCallback<Request, Result, ExecutorContext> task) {
+    Assert.notNull(serviceConfiguration, "Missing service configuration");
+    Assert.notNull(internalErrorService, "Missing internal error service");
+    this.internalErrorService = internalErrorService;
+    this.serviceName = serviceConfiguration.getName();
+    this.retryTemplate = retryTemplate;
+    this.requestLimit = requestLimit;
     this.executorContext = executorContext;
     this.task = task;
-    this.retryTemplate = retryTemplate;
-    this.requestTimeout = requestTimeout;
-    this.requestLimit = requestLimit;
+  }
+
+  /**
+   * Aggregates requests into a list, passes the list to the given task and expects the task to
+   * return a map of completed requests and results. Completed requests are removed once they been
+   * returned by {@link RetryTaskAggregator#getResult}. Uses the default retry template.
+   *
+   * @param requestLimit the maximum number of requests {@link * RetryTaskAggregator#makeRequests}
+   *     will sent to the task at once
+   * @param task the task that is called by {@link * RetryTaskAggregator#makeRequests}
+   */
+  public RetryTaskAggregator(
+      ServiceConfiguration serviceConfiguration,
+      InternalErrorService internalErrorService,
+      int requestLimit,
+      ExecutorContext executorContext,
+      RetryTaskAggregatorCallback<Request, Result, ExecutorContext> task) {
+    this(
+        serviceConfiguration,
+        internalErrorService,
+        RetryTask.DEFAULT,
+        requestLimit,
+        executorContext,
+        task);
   }
 
   protected void addRequest(Request request) {
     requests.put(request, Optional.empty());
-    requestTimes.put(request, ZonedDateTime.now());
   }
 
   public void makeRequests() {
@@ -85,7 +111,8 @@ public class RetryTaskAggregator<Request, Result, ExecutorContext> {
               return null;
             });
       } catch (Exception ex) {
-        log.atSevere().withCause(ex).log("Unexpected exception in RetryTaskAggregator");
+        log.atSevere().withCause(ex).log("Unexpected exception in retry task aggregator");
+        internalErrorService.saveInternalError(serviceName, null, this.getClass(), ex);
       }
       if (toIndex == pendingRequests.size()) {
         return;
@@ -120,30 +147,11 @@ public class RetryTaskAggregator<Request, Result, ExecutorContext> {
       removeRequest(request);
       return result;
     }
-    if (isTimeout(request)) {
-      removeRequest(request);
-      throw new PipeliteTimeoutException("Task timeout");
-    }
     return this.requests.get(request);
   }
 
-  /**
-   * Returns true if the request has timed out.
-   *
-   * @param request the request
-   * @return true if the request has timed out.
-   */
-  public boolean isTimeout(Request request) {
-    ZonedDateTime requestTime = this.requestTimes.get(request);
-    if (requestTime != null) {
-      return requestTime.plus(requestTimeout).isBefore(ZonedDateTime.now());
-    }
-    return false;
-  }
-
-  protected void removeRequest(Request request) {
+  public void removeRequest(Request request) {
     this.requests.remove(request);
-    this.requestTimes.remove(request);
   }
 
   public boolean isRequest(Request request) {

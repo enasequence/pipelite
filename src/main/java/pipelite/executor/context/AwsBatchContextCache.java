@@ -14,8 +14,10 @@ import com.amazonaws.services.batch.AWSBatch;
 import com.amazonaws.services.batch.AWSBatchClientBuilder;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
+import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.AwsBatchExecutor;
-import pipelite.executor.task.DefaultFixedRetryTaskAggregator;
+import pipelite.executor.task.RetryTaskAggregator;
+import pipelite.service.InternalErrorService;
 import pipelite.stage.executor.StageExecutorResult;
 
 /** Context for tasks that can be shared between AWSBatch executors. */
@@ -30,17 +32,25 @@ public class AwsBatchContextCache
   }
 
   public static final class Context extends SharedContextCache.Context<AWSBatch> {
-    public final DefaultFixedRetryTaskAggregator<String, StageExecutorResult, AWSBatch>
-        describeJobs;
+    public final RetryTaskAggregator<String, StageExecutorResult, AWSBatch> describeJobs;
 
-    public Context(AWSBatch awsBatch) {
+    public Context(
+        AWSBatch awsBatch,
+        ServiceConfiguration serviceConfiguration,
+        InternalErrorService internalErrorServices) {
       super(awsBatch);
       describeJobs =
-          new DefaultFixedRetryTaskAggregator<>(100, awsBatch, AwsBatchExecutor::describeJobs);
+          new RetryTaskAggregator<>(
+              serviceConfiguration,
+              internalErrorServices,
+              100,
+              awsBatch,
+              AwsBatchExecutor::describeJobs);
     }
   }
 
-  public AwsBatchContextCache() {
+  public AwsBatchContextCache(
+      ServiceConfiguration serviceConfiguration, InternalErrorService internalErrorService) {
     super(
         e -> {
           AWSBatchClientBuilder awsBuilder = AWSBatchClientBuilder.standard();
@@ -48,7 +58,8 @@ public class AwsBatchContextCache
           if (region != null) {
             awsBuilder.setRegion(region);
           }
-          return new AwsBatchContextCache.Context(awsBuilder.build());
+          return new AwsBatchContextCache.Context(
+              awsBuilder.build(), serviceConfiguration, internalErrorService);
         },
         e -> new AwsBatchContextCache.ContextId(e.getExecutorParams().getRegion()));
     registerMakeRequests(

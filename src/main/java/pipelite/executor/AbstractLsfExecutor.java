@@ -63,10 +63,10 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
   /** The LSF output file. */
   private String outFile;
 
-  private static final LsfContextCache sharedContextCache = new LsfContextCache();
-
   protected LsfContextCache.Context getSharedContext() {
-    return sharedContextCache.getContext((AbstractLsfExecutor<CmdExecutorParameters>) this);
+    return getExecutorContextCache()
+        .lsf
+        .getContext((AbstractLsfExecutor<CmdExecutorParameters>) this);
   }
 
   protected static class JobResult {
@@ -140,12 +140,14 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
 
   @Override
   public void terminate() {
-    RetryTask.DEFAULT_FIXED.execute(r -> bkill(getCmdRunner(), jobId));
+    RetryTask.DEFAULT.execute(r -> bkill(getCmdRunner(), jobId));
+    // Remove request because the execution is being terminated.
+    getSharedContext().describeJobs.removeRequest(getDescribeJobsRequest());
   }
 
   private StageExecutorResult submit(StageExecutorRequest request) {
     StageExecutorResult result =
-        RetryTask.DEFAULT_FIXED.execute(r -> getCmdRunner().execute(getSubmitCmd(request)));
+        RetryTask.DEFAULT.execute(r -> getCmdRunner().execute(getSubmitCmd(request)));
     if (result.isError()) {
       return result;
     }
@@ -161,7 +163,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
     logContext(log.atFine(), request).log("Checking LSF job result using bjobs.");
 
     Optional<StageExecutorResult> result =
-        getSharedContext().describeJobs.getResult(new LsfContextCache.Request(jobId, outFile));
+        getSharedContext().describeJobs.getResult(getDescribeJobsRequest());
     if (result == null || !result.isPresent()) {
       return StageExecutorResult.active();
     }
@@ -215,6 +217,10 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
         .filter(r -> r.jobId != null && r.result != null)
         .forEach(r -> result.put(requestMap.get(r.jobId), r.result));
     return result;
+  }
+
+  private LsfContextCache.Request getDescribeJobsRequest() {
+    return new LsfContextCache.Request(jobId, outFile);
   }
 
   /**
@@ -315,7 +321,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
   }
 
   private StageExecutorResult createWorkDir(StageExecutorRequest request) {
-    return RetryTask.DEFAULT_FIXED.execute(
+    return RetryTask.DEFAULT.execute(
         r -> getCmdRunner().execute(MKDIR_CMD + getWorkDir(request, getExecutorParams())));
   }
 
@@ -350,7 +356,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
     // Check if the stdout file exists. The file may not be immediately available after the job
     // execution finishes.
     StageExecutorResult result =
-        RetryTask.DEFAULT_FIXED.execute(
+        RetryTask.DEFAULT.execute(
             r -> getCmdRunner().execute("sh -c 'test -f " + stdoutFile + "'"));
     return result.isSuccess();
   }
@@ -362,7 +368,7 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
         (executorParams.getLogBytes() > 0)
             ? executorParams.getLogBytes()
             : CmdExecutorParameters.DEFAULT_LOG_BYTES;
-    return RetryTask.DEFAULT_FIXED.execute(
+    return RetryTask.DEFAULT.execute(
         r -> cmdRunner.execute("sh -c 'tail -c " + logBytes + " " + stdoutFile + "'"));
   }
 

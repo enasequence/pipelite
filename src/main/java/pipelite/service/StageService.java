@@ -16,13 +16,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageEntityId;
 import pipelite.entity.StageLogEntity;
 import pipelite.entity.StageLogEntityId;
+import pipelite.executor.context.AwsBatchContextCache;
+import pipelite.executor.context.LsfContextCache;
 import pipelite.repository.StageLogRepository;
 import pipelite.repository.StageRepository;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.StageExecutorContextCache;
 import pipelite.stage.executor.StageExecutorResult;
 
 @Service
@@ -31,11 +35,20 @@ public class StageService {
 
   private final StageRepository repository;
   private final StageLogRepository outRepository;
+  private final StageExecutorContextCache executorContextCache;
 
   public StageService(
-      @Autowired StageRepository repository, @Autowired StageLogRepository outRepository) {
+      @Autowired StageRepository repository,
+      @Autowired StageLogRepository outRepository,
+      @Autowired ServiceConfiguration serviceConfiguration,
+      @Autowired InternalErrorService internalErrorService) {
+
     this.repository = repository;
     this.outRepository = outRepository;
+    this.executorContextCache =
+        new StageExecutorContextCache(
+            new LsfContextCache(serviceConfiguration, internalErrorService),
+            new AwsBatchContextCache(serviceConfiguration, internalErrorService));
   }
 
   /**
@@ -192,5 +205,9 @@ public class StageService {
    */
   public void delete(StageEntity stageEntity) {
     repository.delete(stageEntity);
+  }
+
+  public StageExecutorContextCache getExecutorContextCache() {
+    return executorContextCache;
   }
 }
