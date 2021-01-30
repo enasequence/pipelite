@@ -10,12 +10,11 @@
  */
 package pipelite.service;
 
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.Optional;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,9 +28,17 @@ import pipelite.metrics.PipeliteMetrics;
 import pipelite.repository.ProcessLockRepository;
 import pipelite.repository.ServiceLockRepository;
 
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.Optional;
+
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 @Flogger
+@Retryable(
+    maxAttempts = 10,
+    backoff = @Backoff(delay = 1000 /* 1s */, maxDelay = 600000 /* 10 minutes */, multiplier = 2),
+    exceptionExpression = "#{@retryService.databaseRetryPolicy(#root)}")
 public class LockService {
 
   private final ServiceConfiguration serviceConfiguration;

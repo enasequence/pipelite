@@ -10,9 +10,9 @@
  */
 package pipelite.service;
 
-import java.util.List;
-import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,8 +29,15 @@ import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorContextCache;
 import pipelite.stage.executor.StageExecutorResult;
 
+import java.util.List;
+import java.util.Optional;
+
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
+@Retryable(
+    maxAttempts = 10,
+    backoff = @Backoff(delay = 1000 /* 1s */, maxDelay = 600000 /* 10 minutes */, multiplier = 2),
+    exceptionExpression = "#{@retryService.databaseRetryPolicy(#root)}")
 public class StageService {
 
   private final StageRepository repository;

@@ -11,12 +11,10 @@
 package pipelite.service;
 
 import com.google.common.collect.Lists;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Optional;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,9 +24,18 @@ import pipelite.entity.ScheduleEntity;
 import pipelite.process.ProcessState;
 import pipelite.repository.ScheduleRepository;
 
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Optional;
+
 @Service
 @Flogger
 @Transactional(propagation = Propagation.REQUIRES_NEW)
+@Retryable(
+    maxAttempts = 10,
+    backoff = @Backoff(delay = 1000 /* 1s */, maxDelay = 600000 /* 10 minutes */, multiplier = 2),
+    exceptionExpression = "#{@retryService.databaseRetryPolicy(#root)}")
 public class ScheduleService {
 
   private final ScheduleRepository repository;

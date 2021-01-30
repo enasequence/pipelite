@@ -17,6 +17,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
 import pipelite.configuration.MailConfiguration;
 import pipelite.entity.ProcessEntity;
+import pipelite.executor.task.RetryTask;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.stage.Stage;
@@ -46,7 +47,11 @@ public class MailService {
       message.setSubject(subject);
       String text = getExecutionBody(process, subject);
       message.setText(text);
-      mailSender.send(message);
+      RetryTask.DEFAULT.execute(
+          r -> {
+            mailSender.send(message);
+            return null;
+          });
     }
   }
 
@@ -65,7 +70,11 @@ public class MailService {
       message.setSubject(subject);
       String text = getExecutionBody(process, subject);
       message.setText(text);
-      mailSender.send(message);
+      RetryTask.DEFAULT.execute(
+          r -> {
+            mailSender.send(message);
+            return null;
+          });
     }
   }
 

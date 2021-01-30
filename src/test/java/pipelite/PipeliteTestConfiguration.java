@@ -16,9 +16,11 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
+import org.springframework.retry.annotation.EnableRetry;
 import pipelite.configuration.WebServerCustomizer;
 
 @EnableAutoConfiguration
+@EnableRetry
 @ComponentScan(
     basePackages = {
       "pipelite.service",

@@ -10,12 +10,9 @@
  */
 package pipelite.service;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,8 +20,18 @@ import pipelite.entity.InternalErrorEntity;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.repository.InternalErrorRepository;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
+
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
+@Retryable(
+    maxAttempts = 5,
+    backoff = @Backoff(delay = 1000 /* 1s */, maxDelay = 60000 /* 1 minute */, multiplier = 2),
+    exceptionExpression = "#{@retryService.databaseRetryPolicy(#root)}")
 public class InternalErrorService {
 
   private final InternalErrorRepository repository;

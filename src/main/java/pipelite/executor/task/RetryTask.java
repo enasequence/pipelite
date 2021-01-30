@@ -10,21 +10,16 @@
  */
 package pipelite.executor.task;
 
-import java.time.Duration;
-import org.springframework.classify.Classifier;
-import org.springframework.dao.DataAccessException;
-import org.springframework.dao.RecoverableDataAccessException;
-import org.springframework.dao.TransientDataAccessException;
 import org.springframework.retry.RetryPolicy;
 import org.springframework.retry.backoff.BackOffPolicy;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.backoff.FixedBackOffPolicy;
-import org.springframework.retry.policy.ExceptionClassifierRetryPolicy;
-import org.springframework.retry.policy.NeverRetryPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 
-/** Executes a task with retries using {@link RetryTemplate}. */
+import java.time.Duration;
+
+/** Execute a task with retries using {@link RetryTemplate}. */
 public class RetryTask {
 
   private RetryTask() {}
@@ -35,17 +30,6 @@ public class RetryTask {
    */
   public static final RetryTemplate DEFAULT =
       RetryTask.retryTemplate(fixedBackoffPolicy(Duration.ofSeconds(5)), maxAttemptsRetryPolicy(3));
-
-  /**
-   * The database retry policy makes several attempts with exponentially increasing intervals
-   * between them. The maximum interval is ten minutes. All exceptions will be retried except
-   * {@link DataAccessException}s that are not either {@link TransientDataAccessException} or
-   * {@link RecoverableDataAccessException).
-   */
-  public static final RetryTemplate DATABASE =
-      RetryTask.retryTemplate(
-          expBackoffPolicy(Duration.ofSeconds(1), Duration.ofMinutes(10), 2.0),
-          databaseRetryPolicy(maxAttemptsRetryPolicy(10)));
 
   public static RetryTemplate retryTemplate(BackOffPolicy backOffPolicy, RetryPolicy retryPolicy) {
     RetryTemplate retryTemplate = new RetryTemplate();
@@ -73,27 +57,5 @@ public class RetryTask {
     SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
     retryPolicy.setMaxAttempts(attempts);
     return retryPolicy;
-  }
-
-  public static RetryPolicy databaseRetryPolicy(RetryPolicy retryPolicy) {
-    return new DatabaseRetryPolicy(retryPolicy);
-  }
-
-  public static class DatabaseRetryPolicy extends ExceptionClassifierRetryPolicy {
-    public DatabaseRetryPolicy(RetryPolicy retryPolicy) {
-      this.setExceptionClassifier(
-          (Classifier<Throwable, RetryPolicy>)
-              classifiable -> {
-                if (!(classifiable instanceof DataAccessException)
-                    || classifiable instanceof TransientDataAccessException
-                    || classifiable instanceof RecoverableDataAccessException) {
-                  // Retry
-                  return retryPolicy;
-                }
-
-                // Do not retry
-                return new NeverRetryPolicy();
-              });
-    }
   }
 }
