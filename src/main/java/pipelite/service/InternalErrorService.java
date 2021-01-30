@@ -10,6 +10,11 @@
  */
 package pipelite.service;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
@@ -19,12 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 import pipelite.entity.InternalErrorEntity;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.repository.InternalErrorRepository;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.UUID;
 
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)

@@ -10,6 +10,9 @@
  */
 package pipelite.service;
 
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.Optional;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -27,10 +30,6 @@ import pipelite.log.LogKey;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.repository.ProcessLockRepository;
 import pipelite.repository.ServiceLockRepository;
-
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.Optional;
 
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)

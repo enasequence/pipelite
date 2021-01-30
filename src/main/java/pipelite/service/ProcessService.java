@@ -36,9 +36,9 @@ import pipelite.repository.ProcessRepository;
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 @Retryable(
-        maxAttempts = 10,
-        backoff = @Backoff(delay = 1000 /* 1s */, maxDelay = 600000 /* 10 minutes */, multiplier = 2),
-        exceptionExpression = "#{@retryService.databaseRetryPolicy(#root)}")
+    maxAttempts = 10,
+    backoff = @Backoff(delay = 1000 /* 1s */, maxDelay = 600000 /* 10 minutes */, multiplier = 2),
+    exceptionExpression = "#{@retryService.databaseRetryPolicy(#root)}")
 public class ProcessService {
 
   private final ProcessRepository repository;

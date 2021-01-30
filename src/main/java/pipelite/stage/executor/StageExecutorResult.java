@@ -10,16 +10,15 @@
  */
 package pipelite.stage.executor;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
 import pipelite.json.Json;
 import pipelite.stage.StageState;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.Map;
 
 @Getter
 @Setter

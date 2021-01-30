@@ -10,14 +10,13 @@
  */
 package pipelite.executor.task;
 
+import java.time.Duration;
 import org.springframework.retry.RetryPolicy;
 import org.springframework.retry.backoff.BackOffPolicy;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.backoff.FixedBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
-
-import java.time.Duration;
 
 /** Execute a task with retries using {@link RetryTemplate}. */
 public class RetryTask {

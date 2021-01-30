@@ -10,6 +10,10 @@
  */
 package pipelite.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,29 +23,25 @@ import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import pipelite.PipeliteTestConfiguration;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-@SpringBootTest(
-    classes = PipeliteTestConfiguration.class)
+@SpringBootTest(classes = PipeliteTestConfiguration.class)
 public class RetryServiceTest {
 
   @Configuration
   static class ContextConfiguration {
 
-    @Bean TestService testServiceFiveAttempts() {
+    @Bean
+    TestService testServiceFiveAttempts() {
       return new TestService();
     }
   }
 
   public static class TestService {
     private final AtomicInteger cnt = new AtomicInteger();
+
     @Retryable(
-            maxAttempts = 5,
-            backoff = @Backoff(delay = 1000 /* 1s */, maxDelay = 60000 /* 1 minute */, multiplier = 1),
-            exceptionExpression = "#{@retryService.databaseRetryPolicy(#root)}")
+        maxAttempts = 5,
+        backoff = @Backoff(delay = 1000 /* 1s */, maxDelay = 60000 /* 1 minute */, multiplier = 1),
+        exceptionExpression = "#{@retryService.databaseRetryPolicy(#root)}")
     public void test() {
       cnt.incrementAndGet();
       throw new RuntimeException();
