@@ -10,14 +10,14 @@
  */
 package pipelite.entity;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.executor.CallExecutor;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class StageLogEntityTest {
 
@@ -33,29 +33,15 @@ class StageLogEntityTest {
     // Create execution.
 
     StageEntity stageEntity = StageEntity.createExecution(pipelineName, processId, stage);
-    StageLogEntity stageLogEntity = StageLogEntity.startExecution(stageEntity);
-
-    assertThat(stageLogEntity.getPipelineName()).isEqualTo(pipelineName);
-    assertThat(stageLogEntity.getProcessId()).isEqualTo(processId);
-    assertThat(stageLogEntity.getStageName()).isEqualTo(stageName);
-    assertThat(stageLogEntity.getStageLog()).isNull();
 
     // End execution.
 
     StageExecutorResult result = new StageExecutorResult(StageState.ERROR);
     result.setStageLog("TEST3");
-    stageLogEntity = StageLogEntity.endExecution(stageEntity, result);
+    StageLogEntity stageLogEntity = StageLogEntity.endExecution(stageEntity, result);
     assertThat(stageLogEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(stageLogEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageLogEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageLogEntity.getStageLog()).isEqualTo("TEST3");
-
-    // Reset execution.
-
-    stageLogEntity = StageLogEntity.resetExecution(stageEntity);
-    assertThat(stageLogEntity.getPipelineName()).isEqualTo(pipelineName);
-    assertThat(stageLogEntity.getProcessId()).isEqualTo(processId);
-    assertThat(stageLogEntity.getStageName()).isEqualTo(stageName);
-    assertThat(stageLogEntity.getStageLog()).isNull();
   }
 }

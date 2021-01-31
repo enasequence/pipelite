@@ -10,8 +10,6 @@
  */
 package pipelite.service;
 
-import java.util.List;
-import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
@@ -31,6 +29,9 @@ import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorContextCache;
 import pipelite.stage.executor.StageExecutorResult;
 
+import java.util.List;
+import java.util.Optional;
+
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 @Retryable(
@@ -40,17 +41,17 @@ import pipelite.stage.executor.StageExecutorResult;
 public class StageService {
 
   private final StageRepository repository;
-  private final StageLogRepository outRepository;
+  private final StageLogRepository logRepository;
   private final StageExecutorContextCache executorContextCache;
 
   public StageService(
       @Autowired StageRepository repository,
-      @Autowired StageLogRepository outRepository,
+      @Autowired StageLogRepository logRepository,
       @Autowired ServiceConfiguration serviceConfiguration,
       @Autowired InternalErrorService internalErrorService) {
 
     this.repository = repository;
-    this.outRepository = outRepository;
+    this.logRepository = logRepository;
     this.executorContextCache =
         new StageExecutorContextCache(
             new LsfContextCache(serviceConfiguration, internalErrorService),
@@ -110,7 +111,7 @@ public class StageService {
     StageEntity stageEntity = stage.getStageEntity();
     stageEntity.startExecution(stage);
     saveStage(stageEntity);
-    saveStageLog(StageLogEntity.startExecution(stageEntity));
+    deleteStageLog(logRepository, stageEntity);
   }
 
   /**
@@ -125,7 +126,7 @@ public class StageService {
   }
 
   /**
-   * Called when the stage execution ends. Saves the stage.
+   * Called when the stage execution ends. Saves the stage and stage log.
    *
    * @param stage the stage
    * @param result the stage execution result
@@ -135,16 +136,6 @@ public class StageService {
     StageEntity stageEntity = stage.getStageEntity();
     stageEntity.endExecution(result);
     saveStage(stageEntity);
-  }
-
-  /**
-   * Called when the stage execution ends. Saves the stage log.
-   *
-   * @param stage the stage
-   * @param result the stage execution result
-   */
-  public void endExecutionStageLog(Stage stage, StageExecutorResult result) {
-    StageEntity stageEntity = stage.getStageEntity();
     saveStageLog(StageLogEntity.endExecution(stageEntity, result));
   }
 
@@ -157,18 +148,16 @@ public class StageService {
     StageEntity stageEntity = stage.getStageEntity();
     stageEntity.resetExecution();
     saveStage(stageEntity);
-    saveStageLog(StageLogEntity.resetExecution(stageEntity));
+    deleteStageLog(logRepository, stageEntity);
   }
 
-  /**
-   * Returns the saved stage output.
-   *
-   * @param stageEntity the stage
-   * @return the saved stage output
-   */
-  public Optional<StageLogEntity> getSavedStageLog(StageEntity stageEntity) {
-    return getSavedStageLog(
-        stageEntity.getPipelineName(), stageEntity.getProcessId(), stageEntity.getStageName());
+  public static void deleteStageLog(StageLogRepository logRepository, StageEntity stageEntity) {
+    StageLogEntityId stageLogEntityId =
+        new StageLogEntityId(
+            stageEntity.getProcessId(), stageEntity.getPipelineName(), stageEntity.getStageName());
+    if (logRepository.existsById(stageLogEntityId)) {
+      logRepository.deleteById(stageLogEntityId);
+    }
   }
 
   /**
@@ -181,7 +170,7 @@ public class StageService {
    */
   public Optional<StageLogEntity> getSavedStageLog(
       String pipelineName, String processId, String stageName) {
-    return outRepository.findById(new StageLogEntityId(processId, pipelineName, stageName));
+    return logRepository.findById(new StageLogEntityId(processId, pipelineName, stageName));
   }
 
   /**
@@ -201,7 +190,7 @@ public class StageService {
    * @return the saved stage output
    */
   public StageLogEntity saveStageLog(StageLogEntity stageLogEntity) {
-    return outRepository.save(stageLogEntity);
+    return logRepository.save(stageLogEntity);
   }
 
   /**

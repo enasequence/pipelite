@@ -43,16 +43,6 @@ public class StageLogEntity {
   @Lob
   private String stageLog;
 
-  /** Stage execution starts. */
-  public static StageLogEntity startExecution(StageEntity stageEntity) {
-    StageLogEntity stageLogEntity = new StageLogEntity();
-    stageLogEntity.pipelineName = stageEntity.getPipelineName();
-    stageLogEntity.processId = stageEntity.getProcessId();
-    stageLogEntity.stageName = stageEntity.getStageName();
-    stageLogEntity.stageLog = null;
-    return stageLogEntity;
-  }
-
   /** Stage execution ends. */
   public static StageLogEntity endExecution(StageEntity stageEntity, StageExecutorResult result) {
     StageLogEntity stageLogEntity = new StageLogEntity();
@@ -60,16 +50,6 @@ public class StageLogEntity {
     stageLogEntity.processId = stageEntity.getProcessId();
     stageLogEntity.stageName = stageEntity.getStageName();
     stageLogEntity.stageLog = result.getStageLog();
-    return stageLogEntity;
-  }
-
-  /** Reset stage execution. */
-  public static StageLogEntity resetExecution(StageEntity stageEntity) {
-    StageLogEntity stageLogEntity = new StageLogEntity();
-    stageLogEntity.pipelineName = stageEntity.getPipelineName();
-    stageLogEntity.processId = stageEntity.getProcessId();
-    stageLogEntity.stageName = stageEntity.getStageName();
-    stageLogEntity.stageLog = null;
     return stageLogEntity;
   }
 

@@ -10,7 +10,6 @@
  */
 package pipelite.service;
 
-import java.util.*;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -23,6 +22,8 @@ import pipelite.configuration.ServiceConfiguration;
 import pipelite.cron.CronUtils;
 import pipelite.entity.ScheduleEntity;
 import pipelite.exception.PipeliteException;
+
+import java.util.*;
 
 @Service
 @Lazy
@@ -120,7 +121,7 @@ public class RegisteredPipelineService {
 
                 if (isServiceNameChanged && !serviceConfiguration.isForce()) {
                   throw new PipeliteException(
-                      "Forceful startup not requested. Service name changed for pipeline schedule: "
+                      "Forceful startup not requested. Service name changed for pipeline schedule "
                           + pipelineName
                           + " from "
                           + registeredServiceName
@@ -128,7 +129,7 @@ public class RegisteredPipelineService {
                           + serviceName);
                 } else {
                   log.atWarning().log(
-                      "Forceful startup requested. Changing service name for pipeline schedule: "
+                      "Forceful startup requested. Changing service name for pipeline schedule "
                           + pipelineName
                           + " from "
                           + registeredServiceName

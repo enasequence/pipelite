@@ -154,7 +154,6 @@ public class DefaultProcessRunner implements ProcessRunner {
             }
             StageExecutorResult stageExecutorResult = stageLauncher.run();
             stageService.endExecution(stage, stageExecutorResult);
-            stageService.endExecutionStageLog(stage, stageExecutorResult);
             if (stageExecutorResult.isSuccess()) {
               resetDependentStageExecution(process, stage);
               result.incrementStageSuccess();
@@ -169,7 +168,6 @@ public class DefaultProcessRunner implements ProcessRunner {
             // Catching exceptions here to allow other stages to continue execution.
             StageExecutorResult exceptionResult = StageExecutorResult.internalError(ex);
             stageService.endExecution(stage, exceptionResult);
-            stageService.endExecutionStageLog(stage, exceptionResult);
             mailService.sendStageExecutionMessage(process, stage);
             result.incrementStageFailed();
             internalErrorService.saveInternalError(serviceName, pipelineName, this.getClass(), ex);
