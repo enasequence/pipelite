@@ -10,14 +10,14 @@
  */
 package pipelite.entity;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.executor.CallExecutor;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class StageLogEntityTest {
 

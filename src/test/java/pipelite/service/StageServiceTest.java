@@ -10,6 +10,10 @@
  */
 package pipelite.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.Duration;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,11 +29,6 @@ import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
-
-import java.time.Duration;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @Transactional
@@ -213,8 +212,7 @@ class StageServiceTest {
     assertThat(service.getSavedStage(pipelineName, processId, stageName).get())
         .isEqualTo(stageEntity);
 
-    stageLogEntity =
-            service.getSavedStageLog(pipelineName, processId, stageName);
+    stageLogEntity = service.getSavedStageLog(pipelineName, processId, stageName);
     assertThat(stageLogEntity).isPresent();
 
     // Reset execution.
