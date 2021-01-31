@@ -11,7 +11,7 @@
 package pipelite.launcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.spy;
 import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
 
 import java.time.Duration;
@@ -64,6 +64,7 @@ public class PipeliteSchedulerTest {
   @Autowired private AdvancedConfiguration advancedConfiguration;
   @Autowired private ExecutorConfiguration executorConfiguration;
   @Autowired private InternalErrorService internalErrorService;
+  @Autowired private HealthCheckService healthCheckService;
   @Autowired private RegisteredPipelineService registeredPipelineService;
   @Autowired private ScheduleService scheduleService;
   @Autowired private ProcessService processService;
@@ -138,7 +139,8 @@ public class PipeliteSchedulerTest {
         mailService,
         pipeliteLockerService,
         registeredPipelineService,
-        internalErrorService);
+        internalErrorService,
+        healthCheckService);
   }
 
   private PipeliteScheduler createPipeliteScheduler() {

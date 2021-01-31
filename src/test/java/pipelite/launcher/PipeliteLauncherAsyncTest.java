@@ -57,6 +57,7 @@ public class PipeliteLauncherAsyncTest {
   @Autowired private AdvancedConfiguration advancedConfiguration;
   @Autowired private ExecutorConfiguration executorConfiguration;
   @Autowired private InternalErrorService internalErrorService;
+  @Autowired private HealthCheckService healthCheckService;
   @Autowired private RegisteredPipelineService registeredPipelineService;
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
@@ -107,7 +108,8 @@ public class PipeliteLauncherAsyncTest {
         mailService,
         pipeliteLockerService,
         registeredPipelineService,
-        internalErrorService);
+        internalErrorService,
+        healthCheckService);
   }
 
   private PipeliteLauncher createPipeliteLauncher(String pipelineName) {

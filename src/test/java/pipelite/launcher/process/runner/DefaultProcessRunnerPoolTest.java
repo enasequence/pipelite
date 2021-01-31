@@ -74,7 +74,8 @@ public class DefaultProcessRunnerPoolTest {
             mock(MailService.class),
             locker,
             mock(RegisteredPipelineService.class),
-            internalErrorService);
+            internalErrorService,
+            mock(HealthCheckService.class));
     return new DefaultProcessRunnerPool(
         pipeliteConfiguration, pipeliteServices, processRunnerSupplier);
   }

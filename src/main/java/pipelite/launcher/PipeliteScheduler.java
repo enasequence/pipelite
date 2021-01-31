@@ -28,6 +28,7 @@ import pipelite.launcher.process.runner.ProcessRunnerPoolService;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
+import pipelite.service.HealthCheckService;
 import pipelite.service.InternalErrorService;
 import pipelite.service.ProcessService;
 import pipelite.service.ScheduleService;
@@ -42,6 +43,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   private final ScheduleService scheduleService;
   private final ProcessService processService;
   private final InternalErrorService internalErrorService;
+  private final HealthCheckService healthCheckService;
   private final ScheduleCache scheduleCache;
   private final List<PipeliteSchedulerSchedule> schedules =
       Collections.synchronizedList(new ArrayList<>());
@@ -58,6 +60,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     this.scheduleService = pipeliteServices.schedule();
     this.processService = pipeliteServices.process();
     this.internalErrorService = pipeliteServices.internalError();
+    this.healthCheckService = pipeliteServices.healthCheckService();
     this.scheduleCache = new ScheduleCache(pipeliteServices.registeredPipeline());
     this.serviceName = pipeliteConfiguration.service().getName();
   }
@@ -81,6 +84,10 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
 
   protected void executeSchedules() {
     try {
+      if (!healthCheckService.databaseHealthy()) {
+        log.atSevere().log("Waiting database to be healthy to start new schedules");
+        return;
+      }
       getExecutableSchedules()
           .forEach(
               s -> {

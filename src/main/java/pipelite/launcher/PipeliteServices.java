@@ -16,81 +16,90 @@ import pipelite.service.*;
 
 public class PipeliteServices {
 
-  private final ScheduleService schedule;
-  private final ProcessService process;
-  private final StageService stage;
-  private final MailService mail;
-  private final PipeliteLocker locker;
-  private final RegisteredPipelineService registeredPipeline;
-  private final InternalErrorService internalError;
+  private final ScheduleService scheduleService;
+  private final ProcessService processService;
+  private final StageService stageService;
+  private final MailService mailService;
+  private final PipeliteLocker lockerService;
+  private final RegisteredPipelineService registeredPipelineService;
+  private final InternalErrorService internalErrorService;
+  private final HealthCheckService healthCheckService;
 
   public PipeliteServices(
-      ScheduleService schedule,
-      ProcessService process,
-      StageService stage,
-      MailService mail,
-      PipeliteLocker locker,
-      RegisteredPipelineService registeredPipeline,
-      InternalErrorService internalError) {
-    Assert.notNull(schedule, "Missing schedule service");
-    Assert.notNull(process, "Missing process service");
-    Assert.notNull(stage, "Missing stage service");
-    Assert.notNull(mail, "Missing mail service");
-    Assert.notNull(locker, "Missing locker service");
-    Assert.notNull(registeredPipeline, "Missing registered pipeline service");
-    Assert.notNull(internalError, "Missing internal error service");
-    this.schedule = schedule;
-    this.process = process;
-    this.stage = stage;
-    this.mail = mail;
-    this.locker = locker;
-    this.registeredPipeline = registeredPipeline;
-    this.internalError = internalError;
+      ScheduleService scheduleService,
+      ProcessService processService,
+      StageService stageService,
+      MailService mailService,
+      PipeliteLocker lockerService,
+      RegisteredPipelineService registeredPipelineService,
+      InternalErrorService internalErrorService,
+      HealthCheckService healthCheckService) {
+    Assert.notNull(scheduleService, "Missing schedule service");
+    Assert.notNull(processService, "Missing process service");
+    Assert.notNull(stageService, "Missing stage service");
+    Assert.notNull(mailService, "Missing mail service");
+    Assert.notNull(lockerService, "Missing locker service");
+    Assert.notNull(registeredPipelineService, "Missing registered pipeline service");
+    Assert.notNull(healthCheckService, "Missing health check service");
+    this.scheduleService = scheduleService;
+    this.processService = processService;
+    this.stageService = stageService;
+    this.mailService = mailService;
+    this.lockerService = lockerService;
+    this.registeredPipelineService = registeredPipelineService;
+    this.internalErrorService = internalErrorService;
+    this.healthCheckService = healthCheckService;
   }
 
   public PipeliteServices(
-      ScheduleService schedule,
-      ProcessService process,
-      StageService stage,
-      MailService mail,
-      PipeliteLockerService locker,
-      RegisteredPipelineService registeredPipeline,
-      InternalErrorService internalError) {
+      ScheduleService scheduleService,
+      ProcessService processService,
+      StageService stageService,
+      MailService mailService,
+      PipeliteLockerService lockerService,
+      RegisteredPipelineService registeredPipelineService,
+      InternalErrorService internalErrorService,
+      HealthCheckService healthCheck) {
     this(
-        schedule,
-        process,
-        stage,
-        mail,
-        locker.getPipeliteLocker(),
-        registeredPipeline,
-        internalError);
+        scheduleService,
+        processService,
+        stageService,
+        mailService,
+        lockerService.getPipeliteLocker(),
+        registeredPipelineService,
+        internalErrorService,
+        healthCheck);
   }
 
   public ScheduleService schedule() {
-    return schedule;
+    return scheduleService;
   }
 
   public ProcessService process() {
-    return process;
+    return processService;
   }
 
   public StageService stage() {
-    return stage;
+    return stageService;
   }
 
   public MailService mail() {
-    return mail;
+    return mailService;
   }
 
   public PipeliteLocker locker() {
-    return locker;
+    return lockerService;
   }
 
   public RegisteredPipelineService registeredPipeline() {
-    return registeredPipeline;
+    return registeredPipelineService;
   }
 
   public InternalErrorService internalError() {
-    return internalError;
+    return internalErrorService;
+  }
+
+  public HealthCheckService healthCheckService() {
+    return healthCheckService;
   }
 }

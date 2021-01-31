@@ -21,6 +21,7 @@ import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
+import pipelite.service.HealthCheckService;
 import pipelite.service.InternalErrorService;
 
 /**
@@ -31,6 +32,7 @@ import pipelite.service.InternalErrorService;
 public class PipeliteLauncher extends ProcessRunnerPoolService {
 
   private final InternalErrorService internalErrorService;
+  private final HealthCheckService healthCheckService;
   private final String pipelineName;
   private final Pipeline pipeline;
   private final PrioritizedProcessCreator prioritizedProcessCreator;
@@ -54,6 +56,7 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
     Assert.notNull(prioritizedProcessCreator, "Missing process creator");
     Assert.notNull(processQueue, "Missing process queue");
     this.internalErrorService = pipeliteServices.internalError();
+    this.healthCheckService = pipeliteServices.healthCheckService();
     this.pipeline = pipeline;
     this.prioritizedProcessCreator = prioritizedProcessCreator;
     this.processQueue = processQueue;
@@ -77,6 +80,12 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
   @Override
   protected void run() {
     try {
+      if (!healthCheckService.databaseHealthy()) {
+        log.atSevere().log(
+            "Waiting database to be healthy to start new pipelines: " + pipelineName);
+        return;
+      }
+
       if (processQueue.isFillQueue()) {
         prioritizedProcessCreator.createProcesses(processCreateMaxSize);
         processQueue.fillQueue();

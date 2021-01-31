@@ -41,6 +41,7 @@ public class Application {
   @Autowired private AdvancedConfiguration advancedConfiguration;
   @Autowired private ExecutorConfiguration executorConfiguration;
   @Autowired private InternalErrorService internalErrorService;
+  @Autowired private HealthCheckService healthCheckService;
   @Autowired private RegisteredPipelineService registeredPipelineService;
   @Autowired private PipeliteLockerService pipeliteLockerService;
   @Autowired private ScheduleService scheduleService;
@@ -122,7 +123,8 @@ public class Application {
               mailService,
               pipeliteLockerService,
               registeredPipelineService,
-              internalErrorService);
+              internalErrorService,
+              healthCheckService);
 
       for (String pipelineName : registeredPipelineService.getPipelineNames()) {
         PipeliteLauncher launcher =
