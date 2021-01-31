@@ -10,13 +10,9 @@
  */
 package pipelite.launcher;
 
-import pipelite.configuration.AdvancedConfiguration;
-import pipelite.configuration.ExecutorConfiguration;
-import pipelite.configuration.ServiceConfiguration;
 import pipelite.launcher.process.runner.DefaultProcessRunner;
 import pipelite.launcher.process.runner.DefaultProcessRunnerPool;
 import pipelite.lock.PipeliteLocker;
-import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.*;
 
 public class DefaultPipeliteScheduler {
@@ -24,40 +20,32 @@ public class DefaultPipeliteScheduler {
   private DefaultPipeliteScheduler() {}
 
   public static PipeliteScheduler create(
-      ServiceConfiguration serviceConfiguration,
-      AdvancedConfiguration advancedConfiguration,
-      ExecutorConfiguration executorConfiguration,
+      PipeliteConfiguration pipeliteConfiguration,
       PipeliteLocker pipeliteLocker,
       InternalErrorService internalErrorService,
       RegisteredPipelineService registeredPipelineService,
       ProcessService processService,
       ScheduleService scheduleService,
       StageService stageService,
-      MailService mailService,
-      PipeliteMetrics metrics) {
+      MailService mailService) {
 
     return new PipeliteScheduler(
-        serviceConfiguration,
-        advancedConfiguration,
+        pipeliteConfiguration,
         internalErrorService,
         registeredPipelineService,
         scheduleService,
         processService,
         new DefaultProcessRunnerPool(
-            serviceConfiguration,
+            pipeliteConfiguration,
             internalErrorService,
             pipeliteLocker,
             (pipelineName) ->
                 new DefaultProcessRunner(
-                    serviceConfiguration,
-                    advancedConfiguration,
-                    executorConfiguration,
+                    pipeliteConfiguration,
                     internalErrorService,
                     processService,
                     stageService,
                     mailService,
-                    pipelineName),
-            metrics),
-        metrics);
+                    pipelineName)));
   }
 }

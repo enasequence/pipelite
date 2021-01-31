@@ -23,7 +23,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
-import pipelite.configuration.ServiceConfiguration;
+import pipelite.launcher.PipeliteConfiguration;
 import pipelite.launcher.PipeliteServiceManager;
 import pipelite.lock.PipeliteLocker;
 import pipelite.log.LogKey;
@@ -50,21 +50,21 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
   private final Set<ActiveProcessRunner> active = ConcurrentHashMap.newKeySet();
 
   public DefaultProcessRunnerPool(
-      ServiceConfiguration serviceConfiguration,
+      PipeliteConfiguration pipeliteConfiguration,
       InternalErrorService internalErrorService,
       PipeliteLocker pipeliteLocker,
-      Function<String, ProcessRunner> processRunnerSupplier,
-      PipeliteMetrics metrics) {
-    Assert.notNull(serviceConfiguration, "Missing service configuration");
+      Function<String, ProcessRunner> processRunnerSupplier) {
+    Assert.notNull(pipeliteConfiguration, "Missing configuration");
+    Assert.notNull(pipeliteConfiguration.service(), "Missing service configuration");
+    Assert.notNull(pipeliteConfiguration.metrics(), "Missing metrics");
     Assert.notNull(pipeliteLocker, "Missing pipelite locker");
     Assert.notNull(internalErrorService, "Missing internal error service");
     Assert.notNull(processRunnerSupplier, "Missing process runner supplier");
-    Assert.notNull(metrics, "Missing pipelite metrics");
-    this.serviceName = serviceConfiguration.getName();
+    this.serviceName = pipeliteConfiguration.service().getName();
     this.internalErrorService = internalErrorService;
     this.pipeliteLocker = pipeliteLocker;
     this.processRunnerSupplier = processRunnerSupplier;
-    this.metrics = metrics;
+    this.metrics = pipeliteConfiguration.metrics();
   }
 
   /**

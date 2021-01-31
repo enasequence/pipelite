@@ -14,14 +14,11 @@ import java.time.ZonedDateTime;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.Pipeline;
-import pipelite.configuration.AdvancedConfiguration;
-import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.launcher.process.creator.PrioritizedProcessCreator;
 import pipelite.launcher.process.queue.ProcessQueue;
 import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
-import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.service.InternalErrorService;
@@ -44,17 +41,16 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
   private final String serviceName;
 
   public PipeliteLauncher(
-      ServiceConfiguration serviceConfiguration,
-      AdvancedConfiguration advancedConfiguration,
+      PipeliteConfiguration pipeliteConfiguration,
       InternalErrorService internalErrorService,
       Pipeline pipeline,
       PrioritizedProcessCreator prioritizedProcessCreator,
       ProcessQueue processQueue,
-      ProcessRunnerPool pool,
-      PipeliteMetrics metrics) {
-    super(advancedConfiguration, pool, metrics);
-    Assert.notNull(serviceConfiguration, "Missing service configuration");
-    Assert.notNull(advancedConfiguration, "Missing advanced configuration");
+      ProcessRunnerPool pool) {
+    super(pipeliteConfiguration, pool);
+    Assert.notNull(pipeliteConfiguration, "Missing configuration");
+    Assert.notNull(pipeliteConfiguration.service(), "Missing service configuration");
+    Assert.notNull(pipeliteConfiguration.advanced(), "Missing advanced configuration");
     Assert.notNull(internalErrorService, "Missing internal error service");
     Assert.notNull(pipeline, "Missing pipeline");
     Assert.notNull(prioritizedProcessCreator, "Missing process creator");
@@ -64,10 +60,10 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
     this.prioritizedProcessCreator = prioritizedProcessCreator;
     this.processQueue = processQueue;
     this.pipelineName = processQueue.getPipelineName();
-    this.processCreateMaxSize = advancedConfiguration.getProcessCreateMaxSize();
-    this.shutdownIfIdle = advancedConfiguration.isShutdownIfIdle();
+    this.processCreateMaxSize = pipeliteConfiguration.advanced().getProcessCreateMaxSize();
+    this.shutdownIfIdle = pipeliteConfiguration.advanced().isShutdownIfIdle();
     this.startTime = ZonedDateTime.now();
-    this.serviceName = serviceConfiguration.getName();
+    this.serviceName = pipeliteConfiguration.service().getName();
   }
 
   @Override

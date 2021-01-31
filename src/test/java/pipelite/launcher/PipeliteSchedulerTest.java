@@ -135,18 +135,18 @@ public class PipeliteSchedulerTest {
   }
 
   private PipeliteScheduler createPipeliteScheduler() {
+    PipeliteConfiguration pipeliteConfiguration =
+        new PipeliteConfiguration(
+            serviceConfiguration, advancedConfiguration, executorConfiguration, metrics);
     return DefaultPipeliteScheduler.create(
-        serviceConfiguration,
-        advancedConfiguration,
-        executorConfiguration,
+        pipeliteConfiguration,
         pipeliteLockerService.getPipeliteLocker(),
         internalErrorService,
         registeredPipelineService,
         processService,
         scheduleService,
         stageService,
-        mailService,
-        metrics);
+        mailService);
   }
 
   @Value
@@ -441,17 +441,19 @@ public class PipeliteSchedulerTest {
 
     PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
 
+    PipeliteConfiguration pipeliteConfiguration =
+        new PipeliteConfiguration(
+            serviceConfiguration, advancedConfiguration, executorConfiguration, metrics);
+
     PipeliteScheduler pipeliteScheduler =
         spy(
             new PipeliteScheduler(
-                serviceConfiguration,
-                advancedConfiguration,
+                pipeliteConfiguration,
                 internalErrorService,
                 registeredPipelineService,
                 scheduleService,
                 processService,
-                processRunnerPool,
-                metrics));
+                processRunnerPool));
 
     int maxExecution1 = 1;
     pipeliteScheduler.setMaximumExecutions(pipelineName1, maxExecution1);
@@ -500,20 +502,21 @@ public class PipeliteSchedulerTest {
 
     PipeliteLocker pipeliteLocker = mock(PipeliteLocker.class);
 
+    PipeliteConfiguration pipeliteConfiguration =
+        new PipeliteConfiguration(
+            serviceConfiguration, advancedConfiguration, executorConfiguration, metrics);
+
     PipeliteScheduler pipeliteScheduler =
         spy(
             DefaultPipeliteScheduler.create(
-                serviceConfiguration,
-                advancedConfiguration,
-                executorConfiguration,
+                pipeliteConfiguration,
                 pipeliteLocker,
                 internalErrorService,
                 registeredPipelineService,
                 processService,
                 scheduleService,
                 stageService,
-                mailService,
-                metrics));
+                mailService));
 
     pipeliteScheduler.setMaximumExecutions(resume1.pipelineName(), maxExecution1);
     pipeliteScheduler.setMaximumExecutions(resume2.pipelineName(), maxExecution2);

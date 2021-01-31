@@ -99,17 +99,18 @@ public class PipeliteLauncherAsyncTest {
   }
 
   private PipeliteLauncher createPipeliteLauncher(String pipelineName) {
+    PipeliteConfiguration pipeliteConfiguration =
+        new PipeliteConfiguration(
+            serviceConfiguration, advancedConfiguration, executorConfiguration, metrics);
+
     return DefaultPipeliteLauncher.create(
-        serviceConfiguration,
-        advancedConfiguration,
-        executorConfiguration,
+        pipeliteConfiguration,
         pipeliteLockerService.getPipeliteLocker(),
         internalErrorService,
         registeredPipelineService,
         processService,
         stageService,
         mailService,
-        metrics,
         pipelineName);
   }
 

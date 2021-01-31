@@ -20,15 +20,12 @@ import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.Pipeline;
 import pipelite.Schedule;
-import pipelite.configuration.AdvancedConfiguration;
-import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.exception.PipeliteException;
 import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
 import pipelite.log.LogKey;
-import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.service.InternalErrorService;
@@ -53,17 +50,16 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   private final String serviceName;
 
   public PipeliteScheduler(
-      ServiceConfiguration serviceConfiguration,
-      AdvancedConfiguration advancedConfiguration,
+      PipeliteConfiguration pipeliteConfiguration,
       InternalErrorService internalErrorService,
       RegisteredPipelineService registeredPipelineService,
       ScheduleService scheduleService,
       ProcessService processService,
-      ProcessRunnerPool processRunnerPool,
-      PipeliteMetrics metrics) {
-    super(advancedConfiguration, processRunnerPool, metrics);
+      ProcessRunnerPool processRunnerPool) {
+    super(pipeliteConfiguration, processRunnerPool);
+    Assert.notNull(pipeliteConfiguration, "Missing configuration");
+    Assert.notNull(pipeliteConfiguration.service(), "Missing service configuration");
     Assert.notNull(internalErrorService, "Missing internal error service");
-    Assert.notNull(advancedConfiguration, "Missing advanced configuration");
     Assert.notNull(registeredPipelineService, "Missing pipeline service");
     Assert.notNull(scheduleService, "Missing schedule service");
     Assert.notNull(processService, "Missing process service");
@@ -71,7 +67,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     this.scheduleCache = new ScheduleCache(registeredPipelineService);
     this.scheduleService = scheduleService;
     this.processService = processService;
-    this.serviceName = serviceConfiguration.getName();
+    this.serviceName = pipeliteConfiguration.service().getName();
   }
 
   @Override

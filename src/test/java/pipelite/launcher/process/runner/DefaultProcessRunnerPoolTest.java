@@ -19,8 +19,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import pipelite.PipeliteMetricsTestFactory;
+import pipelite.configuration.AdvancedConfiguration;
+import pipelite.configuration.ExecutorConfiguration;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.ProcessEntity;
+import pipelite.launcher.PipeliteConfiguration;
 import pipelite.lock.PipeliteLocker;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
@@ -53,20 +56,25 @@ public class DefaultProcessRunnerPoolTest {
 
   @Test
   public void testSuccess() {
-    ServiceConfiguration serviceConfiguration = mock(ServiceConfiguration.class);
     InternalErrorService internalErrorService = mock(InternalErrorService.class);
     PipeliteLocker locker = mock(PipeliteLocker.class);
     when(locker.lockProcess(any(), any())).thenReturn(true);
 
     PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
 
+    PipeliteConfiguration pipeliteConfiguration =
+        new PipeliteConfiguration(
+            mock(ServiceConfiguration.class),
+            mock(AdvancedConfiguration.class),
+            mock(ExecutorConfiguration.class),
+            metrics);
+
     DefaultProcessRunnerPool pool =
         new DefaultProcessRunnerPool(
-            serviceConfiguration,
+            pipeliteConfiguration,
             internalErrorService,
             locker,
-            processRunnerSupplier(ProcessState.COMPLETED),
-            metrics);
+            processRunnerSupplier(ProcessState.COMPLETED));
 
     AtomicInteger runProcessCount = new AtomicInteger();
 
@@ -118,13 +126,19 @@ public class DefaultProcessRunnerPoolTest {
 
     PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
 
+    PipeliteConfiguration pipeliteConfiguration =
+        new PipeliteConfiguration(
+            mock(ServiceConfiguration.class),
+            mock(AdvancedConfiguration.class),
+            mock(ExecutorConfiguration.class),
+            metrics);
+
     DefaultProcessRunnerPool pool =
         new DefaultProcessRunnerPool(
-            serviceConfiguration,
+            pipeliteConfiguration,
             internalErrorService,
             locker,
-            processRunnerSupplier(ProcessState.FAILED),
-            metrics);
+            processRunnerSupplier(ProcessState.FAILED));
 
     AtomicInteger runProcessCount = new AtomicInteger();
 
@@ -174,17 +188,23 @@ public class DefaultProcessRunnerPoolTest {
     PipeliteLocker locker = mock(PipeliteLocker.class);
     when(locker.lockProcess(any(), any())).thenReturn(true);
 
+    PipeliteConfiguration pipeliteConfiguration =
+        new PipeliteConfiguration(
+            mock(ServiceConfiguration.class),
+            mock(AdvancedConfiguration.class),
+            mock(ExecutorConfiguration.class),
+            metrics);
+
     DefaultProcessRunnerPool pool =
         new DefaultProcessRunnerPool(
-            serviceConfiguration,
+            pipeliteConfiguration,
             internalErrorService,
             locker,
             (pipelineName) -> {
               ProcessRunner processRunner = mock(ProcessRunner.class);
               doThrow(new RuntimeException()).when(processRunner).runProcess(any());
               return processRunner;
-            },
-            metrics);
+            });
 
     AtomicInteger runProcessCount = new AtomicInteger();
 

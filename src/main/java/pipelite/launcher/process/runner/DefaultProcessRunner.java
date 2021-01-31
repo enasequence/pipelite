@@ -23,11 +23,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
-import pipelite.configuration.AdvancedConfiguration;
 import pipelite.configuration.ExecutorConfiguration;
-import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.StageEntity;
 import pipelite.exception.PipeliteException;
+import pipelite.launcher.PipeliteConfiguration;
 import pipelite.launcher.StageLauncher;
 import pipelite.launcher.dependency.DependencyResolver;
 import pipelite.log.LogKey;
@@ -62,30 +61,29 @@ public class DefaultProcessRunner implements ProcessRunner {
   private ZonedDateTime startTime;
 
   public DefaultProcessRunner(
-      ServiceConfiguration serviceConfiguration,
-      AdvancedConfiguration advancedConfiguration,
-      ExecutorConfiguration executorConfiguration,
+      PipeliteConfiguration pipeliteConfiguration,
       InternalErrorService internalErrorService,
       ProcessService processService,
       StageService stageService,
       MailService mailService,
       String pipelineName) {
-    Assert.notNull(serviceConfiguration, "Missing service configuration");
-    Assert.notNull(advancedConfiguration, "Missing advanced configuration");
-    Assert.notNull(executorConfiguration, "Missing stage configuration");
+    Assert.notNull(pipeliteConfiguration, "Missing configuration");
+    Assert.notNull(pipeliteConfiguration.service(), "Missing service configuration");
+    Assert.notNull(pipeliteConfiguration.advanced(), "Missing advanced configuration");
+    Assert.notNull(pipeliteConfiguration.executor(), "Missing executor configuration");
     Assert.notNull(internalErrorService, "Missing internal error service");
     Assert.notNull(processService, "Missing process service");
     Assert.notNull(stageService, "Missing stage service");
     Assert.notNull(mailService, "Missing mail service");
     Assert.notNull(pipelineName, "Missing pipeline name");
-    this.serviceName = serviceConfiguration.getName();
-    this.executorConfiguration = executorConfiguration;
+    this.serviceName = pipeliteConfiguration.service().getName();
+    this.executorConfiguration = pipeliteConfiguration.executor();
     this.internalErrorService = internalErrorService;
     this.processService = processService;
     this.stageService = stageService;
     this.mailService = mailService;
     this.pipelineName = pipelineName;
-    this.processRunnerFrequency = advancedConfiguration.getProcessRunnerFrequency();
+    this.processRunnerFrequency = pipeliteConfiguration.advanced().getProcessRunnerFrequency();
   }
 
   /**

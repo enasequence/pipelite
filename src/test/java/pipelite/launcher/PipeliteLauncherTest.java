@@ -71,7 +71,6 @@ public class PipeliteLauncherTest {
   @Autowired private StageService stageService;
   @Autowired private PipeliteLockerService pipeliteLockerService;
   @Autowired private MailService mailService;
-  @Autowired private PipeliteMetrics pipelineMetrics;
   @Autowired private PipeliteMetrics metrics;
 
   @Autowired
@@ -112,17 +111,18 @@ public class PipeliteLauncherTest {
   }
 
   private PipeliteLauncher createPipeliteLauncher(String pipelineName) {
+    PipeliteConfiguration pipeliteConfiguration =
+        new PipeliteConfiguration(
+            serviceConfiguration, advancedConfiguration, executorConfiguration, metrics);
+
     return DefaultPipeliteLauncher.create(
-        serviceConfiguration,
-        advancedConfiguration,
-        executorConfiguration,
+        pipeliteConfiguration,
         pipeliteLockerService.getPipeliteLocker(),
         internalErrorService,
         registeredPipelineService,
         processService,
         stageService,
         mailService,
-        pipelineMetrics,
         pipelineName);
   }
 
@@ -348,17 +348,19 @@ public class PipeliteLauncherTest {
 
     PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
 
+    PipeliteConfiguration pipeliteConfiguration =
+        new PipeliteConfiguration(
+            serviceConfiguration, advancedConfiguration, executorConfiguration, metrics);
+
     PipeliteLauncher launcher =
         spy(
             new PipeliteLauncher(
-                serviceConfiguration,
-                advancedConfiguration,
+                pipeliteConfiguration,
                 internalErrorService,
                 pipeline,
                 mock(PrioritizedProcessCreator.class),
                 queue,
-                pool,
-                metrics));
+                pool));
 
     launcher.startUp();
     launcher.run();
@@ -397,17 +399,19 @@ public class PipeliteLauncherTest {
     ProcessRunnerPool pool = mock(ProcessRunnerPool.class);
     PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
 
+    PipeliteConfiguration pipeliteConfiguration =
+        new PipeliteConfiguration(
+            serviceConfiguration, advancedConfiguration, executorConfiguration, metrics);
+
     PipeliteLauncher launcher =
         spy(
             new PipeliteLauncher(
-                serviceConfiguration,
-                advancedConfiguration,
+                pipeliteConfiguration,
                 internalErrorService,
                 mock(Pipeline.class),
                 mock(PrioritizedProcessCreator.class),
                 queue,
-                pool,
-                metrics));
+                pool));
 
     launcher.startUp();
     launcher.run();
@@ -446,17 +450,19 @@ public class PipeliteLauncherTest {
 
     PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
 
+    PipeliteConfiguration pipeliteConfiguration =
+        new PipeliteConfiguration(
+            serviceConfiguration, advancedConfiguration, executorConfiguration, metrics);
+
     PipeliteLauncher launcher =
         spy(
             new PipeliteLauncher(
-                serviceConfiguration,
-                advancedConfiguration,
+                pipeliteConfiguration,
                 internalErrorService,
                 mock(Pipeline.class),
                 prioritizedProcessCreator,
                 queue,
-                mock(DefaultProcessRunnerPool.class),
-                metrics));
+                mock(DefaultProcessRunnerPool.class)));
 
     launcher.startUp();
     launcher.run();

@@ -107,14 +107,19 @@ public class Application {
     try {
       log.atInfo().log("Starting pipelite services");
       // Create launchers for unscheduled pipelines.
+
+      PipeliteConfiguration pipeliteConfiguration =
+          new PipeliteConfiguration(
+              serviceConfiguration, advancedConfiguration, executorConfiguration, metrics);
+
       for (String pipelineName : registeredPipelineService.getPipelineNames()) {
-        PipeliteLauncher launcher = createLauncher(pipelineName);
+        PipeliteLauncher launcher = createLauncher(pipeliteConfiguration, pipelineName);
         launchers.add(launcher);
         serverManager.addService(launcher);
       }
       // Create scheduler for scheduled pipelines.
       if (registeredPipelineService.isScheduler()) {
-        PipeliteScheduler scheduler = createScheduler();
+        PipeliteScheduler scheduler = createScheduler(pipeliteConfiguration);
         schedulers.add(scheduler);
         serverManager.addService(scheduler);
       }
@@ -128,33 +133,28 @@ public class Application {
     }
   }
 
-  private PipeliteScheduler createScheduler() {
+  private PipeliteScheduler createScheduler(PipeliteConfiguration pipeliteConfiguration) {
     return DefaultPipeliteScheduler.create(
-        serviceConfiguration,
-        advancedConfiguration,
-        executorConfiguration,
+        pipeliteConfiguration,
         pipeliteLockerService.getPipeliteLocker(),
         internalErrorService,
         registeredPipelineService,
         processService,
         scheduleService,
         stageService,
-        mailService,
-        metrics);
+        mailService);
   }
 
-  private PipeliteLauncher createLauncher(String pipelineName) {
+  private PipeliteLauncher createLauncher(
+      PipeliteConfiguration pipeliteConfiguration, String pipelineName) {
     return DefaultPipeliteLauncher.create(
-        serviceConfiguration,
-        advancedConfiguration,
-        executorConfiguration,
+        pipeliteConfiguration,
         pipeliteLockerService.getPipeliteLocker(),
         internalErrorService,
         registeredPipelineService,
         processService,
         stageService,
         mailService,
-        metrics,
         pipelineName);
   }
 

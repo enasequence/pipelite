@@ -14,7 +14,7 @@ import java.time.Duration;
 import java.util.List;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
-import pipelite.configuration.AdvancedConfiguration;
+import pipelite.launcher.PipeliteConfiguration;
 import pipelite.launcher.PipeliteService;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
@@ -30,15 +30,14 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
   private boolean shutdown;
 
   public ProcessRunnerPoolService(
-      AdvancedConfiguration advancedConfiguration,
-      ProcessRunnerPool pool,
-      PipeliteMetrics metrics) {
-    Assert.notNull(advancedConfiguration, "Missing advanced configuration");
+      PipeliteConfiguration pipeliteConfiguration, ProcessRunnerPool pool) {
+    Assert.notNull(pipeliteConfiguration, "Missing configuration");
+    Assert.notNull(pipeliteConfiguration.advanced(), "Missing advanced configuration");
+    Assert.notNull(pipeliteConfiguration.metrics(), "Missing metrics");
     Assert.notNull(pool, "Missing process runner pool");
-    Assert.notNull(metrics, "Missing metrics");
     this.pool = pool;
-    this.metrics = metrics;
-    this.processRunnerFrequency = advancedConfiguration.getProcessRunnerFrequency();
+    this.metrics = pipeliteConfiguration.metrics();
+    this.processRunnerFrequency = pipeliteConfiguration.advanced().getProcessRunnerFrequency();
   }
 
   @Override

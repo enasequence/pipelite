@@ -12,9 +12,6 @@ package pipelite.launcher;
 
 import pipelite.Pipeline;
 import pipelite.PrioritizedPipeline;
-import pipelite.configuration.AdvancedConfiguration;
-import pipelite.configuration.ExecutorConfiguration;
-import pipelite.configuration.ServiceConfiguration;
 import pipelite.exception.PipeliteException;
 import pipelite.launcher.process.creator.DefaultPrioritizedProcessCreator;
 import pipelite.launcher.process.creator.PrioritizedProcessCreator;
@@ -23,7 +20,6 @@ import pipelite.launcher.process.queue.ProcessQueue;
 import pipelite.launcher.process.runner.DefaultProcessRunner;
 import pipelite.launcher.process.runner.DefaultProcessRunnerPool;
 import pipelite.lock.PipeliteLocker;
-import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.*;
 
 public class DefaultPipeliteLauncher {
@@ -31,16 +27,13 @@ public class DefaultPipeliteLauncher {
   private DefaultPipeliteLauncher() {}
 
   public static PipeliteLauncher create(
-      ServiceConfiguration serviceConfiguration,
-      AdvancedConfiguration advancedConfiguration,
-      ExecutorConfiguration executorConfiguration,
+      PipeliteConfiguration pipeliteConfiguration,
       PipeliteLocker pipeliteLocker,
       InternalErrorService internalErrorService,
       RegisteredPipelineService registeredPipelineService,
       ProcessService processService,
       StageService stageService,
       MailService mailService,
-      PipeliteMetrics metrics,
       String pipelineName) {
 
     Pipeline pipeline =
@@ -55,32 +48,27 @@ public class DefaultPipeliteLauncher {
             processService);
     ProcessQueue processQueue =
         new DefaultProcessQueue(
-            advancedConfiguration,
+            pipeliteConfiguration.advanced(),
             processService,
             pipelineName,
             pipeline.configurePipeline().pipelineParallelism());
     return new PipeliteLauncher(
-        serviceConfiguration,
-        advancedConfiguration,
+        pipeliteConfiguration,
         internalErrorService,
         pipeline,
         prioritizedProcessCreator,
         processQueue,
         new DefaultProcessRunnerPool(
-            serviceConfiguration,
+            pipeliteConfiguration,
             internalErrorService,
             pipeliteLocker,
             (pipelineName1) ->
                 new DefaultProcessRunner(
-                    serviceConfiguration,
-                    advancedConfiguration,
-                    executorConfiguration,
+                    pipeliteConfiguration,
                     internalErrorService,
                     processService,
                     stageService,
                     mailService,
-                    pipelineName1),
-            metrics),
-        metrics);
+                    pipelineName1)));
   }
 }
