@@ -105,7 +105,7 @@ public class LocalCmdRunner implements CmdRunner {
     try {
       stdoutStream.flush();
       String value = stdoutStream.toString();
-      log.atInfo().log(value);
+      // log.atInfo().log(value);
       stdoutStream.close();
       return value;
     } catch (IOException e) {
