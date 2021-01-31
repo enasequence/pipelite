@@ -32,7 +32,6 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
-import pipelite.PipeliteMetricsTestFactory;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.Schedule;
 import pipelite.UniqueStringGenerator;
@@ -43,12 +42,9 @@ import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageLogEntity;
-import pipelite.launcher.process.runner.ProcessRunnerPool;
-import pipelite.lock.PipeliteLocker;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.TimeSeriesMetrics;
-import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.*;
@@ -134,19 +130,22 @@ public class PipeliteSchedulerTest {
     EXCEPTION
   }
 
+  private PipeliteServices pipeliteServices() {
+    return new PipeliteServices(
+        scheduleService,
+        processService,
+        stageService,
+        mailService,
+        pipeliteLockerService,
+        registeredPipelineService,
+        internalErrorService);
+  }
+
   private PipeliteScheduler createPipeliteScheduler() {
     PipeliteConfiguration pipeliteConfiguration =
         new PipeliteConfiguration(
             serviceConfiguration, advancedConfiguration, executorConfiguration, metrics);
-    return DefaultPipeliteScheduler.create(
-        pipeliteConfiguration,
-        pipeliteLockerService.getPipeliteLocker(),
-        internalErrorService,
-        registeredPipelineService,
-        processService,
-        scheduleService,
-        stageService,
-        mailService);
+    return DefaultPipeliteScheduler.create(pipeliteConfiguration, pipeliteServices());
   }
 
   @Value
@@ -408,69 +407,6 @@ public class PipeliteSchedulerTest {
     assertThat(PipeliteScheduler.nextProcessId("134232")).isEqualTo("134233");
   }
 
-  private static Process testProcess(String processId) {
-    return new ProcessBuilder(processId).execute("STAGE").withCallExecutor().build();
-  }
-
-  @Test
-  public void testInvalidCron() {
-    String pipelineName1 = UniqueStringGenerator.randomPipelineName(PipeliteLauncherTest.class);
-
-    // Create advanced configuration with schedule refresh frequency.
-
-    AdvancedConfiguration advancedConfiguration = new AdvancedConfiguration();
-
-    // Create schedule that has invalid cron.
-
-    ScheduleEntity scheduleEntity1 = new ScheduleEntity();
-    scheduleEntity1.setPipelineName(pipelineName1);
-    String cron1 = "invalid";
-    scheduleEntity1.setCron(cron1);
-
-    PipeliteLocker pipeliteLocker = mock(PipeliteLocker.class);
-    RegisteredPipelineService registeredPipelineService = mock(RegisteredPipelineService.class);
-    ScheduleService scheduleService = mock(ScheduleService.class);
-    ProcessService processService = mock(ProcessService.class);
-    ProcessRunnerPool processRunnerPool = mock(ProcessRunnerPool.class);
-
-    // Return schedule from the schedule service.
-
-    doReturn(Arrays.asList(scheduleEntity1)).when(scheduleService).getSchedules(any());
-
-    // Create pipelite scheduler.
-
-    PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
-
-    PipeliteConfiguration pipeliteConfiguration =
-        new PipeliteConfiguration(
-            serviceConfiguration, advancedConfiguration, executorConfiguration, metrics);
-
-    PipeliteScheduler pipeliteScheduler =
-        spy(
-            new PipeliteScheduler(
-                pipeliteConfiguration,
-                internalErrorService,
-                registeredPipelineService,
-                scheduleService,
-                processService,
-                processRunnerPool));
-
-    int maxExecution1 = 1;
-    pipeliteScheduler.setMaximumExecutions(pipelineName1, maxExecution1);
-
-    pipeliteScheduler.startUp();
-
-    while (pipeliteScheduler.getActiveProcessCount() > 0) {
-      Time.wait(Duration.ofMillis(100));
-    }
-
-    verify(processRunnerPool, times(0)).runProcess(any(), any(), any());
-
-    assertThat(pipeliteScheduler.getSchedules().size()).isEqualTo(1);
-    assertThat(pipeliteScheduler.getSchedules().get(0).getCron()).isEqualTo(cron1);
-    assertThat(pipeliteScheduler.getSchedules().get(0).getLaunchTime()).isNull();
-  }
-
   @Test
   @Timeout(value = 10, unit = TimeUnit.SECONDS)
   public void testResumeSchedules() {
@@ -500,23 +436,12 @@ public class PipeliteSchedulerTest {
     processService.saveProcess(processEntity1);
     processService.saveProcess(processEntity2);
 
-    PipeliteLocker pipeliteLocker = mock(PipeliteLocker.class);
-
     PipeliteConfiguration pipeliteConfiguration =
         new PipeliteConfiguration(
             serviceConfiguration, advancedConfiguration, executorConfiguration, metrics);
 
     PipeliteScheduler pipeliteScheduler =
-        spy(
-            DefaultPipeliteScheduler.create(
-                pipeliteConfiguration,
-                pipeliteLocker,
-                internalErrorService,
-                registeredPipelineService,
-                processService,
-                scheduleService,
-                stageService,
-                mailService));
+        spy(DefaultPipeliteScheduler.create(pipeliteConfiguration, pipeliteServices()));
 
     pipeliteScheduler.setMaximumExecutions(resume1.pipelineName(), maxExecution1);
     pipeliteScheduler.setMaximumExecutions(resume2.pipelineName(), maxExecution2);

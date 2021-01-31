@@ -10,7 +10,9 @@
  */
 package pipelite;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -112,14 +114,25 @@ public class Application {
           new PipeliteConfiguration(
               serviceConfiguration, advancedConfiguration, executorConfiguration, metrics);
 
+      PipeliteServices pipeliteServices =
+          new PipeliteServices(
+              scheduleService,
+              processService,
+              stageService,
+              mailService,
+              pipeliteLockerService,
+              registeredPipelineService,
+              internalErrorService);
+
       for (String pipelineName : registeredPipelineService.getPipelineNames()) {
-        PipeliteLauncher launcher = createLauncher(pipeliteConfiguration, pipelineName);
+        PipeliteLauncher launcher =
+            createLauncher(pipeliteConfiguration, pipeliteServices, pipelineName);
         launchers.add(launcher);
         serverManager.addService(launcher);
       }
       // Create scheduler for scheduled pipelines.
       if (registeredPipelineService.isScheduler()) {
-        PipeliteScheduler scheduler = createScheduler(pipeliteConfiguration);
+        PipeliteScheduler scheduler = createScheduler(pipeliteConfiguration, pipeliteServices);
         schedulers.add(scheduler);
         serverManager.addService(scheduler);
       }
@@ -133,29 +146,16 @@ public class Application {
     }
   }
 
-  private PipeliteScheduler createScheduler(PipeliteConfiguration pipeliteConfiguration) {
-    return DefaultPipeliteScheduler.create(
-        pipeliteConfiguration,
-        pipeliteLockerService.getPipeliteLocker(),
-        internalErrorService,
-        registeredPipelineService,
-        processService,
-        scheduleService,
-        stageService,
-        mailService);
+  private PipeliteScheduler createScheduler(
+      PipeliteConfiguration pipeliteConfiguration, PipeliteServices pipeliteServices) {
+    return DefaultPipeliteScheduler.create(pipeliteConfiguration, pipeliteServices);
   }
 
   private PipeliteLauncher createLauncher(
-      PipeliteConfiguration pipeliteConfiguration, String pipelineName) {
-    return DefaultPipeliteLauncher.create(
-        pipeliteConfiguration,
-        pipeliteLockerService.getPipeliteLocker(),
-        internalErrorService,
-        registeredPipelineService,
-        processService,
-        stageService,
-        mailService,
-        pipelineName);
+      PipeliteConfiguration pipeliteConfiguration,
+      PipeliteServices pipeliteServices,
+      String pipelineName) {
+    return DefaultPipeliteLauncher.create(pipeliteConfiguration, pipeliteServices, pipelineName);
   }
 
   private void run() {

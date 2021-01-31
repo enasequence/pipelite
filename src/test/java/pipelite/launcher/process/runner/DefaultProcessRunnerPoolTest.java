@@ -24,6 +24,7 @@ import pipelite.configuration.ExecutorConfiguration;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.launcher.PipeliteConfiguration;
+import pipelite.launcher.PipeliteServices;
 import pipelite.lock.PipeliteLocker;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
@@ -32,7 +33,7 @@ import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.repository.InternalErrorRepository;
-import pipelite.service.InternalErrorService;
+import pipelite.service.*;
 
 public class DefaultProcessRunnerPoolTest {
 
@@ -54,27 +55,40 @@ public class DefaultProcessRunnerPoolTest {
     };
   }
 
-  @Test
-  public void testSuccess() {
-    InternalErrorService internalErrorService = mock(InternalErrorService.class);
-    PipeliteLocker locker = mock(PipeliteLocker.class);
-    when(locker.lockProcess(any(), any())).thenReturn(true);
-
-    PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
-
+  private DefaultProcessRunnerPool createDefaultProcessRunnerPool(
+      InternalErrorService internalErrorService,
+      PipeliteMetrics metrics,
+      PipeliteLocker locker,
+      Function<String, ProcessRunner> processRunnerSupplier) {
     PipeliteConfiguration pipeliteConfiguration =
         new PipeliteConfiguration(
             mock(ServiceConfiguration.class),
             mock(AdvancedConfiguration.class),
             mock(ExecutorConfiguration.class),
             metrics);
+    PipeliteServices pipeliteServices =
+        new PipeliteServices(
+            mock(ScheduleService.class),
+            mock(ProcessService.class),
+            mock(StageService.class),
+            mock(MailService.class),
+            locker,
+            mock(RegisteredPipelineService.class),
+            internalErrorService);
+    return new DefaultProcessRunnerPool(
+        pipeliteConfiguration, pipeliteServices, processRunnerSupplier);
+  }
+
+  @Test
+  public void testSuccess() {
+    InternalErrorService internalErrorService = mock(InternalErrorService.class);
+    PipeliteLocker locker = mock(PipeliteLocker.class);
+    when(locker.lockProcess(any(), any())).thenReturn(true);
+    PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
 
     DefaultProcessRunnerPool pool =
-        new DefaultProcessRunnerPool(
-            pipeliteConfiguration,
-            internalErrorService,
-            locker,
-            processRunnerSupplier(ProcessState.COMPLETED));
+        createDefaultProcessRunnerPool(
+            internalErrorService, metrics, locker, processRunnerSupplier(ProcessState.COMPLETED));
 
     AtomicInteger runProcessCount = new AtomicInteger();
 
@@ -119,26 +133,14 @@ public class DefaultProcessRunnerPoolTest {
 
   @Test
   public void testFailed() {
-    ServiceConfiguration serviceConfiguration = mock(ServiceConfiguration.class);
     InternalErrorService internalErrorService = mock(InternalErrorService.class);
     PipeliteLocker locker = mock(PipeliteLocker.class);
     when(locker.lockProcess(any(), any())).thenReturn(true);
-
     PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
 
-    PipeliteConfiguration pipeliteConfiguration =
-        new PipeliteConfiguration(
-            mock(ServiceConfiguration.class),
-            mock(AdvancedConfiguration.class),
-            mock(ExecutorConfiguration.class),
-            metrics);
-
     DefaultProcessRunnerPool pool =
-        new DefaultProcessRunnerPool(
-            pipeliteConfiguration,
-            internalErrorService,
-            locker,
-            processRunnerSupplier(ProcessState.FAILED));
+        createDefaultProcessRunnerPool(
+            internalErrorService, metrics, locker, processRunnerSupplier(ProcessState.FAILED));
 
     AtomicInteger runProcessCount = new AtomicInteger();
 
@@ -181,24 +183,16 @@ public class DefaultProcessRunnerPoolTest {
 
   @Test
   public void testException() {
-    ServiceConfiguration serviceConfiguration = mock(ServiceConfiguration.class);
     PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
     InternalErrorService internalErrorService =
         new InternalErrorService(mock(InternalErrorRepository.class), metrics);
     PipeliteLocker locker = mock(PipeliteLocker.class);
     when(locker.lockProcess(any(), any())).thenReturn(true);
 
-    PipeliteConfiguration pipeliteConfiguration =
-        new PipeliteConfiguration(
-            mock(ServiceConfiguration.class),
-            mock(AdvancedConfiguration.class),
-            mock(ExecutorConfiguration.class),
-            metrics);
-
     DefaultProcessRunnerPool pool =
-        new DefaultProcessRunnerPool(
-            pipeliteConfiguration,
+        createDefaultProcessRunnerPool(
             internalErrorService,
+            metrics,
             locker,
             (pipelineName) -> {
               ProcessRunner processRunner = mock(ProcessRunner.class);

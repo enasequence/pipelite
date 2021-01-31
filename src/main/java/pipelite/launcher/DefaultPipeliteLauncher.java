@@ -19,8 +19,7 @@ import pipelite.launcher.process.queue.DefaultProcessQueue;
 import pipelite.launcher.process.queue.ProcessQueue;
 import pipelite.launcher.process.runner.DefaultProcessRunner;
 import pipelite.launcher.process.runner.DefaultProcessRunnerPool;
-import pipelite.lock.PipeliteLocker;
-import pipelite.service.*;
+import pipelite.service.RegisteredPipelineService;
 
 public class DefaultPipeliteLauncher {
 
@@ -28,14 +27,9 @@ public class DefaultPipeliteLauncher {
 
   public static PipeliteLauncher create(
       PipeliteConfiguration pipeliteConfiguration,
-      PipeliteLocker pipeliteLocker,
-      InternalErrorService internalErrorService,
-      RegisteredPipelineService registeredPipelineService,
-      ProcessService processService,
-      StageService stageService,
-      MailService mailService,
+      PipeliteServices pipeliteServices,
       String pipelineName) {
-
+    RegisteredPipelineService registeredPipelineService = pipeliteServices.registeredPipeline();
     Pipeline pipeline =
         registeredPipelineService.getRegisteredPipeline(pipelineName, Pipeline.class);
     if (pipeline == null) {
@@ -45,30 +39,23 @@ public class DefaultPipeliteLauncher {
         new DefaultPrioritizedProcessCreator(
             registeredPipelineService.getRegisteredPipeline(
                 pipelineName, PrioritizedPipeline.class),
-            processService);
+            pipeliteServices.process());
     ProcessQueue processQueue =
         new DefaultProcessQueue(
             pipeliteConfiguration.advanced(),
-            processService,
+            pipeliteServices.process(),
             pipelineName,
             pipeline.configurePipeline().pipelineParallelism());
     return new PipeliteLauncher(
         pipeliteConfiguration,
-        internalErrorService,
+        pipeliteServices,
         pipeline,
         prioritizedProcessCreator,
         processQueue,
         new DefaultProcessRunnerPool(
             pipeliteConfiguration,
-            internalErrorService,
-            pipeliteLocker,
+            pipeliteServices,
             (pipelineName1) ->
-                new DefaultProcessRunner(
-                    pipeliteConfiguration,
-                    internalErrorService,
-                    processService,
-                    stageService,
-                    mailService,
-                    pipelineName1)));
+                new DefaultProcessRunner(pipeliteConfiguration, pipeliteServices, pipelineName1)));
   }
 }

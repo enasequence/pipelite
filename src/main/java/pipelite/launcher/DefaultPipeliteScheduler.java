@@ -12,40 +12,20 @@ package pipelite.launcher;
 
 import pipelite.launcher.process.runner.DefaultProcessRunner;
 import pipelite.launcher.process.runner.DefaultProcessRunnerPool;
-import pipelite.lock.PipeliteLocker;
-import pipelite.service.*;
 
 public class DefaultPipeliteScheduler {
 
   private DefaultPipeliteScheduler() {}
 
   public static PipeliteScheduler create(
-      PipeliteConfiguration pipeliteConfiguration,
-      PipeliteLocker pipeliteLocker,
-      InternalErrorService internalErrorService,
-      RegisteredPipelineService registeredPipelineService,
-      ProcessService processService,
-      ScheduleService scheduleService,
-      StageService stageService,
-      MailService mailService) {
-
+      PipeliteConfiguration pipeliteConfiguration, PipeliteServices pipeliteServices) {
     return new PipeliteScheduler(
         pipeliteConfiguration,
-        internalErrorService,
-        registeredPipelineService,
-        scheduleService,
-        processService,
+        pipeliteServices,
         new DefaultProcessRunnerPool(
             pipeliteConfiguration,
-            internalErrorService,
-            pipeliteLocker,
+            pipeliteServices,
             (pipelineName) ->
-                new DefaultProcessRunner(
-                    pipeliteConfiguration,
-                    internalErrorService,
-                    processService,
-                    stageService,
-                    mailService,
-                    pipelineName)));
+                new DefaultProcessRunner(pipeliteConfiguration, pipeliteServices, pipelineName)));
   }
 }

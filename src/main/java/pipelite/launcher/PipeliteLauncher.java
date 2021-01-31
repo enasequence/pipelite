@@ -42,20 +42,18 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
 
   public PipeliteLauncher(
       PipeliteConfiguration pipeliteConfiguration,
-      InternalErrorService internalErrorService,
+      PipeliteServices pipeliteServices,
       Pipeline pipeline,
       PrioritizedProcessCreator prioritizedProcessCreator,
       ProcessQueue processQueue,
       ProcessRunnerPool pool) {
     super(pipeliteConfiguration, pool);
     Assert.notNull(pipeliteConfiguration, "Missing configuration");
-    Assert.notNull(pipeliteConfiguration.service(), "Missing service configuration");
-    Assert.notNull(pipeliteConfiguration.advanced(), "Missing advanced configuration");
-    Assert.notNull(internalErrorService, "Missing internal error service");
+    Assert.notNull(pipeliteServices, "Missing services");
     Assert.notNull(pipeline, "Missing pipeline");
     Assert.notNull(prioritizedProcessCreator, "Missing process creator");
     Assert.notNull(processQueue, "Missing process queue");
-    this.internalErrorService = internalErrorService;
+    this.internalErrorService = pipeliteServices.internalError();
     this.pipeline = pipeline;
     this.prioritizedProcessCreator = prioritizedProcessCreator;
     this.processQueue = processQueue;

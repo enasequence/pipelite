@@ -30,7 +30,6 @@ import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.service.InternalErrorService;
 import pipelite.service.ProcessService;
-import pipelite.service.RegisteredPipelineService;
 import pipelite.service.ScheduleService;
 
 /**
@@ -40,9 +39,9 @@ import pipelite.service.ScheduleService;
 @Flogger
 public class PipeliteScheduler extends ProcessRunnerPoolService {
 
-  private final InternalErrorService internalErrorService;
   private final ScheduleService scheduleService;
   private final ProcessService processService;
+  private final InternalErrorService internalErrorService;
   private final ScheduleCache scheduleCache;
   private final List<PipeliteSchedulerSchedule> schedules =
       Collections.synchronizedList(new ArrayList<>());
@@ -51,22 +50,15 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
 
   public PipeliteScheduler(
       PipeliteConfiguration pipeliteConfiguration,
-      InternalErrorService internalErrorService,
-      RegisteredPipelineService registeredPipelineService,
-      ScheduleService scheduleService,
-      ProcessService processService,
+      PipeliteServices pipeliteServices,
       ProcessRunnerPool processRunnerPool) {
     super(pipeliteConfiguration, processRunnerPool);
     Assert.notNull(pipeliteConfiguration, "Missing configuration");
-    Assert.notNull(pipeliteConfiguration.service(), "Missing service configuration");
-    Assert.notNull(internalErrorService, "Missing internal error service");
-    Assert.notNull(registeredPipelineService, "Missing pipeline service");
-    Assert.notNull(scheduleService, "Missing schedule service");
-    Assert.notNull(processService, "Missing process service");
-    this.internalErrorService = internalErrorService;
-    this.scheduleCache = new ScheduleCache(registeredPipelineService);
-    this.scheduleService = scheduleService;
-    this.processService = processService;
+    Assert.notNull(pipeliteServices, "Missing services");
+    this.scheduleService = pipeliteServices.schedule();
+    this.processService = pipeliteServices.process();
+    this.internalErrorService = pipeliteServices.internalError();
+    this.scheduleCache = new ScheduleCache(pipeliteServices.registeredPipeline());
     this.serviceName = pipeliteConfiguration.service().getName();
   }
 

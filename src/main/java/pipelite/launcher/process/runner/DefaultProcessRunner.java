@@ -27,6 +27,7 @@ import pipelite.configuration.ExecutorConfiguration;
 import pipelite.entity.StageEntity;
 import pipelite.exception.PipeliteException;
 import pipelite.launcher.PipeliteConfiguration;
+import pipelite.launcher.PipeliteServices;
 import pipelite.launcher.StageLauncher;
 import pipelite.launcher.dependency.DependencyResolver;
 import pipelite.log.LogKey;
@@ -62,26 +63,17 @@ public class DefaultProcessRunner implements ProcessRunner {
 
   public DefaultProcessRunner(
       PipeliteConfiguration pipeliteConfiguration,
-      InternalErrorService internalErrorService,
-      ProcessService processService,
-      StageService stageService,
-      MailService mailService,
+      PipeliteServices pipeliteServices,
       String pipelineName) {
     Assert.notNull(pipeliteConfiguration, "Missing configuration");
-    Assert.notNull(pipeliteConfiguration.service(), "Missing service configuration");
-    Assert.notNull(pipeliteConfiguration.advanced(), "Missing advanced configuration");
-    Assert.notNull(pipeliteConfiguration.executor(), "Missing executor configuration");
-    Assert.notNull(internalErrorService, "Missing internal error service");
-    Assert.notNull(processService, "Missing process service");
-    Assert.notNull(stageService, "Missing stage service");
-    Assert.notNull(mailService, "Missing mail service");
+    Assert.notNull(pipeliteServices, "Missing services");
     Assert.notNull(pipelineName, "Missing pipeline name");
     this.serviceName = pipeliteConfiguration.service().getName();
     this.executorConfiguration = pipeliteConfiguration.executor();
-    this.internalErrorService = internalErrorService;
-    this.processService = processService;
-    this.stageService = stageService;
-    this.mailService = mailService;
+    this.internalErrorService = pipeliteServices.internalError();
+    this.processService = pipeliteServices.process();
+    this.stageService = pipeliteServices.stage();
+    this.mailService = pipeliteServices.mail();
     this.pipelineName = pipelineName;
     this.processRunnerFrequency = pipeliteConfiguration.advanced().getProcessRunnerFrequency();
   }

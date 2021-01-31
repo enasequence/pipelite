@@ -110,20 +110,22 @@ public class PipeliteLauncherTest {
     EXCEPTION
   }
 
+  private PipeliteServices pipeliteServices() {
+    return new PipeliteServices(
+        mock(ScheduleService.class),
+        processService,
+        stageService,
+        mailService,
+        pipeliteLockerService,
+        registeredPipelineService,
+        internalErrorService);
+  }
+
   private PipeliteLauncher createPipeliteLauncher(String pipelineName) {
     PipeliteConfiguration pipeliteConfiguration =
         new PipeliteConfiguration(
             serviceConfiguration, advancedConfiguration, executorConfiguration, metrics);
-
-    return DefaultPipeliteLauncher.create(
-        pipeliteConfiguration,
-        pipeliteLockerService.getPipeliteLocker(),
-        internalErrorService,
-        registeredPipelineService,
-        processService,
-        stageService,
-        mailService,
-        pipelineName);
+    return DefaultPipeliteLauncher.create(pipeliteConfiguration, pipeliteServices(), pipelineName);
   }
 
   @Value
@@ -356,7 +358,7 @@ public class PipeliteLauncherTest {
         spy(
             new PipeliteLauncher(
                 pipeliteConfiguration,
-                internalErrorService,
+                pipeliteServices(),
                 pipeline,
                 mock(PrioritizedProcessCreator.class),
                 queue,
@@ -407,7 +409,7 @@ public class PipeliteLauncherTest {
         spy(
             new PipeliteLauncher(
                 pipeliteConfiguration,
-                internalErrorService,
+                pipeliteServices(),
                 mock(Pipeline.class),
                 mock(PrioritizedProcessCreator.class),
                 queue,
@@ -458,7 +460,7 @@ public class PipeliteLauncherTest {
         spy(
             new PipeliteLauncher(
                 pipeliteConfiguration,
-                internalErrorService,
+                pipeliteServices(),
                 mock(Pipeline.class),
                 prioritizedProcessCreator,
                 queue,

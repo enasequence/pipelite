@@ -32,8 +32,6 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
   public ProcessRunnerPoolService(
       PipeliteConfiguration pipeliteConfiguration, ProcessRunnerPool pool) {
     Assert.notNull(pipeliteConfiguration, "Missing configuration");
-    Assert.notNull(pipeliteConfiguration.advanced(), "Missing advanced configuration");
-    Assert.notNull(pipeliteConfiguration.metrics(), "Missing metrics");
     Assert.notNull(pool, "Missing process runner pool");
     this.pool = pool;
     this.metrics = pipeliteConfiguration.metrics();

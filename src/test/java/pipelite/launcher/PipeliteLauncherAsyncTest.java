@@ -11,6 +11,7 @@
 package pipelite.launcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -98,20 +99,22 @@ public class PipeliteLauncherAsyncTest {
     }
   }
 
+  private PipeliteServices pipeliteServices() {
+    return new PipeliteServices(
+        mock(ScheduleService.class),
+        processService,
+        stageService,
+        mailService,
+        pipeliteLockerService,
+        registeredPipelineService,
+        internalErrorService);
+  }
+
   private PipeliteLauncher createPipeliteLauncher(String pipelineName) {
     PipeliteConfiguration pipeliteConfiguration =
         new PipeliteConfiguration(
             serviceConfiguration, advancedConfiguration, executorConfiguration, metrics);
-
-    return DefaultPipeliteLauncher.create(
-        pipeliteConfiguration,
-        pipeliteLockerService.getPipeliteLocker(),
-        internalErrorService,
-        registeredPipelineService,
-        processService,
-        stageService,
-        mailService,
-        pipelineName);
+    return DefaultPipeliteLauncher.create(pipeliteConfiguration, pipeliteServices(), pipelineName);
   }
 
   @Value

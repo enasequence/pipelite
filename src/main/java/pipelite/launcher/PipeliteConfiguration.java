@@ -10,6 +10,7 @@
  */
 package pipelite.launcher;
 
+import org.springframework.util.Assert;
 import pipelite.configuration.AdvancedConfiguration;
 import pipelite.configuration.ExecutorConfiguration;
 import pipelite.configuration.ServiceConfiguration;
@@ -26,6 +27,10 @@ public class PipeliteConfiguration {
       AdvancedConfiguration advanced,
       ExecutorConfiguration executor,
       PipeliteMetrics metrics) {
+    Assert.notNull(service, "Missing service configuration");
+    Assert.notNull(advanced, "Missing advanced configuration");
+    Assert.notNull(executor, "Missing executor configuration");
+    Assert.notNull(metrics, "Missing metrics configuration");
     this.service = service;
     this.advanced = advanced;
     this.executor = executor;
