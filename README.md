@@ -6,7 +6,7 @@ Pipelite workflow manager
 - [How to configure schedules](#how-to-configure-schedules)
     * [SimpleLsfExecutor example](#simplelsfexecutor-example)
 - [How to configure pipelines](#how-to-configure-pipelines)
-    * [SimpleLsfExecutor example](#simplelsfexecutor-example-1)
+- [How to configure pipelines](#how-to-configure-prioritized-pipelines)
 - [Stage dependency types](#stage-dependency-types)
 - [Stage executor backends](#stage-executor-backends)
 - [Configuration parameters](#configuration-parameters)
