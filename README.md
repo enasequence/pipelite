@@ -455,29 +455,29 @@ through a REST API documented using OpenAPI3.
 
 The Schedules page shows information for all schedules running on the Pipelite service.
 
-![Schedules](../readme/Schedules.png)
+![Schedules](readme/Schedules.png)
 
 #### Pipelines
 
 The Pipelines page shows information for all pipelines running on the Pipelite service.
 
-![Pipelines](../readme/Pipelines.png)
+![Pipelines](readme/Pipelines.png)
 
 #### Processes
 
 The Processes page shows information for all active processes (both from schedules and pipelines) running on the
 Pipelite service.
 
-![Processes](../readme/Processes.png)
+![Processes](readme/Processes.png)
 
 #### Process
 
 The Process page shows information for a specific process given pipeline name and process id.
 
-![Process](../readme/Process.png)
+![Process](readme/Process.png)
 
 #### Admin
 
 The Admin page exposes a number of administrative actions.
 
-![Admin](../readme/Admin.png)
+![Admin](readme/Admin.png)
