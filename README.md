@@ -1,5 +1,6 @@
 Pipelite workflow manager
 =======
+
 - [Overview](#overview)
 - [How to start up Pipelite](#how-to-start-up-pipelite)
 - [How to configure schedules](#how-to-configure-schedules)
@@ -33,8 +34,8 @@ Pipelite workflow manager
     * [Process](#process)
     * [Admin](#admin)
 
-<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
-
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with
+markdown-toc</a></i></small>
 
 ### Overview
 
@@ -98,12 +99,6 @@ public class MySchedule implements Pipelite.Schedule {
         return "MySchedule";
     }
 
-    // The command line command to execute in STAGE1.
-    private static final String STAGE_CMD1 = "...";
-
-    // The command line command to execute in STAGE2.
-    private static final String STAGE_CMD2 = "...";
-
     @Override
     public Options configurePipeline() {
         // The cron expression for the schedule.
@@ -129,14 +124,22 @@ public class MySchedule implements Pipelite.Schedule {
                 .withSimpleLsfExecutor(STAGE_CMD2, STAGE_PARAMS);
     }
 
+    // The command line command to execute in STAGE1.
+    private static final String STAGE_CMD1 = "...";
+
+    // The command line command to execute in STAGE2.
+    private static final String STAGE_CMD2 = "...";
+
     // SimpleLsfExecutor stage execution parameters are defined here. They can be shared
     // between stages or each stage can be configured with different parameters.
     private static final SimpleLsfExecutorParameters STAGE_PARAMS =
             SimpleLsfExecutorParameters.builder()
                     // How may times stages are immediately retried if their execution fails.
                     .immediateRetries(2)
-                    // The maximum number of times a stage is retried if its execution fails.
                     // Applies only to pipelines.
+                    // The maximum number of times a stage is retried if its execution fails.
+                    // Stage executions are temporary stopped if immediate retries have 
+                    // been exhausted and retried later until maximum retries is exceeded.                    
                     .maximumRetries(5)
                     // The number of CPU cores required to execute the stage.
                     .cpu(1)
@@ -158,11 +161,13 @@ public class MySchedule implements Pipelite.Schedule {
 
 Pipelines are used for executing unscheduled process instances.
 
-Pipelilnes are registered by implementing the ```Pipelite.Pipeline``` interface and using the ```@Component```
-annotation. 
+Pipelines are registered by implementing the ```Pipelite.Pipeline``` interface and using the ```@Component```
+annotation.
 
-When using the ```Pipelite.Pipeline``` interface the user is responsible for inserting new processes to be
-executed into the ```PIPELITE2_PROCESS``` table. For example:
+Pipelines are configured exactly like schedules except for differences in the ```configurePipelines``` method.
+
+When using the ```Pipelite.Pipeline``` interface the user is responsible for inserting new processes to be executed into
+the ```PIPELITE2_PROCESS``` table. For example:
 
 ```sql
 --  New process with default priority (5). Priority is between 9 (highest) and 0 (lowest).
@@ -175,77 +180,47 @@ insert into pipelite2_process(pipeline_name, process_id, priority)
 values ('testPipelite', 'testProcess2', 4);
 ```
 
-#### SimpleLsfExecutor example
-
-A pipeline executed using ```SimpleLsfExecutor``` over ssh would look like the following:
+A pipeline would look like the following:
 
 ```java
 
 @Component
 public class MyPipeline implements Pipelite.Pipeline {
 
-    @Override
-    public String pipelineName() {
-        // A unique name for the pipeline.  
-        return "MyPipeline";
-    }
-    
-    // The command line command to execute in STAGE1.
-    private static final String STAGE_CMD1 = "...";
-
-    // The command line command to execute in STAGE2.
-    private static final String STAGE_CMD2 = "...";
+    // Identical to schedule configuration except for the configurePipeline method.
+    // Please refer to the schedule configuration examples for more information.
 
     @Override
     public Options configurePipeline() {
         // The maximum number of parallel process executions.
         return new Options().pipelineParallelism(10);
     }
-
-    @Override
-    public void configureProcess(ProcessBuilder builder) {
-        // A process with two stages is configured here. As the stages do not 
-        // depend on each other they will be executed in parallel.
-        builder
-                // Execute STAGE1 stage that does not depend on any other stage.
-                // Different executeXXX methods exist for different types of stage dependencies.
-                .execute("STAGE1")
-                // Execute STAGE1 using SimpleLsfExecutor with the provided stage execution parameters.
-                // Different withXXX methods exist for different execution backends.
-                .withSimpleLsfExecutor(STAGE_CMD1, STAGE_PARAMS)
-                // Execute STAGE2 stage that does not depend on any other stage.
-                // Different executeXXX methods exist for different types of stage dependencies.
-                .execute("STAGE2")
-                // Execute STAGE2 using SimpleLsfExecutor with the provided stage execution parameters.
-                // Different withXXX methods exist for different execution backends.
-                .withSimpleLsfExecutor(STAGE_CMD2, STAGE_PARAMS);
-    }
-
-    // SimpleLsfExecutor stage execution parameters are defined here. They can be shared
-    // between stages or each stage can be configured with different parameters.
-    private static final SimpleLsfExecutorParameters STAGE_PARAMS =
-            SimpleLsfExecutorParameters.builder()
-                    // How may times stages are immediately retried if their execution fails.
-                    .immediateRetries(2)
-                    // The maximum number of times a stage is retried if its execution fails.
-                    // Stage executions are temporary stopped if immediate retries have 
-                    // been exhausted and retried later until maximum retries is exceeded.
-                    .maximumRetries(5)
-                    // The number of CPU cores required to execute the stage.
-                    .cpu(1)
-                    // The amount of memory in MBytes required to execute the stage.
-                    .memory(16 /* MBytes */)
-                    // The timeout after which the stage execution will be considered as failed.
-                    .timeout(Duration.ofMinutes(30))
-                    // The LSF login node.
-                    .host("noah-login")
-                    // The LSF queue.
-                    .queue("production-rh74")
-                    // The LSF working directoy where stage specific output files are written.
-                    .workDir("pipelite_tmp")
-                    .build();
 }
 ```
+
+### How to configure prioritized pipelines
+
+Prioritized pipelines are configured exactly like pipelines except for two additional methods:
+
+```java
+  @Override
+public PrioritizedProcess nextProcess(){
+        // To be implemented by the user.
+        }
+
+@Override
+public void confirmProcess(String processId){
+        // To be implemented by the user.    
+        }
+```
+
+The ```nextProcess``` method is called by Pipelite and should return ```PrioritizedProcess``` instances or null if no
+new processes are available at the time. The ```PrioritizedProcess``` contains the process id and its priority for the
+new process.
+
+The ```confirmProcess``` method is called by Pipelite to confirm that the process with the ```processId``` has been
+registered for execution. This ```processId``` should no longer be returned by ```nextProcess```. However, if it is then
+it will simply be ignored.
 
 ### Stage dependency types
 
