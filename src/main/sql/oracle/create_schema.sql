@@ -36,9 +36,9 @@ create table pipelite2_process
 (
     pipeline_name varchar2(256) not null,
     process_id    varchar2(256) not null,
-    priority      number (1,0) not null,
-    state         varchar2(15) not null,
-    exec_cnt      number (5,0) not null,
+    priority      number (1,0) default 5 not null,
+    state         varchar2(15) default 'PENDING' not null,
+    exec_cnt      number (5,0) default 0 not null,
     exec_start    date,
     exec_end      date,
     state_comment varchar2(4000),

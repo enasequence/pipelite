@@ -159,7 +159,21 @@ public class MySchedule implements Pipelite.Schedule {
 Pipelines are used for executing unscheduled process instances.
 
 Pipelilnes are registered by implementing the ```Pipelite.Pipeline``` interface and using the ```@Component```
-annotation.
+annotation. 
+
+When using the ```Pipelite.Pipeline``` interface the user is responsible for inserting new processes to be
+executed into the ```PIPELITE2_PROCESS``` table. For example:
+
+```sql
+--  New process with default priority (5). Priority is between 9 (highest) and 0 (lowest).
+insert into pipelite2_process(pipeline_name, process_id)
+values ('testPipelite', 'testProcess1');
+
+
+--  New process with priority 4. Priority is between 9 (highest) and 0 (lowest).
+insert into pipelite2_process(pipeline_name, process_id, priority)
+values ('testPipelite', 'testProcess2', 4);
+```
 
 #### SimpleLsfExecutor example
 

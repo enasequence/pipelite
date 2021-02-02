@@ -10,12 +10,14 @@
  */
 package pipelite.entity;
 
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
-import javax.persistence.*;
-import lombok.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import pipelite.json.Json;
 import pipelite.process.ProcessState;
+
+import javax.persistence.*;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 
 @Entity
 @Table(name = "PIPELITE2_PROCESS")
@@ -38,7 +40,7 @@ public class ProcessEntity {
 
   @Enumerated(EnumType.STRING)
   @Column(name = "STATE", length = 15, nullable = false)
-  private ProcessState processState;
+  private ProcessState processState = ProcessState.PENDING;
 
   @Column(name = "EXEC_CNT", nullable = false)
   private Integer executionCount = 0;
