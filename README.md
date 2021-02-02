@@ -1,32 +1,41 @@
 Pipelite workflow manager
 =======
+- [Overview](#overview)
+- [How to start up Pipelite](#how-to-start-up-pipelite)
+- [How to configure schedules](#how-to-configure-schedules)
+    * [SimpleLsfExecutor example](#simplelsfexecutor-example)
+- [How to configure pipelines](#how-to-configure-pipelines)
+    * [SimpleLsfExecutor example](#simplelsfexecutor-example-1)
+- [Stage dependency types](#stage-dependency-types)
+- [Stage executor backends](#stage-executor-backends)
+- [Configuration parameters](#configuration-parameters)
+    * [Executor parameters](#executor-parameters)
+        + [Cmd executor parameters](#cmd-executor-parameters)
+        + [Simple LSF executor parameters](#simple-lsf-executor-parameters)
+        + [LSF executor parameters](#lsf-executor-parameters)
+        + [AwsBatch executor parameters](#awsbatch-executor-parameters)
+    * [Service parameters](#service-parameters)
+    * [Mail parameters](#mail-parameters)
+    * [Database parameters](#database-parameters)
+    * [Advanced parameters](#advanced-parameters)
+    * [Test profiles](#test-profiles)
+- [Database schema](#database-schema)
+    * [PIPELITE2_SCHEDULE table](#pipelite2-schedule-table)
+    * [PIPELITE2_PROCESS table](#pipelite2-process-table)
+    * [PIPELITE2_STAGE table](#pipelite2-stage-table)
+    * [PIPELITE2_STAGE_LOG table](#pipelite2-stage-log-table)
+    * [PIPELITE2_SERVICE_LOCK table](#pipelite2-service-lock-table)
+    * [PIPELITE2_PROCESS_LOCK table](#pipelite2-process-lock-table)
+- [Web interface](#web-interface)
+    * [Schedules](#schedules)
+    * [Pipelines](#pipelines)
+    * [Processes](#processes)
+    * [Process](#process)
+    * [Admin](#admin)
 
-- [Pipelite workflow manager](#pipelite-workflow-manager)
-  + [Overview](#overview)
-  + [How to start up Pipelite](#how-to-start-up-pipelite)
-  + [How to configure schedules](#how-to-configure-schedules)
-    - [SimpleLsfExecutor example](#simplelsfexecutor-example)
-  + [Stage dependency types](#stage-dependency-types)
-  + [Stage executor backends](#stage-executor-backends)
-  + [Configuration parameters](#configuration-parameters)
-    - [Executor parameters](#executor-parameters)
-      * [Cmd executor parameters](#cmd-executor-parameters)
-      * [Simple LSF executor parameters](#simple-lsf-executor-parameters)
-      * [LSF executor parameters](#lsf-executor-parameters)
-      * [AwsBatch executor parameters](#awsbatch-executor-parameters)
-    - [Service parameters](#service-parameters)
-    - [Mail parameters](#mail-parameters)
-    - [Database parameters](#database-parameters)
-    - [Advanced parameters](#advanced-parameters)
-    - [Test profiles](#test-profiles)
-  + [Database schema](#database-schema)
-    - [PIPELITE2_SCHEDULE table](#pipelite2-schedule-table)
-    - [PIPELITE2_PROCESS table](#pipelite2-process-table)
-    - [PIPELITE2_STAGE table](#pipelite2-stage-table)
-    - [PIPELITE2_STAGE_LOG table](#pipelite2-stage-log-table)
-    - [PIPELITE2_SERVICE_LOCK table](#pipelite2-service-lock-table)
-    - [PIPELITE2_PROCESS_LOCK table](#pipelite2-process-lock-table)
-  
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+
+
 ### Overview
 
 Pipelite is a workflow manager that executes pipelines or schedules. Pipelines are used for parallel executions of
@@ -127,9 +136,86 @@ public class MySchedule implements Pipelite.Schedule {
                     // How may times stages are immediately retried if their execution fails.
                     .immediateRetries(2)
                     // The maximum number of times a stage is retried if its execution fails.
-                    // Applies only to pipelines. As opposed to schedules, stages in pipelines 
-                    // are temporary stopped after immediate retries and picked up later and 
-                    // retried until maximum retries is exceeded.
+                    // Applies only to pipelines.
+                    .maximumRetries(5)
+                    // The number of CPU cores required to execute the stage.
+                    .cpu(1)
+                    // The amount of memory in MBytes required to execute the stage.
+                    .memory(16 /* MBytes */)
+                    // The timeout after which the stage execution will be considered as failed.
+                    .timeout(Duration.ofMinutes(30))
+                    // The LSF login node.
+                    .host("noah-login")
+                    // The LSF queue.
+                    .queue("production-rh74")
+                    // The LSF working directoy where stage specific output files are written.
+                    .workDir("pipelite_tmp")
+                    .build();
+}
+```
+
+### How to configure pipelines
+
+Pipelines are used for executing unscheduled process instances.
+
+Pipelilnes are registered by implementing the ```Pipelite.Pipeline``` interface and using the ```@Component```
+annotation.
+
+#### SimpleLsfExecutor example
+
+A pipeline executed using ```SimpleLsfExecutor``` over ssh would look like the following:
+
+```java
+
+@Component
+public class MyPipeline implements Pipelite.Pipeline {
+
+    @Override
+    public String pipelineName() {
+        // A unique name for the pipeline.  
+        return "MyPipeline";
+    }
+    
+    // The command line command to execute in STAGE1.
+    private static final String STAGE_CMD1 = "...";
+
+    // The command line command to execute in STAGE2.
+    private static final String STAGE_CMD2 = "...";
+
+    @Override
+    public Options configurePipeline() {
+        // The maximum number of parallel process executions.
+        return new Options().pipelineParallelism(10);
+    }
+
+    @Override
+    public void configureProcess(ProcessBuilder builder) {
+        // A process with two stages is configured here. As the stages do not 
+        // depend on each other they will be executed in parallel.
+        builder
+                // Execute STAGE1 stage that does not depend on any other stage.
+                // Different executeXXX methods exist for different types of stage dependencies.
+                .execute("STAGE1")
+                // Execute STAGE1 using SimpleLsfExecutor with the provided stage execution parameters.
+                // Different withXXX methods exist for different execution backends.
+                .withSimpleLsfExecutor(STAGE_CMD1, STAGE_PARAMS)
+                // Execute STAGE2 stage that does not depend on any other stage.
+                // Different executeXXX methods exist for different types of stage dependencies.
+                .execute("STAGE2")
+                // Execute STAGE2 using SimpleLsfExecutor with the provided stage execution parameters.
+                // Different withXXX methods exist for different execution backends.
+                .withSimpleLsfExecutor(STAGE_CMD2, STAGE_PARAMS);
+    }
+
+    // SimpleLsfExecutor stage execution parameters are defined here. They can be shared
+    // between stages or each stage can be configured with different parameters.
+    private static final SimpleLsfExecutorParameters STAGE_PARAMS =
+            SimpleLsfExecutorParameters.builder()
+                    // How may times stages are immediately retried if their execution fails.
+                    .immediateRetries(2)
+                    // The maximum number of times a stage is retried if its execution fails.
+                    // Stage executions are temporary stopped if immediate retries have 
+                    // been exhausted and retried later until maximum retries is exceeded.
                     .maximumRetries(5)
                     // The number of CPU cores required to execute the stage.
                     .cpu(1)
@@ -183,13 +269,14 @@ The following executor backends are supported by the ProcessBuilder:
 
 #### Executor parameters
 
-Executor parameters provide default values for all ```ProcessBuilder``` stage parameters and are used in cases
-where the value is not overriden in ```ProcessBuilder```.
+Executor parameters provide default values for all ```ProcessBuilder``` stage parameters and are used in cases where the
+value is not overriden in ```ProcessBuilder```.
 
 ##### Cmd executor parameters
 
 - pipelite.executor.cmd.host: the remote host. Ssh will be used if the ```host``` has been set.
-- pipelite.executor.cmd.user: the user used to connect to the remote host. Default value: the user who restarted the Pipelite service
+- pipelite.executor.cmd.user: the user used to connect to the remote host. Default value: the user who restarted the
+  Pipelite service
 - pipelite.executor.cmd.env: the environmental variables passed to the command executor
 - pipelite.executor.cmd.workDir: the working directory where the output file and job definition files are written
 - pipelite.executor.cmd.logBytes: the number of last bytes from the output file saved in the stage log
@@ -197,7 +284,8 @@ where the value is not overriden in ```ProcessBuilder```.
 ##### Simple LSF executor parameters
 
 - pipelite.executor.simpleLsf.host: the remote host. Ssh will be used if the ```host``` has been set.
-- pipelite.executor.simpleLsf.user: the user used to connect to the remote host. Default value: user who restarted the Pipelite service
+- pipelite.executor.simpleLsf.user: the user used to connect to the remote host. Default value: user who restarted the
+  Pipelite service
 - pipelite.executor.simpleLsf.env: the environmental variables passed to the command executor
 - pipelite.executor.simpleLsf.workDir: the working directory where the output file and job definition files are written
 - pipelite.executor.simpleLsf.logBytes: the number of last bytes from the output file saved in the stage log
@@ -209,13 +297,15 @@ where the value is not overriden in ```ProcessBuilder```.
 ##### LSF executor parameters
 
 - pipelite.executor.lsf.host: the remote host. Ssh will be used if the ```host``` has been set.
-- pipelite.executor.lsf.user: the user used to connect to the remote host. Default value: user who restarted the Pipelite service
+- pipelite.executor.lsf.user: the user used to connect to the remote host. Default value: user who restarted the
+  Pipelite service
 - pipelite.executor.lsf.env: the environmental variables passed to the command executor
 - pipelite.executor.lsf.workDir: the working directory where the output file and job definition files are written
 - pipelite.executor.lsf.logBytes: the number of last bytes from the output file saved in the stage log
 - pipelite.executor.lsf.definition: the job definition resource name, file name or URL
 - pipelite.executor.lsf.format: the job definition file format: YAML, JSON, or JSDL
-- pipelite.executor.lsf.parameters: the job definition parameters applied to the job definition file. The key is the parameter placeholder that if found in the job definition file will be replaced with the corresponding value.
+- pipelite.executor.lsf.parameters: the job definition parameters applied to the job definition file. The key is the
+  parameter placeholder that if found in the job definition file will be replaced with the corresponding value.
 
 ##### AwsBatch executor parameters
 
@@ -355,3 +445,39 @@ This table contains Pipelite process locks. Each process is allowed to be execut
 - SERVICE_NAME: The Pipeline service name
 - PIPELINE_NAME: the pipeline name
 - PROCESS_ID: the process id
+
+### Web interface
+
+The Pipeline web interface consists of a number of pages briefly explained below. The same functionality is available
+through a REST API documented using OpenAPI3.
+
+#### Schedules
+
+The Schedules page shows information for all schedules running on the Pipelite service.
+
+![Schedules](../readme/Schedules.png)
+
+#### Pipelines
+
+The Pipelines page shows information for all pipelines running on the Pipelite service.
+
+![Pipelines](../readme/Pipelines.png)
+
+#### Processes
+
+The Processes page shows information for all active processes (both from schedules and pipelines) running on the
+Pipelite service.
+
+![Processes](../readme/Processes.png)
+
+#### Process
+
+The Process page shows information for a specific process given pipeline name and process id.
+
+![Process](../readme/Process.png)
+
+#### Admin
+
+The Admin page exposes a number of administrative actions.
+
+![Admin](../readme/Admin.png)
