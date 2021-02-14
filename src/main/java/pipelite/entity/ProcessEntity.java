@@ -10,14 +10,13 @@
  */
 package pipelite.entity;
 
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import javax.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import pipelite.json.Json;
 import pipelite.process.ProcessState;
-
-import javax.persistence.*;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 
 @Entity
 @Table(name = "PIPELITE2_PROCESS")

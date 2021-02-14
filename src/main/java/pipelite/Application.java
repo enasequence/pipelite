@@ -104,7 +104,7 @@ public class Application {
     if (shutdown) {
       return;
     }
-    serverManager = new PipeliteServiceManager();
+    serverManager = new PipeliteServiceManager(serviceConfiguration, internalErrorService);
     launchers.clear();
     schedulers.clear();
     try {

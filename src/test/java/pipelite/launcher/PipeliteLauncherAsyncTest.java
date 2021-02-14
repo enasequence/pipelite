@@ -248,7 +248,9 @@ public class PipeliteLauncherAsyncTest {
     TestPipeline<SubmitSuccessPollSuccessExecutor> f = submitSuccessPollSuccess;
 
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.pipelineName());
-    new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
+    new PipeliteServiceManager(serviceConfiguration, internalErrorService)
+        .addService(pipeliteLauncher)
+        .runSync();
 
     PipelineMetrics pipelineMetrics = metrics.pipeline(f.pipelineName());
     assertThat(pipelineMetrics.getInternalErrorCount()).isEqualTo(0);
@@ -266,7 +268,9 @@ public class PipeliteLauncherAsyncTest {
     TestPipeline<SubmitErrorExecutor> f = submitError;
 
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.pipelineName());
-    new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
+    new PipeliteServiceManager(serviceConfiguration, internalErrorService)
+        .addService(pipeliteLauncher)
+        .runSync();
 
     PipelineMetrics pipelineMetrics = metrics.pipeline(f.pipelineName());
 
@@ -285,7 +289,9 @@ public class PipeliteLauncherAsyncTest {
     TestPipeline<SubmitExceptionExecutor> f = submitException;
 
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.pipelineName());
-    new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
+    new PipeliteServiceManager(serviceConfiguration, internalErrorService)
+        .addService(pipeliteLauncher)
+        .runSync();
 
     PipelineMetrics pipelineMetrics = metrics.pipeline(f.pipelineName());
     assertThat(pipelineMetrics.getInternalErrorCount()).isEqualTo(PROCESS_CNT);
@@ -303,7 +309,9 @@ public class PipeliteLauncherAsyncTest {
     TestPipeline<PollErrorExecutor> f = pollError;
 
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.pipelineName());
-    new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
+    new PipeliteServiceManager(serviceConfiguration, internalErrorService)
+        .addService(pipeliteLauncher)
+        .runSync();
 
     PipelineMetrics pipelineMetrics = metrics.pipeline(f.pipelineName());
     assertThat(pipelineMetrics.getInternalErrorCount()).isEqualTo(0);
@@ -321,7 +329,9 @@ public class PipeliteLauncherAsyncTest {
     TestPipeline<PollExceptionExecutor> f = pollException;
 
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.pipelineName());
-    new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
+    new PipeliteServiceManager(serviceConfiguration, internalErrorService)
+        .addService(pipeliteLauncher)
+        .runSync();
 
     PipelineMetrics pipelineMetrics = metrics.pipeline(f.pipelineName());
     assertThat(pipelineMetrics.getInternalErrorCount()).isEqualTo(PROCESS_CNT);

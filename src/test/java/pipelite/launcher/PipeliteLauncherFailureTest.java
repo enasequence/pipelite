@@ -253,7 +253,9 @@ public class PipeliteLauncherFailureTest {
 
   public void test(TestPipeline testPipeline) {
     PipeliteLauncher pipeliteLauncher = pipeliteLauncher(testPipeline.pipelineName());
-    new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
+    new PipeliteServiceManager(serviceConfiguration, internalErrorService)
+        .addService(pipeliteLauncher)
+        .runSync();
 
     assertThat(pipeliteLauncher.getActiveProcessRunners().size()).isEqualTo(0);
 

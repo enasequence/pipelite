@@ -311,9 +311,10 @@ value is not overriden in ```ProcessBuilder```.
 - pipelite.service.contextPath: the http port for the pipeline web interface. Default value: /pipelite
 - pipelite.service.username: the pipelite web service username. Default value: pipelite
 - pipelite.service.password: the pipelite web service password. Default value: pipelite
+- pipelite.service.shutdownPeriod: the pipelite service shutdown period. Default value: 10 seconds. Minimum value: 30 seconds.
 - pipelite.service.force: forces the pipelite service to start by removing all service locks and by updating service
   names attached to schedules if necessary. Default value: false
-
+  
 #### Mail parameters
 
 - pipelite.mail.host: the SMTP host

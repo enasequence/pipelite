@@ -43,7 +43,7 @@ public class InternalErrorService {
   }
 
   public InternalErrorEntity saveInternalError(
-      String serviceName, String pipelineName, Class cls, Exception exception) {
+      String serviceName, String pipelineName, Class cls, Throwable exception) {
     try {
       if (pipelineName != null) {
         metrics.pipeline(pipelineName).incrementInternalErrorCount();

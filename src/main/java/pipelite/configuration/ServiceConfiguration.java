@@ -11,6 +11,7 @@
 package pipelite.configuration;
 
 import java.net.InetAddress;
+import java.time.Duration;
 import javax.annotation.PostConstruct;
 import lombok.Data;
 import lombok.extern.flogger.Flogger;
@@ -26,6 +27,9 @@ public class ServiceConfiguration {
 
   public static final String DEFAULT_CONTEXT_PATH = "/pipelite";
   public static final int DEFAULT_PORT = 8083;
+  public static final Duration DEFAULT_SHUTDOWN_PERIOD = Duration.ofSeconds(30);
+  public static final Duration MIN_SHUTDOWN_PERIOD = Duration.ofSeconds(10);
+  public static final Duration MARGIN_SHUTDOWN_PERIOD = Duration.ofSeconds(5);
 
   public static String getCanonicalHostName() {
     try {
@@ -74,8 +78,14 @@ public class ServiceConfiguration {
   private String password = "pipelite";
 
   /**
-   * Forces the service to start by removing all service locks and by updating service names
-   * attached to schedules if necessary.
+   * The pipelite service shutdown period. The minimum shutdown period is 10 seconds and the default
+   * shutdown period is 30 seconds.
+   */
+  private Duration shutdownPeriod = DEFAULT_SHUTDOWN_PERIOD;
+
+  /**
+   * Forces the pipelite service to start by removing all service locks and by updating service
+   * names attached to schedules if necessary.
    */
   private boolean force;
 
@@ -88,5 +98,16 @@ public class ServiceConfiguration {
       return name;
     }
     return ServiceConfiguration.getCanonicalHostName() + ":" + port;
+  }
+
+  public Duration getShutdownPeriod() {
+    if (shutdownPeriod.compareTo(MIN_SHUTDOWN_PERIOD) < 0) {
+      return MIN_SHUTDOWN_PERIOD;
+    }
+    return shutdownPeriod;
+  }
+
+  public Duration getShutdownPeriodWithMargin() {
+    return getShutdownPeriod().minus(MARGIN_SHUTDOWN_PERIOD);
   }
 }

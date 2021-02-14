@@ -11,6 +11,7 @@
 package pipelite.launcher.process.runner;
 
 import com.google.common.flogger.FluentLogger;
+import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,7 +25,6 @@ import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.launcher.PipeliteConfiguration;
-import pipelite.launcher.PipeliteServiceManager;
 import pipelite.launcher.PipeliteServices;
 import pipelite.lock.PipeliteLocker;
 import pipelite.log.LogKey;
@@ -40,6 +40,7 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
   private final Function<String, ProcessRunner> processRunnerSupplier;
   private final PipeliteMetrics metrics;
   private final ExecutorService executorService = Executors.newCachedThreadPool();
+  private final Duration executorServiceShutdownPeriod;
 
   @Value
   public static class ActiveProcessRunner {
@@ -62,6 +63,8 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
     this.pipeliteLocker = pipeliteServices.locker();
     this.processRunnerSupplier = processRunnerSupplier;
     this.metrics = pipeliteConfiguration.metrics();
+    this.executorServiceShutdownPeriod =
+        pipeliteConfiguration.service().getShutdownPeriodWithMargin();
   }
 
   /**
@@ -142,7 +145,7 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
     executorService.shutdown();
     try {
       executorService.awaitTermination(
-          PipeliteServiceManager.STOP_WAIT_MIN_SECONDS, TimeUnit.SECONDS);
+          executorServiceShutdownPeriod.getSeconds(), TimeUnit.SECONDS);
       active.forEach(a -> pipeliteLocker.unlockProcess(a.getPipelineName(), a.getProcessId()));
     } catch (InterruptedException ex) {
       executorService.shutdownNow();

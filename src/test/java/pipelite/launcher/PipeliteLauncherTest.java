@@ -284,7 +284,9 @@ public class PipeliteLauncherTest {
 
   private void test(TestPipeline f) {
     PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.pipelineName());
-    new PipeliteServiceManager().addService(pipeliteLauncher).runSync();
+    new PipeliteServiceManager(serviceConfiguration, internalErrorService)
+        .addService(pipeliteLauncher)
+        .runSync();
 
     assertThat(pipeliteLauncher.getActiveProcessRunners().size()).isEqualTo(0);
 

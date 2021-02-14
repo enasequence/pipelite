@@ -11,11 +11,14 @@
 package pipelite.launcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
+import pipelite.configuration.ServiceConfiguration;
+import pipelite.service.InternalErrorService;
 
 public class PipeliteServiceManagerTest {
 
@@ -57,13 +60,15 @@ public class PipeliteServiceManagerTest {
     public long getRunCnt() {
       return runCnt.get();
     }
-  };
+  }
 
   @Test
   public void run() {
     int maxRunCnt = 10;
 
-    PipeliteServiceManager serviceManager = new PipeliteServiceManager();
+    PipeliteServiceManager serviceManager =
+        new PipeliteServiceManager(
+            mock(ServiceConfiguration.class), mock(InternalErrorService.class));
     TestPipeliteService pipeliteService1 = new TestPipeliteService(maxRunCnt);
     TestPipeliteService pipeliteService2 = new TestPipeliteService(maxRunCnt);
     TestPipeliteService pipeliteService3 = new TestPipeliteService(maxRunCnt);

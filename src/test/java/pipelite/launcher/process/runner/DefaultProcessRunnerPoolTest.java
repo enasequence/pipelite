@@ -60,9 +60,12 @@ public class DefaultProcessRunnerPoolTest {
       PipeliteMetrics metrics,
       PipeliteLocker locker,
       Function<String, ProcessRunner> processRunnerSupplier) {
+
+    ServiceConfiguration serviceConfiguration = new ServiceConfiguration();
+    serviceConfiguration.setShutdownPeriod(ServiceConfiguration.DEFAULT_SHUTDOWN_PERIOD);
     PipeliteConfiguration pipeliteConfiguration =
         new PipeliteConfiguration(
-            mock(ServiceConfiguration.class),
+            serviceConfiguration,
             mock(AdvancedConfiguration.class),
             mock(ExecutorConfiguration.class),
             metrics);
