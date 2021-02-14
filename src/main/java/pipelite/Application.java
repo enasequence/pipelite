@@ -62,7 +62,7 @@ public class Application {
     run();
   }
 
-  /** Stops all services. */
+  /** Stops all services. Called when the spring application is shutdown. */
   @PreDestroy
   public synchronized void stop() {
     log.atInfo().log("Stopping pipelite services");
@@ -74,7 +74,6 @@ public class Application {
   }
 
   /** Stops all services and terminates all running processes. */
-  @PreDestroy
   public synchronized void kill() {
     log.atInfo().log("Terminating all running processes");
     if (serverManager != null) {
