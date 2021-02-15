@@ -41,18 +41,23 @@ public class SimpleLsfExecutor extends AbstractLsfExecutor<SimpleLsfExecutorPara
     }
 
     Integer memory = getExecutorParams().getMemory();
+    String memoryUnits = getExecutorParams().getMemoryUnits();
+    ;
     Duration memoryTimeout = getExecutorParams().getMemoryTimeout();
     if (memory != null && memory > 0) {
+      String memStr = memory.toString();
+      if (null != memoryUnits) {
+        memStr += memoryUnits;
+      }
       addArgument(cmd, "-M");
-      addArgument(cmd, memory + "M"); // Megabytes
+      addArgument(cmd, memStr);
       addArgument(cmd, "-R");
       addArgument(
           cmd,
           "\"rusage[mem="
-              + memory
+              + memStr
               + ((memoryTimeout == null || memoryTimeout.toMinutes() < 0)
-                  ? "M" // Megabytes
-                  : "M:duration=" + memoryTimeout.toMinutes())
+                  ? ""  : ":duration=" + memoryTimeout.toMinutes())
               + "]\"");
     }
 

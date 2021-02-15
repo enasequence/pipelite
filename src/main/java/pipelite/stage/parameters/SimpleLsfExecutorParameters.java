@@ -33,8 +33,11 @@ public class SimpleLsfExecutorParameters extends CmdExecutorParameters {
   /** The LSF number of requested cpus (-n option). */
   private Integer cpu;
 
-  /** The LSF amount of requested memory in MBytes (-M and -R rusage[mem=] option). */
+  /** The LSF amount of requested memory (-M and -R rusage[mem=] option). */
   private Integer memory;
+
+  /** The LSF memory units (-M and -R rusage[mem=] option). */
+  private String memoryUnits;
 
   /** The LSF memory duration (-R rusage[mem=:duration=] option). */
   private Duration memoryTimeout;
@@ -49,6 +52,7 @@ public class SimpleLsfExecutorParameters extends CmdExecutorParameters {
     applyDefault(this::getQueue, this::setQueue, defaultParams::getQueue);
     applyDefault(this::getCpu, this::setCpu, defaultParams::getCpu);
     applyDefault(this::getMemory, this::setMemory, defaultParams::getMemory);
+    applyDefault(this::getMemoryUnits, this::setMemoryUnits, defaultParams::getMemoryUnits);
     applyDefault(this::getMemoryTimeout, this::setMemoryTimeout, defaultParams::getMemoryTimeout);
   }
 }
