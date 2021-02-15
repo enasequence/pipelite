@@ -57,7 +57,8 @@ public class SimpleLsfExecutor extends AbstractLsfExecutor<SimpleLsfExecutorPara
           "\"rusage[mem="
               + memStr
               + ((memoryTimeout == null || memoryTimeout.toMinutes() < 0)
-                  ? ""  : ":duration=" + memoryTimeout.toMinutes())
+                  ? ""
+                  : ":duration=" + memoryTimeout.toMinutes())
               + "]\"");
     }
 

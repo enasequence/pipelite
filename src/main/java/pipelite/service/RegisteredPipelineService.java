@@ -142,6 +142,7 @@ public class RegisteredPipelineService {
                     savedScheduleEntity.get().setCron(cron);
                     savedScheduleEntity.get().setDescription(CronUtils.describe(cron));
                     savedScheduleEntity.get().setServiceName(serviceName);
+                    savedScheduleEntity.get().setNextTime(CronUtils.launchTime(cron));
                     scheduleService.saveSchedule(savedScheduleEntity.get());
                   } catch (Exception ex) {
                     throw new PipeliteException(
