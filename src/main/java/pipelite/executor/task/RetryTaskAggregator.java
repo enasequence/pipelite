@@ -111,8 +111,7 @@ public class RetryTaskAggregator<Request, Result, ExecutorContext> {
               return null;
             });
       } catch (Exception ex) {
-        log.atSevere().withCause(ex).log("Unexpected exception in retry task aggregator");
-        internalErrorService.saveInternalError(serviceName, null, this.getClass(), ex);
+        internalErrorService.saveInternalError(serviceName, this.getClass(), ex);
       }
       if (toIndex == pendingRequests.size()) {
         return;

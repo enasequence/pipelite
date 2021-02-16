@@ -41,7 +41,7 @@ public class RetryServiceTest {
     @Retryable(
         maxAttempts = 5,
         backoff = @Backoff(delay = 1000 /* 1s */, maxDelay = 60000 /* 1 minute */, multiplier = 1),
-        exceptionExpression = "#{@retryService.databaseRetryPolicy(#root)}")
+        exceptionExpression = "#{@retryService.recoverableException(#root)}")
     public void test() {
       cnt.incrementAndGet();
       throw new RuntimeException();

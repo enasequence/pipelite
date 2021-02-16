@@ -101,10 +101,8 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
             result = processRunner.runProcess(process);
           } catch (Exception ex) {
             // Catching exceptions here to allow other processes to continue execution.
-            logContext(log.atSevere(), pipelineName, processId)
-                .withCause(ex)
-                .log("Unexpected exception when executing process");
-            internalErrorService.saveInternalError(serviceName, pipelineName, this.getClass(), ex);
+            internalErrorService.saveInternalError(
+                serviceName, pipelineName, processId, this.getClass(), ex);
           } finally {
             if (result == null) {
               result = new ProcessRunnerResult();

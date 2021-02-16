@@ -95,9 +95,6 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
                   executeSchedule(s, createProcessEntity(s), false);
                 } catch (Exception ex) {
                   // Catching exceptions here to allow other schedules to continue execution.
-                  logContext(log.atSevere(), s.getPipelineName())
-                      .withCause(ex)
-                      .log("Unexpected exception when running schedule: " + s.getPipelineName());
                   internalErrorService.saveInternalError(
                       serviceName, s.getPipelineName(), this.getClass(), ex);
                 }
@@ -105,10 +102,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
 
     } catch (Exception ex) {
       // Catching exceptions here in case they have not already been caught.
-      logContext(log.atSevere())
-          .withCause(ex)
-          .log("Unexpected exception when running scheduler: " + serviceName);
-      internalErrorService.saveInternalError(serviceName, null, this.getClass(), ex);
+      internalErrorService.saveInternalError(serviceName, this.getClass(), ex);
     }
   }
 
@@ -242,20 +236,25 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
 
     pipeliteSchedulerSchedule.setLaunchTime(null);
 
-    runProcess(
-        pipelineName,
-        process,
-        (p, r) -> {
-          ZonedDateTime nextLaunchTime = pipeliteSchedulerSchedule.getNextLaunchTime();
-          try {
-            scheduleService.endExecution(processEntity, nextLaunchTime);
-          } catch (Exception ex) {
-            log.atSevere().log("Failed to end execution for scheduled pipeline: " + pipelineName);
-          } finally {
-            pipeliteSchedulerSchedule.setLaunchTime(nextLaunchTime);
-            decreaseMaximumExecutions(pipelineName);
-          }
-        });
+    try {
+      runProcess(
+          pipelineName,
+          process,
+          (p, r) -> {
+            ZonedDateTime nextLaunchTime = pipeliteSchedulerSchedule.getNextLaunchTime();
+            try {
+              scheduleService.endExecution(processEntity, nextLaunchTime);
+            } catch (Exception ex) {
+              internalErrorService.saveInternalError(
+                  serviceName, pipelineName, this.getClass(), ex);
+            } finally {
+              pipeliteSchedulerSchedule.setLaunchTime(nextLaunchTime);
+              decreaseMaximumExecutions(pipelineName);
+            }
+          });
+    } catch (Exception ex) {
+      internalErrorService.saveInternalError(serviceName, pipelineName, this.getClass(), ex);
+    }
   }
 
   private Process getProcess(ProcessEntity processEntity, Schedule schedule) {

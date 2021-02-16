@@ -33,6 +33,12 @@ public class InternalErrorEntity {
   @Column(name = "PIPELINE_NAME", length = 256)
   private String pipelineName;
 
+  @Column(name = "PROCESS_ID", length = 256)
+  private String processId;
+
+  @Column(name = "STAGE_NAME", length = 256)
+  private String stageName;
+
   @Column(name = "CLASS_NAME", nullable = false, length = 256)
   private String className;
 

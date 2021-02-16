@@ -15,6 +15,7 @@ import java.io.StringWriter;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
+import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
@@ -28,9 +29,14 @@ import pipelite.repository.InternalErrorRepository;
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 @Retryable(
-    maxAttempts = 5,
-    backoff = @Backoff(delay = 1000 /* 1s */, maxDelay = 60000 /* 1 minute */, multiplier = 2),
-    exceptionExpression = "#{@retryService.databaseRetryPolicy(#root)}")
+    maxAttemptsExpression = "#{@retryService.maxAttempts()}",
+    backoff =
+        @Backoff(
+            delayExpression = "#{@retryService.delay()}",
+            maxDelayExpression = "#{@retryService.maxDelay()}",
+            multiplierExpression = "#{@retryService.multiplier()}"),
+    exceptionExpression = "#{@retryService.recoverableException(#root)}")
+@Flogger
 public class InternalErrorService {
 
   private final InternalErrorRepository repository;
@@ -43,8 +49,34 @@ public class InternalErrorService {
   }
 
   public InternalErrorEntity saveInternalError(
+      String serviceName, String pipelineName, String processId, Class cls, Throwable exception) {
+    return saveInternalError(serviceName, pipelineName, processId, null, cls, exception);
+  }
+
+  public InternalErrorEntity saveInternalError(
       String serviceName, String pipelineName, Class cls, Throwable exception) {
+    return saveInternalError(serviceName, pipelineName, null, null, cls, exception);
+  }
+
+  public InternalErrorEntity saveInternalError(String serviceName, Class cls, Throwable exception) {
+    return saveInternalError(serviceName, null, null, null, cls, exception);
+  }
+
+  public InternalErrorEntity saveInternalError(
+      String serviceName,
+      String pipelineName,
+      String processId,
+      String stageName,
+      Class cls,
+      Throwable exception) {
     try {
+      log.atSevere().withCause(exception).log(
+          "Internal error in service: %s, pipeline: %s, process: %s, stage: %s, class %s",
+          serviceName != null ? serviceName : "",
+          pipelineName != null ? pipelineName : "",
+          processId != null ? processId : "",
+          stageName != null ? stageName : "",
+          cls != null ? cls.getName() : "");
       if (pipelineName != null) {
         metrics.pipeline(pipelineName).incrementInternalErrorCount();
       } else {
@@ -55,6 +87,8 @@ public class InternalErrorService {
       internalErrorEntity.setErrorTime(ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS));
       internalErrorEntity.setServiceName(serviceName);
       internalErrorEntity.setPipelineName(pipelineName);
+      internalErrorEntity.setProcessId(processId);
+      internalErrorEntity.setStageName(stageName);
       internalErrorEntity.setClassName(cls.getName());
       internalErrorEntity.setErrorMessage(exception.getMessage());
       StringWriter sw = new StringWriter();

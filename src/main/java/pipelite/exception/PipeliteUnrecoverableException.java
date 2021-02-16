@@ -10,8 +10,16 @@
  */
 package pipelite.exception;
 
-public class PipeliteTimeoutException extends PipeliteUnrecoverableException {
-  public PipeliteTimeoutException(String message) {
+public class PipeliteUnrecoverableException extends PipeliteException {
+  public PipeliteUnrecoverableException(String message) {
     super(message);
+  }
+
+  public PipeliteUnrecoverableException(Throwable cause) {
+    super(cause);
+  }
+
+  public PipeliteUnrecoverableException(String message, Throwable cause) {
+    super(message, cause);
   }
 }

@@ -85,7 +85,7 @@ public class PipeliteServiceManager {
             log.atSevere().withCause(service.failureCause()).log(
                 "Pipelite service has failed: " + serviceName);
             internalErrorService.saveInternalError(
-                serviceName, null, this.getClass(), service.failureCause());
+                serviceName, this.getClass(), service.failureCause());
             shutdown();
           }
         },

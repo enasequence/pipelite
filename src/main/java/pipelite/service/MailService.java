@@ -16,6 +16,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
 import pipelite.configuration.MailConfiguration;
+import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.executor.task.RetryTask;
 import pipelite.process.Process;
@@ -27,54 +28,84 @@ import pipelite.stage.StageState;
 @Flogger
 public class MailService {
 
-  @Autowired private MailConfiguration mailConfiguration;
+  private final ServiceConfiguration serviceConfiguration;
+  private final MailConfiguration mailConfiguration;
+  private final InternalErrorService internalErrorService;
 
   @Autowired(required = false)
   private JavaMailSender mailSender;
 
+  public MailService(
+      @Autowired ServiceConfiguration serviceConfiguration,
+      @Autowired MailConfiguration mailConfiguration,
+      @Autowired InternalErrorService internalErrorService) {
+    this.serviceConfiguration = serviceConfiguration;
+    this.mailConfiguration = mailConfiguration;
+    this.internalErrorService = internalErrorService;
+  }
+
+  /**
+   * Sends process execution emails. Saves any internal errors.
+   *
+   * @param process the process being executed
+   */
   public void sendProcessExecutionMessage(Process process) {
     if (mailSender == null) {
       return;
     }
-    if ((mailConfiguration.isProcessCompleted()
-            && process.getProcessEntity().getProcessState() == ProcessState.COMPLETED)
-        || (mailConfiguration.isProcessFailed()
-            && process.getProcessEntity().getProcessState() == ProcessState.FAILED)) {
-      SimpleMailMessage message = new SimpleMailMessage();
-      message.setFrom(mailConfiguration.getFrom());
-      message.setTo(mailConfiguration.getTo());
-      String subject = getProcessExecutionSubject(process);
-      message.setSubject(subject);
-      String text = getExecutionBody(process, subject);
-      message.setText(text);
-      RetryTask.DEFAULT.execute(
-          r -> {
-            mailSender.send(message);
-            return null;
-          });
+    try {
+      if ((mailConfiguration.isProcessCompleted()
+              && process.getProcessEntity().getProcessState() == ProcessState.COMPLETED)
+          || (mailConfiguration.isProcessFailed()
+              && process.getProcessEntity().getProcessState() == ProcessState.FAILED)) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(mailConfiguration.getFrom());
+        message.setTo(mailConfiguration.getTo().split("\\s*,\\s*"));
+        String subject = getProcessExecutionSubject(process);
+        message.setSubject(subject);
+        String text = getExecutionBody(process, subject);
+        message.setText(text);
+        RetryTask.DEFAULT.execute(
+            r -> {
+              mailSender.send(message);
+              return null;
+            });
+      }
+    } catch (Exception ex) {
+      internalErrorService.saveInternalError(serviceConfiguration.getName(), this.getClass(), ex);
     }
   }
 
+  /**
+   * Sends stage execution emails. Saves any internal errors.
+   *
+   * @param process the process being executed
+   * @param stage the stage being executed
+   */
   public void sendStageExecutionMessage(Process process, Stage stage) {
     if (mailSender == null) {
       return;
     }
-    if ((mailConfiguration.isStageSuccess()
-            && stage.getStageEntity().getStageState() == StageState.SUCCESS)
-        || (mailConfiguration.isStageError()
-            && stage.getStageEntity().getStageState() == StageState.ERROR)) {
-      SimpleMailMessage message = new SimpleMailMessage();
-      message.setFrom(mailConfiguration.getFrom());
-      message.setTo(mailConfiguration.getTo());
-      String subject = getStageExecutionSubject(process, stage);
-      message.setSubject(subject);
-      String text = getExecutionBody(process, subject);
-      message.setText(text);
-      RetryTask.DEFAULT.execute(
-          r -> {
-            mailSender.send(message);
-            return null;
-          });
+    try {
+      if ((mailConfiguration.isStageSuccess()
+              && stage.getStageEntity().getStageState() == StageState.SUCCESS)
+          || (mailConfiguration.isStageError()
+              && stage.getStageEntity().getStageState() == StageState.ERROR)) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(mailConfiguration.getFrom());
+        message.setTo(mailConfiguration.getTo().split("\\s*,\\s*"));
+        String subject = getStageExecutionSubject(process, stage);
+        message.setSubject(subject);
+        String text = getExecutionBody(process, subject);
+        message.setText(text);
+        RetryTask.DEFAULT.execute(
+            r -> {
+              mailSender.send(message);
+              return null;
+            });
+      }
+    } catch (Exception ex) {
+      internalErrorService.saveInternalError(serviceConfiguration.getName(), this.getClass(), ex);
     }
   }
 

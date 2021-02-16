@@ -152,15 +152,13 @@ public class DefaultProcessRunner implements ProcessRunner {
               result.incrementStageFailed();
             }
           } catch (Exception ex) {
-            logContext(log.atSevere())
-                .withCause(ex)
-                .log("Unexpected exception when executing stage %s", stage.getStageName());
             // Catching exceptions here to allow other stages to continue execution.
             StageExecutorResult exceptionResult = StageExecutorResult.internalError(ex);
             stageService.endExecution(stage, exceptionResult);
             mailService.sendStageExecutionMessage(process, stage);
             result.incrementStageFailed();
-            internalErrorService.saveInternalError(serviceName, pipelineName, this.getClass(), ex);
+            internalErrorService.saveInternalError(
+                serviceName, pipelineName, processId, stage.getStageName(), this.getClass(), ex);
           } finally {
             activeStages.remove(stage);
           }

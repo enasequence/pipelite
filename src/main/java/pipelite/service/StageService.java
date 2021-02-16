@@ -34,9 +34,13 @@ import pipelite.stage.executor.StageExecutorResult;
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 @Retryable(
-    maxAttempts = 10,
-    backoff = @Backoff(delay = 1000 /* 1s */, maxDelay = 600000 /* 10 minutes */, multiplier = 2),
-    exceptionExpression = "#{@retryService.databaseRetryPolicy(#root)}")
+    maxAttemptsExpression = "#{@retryService.maxAttempts()}",
+    backoff =
+        @Backoff(
+            delayExpression = "#{@retryService.delay()}",
+            maxDelayExpression = "#{@retryService.maxDelay()}",
+            multiplierExpression = "#{@retryService.multiplier()}"),
+    exceptionExpression = "#{@retryService.recoverableException(#root)}")
 public class StageService {
 
   private final StageRepository repository;

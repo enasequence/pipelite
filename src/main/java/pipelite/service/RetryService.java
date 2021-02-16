@@ -15,18 +15,42 @@ import org.springframework.dao.RecoverableDataAccessException;
 import org.springframework.dao.TransientDataAccessException;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
+import pipelite.exception.PipeliteUnrecoverableException;
 
 /** Used from {@link Retryable} annotations. */
 @Service
 public class RetryService {
 
-  /** The database retry policy will retry all exceptions except {@link DataAccessException}s
-   * that are not either {@link TransientDataAccessException}s or
-   * {@link RecoverableDataAccessException)s.
-   */
-  public boolean databaseRetryPolicy(Throwable throwable) {
-    return !(throwable instanceof DataAccessException)
-        || throwable instanceof TransientDataAccessException
-        || throwable instanceof RecoverableDataAccessException;
+  private final int maxAttempts = 100;
+  private final int delay = 1000; // 1s
+  private final int maxDelay = 600000; // 10 minutes
+  private final int multiplier = 2;
+
+  public int maxAttempts() {
+    return maxAttempts;
+  }
+
+  public int delay() {
+    return delay;
+  }
+
+  public int maxDelay() {
+    return maxDelay;
+  }
+
+  public int multiplier() {
+    return multiplier;
+  }
+
+  public boolean recoverableException(Throwable throwable) {
+    if (throwable instanceof PipeliteUnrecoverableException) {
+      return false;
+    }
+    if (throwable instanceof DataAccessException
+        && !(throwable instanceof TransientDataAccessException
+            || throwable instanceof RecoverableDataAccessException)) {
+      return false;
+    }
+    return true;
   }
 }

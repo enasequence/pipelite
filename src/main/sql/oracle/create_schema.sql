@@ -389,6 +389,8 @@ create table pipelite2_internal_error
     error_id      varchar2(36) not null,
     service_name  varchar2(256) not null,
     pipeline_name varchar2(256),
+    process_id    varchar2(256),
+    stage_name    varchar2(256),
     class_name    varchar2(256) not null,
     error_time    date not null,
     error_message clob,

@@ -95,8 +95,6 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
       }
     } catch (Exception ex) {
       // Catching exceptions here in case they have not already been caught.
-      log.atSevere().withCause(ex).log(
-          "Unexpected exception when running pipeline: " + pipelineName);
       internalErrorService.saveInternalError(serviceName, pipelineName, this.getClass(), ex);
     }
   }
@@ -120,8 +118,6 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
       }
     } catch (Exception ex) {
       // Catching exceptions here to allow other processes to continue execution.
-      log.atSevere().withCause(ex).log(
-          "Unexpected exception when running pipeline: " + pipelineName);
       internalErrorService.saveInternalError(serviceName, pipelineName, this.getClass(), ex);
     }
   }

@@ -10,7 +10,7 @@
  */
 package pipelite.exception;
 
-public class PipeliteInterruptedException extends PipeliteException {
+public class PipeliteInterruptedException extends PipeliteUnrecoverableException {
   public PipeliteInterruptedException(String message) {
     super(message);
   }
