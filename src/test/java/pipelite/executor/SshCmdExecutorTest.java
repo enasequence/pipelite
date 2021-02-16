@@ -36,8 +36,7 @@ public class SshCmdExecutorTest {
 
   @Test
   public void test() {
-
-    String stageName = UniqueStringGenerator.randomStageName();
+    String stageName = UniqueStringGenerator.randomStageName(this.getClass());
 
     CmdExecutor<CmdExecutorParameters> executor = StageExecutor.createCmdExecutor("echo test");
     executor.setExecutorParams(

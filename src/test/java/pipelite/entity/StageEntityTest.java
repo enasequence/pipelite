@@ -44,9 +44,9 @@ class StageEntityTest {
 
   @Test
   public void lifecycle() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName(StageEntityTest.class);
-    String processId = UniqueStringGenerator.randomProcessId(StageEntityTest.class);
-    String stageName = UniqueStringGenerator.randomStageName();
+    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
+    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    String stageName = UniqueStringGenerator.randomStageName(this.getClass());
 
     TestExecutor executor = new TestExecutor();
     executor.setExecutorParams(

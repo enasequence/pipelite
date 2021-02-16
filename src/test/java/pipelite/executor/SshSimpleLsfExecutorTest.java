@@ -50,7 +50,7 @@ public class SshSimpleLsfExecutorTest {
             .timeout(Duration.ofSeconds(180))
             .build());
 
-    String stageName = UniqueStringGenerator.randomStageName();
+    String stageName = UniqueStringGenerator.randomStageName(this.getClass());
     Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
     StageExecutorRequest request =
         StageExecutorRequest.builder()

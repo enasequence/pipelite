@@ -30,8 +30,8 @@ public class UniqueStringGenerator {
     return cls.getSimpleName() + "_process_" + id();
   }
 
-  public static String randomStageName() {
-    return "stage_" + id();
+  public static <T> String randomStageName(Class<T> cls) {
+    return cls.getSimpleName() + "_stage_" + id();
   }
 
   private static String id() {

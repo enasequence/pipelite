@@ -24,11 +24,11 @@ public class ProcessBuilderTest {
 
   @Test
   public void test() {
-    String stageName1 = UniqueStringGenerator.randomStageName();
-    String stageName2 = UniqueStringGenerator.randomStageName();
-    String stageName3 = UniqueStringGenerator.randomStageName();
-    String stageName4 = UniqueStringGenerator.randomStageName();
-    String stageName5 = UniqueStringGenerator.randomStageName();
+    String stageName1 = UniqueStringGenerator.randomStageName(this.getClass());
+    String stageName2 = UniqueStringGenerator.randomStageName(this.getClass());
+    String stageName3 = UniqueStringGenerator.randomStageName(this.getClass());
+    String stageName4 = UniqueStringGenerator.randomStageName(this.getClass());
+    String stageName5 = UniqueStringGenerator.randomStageName(this.getClass());
 
     Process process =
         new ProcessBuilder(PROCESS_ID)
