@@ -10,6 +10,10 @@
  */
 package pipelite.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,11 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.InternalErrorEntity;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @Transactional
