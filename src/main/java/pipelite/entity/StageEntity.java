@@ -10,6 +10,7 @@
  */
 package pipelite.entity;
 
+import com.fasterxml.jackson.annotation.JsonRawValue;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import javax.persistence.*;
@@ -61,14 +62,17 @@ public class StageEntity {
 
   @Column(name = "EXEC_DATA", columnDefinition = "CLOB")
   @Lob
+  @JsonRawValue
   private String executorData;
 
   @Column(name = "EXEC_PARAMS", columnDefinition = "CLOB")
   @Lob
+  @JsonRawValue
   private String executorParams;
 
   @Column(name = "EXEC_RESULT_PARAMS", columnDefinition = "CLOB")
   @Lob
+  @JsonRawValue
   private String resultParams;
 
   /**
