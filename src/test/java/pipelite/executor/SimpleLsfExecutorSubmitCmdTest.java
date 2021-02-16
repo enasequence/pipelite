@@ -66,31 +66,28 @@ public class SimpleLsfExecutorSubmitCmdTest {
     SimpleLsfExecutor executor = new SimpleLsfExecutor();
     executor.setCmd("test");
     SimpleLsfExecutorParameters params =
-            SimpleLsfExecutorParameters.builder()
-                    .workDir(Files.createTempDirectory("TEMP").toString())
-                    .cpu(2)
-                    .memory(1)
-                    .memoryUnits("M")
-                    .queue("TEST")
-                    .timeout(Duration.ofMinutes(1))
-                    .build();
+        SimpleLsfExecutorParameters.builder()
+            .workDir(Files.createTempDirectory("TEMP").toString())
+            .cpu(2)
+            .memory(1)
+            .memoryUnits("M")
+            .queue("TEST")
+            .timeout(Duration.ofMinutes(1))
+            .build();
     executor.setExecutorParams(params);
 
     Stage stage = Stage.builder().stageName(STAGE_NAME).executor(executor).build();
     StageExecutorRequest request =
-            StageExecutorRequest.builder()
-                    .pipelineName(PIPELINE_NAME)
-                    .processId(PROCESS_ID)
-                    .stage(stage)
-                    .build();
+        StageExecutorRequest.builder()
+            .pipelineName(PIPELINE_NAME)
+            .processId(PROCESS_ID)
+            .stage(stage)
+            .build();
     String outFile = AbstractLsfExecutor.getOutFile(request, params);
     executor.setOutFile(outFile);
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
-            .isEqualTo(
-                    "bsub -oo "
-                            + outFile
-                            + " -n 2 -M 1M -R \"rusage[mem=1M]\" -W 1 -q TEST test");
+        .isEqualTo("bsub -oo " + outFile + " -n 2 -M 1M -R \"rusage[mem=1M]\" -W 1 -q TEST test");
   }
 
   @Test
@@ -130,27 +127,26 @@ public class SimpleLsfExecutorSubmitCmdTest {
     SimpleLsfExecutor executor = new SimpleLsfExecutor();
     executor.setCmd("test");
     SimpleLsfExecutorParameters params =
-            SimpleLsfExecutorParameters.builder()
-                    .workDir(Files.createTempDirectory("TEMP").toString())
-                    .cpu(2)
-                    .memory(1)
-                    .queue("TEST")
-                    .timeout(Duration.ofMinutes(1))
-                    .build();
+        SimpleLsfExecutorParameters.builder()
+            .workDir(Files.createTempDirectory("TEMP").toString())
+            .cpu(2)
+            .memory(1)
+            .queue("TEST")
+            .timeout(Duration.ofMinutes(1))
+            .build();
     executor.setExecutorParams(params);
 
     Stage stage = Stage.builder().stageName(STAGE_NAME).executor(executor).build();
     StageExecutorRequest request =
-            StageExecutorRequest.builder()
-                    .pipelineName(PIPELINE_NAME)
-                    .processId(PROCESS_ID)
-                    .stage(stage)
-                    .build();
+        StageExecutorRequest.builder()
+            .pipelineName(PIPELINE_NAME)
+            .processId(PROCESS_ID)
+            .stage(stage)
+            .build();
     String outFile = AbstractLsfExecutor.getOutFile(request, params);
     executor.setOutFile(outFile);
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
-            .isEqualTo(
-                    "bsub -oo " + outFile + " -n 2 -M 1 -R \"rusage[mem=1]\" -W 1 -q TEST test");
+        .isEqualTo("bsub -oo " + outFile + " -n 2 -M 1 -R \"rusage[mem=1]\" -W 1 -q TEST test");
   }
 }

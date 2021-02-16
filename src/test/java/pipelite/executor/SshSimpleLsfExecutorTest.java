@@ -47,7 +47,7 @@ public class SshSimpleLsfExecutorTest {
         SimpleLsfExecutorParameters.builder()
             .host(lsfTestConfiguration.getHost())
             .workDir(lsfTestConfiguration.getWorkDir())
-            .timeout(Duration.ofSeconds(60))
+            .timeout(Duration.ofSeconds(180))
             .build());
 
     String stageName = UniqueStringGenerator.randomStageName();
