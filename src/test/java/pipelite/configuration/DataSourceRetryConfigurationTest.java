@@ -28,7 +28,8 @@ public class DataSourceRetryConfigurationTest {
     assertThat(datasourceRetryConfiguration.getMultiplier()).isEqualTo(2);
     assertThat(datasourceRetryConfiguration.getDelay()).isEqualTo(Duration.ofSeconds(1).toMillis());
 
-    assertThat(datasourceRetryConfiguration.getMaxDelay()).isEqualTo(Duration.ofSeconds(16).toMillis());
+    assertThat(datasourceRetryConfiguration.getMaxDelay())
+        .isEqualTo(Duration.ofSeconds(16).toMillis());
     assertThat(datasourceRetryConfiguration.getTotalDelay()).isEqualTo(Duration.ofSeconds(15));
   }
 }

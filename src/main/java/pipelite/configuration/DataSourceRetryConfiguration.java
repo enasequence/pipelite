@@ -10,13 +10,12 @@
  */
 package pipelite.configuration;
 
+import java.time.Duration;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.RecoverableDataAccessException;
 import org.springframework.dao.TransientDataAccessException;
-
-import java.time.Duration;
 
 @Configuration
 @ConfigurationProperties(prefix = "pipelite.datasource.retry")
