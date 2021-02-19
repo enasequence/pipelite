@@ -26,10 +26,11 @@ public class HealthCheckService {
     this.dataSource = dataSource;
   }
 
-  public boolean databaseHealthy() {
+  public boolean isDataSourceHealthy() {
     try (Connection connection = dataSource.getConnection()) {
+      // close connection
     } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Unable to connect to database");
+      log.atSevere().withCause(ex).log("Unable to connect to data source");
       return false;
     }
     return true;

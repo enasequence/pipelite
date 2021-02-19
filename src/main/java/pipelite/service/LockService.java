@@ -27,7 +27,6 @@ import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.ProcessLockEntity;
 import pipelite.entity.ServiceLockEntity;
 import pipelite.log.LogKey;
-import pipelite.metrics.PipeliteMetrics;
 import pipelite.repository.ProcessLockRepository;
 import pipelite.repository.ServiceLockRepository;
 
@@ -35,20 +34,20 @@ import pipelite.repository.ServiceLockRepository;
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 @Flogger
 @Retryable(
-    maxAttemptsExpression = "#{@retryService.maxAttempts()}",
+    listeners = {"dataSourceRetryListener"},
+    maxAttemptsExpression = "#{@dataSourceRetryConfiguration.getAttempts()}",
     backoff =
         @Backoff(
-            delayExpression = "#{@retryService.delay()}",
-            maxDelayExpression = "#{@retryService.maxDelay()}",
-            multiplierExpression = "#{@retryService.multiplier()}"),
-    exceptionExpression = "#{@retryService.recoverableException(#root)}")
+            delayExpression = "#{@dataSourceRetryConfiguration.getDelay()}",
+            maxDelayExpression = "#{@dataSourceRetryConfiguration.getMaxDelay()}",
+            multiplierExpression = "#{@dataSourceRetryConfiguration.getMultiplier()}"),
+    exceptionExpression = "#{@dataSourceRetryConfiguration.recoverableException(#root)}")
 public class LockService {
 
   private final ServiceConfiguration serviceConfiguration;
   private final InternalErrorService internalErrorService;
   private final ServiceLockRepository serviceLockRepository;
   private final ProcessLockRepository processLockRepository;
-  private final PipeliteMetrics metrics;
   private final Duration lockDuration;
 
   public LockService(
@@ -56,13 +55,11 @@ public class LockService {
       @Autowired InternalErrorService internalErrorService,
       @Autowired AdvancedConfiguration advancedConfiguration,
       @Autowired ServiceLockRepository serviceLockRepository,
-      @Autowired ProcessLockRepository processLockRepository,
-      @Autowired PipeliteMetrics metrics) {
+      @Autowired ProcessLockRepository processLockRepository) {
     this.serviceConfiguration = serviceConfiguration;
     this.internalErrorService = internalErrorService;
     this.serviceLockRepository = serviceLockRepository;
     this.processLockRepository = processLockRepository;
-    this.metrics = metrics;
     this.lockDuration = advancedConfiguration.getLockDuration();
   }
 

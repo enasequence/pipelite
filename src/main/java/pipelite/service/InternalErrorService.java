@@ -18,6 +18,7 @@ import java.util.UUID;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -29,13 +30,15 @@ import pipelite.repository.InternalErrorRepository;
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 @Retryable(
-    maxAttemptsExpression = "#{@retryService.maxAttempts()}",
+    listeners = {"dataSourceRetryListener"},
+    maxAttemptsExpression = "#{@dataSourceRetryConfiguration.getAttempts()}",
     backoff =
         @Backoff(
-            delayExpression = "#{@retryService.delay()}",
-            maxDelayExpression = "#{@retryService.maxDelay()}",
-            multiplierExpression = "#{@retryService.multiplier()}"),
-    exceptionExpression = "#{@retryService.recoverableException(#root)}")
+            delayExpression = "#{@dataSourceRetryConfiguration.getDelay()}",
+            maxDelayExpression = "#{@dataSourceRetryConfiguration.getMaxDelay()}",
+            multiplierExpression = "#{@dataSourceRetryConfiguration.getMultiplier()}"),
+    exceptionExpression = "#{@dataSourceRetryConfiguration.recoverableException(#root)}")
+@Recover
 @Flogger
 public class InternalErrorService {
 

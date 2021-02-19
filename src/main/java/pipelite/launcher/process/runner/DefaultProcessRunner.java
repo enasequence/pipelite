@@ -10,17 +10,7 @@
  */
 package pipelite.launcher.process.runner;
 
-import static pipelite.stage.StageState.PENDING;
-import static pipelite.stage.StageState.SUCCESS;
-
 import com.google.common.flogger.FluentLogger;
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.ExecutorConfiguration;
@@ -33,15 +23,23 @@ import pipelite.launcher.dependency.DependencyResolver;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
-import pipelite.service.InternalErrorService;
-import pipelite.service.MailService;
-import pipelite.service.ProcessService;
-import pipelite.service.StageService;
+import pipelite.service.*;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorSerializer;
 import pipelite.time.Time;
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static pipelite.stage.StageState.PENDING;
+import static pipelite.stage.StageState.SUCCESS;
 
 /** Executes a process and returns the process state. */
 @Flogger
@@ -53,6 +51,7 @@ public class DefaultProcessRunner implements ProcessRunner {
   private final ProcessService processService;
   private final StageService stageService;
   private final MailService mailService;
+  private final HealthCheckService healthCheckService;
   private final String pipelineName;
   private final Duration processRunnerFrequency;
   private final ExecutorService executorService = Executors.newCachedThreadPool();
@@ -74,6 +73,7 @@ public class DefaultProcessRunner implements ProcessRunner {
     this.processService = pipeliteServices.process();
     this.stageService = pipeliteServices.stage();
     this.mailService = pipeliteServices.mail();
+    this.healthCheckService = pipeliteServices.healthCheckService();
     this.pipelineName = pipelineName;
     this.processRunnerFrequency = pipeliteConfiguration.advanced().getProcessRunnerFrequency();
   }
@@ -109,17 +109,21 @@ public class DefaultProcessRunner implements ProcessRunner {
 
   private void executeProcess(ProcessRunnerResult result) {
     while (true) {
-      logContext(log.atFine()).log("Executing stages");
-      List<Stage> executableStages =
-          DependencyResolver.getImmediatelyExecutableStages(
-              process.getStages(), activeStages.keySet());
+      if (!healthCheckService.isDataSourceHealthy()) {
+        logContext(log.atSevere())
+            .log("Waiting data source to be healthy before starting new stages");
+      } else {
+        logContext(log.atFine()).log("Executing stages");
+        List<Stage> executableStages =
+            DependencyResolver.getImmediatelyExecutableStages(
+                process.getStages(), activeStages.keySet());
 
-      if (activeStages.isEmpty() && executableStages.isEmpty()) {
-        logContext(log.atInfo()).log("No more executable stages");
-        break;
+        if (activeStages.isEmpty() && executableStages.isEmpty()) {
+          logContext(log.atInfo()).log("No more executable stages");
+          break;
+        }
+        runStages(executableStages, result);
       }
-
-      runStages(executableStages, result);
 
       try {
         Time.wait(processRunnerFrequency);

@@ -27,7 +27,7 @@ public class ServiceConfiguration {
 
   public static final String DEFAULT_CONTEXT_PATH = "/pipelite";
   public static final int DEFAULT_PORT = 8083;
-  public static final Duration DEFAULT_SHUTDOWN_PERIOD = Duration.ofSeconds(30);
+  public static final Duration DEFAULT_SHUTDOWN_PERIOD = Duration.ofMinutes(1);
   public static final Duration MIN_SHUTDOWN_PERIOD = Duration.ofSeconds(10);
   public static final Duration MARGIN_SHUTDOWN_PERIOD = Duration.ofSeconds(5);
 
@@ -78,8 +78,8 @@ public class ServiceConfiguration {
   private String password = "pipelite";
 
   /**
-   * The pipelite service shutdown period. The minimum shutdown period is 10 seconds and the default
-   * shutdown period is 30 seconds.
+   * The pipelite service shutdown period to allow the service to finish gracefully. The minimum
+   * shutdown period is 10 seconds and the default shutdown period is 1 minute.
    */
   private Duration shutdownPeriod = DEFAULT_SHUTDOWN_PERIOD;
 

@@ -32,13 +32,14 @@ import pipelite.repository.ScheduleRepository;
 @Flogger
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 @Retryable(
-    maxAttemptsExpression = "#{@retryService.maxAttempts()}",
+    listeners = {"dataSourceRetryListener"},
+    maxAttemptsExpression = "#{@dataSourceRetryConfiguration.getAttempts()}",
     backoff =
         @Backoff(
-            delayExpression = "#{@retryService.delay()}",
-            maxDelayExpression = "#{@retryService.maxDelay()}",
-            multiplierExpression = "#{@retryService.multiplier()}"),
-    exceptionExpression = "#{@retryService.recoverableException(#root)}")
+            delayExpression = "#{@dataSourceRetryConfiguration.getDelay()}",
+            maxDelayExpression = "#{@dataSourceRetryConfiguration.getMaxDelay()}",
+            multiplierExpression = "#{@dataSourceRetryConfiguration.getMultiplier()}"),
+    exceptionExpression = "#{@dataSourceRetryConfiguration.recoverableException(#root)}")
 public class ScheduleService {
 
   private final ScheduleRepository repository;

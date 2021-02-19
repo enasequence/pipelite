@@ -143,8 +143,10 @@ public class MySchedule implements Pipelite.Schedule {
                     .maximumRetries(5)
                     // The number of CPU cores required to execute the stage.
                     .cpu(1)
-                    // The amount of memory in MBytes required to execute the stage.
-                    .memory(16 /* MBytes */)
+                    // The amount of memory required to execute the stage.
+                    .memory(16)
+                    // The requested memory units.
+                    .memoryUnits("M")
                     // The timeout after which the stage execution will be considered as failed.
                     .timeout(Duration.ofMinutes(30))
                     // The LSF login node.
@@ -280,7 +282,8 @@ value is not overriden in ```ProcessBuilder```.
 - pipelite.executor.simpleLsf.logBytes: the number of last bytes from the output file saved in the stage log
 - pipelite.executor.simpleLsf.queue: the queue name
 - pipelite.executor.simpleLsf.cpu: the number of requested cpus (-n option)
-- pipelite.executor.simpleLsf.memory: the amount of requested memory in MBytes (-M and -R rusage[mem=] option)
+- pipelite.executor.simpleLsf.memory: the amount of requested memory (-M and -R rusage[mem=] option)
+- pipelite.executor.simpleLsf.memoryUnits: the LSF memory units (-M and -R rusage[mem=] option)
 - pipelite.executor.simpleLsf.memoryTimeout: the LSF memory duration (-R rusage[mem=:duration=] option)
 
 ##### LSF executor parameters
@@ -311,7 +314,7 @@ value is not overriden in ```ProcessBuilder```.
 - pipelite.service.contextPath: the http port for the pipeline web interface. Default value: /pipelite
 - pipelite.service.username: the pipelite web service username. Default value: pipelite
 - pipelite.service.password: the pipelite web service password. Default value: pipelite
-- pipelite.service.shutdownPeriod: the pipelite service shutdown period. Default value: 10 seconds. Minimum value: 30 seconds.
+- pipelite.service.shutdownPeriod: the pipelite service shutdown period to allow the service to finish gracefully. Minimum value: 10 seconds. Default value: 1 minute.
 - pipelite.service.force: forces the pipelite service to start by removing all service locks and by updating service
   names attached to schedules if necessary. Default value: false
   
@@ -329,7 +332,7 @@ value is not overriden in ```ProcessBuilder```.
 - pipelite.mail.stageError: send an email when stage fails. Default: true
 - pipelite.mail.stageSuccess: send an email when stage succeeds. Default: false
 
-#### Database parameters
+#### Datasource parameters
 
 - pipelite.datasource.driverClassName: JDBC driver class name
 - pipelite.datasource.url: JDBC URL
@@ -338,8 +341,10 @@ value is not overriden in ```ProcessBuilder```.
 - pipelite.datasource.ddlAuto: see Hibernate hbm2ddl.auto options
 - pipelite.datasource.dialect: see Hibernate dialect options
 - pipelite.datasource.maxActive: maximum number of active database connections. Default value: 25
-- pipelite.datasource.test: if set to true then uses an in memory database unsuitable for production purposes. Default
-  value: false
+- pipelite.datasource.test: if set to true then uses an in memory database unsuitable for production purposes. Default value: false
+- pipelite.datasource.retry.attempts: number of retry attempts to use the data source for an operation. Default value: 10
+- pipelite.datasource.retry.delay: the delay between first and second attempt to use the data source for an operation. Default value: 1 second
+- pipelite.datasource.retry.multiplier: the exponential multiplier between subsequent attempts to use the data source for an operation. Default value: 2
 
 #### Advanced parameters
 

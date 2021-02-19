@@ -84,8 +84,9 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
 
   protected void executeSchedules() {
     try {
-      if (!healthCheckService.databaseHealthy()) {
-        log.atSevere().log("Waiting database to be healthy to start new schedules");
+      if (!healthCheckService.isDataSourceHealthy()) {
+        logContext(log.atSevere())
+            .log("Waiting data source to be healthy before starting new schedules");
         return;
       }
       getExecutableSchedules()

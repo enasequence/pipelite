@@ -10,6 +10,7 @@
  */
 package pipelite.launcher;
 
+import com.google.common.flogger.FluentLogger;
 import java.time.ZonedDateTime;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
@@ -19,6 +20,7 @@ import pipelite.launcher.process.creator.PrioritizedProcessCreator;
 import pipelite.launcher.process.queue.ProcessQueue;
 import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
+import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.service.HealthCheckService;
@@ -80,9 +82,9 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
   @Override
   protected void run() {
     try {
-      if (!healthCheckService.databaseHealthy()) {
-        log.atSevere().log(
-            "Waiting database to be healthy to start new pipelines: " + pipelineName);
+      if (!healthCheckService.isDataSourceHealthy()) {
+        logContext(log.atSevere())
+            .log("Waiting data source to be healthy before starting new processes");
         return;
       }
 
@@ -132,5 +134,10 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
 
   public int getQueuedProcessCount() {
     return processQueue.getQueuedProcessCount();
+  }
+
+  private FluentLogger.Api logContext(FluentLogger.Api log) {
+    return log.with(LogKey.LAUNCHER_NAME, getLauncherName())
+        .with(LogKey.PIPELINE_NAME, pipelineName);
   }
 }
