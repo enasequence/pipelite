@@ -29,9 +29,15 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ProcessEntityId;
+import pipelite.entity.StageEntity;
+import pipelite.entity.StageEntityId;
+import pipelite.exception.PipeliteProcessStateChangeException;
+import pipelite.launcher.dependency.DependencyResolver;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.repository.ProcessRepository;
+import pipelite.repository.StageRepository;
+import pipelite.stage.Stage;
 
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -47,13 +53,17 @@ import pipelite.repository.ProcessRepository;
 public class ProcessService {
 
   private final ProcessRepository repository;
+  private final StageRepository stageRepository;
   private final MailService mailService;
 
   @Autowired JdbcTemplate jdbcTemplate;
 
   public ProcessService(
-      @Autowired ProcessRepository repository, @Autowired MailService mailService) {
+      @Autowired ProcessRepository repository,
+      @Autowired StageRepository stageRepository,
+      @Autowired MailService mailService) {
     this.repository = repository;
+    this.stageRepository = stageRepository;
     this.mailService = mailService;
   }
 
@@ -283,5 +293,94 @@ public class ProcessService {
    */
   public void delete(ProcessEntity processEntity) {
     repository.delete(processEntity);
+  }
+
+  /**
+   * Change process state by resetting failed stages.
+   *
+   * @param pipelineName the pipeline name
+   * @param process the process
+   * @throws PipeliteProcessStateChangeException if the process state can't be changed
+   */
+  public void retry(String pipelineName, Process process)
+      throws PipeliteProcessStateChangeException {
+    getSavedProcessForProcessStateChange(pipelineName, process, ProcessState.FAILED);
+    List<Stage> resetStages = new ArrayList<>();
+    for (Stage stage : process.getStages()) {
+      getSavedStageForProcessStateChange(pipelineName, process, stage);
+      if (DependencyResolver.isPermanentlyFailedStage(stage)) {
+        resetStages.add(stage);
+      }
+    }
+    resetStagesForProcessStateChange(pipelineName, process, resetStages);
+  }
+
+  /**
+   * Change process state by resetting the given completed stage and any dependent stages.
+   *
+   * @param pipelineName the pipeline name
+   * @param stageName the stage name
+   * @param process the process
+   * @throws PipeliteProcessStateChangeException if the process state can't be changed
+   */
+  public void rerun(String pipelineName, String stageName, Process process)
+      throws PipeliteProcessStateChangeException {
+    Optional<Stage> stage = process.getStage(stageName);
+    if (!stage.isPresent()) {
+      throw new PipeliteProcessStateChangeException(
+          pipelineName, process.getProcessId(), "invalid stage name " + stageName);
+    }
+    getSavedProcessForProcessStateChange(pipelineName, process, ProcessState.COMPLETED);
+    List<Stage> resetStages = new ArrayList<>();
+    resetStages.add(stage.get());
+    resetStages.addAll(DependencyResolver.getDependentStages(process.getStages(), stage.get()));
+    resetStagesForProcessStateChange(pipelineName, process, resetStages);
+  }
+
+  private void getSavedProcessForProcessStateChange(
+      String pipelineName, Process process, ProcessState expectedProcessState) {
+    // Get process entity
+    Optional<ProcessEntity> processEntity =
+        repository.findById(new ProcessEntityId(process.getProcessId(), pipelineName));
+    if (!processEntity.isPresent()) {
+      throw new PipeliteProcessStateChangeException(
+          pipelineName, process.getProcessId(), "process does not exists");
+    }
+    process.setProcessEntity(processEntity.get());
+
+    // Check process state
+    ProcessState processState = process.getProcessEntity().getProcessState();
+    if (processState != expectedProcessState) {
+      throw new PipeliteProcessStateChangeException(
+          pipelineName,
+          process.getProcessId(),
+          "process is " + processState + " but should be " + expectedProcessState);
+    }
+  }
+
+  private void getSavedStageForProcessStateChange(
+      String pipelineName, Process process, Stage stage) {
+    Optional<StageEntity> stageEntity =
+        stageRepository.findById(
+            new StageEntityId(process.getProcessId(), pipelineName, stage.getStageName()));
+
+    if (!stageEntity.isPresent()) {
+      throw new PipeliteProcessStateChangeException(
+          pipelineName, process.getProcessId(), "unknown stage " + stage.getStageName());
+    }
+    stage.setStageEntity(stageEntity.get());
+  }
+
+  private void resetStagesForProcessStateChange(
+      String pipelineName, Process process, List<Stage> stages) {
+    if (stages.isEmpty()) {
+      throw new PipeliteProcessStateChangeException(
+          pipelineName, process.getProcessId(), "no stages to reset");
+    }
+    for (Stage stage : stages) {
+      stage.getStageEntity().resetExecution();
+      stageRepository.save(stage.getStageEntity());
+    }
+    startExecution(process.getProcessEntity());
   }
 }

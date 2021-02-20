@@ -11,6 +11,7 @@
 package pipelite.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -22,9 +23,15 @@ import org.springframework.transaction.annotation.Transactional;
 import pipelite.PipeliteTestConfiguration;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.ProcessEntity;
+import pipelite.entity.StageEntity;
+import pipelite.exception.PipeliteProcessStateChangeException;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.stage.Stage;
+import pipelite.stage.StageState;
+import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.parameters.ExecutorParameters;
 
 @SpringBootTest(classes = PipeliteTestConfiguration.class)
 @Transactional
@@ -34,12 +41,13 @@ class ProcessServiceTest {
   private static final int DEFAULT_LIMIT = Integer.MAX_VALUE;
 
   @Autowired ProcessService service;
+  @Autowired StageService stageService;
 
   @Test
   public void lifecycle() {
 
-    String pipelineName = UniqueStringGenerator.randomPipelineName(ProcessServiceTest.class);
-    String processId = UniqueStringGenerator.randomProcessId(ProcessServiceTest.class);
+    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
+    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
     int priority = 1;
 
     ProcessEntity processEntity = service.createExecution(pipelineName, processId, priority);
@@ -81,8 +89,318 @@ class ProcessServiceTest {
   }
 
   @Test
-  public void testGetActiveCompletedFailedPendingProcessesWithSamePriority() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName(ProcessServiceTest.class);
+  public void retryFailedProcess() {
+    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
+    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    String stageName = UniqueStringGenerator.randomStageName(this.getClass());
+
+    Process process =
+        new ProcessBuilder(processId)
+            .execute(stageName)
+            .withCallExecutor(
+                StageState.ERROR,
+                ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build())
+            .build();
+
+    // Save failed process
+    process.setProcessEntity(service.createExecution(pipelineName, processId, 1));
+    service.startExecution(process.getProcessEntity());
+    service.endExecution(process, ProcessState.FAILED);
+
+    // Check failed process
+    ProcessEntity processEntity = service.getSavedProcess(pipelineName, processId).get();
+    assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
+    assertThat(processEntity.getProcessId()).isEqualTo(processId);
+    assertThat(processEntity.getPriority()).isEqualTo(1);
+    assertThat(processEntity.getExecutionCount()).isEqualTo(1);
+    assertThat(processEntity.getStartTime()).isNotNull();
+    assertThat(processEntity.getEndTime()).isNotNull();
+    assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.FAILED);
+
+    // Save failed stage
+    Stage stage = process.getStage(stageName).get();
+    stage.setStageEntity(stageService.createExecution(pipelineName, processId, stage));
+    stageService.startExecution(stage);
+    stageService.endExecution(stage, StageExecutorResult.error());
+
+    // Check failed stage
+    StageEntity stageEntity = stageService.getSavedStage(pipelineName, processId, stageName).get();
+    assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
+    assertThat(stageEntity.getProcessId()).isEqualTo(processId);
+    assertThat(stageEntity.getStageName()).isEqualTo(stageName);
+    assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
+    assertThat(stageEntity.getStageState()).isEqualTo(StageState.ERROR);
+    assertThat(stageEntity.getStartTime()).isNotNull();
+    assertThat(stageEntity.getEndTime()).isNotNull();
+
+    // Retry
+    service.retry(pipelineName, process);
+
+    processEntity = service.getSavedProcess(pipelineName, processId).get();
+    assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
+    assertThat(processEntity.getProcessId()).isEqualTo(processId);
+    assertThat(processEntity.getPriority()).isEqualTo(1);
+    assertThat(processEntity.getExecutionCount()).isEqualTo(1);
+    assertThat(processEntity.getStartTime()).isNotNull();
+    assertThat(processEntity.getEndTime()).isNull(); // Made null
+    assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.ACTIVE);
+
+    // Check stage state
+    stageEntity = stageService.getSavedStage(pipelineName, processId, stageName).get();
+    assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
+    assertThat(stageEntity.getProcessId()).isEqualTo(processId);
+    assertThat(stageEntity.getStageName()).isEqualTo(stageName);
+    assertThat(stageEntity.getExecutionCount()).isEqualTo(0); // Made 0
+    assertThat(stageEntity.getStageState()).isEqualTo(StageState.PENDING);
+    assertThat(stageEntity.getStartTime()).isNull(); // Made null
+    assertThat(stageEntity.getEndTime()).isNull(); // Made null
+  }
+
+  @Test
+  public void retryFailedProcessThrowsBecauseNotFailed() {
+    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
+    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    String stageName = UniqueStringGenerator.randomStageName(this.getClass());
+
+    Process process =
+        new ProcessBuilder(processId)
+            .execute(stageName)
+            .withCallExecutor(
+                StageState.ERROR,
+                ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build())
+            .build();
+
+    // Save completed process
+    process.setProcessEntity(service.createExecution(pipelineName, processId, 1));
+    service.startExecution(process.getProcessEntity());
+    service.endExecution(process, ProcessState.COMPLETED);
+
+    // Check completed process
+    ProcessEntity processEntity = service.getSavedProcess(pipelineName, processId).get();
+    assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.COMPLETED);
+
+    // Retry
+    Exception exception =
+        assertThrows(
+            PipeliteProcessStateChangeException.class, () -> service.retry(pipelineName, process));
+    assertThat(exception.getMessage()).contains("process is COMPLETED but should be FAILED");
+  }
+
+  @Test
+  public void retryFailedProcessThrowsUnknownStage() {
+    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
+    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    String stageName = UniqueStringGenerator.randomStageName(this.getClass());
+
+    Process process =
+        new ProcessBuilder(processId)
+            .execute(stageName)
+            .withCallExecutor(
+                StageState.ERROR,
+                ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build())
+            .build();
+
+    // Save completed process
+    process.setProcessEntity(service.createExecution(pipelineName, processId, 1));
+    service.startExecution(process.getProcessEntity());
+    service.endExecution(process, ProcessState.FAILED);
+
+    // Check completed process
+    ProcessEntity processEntity = service.getSavedProcess(pipelineName, processId).get();
+    assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.FAILED);
+
+    // Retry
+    Exception exception =
+        assertThrows(
+            PipeliteProcessStateChangeException.class, () -> service.retry(pipelineName, process));
+    assertThat(exception.getMessage()).contains("unknown stage");
+  }
+
+  @Test
+  public void retryFailedProcessThrowsBecauseNoPermanenentlyFailedStages() {
+    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
+    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    String stageName = UniqueStringGenerator.randomStageName(this.getClass());
+
+    Process process =
+        new ProcessBuilder(processId)
+            .execute(stageName)
+            .withCallExecutor(
+                StageState.ERROR,
+                ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build())
+            .build();
+
+    // Save failed process
+    process.setProcessEntity(service.createExecution(pipelineName, processId, 1));
+    service.startExecution(process.getProcessEntity());
+    service.endExecution(process, ProcessState.FAILED);
+
+    // Check failed process
+    ProcessEntity processEntity = service.getSavedProcess(pipelineName, processId).get();
+    assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.FAILED);
+
+    // Save completed stage
+    Stage stage = process.getStage(stageName).get();
+    stage.setStageEntity(stageService.createExecution(pipelineName, processId, stage));
+    stageService.startExecution(stage);
+    stageService.endExecution(stage, StageExecutorResult.success());
+
+    // Check completed stage
+    StageEntity stageEntity = stageService.getSavedStage(pipelineName, processId, stageName).get();
+    assertThat(stageEntity.getStageState()).isEqualTo(StageState.SUCCESS);
+
+    // Retry
+    Exception exception =
+        assertThrows(
+            PipeliteProcessStateChangeException.class, () -> service.retry(pipelineName, process));
+    assertThat(exception.getMessage()).contains("no stages to reset");
+  }
+
+  @Test
+  public void rerunCompletedProcess() {
+    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
+    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    String stageName1 = UniqueStringGenerator.randomStageName(this.getClass());
+    String stageName2 = UniqueStringGenerator.randomStageName(this.getClass());
+    String stageName3 = UniqueStringGenerator.randomStageName(this.getClass());
+
+    // Stage 2 depends on stage 1. Stage 1 will be rerun and so will stage 2.
+
+    Process process =
+        new ProcessBuilder(processId)
+            .execute(stageName1)
+            .withCallExecutor(
+                StageState.SUCCESS,
+                ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build())
+            .executeAfter(stageName2, stageName1)
+            .withCallExecutor(
+                StageState.SUCCESS,
+                ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build())
+            .execute(stageName3)
+            .withCallExecutor(
+                StageState.SUCCESS,
+                ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build())
+            .build();
+
+    // Save completed process
+    process.setProcessEntity(service.createExecution(pipelineName, processId, 1));
+    service.startExecution(process.getProcessEntity());
+    service.endExecution(process, ProcessState.COMPLETED);
+
+    // Check completed process
+    ProcessEntity processEntity = service.getSavedProcess(pipelineName, processId).get();
+    assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
+    assertThat(processEntity.getProcessId()).isEqualTo(processId);
+    assertThat(processEntity.getPriority()).isEqualTo(1);
+    assertThat(processEntity.getExecutionCount()).isEqualTo(1);
+    assertThat(processEntity.getStartTime()).isNotNull();
+    assertThat(processEntity.getEndTime()).isNotNull();
+    assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.COMPLETED);
+
+    // Save completed stages
+    process
+        .getStages()
+        .forEach(
+            stage -> {
+              String stageName = stage.getStageName();
+              stage = process.getStage(stageName).get();
+              stage.setStageEntity(stageService.createExecution(pipelineName, processId, stage));
+              stageService.startExecution(stage);
+              stageService.endExecution(stage, StageExecutorResult.success());
+            });
+
+    process
+        .getStages()
+        .forEach(
+            stage -> {
+              String stageName = stage.getStageName();
+              // Check completed stages
+              StageEntity stageEntity =
+                  stageService.getSavedStage(pipelineName, processId, stageName).get();
+              assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
+              assertThat(stageEntity.getProcessId()).isEqualTo(processId);
+              assertThat(stageEntity.getStageName()).isEqualTo(stageName);
+              assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
+              assertThat(stageEntity.getStageState()).isEqualTo(StageState.SUCCESS);
+              assertThat(stageEntity.getStartTime()).isNotNull();
+              assertThat(stageEntity.getEndTime()).isNotNull();
+            });
+
+    // Retry
+    service.rerun(pipelineName, stageName1, process);
+
+    processEntity = service.getSavedProcess(pipelineName, processId).get();
+    assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
+    assertThat(processEntity.getProcessId()).isEqualTo(processId);
+    assertThat(processEntity.getPriority()).isEqualTo(1);
+    assertThat(processEntity.getExecutionCount()).isEqualTo(1);
+    assertThat(processEntity.getStartTime()).isNotNull();
+    assertThat(processEntity.getEndTime()).isNull(); // Made null
+    assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.ACTIVE);
+
+    // Check stage state
+    StageEntity stageEntity = stageService.getSavedStage(pipelineName, processId, stageName1).get();
+    assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
+    assertThat(stageEntity.getProcessId()).isEqualTo(processId);
+    assertThat(stageEntity.getStageName()).isEqualTo(stageName1);
+    assertThat(stageEntity.getExecutionCount()).isEqualTo(0); // Made 0
+    assertThat(stageEntity.getStageState()).isEqualTo(StageState.PENDING);
+    assertThat(stageEntity.getStartTime()).isNull(); // Made null
+    assertThat(stageEntity.getEndTime()).isNull(); // Made null
+
+    stageEntity = stageService.getSavedStage(pipelineName, processId, stageName2).get();
+    assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
+    assertThat(stageEntity.getProcessId()).isEqualTo(processId);
+    assertThat(stageEntity.getStageName()).isEqualTo(stageName2);
+    assertThat(stageEntity.getExecutionCount()).isEqualTo(0); // Made 0
+    assertThat(stageEntity.getStageState()).isEqualTo(StageState.PENDING);
+    assertThat(stageEntity.getStartTime()).isNull(); // Made null
+    assertThat(stageEntity.getEndTime()).isNull(); // Made null
+
+    stageEntity = stageService.getSavedStage(pipelineName, processId, stageName3).get();
+    assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
+    assertThat(stageEntity.getProcessId()).isEqualTo(processId);
+    assertThat(stageEntity.getStageName()).isEqualTo(stageName3);
+    assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
+    assertThat(stageEntity.getStageState()).isEqualTo(StageState.SUCCESS);
+    assertThat(stageEntity.getStartTime()).isNotNull();
+    assertThat(stageEntity.getEndTime()).isNotNull();
+  }
+
+  @Test
+  public void rerunCompletedProcessThrowsBecauseNotCompleted() {
+    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
+    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    String stageName = UniqueStringGenerator.randomStageName(this.getClass());
+
+    Process process =
+        new ProcessBuilder(processId)
+            .execute(stageName)
+            .withCallExecutor(
+                StageState.ERROR,
+                ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build())
+            .build();
+
+    // Save failed process
+    process.setProcessEntity(service.createExecution(pipelineName, processId, 1));
+    service.startExecution(process.getProcessEntity());
+    service.endExecution(process, ProcessState.FAILED);
+
+    // Check completed process
+    ProcessEntity processEntity = service.getSavedProcess(pipelineName, processId).get();
+    assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.FAILED);
+
+    // Retry
+    Exception exception =
+        assertThrows(
+            PipeliteProcessStateChangeException.class,
+            () -> service.rerun(pipelineName, stageName, process));
+    assertThat(exception.getMessage()).contains("process is FAILED but should be COMPLETED");
+  }
+
+  @Test
+  public void getActiveCompletedFailedPendingProcessesWithSamePriority() {
+    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
 
     saveProcess(pipelineName, ProcessState.ACTIVE, 1);
     saveProcess(pipelineName, ProcessState.ACTIVE, 1);
@@ -103,8 +421,8 @@ class ProcessServiceTest {
   }
 
   @Test
-  public void testGetActiveCompletedFailedPendingProcessesWithDifferentPriority() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName(ProcessServiceTest.class);
+  public void getActiveCompletedFailedPendingProcessesWithDifferentPriority() {
+    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
 
     saveProcess(pipelineName, ProcessState.ACTIVE, 1);
     saveProcess(pipelineName, ProcessState.ACTIVE, 2);
@@ -132,8 +450,8 @@ class ProcessServiceTest {
   }
 
   @Test
-  public void testGetProcesses() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName(ProcessServiceTest.class);
+  public void getProcesses() {
+    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
 
     List<ProcessEntity> processes =
         Arrays.asList(
@@ -171,9 +489,7 @@ class ProcessServiceTest {
   private ProcessEntity saveProcess(String pipelineName, ProcessState state, int priority) {
     ProcessEntity processEntity =
         ProcessEntity.createExecution(
-            pipelineName,
-            UniqueStringGenerator.randomProcessId(ProcessServiceTest.class),
-            priority);
+            pipelineName, UniqueStringGenerator.randomProcessId(this.getClass()), priority);
     processEntity.setProcessState(state);
     processEntity.setExecutionCount(0);
     return service.saveProcess(processEntity);

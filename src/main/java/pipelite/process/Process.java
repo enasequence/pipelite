@@ -12,6 +12,7 @@ package pipelite.process;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.flogger.Flogger;
@@ -42,5 +43,9 @@ public class Process {
       }
       stageNames.add(stage.getStageName());
     }
+  }
+
+  public Optional<Stage> getStage(String stageName) {
+    return stages.stream().filter(s -> s.getStageName().equals(stageName)).findFirst();
   }
 }

@@ -111,8 +111,9 @@ public class DataSourceRetryListenerTest {
           }
         });
 
-    assertThrows(
-        TestException.class, () -> testServiceWithListenerAlwaysThrows.test(), EXCEPTION_MESSAGE);
+    Exception exception =
+        assertThrows(TestException.class, () -> testServiceWithListenerAlwaysThrows.test());
+    assertThat(exception.getMessage()).isEqualTo(EXCEPTION_MESSAGE);
 
     assertThat(onErrorThrows.get()).isEqualTo(10);
     assertThat(onErrorThrowsCorrect.get()).isEqualTo(10);

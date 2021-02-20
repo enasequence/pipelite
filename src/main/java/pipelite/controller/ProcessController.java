@@ -21,11 +21,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.function.Consumer;
+import lombok.Builder;
+import lombok.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
+import pipelite.RegisteredPipeline;
 import pipelite.controller.info.ProcessInfo;
 import pipelite.controller.utils.LoremUtils;
 import pipelite.controller.utils.TimeUtils;
@@ -33,7 +38,10 @@ import pipelite.entity.ProcessEntity;
 import pipelite.launcher.process.runner.ProcessRunner;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
 import pipelite.process.Process;
+import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.ProcessService;
+import pipelite.service.RegisteredPipelineService;
+import pipelite.service.StageService;
 
 @RestController
 @RequestMapping(value = "/process")
@@ -43,7 +51,9 @@ public class ProcessController {
 
   @Autowired private Application application;
   @Autowired private Environment environment;
+  @Autowired RegisteredPipelineService registeredPipelineService;
   @Autowired private ProcessService processService;
+  @Autowired private StageService stageService;
 
   @GetMapping("/{pipelineName}/{processId}")
   @ResponseStatus(HttpStatus.OK)
@@ -83,6 +93,79 @@ public class ProcessController {
         .forEach(launcher -> list.addAll(getProcesses(launcher, pipelineName)));
     getLoremIpsumProcess(list);
     return list;
+  }
+
+  @Value
+  @Builder
+  public static class ProcessStateChangeResult {
+    private final String pipelineName;
+    private final String processId;
+    private final boolean success;
+    private final String message;
+  }
+
+  @PutMapping("/{pipelineName}/retry/{processIds}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(description = "Retry permanently failed stages")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "OK"),
+        @ApiResponse(responseCode = "400", description = "Error"),
+        @ApiResponse(responseCode = "500", description = "Internal Server error")
+      })
+  public ResponseEntity<List<ProcessStateChangeResult>> retry(
+      @PathVariable(value = "pipelineName") String pipelineName,
+      @PathVariable(value = "processIds") List<String> processIds) {
+    List<ProcessStateChangeResult> result =
+        changeProcessState(
+            pipelineName, processIds, (process) -> processService.retry(pipelineName, process));
+    boolean isError = result.stream().anyMatch(s -> !s.isSuccess());
+    return new ResponseEntity<>(result, isError ? HttpStatus.BAD_REQUEST : HttpStatus.OK);
+  }
+
+  @PutMapping("/{pipelineName}/rerun/{stageName}/{processIds}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(description = "Rerun previously executed stages")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "OK"),
+        @ApiResponse(responseCode = "400", description = "Error"),
+        @ApiResponse(responseCode = "500", description = "Internal Server error")
+      })
+  public ResponseEntity<List<ProcessStateChangeResult>> rerun(
+      @PathVariable(value = "pipelineName") String pipelineName,
+      @PathVariable(value = "stageName") String stageName,
+      @PathVariable(value = "processIds") List<String> processIds) {
+    List<ProcessStateChangeResult> result =
+        changeProcessState(
+            pipelineName,
+            processIds,
+            (process) -> processService.rerun(pipelineName, stageName, process));
+    boolean isError = result.stream().anyMatch(s -> !s.isSuccess());
+    return new ResponseEntity<>(result, isError ? HttpStatus.BAD_REQUEST : HttpStatus.OK);
+  }
+
+  private List<ProcessStateChangeResult> changeProcessState(
+      String pipelineName, List<String> processIds, Consumer<Process> action) {
+    List<ProcessStateChangeResult> result = new ArrayList<>();
+
+    RegisteredPipeline registeredPipeline =
+        registeredPipelineService.getRegisteredPipeline(pipelineName);
+
+    for (String processId : processIds) {
+      ProcessBuilder processBuilder = new ProcessBuilder(processId);
+      registeredPipeline.configureProcess(processBuilder);
+      Process process = processBuilder.build();
+      ProcessStateChangeResult.ProcessStateChangeResultBuilder resultBuilder =
+          ProcessStateChangeResult.builder().pipelineName(pipelineName).processId(processId);
+      try {
+        action.accept(process);
+        result.add(resultBuilder.success(true).message("").build());
+      } catch (Exception ex) {
+        result.add(resultBuilder.success(false).message(ex.getMessage()).build());
+      }
+    }
+    return result;
   }
 
   private static List<ProcessInfo> getProcesses(

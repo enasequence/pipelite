@@ -95,6 +95,19 @@ public class DependencyResolver {
         .filter(stage -> isEventuallyExecutableStage(stages, stage))
         .collect(Collectors.toList());
   }
+
+  /**
+   * Returns the list of stages that have failed and exceeded the maximum execution count
+   *
+   * @param stages all stages
+   * @return the list of stages that have failed and exceeded the maximum execution count
+   */
+  public static List<Stage> getPermanentlyFailedStages(List<Stage> stages) {
+    return stages.stream()
+        .filter(stage -> isPermanentlyFailedStage(stage))
+        .collect(Collectors.toList());
+  }
+
   /**
    * Returns the list of stages that can be immediately executed.
    *
@@ -175,5 +188,15 @@ public class DependencyResolver {
 
     // Stage can be executed if all stages it depends on have been executed successfully.
     return dependsOnStages.stream().allMatch(s -> s.isSuccess());
+  }
+
+  /**
+   * Returns true if the stage has failed and exceeded the maximum execution count
+   *
+   * @param stage the stage of interest
+   * @return true if the stage has failed and exceeded the maximum execution count
+   */
+  public static boolean isPermanentlyFailedStage(Stage stage) {
+    return stage.isError() && !stage.hasMaximumRetriesLeft();
   }
 }

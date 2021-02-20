@@ -46,16 +46,16 @@ public class ProcessBuilderTest {
 
     assertThat(process).isNotNull();
     assertThat(process.getProcessId()).isEqualTo(PROCESS_ID);
-    assertThat(process.getStages().get(0).getDependsOn()).isEmpty();
-    assertThat(process.getStages().get(1).getDependsOn().get(0).getStageName())
+    assertThat(process.getStage(stageName1).get().getDependsOn()).isEmpty();
+    assertThat(process.getStage(stageName2).get().getDependsOn().get(0).getStageName())
         .isEqualTo(stageName1);
-    assertThat(process.getStages().get(2).getDependsOn().get(0).getStageName())
+    assertThat(process.getStage(stageName3).get().getDependsOn().get(0).getStageName())
         .isEqualTo(stageName2);
-    assertThat(process.getStages().get(3).getDependsOn().get(0).getStageName())
+    assertThat(process.getStage(stageName4).get().getDependsOn().get(0).getStageName())
         .isEqualTo(stageName1);
-    assertThat(process.getStages().get(4).getDependsOn().get(0).getStageName())
+    assertThat(process.getStage(stageName5).get().getDependsOn().get(0).getStageName())
         .isEqualTo(stageName1);
-    assertThat(process.getStages().get(4).getDependsOn().get(1).getStageName())
+    assertThat(process.getStage(stageName5).get().getDependsOn().get(1).getStageName())
         .isEqualTo(stageName2);
     assertThat(process.getStages()).hasSize(5);
   }
