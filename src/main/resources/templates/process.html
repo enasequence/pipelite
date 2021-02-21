@@ -11,7 +11,17 @@
                 columns: [
                     // { data: "pipelineName" },
                     // { data: "processId" },
-                    {data: "state"},
+                    {
+                        data: "state",
+                        render: function (data) {
+                            if (data == 'FAILED') {
+                                $("#retry").show();
+                            } else {
+                                $("#retry").hide();
+                            }
+                            return data;
+                        }
+                    },
                     {
                         data: "startTime",
                         render: function (data) {
@@ -129,9 +139,12 @@
 
             // Logs button is pressed.
             $('#stagesStatusTable tbody').on('click', 'button', function () {
+                var pipelineName = $("#pipelineName").val();
+                var processId = $("#processId").val();
+
                 var table = $('#stagesStatusTable').DataTable();
                 var data = table.row($(this).parents('tr')).data();
-                var url = "/pipelite/log/" + window.pipelineName + "/" + window.processId + "/" + data.stageName + "/";
+                var url = "/pipelite/log/" + pipelineName + "/" + processId + "/" + data.stageName + "/";
                 console.log(url);
                 $.get(url, function (data, status) {
                     $("#logsText").text(data.log);
@@ -194,10 +207,6 @@
 
                 $("#alert").hide();
 
-                // Save pipeline name and processId.
-                window.pipelineName = pipelineName;
-                window.processId = processId;
-
                 // Show the filter badges.
                 var pipelineNameBadgeText;
                 var processIdBadgeText;
@@ -219,13 +228,13 @@
                 var stagesStatusTable = $('#stagesStatusTable').DataTable();
                 var stagesDataTable = $('#stagesDataTable').DataTable();
 
-                var processUrl = "/pipelite/process/" + window.pipelineName + "/" + processId + "/";
+                var processUrl = "/pipelite/process/" + pipelineName + "/" + processId + "/";
                 console.log(processUrl);
                 $.get(processUrl, function (data, status) {
                     processTable.clear().rows.add(data).draw();
                 });
 
-                var stagesUrl = "/pipelite/stage/" + window.pipelineName + "/" + processId + "/";
+                var stagesUrl = "/pipelite/stage/" + pipelineName + "/" + processId + "/";
                 console.log(stagesUrl);
                 $.get(stagesUrl, function (data, status) {
                     stagesStatusTable.clear().rows.add(data).draw();
@@ -243,6 +252,9 @@
         // Show graph.
         function plot() {
 
+            var pipelineName = $("#pipelineName").val();
+            var processId = $("#processId").val();
+
             var minWidth = 100;
             var fullWidth = $("#stagesGraph").width();
             if (fullWidth < minWidth) {
@@ -251,7 +263,7 @@
             var fullHeight = 500;
             $("#stagesGraph").height(fullHeight);
 
-            var url = "/pipelite/stage/" + window.pipelineName + "/" + window.processId + "/";
+            var url = "/pipelite/stage/" + pipelineName + "/" + processId + "/";
             console.log(url);
             $.get(url, function (data, status) {
                 var g = new dagreD3.graphlib.Graph()
@@ -342,6 +354,32 @@
             window.getSelection().removeAllRanges();// to deselect
         };
 
+        // Retry
+        function retry() {
+            var pipelineName = $("#pipelineName").val();
+            var processId = $("#processId").val();
+
+            var url = "/pipelite/process/retry/" + pipelineName + "/" + processId;
+            console.log(url);
+
+            $.ajax({
+                url: url,
+                type: 'PUT',
+                data: '',
+                error: function (context) {
+                    var message = "";
+                    try {
+                        message = JSON.parse(context.responseText)[0].message;
+                    } catch (err) {
+                    }
+                    $("#alert-retry").text("Failed to retry process. " + message);
+                    $("#alert-retry").show();
+                },
+                success: function () {
+                    show();
+                }
+            });
+        }
 
     </script>
 </head>
@@ -383,7 +421,18 @@
             <span class="badge badge-secondary" id="pipelineNameBadge"></span>
             <span class="badge badge-secondary" id="processIdBadge"></span>
         </h5>
-        <div class="alert alert-warning" style="display: none;" role="alert" id="alert">
+        <div class="alert alert-danger" style="display: none;" role="alert" id="alert">
+        </div>
+    </div>
+</div>
+
+<div class="card m-2" id="retry">
+    <div class="card-body">
+        <h5 class="card-title">Retry failed process</h5>
+        <div class="form-inline m-2">
+            <button type="submit" class="btn btn-primary m-2" onclick="retry()">Retry process</button>
+        </div>
+        <div class="alert alert-danger" style="display: none;" role="alert" id="alert-retry">
         </div>
     </div>
 </div>

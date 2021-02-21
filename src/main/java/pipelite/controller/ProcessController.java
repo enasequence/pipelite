@@ -16,12 +16,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.function.Consumer;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +37,13 @@ import pipelite.service.ProcessService;
 import pipelite.service.RegisteredPipelineService;
 import pipelite.service.StageService;
 
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import java.util.function.Consumer;
+
 @RestController
 @RequestMapping(value = "/process")
 @Tag(name = "ProcessAPI", description = "Process")
@@ -54,26 +55,6 @@ public class ProcessController {
   @Autowired RegisteredPipelineService registeredPipelineService;
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
-
-  @GetMapping("/{pipelineName}/{processId}")
-  @ResponseStatus(HttpStatus.OK)
-  @Operation(description = "Process")
-  @ApiResponses(
-      value = {
-        @ApiResponse(responseCode = "200", description = "OK"),
-        @ApiResponse(responseCode = "500", description = "Internal Server error")
-      })
-  public List<ProcessInfo> process(
-      @PathVariable(value = "pipelineName") String pipelineName,
-      @PathVariable(value = "processId") String processId) {
-    List<ProcessInfo> list = new ArrayList<>();
-    Optional<ProcessEntity> processEntity = processService.getSavedProcess(pipelineName, processId);
-    if (processEntity.isPresent()) {
-      list.add(getProcess(processEntity.get()));
-    }
-    getLoremIpsumProcess(list);
-    return list;
-  }
 
   @GetMapping("/")
   @ResponseStatus(HttpStatus.OK)
@@ -95,6 +76,26 @@ public class ProcessController {
     return list;
   }
 
+  @GetMapping("/{pipelineName}/{processId}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(description = "Process")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "OK"),
+        @ApiResponse(responseCode = "500", description = "Internal Server error")
+      })
+  public List<ProcessInfo> process(
+      @PathVariable(value = "pipelineName") String pipelineName,
+      @PathVariable(value = "processId") String processId) {
+    List<ProcessInfo> list = new ArrayList<>();
+    Optional<ProcessEntity> processEntity = processService.getSavedProcess(pipelineName, processId);
+    if (processEntity.isPresent()) {
+      list.add(getProcess(processEntity.get()));
+    }
+    getLoremIpsumProcess(list);
+    return list;
+  }
+
   @Value
   @Builder
   public static class ProcessStateChangeResult {
@@ -104,7 +105,7 @@ public class ProcessController {
     private final String message;
   }
 
-  @PutMapping("/{pipelineName}/retry/{processIds}")
+  @PutMapping("/retry/{pipelineName}/{processIds}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(description = "Retry permanently failed stages")
   @ApiResponses(
@@ -123,7 +124,7 @@ public class ProcessController {
     return new ResponseEntity<>(result, isError ? HttpStatus.BAD_REQUEST : HttpStatus.OK);
   }
 
-  @PutMapping("/{pipelineName}/rerun/{stageName}/{processIds}")
+  @PutMapping("/rerun/{pipelineName}/{stageName}/{processIds}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(description = "Rerun previously executed stages")
   @ApiResponses(
@@ -149,8 +150,17 @@ public class ProcessController {
       String pipelineName, List<String> processIds, Consumer<Process> action) {
     List<ProcessStateChangeResult> result = new ArrayList<>();
 
-    RegisteredPipeline registeredPipeline =
-        registeredPipelineService.getRegisteredPipeline(pipelineName);
+    RegisteredPipeline registeredPipeline;
+    try {
+      registeredPipeline = registeredPipelineService.getRegisteredPipeline(pipelineName);
+    } catch (Exception ex) {
+      for (String processId : processIds) {
+        ProcessStateChangeResult.ProcessStateChangeResultBuilder resultBuilder =
+            ProcessStateChangeResult.builder().pipelineName(pipelineName).processId(processId);
+        result.add(resultBuilder.success(false).message(ex.getMessage()).build());
+      }
+      return result;
+    }
 
     for (String processId : processIds) {
       ProcessBuilder processBuilder = new ProcessBuilder(processId);

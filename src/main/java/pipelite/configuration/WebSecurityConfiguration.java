@@ -28,18 +28,19 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
   public static final String HEALTH_ENDPOINT = "/actuator/health";
 
-  @Autowired ServiceConfiguration serviceConfiguration;
+  @Autowired
+  ServiceConfiguration serviceConfiguration;
 
   @Bean
   public UserDetailsService userDetailsService() {
     User.UserBuilder users = User.withDefaultPasswordEncoder();
     InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
     manager.createUser(
-        users
-            .username(serviceConfiguration.getUsername())
-            .password(serviceConfiguration.getPassword())
-            .roles("ADMIN")
-            .build());
+            users
+                    .username(serviceConfiguration.getUsername())
+                    .password(serviceConfiguration.getPassword())
+                    .roles("ADMIN")
+                    .build());
     return manager;
   }
 
@@ -51,27 +52,26 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
   @Override
   protected void configure(HttpSecurity httpSecurity) throws Exception {
     httpSecurity
-        .csrf()
-        .disable()
-        .cors()
-        .and()
-        .authorizeRequests()
-        .antMatchers("static/**")
-        .permitAll()
-        .antMatchers(HEALTH_ENDPOINT)
-        .permitAll()
-        .anyRequest()
-        .authenticated()
-        .and()
-        .formLogin()
-        .defaultSuccessUrl("/ui/schedules", true)
-        .loginPage("/login")
-        .permitAll()
-        .and()
-        .logout()
-        .permitAll();
-    //  .antMatchers("/*").permitAll();
-    httpSecurity.csrf().disable();
+            .csrf()
+            .disable()
+            .cors()
+            .and()
+            .authorizeRequests()
+            .antMatchers("static/**")
+            .permitAll()
+            .antMatchers(HEALTH_ENDPOINT)
+            .permitAll()
+            .anyRequest()
+            .authenticated()
+            .and()
+            .formLogin()
+            .loginPage("/login")
+            .defaultSuccessUrl("/ui/schedules", true)
+            .failureUrl("/login")
+            .permitAll()
+            .and()
+            .logout()
+            .permitAll();
   }
 
   @Bean
