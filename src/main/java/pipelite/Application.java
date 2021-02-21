@@ -10,12 +10,6 @@
  */
 package pipelite;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -29,6 +23,13 @@ import pipelite.configuration.ServiceConfiguration;
 import pipelite.launcher.*;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.*;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Configuration
 @ComponentScan
@@ -125,15 +126,19 @@ public class Application {
               internalErrorService,
               healthCheckService);
 
-      for (String pipelineName : registeredPipelineService.getPipelineNames()) {
+      for (Pipeline pipeline : registeredPipelineService.getRegisteredPipelines(Pipeline.class)) {
         PipeliteLauncher launcher =
-            createLauncher(pipeliteConfiguration, pipeliteServices, pipelineName);
+            createLauncher(pipeliteConfiguration, pipeliteServices, pipeline.pipelineName());
         launchers.add(launcher);
         serverManager.addService(launcher);
       }
       // Create scheduler for scheduled pipelines.
       if (registeredPipelineService.isScheduler()) {
-        PipeliteScheduler scheduler = createScheduler(pipeliteConfiguration, pipeliteServices);
+        PipeliteScheduler scheduler =
+            createScheduler(
+                pipeliteConfiguration,
+                pipeliteServices,
+                registeredPipelineService.getRegisteredPipelines(Schedule.class));
         schedulers.add(scheduler);
         serverManager.addService(scheduler);
       }
@@ -148,8 +153,10 @@ public class Application {
   }
 
   private PipeliteScheduler createScheduler(
-      PipeliteConfiguration pipeliteConfiguration, PipeliteServices pipeliteServices) {
-    return DefaultPipeliteScheduler.create(pipeliteConfiguration, pipeliteServices);
+      PipeliteConfiguration pipeliteConfiguration,
+      PipeliteServices pipeliteServices,
+      List<Schedule> schedules) {
+    return DefaultPipeliteScheduler.create(pipeliteConfiguration, pipeliteServices, schedules);
   }
 
   private PipeliteLauncher createLauncher(

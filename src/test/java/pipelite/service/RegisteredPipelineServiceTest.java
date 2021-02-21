@@ -10,30 +10,41 @@
  */
 package pipelite.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.test.context.ContextConfiguration;
 import pipelite.*;
+import pipelite.configuration.ServiceConfiguration;
 import pipelite.exception.PipeliteException;
 import pipelite.process.builder.ProcessBuilder;
 
-@SpringBootTest(classes = PipeliteTestConfiguration.class)
-@ContextConfiguration(initializers = PipeliteTestConfiguration.TestContextInitializer.class)
+import java.util.Arrays;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.Mockito.mock;
+
+@SpringBootTest(classes = RegisteredPipelineServiceTest.TestConfig.class)
 public class RegisteredPipelineServiceTest {
 
   @Autowired RegisteredPipelineService registeredPipelineService;
-
   @Autowired TestPipeline pipeline1;
   @Autowired TestPipeline pipeline2;
+  @Autowired TestSchedule schedule1;
+  @Autowired TestSchedule schedule2;
+  @Autowired TestPrioritizedPipeline prioritizedPipeline1;
+  @Autowired TestPrioritizedPipeline prioritizedPipeline2;
 
-  @TestConfiguration
   public static class TestConfig {
+    @Bean
+    public RegisteredPipelineService registeredPipelineService(
+        @Autowired List<RegisteredPipeline> registeredPipelines) {
+      return new RegisteredPipelineService(
+          mock(ServiceConfiguration.class), mock(ScheduleService.class), registeredPipelines);
+    }
+
     @Bean
     public TestPipeline pipeline1() {
       return new TestPipeline();
@@ -42,6 +53,26 @@ public class RegisteredPipelineServiceTest {
     @Bean
     public TestPipeline pipeline2() {
       return new TestPipeline();
+    }
+
+    @Bean
+    public TestSchedule schedule1() {
+      return new TestSchedule();
+    }
+
+    @Bean
+    public TestSchedule schedule2() {
+      return new TestSchedule();
+    }
+
+    @Bean
+    public TestPrioritizedPipeline prioritizedPipeline1() {
+      return new TestPrioritizedPipeline();
+    }
+
+    @Bean
+    public TestPrioritizedPipeline prioritizedPipeline2() {
+      return new TestPrioritizedPipeline();
     }
   }
 
@@ -63,39 +94,92 @@ public class RegisteredPipelineServiceTest {
     public void configureProcess(ProcessBuilder builder) {}
   }
 
+  public static class TestSchedule implements Schedule {
+    private final String pipelineName =
+        UniqueStringGenerator.randomPipelineName(RegisteredPipelineServiceTest.class);
+
+    @Override
+    public Options configurePipeline() {
+      return new Options().cron("* * * * *");
+    }
+
+    @Override
+    public String pipelineName() {
+      return pipelineName;
+    }
+
+    @Override
+    public void configureProcess(ProcessBuilder builder) {}
+  }
+
+  public static class TestPrioritizedPipeline implements PrioritizedPipeline {
+    private final String pipelineName =
+        UniqueStringGenerator.randomPipelineName(RegisteredPipelineServiceTest.class);
+
+    @Override
+    public Options configurePipeline() {
+      return new Options().pipelineParallelism(1);
+    }
+
+    @Override
+    public String pipelineName() {
+      return pipelineName;
+    }
+
+    @Override
+    public void configureProcess(ProcessBuilder builder) {}
+
+    @Override
+    public PrioritizedProcess nextProcess() {
+      return null;
+    }
+
+    @Override
+    public void confirmProcess(String processId) {}
+  }
+
+  private void assertGetRegisteredPipelineByName(
+      RegisteredPipeline registeredPipeline, String pipelineName) {
+    assertThat(registeredPipelineService.getRegisteredPipeline(pipelineName))
+        .isEqualTo(registeredPipeline);
+  }
+
+  private <T extends RegisteredPipeline> void assertGetRegisteredPipelineByName(
+      RegisteredPipeline registeredPipeline, Class<T> cls, String pipelineName) {
+    assertThat(registeredPipelineService.getRegisteredPipeline(pipelineName, cls))
+        .isEqualTo(registeredPipeline);
+  }
+
+  private <T extends RegisteredPipeline> void assertGetRegisteredPipelinesByType(
+      List<T> registeredPipelines, Class<T> cls) {
+    assertThat(registeredPipelineService.getRegisteredPipelines(cls))
+        .containsExactlyInAnyOrderElementsOf(registeredPipelines);
+  }
+
   @Test
-  public void getRegisteredPipeline() {
-    assertThat(
-            registeredPipelineService
-                .getRegisteredPipeline(pipeline1.pipelineName())
-                .pipelineName())
-        .isEqualTo(pipeline1.pipelineName());
-    assertThat(
-            registeredPipelineService
-                .getRegisteredPipeline(pipeline2.pipelineName())
-                .pipelineName())
-        .isEqualTo(pipeline2.pipelineName());
+  public void getRegisteredPipelineByName() {
+    assertGetRegisteredPipelineByName(pipeline1, pipeline1.pipelineName());
+    assertGetRegisteredPipelineByName(pipeline2, pipeline2.pipelineName());
+    assertGetRegisteredPipelineByName(schedule1, schedule1.pipelineName());
+    assertGetRegisteredPipelineByName(schedule2, schedule2.pipelineName());
+    assertGetRegisteredPipelineByName(prioritizedPipeline1, prioritizedPipeline1.pipelineName());
+    assertGetRegisteredPipelineByName(prioritizedPipeline2, prioritizedPipeline2.pipelineName());
+  }
 
-    assertThat(
-            registeredPipelineService
-                .getRegisteredPipeline(pipeline1.pipelineName(), Pipeline.class)
-                .pipelineName())
-        .isEqualTo(pipeline1.pipelineName());
-    assertThat(
-            registeredPipelineService
-                .getRegisteredPipeline(pipeline2.pipelineName(), Pipeline.class)
-                .pipelineName())
-        .isEqualTo(pipeline2.pipelineName());
+  @Test
+  public void getRegisteredPipelineByNameAndType() {
+    assertGetRegisteredPipelineByName(pipeline1, Pipeline.class, pipeline1.pipelineName());
+    assertGetRegisteredPipelineByName(pipeline2, Pipeline.class, pipeline2.pipelineName());
+    assertGetRegisteredPipelineByName(schedule1, Schedule.class, schedule1.pipelineName());
+    assertGetRegisteredPipelineByName(schedule2, Schedule.class, schedule2.pipelineName());
+    assertGetRegisteredPipelineByName(
+        prioritizedPipeline1, PrioritizedPipeline.class, prioritizedPipeline1.pipelineName());
+    assertGetRegisteredPipelineByName(
+        prioritizedPipeline2, PrioritizedPipeline.class, prioritizedPipeline2.pipelineName());
+  }
 
-    assertThat(
-            registeredPipelineService.getRegisteredPipeline(
-                pipeline1.pipelineName(), Schedule.class))
-        .isNull();
-    assertThat(
-            registeredPipelineService.getRegisteredPipeline(
-                pipeline2.pipelineName(), Schedule.class))
-        .isNull();
-
+  @Test
+  public void getRegisteredPipelineException() {
     assertThatExceptionOfType(PipeliteException.class)
         .isThrownBy(() -> registeredPipelineService.getRegisteredPipeline(null))
         .withMessage("Missing pipeline name");
@@ -108,5 +192,20 @@ public class RegisteredPipelineServiceTest {
                 registeredPipelineService.getRegisteredPipeline(
                     UniqueStringGenerator.randomPipelineName(RegisteredPipelineServiceTest.class)))
         .withMessageStartingWith("Unknown pipeline");
+  }
+
+  @Test
+  public void getRegisteredPipelinesByType() {
+    assertGetRegisteredPipelinesByType(
+        Arrays.asList(pipeline1, pipeline2, prioritizedPipeline1, prioritizedPipeline2),
+        Pipeline.class);
+    assertGetRegisteredPipelinesByType(Arrays.asList(schedule1, schedule2), Schedule.class);
+    assertGetRegisteredPipelinesByType(
+        Arrays.asList(prioritizedPipeline1, prioritizedPipeline2), PrioritizedPipeline.class);
+  }
+
+  @Test
+  public void isScheduler() {
+    assertThat(registeredPipelineService.isScheduler()).isTrue();
   }
 }

@@ -11,11 +11,6 @@
 package pipelite.launcher;
 
 import com.google.common.flogger.FluentLogger;
-import java.time.ZonedDateTime;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Stream;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.Pipeline;
@@ -32,6 +27,12 @@ import pipelite.service.HealthCheckService;
 import pipelite.service.InternalErrorService;
 import pipelite.service.ProcessService;
 import pipelite.service.ScheduleService;
+
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 
 /**
  * Schedules non-parallel processes using cron expressions. New process instances are created using
@@ -53,7 +54,8 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   public PipeliteScheduler(
       PipeliteConfiguration pipeliteConfiguration,
       PipeliteServices pipeliteServices,
-      ProcessRunnerPool processRunnerPool) {
+      ProcessRunnerPool processRunnerPool,
+      List<Schedule> schedules) {
     super(pipeliteConfiguration, processRunnerPool);
     Assert.notNull(pipeliteConfiguration, "Missing configuration");
     Assert.notNull(pipeliteServices, "Missing services");
@@ -63,6 +65,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     this.healthCheckService = pipeliteServices.healthCheckService();
     this.scheduleCache = new ScheduleCache(pipeliteServices.registeredPipeline());
     this.serviceName = pipeliteConfiguration.service().getName();
+    schedules.forEach(s -> this.schedules.add(new PipeliteSchedulerSchedule(s.pipelineName())));
   }
 
   @Override
@@ -115,20 +118,23 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
 
   private void loadSchedules() {
     logContext(log.atInfo()).log("Loading schedules");
-    Collection<ScheduleEntity> scheduleEntities = scheduleService.getSchedules(serviceName);
-    for (ScheduleEntity scheduleEntity : scheduleEntities) {
-      createSchedule(scheduleEntity);
+    for (PipeliteSchedulerSchedule schedule : schedules) {
+      Optional<ScheduleEntity> scheduleEntity =
+          scheduleService.getSavedSchedule(schedule.getPipelineName());
+      if (scheduleEntity == null) {
+        throw new PipeliteException("Unknown scheduled pipeline: " + schedule.getPipelineName());
+      }
+      createSchedule(schedule, scheduleEntity.get());
     }
   }
 
   /**
    * Creates and enables the schedule.
    *
+   * @param schedule the schedule
    * @param scheduleEntity the schedule entity
    */
-  private void createSchedule(ScheduleEntity scheduleEntity) {
-    String pipelineName = scheduleEntity.getPipelineName();
-    PipeliteSchedulerSchedule schedule = new PipeliteSchedulerSchedule(pipelineName);
+  private void createSchedule(PipeliteSchedulerSchedule schedule, ScheduleEntity scheduleEntity) {
     schedule.setCron(scheduleEntity.getCron());
     if (scheduleEntity.getNextTime() != null) {
       // Use previously assigned launch time. The launch time is removed when the process
@@ -138,9 +144,8 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     } else {
       // Evaluate the cron expression and assign the next launch time.
       schedule.setLaunchTime(schedule.getNextLaunchTime());
-      scheduleService.scheduleExecution(pipelineName, schedule.getLaunchTime());
+      scheduleService.scheduleExecution(schedule.getPipelineName(), schedule.getLaunchTime());
     }
-    schedules.add(schedule);
   }
 
   protected void resumeSchedules() {

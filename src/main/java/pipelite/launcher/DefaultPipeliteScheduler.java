@@ -10,15 +10,20 @@
  */
 package pipelite.launcher;
 
+import pipelite.Schedule;
 import pipelite.launcher.process.runner.DefaultProcessRunner;
 import pipelite.launcher.process.runner.DefaultProcessRunnerPool;
+
+import java.util.List;
 
 public class DefaultPipeliteScheduler {
 
   private DefaultPipeliteScheduler() {}
 
   public static PipeliteScheduler create(
-      PipeliteConfiguration pipeliteConfiguration, PipeliteServices pipeliteServices) {
+      PipeliteConfiguration pipeliteConfiguration,
+      PipeliteServices pipeliteServices,
+      List<Schedule> schedules) {
     return new PipeliteScheduler(
         pipeliteConfiguration,
         pipeliteServices,
@@ -26,6 +31,7 @@ public class DefaultPipeliteScheduler {
             pipeliteConfiguration,
             pipeliteServices,
             (pipelineName) ->
-                new DefaultProcessRunner(pipeliteConfiguration, pipeliteServices, pipelineName)));
+                new DefaultProcessRunner(pipeliteConfiguration, pipeliteServices, pipelineName)),
+        schedules);
   }
 }

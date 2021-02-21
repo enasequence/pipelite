@@ -10,13 +10,11 @@
  */
 package pipelite.service;
 
-import java.util.*;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import pipelite.Pipeline;
-import pipelite.PrioritizedPipeline;
 import pipelite.RegisteredPipeline;
 import pipelite.Schedule;
 import pipelite.configuration.ServiceConfiguration;
@@ -24,14 +22,19 @@ import pipelite.cron.CronUtils;
 import pipelite.entity.ScheduleEntity;
 import pipelite.exception.PipeliteException;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 @Service
 @Lazy
 @Flogger
 public class RegisteredPipelineService {
 
-  private final Map<String, Schedule> scheduleMap = new HashMap<>();
-  private final Map<String, Pipeline> pipelineMap = new HashMap<>();
-  private final Map<String, PrioritizedPipeline> prioritizedPipelineMap = new HashMap<>();
+  private final Map<String, RegisteredPipeline> registeredPipelineMap = new HashMap<>();
   private final ServiceConfiguration serviceConfiguration;
   private final ScheduleService scheduleService;
   private final String serviceName;
@@ -43,22 +46,20 @@ public class RegisteredPipelineService {
     this.serviceConfiguration = serviceConfiguration;
     this.scheduleService = scheduleService;
     this.serviceName = serviceConfiguration.getName();
-    Set<String> pipelineNames = new HashSet<>();
     for (RegisteredPipeline registeredPipeline : registeredPipelines) {
-      registerPipeline(pipelineNames, registeredPipeline);
+      registerPipeline(registeredPipeline);
     }
     saveSchedules();
   }
 
-  private void registerPipeline(Set<String> pipelineNames, RegisteredPipeline registeredPipeline) {
+  private void registerPipeline(RegisteredPipeline registeredPipeline) {
     String pipelineName = registeredPipeline.pipelineName();
     if (pipelineName == null || pipelineName.trim().isEmpty()) {
       throw new PipeliteException("Missing pipeline name");
     }
-    if (pipelineNames.contains(pipelineName)) {
+    if (registeredPipelineMap.containsKey(pipelineName)) {
       throw new PipeliteException("Non-unique pipeline name: " + pipelineName);
     }
-    pipelineNames.add(pipelineName);
     if (registeredPipeline instanceof Schedule) {
       Schedule schedule = (Schedule) registeredPipeline;
       String cron = schedule.configurePipeline().cron();
@@ -70,9 +71,7 @@ public class RegisteredPipelineService {
         throw new PipeliteException(
             "Invalid cron expression '" + cron + "' for pipeline schedule: " + pipelineName);
       }
-      scheduleMap.put(pipelineName, schedule);
-    }
-    if (registeredPipeline instanceof Pipeline) {
+    } else if (registeredPipeline instanceof Pipeline) {
       Pipeline pipeline = (Pipeline) registeredPipeline;
       int pipelineParallelism = pipeline.configurePipeline().pipelineParallelism();
       if (pipelineParallelism < 1) {
@@ -82,17 +81,18 @@ public class RegisteredPipelineService {
                 + "' for pipeline: "
                 + pipelineName);
       }
-      pipelineMap.put(pipelineName, pipeline);
     }
-    if (registeredPipeline instanceof PrioritizedPipeline) {
-      PrioritizedPipeline pipeline = (PrioritizedPipeline) registeredPipeline;
-      prioritizedPipelineMap.put(pipelineName, pipeline);
-    }
+    registeredPipelineMap.put(pipelineName, registeredPipeline);
+  }
+
+  private Stream<Schedule> streamSchedules() {
+    return registeredPipelineMap.values().stream()
+        .filter(s -> s instanceof Schedule)
+        .map(s -> (Schedule) s);
   }
 
   private void saveSchedules() {
-    scheduleMap
-        .values()
+    streamSchedules()
         .forEach(
             schedule -> {
               String pipelineName = schedule.pipelineName();
@@ -170,30 +170,12 @@ public class RegisteredPipelineService {
   }
 
   /**
-   * Returns the registered pipeline names.
-   *
-   * @return the registered pipeline names
-   */
-  public List<String> getPipelineNames() {
-    return new ArrayList<>(pipelineMap.keySet());
-  }
-
-  /**
-   * Returns the registered scheduled pipeline names.
-   *
-   * @return the registered scheduled pipeline names
-   */
-  public List<String> getScheduleNames() {
-    return new ArrayList<>(scheduleMap.keySet());
-  }
-
-  /**
    * Returns true if a scheduler is registered.
    *
    * @return true if a scheduler is registered.
    */
   public boolean isScheduler() {
-    return !scheduleMap.isEmpty();
+    return streamSchedules().findAny().isPresent();
   }
 
   /**
@@ -207,11 +189,8 @@ public class RegisteredPipelineService {
     if (pipelineName == null || pipelineName.trim().isEmpty()) {
       throw new PipeliteException("Missing pipeline name");
     }
-    if (pipelineMap.containsKey(pipelineName)) {
-      return pipelineMap.get(pipelineName);
-    }
-    if (scheduleMap.containsKey(pipelineName)) {
-      return scheduleMap.get(pipelineName);
+    if (registeredPipelineMap.containsKey(pipelineName)) {
+      return registeredPipelineMap.get(pipelineName);
     }
     throw new PipeliteException("Unknown pipeline: " + pipelineName);
   }
@@ -227,20 +206,11 @@ public class RegisteredPipelineService {
     if (pipelineName == null || pipelineName.trim().isEmpty()) {
       throw new PipeliteException("Missing pipeline name");
     }
-
-    if (PrioritizedPipeline.class.equals(cls)) {
-      return (T) prioritizedPipelineMap.get(pipelineName);
+    RegisteredPipeline registeredPipeline = registeredPipelineMap.get(pipelineName);
+    if (registeredPipeline != null && cls.isInstance(registeredPipeline)) {
+      return (T) registeredPipelineMap.get(pipelineName);
     }
-
-    if (Pipeline.class.equals(cls)) {
-      return (T) pipelineMap.get(pipelineName);
-    }
-
-    if (Schedule.class.equals(cls)) {
-      return (T) scheduleMap.get(pipelineName);
-    }
-
-    return null;
+    throw new PipeliteException("Unknown pipeline: " + pipelineName);
   }
 
   /**
@@ -248,20 +218,10 @@ public class RegisteredPipelineService {
    *
    * @return the registered pipelines.
    */
-  public <T extends RegisteredPipeline> Collection<T> getRegisteredPipelines(Class<T> cls) {
-
-    if (PrioritizedPipeline.class.equals(cls)) {
-      return (Collection<T>) prioritizedPipelineMap.values();
-    }
-
-    if (Pipeline.class.equals(cls)) {
-      return (Collection<T>) pipelineMap.values();
-    }
-
-    if (Schedule.class.equals(cls)) {
-      return (Collection<T>) scheduleMap.values();
-    }
-
-    return Collections.emptyList();
+  public <T extends RegisteredPipeline> List<T> getRegisteredPipelines(Class<T> cls) {
+    return registeredPipelineMap.values().stream()
+        .filter(s -> cls.isInstance(s))
+        .map(s -> (T) s)
+        .collect(Collectors.toList());
   }
 }
