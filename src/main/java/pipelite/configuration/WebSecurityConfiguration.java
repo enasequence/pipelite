@@ -12,13 +12,11 @@ package pipelite.configuration;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -28,20 +26,19 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
   public static final String HEALTH_ENDPOINT = "/actuator/health";
 
-  @Autowired
-  ServiceConfiguration serviceConfiguration;
+  private final ServiceConfiguration serviceConfiguration;
+  private final UserDetailsConfiguration userDetailsConfiguration;
 
-  @Bean
-  public UserDetailsService userDetailsService() {
-    User.UserBuilder users = User.withDefaultPasswordEncoder();
-    InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
-    manager.createUser(
-            users
-                    .username(serviceConfiguration.getUsername())
-                    .password(serviceConfiguration.getPassword())
-                    .roles("ADMIN")
-                    .build());
-    return manager;
+  public WebSecurityConfiguration(
+      @Autowired ServiceConfiguration serviceConfiguration,
+      @Autowired UserDetailsConfiguration userDetailsConfiguration) {
+    this.serviceConfiguration = serviceConfiguration;
+    this.userDetailsConfiguration = userDetailsConfiguration;
+  }
+
+  @Override
+  protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+    auth.userDetailsService(userDetailsConfiguration);
   }
 
   @Override
@@ -52,26 +49,26 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
   @Override
   protected void configure(HttpSecurity httpSecurity) throws Exception {
     httpSecurity
-            .csrf()
-            .disable()
-            .cors()
-            .and()
-            .authorizeRequests()
-            .antMatchers("static/**")
-            .permitAll()
-            .antMatchers(HEALTH_ENDPOINT)
-            .permitAll()
-            .anyRequest()
-            .authenticated()
-            .and()
-            .formLogin()
-            .loginPage("/login")
-            .defaultSuccessUrl("/ui/schedules", true)
-            .failureUrl("/login")
-            .permitAll()
-            .and()
-            .logout()
-            .permitAll();
+        .csrf()
+        .disable()
+        .cors()
+        .and()
+        .authorizeRequests()
+        .antMatchers("static/**")
+        .permitAll()
+        .antMatchers(HEALTH_ENDPOINT)
+        .permitAll()
+        .anyRequest()
+        .authenticated()
+        .and()
+        .formLogin()
+        .loginPage("/login")
+        .defaultSuccessUrl("/ui/schedules", true)
+        .failureUrl("/login")
+        .permitAll()
+        .and()
+        .logout()
+        .permitAll();
   }
 
   @Bean
