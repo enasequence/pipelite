@@ -10,6 +10,12 @@
  */
 package pipelite;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -23,13 +29,6 @@ import pipelite.configuration.ServiceConfiguration;
 import pipelite.launcher.*;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.*;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Configuration
 @ComponentScan

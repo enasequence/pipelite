@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.controller;
+package pipelite.controller.api;
 
 import static pipelite.metrics.TimeSeriesMetrics.getTimeSeries;
 
@@ -31,7 +31,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
 import pipelite.Pipeline;
-import pipelite.controller.info.PipelineInfo;
+import pipelite.controller.api.info.PipelineInfo;
 import pipelite.controller.utils.LoremUtils;
 import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.process.runner.ProcessRunnerResult;
@@ -45,7 +45,7 @@ import tech.tablesaw.api.Table;
 import tech.tablesaw.plotly.components.Figure;
 
 @RestController
-@RequestMapping(value = "/pipeline")
+@RequestMapping(value = "/api/pipeline")
 @Tag(name = "PipelineAPI", description = "Pipelines")
 public class PipelineController {
 

@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.controller;
+package pipelite.controller.api;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -20,11 +20,11 @@ import org.springframework.boot.actuate.metrics.MetricsEndpoint;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Application;
-import pipelite.controller.info.AdminInfo;
+import pipelite.controller.api.info.AdminInfo;
 import pipelite.controller.utils.TimeUtils;
 
 @RestController
-@RequestMapping(value = "/admin")
+@RequestMapping(value = {"/api/admin"})
 @Tag(name = "AdministrationAPI", description = "Administration of pipelite services")
 public class AdminController {
 

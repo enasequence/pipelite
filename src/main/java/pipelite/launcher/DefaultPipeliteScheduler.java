@@ -10,11 +10,10 @@
  */
 package pipelite.launcher;
 
+import java.util.List;
 import pipelite.Schedule;
 import pipelite.launcher.process.runner.DefaultProcessRunner;
 import pipelite.launcher.process.runner.DefaultProcessRunnerPool;
-
-import java.util.List;
 
 public class DefaultPipeliteScheduler {
 

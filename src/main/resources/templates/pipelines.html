@@ -76,7 +76,7 @@
 
             // Show the tables.
 
-            var url = "/pipelite/pipeline/";
+            var url = "/pipelite/ui/api/pipeline/";
             console.log(url);
             $.get(url, function (data, status) {
                 pipelinesTable.clear().rows.add(data).draw();
@@ -90,7 +90,7 @@
         function plot() {
             var runningHistorySince = $("#runningHistorySince").val();
             var runningHistoryType = $("#runningHistoryType").val();
-            var url = "/pipelite/pipeline/run/history/plot?since=" + runningHistorySince + "&type=" + runningHistoryType + "&id=runningHistoryPlot";
+            var url = "/pipelite/ui/api/pipeline/run/history/plot?since=" + runningHistorySince + "&type=" + runningHistoryType + "&id=runningHistoryPlot";
             console.log(url);
             $.getScript(url,
                 function (data) {

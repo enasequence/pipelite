@@ -8,24 +8,13 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.controller.info;
+package pipelite.controller.api.info;
 
-import lombok.Builder;
-import lombok.Value;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
-@Value
-@Builder
-public class ScheduleInfo {
-  private String serviceName;
-  private String pipelineName;
-  private String cron;
-  private String description;
-  private String processId;
-  private String startTime;
-  private String endTime;
-  private String nextTime;
-  private String lastCompleted;
-  private String lastFailed;
-  private Integer completedStreak;
-  private Integer failedStreak;
+@Data
+@AllArgsConstructor
+public class AdminInfo {
+  String message;
 }

@@ -62,7 +62,7 @@
             });
 
             // Set up autocomplete for pipeline name.
-            var url = "/pipelite/process/";
+            var url = "/pipelite/ui/api/process/";
             $.get(url, function (data, status) {
 
                 var pipelineNames = data.map(function (obj) {
@@ -115,7 +115,7 @@
             $("#pipelineNameBadge").text(pipelineNameBadgeText);
 
             // Show the table.
-            var url = "/pipelite/process/";
+            var url = "/pipelite/ui/api/process/";
             if (pipelineName) {
                 url = url + "?pipelineName=" + pipelineName + "&";
             }

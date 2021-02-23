@@ -8,26 +8,17 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.controller.info;
+package pipelite.controller.ui;
 
-import java.util.List;
-import lombok.Builder;
-import lombok.Value;
+import io.swagger.v3.oas.annotations.Hidden;
+import org.springframework.web.bind.annotation.*;
+import pipelite.controller.api.PipelineController;
 
-@Value
-@Builder
-public class StageInfo {
-  private String pipelineName;
-  private String processId;
-  private String stageName;
-  private String stageState;
-  private String startTime;
-  private String endTime;
-  private String executionTime;
-  private Integer executionCount;
-  private String executorName;
-  private String executorData;
-  private String executorParams;
-  private String resultParams;
-  private List<String> dependsOnStage;
-}
+@RestController
+@RequestMapping(value = "/ui/api/pipeline")
+@Hidden
+/**
+ * Extends the API controller to allow use of different authentication scheme. Not documented using
+ * OpenAPI.
+ */
+public class UIPipelineController extends PipelineController {}

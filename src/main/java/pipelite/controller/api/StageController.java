@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.controller;
+package pipelite.controller.api;
 
 import com.thedeanda.lorem.Lorem;
 import com.thedeanda.lorem.LoremIpsum;
@@ -29,7 +29,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.RegisteredPipeline;
-import pipelite.controller.info.StageInfo;
+import pipelite.controller.api.info.StageInfo;
 import pipelite.controller.utils.LoremUtils;
 import pipelite.controller.utils.TimeUtils;
 import pipelite.entity.StageEntity;
@@ -40,7 +40,7 @@ import pipelite.service.StageService;
 import pipelite.stage.Stage;
 
 @RestController
-@RequestMapping(value = "/stage")
+@RequestMapping(value = "/api/stage")
 @Tag(name = "StageAPI", description = "Process stages")
 @Flogger
 public class StageController {

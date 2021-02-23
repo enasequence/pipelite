@@ -8,14 +8,19 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.controller.info;
+package pipelite.controller.api.info;
 
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
-@AllArgsConstructor
-public class ServerInfo {
-  String url;
-  boolean healthy;
+@Builder
+public class ProcessInfo {
+  private String pipelineName;
+  private String processId;
+  private String state;
+  private String startTime;
+  private String endTime;
+  private Integer executionCount;
+  private Integer priority;
 }

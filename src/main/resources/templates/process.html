@@ -144,7 +144,7 @@
 
                 var table = $('#stagesStatusTable').DataTable();
                 var data = table.row($(this).parents('tr')).data();
-                var url = "/pipelite/log/" + pipelineName + "/" + processId + "/" + data.stageName + "/";
+                var url = "/pipelite/ui/api/log/" + pipelineName + "/" + processId + "/" + data.stageName + "/";
                 console.log(url);
                 $.get(url, function (data, status) {
                     $("#logsText").text(data.log);
@@ -153,7 +153,7 @@
             });
 
             // Set up autocomplete for pipeline name.
-            var url = "/pipelite/process/run";
+            var url = "/pipelite/ui/api/process/run";
             $.get(url, function (data, status) {
 
                 var pipelineNames = data.map(function (obj) {
@@ -228,13 +228,13 @@
                 var stagesStatusTable = $('#stagesStatusTable').DataTable();
                 var stagesDataTable = $('#stagesDataTable').DataTable();
 
-                var processUrl = "/pipelite/process/" + pipelineName + "/" + processId + "/";
+                var processUrl = "/pipelite/ui/api/process/" + pipelineName + "/" + processId + "/";
                 console.log(processUrl);
                 $.get(processUrl, function (data, status) {
                     processTable.clear().rows.add(data).draw();
                 });
 
-                var stagesUrl = "/pipelite/stage/" + pipelineName + "/" + processId + "/";
+                var stagesUrl = "/pipelite/ui/api/stage/" + pipelineName + "/" + processId + "/";
                 console.log(stagesUrl);
                 $.get(stagesUrl, function (data, status) {
                     stagesStatusTable.clear().rows.add(data).draw();
@@ -263,7 +263,7 @@
             var fullHeight = 500;
             $("#stagesGraph").height(fullHeight);
 
-            var url = "/pipelite/stage/" + pipelineName + "/" + processId + "/";
+            var url = "/pipelite/ui/api/stage/" + pipelineName + "/" + processId + "/";
             console.log(url);
             $.get(url, function (data, status) {
                 var g = new dagreD3.graphlib.Graph()
@@ -359,7 +359,7 @@
             var pipelineName = $("#pipelineName").val();
             var processId = $("#processId").val();
 
-            var url = "/pipelite/process/retry/" + pipelineName + "/" + processId;
+            var url = "/pipelite/ui/api/action/process/retry/" + pipelineName + "/" + processId;
             console.log(url);
 
             $.ajax({

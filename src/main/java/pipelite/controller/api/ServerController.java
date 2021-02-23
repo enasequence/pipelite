@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.controller;
+package pipelite.controller.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,11 +29,11 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import pipelite.configuration.WebSecurityConfiguration;
-import pipelite.controller.info.ServerInfo;
+import pipelite.controller.api.info.ServerInfo;
 import pipelite.service.ServerService;
 
 @RestController
-@RequestMapping(value = "/server")
+@RequestMapping(value = "/api/server")
 @Tag(name = "ServerAPI", description = "Pipelite servers")
 @Flogger
 public class ServerController {

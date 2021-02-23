@@ -8,17 +8,18 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.controller;
+package pipelite.controller.ui;
 
-import org.springframework.stereotype.Controller;
+import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import pipelite.controller.api.AdminController;
 
-@Controller
-@RequestMapping(value = "/")
-public class LoginController {
-
-  @RequestMapping("/login")
-  public String login() {
-    return "login";
-  }
-}
+@RestController
+@RequestMapping(value = {"/ui/api/admin"})
+@Hidden
+/**
+ * Extends the API controller to allow use of different authentication scheme. Not documented using
+ * OpenAPI.
+ */
+public class UIAdminController extends AdminController {}

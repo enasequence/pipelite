@@ -10,6 +10,19 @@
  */
 package pipelite.launcher;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.spy;
+import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import lombok.Value;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -39,20 +52,6 @@ import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.time.Time;
-
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.spy;
-import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
 
 @SpringBootTest(
     classes = PipeliteTestConfiguration.class,

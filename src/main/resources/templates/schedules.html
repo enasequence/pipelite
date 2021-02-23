@@ -96,7 +96,7 @@
 
             // Show the tables.
 
-            var url = "/pipelite/schedule/";
+            var url = "/pipelite/ui/api/schedule/";
             console.log(url);
             $.get(url, function (data, status) {
                 schedulesTable.clear().rows.add(data).draw();

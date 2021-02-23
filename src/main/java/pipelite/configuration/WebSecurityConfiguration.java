@@ -10,36 +10,19 @@
  */
 package pipelite.configuration;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @EnableWebSecurity
+@Configuration
+@Order(3)
 public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
   public static final String HEALTH_ENDPOINT = "/actuator/health";
-
-  private final ServiceConfiguration serviceConfiguration;
-  private final UserDetailsConfiguration userDetailsConfiguration;
-
-  public WebSecurityConfiguration(
-      @Autowired ServiceConfiguration serviceConfiguration,
-      @Autowired UserDetailsConfiguration userDetailsConfiguration) {
-    this.serviceConfiguration = serviceConfiguration;
-    this.userDetailsConfiguration = userDetailsConfiguration;
-  }
-
-  @Override
-  protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-    auth.userDetailsService(userDetailsConfiguration);
-  }
 
   @Override
   public void configure(WebSecurity web) {
@@ -47,39 +30,5 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
   }
 
   @Override
-  protected void configure(HttpSecurity httpSecurity) throws Exception {
-    httpSecurity
-        .csrf()
-        .disable()
-        .cors()
-        .and()
-        .authorizeRequests()
-        .antMatchers("static/**")
-        .permitAll()
-        .antMatchers(HEALTH_ENDPOINT)
-        .permitAll()
-        .anyRequest()
-        .authenticated()
-        .and()
-        .formLogin()
-        .loginPage("/login")
-        .defaultSuccessUrl("/ui/schedules", true)
-        .failureUrl("/login")
-        .permitAll()
-        .and()
-        .logout()
-        .permitAll();
-  }
-
-  @Bean
-  CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowCredentials(true);
-    configuration.addAllowedOrigin("*");
-    configuration.addAllowedHeader("*");
-    configuration.addAllowedMethod("*");
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", configuration);
-    return source;
-  }
+  protected void configure(HttpSecurity httpSecurity) throws Exception {}
 }

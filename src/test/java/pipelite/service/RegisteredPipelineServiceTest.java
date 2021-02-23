@@ -10,6 +10,12 @@
  */
 package pipelite.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.Mockito.mock;
+
+import java.util.Arrays;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,13 +24,6 @@ import pipelite.*;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.exception.PipeliteException;
 import pipelite.process.builder.ProcessBuilder;
-
-import java.util.Arrays;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.mockito.Mockito.mock;
 
 @SpringBootTest(classes = RegisteredPipelineServiceTest.TestConfig.class)
 public class RegisteredPipelineServiceTest {

@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.controller;
+package pipelite.controller.api;
 
 import com.thedeanda.lorem.Lorem;
 import com.thedeanda.lorem.LoremIpsum;
@@ -29,14 +29,14 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import pipelite.Application;
 import pipelite.configuration.ServiceConfiguration;
-import pipelite.controller.info.ScheduleInfo;
+import pipelite.controller.api.info.ScheduleInfo;
 import pipelite.controller.utils.LoremUtils;
 import pipelite.controller.utils.TimeUtils;
 import pipelite.entity.ScheduleEntity;
 import pipelite.service.ScheduleService;
 
 @RestController
-@RequestMapping(value = "/schedule")
+@RequestMapping(value = "/api/schedule")
 @Tag(name = "ScheduleAPI", description = "Schedules")
 public class ScheduleController {
 

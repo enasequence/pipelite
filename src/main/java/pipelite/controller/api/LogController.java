@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.controller;
+package pipelite.controller.api;
 
 import com.thedeanda.lorem.Lorem;
 import com.thedeanda.lorem.LoremIpsum;
@@ -21,13 +21,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import pipelite.controller.info.LogInfo;
+import pipelite.controller.api.info.LogInfo;
 import pipelite.controller.utils.LoremUtils;
 import pipelite.entity.StageLogEntity;
 import pipelite.service.StageService;
 
 @RestController
-@RequestMapping(value = "/log")
+@RequestMapping(value = "/api/log")
 @Tag(name = "LogAPI", description = "Process logs")
 public class LogController {
 
