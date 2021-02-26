@@ -35,7 +35,7 @@ public class WebSecurityUIConfiguration extends WebSecurityConfigurerAdapter {
   @Override
   protected void configure(HttpSecurity httpSecurity) throws Exception {
     httpSecurity
-        .antMatcher("/ui/**")
+        .antMatcher("/**")
         .csrf()
         .disable()
         .authorizeRequests()
@@ -43,9 +43,9 @@ public class WebSecurityUIConfiguration extends WebSecurityConfigurerAdapter {
         .authenticated()
         .and()
         .formLogin()
-        .loginPage("/ui/login")
-        .defaultSuccessUrl("/ui/schedules", true)
-        .failureUrl("/ui/login")
+        .loginPage("/login")
+        .defaultSuccessUrl("/", true)
+        .failureUrl("/login")
         .permitAll()
         .and()
         .logout()

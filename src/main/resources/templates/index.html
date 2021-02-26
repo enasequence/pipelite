@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <div th:replace="fragments/header :: header"></div>
+
+    <script type="text/javascript" src="/pipelite/static/scripts/index.js"></script>
+    <script type="text/javascript" src="/pipelite/static/scripts/schedules.js"></script>
+    <script type="text/javascript" src="/pipelite/static/scripts/pipelines.js"></script>
+    <script type="text/javascript" src="/pipelite/static/scripts/processes.js"></script>
+    <script type="text/javascript" src="/pipelite/static/scripts/process.js"></script>
+    <script type="text/javascript" src="/pipelite/static/scripts/servers.js"></script>
+    <script type="text/javascript" src="/pipelite/static/scripts/admin.js"></script>
+
+    <title>Pipelite</title>
+</head>
+<body>
+
+<nav class="navbar navbar-expand navbar-dark bg-dark">
+    <a class="navbar-brand" href="#"><img src="/pipelite/static/favicon-32x32.png"/>
+        Pipelite</a>
+
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav nav nav-pills" id="indexTabs">
+                <li class="nav-item">
+                    <a class="nav-link active" data-toggle="pill" href="#schedulesTab">Schedules</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-toggle="pill" href="#pipelinesTab">Pipelines</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-toggle="pill" href="#processesTab">Processes</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-toggle="pill" href="#processTab">Process</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-toggle="pill" href="#serversTab">Servers</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-toggle="pill" href="#adminTab">Admin</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" target="_blank"
+                       href="/pipelite/swagger-ui/index.html?configUrl=/pipelite/v3/api-docs/swagger-config">OpenAPI</a>
+                </li>
+            </ul>
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="javascript: document.logoutForm.submit()"> Logout</a>
+                    <form name="logoutForm" th:action="@{/logout}" method="post" th:hidden="true">
+                        <input hidden type="submit" value="Logout"/>
+                    </form>
+                </li>
+            </ul>
+        </div>
+</nav>
+
+<div class="tab-content">
+    <div id="schedulesTab" class="tab-pane fade show active" role="tabpanel">
+        <div th:replace="fragments/schedules :: schedules"></div>
+    </div>
+    <div id="pipelinesTab" class="tab-pane fade" role="tabpanel">
+        <div th:replace="fragments/pipelines :: pipelines"></div>
+    </div>
+    <div id="processesTab" class="tab-pane fade" role="tabpanel">
+        <div th:replace="fragments/processes :: processes"></div>
+    </div>
+    <div id="processTab" class="tab-pane fade" role="tabpanel">
+        <div th:replace="fragments/process :: process"></div>
+    </div>
+    <div id="serversTab" class="tab-pane fade" role="tabpanel">
+        <div th:replace="fragments/servers :: servers"></div>
+    </div>
+    <div id="adminTab" class="tab-pane fade" role="tabpanel">
+        <div th:replace="fragments/admin :: admin"></div>
+    </div>
+</div>
+
+</body>
+</html>

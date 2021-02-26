@@ -1,0 +1,22 @@
+<th:block th:fragment="schedules">
+    <div class="card m-2">
+        <div class="card-body">
+            <h5 class="card-title">Schedules running in this server</h5>
+
+            <table id="schedulesTable" class="table table-striped table-hover" style="width:100%">
+                <thead>
+                <tr>
+                    <th>Pipeline</th>
+                    <th>Cron</th>
+                    <th>Description</th>
+                    <th>Running process</th>
+                    <th>Start time</th>
+                    <th>Next time</th>
+                    <th>Last completed</th>
+                    <th>Last failed</th>
+                </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+</th:block>

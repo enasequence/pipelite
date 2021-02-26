@@ -1,3 +1,8 @@
+/* Navigation bar */
+
+.nav-pills .nav-link.active {
+  background-color: #000000 !important;
+}
 
 /* Stage graph. */
 
@@ -21,5 +26,5 @@ g.stageError > rect {
 }
 
 g.stageActive > rect {
-  fill: ##6C757D;
+  fill: #6C757D;
 }
