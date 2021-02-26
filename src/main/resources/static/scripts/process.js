@@ -131,8 +131,8 @@ $(document).ready(function () {
 
     // Logs button is pressed.
     $('#processStagesStatusTable tbody').on('click', 'button', function () {
-        let pipelineName = $("#pipelineName").val();
-        let processId = $("#processId").val();
+        let pipelineName = $("#processPipelineName").val();
+        let processId = $("#processProcessId").val();
 
         let table = $('#processStagesStatusTable').DataTable();
         let data = table.row($(this).parents('tr')).data();
@@ -145,9 +145,8 @@ $(document).ready(function () {
     });
 
     // Set up autocomplete for pipeline name.
-    let url = "/pipelite/ui/api/process/run";
+    let url = "/pipelite/ui/api/process/";
     $.get(url, function (data) {
-
         let pipelineNames = data.map(function (obj) {
             return obj.pipelineName;
         });
@@ -158,7 +157,7 @@ $(document).ready(function () {
 
         pipelineNames = pipelineNames.filter(onlyUnique);
 
-        $("#pipelineName").autocomplete({
+        $("#processPipelineName").autocomplete({
             source: pipelineNames,
             minLength: 0,
             open: function () {
@@ -170,18 +169,6 @@ $(document).ready(function () {
         });
     });
 
-    // Show tables and graph.
-    let urlParams = new URLSearchParams(window.location.search);
-    let pipelineName = urlParams.get("pipelineName");
-    let processId = urlParams.get("processId");
-    // console.log("url parameter pipelineName:" + pipelineName);
-    // console.log("url parameter processId:" + processId);
-    if (pipelineName && processId) {
-        $("#pipelineName").val(pipelineName);
-        $("#processId").val(processId);
-        refreshProcess();
-    }
-
     // Show graph when tab is changed.
     $('#processTabs a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
         $('svg').remove();
@@ -192,14 +179,14 @@ $(document).ready(function () {
 // Show the filter badges, tables and graph.
 function refreshProcess(pipelineName, processId) {
     if (pipelineName) {
-        $("#pipelineName").val(pipelineName);
+        $("#processPipelineName").val(pipelineName);
     }
     if (processId) {
-        $("#processId").val(processId);
+        $("#processProcessId").val(processId);
     }
 
-    pipelineName = $("#pipelineName").val();
-    processId = $("#processId").val();
+    pipelineName = $("#processPipelineName").val();
+    processId = $("#processProcessId").val();
 
     if (pipelineName && processId) {
         $("#processAlert").hide();
@@ -246,19 +233,19 @@ function refreshProcess(pipelineName, processId) {
 };
 
 function plotProcess() {
-    let pipelineName = $("#pipelineName").val();
-    let processId = $("#processId").val();
+    let pipelineName = $("#processPipelineName").val();
+    let processId = $("#processProcessId").val();
     let minWidth = 100;
-    let fullWidth = $("#stagesGraph").width();
+    let fullWidth = $("#processGraph").width();
     if (fullWidth < minWidth) {
         return;
     }
     let fullHeight = 500;
-    $("#stagesGraph").height(fullHeight);
+    $("#processGraph").height(fullHeight);
 
     let url = "/pipelite/ui/api/stage/" + pipelineName + "/" + processId + "/";
     console.log(url);
-    $.get(url, function (data, status) {
+    $.get(url, function (data) {
         let g = new dagreD3.graphlib.Graph()
             .setGraph({
                 ranksep: 20,
@@ -301,7 +288,7 @@ function plotProcess() {
         // g.node('CLOSED').style = "fill: #f77";
         // g.node('ESTAB').style = "fill: #7f7";
 
-        let svg = d3.select("#stagesGraph").append("svg")
+        let svg = d3.select("#processGraph").append("svg")
             .attr("width", fullWidth)
             .attr("height", fullHeight);
         let svgGroup = svg.append("g");
@@ -337,7 +324,6 @@ function plotProcess() {
 
 function processCopyLogs() {
     let range = document.createRange();
-
     range.selectNode(document.getElementById("logsText"));
     window.getSelection().removeAllRanges(); // clear current selection
     window.getSelection().addRange(range); // to select text
@@ -346,8 +332,8 @@ function processCopyLogs() {
 };
 
 function processRetry() {
-    let pipelineName = $("#pipelineName").val();
-    let processId = $("#processId").val();
+    let pipelineName = $("#processPipelineName").val();
+    let processId = $("#processProcessId").val();
 
     let url = "/pipelite/ui/api/action/process/retry/" + pipelineName + "/" + processId;
     console.log(url);

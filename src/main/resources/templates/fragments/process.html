@@ -21,10 +21,10 @@
         <div class="card-body">
             <h5 class="card-title">Select process</h5>
             <div class="form-inline m-2">
-                <label class="mr-2" for="pipelineName">Pipeline</label>
-                <input type="text" class="form-control m-2" id="pipelineName">
-                <label class="mr-2" for="processId">Process</label>
-                <input type="text" class="form-control m-2" id="processId">
+                <label class="mr-2" for="processPipelineName">Pipeline</label>
+                <input type="text" class="form-control m-2" id="processPipelineName">
+                <label class="mr-2" for="processProcessId">Process</label>
+                <input type="text" class="form-control m-2" id="processProcessId">
                 <button type="submit" class="btn btn-primary m-2" onclick="refreshProcess()">Show process</button>
             </div>
             <h5 class="mb-4">
@@ -109,7 +109,7 @@
                     </table>
                 </div>
                 <div id="processGraphTab" class="tab-pane fade" role="tabpanel">
-                    <div id="stagesGraph" class="border rounded" style="width:100%;overflow:scroll;">
+                    <div id="processGraph" class="border rounded" style="width:100%;overflow:scroll;">
                         <!--   <svg width="960" height="960" style="background:yellow"></svg> -->
                     </div>
                 </div>

@@ -57,7 +57,6 @@ $(document).ready(function () {
 
     // Set up autocomplete for pipeline name.
     let url = "/pipelite/ui/api/process/";
-    console.log(url);
     $.get(url, function (data) {
         let pipelineNames = data.map(function (obj) {
             return obj.pipelineName;
