@@ -60,11 +60,11 @@ class ScheduleServiceTest {
     assertThat(activeSchedules.get(0)).isEqualTo(scheduleEntity);
 
     // Schedule first execution.
+    ScheduleEntity s = service.getSavedSchedule(pipelineName).get();
 
     ZonedDateTime nextTime1 = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
-    service.scheduleExecution(pipelineName, nextTime1);
+    service.scheduleExecution(s, nextTime1);
 
-    ScheduleEntity s = service.getSavedSchedule(pipelineName).get();
     assertThat(s.getServiceName()).isEqualTo(serviceName);
     assertThat(s.getPipelineName()).isEqualTo(pipelineName);
     assertThat(s.getCron()).isEqualTo(cron);

@@ -20,6 +20,7 @@ import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.Pipeline;
 import pipelite.Schedule;
+import pipelite.cron.CronUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.exception.PipeliteException;
@@ -75,7 +76,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   @Override
   protected void startUp() {
     super.startUp();
-    loadSchedules();
+    initSchedules();
     resumeSchedules();
   }
 
@@ -115,36 +116,31 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
         || maximumExecutions.values().stream().anyMatch(r -> r.get() > 0));
   }
 
-  private void loadSchedules() {
-    logContext(log.atInfo()).log("Loading schedules");
+  /** Initialises schedules. */
+  private void initSchedules() {
+    logContext(log.atInfo()).log("Initialising schedules");
     for (PipeliteSchedulerSchedule schedule : schedules) {
       Optional<ScheduleEntity> scheduleEntity =
           scheduleService.getSavedSchedule(schedule.getPipelineName());
       if (scheduleEntity == null) {
-        throw new PipeliteException("Unknown scheduled pipeline: " + schedule.getPipelineName());
+        throw new PipeliteException("Unknown schedule: " + schedule.getPipelineName());
       }
-      createSchedule(schedule, scheduleEntity.get());
+      initSchedule(schedule, scheduleEntity.get());
     }
   }
 
   /**
-   * Creates and enables the schedule.
+   * Initialises a schedule.
    *
    * @param schedule the schedule
    * @param scheduleEntity the schedule entity
    */
-  private void createSchedule(PipeliteSchedulerSchedule schedule, ScheduleEntity scheduleEntity) {
+  private void initSchedule(PipeliteSchedulerSchedule schedule, ScheduleEntity scheduleEntity) {
     schedule.setCron(scheduleEntity.getCron());
-    if (scheduleEntity.getNextTime() != null) {
-      // Use previously assigned launch time. The launch time is removed when the process
-      // execution starts and assigned when the process execution finishes or here if the launch
-      // time has not been assigned.
-      schedule.setLaunchTime(scheduleEntity.getNextTime());
-    } else {
-      // Evaluate the cron expression and assign the next launch time.
-      schedule.setLaunchTime(schedule.getNextLaunchTime());
-      scheduleService.scheduleExecution(schedule.getPipelineName(), schedule.getLaunchTime());
+    if (!scheduleEntity.isActive() && scheduleEntity.getNextTime() == null) {
+      scheduleService.scheduleExecution(scheduleEntity);
     }
+    schedule.setLaunchTime(scheduleEntity.getNextTime());
   }
 
   protected void resumeSchedules() {
@@ -162,7 +158,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   protected void resumeSchedule(PipeliteSchedulerSchedule schedule) {
     String pipelineName = schedule.getPipelineName();
     ScheduleEntity scheduleEntity = scheduleService.getSavedSchedule(pipelineName).get();
-    if (!scheduleEntity.isResumeProcess()) {
+    if (!scheduleEntity.isActive()) {
       return;
     }
     logContext(log.atInfo(), pipelineName).log("Resuming schedule");
@@ -228,7 +224,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
       return;
     }
 
-    Process process = getProcess(processEntity, schedule);
+    Process process = createProcess(processEntity, schedule);
     if (process == null) {
       return;
     }
@@ -246,7 +242,8 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
           pipelineName,
           process,
           (p, r) -> {
-            ZonedDateTime nextLaunchTime = pipeliteSchedulerSchedule.getNextLaunchTime();
+            ZonedDateTime nextLaunchTime =
+                CronUtils.launchTime(pipeliteSchedulerSchedule.getCron());
             try {
               scheduleService.endExecution(processEntity, nextLaunchTime);
             } catch (Exception ex) {
@@ -262,16 +259,16 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     }
   }
 
-  private Process getProcess(ProcessEntity processEntity, Schedule schedule) {
-    return ProcessFactory.create(processEntity, schedule);
-  }
-
   private Schedule getSchedule(String pipelineName) {
     Schedule schedule = scheduleCache.getSchedule(pipelineName);
     if (schedule == null) {
       throw new PipeliteException("Failed to create a schedule for pipeline: " + pipelineName);
     }
     return schedule;
+  }
+
+  private Process createProcess(ProcessEntity processEntity, Schedule schedule) {
+    return ProcessFactory.create(processEntity, schedule);
   }
 
   /**
@@ -309,7 +306,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
         .filter(s -> s.isExecutable())
         // Must not be running.
         .filter(s -> !isPipelineActive(s.getPipelineName()))
-        // Must not have exceeded maximum executions.
+        // Must not have exceeded maximum executions (not used in production).
         .filter(
             s ->
                 !maximumExecutions.containsKey(s.getPipelineName())

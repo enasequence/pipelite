@@ -22,7 +22,7 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import pipelite.controller.utils.TimeUtils;
+import pipelite.cron.CronUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.process.ProcessState;
@@ -68,16 +68,13 @@ public class ScheduleService {
     repository.delete(scheduleEntity);
   }
 
-  /**
-   * Called when the next execution time is set for the schedule. Sets the next execution time and
-   * saves the schedule.
-   *
-   * @param pipelineName the pipeline name
-   * @param nextTime the next execution time
-   */
-  public void scheduleExecution(String pipelineName, ZonedDateTime nextTime) {
-    ScheduleEntity scheduleEntity = getSavedSchedule(pipelineName).get();
-    scheduleEntity.setNextTime(truncateNextTime(pipelineName, nextTime));
+  public void scheduleExecution(ScheduleEntity scheduleEntity) {
+    scheduleEntity.setNextTime(CronUtils.launchTime(scheduleEntity.getCron()));
+    saveSchedule(scheduleEntity);
+  }
+
+  public void scheduleExecution(ScheduleEntity scheduleEntity, ZonedDateTime nextTime) {
+    scheduleEntity.setNextTime(nextTime);
     saveSchedule(scheduleEntity);
   }
 
@@ -111,7 +108,7 @@ public class ScheduleService {
     ZonedDateTime now = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     ScheduleEntity scheduleEntity = getSavedSchedule(pipelineName).get();
     scheduleEntity.setEndTime(now);
-    scheduleEntity.setNextTime(truncateNextTime(pipelineName, nextTime));
+    scheduleEntity.setNextTime(nextTime);
     scheduleEntity.setExecutionCount(scheduleEntity.getExecutionCount() + 1);
     if (processEntity.getProcessState() == ProcessState.COMPLETED) {
       scheduleEntity.setLastCompleted(now);
@@ -123,15 +120,5 @@ public class ScheduleService {
       scheduleEntity.setStreakFailed(scheduleEntity.getStreakFailed() + 1);
     }
     saveSchedule(scheduleEntity);
-  }
-
-  private ZonedDateTime truncateNextTime(String pipelineName, ZonedDateTime nextTime) {
-    nextTime = nextTime.truncatedTo(ChronoUnit.SECONDS);
-    log.atInfo().log(
-        "Next scheduled execution time for "
-            + pipelineName
-            + " is "
-            + TimeUtils.humanReadableDate(nextTime));
-    return nextTime;
   }
 }

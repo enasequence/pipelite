@@ -11,7 +11,11 @@
 package pipelite.entity;
 
 import java.time.ZonedDateTime;
-import javax.persistence.*;
+import java.time.temporal.ChronoUnit;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -79,11 +83,20 @@ public class ScheduleEntity {
   private int streakFailed = 0;
 
   /**
-   * Returns true if process execution can be resumed.
+   * Returns true if the schedule is running.
    *
-   * @return true if process execution can be resumed
+   * @return true if the schedule is running
    */
-  public boolean isResumeProcess() {
+  public boolean isActive() {
     return (startTime != null && endTime == null && processId != null);
+  }
+
+  public void setNextTime(ZonedDateTime nextTime) {
+    if (nextTime != null) {
+      nextTime = nextTime.truncatedTo(ChronoUnit.SECONDS);
+      log.atInfo().log(
+          "Next scheduled execution time for " + pipelineName + " is " + this.nextTime);
+    }
+    this.nextTime = nextTime;
   }
 }

@@ -13,7 +13,6 @@ package pipelite.launcher;
 import java.time.ZonedDateTime;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
-import pipelite.cron.CronUtils;
 
 /**
  * Schedule for one pipeline. The schedule becomes executable after it has been provided with a
@@ -80,19 +79,6 @@ public class PipeliteSchedulerSchedule {
    */
   public void setLaunchTime(ZonedDateTime launchTime) {
     this.launchTime = launchTime;
-  }
-
-  /**
-   * Returns the next launch time.
-   *
-   * @return the next launch time
-   */
-  public ZonedDateTime getNextLaunchTime() {
-    if (cron != null) {
-      return CronUtils.launchTime(cron);
-    } else {
-      return null;
-    }
   }
 
   @Override

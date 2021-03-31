@@ -96,14 +96,15 @@ public class RegisteredPipelineService {
             schedule -> {
               String pipelineName = schedule.pipelineName();
 
-              Optional<ScheduleEntity> savedScheduleEntity =
+              Optional<ScheduleEntity> savedScheduleEntityOpt =
                   scheduleService.getSavedSchedule(pipelineName);
 
-              if (!savedScheduleEntity.isPresent()) {
+              if (!savedScheduleEntityOpt.isPresent()) {
                 createSchedule(schedule);
               } else {
-                String registeredCron = savedScheduleEntity.get().getCron();
-                String registeredServiceName = savedScheduleEntity.get().getServiceName();
+                ScheduleEntity savedScheduleEntity = savedScheduleEntityOpt.get();
+                String registeredCron = savedScheduleEntity.getCron();
+                String registeredServiceName = savedScheduleEntity.getServiceName();
                 String cron = schedule.configurePipeline().cron();
                 boolean isCronChanged = !registeredCron.equals(cron);
                 boolean isServiceNameChanged = !registeredServiceName.equals(serviceName);
@@ -138,11 +139,14 @@ public class RegisteredPipelineService {
                 if (isCronChanged || isServiceNameChanged) {
                   log.atInfo().log("Updating pipeline schedule: " + schedule.pipelineName());
                   try {
-                    savedScheduleEntity.get().setCron(cron);
-                    savedScheduleEntity.get().setDescription(CronUtils.describe(cron));
-                    savedScheduleEntity.get().setServiceName(serviceName);
-                    savedScheduleEntity.get().setNextTime(CronUtils.launchTime(cron));
-                    scheduleService.saveSchedule(savedScheduleEntity.get());
+                    savedScheduleEntity.setCron(cron);
+                    savedScheduleEntity.setDescription(CronUtils.describe(cron));
+                    savedScheduleEntity.setServiceName(serviceName);
+                    if (!savedScheduleEntity.isActive()) {
+                      savedScheduleEntity.setNextTime(
+                          CronUtils.launchTime(savedScheduleEntity.getCron()));
+                    }
+                    scheduleService.saveSchedule(savedScheduleEntity);
                   } catch (Exception ex) {
                     throw new PipeliteException(
                         "Failed to update pipeline schedule: " + schedule.pipelineName(), ex);

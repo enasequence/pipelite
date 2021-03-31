@@ -18,18 +18,18 @@ import org.junit.jupiter.api.Test;
 class ScheduleEntityTest {
 
   @Test
-  public void isResumeProcess() {
+  public void isActive() {
     ScheduleEntity scheduleEntity = new ScheduleEntity();
 
-    assertThat(scheduleEntity.isResumeProcess()).isFalse();
+    assertThat(scheduleEntity.isActive()).isFalse();
 
     scheduleEntity.setStartTime(ZonedDateTime.now());
-    assertThat(scheduleEntity.isResumeProcess()).isFalse();
+    assertThat(scheduleEntity.isActive()).isFalse();
 
     scheduleEntity.setProcessId("1");
-    assertThat(scheduleEntity.isResumeProcess()).isTrue();
+    assertThat(scheduleEntity.isActive()).isTrue();
 
     scheduleEntity.setEndTime(ZonedDateTime.now());
-    assertThat(scheduleEntity.isResumeProcess()).isFalse();
+    assertThat(scheduleEntity.isActive()).isFalse();
   }
 }

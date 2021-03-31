@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import org.junit.jupiter.api.Test;
+import pipelite.cron.CronUtils;
 import pipelite.time.Time;
 
 public class PipeliteSchedulerScheduleTest {
@@ -45,7 +46,7 @@ public class PipeliteSchedulerScheduleTest {
     // Enable.
     ZonedDateTime first = ZonedDateTime.now();
 
-    schedule.setLaunchTime(schedule.getNextLaunchTime());
+    schedule.setLaunchTime(CronUtils.launchTime(schedule.getCron()));
 
     assertThat(schedule.getPipelineName()).isEqualTo(pipelineName);
     assertThat(schedule.isExecutable()).isFalse();
@@ -76,7 +77,7 @@ public class PipeliteSchedulerScheduleTest {
     // Enable.
     ZonedDateTime second = ZonedDateTime.now();
 
-    schedule.setLaunchTime(schedule.getNextLaunchTime());
+    schedule.setLaunchTime(CronUtils.launchTime(schedule.getCron()));
 
     assertThat(schedule.getPipelineName()).isEqualTo(pipelineName);
     assertThat(schedule.isExecutable()).isFalse();
