@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 public class TimeSeriesMetricsTest {
 
   private static final ZonedDateTime SINCE =
-      ZonedDateTime.of(LocalDateTime.of(2020, 1, 1, 1, 0), ZoneId.of("UTC"));
+      ZonedDateTime.of(LocalDateTime.of(2020, 1, 1, 1, 0), ZoneId.systemDefault());
 
   @Test
   public void getTimeSeriesWindow() {

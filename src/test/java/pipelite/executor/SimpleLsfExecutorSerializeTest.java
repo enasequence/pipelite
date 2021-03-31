@@ -12,9 +12,6 @@ package pipelite.executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import org.junit.jupiter.api.Test;
 import pipelite.json.Json;
 import pipelite.stage.Stage;
@@ -37,8 +34,6 @@ public class SimpleLsfExecutorSerializeTest {
 
     executor.setJobId("test");
     executor.setOutFile(AbstractLsfExecutor.getOutFile(request, null));
-    ZonedDateTime startTime =
-        ZonedDateTime.of(LocalDateTime.of(2020, 1, 1, 1, 1), ZoneId.of("UTC"));
     String json = Json.serialize(executor);
     assertThat(json)
         .isEqualTo(

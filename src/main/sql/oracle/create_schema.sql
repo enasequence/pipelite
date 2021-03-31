@@ -10,8 +10,8 @@ create table pipelite2_service_lock
     host         varchar2(256) not null,
     port         number(5,0) not null,
     context_path varchar2(256) not null,
-    expiry       timestamp            not null,
-    audit_time   date default sysdate not null
+    expiry       timestamp with time zone not null,
+    audit_time   timestamp with time zone default cast(sysdate as timestamp with time zone) not null
 ) tablespace &table_tablespace;
 
 -- @formatter:off
@@ -39,10 +39,10 @@ create table pipelite2_process
     priority      number (1,0) default 5 not null,
     state         varchar2(15) default 'PENDING' not null,
     exec_cnt      number (5,0) default 0 not null,
-    exec_start    date,
-    exec_end      date,
+    exec_start    timestamp with time zone,
+    exec_end      timestamp with time zone,
     state_comment varchar2(4000),
-    audit_time    date default sysdate not null
+    audit_time    timestamp with time zone default cast(sysdate as timestamp with time zone) not null
 ) tablespace &table_tablespace;
 
 -- @formatter:off
@@ -70,11 +70,11 @@ create table pipelite2_process_audit
     priority      number (1,0),
     state         varchar2(15),
     exec_cnt      number (5,0),
-    exec_start    date,
-    exec_end      date,
+    exec_start    timestamp with time zone,
+    exec_end      timestamp with time zone,
     state_comment varchar2(4000),
-    audit_time    date,
-    to_audit_time date,
+    audit_time    timestamp with time zone,
+    to_audit_time timestamp with time zone,
     audit_stmt    char(1)
 ) tablespace &table_tablespace;
 
@@ -88,7 +88,7 @@ declare
     audit_stmt varchar2(1);
 begin
     if updating or inserting then
-        :new.audit_time := sysdate;
+        :new.audit_time := cast(sysdate as timestamp with time zone);
     end if;
 
     if updating then
@@ -135,7 +135,7 @@ create table pipelite2_process_lock
     service_name  varchar2(256) not null,
     pipeline_name varchar2(256) not null,
     process_id    varchar2(256) not null,
-    audit_time    date default sysdate not null
+    audit_time    timestamp with time zone default cast(sysdate as timestamp with time zone) not null
 ) tablespace &table_tablespace;
 
 -- @formatter:off
@@ -156,15 +156,15 @@ create table pipelite2_schedule
     cron             varchar2(256) not null,
     description      varchar2(256),
     process_id       varchar2(256),
-    exec_start       date,
-    exec_end         date,
+    exec_start       timestamp with time zone,
+    exec_end         timestamp with time zone,
     exec_cnt         number(10,0) default 0 not null,
-    exec_next        date,
-    last_completed   date,
-    last_failed      date,
+    exec_next        timestamp with time zone,
+    last_completed   timestamp with time zone,
+    last_failed      timestamp with time zone,
     streak_completed number(10,0) default 0 not null,
     streak_failed    number(10,0) default 0 not null,
-    audit_time       date default sysdate not null
+    audit_time       timestamp with time zone default cast(sysdate as timestamp with time zone) not null
 ) tablespace &table_tablespace;
 
 -- @formatter:off
@@ -185,16 +185,16 @@ create table pipelite2_schedule_audit
     cron             varchar2(256),
     description      varchar2(256),
     process_id       varchar2(256),
-    exec_start       date,
-    exec_end         date,
+    exec_start       timestamp with time zone,
+    exec_end         timestamp with time zone,
     exec_cnt         number(10,0),
-    exec_next        date,
-    last_completed   date,
-    last_failed      date,
+    exec_next        timestamp with time zone,
+    last_completed   timestamp with time zone,
+    last_failed      timestamp with time zone,
     streak_completed number(10,0),
     streak_failed    number(10,0),
-    audit_time       date,
-    to_audit_time    date,
+    audit_time       timestamp with time zone,
+    to_audit_time    timestamp with time zone,
     audit_stmt       char(1)
 ) tablespace &table_tablespace;
 
@@ -207,7 +207,7 @@ declare
     audit_stmt varchar2(1);
 begin
     if updating or inserting then
-        :new.audit_time := sysdate;
+        :new.audit_time := cast(sysdate as timestamp with time zone);
     end if;
 
     if updating then
@@ -264,14 +264,14 @@ create table pipelite2_stage
     process_id         varchar2(256) not null,
     stage_name         varchar2(256) not null,
     state              varchar2(15) not null,
-    exec_start         date,
-    exec_end           date,
+    exec_start         timestamp with time zone,
+    exec_end           timestamp with time zone,
     exec_cnt           number(5,0) default 0 not null,
     exec_name          varchar2(256),
     exec_data          clob,
     exec_params        clob,
     exec_result_params clob,
-    audit_time         date default sysdate not null
+    audit_time         timestamp with time zone default cast(sysdate as timestamp with time zone) not null
 ) tablespace &table_tablespace;
 
 -- @formatter:off
@@ -295,15 +295,15 @@ create table pipelite2_stage_audit
     process_id         varchar2(256),
     stage_name         varchar2(256),
     state              varchar2(15),
-    exec_start         date,
-    exec_end           date,
+    exec_start         timestamp with time zone,
+    exec_end           timestamp with time zone,
     exec_cnt           number(5,0),
     exec_name          varchar2(256),
     exec_data          clob,
     exec_params        clob,
     exec_result_params clob,
-    audit_time         date,
-    to_audit_time      date,
+    audit_time         timestamp with time zone,
+    to_audit_time      timestamp with time zone,
     audit_stmt         char(1)
 ) tablespace &table_tablespace;
 
@@ -316,7 +316,7 @@ declare
     audit_stmt varchar2(1);
 begin
     if updating or inserting then
-        :new.audit_time := sysdate;
+        :new.audit_time := cast(sysdate as timestamp with time zone);
     end if;
 
     if updating then
@@ -369,7 +369,7 @@ create table pipelite2_stage_log
     process_id    varchar2(256) not null,
     stage_name    varchar2(255) not null,
     stage_log     clob,
-    audit_time    date default sysdate not null
+    audit_time    timestamp with time zone default cast(sysdate as timestamp with time zone) not null
 ) tablespace &table_tablespace;
 
 -- @formatter:off
@@ -392,10 +392,10 @@ create table pipelite2_internal_error
     process_id    varchar2(256),
     stage_name    varchar2(256),
     class_name    varchar2(256) not null,
-    error_time    date not null,
+    error_time    timestamp with time zone not null,
     error_message clob,
     error_log     clob,
-    audit_time    date default sysdate not null
+    audit_time    timestamp with time zone default cast(sysdate as timestamp with time zone) not null
 ) tablespace &table_tablespace;
 
 -- @formatter:off

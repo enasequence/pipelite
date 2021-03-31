@@ -57,7 +57,7 @@ public class PipelineController {
 
   private static final int LOREM_IPSUM_PROCESSES = 5;
   private static final ZonedDateTime LOREM_IPSUM_SINCE =
-      ZonedDateTime.of(LocalDateTime.of(2020, 1, 1, 1, 0), ZoneId.of("UTC"));
+      ZonedDateTime.of(LocalDateTime.of(2020, 1, 1, 1, 0), ZoneId.systemDefault());
 
   @GetMapping("/")
   @ResponseStatus(HttpStatus.OK)
