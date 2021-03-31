@@ -10,3 +10,4 @@ drop table pipelite2_stage;
 drop table pipelite2_stage_audit;
 drop table pipelite2_stage_log;
 drop table pipelite2_internal_error;
+drop table pipelite2_service_lock;
