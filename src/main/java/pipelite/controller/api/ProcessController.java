@@ -25,7 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import pipelite.Application;
+import pipelite.PipeliteApplication;
 import pipelite.controller.api.info.ProcessInfo;
 import pipelite.controller.utils.LoremUtils;
 import pipelite.controller.utils.TimeUtils;
@@ -41,7 +41,7 @@ import pipelite.service.RegisteredPipelineService;
 @Tag(name = "ProcessAPI", description = "Process")
 public class ProcessController {
 
-  @Autowired private Application application;
+  @Autowired private PipeliteApplication application;
   @Autowired private Environment environment;
   @Autowired RegisteredPipelineService registeredPipelineService;
   @Autowired private ProcessService processService;

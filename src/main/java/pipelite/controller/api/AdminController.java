@@ -19,7 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.metrics.MetricsEndpoint;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import pipelite.Application;
+import pipelite.PipeliteApplication;
 import pipelite.controller.api.info.AdminInfo;
 import pipelite.controller.utils.TimeUtils;
 
@@ -28,7 +28,7 @@ import pipelite.controller.utils.TimeUtils;
 @Tag(name = "AdministrationAPI", description = "Administration of pipelite services")
 public class AdminController {
 
-  @Autowired Application application;
+  @Autowired PipeliteApplication application;
   @Autowired MetricsEndpoint metricsEndpoint;
 
   @GetMapping("/uptime")

@@ -10,11 +10,10 @@
  */
 package pipelite;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.context.ConfigurableApplicationContext;
-
 import java.util.Properties;
 import java.util.function.Consumer;
+import org.springframework.boot.SpringApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 
 public class Pipelite {
 
@@ -46,7 +45,7 @@ public class Pipelite {
    */
   public static ConfigurableApplicationContext run(
       String[] args, Consumer<SpringApplication> applicationConsumer) {
-    SpringApplication application = new SpringApplication(Application.class);
+    SpringApplication application = new SpringApplication(PipeliteApplication.class);
     application.setAdditionalProfiles("pipelite");
     if (applicationConsumer != null) {
       applicationConsumer.accept(application);

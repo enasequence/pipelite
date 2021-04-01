@@ -29,8 +29,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import pipelite.Application;
 import pipelite.Pipeline;
+import pipelite.PipeliteApplication;
 import pipelite.controller.api.info.PipelineInfo;
 import pipelite.controller.utils.LoremUtils;
 import pipelite.launcher.PipeliteLauncher;
@@ -49,7 +49,7 @@ import tech.tablesaw.plotly.components.Figure;
 @Tag(name = "PipelineAPI", description = "Pipelines")
 public class PipelineController {
 
-  @Autowired Application application;
+  @Autowired PipeliteApplication application;
   @Autowired Environment environment;
   @Autowired ProcessService processService;
   @Autowired RegisteredPipelineService registeredPipelineService;

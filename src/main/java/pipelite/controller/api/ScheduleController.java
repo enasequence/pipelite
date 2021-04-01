@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import pipelite.Application;
+import pipelite.PipeliteApplication;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.controller.api.info.ScheduleInfo;
 import pipelite.controller.utils.LoremUtils;
@@ -40,7 +40,7 @@ import pipelite.service.ScheduleService;
 @Tag(name = "ScheduleAPI", description = "Schedules")
 public class ScheduleController {
 
-  @Autowired Application application;
+  @Autowired PipeliteApplication application;
   @Autowired Environment environment;
   @Autowired ServiceConfiguration serviceConfiguration;
   @Autowired ScheduleService scheduleService;

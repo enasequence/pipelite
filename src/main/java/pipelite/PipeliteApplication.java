@@ -35,7 +35,7 @@ import pipelite.service.*;
 @EnableAutoConfiguration
 @EnableRetry
 @Flogger
-public class Application {
+public class PipeliteApplication {
 
   @Autowired private ServiceConfiguration serviceConfiguration;
   @Autowired private AdvancedConfiguration advancedConfiguration;
