@@ -68,11 +68,22 @@ implementation 'pipelite:pipelite:1.0.89'
 and the minimal application would call  ```Pipelite.main``` to start up the Pipelite services:
 
 ```java
-
 @SpringBootApplication
 public class Application {
     public static void main(String[] args) {
         Pipelite.main(args);
+    }
+}
+```
+
+The ```SpringApplication``` can be configured using a ```Consumer<SpringApplication>``` callback:
+
+```java
+@SpringBootApplication
+public class Application {
+    public static void main(String[] args) {
+        Consumer<SpringApplication> applicationConsumer = ...;
+        Pipelite.main(args, applicationConsumer);
     }
 }
 ```
