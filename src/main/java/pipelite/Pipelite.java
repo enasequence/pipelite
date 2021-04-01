@@ -10,9 +10,11 @@
  */
 package pipelite;
 
-import java.util.Properties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
+
+import java.util.Properties;
+import java.util.function.Consumer;
 
 public class Pipelite {
 
@@ -24,7 +26,16 @@ public class Pipelite {
    * @param args command line arguments
    */
   public static void main(String[] args) {
-    run(args);
+    run(args, null);
+  }
+
+  /**
+   * Runs the pipelite services.
+   *
+   * @param args command line arguments
+   */
+  public static void main(String[] args, Consumer<SpringApplication> applicationConsumer) {
+    run(args, applicationConsumer);
   }
 
   /**
@@ -33,10 +44,15 @@ public class Pipelite {
    * @param args command line arguments
    * @return Spring configurable application context
    */
-  public static ConfigurableApplicationContext run(String[] args) {
+  public static ConfigurableApplicationContext run(
+      String[] args, Consumer<SpringApplication> applicationConsumer) {
     SpringApplication application = new SpringApplication(Application.class);
     application.setAdditionalProfiles("pipelite");
+    if (applicationConsumer != null) {
+      applicationConsumer.accept(application);
+    }
     application.setDefaultProperties(getDefaultProperties());
+
     return application.run(args);
   }
 
