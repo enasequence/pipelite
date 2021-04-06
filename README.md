@@ -46,6 +46,8 @@ active for a pipeline at any given time.
 Pipeline starts up a web service with a basic monitoring interface, takes care of the pipeline and schedule executions
 and stores the execution state in a relational database.
 
+Please note that no new classes should be added to the ```pipelite```  package or any of its sub-packages except for pipeline and schedule configurations that should be in ```pipelite.pipeline``` and ```pipelite.schedule``` packages. This will allow pipeline and schedule configurations to be picked up pipelite while no other classes will accidentially override any pipelite classes.
+
 ### How to start up Pipelite
 
 Pipelite is a Spring java application distributed as a regular maven jar archive. The jar should be added as a
@@ -93,7 +95,9 @@ public class Application {
 Schedules are used for executing processes according to a cron schedule.
 
 Schedules are registered by implementing the ```Pipelite.Schedule``` interface and using the ```@Component```
-annotation.
+annotation. 
+
+Schedules should be declared in the ```pipelite.schedule``` package to allow the configurations to be picked up pipelite.
 
 #### SimpleLsfExecutor example
 
@@ -176,6 +180,8 @@ Pipelines are used for executing unscheduled process instances.
 
 Pipelines are registered by implementing the ```Pipelite.Pipeline``` interface and using the ```@Component```
 annotation.
+
+Pipelines should be declared in the ```pipelite.pipeline``` package to allow the configurations to be picked up pipelite.
 
 Pipelines are configured exactly like schedules except for differences in the ```configurePipelines``` method.
 
