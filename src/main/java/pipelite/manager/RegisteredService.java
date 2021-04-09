@@ -8,11 +8,25 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.exception;
+package pipelite.manager;
 
-public class PipeliteProcessStateChangeException extends PipeliteUnrecoverableException {
+import com.google.common.util.concurrent.AbstractScheduledService;
 
-  public PipeliteProcessStateChangeException(String pipelineName, String processId, String reason) {
-    super("Failed to change " + pipelineName + " " + processId + " process state: " + reason);
+public abstract class RegisteredService extends AbstractScheduledService {
+
+  /** AbstractScheduledService service name. */
+  @Override
+  protected final String serviceName() {
+    return getLauncherName();
   }
+
+  /**
+   * Returns the process launcher name.
+   *
+   * @return the process launcher name.
+   */
+  public abstract String getLauncherName();
+
+  /** Terminates all running processes. */
+  public abstract void terminateProcesses();
 }

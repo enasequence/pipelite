@@ -14,27 +14,29 @@ import java.time.Duration;
 import java.util.List;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
-import pipelite.launcher.PipeliteConfiguration;
-import pipelite.launcher.PipeliteService;
+import pipelite.configuration.PipeliteConfiguration;
+import pipelite.manager.RegisteredService;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 
 /** Abstract base class for executing processes. */
 @Flogger
-public abstract class ProcessRunnerPoolService extends PipeliteService
+public abstract class ProcessRunnerPoolService extends RegisteredService
     implements ProcessRunnerPool {
 
   private final ProcessRunnerPool pool;
-  protected final PipeliteMetrics metrics;
+  protected final PipeliteMetrics pipeliteMetrics;
   private final Duration processRunnerFrequency;
   private boolean shutdown;
 
   public ProcessRunnerPoolService(
-      PipeliteConfiguration pipeliteConfiguration, ProcessRunnerPool pool) {
+      PipeliteConfiguration pipeliteConfiguration,
+      PipeliteMetrics pipeliteMetrics,
+      ProcessRunnerPool pool) {
     Assert.notNull(pipeliteConfiguration, "Missing configuration");
     Assert.notNull(pool, "Missing process runner pool");
     this.pool = pool;
-    this.metrics = pipeliteConfiguration.metrics();
+    this.pipeliteMetrics = pipeliteMetrics;
     this.processRunnerFrequency = pipeliteConfiguration.advanced().getProcessRunnerFrequency();
   }
 
@@ -55,7 +57,7 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
 
       try {
         run();
-        metrics.setRunningProcessesCount(pool.getActiveProcessRunners());
+        pipeliteMetrics.setRunningProcessesCount(pool.getActiveProcessRunners());
       } catch (Exception ex) {
         log.atSevere().withCause(ex).log("Unexpected exception from service: %s", serviceName());
       }
@@ -118,8 +120,8 @@ public abstract class ProcessRunnerPoolService extends PipeliteService
   }
 
   @Override
-  public void terminate() {
-    pool.terminate();
+  public void terminateProcesses() {
+    pool.terminateProcesses();
   }
 
   @Override

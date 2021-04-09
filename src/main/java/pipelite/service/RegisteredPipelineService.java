@@ -13,42 +13,24 @@ package pipelite.service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import pipelite.Pipeline;
 import pipelite.RegisteredPipeline;
 import pipelite.Schedule;
-import pipelite.configuration.ServiceConfiguration;
 import pipelite.cron.CronUtils;
-import pipelite.entity.ScheduleEntity;
 import pipelite.exception.PipeliteException;
 
 @Service
-@Lazy
 @Flogger
 public class RegisteredPipelineService {
 
   private final Map<String, RegisteredPipeline> registeredPipelineMap = new HashMap<>();
-  private final ServiceConfiguration serviceConfiguration;
-  private final ScheduleService scheduleService;
-  private final String serviceName;
 
-  public RegisteredPipelineService(
-      @Autowired ServiceConfiguration serviceConfiguration,
-      @Autowired ScheduleService scheduleService,
-      @Autowired List<RegisteredPipeline> registeredPipelines) {
-    this.serviceConfiguration = serviceConfiguration;
-    this.scheduleService = scheduleService;
-    this.serviceName = serviceConfiguration.getName();
-    for (RegisteredPipeline registeredPipeline : registeredPipelines) {
-      registerPipeline(registeredPipeline);
-    }
-    saveSchedules();
+  public RegisteredPipelineService(@Autowired List<RegisteredPipeline> registeredPipelines) {
+    registeredPipelines.forEach(p -> registerPipeline(p));
   }
 
   private void registerPipeline(RegisteredPipeline registeredPipeline) {
@@ -84,101 +66,16 @@ public class RegisteredPipelineService {
     registeredPipelineMap.put(pipelineName, registeredPipeline);
   }
 
-  private Stream<Schedule> streamSchedules() {
-    return registeredPipelineMap.values().stream()
-        .filter(s -> s instanceof Schedule)
-        .map(s -> (Schedule) s);
-  }
-
-  private void saveSchedules() {
-    streamSchedules()
-        .forEach(
-            schedule -> {
-              String pipelineName = schedule.pipelineName();
-
-              Optional<ScheduleEntity> savedScheduleEntityOpt =
-                  scheduleService.getSavedSchedule(pipelineName);
-
-              if (!savedScheduleEntityOpt.isPresent()) {
-                createSchedule(schedule);
-              } else {
-                ScheduleEntity savedScheduleEntity = savedScheduleEntityOpt.get();
-                String registeredCron = savedScheduleEntity.getCron();
-                String registeredServiceName = savedScheduleEntity.getServiceName();
-                String cron = schedule.configurePipeline().cron();
-                boolean isCronChanged = !registeredCron.equals(cron);
-                boolean isServiceNameChanged = !registeredServiceName.equals(serviceName);
-
-                if (isCronChanged) {
-                  log.atInfo().log(
-                      "Cron changed for pipeline schedule: " + schedule.pipelineName());
-                }
-                if (isServiceNameChanged) {
-                  log.atInfo().log(
-                      "Service name changed for pipeline schedule: " + schedule.pipelineName());
-                }
-
-                if (isServiceNameChanged && !serviceConfiguration.isForce()) {
-                  throw new PipeliteException(
-                      "Forceful startup not requested. Service name changed for pipeline schedule "
-                          + pipelineName
-                          + " from "
-                          + registeredServiceName
-                          + " to "
-                          + serviceName);
-                } else {
-                  log.atWarning().log(
-                      "Forceful startup requested. Changing service name for pipeline schedule "
-                          + pipelineName
-                          + " from "
-                          + registeredServiceName
-                          + " to "
-                          + serviceName);
-                }
-
-                if (isCronChanged || isServiceNameChanged) {
-                  log.atInfo().log("Updating pipeline schedule: " + schedule.pipelineName());
-                  try {
-                    savedScheduleEntity.setCron(cron);
-                    savedScheduleEntity.setDescription(CronUtils.describe(cron));
-                    savedScheduleEntity.setServiceName(serviceName);
-                    if (!savedScheduleEntity.isActive()) {
-                      savedScheduleEntity.setNextTime(
-                          CronUtils.launchTime(savedScheduleEntity.getCron()));
-                    }
-                    scheduleService.saveSchedule(savedScheduleEntity);
-                  } catch (Exception ex) {
-                    throw new PipeliteException(
-                        "Failed to update pipeline schedule: " + schedule.pipelineName(), ex);
-                  }
-                }
-              }
-            });
-  }
-
-  private void createSchedule(Schedule schedule) {
-    log.atInfo().log("Creating pipeline schedule: " + schedule.pipelineName());
-    try {
-      String cron = schedule.configurePipeline().cron();
-      ScheduleEntity scheduleEntity = new ScheduleEntity();
-      scheduleEntity.setCron(cron);
-      scheduleEntity.setDescription(CronUtils.describe(cron));
-      scheduleEntity.setPipelineName(schedule.pipelineName());
-      scheduleEntity.setServiceName(serviceName);
-      scheduleService.saveSchedule(scheduleEntity);
-    } catch (Exception ex) {
-      throw new PipeliteException(
-          "Failed to create pipeline schedule: " + schedule.pipelineName(), ex);
-    }
-  }
-
   /**
    * Returns true if a scheduler is registered.
    *
    * @return true if a scheduler is registered.
    */
   public boolean isScheduler() {
-    return streamSchedules().findAny().isPresent();
+    return registeredPipelineMap.values().stream()
+        .filter(s -> s instanceof Schedule)
+        .findAny()
+        .isPresent();
   }
 
   /**

@@ -11,7 +11,6 @@
 package pipelite.launcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,56 +22,51 @@ import lombok.Value;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ContextConfiguration;
-import pipelite.*;
-import pipelite.configuration.AdvancedConfiguration;
-import pipelite.configuration.ExecutorConfiguration;
-import pipelite.configuration.ServiceConfiguration;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.PipeliteTestConfigWithManager;
+import pipelite.PrioritizedPipeline;
+import pipelite.PrioritizedPipelineTestHelper;
+import pipelite.UniqueStringGenerator;
 import pipelite.executor.AbstractExecutor;
+import pipelite.manager.RegisteredServiceManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.service.*;
+import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
 
 @SpringBootTest(
-    classes = PipeliteTestConfiguration.class,
+    classes = PipeliteTestConfigWithManager.class,
     properties = {
+      "pipelite.service.force=true",
+      "pipelite.service.name=PipeliteLauncherAsyncTest",
       "pipelite.advanced.processRunnerFrequency=250ms",
       "pipelite.advanced.shutdownIfIdle=true"
     })
-@ContextConfiguration(initializers = PipeliteTestConfiguration.TestContextInitializer.class)
+@ActiveProfiles({"test", "PipeliteLauncherAsyncTest"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class PipeliteLauncherAsyncTest {
 
   private static final int PROCESS_CNT = 2;
 
-  @Autowired private ServiceConfiguration serviceConfiguration;
-  @Autowired private AdvancedConfiguration advancedConfiguration;
-  @Autowired private ExecutorConfiguration executorConfiguration;
-  @Autowired private InternalErrorService internalErrorService;
-  @Autowired private HealthCheckService healthCheckService;
-  @Autowired private RegisteredPipelineService registeredPipelineService;
-  @Autowired private ProcessService processService;
-  @Autowired private StageService stageService;
-  @Autowired private PipeliteLockerService pipeliteLockerService;
-  @Autowired private MailService mailService;
+  @Autowired private RegisteredServiceManager registeredServiceManager;
+  @Autowired private PipeliteServices pipeliteServices;
   @Autowired private PipeliteMetrics metrics;
-
   @Autowired private TestPipeline<SubmitSuccessPollSuccessExecutor> submitSuccessPollSuccess;
 
-  @Autowired public TestPipeline<SubmitErrorExecutor> submitError;
-  @Autowired public TestPipeline<SubmitExceptionExecutor> submitException;
-  @Autowired public TestPipeline<PollErrorExecutor> pollError;
-  @Autowired public TestPipeline<PollExceptionExecutor> pollException;
+  @Autowired private TestPipeline<SubmitErrorExecutor> submitError;
+  @Autowired private TestPipeline<SubmitExceptionExecutor> submitException;
+  @Autowired private TestPipeline<PollErrorExecutor> pollError;
+  @Autowired private TestPipeline<PollExceptionExecutor> pollException;
 
-  @TestConfiguration
+  @Profile("PipeliteLauncherAsyncTest")
+  @org.springframework.boot.test.context.TestConfiguration
   static class TestConfig {
     @Bean
     public TestPipeline<SubmitSuccessPollSuccessExecutor> submitSuccessPollSuccess() {
@@ -98,25 +92,6 @@ public class PipeliteLauncherAsyncTest {
     public TestPipeline<PollExceptionExecutor> pollException() {
       return new TestPipeline<>(new PollExceptionExecutor());
     }
-  }
-
-  private PipeliteServices pipeliteServices() {
-    return new PipeliteServices(
-        mock(ScheduleService.class),
-        processService,
-        stageService,
-        mailService,
-        pipeliteLockerService,
-        registeredPipelineService,
-        internalErrorService,
-        healthCheckService);
-  }
-
-  private PipeliteLauncher createPipeliteLauncher(String pipelineName) {
-    PipeliteConfiguration pipeliteConfiguration =
-        new PipeliteConfiguration(
-            serviceConfiguration, advancedConfiguration, executorConfiguration, metrics);
-    return DefaultPipeliteLauncher.create(pipeliteConfiguration, pipeliteServices(), pipelineName);
   }
 
   @Value
@@ -243,17 +218,16 @@ public class PipeliteLauncherAsyncTest {
     }
   }
 
-  @Test
-  public void testSubmitSuccessPollSuccess() {
+  private void assertSubmitSuccessPollSuccess() {
     TestPipeline<SubmitSuccessPollSuccessExecutor> f = submitSuccessPollSuccess;
 
-    PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.pipelineName());
-    new PipeliteServiceManager(serviceConfiguration, internalErrorService)
-        .addService(pipeliteLauncher)
-        .runSync();
+    PipeliteLauncher pipeliteLauncher =
+        pipeliteServices.launcher().getPipeliteLauncher(f.pipelineName()).get();
+
+    assertThat(pipeliteLauncher.getActiveProcessRunners().size()).isEqualTo(0);
 
     PipelineMetrics pipelineMetrics = metrics.pipeline(f.pipelineName());
-    assertThat(pipelineMetrics.getInternalErrorCount()).isEqualTo(0);
+    assertThat(pipelineMetrics.process().getInternalErrorCount()).isEqualTo(0);
     assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipelineMetrics.process().getFailedCount()).isZero();
     assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(0);
@@ -263,18 +237,17 @@ public class PipeliteLauncherAsyncTest {
     assertThat(f.stageExecutor.pollCount.get()).isEqualTo(PROCESS_CNT);
   }
 
-  @Test
-  public void testSubmitError() {
+  private void assertSubmitError() {
     TestPipeline<SubmitErrorExecutor> f = submitError;
 
-    PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.pipelineName());
-    new PipeliteServiceManager(serviceConfiguration, internalErrorService)
-        .addService(pipeliteLauncher)
-        .runSync();
+    PipeliteLauncher pipeliteLauncher =
+        pipeliteServices.launcher().getPipeliteLauncher(f.pipelineName()).get();
+
+    assertThat(pipeliteLauncher.getActiveProcessRunners().size()).isEqualTo(0);
 
     PipelineMetrics pipelineMetrics = metrics.pipeline(f.pipelineName());
 
-    assertThat(pipelineMetrics.getInternalErrorCount()).isEqualTo(0);
+    assertThat(pipelineMetrics.process().getInternalErrorCount()).isEqualTo(0);
     assertThat(pipelineMetrics.process().getCompletedCount()).isZero();
     assertThat(pipelineMetrics.process().getFailedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(PROCESS_CNT);
@@ -284,17 +257,16 @@ public class PipeliteLauncherAsyncTest {
     assertThat(f.stageExecutor.pollCount.get()).isEqualTo(0);
   }
 
-  @Test
-  public void testSubmitException() {
+  private void assertSubmitException() {
     TestPipeline<SubmitExceptionExecutor> f = submitException;
 
-    PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.pipelineName());
-    new PipeliteServiceManager(serviceConfiguration, internalErrorService)
-        .addService(pipeliteLauncher)
-        .runSync();
+    PipeliteLauncher pipeliteLauncher =
+        pipeliteServices.launcher().getPipeliteLauncher(f.pipelineName()).get();
+
+    assertThat(pipeliteLauncher.getActiveProcessRunners().size()).isEqualTo(0);
 
     PipelineMetrics pipelineMetrics = metrics.pipeline(f.pipelineName());
-    assertThat(pipelineMetrics.getInternalErrorCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipelineMetrics.process().getInternalErrorCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipelineMetrics.process().getCompletedCount()).isZero();
     assertThat(pipelineMetrics.process().getFailedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(PROCESS_CNT);
@@ -304,17 +276,35 @@ public class PipeliteLauncherAsyncTest {
     assertThat(f.stageExecutor.pollCount.get()).isEqualTo(0);
   }
 
-  @Test
-  public void testPollError() {
+  private void assertPollError() {
     TestPipeline<PollErrorExecutor> f = pollError;
 
-    PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.pipelineName());
-    new PipeliteServiceManager(serviceConfiguration, internalErrorService)
-        .addService(pipeliteLauncher)
-        .runSync();
+    PipeliteLauncher pipeliteLauncher =
+        pipeliteServices.launcher().getPipeliteLauncher(f.pipelineName()).get();
+
+    assertThat(pipeliteLauncher.getActiveProcessRunners().size()).isEqualTo(0);
 
     PipelineMetrics pipelineMetrics = metrics.pipeline(f.pipelineName());
-    assertThat(pipelineMetrics.getInternalErrorCount()).isEqualTo(0);
+    assertThat(pipelineMetrics.process().getInternalErrorCount()).isEqualTo(0);
+    assertThat(pipelineMetrics.process().getCompletedCount()).isZero();
+    assertThat(pipelineMetrics.process().getFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(0);
+
+    assertThat(f.stageExecutor.submitCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(f.stageExecutor.pollCount.get()).isEqualTo(PROCESS_CNT);
+  }
+
+  private void assertPollException() {
+    TestPipeline<PollExceptionExecutor> f = pollException;
+
+    PipeliteLauncher pipeliteLauncher =
+        pipeliteServices.launcher().getPipeliteLauncher(f.pipelineName()).get();
+
+    assertThat(pipeliteLauncher.getActiveProcessRunners().size()).isEqualTo(0);
+
+    PipelineMetrics pipelineMetrics = metrics.pipeline(f.pipelineName());
+    assertThat(pipelineMetrics.process().getInternalErrorCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipelineMetrics.process().getCompletedCount()).isZero();
     assertThat(pipelineMetrics.process().getFailedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(PROCESS_CNT);
@@ -325,22 +315,15 @@ public class PipeliteLauncherAsyncTest {
   }
 
   @Test
-  public void testPollException() {
-    TestPipeline<PollExceptionExecutor> f = pollException;
+  public void testPipelines() {
+    registeredServiceManager.init();
+    registeredServiceManager.start();
+    registeredServiceManager.awaitStopped();
 
-    PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.pipelineName());
-    new PipeliteServiceManager(serviceConfiguration, internalErrorService)
-        .addService(pipeliteLauncher)
-        .runSync();
-
-    PipelineMetrics pipelineMetrics = metrics.pipeline(f.pipelineName());
-    assertThat(pipelineMetrics.getInternalErrorCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipelineMetrics.process().getCompletedCount()).isZero();
-    assertThat(pipelineMetrics.process().getFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(0);
-
-    assertThat(f.stageExecutor.submitCount.get()).isEqualTo(PROCESS_CNT);
-    assertThat(f.stageExecutor.pollCount.get()).isEqualTo(PROCESS_CNT);
+    assertSubmitSuccessPollSuccess();
+    assertSubmitError();
+    assertSubmitException();
+    assertPollError();
+    assertPollException();
   }
 }

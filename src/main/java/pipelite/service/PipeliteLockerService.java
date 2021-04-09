@@ -10,58 +10,119 @@
  */
 package pipelite.service;
 
-import javax.annotation.PostConstruct;
+import java.time.Duration;
 import javax.annotation.PreDestroy;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 import pipelite.configuration.AdvancedConfiguration;
 import pipelite.configuration.ServiceConfiguration;
-import pipelite.lock.DefaultPipeliteLocker;
-import pipelite.lock.PipeliteLocker;
+import pipelite.entity.ServiceLockEntity;
+import pipelite.exception.PipeliteException;
+import pipelite.time.Time;
 
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 @Flogger
-@Lazy
 public class PipeliteLockerService {
 
-  private final ServiceConfiguration serviceConfiguration;
-  private final AdvancedConfiguration advancedConfiguration;
   private final LockService lockService;
-
-  private PipeliteLocker pipeliteLocker;
+  private final String serviceName;
+  private final ServiceLockEntity serviceLock;
+  private final Thread relockServiceThread;
 
   public PipeliteLockerService(
       @Autowired ServiceConfiguration serviceConfiguration,
       @Autowired AdvancedConfiguration advancedConfiguration,
       @Autowired LockService lockService) {
-    this.serviceConfiguration = serviceConfiguration;
-    this.advancedConfiguration = advancedConfiguration;
     this.lockService = lockService;
-  }
-
-  @PostConstruct
-  private void init() {
-    pipeliteLocker =
-        new DefaultPipeliteLocker(serviceConfiguration, advancedConfiguration, lockService);
+    this.serviceName = serviceConfiguration.getName();
+    this.serviceLock = lockService(serviceConfiguration.isForce());
+    Duration lockFrequency = getLockFrequency(advancedConfiguration);
+    this.relockServiceThread =
+        new Thread(
+            () -> {
+              while (!Thread.interrupted()) {
+                try {
+                  Time.wait(lockFrequency);
+                } catch (Exception ex) {
+                  log.atInfo().log("Service lock renewal interrupted");
+                  break;
+                }
+                try {
+                  this.relockService();
+                } catch (Exception ex) {
+                  log.atSevere().log("Unexpected exception when renewing service lock");
+                }
+              }
+            });
+    this.relockServiceThread.start();
   }
 
   @PreDestroy
-  public synchronized void close() {
-    if (pipeliteLocker != null) {
-      try {
-        pipeliteLocker.close();
-      } catch (Exception ex) {
-        log.atSevere().withCause(ex).log("Unexpected exception when closing pipelite locker");
+  private void close() {
+    try {
+      if (this.relockServiceThread != null) {
+        this.relockServiceThread.interrupt();
       }
+      unlockService();
+    } catch (Exception ex) {
+      log.atSevere().withCause(ex).log("Unexpected exception when closing pipelite locker");
     }
   }
 
-  public PipeliteLocker getPipeliteLocker() {
-    return pipeliteLocker;
+  private Duration getLockFrequency(AdvancedConfiguration advancedConfiguration) {
+    return advancedConfiguration.getLockFrequency() != null
+        ? advancedConfiguration.getLockFrequency()
+        : AdvancedConfiguration.DEFAULT_LOCK_FREQUENCY;
+  }
+
+  private ServiceLockEntity lockService(boolean force) {
+    log.atFine().log("Locking service: " + serviceName);
+    ServiceLockEntity lock = LockService.lockService(lockService, serviceName);
+    if (lock == null && force) {
+      log.atWarning().log(
+          "Forceful startup requested. Removing existing locks for service: " + serviceName);
+      unlockService();
+      lock = LockService.lockService(lockService, serviceName);
+    }
+    if (lock == null) {
+      throw new RuntimeException("Could not lock service " + serviceName);
+    }
+    return lock;
+  }
+
+  private void unlockService() {
+    try {
+      log.atFine().log("Unlocking service: " + serviceName);
+      lockService.unlockProcesses(serviceName);
+      lockService.unlockService(serviceName);
+    } catch (Exception ex) {
+      log.atSevere().log("Failed to unlock service: " + serviceName);
+    }
+  }
+
+  private void relockService() {
+    log.atFine().log("Relocking service: " + serviceName);
+    if (!lockService.relockService(serviceLock)) {
+      throw new PipeliteException("Could not relock service: " + serviceName);
+    }
+  }
+
+  public boolean lockProcess(String pipelineName, String processId) {
+    Assert.notNull(serviceLock, "Missing lock");
+    Assert.notNull(pipelineName, "Missing pipeline name");
+    Assert.notNull(processId, "Missing process id");
+    return LockService.lockProcess(lockService, serviceLock, pipelineName, processId);
+  }
+
+  public void unlockProcess(String pipelineName, String processId) {
+    Assert.notNull(serviceLock, "Missing lock");
+    Assert.notNull(pipelineName, "Missing pipeline name");
+    Assert.notNull(processId, "Missing process id");
+    lockService.unlockProcess(serviceLock, pipelineName, processId);
   }
 }

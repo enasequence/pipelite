@@ -10,7 +10,6 @@
  */
 package pipelite.launcher.process.runner;
 
-import com.google.common.flogger.FluentLogger;
 import java.time.Duration;
 import java.util.List;
 import java.util.Set;
@@ -24,21 +23,20 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
-import pipelite.launcher.PipeliteConfiguration;
-import pipelite.launcher.PipeliteServices;
-import pipelite.lock.PipeliteLocker;
-import pipelite.log.LogKey;
+import pipelite.configuration.PipeliteConfiguration;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.service.InternalErrorService;
+import pipelite.service.PipeliteLockerService;
+import pipelite.service.PipeliteServices;
 
 @Flogger
 public class DefaultProcessRunnerPool implements ProcessRunnerPool {
   private final String serviceName;
   private final InternalErrorService internalErrorService;
-  private final PipeliteLocker pipeliteLocker;
+  private final PipeliteLockerService pipeliteLockerService;
   private final Function<String, ProcessRunner> processRunnerSupplier;
-  private final PipeliteMetrics metrics;
+  private final PipeliteMetrics pipeliteMetrics;
   private final ExecutorService executorService = Executors.newCachedThreadPool();
   private final Duration executorServiceShutdownPeriod;
 
@@ -54,15 +52,16 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
   public DefaultProcessRunnerPool(
       PipeliteConfiguration pipeliteConfiguration,
       PipeliteServices pipeliteServices,
+      PipeliteMetrics pipeliteMetrics,
       Function<String, ProcessRunner> processRunnerSupplier) {
     Assert.notNull(pipeliteConfiguration, "Missing configuration");
     Assert.notNull(pipeliteServices, "Missing services");
     Assert.notNull(processRunnerSupplier, "Missing process runner supplier");
     this.serviceName = pipeliteConfiguration.service().getName();
     this.internalErrorService = pipeliteServices.internalError();
-    this.pipeliteLocker = pipeliteServices.locker();
+    this.pipeliteLockerService = pipeliteServices.locker();
     this.processRunnerSupplier = processRunnerSupplier;
-    this.metrics = pipeliteConfiguration.metrics();
+    this.pipeliteMetrics = pipeliteMetrics;
     this.executorServiceShutdownPeriod =
         pipeliteConfiguration.service().getShutdownPeriodWithMargin();
   }
@@ -95,7 +94,7 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
           ProcessRunnerResult result = null;
           try {
             // Lock process.
-            if (!pipeliteLocker.lockProcess(pipelineName, processId)) {
+            if (!pipeliteLockerService.lockProcess(pipelineName, processId)) {
               return;
             }
             result = processRunner.runProcess(process);
@@ -107,12 +106,12 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
             if (result == null) {
               result = new ProcessRunnerResult();
             }
-            metrics
+            pipeliteMetrics
                 .pipeline(pipelineName)
                 .increment(process.getProcessEntity().getProcessState(), result);
             callback.accept(process, result);
             // Unlock process.
-            pipeliteLocker.unlockProcess(pipelineName, processId);
+            pipeliteLockerService.unlockProcess(pipelineName, processId);
             active.remove(activeProcessRunner);
           }
         });
@@ -144,7 +143,8 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
     try {
       executorService.awaitTermination(
           executorServiceShutdownPeriod.getSeconds(), TimeUnit.SECONDS);
-      active.forEach(a -> pipeliteLocker.unlockProcess(a.getPipelineName(), a.getProcessId()));
+      active.forEach(
+          a -> pipeliteLockerService.unlockProcess(a.getPipelineName(), a.getProcessId()));
     } catch (InterruptedException ex) {
       executorService.shutdownNow();
       Thread.currentThread().interrupt();
@@ -152,11 +152,7 @@ public class DefaultProcessRunnerPool implements ProcessRunnerPool {
   }
 
   @Override
-  public void terminate() {
+  public void terminateProcesses() {
     active.forEach(runner -> runner.getProcessRunner().terminate());
-  }
-
-  private FluentLogger.Api logContext(FluentLogger.Api log, String pipelineName, String processId) {
-    return log.with(LogKey.PIPELINE_NAME, pipelineName).with(LogKey.PROCESS_ID, processId);
   }
 }

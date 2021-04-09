@@ -12,8 +12,11 @@ package pipelite.launcher;
 
 import java.util.List;
 import pipelite.Schedule;
+import pipelite.configuration.PipeliteConfiguration;
 import pipelite.launcher.process.runner.DefaultProcessRunner;
 import pipelite.launcher.process.runner.DefaultProcessRunnerPool;
+import pipelite.metrics.PipeliteMetrics;
+import pipelite.service.PipeliteServices;
 
 public class DefaultPipeliteScheduler {
 
@@ -22,13 +25,16 @@ public class DefaultPipeliteScheduler {
   public static PipeliteScheduler create(
       PipeliteConfiguration pipeliteConfiguration,
       PipeliteServices pipeliteServices,
+      PipeliteMetrics pipeliteMetrics,
       List<Schedule> schedules) {
     return new PipeliteScheduler(
         pipeliteConfiguration,
         pipeliteServices,
+        pipeliteMetrics,
         new DefaultProcessRunnerPool(
             pipeliteConfiguration,
             pipeliteServices,
+            pipeliteMetrics,
             (pipelineName) ->
                 new DefaultProcessRunner(pipeliteConfiguration, pipeliteServices, pipelineName)),
         schedules);

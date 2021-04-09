@@ -21,11 +21,9 @@ import org.junit.jupiter.api.Test;
 import pipelite.PipeliteMetricsTestFactory;
 import pipelite.configuration.AdvancedConfiguration;
 import pipelite.configuration.ExecutorConfiguration;
+import pipelite.configuration.PipeliteConfiguration;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.ProcessEntity;
-import pipelite.launcher.PipeliteConfiguration;
-import pipelite.launcher.PipeliteServices;
-import pipelite.lock.PipeliteLocker;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.TimeSeriesMetrics;
@@ -57,42 +55,45 @@ public class DefaultProcessRunnerPoolTest {
 
   private DefaultProcessRunnerPool createDefaultProcessRunnerPool(
       InternalErrorService internalErrorService,
-      PipeliteMetrics metrics,
-      PipeliteLocker locker,
+      PipeliteMetrics pipeliteMetrics,
+      PipeliteLockerService pipeliteLockerService,
       Function<String, ProcessRunner> processRunnerSupplier) {
 
     ServiceConfiguration serviceConfiguration = new ServiceConfiguration();
+    AdvancedConfiguration advancedConfiguration = mock(AdvancedConfiguration.class);
+
     serviceConfiguration.setShutdownPeriod(ServiceConfiguration.DEFAULT_SHUTDOWN_PERIOD);
     PipeliteConfiguration pipeliteConfiguration =
         new PipeliteConfiguration(
-            serviceConfiguration,
-            mock(AdvancedConfiguration.class),
-            mock(ExecutorConfiguration.class),
-            metrics);
+            serviceConfiguration, advancedConfiguration, mock(ExecutorConfiguration.class));
     PipeliteServices pipeliteServices =
         new PipeliteServices(
             mock(ScheduleService.class),
             mock(ProcessService.class),
             mock(StageService.class),
             mock(MailService.class),
-            locker,
+            pipeliteLockerService,
             mock(RegisteredPipelineService.class),
             internalErrorService,
-            mock(HealthCheckService.class));
+            mock(HealthCheckService.class),
+            mock(LauncherService.class));
     return new DefaultProcessRunnerPool(
-        pipeliteConfiguration, pipeliteServices, processRunnerSupplier);
+        pipeliteConfiguration, pipeliteServices, pipeliteMetrics, processRunnerSupplier);
   }
 
   @Test
   public void testSuccess() {
     InternalErrorService internalErrorService = mock(InternalErrorService.class);
-    PipeliteLocker locker = mock(PipeliteLocker.class);
-    when(locker.lockProcess(any(), any())).thenReturn(true);
+    PipeliteLockerService pipeliteLockerService = mock(PipeliteLockerService.class);
+    when(pipeliteLockerService.lockProcess(any(), any())).thenReturn(true);
     PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
 
     DefaultProcessRunnerPool pool =
         createDefaultProcessRunnerPool(
-            internalErrorService, metrics, locker, processRunnerSupplier(ProcessState.COMPLETED));
+            internalErrorService,
+            metrics,
+            pipeliteLockerService,
+            processRunnerSupplier(ProcessState.COMPLETED));
 
     AtomicInteger runProcessCount = new AtomicInteger();
 
@@ -112,7 +113,7 @@ public class DefaultProcessRunnerPoolTest {
 
     assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipelineMetrics.process().getFailedCount()).isZero();
-    assertThat(pipelineMetrics.getInternalErrorCount()).isZero();
+    assertThat(pipelineMetrics.process().getInternalErrorCount()).isZero();
     assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getCompletedTimeSeries()))
         .isEqualTo(PROCESS_CNT);
     assertThat(
@@ -127,10 +128,11 @@ public class DefaultProcessRunnerPoolTest {
         .isZero();
     assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getFailedTimeSeries()))
         .isZero();
-    assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.getInternalErrorTimeSeries())).isZero();
+    assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getInternalErrorTimeSeries()))
+        .isZero();
 
-    verify(locker, times(PROCESS_CNT)).lockProcess(eq(PIPELINE_NAME), any());
-    verify(locker, times(PROCESS_CNT)).unlockProcess(eq(PIPELINE_NAME), any());
+    verify(pipeliteLockerService, times(PROCESS_CNT)).lockProcess(eq(PIPELINE_NAME), any());
+    verify(pipeliteLockerService, times(PROCESS_CNT)).unlockProcess(eq(PIPELINE_NAME), any());
     assertThat(pool.getActiveProcessCount()).isZero();
     assertThat(pool.getActiveProcessRunners().size()).isZero();
   }
@@ -138,13 +140,16 @@ public class DefaultProcessRunnerPoolTest {
   @Test
   public void testFailed() {
     InternalErrorService internalErrorService = mock(InternalErrorService.class);
-    PipeliteLocker locker = mock(PipeliteLocker.class);
-    when(locker.lockProcess(any(), any())).thenReturn(true);
+    PipeliteLockerService pipeliteLockerService = mock(PipeliteLockerService.class);
+    when(pipeliteLockerService.lockProcess(any(), any())).thenReturn(true);
     PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
 
     DefaultProcessRunnerPool pool =
         createDefaultProcessRunnerPool(
-            internalErrorService, metrics, locker, processRunnerSupplier(ProcessState.FAILED));
+            internalErrorService,
+            metrics,
+            pipeliteLockerService,
+            processRunnerSupplier(ProcessState.FAILED));
 
     AtomicInteger runProcessCount = new AtomicInteger();
 
@@ -164,7 +169,7 @@ public class DefaultProcessRunnerPoolTest {
 
     assertThat(pipelineMetrics.process().getCompletedCount()).isZero();
     assertThat(pipelineMetrics.process().getFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipelineMetrics.getInternalErrorCount()).isZero();
+    assertThat(pipelineMetrics.process().getInternalErrorCount()).isZero();
     assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getCompletedTimeSeries()))
         .isZero();
     assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getFailedTimeSeries()))
@@ -177,10 +182,11 @@ public class DefaultProcessRunnerPoolTest {
             TimeSeriesMetrics.getCount(
                 pipelineMetrics.process().getFailedTimeSeries(), ZonedDateTime.now().plusHours(1)))
         .isZero();
-    assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.getInternalErrorTimeSeries())).isZero();
+    assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getInternalErrorTimeSeries()))
+        .isZero();
 
-    verify(locker, times(PROCESS_CNT)).lockProcess(eq(PIPELINE_NAME), any());
-    verify(locker, times(PROCESS_CNT)).unlockProcess(eq(PIPELINE_NAME), any());
+    verify(pipeliteLockerService, times(PROCESS_CNT)).lockProcess(eq(PIPELINE_NAME), any());
+    verify(pipeliteLockerService, times(PROCESS_CNT)).unlockProcess(eq(PIPELINE_NAME), any());
     assertThat(pool.getActiveProcessCount()).isZero();
     assertThat(pool.getActiveProcessRunners().size()).isZero();
   }
@@ -190,14 +196,14 @@ public class DefaultProcessRunnerPoolTest {
     PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
     InternalErrorService internalErrorService =
         new InternalErrorService(mock(InternalErrorRepository.class), metrics);
-    PipeliteLocker locker = mock(PipeliteLocker.class);
-    when(locker.lockProcess(any(), any())).thenReturn(true);
+    PipeliteLockerService pipeliteLockerService = mock(PipeliteLockerService.class);
+    when(pipeliteLockerService.lockProcess(any(), any())).thenReturn(true);
 
     DefaultProcessRunnerPool pool =
         createDefaultProcessRunnerPool(
             internalErrorService,
             metrics,
-            locker,
+            pipeliteLockerService,
             (pipelineName) -> {
               ProcessRunner processRunner = mock(ProcessRunner.class);
               doThrow(new RuntimeException()).when(processRunner).runProcess(any());
@@ -222,24 +228,26 @@ public class DefaultProcessRunnerPoolTest {
 
     assertThat(pipelineMetrics.process().getCompletedCount()).isZero();
     assertThat(pipelineMetrics.process().getFailedCount()).isZero();
-    assertThat(pipelineMetrics.getInternalErrorCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipelineMetrics.process().getInternalErrorCount()).isEqualTo(PROCESS_CNT);
     assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getCompletedTimeSeries()))
         .isZero();
     assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getFailedTimeSeries()))
         .isZero();
-    assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.getInternalErrorTimeSeries()))
+    assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getInternalErrorTimeSeries()))
         .isEqualTo(PROCESS_CNT);
     assertThat(
             TimeSeriesMetrics.getCount(
-                pipelineMetrics.getInternalErrorTimeSeries(), ZonedDateTime.now().minusHours(1)))
+                pipelineMetrics.process().getInternalErrorTimeSeries(),
+                ZonedDateTime.now().minusHours(1)))
         .isEqualTo(PROCESS_CNT);
     assertThat(
             TimeSeriesMetrics.getCount(
-                pipelineMetrics.getInternalErrorTimeSeries(), ZonedDateTime.now().plusHours(1)))
+                pipelineMetrics.process().getInternalErrorTimeSeries(),
+                ZonedDateTime.now().plusHours(1)))
         .isZero();
 
-    verify(locker, times(PROCESS_CNT)).lockProcess(eq(PIPELINE_NAME), any());
-    verify(locker, times(PROCESS_CNT)).unlockProcess(eq(PIPELINE_NAME), any());
+    verify(pipeliteLockerService, times(PROCESS_CNT)).lockProcess(eq(PIPELINE_NAME), any());
+    verify(pipeliteLockerService, times(PROCESS_CNT)).unlockProcess(eq(PIPELINE_NAME), any());
     assertThat(pool.getActiveProcessCount()).isZero();
     assertThat(pool.getActiveProcessRunners().size()).isZero();
   }

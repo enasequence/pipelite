@@ -8,25 +8,11 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.exception;
 
-import com.google.common.util.concurrent.AbstractScheduledService;
+public class PipeliteRetryException extends PipeliteUnrecoverableException {
 
-public abstract class PipeliteService extends AbstractScheduledService {
-
-  /** AbstractScheduledService service name. */
-  @Override
-  protected final String serviceName() {
-    return getLauncherName();
+  public PipeliteRetryException(String pipelineName, String processId, String reason) {
+    super("Failed to retry " + pipelineName + " " + processId + ": " + reason);
   }
-
-  /**
-   * Returns the process launcher name.
-   *
-   * @return the process launcher name.
-   */
-  public abstract String getLauncherName();
-
-  /** Terminates all running processes. */
-  public abstract void terminate();
 }

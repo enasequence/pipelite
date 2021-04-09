@@ -15,7 +15,6 @@ import static org.mockito.Mockito.*;
 
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.ExecutorConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.executor.CallExecutor;
@@ -30,7 +29,6 @@ import pipelite.stage.parameters.ExecutorParameters;
 public class StageLauncherTest {
 
   private void callExecutor(StageState stageState) {
-    ExecutorConfiguration executorConfiguration = new ExecutorConfiguration();
     StageService stageService = mock(StageService.class);
     String pipelineName = UniqueStringGenerator.randomPipelineName(StageLauncherTest.class);
     String processId = UniqueStringGenerator.randomProcessId(StageLauncherTest.class);
@@ -63,7 +61,6 @@ public class StageLauncherTest {
   }
 
   private void asyncCallExecutor(StageState stageState) {
-    ExecutorConfiguration executorConfiguration = new ExecutorConfiguration();
     StageService stageService = mock(StageService.class);
     String pipelineName = UniqueStringGenerator.randomPipelineName(StageLauncherTest.class);
     String processId = UniqueStringGenerator.randomProcessId(StageLauncherTest.class);

@@ -8,33 +8,24 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.configuration;
 
-import org.springframework.util.Assert;
-import pipelite.configuration.AdvancedConfiguration;
-import pipelite.configuration.ExecutorConfiguration;
-import pipelite.configuration.ServiceConfiguration;
-import pipelite.metrics.PipeliteMetrics;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+@Component
 public class PipeliteConfiguration {
   private final ServiceConfiguration service;
   private final AdvancedConfiguration advanced;
   private final ExecutorConfiguration executor;
-  private final PipeliteMetrics metrics;
 
   public PipeliteConfiguration(
-      ServiceConfiguration service,
-      AdvancedConfiguration advanced,
-      ExecutorConfiguration executor,
-      PipeliteMetrics metrics) {
-    Assert.notNull(service, "Missing service configuration");
-    Assert.notNull(advanced, "Missing advanced configuration");
-    Assert.notNull(executor, "Missing executor configuration");
-    Assert.notNull(metrics, "Missing metrics configuration");
+      @Autowired ServiceConfiguration service,
+      @Autowired AdvancedConfiguration advanced,
+      @Autowired ExecutorConfiguration executor) {
     this.service = service;
     this.advanced = advanced;
     this.executor = executor;
-    this.metrics = metrics;
   }
 
   public ServiceConfiguration service() {
@@ -47,9 +38,5 @@ public class PipeliteConfiguration {
 
   public ExecutorConfiguration executor() {
     return executor;
-  }
-
-  public PipeliteMetrics metrics() {
-    return metrics;
   }
 }

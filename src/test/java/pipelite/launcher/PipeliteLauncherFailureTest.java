@@ -11,7 +11,6 @@
 package pipelite.launcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -26,48 +25,45 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ContextConfiguration;
-import pipelite.PipeliteTestConfiguration;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.PipeliteTestConfigWithManager;
 import pipelite.PrioritizedPipeline;
 import pipelite.PrioritizedPipelineTestHelper;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.AdvancedConfiguration;
-import pipelite.configuration.ExecutorConfiguration;
-import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
+import pipelite.manager.RegisteredServiceManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.service.*;
+import pipelite.service.LauncherService;
+import pipelite.service.ProcessService;
+import pipelite.service.StageService;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
 
 @SpringBootTest(
-    classes = PipeliteTestConfiguration.class,
+    classes = PipeliteTestConfigWithManager.class,
     properties = {
+      "pipelite.service.force=true",
+      "pipelite.service.name=PipeliteLauncherFailureTest",
       "pipelite.advanced.processRunnerFrequency=250ms",
       "pipelite.advanced.shutdownIfIdle=true"
     })
-@ContextConfiguration(initializers = PipeliteTestConfiguration.TestContextInitializer.class)
+@ActiveProfiles({"test", "PipeliteLauncherFailureTest"})
 @DirtiesContext
 public class PipeliteLauncherFailureTest {
 
   private static final int PROCESS_CNT = 1;
 
-  @Autowired private ServiceConfiguration serviceConfiguration;
-  @Autowired private AdvancedConfiguration advancedConfiguration;
-  @Autowired private ExecutorConfiguration executorConfiguration;
-  @Autowired private InternalErrorService internalErrorService;
-  @Autowired private HealthCheckService healthCheckService;
-  @Autowired private RegisteredPipelineService registeredPipelineService;
+  @Autowired private RegisteredServiceManager registeredServiceManager;
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
-  @Autowired private PipeliteLockerService pipeliteLockerService;
-  @Autowired private MailService mailService;
+  @Autowired private LauncherService launcherService;
   @Autowired private PipeliteMetrics metrics;
 
   @Autowired
@@ -90,6 +86,7 @@ public class PipeliteLauncherFailureTest {
   @Qualifier("noStageFails")
   private TestPipeline noStageFails;
 
+  @Profile("PipeliteLauncherFailureTest")
   @TestConfiguration
   static class TestConfig {
     @Bean("firstStageFails")
@@ -125,26 +122,6 @@ public class PipeliteLauncherFailureTest {
     THIRD_ERROR,
     FOURTH_ERROR,
     NO_ERROR
-  }
-
-  private PipeliteServices pipeliteServices() {
-    return new PipeliteServices(
-        mock(ScheduleService.class),
-        processService,
-        stageService,
-        mailService,
-        pipeliteLockerService,
-        registeredPipelineService,
-        internalErrorService,
-        healthCheckService);
-  }
-
-  private PipeliteLauncher createPipeliteLauncher(String pipelineName) {
-    PipeliteConfiguration pipeliteConfiguration =
-        new PipeliteConfiguration(
-            serviceConfiguration, advancedConfiguration, executorConfiguration, metrics);
-
-    return DefaultPipeliteLauncher.create(pipeliteConfiguration, pipeliteServices(), pipelineName);
   }
 
   @Value
@@ -247,15 +224,10 @@ public class PipeliteLauncherFailureTest {
     }
   }
 
-  private PipeliteLauncher pipeliteLauncher(String pipelineName) {
-    return createPipeliteLauncher(pipelineName);
-  }
+  public void assertPipeline(TestPipeline testPipeline) {
 
-  public void test(TestPipeline testPipeline) {
-    PipeliteLauncher pipeliteLauncher = pipeliteLauncher(testPipeline.pipelineName());
-    new PipeliteServiceManager(serviceConfiguration, internalErrorService)
-        .addService(pipeliteLauncher)
-        .runSync();
+    PipeliteLauncher pipeliteLauncher =
+        launcherService.getPipeliteLauncher(testPipeline.pipelineName()).get();
 
     assertThat(pipeliteLauncher.getActiveProcessRunners().size()).isEqualTo(0);
 
@@ -400,27 +372,15 @@ public class PipeliteLauncherFailureTest {
   }
 
   @Test
-  public void testFirstStageFails() {
-    test(firstStageFails);
-  }
+  public void testPipelines() {
+    registeredServiceManager.init();
+    registeredServiceManager.start();
+    registeredServiceManager.awaitStopped();
 
-  @Test
-  public void testSecondStageFails() {
-    test(secondStageFails);
-  }
-
-  @Test
-  public void testThirdStageFails() {
-    test(thirdStageFails);
-  }
-
-  @Test
-  public void testFourthStageFails() {
-    test(fourthStageFails);
-  }
-
-  @Test
-  public void testNoStageFails() {
-    test(noStageFails);
+    assertPipeline(firstStageFails);
+    assertPipeline(secondStageFails);
+    assertPipeline(thirdStageFails);
+    assertPipeline(fourthStageFails);
+    assertPipeline(noStageFails);
   }
 }

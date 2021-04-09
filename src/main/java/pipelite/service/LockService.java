@@ -68,14 +68,13 @@ public class LockService {
    *
    * @param lockService the lock service
    * @param serviceName the service name
-   * @param lockId the unique service lock id
    * @return the service lock or null if the lock could not be created.
    */
-  public static ServiceLockEntity lockService(
-      LockService lockService, String serviceName, String lockId) {
+  public static ServiceLockEntity lockService(LockService lockService, String serviceName) {
     Assert.notNull(lockService, "Missing lock service");
     // Catch DataIntegrityViolationException that my be thrown during commit.
     try {
+      String lockId = ServiceLockEntity.createLockId();
       return lockService.lockServiceThrowsDataIntegrityViolationException(serviceName, lockId);
     } catch (DataIntegrityViolationException ex) {
       // Locking the service may throw DataIntegrityViolationException during commit.

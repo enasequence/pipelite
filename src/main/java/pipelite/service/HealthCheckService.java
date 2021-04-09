@@ -11,19 +11,55 @@
 package pipelite.service;
 
 import java.sql.Connection;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.sql.DataSource;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Service;
+import pipelite.configuration.DataSourceRetryConfiguration;
 
 @Service
 @Flogger
-public class HealthCheckService {
+public class HealthCheckService implements HealthIndicator {
 
+  private final DataSourceRetryConfiguration dataSourceRetryConfiguration;
   private final DataSource dataSource;
 
-  public HealthCheckService(@Autowired DataSource dataSource) {
+  public HealthCheckService(
+      @Autowired DataSourceRetryConfiguration dataSourceRetryConfiguration,
+      @Autowired DataSource dataSource) {
+    this.dataSourceRetryConfiguration = dataSourceRetryConfiguration;
     this.dataSource = dataSource;
+  }
+
+  private AtomicReference<LocalDateTime> unhealthySince = new AtomicReference<>();
+
+  @Override
+  public Health health() {
+    return health(LocalDateTime.now());
+  }
+
+  protected Health health(LocalDateTime now) {
+    if (!isDataSourceHealthy()) {
+      unhealthySince.compareAndSet(null, now);
+    } else {
+      unhealthySince.set(null);
+    }
+
+    LocalDateTime since = unhealthySince.get();
+    if (since == null
+        || Duration.between(since, now)
+                .abs()
+                .compareTo(dataSourceRetryConfiguration.getTotalDelay())
+            < 0) {
+      return Health.up().build();
+    } else {
+      return Health.down().build();
+    }
   }
 
   public boolean isDataSourceHealthy() {

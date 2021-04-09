@@ -12,20 +12,29 @@ package pipelite.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.mockito.Mockito.mock;
 
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Profile;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
 import pipelite.*;
-import pipelite.configuration.ServiceConfiguration;
 import pipelite.exception.PipeliteException;
 import pipelite.process.builder.ProcessBuilder;
 
-@SpringBootTest(classes = RegisteredPipelineServiceTest.TestConfig.class)
+@SpringBootTest(
+    classes = PipeliteTestConfigWithServices.class,
+    properties = {
+      "pipelite.service.force=true",
+      "pipelite.service.name=RegisteredPipelineServiceTest"
+    })
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@ActiveProfiles({"test", "RegisteredPipelineServiceTest"})
 public class RegisteredPipelineServiceTest {
 
   @Autowired RegisteredPipelineService registeredPipelineService;
@@ -36,14 +45,9 @@ public class RegisteredPipelineServiceTest {
   @Autowired TestPrioritizedPipeline prioritizedPipeline1;
   @Autowired TestPrioritizedPipeline prioritizedPipeline2;
 
+  @TestConfiguration
+  @Profile("RegisteredPipelineServiceTest")
   public static class TestConfig {
-    @Bean
-    public RegisteredPipelineService registeredPipelineService(
-        @Autowired List<RegisteredPipeline> registeredPipelines) {
-      return new RegisteredPipelineService(
-          mock(ServiceConfiguration.class), mock(ScheduleService.class), registeredPipelines);
-    }
-
     @Bean
     public TestPipeline pipeline1() {
       return new TestPipeline();

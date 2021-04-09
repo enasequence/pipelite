@@ -15,16 +15,19 @@ import java.time.ZonedDateTime;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.Pipeline;
+import pipelite.configuration.PipeliteConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.launcher.process.creator.PrioritizedProcessCreator;
 import pipelite.launcher.process.queue.ProcessQueue;
 import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
 import pipelite.log.LogKey;
+import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.service.HealthCheckService;
 import pipelite.service.InternalErrorService;
+import pipelite.service.PipeliteServices;
 
 /**
  * Executes processes in parallel for one pipeline. New process instances are created using for
@@ -47,18 +50,19 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
   public PipeliteLauncher(
       PipeliteConfiguration pipeliteConfiguration,
       PipeliteServices pipeliteServices,
+      PipeliteMetrics pipeliteMetrics,
       Pipeline pipeline,
       PrioritizedProcessCreator prioritizedProcessCreator,
       ProcessQueue processQueue,
       ProcessRunnerPool pool) {
-    super(pipeliteConfiguration, pool);
+    super(pipeliteConfiguration, pipeliteMetrics, pool);
     Assert.notNull(pipeliteConfiguration, "Missing configuration");
     Assert.notNull(pipeliteServices, "Missing services");
     Assert.notNull(pipeline, "Missing pipeline");
     Assert.notNull(prioritizedProcessCreator, "Missing process creator");
     Assert.notNull(processQueue, "Missing process queue");
     this.internalErrorService = pipeliteServices.internalError();
-    this.healthCheckService = pipeliteServices.healthCheckService();
+    this.healthCheckService = pipeliteServices.healthCheck();
     this.pipeline = pipeline;
     this.prioritizedProcessCreator = prioritizedProcessCreator;
     this.processQueue = processQueue;

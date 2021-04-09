@@ -16,9 +16,10 @@ import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import pipelite.PipeliteTestConfiguration;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.PipeliteTestConfigWithServices;
 import pipelite.UniqueStringGenerator;
-import pipelite.configuration.LsfTestConfiguration;
+import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
@@ -29,7 +30,10 @@ import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 import pipelite.time.Time;
 
-@SpringBootTest(classes = PipeliteTestConfiguration.class)
+@SpringBootTest(
+    classes = PipeliteTestConfigWithServices.class,
+    properties = {"pipelite.service.force=true", "pipelite.service.name=SshSimpleLsfExecutorTest"})
+@ActiveProfiles("test")
 public class SshSimpleLsfExecutorTest {
 
   @Autowired LsfTestConfiguration lsfTestConfiguration;

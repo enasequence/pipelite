@@ -10,27 +10,18 @@
  */
 package pipelite;
 
-import javax.annotation.PostConstruct;
-import lombok.extern.flogger.Flogger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.retry.annotation.EnableRetry;
-import pipelite.manager.RegisteredServiceManager;
+import pipelite.configuration.WebServerCustomizer;
 
-@Configuration
-@ComponentScan
 @EnableAutoConfiguration
 @EnableRetry
-@Flogger
-public class PipeliteApplication {
-
-  @Autowired RegisteredServiceManager registeredServiceManager;
-
-  @PostConstruct
-  private void run() {
-    registeredServiceManager.init();
-    registeredServiceManager.start();
-  }
-}
+@ComponentScan(
+    basePackages = {"pipelite.configuration"},
+    excludeFilters =
+        @ComponentScan.Filter(
+            type = FilterType.ASSIGNABLE_TYPE,
+            classes = {WebServerCustomizer.class}))
+public class PipeliteTestConfigWithConfigurations {}

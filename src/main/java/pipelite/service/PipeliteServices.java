@@ -8,67 +8,42 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.launcher;
+package pipelite.service;
 
-import org.springframework.util.Assert;
-import pipelite.lock.PipeliteLocker;
-import pipelite.service.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+@Component
 public class PipeliteServices {
-
   private final ScheduleService scheduleService;
   private final ProcessService processService;
   private final StageService stageService;
   private final MailService mailService;
-  private final PipeliteLocker lockerService;
+  private final PipeliteLockerService pipeliteLockerService;
   private final RegisteredPipelineService registeredPipelineService;
   private final InternalErrorService internalErrorService;
   private final HealthCheckService healthCheckService;
+  private final LauncherService launcherService;
 
   public PipeliteServices(
-      ScheduleService scheduleService,
-      ProcessService processService,
-      StageService stageService,
-      MailService mailService,
-      PipeliteLocker lockerService,
-      RegisteredPipelineService registeredPipelineService,
-      InternalErrorService internalErrorService,
-      HealthCheckService healthCheckService) {
-    Assert.notNull(scheduleService, "Missing schedule service");
-    Assert.notNull(processService, "Missing process service");
-    Assert.notNull(stageService, "Missing stage service");
-    Assert.notNull(mailService, "Missing mail service");
-    Assert.notNull(lockerService, "Missing locker service");
-    Assert.notNull(registeredPipelineService, "Missing registered pipeline service");
-    Assert.notNull(healthCheckService, "Missing health check service");
+      @Autowired ScheduleService scheduleService,
+      @Autowired ProcessService processService,
+      @Autowired StageService stageService,
+      @Autowired MailService mailService,
+      @Autowired PipeliteLockerService pipeliteLockerService,
+      @Autowired RegisteredPipelineService registeredPipelineService,
+      @Autowired InternalErrorService internalErrorService,
+      @Autowired HealthCheckService healthCheckService,
+      @Autowired LauncherService launcherService) {
     this.scheduleService = scheduleService;
     this.processService = processService;
     this.stageService = stageService;
     this.mailService = mailService;
-    this.lockerService = lockerService;
+    this.pipeliteLockerService = pipeliteLockerService;
     this.registeredPipelineService = registeredPipelineService;
     this.internalErrorService = internalErrorService;
     this.healthCheckService = healthCheckService;
-  }
-
-  public PipeliteServices(
-      ScheduleService scheduleService,
-      ProcessService processService,
-      StageService stageService,
-      MailService mailService,
-      PipeliteLockerService lockerService,
-      RegisteredPipelineService registeredPipelineService,
-      InternalErrorService internalErrorService,
-      HealthCheckService healthCheck) {
-    this(
-        scheduleService,
-        processService,
-        stageService,
-        mailService,
-        lockerService.getPipeliteLocker(),
-        registeredPipelineService,
-        internalErrorService,
-        healthCheck);
+    this.launcherService = launcherService;
   }
 
   public ScheduleService schedule() {
@@ -87,8 +62,8 @@ public class PipeliteServices {
     return mailService;
   }
 
-  public PipeliteLocker locker() {
-    return lockerService;
+  public PipeliteLockerService locker() {
+    return pipeliteLockerService;
   }
 
   public RegisteredPipelineService registeredPipeline() {
@@ -99,7 +74,11 @@ public class PipeliteServices {
     return internalErrorService;
   }
 
-  public HealthCheckService healthCheckService() {
+  public HealthCheckService healthCheck() {
     return healthCheckService;
+  }
+
+  public LauncherService launcher() {
+    return launcherService;
   }
 }

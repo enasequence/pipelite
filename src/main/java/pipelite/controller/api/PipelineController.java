@@ -30,7 +30,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Pipeline;
-import pipelite.PipeliteApplication;
 import pipelite.controller.api.info.PipelineInfo;
 import pipelite.controller.utils.LoremUtils;
 import pipelite.launcher.PipeliteLauncher;
@@ -39,6 +38,7 @@ import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.TimeSeriesMetrics;
 import pipelite.process.ProcessState;
+import pipelite.service.LauncherService;
 import pipelite.service.ProcessService;
 import pipelite.service.RegisteredPipelineService;
 import tech.tablesaw.api.Table;
@@ -49,9 +49,9 @@ import tech.tablesaw.plotly.components.Figure;
 @Tag(name = "PipelineAPI", description = "Pipelines")
 public class PipelineController {
 
-  @Autowired PipeliteApplication application;
   @Autowired Environment environment;
   @Autowired ProcessService processService;
+  @Autowired LauncherService launcherService;
   @Autowired RegisteredPipelineService registeredPipelineService;
   @Autowired PipeliteMetrics pipeliteMetrics;
 
@@ -61,17 +61,17 @@ public class PipelineController {
 
   @GetMapping("/")
   @ResponseStatus(HttpStatus.OK)
-  @Operation(description = "Processes running in this server")
+  @Operation(description = "Pipelines running in this server")
   @ApiResponses(
       value = {
         @ApiResponse(responseCode = "200", description = "OK"),
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
-  public Collection<PipelineInfo> processes() {
+  public Collection<PipelineInfo> pipelines() {
     List<PipelineInfo> list =
         getPipelines(
             registeredPipelineService.getRegisteredPipelines(Pipeline.class),
-            application.getRunningLaunchers(),
+            launcherService.getPipeliteLaunchers(),
             processService.getProcessStateSummary());
     getLoremIpsumPipelines(list);
     return list;
@@ -147,8 +147,8 @@ public class PipelineController {
     Collection<Table> tables = new ArrayList<>();
     ZonedDateTime since = ZonedDateTime.now().minus(duration);
 
-    application
-        .getRunningLaunchers()
+    launcherService
+        .getPipeliteLaunchers()
         .forEach(
             p -> {
               PipelineMetrics metrics = pipeliteMetrics.pipeline(p.getPipelineName());
@@ -172,7 +172,7 @@ public class PipelineController {
         tables.add(getTimeSeries(metrics.process().getFailedTimeSeries(), since));
         break;
       case "error":
-        tables.add(getTimeSeries(metrics.getInternalErrorTimeSeries(), since));
+        tables.add(getTimeSeries(metrics.process().getInternalErrorTimeSeries(), since));
         break;
     }
   }
@@ -190,7 +190,7 @@ public class PipelineController {
         tables.add(metrics.process().getFailedTimeSeries());
         break;
       case "error":
-        tables.add(metrics.getInternalErrorTimeSeries());
+        tables.add(metrics.process().getInternalErrorTimeSeries());
         break;
     }
   }

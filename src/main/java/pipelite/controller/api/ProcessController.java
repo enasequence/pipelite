@@ -25,7 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import pipelite.PipeliteApplication;
 import pipelite.controller.api.info.ProcessInfo;
 import pipelite.controller.utils.LoremUtils;
 import pipelite.controller.utils.TimeUtils;
@@ -33,18 +32,17 @@ import pipelite.entity.ProcessEntity;
 import pipelite.launcher.process.runner.ProcessRunner;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
 import pipelite.process.Process;
+import pipelite.service.LauncherService;
 import pipelite.service.ProcessService;
-import pipelite.service.RegisteredPipelineService;
 
 @RestController
 @RequestMapping(value = "/api/process")
 @Tag(name = "ProcessAPI", description = "Process")
 public class ProcessController {
 
-  @Autowired private PipeliteApplication application;
   @Autowired private Environment environment;
-  @Autowired RegisteredPipelineService registeredPipelineService;
   @Autowired private ProcessService processService;
+  @Autowired private LauncherService launcherService;
 
   @GetMapping("/")
   @ResponseStatus(HttpStatus.OK)
@@ -56,12 +54,12 @@ public class ProcessController {
       })
   public List<ProcessInfo> processes(@RequestParam(required = false) String pipelineName) {
     List<ProcessInfo> list = new ArrayList<>();
-    application
-        .getRunningLaunchers()
+    launcherService
+        .getPipeliteLaunchers()
         .forEach(launcher -> list.addAll(getProcesses(launcher, pipelineName)));
-    application
-        .getRunningSchedulers()
-        .forEach(launcher -> list.addAll(getProcesses(launcher, pipelineName)));
+    if (launcherService.isPipeliteScheduler()) {
+      list.addAll(getProcesses(launcherService.getPipeliteScheduler(), pipelineName));
+    }
     getLoremIpsumProcess(list);
     return list;
   }

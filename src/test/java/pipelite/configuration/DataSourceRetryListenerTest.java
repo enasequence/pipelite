@@ -17,24 +17,29 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.test.annotation.DirtiesContext;
-import pipelite.PipeliteTestConfiguration;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.PipeliteTestConfigWithConfigurations;
 
-@SpringBootTest(classes = PipeliteTestConfiguration.class)
+@SpringBootTest(classes = PipeliteTestConfigWithConfigurations.class)
+@ActiveProfiles({"test", "DataSourceRetryListenerTest"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class DataSourceRetryListenerTest {
 
   private static final String EXCEPTION_MESSAGE = "test";
 
-  @Autowired PipeliteHealth pipeliteHealth;
-  @Autowired DataSourceRetryListener dataSourceRetryListener;
+  @Autowired private DataSourceRetryListener dataSourceRetryListener;
+  @Autowired private TestServiceWithListenerAlwaysThrows testServiceWithListenerAlwaysThrows;
+  @Autowired private TestServiceWithListenerNeverThrows testServiceWithListenerNeverThrows;
 
-  @Configuration
-  static class ContextConfiguration {
+  @TestConfiguration
+  @Profile("DataSourceRetryListenerTest")
+  static class TestConfig {
 
     @Bean
     TestServiceWithListenerAlwaysThrows testServiceWithListenerAlwaysThrows() {
@@ -64,10 +69,6 @@ public class DataSourceRetryListenerTest {
       cnt.incrementAndGet();
       throw new TestException(EXCEPTION_MESSAGE);
     }
-
-    public int getCnt() {
-      return cnt.get();
-    }
   }
 
   public static class TestServiceWithListenerNeverThrows {
@@ -80,14 +81,7 @@ public class DataSourceRetryListenerTest {
     public void test() {
       cnt.incrementAndGet();
     }
-
-    public int getCnt() {
-      return cnt.get();
-    }
   }
-
-  @Autowired private TestServiceWithListenerAlwaysThrows testServiceWithListenerAlwaysThrows;
-  @Autowired private TestServiceWithListenerNeverThrows testServiceWithListenerNeverThrows;
 
   @Test
   public void testServiceWithListenerAlwaysThrows() {

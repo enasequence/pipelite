@@ -12,6 +12,7 @@ package pipelite.launcher;
 
 import pipelite.Pipeline;
 import pipelite.PrioritizedPipeline;
+import pipelite.configuration.PipeliteConfiguration;
 import pipelite.exception.PipeliteException;
 import pipelite.launcher.process.creator.DefaultPrioritizedProcessCreator;
 import pipelite.launcher.process.creator.PrioritizedProcessCreator;
@@ -19,6 +20,8 @@ import pipelite.launcher.process.queue.DefaultProcessQueue;
 import pipelite.launcher.process.queue.ProcessQueue;
 import pipelite.launcher.process.runner.DefaultProcessRunner;
 import pipelite.launcher.process.runner.DefaultProcessRunnerPool;
+import pipelite.metrics.PipeliteMetrics;
+import pipelite.service.PipeliteServices;
 import pipelite.service.RegisteredPipelineService;
 
 public class DefaultPipeliteLauncher {
@@ -28,6 +31,7 @@ public class DefaultPipeliteLauncher {
   public static PipeliteLauncher create(
       PipeliteConfiguration pipeliteConfiguration,
       PipeliteServices pipeliteServices,
+      PipeliteMetrics pipeliteMetrics,
       String pipelineName) {
     RegisteredPipelineService registeredPipelineService = pipeliteServices.registeredPipeline();
     Pipeline pipeline =
@@ -49,12 +53,14 @@ public class DefaultPipeliteLauncher {
     return new PipeliteLauncher(
         pipeliteConfiguration,
         pipeliteServices,
+        pipeliteMetrics,
         pipeline,
         prioritizedProcessCreator,
         processQueue,
         new DefaultProcessRunnerPool(
             pipeliteConfiguration,
             pipeliteServices,
+            pipeliteMetrics,
             (pipelineName1) ->
                 new DefaultProcessRunner(pipeliteConfiguration, pipeliteServices, pipelineName1)));
   }

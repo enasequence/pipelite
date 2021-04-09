@@ -8,26 +8,22 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.configuration;
+package pipelite.launcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import pipelite.PipeliteTestConfigWithConfigurations;
 
-@SpringBootTest(classes = PipeliteTestConfigWithConfigurations.class)
-@ActiveProfiles("test")
-public class ServiceConfigurationTest {
-
-  @Autowired ServiceConfiguration serviceConfiguration;
+public class PipeliteSchedulerNextProcessIdTest {
 
   @Test
-  public void getName() {
-    String hostName = ServiceConfiguration.getCanonicalHostName();
-    int port = ServiceConfiguration.DEFAULT_PORT;
-    assertThat(serviceConfiguration.getName()).isEqualTo(hostName + ":" + port);
+  public void nextProcessId() {
+    assertThat(PipeliteScheduler.nextProcessId(null)).isEqualTo("1");
+    assertThat(PipeliteScheduler.nextProcessId("0")).isEqualTo("1");
+    assertThat(PipeliteScheduler.nextProcessId("1")).isEqualTo("2");
+    assertThat(PipeliteScheduler.nextProcessId("9")).isEqualTo("10");
+    assertThat(PipeliteScheduler.nextProcessId("10")).isEqualTo("11");
+    assertThat(PipeliteScheduler.nextProcessId("29")).isEqualTo("30");
+    assertThat(PipeliteScheduler.nextProcessId("134232")).isEqualTo("134233");
   }
 }

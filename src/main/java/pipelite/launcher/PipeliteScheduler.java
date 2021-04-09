@@ -20,19 +20,19 @@ import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.Pipeline;
 import pipelite.Schedule;
+import pipelite.configuration.PipeliteConfiguration;
 import pipelite.cron.CronUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.exception.PipeliteException;
+import pipelite.exception.PipeliteRetryException;
 import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.launcher.process.runner.ProcessRunnerPoolService;
 import pipelite.log.LogKey;
+import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
-import pipelite.service.HealthCheckService;
-import pipelite.service.InternalErrorService;
-import pipelite.service.ProcessService;
-import pipelite.service.ScheduleService;
+import pipelite.service.*;
 
 /**
  * Schedules non-parallel processes using cron expressions. New process instances are created using
@@ -54,15 +54,16 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   public PipeliteScheduler(
       PipeliteConfiguration pipeliteConfiguration,
       PipeliteServices pipeliteServices,
+      PipeliteMetrics pipeliteMetrics,
       ProcessRunnerPool processRunnerPool,
       List<Schedule> schedules) {
-    super(pipeliteConfiguration, processRunnerPool);
+    super(pipeliteConfiguration, pipeliteMetrics, processRunnerPool);
     Assert.notNull(pipeliteConfiguration, "Missing configuration");
     Assert.notNull(pipeliteServices, "Missing services");
     this.scheduleService = pipeliteServices.schedule();
     this.processService = pipeliteServices.process();
     this.internalErrorService = pipeliteServices.internalError();
-    this.healthCheckService = pipeliteServices.healthCheckService();
+    this.healthCheckService = pipeliteServices.healthCheck();
     this.scheduleCache = new ScheduleCache(pipeliteServices.registeredPipeline());
     this.serviceName = pipeliteConfiguration.service().getName();
     schedules.forEach(s -> this.schedules.add(new PipeliteSchedulerSchedule(s.pipelineName())));
@@ -96,7 +97,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
           .forEach(
               s -> {
                 try {
-                  executeSchedule(s, createProcessEntity(s), false);
+                  executeSchedule(s, createProcessEntity(s), ExecuteMode.NEW);
                 } catch (Exception ex) {
                   // Catching exceptions here to allow other schedules to continue execution.
                   internalErrorService.saveInternalError(
@@ -162,16 +163,29 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
       return;
     }
     logContext(log.atInfo(), pipelineName).log("Resuming schedule");
-    Optional<ProcessEntity> processEntity = getSavedProcessEntity(scheduleEntity);
+    Optional<ProcessEntity> processEntity = getSavedProcess(scheduleEntity);
     if (!processEntity.isPresent()) {
       logContext(log.atSevere(), pipelineName, scheduleEntity.getProcessId())
           .log("Could not resume schedule because process does not exist");
     } else {
-      executeSchedule(schedule, processEntity.get(), true);
+      executeSchedule(schedule, processEntity.get(), ExecuteMode.RESUME);
     }
   }
 
-  private Optional<ProcessEntity> getSavedProcessEntity(ScheduleEntity scheduleEntity) {
+  public void retrySchedule(String pipelineName, String processId) {
+    Optional<PipeliteSchedulerSchedule> schedule =
+        schedules.stream().filter(s -> s.getPipelineName().equals(pipelineName)).findAny();
+    if (!schedule.isPresent()) {
+      throw new PipeliteRetryException(pipelineName, processId, "schedule not found");
+    }
+    Optional<ProcessEntity> processEntity = processService.getSavedProcess(pipelineName, processId);
+    if (!processEntity.isPresent()) {
+      throw new PipeliteRetryException(pipelineName, processId, "process not found");
+    }
+    executeSchedule(schedule.get(), processEntity.get(), ExecuteMode.RETRY);
+  }
+
+  private Optional<ProcessEntity> getSavedProcess(ScheduleEntity scheduleEntity) {
     return processService.getSavedProcess(
         scheduleEntity.getPipelineName(), scheduleEntity.getProcessId());
   }
@@ -211,10 +225,16 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     }
   }
 
+  protected enum ExecuteMode {
+    NEW,
+    RESUME,
+    RETRY
+  };
+
   protected void executeSchedule(
       PipeliteSchedulerSchedule pipeliteSchedulerSchedule,
       ProcessEntity processEntity,
-      boolean isResume) {
+      ExecuteMode executeMode) {
     String pipelineName = processEntity.getPipelineName();
     String processId = processEntity.getProcessId();
     logContext(log.atInfo(), pipelineName, processId).log("Executing scheduled process");
@@ -224,14 +244,14 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
       return;
     }
 
-    Process process = createProcess(processEntity, schedule);
+    Process process = getProcess(processEntity, schedule);
     if (process == null) {
       return;
     }
 
     setMaximumRetries(process);
 
-    if (!isResume) {
+    if (executeMode != ExecuteMode.RESUME) {
       scheduleService.startExecution(pipelineName, processId);
     }
 
@@ -267,7 +287,7 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     return schedule;
   }
 
-  private Process createProcess(ProcessEntity processEntity, Schedule schedule) {
+  private Process getProcess(ProcessEntity processEntity, Schedule schedule) {
     return ProcessFactory.create(processEntity, schedule);
   }
 

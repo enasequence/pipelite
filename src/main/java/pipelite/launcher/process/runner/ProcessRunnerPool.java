@@ -56,7 +56,7 @@ public interface ProcessRunnerPool {
   boolean isProcessActive(String pipelineName, String processId);
 
   /** Terminates all running processes. */
-  void terminate();
+  void terminateProcesses();
 
   /** Shuts down the process runner pool. */
   void shutDown();

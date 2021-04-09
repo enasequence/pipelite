@@ -24,16 +24,16 @@ import java.util.concurrent.Executors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.ExecutorConfiguration;
+import pipelite.configuration.PipeliteConfiguration;
 import pipelite.entity.StageEntity;
 import pipelite.exception.PipeliteException;
-import pipelite.launcher.PipeliteConfiguration;
-import pipelite.launcher.PipeliteServices;
 import pipelite.launcher.StageLauncher;
 import pipelite.launcher.dependency.DependencyResolver;
 import pipelite.log.LogKey;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.service.*;
+import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
@@ -72,7 +72,7 @@ public class DefaultProcessRunner implements ProcessRunner {
     this.processService = pipeliteServices.process();
     this.stageService = pipeliteServices.stage();
     this.mailService = pipeliteServices.mail();
-    this.healthCheckService = pipeliteServices.healthCheckService();
+    this.healthCheckService = pipeliteServices.healthCheck();
     this.pipelineName = pipelineName;
     this.processRunnerFrequency = pipeliteConfiguration.advanced().getProcessRunnerFrequency();
   }

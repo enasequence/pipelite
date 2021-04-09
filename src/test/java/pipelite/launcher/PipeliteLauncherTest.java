@@ -26,81 +26,77 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.ActiveProfiles;
 import pipelite.*;
 import pipelite.configuration.AdvancedConfiguration;
-import pipelite.configuration.ExecutorConfiguration;
-import pipelite.configuration.ServiceConfiguration;
+import pipelite.configuration.PipeliteConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageLogEntity;
 import pipelite.launcher.process.creator.PrioritizedProcessCreator;
 import pipelite.launcher.process.queue.DefaultProcessQueue;
-import pipelite.launcher.process.runner.DefaultProcessRunnerPool;
 import pipelite.launcher.process.runner.ProcessRunnerPool;
+import pipelite.manager.RegisteredServiceManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.TimeSeriesMetrics;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.service.*;
+import pipelite.service.PipeliteServices;
+import pipelite.service.ProcessService;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
 
 @SpringBootTest(
-    classes = PipeliteTestConfiguration.class,
+    classes = PipeliteTestConfigWithManager.class,
     properties = {
+      "pipelite.service.force=true",
+      "pipelite.service.name=PipeliteLauncherTest",
       "pipelite.advanced.processRunnerFrequency=250ms",
       "pipelite.advanced.shutdownIfIdle=true"
     })
-@ContextConfiguration(initializers = PipeliteTestConfiguration.TestContextInitializer.class)
+@ActiveProfiles({"test", "PipeliteLauncherTest"})
 @DirtiesContext
 public class PipeliteLauncherTest {
 
-  @Autowired private ServiceConfiguration serviceConfiguration;
-  @Autowired private AdvancedConfiguration advancedConfiguration;
-  @Autowired private ExecutorConfiguration executorConfiguration;
-  @Autowired private InternalErrorService internalErrorService;
-  @Autowired private HealthCheckService healthCheckService;
-  @Autowired private RegisteredPipelineService registeredPipelineService;
-  @Autowired private ProcessService processService;
-  @Autowired private StageService stageService;
-  @Autowired private PipeliteLockerService pipeliteLockerService;
-  @Autowired private MailService mailService;
-  @Autowired private PipeliteMetrics metrics;
+  @Autowired private RegisteredServiceManager registeredServiceManager;
+  @Autowired private PipeliteConfiguration pipeliteConfiguration;
+  @Autowired private PipeliteServices pipeliteServices;
+  @Autowired private PipeliteMetrics pipeliteMetrics;
 
   @Autowired
-  @Qualifier("processSuccess")
-  private TestPipeline processSuccess;
+  @Qualifier("successPipeline")
+  private TestPipeline successPipeline;
 
   @Autowired
-  @Qualifier("processFailure")
-  private TestPipeline processFailure;
+  @Qualifier("failurePipeline")
+  private TestPipeline failurePipeline;
 
   @Autowired
-  @Qualifier("processException")
-  private TestPipeline processException;
+  @Qualifier("exceptionPipeline")
+  private TestPipeline exceptionPipeline;
 
-  @TestConfiguration
+  @Profile("PipeliteLauncherTest")
+  @org.springframework.boot.test.context.TestConfiguration
   static class TestConfig {
-    @Bean("processSuccess")
+    @Bean("successPipeline")
     @Primary
-    public TestPipeline processSuccess() {
+    public TestPipeline successPipeline() {
       return new TestPipeline(4, 2, StageTestResult.SUCCESS);
     }
 
-    @Bean("processFailure")
-    public TestPipeline processFailure() {
+    @Bean("failurePipeline")
+    public TestPipeline failurePipeline() {
       return new TestPipeline(4, 2, StageTestResult.ERROR);
     }
 
-    @Bean("processException")
-    public TestPipeline processException() {
+    @Bean("exceptionPipeline")
+    public TestPipeline exceptionPipeline() {
       return new TestPipeline(4, 2, StageTestResult.EXCEPTION);
     }
   }
@@ -109,25 +105,6 @@ public class PipeliteLauncherTest {
     SUCCESS,
     ERROR,
     EXCEPTION
-  }
-
-  private PipeliteServices pipeliteServices() {
-    return new PipeliteServices(
-        mock(ScheduleService.class),
-        processService,
-        stageService,
-        mailService,
-        pipeliteLockerService,
-        registeredPipelineService,
-        internalErrorService,
-        healthCheckService);
-  }
-
-  private PipeliteLauncher createPipeliteLauncher(String pipelineName) {
-    PipeliteConfiguration pipeliteConfiguration =
-        new PipeliteConfiguration(
-            serviceConfiguration, advancedConfiguration, executorConfiguration, metrics);
-    return DefaultPipeliteLauncher.create(pipeliteConfiguration, pipeliteServices(), pipelineName);
   }
 
   @Value
@@ -201,29 +178,26 @@ public class PipeliteLauncherTest {
   }
 
   private void assertLauncherMetrics(TestPipeline f) {
-    PipelineMetrics pipelineMetrics = metrics.pipeline(f.pipelineName());
+    PipelineMetrics metrics = pipeliteMetrics.pipeline(f.pipelineName());
 
     if (f.stageTestResult != StageTestResult.SUCCESS) {
-      assertThat(pipelineMetrics.process().getFailedCount())
+      assertThat(metrics.process().getFailedCount()).isEqualTo(f.stageExecCnt.get() / f.stageCnt);
+      assertThat(metrics.stage().getFailedCount()).isEqualTo(f.stageExecCnt.get());
+      assertThat(metrics.stage().getSuccessCount()).isEqualTo(0L);
+      assertThat(TimeSeriesMetrics.getCount(metrics.process().getFailedTimeSeries()))
           .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
-      assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(f.stageExecCnt.get());
-      assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(0L);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getFailedTimeSeries()))
-          .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getFailedTimeSeries()))
+      assertThat(TimeSeriesMetrics.getCount(metrics.stage().getFailedTimeSeries()))
           .isEqualTo(f.stageExecCnt.get());
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getSuccessTimeSeries()))
-          .isEqualTo(0);
+      assertThat(TimeSeriesMetrics.getCount(metrics.stage().getSuccessTimeSeries())).isEqualTo(0);
     } else {
-      assertThat(pipelineMetrics.process().getCompletedCount())
+      assertThat(metrics.process().getCompletedCount())
           .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
-      assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(0L);
-      assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(f.stageExecCnt.get());
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getCompletedTimeSeries()))
+      assertThat(metrics.stage().getFailedCount()).isEqualTo(0L);
+      assertThat(metrics.stage().getSuccessCount()).isEqualTo(f.stageExecCnt.get());
+      assertThat(TimeSeriesMetrics.getCount(metrics.process().getCompletedTimeSeries()))
           .isEqualTo(f.stageExecCnt.get() / f.stageCnt);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getFailedTimeSeries()))
-          .isEqualTo(0);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getSuccessTimeSeries()))
+      assertThat(TimeSeriesMetrics.getCount(metrics.stage().getFailedTimeSeries())).isEqualTo(0);
+      assertThat(TimeSeriesMetrics.getCount(metrics.stage().getSuccessTimeSeries()))
           .isEqualTo(f.stageExecCnt.get());
     }
   }
@@ -231,7 +205,8 @@ public class PipeliteLauncherTest {
   private void assertProcessEntity(TestPipeline f, String processId) {
     String pipelineName = f.pipelineName();
 
-    ProcessEntity processEntity = processService.getSavedProcess(f.pipelineName(), processId).get();
+    ProcessEntity processEntity =
+        pipeliteServices.process().getSavedProcess(f.pipelineName(), processId).get();
     assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);
@@ -248,9 +223,9 @@ public class PipeliteLauncherTest {
 
     for (int i = 0; i < f.stageCnt; ++i) {
       StageEntity stageEntity =
-          stageService.getSavedStage(f.pipelineName(), processId, "STAGE" + i).get();
+          pipeliteServices.stage().getSavedStage(f.pipelineName(), processId, "STAGE" + i).get();
       StageLogEntity stageLogEntity =
-          stageService.getSavedStageLog(f.pipelineName(), processId, "STAGE" + i).get();
+          pipeliteServices.stage().getSavedStageLog(f.pipelineName(), processId, "STAGE" + i).get();
       assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
       assertThat(stageEntity.getProcessId()).isEqualTo(processId);
       assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
@@ -282,14 +257,13 @@ public class PipeliteLauncherTest {
     }
   }
 
-  private void test(TestPipeline f) {
-    PipeliteLauncher pipeliteLauncher = createPipeliteLauncher(f.pipelineName());
-    new PipeliteServiceManager(serviceConfiguration, internalErrorService)
-        .addService(pipeliteLauncher)
-        .runSync();
+  private void assertPipeline(TestPipeline f) {
+    PipeliteLauncher pipeliteLauncher =
+        pipeliteServices.launcher().getPipeliteLauncher(f.pipelineName()).get();
 
     assertThat(pipeliteLauncher.getActiveProcessRunners().size()).isEqualTo(0);
-
+    assertThat(f.processCnt).isGreaterThan(0);
+    assertThat(f.stageCnt).isGreaterThan(0);
     assertThat(f.stageExecCnt.get() / f.stageCnt).isEqualTo(f.processCnt);
     assertThat(f.processIds.size()).isEqualTo(f.processCnt);
     assertLauncherMetrics(f);
@@ -300,90 +274,26 @@ public class PipeliteLauncherTest {
   }
 
   @Test
-  public void testSuccess() {
-    test(processSuccess);
+  public void testPipelines() {
+    registeredServiceManager.init();
+    registeredServiceManager.start();
+    registeredServiceManager.awaitStopped();
+
+    assertPipeline(successPipeline);
+    assertPipeline(failurePipeline);
+    assertPipeline(exceptionPipeline);
   }
 
   @Test
-  public void testFailure() {
-    test(processFailure);
-  }
-
-  @Test
-  public void testException() {
-    test(processException);
-  }
-
-  @Test
-  public void testRunProcess() {
+  public void testProcessQueue() {
     final int processCnt = 100;
     String pipelineName = UniqueStringGenerator.randomPipelineName(PipeliteLauncherTest.class);
-    ServiceConfiguration serviceConfiguration = new ServiceConfiguration();
+    Duration processQueueRefreshFrequency = Duration.ofDays(1);
+
     AdvancedConfiguration advancedConfiguration = new AdvancedConfiguration();
-    int pipelineParallelism = ForkJoinPool.getCommonPoolParallelism();
+    advancedConfiguration.setProcessQueueMaxRefreshFrequency(processQueueRefreshFrequency);
+    advancedConfiguration.setProcessQueueMinRefreshFrequency(processQueueRefreshFrequency);
 
-    Pipeline pipeline =
-        new Pipeline() {
-          @Override
-          public String pipelineName() {
-            return pipelineName;
-          }
-
-          @Override
-          public Options configurePipeline() {
-            return new Options().pipelineParallelism(pipelineParallelism);
-          }
-
-          @Override
-          public void configureProcess(ProcessBuilder builder) {}
-        };
-
-    DefaultProcessQueue queue =
-        spy(
-            new DefaultProcessQueue(
-                advancedConfiguration,
-                mock(ProcessService.class),
-                pipelineName,
-                pipeline.configurePipeline().pipelineParallelism()));
-
-    List<ProcessEntity> processesEntities =
-        Collections.nCopies(processCnt, mock(ProcessEntity.class));
-    doReturn(processesEntities).when(queue).getAvailableActiveProcesses();
-
-    ProcessRunnerPool pool = mock(ProcessRunnerPool.class);
-
-    PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
-
-    PipeliteConfiguration pipeliteConfiguration =
-        new PipeliteConfiguration(
-            serviceConfiguration, advancedConfiguration, executorConfiguration, metrics);
-
-    PipeliteLauncher launcher =
-        spy(
-            new PipeliteLauncher(
-                pipeliteConfiguration,
-                pipeliteServices(),
-                pipeline,
-                mock(PrioritizedProcessCreator.class),
-                queue,
-                pool));
-
-    launcher.startUp();
-    launcher.run();
-
-    verify(launcher, times(1)).run();
-    verify(launcher, times(processCnt)).runProcess(any());
-  }
-
-  @Test
-  public void testQueueProcesses() {
-    final int processCnt = 100;
-    String pipelineName = UniqueStringGenerator.randomPipelineName(PipeliteLauncherTest.class);
-    Duration refreshFrequency = Duration.ofDays(1);
-    ServiceConfiguration serviceConfiguration = new ServiceConfiguration();
-    AdvancedConfiguration advancedConfiguration = new AdvancedConfiguration();
-    advancedConfiguration.setProcessQueueMaxRefreshFrequency(refreshFrequency);
-    advancedConfiguration.setProcessQueueMinRefreshFrequency(refreshFrequency);
     int pipelineParallelism = ForkJoinPool.getCommonPoolParallelism();
 
     DefaultProcessQueue queue =
@@ -403,17 +313,16 @@ public class PipeliteLauncherTest {
     doReturn(processesEntities).when(queue).getPendingProcesses();
 
     ProcessRunnerPool pool = mock(ProcessRunnerPool.class);
-    PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
 
-    PipeliteConfiguration pipeliteConfiguration =
-        new PipeliteConfiguration(
-            serviceConfiguration, advancedConfiguration, executorConfiguration, metrics);
+    PipeliteConfiguration configuration = spy(pipeliteConfiguration);
+    when(configuration.advanced()).thenReturn(advancedConfiguration);
 
     PipeliteLauncher launcher =
         spy(
             new PipeliteLauncher(
-                pipeliteConfiguration,
-                pipeliteServices(),
+                configuration,
+                pipeliteServices,
+                pipeliteMetrics,
                 mock(Pipeline.class),
                 mock(PrioritizedProcessCreator.class),
                 queue,
@@ -422,7 +331,7 @@ public class PipeliteLauncherTest {
     launcher.startUp();
     launcher.run();
 
-    ZonedDateTime plusRefresh = ZonedDateTime.now().plus(refreshFrequency);
+    ZonedDateTime plusRefresh = ZonedDateTime.now().plus(processQueueRefreshFrequency);
     ZonedDateTime plusBeforeRefresh = ZonedDateTime.now().plus(Duration.ofHours(23));
     assertThat(queue.getProcessQueueMaxValidUntil()).isAfter(plusBeforeRefresh);
     assertThat(queue.getProcessQueueMinValidUntil()).isAfter(plusBeforeRefresh);
@@ -433,47 +342,5 @@ public class PipeliteLauncherTest {
     verify(queue, times(1)).fillQueue();
     verify(queue, times(1)).getAvailableActiveProcesses();
     verify(queue, times(1)).getPendingProcesses();
-  }
-
-  @Test
-  public void testCreateProcess() {
-    final int processCnt = 100;
-    String pipelineName = UniqueStringGenerator.randomPipelineName(PipeliteLauncherTest.class);
-    ServiceConfiguration serviceConfiguration = new ServiceConfiguration();
-    AdvancedConfiguration advancedConfiguration = new AdvancedConfiguration();
-    advancedConfiguration.setProcessCreateMaxSize(100);
-    int pipelineParallelism = ForkJoinPool.getCommonPoolParallelism();
-
-    PrioritizedProcessCreator prioritizedProcessCreator = mock(PrioritizedProcessCreator.class);
-    DefaultProcessQueue queue =
-        spy(
-            new DefaultProcessQueue(
-                advancedConfiguration,
-                mock(ProcessService.class),
-                pipelineName,
-                pipelineParallelism));
-    when(queue.isFillQueue()).thenReturn(true);
-
-    PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
-
-    PipeliteConfiguration pipeliteConfiguration =
-        new PipeliteConfiguration(
-            serviceConfiguration, advancedConfiguration, executorConfiguration, metrics);
-
-    PipeliteLauncher launcher =
-        spy(
-            new PipeliteLauncher(
-                pipeliteConfiguration,
-                pipeliteServices(),
-                mock(Pipeline.class),
-                prioritizedProcessCreator,
-                queue,
-                mock(DefaultProcessRunnerPool.class)));
-
-    launcher.startUp();
-    launcher.run();
-
-    verify(launcher, times(1)).run();
-    verify(prioritizedProcessCreator, times(1)).createProcesses(processCnt);
   }
 }

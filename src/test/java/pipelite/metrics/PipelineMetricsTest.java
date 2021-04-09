@@ -20,18 +20,18 @@ import pipelite.process.ProcessState;
 public class PipelineMetricsTest {
 
   @Test
-  public void internalError() {
+  public void processInternalError() {
     PipelineMetrics metrics = PipeliteMetricsTestFactory.pipelineMetrics("PIPELINE_NAME");
 
-    assertThat(metrics.getInternalErrorCount()).isZero();
-    assertThat(metrics.getInternalErrorTimeSeries().rowCount()).isZero();
-    assertThat(metrics.getInternalErrorTimeSeries().dateTimeColumn("time")).isNotNull();
-    assertThat(metrics.getInternalErrorTimeSeries().doubleColumn("count")).isNotNull();
+    assertThat(metrics.process().getInternalErrorCount()).isZero();
+    assertThat(metrics.process().getInternalErrorTimeSeries().rowCount()).isZero();
+    assertThat(metrics.process().getInternalErrorTimeSeries().dateTimeColumn("time")).isNotNull();
+    assertThat(metrics.process().getInternalErrorTimeSeries().doubleColumn("count")).isNotNull();
 
-    metrics.incrementInternalErrorCount();
+    metrics.process().incrementInternalErrorCount();
 
-    assertThat(metrics.getInternalErrorCount()).isOne();
-    assertThat(metrics.getInternalErrorTimeSeries().rowCount()).isOne();
+    assertThat(metrics.process().getInternalErrorCount()).isOne();
+    assertThat(metrics.process().getInternalErrorTimeSeries().rowCount()).isOne();
   }
 
   @Test

@@ -81,7 +81,7 @@ public class InternalErrorService {
           stageName != null ? stageName : "",
           cls != null ? cls.getName() : "");
       if (pipelineName != null) {
-        metrics.pipeline(pipelineName).incrementInternalErrorCount();
+        metrics.pipeline(pipelineName).process().incrementInternalErrorCount();
       } else {
         metrics.incrementInternalErrorCount();
       }

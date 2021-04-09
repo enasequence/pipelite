@@ -11,6 +11,7 @@
 package pipelite.service;
 
 import com.google.common.collect.Lists;
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pipelite.cron.CronUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
+import pipelite.exception.PipeliteRetryException;
 import pipelite.process.ProcessState;
 import pipelite.repository.ScheduleRepository;
 
@@ -41,6 +43,9 @@ import pipelite.repository.ScheduleRepository;
             multiplierExpression = "#{@dataSourceRetryConfiguration.getMultiplier()}"),
     exceptionExpression = "#{@dataSourceRetryConfiguration.recoverableException(#root)}")
 public class ScheduleService {
+
+  /** Retry margin until next scheduled execution. */
+  private static final Duration RETRY_MARGIN = Duration.ofMinutes(5);
 
   private final ScheduleRepository repository;
 
@@ -120,5 +125,45 @@ public class ScheduleService {
       scheduleEntity.setStreakFailed(scheduleEntity.getStreakFailed() + 1);
     }
     saveSchedule(scheduleEntity);
+  }
+
+  /**
+   * Returns true if there is a schedule that has failed and can be retried.
+   *
+   * @param pipelineName the pipeline name
+   * @param processId the process id
+   * @return true if there is a schedule that has failed and can be retried
+   * @throws PipeliteRetryException if there is a schedule that can't be retried
+   */
+  public boolean isRetrySchedule(String pipelineName, String processId) {
+    Optional<ScheduleEntity> scheduleEntityOpt = getSavedSchedule(pipelineName);
+    if (!scheduleEntityOpt.isPresent()) {
+      return false;
+    }
+
+    ScheduleEntity scheduleEntity = scheduleEntityOpt.get();
+
+    if (!scheduleEntity.isFailed()) {
+      throw new PipeliteRetryException(pipelineName, processId, "schedule has not failed");
+    }
+
+    if (!processId.equals(scheduleEntity.getProcessId())) {
+      throw new PipeliteRetryException(
+          pipelineName,
+          processId,
+          "last execution is a different process " + scheduleEntity.getProcessId());
+    }
+
+    if (scheduleEntity.getNextTime() != null
+        && Duration.between(ZonedDateTime.now(), scheduleEntity.getNextTime())
+                .compareTo(RETRY_MARGIN)
+            < 0) {
+      throw new PipeliteRetryException(
+          pipelineName,
+          processId,
+          "next execution is in less than " + RETRY_MARGIN.toMinutes() + " minutes");
+    }
+
+    return true;
   }
 }

@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.configuration;
+package pipelite.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -20,9 +20,9 @@ import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.jdbc.datasource.AbstractDataSource;
-import pipelite.service.HealthCheckService;
+import pipelite.configuration.DataSourceRetryConfiguration;
 
-public class PipeliteHealthTest {
+public class HealthCheckServiceTest {
 
   public class TestDataSource extends AbstractDataSource {
 
@@ -50,35 +50,31 @@ public class PipeliteHealthTest {
     dataSourceRetryConfiguration.setMultiplier(1);
 
     TestDataSource testDataSource = new TestDataSource();
-    HealthCheckService healthCheckService = new HealthCheckService(testDataSource);
-
-    PipeliteHealth pipeliteHealth =
-        new PipeliteHealth(dataSourceRetryConfiguration, healthCheckService);
+    HealthCheckService h = new HealthCheckService(dataSourceRetryConfiguration, testDataSource);
 
     // up healthy check
-    assertThat(pipeliteHealth.health().getStatus()).isEqualTo(Status.UP);
-    assertThat(pipeliteHealth.health().getStatus()).isEqualTo(Status.UP);
+    assertThat(h.health().getStatus()).isEqualTo(Status.UP);
+    assertThat(h.health().getStatus()).isEqualTo(Status.UP);
 
     // data source throws
     testDataSource.error = true;
     LocalDateTime now = LocalDateTime.now();
 
     // up healthy check
-    assertThat(pipeliteHealth.health(now).getStatus()).isEqualTo(Status.UP);
-    assertThat(pipeliteHealth.health(now.plusMinutes(15)).getStatus()).isEqualTo(Status.UP);
-    assertThat(pipeliteHealth.health(now.plusMinutes(45)).getStatus()).isEqualTo(Status.UP);
-    assertThat(pipeliteHealth.health(now.plusMinutes(59).plusSeconds(59)).getStatus())
-        .isEqualTo(Status.UP);
+    assertThat(h.health(now).getStatus()).isEqualTo(Status.UP);
+    assertThat(h.health(now.plusMinutes(15)).getStatus()).isEqualTo(Status.UP);
+    assertThat(h.health(now.plusMinutes(45)).getStatus()).isEqualTo(Status.UP);
+    assertThat(h.health(now.plusMinutes(59).plusSeconds(59)).getStatus()).isEqualTo(Status.UP);
 
     // down healthy check
-    assertThat(pipeliteHealth.health(now.plusHours(1)).getStatus()).isEqualTo(Status.DOWN);
-    assertThat(pipeliteHealth.health(now.plusHours(2)).getStatus()).isEqualTo(Status.DOWN);
+    assertThat(h.health(now.plusHours(1)).getStatus()).isEqualTo(Status.DOWN);
+    assertThat(h.health(now.plusHours(2)).getStatus()).isEqualTo(Status.DOWN);
 
     // data source stops throwing
     testDataSource.error = false;
 
     // up healthy check
-    assertThat(pipeliteHealth.health().getStatus()).isEqualTo(Status.UP);
-    assertThat(pipeliteHealth.health().getStatus()).isEqualTo(Status.UP);
+    assertThat(h.health().getStatus()).isEqualTo(Status.UP);
+    assertThat(h.health().getStatus()).isEqualTo(Status.UP);
   }
 }
