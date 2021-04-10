@@ -13,6 +13,12 @@ package pipelite.manager;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import javax.annotation.PreDestroy;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -20,20 +26,13 @@ import pipelite.Pipeline;
 import pipelite.Schedule;
 import pipelite.configuration.PipeliteConfiguration;
 import pipelite.exception.PipeliteException;
-import pipelite.launcher.DefaultPipeliteLauncher;
-import pipelite.launcher.DefaultPipeliteScheduler;
-import pipelite.launcher.PipeliteLauncher;
-import pipelite.launcher.PipeliteScheduler;
-import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.metrics.PipeliteMetrics;
+import pipelite.runner.pipeline.DefaultPipelineRunner;
+import pipelite.runner.pipeline.PipelineRunner;
+import pipelite.runner.process.ProcessRunnerPool;
+import pipelite.runner.schedule.DefaultScheduleRunner;
+import pipelite.runner.schedule.ScheduleRunner;
 import pipelite.service.PipeliteServices;
-
-import javax.annotation.PreDestroy;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 @Flogger
 @Component
@@ -68,8 +67,8 @@ public class ProcessRunnerPoolManager {
   }
 
   private void clear() {
-    pipeliteServices.launcher().clearPipeliteScheduler();
-    pipeliteServices.launcher().clearPipeliteLaunchers();
+    pipeliteServices.runner().clearScheduleRunner();
+    pipeliteServices.runner().clearPipelineRunners();
     pools.clear();
     serviceManager = null;
   }
@@ -87,20 +86,20 @@ public class ProcessRunnerPoolManager {
       // Create process runner pools for pipelines.
       for (Pipeline pipeline :
           pipeliteServices.registeredPipeline().getRegisteredPipelines(Pipeline.class)) {
-        PipeliteLauncher launcher = createLauncher(pipeline.pipelineName());
+        PipelineRunner pipelineRunner = createPipelineRunner(pipeline.pipelineName());
         log.atInfo().log("Creating process runner pool for pipeline: " + pipeline.pipelineName());
-        pipeliteServices.launcher().addPipeliteLauncher(launcher);
-        pools.add(launcher);
+        pipeliteServices.runner().addPipelineRunner(pipelineRunner);
+        pools.add(pipelineRunner);
       }
 
       // Create process runner pools for schedules.
       if (pipeliteServices.registeredPipeline().isSchedules()) {
-        PipeliteScheduler pipeliteScheduler =
+        ScheduleRunner scheduleRunner =
             createScheduler(
                 pipeliteServices.registeredPipeline().getRegisteredPipelines(Schedule.class));
         log.atInfo().log("Creating process runner pool for schedules");
-        pipeliteServices.launcher().setPipeliteScheduler(pipeliteScheduler);
-        pools.add(pipeliteScheduler);
+        pipeliteServices.runner().setScheduleRunner(scheduleRunner);
+        pools.add(scheduleRunner);
       }
 
       log.atInfo().log("Created process runner pools");
@@ -211,13 +210,13 @@ public class ProcessRunnerPoolManager {
     pools.forEach(service -> service.terminateProcesses());
   }
 
-  private PipeliteScheduler createScheduler(List<Schedule> schedules) {
-    return DefaultPipeliteScheduler.create(
+  private ScheduleRunner createScheduler(List<Schedule> schedules) {
+    return DefaultScheduleRunner.create(
         pipeliteConfiguration, pipeliteServices, pipeliteMetrics, schedules);
   }
 
-  private PipeliteLauncher createLauncher(String pipelineName) {
-    return DefaultPipeliteLauncher.create(
+  private PipelineRunner createPipelineRunner(String pipelineName) {
+    return DefaultPipelineRunner.create(
         pipeliteConfiguration, pipeliteServices, pipeliteMetrics, pipelineName);
   }
 }

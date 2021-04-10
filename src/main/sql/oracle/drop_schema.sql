@@ -1,6 +1,3 @@
-drop sequence pipelite2_launcher_lock_seq;
-
-drop table pipelite2_launcher_lock;
 drop table pipelite2_process;
 drop table pipelite2_process_audit;
 drop table pipelite2_process_lock;

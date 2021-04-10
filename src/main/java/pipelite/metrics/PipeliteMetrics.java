@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import pipelite.launcher.process.runner.ProcessRunner;
+import pipelite.runner.process.ProcessRunner;
 import tech.tablesaw.api.Table;
 
 @Component

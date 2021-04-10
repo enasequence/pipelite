@@ -18,10 +18,10 @@ import pipelite.RegisteredPipeline;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.exception.PipeliteRetryException;
-import pipelite.launcher.PipeliteScheduler;
-import pipelite.launcher.dependency.DependencyResolver;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
+import pipelite.runner.schedule.ScheduleRunner;
+import pipelite.runner.stage.DependencyResolver;
 import pipelite.stage.Stage;
 
 @Service
@@ -32,19 +32,19 @@ public class RetryService {
   private final ScheduleService scheduleService;
   private final ProcessService processService;
   private final StageService stageService;
-  private final LauncherService launcherService;
+  private final RunnerService runnerService;
 
   public RetryService(
       @Autowired RegisteredPipelineService registeredPipelineService,
       @Autowired ScheduleService scheduleService,
       @Autowired ProcessService processService,
       @Autowired StageService stageService,
-      @Autowired LauncherService launcherService) {
+      @Autowired RunnerService runnerService) {
     this.registeredPipelineService = registeredPipelineService;
     this.scheduleService = scheduleService;
     this.processService = processService;
     this.stageService = stageService;
-    this.launcherService = launcherService;
+    this.runnerService = runnerService;
   }
 
   /**
@@ -81,7 +81,7 @@ public class RetryService {
 
     // Retry schedule
     if (isRetrySchedule) {
-      PipeliteScheduler scheduler = launcherService.getPipeliteScheduler();
+      ScheduleRunner scheduler = runnerService.getScheduleRunner();
       if (scheduler == null) {
         throw new PipeliteRetryException(pipelineName, processId, "missing scheduler");
       }

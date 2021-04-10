@@ -14,8 +14,8 @@ import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 import pipelite.PipeliteMetricsTestFactory;
-import pipelite.launcher.process.runner.ProcessRunnerResult;
 import pipelite.process.ProcessState;
+import pipelite.runner.process.ProcessRunnerResult;
 
 public class PipelineMetricsTest {
 

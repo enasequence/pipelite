@@ -12,8 +12,8 @@ package pipelite.metrics;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.ZonedDateTime;
-import pipelite.launcher.process.runner.ProcessRunnerResult;
 import pipelite.process.ProcessState;
+import pipelite.runner.process.ProcessRunnerResult;
 
 public class PipelineMetrics {
 

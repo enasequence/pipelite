@@ -25,7 +25,7 @@ import pipelite.configuration.WebServerCustomizer;
       "pipelite.service",
       "pipelite.manager",
       "pipelite.metrics",
-      "pipelite.launcher" // for beans created in tests
+      "pipelite.runner" // for beans created in tests
     },
     excludeFilters =
         @ComponentScan.Filter(

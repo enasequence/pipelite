@@ -26,9 +26,9 @@ import pipelite.PipeliteTestConfigWithManager;
 import pipelite.PrioritizedPipeline;
 import pipelite.Schedule;
 import pipelite.UniqueStringGenerator;
-import pipelite.launcher.PipeliteScheduler;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.service.LauncherService;
+import pipelite.runner.schedule.ScheduleRunner;
+import pipelite.service.RunnerService;
 import pipelite.stage.executor.StageExecutorResult;
 
 @SpringBootTest(
@@ -52,7 +52,7 @@ public class ProcessRunnerPoolManagerTest {
   private static final AtomicInteger pipelineExecutionCount = new AtomicInteger();
 
   @Autowired ProcessRunnerPoolManager processRunnerPoolManager;
-  @Autowired LauncherService launcherService;
+  @Autowired RunnerService runnerService;
 
   @Profile("ProcessRunnerPoolManagerTest")
   @TestConfiguration
@@ -131,11 +131,11 @@ public class ProcessRunnerPoolManagerTest {
   public void test() {
     processRunnerPoolManager.createPools();
 
-    assertThat(launcherService.isPipeliteScheduler()).isTrue();
-    assertThat(launcherService.getPipeliteLaunchers().size()).isEqualTo(1);
+    assertThat(runnerService.isScheduleRunner()).isTrue();
+    assertThat(runnerService.getPipelineRunners().size()).isEqualTo(1);
 
-    PipeliteScheduler pipeliteScheduler = launcherService.getPipeliteScheduler();
-    pipeliteScheduler.setMaximumExecutions(SCHEDULE_NAME, 1);
+    ScheduleRunner scheduleRunner = runnerService.getScheduleRunner();
+    scheduleRunner.setMaximumExecutions(SCHEDULE_NAME, 1);
 
     processRunnerPoolManager.startPools();
     processRunnerPoolManager.waitPoolsToStop();

@@ -17,7 +17,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.flogger.Flogger;
 import pipelite.entity.StageEntity;
-import pipelite.launcher.StageLauncher;
+import pipelite.runner.stage.StageRunner;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
@@ -81,7 +81,7 @@ public class Stage {
    */
   public boolean hasMaximumRetriesLeft() {
     // Stage has been retried the maximum number of times.
-    return stageEntity.getExecutionCount() <= StageLauncher.getMaximumRetries(this);
+    return stageEntity.getExecutionCount() <= StageRunner.getMaximumRetries(this);
   }
 
   /**
@@ -90,6 +90,6 @@ public class Stage {
    * @return true if the stage has immediate retries left.
    */
   public boolean hasImmediateRetriesLeft() {
-    return immediateExecutionCount.get() <= StageLauncher.getImmediateRetries(this);
+    return immediateExecutionCount.get() <= StageRunner.getImmediateRetries(this);
   }
 }

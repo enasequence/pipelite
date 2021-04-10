@@ -32,15 +32,15 @@ import org.springframework.web.bind.annotation.*;
 import pipelite.Pipeline;
 import pipelite.controller.api.info.PipelineInfo;
 import pipelite.controller.utils.LoremUtils;
-import pipelite.launcher.PipeliteLauncher;
-import pipelite.launcher.process.runner.ProcessRunnerResult;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.TimeSeriesMetrics;
 import pipelite.process.ProcessState;
-import pipelite.service.LauncherService;
+import pipelite.runner.pipeline.PipelineRunner;
+import pipelite.runner.process.ProcessRunnerResult;
 import pipelite.service.ProcessService;
 import pipelite.service.RegisteredPipelineService;
+import pipelite.service.RunnerService;
 import tech.tablesaw.api.Table;
 import tech.tablesaw.plotly.components.Figure;
 
@@ -51,7 +51,7 @@ public class PipelineController {
 
   @Autowired Environment environment;
   @Autowired ProcessService processService;
-  @Autowired LauncherService launcherService;
+  @Autowired RunnerService runnerService;
   @Autowired RegisteredPipelineService registeredPipelineService;
   @Autowired PipeliteMetrics pipeliteMetrics;
 
@@ -71,7 +71,7 @@ public class PipelineController {
     List<PipelineInfo> list =
         getPipelines(
             registeredPipelineService.getRegisteredPipelines(Pipeline.class),
-            launcherService.getPipeliteLaunchers(),
+            runnerService.getPipelineRunners(),
             processService.getProcessStateSummary());
     getLoremIpsumPipelines(list);
     return list;
@@ -79,11 +79,11 @@ public class PipelineController {
 
   private List<PipelineInfo> getPipelines(
       Collection<Pipeline> pipelines,
-      Collection<PipeliteLauncher> pipeliteLaunchers,
+      Collection<PipelineRunner> pipelineRunners,
       List<ProcessService.ProcessStateSummary> summaries) {
 
-    Map<String, PipeliteLauncher> runningMap = new HashMap<>();
-    pipeliteLaunchers.forEach(s -> runningMap.put(s.getPipelineName(), s));
+    Map<String, PipelineRunner> runningMap = new HashMap<>();
+    pipelineRunners.forEach(s -> runningMap.put(s.getPipelineName(), s));
 
     Map<String, ProcessService.ProcessStateSummary> summaryMap = new HashMap<>();
     summaries.forEach(s -> summaryMap.put(s.getPipelineName(), s));
@@ -91,12 +91,12 @@ public class PipelineController {
     return pipelines.stream()
         .map(
             pipeline -> {
-              PipeliteLauncher pipeliteLauncher = runningMap.get(pipeline.pipelineName());
+              PipelineRunner pipelineRunner = runningMap.get(pipeline.pipelineName());
               ProcessService.ProcessStateSummary summary = summaryMap.get(pipeline.pipelineName());
               return PipelineInfo.builder()
                   .pipelineName(pipeline.pipelineName())
                   .maxRunningCount(pipeline.configurePipeline().pipelineParallelism())
-                  .runningCount(pipeliteLauncher.getActiveProcessCount())
+                  .runningCount(pipelineRunner.getActiveProcessCount())
                   .pendingCount(summary.getPendingCount())
                   .activeCount(summary.getActiveCount())
                   .completedCount(summary.getCompletedCount())
@@ -147,8 +147,8 @@ public class PipelineController {
     Collection<Table> tables = new ArrayList<>();
     ZonedDateTime since = ZonedDateTime.now().minus(duration);
 
-    launcherService
-        .getPipeliteLaunchers()
+    runnerService
+        .getPipelineRunners()
         .forEach(
             p -> {
               PipelineMetrics metrics = pipeliteMetrics.pipeline(p.getPipelineName());

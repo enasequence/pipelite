@@ -16,6 +16,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
@@ -24,17 +29,11 @@ import pipelite.controller.api.info.ProcessInfo;
 import pipelite.controller.utils.LoremUtils;
 import pipelite.controller.utils.TimeUtils;
 import pipelite.entity.ProcessEntity;
-import pipelite.launcher.process.runner.ProcessRunner;
-import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.process.Process;
-import pipelite.service.LauncherService;
+import pipelite.runner.process.ProcessRunner;
+import pipelite.runner.process.ProcessRunnerPool;
 import pipelite.service.ProcessService;
-
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import pipelite.service.RunnerService;
 
 @RestController
 @RequestMapping(value = "/api/process")
@@ -43,7 +42,7 @@ public class ProcessController {
 
   @Autowired private Environment environment;
   @Autowired private ProcessService processService;
-  @Autowired private LauncherService launcherService;
+  @Autowired private RunnerService runnerService;
 
   @GetMapping("/")
   @ResponseStatus(HttpStatus.OK)
@@ -55,11 +54,11 @@ public class ProcessController {
       })
   public List<ProcessInfo> processes(@RequestParam(required = false) String pipelineName) {
     List<ProcessInfo> list = new ArrayList<>();
-    launcherService
-        .getPipeliteLaunchers()
-        .forEach(launcher -> list.addAll(getProcesses(launcher, pipelineName)));
-    if (launcherService.isPipeliteScheduler()) {
-      list.addAll(getProcesses(launcherService.getPipeliteScheduler(), pipelineName));
+    runnerService
+        .getPipelineRunners()
+        .forEach(pipelineRunner -> list.addAll(getProcesses(pipelineRunner, pipelineName)));
+    if (runnerService.isScheduleRunner()) {
+      list.addAll(getProcesses(runnerService.getScheduleRunner(), pipelineName));
     }
     getLoremIpsumProcess(list);
     return list;
