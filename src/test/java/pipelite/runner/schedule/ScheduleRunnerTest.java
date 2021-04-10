@@ -13,8 +13,6 @@ package pipelite.runner.schedule;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.Value;
@@ -27,13 +25,12 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
-import pipelite.Schedule;
-import pipelite.UniqueStringGenerator;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageLogEntity;
+import pipelite.helper.ScheduleTestHelper;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
@@ -110,46 +107,35 @@ public class ScheduleRunnerTest {
   }
 
   @Value
-  protected static class TestSchedule implements Schedule {
-    private final String pipelineName;
+  protected static class TestSchedule extends ScheduleTestHelper {
     public final int processCnt;
     public final int stageCnt;
     public final int schedulerSeconds; // 60 must be divisible by schedulerSeconds.
     public final StageTestResult stageTestResult;
-    public final String cron;
-    public final List<String> processIds = Collections.synchronizedList(new ArrayList<>());
     public final AtomicLong stageExecCnt = new AtomicLong();
 
     public TestSchedule(
         int processCnt, int stageCnt, int schedulerSeconds, StageTestResult stageTestResult) {
-      this.pipelineName = UniqueStringGenerator.randomPipelineName(ScheduleRunnerTest.class);
+      super();
+      this.processCnt = processCnt;
       this.stageCnt = stageCnt;
       this.schedulerSeconds = schedulerSeconds;
-      this.processCnt = processCnt;
       this.stageTestResult = stageTestResult;
-      this.cron = "0/" + schedulerSeconds + " * * * * ?";
     }
 
     @Override
-    public String pipelineName() {
-      return pipelineName;
+    protected int _configureSeconds() {
+      return schedulerSeconds;
     }
 
     @Override
-    public Options configurePipeline() {
-      return new Options().cron(cron);
-    }
-
-    @Override
-    public void configureProcess(ProcessBuilder builder) {
-      processIds.add(builder.getProcessId());
+    public void _configureProcess(ProcessBuilder builder) {
       ExecutorParameters executorParams =
           ExecutorParameters.builder()
               .immediateRetries(0)
               .maximumRetries(0)
               .timeout(Duration.ofSeconds(10))
               .build();
-
       for (int i = 0; i < stageCnt; ++i) {
         builder
             .execute("STAGE" + i)
@@ -174,9 +160,9 @@ public class ScheduleRunnerTest {
 
   private void deleteSchedule(TestSchedule testSchedule) {
     ScheduleEntity schedule = new ScheduleEntity();
-    schedule.setPipelineName(testSchedule.pipelineName);
+    schedule.setPipelineName(testSchedule.pipelineName());
     scheduleService.delete(schedule);
-    System.out.println("deleted schedule for pipeline: " + testSchedule.pipelineName);
+    System.out.println("deleted schedule for pipeline: " + testSchedule.pipelineName());
   }
 
   private void assertSchedulerMetrics(TestSchedule f) {
@@ -226,7 +212,7 @@ public class ScheduleRunnerTest {
     assertThat(scheduleEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(scheduleEntity.getProcessId()).isNotNull();
     assertThat(scheduleEntity.getExecutionCount()).isEqualTo(f.processCnt);
-    assertThat(scheduleEntity.getCron()).isEqualTo(f.cron);
+    assertThat(scheduleEntity.getCron()).isEqualTo(f.cron());
     assertThat(scheduleEntity.getStartTime()).isNotNull();
     assertThat(scheduleEntity.getEndTime()).isNotNull();
   }
@@ -292,10 +278,10 @@ public class ScheduleRunnerTest {
     List<ScheduleEntity> scheduleEntities =
         scheduleService.getSchedules(serviceConfiguration.getName());
     assertThat(f.stageExecCnt.get() / f.stageCnt).isEqualTo(f.processCnt);
-    assertThat(f.processIds.size()).isEqualTo(f.processCnt);
+    assertThat(f.configuredProcessIds().size()).isEqualTo(f.processCnt);
     assertSchedulerMetrics(f);
     assertScheduleEntity(scheduleEntities, f);
-    for (String processId : f.processIds) {
+    for (String processId : f.configuredProcessIds()) {
       assertProcessEntity(f, processId);
       assertStageEntities(f, processId);
     }

@@ -27,6 +27,7 @@ import pipelite.*;
 import pipelite.exception.PipeliteException;
 import pipelite.helper.PipelineTestHelper;
 import pipelite.helper.PrioritizedPipelineTestHelper;
+import pipelite.helper.ScheduleTestHelper;
 import pipelite.process.builder.ProcessBuilder;
 
 @SpringBootTest(
@@ -82,35 +83,34 @@ public class RegisteredPipelineServiceTest {
   }
 
   public static class TestPipeline extends PipelineTestHelper {
-    public TestPipeline() {
-      super(1);
+
+    @Override
+    public int _configureParallelism() {
+      return 1;
     }
 
     @Override
     public void _configureProcess(ProcessBuilder builder) {}
   }
 
-  public static class TestSchedule implements Schedule {
-    private final String pipelineName =
-        UniqueStringGenerator.randomPipelineName(RegisteredPipelineServiceTest.class);
-
+  public static class TestSchedule extends ScheduleTestHelper {
     @Override
-    public Options configurePipeline() {
-      return new Options().cron("* * * * *");
+    protected int _configureSeconds() {
+      return 5;
     }
 
     @Override
-    public String pipelineName() {
-      return pipelineName;
-    }
-
-    @Override
-    public void configureProcess(ProcessBuilder builder) {}
+    public void _configureProcess(ProcessBuilder builder) {}
   }
 
   public static class TestPrioritizedPipeline extends PrioritizedPipelineTestHelper {
     public TestPrioritizedPipeline() {
-      super(1, 0);
+      super(0);
+    }
+
+    @Override
+    public int _configureParallelism() {
+      return 1;
     }
 
     @Override

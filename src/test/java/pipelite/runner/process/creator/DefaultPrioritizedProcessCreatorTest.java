@@ -27,7 +27,12 @@ public class DefaultPrioritizedProcessCreatorTest {
   private static final class TestPipeline extends PrioritizedPipelineTestHelper {
 
     public TestPipeline() {
-      super(1, PROCESS_CNT);
+      super(PROCESS_CNT);
+    }
+
+    @Override
+    public int _configureParallelism() {
+      return 1;
     }
 
     @Override

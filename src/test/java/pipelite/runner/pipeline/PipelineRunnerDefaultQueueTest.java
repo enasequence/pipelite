@@ -68,7 +68,13 @@ public class PipelineRunnerDefaultQueueTest {
   public void test() {
 
     PrioritizedPipeline prioritizedPipeline =
-        new PrioritizedPipelineTestHelper(PIPELINE_NAME, 10, 10) {
+        new PrioritizedPipelineTestHelper(PIPELINE_NAME, 10) {
+
+          @Override
+          public int _configureParallelism() {
+            return 10;
+          }
+
           @Override
           public void _configureProcess(ProcessBuilder builder) {
             builder

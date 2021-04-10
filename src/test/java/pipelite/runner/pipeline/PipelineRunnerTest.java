@@ -104,9 +104,14 @@ public class PipelineRunnerTest {
     private final AtomicLong stageExecCnt = new AtomicLong();
 
     public TestPipeline(int processCnt, int stageCnt, StageTestResult stageTestResult) {
-      super(5, processCnt);
+      super(processCnt);
       this.stageCnt = stageCnt;
       this.stageTestResult = stageTestResult;
+    }
+
+    @Override
+    public int _configureParallelism() {
+      return 5;
     }
 
     @Override
@@ -229,9 +234,9 @@ public class PipelineRunnerTest {
     assertThat(f.processCnt()).isGreaterThan(0);
     assertThat(f.stageCnt()).isGreaterThan(0);
     assertThat(f.stageExecCnt().get() / f.stageCnt()).isEqualTo(f.processCnt());
-    assertThat(f.getConfiguredProcessCount()).isEqualTo(f.processCnt());
+    assertThat(f.configuredProcessCount()).isEqualTo(f.processCnt());
     assertMetrics(f);
-    for (String processId : f.getConfiguredProcessIds()) {
+    for (String processId : f.configuredProcessIds()) {
       assertProcessEntity(f, processId);
       assertStageEntities(f, processId);
     }

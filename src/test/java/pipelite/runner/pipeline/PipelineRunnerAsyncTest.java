@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import lombok.Value;
+import lombok.Getter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -90,13 +90,18 @@ public class PipelineRunnerAsyncTest {
     }
   }
 
-  @Value
+  @Getter
   public static class TestPipeline<T extends StageExecutor> extends PrioritizedPipelineTestHelper {
     private final T stageExecutor;
 
     public TestPipeline(T stageExecutor) {
-      super(2, PROCESS_CNT);
+      super(PROCESS_CNT);
       this.stageExecutor = stageExecutor;
+    }
+
+    @Override
+    public int _configureParallelism() {
+      return 2;
     }
 
     @Override

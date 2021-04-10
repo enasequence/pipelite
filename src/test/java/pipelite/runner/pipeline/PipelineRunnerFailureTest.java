@@ -132,7 +132,7 @@ public class PipelineRunnerFailureTest {
     public final AtomicLong fourthStageExecCnt = new AtomicLong();
 
     public TestPipeline(StageTestResult stageTestResult) {
-      super(5, PROCESS_CNT);
+      super(PROCESS_CNT);
       this.stageTestResult = stageTestResult;
       this.firstStageExecResult =
           stageTestResult == StageTestResult.FIRST_ERROR
@@ -150,6 +150,11 @@ public class PipelineRunnerFailureTest {
           stageTestResult == StageTestResult.FOURTH_ERROR
               ? StageExecutorResult.error()
               : StageExecutorResult.success();
+    }
+
+    @Override
+    public int _configureParallelism() {
+      return 5;
     }
 
     @Override
@@ -200,9 +205,9 @@ public class PipelineRunnerFailureTest {
 
     assertThat(pipelineRunner.getActiveProcessRunners().size()).isEqualTo(0);
 
-    assertThat(testPipeline.getNewProcessCount()).isEqualTo(0);
-    assertThat(testPipeline.getReturnedProcessCount()).isEqualTo(PROCESS_CNT);
-    assertThat(testPipeline.getConfirmedProcessCount()).isEqualTo(PROCESS_CNT);
+    assertThat(testPipeline.newProcessCount()).isEqualTo(0);
+    assertThat(testPipeline.returnedProcessCount()).isEqualTo(PROCESS_CNT);
+    assertThat(testPipeline.confirmedProcessCount()).isEqualTo(PROCESS_CNT);
 
     if (testPipeline.stageTestResult == StageTestResult.FIRST_ERROR) {
       assertThat(testPipeline.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
@@ -226,9 +231,9 @@ public class PipelineRunnerFailureTest {
       assertThat(testPipeline.fourthStageExecCnt.get()).isEqualTo(PROCESS_CNT);
     }
 
-    assertThat(testPipeline.getConfiguredProcessCount()).isEqualTo(PROCESS_CNT);
+    assertThat(testPipeline.configuredProcessCount()).isEqualTo(PROCESS_CNT);
     assertMetrics(testPipeline);
-    for (String processId : testPipeline.getConfiguredProcessIds()) {
+    for (String processId : testPipeline.configuredProcessIds()) {
       assertProcessEntity(testPipeline, processId);
       assertStageEntities(testPipeline, processId);
     }

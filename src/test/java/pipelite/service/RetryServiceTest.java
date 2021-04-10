@@ -66,7 +66,12 @@ class RetryServiceTest {
 
   public static class FailedPipeline extends PipelineTestHelper {
     public FailedPipeline() {
-      super(PIPELINE_NAME, 5);
+      super(PIPELINE_NAME);
+    }
+
+    @Override
+    public int _configureParallelism() {
+      return 5;
     }
 
     @Override

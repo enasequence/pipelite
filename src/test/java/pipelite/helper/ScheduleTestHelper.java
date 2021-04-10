@@ -13,20 +13,20 @@ package pipelite.helper;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import pipelite.Pipeline;
+import pipelite.Schedule;
 import pipelite.UniqueStringGenerator;
 import pipelite.process.builder.ProcessBuilder;
 
-public abstract class PipelineTestHelper implements Pipeline {
+public abstract class ScheduleTestHelper implements Schedule {
 
   private final String pipelineName;
   private final Set<String> configuredProcessIds = ConcurrentHashMap.newKeySet();
 
-  public PipelineTestHelper() {
+  public ScheduleTestHelper() {
     this(UniqueStringGenerator.randomPipelineName(PipelineTestHelper.class));
   }
 
-  public PipelineTestHelper(String pipelineName) {
+  public ScheduleTestHelper(String pipelineName) {
     this.pipelineName = pipelineName;
   }
 
@@ -35,12 +35,16 @@ public abstract class PipelineTestHelper implements Pipeline {
     return pipelineName;
   }
 
-  @Override
-  public final Options configurePipeline() {
-    return new Options().pipelineParallelism(_configureParallelism());
+  public final String cron() {
+    return "0/" + _configureSeconds() + " * * * * ?";
   }
 
-  protected abstract int _configureParallelism();
+  @Override
+  public final Options configurePipeline() {
+    return new Options().cron(cron());
+  }
+
+  protected abstract int _configureSeconds();
 
   @Override
   public final void configureProcess(ProcessBuilder builder) {

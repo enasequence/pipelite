@@ -26,15 +26,12 @@ public abstract class PrioritizedPipelineTestHelper extends PipelineTestHelper
   private final Set<String> confirmedProcessIds = ConcurrentHashMap.newKeySet();
   private final Monitor monitor = new Monitor();
 
-  public PrioritizedPipelineTestHelper(int parallelism, int processCnt) {
-    this(
-        UniqueStringGenerator.randomPipelineName(PrioritizedPipelineTestHelper.class),
-        parallelism,
-        processCnt);
+  public PrioritizedPipelineTestHelper(int processCnt) {
+    this(UniqueStringGenerator.randomPipelineName(PrioritizedPipelineTestHelper.class), processCnt);
   }
 
-  public PrioritizedPipelineTestHelper(String pipelineName, int parallelism, int processCnt) {
-    super(pipelineName, parallelism);
+  public PrioritizedPipelineTestHelper(String pipelineName, int processCnt) {
+    super(pipelineName);
     this.processCnt = processCnt;
     for (int i = 0; i < processCnt; ++i) {
       newProcessIds.add(UniqueStringGenerator.randomProcessId(PrioritizedPipelineTestHelper.class));
@@ -45,7 +42,7 @@ public abstract class PrioritizedPipelineTestHelper extends PipelineTestHelper
     return processCnt;
   }
 
-  public PrioritizedPipeline.PrioritizedProcess nextProcess() {
+  public final PrioritizedPipeline.PrioritizedProcess nextProcess() {
     monitor.enter();
     try {
       if (newProcessIds.isEmpty()) {
@@ -60,7 +57,7 @@ public abstract class PrioritizedPipelineTestHelper extends PipelineTestHelper
     }
   }
 
-  public void confirmProcess(String processId) {
+  public final void confirmProcess(String processId) {
     monitor.enter();
     try {
       confirmedProcessIds.add(processId);
@@ -69,27 +66,27 @@ public abstract class PrioritizedPipelineTestHelper extends PipelineTestHelper
     }
   }
 
-  public int getNewProcessCount() {
+  public int newProcessCount() {
     return newProcessIds.size();
   }
 
-  public int getReturnedProcessCount() {
+  public int returnedProcessCount() {
     return returnedProcessIds.size();
   }
 
-  public int getConfirmedProcessCount() {
+  public int confirmedProcessCount() {
     return confirmedProcessIds.size();
   }
 
-  public Collection<String> getNewProcessIds() {
+  public Collection<String> newProcessIds() {
     return newProcessIds;
   }
 
-  public Collection<String> getReturnedProcessIds() {
+  public Collection<String> returnedProcessIds() {
     return returnedProcessIds;
   }
 
-  public Collection<String> getConfirmedProcessIds() {
+  public Collection<String> confirmedProcessIds() {
     return confirmedProcessIds;
   }
 }
