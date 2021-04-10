@@ -25,6 +25,8 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.*;
 import pipelite.exception.PipeliteException;
+import pipelite.helper.PipelineTestHelper;
+import pipelite.helper.PrioritizedPipelineTestHelper;
 import pipelite.process.builder.ProcessBuilder;
 
 @SpringBootTest(
@@ -79,22 +81,13 @@ public class RegisteredPipelineServiceTest {
     }
   }
 
-  public static class TestPipeline implements Pipeline {
-    private final String pipelineName =
-        UniqueStringGenerator.randomPipelineName(RegisteredPipelineServiceTest.class);
-
-    @Override
-    public Options configurePipeline() {
-      return new Options().pipelineParallelism(1);
+  public static class TestPipeline extends PipelineTestHelper {
+    public TestPipeline() {
+      super(1);
     }
 
     @Override
-    public String pipelineName() {
-      return pipelineName;
-    }
-
-    @Override
-    public void configureProcess(ProcessBuilder builder) {}
+    public void _configureProcess(ProcessBuilder builder) {}
   }
 
   public static class TestSchedule implements Schedule {

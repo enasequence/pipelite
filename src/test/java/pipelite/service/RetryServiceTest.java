@@ -22,13 +22,13 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
-import pipelite.Pipeline;
 import pipelite.PipeliteTestConfigWithServices;
 import pipelite.RegisteredPipeline;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.exception.PipeliteRetryException;
+import pipelite.helper.PipelineTestHelper;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessState;
@@ -64,19 +64,13 @@ class RetryServiceTest {
     }
   }
 
-  public static class FailedPipeline implements Pipeline {
-    @Override
-    public String pipelineName() {
-      return PIPELINE_NAME;
+  public static class FailedPipeline extends PipelineTestHelper {
+    public FailedPipeline() {
+      super(PIPELINE_NAME, 5);
     }
 
     @Override
-    public Options configurePipeline() {
-      return new Options().pipelineParallelism(5);
-    }
-
-    @Override
-    public void configureProcess(ProcessBuilder builder) {
+    public void _configureProcess(ProcessBuilder builder) {
       builder
           .execute(STAGE_NAME)
           .withCallExecutor(

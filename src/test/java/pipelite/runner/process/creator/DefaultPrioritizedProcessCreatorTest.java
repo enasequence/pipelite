@@ -15,8 +15,8 @@ import static org.mockito.Mockito.*;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 import org.junit.jupiter.api.Test;
-import pipelite.PrioritizedPipelineTestHelper;
 import pipelite.entity.ProcessEntity;
+import pipelite.helper.PrioritizedPipelineTestHelper;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.ProcessService;
 
