@@ -13,11 +13,8 @@ package pipelite.runner.pipeline;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-import lombok.Value;
+import lombok.Getter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -29,9 +26,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
-import pipelite.PrioritizedPipeline;
 import pipelite.PrioritizedPipelineTestHelper;
-import pipelite.UniqueStringGenerator;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.manager.ProcessRunnerPoolManager;
@@ -124,14 +119,9 @@ public class PipelineRunnerFailureTest {
     NO_ERROR
   }
 
-  @Value
-  public static class TestPipeline implements PrioritizedPipeline {
-    private final String pipelineName =
-        UniqueStringGenerator.randomPipelineName(PipelineRunnerFailureTest.class);
-    public final PrioritizedPipelineTestHelper helper =
-        new PrioritizedPipelineTestHelper(PROCESS_CNT);
+  @Getter
+  public static class TestPipeline extends PrioritizedPipelineTestHelper {
     private final StageTestResult stageTestResult;
-    public final List<String> processIds = Collections.synchronizedList(new ArrayList<>());
     private StageExecutorResult firstStageExecResult;
     private StageExecutorResult secondStageExecResult;
     private StageExecutorResult thirdStageExecResult;
@@ -142,6 +132,7 @@ public class PipelineRunnerFailureTest {
     public final AtomicLong fourthStageExecCnt = new AtomicLong();
 
     public TestPipeline(StageTestResult stageTestResult) {
+      super(5, PROCESS_CNT);
       this.stageTestResult = stageTestResult;
       this.firstStageExecResult =
           stageTestResult == StageTestResult.FIRST_ERROR
@@ -162,19 +153,7 @@ public class PipelineRunnerFailureTest {
     }
 
     @Override
-    public String pipelineName() {
-      return pipelineName;
-    }
-
-    @Override
-    public Options configurePipeline() {
-      return new Options().pipelineParallelism(5);
-    }
-
-    @Override
-    public void configureProcess(ProcessBuilder builder) {
-      processIds.add(builder.getProcessId());
-
+    public void _configureProcess(ProcessBuilder builder) {
       ExecutorParameters executorParams =
           ExecutorParameters.builder()
               .immediateRetries(0)
@@ -212,16 +191,6 @@ public class PipelineRunnerFailureTest {
               },
               executorParams);
     }
-
-    @Override
-    public PrioritizedProcess nextProcess() {
-      return helper.nextProcess();
-    }
-
-    @Override
-    public void confirmProcess(String processId) {
-      helper.confirmProcess(processId);
-    }
   }
 
   public void assertPipeline(TestPipeline testPipeline) {
@@ -231,10 +200,9 @@ public class PipelineRunnerFailureTest {
 
     assertThat(pipelineRunner.getActiveProcessRunners().size()).isEqualTo(0);
 
-    assertThat(testPipeline.helper.getNewProcesses()).isEqualTo(0);
-    assertThat(testPipeline.helper.getReturnedProcesses()).isEqualTo(PROCESS_CNT);
-    assertThat(testPipeline.helper.getAcceptedProcesses()).isEqualTo(PROCESS_CNT);
-    assertThat(testPipeline.helper.getRejectedProcesses()).isEqualTo(0);
+    assertThat(testPipeline.getNewProcessCount()).isEqualTo(0);
+    assertThat(testPipeline.getReturnedProcessCount()).isEqualTo(PROCESS_CNT);
+    assertThat(testPipeline.getConfirmedProcessCount()).isEqualTo(PROCESS_CNT);
 
     if (testPipeline.stageTestResult == StageTestResult.FIRST_ERROR) {
       assertThat(testPipeline.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
@@ -258,9 +226,9 @@ public class PipelineRunnerFailureTest {
       assertThat(testPipeline.fourthStageExecCnt.get()).isEqualTo(PROCESS_CNT);
     }
 
-    assertThat(testPipeline.processIds.size()).isEqualTo(PROCESS_CNT);
+    assertThat(testPipeline.getConfiguredProcessCount()).isEqualTo(PROCESS_CNT);
     assertMetrics(testPipeline);
-    for (String processId : testPipeline.processIds) {
+    for (String processId : testPipeline.getConfiguredProcessIds()) {
       assertProcessEntity(testPipeline, processId);
       assertStageEntities(testPipeline, processId);
     }

@@ -35,7 +35,7 @@ import pipelite.stage.parameters.ExecutorParameters;
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
     properties = {"pipelite.service.force=true", "pipelite.service.name=StageServiceTest"})
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@DirtiesContext
 @ActiveProfiles("test")
 @Transactional
 class StageServiceTest {

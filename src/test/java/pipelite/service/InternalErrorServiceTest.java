@@ -27,7 +27,7 @@ import pipelite.entity.InternalErrorEntity;
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
     properties = {"pipelite.service.force=true", "pipelite.service.name=InternalErrorServiceTest"})
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@DirtiesContext
 @ActiveProfiles("test")
 @Transactional
 class InternalErrorServiceTest {

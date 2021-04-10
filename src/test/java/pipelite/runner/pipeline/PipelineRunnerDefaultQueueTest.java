@@ -25,6 +25,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithServices;
 import pipelite.PrioritizedPipeline;
+import pipelite.PrioritizedPipelineTestHelper;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.PipeliteConfiguration;
 import pipelite.metrics.PipeliteMetrics;
@@ -67,19 +68,9 @@ public class PipelineRunnerDefaultQueueTest {
   public void test() {
 
     PrioritizedPipeline prioritizedPipeline =
-        new PrioritizedPipeline() {
+        new PrioritizedPipelineTestHelper(PIPELINE_NAME, 10, 10) {
           @Override
-          public String pipelineName() {
-            return PIPELINE_NAME;
-          }
-
-          @Override
-          public Options configurePipeline() {
-            return new Options().pipelineParallelism(10);
-          }
-
-          @Override
-          public void configureProcess(ProcessBuilder builder) {
+          public void _configureProcess(ProcessBuilder builder) {
             builder
                 .execute("STAGE")
                 .withCallExecutor(
@@ -88,14 +79,6 @@ public class PipelineRunnerDefaultQueueTest {
                       return StageExecutorResult.success();
                     });
           }
-
-          @Override
-          public PrioritizedProcess nextProcess() {
-            return new PrioritizedProcess(UniqueStringGenerator.randomProcessId(this.getClass()));
-          }
-
-          @Override
-          public void confirmProcess(String processId) {}
         };
 
     PrioritizedProcessCreator prioritizedProcessCreator =

@@ -49,7 +49,7 @@ import pipelite.stage.parameters.LsfExecutorParameters;
       "pipelite.executor.awsBatch.timeout=10s"
     })
 @ActiveProfiles("test")
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@DirtiesContext
 public class ExecutorConfigurationTest {
 
   @Autowired ExecutorConfiguration config;

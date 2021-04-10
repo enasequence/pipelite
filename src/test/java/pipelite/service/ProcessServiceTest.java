@@ -30,7 +30,7 @@ import pipelite.process.builder.ProcessBuilder;
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
     properties = {"pipelite.service.force=true", "pipelite.service.name=ProcessServiceTest"})
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@DirtiesContext
 @ActiveProfiles("test")
 @Transactional
 class ProcessServiceTest {

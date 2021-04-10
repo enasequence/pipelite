@@ -15,9 +15,7 @@ import static org.mockito.Mockito.*;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 import org.junit.jupiter.api.Test;
-import pipelite.PrioritizedPipeline;
 import pipelite.PrioritizedPipelineTestHelper;
-import pipelite.UniqueStringGenerator;
 import pipelite.entity.ProcessEntity;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.ProcessService;
@@ -26,34 +24,14 @@ public class DefaultPrioritizedProcessCreatorTest {
 
   private static final int PROCESS_CNT = 100;
 
-  private static final class TestPipeline implements PrioritizedPipeline {
-    private final String pipelineName =
-        UniqueStringGenerator.randomPipelineName(DefaultPrioritizedProcessCreatorTest.class);
-    private final PrioritizedPipelineTestHelper helper =
-        new PrioritizedPipelineTestHelper(PROCESS_CNT);
+  private static final class TestPipeline extends PrioritizedPipelineTestHelper {
 
-    @Override
-    public String pipelineName() {
-      return pipelineName;
+    public TestPipeline() {
+      super(1, PROCESS_CNT);
     }
 
     @Override
-    public Options configurePipeline() {
-      return new Options().pipelineParallelism(1);
-    }
-
-    @Override
-    public PrioritizedProcess nextProcess() {
-      return helper.nextProcess();
-    }
-
-    @Override
-    public void confirmProcess(String processId) {
-      helper.confirmProcess(processId);
-    }
-
-    @Override
-    public void configureProcess(ProcessBuilder builder) {}
+    public void _configureProcess(ProcessBuilder builder) {}
   }
 
   @Test

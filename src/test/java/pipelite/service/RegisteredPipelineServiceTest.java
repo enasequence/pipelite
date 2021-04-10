@@ -33,7 +33,7 @@ import pipelite.process.builder.ProcessBuilder;
       "pipelite.service.force=true",
       "pipelite.service.name=RegisteredPipelineServiceTest"
     })
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@DirtiesContext
 @ActiveProfiles({"test", "RegisteredPipelineServiceTest"})
 public class RegisteredPipelineServiceTest {
 
@@ -115,30 +115,13 @@ public class RegisteredPipelineServiceTest {
     public void configureProcess(ProcessBuilder builder) {}
   }
 
-  public static class TestPrioritizedPipeline implements PrioritizedPipeline {
-    private final String pipelineName =
-        UniqueStringGenerator.randomPipelineName(RegisteredPipelineServiceTest.class);
-
-    @Override
-    public Options configurePipeline() {
-      return new Options().pipelineParallelism(1);
+  public static class TestPrioritizedPipeline extends PrioritizedPipelineTestHelper {
+    public TestPrioritizedPipeline() {
+      super(1, 0);
     }
 
     @Override
-    public String pipelineName() {
-      return pipelineName;
-    }
-
-    @Override
-    public void configureProcess(ProcessBuilder builder) {}
-
-    @Override
-    public PrioritizedProcess nextProcess() {
-      return null;
-    }
-
-    @Override
-    public void confirmProcess(String processId) {}
+    public void _configureProcess(ProcessBuilder builder) {}
   }
 
   private void assertGetRegisteredPipelineByName(

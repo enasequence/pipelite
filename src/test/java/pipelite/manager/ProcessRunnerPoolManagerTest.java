@@ -22,10 +22,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import pipelite.PipeliteTestConfigWithManager;
-import pipelite.PrioritizedPipeline;
-import pipelite.Schedule;
-import pipelite.UniqueStringGenerator;
+import pipelite.*;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.runner.schedule.ScheduleRunner;
 import pipelite.service.RunnerService;
@@ -40,7 +37,7 @@ import pipelite.stage.executor.StageExecutorResult;
       "pipelite.service.name=RegisteredServiceManagerTest"
     })
 @ActiveProfiles({"test", "ProcessRunnerPoolManagerTest"})
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@DirtiesContext
 public class ProcessRunnerPoolManagerTest {
 
   private static final String SCHEDULE_NAME =
@@ -86,22 +83,9 @@ public class ProcessRunnerPoolManagerTest {
 
     @Bean
     PrioritizedPipeline testPipeline() {
-      return new PrioritizedPipeline() {
-
-        private String processId = UniqueStringGenerator.randomProcessId(this.getClass());
-
+      return new PrioritizedPipelineTestHelper(PIPELINE_NAME, 1, 1) {
         @Override
-        public String pipelineName() {
-          return PIPELINE_NAME;
-        }
-
-        @Override
-        public Options configurePipeline() {
-          return new Options();
-        }
-
-        @Override
-        public void configureProcess(ProcessBuilder builder) {
+        public void _configureProcess(ProcessBuilder builder) {
           builder
               .execute("STAGE")
               .withCallExecutor(
@@ -110,19 +94,6 @@ public class ProcessRunnerPoolManagerTest {
                     return StageExecutorResult.success();
                   });
         }
-
-        @Override
-        public PrioritizedProcess nextProcess() {
-          if (processId != null) {
-            PrioritizedProcess process = new PrioritizedProcess(processId);
-            processId = null;
-            return process;
-          }
-          return null;
-        }
-
-        @Override
-        public void confirmProcess(String processId) {}
       };
     }
   }

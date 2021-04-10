@@ -28,7 +28,7 @@ import pipelite.PipeliteTestConfigWithConfigurations;
 
 @SpringBootTest(classes = PipeliteTestConfigWithConfigurations.class)
 @ActiveProfiles({"test", "DataSourceRetryListenerTest"})
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@DirtiesContext
 public class DataSourceRetryListenerTest {
 
   private static final String EXCEPTION_MESSAGE = "test";

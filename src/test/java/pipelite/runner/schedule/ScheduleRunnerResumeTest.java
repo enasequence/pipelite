@@ -43,7 +43,7 @@ import pipelite.time.Time;
       "pipelite.advanced.processRunnerFrequency=250ms"
     })
 @ActiveProfiles({"test", "ScheduleRunnerResumeTest"})
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@DirtiesContext
 public class ScheduleRunnerResumeTest {
 
   @Autowired private PipeliteConfiguration pipeliteConfiguration;

@@ -28,7 +28,7 @@ import pipelite.process.builder.ProcessBuilder;
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     classes = PipeliteTestConfigWithServices.class,
     properties = {"pipelite.service.force=true", "pipelite.service.name=MailServiceTest"})
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@DirtiesContext
 @ActiveProfiles("test")
 public class MailServiceTest {
 

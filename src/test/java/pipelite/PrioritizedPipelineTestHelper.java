@@ -11,34 +11,71 @@
 package pipelite;
 
 import com.google.common.util.concurrent.Monitor;
-import java.util.*;
+import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import pipelite.process.builder.ProcessBuilder;
 
-public class PrioritizedPipelineTestHelper {
+public abstract class PrioritizedPipelineTestHelper implements PrioritizedPipeline {
 
-  private final Set<String> newProcesses = ConcurrentHashMap.newKeySet();
-  private final Set<String> returnedProcesses = ConcurrentHashMap.newKeySet();
-  private final Set<String> acceptedProcesses = ConcurrentHashMap.newKeySet();
-  private final Set<String> rejectedProcesses = ConcurrentHashMap.newKeySet();
+  private final String pipelineName;
+  private final int parallelism;
+  private final int processCnt;
+  private final Set<String> newProcessIds = ConcurrentHashMap.newKeySet();
+  private final Set<String> configuredProcessIds = ConcurrentHashMap.newKeySet();
+  private final Set<String> returnedProcessIds = ConcurrentHashMap.newKeySet();
+  private final Set<String> confirmedProcessIds = ConcurrentHashMap.newKeySet();
+  private final Monitor monitor = new Monitor();
 
-  public PrioritizedPipelineTestHelper(int processCnt) {
+  public PrioritizedPipelineTestHelper(int parallelism, int processCnt) {
+    this(
+        UniqueStringGenerator.randomPipelineName(PrioritizedPipelineTestHelper.class),
+        parallelism,
+        processCnt);
+  }
+
+  public PrioritizedPipelineTestHelper(String pipelineName, int parallelism, int processCnt) {
+    this.pipelineName = pipelineName;
+    this.parallelism = parallelism;
+    this.processCnt = processCnt;
     for (int i = 0; i < processCnt; ++i) {
-      newProcesses.add(
-          i + "_" + UniqueStringGenerator.randomProcessId(PrioritizedPipelineTestHelper.class));
+      newProcessIds.add(UniqueStringGenerator.randomProcessId(PrioritizedPipelineTestHelper.class));
     }
   }
 
-  private final Monitor monitor = new Monitor();
+  public String pipelineName() {
+    return pipelineName;
+  }
+
+  public int parallelism() {
+    return parallelism;
+  }
+
+  public int processCnt() {
+    return processCnt;
+  }
+
+  public Options configurePipeline() {
+    return new Options().pipelineParallelism(parallelism);
+  }
+
+  @Override
+  public final void configureProcess(ProcessBuilder builder) {
+    configuredProcessIds.add(builder.getProcessId());
+    _configureProcess(builder);
+  }
+
+  protected abstract void _configureProcess(ProcessBuilder builder);
 
   public PrioritizedPipeline.PrioritizedProcess nextProcess() {
     monitor.enter();
     try {
-      if (newProcesses.isEmpty()) {
+      if (newProcessIds.isEmpty()) {
         return null;
       }
-      String processId = newProcesses.iterator().next();
-      returnedProcesses.add(processId);
-      newProcesses.remove(processId);
+      String processId = newProcessIds.iterator().next();
+      returnedProcessIds.add(processId);
+      newProcessIds.remove(processId);
       return new PrioritizedPipeline.PrioritizedProcess(processId);
     } finally {
       monitor.leave();
@@ -48,25 +85,41 @@ public class PrioritizedPipelineTestHelper {
   public void confirmProcess(String processId) {
     monitor.enter();
     try {
-      acceptedProcesses.add(processId);
+      confirmedProcessIds.add(processId);
     } finally {
       monitor.leave();
     }
   }
 
-  public int getNewProcesses() {
-    return newProcesses.size();
+  public int getNewProcessCount() {
+    return newProcessIds.size();
   }
 
-  public int getReturnedProcesses() {
-    return returnedProcesses.size();
+  public int getConfiguredProcessCount() {
+    return configuredProcessIds.size();
   }
 
-  public int getAcceptedProcesses() {
-    return acceptedProcesses.size();
+  public int getReturnedProcessCount() {
+    return returnedProcessIds.size();
   }
 
-  public int getRejectedProcesses() {
-    return rejectedProcesses.size();
+  public int getConfirmedProcessCount() {
+    return confirmedProcessIds.size();
+  }
+
+  public Collection<String> getNewProcessIds() {
+    return newProcessIds;
+  }
+
+  public Collection<String> getConfiguredProcessIds() {
+    return configuredProcessIds;
+  }
+
+  public Collection<String> getReturnedProcessIds() {
+    return returnedProcessIds;
+  }
+
+  public Collection<String> getConfirmedProcessIds() {
+    return confirmedProcessIds;
   }
 }

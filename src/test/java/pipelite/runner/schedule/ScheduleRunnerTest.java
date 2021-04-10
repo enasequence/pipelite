@@ -56,7 +56,7 @@ import pipelite.stage.parameters.ExecutorParameters;
       "pipelite.advanced.processRunnerFrequency=250ms"
     })
 @ActiveProfiles({"test", "ScheduleRunnerTest"})
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@DirtiesContext
 public class ScheduleRunnerTest {
 
   @Autowired private ProcessRunnerPoolManager processRunnerPoolManager;

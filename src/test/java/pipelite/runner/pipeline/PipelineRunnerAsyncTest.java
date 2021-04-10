@@ -12,9 +12,6 @@ package pipelite.runner.pipeline;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,9 +25,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
-import pipelite.PrioritizedPipeline;
 import pipelite.PrioritizedPipelineTestHelper;
-import pipelite.UniqueStringGenerator;
 import pipelite.executor.AbstractExecutor;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
@@ -96,44 +91,19 @@ public class PipelineRunnerAsyncTest {
   }
 
   @Value
-  public static class TestPipeline<T extends StageExecutor> implements PrioritizedPipeline {
-    private final String pipelineName =
-        UniqueStringGenerator.randomPipelineName(PipelineRunnerAsyncTest.class);
+  public static class TestPipeline<T extends StageExecutor> extends PrioritizedPipelineTestHelper {
     private final T stageExecutor;
-    private final PrioritizedPipelineTestHelper helper =
-        new PrioritizedPipelineTestHelper(PROCESS_CNT);
-    public final List<String> processIds = Collections.synchronizedList(new ArrayList<>());
 
     public TestPipeline(T stageExecutor) {
+      super(2, PROCESS_CNT);
       this.stageExecutor = stageExecutor;
     }
 
     @Override
-    public String pipelineName() {
-      return pipelineName;
-    }
-
-    @Override
-    public Options configurePipeline() {
-      return new Options().pipelineParallelism(2);
-    }
-
-    @Override
-    public void configureProcess(ProcessBuilder builder) {
-      processIds.add(builder.getProcessId());
+    public void _configureProcess(ProcessBuilder builder) {
       ExecutorParameters executorParams =
           ExecutorParameters.builder().immediateRetries(0).maximumRetries(0).build();
       builder.execute("STAGE").with(stageExecutor, executorParams);
-    }
-
-    @Override
-    public PrioritizedProcess nextProcess() {
-      return helper.nextProcess();
-    }
-
-    @Override
-    public void confirmProcess(String processId) {
-      helper.confirmProcess(processId);
     }
   }
 

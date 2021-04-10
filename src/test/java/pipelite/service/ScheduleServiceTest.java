@@ -31,7 +31,7 @@ import pipelite.process.ProcessState;
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
     properties = {"pipelite.service.force=true", "pipelite.service.name=ScheduleServiceTest"})
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@DirtiesContext
 @ActiveProfiles("test")
 @Transactional
 class ScheduleServiceTest {

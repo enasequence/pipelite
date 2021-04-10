@@ -37,7 +37,7 @@ import pipelite.time.Time;
       "pipelite.service.name=LockServiceTest",
       "pipelite.advanced.lockDuration=15s"
     })
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@DirtiesContext
 @ActiveProfiles("test")
 public class LockServiceTest {
 
