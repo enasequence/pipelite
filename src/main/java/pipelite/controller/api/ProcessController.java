@@ -16,11 +16,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
@@ -30,10 +25,16 @@ import pipelite.controller.utils.LoremUtils;
 import pipelite.controller.utils.TimeUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.launcher.process.runner.ProcessRunner;
-import pipelite.launcher.process.runner.ProcessRunnerPoolService;
+import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.process.Process;
 import pipelite.service.LauncherService;
 import pipelite.service.ProcessService;
+
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
 
 @RestController
 @RequestMapping(value = "/api/process")
@@ -85,9 +86,9 @@ public class ProcessController {
   }
 
   private static List<ProcessInfo> getProcesses(
-      ProcessRunnerPoolService service, String pipelineName) {
+      ProcessRunnerPool processRunnerPool, String pipelineName) {
     List<ProcessInfo> processes = new ArrayList<>();
-    for (ProcessRunner processRunner : service.getActiveProcessRunners()) {
+    for (ProcessRunner processRunner : processRunnerPool.getActiveProcessRunners()) {
       Process process = processRunner.getProcess();
       ProcessEntity processEntity = process.getProcessEntity();
       if (pipelineName == null || pipelineName.equals(processRunner.getPipelineName())) {

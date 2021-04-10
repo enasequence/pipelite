@@ -15,6 +15,7 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
@@ -26,8 +27,8 @@ import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.exception.PipeliteException;
 import pipelite.exception.PipeliteRetryException;
+import pipelite.launcher.process.runner.ProcessRunner;
 import pipelite.launcher.process.runner.ProcessRunnerPool;
-import pipelite.launcher.process.runner.ProcessRunnerPoolService;
 import pipelite.log.LogKey;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
@@ -39,7 +40,7 @@ import pipelite.service.*;
  * {@link Pipeline}.
  */
 @Flogger
-public class PipeliteScheduler extends ProcessRunnerPoolService {
+public class PipeliteScheduler extends ProcessRunnerPool {
 
   private final ScheduleService scheduleService;
   private final ProcessService processService;
@@ -55,9 +56,14 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
       PipeliteConfiguration pipeliteConfiguration,
       PipeliteServices pipeliteServices,
       PipeliteMetrics pipeliteMetrics,
-      ProcessRunnerPool processRunnerPool,
-      List<Schedule> schedules) {
-    super(pipeliteConfiguration, pipeliteMetrics, processRunnerPool);
+      List<Schedule> schedules,
+      Function<String, ProcessRunner> processRunnerSupplier) {
+    super(
+        pipeliteConfiguration,
+        pipeliteServices,
+        pipeliteMetrics,
+        serviceName(pipeliteConfiguration),
+        processRunnerSupplier);
     Assert.notNull(pipeliteConfiguration, "Missing configuration");
     Assert.notNull(pipeliteServices, "Missing services");
     this.scheduleService = pipeliteServices.schedule();
@@ -67,11 +73,35 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     this.scheduleCache = new ScheduleCache(pipeliteServices.registeredPipeline());
     this.serviceName = pipeliteConfiguration.service().getName();
     schedules.forEach(s -> this.schedules.add(new PipeliteSchedulerSchedule(s.pipelineName())));
+    setRunnerCallback(
+        () -> {
+          try {
+            if (!healthCheckService.isDataSourceHealthy()) {
+              logContext(log.atSevere())
+                  .log("Waiting data source to be healthy before starting new schedules");
+              return;
+            }
+            getExecutableSchedules()
+                .forEach(
+                    s -> {
+                      try {
+                        executeSchedule(s, createProcessEntity(s), ExecuteMode.NEW);
+                      } catch (Exception ex) {
+                        // Catching exceptions here to allow other schedules to continue execution.
+                        internalErrorService.saveInternalError(
+                            serviceName, s.getPipelineName(), this.getClass(), ex);
+                      }
+                    });
+
+          } catch (Exception ex) {
+            // Catching exceptions here in case they have not already been caught.
+            internalErrorService.saveInternalError(serviceName, this.getClass(), ex);
+          }
+        });
   }
 
-  @Override
-  public String getLauncherName() {
-    return serviceName + "@scheduler";
+  private static String serviceName(PipeliteConfiguration pipeliteConfiguration) {
+    return pipeliteConfiguration.service().getName() + "@scheduler";
   }
 
   @Override
@@ -79,36 +109,6 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
     super.startUp();
     initSchedules();
     resumeSchedules();
-  }
-
-  @Override
-  protected void run() {
-    executeSchedules();
-  }
-
-  protected void executeSchedules() {
-    try {
-      if (!healthCheckService.isDataSourceHealthy()) {
-        logContext(log.atSevere())
-            .log("Waiting data source to be healthy before starting new schedules");
-        return;
-      }
-      getExecutableSchedules()
-          .forEach(
-              s -> {
-                try {
-                  executeSchedule(s, createProcessEntity(s), ExecuteMode.NEW);
-                } catch (Exception ex) {
-                  // Catching exceptions here to allow other schedules to continue execution.
-                  internalErrorService.saveInternalError(
-                      serviceName, s.getPipelineName(), this.getClass(), ex);
-                }
-              });
-
-    } catch (Exception ex) {
-      // Catching exceptions here in case they have not already been caught.
-      internalErrorService.saveInternalError(serviceName, this.getClass(), ex);
-    }
   }
 
   @Override
@@ -345,16 +345,16 @@ public class PipeliteScheduler extends ProcessRunnerPoolService {
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {
-    return log.with(LogKey.LAUNCHER_NAME, getLauncherName());
+    return log.with(LogKey.PROCESS_RUNNER_NAME, serviceName());
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log, String pipelineName) {
-    return log.with(LogKey.LAUNCHER_NAME, getLauncherName())
+    return log.with(LogKey.PROCESS_RUNNER_NAME, serviceName())
         .with(LogKey.PIPELINE_NAME, pipelineName);
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log, String pipelineName, String processId) {
-    return log.with(LogKey.LAUNCHER_NAME, getLauncherName())
+    return log.with(LogKey.PROCESS_RUNNER_NAME, serviceName())
         .with(LogKey.PIPELINE_NAME, pipelineName)
         .with(LogKey.PROCESS_ID, processId);
   }

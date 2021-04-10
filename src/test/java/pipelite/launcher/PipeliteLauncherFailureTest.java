@@ -34,7 +34,7 @@ import pipelite.PrioritizedPipelineTestHelper;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
-import pipelite.manager.RegisteredServiceManager;
+import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.ProcessState;
@@ -60,7 +60,7 @@ public class PipeliteLauncherFailureTest {
 
   private static final int PROCESS_CNT = 1;
 
-  @Autowired private RegisteredServiceManager registeredServiceManager;
+  @Autowired private ProcessRunnerPoolManager processRunnerPoolManager;
   @Autowired private ProcessService processService;
   @Autowired private StageService stageService;
   @Autowired private LauncherService launcherService;
@@ -373,9 +373,9 @@ public class PipeliteLauncherFailureTest {
 
   @Test
   public void testPipelines() {
-    registeredServiceManager.init();
-    registeredServiceManager.start();
-    registeredServiceManager.awaitStopped();
+    processRunnerPoolManager.createPools();
+    processRunnerPoolManager.startPools();
+    processRunnerPoolManager.waitPoolsToStop();
 
     assertPipeline(firstStageFails);
     assertPipeline(secondStageFails);

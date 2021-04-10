@@ -34,7 +34,7 @@ import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageLogEntity;
-import pipelite.manager.RegisteredServiceManager;
+import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.TimeSeriesMetrics;
@@ -59,7 +59,7 @@ import pipelite.stage.parameters.ExecutorParameters;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class PipeliteSchedulerTest {
 
-  @Autowired private RegisteredServiceManager registeredServiceManager;
+  @Autowired private ProcessRunnerPoolManager processRunnerPoolManager;
   @Autowired private ServiceConfiguration serviceConfiguration;
   @Autowired private ScheduleService scheduleService;
   @Autowired private ProcessService processService;
@@ -304,15 +304,15 @@ public class PipeliteSchedulerTest {
   @Test
   public void testSchedules() {
     try {
-      registeredServiceManager.init();
+      processRunnerPoolManager.createPools();
 
       PipeliteScheduler pipeliteScheduler = launcherService.getPipeliteScheduler();
       for (TestSchedule f : testSchedules) {
         pipeliteScheduler.setMaximumExecutions(f.pipelineName(), f.processCnt);
       }
 
-      registeredServiceManager.start();
-      registeredServiceManager.awaitStopped();
+      processRunnerPoolManager.startPools();
+      processRunnerPoolManager.waitPoolsToStop();
 
       for (TestSchedule f : testSchedules) {
         assertSchedule(f);

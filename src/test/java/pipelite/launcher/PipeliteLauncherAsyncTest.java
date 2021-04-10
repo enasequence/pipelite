@@ -22,6 +22,7 @@ import lombok.Value;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
@@ -31,7 +32,7 @@ import pipelite.PrioritizedPipeline;
 import pipelite.PrioritizedPipelineTestHelper;
 import pipelite.UniqueStringGenerator;
 import pipelite.executor.AbstractExecutor;
-import pipelite.manager.RegisteredServiceManager;
+import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.builder.ProcessBuilder;
@@ -50,12 +51,12 @@ import pipelite.stage.parameters.ExecutorParameters;
       "pipelite.advanced.shutdownIfIdle=true"
     })
 @ActiveProfiles({"test", "PipeliteLauncherAsyncTest"})
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext
 public class PipeliteLauncherAsyncTest {
 
   private static final int PROCESS_CNT = 2;
 
-  @Autowired private RegisteredServiceManager registeredServiceManager;
+  @Autowired private ProcessRunnerPoolManager processRunnerPoolManager;
   @Autowired private PipeliteServices pipeliteServices;
   @Autowired private PipeliteMetrics metrics;
   @Autowired private TestPipeline<SubmitSuccessPollSuccessExecutor> submitSuccessPollSuccess;
@@ -66,7 +67,7 @@ public class PipeliteLauncherAsyncTest {
   @Autowired private TestPipeline<PollExceptionExecutor> pollException;
 
   @Profile("PipeliteLauncherAsyncTest")
-  @org.springframework.boot.test.context.TestConfiguration
+  @TestConfiguration
   static class TestConfig {
     @Bean
     public TestPipeline<SubmitSuccessPollSuccessExecutor> submitSuccessPollSuccess() {
@@ -316,9 +317,9 @@ public class PipeliteLauncherAsyncTest {
 
   @Test
   public void testPipelines() {
-    registeredServiceManager.init();
-    registeredServiceManager.start();
-    registeredServiceManager.awaitStopped();
+    processRunnerPoolManager.createPools();
+    processRunnerPoolManager.startPools();
+    processRunnerPoolManager.waitPoolsToStop();
 
     assertSubmitSuccessPollSuccess();
     assertSubmitError();

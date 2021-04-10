@@ -17,7 +17,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.annotation.EnableRetry;
-import pipelite.manager.RegisteredServiceManager;
+import pipelite.manager.ProcessRunnerPoolManager;
 
 @Configuration
 @ComponentScan
@@ -26,11 +26,11 @@ import pipelite.manager.RegisteredServiceManager;
 @Flogger
 public class PipeliteApplication {
 
-  @Autowired RegisteredServiceManager registeredServiceManager;
+  @Autowired ProcessRunnerPoolManager processRunnerPoolManager;
 
   @PostConstruct
   private void run() {
-    registeredServiceManager.init();
-    registeredServiceManager.start();
+    processRunnerPoolManager.createPools();
+    processRunnerPoolManager.startPools();
   }
 }

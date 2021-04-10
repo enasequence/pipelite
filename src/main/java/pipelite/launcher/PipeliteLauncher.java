@@ -12,6 +12,7 @@ package pipelite.launcher;
 
 import com.google.common.flogger.FluentLogger;
 import java.time.ZonedDateTime;
+import java.util.function.Function;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.Pipeline;
@@ -19,8 +20,8 @@ import pipelite.configuration.PipeliteConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.launcher.process.creator.PrioritizedProcessCreator;
 import pipelite.launcher.process.queue.ProcessQueue;
+import pipelite.launcher.process.runner.ProcessRunner;
 import pipelite.launcher.process.runner.ProcessRunnerPool;
-import pipelite.launcher.process.runner.ProcessRunnerPoolService;
 import pipelite.log.LogKey;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
@@ -34,18 +35,16 @@ import pipelite.service.PipeliteServices;
  * process ids waiting to be executed.
  */
 @Flogger
-public class PipeliteLauncher extends ProcessRunnerPoolService {
+public class PipeliteLauncher extends ProcessRunnerPool {
 
   private final InternalErrorService internalErrorService;
   private final HealthCheckService healthCheckService;
   private final String pipelineName;
   private final Pipeline pipeline;
-  private final PrioritizedProcessCreator prioritizedProcessCreator;
   private final ProcessQueue processQueue;
   private final int processCreateMaxSize;
   private final boolean shutdownIfIdle;
   private final ZonedDateTime startTime;
-  private final String serviceName;
 
   public PipeliteLauncher(
       PipeliteConfiguration pipeliteConfiguration,
@@ -54,55 +53,51 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
       Pipeline pipeline,
       PrioritizedProcessCreator prioritizedProcessCreator,
       ProcessQueue processQueue,
-      ProcessRunnerPool pool) {
-    super(pipeliteConfiguration, pipeliteMetrics, pool);
-    Assert.notNull(pipeliteConfiguration, "Missing configuration");
-    Assert.notNull(pipeliteServices, "Missing services");
-    Assert.notNull(pipeline, "Missing pipeline");
+      Function<String, ProcessRunner> processRunnerSupplier) {
+    super(
+        pipeliteConfiguration,
+        pipeliteServices,
+        pipeliteMetrics,
+        serviceName(pipeliteConfiguration, processQueue),
+        processRunnerSupplier);
     Assert.notNull(prioritizedProcessCreator, "Missing process creator");
-    Assert.notNull(processQueue, "Missing process queue");
     this.internalErrorService = pipeliteServices.internalError();
     this.healthCheckService = pipeliteServices.healthCheck();
     this.pipeline = pipeline;
-    this.prioritizedProcessCreator = prioritizedProcessCreator;
     this.processQueue = processQueue;
     this.pipelineName = processQueue.getPipelineName();
     this.processCreateMaxSize = pipeliteConfiguration.advanced().getProcessCreateMaxSize();
     this.shutdownIfIdle = pipeliteConfiguration.advanced().isShutdownIfIdle();
     this.startTime = ZonedDateTime.now();
-    this.serviceName = pipeliteConfiguration.service().getName();
+    setRunnerCallback(
+        () -> {
+          try {
+            if (!healthCheckService.isDataSourceHealthy()) {
+              logContext(log.atSevere())
+                  .log("Waiting data source to be healthy before starting new processes");
+              return;
+            }
+
+            if (processQueue.isFillQueue()) {
+              prioritizedProcessCreator.createProcesses(processCreateMaxSize);
+              processQueue.fillQueue();
+            }
+            while (processQueue.isAvailableProcesses(this.getActiveProcessCount())) {
+              runProcess(processQueue.nextAvailableProcess());
+            }
+          } catch (Exception ex) {
+            // Catching exceptions here in case they have not already been caught.
+            internalErrorService.saveInternalError(
+                serviceName(), pipelineName, this.getClass(), ex);
+          }
+        });
   }
 
-  @Override
-  public String getLauncherName() {
-    return serviceName + "@pipeline@" + pipelineName;
-  }
-
-  @Override
-  protected void startUp() {
-    super.startUp();
-  }
-
-  @Override
-  protected void run() {
-    try {
-      if (!healthCheckService.isDataSourceHealthy()) {
-        logContext(log.atSevere())
-            .log("Waiting data source to be healthy before starting new processes");
-        return;
-      }
-
-      if (processQueue.isFillQueue()) {
-        prioritizedProcessCreator.createProcesses(processCreateMaxSize);
-        processQueue.fillQueue();
-      }
-      while (processQueue.isAvailableProcesses(this.getActiveProcessCount())) {
-        runProcess(processQueue.nextAvailableProcess());
-      }
-    } catch (Exception ex) {
-      // Catching exceptions here in case they have not already been caught.
-      internalErrorService.saveInternalError(serviceName, pipelineName, this.getClass(), ex);
-    }
+  private static String serviceName(
+      PipeliteConfiguration pipeliteConfiguration, ProcessQueue processQueue) {
+    return pipeliteConfiguration.service().getName()
+        + "@pipeline@"
+        + processQueue.getPipelineName();
   }
 
   @Override
@@ -124,7 +119,7 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
       }
     } catch (Exception ex) {
       // Catching exceptions here to allow other processes to continue execution.
-      internalErrorService.saveInternalError(serviceName, pipelineName, this.getClass(), ex);
+      internalErrorService.saveInternalError(serviceName(), pipelineName, this.getClass(), ex);
     }
   }
 
@@ -141,7 +136,7 @@ public class PipeliteLauncher extends ProcessRunnerPoolService {
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {
-    return log.with(LogKey.LAUNCHER_NAME, getLauncherName())
+    return log.with(LogKey.PROCESS_RUNNER_NAME, serviceName())
         .with(LogKey.PIPELINE_NAME, pipelineName);
   }
 }

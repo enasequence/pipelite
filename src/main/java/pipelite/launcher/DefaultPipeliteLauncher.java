@@ -19,7 +19,6 @@ import pipelite.launcher.process.creator.PrioritizedProcessCreator;
 import pipelite.launcher.process.queue.DefaultProcessQueue;
 import pipelite.launcher.process.queue.ProcessQueue;
 import pipelite.launcher.process.runner.DefaultProcessRunner;
-import pipelite.launcher.process.runner.DefaultProcessRunnerPool;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.PipeliteServices;
 import pipelite.service.RegisteredPipelineService;
@@ -57,11 +56,7 @@ public class DefaultPipeliteLauncher {
         pipeline,
         prioritizedProcessCreator,
         processQueue,
-        new DefaultProcessRunnerPool(
-            pipeliteConfiguration,
-            pipeliteServices,
-            pipeliteMetrics,
-            (pipelineName1) ->
-                new DefaultProcessRunner(pipeliteConfiguration, pipeliteServices, pipelineName1)));
+        (pipelineName1) ->
+            new DefaultProcessRunner(pipeliteConfiguration, pipeliteServices, pipelineName1));
   }
 }

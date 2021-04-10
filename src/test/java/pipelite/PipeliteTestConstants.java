@@ -8,25 +8,11 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.manager;
+package pipelite;
 
-import com.google.common.util.concurrent.AbstractScheduledService;
+public final class PipeliteTestConstants {
 
-public abstract class RegisteredService extends AbstractScheduledService {
+  private PipeliteTestConstants() {}
 
-  /** AbstractScheduledService service name. */
-  @Override
-  protected final String serviceName() {
-    return getLauncherName();
-  }
-
-  /**
-   * Returns the process launcher name.
-   *
-   * @return the process launcher name.
-   */
-  public abstract String getLauncherName();
-
-  /** Terminates all running processes. */
-  public abstract void terminateProcesses();
+  public static final String CRON_EVERY_TWO_SECONDS = "0/2 * * * * ?";
 }

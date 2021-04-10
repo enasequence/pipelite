@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import pipelite.PipeliteMetricsTestFactory;
+import pipelite.UniqueStringGenerator;
 import pipelite.configuration.AdvancedConfiguration;
 import pipelite.configuration.ExecutorConfiguration;
 import pipelite.configuration.PipeliteConfiguration;
@@ -33,7 +34,7 @@ import pipelite.process.builder.ProcessBuilder;
 import pipelite.repository.InternalErrorRepository;
 import pipelite.service.*;
 
-public class DefaultProcessRunnerPoolTest {
+public class ProcessRunnerPoolTest {
 
   private static final int PROCESS_CNT = 1000;
   public static final String PIPELINE_NAME = "PIPELINE1";
@@ -53,7 +54,7 @@ public class DefaultProcessRunnerPoolTest {
     };
   }
 
-  private DefaultProcessRunnerPool createDefaultProcessRunnerPool(
+  private ProcessRunnerPool createProcessRunnerPool(
       InternalErrorService internalErrorService,
       PipeliteMetrics pipeliteMetrics,
       PipeliteLockerService pipeliteLockerService,
@@ -77,8 +78,12 @@ public class DefaultProcessRunnerPoolTest {
             internalErrorService,
             mock(HealthCheckService.class),
             mock(LauncherService.class));
-    return new DefaultProcessRunnerPool(
-        pipeliteConfiguration, pipeliteServices, pipeliteMetrics, processRunnerSupplier);
+    return new ProcessRunnerPool(
+        pipeliteConfiguration,
+        pipeliteServices,
+        pipeliteMetrics,
+        UniqueStringGenerator.randomProcessRunnerPoolName(this.getClass()),
+        processRunnerSupplier);
   }
 
   @Test
@@ -88,8 +93,8 @@ public class DefaultProcessRunnerPoolTest {
     when(pipeliteLockerService.lockProcess(any(), any())).thenReturn(true);
     PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
 
-    DefaultProcessRunnerPool pool =
-        createDefaultProcessRunnerPool(
+    ProcessRunnerPool pool =
+        createProcessRunnerPool(
             internalErrorService,
             metrics,
             pipeliteLockerService,
@@ -144,8 +149,8 @@ public class DefaultProcessRunnerPoolTest {
     when(pipeliteLockerService.lockProcess(any(), any())).thenReturn(true);
     PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
 
-    DefaultProcessRunnerPool pool =
-        createDefaultProcessRunnerPool(
+    ProcessRunnerPool pool =
+        createProcessRunnerPool(
             internalErrorService,
             metrics,
             pipeliteLockerService,
@@ -199,8 +204,8 @@ public class DefaultProcessRunnerPoolTest {
     PipeliteLockerService pipeliteLockerService = mock(PipeliteLockerService.class);
     when(pipeliteLockerService.lockProcess(any(), any())).thenReturn(true);
 
-    DefaultProcessRunnerPool pool =
-        createDefaultProcessRunnerPool(
+    ProcessRunnerPool pool =
+        createProcessRunnerPool(
             internalErrorService,
             metrics,
             pipeliteLockerService,

@@ -11,15 +11,11 @@
 package pipelite.launcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
-import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 import java.time.Duration;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.Value;
 import org.junit.jupiter.api.Test;
@@ -32,22 +28,16 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.*;
-import pipelite.configuration.AdvancedConfiguration;
-import pipelite.configuration.PipeliteConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageLogEntity;
-import pipelite.launcher.process.creator.PrioritizedProcessCreator;
-import pipelite.launcher.process.queue.DefaultProcessQueue;
-import pipelite.launcher.process.runner.ProcessRunnerPool;
-import pipelite.manager.RegisteredServiceManager;
+import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.TimeSeriesMetrics;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.PipeliteServices;
-import pipelite.service.ProcessService;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
@@ -64,8 +54,7 @@ import pipelite.stage.parameters.ExecutorParameters;
 @DirtiesContext
 public class PipeliteLauncherTest {
 
-  @Autowired private RegisteredServiceManager registeredServiceManager;
-  @Autowired private PipeliteConfiguration pipeliteConfiguration;
+  @Autowired private ProcessRunnerPoolManager processRunnerPoolManager;
   @Autowired private PipeliteServices pipeliteServices;
   @Autowired private PipeliteMetrics pipeliteMetrics;
 
@@ -275,72 +264,12 @@ public class PipeliteLauncherTest {
 
   @Test
   public void testPipelines() {
-    registeredServiceManager.init();
-    registeredServiceManager.start();
-    registeredServiceManager.awaitStopped();
+    processRunnerPoolManager.createPools();
+    processRunnerPoolManager.startPools();
+    processRunnerPoolManager.waitPoolsToStop();
 
     assertPipeline(successPipeline);
     assertPipeline(failurePipeline);
     assertPipeline(exceptionPipeline);
-  }
-
-  @Test
-  public void testProcessQueue() {
-    final int processCnt = 100;
-    String pipelineName = UniqueStringGenerator.randomPipelineName(PipeliteLauncherTest.class);
-    Duration processQueueRefreshFrequency = Duration.ofDays(1);
-
-    AdvancedConfiguration advancedConfiguration = new AdvancedConfiguration();
-    advancedConfiguration.setProcessQueueMaxRefreshFrequency(processQueueRefreshFrequency);
-    advancedConfiguration.setProcessQueueMinRefreshFrequency(processQueueRefreshFrequency);
-
-    int pipelineParallelism = ForkJoinPool.getCommonPoolParallelism();
-
-    DefaultProcessQueue queue =
-        spy(
-            new DefaultProcessQueue(
-                advancedConfiguration,
-                mock(ProcessService.class),
-                pipelineName,
-                pipelineParallelism));
-
-    assertThat(queue.getProcessQueueMaxValidUntil()).isBeforeOrEqualTo(ZonedDateTime.now());
-    assertThat(queue.getProcessQueueMinValidUntil()).isBeforeOrEqualTo(ZonedDateTime.now());
-
-    List<ProcessEntity> processesEntities =
-        Collections.nCopies(processCnt, mock(ProcessEntity.class));
-    doReturn(processesEntities).when(queue).getAvailableActiveProcesses();
-    doReturn(processesEntities).when(queue).getPendingProcesses();
-
-    ProcessRunnerPool pool = mock(ProcessRunnerPool.class);
-
-    PipeliteConfiguration configuration = spy(pipeliteConfiguration);
-    when(configuration.advanced()).thenReturn(advancedConfiguration);
-
-    PipeliteLauncher launcher =
-        spy(
-            new PipeliteLauncher(
-                configuration,
-                pipeliteServices,
-                pipeliteMetrics,
-                mock(Pipeline.class),
-                mock(PrioritizedProcessCreator.class),
-                queue,
-                pool));
-
-    launcher.startUp();
-    launcher.run();
-
-    ZonedDateTime plusRefresh = ZonedDateTime.now().plus(processQueueRefreshFrequency);
-    ZonedDateTime plusBeforeRefresh = ZonedDateTime.now().plus(Duration.ofHours(23));
-    assertThat(queue.getProcessQueueMaxValidUntil()).isAfter(plusBeforeRefresh);
-    assertThat(queue.getProcessQueueMinValidUntil()).isAfter(plusBeforeRefresh);
-    assertThat(plusRefresh.isAfter(queue.getProcessQueueMaxValidUntil()));
-    assertThat(plusRefresh.isAfter(queue.getProcessQueueMinValidUntil()));
-
-    verify(launcher, times(1)).run();
-    verify(queue, times(1)).fillQueue();
-    verify(queue, times(1)).getAvailableActiveProcesses();
-    verify(queue, times(1)).getPendingProcesses();
   }
 }

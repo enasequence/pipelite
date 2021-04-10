@@ -208,7 +208,7 @@ public class RegisteredPipelineServiceTest {
   }
 
   @Test
-  public void isScheduler() {
-    assertThat(registeredPipelineService.isScheduler()).isTrue();
+  public void isSchedules() {
+    assertThat(registeredPipelineService.isSchedules()).isTrue();
   }
 }

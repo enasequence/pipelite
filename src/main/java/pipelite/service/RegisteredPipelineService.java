@@ -67,11 +67,11 @@ public class RegisteredPipelineService {
   }
 
   /**
-   * Returns true if a scheduler is registered.
+   * Returns true if one or more schedules are registered.
    *
-   * @return true if a scheduler is registered.
+   * @return true if one or more schedules are registered
    */
-  public boolean isScheduler() {
+  public boolean isSchedules() {
     return registeredPipelineMap.values().stream()
         .filter(s -> s instanceof Schedule)
         .findAny()

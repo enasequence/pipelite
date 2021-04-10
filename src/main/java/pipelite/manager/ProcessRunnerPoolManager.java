@@ -13,13 +13,6 @@ package pipelite.manager;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import javax.annotation.PreDestroy;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -31,18 +24,26 @@ import pipelite.launcher.DefaultPipeliteLauncher;
 import pipelite.launcher.DefaultPipeliteScheduler;
 import pipelite.launcher.PipeliteLauncher;
 import pipelite.launcher.PipeliteScheduler;
+import pipelite.launcher.process.runner.ProcessRunnerPool;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.PipeliteServices;
 
+import javax.annotation.PreDestroy;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 @Flogger
 @Component
-public class RegisteredServiceManager {
+public class ProcessRunnerPoolManager {
 
   private final PipeliteConfiguration pipeliteConfiguration;
   private final PipeliteServices pipeliteServices;
   private final PipeliteMetrics pipeliteMetrics;
 
-  private final Set<RegisteredService> services = new HashSet<>();
+  private final List<ProcessRunnerPool> pools = new ArrayList<>();
   private ServiceManager serviceManager;
   private State state;
 
@@ -52,7 +53,7 @@ public class RegisteredServiceManager {
     RUNNING
   }
 
-  public RegisteredServiceManager(
+  public ProcessRunnerPoolManager(
       @Autowired PipeliteConfiguration pipeliteConfiguration,
       @Autowired PipeliteServices pipeliteServices,
       @Autowired PipeliteMetrics pipeliteMetrics) {
@@ -62,71 +63,68 @@ public class RegisteredServiceManager {
     this.state = State.STOPPED;
   }
 
-  public Collection<RegisteredService> getServices() {
-    return services;
-  }
-
-  protected synchronized RegisteredServiceManager addService(RegisteredService service) {
-    if (services.contains(service)) {
-      throw new RuntimeException("Pipelite service name is not unique: " + service.serviceName());
-    }
-    services.add(service);
-    return this;
+  public Collection<ProcessRunnerPool> getPools() {
+    return pools;
   }
 
   private void clear() {
     pipeliteServices.launcher().clearPipeliteScheduler();
     pipeliteServices.launcher().clearPipeliteLaunchers();
-    services.clear();
+    pools.clear();
     serviceManager = null;
   }
 
-  /** Initialises pipelite services. */
-  public synchronized void init() {
-    log.atInfo().log("Initialising pipelite services");
+  public synchronized void createPools() {
+    log.atInfo().log("Creating process runner pools");
 
     if (state != State.STOPPED) {
       log.atWarning().log(
-          "Failed to initialise pipelite services because services are not stopped");
+          "Failed to create process runner pools because manager state is not stopped");
       return;
     }
 
     try {
-      // Create launchers for unscheduled pipelines.
+      // Create process runner pools for pipelines.
       for (Pipeline pipeline :
           pipeliteServices.registeredPipeline().getRegisteredPipelines(Pipeline.class)) {
         PipeliteLauncher launcher = createLauncher(pipeline.pipelineName());
-        log.atInfo().log("Adding pipelite launcher: " + launcher.serviceName());
+        log.atInfo().log("Creating process runner pool for pipeline: " + pipeline.pipelineName());
         pipeliteServices.launcher().addPipeliteLauncher(launcher);
-        addService(launcher);
+        pools.add(launcher);
       }
 
-      // Create scheduler for scheduled pipelines.
-      if (pipeliteServices.registeredPipeline().isScheduler()) {
+      // Create process runner pools for schedules.
+      if (pipeliteServices.registeredPipeline().isSchedules()) {
         PipeliteScheduler pipeliteScheduler =
             createScheduler(
                 pipeliteServices.registeredPipeline().getRegisteredPipelines(Schedule.class));
-        log.atInfo().log("Adding pipelite scheduler: " + pipeliteScheduler.serviceName());
+        log.atInfo().log("Creating process runner pool for schedules");
         pipeliteServices.launcher().setPipeliteScheduler(pipeliteScheduler);
-        addService(pipeliteScheduler);
+        pools.add(pipeliteScheduler);
       }
 
-      initServices();
+      log.atInfo().log("Created process runner pools");
+
+      createServiceManager();
     } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Unexpected exception when initialising pipelite services");
+      log.atSevere().withCause(ex).log("Unexpected exception when creating process runner pools");
       clear();
       throw new PipeliteException(ex);
     }
   }
 
-  protected synchronized void initServices() {
-    if (services.isEmpty()) {
-      log.atSevere().log("No pipelite services configured");
+  /** Creates the google guava service manager that runs the process runner pools. */
+  protected synchronized void createServiceManager() {
+    log.atInfo().log("Creating service manager for process runner pools");
+
+    if (pools.isEmpty()) {
+      log.atSevere().log(
+          "Failed to create service manager for process runner pools because none exist");
       return;
     }
 
     try {
-      serviceManager = new ServiceManager(services);
+      serviceManager = new ServiceManager(pools);
       serviceManager.addListener(
           new ServiceManager.Listener() {
             public void stopped() {}
@@ -134,46 +132,49 @@ public class RegisteredServiceManager {
             public void healthy() {}
 
             public void failure(Service service) {
-              String serviceName = ((RegisteredService) service).serviceName();
+              String serviceName = ((ProcessRunnerPool) service).serviceName();
               log.atSevere().withCause(service.failureCause()).log(
-                  "Pipelite service has failed: " + serviceName);
+                  "Process runner pool has failed: " + serviceName);
               pipeliteServices
                   .internalError()
                   .saveInternalError(serviceName, this.getClass(), service.failureCause());
-              stop();
+              stopPools();
             }
           },
           MoreExecutors.directExecutor());
 
     } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Unexpected exception when initialising pipelite services");
+      log.atSevere().withCause(ex).log(
+          "Unexpected exception when creating service manager for process runner pools");
       clear();
       throw new PipeliteException(ex);
     }
 
     state = State.INITIALISED;
-    log.atInfo().log("Initialised pipelite services");
+    log.atInfo().log("Created service manager for process runner pools");
   }
 
-  /** Starts pipelite services. */
-  public synchronized void start() {
-    log.atInfo().log("Starting pipelite services");
+  /** Starts process runner pools. */
+  public synchronized void startPools() {
+    log.atInfo().log("Starting process runner pools");
 
     if (state != State.INITIALISED) {
-      log.atWarning().log("Failed to start pipelite services because services are not initialised");
+      log.atWarning().log(
+          "Failed to start process runner pools because manager state is not initialised");
       return;
     }
 
     serviceManager.startAsync();
 
     state = State.RUNNING;
-    log.atInfo().log("Started pipelite services");
+    log.atInfo().log("Started process runner pools");
   }
 
-  public synchronized void awaitStopped() {
+  /** Waits until process runner pools have stopped. */
+  public synchronized void waitPoolsToStop() {
     if (state != State.RUNNING) {
       log.atWarning().log(
-          "Failed to wait for pipelite services to stop because services are not running");
+          "Failed to wait process runner pools to stop because manager state is not running");
       return;
     }
     serviceManager.awaitStopped();
@@ -181,14 +182,14 @@ public class RegisteredServiceManager {
   }
 
   @PreDestroy
-  /** Stops pipelite services. */
-  public synchronized void stop() {
+  /** Stops process runner pools. */
+  public synchronized void stopPools() {
     if (state != State.RUNNING) {
       return;
     }
 
     log.atInfo().log(
-        "Stopping pipelite services. Shutdown period is + "
+        "Stopping process runner pools. Shutdown period is + "
             + pipeliteConfiguration.service().getShutdownPeriod().getSeconds()
             + " seconds.");
 
@@ -200,14 +201,14 @@ public class RegisteredServiceManager {
     } catch (TimeoutException ignored) {
     }
     clear();
-    log.atInfo().log("Stopped pipelite services");
+    log.atInfo().log("Stopped process runner pools");
     state = State.STOPPED;
   }
 
   /** Terminates all running processes. */
   public synchronized void terminateProcesses() {
     log.atInfo().log("Terminating all running processes");
-    services.forEach(service -> service.terminateProcesses());
+    pools.forEach(service -> service.terminateProcesses());
   }
 
   private PipeliteScheduler createScheduler(List<Schedule> schedules) {

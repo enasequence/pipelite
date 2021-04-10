@@ -25,14 +25,14 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import pipelite.controller.api.info.AdminInfo;
 import pipelite.controller.utils.TimeUtils;
-import pipelite.manager.RegisteredServiceManager;
+import pipelite.manager.ProcessRunnerPoolManager;
 
 @RestController
 @RequestMapping(value = {"/api/admin"})
 @Tag(name = "AdministrationAPI", description = "Administration of pipelite services")
 public class AdminController {
 
-  @Autowired RegisteredServiceManager registeredServiceManager;
+  @Autowired ProcessRunnerPoolManager processRunnerPoolManager;
   @Autowired ConfigurableApplicationContext applicationContext;
   @Autowired MetricsEndpoint metricsEndpoint;
 
@@ -61,7 +61,7 @@ public class AdminController {
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
   public AdminInfo stop() {
-    new Thread(() -> registeredServiceManager.stop()).start();
+    new Thread(() -> processRunnerPoolManager.stopPools()).start();
     return new AdminInfo("Stopping all pipelite services");
   }
 
@@ -76,8 +76,8 @@ public class AdminController {
   public AdminInfo kill() {
     new Thread(
             () -> {
-              registeredServiceManager.terminateProcesses();
-              registeredServiceManager.stop();
+              processRunnerPoolManager.terminateProcesses();
+              processRunnerPoolManager.stopPools();
             })
         .start();
     return new AdminInfo("Stopping all pipelite services and terminating all running processes");
@@ -94,9 +94,9 @@ public class AdminController {
   public AdminInfo restart() {
     new Thread(
             () -> {
-              registeredServiceManager.stop();
-              registeredServiceManager.init();
-              registeredServiceManager.start();
+              processRunnerPoolManager.stopPools();
+              processRunnerPoolManager.createPools();
+              processRunnerPoolManager.startPools();
             })
         .start();
     return new AdminInfo("Restarting all pipelite services");
@@ -113,7 +113,7 @@ public class AdminController {
   public AdminInfo shutDown() {
     new Thread(
             () -> {
-              registeredServiceManager.stop();
+              processRunnerPoolManager.stopPools();
               applicationContext.close();
             })
         .start();
