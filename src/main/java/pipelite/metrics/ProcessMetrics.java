@@ -24,12 +24,14 @@ public class ProcessMetrics {
   private final AtomicDouble runningGauge = new AtomicDouble();
   private final Counter completedCounter;
   private final Counter failedCounter;
+  private final Counter internalErrorCounter;
 
   // Time series.
 
   private final Table runningTimeSeries;
   private final Table completedTimeSeries;
   private final Table failedTimeSeries;
+  private final Table internalErrorTimeSeries;
 
   public ProcessMetrics(String pipelineName, MeterRegistry meterRegistry) {
     Gauge.builder("pipelite.process.running", runningGauge, AtomicDouble::get)
@@ -38,10 +40,13 @@ public class ProcessMetrics {
     completedCounter =
         meterRegistry.counter("pipelite.process.completed", "pipelineName", pipelineName);
     failedCounter = meterRegistry.counter("pipelite.process.failed", "pipelineName", pipelineName);
+    internalErrorCounter =
+        meterRegistry.counter("pipelite.process.error", "pipelineName", pipelineName);
 
     runningTimeSeries = TimeSeriesMetrics.getEmptyTimeSeries(pipelineName);
     completedTimeSeries = TimeSeriesMetrics.getEmptyTimeSeries(pipelineName);
     failedTimeSeries = TimeSeriesMetrics.getEmptyTimeSeries(pipelineName);
+    internalErrorTimeSeries = TimeSeriesMetrics.getEmptyTimeSeries(pipelineName);
   }
 
   public double getRunningCount() {
@@ -56,6 +61,10 @@ public class ProcessMetrics {
     return failedCounter.count();
   }
 
+  public double getInternalErrorCount() {
+    return internalErrorCounter.count();
+  }
+
   public Table getRunningTimeSeries() {
     return runningTimeSeries;
   }
@@ -66,6 +75,10 @@ public class ProcessMetrics {
 
   public Table getFailedTimeSeries() {
     return failedTimeSeries;
+  }
+
+  public Table getInternalErrorTimeSeries() {
+    return internalErrorTimeSeries;
   }
 
   public void setRunningCount(int count, ZonedDateTime now) {
@@ -81,5 +94,10 @@ public class ProcessMetrics {
   public void incrementFailedCount(ZonedDateTime now) {
     failedCounter.increment(1);
     TimeSeriesMetrics.updateCounter(failedTimeSeries, 1, now);
+  }
+
+  public void incrementInternalErrorCount() {
+    internalErrorCounter.increment(1);
+    TimeSeriesMetrics.updateCounter(internalErrorTimeSeries, 1, ZonedDateTime.now());
   }
 }

@@ -13,7 +13,7 @@ package pipelite.metrics;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.ZonedDateTime;
-import pipelite.launcher.process.runner.ProcessRunnerResult;
+import pipelite.runner.process.ProcessRunnerResult;
 import tech.tablesaw.api.Table;
 
 public class StageMetrics {

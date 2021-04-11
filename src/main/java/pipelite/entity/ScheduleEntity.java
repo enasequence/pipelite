@@ -91,6 +91,19 @@ public class ScheduleEntity {
     return (startTime != null && endTime == null && processId != null);
   }
 
+  /**
+   * Returns true if the schedule has failed.
+   *
+   * @return true if the schedule has failed
+   */
+  public boolean isFailed() {
+    return (startTime != null
+        && endTime != null
+        && processId != null
+        && lastFailed != null
+        && (lastCompleted == null || !lastFailed.isBefore(lastCompleted)));
+  }
+
   public void setNextTime(ZonedDateTime nextTime) {
     if (nextTime != null) {
       nextTime = nextTime.truncatedTo(ChronoUnit.SECONDS);

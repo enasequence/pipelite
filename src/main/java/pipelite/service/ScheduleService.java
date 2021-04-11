@@ -11,6 +11,7 @@
 package pipelite.service;
 
 import com.google.common.collect.Lists;
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pipelite.cron.CronUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
+import pipelite.exception.PipeliteRetryException;
 import pipelite.process.ProcessState;
 import pipelite.repository.ScheduleRepository;
 
@@ -41,6 +43,9 @@ import pipelite.repository.ScheduleRepository;
             multiplierExpression = "#{@dataSourceRetryConfiguration.getMultiplier()}"),
     exceptionExpression = "#{@dataSourceRetryConfiguration.recoverableException(#root)}")
 public class ScheduleService {
+
+  /** Retry margin until next scheduled execution. */
+  private static final Duration RETRY_MARGIN = Duration.ofMinutes(5);
 
   private final ScheduleRepository repository;
 
@@ -68,14 +73,24 @@ public class ScheduleService {
     repository.delete(scheduleEntity);
   }
 
-  public void scheduleExecution(ScheduleEntity scheduleEntity) {
-    scheduleEntity.setNextTime(CronUtils.launchTime(scheduleEntity.getCron()));
-    saveSchedule(scheduleEntity);
+  public ScheduleEntity scheduleExecution(ScheduleEntity scheduleEntity) {
+    scheduleEntity.setNextTime(
+        CronUtils.launchTime(scheduleEntity.getCron(), scheduleEntity.getStartTime()));
+    return saveSchedule(scheduleEntity);
   }
 
-  public void scheduleExecution(ScheduleEntity scheduleEntity, ZonedDateTime nextTime) {
+  public ScheduleEntity scheduleExecution(ScheduleEntity scheduleEntity, ZonedDateTime nextTime) {
     scheduleEntity.setNextTime(nextTime);
-    saveSchedule(scheduleEntity);
+    return saveSchedule(scheduleEntity);
+  }
+
+  public ScheduleEntity createSchedule(String serviceName, String pipelineName, String cron) {
+    ScheduleEntity scheduleEntity = new ScheduleEntity();
+    scheduleEntity.setCron(cron);
+    scheduleEntity.setDescription(CronUtils.describe(cron));
+    scheduleEntity.setPipelineName(pipelineName);
+    scheduleEntity.setServiceName(serviceName);
+    return saveSchedule(scheduleEntity);
   }
 
   /**
@@ -85,14 +100,14 @@ public class ScheduleService {
    * @param pipelineName the pipeline name
    * @param processId the process id
    */
-  public void startExecution(String pipelineName, String processId) {
+  public ScheduleEntity startExecution(String pipelineName, String processId) {
     log.atInfo().log("Starting scheduled process execution: " + pipelineName);
     ScheduleEntity scheduleEntity = getSavedSchedule(pipelineName).get();
     scheduleEntity.setStartTime(ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS));
     scheduleEntity.setProcessId(processId);
     scheduleEntity.setEndTime(null);
     scheduleEntity.setNextTime(null);
-    saveSchedule(scheduleEntity);
+    return saveSchedule(scheduleEntity);
   }
 
   /**
@@ -102,7 +117,7 @@ public class ScheduleService {
    * @param processEntity the process entity
    * @param nextTime the next execution time
    */
-  public void endExecution(ProcessEntity processEntity, ZonedDateTime nextTime) {
+  public ScheduleEntity endExecution(ProcessEntity processEntity, ZonedDateTime nextTime) {
     String pipelineName = processEntity.getPipelineName();
     log.atInfo().log("Ending scheduled process execution: " + pipelineName);
     ZonedDateTime now = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
@@ -119,6 +134,46 @@ public class ScheduleService {
       scheduleEntity.setStreakCompleted(0);
       scheduleEntity.setStreakFailed(scheduleEntity.getStreakFailed() + 1);
     }
-    saveSchedule(scheduleEntity);
+    return saveSchedule(scheduleEntity);
+  }
+
+  /**
+   * Returns true if there is a schedule that has failed and can be retried.
+   *
+   * @param pipelineName the pipeline name
+   * @param processId the process id
+   * @return true if there is a schedule that has failed and can be retried
+   * @throws PipeliteRetryException if there is a schedule that can't be retried
+   */
+  public boolean isRetrySchedule(String pipelineName, String processId) {
+    Optional<ScheduleEntity> scheduleEntityOpt = getSavedSchedule(pipelineName);
+    if (!scheduleEntityOpt.isPresent()) {
+      return false;
+    }
+
+    ScheduleEntity scheduleEntity = scheduleEntityOpt.get();
+
+    if (!scheduleEntity.isFailed()) {
+      throw new PipeliteRetryException(pipelineName, processId, "schedule is not failed");
+    }
+
+    if (!processId.equals(scheduleEntity.getProcessId())) {
+      throw new PipeliteRetryException(
+          pipelineName,
+          processId,
+          "last execution is a different process " + scheduleEntity.getProcessId());
+    }
+
+    if (scheduleEntity.getNextTime() != null
+        && Duration.between(ZonedDateTime.now(), scheduleEntity.getNextTime())
+                .compareTo(RETRY_MARGIN)
+            < 0) {
+      throw new PipeliteRetryException(
+          pipelineName,
+          processId,
+          "next execution is in less than " + RETRY_MARGIN.toMinutes() + " minutes");
+    }
+
+    return true;
   }
 }

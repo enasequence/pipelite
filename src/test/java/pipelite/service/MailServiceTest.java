@@ -15,7 +15,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import pipelite.PipeliteTestConfiguration;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.PipeliteTestConfigWithServices;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.process.Process;
@@ -24,7 +26,10 @@ import pipelite.process.builder.ProcessBuilder;
 
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    classes = PipeliteTestConfiguration.class)
+    classes = PipeliteTestConfigWithServices.class,
+    properties = {"pipelite.service.force=true", "pipelite.service.name=MailServiceTest"})
+@DirtiesContext
+@ActiveProfiles("test")
 public class MailServiceTest {
 
   @Autowired MailService mailService;

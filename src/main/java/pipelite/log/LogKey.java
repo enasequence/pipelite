@@ -20,8 +20,8 @@ public class LogKey {
   public static final MetadataKey<String> SERVICE_NAME =
       MetadataKey.single("service_name", String.class);
 
-  public static final MetadataKey<String> LAUNCHER_NAME =
-      MetadataKey.single("launcher_name", String.class);
+  public static final MetadataKey<String> PROCESS_RUNNER_NAME =
+      MetadataKey.single("process_runner", String.class);
 
   public static final MetadataKey<String> PIPELINE_NAME =
       MetadataKey.single("pipeline_name", String.class);

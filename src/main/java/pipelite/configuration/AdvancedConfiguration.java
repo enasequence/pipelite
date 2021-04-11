@@ -15,11 +15,12 @@ import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+import pipelite.runner.pipeline.PipelineRunner;
+import pipelite.runner.schedule.ScheduleRunner;
 
 /**
- * Advanced configuration for {@link pipelite.launcher.PipeliteLauncher} and {@link
- * pipelite.launcher.PipeliteScheduler}. {@link pipelite.launcher.PipeliteLauncher} executes
- * processes in parallel for one pipeline. {@link pipelite.launcher.PipeliteScheduler} executes
+ * Advanced configuration for {@link PipelineRunner} and {@link ScheduleRunner}. {@link
+ * PipelineRunner} executes processes in parallel for one pipeline. {@link ScheduleRunner} executes
  * non-parallel processes using cron schedules.
  */
 @Flogger
@@ -47,36 +48,24 @@ public class AdvancedConfiguration {
    */
   private Duration lockDuration = DEFAULT_LOCK_DURATION;
 
-  /**
-   * The running frequency for {@link pipelite.launcher.PipeliteLauncher} and {@link
-   * pipelite.launcher.PipeliteScheduler}.
-   */
+  /** The running frequency for {@link PipelineRunner} and {@link ScheduleRunner}. */
   private Duration processRunnerFrequency = DEFAULT_PROCESS_RUNNER_FREQUENCY;
 
-  /**
-   * The maximum frequency for {@link pipelite.launcher.PipeliteLauncher} to refresh its process
-   * execution queue.
-   */
+  /** The maximum frequency for {@link PipelineRunner} to refresh its process execution queue. */
   private Duration processQueueMaxRefreshFrequency = DEFAULT_PROCESS_QUEUE_MAX_REFRESH_FREQUENCY;
 
-  /**
-   * The minimum frequency for {@link pipelite.launcher.PipeliteLauncher} to refresh its process
-   * execution queue.
-   */
+  /** The minimum frequency for {@link PipelineRunner} to refresh its process execution queue. */
   private Duration processQueueMinRefreshFrequency = DEFAULT_PROCESS_QUEUE_MIN_REFRESH_FREQUENCY;
 
   /**
-   * The maximum length of {@link pipelite.launcher.PipeliteLauncher} process execution queue. The
-   * queue will be refreshed if it becomes smaller than the pipeline parallelism.
+   * The maximum length of {@link PipelineRunner} process execution queue. The queue will be
+   * refreshed if it becomes smaller than the pipeline parallelism.
    */
   private int processQueueMaxSize = DEFAULT_PROCESS_QUEUE_MAX_SIZE;
 
-  /**
-   * The maximum number of new processes created by {@link pipelite.launcher.PipeliteLauncher} at
-   * one go.
-   */
+  /** The maximum number of new processes created by {@link PipelineRunner} at one go. */
   private int processCreateMaxSize = DEFAULT_PROCESS_CREATE_MAX_SIZE;
 
-  /** The {@link pipelite.launcher.PipeliteLauncher} can optionally be shut down if idle. */
+  /** The {@link PipelineRunner} can optionally be shut down if idle. */
   private boolean shutdownIfIdle;
 }

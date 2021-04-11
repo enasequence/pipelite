@@ -17,8 +17,10 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
-import pipelite.PipeliteTestConfiguration;
+import pipelite.PipeliteTestConfigWithServices;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageLogEntity;
@@ -30,7 +32,11 @@ import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
 
-@SpringBootTest(classes = PipeliteTestConfiguration.class)
+@SpringBootTest(
+    classes = PipeliteTestConfigWithServices.class,
+    properties = {"pipelite.service.force=true", "pipelite.service.name=StageServiceTest"})
+@DirtiesContext
+@ActiveProfiles("test")
 @Transactional
 class StageServiceTest {
 

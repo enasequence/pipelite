@@ -25,26 +25,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import pipelite.PipeliteApplication;
 import pipelite.controller.api.info.ProcessInfo;
 import pipelite.controller.utils.LoremUtils;
 import pipelite.controller.utils.TimeUtils;
 import pipelite.entity.ProcessEntity;
-import pipelite.launcher.process.runner.ProcessRunner;
-import pipelite.launcher.process.runner.ProcessRunnerPoolService;
 import pipelite.process.Process;
+import pipelite.runner.process.ProcessRunner;
+import pipelite.runner.process.ProcessRunnerPool;
 import pipelite.service.ProcessService;
-import pipelite.service.RegisteredPipelineService;
+import pipelite.service.RunnerService;
 
 @RestController
 @RequestMapping(value = "/api/process")
 @Tag(name = "ProcessAPI", description = "Process")
 public class ProcessController {
 
-  @Autowired private PipeliteApplication application;
   @Autowired private Environment environment;
-  @Autowired RegisteredPipelineService registeredPipelineService;
   @Autowired private ProcessService processService;
+  @Autowired private RunnerService runnerService;
 
   @GetMapping("/")
   @ResponseStatus(HttpStatus.OK)
@@ -56,12 +54,12 @@ public class ProcessController {
       })
   public List<ProcessInfo> processes(@RequestParam(required = false) String pipelineName) {
     List<ProcessInfo> list = new ArrayList<>();
-    application
-        .getRunningLaunchers()
-        .forEach(launcher -> list.addAll(getProcesses(launcher, pipelineName)));
-    application
-        .getRunningSchedulers()
-        .forEach(launcher -> list.addAll(getProcesses(launcher, pipelineName)));
+    runnerService
+        .getPipelineRunners()
+        .forEach(pipelineRunner -> list.addAll(getProcesses(pipelineRunner, pipelineName)));
+    if (runnerService.isScheduleRunner()) {
+      list.addAll(getProcesses(runnerService.getScheduleRunner(), pipelineName));
+    }
     getLoremIpsumProcess(list);
     return list;
   }
@@ -87,9 +85,9 @@ public class ProcessController {
   }
 
   private static List<ProcessInfo> getProcesses(
-      ProcessRunnerPoolService service, String pipelineName) {
+      ProcessRunnerPool processRunnerPool, String pipelineName) {
     List<ProcessInfo> processes = new ArrayList<>();
-    for (ProcessRunner processRunner : service.getActiveProcessRunners()) {
+    for (ProcessRunner processRunner : processRunnerPool.getActiveProcessRunners()) {
       Process process = processRunner.getProcess();
       ProcessEntity processEntity = process.getProcessEntity();
       if (pipelineName == null || pipelineName.equals(processRunner.getPipelineName())) {

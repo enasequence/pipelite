@@ -16,13 +16,15 @@ import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import pipelite.PipeliteTestConfiguration;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.PipeliteTestConfigWithConfigurations;
 import pipelite.stage.parameters.LsfExecutorParameters;
 
 // TODO: move to and test YAML
 
 @SpringBootTest(
-    classes = PipeliteTestConfiguration.class,
+    classes = PipeliteTestConfigWithConfigurations.class,
     properties = {
       "pipelite.executor.cmd.host=TEST",
       "pipelite.executor.cmd.immediateRetries=2",
@@ -46,6 +48,8 @@ import pipelite.stage.parameters.LsfExecutorParameters;
       "pipelite.executor.awsBatch.maximumRetries=3",
       "pipelite.executor.awsBatch.timeout=10s"
     })
+@ActiveProfiles("test")
+@DirtiesContext
 public class ExecutorConfigurationTest {
 
   @Autowired ExecutorConfiguration config;

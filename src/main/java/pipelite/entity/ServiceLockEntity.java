@@ -11,7 +11,11 @@
 package pipelite.entity;
 
 import java.time.ZonedDateTime;
-import javax.persistence.*;
+import java.util.UUID;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -41,4 +45,8 @@ public class ServiceLockEntity {
 
   @Column(name = "EXPIRY", nullable = false)
   private ZonedDateTime expiry;
+
+  public static String createLockId() {
+    return UUID.randomUUID().toString();
+  }
 }

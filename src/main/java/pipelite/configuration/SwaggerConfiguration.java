@@ -35,6 +35,6 @@ public class SwaggerConfiguration {
                     "basicScheme",
                     new SecurityScheme().type(SecurityScheme.Type.HTTP).scheme("basic")))
         .addSecurityItem(new SecurityRequirement().addList("basicScheme"))
-        .info(new Info().version("1").title("Pipelite launcher and scheduler services"));
+        .info(new Info().version("1").title("Pipelite"));
   }
 }

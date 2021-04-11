@@ -12,20 +12,32 @@ package pipelite.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.mockito.Mockito.mock;
 
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Profile;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
 import pipelite.*;
-import pipelite.configuration.ServiceConfiguration;
 import pipelite.exception.PipeliteException;
+import pipelite.helper.PipelineTestHelper;
+import pipelite.helper.PrioritizedPipelineTestHelper;
+import pipelite.helper.ScheduleTestHelper;
 import pipelite.process.builder.ProcessBuilder;
 
-@SpringBootTest(classes = RegisteredPipelineServiceTest.TestConfig.class)
+@SpringBootTest(
+    classes = PipeliteTestConfigWithServices.class,
+    properties = {
+      "pipelite.service.force=true",
+      "pipelite.service.name=RegisteredPipelineServiceTest"
+    })
+@DirtiesContext
+@ActiveProfiles({"test", "RegisteredPipelineServiceTest"})
 public class RegisteredPipelineServiceTest {
 
   @Autowired RegisteredPipelineService registeredPipelineService;
@@ -36,14 +48,9 @@ public class RegisteredPipelineServiceTest {
   @Autowired TestPrioritizedPipeline prioritizedPipeline1;
   @Autowired TestPrioritizedPipeline prioritizedPipeline2;
 
+  @TestConfiguration
+  @Profile("RegisteredPipelineServiceTest")
   public static class TestConfig {
-    @Bean
-    public RegisteredPipelineService registeredPipelineService(
-        @Autowired List<RegisteredPipeline> registeredPipelines) {
-      return new RegisteredPipelineService(
-          mock(ServiceConfiguration.class), mock(ScheduleService.class), registeredPipelines);
-    }
-
     @Bean
     public TestPipeline pipeline1() {
       return new TestPipeline();
@@ -75,66 +82,39 @@ public class RegisteredPipelineServiceTest {
     }
   }
 
-  public static class TestPipeline implements Pipeline {
-    private final String pipelineName =
-        UniqueStringGenerator.randomPipelineName(RegisteredPipelineServiceTest.class);
+  public static class TestPipeline extends PipelineTestHelper {
 
     @Override
-    public Options configurePipeline() {
-      return new Options().pipelineParallelism(1);
+    public int _configureParallelism() {
+      return 1;
     }
 
     @Override
-    public String pipelineName() {
-      return pipelineName;
-    }
-
-    @Override
-    public void configureProcess(ProcessBuilder builder) {}
+    public void _configureProcess(ProcessBuilder builder) {}
   }
 
-  public static class TestSchedule implements Schedule {
-    private final String pipelineName =
-        UniqueStringGenerator.randomPipelineName(RegisteredPipelineServiceTest.class);
-
+  public static class TestSchedule extends ScheduleTestHelper {
     @Override
-    public Options configurePipeline() {
-      return new Options().cron("* * * * *");
+    protected String _configureCron() {
+      return PipeliteTestConstants.CRON_EVERY_TWO_SECONDS;
     }
 
     @Override
-    public String pipelineName() {
-      return pipelineName;
-    }
-
-    @Override
-    public void configureProcess(ProcessBuilder builder) {}
+    public void _configureProcess(ProcessBuilder builder) {}
   }
 
-  public static class TestPrioritizedPipeline implements PrioritizedPipeline {
-    private final String pipelineName =
-        UniqueStringGenerator.randomPipelineName(RegisteredPipelineServiceTest.class);
-
-    @Override
-    public Options configurePipeline() {
-      return new Options().pipelineParallelism(1);
+  public static class TestPrioritizedPipeline extends PrioritizedPipelineTestHelper {
+    public TestPrioritizedPipeline() {
+      super(0);
     }
 
     @Override
-    public String pipelineName() {
-      return pipelineName;
+    public int _configureParallelism() {
+      return 1;
     }
 
     @Override
-    public void configureProcess(ProcessBuilder builder) {}
-
-    @Override
-    public PrioritizedProcess nextProcess() {
-      return null;
-    }
-
-    @Override
-    public void confirmProcess(String processId) {}
+    public void _configureProcess(ProcessBuilder builder) {}
   }
 
   private void assertGetRegisteredPipelineByName(
@@ -204,7 +184,7 @@ public class RegisteredPipelineServiceTest {
   }
 
   @Test
-  public void isScheduler() {
-    assertThat(registeredPipelineService.isScheduler()).isTrue();
+  public void isSchedules() {
+    assertThat(registeredPipelineService.isSchedules()).isTrue();
   }
 }

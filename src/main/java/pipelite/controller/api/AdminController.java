@@ -17,18 +17,23 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.metrics.MetricsEndpoint;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
-import pipelite.PipeliteApplication;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import pipelite.controller.api.info.AdminInfo;
 import pipelite.controller.utils.TimeUtils;
+import pipelite.manager.ProcessRunnerPoolManager;
 
 @RestController
 @RequestMapping(value = {"/api/admin"})
 @Tag(name = "AdministrationAPI", description = "Administration of pipelite services")
 public class AdminController {
 
-  @Autowired PipeliteApplication application;
+  @Autowired ProcessRunnerPoolManager processRunnerPoolManager;
+  @Autowired ConfigurableApplicationContext applicationContext;
   @Autowired MetricsEndpoint metricsEndpoint;
 
   @GetMapping("/uptime")
@@ -56,7 +61,7 @@ public class AdminController {
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
   public AdminInfo stop() {
-    new Thread(() -> application.stop()).start();
+    new Thread(() -> processRunnerPoolManager.stopPools()).start();
     return new AdminInfo("Stopping all pipelite services");
   }
 
@@ -69,7 +74,12 @@ public class AdminController {
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
   public AdminInfo kill() {
-    new Thread(() -> application.kill()).start();
+    new Thread(
+            () -> {
+              processRunnerPoolManager.terminateProcesses();
+              processRunnerPoolManager.stopPools();
+            })
+        .start();
     return new AdminInfo("Stopping all pipelite services and terminating all running processes");
   }
 
@@ -82,7 +92,13 @@ public class AdminController {
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
   public AdminInfo restart() {
-    new Thread(() -> application.restart()).start();
+    new Thread(
+            () -> {
+              processRunnerPoolManager.stopPools();
+              processRunnerPoolManager.createPools();
+              processRunnerPoolManager.startPools();
+            })
+        .start();
     return new AdminInfo("Restarting all pipelite services");
   }
 
@@ -95,7 +111,12 @@ public class AdminController {
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
   public AdminInfo shutDown() {
-    new Thread(() -> application.shutDown()).start();
+    new Thread(
+            () -> {
+              processRunnerPoolManager.stopPools();
+              applicationContext.close();
+            })
+        .start();
     return new AdminInfo("Shutting down all pipelite services");
   }
 }

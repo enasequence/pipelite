@@ -10,31 +10,19 @@
  */
 package pipelite.metrics;
 
-import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.ZonedDateTime;
-import pipelite.launcher.process.runner.ProcessRunnerResult;
 import pipelite.process.ProcessState;
-import tech.tablesaw.api.Table;
+import pipelite.runner.process.ProcessRunnerResult;
 
 public class PipelineMetrics {
 
   private final ProcessMetrics processMetrics;
   private final StageMetrics stageMetrics;
 
-  // Micrometer counters.
-
-  private final Counter internalErrorCounter;
-
-  // Time series.
-
-  private final Table internalErrorTimeSeries;
-
   public PipelineMetrics(String pipelineName, MeterRegistry meterRegistry) {
     processMetrics = new ProcessMetrics(pipelineName, meterRegistry);
     stageMetrics = new StageMetrics(pipelineName, meterRegistry);
-    internalErrorCounter = meterRegistry.counter("pipelite.error");
-    internalErrorTimeSeries = TimeSeriesMetrics.getEmptyTimeSeries(pipelineName);
   }
 
   public ProcessMetrics process() {
@@ -57,27 +45,5 @@ public class PipelineMetrics {
       processMetrics.incrementFailedCount(now);
     }
     stageMetrics.increment(result, now);
-  }
-
-  public double getInternalErrorCount() {
-    return internalErrorCounter.count();
-  }
-
-  public double getInternalErrorCount(ZonedDateTime since) {
-    return TimeSeriesMetrics.getCount(internalErrorTimeSeries, since);
-  }
-
-  public Table getInternalErrorTimeSeries() {
-    return internalErrorTimeSeries;
-  }
-
-  /** Increment internal error count. */
-  public void incrementInternalErrorCount() {
-    incrementInternalErrorCount(1, ZonedDateTime.now());
-  }
-
-  public void incrementInternalErrorCount(long count, ZonedDateTime now) {
-    internalErrorCounter.increment(count);
-    TimeSeriesMetrics.updateCounter(internalErrorTimeSeries, count, now);
   }
 }

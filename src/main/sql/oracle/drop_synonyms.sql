@@ -1,4 +1,3 @@
-drop public synonym pipelite2_launcher_lock;
 drop public synonym pipelite2_process;
 drop public synonym pipelite2_process_audit;
 drop public synonym pipelite2_process_lock;
@@ -7,3 +6,5 @@ drop public synonym pipelite2_schedule_audit;
 drop public synonym pipelite2_stage;
 drop public synonym pipelite2_stage_audit;
 drop public synonym pipelite2_stage_log;
+drop public synonym pipelite2_internal_error;
+drop public synonym pipelite2_service_lock;

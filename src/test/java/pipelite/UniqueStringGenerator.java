@@ -22,8 +22,8 @@ public class UniqueStringGenerator {
     return cls.getSimpleName() + "_pipeline_" + id();
   }
 
-  public static <T> String randomLauncherName(Class<T> cls) {
-    return cls.getSimpleName() + "_launcher_" + id();
+  public static <T> String randomProcessRunnerPoolName(Class<T> cls) {
+    return cls.getSimpleName() + "process_runner_pool_" + id();
   }
 
   public static <T> String randomProcessId(Class<T> cls) {

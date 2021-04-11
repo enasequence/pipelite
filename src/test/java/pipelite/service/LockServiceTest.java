@@ -23,29 +23,34 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import pipelite.PipeliteTestConfiguration;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.PipeliteTestConfigWithServices;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.ServiceLockEntity;
-import pipelite.lock.PipeliteLocker;
 import pipelite.time.Time;
 
 @SpringBootTest(
-    classes = PipeliteTestConfiguration.class,
-    properties = {"pipelite.advanced.lockDuration=15s"})
+    classes = PipeliteTestConfigWithServices.class,
+    properties = {
+      "pipelite.service.force=true",
+      "pipelite.service.name=LockServiceTest",
+      "pipelite.advanced.lockDuration=15s"
+    })
+@DirtiesContext
+@ActiveProfiles("test")
 public class LockServiceTest {
 
   private static final Duration LOCK_DURATION = Duration.ofSeconds(15);
 
-  @Autowired LockService service;
-
+  @Autowired LockService lockService;
   @Autowired DataSource dataSource;
 
   @Test
   public void testParallelLockProcess() throws Exception {
     String serviceName1 = UniqueStringGenerator.randomServiceName(LockServiceTest.class);
 
-    String lockId1 = PipeliteLocker.createLockId();
-    ServiceLockEntity serviceLock1 = LockService.lockService(service, serviceName1, lockId1);
+    ServiceLockEntity serviceLock1 = LockService.lockService(lockService, serviceName1);
 
     String pipelineName = UniqueStringGenerator.randomPipelineName(LockServiceTest.class);
     ExecutorService executorService = Executors.newFixedThreadPool(500);
@@ -54,7 +59,7 @@ public class LockServiceTest {
           () -> {
             assertThat(
                     LockService.lockProcess(
-                        service,
+                        lockService,
                         serviceLock1,
                         pipelineName,
                         UniqueStringGenerator.randomProcessId(LockServiceTest.class)))
@@ -70,37 +75,36 @@ public class LockServiceTest {
     String serviceName1 = UniqueStringGenerator.randomServiceName(LockServiceTest.class);
     String serviceName2 = UniqueStringGenerator.randomServiceName(LockServiceTest.class);
 
-    String lockId1 = PipeliteLocker.createLockId();
-    String lockId2 = PipeliteLocker.createLockId();
+    lockService.unlockService(serviceName1);
+    lockService.unlockService(serviceName2);
 
-    service.unlockService(serviceName1);
-    service.unlockService(serviceName2);
-
-    ServiceLockEntity serviceLock1 = LockService.lockService(service, serviceName1, lockId1);
-    ServiceLockEntity serviceLock2 = LockService.lockService(service, serviceName2, lockId2);
+    ServiceLockEntity serviceLock1 = LockService.lockService(lockService, serviceName1);
+    ServiceLockEntity serviceLock2 = LockService.lockService(lockService, serviceName2);
 
     assertThat(serviceLock1.getServiceName()).isEqualTo(serviceName1);
     assertThat(serviceLock1.getExpiry())
-        .isAfterOrEqualTo(ZonedDateTime.now().plus(service.getLockDuration()).minus(LOCK_DURATION));
+        .isAfterOrEqualTo(
+            ZonedDateTime.now().plus(lockService.getLockDuration()).minus(LOCK_DURATION));
 
     assertThat(serviceLock2.getServiceName()).isEqualTo(serviceName2);
     assertThat(serviceLock2.getExpiry())
-        .isAfterOrEqualTo(ZonedDateTime.now().plus(service.getLockDuration()).minus(LOCK_DURATION));
+        .isAfterOrEqualTo(
+            ZonedDateTime.now().plus(lockService.getLockDuration()).minus(LOCK_DURATION));
 
-    assertThat(service.isServiceLocked(serviceName1)).isTrue();
-    assertThat(service.isServiceLocked(serviceName2)).isTrue();
+    assertThat(lockService.isServiceLocked(serviceName1)).isTrue();
+    assertThat(lockService.isServiceLocked(serviceName2)).isTrue();
 
-    assertTrue(service.relockService(serviceLock1));
-    assertTrue(service.relockService(serviceLock2));
+    assertTrue(lockService.relockService(serviceLock1));
+    assertTrue(lockService.relockService(serviceLock2));
 
-    assertThat(service.isServiceLocked(serviceName1)).isTrue();
-    assertThat(service.isServiceLocked(serviceName2)).isTrue();
+    assertThat(lockService.isServiceLocked(serviceName1)).isTrue();
+    assertThat(lockService.isServiceLocked(serviceName2)).isTrue();
 
-    service.unlockService(serviceName1);
-    service.unlockService(serviceName2);
+    lockService.unlockService(serviceName1);
+    lockService.unlockService(serviceName2);
 
-    assertThat(service.isServiceLocked(serviceName1)).isFalse();
-    assertThat(service.isServiceLocked(serviceName2)).isFalse();
+    assertThat(lockService.isServiceLocked(serviceName1)).isFalse();
+    assertThat(lockService.isServiceLocked(serviceName2)).isFalse();
   }
 
   @Test
@@ -109,56 +113,53 @@ public class LockServiceTest {
     String serviceName1 = UniqueStringGenerator.randomServiceName(LockServiceTest.class);
     String serviceName2 = UniqueStringGenerator.randomServiceName(LockServiceTest.class);
 
-    service.unlockService(serviceName1);
-    service.unlockService(serviceName2);
+    lockService.unlockService(serviceName1);
+    lockService.unlockService(serviceName2);
 
-    String lockId1 = PipeliteLocker.createLockId();
-    String lockId2 = PipeliteLocker.createLockId();
+    ServiceLockEntity serviceLock1 = LockService.lockService(lockService, serviceName1);
+    ServiceLockEntity serviceLock2 = LockService.lockService(lockService, serviceName2);
 
-    ServiceLockEntity serviceLock1 = LockService.lockService(service, serviceName1, lockId1);
-    ServiceLockEntity serviceLock2 = LockService.lockService(service, serviceName2, lockId2);
+    assertTrue(LockService.lockProcess(lockService, serviceLock1, pipelineName, "1"));
+    assertTrue(lockService.isProcessLocked(pipelineName, "1"));
 
-    assertTrue(LockService.lockProcess(service, serviceLock1, pipelineName, "1"));
-    assertTrue(service.isProcessLocked(pipelineName, "1"));
+    assertTrue(LockService.lockProcess(lockService, serviceLock1, pipelineName, "2"));
+    assertTrue(lockService.isProcessLocked(pipelineName, "1"));
+    assertTrue(lockService.isProcessLocked(pipelineName, "2"));
 
-    assertTrue(LockService.lockProcess(service, serviceLock1, pipelineName, "2"));
-    assertTrue(service.isProcessLocked(pipelineName, "1"));
-    assertTrue(service.isProcessLocked(pipelineName, "2"));
+    assertTrue(lockService.unlockProcess(serviceLock1, pipelineName, "1"));
+    assertFalse(lockService.isProcessLocked(pipelineName, "1"));
+    assertTrue(lockService.isProcessLocked(pipelineName, "2"));
 
-    assertTrue(service.unlockProcess(serviceLock1, pipelineName, "1"));
-    assertFalse(service.isProcessLocked(pipelineName, "1"));
-    assertTrue(service.isProcessLocked(pipelineName, "2"));
+    assertTrue(LockService.lockProcess(lockService, serviceLock2, pipelineName, "3"));
+    assertFalse(lockService.isProcessLocked(pipelineName, "1"));
+    assertTrue(lockService.isProcessLocked(pipelineName, "2"));
+    assertTrue(lockService.isProcessLocked(pipelineName, "3"));
 
-    assertTrue(LockService.lockProcess(service, serviceLock2, pipelineName, "3"));
-    assertFalse(service.isProcessLocked(pipelineName, "1"));
-    assertTrue(service.isProcessLocked(pipelineName, "2"));
-    assertTrue(service.isProcessLocked(pipelineName, "3"));
+    assertTrue(LockService.lockProcess(lockService, serviceLock2, pipelineName, "4"));
+    assertFalse(lockService.isProcessLocked(pipelineName, "1"));
+    assertTrue(lockService.isProcessLocked(pipelineName, "2"));
+    assertTrue(lockService.isProcessLocked(pipelineName, "3"));
+    assertTrue(lockService.isProcessLocked(pipelineName, "4"));
 
-    assertTrue(LockService.lockProcess(service, serviceLock2, pipelineName, "4"));
-    assertFalse(service.isProcessLocked(pipelineName, "1"));
-    assertTrue(service.isProcessLocked(pipelineName, "2"));
-    assertTrue(service.isProcessLocked(pipelineName, "3"));
-    assertTrue(service.isProcessLocked(pipelineName, "4"));
+    assertTrue(lockService.unlockProcess(serviceLock2, pipelineName, "4"));
+    assertFalse(lockService.isProcessLocked(pipelineName, "1"));
+    assertTrue(lockService.isProcessLocked(pipelineName, "2"));
+    assertTrue(lockService.isProcessLocked(pipelineName, "3"));
+    assertFalse(lockService.isProcessLocked(pipelineName, "4"));
 
-    assertTrue(service.unlockProcess(serviceLock2, pipelineName, "4"));
-    assertFalse(service.isProcessLocked(pipelineName, "1"));
-    assertTrue(service.isProcessLocked(pipelineName, "2"));
-    assertTrue(service.isProcessLocked(pipelineName, "3"));
-    assertFalse(service.isProcessLocked(pipelineName, "4"));
+    lockService.unlockProcesses(serviceName1);
 
-    service.unlockProcesses(serviceName1);
+    assertFalse(lockService.isProcessLocked(pipelineName, "1"));
+    assertFalse(lockService.isProcessLocked(pipelineName, "2"));
+    assertTrue(lockService.isProcessLocked(pipelineName, "3"));
+    assertFalse(lockService.isProcessLocked(pipelineName, "4"));
 
-    assertFalse(service.isProcessLocked(pipelineName, "1"));
-    assertFalse(service.isProcessLocked(pipelineName, "2"));
-    assertTrue(service.isProcessLocked(pipelineName, "3"));
-    assertFalse(service.isProcessLocked(pipelineName, "4"));
+    lockService.unlockProcesses(serviceName2);
 
-    service.unlockProcesses(serviceName2);
-
-    assertFalse(service.isProcessLocked(pipelineName, "1"));
-    assertFalse(service.isProcessLocked(pipelineName, "2"));
-    assertFalse(service.isProcessLocked(pipelineName, "3"));
-    assertFalse(service.isProcessLocked(pipelineName, "4"));
+    assertFalse(lockService.isProcessLocked(pipelineName, "1"));
+    assertFalse(lockService.isProcessLocked(pipelineName, "2"));
+    assertFalse(lockService.isProcessLocked(pipelineName, "3"));
+    assertFalse(lockService.isProcessLocked(pipelineName, "4"));
   }
 
   // Test fails if the lock is not created and checked for the first time within the lock duration.
@@ -166,26 +167,23 @@ public class LockServiceTest {
   public void testRemoveExpiredServiceLock() {
     String serviceName1 = UniqueStringGenerator.randomServiceName(LockServiceTest.class);
 
-    service.unlockService(serviceName1);
+    lockService.unlockService(serviceName1);
 
-    String lockId1 = PipeliteLocker.createLockId();
-    String lockId2 = PipeliteLocker.createLockId();
-
-    ServiceLockEntity serviceLockEntity1 = LockService.lockService(service, serviceName1, lockId1);
+    ServiceLockEntity serviceLockEntity1 = LockService.lockService(lockService, serviceName1);
     assertThat(serviceLockEntity1).isNotNull();
-    assertThat(service.isServiceLocked(serviceName1)).isTrue();
+    assertThat(lockService.isServiceLocked(serviceName1)).isTrue();
 
     // Expired lock will not be removed.
-    ServiceLockEntity serviceLockEntity2 = LockService.lockService(service, serviceName1, lockId2);
+    ServiceLockEntity serviceLockEntity2 = LockService.lockService(lockService, serviceName1);
     assertThat(serviceLockEntity2).isNull();
-    assertThat(service.isServiceLocked(serviceName1)).isTrue();
+    assertThat(lockService.isServiceLocked(serviceName1)).isTrue();
 
-    Time.wait(service.getLockDuration());
+    Time.wait(lockService.getLockDuration());
 
     // Expired lock will be removed.
-    ServiceLockEntity serviceLockEntity3 = LockService.lockService(service, serviceName1, lockId2);
+    ServiceLockEntity serviceLockEntity3 = LockService.lockService(lockService, serviceName1);
     assertThat(serviceLockEntity3).isNotNull();
-    assertThat(service.isServiceLocked(serviceName1)).isTrue();
+    assertThat(lockService.isServiceLocked(serviceName1)).isTrue();
     assertThat(serviceLockEntity3.getExpiry()).isAfter(serviceLockEntity1.getExpiry());
   }
 
@@ -195,39 +193,40 @@ public class LockServiceTest {
     String serviceName1 = UniqueStringGenerator.randomServiceName(LockServiceTest.class);
     String serviceName2 = UniqueStringGenerator.randomServiceName(LockServiceTest.class);
 
-    service.unlockService(serviceName1);
-    service.unlockService(serviceName2);
+    lockService.unlockService(serviceName1);
+    lockService.unlockService(serviceName2);
 
-    assertThat(service.isServiceLocked(serviceName1)).isFalse();
-    assertThat(service.isServiceLocked(serviceName2)).isFalse();
+    assertThat(lockService.isServiceLocked(serviceName1)).isFalse();
+    assertThat(lockService.isServiceLocked(serviceName2)).isFalse();
 
-    String lockId1 = PipeliteLocker.createLockId();
-    String lockId2 = PipeliteLocker.createLockId();
+    ServiceLockEntity serviceLock1 = LockService.lockService(lockService, serviceName1);
+    ServiceLockEntity serviceLock2 = LockService.lockService(lockService, serviceName2);
 
-    ServiceLockEntity serviceLock1 = LockService.lockService(service, serviceName1, lockId1);
-    ServiceLockEntity serviceLock2 = LockService.lockService(service, serviceName2, lockId2);
-
-    assertThat(service.isServiceLocked(serviceName1)).isTrue();
-    assertThat(service.isServiceLocked(serviceName2)).isTrue();
+    assertThat(lockService.isServiceLocked(serviceName1)).isTrue();
+    assertThat(lockService.isServiceLocked(serviceName2)).isTrue();
 
     String processId = "1";
 
-    assertThat(service.isProcessLocked(pipelineName, processId)).isFalse();
-    assertThat(LockService.lockProcess(service, serviceLock1, pipelineName, processId)).isTrue();
-    assertThat(LockService.lockProcess(service, serviceLock2, pipelineName, processId)).isFalse();
-    assertThat(service.isProcessLocked(pipelineName, processId)).isTrue();
+    assertThat(lockService.isProcessLocked(pipelineName, processId)).isFalse();
+    assertThat(LockService.lockProcess(lockService, serviceLock1, pipelineName, processId))
+        .isTrue();
+    assertThat(LockService.lockProcess(lockService, serviceLock2, pipelineName, processId))
+        .isFalse();
+    assertThat(lockService.isProcessLocked(pipelineName, processId)).isTrue();
 
     // Expired lock will not be removed.
-    assertThat(LockService.lockProcess(service, serviceLock2, pipelineName, processId)).isFalse();
-    assertThat(service.isProcessLocked(pipelineName, processId)).isTrue();
+    assertThat(LockService.lockProcess(lockService, serviceLock2, pipelineName, processId))
+        .isFalse();
+    assertThat(lockService.isProcessLocked(pipelineName, processId)).isTrue();
 
-    Time.wait(service.getLockDuration());
+    Time.wait(lockService.getLockDuration());
 
     // Renew lock.
-    service.relockService(serviceLock2);
+    lockService.relockService(serviceLock2);
 
     // Expired lock will be removed.
-    assertThat(LockService.lockProcess(service, serviceLock2, pipelineName, processId)).isTrue();
-    assertThat(service.isProcessLocked(pipelineName, processId)).isTrue();
+    assertThat(LockService.lockProcess(lockService, serviceLock2, pipelineName, processId))
+        .isTrue();
+    assertThat(lockService.isProcessLocked(pipelineName, processId)).isTrue();
   }
 }

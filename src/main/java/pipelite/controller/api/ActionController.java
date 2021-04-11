@@ -23,22 +23,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import pipelite.RegisteredPipeline;
-import pipelite.process.Process;
-import pipelite.process.builder.ProcessBuilder;
-import pipelite.service.ProcessService;
-import pipelite.service.RegisteredPipelineService;
+import pipelite.service.RetryService;
 
 @RestController
 @RequestMapping(value = {"/api/action"})
 @Tag(name = "ActionAPI", description = "Processing actions")
 public class ActionController {
-  @Autowired RegisteredPipelineService registeredPipelineService;
-  @Autowired private ProcessService processService;
+
+  @Autowired private RetryService retryService;
 
   @Value
   @Builder
-  public static class ProcessStateChangeResult {
+  public static class RetryResult {
     private final String pipelineName;
     private final String processId;
     private final boolean success;
@@ -54,62 +50,24 @@ public class ActionController {
         @ApiResponse(responseCode = "400", description = "Error"),
         @ApiResponse(responseCode = "500", description = "Internal Server error")
       })
-  public ResponseEntity<List<ProcessStateChangeResult>> retry(
+  public ResponseEntity<List<RetryResult>> retry(
       @PathVariable(value = "pipelineName") String pipelineName,
       @PathVariable(value = "processIds") List<String> processIds) {
-    List<ProcessStateChangeResult> result =
-        changeProcessState(
-            pipelineName, processIds, (process) -> processService.retry(pipelineName, process));
+    List<RetryResult> result =
+        retry(pipelineName, processIds, (processId) -> retryService.retry(pipelineName, processId));
     boolean isError = result.stream().anyMatch(s -> !s.isSuccess());
     return new ResponseEntity<>(result, isError ? HttpStatus.BAD_REQUEST : HttpStatus.OK);
   }
 
-  @PutMapping("/process/rerun/{pipelineName}/{processIds}/{stageName}")
-  @ResponseStatus(HttpStatus.OK)
-  @Operation(description = "Rerun previously executed stages")
-  @ApiResponses(
-      value = {
-        @ApiResponse(responseCode = "200", description = "OK"),
-        @ApiResponse(responseCode = "400", description = "Error"),
-        @ApiResponse(responseCode = "500", description = "Internal Server error")
-      })
-  public ResponseEntity<List<ProcessStateChangeResult>> rerun(
-      @PathVariable(value = "pipelineName") String pipelineName,
-      @PathVariable(value = "processIds") List<String> processIds,
-      @PathVariable(value = "stageName") String stageName) {
-    List<ProcessStateChangeResult> result =
-        changeProcessState(
-            pipelineName,
-            processIds,
-            (process) -> processService.rerun(pipelineName, stageName, process));
-    boolean isError = result.stream().anyMatch(s -> !s.isSuccess());
-    return new ResponseEntity<>(result, isError ? HttpStatus.BAD_REQUEST : HttpStatus.OK);
-  }
-
-  private List<ProcessStateChangeResult> changeProcessState(
-      String pipelineName, List<String> processIds, Consumer<Process> action) {
-    List<ProcessStateChangeResult> result = new ArrayList<>();
-
-    RegisteredPipeline registeredPipeline;
-    try {
-      registeredPipeline = registeredPipelineService.getRegisteredPipeline(pipelineName);
-    } catch (Exception ex) {
-      for (String processId : processIds) {
-        ProcessStateChangeResult.ProcessStateChangeResultBuilder resultBuilder =
-            ProcessStateChangeResult.builder().pipelineName(pipelineName).processId(processId);
-        result.add(resultBuilder.success(false).message(ex.getMessage()).build());
-      }
-      return result;
-    }
+  private List<RetryResult> retry(
+      String pipelineName, List<String> processIds, Consumer<String> action) {
+    List<RetryResult> result = new ArrayList<>();
 
     for (String processId : processIds) {
-      ProcessBuilder processBuilder = new ProcessBuilder(processId);
-      registeredPipeline.configureProcess(processBuilder);
-      Process process = processBuilder.build();
-      ProcessStateChangeResult.ProcessStateChangeResultBuilder resultBuilder =
-          ProcessStateChangeResult.builder().pipelineName(pipelineName).processId(processId);
+      RetryResult.RetryResultBuilder resultBuilder =
+          RetryResult.builder().pipelineName(pipelineName).processId(processId);
       try {
-        action.accept(process);
+        action.accept(processId);
         result.add(resultBuilder.success(true).message("").build());
       } catch (Exception ex) {
         result.add(resultBuilder.success(false).message(ex.getMessage()).build());
