@@ -10,12 +10,6 @@
  */
 package pipelite.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +42,13 @@ import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.time.Time;
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithManager.class,
@@ -293,7 +294,7 @@ class RetryServiceTest {
     String cron = testSchedule.cron();
     scheduleService.createSchedule(serviceName, SCHEDULE_NAME, cron);
     ScheduleEntity scheduleEntity = scheduleService.startExecution(SCHEDULE_NAME, processId);
-    ZonedDateTime nextTime = CronUtils.launchTime(cron, scheduleEntity.getNextTime());
+    ZonedDateTime nextTime = CronUtils.launchTime(cron, ZonedDateTime.now().plusHours(1));
     scheduleEntity = scheduleService.endExecution(processEntity, nextTime);
 
     assertThat(scheduleEntity.isFailed()).isTrue();
@@ -311,6 +312,8 @@ class RetryServiceTest {
     // Check schedule state
     assertSetupSchedule(serviceName, SCHEDULE_NAME, processId, cron, nextTime);
 
+    ZonedDateTime retryTime = ZonedDateTime.now();
+
     // Retry
     retryService.retry(SCHEDULE_NAME, processId);
 
@@ -321,7 +324,7 @@ class RetryServiceTest {
     }
 
     // Check schedule state
-    assertRetriedSchedule(serviceName, SCHEDULE_NAME, processId, cron, nextTime);
+    assertRetriedSchedule(serviceName, SCHEDULE_NAME, processId, cron, retryTime);
 
     // Check process state
     processEntity = processService.getSavedProcess(SCHEDULE_NAME, processId).get();
