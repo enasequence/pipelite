@@ -86,13 +86,22 @@ public abstract class CronUtils {
    * Returns the next launch time or null if the cron expression is not valid.
    *
    * @param cron the cron expression
+   * @param startTime previous execution start time
    * @return the next launch time or null if the cron expression is not valid
    */
-  public static ZonedDateTime launchTime(String cron) {
+  public static ZonedDateTime launchTime(String cron, ZonedDateTime startTime) {
     if (!validate(cron)) {
       return null;
     }
     ExecutionTime executionTime = ExecutionTime.forCron(parse(cron));
+
+    if (startTime != null) {
+      ZonedDateTime now = ZonedDateTime.now();
+      Optional<ZonedDateTime> next = executionTime.nextExecution(startTime);
+      if (next.isPresent() && next.get().isAfter(now)) {
+        return next.get();
+      }
+    }
     Optional<ZonedDateTime> next = executionTime.nextExecution(ZonedDateTime.now());
     if (next.isPresent()) {
       return next.get();

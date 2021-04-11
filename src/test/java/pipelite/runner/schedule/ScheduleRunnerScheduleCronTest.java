@@ -46,7 +46,7 @@ public class ScheduleRunnerScheduleCronTest {
     // Enable.
     ZonedDateTime first = ZonedDateTime.now();
 
-    scheduleCron.setLaunchTime(CronUtils.launchTime(scheduleCron.getCron()));
+    scheduleCron.setLaunchTime(CronUtils.launchTime(scheduleCron.getCron(), null));
 
     assertThat(scheduleCron.getPipelineName()).isEqualTo(pipelineName);
     assertThat(scheduleCron.isExecutable()).isFalse();
@@ -77,7 +77,7 @@ public class ScheduleRunnerScheduleCronTest {
     // Enable.
     ZonedDateTime second = ZonedDateTime.now();
 
-    scheduleCron.setLaunchTime(CronUtils.launchTime(scheduleCron.getCron()));
+    scheduleCron.setLaunchTime(CronUtils.launchTime(scheduleCron.getCron(), null));
 
     assertThat(scheduleCron.getPipelineName()).isEqualTo(pipelineName);
     assertThat(scheduleCron.isExecutable()).isFalse();

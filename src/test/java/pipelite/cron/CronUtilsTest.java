@@ -13,6 +13,7 @@ package pipelite.cron;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.Test;
 
 public class CronUtilsTest {
@@ -37,9 +38,25 @@ public class CronUtilsTest {
   }
 
   @Test
-  public void testLaunchTime() {
-    assertThat(CronUtils.launchTime("00 11 * * *").getHour()).isEqualTo(11);
-    assertThat(CronUtils.launchTime("00 11 * * *").isAfter(ZonedDateTime.now()));
-    assertThat(CronUtils.launchTime("00 11 * * *").isBefore(ZonedDateTime.now().plusDays(1)));
+  public void testStandardCronLaunchTime() {
+    // at minute
+    assertThat(CronUtils.launchTime("1 * * * *", null).getMinute()).isEqualTo(1);
+    assertThat(CronUtils.launchTime("1 * * * *", null).isAfter(ZonedDateTime.now()));
+    assertThat(CronUtils.launchTime("1 * * * *", null).isBefore(ZonedDateTime.now().plusHours(1)));
+
+    // at hour
+    assertThat(CronUtils.launchTime("0 1 * * *", null).getHour()).isEqualTo(1);
+    assertThat(CronUtils.launchTime("0 1 * * *", null).isAfter(ZonedDateTime.now()));
+    assertThat(CronUtils.launchTime("0 1 * * *", null).isBefore(ZonedDateTime.now().plusDays(1)));
+
+    // every hour
+    ZonedDateTime now = ZonedDateTime.now();
+    ZonedDateTime nowTruncatedToSeconds = now.truncatedTo(ChronoUnit.SECONDS);
+    assertThat(CronUtils.launchTime("0 */1 * * *", null))
+        .isBetween(nowTruncatedToSeconds, nowTruncatedToSeconds.plusHours(1));
+    assertThat(CronUtils.launchTime("0 */1 * * *", nowTruncatedToSeconds.plusHours(1)))
+        .isBetween(nowTruncatedToSeconds.plusHours(1), nowTruncatedToSeconds.plusHours(2));
+    assertThat(CronUtils.launchTime("0 */1 * * *", nowTruncatedToSeconds.plusHours(2)))
+        .isBetween(nowTruncatedToSeconds.plusHours(2), nowTruncatedToSeconds.plusHours(3));
   }
 }

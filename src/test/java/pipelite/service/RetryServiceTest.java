@@ -13,6 +13,10 @@ package pipelite.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,25 +26,36 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
-import pipelite.PipeliteTestConfigWithServices;
+import pipelite.PipeliteTestConfigWithManager;
+import pipelite.PipeliteTestConstants;
 import pipelite.RegisteredPipeline;
 import pipelite.UniqueStringGenerator;
+import pipelite.cron.CronUtils;
 import pipelite.entity.ProcessEntity;
+import pipelite.entity.ScheduleEntity;
 import pipelite.entity.StageEntity;
 import pipelite.exception.PipeliteRetryException;
 import pipelite.helper.PipelineTestHelper;
+import pipelite.helper.ScheduleTestHelper;
+import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.runner.schedule.ScheduleRunner;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
+import pipelite.time.Time;
 
 @SpringBootTest(
-    classes = PipeliteTestConfigWithServices.class,
-    properties = {"pipelite.service.force=true", "pipelite.service.name=RetryServiceTest"})
+    classes = PipeliteTestConfigWithManager.class,
+    properties = {
+      "pipelite.advanced.processRunnerFrequency=250ms",
+      "pipelite.service.force=true",
+      "pipelite.service.name=RetryServiceTest"
+    })
 @DirtiesContext
 @ActiveProfiles({"test", "RetryServiceTest"})
 @Transactional
@@ -48,24 +63,53 @@ class RetryServiceTest {
 
   private static final String PIPELINE_NAME =
       UniqueStringGenerator.randomPipelineName(RetryServiceTest.class);
+  private static final String SCHEDULE_NAME =
+      UniqueStringGenerator.randomPipelineName(RetryServiceTest.class);
+
   private static final String STAGE_NAME = "STAGE";
 
   @Autowired RegisteredPipelineService registeredPipelineService;
+  @Autowired ProcessRunnerPoolManager processRunnerPoolManager;
   @Autowired RetryService retryService;
+  @Autowired ScheduleService scheduleService;
   @Autowired ProcessService processService;
   @Autowired StageService stageService;
+  @Autowired RunnerService runnerService;
+
+  @Autowired TestSchedule testSchedule;
 
   @Profile("RetryServiceTest")
   @TestConfiguration
   static class TestConfig {
-    @Bean("failedPipeline")
-    public FailedPipeline failedPipeline() {
-      return new FailedPipeline();
+    @Bean
+    public TestSchedule testSchedule() {
+      return new TestSchedule();
+    }
+
+    @Bean
+    public TestPipeline testPipeline() {
+      return new TestPipeline();
     }
   }
 
-  public static class FailedPipeline extends PipelineTestHelper {
-    public FailedPipeline() {
+  public static class TestSchedule extends ScheduleTestHelper {
+    public TestSchedule() {
+      super(SCHEDULE_NAME);
+    }
+
+    @Override
+    protected String _configureCron() {
+      return PipeliteTestConstants.CRON_EVERY_HOUR;
+    }
+
+    @Override
+    protected void _configureProcess(ProcessBuilder builder) {
+      builder.execute(STAGE_NAME).withCallExecutor().build();
+    }
+  }
+
+  public static class TestPipeline extends PipelineTestHelper {
+    public TestPipeline() {
       super(PIPELINE_NAME);
     }
 
@@ -85,6 +129,13 @@ class RetryServiceTest {
     }
   }
 
+  @AfterEach
+  public void clean() {
+    ScheduleEntity scheduleEntity = new ScheduleEntity();
+    scheduleEntity.setPipelineName(SCHEDULE_NAME);
+    scheduleService.delete(scheduleEntity);
+  }
+
   @Test
   public void retryFailedProcess() {
     String processId = UniqueStringGenerator.randomProcessId(this.getClass());
@@ -92,48 +143,29 @@ class RetryServiceTest {
         registeredPipelineService.getRegisteredPipeline(PIPELINE_NAME);
     Process process = ProcessFactory.create(processId, registeredPipeline);
 
-    // Save failed process
+    // Failed process
     process.setProcessEntity(processService.createExecution(PIPELINE_NAME, processId, 1));
     processService.startExecution(process.getProcessEntity());
-    processService.endExecution(process, ProcessState.FAILED);
+    ProcessEntity processEntity = processService.endExecution(process, ProcessState.FAILED);
 
-    // Check failed process
-    ProcessEntity processEntity = processService.getSavedProcess(PIPELINE_NAME, processId).get();
-    assertThat(processEntity.getPipelineName()).isEqualTo(PIPELINE_NAME);
-    assertThat(processEntity.getProcessId()).isEqualTo(processId);
-    assertThat(processEntity.getPriority()).isEqualTo(1);
-    assertThat(processEntity.getExecutionCount()).isEqualTo(1);
-    assertThat(processEntity.getStartTime()).isNotNull();
-    assertThat(processEntity.getEndTime()).isNotNull();
-    assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.FAILED);
-
-    // Save failed stage
+    // Failed stage
     Stage stage = process.getStage(STAGE_NAME).get();
     stage.setStageEntity(stageService.createExecution(PIPELINE_NAME, processId, stage));
     stageService.startExecution(stage);
-    stageService.endExecution(stage, StageExecutorResult.error());
+    StageEntity stageEntity = stageService.endExecution(stage, StageExecutorResult.error());
 
-    // Check failed stage
-    StageEntity stageEntity =
-        stageService.getSavedStage(PIPELINE_NAME, processId, STAGE_NAME).get();
-    assertThat(stageEntity.getPipelineName()).isEqualTo(PIPELINE_NAME);
-    assertThat(stageEntity.getProcessId()).isEqualTo(processId);
-    assertThat(stageEntity.getStageName()).isEqualTo(STAGE_NAME);
-    assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
+    assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.FAILED);
     assertThat(stageEntity.getStageState()).isEqualTo(StageState.ERROR);
-    assertThat(stageEntity.getStartTime()).isNotNull();
-    assertThat(stageEntity.getEndTime()).isNotNull();
 
     // Retry
     retryService.retry(PIPELINE_NAME, processId);
 
+    // Check process state
     processEntity = processService.getSavedProcess(PIPELINE_NAME, processId).get();
     assertThat(processEntity.getPipelineName()).isEqualTo(PIPELINE_NAME);
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
-    assertThat(processEntity.getPriority()).isEqualTo(1);
-    assertThat(processEntity.getExecutionCount()).isEqualTo(1);
     assertThat(processEntity.getStartTime()).isNotNull();
-    assertThat(processEntity.getEndTime()).isNull(); // Made null
+    assertThat(processEntity.getEndTime()).isNull();
     assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.ACTIVE);
 
     // Check stage state
@@ -141,10 +173,9 @@ class RetryServiceTest {
     assertThat(stageEntity.getPipelineName()).isEqualTo(PIPELINE_NAME);
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageEntity.getStageName()).isEqualTo(STAGE_NAME);
-    assertThat(stageEntity.getExecutionCount()).isEqualTo(0); // Made 0
     assertThat(stageEntity.getStageState()).isEqualTo(StageState.PENDING);
-    assertThat(stageEntity.getStartTime()).isNull(); // Made null
-    assertThat(stageEntity.getEndTime()).isNull(); // Made null
+    assertThat(stageEntity.getStartTime()).isNull();
+    assertThat(stageEntity.getEndTime()).isNull();
   }
 
   @Test
@@ -194,7 +225,7 @@ class RetryServiceTest {
   }
 
   @Test
-  public void retryFailedProcessThrowsBecauseNoPermanenentlyFailedStages() {
+  public void retryFailedProcessNoPermanentlyFailedStages() {
     String processId = UniqueStringGenerator.randomProcessId(this.getClass());
     RegisteredPipeline registeredPipeline =
         registeredPipelineService.getRegisteredPipeline(PIPELINE_NAME);
@@ -234,5 +265,129 @@ class RetryServiceTest {
 
     // Check that stage state is unchanged
     stageEntity.equals(stageService.getSavedStage(PIPELINE_NAME, processId, STAGE_NAME).get());
+  }
+
+  @Test
+  public void retryFailedSchedule() {
+    String serviceName = UniqueStringGenerator.randomServiceName(ScheduleServiceTest.class);
+    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    RegisteredPipeline registeredPipeline =
+        registeredPipelineService.getRegisteredPipeline(SCHEDULE_NAME);
+    Process process = ProcessFactory.create(processId, registeredPipeline);
+
+    // Failed process
+    process.setProcessEntity(processService.createExecution(SCHEDULE_NAME, processId, 1));
+    processService.startExecution(process.getProcessEntity());
+    ProcessEntity processEntity = processService.endExecution(process, ProcessState.FAILED);
+
+    // Failed stage
+    Stage stage = process.getStage(STAGE_NAME).get();
+    stage.setStageEntity(stageService.createExecution(SCHEDULE_NAME, processId, stage));
+    stageService.startExecution(stage);
+    StageEntity stageEntity = stageService.endExecution(stage, StageExecutorResult.error());
+
+    assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.FAILED);
+    assertThat(stageEntity.getStageState()).isEqualTo(StageState.ERROR);
+
+    // Failed schedule
+    String cron = testSchedule.cron();
+    scheduleService.createSchedule(serviceName, SCHEDULE_NAME, cron);
+    ScheduleEntity scheduleEntity = scheduleService.startExecution(SCHEDULE_NAME, processId);
+    ZonedDateTime nextTime = CronUtils.launchTime(cron, scheduleEntity.getNextTime());
+    scheduleEntity = scheduleService.endExecution(processEntity, nextTime);
+
+    assertThat(scheduleEntity.isFailed()).isTrue();
+
+    // Create schedule runner
+    processRunnerPoolManager._createScheduleRunner();
+
+    ScheduleRunner scheduleRunner = runnerService.getScheduleRunner();
+    scheduleRunner.setMaximumExecutions(SCHEDULE_NAME, 1);
+    assertThat(scheduleRunner.getScheduleCrons().size()).isOne();
+    assertThat(scheduleRunner.getScheduleCrons().get(0).getPipelineName()).isEqualTo(SCHEDULE_NAME);
+
+    scheduleRunner.startUp();
+
+    // Check schedule state
+    assertSetupSchedule(serviceName, SCHEDULE_NAME, processId, cron, nextTime);
+
+    // Retry
+    retryService.retry(SCHEDULE_NAME, processId);
+
+    scheduleRunner.runOneIteration();
+
+    while (scheduleRunner.getActiveProcessCount() > 0) {
+      Time.wait(Duration.ofMillis(100));
+    }
+
+    // Check schedule state
+    assertRetriedSchedule(serviceName, SCHEDULE_NAME, processId, cron, nextTime);
+
+    // Check process state
+    processEntity = processService.getSavedProcess(SCHEDULE_NAME, processId).get();
+    assertThat(processEntity.getPipelineName()).isEqualTo(SCHEDULE_NAME);
+    assertThat(processEntity.getProcessId()).isEqualTo(processId);
+    assertThat(processEntity.getStartTime()).isNotNull();
+    assertThat(processEntity.getEndTime()).isNotNull();
+    assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.COMPLETED);
+
+    // Check stage state
+    stageEntity = stageService.getSavedStage(SCHEDULE_NAME, processId, STAGE_NAME).get();
+    assertThat(stageEntity.getPipelineName()).isEqualTo(SCHEDULE_NAME);
+    assertThat(stageEntity.getProcessId()).isEqualTo(processId);
+    assertThat(stageEntity.getStageName()).isEqualTo(STAGE_NAME);
+    assertThat(stageEntity.getStageState()).isEqualTo(StageState.SUCCESS);
+    assertThat(stageEntity.getStartTime()).isNotNull();
+    assertThat(stageEntity.getEndTime()).isNotNull();
+  }
+
+  private void assertSetupSchedule(
+      String serviceName,
+      String pipelineName,
+      String processId,
+      String cron,
+      ZonedDateTime nextTime) {
+    // Failed
+    ScheduleEntity s = scheduleService.getSavedSchedule(pipelineName).get();
+    assertThat(s.getServiceName()).isEqualTo(serviceName);
+    assertThat(s.getPipelineName()).isEqualTo(pipelineName);
+    assertThat(s.getCron()).isEqualTo(cron);
+    assertThat(s.getDescription()).isEqualTo(CronUtils.describe(cron));
+    assertThat(s.getExecutionCount()).isEqualTo(1);
+    assertThat(s.getNextTime()).isEqualTo(nextTime.truncatedTo(ChronoUnit.SECONDS));
+    assertThat(s.getStartTime()).isNotNull();
+    assertThat(s.getEndTime()).isNotNull();
+    assertThat(s.getLastCompleted()).isNull();
+    assertThat(s.getLastFailed()).isNotNull();
+    assertThat(s.getStreakCompleted()).isEqualTo(0);
+    assertThat(s.getStreakFailed()).isEqualTo(1);
+    assertThat(s.getProcessId()).isEqualTo(processId);
+    assertThat(s.isFailed()).isEqualTo(true);
+    assertThat(s.isActive()).isEqualTo(false);
+  }
+
+  private void assertRetriedSchedule(
+      String serviceName,
+      String pipelineName,
+      String processId,
+      String cron,
+      ZonedDateTime nextTime) {
+    // Success
+    ScheduleEntity s = scheduleService.getSavedSchedule(pipelineName).get();
+    assertThat(s.getServiceName()).isEqualTo(serviceName);
+    assertThat(s.getPipelineName()).isEqualTo(pipelineName);
+    assertThat(s.getCron()).isEqualTo(cron);
+    assertThat(s.getDescription()).isEqualTo(CronUtils.describe(cron));
+    assertThat(s.getExecutionCount()).isEqualTo(2);
+    assertThat(s.getNextTime()).isAfterOrEqualTo(nextTime.truncatedTo(ChronoUnit.SECONDS));
+    assertThat(s.getStartTime()).isNotNull();
+    assertThat(s.getEndTime()).isNotNull();
+    assertThat(s.getLastCompleted()).isNotNull();
+    assertThat(s.getLastFailed()).isNotNull();
+    assertThat(s.getStreakCompleted()).isEqualTo(1);
+    assertThat(s.getStreakFailed()).isEqualTo(0);
+    assertThat(s.getProcessId()).isEqualTo(processId);
+    assertThat(s.isFailed()).isEqualTo(false);
+    assertThat(s.isActive()).isEqualTo(false);
   }
 }

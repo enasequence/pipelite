@@ -101,7 +101,7 @@ public class ScheduleRunner extends ProcessRunnerPool {
   }
 
   @Override
-  protected void startUp() {
+  public void startUp() {
     super.startUp();
     initSchedules();
     resumeSchedules();
@@ -256,7 +256,9 @@ public class ScheduleRunner extends ProcessRunnerPool {
           pipelineName,
           process,
           (p, r) -> {
-            ZonedDateTime nextLaunchTime = CronUtils.launchTime(scheduleCron.getCron());
+            ScheduleEntity scheduleEntity = scheduleService.getSavedSchedule(pipelineName).get();
+            ZonedDateTime nextLaunchTime =
+                CronUtils.launchTime(scheduleCron.getCron(), scheduleEntity.getStartTime());
             try {
               scheduleService.endExecution(processEntity, nextLaunchTime);
             } catch (Exception ex) {

@@ -74,7 +74,8 @@ public class ScheduleService {
   }
 
   public ScheduleEntity scheduleExecution(ScheduleEntity scheduleEntity) {
-    scheduleEntity.setNextTime(CronUtils.launchTime(scheduleEntity.getCron()));
+    scheduleEntity.setNextTime(
+        CronUtils.launchTime(scheduleEntity.getCron(), scheduleEntity.getStartTime()));
     return saveSchedule(scheduleEntity);
   }
 

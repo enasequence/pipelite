@@ -95,8 +95,8 @@ public class RegisteredPipelineServiceTest {
 
   public static class TestSchedule extends ScheduleTestHelper {
     @Override
-    protected int _configureSeconds() {
-      return 5;
+    protected String _configureCron() {
+      return PipeliteTestConstants.CRON_EVERY_TWO_SECONDS;
     }
 
     @Override

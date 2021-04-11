@@ -96,7 +96,8 @@ public class RegisteredScheduleService {
                     savedScheduleEntity.setServiceName(serviceName);
                     if (!savedScheduleEntity.isActive()) {
                       savedScheduleEntity.setNextTime(
-                          CronUtils.launchTime(savedScheduleEntity.getCron()));
+                          CronUtils.launchTime(
+                              savedScheduleEntity.getCron(), savedScheduleEntity.getStartTime()));
                     }
                     scheduleService.saveSchedule(savedScheduleEntity);
                   } catch (Exception ex) {

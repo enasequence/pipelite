@@ -265,9 +265,9 @@ public class ProcessService {
    *
    * @param processEntity the process
    */
-  public void startExecution(ProcessEntity processEntity) {
+  public ProcessEntity startExecution(ProcessEntity processEntity) {
     processEntity.startExecution();
-    saveProcess(processEntity);
+    return saveProcess(processEntity);
   }
 
   /**
@@ -277,11 +277,12 @@ public class ProcessService {
    * @param process the process
    * @param processState the process state
    */
-  public void endExecution(Process process, ProcessState processState) {
+  public ProcessEntity endExecution(Process process, ProcessState processState) {
     ProcessEntity processEntity = process.getProcessEntity();
     processEntity.endExecution(processState);
-    saveProcess(processEntity);
+    ProcessEntity savedProcess = saveProcess(processEntity);
     mailService.sendProcessExecutionMessage(process);
+    return savedProcess;
   }
 
   /**

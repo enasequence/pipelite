@@ -76,35 +76,13 @@ public class ProcessRunnerPoolManager {
   public synchronized void createPools() {
     log.atInfo().log("Creating process runner pools");
 
-    if (state != State.STOPPED) {
-      log.atWarning().log(
-          "Failed to create process runner pools because manager state is not stopped");
-      return;
-    }
-
     try {
-      // Create process runner pools for pipelines.
-      for (Pipeline pipeline :
-          pipeliteServices.registeredPipeline().getRegisteredPipelines(Pipeline.class)) {
-        PipelineRunner pipelineRunner = createPipelineRunner(pipeline.pipelineName());
-        log.atInfo().log("Creating process runner pool for pipeline: " + pipeline.pipelineName());
-        pipeliteServices.runner().addPipelineRunner(pipelineRunner);
-        pools.add(pipelineRunner);
-      }
-
-      // Create process runner pools for schedules.
-      if (pipeliteServices.registeredPipeline().isSchedules()) {
-        ScheduleRunner scheduleRunner =
-            createScheduler(
-                pipeliteServices.registeredPipeline().getRegisteredPipelines(Schedule.class));
-        log.atInfo().log("Creating process runner pool for schedules");
-        pipeliteServices.runner().setScheduleRunner(scheduleRunner);
-        pools.add(scheduleRunner);
-      }
+      _createPipelineRunners();
+      _createScheduleRunner();
 
       log.atInfo().log("Created process runner pools");
 
-      createServiceManager();
+      _createServiceManager();
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Unexpected exception when creating process runner pools");
       clear();
@@ -112,8 +90,43 @@ public class ProcessRunnerPoolManager {
     }
   }
 
-  /** Creates the google guava service manager that runs the process runner pools. */
-  protected synchronized void createServiceManager() {
+  /** Should not be called directly. Called by {@link #createPools()}. */
+  public void _createPipelineRunners() {
+    if (state != State.STOPPED) {
+      log.atWarning().log("Failed to create pipeline runners manager state is not stopped");
+      return;
+    }
+
+    for (Pipeline pipeline :
+        pipeliteServices.registeredPipeline().getRegisteredPipelines(Pipeline.class)) {
+      PipelineRunner pipelineRunner = createPipelineRunner(pipeline.pipelineName());
+      log.atInfo().log("Creating pipeline runner: " + pipeline.pipelineName());
+      pipeliteServices.runner().addPipelineRunner(pipelineRunner);
+      pools.add(pipelineRunner);
+    }
+    log.atInfo().log("Created pipeline runners");
+  }
+
+  /** Should not be called directly. Called by {@link #createPools()}. */
+  public void _createScheduleRunner() {
+    if (state != State.STOPPED) {
+      log.atWarning().log("Failed to create schedule runners manager state is not stopped");
+      return;
+    }
+
+    if (pipeliteServices.registeredPipeline().isSchedules()) {
+      ScheduleRunner scheduleRunner =
+          createScheduler(
+              pipeliteServices.registeredPipeline().getRegisteredPipelines(Schedule.class));
+      log.atInfo().log("Creating schedule runner");
+      pipeliteServices.runner().setScheduleRunner(scheduleRunner);
+      pools.add(scheduleRunner);
+      log.atInfo().log("Created schedule runner");
+    }
+  }
+
+  /** Should not be called directly. Called by {@link #createPools()}. */
+  public synchronized void _createServiceManager() {
     log.atInfo().log("Creating service manager for process runner pools");
 
     if (pools.isEmpty()) {

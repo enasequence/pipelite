@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-import lombok.Value;
+import lombok.Getter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -106,7 +106,7 @@ public class ScheduleRunnerTest {
     EXCEPTION
   }
 
-  @Value
+  @Getter
   protected static class TestSchedule extends ScheduleTestHelper {
     public final int processCnt;
     public final int stageCnt;
@@ -124,8 +124,8 @@ public class ScheduleRunnerTest {
     }
 
     @Override
-    protected int _configureSeconds() {
-      return schedulerSeconds;
+    protected String _configureCron() {
+      return "0/" + schedulerSeconds + " * * * * ?";
     }
 
     @Override

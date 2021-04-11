@@ -15,4 +15,5 @@ public final class PipeliteTestConstants {
   private PipeliteTestConstants() {}
 
   public static final String CRON_EVERY_TWO_SECONDS = "0/2 * * * * ?";
+  public static final String CRON_EVERY_HOUR = "0 */1 * * *";
 }

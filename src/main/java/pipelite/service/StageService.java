@@ -111,11 +111,12 @@ public class StageService {
    *
    * @param stage the stage
    */
-  public void startExecution(Stage stage) {
+  public StageEntity startExecution(Stage stage) {
     StageEntity stageEntity = stage.getStageEntity();
     stageEntity.startExecution(stage);
-    saveStage(stageEntity);
+    StageEntity savedStage = saveStage(stageEntity);
     deleteStageLog(logRepository, stageEntity);
+    return savedStage;
   }
 
   /**
@@ -123,10 +124,10 @@ public class StageService {
    *
    * @param stage the stage
    */
-  public void startAsyncExecution(Stage stage) {
+  public StageEntity startAsyncExecution(Stage stage) {
     StageEntity stageEntity = stage.getStageEntity();
     stageEntity.startAsyncExecution(stage);
-    saveStage(stageEntity);
+    return saveStage(stageEntity);
   }
 
   /**
@@ -135,12 +136,13 @@ public class StageService {
    * @param stage the stage
    * @param result the stage execution result
    */
-  public void endExecution(Stage stage, StageExecutorResult result) {
+  public StageEntity endExecution(Stage stage, StageExecutorResult result) {
     stage.incrementImmediateExecutionCount();
     StageEntity stageEntity = stage.getStageEntity();
     stageEntity.endExecution(result);
-    saveStage(stageEntity);
+    StageEntity savedStage = saveStage(stageEntity);
     saveStageLog(StageLogEntity.endExecution(stageEntity, result));
+    return savedStage;
   }
 
   /**

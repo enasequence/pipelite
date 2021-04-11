@@ -35,16 +35,16 @@ public abstract class ScheduleTestHelper implements Schedule {
     return pipelineName;
   }
 
-  public final String cron() {
-    return "0/" + _configureSeconds() + " * * * * ?";
-  }
-
   @Override
   public final Options configurePipeline() {
-    return new Options().cron(cron());
+    return new Options().cron(_configureCron());
   }
 
-  protected abstract int _configureSeconds();
+  public String cron() {
+    return _configureCron();
+  }
+
+  protected abstract String _configureCron();
 
   @Override
   public final void configureProcess(ProcessBuilder builder) {
