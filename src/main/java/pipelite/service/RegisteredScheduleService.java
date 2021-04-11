@@ -112,12 +112,7 @@ public class RegisteredScheduleService {
     log.atInfo().log("Creating pipeline schedule: " + schedule.pipelineName());
     try {
       String cron = schedule.configurePipeline().cron();
-      ScheduleEntity scheduleEntity = new ScheduleEntity();
-      scheduleEntity.setCron(cron);
-      scheduleEntity.setDescription(CronUtils.describe(cron));
-      scheduleEntity.setPipelineName(schedule.pipelineName());
-      scheduleEntity.setServiceName(serviceName);
-      scheduleService.saveSchedule(scheduleEntity);
+      scheduleService.createSchedule(serviceName, schedule.pipelineName(), cron);
     } catch (Exception ex) {
       throw new PipeliteException(
           "Failed to create pipeline schedule: " + schedule.pipelineName(), ex);

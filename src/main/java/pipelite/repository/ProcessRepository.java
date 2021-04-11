@@ -85,6 +85,6 @@ public interface ProcessRepository extends CrudRepository<ProcessEntity, Process
       value =
           "SELECT * FROM PIPELITE2_PROCESS A WHERE PIPELINE_NAME = ?1 AND STATE = 'ACTIVE' AND NOT EXISTS (SELECT 1 FROM PIPELITE2_PROCESS_LOCK B JOIN PIPELITE2_SERVICE_LOCK C USING (SERVICE_NAME) WHERE A.PIPELINE_NAME = B.PIPELINE_NAME AND A.PROCESS_ID = B.PROCESS_ID AND C.EXPIRY > ?2) ORDER BY PRIORITY DESC",
       nativeQuery = true)
-  Stream<ProcessEntity> findAvailableActiveOrderByPriorityDesc(
+  Stream<ProcessEntity> findUnlockedActiveByPipelineNameOrderByPriorityDesc(
       String pipelineName, ZonedDateTime now);
 }

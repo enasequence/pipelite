@@ -56,10 +56,7 @@ public class RetryService {
    */
   public void retry(String pipelineName, String processId) {
 
-    boolean isRetryProcess = processService.isRetryProcess(pipelineName, processId);
-    if (!isRetryProcess) {
-      throw new PipeliteRetryException(pipelineName, processId, "process does not exist");
-    }
+    processService.isRetryProcess(pipelineName, processId);
     boolean isRetrySchedule = scheduleService.isRetrySchedule(pipelineName, processId);
 
     RegisteredPipeline registeredPipeline =

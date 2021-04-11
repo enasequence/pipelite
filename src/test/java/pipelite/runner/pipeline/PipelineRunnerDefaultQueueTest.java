@@ -104,7 +104,7 @@ public class PipelineRunnerDefaultQueueTest {
     assertThat(queue.isAvailableProcesses(0)).isFalse();
     assertThat(queue.getQueuedProcessCount()).isZero();
     // There should be no processes in active state waiting to be executed
-    assertThat(queue.getAvailableActiveProcesses().size()).isEqualTo(0);
+    assertThat(queue.getUnlockedActiveProcesses().size()).isEqualTo(0);
     // There should be no processes in pending state waiting to be executed
     assertThat(queue.getPendingProcesses().size()).isEqualTo(0);
 
@@ -155,7 +155,7 @@ public class PipelineRunnerDefaultQueueTest {
     assertThat(queue.isAvailableProcesses(0)).isFalse();
     assertThat(queue.getQueuedProcessCount()).isZero();
     // There should be no processes in active state waiting to be executed
-    assertThat(queue.getAvailableActiveProcesses().size()).isEqualTo(0);
+    assertThat(queue.getUnlockedActiveProcesses().size()).isEqualTo(0);
     // There should be no processes in pending state waiting to be executed
     assertThat(queue.getPendingProcesses().size()).isEqualTo(0);
   }

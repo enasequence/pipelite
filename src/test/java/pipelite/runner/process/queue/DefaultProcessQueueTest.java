@@ -66,7 +66,7 @@ public class DefaultProcessQueueTest {
         Collections.nCopies(getActiveProcessCnt, mock(ProcessEntity.class));
     List<ProcessEntity> pendingEntities =
         Collections.nCopies(getPendingProcessCnt, mock(ProcessEntity.class));
-    doReturn(activeEntities).when(processService).getAvailableActiveProcesses(any(), eq(150));
+    doReturn(activeEntities).when(processService).getUnlockedActiveProcesses(any(), eq(150));
     doReturn(pendingEntities).when(processService).getPendingProcesses(any(), eq(50));
 
     DefaultProcessQueue queue =
@@ -85,7 +85,7 @@ public class DefaultProcessQueueTest {
     assertThat(queue.fillQueue()).isEqualTo(processQueueMaxSize);
 
     verify(queue, times(1)).fillQueue();
-    verify(queue, times(1)).getAvailableActiveProcesses();
+    verify(queue, times(1)).getUnlockedActiveProcesses();
     verify(queue, times(1)).getPendingProcesses();
 
     assertThat(queue.isFillQueue()).isFalse();

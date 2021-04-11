@@ -101,7 +101,7 @@ public class ScheduleEntity {
         && endTime != null
         && processId != null
         && lastFailed != null
-        && (lastCompleted == null || lastFailed.isAfter(lastCompleted)));
+        && (lastCompleted == null || !lastFailed.isBefore(lastCompleted)));
   }
 
   public void setNextTime(ZonedDateTime nextTime) {

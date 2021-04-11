@@ -69,37 +69,37 @@ public class ProcessService {
     return processRepository.findById(new ProcessEntityId(processId, pipelineName));
   }
 
-  private <T> List<T> list(Stream<T> strm, int limit) {
-    return strm.limit(limit).collect(Collectors.toList());
+  private <T> List<T> getProcesses(Stream<T> processes, int maxProcessCount) {
+    return processes.limit(maxProcessCount).collect(Collectors.toList());
   }
 
   /**
    * Returns pending processes in priority order.
    *
    * @param pipelineName the pipeline name
-   * @param limit the maximum number of processes to return
+   * @param maxProcessCount the maximum number of processes to return
    * @return the pending processes for a pipeline in priority order
    */
-  public List<ProcessEntity> getPendingProcesses(String pipelineName, int limit) {
-    try (Stream<ProcessEntity> strm =
+  public List<ProcessEntity> getPendingProcesses(String pipelineName, int maxProcessCount) {
+    try (Stream<ProcessEntity> processes =
         processRepository.findAllByPipelineNameAndProcessStateOrderByPriorityDesc(
             pipelineName, ProcessState.PENDING)) {
-      return list(strm, limit);
+      return getProcesses(processes, maxProcessCount);
     }
   }
 
   /**
-   * Returns available (unlocked) active processes in priority order.
+   * Returns active processes that are not locked in priority order.
    *
    * @param pipelineName the pipeline name
-   * @param limit the maximum number of processes to return
-   * @return available (unlocked) active processes in priority order
+   * @param maxProcessCount the maximum number of processes to return
+   * @return active processes that are not locked in priority order
    */
-  public List<ProcessEntity> getAvailableActiveProcesses(String pipelineName, int limit) {
-    try (Stream<ProcessEntity> strm =
-        processRepository.findAvailableActiveOrderByPriorityDesc(
+  public List<ProcessEntity> getUnlockedActiveProcesses(String pipelineName, int maxProcessCount) {
+    try (Stream<ProcessEntity> processes =
+        processRepository.findUnlockedActiveByPipelineNameOrderByPriorityDesc(
             pipelineName, ZonedDateTime.now())) {
-      return list(strm, limit);
+      return getProcesses(processes, maxProcessCount);
     }
   }
 
@@ -107,14 +107,14 @@ public class ProcessService {
    * Returns completed processes.
    *
    * @param pipelineName the pipeline name
-   * @param limit the maximum number of processes to return
+   * @param maxProcessCount the maximum number of processes to return
    * @return the completed processes for a pipeline
    */
-  public List<ProcessEntity> getCompletedProcesses(String pipelineName, int limit) {
-    try (Stream<ProcessEntity> strm =
+  public List<ProcessEntity> getCompletedProcesses(String pipelineName, int maxProcessCount) {
+    try (Stream<ProcessEntity> processes =
         processRepository.findAllByPipelineNameAndProcessState(
             pipelineName, ProcessState.COMPLETED)) {
-      return list(strm, limit);
+      return getProcesses(processes, maxProcessCount);
     }
   }
 
@@ -122,14 +122,14 @@ public class ProcessService {
    * Returns failed processes.
    *
    * @param pipelineName the pipeline name
-   * @param limit the maximum number of processes to return
+   * @param maxProcessCount the maximum number of processes to return
    * @return the failed processes for a pipeline
    */
-  public List<ProcessEntity> getFailedProcesses(String pipelineName, int limit) {
-    try (Stream<ProcessEntity> strm =
+  public List<ProcessEntity> getFailedProcesses(String pipelineName, int maxProcessCount) {
+    try (Stream<ProcessEntity> processes =
         processRepository.findAllByPipelineNameAndProcessStateOrderByPriorityDesc(
             pipelineName, ProcessState.FAILED)) {
-      return list(strm, limit);
+      return getProcesses(processes, maxProcessCount);
     }
   }
 
@@ -138,29 +138,34 @@ public class ProcessService {
    *
    * @param pipelineName optional pipeline name
    * @param state optional process state
-   * @param limit the maximum number of processes to return
+   * @param maxProcessCount the maximum number of processes to return
    * @return processes
    */
-  public List<ProcessEntity> getProcesses(String pipelineName, ProcessState state, int limit) {
+  public List<ProcessEntity> getProcesses(
+      String pipelineName, ProcessState state, int maxProcessCount) {
     List<ProcessEntity> processes = new ArrayList<>();
     // pipelineName state
     // Y            Y
     if (pipelineName != null && state != null) {
       processes.addAll(
-          list(processRepository.findAllByPipelineNameAndProcessState(pipelineName, state), limit));
+          getProcesses(
+              processRepository.findAllByPipelineNameAndProcessState(pipelineName, state),
+              maxProcessCount));
       // pipelineName state
       // Y            N
     } else if (pipelineName != null) {
-      processes.addAll(list(processRepository.findAllByPipelineName(pipelineName), limit));
+      processes.addAll(
+          getProcesses(processRepository.findAllByPipelineName(pipelineName), maxProcessCount));
       // pipelineName state
       // N            Y
     } else if (state != null) {
-      processes.addAll(list(processRepository.findAllByProcessState(state), limit));
+      processes.addAll(
+          getProcesses(processRepository.findAllByProcessState(state), maxProcessCount));
     }
     // pipelineName state
     // N            N
     else {
-      processes.addAll(list(processRepository.findAllStream(), limit));
+      processes.addAll(getProcesses(processRepository.findAllStream(), maxProcessCount));
     }
     return processes;
   }
@@ -299,7 +304,7 @@ public class ProcessService {
   public boolean isRetryProcess(String pipelineName, String processId) {
     Optional<ProcessEntity> processEntity = getSavedProcess(pipelineName, processId);
     if (!processEntity.isPresent()) {
-      return false;
+      throw new PipeliteRetryException(pipelineName, processId, "process does not exist");
     }
     if (processEntity.get().getProcessState() != ProcessState.FAILED) {
       throw new PipeliteRetryException(pipelineName, processId, "process is not failed");

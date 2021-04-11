@@ -11,6 +11,7 @@
 package pipelite.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pipelite.PipeliteTestConfigWithServices;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.ProcessEntity;
+import pipelite.exception.PipeliteRetryException;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
@@ -35,7 +37,7 @@ import pipelite.process.builder.ProcessBuilder;
 @Transactional
 class ProcessServiceTest {
 
-  private static final int DEFAULT_LIMIT = Integer.MAX_VALUE;
+  private static final int MAX_PROCESS_COUNT = Integer.MAX_VALUE;
 
   @Autowired ProcessService processService;
   @Autowired StageService stageService;
@@ -88,7 +90,7 @@ class ProcessServiceTest {
   }
 
   @Test
-  public void getActiveCompletedFailedPendingProcessesWithSamePriority() {
+  public void getUnlockedActiveCompletedFailedPendingProcessesWithSamePriority() {
     String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
 
     saveProcess(pipelineName, ProcessState.ACTIVE, 1);
@@ -103,14 +105,15 @@ class ProcessServiceTest {
     saveProcess(pipelineName, ProcessState.PENDING, 1);
     saveProcess(pipelineName, ProcessState.PENDING, 1);
 
-    assertThat(processService.getAvailableActiveProcesses(pipelineName, DEFAULT_LIMIT)).hasSize(2);
-    assertThat(processService.getCompletedProcesses(pipelineName, DEFAULT_LIMIT)).hasSize(3);
-    assertThat(processService.getFailedProcesses(pipelineName, DEFAULT_LIMIT)).hasSize(4);
-    assertThat(processService.getPendingProcesses(pipelineName, DEFAULT_LIMIT)).hasSize(2);
+    assertThat(processService.getUnlockedActiveProcesses(pipelineName, MAX_PROCESS_COUNT))
+        .hasSize(2);
+    assertThat(processService.getCompletedProcesses(pipelineName, MAX_PROCESS_COUNT)).hasSize(3);
+    assertThat(processService.getFailedProcesses(pipelineName, MAX_PROCESS_COUNT)).hasSize(4);
+    assertThat(processService.getPendingProcesses(pipelineName, MAX_PROCESS_COUNT)).hasSize(2);
   }
 
   @Test
-  public void getActiveCompletedFailedPendingProcessesWithDifferentPriority() {
+  public void getUnlockedActiveCompletedFailedPendingProcessesWithDifferentPriority() {
     String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
 
     saveProcess(pipelineName, ProcessState.ACTIVE, 1);
@@ -125,16 +128,17 @@ class ProcessServiceTest {
     saveProcess(pipelineName, ProcessState.PENDING, 1);
     saveProcess(pipelineName, ProcessState.PENDING, 2);
 
-    assertThat(processService.getAvailableActiveProcesses(pipelineName, DEFAULT_LIMIT)).hasSize(2);
-    assertThat(processService.getCompletedProcesses(pipelineName, DEFAULT_LIMIT)).hasSize(3);
-    assertThat(processService.getFailedProcesses(pipelineName, DEFAULT_LIMIT)).hasSize(4);
-    assertThat(processService.getPendingProcesses(pipelineName, DEFAULT_LIMIT)).hasSize(2);
+    assertThat(processService.getUnlockedActiveProcesses(pipelineName, MAX_PROCESS_COUNT))
+        .hasSize(2);
+    assertThat(processService.getCompletedProcesses(pipelineName, MAX_PROCESS_COUNT)).hasSize(3);
+    assertThat(processService.getFailedProcesses(pipelineName, MAX_PROCESS_COUNT)).hasSize(4);
+    assertThat(processService.getPendingProcesses(pipelineName, MAX_PROCESS_COUNT)).hasSize(2);
 
-    assertThat(processService.getAvailableActiveProcesses(pipelineName, DEFAULT_LIMIT))
+    assertThat(processService.getUnlockedActiveProcesses(pipelineName, MAX_PROCESS_COUNT))
         .isSortedAccordingTo(Comparator.comparingInt(ProcessEntity::getPriority).reversed());
-    assertThat(processService.getFailedProcesses(pipelineName, DEFAULT_LIMIT))
+    assertThat(processService.getFailedProcesses(pipelineName, MAX_PROCESS_COUNT))
         .isSortedAccordingTo(Comparator.comparingInt(ProcessEntity::getPriority).reversed());
-    assertThat(processService.getPendingProcesses(pipelineName, DEFAULT_LIMIT))
+    assertThat(processService.getPendingProcesses(pipelineName, MAX_PROCESS_COUNT))
         .isSortedAccordingTo(Comparator.comparingInt(ProcessEntity::getPriority).reversed());
   }
 
@@ -153,12 +157,12 @@ class ProcessServiceTest {
             saveProcess(pipelineName, ProcessState.PENDING, 1),
             saveProcess(pipelineName, ProcessState.PENDING, 1));
 
-    // Test with pipeline name.
+    // Test without state.
 
-    testProcessStateCount(
-        processService.getProcesses(pipelineName, null /* state*/, DEFAULT_LIMIT), 2, 2, 2, 2);
+    assertProcessStateCount(
+        processService.getProcesses(pipelineName, null /* state*/, MAX_PROCESS_COUNT), 2, 2, 2, 2);
 
-    // Test with pipeline name and state.
+    // Test with state.
 
     for (ProcessState state :
         EnumSet.of(
@@ -166,8 +170,8 @@ class ProcessServiceTest {
             ProcessState.COMPLETED,
             ProcessState.FAILED,
             ProcessState.CANCELLED)) {
-      testProcessStateCount(
-          processService.getProcesses(pipelineName, state, DEFAULT_LIMIT),
+      assertProcessStateCount(
+          processService.getProcesses(pipelineName, state, MAX_PROCESS_COUNT),
           state == ProcessState.COMPLETED ? 2 : 0,
           state == ProcessState.ACTIVE ? 2 : 0,
           state == ProcessState.FAILED ? 2 : 0,
@@ -184,7 +188,7 @@ class ProcessServiceTest {
     return processService.saveProcess(processEntity);
   }
 
-  private void testProcessStateCount(
+  private void assertProcessStateCount(
       List<ProcessEntity> processes,
       int completedCount,
       int activeCount,
@@ -203,7 +207,46 @@ class ProcessServiceTest {
   }
 
   @Test
-  public void testProcessStateSummary() {
+  public void getProcessStateSummary() {
     processService.getProcessStateSummary();
+  }
+
+  @Test
+  public void isRetryProcessWithFailedProcess() {
+    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
+    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    int priority = 1;
+
+    ProcessEntity processEntity = processService.createExecution(pipelineName, processId, priority);
+    processEntity.endExecution(ProcessState.FAILED);
+    processService.saveProcess(processEntity);
+
+    assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.FAILED);
+    assertThat(processService.isRetryProcess(pipelineName, processId)).isTrue();
+  }
+
+  @Test
+  public void isRetryProcessWithNotFailedProcess() {
+    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
+    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    int priority = 1;
+
+    ProcessEntity processEntity = processService.createExecution(pipelineName, processId, priority);
+    processEntity.endExecution(ProcessState.COMPLETED);
+    processService.saveProcess(processEntity);
+
+    assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.COMPLETED);
+    assertThrows(
+        PipeliteRetryException.class, () -> processService.isRetryProcess(pipelineName, processId));
+  }
+
+  @Test
+  public void isRetryProcessWithMissingProcess() {
+    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
+    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+
+    assertThat(processService.getSavedProcess(pipelineName, processId).isPresent()).isFalse();
+    assertThrows(
+        PipeliteRetryException.class, () -> processService.isRetryProcess(pipelineName, processId));
   }
 }

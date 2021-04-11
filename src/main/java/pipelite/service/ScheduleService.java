@@ -73,14 +73,23 @@ public class ScheduleService {
     repository.delete(scheduleEntity);
   }
 
-  public void scheduleExecution(ScheduleEntity scheduleEntity) {
+  public ScheduleEntity scheduleExecution(ScheduleEntity scheduleEntity) {
     scheduleEntity.setNextTime(CronUtils.launchTime(scheduleEntity.getCron()));
-    saveSchedule(scheduleEntity);
+    return saveSchedule(scheduleEntity);
   }
 
-  public void scheduleExecution(ScheduleEntity scheduleEntity, ZonedDateTime nextTime) {
+  public ScheduleEntity scheduleExecution(ScheduleEntity scheduleEntity, ZonedDateTime nextTime) {
     scheduleEntity.setNextTime(nextTime);
-    saveSchedule(scheduleEntity);
+    return saveSchedule(scheduleEntity);
+  }
+
+  public ScheduleEntity createSchedule(String serviceName, String pipelineName, String cron) {
+    ScheduleEntity scheduleEntity = new ScheduleEntity();
+    scheduleEntity.setCron(cron);
+    scheduleEntity.setDescription(CronUtils.describe(cron));
+    scheduleEntity.setPipelineName(pipelineName);
+    scheduleEntity.setServiceName(serviceName);
+    return saveSchedule(scheduleEntity);
   }
 
   /**
@@ -90,14 +99,14 @@ public class ScheduleService {
    * @param pipelineName the pipeline name
    * @param processId the process id
    */
-  public void startExecution(String pipelineName, String processId) {
+  public ScheduleEntity startExecution(String pipelineName, String processId) {
     log.atInfo().log("Starting scheduled process execution: " + pipelineName);
     ScheduleEntity scheduleEntity = getSavedSchedule(pipelineName).get();
     scheduleEntity.setStartTime(ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS));
     scheduleEntity.setProcessId(processId);
     scheduleEntity.setEndTime(null);
     scheduleEntity.setNextTime(null);
-    saveSchedule(scheduleEntity);
+    return saveSchedule(scheduleEntity);
   }
 
   /**
@@ -107,7 +116,7 @@ public class ScheduleService {
    * @param processEntity the process entity
    * @param nextTime the next execution time
    */
-  public void endExecution(ProcessEntity processEntity, ZonedDateTime nextTime) {
+  public ScheduleEntity endExecution(ProcessEntity processEntity, ZonedDateTime nextTime) {
     String pipelineName = processEntity.getPipelineName();
     log.atInfo().log("Ending scheduled process execution: " + pipelineName);
     ZonedDateTime now = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
@@ -124,7 +133,7 @@ public class ScheduleService {
       scheduleEntity.setStreakCompleted(0);
       scheduleEntity.setStreakFailed(scheduleEntity.getStreakFailed() + 1);
     }
-    saveSchedule(scheduleEntity);
+    return saveSchedule(scheduleEntity);
   }
 
   /**
@@ -144,7 +153,7 @@ public class ScheduleService {
     ScheduleEntity scheduleEntity = scheduleEntityOpt.get();
 
     if (!scheduleEntity.isFailed()) {
-      throw new PipeliteRetryException(pipelineName, processId, "schedule has not failed");
+      throw new PipeliteRetryException(pipelineName, processId, "schedule is not failed");
     }
 
     if (!processId.equals(scheduleEntity.getProcessId())) {
