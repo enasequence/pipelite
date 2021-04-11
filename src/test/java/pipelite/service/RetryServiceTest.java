@@ -10,6 +10,12 @@
  */
 package pipelite.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,13 +48,6 @@ import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.time.Time;
-
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithManager.class,
