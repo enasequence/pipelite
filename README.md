@@ -301,6 +301,15 @@ value is not overriden in ```ProcessBuilder```.
 - pipelite.executor.simpleLsf.memoryUnits: the LSF memory units (-M and -R rusage[mem=] option)
 - pipelite.executor.simpleLsf.memoryTimeout: the LSF memory duration (-R rusage[mem=:duration=] option)
 
+The unit for the resource usage limit can be one of:
+- KB or K (kilobytes)
+- MB or M (megabytes)
+- GB or G (gigabytes)
+- TB or T (terabytes)
+- PB or P (petabytes)
+- EB or E (exabytes)
+- ZB or Z (zettabytes)
+
 ##### LSF executor parameters
 
 - pipelite.executor.lsf.host: the remote host. Ssh will be used if the ```host``` has been set.
