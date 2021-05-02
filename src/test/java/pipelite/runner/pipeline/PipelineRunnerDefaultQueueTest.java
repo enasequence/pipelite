@@ -30,10 +30,10 @@ import pipelite.configuration.PipeliteConfiguration;
 import pipelite.helper.PrioritizedPipelineTestHelper;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.runner.process.ProcessQueue;
 import pipelite.runner.process.ProcessRunner;
 import pipelite.runner.process.creator.DefaultPrioritizedProcessCreator;
 import pipelite.runner.process.creator.PrioritizedProcessCreator;
-import pipelite.runner.process.queue.DefaultProcessQueue;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.time.Time;
@@ -123,9 +123,9 @@ public class PipelineRunnerDefaultQueueTest {
     PrioritizedProcessCreator prioritizedProcessCreator =
         new DefaultPrioritizedProcessCreator(prioritizedPipeline, pipeliteServices.process());
 
-    DefaultProcessQueue queue =
+    ProcessQueue queue =
         spy(
-            new DefaultProcessQueue(
+            new ProcessQueue(
                 pipeliteConfiguration.advanced(),
                 pipeliteServices.process(),
                 prioritizedPipeline.pipelineName(),

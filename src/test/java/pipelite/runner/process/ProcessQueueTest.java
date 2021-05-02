@@ -8,12 +8,12 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.runner.process.queue;
+package pipelite.runner.process;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
-import static pipelite.runner.process.queue.DefaultProcessQueue.isFillQueue;
+import static pipelite.runner.process.ProcessQueue.isFillQueue;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -26,7 +26,7 @@ import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.service.ProcessService;
 
-public class DefaultProcessQueueTest {
+public class ProcessQueueTest {
 
   @Test
   public void fillQueue() {
@@ -52,7 +52,7 @@ public class DefaultProcessQueueTest {
     final int getPendingProcessCnt = 50;
     final int processQueueMaxSize = 150;
     final int pipelineParallelism = 10;
-    String pipelineName = UniqueStringGenerator.randomPipelineName(DefaultProcessQueueTest.class);
+    String pipelineName = UniqueStringGenerator.randomPipelineName(ProcessQueueTest.class);
     Duration refreshFrequency = Duration.ofDays(1);
     ServiceConfiguration serviceConfiguration = new ServiceConfiguration();
     AdvancedConfiguration advancedConfiguration = new AdvancedConfiguration();
@@ -69,9 +69,9 @@ public class DefaultProcessQueueTest {
     doReturn(activeEntities).when(processService).getUnlockedActiveProcesses(any(), eq(150));
     doReturn(pendingEntities).when(processService).getPendingProcesses(any(), eq(50));
 
-    DefaultProcessQueue queue =
+    ProcessQueue queue =
         spy(
-            new DefaultProcessQueue(
+            new ProcessQueue(
                 advancedConfiguration, processService, pipelineName, pipelineParallelism));
 
     assertThat(queue.isFillQueue()).isTrue();

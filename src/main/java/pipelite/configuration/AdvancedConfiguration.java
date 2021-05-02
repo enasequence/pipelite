@@ -16,6 +16,7 @@ import lombok.extern.flogger.Flogger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import pipelite.runner.pipeline.PipelineRunner;
+import pipelite.runner.process.ProcessQueue;
 import pipelite.runner.schedule.ScheduleRunner;
 
 /**
@@ -59,22 +60,15 @@ public class AdvancedConfiguration {
   /** The number of workers for stage runners. */
   private int stageRunnerWorkers = DEFAULT_STAGE_RUNNER_WORKERS;
 
-  /**
-   * The maximum frequency for {@link pipelite.runner.process.queue.DefaultProcessQueue} to refresh
-   * its process execution queue.
-   */
+  /** The maximum frequency for {@link ProcessQueue} to refresh its process execution queue. */
   private Duration processQueueMaxRefreshFrequency = DEFAULT_PROCESS_QUEUE_MAX_REFRESH_FREQUENCY;
 
-  /**
-   * The minimum frequency for {@link pipelite.runner.process.queue.DefaultProcessQueue} to refresh
-   * its process execution queue.
-   */
+  /** The minimum frequency for {@link ProcessQueue} to refresh its process execution queue. */
   private Duration processQueueMinRefreshFrequency = DEFAULT_PROCESS_QUEUE_MIN_REFRESH_FREQUENCY;
 
   /**
-   * The maximum length of {@link pipelite.runner.process.queue.DefaultProcessQueue} process
-   * execution queue. The queue will be refreshed if it becomes smaller than the pipeline
-   * parallelism.
+   * The maximum length of {@link ProcessQueue} process execution queue. The queue will be refreshed
+   * if it becomes smaller than the pipeline parallelism.
    */
   private int processQueueMaxSize = DEFAULT_PROCESS_QUEUE_MAX_SIZE;
 

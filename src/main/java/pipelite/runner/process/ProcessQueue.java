@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.runner.process.queue;
+package pipelite.runner.process;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -21,7 +21,7 @@ import pipelite.configuration.AdvancedConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.service.ProcessService;
 
-public class DefaultProcessQueue implements ProcessQueue {
+public class ProcessQueue {
 
   private final ProcessService processService;
   private final String pipelineName;
@@ -34,7 +34,7 @@ public class DefaultProcessQueue implements ProcessQueue {
   private ZonedDateTime processQueueMaxValidUntil = ZonedDateTime.now();
   private ZonedDateTime processQueueMinValidUntil = ZonedDateTime.now();
 
-  public DefaultProcessQueue(
+  public ProcessQueue(
       AdvancedConfiguration advancedConfiguration,
       ProcessService processService,
       String pipelineName,
@@ -51,12 +51,20 @@ public class DefaultProcessQueue implements ProcessQueue {
     this.pipelineParallelism = Math.max(pipelineParallelism, 1);
   }
 
-  @Override
+  /**
+   * Returns the pipeline name.
+   *
+   * @return the pipeline name
+   */
   public String getPipelineName() {
     return pipelineName;
   }
 
-  @Override
+  /**
+   * Returns true if more processes can be queued.
+   *
+   * @return true if more processes can be queued
+   */
   public boolean isFillQueue() {
     return isFillQueue(
         processQueueIndex.get(),
@@ -80,7 +88,11 @@ public class DefaultProcessQueue implements ProcessQueue {
         || !processQueueMaxValidUntil.isAfter(ZonedDateTime.now());
   }
 
-  @Override
+  /**
+   * Queues processes and returns the number of processes queued.
+   *
+   * @return the number of processes queued
+   */
   public int fillQueue() {
     if (!isFillQueue()) {
       return 0;
@@ -105,17 +117,31 @@ public class DefaultProcessQueue implements ProcessQueue {
     return processCnt;
   }
 
-  @Override
+  /**
+   * Returns true if there are available processes in the queue taking into account the maximum
+   * number of active processes.
+   *
+   * @param activeProcesses the number of currently executing processes
+   * @return true if there are available processes in the queue
+   */
   public boolean isAvailableProcesses(int activeProcesses) {
     return processQueueIndex.get() < processQueue.size() && activeProcesses < pipelineParallelism;
   }
 
-  @Override
+  /**
+   * Returns the number of available processes in the queue.
+   *
+   * @return the number of available processes in the queue
+   */
   public int getQueuedProcessCount() {
     return processQueue.size() - processQueueIndex.get();
   }
 
-  @Override
+  /**
+   * Returns the next available process in the queue.
+   *
+   * @return the next available process in the queue
+   */
   public ProcessEntity nextAvailableProcess() {
     return processQueue.get(processQueueIndex.getAndIncrement());
   }

@@ -15,11 +15,10 @@ import pipelite.PrioritizedPipeline;
 import pipelite.configuration.PipeliteConfiguration;
 import pipelite.exception.PipeliteException;
 import pipelite.metrics.PipeliteMetrics;
+import pipelite.runner.process.ProcessQueue;
 import pipelite.runner.process.ProcessRunner;
 import pipelite.runner.process.creator.DefaultPrioritizedProcessCreator;
 import pipelite.runner.process.creator.PrioritizedProcessCreator;
-import pipelite.runner.process.queue.DefaultProcessQueue;
-import pipelite.runner.process.queue.ProcessQueue;
 import pipelite.service.PipeliteServices;
 import pipelite.service.RegisteredPipelineService;
 
@@ -44,7 +43,7 @@ public class PipelineRunnerFactory {
                 pipelineName, PrioritizedPipeline.class),
             pipeliteServices.process());
     ProcessQueue processQueue =
-        new DefaultProcessQueue(
+        new ProcessQueue(
             pipeliteConfiguration.advanced(),
             pipeliteServices.process(),
             pipelineName,
