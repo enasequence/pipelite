@@ -10,12 +10,12 @@
  */
 package pipelite.metrics;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import pipelite.PipeliteMetricsTestFactory;
 import pipelite.process.ProcessState;
-import pipelite.runner.process.ProcessRunnerResult;
+import pipelite.stage.executor.StageExecutorResult;
 
 public class PipelineMetricsTest {
 
@@ -47,10 +47,9 @@ public class PipelineMetricsTest {
     assertThat(TimeSeriesMetrics.getCount(metrics.stage().getSuccessTimeSeries())).isZero();
     assertThat(TimeSeriesMetrics.getCount(metrics.stage().getFailedTimeSeries())).isZero();
 
-    ProcessRunnerResult result = new ProcessRunnerResult();
-    result.incrementStageSuccess();
-    result.incrementStageFailed();
-    metrics.increment(ProcessState.COMPLETED, result);
+    metrics.stage().endStageExecution(StageExecutorResult.success());
+    metrics.stage().endStageExecution(StageExecutorResult.error());
+    metrics.process().endProcessExecution(ProcessState.COMPLETED);
 
     assertThat(metrics.process().getCompletedCount()).isEqualTo(1);
     assertThat(metrics.process().getFailedCount()).isZero();
@@ -75,10 +74,9 @@ public class PipelineMetricsTest {
     assertThat(TimeSeriesMetrics.getCount(metrics.stage().getSuccessTimeSeries())).isZero();
     assertThat(TimeSeriesMetrics.getCount(metrics.stage().getFailedTimeSeries())).isZero();
 
-    ProcessRunnerResult result = new ProcessRunnerResult();
-    result.incrementStageSuccess();
-    result.incrementStageFailed();
-    metrics.increment(ProcessState.FAILED, result);
+    metrics.stage().endStageExecution(StageExecutorResult.success());
+    metrics.stage().endStageExecution(StageExecutorResult.error());
+    metrics.process().endProcessExecution(ProcessState.FAILED);
 
     assertThat(metrics.process().getCompletedCount()).isZero();
     assertThat(metrics.process().getFailedCount()).isEqualTo(1);

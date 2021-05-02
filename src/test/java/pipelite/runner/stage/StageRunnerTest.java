@@ -11,31 +11,46 @@
 package pipelite.runner.stage;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.spy;
 
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.PipeliteTestConfigWithManager;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
-import pipelite.executor.CallExecutor;
+import pipelite.executor.TestExecutor;
+import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.service.StageService;
+import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
 
+@SpringBootTest(
+    classes = PipeliteTestConfigWithManager.class,
+    properties = {"pipelite.service.force=true", "pipelite.service.name=StageRunnerTest"})
+@ActiveProfiles({"test"})
+@DirtiesContext
 public class StageRunnerTest {
 
-  private void callExecutor(StageState stageState) {
-    StageService stageService = mock(StageService.class);
+  @Autowired PipeliteServices pipeliteServices;
+  @Autowired PipeliteMetrics pipeliteMetrics;
+
+  private void sync(StageState stageState) {
+    String serviceName = UniqueStringGenerator.randomServiceName(StageRunnerTest.class);
     String pipelineName = UniqueStringGenerator.randomPipelineName(StageRunnerTest.class);
     String processId = UniqueStringGenerator.randomProcessId(StageRunnerTest.class);
     Process process =
         new ProcessBuilder(processId)
             .execute("STAGE1")
-            .withCallExecutor(
+            .withSyncTestExecutor(
                 stageState,
                 ExecutorParameters.builder()
                     .immediateRetries(3)
@@ -49,24 +64,32 @@ public class StageRunnerTest {
     Stage stage = process.getStages().get(0);
     stage.setStageEntity(StageEntity.createExecution(pipelineName, processId, stage));
     stage.getStageEntity().startExecution(stage);
-    StageRunner stageRunner = spy(new StageRunner(stageService, pipelineName, process, stage));
-    assertThat(stageRunner.run().getStageState()).isEqualTo(stageState);
-    verify(stageRunner, times(0)).pollExecution();
+    StageRunner stageRunner =
+        spy(
+            new StageRunner(
+                pipeliteServices, pipeliteMetrics, serviceName, pipelineName, process, stage));
+
+    AtomicReference<StageExecutorResult> result = new AtomicReference<>();
+    stageRunner.runOneIteration(r -> result.set(r));
+
+    assertThat(result.get()).isNotNull();
+    assertThat(result.get().getStageState()).isEqualTo(stageState);
+
     assertThat(stage.getStageEntity().getExecutorName())
-        .isEqualTo("pipelite.executor.CallExecutor");
+        .isEqualTo("pipelite.executor.TestExecutor");
     assertThat(stage.getStageEntity().getExecutorData()).isNull();
     assertThat(stage.getStageEntity().getExecutorParams())
         .isEqualTo("{\n" + "  \"maximumRetries\" : 3,\n" + "  \"immediateRetries\" : 3\n" + "}");
   }
 
-  private void asyncCallExecutor(StageState stageState) {
-    StageService stageService = mock(StageService.class);
+  private void async(StageState stageState) {
+    String serviceName = UniqueStringGenerator.randomServiceName(StageRunnerTest.class);
     String pipelineName = UniqueStringGenerator.randomPipelineName(StageRunnerTest.class);
     String processId = UniqueStringGenerator.randomProcessId(StageRunnerTest.class);
     Process process =
         new ProcessBuilder(processId)
             .execute("STAGE1")
-            .withAsyncCallExecutor(
+            .withAsyncTestExecutor(
                 stageState,
                 ExecutorParameters.builder()
                     .immediateRetries(3)
@@ -80,28 +103,44 @@ public class StageRunnerTest {
     Stage stage = process.getStages().get(0);
     stage.setStageEntity(StageEntity.createExecution(pipelineName, processId, stage));
     stage.getStageEntity().startExecution(stage);
-    stage.getStageEntity().endExecution(StageExecutorResult.error());
-    stage.getStageEntity().startExecution(stage);
-    StageRunner stageRunner = spy(new StageRunner(stageService, pipelineName, process, stage));
-    assertThat(stageRunner.run().getStageState()).isEqualTo(stageState);
-    verify(stageRunner, times(1)).pollExecution();
+    StageRunner stageRunner =
+        spy(
+            new StageRunner(
+                pipeliteServices, pipeliteMetrics, serviceName, pipelineName, process, stage));
+
+    AtomicReference<StageExecutorResult> result = new AtomicReference<>();
+
+    stageRunner.runOneIteration(r -> result.set(r));
+
+    assertThat(result.get()).isNull();
+    assertThat(stage.getStageEntity().getStageState()).isEqualTo(StageState.ACTIVE);
+
+    stageRunner.runOneIteration(r -> result.set(r));
+
+    assertThat(result.get()).isNotNull();
+    assertThat(result.get().getStageState()).isEqualTo(stageState);
+
     assertThat(stage.getStageEntity().getExecutorName())
-        .isEqualTo("pipelite.executor.CallExecutor");
+        .isEqualTo("pipelite.executor.TestExecutor");
     assertThat(stage.getStageEntity().getExecutorData()).isNull();
     assertThat(stage.getStageEntity().getExecutorParams())
         .isEqualTo("{\n" + "  \"maximumRetries\" : 3,\n" + "  \"immediateRetries\" : 3\n" + "}");
   }
 
   @Test
-  public void callExecutor() {
-    callExecutor(StageState.SUCCESS);
-    callExecutor(StageState.ERROR);
-    asyncCallExecutor(StageState.SUCCESS);
-    asyncCallExecutor(StageState.ERROR);
+  public void sync() {
+    sync(StageState.SUCCESS);
+    sync(StageState.ERROR);
+  }
+
+  @Test
+  public void async() {
+    async(StageState.SUCCESS);
+    async(StageState.ERROR);
   }
 
   private void maximumRetries(Integer maximumRetries, int expectedMaximumRetries) {
-    CallExecutor executor = new CallExecutor(StageState.SUCCESS);
+    TestExecutor executor = TestExecutor.sync(StageState.SUCCESS);
     executor.setExecutorParams(ExecutorParameters.builder().maximumRetries(maximumRetries).build());
     assertThat(
             StageRunner.getMaximumRetries(
@@ -111,7 +150,7 @@ public class StageRunnerTest {
 
   private void immediateRetries(
       Integer immediateRetries, Integer maximumRetries, int expectedImmediateRetries) {
-    CallExecutor executor = new CallExecutor(StageState.SUCCESS);
+    TestExecutor executor = TestExecutor.sync(StageState.SUCCESS);
     executor.setExecutorParams(
         ExecutorParameters.builder()
             .immediateRetries(immediateRetries)

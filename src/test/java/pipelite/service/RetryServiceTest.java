@@ -104,7 +104,7 @@ class RetryServiceTest {
 
     @Override
     protected void _configureProcess(ProcessBuilder builder) {
-      builder.execute(STAGE_NAME).withCallExecutor().build();
+      builder.execute(STAGE_NAME).withSyncTestExecutor().build();
     }
   }
 
@@ -114,15 +114,15 @@ class RetryServiceTest {
     }
 
     @Override
-    public int _configureParallelism() {
+    public int testConfigureParallelism() {
       return 5;
     }
 
     @Override
-    public void _configureProcess(ProcessBuilder builder) {
+    public void testConfigureProcess(ProcessBuilder builder) {
       builder
           .execute(STAGE_NAME)
-          .withCallExecutor(
+          .withSyncTestExecutor(
               StageState.ERROR,
               ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build())
           .build();
@@ -316,9 +316,8 @@ class RetryServiceTest {
     // Retry
     retryService.retry(SCHEDULE_NAME, processId);
 
-    scheduleRunner.runOneIteration();
-
     while (scheduleRunner.getActiveProcessCount() > 0) {
+      scheduleRunner.runOneIteration();
       Time.wait(Duration.ofMillis(100));
     }
 

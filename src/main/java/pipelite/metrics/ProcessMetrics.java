@@ -15,6 +15,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.ZonedDateTime;
+import pipelite.process.ProcessState;
 import tech.tablesaw.api.Table;
 
 public class ProcessMetrics {
@@ -86,18 +87,23 @@ public class ProcessMetrics {
     TimeSeriesMetrics.updateGauge(runningTimeSeries, count, now);
   }
 
-  public void incrementCompletedCount(ZonedDateTime now) {
-    completedCounter.increment(1);
-    TimeSeriesMetrics.updateCounter(completedTimeSeries, 1, now);
-  }
-
-  public void incrementFailedCount(ZonedDateTime now) {
-    failedCounter.increment(1);
-    TimeSeriesMetrics.updateCounter(failedTimeSeries, 1, now);
-  }
-
+  /** Called by internal error service. */
   public void incrementInternalErrorCount() {
     internalErrorCounter.increment(1);
     TimeSeriesMetrics.updateCounter(internalErrorTimeSeries, 1, ZonedDateTime.now());
+  }
+
+  public void endProcessExecution(ProcessState state) {
+    endProcessExecution(state, ZonedDateTime.now());
+  }
+
+  public void endProcessExecution(ProcessState state, ZonedDateTime now) {
+    if (state == ProcessState.COMPLETED) {
+      completedCounter.increment(1);
+      TimeSeriesMetrics.updateCounter(completedTimeSeries, 1, now);
+    } else if (state == ProcessState.FAILED) {
+      failedCounter.increment(1);
+      TimeSeriesMetrics.updateCounter(failedTimeSeries, 1, now);
+    }
   }
 }

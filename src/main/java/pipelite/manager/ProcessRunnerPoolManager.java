@@ -27,11 +27,11 @@ import pipelite.Schedule;
 import pipelite.configuration.PipeliteConfiguration;
 import pipelite.exception.PipeliteException;
 import pipelite.metrics.PipeliteMetrics;
-import pipelite.runner.pipeline.DefaultPipelineRunner;
 import pipelite.runner.pipeline.PipelineRunner;
+import pipelite.runner.pipeline.PipelineRunnerFactory;
 import pipelite.runner.process.ProcessRunnerPool;
-import pipelite.runner.schedule.DefaultScheduleRunner;
 import pipelite.runner.schedule.ScheduleRunner;
+import pipelite.runner.schedule.ScheduleRunnerFactory;
 import pipelite.service.PipeliteServices;
 
 @Flogger
@@ -220,16 +220,16 @@ public class ProcessRunnerPoolManager {
   /** Terminates all running processes. */
   public synchronized void terminateProcesses() {
     log.atInfo().log("Terminating all running processes");
-    pools.forEach(service -> service.terminateProcesses());
+    pools.forEach(service -> service.terminate());
   }
 
   private ScheduleRunner createScheduler(List<Schedule> schedules) {
-    return DefaultScheduleRunner.create(
+    return ScheduleRunnerFactory.create(
         pipeliteConfiguration, pipeliteServices, pipeliteMetrics, schedules);
   }
 
   private PipelineRunner createPipelineRunner(String pipelineName) {
-    return DefaultPipelineRunner.create(
+    return PipelineRunnerFactory.create(
         pipeliteConfiguration, pipeliteServices, pipeliteMetrics, pipelineName);
   }
 }

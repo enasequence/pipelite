@@ -30,6 +30,9 @@ import pipelite.stage.parameters.LsfExecutorParameters;
 public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
     implements JsonSerializableExecutor {
 
+  // Json deserialization requires a no argument constructor.
+  public LsfExecutor() {}
+
   private String definitionFile;
 
   private static final String JOB_FILE_SUFFIX = ".job";

@@ -43,7 +43,7 @@ public class ProcessFactoryTest {
 
           @Override
           public void configureProcess(ProcessBuilder builder) {
-            builder.execute("STAGE1").withCallExecutor();
+            builder.execute("STAGE1").withSyncTestExecutor();
           }
         };
 

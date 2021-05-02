@@ -32,6 +32,8 @@ public class AdvancedConfiguration {
   public static final Duration DEFAULT_LOCK_FREQUENCY = Duration.ofMinutes(5);
   public static final Duration DEFAULT_LOCK_DURATION = Duration.ofMinutes(60);
   private static final Duration DEFAULT_PROCESS_RUNNER_FREQUENCY = Duration.ofSeconds(10);
+  private static final int DEFAULT_PROCESS_RUNNER_WORKERS = 25;
+  private static final int DEFAULT_STAGE_RUNNER_WORKERS = 25;
   private static final Duration DEFAULT_SCHEDULE_REFRESH_FREQUENCY = Duration.ofHours(4);
   private static final Duration DEFAULT_PROCESS_QUEUE_MAX_REFRESH_FREQUENCY = Duration.ofHours(6);
   private static final Duration DEFAULT_PROCESS_QUEUE_MIN_REFRESH_FREQUENCY = Duration.ofMinutes(5);
@@ -48,18 +50,31 @@ public class AdvancedConfiguration {
    */
   private Duration lockDuration = DEFAULT_LOCK_DURATION;
 
-  /** The running frequency for {@link PipelineRunner} and {@link ScheduleRunner}. */
+  /** The frequency for {@link pipelite.runner.process.ProcessRunnerPool}. */
   private Duration processRunnerFrequency = DEFAULT_PROCESS_RUNNER_FREQUENCY;
 
-  /** The maximum frequency for {@link PipelineRunner} to refresh its process execution queue. */
+  /** The number of workers for process runners. */
+  private int processRunnerWorkers = DEFAULT_PROCESS_RUNNER_WORKERS;
+
+  /** The number of workers for stage runners. */
+  private int stageRunnerWorkers = DEFAULT_STAGE_RUNNER_WORKERS;
+
+  /**
+   * The maximum frequency for {@link pipelite.runner.process.queue.DefaultProcessQueue} to refresh
+   * its process execution queue.
+   */
   private Duration processQueueMaxRefreshFrequency = DEFAULT_PROCESS_QUEUE_MAX_REFRESH_FREQUENCY;
 
-  /** The minimum frequency for {@link PipelineRunner} to refresh its process execution queue. */
+  /**
+   * The minimum frequency for {@link pipelite.runner.process.queue.DefaultProcessQueue} to refresh
+   * its process execution queue.
+   */
   private Duration processQueueMinRefreshFrequency = DEFAULT_PROCESS_QUEUE_MIN_REFRESH_FREQUENCY;
 
   /**
-   * The maximum length of {@link PipelineRunner} process execution queue. The queue will be
-   * refreshed if it becomes smaller than the pipeline parallelism.
+   * The maximum length of {@link pipelite.runner.process.queue.DefaultProcessQueue} process
+   * execution queue. The queue will be refreshed if it becomes smaller than the pipeline
+   * parallelism.
    */
   private int processQueueMaxSize = DEFAULT_PROCESS_QUEUE_MAX_SIZE;
 

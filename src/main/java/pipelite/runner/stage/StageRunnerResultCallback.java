@@ -8,10 +8,10 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.runner.process;
+package pipelite.runner.stage;
 
-import java.util.function.BiConsumer;
-import pipelite.process.Process;
+import java.util.function.Consumer;
+import pipelite.stage.executor.StageExecutorResult;
 
 /** Callback at the end of process execution. */
-public interface ProcessRunnerCallback extends BiConsumer<Process, ProcessRunnerResult> {}
+public interface StageRunnerResultCallback extends Consumer<StageExecutorResult> {}

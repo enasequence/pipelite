@@ -30,7 +30,7 @@ import pipelite.configuration.PipeliteConfiguration;
 import pipelite.helper.PrioritizedPipelineTestHelper;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.runner.process.DefaultProcessRunner;
+import pipelite.runner.process.ProcessRunner;
 import pipelite.runner.process.creator.DefaultPrioritizedProcessCreator;
 import pipelite.runner.process.creator.PrioritizedProcessCreator;
 import pipelite.runner.process.queue.DefaultProcessQueue;
@@ -61,31 +61,64 @@ public class PipelineRunnerDefaultQueueTest {
 
   private static final String PIPELINE_NAME =
       UniqueStringGenerator.randomPipelineName(PipelineRunnerDefaultQueueTest.class);
+  private static final int PROCESS_CNT = 10;
   private static final Duration PROCESS_QUEUE_REFRESH_FREQUENCY = Duration.ofDays(1);
-  private static final AtomicInteger executionCount = new AtomicInteger();
+  private static final AtomicInteger syncExecutionCount = new AtomicInteger();
+  private static final AtomicInteger asyncExecutionCount = new AtomicInteger();
 
   @Test
-  public void test() {
+  public void sync() {
 
     PrioritizedPipeline prioritizedPipeline =
-        new PrioritizedPipelineTestHelper(PIPELINE_NAME, 10) {
+        new PrioritizedPipelineTestHelper(PIPELINE_NAME, PROCESS_CNT) {
 
           @Override
-          public int _configureParallelism() {
-            return 10;
+          public int testConfigureParallelism() {
+            return PROCESS_CNT;
           }
 
           @Override
-          public void _configureProcess(ProcessBuilder builder) {
+          public void testConfigureProcess(ProcessBuilder builder) {
             builder
                 .execute("STAGE")
-                .withCallExecutor(
+                .withSyncTestExecutor(
                     (request) -> {
-                      executionCount.incrementAndGet();
+                      syncExecutionCount.incrementAndGet();
                       return StageExecutorResult.success();
                     });
           }
         };
+
+    test(prioritizedPipeline, syncExecutionCount);
+  }
+
+  @Test
+  public void async() {
+
+    PrioritizedPipeline prioritizedPipeline =
+        new PrioritizedPipelineTestHelper(PIPELINE_NAME, PROCESS_CNT) {
+
+          @Override
+          public int testConfigureParallelism() {
+            return PROCESS_CNT;
+          }
+
+          @Override
+          public void testConfigureProcess(ProcessBuilder builder) {
+            builder
+                .execute("STAGE")
+                .withAsyncTestExecutor(
+                    (request) -> {
+                      asyncExecutionCount.incrementAndGet();
+                      return StageExecutorResult.success();
+                    });
+          }
+        };
+
+    test(prioritizedPipeline, asyncExecutionCount);
+  }
+
+  private void test(PrioritizedPipeline prioritizedPipeline, AtomicInteger executionCount) {
 
     PrioritizedProcessCreator prioritizedProcessCreator =
         new DefaultPrioritizedProcessCreator(prioritizedPipeline, pipeliteServices.process());
@@ -120,8 +153,13 @@ public class PipelineRunnerDefaultQueueTest {
             prioritizedPipeline,
             prioritizedProcessCreator,
             queue,
-            (pipelineName1) ->
-                new DefaultProcessRunner(pipeliteConfiguration, pipeliteServices, pipelineName1));
+            (pipelineName1, process1) ->
+                new ProcessRunner(
+                    pipeliteConfiguration,
+                    pipeliteServices,
+                    pipeliteMetrics,
+                    pipelineName1,
+                    process1));
 
     ZonedDateTime expectedValidLowerBound =
         ZonedDateTime.now().plus(PROCESS_QUEUE_REFRESH_FREQUENCY);
@@ -143,11 +181,12 @@ public class PipelineRunnerDefaultQueueTest {
 
     // Wait for the processes to execute
     while (pipelineRunner.getActiveProcessCount() > 0) {
-      Time.wait(Duration.ofSeconds(10));
+      Time.wait(Duration.ofSeconds(1));
+      pipelineRunner.runOneIteration();
     }
 
     // Check that all processes were executed
-    assertThat(executionCount.get()).isEqualTo(10);
+    assertThat(executionCount.get()).isEqualTo(PROCESS_CNT);
 
     // Queue should not be filled because refresh frequency is 24 hours
     assertThat(queue.isFillQueue()).isFalse();

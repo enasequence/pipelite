@@ -139,7 +139,7 @@ public class ScheduleRunnerTest {
       for (int i = 0; i < stageCnt; ++i) {
         builder
             .execute("STAGE" + i)
-            .withCallExecutor(
+            .withSyncTestExecutor(
                 (request) -> {
                   stageExecCnt.incrementAndGet();
                   if (stageTestResult == StageTestResult.ERROR) {
@@ -246,7 +246,7 @@ public class ScheduleRunnerTest {
       assertThat(stageEntity.getStartTime()).isNotNull();
       assertThat(stageEntity.getEndTime()).isNotNull();
       assertThat(stageEntity.getStartTime()).isBeforeOrEqualTo(stageEntity.getEndTime());
-      assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.CallExecutor");
+      assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.TestExecutor");
       assertThat(stageEntity.getExecutorData()).isNull();
       assertThat(stageEntity.getExecutorParams())
           .isEqualTo(
@@ -262,8 +262,7 @@ public class ScheduleRunnerTest {
       } else if (f.stageTestResult == StageTestResult.EXCEPTION) {
         assertThat(stageEntity.getStageState()).isEqualTo(StageState.ERROR);
         assertThat(stageLogEntity.getStageLog())
-            .contains(
-                "pipelite.exception.PipeliteException: java.lang.RuntimeException: Expected exception");
+            .contains("java.lang.RuntimeException: Expected exception");
       } else {
         assertThat(stageEntity.getStageState()).isEqualTo(StageState.SUCCESS);
         assertThat(stageEntity.getResultParams()).isNull();

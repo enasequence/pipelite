@@ -25,6 +25,9 @@ import pipelite.stage.parameters.CmdExecutorParameters;
 public class CmdExecutor<T extends CmdExecutorParameters> extends AbstractExecutor<T>
     implements JsonSerializableExecutor {
 
+  // Json deserialization requires a no argument constructor.
+  public CmdExecutor() {}
+
   /** The command to be executed. */
   private String cmd;
 

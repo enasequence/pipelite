@@ -14,7 +14,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
-import pipelite.executor.CallExecutor;
+import pipelite.executor.TestExecutor;
 
 public class StageTest {
 
@@ -29,15 +29,17 @@ public class StageTest {
   public void constructorThrowsMissingStageNameException() {
     assertThrows(
         IllegalArgumentException.class,
-        () ->
-            Stage.builder().stageName(null).executor(new CallExecutor(StageState.SUCCESS)).build());
+        () -> {
+          TestExecutor executor = TestExecutor.sync(StageState.SUCCESS);
+          Stage.builder().stageName(null).executor(executor).build();
+        });
   }
 
   @Test
   public void constructor() {
-    Stage stage =
-        Stage.builder().stageName("TEST").executor(new CallExecutor(StageState.SUCCESS)).build();
+    TestExecutor executor = TestExecutor.sync(StageState.SUCCESS);
+    Stage stage = Stage.builder().stageName("TEST").executor(executor).build();
     assertThat(stage.getStageName()).isEqualTo("TEST");
-    assertThat(stage.getExecutor()).isInstanceOf(CallExecutor.class);
+    assertThat(stage.getExecutor()).isInstanceOf(TestExecutor.class);
   }
 }

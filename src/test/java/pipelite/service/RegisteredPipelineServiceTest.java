@@ -85,12 +85,12 @@ public class RegisteredPipelineServiceTest {
   public static class TestPipeline extends PipelineTestHelper {
 
     @Override
-    public int _configureParallelism() {
+    public int testConfigureParallelism() {
       return 1;
     }
 
     @Override
-    public void _configureProcess(ProcessBuilder builder) {}
+    public void testConfigureProcess(ProcessBuilder builder) {}
   }
 
   public static class TestSchedule extends ScheduleTestHelper {
@@ -109,12 +109,12 @@ public class RegisteredPipelineServiceTest {
     }
 
     @Override
-    public int _configureParallelism() {
+    public int testConfigureParallelism() {
       return 1;
     }
 
     @Override
-    public void _configureProcess(ProcessBuilder builder) {}
+    public void testConfigureProcess(ProcessBuilder builder) {}
   }
 
   private void assertGetRegisteredPipelineByName(

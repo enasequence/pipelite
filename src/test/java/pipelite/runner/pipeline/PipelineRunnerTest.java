@@ -99,23 +99,23 @@ public class PipelineRunnerTest {
   @Accessors(fluent = true)
   @Getter
   public static class TestPipeline extends PrioritizedPipelineTestHelper {
-    private final int stageCnt;
+    private final int stageCount;
     private final StageTestResult stageTestResult;
-    private final AtomicLong stageExecCnt = new AtomicLong();
+    private final AtomicLong executeCalledCount = new AtomicLong();
 
-    public TestPipeline(int processCnt, int stageCnt, StageTestResult stageTestResult) {
-      super(processCnt);
-      this.stageCnt = stageCnt;
+    public TestPipeline(int processCount, int stageCount, StageTestResult stageTestResult) {
+      super(processCount);
+      this.stageCount = stageCount;
       this.stageTestResult = stageTestResult;
     }
 
     @Override
-    public int _configureParallelism() {
+    public int testConfigureParallelism() {
       return 5;
     }
 
     @Override
-    public void _configureProcess(ProcessBuilder builder) {
+    public void testConfigureProcess(ProcessBuilder builder) {
       ExecutorParameters executorParams =
           ExecutorParameters.builder()
               .immediateRetries(0)
@@ -123,12 +123,12 @@ public class PipelineRunnerTest {
               .timeout(Duration.ofSeconds(10))
               .build();
 
-      for (int i = 0; i < stageCnt; ++i) {
+      for (int i = 0; i < stageCount; ++i) {
         builder
             .execute("STAGE" + i)
-            .withCallExecutor(
+            .withSyncTestExecutor(
                 (request) -> {
-                  stageExecCnt.incrementAndGet();
+                  executeCalledCount.incrementAndGet();
                   if (stageTestResult == StageTestResult.ERROR) {
                     return StageExecutorResult.error();
                   }
@@ -150,24 +150,24 @@ public class PipelineRunnerTest {
 
     if (f.stageTestResult() != StageTestResult.SUCCESS) {
       assertThat(metrics.process().getFailedCount())
-          .isEqualTo(f.stageExecCnt().get() / f.stageCnt());
-      assertThat(metrics.stage().getFailedCount()).isEqualTo(f.stageExecCnt().get());
+          .isEqualTo(f.executeCalledCount().get() / f.stageCount());
+      assertThat(metrics.stage().getFailedCount()).isEqualTo(f.executeCalledCount().get());
       assertThat(metrics.stage().getSuccessCount()).isEqualTo(0L);
       assertThat(TimeSeriesMetrics.getCount(metrics.process().getFailedTimeSeries()))
-          .isEqualTo(f.stageExecCnt().get() / f.stageCnt());
+          .isEqualTo(f.executeCalledCount().get() / f.stageCount());
       assertThat(TimeSeriesMetrics.getCount(metrics.stage().getFailedTimeSeries()))
-          .isEqualTo(f.stageExecCnt().get());
+          .isEqualTo(f.executeCalledCount().get());
       assertThat(TimeSeriesMetrics.getCount(metrics.stage().getSuccessTimeSeries())).isEqualTo(0);
     } else {
       assertThat(metrics.process().getCompletedCount())
-          .isEqualTo(f.stageExecCnt().get() / f.stageCnt());
+          .isEqualTo(f.executeCalledCount().get() / f.stageCount());
       assertThat(metrics.stage().getFailedCount()).isEqualTo(0L);
-      assertThat(metrics.stage().getSuccessCount()).isEqualTo(f.stageExecCnt().get());
+      assertThat(metrics.stage().getSuccessCount()).isEqualTo(f.executeCalledCount().get());
       assertThat(TimeSeriesMetrics.getCount(metrics.process().getCompletedTimeSeries()))
-          .isEqualTo(f.stageExecCnt().get() / f.stageCnt());
+          .isEqualTo(f.executeCalledCount().get() / f.stageCount());
       assertThat(TimeSeriesMetrics.getCount(metrics.stage().getFailedTimeSeries())).isEqualTo(0);
       assertThat(TimeSeriesMetrics.getCount(metrics.stage().getSuccessTimeSeries()))
-          .isEqualTo(f.stageExecCnt().get());
+          .isEqualTo(f.executeCalledCount().get());
     }
   }
 
@@ -190,7 +190,7 @@ public class PipelineRunnerTest {
   private void assertStageEntities(TestPipeline f, String processId) {
     String pipelineName = f.pipelineName();
 
-    for (int i = 0; i < f.stageCnt(); ++i) {
+    for (int i = 0; i < f.stageCount(); ++i) {
       StageEntity stageEntity =
           pipeliteServices.stage().getSavedStage(f.pipelineName(), processId, "STAGE" + i).get();
       StageLogEntity stageLogEntity =
@@ -201,7 +201,7 @@ public class PipelineRunnerTest {
       assertThat(stageEntity.getStartTime()).isNotNull();
       assertThat(stageEntity.getEndTime()).isNotNull();
       assertThat(stageEntity.getStartTime()).isBeforeOrEqualTo(stageEntity.getEndTime());
-      assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.CallExecutor");
+      assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.TestExecutor");
       assertThat(stageEntity.getExecutorData()).isNull();
       assertThat(stageEntity.getExecutorParams())
           .isEqualTo(
@@ -217,8 +217,7 @@ public class PipelineRunnerTest {
       } else if (f.stageTestResult() == StageTestResult.EXCEPTION) {
         assertThat(stageEntity.getStageState()).isEqualTo(StageState.ERROR);
         assertThat(stageLogEntity.getStageLog())
-            .contains(
-                "pipelite.exception.PipeliteException: java.lang.RuntimeException: Expected exception");
+            .contains("java.lang.RuntimeException: Expected exception");
       } else {
         assertThat(stageEntity.getStageState()).isEqualTo(StageState.SUCCESS);
         assertThat(stageEntity.getResultParams()).isNull();
@@ -232,8 +231,8 @@ public class PipelineRunnerTest {
 
     assertThat(pipelineRunner.getActiveProcessRunners().size()).isEqualTo(0);
     assertThat(f.processCnt()).isGreaterThan(0);
-    assertThat(f.stageCnt()).isGreaterThan(0);
-    assertThat(f.stageExecCnt().get() / f.stageCnt()).isEqualTo(f.processCnt());
+    assertThat(f.stageCount()).isGreaterThan(0);
+    assertThat(f.executeCalledCount().get() / f.stageCount()).isEqualTo(f.processCnt());
     assertThat(f.configuredProcessCount()).isEqualTo(f.processCnt());
     assertMetrics(f);
     for (String processId : f.configuredProcessIds()) {

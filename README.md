@@ -268,10 +268,8 @@ The following executor backends are supported by the ProcessBuilder:
 - ```withAwsBatchExecutor```: an experimental AwsBatch executor that uses JSON configuration files with parameter
   placeholders.
 - ```with```: any executor that implements the ```StageExecutor``` interface.
-- ```withCallExecutor```: any executor that implements the ```StageExecutorCall``` interface.
-- ```withCallExecutor```: A test executor that behaves like a synchronous executor and returns the given stage state.
-- ```withAsyncCallExecutor```: A test executor that behaves like an asynchronous executor by returning ACTIVE stage
-  state when called for the first time and then returning the given stage state for subsequent calls.
+- ```withSyncTestExecutor```: A test executor that behaves like a synchronous executor.
+- ```withAsyncTestExecutor```: A test executor that behaves like an asynchronous executor.
 
 ### Configuration parameters
 

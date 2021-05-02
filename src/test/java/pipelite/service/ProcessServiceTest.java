@@ -72,7 +72,7 @@ class ProcessServiceTest {
     assertThat(processService.getSavedProcess(pipelineName, processId).get())
         .isEqualTo(processEntity);
 
-    Process process = new ProcessBuilder(processId).execute("STAGE").withCallExecutor().build();
+    Process process = new ProcessBuilder(processId).execute("STAGE").withSyncTestExecutor().build();
     process.setProcessEntity(processEntity);
 
     processService.endExecution(process, ProcessState.COMPLETED);

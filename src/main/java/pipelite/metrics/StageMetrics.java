@@ -13,7 +13,7 @@ package pipelite.metrics;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.ZonedDateTime;
-import pipelite.runner.process.ProcessRunnerResult;
+import pipelite.stage.executor.StageExecutorResult;
 import tech.tablesaw.api.Table;
 
 public class StageMetrics {
@@ -60,11 +60,17 @@ public class StageMetrics {
     return failedTimeSeries;
   }
 
-  public void increment(ProcessRunnerResult result, ZonedDateTime now) {
-    successCounter.increment(result.getStageSuccessCount());
-    TimeSeriesMetrics.updateCounter(successTimeSeries, result.getStageSuccessCount(), now);
+  public void endStageExecution(StageExecutorResult result) {
+    endStageExecution(result, ZonedDateTime.now());
+  }
 
-    failedCounter.increment(result.getStageFailedCount());
-    TimeSeriesMetrics.updateCounter(failedTimeSeries, result.getStageFailedCount(), now);
+  public void endStageExecution(StageExecutorResult result, ZonedDateTime now) {
+    if (result.isSuccess()) {
+      successCounter.increment(1);
+      TimeSeriesMetrics.updateCounter(successTimeSeries, 1, now);
+    } else if (result.isError()) {
+      failedCounter.increment(1);
+      TimeSeriesMetrics.updateCounter(failedTimeSeries, 1, now);
+    }
   }
 }

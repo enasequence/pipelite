@@ -8,25 +8,11 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.metrics;
+package pipelite.runner.process;
 
-import io.micrometer.core.instrument.MeterRegistry;
+import pipelite.process.Process;
 
-public class PipelineMetrics {
-
-  private final ProcessMetrics processMetrics;
-  private final StageMetrics stageMetrics;
-
-  public PipelineMetrics(String pipelineName, MeterRegistry meterRegistry) {
-    processMetrics = new ProcessMetrics(pipelineName, meterRegistry);
-    stageMetrics = new StageMetrics(pipelineName, meterRegistry);
-  }
-
-  public ProcessMetrics process() {
-    return processMetrics;
-  }
-
-  public StageMetrics stage() {
-    return stageMetrics;
-  }
+@FunctionalInterface
+public interface ProcessRunnerFactory {
+  ProcessRunner create(String pipelineName, Process process);
 }

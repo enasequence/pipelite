@@ -31,12 +31,12 @@ public class DefaultPrioritizedProcessCreatorTest {
     }
 
     @Override
-    public int _configureParallelism() {
+    public int testConfigureParallelism() {
       return 1;
     }
 
     @Override
-    public void _configureProcess(ProcessBuilder builder) {}
+    public void testConfigureProcess(ProcessBuilder builder) {}
   }
 
   @Test

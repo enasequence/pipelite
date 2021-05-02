@@ -15,7 +15,6 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
@@ -30,7 +29,7 @@ import pipelite.log.LogKey;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
-import pipelite.runner.process.ProcessRunner;
+import pipelite.runner.process.ProcessRunnerFactory;
 import pipelite.runner.process.ProcessRunnerPool;
 import pipelite.runner.stage.StageRunner;
 import pipelite.service.*;
@@ -53,13 +52,13 @@ public class ScheduleRunner extends ProcessRunnerPool {
       PipeliteServices pipeliteServices,
       PipeliteMetrics pipeliteMetrics,
       List<Schedule> schedules,
-      Function<String, ProcessRunner> processRunnerSupplier) {
+      ProcessRunnerFactory processRunnerFactory) {
     super(
         pipeliteConfiguration,
         pipeliteServices,
         pipeliteMetrics,
         serviceName(pipeliteConfiguration),
-        processRunnerSupplier);
+        processRunnerFactory);
     Assert.notNull(pipeliteConfiguration, "Missing configuration");
     Assert.notNull(pipeliteServices, "Missing services");
     this.scheduleService = pipeliteServices.schedule();
@@ -69,31 +68,36 @@ public class ScheduleRunner extends ProcessRunnerPool {
     this.scheduleCache = new ScheduleCache(pipeliteServices.registeredPipeline());
     this.serviceName = pipeliteConfiguration.service().getName();
     schedules.forEach(s -> this.scheduleCrons.add(new ScheduleCron(s.pipelineName())));
-    setRunnerCallback(
-        () -> {
-          try {
-            if (!healthCheckService.isDataSourceHealthy()) {
-              logContext(log.atSevere())
-                  .log("Waiting data source to be healthy before starting new schedules");
-              return;
-            }
-            getExecutableSchedules()
-                .forEach(
-                    s -> {
-                      try {
-                        executeSchedule(s, createProcessEntity(s), ExecuteMode.NEW);
-                      } catch (Exception ex) {
-                        // Catching exceptions here to allow other schedules to continue execution.
-                        internalErrorService.saveInternalError(
-                            serviceName, s.getPipelineName(), this.getClass(), ex);
-                      }
-                    });
+  }
 
-          } catch (Exception ex) {
-            // Catching exceptions here in case they have not already been caught.
-            internalErrorService.saveInternalError(serviceName, this.getClass(), ex);
-          }
-        });
+  // From AbstractScheduledService.
+  @Override
+  public void runOneIteration() {
+    try {
+      if (!healthCheckService.isDataSourceHealthy()) {
+        logContext(log.atSevere())
+            .log("Waiting data source to be healthy before starting new schedules");
+        return;
+      }
+      getExecutableSchedules()
+          .forEach(
+              s -> {
+                try {
+                  executeSchedule(s, createProcessEntity(s), ExecuteMode.NEW);
+                } catch (Exception ex) {
+                  // Catching exceptions here to allow other schedules to continue execution.
+                  internalErrorService.saveInternalError(
+                      serviceName, s.getPipelineName(), this.getClass(), ex);
+                }
+              });
+
+      // Must call ProcessRunnerPool.runOneIteration()
+      super.runOneIteration();
+
+    } catch (Exception ex) {
+      // Catching exceptions here in case they have not already been caught.
+      internalErrorService.saveInternalError(serviceName, this.getClass(), ex);
+    }
   }
 
   private static String serviceName(PipeliteConfiguration pipeliteConfiguration) {
@@ -255,7 +259,7 @@ public class ScheduleRunner extends ProcessRunnerPool {
       runProcess(
           pipelineName,
           process,
-          (p, r) -> {
+          (p) -> {
             ScheduleEntity scheduleEntity = scheduleService.getSavedSchedule(pipelineName).get();
             ZonedDateTime nextLaunchTime =
                 CronUtils.launchTime(scheduleCron.getCron(), scheduleEntity.getStartTime());

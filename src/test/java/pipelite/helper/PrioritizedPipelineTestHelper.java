@@ -20,26 +20,28 @@ import pipelite.UniqueStringGenerator;
 public abstract class PrioritizedPipelineTestHelper extends PipelineTestHelper
     implements PrioritizedPipeline {
 
-  private final int processCnt;
+  private final int processCount;
   private final Set<String> newProcessIds = ConcurrentHashMap.newKeySet();
   private final Set<String> returnedProcessIds = ConcurrentHashMap.newKeySet();
   private final Set<String> confirmedProcessIds = ConcurrentHashMap.newKeySet();
   private final Monitor monitor = new Monitor();
 
-  public PrioritizedPipelineTestHelper(int processCnt) {
-    this(UniqueStringGenerator.randomPipelineName(PrioritizedPipelineTestHelper.class), processCnt);
+  public PrioritizedPipelineTestHelper(int processCount) {
+    this(
+        UniqueStringGenerator.randomPipelineName(PrioritizedPipelineTestHelper.class),
+        processCount);
   }
 
-  public PrioritizedPipelineTestHelper(String pipelineName, int processCnt) {
+  public PrioritizedPipelineTestHelper(String pipelineName, int processCount) {
     super(pipelineName);
-    this.processCnt = processCnt;
-    for (int i = 0; i < processCnt; ++i) {
+    this.processCount = processCount;
+    for (int i = 0; i < processCount; ++i) {
       newProcessIds.add(UniqueStringGenerator.randomProcessId(PrioritizedPipelineTestHelper.class));
     }
   }
 
   public int processCnt() {
-    return processCnt;
+    return processCount;
   }
 
   public final PrioritizedPipeline.PrioritizedProcess nextProcess() {

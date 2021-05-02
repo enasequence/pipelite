@@ -18,12 +18,27 @@ import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.ExecutorParameters;
 
 /** Executes a stage. Must be serializable to json. */
-public interface StageExecutor<T extends ExecutorParameters> extends StageExecutorCall {
+public interface StageExecutor<T extends ExecutorParameters> {
 
+  /**
+   * Returns the executor parameters class.
+   *
+   * @return the executor parameters class
+   */
   Class<T> getExecutorParamsType();
 
+  /**
+   * Returns the executor parameters.
+   *
+   * @return the executor parameters
+   */
   T getExecutorParams();
 
+  /**
+   * Sets the executor parameters.
+   *
+   * @param executorParams the executor parameters
+   */
   void setExecutorParams(T executorParams);
 
   /**
@@ -33,7 +48,15 @@ public interface StageExecutor<T extends ExecutorParameters> extends StageExecut
    */
   void prepareExecute(StageExecutorContextCache executorContextCache);
 
-  /** Terminates the current active execution. */
+  /**
+   * Called repeatedly to execute the stage until it is not ACTIVE.
+   *
+   * @param request the execution request
+   * @return stage execution result
+   */
+  StageExecutorResult execute(StageExecutorRequest request);
+
+  /** Terminates the stage execution. */
   void terminate();
 
   /**

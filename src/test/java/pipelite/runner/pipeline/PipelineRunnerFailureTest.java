@@ -153,12 +153,12 @@ public class PipelineRunnerFailureTest {
     }
 
     @Override
-    public int _configureParallelism() {
+    public int testConfigureParallelism() {
       return 5;
     }
 
     @Override
-    public void _configureProcess(ProcessBuilder builder) {
+    public void testConfigureProcess(ProcessBuilder builder) {
       ExecutorParameters executorParams =
           ExecutorParameters.builder()
               .immediateRetries(0)
@@ -168,28 +168,28 @@ public class PipelineRunnerFailureTest {
 
       builder
           .execute("STAGE0")
-          .withCallExecutor(
+          .withSyncTestExecutor(
               (pipelineName1) -> {
                 firstStageExecCnt.incrementAndGet();
                 return firstStageExecResult;
               },
               executorParams)
           .executeAfterPrevious("STAGE1")
-          .withCallExecutor(
+          .withSyncTestExecutor(
               (pipelineName1) -> {
                 secondStageExecCnt.incrementAndGet();
                 return secondStageExecResult;
               },
               executorParams)
           .executeAfterPrevious("STAGE2")
-          .withCallExecutor(
+          .withSyncTestExecutor(
               (pipelineName1) -> {
                 thirdStageExecCnt.incrementAndGet();
                 return thirdStageExecResult;
               },
               executorParams)
           .executeAfterPrevious("STAGE3")
-          .withCallExecutor(
+          .withSyncTestExecutor(
               (pipelineName1) -> {
                 fourthStageExecCnt.incrementAndGet();
                 return fourthStageExecResult;
@@ -288,7 +288,7 @@ public class PipelineRunnerFailureTest {
         assertThat(stageEntity.getStartTime()).isNotNull();
         assertThat(stageEntity.getEndTime()).isNotNull();
         assertThat(stageEntity.getStartTime()).isBeforeOrEqualTo(stageEntity.getEndTime());
-        assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.CallExecutor");
+        assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.TestExecutor");
         assertThat(stageEntity.getExecutorData()).isNull();
         assertThat(stageEntity.getExecutorParams())
             .isEqualTo(

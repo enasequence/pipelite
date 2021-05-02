@@ -25,7 +25,7 @@ import pipelite.stage.Stage;
 import pipelite.stage.StageState;
 import pipelite.stage.parameters.ExecutorParameters;
 
-public class DefaultProcessRunnerTest {
+public class ProcessRunnerTest {
 
   @Test
   public void evaluateProcessStateNoRetries() {
@@ -74,7 +74,7 @@ public class DefaultProcessRunnerTest {
     List<Stage> stages =
         getTwoIndependentStages(
             firstStageState, secondStageState, firstStageExecutions, secondStageExecutions, 0, 0);
-    Assertions.assertThat(DefaultProcessRunner.evaluateProcessState(stages)).isEqualTo(state);
+    Assertions.assertThat(ProcessRunner.evaluateProcessState(stages)).isEqualTo(state);
   }
 
   private void evaluateProcessStateWithRetries(
@@ -84,7 +84,7 @@ public class DefaultProcessRunnerTest {
     List<Stage> stages =
         getTwoIndependentStages(
             firstStageState, secondStageState, firstStageExecutions, secondStageExecutions, 1, 1);
-    assertThat(DefaultProcessRunner.evaluateProcessState(stages)).isEqualTo(state);
+    assertThat(ProcessRunner.evaluateProcessState(stages)).isEqualTo(state);
   }
 
   public static List<Stage> getTwoIndependentStages(
@@ -102,9 +102,9 @@ public class DefaultProcessRunnerTest {
     Process process =
         new ProcessBuilder("pipelite-test")
             .execute("STAGE0")
-            .withCallExecutor((request) -> null, executorParams)
+            .withSyncTestExecutor((request) -> null, executorParams)
             .execute("STAGE1")
-            .withCallExecutor((request) -> null, executorParams)
+            .withSyncTestExecutor((request) -> null, executorParams)
             .build();
     List<Stage> stages = new ArrayList<>();
 

@@ -27,6 +27,7 @@ public class StageExecutorSerializerTest {
 
     private StageState stageState;
 
+    // Json deserialization requires no argument constructor.
     public TestExecutor() {}
 
     public TestExecutor(StageState stageState) {

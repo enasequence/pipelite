@@ -15,7 +15,7 @@ import pipelite.PrioritizedPipeline;
 import pipelite.configuration.PipeliteConfiguration;
 import pipelite.exception.PipeliteException;
 import pipelite.metrics.PipeliteMetrics;
-import pipelite.runner.process.DefaultProcessRunner;
+import pipelite.runner.process.ProcessRunner;
 import pipelite.runner.process.creator.DefaultPrioritizedProcessCreator;
 import pipelite.runner.process.creator.PrioritizedProcessCreator;
 import pipelite.runner.process.queue.DefaultProcessQueue;
@@ -23,9 +23,9 @@ import pipelite.runner.process.queue.ProcessQueue;
 import pipelite.service.PipeliteServices;
 import pipelite.service.RegisteredPipelineService;
 
-public class DefaultPipelineRunner {
+public class PipelineRunnerFactory {
 
-  private DefaultPipelineRunner() {}
+  private PipelineRunnerFactory() {}
 
   public static PipelineRunner create(
       PipeliteConfiguration pipeliteConfiguration,
@@ -56,7 +56,8 @@ public class DefaultPipelineRunner {
         pipeline,
         prioritizedProcessCreator,
         processQueue,
-        (pipelineName1) ->
-            new DefaultProcessRunner(pipeliteConfiguration, pipeliteServices, pipelineName1));
+        (pipelineName1, process1) ->
+            new ProcessRunner(
+                pipeliteConfiguration, pipeliteServices, pipeliteMetrics, pipelineName1, process1));
   }
 }

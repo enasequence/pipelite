@@ -37,7 +37,6 @@ import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.TimeSeriesMetrics;
 import pipelite.process.ProcessState;
 import pipelite.runner.pipeline.PipelineRunner;
-import pipelite.runner.process.ProcessRunnerResult;
 import pipelite.service.ProcessService;
 import pipelite.service.RegisteredPipelineService;
 import pipelite.service.RunnerService;
@@ -206,11 +205,9 @@ public class PipelineController {
     for (int i = 0; i < LOREM_IPSUM_PROCESSES; ++i) {
       PipelineMetrics metrics = new PipelineMetrics("pipeline" + i, new SimpleMeterRegistry());
       for (int j = 0; j < timeCount; ++j) {
-        ProcessRunnerResult r = new ProcessRunnerResult();
-        r.incrementStageSuccess();
         ZonedDateTime now = since.plus(increment.multipliedBy(j + 1));
         metrics.process().setRunningCount(i, now);
-        metrics.increment(ProcessState.COMPLETED, r, now);
+        metrics.process().endProcessExecution(ProcessState.COMPLETED, now);
       }
       list.add(metrics);
     }

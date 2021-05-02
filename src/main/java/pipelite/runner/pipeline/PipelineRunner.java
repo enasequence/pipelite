@@ -12,7 +12,6 @@ package pipelite.runner.pipeline;
 
 import com.google.common.flogger.FluentLogger;
 import java.time.ZonedDateTime;
-import java.util.function.Function;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.Pipeline;
@@ -22,7 +21,7 @@ import pipelite.log.LogKey;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
-import pipelite.runner.process.ProcessRunner;
+import pipelite.runner.process.ProcessRunnerFactory;
 import pipelite.runner.process.ProcessRunnerPool;
 import pipelite.runner.process.creator.PrioritizedProcessCreator;
 import pipelite.runner.process.queue.ProcessQueue;
@@ -38,6 +37,7 @@ public class PipelineRunner extends ProcessRunnerPool {
   private final HealthCheckService healthCheckService;
   private final String pipelineName;
   private final Pipeline pipeline;
+  private final PrioritizedProcessCreator prioritizedProcessCreator;
   private final ProcessQueue processQueue;
   private final int processCreateMaxSize;
   private final boolean shutdownIfIdle;
@@ -50,44 +50,50 @@ public class PipelineRunner extends ProcessRunnerPool {
       Pipeline pipeline,
       PrioritizedProcessCreator prioritizedProcessCreator,
       ProcessQueue processQueue,
-      Function<String, ProcessRunner> processRunnerSupplier) {
+      ProcessRunnerFactory processRunnerFactory) {
     super(
         pipeliteConfiguration,
         pipeliteServices,
         pipeliteMetrics,
         serviceName(pipeliteConfiguration, processQueue),
-        processRunnerSupplier);
+        processRunnerFactory);
     Assert.notNull(prioritizedProcessCreator, "Missing process creator");
     this.internalErrorService = pipeliteServices.internalError();
     this.healthCheckService = pipeliteServices.healthCheck();
     this.pipeline = pipeline;
+    this.prioritizedProcessCreator = prioritizedProcessCreator;
     this.processQueue = processQueue;
     this.pipelineName = processQueue.getPipelineName();
     this.processCreateMaxSize = pipeliteConfiguration.advanced().getProcessCreateMaxSize();
     this.shutdownIfIdle = pipeliteConfiguration.advanced().isShutdownIfIdle();
     this.startTime = ZonedDateTime.now();
-    setRunnerCallback(
-        () -> {
-          try {
-            if (!healthCheckService.isDataSourceHealthy()) {
-              logContext(log.atSevere())
-                  .log("Waiting data source to be healthy before starting new processes");
-              return;
-            }
+  }
 
-            if (processQueue.isFillQueue()) {
-              prioritizedProcessCreator.createProcesses(processCreateMaxSize);
-              processQueue.fillQueue();
-            }
-            while (processQueue.isAvailableProcesses(this.getActiveProcessCount())) {
-              runProcess(processQueue.nextAvailableProcess());
-            }
-          } catch (Exception ex) {
-            // Catching exceptions here in case they have not already been caught.
-            internalErrorService.saveInternalError(
-                serviceName(), pipelineName, this.getClass(), ex);
-          }
-        });
+  // From AbstractScheduledService.
+  @Override
+  public void runOneIteration() {
+    try {
+      if (!healthCheckService.isDataSourceHealthy()) {
+        logContext(log.atSevere())
+            .log("Waiting data source to be healthy before starting new processes");
+        return;
+      }
+
+      if (processQueue.isFillQueue()) {
+        prioritizedProcessCreator.createProcesses(processCreateMaxSize);
+        processQueue.fillQueue();
+      }
+      while (processQueue.isAvailableProcesses(this.getActiveProcessCount())) {
+        runProcess(processQueue.nextAvailableProcess());
+      }
+
+      // Must call ProcessRunnerPool.runOneIteration()
+      super.runOneIteration();
+
+    } catch (Exception ex) {
+      // Catching exceptions here in case they have not already been caught.
+      internalErrorService.saveInternalError(serviceName(), pipelineName, this.getClass(), ex);
+    }
   }
 
   private static String serviceName(
@@ -112,7 +118,7 @@ public class PipelineRunner extends ProcessRunnerPool {
     try {
       Process process = ProcessFactory.create(processEntity, pipeline);
       if (process != null) {
-        runProcess(pipelineName, process, (p, r) -> {});
+        runProcess(pipelineName, process, (p) -> {});
       }
     } catch (Exception ex) {
       // Catching exceptions here to allow other processes to continue execution.

@@ -10,76 +10,60 @@
  */
 package pipelite.runner.process;
 
+import com.google.common.flogger.FluentLogger;
 import com.google.common.util.concurrent.AbstractScheduledService;
 import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.PipeliteConfiguration;
+import pipelite.log.LogKey;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
-import pipelite.service.InternalErrorService;
-import pipelite.service.PipeliteLockerService;
 import pipelite.service.PipeliteServices;
+import pipelite.time.Time;
 
 /** Abstract base class for executing processes. */
 @Flogger
 public class ProcessRunnerPool extends AbstractScheduledService {
 
-  private final InternalErrorService internalErrorService;
-  private final PipeliteLockerService pipeliteLockerService;
-  private final Function<String, ProcessRunner> processRunnerSupplier;
+  private final PipeliteServices pipeliteServices;
   private final PipeliteMetrics pipeliteMetrics;
-  private final ExecutorService executorService = Executors.newCachedThreadPool();
-  private final Duration executorServiceShutdownPeriod;
-  private final Duration processRunnerFrequency;
   private final String serviceName;
-  private Runnable runnerCallback;
+  private final ProcessRunnerFactory processRunnerFactory;
+  private final Duration processRunnerFrequency;
+  private final Set<ProcessRunnerPool.ActiveProcessRunner> active = ConcurrentHashMap.newKeySet();
 
-  @Value
+  @Data
   public static class ActiveProcessRunner {
     private final String pipelineName;
     private final String processId;
-    @EqualsAndHashCode.Exclude private final ProcessRunner processRunner;
+    @EqualsAndHashCode.Exclude private final ProcessRunnerResultCallback resultCallback;
+    @EqualsAndHashCode.Exclude private ProcessRunner processRunner;
+    @EqualsAndHashCode.Exclude private Future<?> future;
   }
-
-  private final Set<ProcessRunnerPool.ActiveProcessRunner> active = ConcurrentHashMap.newKeySet();
 
   public ProcessRunnerPool(
       PipeliteConfiguration pipeliteConfiguration,
       PipeliteServices pipeliteServices,
       PipeliteMetrics pipeliteMetrics,
       String serviceName,
-      Function<String, ProcessRunner> processRunnerSupplier) {
+      ProcessRunnerFactory processRunnerFactory) {
     Assert.notNull(pipeliteConfiguration, "Missing configuration");
     Assert.notNull(pipeliteServices, "Missing services");
-    Assert.notNull(processRunnerSupplier, "Missing process runner supplier");
-    this.internalErrorService = pipeliteServices.internalError();
-    this.pipeliteLockerService = pipeliteServices.locker();
+    Assert.notNull(processRunnerFactory, "Missing process runner factory");
+    this.pipeliteServices = pipeliteServices;
     this.pipeliteMetrics = pipeliteMetrics;
     this.serviceName = serviceName;
-    this.processRunnerSupplier = processRunnerSupplier;
-    this.executorServiceShutdownPeriod =
-        pipeliteConfiguration.service().getShutdownPeriodWithMargin();
+    this.processRunnerFactory = processRunnerFactory;
     this.processRunnerFrequency = pipeliteConfiguration.advanced().getProcessRunnerFrequency();
-  }
-
-  /**
-   * Callback called once every iteration of the process runner pool.
-   *
-   * @param runnerCallback callback called once every iteration of the process runner pool
-   */
-  public void setRunnerCallback(Runnable runnerCallback) {
-    this.runnerCallback = runnerCallback;
   }
 
   // From AbstractScheduledService.
@@ -101,21 +85,69 @@ public class ProcessRunnerPool extends AbstractScheduledService {
   // From AbstractScheduledService.
   @Override
   public void runOneIteration() {
-    if (runnerCallback == null) {
-      log.atWarning().log("No process runner pool callback: %s", serviceName());
-    }
-    log.atFine().log("Calling process runner pool callback: %s", serviceName());
-
     try {
-      this.runnerCallback.run();
-      pipeliteMetrics.setRunningProcessesCount(getActiveProcessRunners());
-    } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Unexpected exception from service: %s", serviceName());
-    }
+      ZonedDateTime runOneIterationStartTime = ZonedDateTime.now();
 
-    if (getActiveProcessCount() == 0 && shutdownIfIdle()) {
-      log.atInfo().log("Stopping idle process runner pool: %s", serviceName());
-      stopAsync();
+      // ProcessRunnerPool runOneIteration is called from AbstractScheduledService schedule.
+      // It is guaranteed not to be called concurrently. We use an executor service to call
+      // ProcessRunner runOneIteration. The ProcessRunner runOneIteration will not execute stages
+      // in the same thread and should complete fairly quickly. We capture the ProcessRunner
+      // runOneIteration future to make sure not to call ProcessRunner runOneIteration again
+      // until the future has completed.
+
+      runOneIterationForActiveProcessRunners();
+
+      pipeliteMetrics.setRunningProcessesCount(getActiveProcessRunners());
+      if (getActiveProcessCount() == 0 && shutdownIfIdle()) {
+        log.atInfo().log("Stopping idle process runner pool: %s", serviceName());
+        stopAsync();
+      }
+      pipeliteMetrics
+          .getProcessRunnerPoolOneIterationTimer()
+          .record(Duration.between(runOneIterationStartTime, ZonedDateTime.now()));
+    } catch (Exception ex) {
+      pipeliteServices.internalError().saveInternalError(serviceName, this.getClass(), ex);
+    }
+  }
+
+  private void runOneIterationForActiveProcessRunners() {
+    active.stream()
+        .filter(a -> a.getFuture() == null || a.getFuture().isDone())
+        .forEach(a -> runOneIterationForActiveProcessRunner(a));
+  }
+
+  private void runOneIterationForActiveProcessRunner(ActiveProcessRunner activeProcessRunner) {
+    activeProcessRunner.setFuture(
+        pipeliteServices
+            .executor()
+            .process()
+            .submit(
+                () -> {
+                  try {
+                    activeProcessRunner
+                        .getProcessRunner()
+                        .runOneIteration(
+                            (process) ->
+                                processRunnerEndExecutionHandler(activeProcessRunner, process));
+                  } catch (Exception ex) {
+                    pipeliteServices
+                        .internalError()
+                        .saveInternalError(
+                            serviceName,
+                            activeProcessRunner.getPipelineName(),
+                            activeProcessRunner.getProcessId(),
+                            this.getClass(),
+                            ex);
+                  }
+                }));
+  }
+
+  private void processRunnerEndExecutionHandler(
+      ActiveProcessRunner activeProcessRunner, Process process) {
+    try {
+      activeProcessRunner.getResultCallback().accept(process);
+    } finally {
+      active.remove(activeProcessRunner);
     }
   }
 
@@ -133,49 +165,33 @@ public class ProcessRunnerPool extends AbstractScheduledService {
    *
    * @param pipelineName the pipeline name
    * @param process the process
-   * @param callback the process runner callback
+   * @param resultCallback the process runner callback
    */
-  public void runProcess(String pipelineName, Process process, ProcessRunnerCallback callback) {
+  public void runProcess(
+      String pipelineName, Process process, ProcessRunnerResultCallback resultCallback) {
 
     Assert.notNull(pipelineName, "Missing pipeline name");
     Assert.notNull(process, "Missing process");
     Assert.notNull(process.getProcessId(), "Missing process id");
-    Assert.notNull(callback, "Missing process runner callback");
+    Assert.notNull(resultCallback, "Missing process runner result callback");
 
     String processId = process.getProcessId();
 
     // Create process runner.
-    ProcessRunner processRunner = processRunnerSupplier.apply(pipelineName);
-    ProcessRunnerPool.ActiveProcessRunner activeProcessRunner =
-        new ProcessRunnerPool.ActiveProcessRunner(pipelineName, processId, processRunner);
-    active.add(activeProcessRunner);
-    // Run process.
-    executorService.execute(
-        () -> {
-          ProcessRunnerResult result = null;
-          try {
-            // Lock process.
-            if (!pipeliteLockerService.lockProcess(pipelineName, processId)) {
-              return;
-            }
-            result = processRunner.runProcess(process);
-          } catch (Exception ex) {
-            // Catching exceptions here to allow other processes to continue execution.
-            internalErrorService.saveInternalError(
-                serviceName, pipelineName, processId, this.getClass(), ex);
-          } finally {
-            if (result == null) {
-              result = new ProcessRunnerResult();
-            }
-            pipeliteMetrics
-                .pipeline(pipelineName)
-                .increment(process.getProcessEntity().getProcessState(), result);
-            callback.accept(process, result);
-            // Unlock process.
-            pipeliteLockerService.unlockProcess(pipelineName, processId);
-            active.remove(activeProcessRunner);
-          }
-        });
+    try {
+      ProcessRunnerPool.ActiveProcessRunner activeProcessRunner =
+          new ProcessRunnerPool.ActiveProcessRunner(pipelineName, processId, resultCallback);
+
+      ProcessRunner processRunner = processRunnerFactory.create(pipelineName, process);
+
+      activeProcessRunner.setProcessRunner(processRunner);
+      active.add(activeProcessRunner);
+    } catch (Exception ex) {
+      // Catching exceptions here to allow other processes to continue execution.
+      pipeliteServices
+          .internalError()
+          .saveInternalError(serviceName, pipelineName, processId, this.getClass(), ex);
+    }
   }
 
   /**
@@ -221,23 +237,25 @@ public class ProcessRunnerPool extends AbstractScheduledService {
         .collect(Collectors.toList());
   }
 
-  /** Terminates running processes. */
-  public void terminateProcesses() {
-    active.forEach(runner -> runner.getProcessRunner().terminate());
+  /** Terminates running processes. Process execution can't be continued later. */
+  public void terminate() {
+    Time.wait(processRunnerFrequency);
+    active.forEach(a -> a.getProcessRunner().terminate());
   }
 
-  /** Shuts down the process runner pool. */
+  /** Detaches from the running processes. Asynchronous process execution can be continued later. */
+  public void detach() {
+    Time.wait(processRunnerFrequency);
+    active.forEach(a -> a.getProcessRunner().detach());
+  }
+
   @Override
   public void shutDown() {
-    executorService.shutdown();
-    try {
-      executorService.awaitTermination(
-          executorServiceShutdownPeriod.getSeconds(), TimeUnit.SECONDS);
-      active.forEach(
-          a -> pipeliteLockerService.unlockProcess(a.getPipelineName(), a.getProcessId()));
-    } catch (InterruptedException ex) {
-      executorService.shutdownNow();
-      Thread.currentThread().interrupt();
-    }
+    // Guaranteed not to be called concurrently with runOneIteration.
+    detach();
+  }
+
+  private FluentLogger.Api logContext(FluentLogger.Api log) {
+    return log.with(LogKey.SERVICE_NAME, serviceName);
   }
 }

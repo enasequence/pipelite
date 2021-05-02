@@ -37,18 +37,18 @@ public abstract class PipelineTestHelper implements Pipeline {
 
   @Override
   public final Options configurePipeline() {
-    return new Options().pipelineParallelism(_configureParallelism());
+    return new Options().pipelineParallelism(testConfigureParallelism());
   }
 
-  protected abstract int _configureParallelism();
+  protected abstract int testConfigureParallelism();
 
   @Override
   public final void configureProcess(ProcessBuilder builder) {
     configuredProcessIds.add(builder.getProcessId());
-    _configureProcess(builder);
+    testConfigureProcess(builder);
   }
 
-  protected abstract void _configureProcess(ProcessBuilder builder);
+  protected abstract void testConfigureProcess(ProcessBuilder builder);
 
   public int configuredProcessCount() {
     return configuredProcessIds.size();

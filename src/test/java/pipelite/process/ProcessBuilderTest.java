@@ -33,15 +33,15 @@ public class ProcessBuilderTest {
     Process process =
         new ProcessBuilder(PROCESS_ID)
             .execute(stageName1)
-            .withCallExecutor()
+            .withSyncTestExecutor()
             .executeAfterPrevious(stageName2)
-            .withCallExecutor()
+            .withSyncTestExecutor()
             .executeAfterPrevious(stageName3)
-            .withCallExecutor()
+            .withSyncTestExecutor()
             .executeAfterFirst(stageName4)
-            .withCallExecutor()
+            .withSyncTestExecutor()
             .executeAfter(stageName5, Arrays.asList(stageName1, stageName2))
-            .withCallExecutor()
+            .withSyncTestExecutor()
             .build();
 
     assertThat(process).isNotNull();

@@ -46,6 +46,10 @@ public class StageExecutorResult {
     this.stageState = stageState;
   }
 
+  public boolean isPending() {
+    return StageState.isPending(stageState);
+  }
+
   public boolean isActive() {
     return StageState.isActive(stageState);
   }

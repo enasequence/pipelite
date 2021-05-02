@@ -12,6 +12,7 @@ package pipelite.configuration;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import javax.sql.DataSource;
@@ -40,6 +41,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 public class RepositoryConfiguration {
 
   private static final int DEFAULT_MAX_ACTIVE = 25;
+  private static final Duration DEFAULT_CONNECTION_TIMEOUT = Duration.ofMinutes(1);
 
   @Autowired Environment environment;
 
@@ -50,6 +52,7 @@ public class RepositoryConfiguration {
   private String ddlAuto;
   private String dialect;
   private Integer maxActive;
+  private Duration connectionTimeout;
   /** Uses an in memory database if a valid repository configuration has not been provided. */
   private boolean test;
 
@@ -79,7 +82,8 @@ public class RepositoryConfiguration {
       this.url = "jdbc:hsqldb:mem:testdb;DB_CLOSE_DELAY: -1";
       this.username = "sa";
       this.password = "";
-      this.maxActive = 25;
+      this.maxActive = DEFAULT_MAX_ACTIVE;
+      this.connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
       this.ddlAuto = "create";
       this.dialect = "org.hibernate.dialect.HSQLDialect";
       return true;
@@ -127,6 +131,10 @@ public class RepositoryConfiguration {
     hikariConfig.setMaximumPoolSize(maxActive);
     hikariConfig.setPoolName("pipeliteConnectionPool");
     hikariConfig.setAutoCommit(false);
+    if (connectionTimeout == null) {
+      connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
+    }
+    hikariConfig.setConnectionTimeout(connectionTimeout.toMillis());
     return new HikariDataSource(hikariConfig);
   }
 

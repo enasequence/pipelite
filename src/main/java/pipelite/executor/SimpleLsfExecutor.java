@@ -23,6 +23,9 @@ import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 @Setter
 public class SimpleLsfExecutor extends AbstractLsfExecutor<SimpleLsfExecutorParameters> {
 
+  // Json deserialization requires a no argument constructor.
+  public SimpleLsfExecutor() {}
+
   @Override
   public final String getSubmitCmd(StageExecutorRequest request) {
 

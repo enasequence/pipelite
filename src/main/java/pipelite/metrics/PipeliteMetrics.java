@@ -12,6 +12,7 @@ package pipelite.metrics;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.HashMap;
@@ -20,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import pipelite.exception.PipeliteException;
 import pipelite.runner.process.ProcessRunner;
 import tech.tablesaw.api.Table;
 
@@ -34,44 +36,68 @@ public class PipeliteMetrics {
 
   private final Counter internalErrorCounter;
 
+  // Micrometer timers.
+
+  private final Timer processRunnerPoolOneIterationTimer;
+  private final Timer processRunnerOneIterationTimer;
+  private final Timer stageRunnerOneIterationTimer;
+
   // Time series.
 
   private final Table internalErrorTimeSeries;
 
   public PipeliteMetrics(@Autowired MeterRegistry meterRegistry) {
     this.meterRegistry = meterRegistry;
-    internalErrorCounter = meterRegistry.counter("pipelite.error");
-    internalErrorTimeSeries = TimeSeriesMetrics.getEmptyTimeSeries("internal errors");
+    this.internalErrorCounter = meterRegistry.counter("pipelite.error");
+    this.processRunnerPoolOneIterationTimer =
+        meterRegistry.timer("pipelite.processRunnerPool.runOneIteration");
+    this.processRunnerOneIterationTimer =
+        meterRegistry.timer("pipelite.processRunner.runOneIteration");
+    this.stageRunnerOneIterationTimer = meterRegistry.timer("pipelite.stageRunner.runOneIteration");
+    this.internalErrorTimeSeries = TimeSeriesMetrics.getEmptyTimeSeries("internal errors");
   }
 
   public PipelineMetrics pipeline(String pipelineName) {
-    PipelineMetrics m = pipelineMetrics.get(pipelineName);
-    if (m == null) {
-      pipelineMetrics.putIfAbsent(pipelineName, new PipelineMetrics(pipelineName, meterRegistry));
-      m = pipelineMetrics.get(pipelineName);
+    if (pipelineName == null) {
+      throw new PipeliteException("Missing pipeline name");
     }
-    return m;
+    try {
+      PipelineMetrics m = pipelineMetrics.get(pipelineName);
+      if (m == null) {
+        pipelineMetrics.putIfAbsent(pipelineName, new PipelineMetrics(pipelineName, meterRegistry));
+        return pipelineMetrics.get(pipelineName);
+      }
+      return m;
+    } catch (Exception ex) {
+      pipelineMetrics.putIfAbsent(pipelineName, new PipelineMetrics(pipelineName, meterRegistry));
+      return pipelineMetrics.get(pipelineName);
+    }
   }
 
   public double getInternalErrorCount() {
     return internalErrorCounter.count();
   }
 
-  public double getInternalErrorCount(ZonedDateTime since) {
-    return TimeSeriesMetrics.getCount(internalErrorTimeSeries, since);
+  public Timer getProcessRunnerPoolOneIterationTimer() {
+    return processRunnerPoolOneIterationTimer;
+  }
+
+  public Timer getProcessRunnerOneIterationTimer() {
+    return processRunnerOneIterationTimer;
+  }
+
+  public Timer getStageRunnerOneIterationTimer() {
+    return stageRunnerOneIterationTimer;
   }
 
   public Table getInternalErrorTimeSeries() {
     return internalErrorTimeSeries;
   }
 
+  /** Called from InternalErrorService. */
   public void incrementInternalErrorCount() {
-    incrementInternalErrorCount(ZonedDateTime.now());
-  }
-
-  public void incrementInternalErrorCount(ZonedDateTime now) {
     internalErrorCounter.increment(1);
-    TimeSeriesMetrics.updateCounter(internalErrorTimeSeries, 1, now);
+    TimeSeriesMetrics.updateCounter(internalErrorTimeSeries, 1, ZonedDateTime.now());
   }
 
   /**
@@ -92,10 +118,7 @@ public class PipeliteMetrics {
   public void setRunningProcessesCount(
       Collection<ProcessRunner> processRunners, ZonedDateTime now) {
     Map<String, Integer> counts = new HashMap<>();
-    processRunners.forEach(
-        r -> {
-          counts.merge(r.getPipelineName(), 1, Integer::sum);
-        });
+    processRunners.forEach(r -> counts.merge(r.getPipelineName(), 1, Integer::sum));
     counts.forEach(
         (pipelineName, count) -> pipeline(pipelineName).process().setRunningCount(count, now));
   }

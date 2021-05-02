@@ -100,12 +100,12 @@ public class PipelineRunnerAsyncTest {
     }
 
     @Override
-    public int _configureParallelism() {
+    public int testConfigureParallelism() {
       return 2;
     }
 
     @Override
-    public void _configureProcess(ProcessBuilder builder) {
+    public void testConfigureProcess(ProcessBuilder builder) {
       ExecutorParameters executorParams =
           ExecutorParameters.builder().immediateRetries(0).maximumRetries(0).build();
       builder.execute("STAGE").with(stageExecutor, executorParams);
@@ -113,13 +113,13 @@ public class PipelineRunnerAsyncTest {
   }
 
   public abstract static class TestExecutor extends AbstractExecutor<ExecutorParameters> {
-    public final AtomicInteger submitCount = new AtomicInteger();
-    public final AtomicInteger pollCount = new AtomicInteger();
-    private final Set<String> submit = ConcurrentHashMap.newKeySet();
+    public final AtomicInteger firstExecuteCalledCount = new AtomicInteger();
+    public final AtomicInteger subsequentExecuteCalledCount = new AtomicInteger();
+    private final Set<String> executeCalled = ConcurrentHashMap.newKeySet();
 
-    protected boolean isSubmitted(String processId) {
-      if (!submit.contains(processId)) {
-        submit.add(processId);
+    protected boolean isExecuteCalled(String processId) {
+      if (!executeCalled.contains(processId)) {
+        executeCalled.add(processId);
         return false;
       }
       return true;
@@ -132,11 +132,11 @@ public class PipelineRunnerAsyncTest {
   public static class SubmitSuccessPollSuccessExecutor extends TestExecutor {
     @Override
     public StageExecutorResult execute(StageExecutorRequest request) {
-      if (!isSubmitted(request.getProcessId())) {
-        submitCount.incrementAndGet();
+      if (!isExecuteCalled(request.getProcessId())) {
+        firstExecuteCalledCount.incrementAndGet();
         return StageExecutorResult.active();
       } else {
-        pollCount.incrementAndGet();
+        subsequentExecuteCalledCount.incrementAndGet();
         return StageExecutorResult.success();
       }
     }
@@ -145,11 +145,11 @@ public class PipelineRunnerAsyncTest {
   public static class SubmitErrorExecutor extends TestExecutor {
     @Override
     public StageExecutorResult execute(StageExecutorRequest request) {
-      if (!isSubmitted(request.getProcessId())) {
-        submitCount.incrementAndGet();
+      if (!isExecuteCalled(request.getProcessId())) {
+        firstExecuteCalledCount.incrementAndGet();
         return StageExecutorResult.error();
       } else {
-        pollCount.incrementAndGet();
+        subsequentExecuteCalledCount.incrementAndGet();
         throw new RuntimeException("Unexpected call to execute");
       }
     }
@@ -158,11 +158,11 @@ public class PipelineRunnerAsyncTest {
   public static class SubmitExceptionExecutor extends TestExecutor {
     @Override
     public StageExecutorResult execute(StageExecutorRequest request) {
-      if (!isSubmitted(request.getProcessId())) {
-        submitCount.incrementAndGet();
+      if (!isExecuteCalled(request.getProcessId())) {
+        firstExecuteCalledCount.incrementAndGet();
         throw new RuntimeException("Expected exception from submit");
       } else {
-        pollCount.incrementAndGet();
+        subsequentExecuteCalledCount.incrementAndGet();
         throw new RuntimeException("Unexpected call to execute");
       }
     }
@@ -171,11 +171,11 @@ public class PipelineRunnerAsyncTest {
   public static class PollErrorExecutor extends TestExecutor {
     @Override
     public StageExecutorResult execute(StageExecutorRequest request) {
-      if (!isSubmitted(request.getProcessId())) {
-        submitCount.incrementAndGet();
+      if (!isExecuteCalled(request.getProcessId())) {
+        firstExecuteCalledCount.incrementAndGet();
         return StageExecutorResult.active();
       } else {
-        pollCount.incrementAndGet();
+        subsequentExecuteCalledCount.incrementAndGet();
         return StageExecutorResult.error();
       }
     }
@@ -184,11 +184,11 @@ public class PipelineRunnerAsyncTest {
   public static class PollExceptionExecutor extends TestExecutor {
     @Override
     public StageExecutorResult execute(StageExecutorRequest request) {
-      if (!isSubmitted(request.getProcessId())) {
-        submitCount.incrementAndGet();
+      if (!isExecuteCalled(request.getProcessId())) {
+        firstExecuteCalledCount.incrementAndGet();
         return StageExecutorResult.active();
       } else {
-        pollCount.incrementAndGet();
+        subsequentExecuteCalledCount.incrementAndGet();
         throw new RuntimeException("Expected exception from poll");
       }
     }
@@ -209,8 +209,8 @@ public class PipelineRunnerAsyncTest {
     assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(0);
     assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(PROCESS_CNT);
 
-    assertThat(f.stageExecutor.submitCount.get()).isEqualTo(PROCESS_CNT);
-    assertThat(f.stageExecutor.pollCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(f.stageExecutor.firstExecuteCalledCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(f.stageExecutor.subsequentExecuteCalledCount.get()).isEqualTo(PROCESS_CNT);
   }
 
   private void assertSubmitError() {
@@ -229,8 +229,8 @@ public class PipelineRunnerAsyncTest {
     assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(0);
 
-    assertThat(f.stageExecutor.submitCount.get()).isEqualTo(PROCESS_CNT);
-    assertThat(f.stageExecutor.pollCount.get()).isEqualTo(0);
+    assertThat(f.stageExecutor.firstExecuteCalledCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(f.stageExecutor.subsequentExecuteCalledCount.get()).isEqualTo(0);
   }
 
   private void assertSubmitException() {
@@ -248,8 +248,8 @@ public class PipelineRunnerAsyncTest {
     assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(0);
 
-    assertThat(f.stageExecutor.submitCount.get()).isEqualTo(PROCESS_CNT);
-    assertThat(f.stageExecutor.pollCount.get()).isEqualTo(0);
+    assertThat(f.stageExecutor.firstExecuteCalledCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(f.stageExecutor.subsequentExecuteCalledCount.get()).isEqualTo(0);
   }
 
   private void assertPollError() {
@@ -267,8 +267,8 @@ public class PipelineRunnerAsyncTest {
     assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(0);
 
-    assertThat(f.stageExecutor.submitCount.get()).isEqualTo(PROCESS_CNT);
-    assertThat(f.stageExecutor.pollCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(f.stageExecutor.firstExecuteCalledCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(f.stageExecutor.subsequentExecuteCalledCount.get()).isEqualTo(PROCESS_CNT);
   }
 
   private void assertPollException() {
@@ -286,8 +286,8 @@ public class PipelineRunnerAsyncTest {
     assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(PROCESS_CNT);
     assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(0);
 
-    assertThat(f.stageExecutor.submitCount.get()).isEqualTo(PROCESS_CNT);
-    assertThat(f.stageExecutor.pollCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(f.stageExecutor.firstExecuteCalledCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(f.stageExecutor.subsequentExecuteCalledCount.get()).isEqualTo(PROCESS_CNT);
   }
 
   @Test

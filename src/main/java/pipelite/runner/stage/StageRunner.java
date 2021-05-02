@@ -16,38 +16,46 @@ import java.time.ZonedDateTime;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.exception.PipeliteException;
-import pipelite.exception.PipeliteInterruptedException;
-import pipelite.exception.PipeliteTimeoutException;
 import pipelite.log.LogKey;
+import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
-import pipelite.service.StageService;
+import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.StageExecutor;
-import pipelite.stage.executor.StageExecutorRequest;
+import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
-import pipelite.time.Time;
 
 @Flogger
 /** Executes a stage and returns the stage execution result. */
 public class StageRunner {
 
-  private final StageService stageService;
+  private final PipeliteServices pipeliteServices;
+  private final PipeliteMetrics pipeliteMetrics;
+  private final String serviceName;
   private final String pipelineName;
   private final Process process;
   private final Stage stage;
+  private ZonedDateTime startTime;
   private final ZonedDateTime timeout;
 
-  private static final Duration POLL_FREQUENCY = Duration.ofSeconds(10);
-
-  public StageRunner(StageService stageService, String pipelineName, Process process, Stage stage) {
-    Assert.notNull(stageService, "Missing stage service");
+  public StageRunner(
+      PipeliteServices pipeliteServices,
+      PipeliteMetrics pipeliteMetrics,
+      String serviceName,
+      String pipelineName,
+      Process process,
+      Stage stage) {
+    Assert.notNull(pipeliteServices, "Missing pipelite services");
+    Assert.notNull(pipeliteMetrics, "Missing pipelite metrics");
+    Assert.notNull(serviceName, "Missing service name");
     Assert.notNull(pipelineName, "Missing pipeline name");
     Assert.notNull(process, "Missing process");
     Assert.notNull(process.getProcessEntity(), "Missing process entity");
     Assert.notNull(stage, "Missing stage");
     Assert.notNull(stage.getStageEntity(), "Missing stage entity");
-    this.stageService = stageService;
+    this.pipeliteServices = pipeliteServices;
+    this.pipeliteMetrics = pipeliteMetrics;
+    this.serviceName = serviceName;
     this.pipelineName = pipelineName;
     this.process = process;
     this.stage = stage;
@@ -96,80 +104,75 @@ public class StageRunner {
   }
 
   /**
-   * Executes the stage and returns the stage execution result.
+   * Called until the stage has been executed and the result callback has been called.
    *
-   * @return The stage execution result.
-   * @throws PipeliteException if could not execute the stage
+   * @param resultCallback stage runner result callback
    */
-  public StageExecutorResult run() {
-    logContext(log.atInfo()).log("Executing stage");
-    StageExecutorResult result;
+  public void runOneIteration(StageRunnerResultCallback resultCallback) {
+    boolean isFirstIteration = startTime == null;
+    ZonedDateTime runOneIterationStartTime = ZonedDateTime.now();
+
     try {
-      StageExecutor stageExecutor = stage.getExecutor();
-      stageExecutor.prepareExecute(stageService.getExecutorContextCache());
-      result =
-          stageExecutor.execute(
-              StageExecutorRequest.builder()
-                  .pipelineName(pipelineName)
-                  .processId(process.getProcessId())
-                  .stage(stage)
-                  .build());
-      if (result.isActive()) {
-        stageService.startAsyncExecution(stage);
-        // If the execution state is active then the executor is asynchronous.
-        result = pollExecution();
+      if (isFirstIteration) {
+        startTime = ZonedDateTime.now();
+        startStageExecution();
       }
-    } catch (PipeliteException ex) {
-      throw ex;
+      executeStage(isFirstIteration, resultCallback);
+
+      pipeliteMetrics
+          .getStageRunnerOneIterationTimer()
+          .record(Duration.between(runOneIterationStartTime, ZonedDateTime.now()));
     } catch (Exception ex) {
-      throw new PipeliteException(ex);
+      pipeliteServices
+          .internalError()
+          .saveInternalError(
+              serviceName, pipelineName, process.getProcessId(), this.getClass(), ex);
     }
-    if (result.isSuccess()) {
-      logContext(log.atInfo()).log("Stage execution succeeded");
-    } else if (result.isError()) {
-      logContext(log.atSevere()).log("Stage execution failed");
-    } else {
-      throw new PipeliteException("Unexpected stage execution result");
-    }
-    return result;
   }
 
-  /**
-   * Wait for an asynchronous executor to complete.
-   *
-   * @return the stage execution result
-   */
-  StageExecutorResult pollExecution() {
+  private void startStageExecution() {
+    logContext(log.atInfo()).log("Executing stage");
+    stage.getExecutor().prepareExecute(pipeliteServices.stage().getExecutorContextCache());
+  }
+
+  private void executeStage(boolean isFirstIteration, StageRunnerResultCallback resultCallback) {
     StageExecutorResult result;
-    while (true) {
-      try {
-        logContext(log.atFine()).log("Waiting asynchronous stage execution to complete");
-        result = stage.execute(pipelineName, process.getProcessId());
-        if (!result.isActive()) {
-          // The asynchronous stage execution has completed.
-          return result;
-        }
-      } catch (Exception ex) {
-        throw new PipeliteException(
-            "Unexpected exception when waiting for asynchronous stage execution to complete", ex);
+    try {
+      result = stage.execute(pipelineName, process.getProcessId());
+
+      if (result.isPending()) {
+        throw new PipeliteException("Invalid stage state: " + StageState.PENDING.name());
       }
 
-      try {
-        Time.waitUntil(POLL_FREQUENCY, timeout);
-      } catch (PipeliteTimeoutException ex) {
+      if (result.isActive() && ZonedDateTime.now().isAfter(timeout)) {
         logContext(log.atSevere())
             .log("Maximum stage execution time exceeded. Terminating stage execution.");
         stage.getExecutor().terminate();
-        return StageExecutorResult.timeoutError();
-      } catch (PipeliteInterruptedException ex) {
-        logContext(log.atSevere())
-            .log("Stage execution was interrupted. Terminating stage execution.");
-        stage.getExecutor().terminate();
-        return StageExecutorResult.interruptedError();
-      } catch (Exception ex) {
-        throw new PipeliteException(
-            "Unexpected exception when waiting for asynchronous stage execution to complete", ex);
+        result = StageExecutorResult.timeoutError();
       }
+    } catch (Exception ex) {
+      result = StageExecutorResult.internalError(ex);
+      pipeliteServices
+          .internalError()
+          .saveInternalError(
+              serviceName,
+              pipelineName,
+              process.getProcessId(),
+              stage.getStageName(),
+              this.getClass(),
+              ex);
+    }
+
+    if (result.isActive()) {
+      logContext(log.atFine()).log("Waiting asynchronous stage execution to complete");
+    } else {
+      String executorType = isFirstIteration ? "Synchronous" : "Asynchronous";
+      if (result.isSuccess()) {
+        logContext(log.atInfo()).log(executorType + " stage execution succeeded");
+      } else if (result.isError()) {
+        logContext(log.atInfo()).log(executorType + " stage execution failed");
+      }
+      resultCallback.accept(result);
     }
   }
 

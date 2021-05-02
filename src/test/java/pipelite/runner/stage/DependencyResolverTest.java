@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.StageEntity;
-import pipelite.executor.CallExecutor;
+import pipelite.executor.TestExecutor;
 import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.Stage;
@@ -42,11 +42,11 @@ public class DependencyResolverTest {
       Process process =
           builder
               .execute("STAGE1")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .executeAfterPrevious("STAGE2")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .executeAfterPrevious("STAGE3")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .build();
       List<Stage> stages = process.getStages();
       for (Stage stage : process.getStages()) {
@@ -75,11 +75,11 @@ public class DependencyResolverTest {
       Process process =
           builder
               .execute("STAGE1")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .executeAfter("STAGE2", "STAGE1")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .executeAfter("STAGE3", "STAGE1")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .build();
       List<Stage> stages = process.getStages();
       for (Stage stage : process.getStages()) {
@@ -109,11 +109,11 @@ public class DependencyResolverTest {
       Process process =
           builder
               .execute("STAGE1")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .executeAfter("STAGE2", "STAGE1")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .executeAfter("STAGE3", "STAGE1")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .build();
       List<Stage> stages = process.getStages();
       int stageNumber = 0;
@@ -149,11 +149,11 @@ public class DependencyResolverTest {
       Process process =
           builder
               .execute("STAGE1")
-              .withCallExecutor(ERROR, ExecutorParameters.builder().maximumRetries(0).build())
+              .withSyncTestExecutor(ERROR, ExecutorParameters.builder().maximumRetries(0).build())
               .executeAfter("STAGE2", "STAGE1")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .executeAfter("STAGE3", "STAGE1")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .build();
       List<Stage> stages = process.getStages();
       int stageNumber = 0;
@@ -189,12 +189,12 @@ public class DependencyResolverTest {
       Process process =
           builder
               .execute("STAGE1")
-              .withCallExecutor(
+              .withSyncTestExecutor(
                   ERROR, ExecutorParameters.builder().maximumRetries(3).immediateRetries(0).build())
               .executeAfter("STAGE2", "STAGE1")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .executeAfter("STAGE3", "STAGE1")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .build();
       List<Stage> stages = process.getStages();
       int stageNumber = 0;
@@ -229,12 +229,12 @@ public class DependencyResolverTest {
       Process process =
           builder
               .execute("STAGE1")
-              .withCallExecutor(
+              .withSyncTestExecutor(
                   ERROR, ExecutorParameters.builder().maximumRetries(1).immediateRetries(1).build())
               .execute("STAGE2")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .execute("STAGE3")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .build();
       List<Stage> stages = process.getStages();
       int stageNumber = 0;
@@ -269,14 +269,14 @@ public class DependencyResolverTest {
       Process process =
           builder
               .execute("STAGE1")
-              .withCallExecutor(
+              .withSyncTestExecutor(
                   ERROR, ExecutorParameters.builder().maximumRetries(1).immediateRetries(0).build())
               .execute("STAGE2")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .execute("STAGE3")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .execute("STAGE4")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .build();
       List<Stage> stages = process.getStages();
       int stageNumber = 0;
@@ -314,14 +314,14 @@ public class DependencyResolverTest {
       Process process =
           builder
               .execute("STAGE1")
-              .withCallExecutor(
+              .withSyncTestExecutor(
                   ERROR, ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build())
               .execute("STAGE2")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .execute("STAGE3")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .execute("STAGE4")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .build();
       List<Stage> stages = process.getStages();
       int stageNumber = 0;
@@ -357,13 +357,13 @@ public class DependencyResolverTest {
       Process process =
           builder
               .execute("STAGE1")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .executeAfterPrevious("STAGE2")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .executeAfterPrevious("STAGE3")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .executeAfterPrevious("STAGE4")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .build();
       List<Stage> stages = process.getStages();
       for (Stage stage : stages) {
@@ -395,13 +395,13 @@ public class DependencyResolverTest {
       Process process =
           builder
               .execute("STAGE1")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .executeAfter("STAGE2", "STAGE1")
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .executeAfter("STAGE3", Arrays.asList("STAGE2"))
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .executeAfter("STAGE4", Arrays.asList("STAGE3", "STAGE3"))
-              .withCallExecutor()
+              .withSyncTestExecutor()
               .build();
       List<Stage> stages = process.getStages();
       for (Stage stage : stages) {
@@ -432,16 +432,16 @@ public class DependencyResolverTest {
     Process process =
         builder
             .execute("STAGE1")
-            .withCallExecutor(
+            .withSyncTestExecutor(
                 ERROR, ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build())
             .execute("STAGE2")
-            .withCallExecutor(
+            .withSyncTestExecutor(
                 ERROR, ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build())
             .execute("STAGE3")
-            .withCallExecutor(
+            .withSyncTestExecutor(
                 ERROR, ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build())
             .execute("STAGE4")
-            .withCallExecutor(
+            .withSyncTestExecutor(
                 ERROR, ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build())
             .build();
     List<Stage> stages = process.getStages();
@@ -517,7 +517,7 @@ public class DependencyResolverTest {
     stageEntity.setExecutionCount(executionCount);
     stageEntity.setStageState(stageState);
 
-    CallExecutor executor = new CallExecutor(StageState.SUCCESS);
+    TestExecutor executor = TestExecutor.sync(StageState.SUCCESS);
     executor.setExecutorParams(
         ExecutorParameters.builder()
             .immediateRetries(immediateRetries)

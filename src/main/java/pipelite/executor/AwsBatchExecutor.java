@@ -33,6 +33,9 @@ import pipelite.stage.parameters.AwsBatchExecutorParameters;
 public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameters>
     implements JsonSerializableExecutor {
 
+  // Json deserialization requires a no argument constructor.
+  public AwsBatchExecutor() {}
+
   // TODO: capture logs
 
   private SubmitJobResult submitJobResult;

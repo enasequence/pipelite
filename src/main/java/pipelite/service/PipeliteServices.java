@@ -24,6 +24,7 @@ public class PipeliteServices {
   private final InternalErrorService internalErrorService;
   private final HealthCheckService healthCheckService;
   private final RunnerService runnerService;
+  private final PipeliteExecutorService pipeliteExecutorService;
 
   public PipeliteServices(
       @Autowired ScheduleService scheduleService,
@@ -34,7 +35,8 @@ public class PipeliteServices {
       @Autowired RegisteredPipelineService registeredPipelineService,
       @Autowired InternalErrorService internalErrorService,
       @Autowired HealthCheckService healthCheckService,
-      @Autowired RunnerService runnerService) {
+      @Autowired RunnerService runnerService,
+      @Autowired PipeliteExecutorService pipeliteExecutorService) {
     this.scheduleService = scheduleService;
     this.processService = processService;
     this.stageService = stageService;
@@ -44,6 +46,7 @@ public class PipeliteServices {
     this.internalErrorService = internalErrorService;
     this.healthCheckService = healthCheckService;
     this.runnerService = runnerService;
+    this.pipeliteExecutorService = pipeliteExecutorService;
   }
 
   public ScheduleService schedule() {
@@ -80,5 +83,9 @@ public class PipeliteServices {
 
   public RunnerService runner() {
     return runnerService;
+  }
+
+  public PipeliteExecutorService executor() {
+    return pipeliteExecutorService;
   }
 }

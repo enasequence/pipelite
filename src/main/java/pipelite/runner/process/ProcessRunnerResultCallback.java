@@ -10,27 +10,8 @@
  */
 package pipelite.runner.process;
 
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
+import pipelite.process.Process;
 
-public class ProcessRunnerResult {
-  private final AtomicLong stageSuccessCount = new AtomicLong();
-  private final AtomicLong stageFailedCount = new AtomicLong();
-
-  public ProcessRunnerResult incrementStageSuccess() {
-    this.stageSuccessCount.incrementAndGet();
-    return this;
-  }
-
-  public ProcessRunnerResult incrementStageFailed() {
-    this.stageFailedCount.incrementAndGet();
-    return this;
-  }
-
-  public long getStageSuccessCount() {
-    return stageSuccessCount.get();
-  }
-
-  public long getStageFailedCount() {
-    return stageFailedCount.get();
-  }
-}
+/** Callback at the end of process execution. */
+public interface ProcessRunnerResultCallback extends Consumer<Process> {}

@@ -8,17 +8,11 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.stage.executor;
+package pipelite.exception;
 
-/** Executes a stage. */
-@FunctionalInterface
-public interface StageExecutorCall {
-  /**
-   * Called repeatedly to execute the stage until it is not ACTIVE. Only asynchronous executions are
-   * expected to return ACTIVE.
-   *
-   * @param request the execution request
-   * @return stage execution result
-   */
-  StageExecutorResult execute(StageExecutorRequest request);
+public class PipeliteProcessLockedException extends PipeliteException {
+
+  public PipeliteProcessLockedException(String pipelineName, String processId) {
+    super("Failed to lock " + pipelineName + " " + processId);
+  }
 }

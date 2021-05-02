@@ -76,7 +76,7 @@ public class ProcessRunnerPoolManagerTest {
         public void configureProcess(ProcessBuilder builder) {
           builder
               .execute("STAGE")
-              .withCallExecutor(
+              .withSyncTestExecutor(
                   request -> {
                     scheduleExecutionCount.incrementAndGet();
                     return StageExecutorResult.success();
@@ -90,15 +90,15 @@ public class ProcessRunnerPoolManagerTest {
       return new PrioritizedPipelineTestHelper(PIPELINE_NAME, 1) {
 
         @Override
-        public int _configureParallelism() {
+        public int testConfigureParallelism() {
           return 1;
         }
 
         @Override
-        public void _configureProcess(ProcessBuilder builder) {
+        public void testConfigureProcess(ProcessBuilder builder) {
           builder
               .execute("STAGE")
-              .withCallExecutor(
+              .withSyncTestExecutor(
                   request -> {
                     pipelineExecutionCount.incrementAndGet();
                     return StageExecutorResult.success();

@@ -14,12 +14,12 @@ import java.util.List;
 import pipelite.Schedule;
 import pipelite.configuration.PipeliteConfiguration;
 import pipelite.metrics.PipeliteMetrics;
-import pipelite.runner.process.DefaultProcessRunner;
+import pipelite.runner.process.ProcessRunner;
 import pipelite.service.PipeliteServices;
 
-public class DefaultScheduleRunner {
+public class ScheduleRunnerFactory {
 
-  private DefaultScheduleRunner() {}
+  private ScheduleRunnerFactory() {}
 
   public static ScheduleRunner create(
       PipeliteConfiguration pipeliteConfiguration,
@@ -31,7 +31,8 @@ public class DefaultScheduleRunner {
         pipeliteServices,
         pipeliteMetrics,
         schedules,
-        (pipelineName) ->
-            new DefaultProcessRunner(pipeliteConfiguration, pipeliteServices, pipelineName));
+        (pipelineName1, process1) ->
+            new ProcessRunner(
+                pipeliteConfiguration, pipeliteServices, pipeliteMetrics, pipelineName1, process1));
   }
 }

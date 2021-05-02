@@ -16,9 +16,7 @@ import static org.mockito.Mockito.spy;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -70,15 +68,17 @@ public class ScheduleRunnerResumeTest {
   }
 
   @Test
-  @Timeout(value = 10, unit = TimeUnit.SECONDS)
+  // @Timeout(value = 10, unit = TimeUnit.SECONDS)
   public void testResumeSchedules() {
     int maxExecution1 = 1;
     int maxExecution2 = 1;
 
     // Create two schedules with start time and process id to allow processes to resume.
 
-    ZonedDateTime startTime1 = ZonedDateTime.now().minusHours(1).truncatedTo(ChronoUnit.SECONDS);
-    ZonedDateTime startTime2 = ZonedDateTime.now().minusHours(1).truncatedTo(ChronoUnit.SECONDS);
+    ZonedDateTime startTime1 = ZonedDateTime.now().minusHours(2).truncatedTo(ChronoUnit.SECONDS);
+    ZonedDateTime startTime2 = ZonedDateTime.now().minusHours(2).truncatedTo(ChronoUnit.SECONDS);
+    ZonedDateTime nextTime1 = ZonedDateTime.now().minusMinutes(1).truncatedTo(ChronoUnit.SECONDS);
+    ZonedDateTime nextTime2 = ZonedDateTime.now().minusHours(1).truncatedTo(ChronoUnit.SECONDS);
 
     ScheduleEntity scheduleEntity1 =
         pipeliteServices.schedule().getSavedSchedule(resume1.pipelineName()).get();
@@ -86,6 +86,8 @@ public class ScheduleRunnerResumeTest {
         pipeliteServices.schedule().getSavedSchedule(resume2.pipelineName()).get();
     scheduleEntity1.setStartTime(startTime1);
     scheduleEntity2.setStartTime(startTime2);
+    scheduleEntity1.setNextTime(nextTime1);
+    scheduleEntity2.setNextTime(nextTime2);
     String processId1 = "1";
     String processId2 = "2";
     scheduleEntity1.setProcessId(processId1);
@@ -102,7 +104,7 @@ public class ScheduleRunnerResumeTest {
 
     ScheduleRunner scheduleRunner =
         spy(
-            DefaultScheduleRunner.create(
+            ScheduleRunnerFactory.create(
                 pipeliteConfiguration,
                 pipeliteServices,
                 pipeliteMetrics,
@@ -117,6 +119,7 @@ public class ScheduleRunnerResumeTest {
     scheduleRunner.startUp();
 
     while (scheduleRunner.getActiveProcessCount() > 0) {
+      scheduleRunner.runOneIteration();
       Time.wait(Duration.ofMillis(100));
     }
 
