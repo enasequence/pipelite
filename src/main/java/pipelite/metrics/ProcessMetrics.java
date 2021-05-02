@@ -82,15 +82,34 @@ public class ProcessMetrics {
     return internalErrorTimeSeries;
   }
 
-  public void setRunningCount(int count, ZonedDateTime now) {
-    runningGauge.set(count);
-    TimeSeriesMetrics.updateGauge(runningTimeSeries, count, now);
-  }
-
   /** Called by internal error service. */
   public void incrementInternalErrorCount() {
+    incrementInternalErrorCount(ZonedDateTime.now());
+  }
+
+  public void incrementInternalErrorCount(ZonedDateTime now) {
     internalErrorCounter.increment(1);
-    TimeSeriesMetrics.updateCounter(internalErrorTimeSeries, 1, ZonedDateTime.now());
+    TimeSeriesMetrics.updateCounter(internalErrorTimeSeries, 1, now);
+  }
+
+  /**
+   * Set the number of running processes.
+   *
+   * @param count the number of running processes
+   */
+  public void setRunningProcessesCount(int count) {
+    setRunningProcessesCount(count, ZonedDateTime.now());
+  }
+
+  /**
+   * Set the number of running processes.
+   *
+   * @param count the number of running processes
+   * @paran now the time when the running process count was measured
+   */
+  public void setRunningProcessesCount(int count, ZonedDateTime now) {
+    runningGauge.set(count);
+    TimeSeriesMetrics.updateGauge(runningTimeSeries, count, now);
   }
 
   public void endProcessExecution(ProcessState state) {

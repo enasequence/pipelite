@@ -20,8 +20,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -55,8 +53,6 @@ public class PipelineController {
   @Autowired PipeliteMetrics pipeliteMetrics;
 
   private static final int LOREM_IPSUM_PROCESSES = 5;
-  private static final ZonedDateTime LOREM_IPSUM_SINCE =
-      ZonedDateTime.of(LocalDateTime.of(2020, 1, 1, 1, 0), ZoneId.systemDefault());
 
   @GetMapping("/")
   @ResponseStatus(HttpStatus.OK)
@@ -196,19 +192,50 @@ public class PipelineController {
 
   private Collection<PipelineMetrics> getLoremIpsumRunningProcessesHistoryMetrics(
       Duration duration) {
-    int timeCount = 100;
     Collection<PipelineMetrics> list = new ArrayList<>();
+    ZonedDateTime since = ZonedDateTime.now().minus(duration);
+    int maxRunningProcesses = 100;
+    int runningProcessesDurationIncrements = 100;
+    Duration runningProcessesIncrement = duration.dividedBy(runningProcessesDurationIncrements);
+    Duration completedProcessesMaxIncrement = duration.dividedBy(100);
+    Duration failedProcessesMaxIncrement = duration.dividedBy(10);
+    Duration internalErrorsMaxIncrement = duration.dividedBy(1);
+    ZonedDateTime completedProcessesCurrentTime = since;
+    ZonedDateTime failedProcessesCurrentTime = since;
+    ZonedDateTime internalErrorsCurrentTime = since;
 
-    ZonedDateTime since = LOREM_IPSUM_SINCE.minus(duration);
-    Duration increment = duration.dividedBy(timeCount);
-
+    Random r = new Random();
     for (int i = 0; i < LOREM_IPSUM_PROCESSES; ++i) {
       PipelineMetrics metrics = new PipelineMetrics("pipeline" + i, new SimpleMeterRegistry());
-      for (int j = 0; j < timeCount; ++j) {
-        ZonedDateTime now = since.plus(increment.multipliedBy(j + 1));
-        metrics.process().setRunningCount(i, now);
-        metrics.process().endProcessExecution(ProcessState.COMPLETED, now);
+      for (int j = 0; j < runningProcessesDurationIncrements; ++j) {
+        metrics
+            .process()
+            .setRunningProcessesCount(
+                r.nextInt(maxRunningProcesses),
+                since.plus(runningProcessesIncrement.multipliedBy(j + 1)));
       }
+
+      while (completedProcessesCurrentTime.isBefore(since.plus(duration))) {
+        completedProcessesCurrentTime =
+            completedProcessesCurrentTime.plusSeconds(
+                Math.round(completedProcessesMaxIncrement.getSeconds() * r.nextDouble()));
+        metrics
+            .process()
+            .endProcessExecution(ProcessState.COMPLETED, completedProcessesCurrentTime);
+      }
+      while (failedProcessesCurrentTime.isBefore(since.plus(duration))) {
+        failedProcessesCurrentTime =
+            failedProcessesCurrentTime.plusSeconds(
+                Math.round(failedProcessesMaxIncrement.getSeconds() * r.nextDouble()));
+        metrics.process().endProcessExecution(ProcessState.FAILED, failedProcessesCurrentTime);
+      }
+      while (internalErrorsCurrentTime.isBefore(since.plus(duration))) {
+        internalErrorsCurrentTime =
+            internalErrorsCurrentTime.plusSeconds(
+                Math.round(internalErrorsMaxIncrement.getSeconds() * r.nextDouble()));
+        metrics.process().incrementInternalErrorCount(internalErrorsCurrentTime);
+      }
+
       list.add(metrics);
     }
     return list;

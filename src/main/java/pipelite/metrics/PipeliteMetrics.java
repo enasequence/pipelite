@@ -30,11 +30,16 @@ import tech.tablesaw.api.Table;
 public class PipeliteMetrics {
 
   private final MeterRegistry meterRegistry;
+
   private final Map<String, PipelineMetrics> pipelineMetrics = new ConcurrentHashMap<>();
 
   // Micrometer counters.
 
   private final Counter internalErrorCounter;
+
+  // Time series.
+
+  private final Table internalErrorTimeSeries;
 
   // Micrometer timers.
 
@@ -42,19 +47,15 @@ public class PipeliteMetrics {
   private final Timer processRunnerOneIterationTimer;
   private final Timer stageRunnerOneIterationTimer;
 
-  // Time series.
-
-  private final Table internalErrorTimeSeries;
-
   public PipeliteMetrics(@Autowired MeterRegistry meterRegistry) {
     this.meterRegistry = meterRegistry;
     this.internalErrorCounter = meterRegistry.counter("pipelite.error");
+    this.internalErrorTimeSeries = TimeSeriesMetrics.getEmptyTimeSeries("internal errors");
     this.processRunnerPoolOneIterationTimer =
         meterRegistry.timer("pipelite.processRunnerPool.runOneIteration");
     this.processRunnerOneIterationTimer =
         meterRegistry.timer("pipelite.processRunner.runOneIteration");
     this.stageRunnerOneIterationTimer = meterRegistry.timer("pipelite.stageRunner.runOneIteration");
-    this.internalErrorTimeSeries = TimeSeriesMetrics.getEmptyTimeSeries("internal errors");
   }
 
   public PipelineMetrics pipeline(String pipelineName) {
@@ -78,6 +79,10 @@ public class PipeliteMetrics {
     return internalErrorCounter.count();
   }
 
+  public Table getInternalErrorTimeSeries() {
+    return internalErrorTimeSeries;
+  }
+
   public Timer getProcessRunnerPoolOneIterationTimer() {
     return processRunnerPoolOneIterationTimer;
   }
@@ -88,10 +93,6 @@ public class PipeliteMetrics {
 
   public Timer getStageRunnerOneIterationTimer() {
     return stageRunnerOneIterationTimer;
-  }
-
-  public Table getInternalErrorTimeSeries() {
-    return internalErrorTimeSeries;
   }
 
   /** Called from InternalErrorService. */
@@ -106,20 +107,9 @@ public class PipeliteMetrics {
    * @param processRunners the active process runners
    */
   public void setRunningProcessesCount(Collection<ProcessRunner> processRunners) {
-    setRunningProcessesCount(processRunners, ZonedDateTime.now());
-  }
-
-  /**
-   * Set the number of running processes.
-   *
-   * @param processRunners the active process runners
-   * @param now the current time
-   */
-  public void setRunningProcessesCount(
-      Collection<ProcessRunner> processRunners, ZonedDateTime now) {
     Map<String, Integer> counts = new HashMap<>();
     processRunners.forEach(r -> counts.merge(r.getPipelineName(), 1, Integer::sum));
     counts.forEach(
-        (pipelineName, count) -> pipeline(pipelineName).process().setRunningCount(count, now));
+        (pipelineName, count) -> pipeline(pipelineName).process().setRunningProcessesCount(count));
   }
 }

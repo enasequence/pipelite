@@ -25,12 +25,6 @@ $(document).ready(function () {
         },
     });
 
-    // Show plot when tag is changed.
-    // TODO: data-toggle
-    // $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-    //    pipelinesShow();
-    //});
-
     refreshPipelines();
 });
 

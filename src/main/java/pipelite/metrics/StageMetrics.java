@@ -44,14 +44,6 @@ public class StageMetrics {
     return failedCounter.count();
   }
 
-  public double getSuccessCount(ZonedDateTime since) {
-    return TimeSeriesMetrics.getCount(successTimeSeries, since);
-  }
-
-  public double getFailedCount(ZonedDateTime since) {
-    return TimeSeriesMetrics.getCount(failedTimeSeries, since);
-  }
-
   public Table getSuccessTimeSeries() {
     return successTimeSeries;
   }
@@ -61,16 +53,12 @@ public class StageMetrics {
   }
 
   public void endStageExecution(StageExecutorResult result) {
-    endStageExecution(result, ZonedDateTime.now());
-  }
-
-  public void endStageExecution(StageExecutorResult result, ZonedDateTime now) {
     if (result.isSuccess()) {
       successCounter.increment(1);
-      TimeSeriesMetrics.updateCounter(successTimeSeries, 1, now);
+      TimeSeriesMetrics.updateCounter(successTimeSeries, 1, ZonedDateTime.now());
     } else if (result.isError()) {
       failedCounter.increment(1);
-      TimeSeriesMetrics.updateCounter(failedTimeSeries, 1, now);
+      TimeSeriesMetrics.updateCounter(failedTimeSeries, 1, ZonedDateTime.now());
     }
   }
 }
