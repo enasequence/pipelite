@@ -12,10 +12,6 @@ package pipelite.configuration;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.HashMap;
-import javax.sql.DataSource;
 import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +26,11 @@ import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import javax.sql.DataSource;
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.HashMap;
+
 @Configuration
 @ConfigurationProperties(prefix = "pipelite.datasource")
 @Data
@@ -40,7 +41,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 @Flogger
 public class RepositoryConfiguration {
 
-  private static final int DEFAULT_MAX_ACTIVE = 25;
+  private static final int DEFAULT_MINIMUM_IDLE = 10;
+  private static final int DEFAULT_MAXIMUM_POOL_SIZE = 25;
   private static final Duration DEFAULT_CONNECTION_TIMEOUT = Duration.ofMinutes(1);
 
   @Autowired Environment environment;
@@ -51,7 +53,8 @@ public class RepositoryConfiguration {
   private String password;
   private String ddlAuto;
   private String dialect;
-  private Integer maxActive;
+  private Integer minimumIdle;
+  private Integer maximumPoolSize;
   private Duration connectionTimeout;
   /** Uses an in memory database if a valid repository configuration has not been provided. */
   private boolean test;
@@ -82,7 +85,8 @@ public class RepositoryConfiguration {
       this.url = "jdbc:hsqldb:mem:testdb;DB_CLOSE_DELAY: -1";
       this.username = "sa";
       this.password = "";
-      this.maxActive = DEFAULT_MAX_ACTIVE;
+      this.minimumIdle = DEFAULT_MINIMUM_IDLE;
+      this.maximumPoolSize = DEFAULT_MAXIMUM_POOL_SIZE;
       this.connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
       this.ddlAuto = "create";
       this.dialect = "org.hibernate.dialect.HSQLDialect";
@@ -120,21 +124,25 @@ public class RepositoryConfiguration {
   @Primary
   @Bean("pipeliteDataSource")
   public DataSource pipeliteDataSource() {
+    if (minimumIdle == null || minimumIdle < 1) {
+      minimumIdle = DEFAULT_MINIMUM_IDLE;
+    }
+    if (maximumPoolSize == null || maximumPoolSize < 1) {
+      maximumPoolSize = DEFAULT_MAXIMUM_POOL_SIZE;
+    }
+    if (connectionTimeout == null) {
+      connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
+    }
     HikariConfig hikariConfig = new HikariConfig();
     hikariConfig.setDriverClassName(driverClassName);
     hikariConfig.setJdbcUrl(url);
     hikariConfig.setUsername(username);
     hikariConfig.setPassword(password);
-    if (maxActive == null || maxActive < 1) {
-      maxActive = DEFAULT_MAX_ACTIVE;
-    }
-    hikariConfig.setMaximumPoolSize(maxActive);
-    hikariConfig.setPoolName("pipeliteConnectionPool");
-    hikariConfig.setAutoCommit(false);
-    if (connectionTimeout == null) {
-      connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
-    }
+    hikariConfig.setMinimumIdle(minimumIdle);
+    hikariConfig.setMaximumPoolSize(maximumPoolSize);
     hikariConfig.setConnectionTimeout(connectionTimeout.toMillis());
+    hikariConfig.setPoolName("pipelite");
+    hikariConfig.setAutoCommit(false);
     return new HikariDataSource(hikariConfig);
   }
 

@@ -364,11 +364,13 @@ The unit for the resource usage limit can be one of:
 - pipelite.datasource.password: JDBC password
 - pipelite.datasource.ddlAuto: see Hibernate hbm2ddl.auto options
 - pipelite.datasource.dialect: see Hibernate dialect options
-- pipelite.datasource.maxActive: maximum number of active database connections. Default value: 25
-- pipelite.datasource.test: if set to true then uses an in memory database unsuitable for production purposes. Default value: false
+- pipelite.datasource.minimumIdle: minimum number of database connections in the connection pool. Default value: 10
+- pipelite.datasource.maximumPoolSize: maximum number of database connections in the connection pool. Default value: 25
+- pipelite.datasource.connectionTimeout: maximum duration waiting for a connection from the connection pool. Default value: 1m
 - pipelite.datasource.retry.attempts: number of retry attempts to use the data source for an operation. Default value: 10
 - pipelite.datasource.retry.delay: the delay between first and second attempt to use the data source for an operation. Default value: 1 second
 - pipelite.datasource.retry.multiplier: the exponential multiplier between subsequent attempts to use the data source for an operation. Default value: 2
+- pipelite.datasource.test: if set to true then uses an in memory database unsuitable for production purposes. Default value: false
 
 #### Advanced parameters
 
@@ -376,6 +378,8 @@ The unit for the resource usage limit can be one of:
 - pipelite.advanced.lockDuration: the duration after which service and process locks expire unless the service lock is
   renewed. Default value: 60 minutes
 - pipelite.advanced.processRunnerFrequency: the running frequency for executing new processes. Default value: 10 seconds
+- pipelite.advanced.processRunnerWorkers: the number or parallel workers running processes in the main event loop. Default value: 25
+- pipelite.advanced.stageRunnerWorkers:the number or parallel workers running stages in the main event loop. Default value: 25
 - pipelite.advanced.processQueueMaxRefreshFrequency: the maximum frequency for pipeline execution queue to be refreshed
   to allow process re-prioritisation. Default value: 6 hours
 - pipelite.advanced.processQueueMinRefreshFrequency: the minimum frequency for pipeline execution queue to be refreshed
