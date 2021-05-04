@@ -316,7 +316,7 @@ class RetryServiceTest {
     // Retry
     retryService.retry(SCHEDULE_NAME, processId);
 
-    while (scheduleRunner.getActiveProcessCount() > 0) {
+    while (!scheduleRunner.isIdle()) {
       scheduleRunner.runOneIteration();
       Time.wait(Duration.ofMillis(100));
     }

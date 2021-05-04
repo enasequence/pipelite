@@ -44,7 +44,8 @@ import pipelite.time.Time;
     properties = {
       "pipelite.advanced.processRunnerFrequency=250ms",
       "pipelite.service.force=true",
-      "pipelite.service.name=ProcessRunnerPoolTest"
+      "pipelite.service.name=ProcessRunnerPoolTest",
+      "pipelite.advanced.shutdownIfIdle=true"
     })
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ActiveProfiles("test")
@@ -108,7 +109,7 @@ public class ProcessRunnerPoolTest {
       pool.runProcess(PIPELINE_NAME, process, (p) -> runProcessCnt.incrementAndGet());
     }
 
-    while (pool.getActiveProcessCount() > 0) {
+    while (!pool.isIdle()) {
       Time.wait(Duration.ofSeconds(1));
       pool.runOneIteration();
     }
@@ -159,7 +160,7 @@ public class ProcessRunnerPoolTest {
       pool.runProcess(PIPELINE_NAME, process, (p) -> runProcessCnt.incrementAndGet());
     }
 
-    while (pool.getActiveProcessCount() > 0) {
+    while (!pool.isIdle()) {
       Time.wait(Duration.ofSeconds(1));
       pool.runOneIteration();
     }
@@ -212,7 +213,7 @@ public class ProcessRunnerPoolTest {
       pool.runProcess(PIPELINE_NAME, process, (p) -> runProcessCount.incrementAndGet());
     }
 
-    while (pool.getActiveProcessCount() > 0) {
+    while (!pool.isIdle()) {
       Time.wait(Duration.ofSeconds(1));
       pool.runOneIteration();
     }

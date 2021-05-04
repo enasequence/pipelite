@@ -38,7 +38,8 @@ import pipelite.time.Time;
     properties = {
       "pipelite.service.force=true",
       "pipelite.service.name=ScheduleRunnerResumeTest",
-      "pipelite.advanced.processRunnerFrequency=250ms"
+      "pipelite.advanced.processRunnerFrequency=250ms",
+      "pipelite.advanced.shutdownIfIdle=true"
     })
 @ActiveProfiles({"test", "ScheduleRunnerResumeTest"})
 @DirtiesContext
@@ -118,7 +119,7 @@ public class ScheduleRunnerResumeTest {
 
     scheduleRunner.startUp();
 
-    while (scheduleRunner.getActiveProcessCount() > 0) {
+    while (!scheduleRunner.isIdle()) {
       scheduleRunner.runOneIteration();
       Time.wait(Duration.ofMillis(100));
     }

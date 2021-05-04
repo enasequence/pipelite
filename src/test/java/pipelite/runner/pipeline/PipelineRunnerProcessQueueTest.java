@@ -16,7 +16,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 import java.time.Duration;
-import java.time.ZonedDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,8 +31,7 @@ import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.runner.process.ProcessQueue;
 import pipelite.runner.process.ProcessRunner;
-import pipelite.runner.process.creator.DefaultPrioritizedProcessCreator;
-import pipelite.runner.process.creator.PrioritizedProcessCreator;
+import pipelite.runner.process.creator.ProcessCreator;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.time.Time;
@@ -47,20 +45,22 @@ import pipelite.time.Time;
     properties = {
       "pipelite.service.force=true",
       "pipelite.service.name=PipelineRunnerDefaultProcessQueueTest",
+      "pipelite.advanced.processRunnerFrequency=250ms",
       "pipelite.advanced.processQueueMinRefreshFrequency=24h",
       "pipelite.advanced.processQueueMaxRefreshFrequency=24h",
-      "pipelite.advanced.processCreateMaxSize=10"
+      "pipelite.advanced.processCreateMaxSize=10",
+      "pipelite.advanced.shutdownIfIdle=true"
     })
 @ActiveProfiles({"test"})
 @DirtiesContext
-public class PipelineRunnerDefaultQueueTest {
+public class PipelineRunnerProcessQueueTest {
 
   @Autowired private PipeliteConfiguration pipeliteConfiguration;
   @Autowired private PipeliteServices pipeliteServices;
   @Autowired private PipeliteMetrics pipeliteMetrics;
 
   private static final String PIPELINE_NAME =
-      UniqueStringGenerator.randomPipelineName(PipelineRunnerDefaultQueueTest.class);
+      UniqueStringGenerator.randomPipelineName(PipelineRunnerProcessQueueTest.class);
   private static final int PROCESS_CNT = 10;
   private static final Duration PROCESS_QUEUE_REFRESH_FREQUENCY = Duration.ofDays(1);
   private static final AtomicInteger syncExecutionCount = new AtomicInteger();
@@ -120,39 +120,25 @@ public class PipelineRunnerDefaultQueueTest {
 
   private void test(PrioritizedPipeline prioritizedPipeline, AtomicInteger executionCount) {
 
-    PrioritizedProcessCreator prioritizedProcessCreator =
-        new DefaultPrioritizedProcessCreator(prioritizedPipeline, pipeliteServices.process());
+    ProcessCreator processCreator =
+        new ProcessCreator(prioritizedPipeline, pipeliteServices.process());
 
-    ProcessQueue queue =
-        spy(
-            new ProcessQueue(
-                pipeliteConfiguration.advanced(),
-                pipeliteServices.process(),
-                prioritizedPipeline.pipelineName(),
-                prioritizedPipeline.configurePipeline().pipelineParallelism()));
+    ProcessQueue processQueue =
+        spy(new ProcessQueue(pipeliteConfiguration, pipeliteServices, prioritizedPipeline));
 
     // Queue should be filled
-    assertThat(queue.isFillQueue()).isTrue();
+    assertThat(processQueue.isRefreshQueue()).isTrue();
     // Queue should be empty
-    assertThat(queue.isAvailableProcesses(0)).isFalse();
-    assertThat(queue.getQueuedProcessCount()).isZero();
-    // There should be no processes in active state waiting to be executed
-    assertThat(queue.getUnlockedActiveProcesses().size()).isEqualTo(0);
-    // There should be no processes in pending state waiting to be executed
-    assertThat(queue.getPendingProcesses().size()).isEqualTo(0);
-
-    // Queue max valid time should be before now
-    assertThat(queue.getProcessQueueMaxValidUntil()).isBeforeOrEqualTo(ZonedDateTime.now());
-    assertThat(queue.getProcessQueueMinValidUntil()).isBeforeOrEqualTo(ZonedDateTime.now());
+    assertThat(processQueue.getProcessQueueSize()).isZero();
 
     PipelineRunner pipelineRunner =
-        new PipelineRunner(
+        PipelineRunnerFactory.create(
             pipeliteConfiguration,
             pipeliteServices,
             pipeliteMetrics,
             prioritizedPipeline,
-            prioritizedProcessCreator,
-            queue,
+            processCreator,
+            (pipeline1) -> processQueue,
             (pipelineName1, process1) ->
                 new ProcessRunner(
                     pipeliteConfiguration,
@@ -161,41 +147,18 @@ public class PipelineRunnerDefaultQueueTest {
                     pipelineName1,
                     process1));
 
-    ZonedDateTime expectedValidLowerBound =
-        ZonedDateTime.now().plus(PROCESS_QUEUE_REFRESH_FREQUENCY);
-
-    // Execute processes from the queue
-    pipelineRunner.runOneIteration();
-
-    // Check that the queue was filled
-    verify(queue, times(1)).fillQueue();
-
-    ZonedDateTime expectedValidUpperBound =
-        ZonedDateTime.now().plus(PROCESS_QUEUE_REFRESH_FREQUENCY);
-
-    // Queue max valid time should be between expected bounds
-    assertThat(queue.getProcessQueueMaxValidUntil())
-        .isBetween(expectedValidLowerBound, expectedValidUpperBound);
-    assertThat(queue.getProcessQueueMinValidUntil())
-        .isBetween(expectedValidLowerBound, expectedValidUpperBound);
-
     // Wait for the processes to execute
-    while (pipelineRunner.getActiveProcessCount() > 0) {
+    while (!pipelineRunner.isIdle()) {
       Time.wait(Duration.ofSeconds(1));
       pipelineRunner.runOneIteration();
     }
 
-    // Check that all processes were executed
+    // Refresh is called two times. Once before creating processes when
+    // the process queue is created empty and immediately after
+    // creating processing.
+    verify(processQueue, times(2)).refreshQueue();
     assertThat(executionCount.get()).isEqualTo(PROCESS_CNT);
-
-    // Queue should not be filled because refresh frequency is 24 hours
-    assertThat(queue.isFillQueue()).isFalse();
-    // Queue should be empty
-    assertThat(queue.isAvailableProcesses(0)).isFalse();
-    assertThat(queue.getQueuedProcessCount()).isZero();
-    // There should be no processes in active state waiting to be executed
-    assertThat(queue.getUnlockedActiveProcesses().size()).isEqualTo(0);
-    // There should be no processes in pending state waiting to be executed
-    assertThat(queue.getPendingProcesses().size()).isEqualTo(0);
+    assertThat(processQueue.isRefreshQueue()).isFalse();
+    assertThat(processQueue.getProcessQueueSize()).isZero();
   }
 }

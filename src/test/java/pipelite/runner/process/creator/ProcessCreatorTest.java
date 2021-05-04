@@ -20,7 +20,7 @@ import pipelite.helper.PrioritizedPipelineTestHelper;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.ProcessService;
 
-public class DefaultPrioritizedProcessCreatorTest {
+public class ProcessCreatorTest {
 
   private static final int PROCESS_CNT = 100;
 
@@ -44,8 +44,7 @@ public class DefaultPrioritizedProcessCreatorTest {
     TestPipeline testPipeline = new TestPipeline();
 
     ProcessService service = mock(ProcessService.class);
-    DefaultPrioritizedProcessCreator creator =
-        spy(new DefaultPrioritizedProcessCreator(testPipeline, service));
+    ProcessCreator creator = spy(new ProcessCreator(testPipeline, service));
 
     when(service.createExecution(any(), any(), any())).thenReturn(mock(ProcessEntity.class));
 

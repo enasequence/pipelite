@@ -33,18 +33,21 @@ public class PipeliteExecutorService {
     this.internalErrorService = internalErrorService;
   }
 
-  private AtomicReference<ExecutorService> processExecutorService = new AtomicReference<>();
-  public AtomicReference<ExecutorService> stageExecutorService = new AtomicReference<>();
+  private AtomicReference<ExecutorService> runProcessExecutorService = new AtomicReference<>();
+  private AtomicReference<ExecutorService> runStageExecutorService = new AtomicReference<>();
+  private AtomicReference<ExecutorService> refreshQueueExecutorService = new AtomicReference<>();
+  private AtomicReference<ExecutorService> replenishQueueExecutorService = new AtomicReference<>();
 
   @PostConstruct
   private void initExecutorServices() {
     initExecutorService(
         "pipelite-process-%d",
-        pipeliteConfiguration.advanced().getProcessRunnerWorkers(), processExecutorService);
+        pipeliteConfiguration.advanced().getProcessRunnerWorkers(), runProcessExecutorService);
     initExecutorService(
         "pipelite-stage-%d",
-        pipeliteConfiguration.advanced().getStageRunnerWorkers(), stageExecutorService);
-    ;
+        pipeliteConfiguration.advanced().getStageRunnerWorkers(), runStageExecutorService);
+    initExecutorService("pipelite-refresh-%d", 5, refreshQueueExecutorService);
+    initExecutorService("pipelite-replenish-%d", 5, replenishQueueExecutorService);
   }
 
   private void initExecutorService(
@@ -60,11 +63,23 @@ public class PipeliteExecutorService {
     executorService.set(Executors.newFixedThreadPool(workers, threadFactory));
   }
 
-  public ExecutorService process() {
-    return processExecutorService.get();
+  /** Used in ProcessRunnerPool.runOneIteration to run processes. */
+  public ExecutorService runProcess() {
+    return runProcessExecutorService.get();
   }
 
-  public ExecutorService stage() {
-    return stageExecutorService.get();
+  /** Used in ProcessRunner.runOneIteration to run stages. */
+  public ExecutorService runStage() {
+    return runStageExecutorService.get();
+  }
+
+  /** Used in PipelineRunner runOneIteration to refresh process queue. */
+  public ExecutorService refreshQueue() {
+    return refreshQueueExecutorService.get();
+  }
+
+  /** Used in PipelineRunner runOneIteration to replenish process queue. */
+  public ExecutorService replenishQueue() {
+    return replenishQueueExecutorService.get();
   }
 }

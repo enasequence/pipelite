@@ -12,6 +12,10 @@ package pipelite.configuration;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.HashMap;
+import javax.sql.DataSource;
 import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,11 +29,6 @@ import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
-
-import javax.sql.DataSource;
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.HashMap;
 
 @Configuration
 @ConfigurationProperties(prefix = "pipelite.datasource")

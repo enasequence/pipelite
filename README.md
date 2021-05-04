@@ -380,13 +380,11 @@ The unit for the resource usage limit can be one of:
 - pipelite.advanced.processRunnerFrequency: the running frequency for executing new processes. Default value: 10 seconds
 - pipelite.advanced.processRunnerWorkers: the number or parallel workers running processes in the main event loop. Default value: 25
 - pipelite.advanced.stageRunnerWorkers:the number or parallel workers running stages in the main event loop. Default value: 25
-- pipelite.advanced.processQueueMaxRefreshFrequency: the maximum frequency for pipeline execution queue to be refreshed
-  to allow process re-prioritisation. Default value: 6 hours
-- pipelite.advanced.processQueueMinRefreshFrequency: the minimum frequency for pipeline execution queue to be refreshed
-  to allow process re-prioritisation. Default value: 5 minutes
-- pipelite.advanced.processQueueMaxSize: The maximum size of pipeline execution queue. Default value: 5000
-- pipelite.advanced.processCreateMaxSize: The maximum number of processes created from a process source at one time.
-  Default value: 1000
+- pipelite.advanced.pipelineRunnerProcessQueueMinRefreshFrequency: the minimum frequency for process queue to be refreshed
+  to allow process re-prioritisation. Default value: 10 minutes
+- pipelite.advanced.pipelineRunnerProcessQueueMaxRefreshFrequency: the maximum frequency for process queue to be refreshed
+  to allow process re-prioritisation. Default value: 4 hours
+- pipelite.advanced.pipelineRunnerProcessQueueMinReplenishFrequency: the minimum frequency for process queue to be replenished. Default value: 10 minutes
 
 #### Test profiles
 

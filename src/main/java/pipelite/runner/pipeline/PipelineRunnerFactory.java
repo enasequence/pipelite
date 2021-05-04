@@ -16,9 +16,10 @@ import pipelite.configuration.PipeliteConfiguration;
 import pipelite.exception.PipeliteException;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.runner.process.ProcessQueue;
+import pipelite.runner.process.ProcessQueueFactory;
 import pipelite.runner.process.ProcessRunner;
-import pipelite.runner.process.creator.DefaultPrioritizedProcessCreator;
-import pipelite.runner.process.creator.PrioritizedProcessCreator;
+import pipelite.runner.process.ProcessRunnerFactory;
+import pipelite.runner.process.creator.ProcessCreator;
 import pipelite.service.PipeliteServices;
 import pipelite.service.RegisteredPipelineService;
 
@@ -31,32 +32,54 @@ public class PipelineRunnerFactory {
       PipeliteServices pipeliteServices,
       PipeliteMetrics pipeliteMetrics,
       String pipelineName) {
+
+    // Get registered pipeline.
     RegisteredPipelineService registeredPipelineService = pipeliteServices.registeredPipeline();
     Pipeline pipeline =
         registeredPipelineService.getRegisteredPipeline(pipelineName, Pipeline.class);
     if (pipeline == null) {
       throw new PipeliteException("Missing pipeline: " + pipelineName);
     }
-    PrioritizedProcessCreator prioritizedProcessCreator =
-        new DefaultPrioritizedProcessCreator(
+
+    ProcessCreator processCreator =
+        new ProcessCreator(
             registeredPipelineService.getRegisteredPipeline(
                 pipelineName, PrioritizedPipeline.class),
             pipeliteServices.process());
-    ProcessQueue processQueue =
-        new ProcessQueue(
-            pipeliteConfiguration.advanced(),
-            pipeliteServices.process(),
-            pipelineName,
-            pipeline.configurePipeline().pipelineParallelism());
+
+    ProcessQueueFactory processQueueFactory =
+        (pipeline1) -> new ProcessQueue(pipeliteConfiguration, pipeliteServices, pipeline1);
+
+    ProcessRunnerFactory processRunnerFactory =
+        (pipelineName1, process1) ->
+            new ProcessRunner(
+                pipeliteConfiguration, pipeliteServices, pipeliteMetrics, pipelineName1, process1);
+
+    return create(
+        pipeliteConfiguration,
+        pipeliteServices,
+        pipeliteMetrics,
+        pipeline,
+        processCreator,
+        processQueueFactory,
+        processRunnerFactory);
+  }
+
+  public static PipelineRunner create(
+      PipeliteConfiguration pipeliteConfiguration,
+      PipeliteServices pipeliteServices,
+      PipeliteMetrics pipeliteMetrics,
+      Pipeline pipeline,
+      ProcessCreator processCreator,
+      ProcessQueueFactory processQueueFactory,
+      ProcessRunnerFactory processRunnerFactory) {
     return new PipelineRunner(
         pipeliteConfiguration,
         pipeliteServices,
         pipeliteMetrics,
         pipeline,
-        prioritizedProcessCreator,
-        processQueue,
-        (pipelineName1, process1) ->
-            new ProcessRunner(
-                pipeliteConfiguration, pipeliteServices, pipeliteMetrics, pipelineName1, process1));
+        processCreator,
+        processQueueFactory,
+        processRunnerFactory);
   }
 }

@@ -112,9 +112,10 @@ public class ScheduleRunner extends ProcessRunnerPool {
   }
 
   @Override
-  protected boolean shutdownIfIdle() {
+  public boolean isIdle() {
     return !(maximumExecutions.isEmpty()
-        || maximumExecutions.values().stream().anyMatch(r -> r.get() > 0));
+            || maximumExecutions.values().stream().anyMatch(r -> r.get() > 0))
+        && super.isIdle();
   }
 
   /** Initialises schedules. */

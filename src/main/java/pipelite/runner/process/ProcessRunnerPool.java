@@ -39,6 +39,7 @@ public class ProcessRunnerPool extends AbstractScheduledService {
   private final String serviceName;
   private final ProcessRunnerFactory processRunnerFactory;
   private final Duration processRunnerFrequency;
+  private final boolean shutdownIfIdle;
   private final Set<ProcessRunnerPool.ActiveProcessRunner> active = ConcurrentHashMap.newKeySet();
 
   @Data
@@ -64,6 +65,7 @@ public class ProcessRunnerPool extends AbstractScheduledService {
     this.serviceName = serviceName;
     this.processRunnerFactory = processRunnerFactory;
     this.processRunnerFrequency = pipeliteConfiguration.advanced().getProcessRunnerFrequency();
+    this.shutdownIfIdle = pipeliteConfiguration.advanced().isShutdownIfIdle();
   }
 
   // From AbstractScheduledService.
@@ -98,7 +100,7 @@ public class ProcessRunnerPool extends AbstractScheduledService {
       runOneIterationForActiveProcessRunners();
 
       pipeliteMetrics.setRunningProcessesCount(getActiveProcessRunners());
-      if (getActiveProcessCount() == 0 && shutdownIfIdle()) {
+      if (shutdownIfIdle && isIdle()) {
         log.atInfo().log("Stopping idle process runner pool: %s", serviceName());
         stopAsync();
       }
@@ -120,7 +122,7 @@ public class ProcessRunnerPool extends AbstractScheduledService {
     activeProcessRunner.setFuture(
         pipeliteServices
             .executor()
-            .process()
+            .runProcess()
             .submit(
                 () -> {
                   try {
@@ -151,13 +153,9 @@ public class ProcessRunnerPool extends AbstractScheduledService {
     }
   }
 
-  /**
-   * Override to allow an idle process runner pool to be shut down.
-   *
-   * @return true if an idle process runner pool should be shut down
-   */
-  protected boolean shutdownIfIdle() {
-    return false;
+  /** Returns true if the process runner is idle. */
+  public boolean isIdle() {
+    return active.isEmpty();
   }
 
   /**

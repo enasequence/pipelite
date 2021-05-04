@@ -20,14 +20,13 @@ import pipelite.log.LogKey;
 import pipelite.service.ProcessService;
 
 @Flogger
-public class DefaultPrioritizedProcessCreator implements PrioritizedProcessCreator {
+public class ProcessCreator {
 
   private final PrioritizedPipeline prioritizedPipeline;
   private final ProcessService processService;
   private final String pipelineName;
 
-  public DefaultPrioritizedProcessCreator(
-      PrioritizedPipeline prioritizedPipeline, ProcessService processService) {
+  public ProcessCreator(PrioritizedPipeline prioritizedPipeline, ProcessService processService) {
     Assert.notNull(processService, "Missing process service");
     this.prioritizedPipeline = prioritizedPipeline;
     this.processService = processService;
@@ -35,7 +34,12 @@ public class DefaultPrioritizedProcessCreator implements PrioritizedProcessCreat
     Assert.notNull(this.pipelineName, "Missing pipeline name");
   }
 
-  @Override
+  /**
+   * Creates and saves prioritized processes.
+   *
+   * @param processCnt the number of requested processes to create
+   * @return the number of created processes
+   */
   public int createProcesses(int processCnt) {
     if (prioritizedPipeline == null) {
       return 0;
@@ -55,7 +59,12 @@ public class DefaultPrioritizedProcessCreator implements PrioritizedProcessCreat
     return createCnt;
   }
 
-  @Override
+  /**
+   * Creates and saves one prioritized process.
+   *
+   * @param prioritizedProcess the next process
+   * @return the created process or null if it could not be created
+   */
   public ProcessEntity createProcess(PrioritizedPipeline.PrioritizedProcess prioritizedProcess) {
     String processId = prioritizedProcess.getProcessId();
     if (processId == null || processId.trim().isEmpty()) {

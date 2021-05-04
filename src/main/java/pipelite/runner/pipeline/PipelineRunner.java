@@ -11,7 +11,10 @@
 package pipelite.runner.pipeline;
 
 import com.google.common.flogger.FluentLogger;
+import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.Pipeline;
@@ -22,50 +25,52 @@ import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.runner.process.ProcessQueue;
+import pipelite.runner.process.ProcessQueueFactory;
 import pipelite.runner.process.ProcessRunnerFactory;
 import pipelite.runner.process.ProcessRunnerPool;
-import pipelite.runner.process.creator.PrioritizedProcessCreator;
-import pipelite.service.HealthCheckService;
-import pipelite.service.InternalErrorService;
+import pipelite.runner.process.creator.ProcessCreator;
 import pipelite.service.PipeliteServices;
 
 /** Executes processes in parallel for one pipeline. */
 @Flogger
 public class PipelineRunner extends ProcessRunnerPool {
 
-  private final InternalErrorService internalErrorService;
-  private final HealthCheckService healthCheckService;
+  private final PipeliteServices pipeliteServices;
   private final String pipelineName;
   private final Pipeline pipeline;
-  private final PrioritizedProcessCreator prioritizedProcessCreator;
-  private final ProcessQueue processQueue;
-  private final int processCreateMaxSize;
-  private final boolean shutdownIfIdle;
+  private final ProcessCreator processCreator;
+  private final ProcessQueueFactory processQueueFactory;
+  private final AtomicReference<ProcessQueue> processQueue = new AtomicReference<>();
+  private final Duration minReplenishFrequency;
   private final ZonedDateTime startTime;
+  private ZonedDateTime replenishTime;
+  private AtomicBoolean activeRefreshQueue = new AtomicBoolean();
+  private AtomicBoolean activeReplenishQueue = new AtomicBoolean();
 
   public PipelineRunner(
       PipeliteConfiguration pipeliteConfiguration,
       PipeliteServices pipeliteServices,
       PipeliteMetrics pipeliteMetrics,
       Pipeline pipeline,
-      PrioritizedProcessCreator prioritizedProcessCreator,
-      ProcessQueue processQueue,
+      ProcessCreator processCreator,
+      ProcessQueueFactory processQueueFactory,
       ProcessRunnerFactory processRunnerFactory) {
     super(
         pipeliteConfiguration,
         pipeliteServices,
         pipeliteMetrics,
-        serviceName(pipeliteConfiguration, processQueue),
+        serviceName(pipeliteConfiguration, pipeline.pipelineName()),
         processRunnerFactory);
-    Assert.notNull(prioritizedProcessCreator, "Missing process creator");
-    this.internalErrorService = pipeliteServices.internalError();
-    this.healthCheckService = pipeliteServices.healthCheck();
+    Assert.notNull(pipeline, "Missing pipeline");
+    Assert.notNull(processCreator, "Missing process creator");
+    Assert.notNull(processQueueFactory, "Missing process queue factory");
+    this.pipeliteServices = pipeliteServices;
     this.pipeline = pipeline;
-    this.prioritizedProcessCreator = prioritizedProcessCreator;
-    this.processQueue = processQueue;
-    this.pipelineName = processQueue.getPipelineName();
-    this.processCreateMaxSize = pipeliteConfiguration.advanced().getProcessCreateMaxSize();
-    this.shutdownIfIdle = pipeliteConfiguration.advanced().isShutdownIfIdle();
+    this.processCreator = processCreator;
+    this.processQueueFactory = processQueueFactory;
+    this.pipelineName = pipeline.pipelineName();
+    this.minReplenishFrequency =
+        pipeliteConfiguration.advanced().getPipelineRunnerProcessQueueMinReplenishFrequency();
     this.startTime = ZonedDateTime.now();
   }
 
@@ -73,41 +78,126 @@ public class PipelineRunner extends ProcessRunnerPool {
   @Override
   public void runOneIteration() {
     try {
-      if (!healthCheckService.isDataSourceHealthy()) {
+      if (!pipeliteServices.healthCheck().isDataSourceHealthy()) {
         logContext(log.atSevere())
             .log("Waiting data source to be healthy before starting new processes");
         return;
       }
 
-      if (processQueue.isFillQueue()) {
-        prioritizedProcessCreator.createProcesses(processCreateMaxSize);
-        processQueue.fillQueue();
-      }
-      while (processQueue.isAvailableProcesses(this.getActiveProcessCount())) {
-        runProcess(processQueue.nextAvailableProcess());
-      }
+      refreshQueue();
+      replenishQueue();
+      runProcesses();
 
       // Must call ProcessRunnerPool.runOneIteration()
       super.runOneIteration();
 
     } catch (Exception ex) {
       // Catching exceptions here in case they have not already been caught.
-      internalErrorService.saveInternalError(serviceName(), pipelineName, this.getClass(), ex);
+      pipeliteServices
+          .internalError()
+          .saveInternalError(serviceName(), pipelineName, this.getClass(), ex);
+    }
+  }
+
+  private void refreshQueue() {
+    if (processQueue.get() == null || processQueue.get().isRefreshQueue()) {
+      if (activeRefreshQueue.compareAndSet(false, true)) {
+        pipeliteServices
+            .executor()
+            .refreshQueue()
+            .execute(
+                () -> {
+                  try {
+                    ProcessQueue p = processQueue.get();
+                    boolean firstRefresh = p == null;
+                    if (firstRefresh) {
+                      // Create process queue.
+                      // The process queue creation is intentionally deferred to
+                      // happen here so that we will only assign the process queue
+                      // after it has been refreshed once and processes have been
+                      // created if needed.
+                      p = processQueueFactory.create(pipeline);
+                    }
+
+                    // Refresh process queue.
+                    p.refreshQueue();
+
+                    if (p.getProcessQueueSize() == 0) {
+                      // The process queue is empty.
+                      // Create new processes.
+                      int createdProcessCount =
+                          processCreator.createProcesses(p.getProcessQueueMaxSize());
+                      replenishTime = ZonedDateTime.now();
+                      if (createdProcessCount > 0) {
+                        // Refresh process queue.
+                        p.refreshQueue();
+                      }
+                    }
+
+                    if (firstRefresh) {
+                      processQueue.set(p);
+                    }
+                  } catch (Exception ex) {
+                    pipeliteServices
+                        .internalError()
+                        .saveInternalError(serviceName(), pipelineName, this.getClass(), ex);
+                  } finally {
+                    activeRefreshQueue.set(false);
+                  }
+                });
+      }
+    }
+  }
+
+  private void replenishQueue() {
+    if (processQueue.get() != null
+        && (replenishTime == null
+            || replenishTime.plus(minReplenishFrequency).isBefore(ZonedDateTime.now()))) {
+      if (activeReplenishQueue.compareAndSet(false, true)) {
+        pipeliteServices
+            .executor()
+            .replenishQueue()
+            .execute(
+                () -> {
+                  try {
+                    // Create new processes.
+                    processCreator.createProcesses(processQueue.get().getProcessQueueMaxSize());
+                    replenishTime = ZonedDateTime.now();
+                  } catch (Exception ex) {
+                    pipeliteServices
+                        .internalError()
+                        .saveInternalError(serviceName(), pipelineName, this.getClass(), ex);
+                  } finally {
+                    activeReplenishQueue.set(false);
+                  }
+                });
+      }
+    }
+  }
+
+  private void runProcesses() {
+    if (processQueue.get() == null) {
+      return;
+    }
+    while (true) {
+      ProcessEntity processEntity = processQueue.get().nextProcess(this.getActiveProcessCount());
+      if (processEntity == null) {
+        return;
+      }
+      runProcess(processEntity);
     }
   }
 
   private static String serviceName(
-      PipeliteConfiguration pipeliteConfiguration, ProcessQueue processQueue) {
-    return pipeliteConfiguration.service().getName()
-        + "@pipeline@"
-        + processQueue.getPipelineName();
+      PipeliteConfiguration pipeliteConfiguration, String pipelineName) {
+    return pipeliteConfiguration.service().getName() + "@pipeline@" + pipelineName;
   }
 
   @Override
-  protected boolean shutdownIfIdle() {
-    return !processQueue.isAvailableProcesses(0)
-        && this.getActiveProcessCount() == 0
-        && shutdownIfIdle;
+  public boolean isIdle() {
+    return processQueue.get() != null
+        && processQueue.get().getProcessQueueSize() == 0
+        && super.isIdle();
   }
 
   public ZonedDateTime getStartTime() {
@@ -117,12 +207,12 @@ public class PipelineRunner extends ProcessRunnerPool {
   protected void runProcess(ProcessEntity processEntity) {
     try {
       Process process = ProcessFactory.create(processEntity, pipeline);
-      if (process != null) {
-        runProcess(pipelineName, process, (p) -> {});
-      }
+      runProcess(pipelineName, process, (p) -> {});
     } catch (Exception ex) {
       // Catching exceptions here to allow other processes to continue execution.
-      internalErrorService.saveInternalError(serviceName(), pipelineName, this.getClass(), ex);
+      pipeliteServices
+          .internalError()
+          .saveInternalError(serviceName(), pipelineName, this.getClass(), ex);
     }
   }
 
@@ -135,7 +225,10 @@ public class PipelineRunner extends ProcessRunnerPool {
   }
 
   public int getQueuedProcessCount() {
-    return processQueue.getQueuedProcessCount();
+    if (processQueue.get() == null) {
+      return 0;
+    }
+    return processQueue.get().getProcessQueueSize();
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {

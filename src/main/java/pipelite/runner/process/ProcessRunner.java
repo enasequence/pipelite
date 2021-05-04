@@ -140,7 +140,7 @@ public class ProcessRunner {
     activeStageRunner.setFuture(
         pipeliteServices
             .executor()
-            .stage()
+            .runStage()
             .submit(
                 () -> {
                   try {

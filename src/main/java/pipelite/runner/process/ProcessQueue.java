@@ -12,43 +12,79 @@ package pipelite.runner.process;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 import org.springframework.util.Assert;
-import pipelite.configuration.AdvancedConfiguration;
+import pipelite.Pipeline;
+import pipelite.configuration.PipeliteConfiguration;
 import pipelite.entity.ProcessEntity;
+import pipelite.service.PipeliteServices;
 import pipelite.service.ProcessService;
 
 public class ProcessQueue {
 
+  public static final int MAX_PARALLELISM = 100000;
+
+  /**
+   * The queue is created by selecting processes from the database based on process status and
+   * priority. It is fairly expensive to create the queue. Therefore the queue should be created as
+   * infrequently as possible. However, because processes are prioritised it is important to refresh
+   * the queue periodically to prioritize the execution of new high priority processes. In an
+   * attempt to balance these two requirements the process queue length is determined by a
+   * parallelism multiplier.
+   */
+  public static final int MAX_QUEUE_SIZE_PARALLELISM_MULTIPLIER = 4;
+
   private final ProcessService processService;
   private final String pipelineName;
-  private final Duration processQueueMaxRefreshFrequency;
-  private final Duration processQueueMinRefreshFrequency;
-  private final int processQueueMaxSize;
   private final int pipelineParallelism;
-  private final List<ProcessEntity> processQueue = Collections.synchronizedList(new ArrayList<>());
-  private final AtomicInteger processQueueIndex = new AtomicInteger();
-  private ZonedDateTime processQueueMaxValidUntil = ZonedDateTime.now();
-  private ZonedDateTime processQueueMinValidUntil = ZonedDateTime.now();
+  private final Duration minRefreshFrequency;
+  private final Duration maxRefreshFrequency;
+  private ZonedDateTime refreshTime;
+  private final Queue<ProcessEntity> processQueue = new ArrayDeque<>();
+  private final int processQueueMaxSize;
+  private int processQueueRefreshSize = 0;
+
+  /**
+   * The refreshQueue and nextProcess methods are called from different threads. The refreshLock is
+   * makes sure that these method are not called at the same time. The refreshQueue method will wait
+   * until the lock can be acquired. The nextProcess method will return null if the lock can't be
+   * acquired.
+   */
+  private final ReentrantLock refreshLock = new ReentrantLock();
+
+  /**
+   * When the refreshQueue method is called some of the new processes may already have been returned
+   * by the nextProcess method call. These processes are removed using the returnedProcesses set.
+   */
+  private final Set<String> returnedProcesses = new HashSet();
 
   public ProcessQueue(
-      AdvancedConfiguration advancedConfiguration,
-      ProcessService processService,
-      String pipelineName,
-      int pipelineParallelism) {
-    Assert.notNull(advancedConfiguration, "Missing advanced configuration");
-    Assert.notNull(pipelineName, "Missing pipeline name");
-    this.processService = processService;
-    this.pipelineName = pipelineName;
-    this.processQueueMaxRefreshFrequency =
-        advancedConfiguration.getProcessQueueMaxRefreshFrequency();
-    this.processQueueMinRefreshFrequency =
-        advancedConfiguration.getProcessQueueMinRefreshFrequency();
-    this.processQueueMaxSize = advancedConfiguration.getProcessQueueMaxSize();
-    this.pipelineParallelism = Math.max(pipelineParallelism, 1);
+      PipeliteConfiguration pipeliteConfiguration,
+      PipeliteServices pipeliteServices,
+      Pipeline pipeline) {
+    Assert.notNull(pipeliteConfiguration, "Missing pipelite configuration");
+    Assert.notNull(pipeliteServices, "Missing pipelite services");
+    Assert.notNull(pipeline, "Missing pipeline");
+    Assert.notNull(pipeline.pipelineName(), "Missing pipeline name");
+    Assert.notNull(
+        pipeline.configurePipeline().pipelineParallelism(), "Missing pipeline parallelism");
+    Assert.notNull(
+        pipeliteConfiguration.advanced().getPipelineRunnerProcessQueueMinRefreshFrequency(),
+        "Missing process queue min refresh frequency");
+    Assert.notNull(
+        pipeliteConfiguration.advanced().getPipelineRunnerProcessQueueMaxRefreshFrequency(),
+        "Missing process queue max refresh frequency");
+    this.processService = pipeliteServices.process();
+    this.pipelineName = pipeline.pipelineName();
+    this.pipelineParallelism =
+        Math.min(MAX_PARALLELISM, Math.max(pipeline.configurePipeline().pipelineParallelism(), 1));
+    this.minRefreshFrequency =
+        pipeliteConfiguration.advanced().getPipelineRunnerProcessQueueMinRefreshFrequency();
+    this.maxRefreshFrequency =
+        pipeliteConfiguration.advanced().getPipelineRunnerProcessQueueMaxRefreshFrequency();
+    this.processQueueMaxSize = pipelineParallelism * MAX_QUEUE_SIZE_PARALLELISM_MULTIPLIER;
   }
 
   /**
@@ -61,105 +97,127 @@ public class ProcessQueue {
   }
 
   /**
-   * Returns true if more processes can be queued.
+   * Returns true if the queue should be refreshed.
    *
-   * @return true if more processes can be queued
+   * @return true if the queue should be refreshed.
    */
-  public boolean isFillQueue() {
-    return isFillQueue(
-        processQueueIndex.get(),
-        processQueue.size(),
-        processQueueMaxValidUntil,
-        processQueueMinValidUntil,
-        pipelineParallelism);
-  }
-
-  /** Returns true if the process queue should be recreated. */
-  public static boolean isFillQueue(
-      int processQueueIndex,
-      int processQueueSize,
-      ZonedDateTime processQueueMaxValidUntil,
-      ZonedDateTime processQueueMinValidUntil,
-      int pipelineParallelism) {
-    if (processQueueMinValidUntil.isAfter(ZonedDateTime.now())) {
+  public boolean isRefreshQueue() {
+    if (refreshTime == null) {
+      // Queue has not been refreshed.
+      return true;
+    }
+    ZonedDateTime now = ZonedDateTime.now();
+    if (isRefreshQueuePremature(now, refreshTime, minRefreshFrequency)) {
       return false;
     }
-    return processQueueIndex >= processQueueSize - pipelineParallelism + 1
-        || !processQueueMaxValidUntil.isAfter(ZonedDateTime.now());
-  }
-
-  /**
-   * Queues processes and returns the number of processes queued.
-   *
-   * @return the number of processes queued
-   */
-  public int fillQueue() {
-    if (!isFillQueue()) {
-      return 0;
+    if (isRefreshQueueOverdue(now, refreshTime, maxRefreshFrequency)) {
+      return true;
     }
-    int processCnt = 0;
-    // Clear process queue.
-    processQueueIndex.set(0);
-    processQueue.clear();
+    return isRefreshQueueSize();
+  }
 
-    // First add unlocked active processes. Asynchronous active processes may be able to continue
-    // execution.
-    List<ProcessEntity> unlockedActiveProcesses = getUnlockedActiveProcesses();
-    processCnt += unlockedActiveProcesses.size();
-    processQueue.addAll(unlockedActiveProcesses);
+  public boolean isRefreshQueueSize() {
+    return processQueue.size() <= pipelineParallelism;
+  }
 
-    // Then add new processes.
-    List<ProcessEntity> pendingProcesses = getPendingProcesses();
-    processCnt += pendingProcesses.size();
-    processQueue.addAll(pendingProcesses);
-    processQueueMaxValidUntil = ZonedDateTime.now().plus(processQueueMaxRefreshFrequency);
-    processQueueMinValidUntil = ZonedDateTime.now().plus(processQueueMinRefreshFrequency);
-    return processCnt;
+  public static boolean isRefreshQueuePremature(
+      ZonedDateTime now, ZonedDateTime refreshTime, Duration minRefreshFrequency) {
+    return now.isBefore(refreshTime.plus(minRefreshFrequency));
+  }
+
+  public static boolean isRefreshQueueOverdue(
+      ZonedDateTime now, ZonedDateTime refreshTime, Duration maxRefreshFrequency) {
+    return now.isAfter(refreshTime.plus(maxRefreshFrequency));
+  }
+
+  /** Refreshes the queue. */
+  public synchronized void refreshQueue() {
+    try {
+      // Wait until refreshLock can be acquired.
+      refreshLock.lock();
+
+      List<ProcessEntity> unlockedActiveProcesses =
+          getUnlockedActiveProcessesExcludingReturnedProcesses(processQueueMaxSize);
+      List<ProcessEntity> pendingProcesses =
+          getPendingProcessesExcludingReturnedProcesses(
+              processQueueMaxSize - unlockedActiveProcesses.size());
+
+      refreshTime = ZonedDateTime.now();
+      processQueue.clear();
+      processQueue.addAll(unlockedActiveProcesses);
+      processQueue.addAll(pendingProcesses);
+      processQueueRefreshSize = processQueue.size();
+      returnedProcesses.clear();
+    } finally {
+      refreshLock.unlock();
+    }
   }
 
   /**
-   * Returns true if there are available processes in the queue taking into account the maximum
-   * number of active processes.
+   * Returns the number of processes in the queue.
    *
-   * @param activeProcesses the number of currently executing processes
-   * @return true if there are available processes in the queue
+   * @return the number of processes in the queue
    */
-  public boolean isAvailableProcesses(int activeProcesses) {
-    return processQueueIndex.get() < processQueue.size() && activeProcesses < pipelineParallelism;
+  public int getProcessQueueSize() {
+    return processQueue.size();
   }
 
   /**
-   * Returns the number of available processes in the queue.
+   * Returns the maximum number of processes in the queue.
    *
-   * @return the number of available processes in the queue
+   * @return the maximum number of processes in the queue
    */
-  public int getQueuedProcessCount() {
-    return processQueue.size() - processQueueIndex.get();
+  public int getProcessQueueMaxSize() {
+    return processQueueMaxSize;
   }
 
   /**
-   * Returns the next available process in the queue.
+   * Returns the number of processes in the queue after refresh.
    *
-   * @return the next available process in the queue
+   * @return the number of processes in the queue after refresh.
    */
-  public ProcessEntity nextAvailableProcess() {
-    return processQueue.get(processQueueIndex.getAndIncrement());
+  public int getProcessQueueRefreshSize() {
+    return processQueueRefreshSize;
+  }
+  /**
+   * Returns the next available process in the queue if there is one, if the queue is not being
+   * refreshed and if the number of currently executing processes is lower than the pipeline
+   * parallelism.
+   *
+   * @param activeProcessCount the number of currently executing processes
+   * @return the next available process in the queue if there is one, if the queue is not being
+   *     refreshed and if the number of currently executing processes is lower than the pipeline
+   *     parallelism.
+   */
+  public synchronized ProcessEntity nextProcess(int activeProcessCount) {
+    // Return null if refreshLock can't be acquired.
+    if (refreshLock.tryLock()) {
+      try {
+        if (activeProcessCount >= pipelineParallelism) {
+          return null;
+        }
+        ProcessEntity processEntity = processQueue.poll();
+        if (processEntity != null) {
+          returnedProcesses.add(processEntity.getProcessId());
+        }
+        return processEntity;
+      } finally {
+        refreshLock.unlock();
+      }
+    }
+    return null;
   }
 
-  public List<ProcessEntity> getUnlockedActiveProcesses() {
-    return processService.getUnlockedActiveProcesses(pipelineName, processQueueMaxSize);
+  private List<ProcessEntity> getUnlockedActiveProcessesExcludingReturnedProcesses(
+      int maxProcesses) {
+    return processService.getUnlockedActiveProcesses(pipelineName, maxProcesses).stream()
+        .filter(e -> !returnedProcesses.contains(e.getProcessId()))
+        .collect(Collectors.toList());
   }
 
-  public List<ProcessEntity> getPendingProcesses() {
-    return processService.getPendingProcesses(
-        pipelineName, processQueueMaxSize - processQueue.size());
-  }
-
-  public ZonedDateTime getProcessQueueMaxValidUntil() {
-    return processQueueMaxValidUntil;
-  }
-
-  public ZonedDateTime getProcessQueueMinValidUntil() {
-    return processQueueMinValidUntil;
+  private List<ProcessEntity> getPendingProcessesExcludingReturnedProcesses(int maxProcesses) {
+    return processService.getPendingProcesses(pipelineName, maxProcesses).stream()
+        .filter(e -> !returnedProcesses.contains(e.getProcessId()))
+        .collect(Collectors.toList());
   }
 }

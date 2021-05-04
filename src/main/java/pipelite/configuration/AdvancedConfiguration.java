@@ -16,7 +16,6 @@ import lombok.extern.flogger.Flogger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import pipelite.runner.pipeline.PipelineRunner;
-import pipelite.runner.process.ProcessQueue;
 import pipelite.runner.schedule.ScheduleRunner;
 
 /**
@@ -36,10 +35,12 @@ public class AdvancedConfiguration {
   private static final int DEFAULT_PROCESS_RUNNER_WORKERS = 25;
   private static final int DEFAULT_STAGE_RUNNER_WORKERS = 25;
   private static final Duration DEFAULT_SCHEDULE_REFRESH_FREQUENCY = Duration.ofHours(4);
-  private static final Duration DEFAULT_PROCESS_QUEUE_MAX_REFRESH_FREQUENCY = Duration.ofHours(6);
-  private static final Duration DEFAULT_PROCESS_QUEUE_MIN_REFRESH_FREQUENCY = Duration.ofMinutes(5);
-  private static final int DEFAULT_PROCESS_QUEUE_MAX_SIZE = 5000;
-  private static final int DEFAULT_PROCESS_CREATE_MAX_SIZE = 1000;
+  private static final Duration DEFAULT_PIPELINE_RUNNER_PROCESS_QUEUE_MAX_REFRESH_FREQUENCY =
+      Duration.ofHours(4);
+  private static final Duration DEFAULT_PIPELINE_RUNNER_PROCESS_QUEUE_MIN_REFRESH_FREQUENCY =
+      Duration.ofMinutes(10);
+  private static final Duration DEFAULT_PIPELINE_RUNNER_PROCESS_QUEUE_MIN_REPLENISH_FREQUENCY =
+      Duration.ofMinutes(10);
 
   public AdvancedConfiguration() {}
 
@@ -60,21 +61,18 @@ public class AdvancedConfiguration {
   /** The number of workers for stage runners. */
   private int stageRunnerWorkers = DEFAULT_STAGE_RUNNER_WORKERS;
 
-  /** The maximum frequency for {@link ProcessQueue} to refresh its process execution queue. */
-  private Duration processQueueMaxRefreshFrequency = DEFAULT_PROCESS_QUEUE_MAX_REFRESH_FREQUENCY;
+  /** The minimum refresh frequency of process queue in {@link PipelineRunner}. */
+  private Duration pipelineRunnerProcessQueueMinRefreshFrequency =
+      DEFAULT_PIPELINE_RUNNER_PROCESS_QUEUE_MIN_REFRESH_FREQUENCY;
 
-  /** The minimum frequency for {@link ProcessQueue} to refresh its process execution queue. */
-  private Duration processQueueMinRefreshFrequency = DEFAULT_PROCESS_QUEUE_MIN_REFRESH_FREQUENCY;
+  /** The maximum refresh frequency of process queue in {@link PipelineRunner}. */
+  private Duration pipelineRunnerProcessQueueMaxRefreshFrequency =
+      DEFAULT_PIPELINE_RUNNER_PROCESS_QUEUE_MAX_REFRESH_FREQUENCY;
 
-  /**
-   * The maximum length of {@link ProcessQueue} process execution queue. The queue will be refreshed
-   * if it becomes smaller than the pipeline parallelism.
-   */
-  private int processQueueMaxSize = DEFAULT_PROCESS_QUEUE_MAX_SIZE;
+  /** The minimum replenish frequency of process queue in {@link PipelineRunner}. */
+  private Duration pipelineRunnerProcessQueueMinReplenishFrequency =
+      DEFAULT_PIPELINE_RUNNER_PROCESS_QUEUE_MIN_REPLENISH_FREQUENCY;
 
-  /** The maximum number of new processes created by {@link PipelineRunner} at one go. */
-  private int processCreateMaxSize = DEFAULT_PROCESS_CREATE_MAX_SIZE;
-
-  /** The {@link PipelineRunner} can optionally be shut down if idle. */
+  /** The {@link PipelineRunner} can be shut down if it is idle. */
   private boolean shutdownIfIdle;
 }

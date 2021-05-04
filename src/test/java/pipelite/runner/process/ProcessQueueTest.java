@@ -13,91 +13,127 @@ package pipelite.runner.process;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
-import static pipelite.runner.process.ProcessQueue.isFillQueue;
+import static pipelite.runner.process.ProcessQueue.MAX_QUEUE_SIZE_PARALLELISM_MULTIPLIER;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import pipelite.UniqueStringGenerator;
-import pipelite.configuration.AdvancedConfiguration;
-import pipelite.configuration.ServiceConfiguration;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
+import pipelite.PipeliteTestConfigWithServices;
+import pipelite.configuration.PipeliteConfiguration;
 import pipelite.entity.ProcessEntity;
+import pipelite.helper.PipelineTestHelper;
+import pipelite.process.builder.ProcessBuilder;
+import pipelite.service.PipeliteServices;
 import pipelite.service.ProcessService;
 
+@SpringBootTest(
+    classes = PipeliteTestConfigWithServices.class,
+    properties = {
+      "pipelite.service.force=true",
+      "pipelite.service.name=ProcessQueueTest",
+      "pipelite.advanced.pipelineRunnerProcessQueueMinRefreshFrequency=0s",
+      "pipelite.advanced.pipelineRunnerProcessQueueMaxRefreshFrequency=1d"
+    })
+@DirtiesContext
+@ActiveProfiles("test")
+@Transactional
 public class ProcessQueueTest {
 
+  @Autowired PipeliteConfiguration pipeliteConfiguration;
+  @Autowired PipeliteServices pipeliteServices;
+  @MockBean ProcessService processService;
+
+  private class TestPipeline extends PipelineTestHelper {
+    @Override
+    protected int testConfigureParallelism() {
+      return 10;
+    }
+
+    @Override
+    protected void testConfigureProcess(ProcessBuilder builder) {
+      builder.execute("STAGE").withSyncTestExecutor().build();
+    }
+  }
+
   @Test
-  public void fillQueue() {
+  public void isRefreshQueuePremature() {
     ZonedDateTime now = ZonedDateTime.now();
-    ZonedDateTime later = ZonedDateTime.now().plusHours(1);
-    int len = 10; // queue length
-    int par = 5; // parallelism
-    // Queue is running low and we can refresh the queue now.
-    assertThat(isFillQueue(len, len, later, now, par)).isTrue();
-    assertThat(isFillQueue(len - par, len, later, now, par)).isFalse();
-    assertThat(isFillQueue(len - par + 1, len, later, now, par)).isTrue();
-    // Queue is not running low but we must refresh the queue now.
-    assertThat(isFillQueue(0, len, now, now, par)).isTrue();
-    // Queue is running low but we can't refresh it yet.
-    assertThat(isFillQueue(len, len, later, later, par)).isFalse();
-    // Queue is not running low.
-    assertThat(isFillQueue(0, len, later, now, par)).isFalse();
+    assertThat(
+            ProcessQueue.isRefreshQueuePremature(
+                now, now.minus(Duration.ofMinutes(10)), Duration.ofMinutes(20)))
+        .isTrue();
+    assertThat(
+            ProcessQueue.isRefreshQueuePremature(
+                now, now.minus(Duration.ofMinutes(10)), Duration.ofMinutes(5)))
+        .isFalse();
+  }
+
+  @Test
+  public void isRefreshQueueOverdue() {
+    ZonedDateTime now = ZonedDateTime.now();
+    assertThat(
+            ProcessQueue.isRefreshQueueOverdue(
+                now, now.minus(Duration.ofMinutes(10)), Duration.ofMinutes(20)))
+        .isFalse();
+    assertThat(
+            ProcessQueue.isRefreshQueueOverdue(
+                now, now.minus(Duration.ofMinutes(10)), Duration.ofMinutes(5)))
+        .isTrue();
   }
 
   @Test
   public void lifecycle() {
-    final int getActiveProcessCnt = 100;
-    final int getPendingProcessCnt = 50;
-    final int processQueueMaxSize = 150;
-    final int pipelineParallelism = 10;
-    String pipelineName = UniqueStringGenerator.randomPipelineName(ProcessQueueTest.class);
-    Duration refreshFrequency = Duration.ofDays(1);
-    ServiceConfiguration serviceConfiguration = new ServiceConfiguration();
-    AdvancedConfiguration advancedConfiguration = new AdvancedConfiguration();
-    advancedConfiguration.setProcessQueueMaxRefreshFrequency(refreshFrequency);
-    advancedConfiguration.setProcessQueueMinRefreshFrequency(refreshFrequency);
-    advancedConfiguration.setProcessQueueMaxSize(processQueueMaxSize);
+    final int activeProcessCnt = 25;
+    final int pendingProcessCnt = 10;
 
-    ProcessService processService = mock(ProcessService.class);
+    final TestPipeline pipeline = new TestPipeline();
+    final int pipelineParallelism = pipeline.configurePipeline().pipelineParallelism();
+    final int processQueueMaxSize = pipelineParallelism * MAX_QUEUE_SIZE_PARALLELISM_MULTIPLIER;
 
     List<ProcessEntity> activeEntities =
-        Collections.nCopies(getActiveProcessCnt, mock(ProcessEntity.class));
+        Collections.nCopies(activeProcessCnt, mock(ProcessEntity.class));
     List<ProcessEntity> pendingEntities =
-        Collections.nCopies(getPendingProcessCnt, mock(ProcessEntity.class));
-    doReturn(activeEntities).when(processService).getUnlockedActiveProcesses(any(), eq(150));
-    doReturn(pendingEntities).when(processService).getPendingProcesses(any(), eq(50));
+        Collections.nCopies(pendingProcessCnt, mock(ProcessEntity.class));
+    doReturn(activeEntities)
+        .when(processService)
+        .getUnlockedActiveProcesses(any(), eq(processQueueMaxSize));
+    doReturn(pendingEntities)
+        .when(processService)
+        .getPendingProcesses(any(), eq(processQueueMaxSize - activeProcessCnt));
 
-    ProcessQueue queue =
-        spy(
-            new ProcessQueue(
-                advancedConfiguration, processService, pipelineName, pipelineParallelism));
+    ProcessQueue processQueue =
+        spy(new ProcessQueue(pipeliteConfiguration, pipeliteServices, pipeline));
 
-    assertThat(queue.isFillQueue()).isTrue();
-    assertThat(queue.isAvailableProcesses(0)).isFalse();
-    ZonedDateTime processQueueMaxValidUntil = queue.getProcessQueueMaxValidUntil();
-    ZonedDateTime processQueueMinValidUntil = queue.getProcessQueueMinValidUntil();
-    assertThat(processQueueMaxValidUntil).isBeforeOrEqualTo(ZonedDateTime.now());
-    assertThat(processQueueMinValidUntil).isBeforeOrEqualTo(ZonedDateTime.now());
+    assertThat(processQueue.isRefreshQueue()).isTrue();
+    assertThat(processQueue.getProcessQueueSize()).isZero();
+    assertThat(processQueue.getProcessQueueMaxSize()).isEqualTo(processQueueMaxSize);
+    assertThat(processQueue.getProcessQueueRefreshSize()).isZero();
 
     // Queue processes.
-    assertThat(queue.fillQueue()).isEqualTo(processQueueMaxSize);
+    processQueue.refreshQueue();
+    verify(processQueue, times(1)).refreshQueue();
 
-    verify(queue, times(1)).fillQueue();
-    verify(queue, times(1)).getUnlockedActiveProcesses();
-    verify(queue, times(1)).getPendingProcesses();
+    assertThat(processQueue.isRefreshQueue()).isFalse();
+    assertThat(processQueue.getProcessQueueSize()).isEqualTo(activeProcessCnt + pendingProcessCnt);
+    assertThat(processQueue.getProcessQueueMaxSize()).isEqualTo(processQueueMaxSize);
+    assertThat(processQueue.getProcessQueueRefreshSize())
+        .isEqualTo(activeProcessCnt + pendingProcessCnt);
 
-    assertThat(queue.isFillQueue()).isFalse();
-    assertThat(queue.isAvailableProcesses(0)).isTrue();
-    assertThat(queue.isAvailableProcesses(pipelineParallelism - 1)).isTrue();
-    assertThat(queue.isAvailableProcesses(pipelineParallelism)).isFalse();
-    assertThat(queue.getProcessQueueMaxValidUntil()).isAfter(processQueueMaxValidUntil);
-    assertThat(queue.getProcessQueueMinValidUntil()).isAfter(processQueueMinValidUntil);
-
-    while (queue.isAvailableProcesses(0)) {
-      assertThat(queue.nextAvailableProcess()).isNotNull();
+    for (int i = 0; i < activeProcessCnt + pendingProcessCnt; ++i) {
+      assertThat(processQueue.nextProcess(0)).isNotNull();
     }
-    assertThat(queue.isAvailableProcesses(0)).isFalse();
+    assertThat(processQueue.isRefreshQueue()).isTrue();
+    assertThat(processQueue.getProcessQueueSize()).isZero();
+    assertThat(processQueue.getProcessQueueMaxSize()).isEqualTo(processQueueMaxSize);
+    assertThat(processQueue.getProcessQueueRefreshSize())
+        .isEqualTo(activeProcessCnt + pendingProcessCnt);
   }
 }

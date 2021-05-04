@@ -50,7 +50,8 @@ import pipelite.stage.parameters.ExecutorParameters;
     properties = {
       "pipelite.service.force=true",
       "pipelite.service.name=ScheduleRunnerTest",
-      "pipelite.advanced.processRunnerFrequency=250ms"
+      "pipelite.advanced.processRunnerFrequency=250ms",
+      "pipelite.advanced.shutdownIfIdle=true"
     })
 @ActiveProfiles({"test", "ScheduleRunnerTest"})
 @DirtiesContext
