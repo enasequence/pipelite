@@ -124,7 +124,7 @@ public class ScheduleRunner extends ProcessRunnerPool {
     for (ScheduleCron scheduleCron : scheduleCrons) {
       Optional<ScheduleEntity> scheduleEntity =
           scheduleService.getSavedSchedule(scheduleCron.getPipelineName());
-      if (scheduleEntity == null) {
+      if (!scheduleEntity.isPresent()) {
         throw new PipeliteException("Unknown schedule: " + scheduleCron.getPipelineName());
       }
       initSchedule(scheduleCron, scheduleEntity.get());

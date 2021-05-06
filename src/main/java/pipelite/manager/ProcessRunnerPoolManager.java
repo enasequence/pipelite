@@ -21,6 +21,7 @@ import java.util.concurrent.TimeoutException;
 import javax.annotation.PreDestroy;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 import pipelite.Pipeline;
 import pipelite.Schedule;
@@ -36,6 +37,7 @@ import pipelite.service.PipeliteServices;
 
 @Flogger
 @Component
+@DependsOn({"registeredPipelineService", "registeredScheduleService"})
 public class ProcessRunnerPoolManager {
 
   private final PipeliteConfiguration pipeliteConfiguration;
