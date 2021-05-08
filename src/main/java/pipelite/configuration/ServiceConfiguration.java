@@ -63,6 +63,7 @@ public class ServiceConfiguration {
     }
   }
 
+  /** The unique service name. */
   private String name;
 
   /** The pipelite web server port number. */
