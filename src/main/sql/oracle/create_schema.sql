@@ -61,6 +61,9 @@ check ( state in ('PENDING', 'ACTIVE', 'FAILED', 'COMPLETED', 'CANCELLED') )
 create index i_pipelite2_process_state on pipelite2_process (state)
 tablespace &index_tablespace;
 
+create index i_pipelite2_process_name on pipelite2_process (pipeline_name)
+tablespace &index_tablespace;
+
 -- @formatter:on
 
 create table pipelite2_process_audit
