@@ -12,7 +12,9 @@ package pipelite.json;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Duration;
 import java.util.HashMap;
+import lombok.Data;
 import org.junit.jupiter.api.Test;
 
 public class JsonTest {
@@ -94,5 +96,22 @@ public class JsonTest {
         Json.deserializeSafely(
             "{\n" + "  \"invalid\" : {\n" + "    \"test\" : \"test\"\n" + "  }\n" + "}", A.class);
     assertThat(a).isNull();
+  }
+
+  @Data
+  private static class DurationSerializationTest {
+    public Duration duration;
+  }
+
+  @Test
+  public void durationSerializationTest() {
+    Duration expected = Duration.ofMinutes(1);
+    DurationSerializationTest test = new DurationSerializationTest();
+    test.setDuration(expected);
+
+    String json = Json.serialize(test);
+    Duration actual = Json.deserialize(json, DurationSerializationTest.class).duration;
+
+    assertThat(actual).isEqualTo(expected);
   }
 }

@@ -10,6 +10,8 @@
  */
 package pipelite.service;
 
+import java.util.Optional;
+import javax.annotation.PostConstruct;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,9 +20,6 @@ import pipelite.configuration.PipeliteConfiguration;
 import pipelite.cron.CronUtils;
 import pipelite.entity.ScheduleEntity;
 import pipelite.exception.PipeliteException;
-
-import javax.annotation.PostConstruct;
-import java.util.Optional;
 
 @Service
 @Flogger
