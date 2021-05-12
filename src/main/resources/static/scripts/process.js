@@ -18,7 +18,7 @@ $(document).ready(function () {
                 data: "startTime",
                 render: function (data) {
                     if (data) {
-                        return moment(data).format('YYYY/MM/DD hh:mm:ss');
+                        return moment(data).format('YYYY/MM/DD HH:mm:ss');
                     } else {
                         return '';
                     }
@@ -28,7 +28,7 @@ $(document).ready(function () {
                 data: "endTime",
                 render: function (data) {
                     if (data) {
-                        return moment(data).format('YYYY/MM/DD hh:mm:ss');
+                        return moment(data).format('YYYY/MM/DD HH:mm:ss');
                     } else {
                         return '';
                     }
@@ -54,7 +54,7 @@ $(document).ready(function () {
                 data: "startTime",
                 render: function (data) {
                     if (data) {
-                        return moment(data).format('YYYY/MM/DD hh:mm:ss');
+                        return moment(data).format('YYYY/MM/DD HH:mm:ss');
                     } else {
                         return '';
                     }
@@ -64,7 +64,7 @@ $(document).ready(function () {
                 data: "endTime",
                 render: function (data) {
                     if (data) {
-                        return moment(data).format('YYYY/MM/DD hh:mm:ss');
+                        return moment(data).format('YYYY/MM/DD HH:mm:ss');
                     } else {
                         return '';
                     }
