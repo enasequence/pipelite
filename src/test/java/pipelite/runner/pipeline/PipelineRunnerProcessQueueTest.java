@@ -131,6 +131,7 @@ public class PipelineRunnerProcessQueueTest {
     // Queue should be empty
     assertThat(processQueue.getProcessQueueSize()).isZero();
 
+    boolean lockProcess = true;
     PipelineRunner pipelineRunner =
         PipelineRunnerFactory.create(
             pipeliteConfiguration,
@@ -145,7 +146,8 @@ public class PipelineRunnerProcessQueueTest {
                     pipeliteServices,
                     pipeliteMetrics,
                     pipelineName1,
-                    process1));
+                    process1,
+                    lockProcess));
 
     // Wait for the processes to execute
     while (!pipelineRunner.isIdle()) {

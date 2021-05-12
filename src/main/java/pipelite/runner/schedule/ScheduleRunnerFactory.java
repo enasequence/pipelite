@@ -26,6 +26,7 @@ public class ScheduleRunnerFactory {
       PipeliteServices pipeliteServices,
       PipeliteMetrics pipeliteMetrics,
       List<Schedule> schedules) {
+    boolean lockProcess = false;
     return new ScheduleRunner(
         pipeliteConfiguration,
         pipeliteServices,
@@ -33,6 +34,11 @@ public class ScheduleRunnerFactory {
         schedules,
         (pipelineName1, process1) ->
             new ProcessRunner(
-                pipeliteConfiguration, pipeliteServices, pipeliteMetrics, pipelineName1, process1));
+                pipeliteConfiguration,
+                pipeliteServices,
+                pipeliteMetrics,
+                pipelineName1,
+                process1,
+                lockProcess));
   }
 }

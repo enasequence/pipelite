@@ -62,8 +62,10 @@ public class ProcessRunnerPoolTest {
 
   private ProcessRunnerFactory createProcessRunnerFactory(
       AtomicLong lockProcessCnt, AtomicLong unlockProcessCnt) {
+    boolean lockProcess = true;
     return (pipelineName, process) ->
-        new ProcessRunner(pipeliteConfiguration, pipeliteServices, metrics, pipelineName, process) {
+        new ProcessRunner(
+            pipeliteConfiguration, pipeliteServices, metrics, pipelineName, process, lockProcess) {
 
           @Override
           protected void lockProcess(String pipelineName) {

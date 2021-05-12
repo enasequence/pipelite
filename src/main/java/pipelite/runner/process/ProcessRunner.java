@@ -67,7 +67,8 @@ public class ProcessRunner {
       PipeliteServices pipeliteServices,
       PipeliteMetrics pipeliteMetrics,
       String pipelineName,
-      Process process) {
+      Process process,
+      boolean lockProcess) {
     Assert.notNull(pipeliteConfiguration, "Missing configuration");
     Assert.notNull(pipeliteServices, "Missing services");
     Assert.notNull(pipelineName, "Missing pipeline name");
@@ -81,7 +82,9 @@ public class ProcessRunner {
     this.pipelineName = pipelineName;
     this.process = process;
     this.processId = process.getProcessId();
-    lockProcess(pipelineName);
+    if (lockProcess) {
+      lockProcess(pipelineName);
+    }
   }
 
   protected void lockProcess(String pipelineName) {

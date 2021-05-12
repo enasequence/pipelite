@@ -50,10 +50,16 @@ public class PipelineRunnerFactory {
     ProcessQueueFactory processQueueFactory =
         (pipeline1) -> new ProcessQueue(pipeliteConfiguration, pipeliteServices, pipeline1);
 
+    boolean lockProcess = true;
     ProcessRunnerFactory processRunnerFactory =
         (pipelineName1, process1) ->
             new ProcessRunner(
-                pipeliteConfiguration, pipeliteServices, pipeliteMetrics, pipelineName1, process1);
+                pipeliteConfiguration,
+                pipeliteServices,
+                pipeliteMetrics,
+                pipelineName1,
+                process1,
+                lockProcess);
 
     return create(
         pipeliteConfiguration,
