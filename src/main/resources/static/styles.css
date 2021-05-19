@@ -28,3 +28,7 @@ g.stageError > rect {
 g.stageActive > rect {
   fill: #6C757D;
 }
+
+#logsText {
+  white-space: pre;
+}
