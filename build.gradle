@@ -17,6 +17,9 @@ targetCompatibility = '1.8'
 
 bootJar {
     enabled = false
+    manifest {
+        attributes 'Start-Class': 'pipelite.Pipelite'
+    }
 }
 
 jar {
