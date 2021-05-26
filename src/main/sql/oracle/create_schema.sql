@@ -77,7 +77,6 @@ create table pipelite2_process_audit
     exec_end      timestamp with time zone,
     state_comment varchar2(4000),
     audit_time    timestamp with time zone,
-    to_audit_time timestamp with time zone,
     audit_stmt    char(1)
 ) tablespace &table_tablespace;
 
@@ -197,7 +196,6 @@ create table pipelite2_schedule_audit
     streak_completed number(10,0),
     streak_failed    number(10,0),
     audit_time       timestamp with time zone,
-    to_audit_time    timestamp with time zone,
     audit_stmt       char(1)
 ) tablespace &table_tablespace;
 
@@ -306,7 +304,6 @@ create table pipelite2_stage_audit
     exec_params        clob,
     exec_result_params clob,
     audit_time         timestamp with time zone,
-    to_audit_time      timestamp with time zone,
     audit_stmt         char(1)
 ) tablespace &table_tablespace;
 
@@ -383,6 +380,60 @@ tablespace &index_tablespace;
 alter table pipelite2_stage_log add constraint pk_pipelite2_stage_log
 primary key (process_id, stage_name, pipeline_name) using index pk_pipelite2_stage_log
 ;
+
+-- @formatter:on
+
+create table pipelite2_stage_log_audit
+(
+    pipeline_name varchar2(256) not null,
+    process_id    varchar2(256) not null,
+    stage_name    varchar2(255) not null,
+    stage_log     clob,
+    audit_time    timestamp with time zone,
+    audit_stmt    char(1)
+) tablespace &table_tablespace;
+
+-- @formatter:off
+
+create index i_pipelite2_stage_log_audit on pipelite2_stage_log_audit (process_id, pipeline_name)
+tablespace &index_tablespace;
+
+create or replace trigger pipelite2_stage_log_audit
+before insert or update or delete on pipelite2_stage_log
+    for each row
+declare
+audit_stmt varchar2(1);
+begin
+    if updating or inserting then
+        :new.audit_time := cast(sysdate as timestamp with time zone);
+    end if;
+    if updating then
+        audit_stmt := 'U';
+    elsif deleting then
+        audit_stmt := 'D';
+end if;
+
+    if updating or deleting then
+      insert into pipelite2_stage_log_audit (
+        pipeline_name,
+        process_id,
+        stage_name,
+        stage_log,
+        audit_time,
+        audit_stmt
+      )
+      values
+      (
+        :old.pipeline_name,
+        :old.process_id,
+        :old.stage_name,
+        :old.stage_log,
+        :old.audit_time,
+        audit_stmt
+      );
+end if;
+end;
+/
 
 -- @formatter:on
 
