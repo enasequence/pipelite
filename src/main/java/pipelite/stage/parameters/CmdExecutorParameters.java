@@ -38,6 +38,7 @@ public class CmdExecutorParameters extends ExecutorParameters {
   /** The working directory where the output file and job definition files are written. */
   private String workDir;
 
+
   /** The number of last bytes from the output file saved in the stage log. */
   @Builder.Default private int logBytes = DEFAULT_LOG_BYTES;
 
