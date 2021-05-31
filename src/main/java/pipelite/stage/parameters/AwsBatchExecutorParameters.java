@@ -10,6 +10,7 @@
  */
 package pipelite.stage.parameters;
 
+import java.util.HashMap;
 import java.util.Map;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -46,6 +47,9 @@ public class AwsBatchExecutorParameters extends ExecutorParameters {
     applyDefault(this::getRegion, this::setRegion, defaultParams::getRegion);
     applyDefault(this::getQueue, this::setQueue, defaultParams::getQueue);
     applyDefault(this::getDefinition, this::setDefinition, defaultParams::getDefinition);
+    if (parameters == null) {
+      parameters = new HashMap<>();
+    }
     applyMapDefaults(parameters, defaultParams.parameters);
   }
 

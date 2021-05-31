@@ -15,8 +15,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 import lombok.Builder;
 import lombok.Data;
@@ -54,14 +53,21 @@ public class ExecutorParameters {
     }
   }
 
-  public static <K, V> void applyMapDefaults(Map<K, V> params, Map<K, V> defaultParams) {
-    if (params == null) {
-      params = new HashMap<>();
+  public static <K, V> void applyMapDefaults(Map<K, V> map, Map<K, V> defaultMap) {
+    if (defaultMap != null) {
+      for (K key : defaultMap.keySet()) {
+        if (!map.containsKey(key)) {
+          map.put(key, defaultMap.get(key));
+        }
+      }
     }
-    if (defaultParams != null) {
-      for (K key : defaultParams.keySet()) {
-        if (!params.containsKey(key)) {
-          params.put(key, defaultParams.get(key));
+  }
+
+  public static <V> void applyListDefaults(List<V> list, List<V> defaultList) {
+    if (defaultList != null) {
+      for (V defaultValue : defaultList) {
+        if (!list.contains(defaultValue)) {
+          list.add(defaultValue);
         }
       }
     }

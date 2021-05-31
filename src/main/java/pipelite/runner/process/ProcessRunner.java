@@ -235,13 +235,9 @@ public class ProcessRunner {
   }
 
   private void endStageExecution(Stage stage, StageExecutorResult result) {
-    pipeliteServices.stage().endExecution(stage, result);
     if (result.isSuccess()) {
       resetDependentStageExecution(process, stage);
-    } else {
-      pipeliteServices.mail().sendStageExecutionMessage(process, stage);
     }
-    pipeliteMetrics.pipeline(pipelineName).stage().endStageExecution(result);
   }
 
   /**
