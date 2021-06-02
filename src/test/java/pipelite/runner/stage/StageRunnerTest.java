@@ -31,6 +31,7 @@ import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.ExecutorParameters;
 
 @SpringBootTest(
@@ -179,5 +180,88 @@ public class StageRunnerTest {
         ExecutorParameters.DEFAULT_IMMEDIATE_RETRIES + 1,
         ExecutorParameters.DEFAULT_IMMEDIATE_RETRIES);
     immediateRetries(null, null, ExecutorParameters.DEFAULT_IMMEDIATE_RETRIES);
+  }
+
+  @Test
+  public void cmdExecutorSuccess() {
+    String serviceName = UniqueStringGenerator.randomServiceName(StageRunnerTest.class);
+    String pipelineName = UniqueStringGenerator.randomPipelineName(StageRunnerTest.class);
+    String processId = UniqueStringGenerator.randomProcessId(StageRunnerTest.class);
+    Process process =
+        new ProcessBuilder(processId)
+            .execute("STAGE1")
+            .withCmdExecutor(
+                "date",
+                CmdExecutorParameters.builder()
+                    .immediateRetries(3)
+                    .maximumRetries(3)
+                    .timeout(null)
+                    .build())
+            .build();
+    process.setProcessEntity(
+        ProcessEntity.createExecution(pipelineName, processId, ProcessEntity.DEFAULT_PRIORITY));
+    process.getProcessEntity().startExecution();
+    Stage stage = process.getStages().get(0);
+    stage.setStageEntity(StageEntity.createExecution(pipelineName, processId, stage));
+    stage.getStageEntity().startExecution(stage);
+
+    assertThat(stage.getStageEntity().getStageState()).isEqualTo(StageState.ACTIVE);
+    assertThat(stage.getStageEntity().getExecutionCount()).isEqualTo(0);
+
+    StageRunner stageRunner =
+        new StageRunner(
+            pipeliteServices, pipeliteMetrics, serviceName, pipelineName, process, stage);
+
+    AtomicReference<StageExecutorResult> result = new AtomicReference<>();
+    stageRunner.runOneIteration(r -> result.set(r));
+
+    assertThat(result.get()).isNotNull();
+    assertThat(result.get().getStageState()).isEqualTo(StageState.SUCCESS);
+    assertThat(result.get().isSuccess()).isTrue();
+    assertThat(stage.getStageEntity().getStageState()).isEqualTo(StageState.SUCCESS);
+    assertThat(stage.getStageEntity().getExecutionCount()).isEqualTo(1);
+  }
+
+  @Test
+  public void cmdExecutorPermanentError() {
+    String serviceName = UniqueStringGenerator.randomServiceName(StageRunnerTest.class);
+    String pipelineName = UniqueStringGenerator.randomPipelineName(StageRunnerTest.class);
+    String processId = UniqueStringGenerator.randomProcessId(StageRunnerTest.class);
+    Process process =
+        new ProcessBuilder(processId)
+            .execute("STAGE1")
+            .withCmdExecutor(
+                "date",
+                CmdExecutorParameters.builder()
+                    .permanentError(0)
+                    .immediateRetries(3)
+                    .maximumRetries(3)
+                    .timeout(null)
+                    .build())
+            .build();
+    process.setProcessEntity(
+        ProcessEntity.createExecution(pipelineName, processId, ProcessEntity.DEFAULT_PRIORITY));
+    process.getProcessEntity().startExecution();
+    Stage stage = process.getStages().get(0);
+    stage.setStageEntity(StageEntity.createExecution(pipelineName, processId, stage));
+    stage.getStageEntity().startExecution(stage);
+
+    assertThat(stage.getStageEntity().getStageState()).isEqualTo(StageState.ACTIVE);
+    assertThat(stage.getStageEntity().getExecutionCount()).isEqualTo(0);
+
+    StageRunner stageRunner =
+        new StageRunner(
+            pipeliteServices, pipeliteMetrics, serviceName, pipelineName, process, stage);
+
+    AtomicReference<StageExecutorResult> result = new AtomicReference<>();
+    stageRunner.runOneIteration(r -> result.set(r));
+
+    assertThat(result.get()).isNotNull();
+    assertThat(result.get().getStageState()).isEqualTo(StageState.ERROR);
+    assertThat(result.get().isError()).isTrue();
+    assertThat(result.get().isPermanentError()).isTrue();
+    assertThat(stage.getStageEntity().getStageState()).isEqualTo(StageState.ERROR);
+    // Permanent error results in the maximum execution count being exceeded.
+    assertThat(stage.getStageEntity().getExecutionCount()).isEqualTo(4);
   }
 }

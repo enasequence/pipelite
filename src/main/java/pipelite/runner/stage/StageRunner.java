@@ -172,8 +172,17 @@ public class StageRunner {
       } else if (result.isError()) {
         logContext(log.atInfo()).log(executorType + " stage execution failed");
       }
+      endStageExecution(stage, result);
       resultCallback.accept(result);
     }
+  }
+
+  private void endStageExecution(Stage stage, StageExecutorResult result) {
+    pipeliteServices.stage().endExecution(stage, result);
+    if (!result.isSuccess()) {
+      pipeliteServices.mail().sendStageExecutionMessage(process, stage);
+    }
+    pipeliteMetrics.pipeline(pipelineName).stage().endStageExecution(result);
   }
 
   public void terminate() {

@@ -15,6 +15,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
+import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
 public class LocalCmdRunnerTest {
@@ -35,5 +37,23 @@ public class LocalCmdRunnerTest {
     assertThat(tempFile).exists();
     cmdRunner.deleteFile(tempFile);
     assertThat(tempFile).doesNotExist();
+  }
+
+  @Test
+  public void error() {
+    LocalCmdRunner cmdRunner = new LocalCmdRunner(CmdExecutorParameters.builder().build());
+    StageExecutorResult result = cmdRunner.execute("date");
+    assertThat(result.isError()).isFalse();
+    assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+  }
+
+  @Test
+  public void permanentError() {
+    LocalCmdRunner cmdRunner =
+        new LocalCmdRunner(CmdExecutorParameters.builder().permanentError(0).build());
+    StageExecutorResult result = cmdRunner.execute("date");
+    assertThat(result.isError()).isTrue();
+    assertThat(result.isPermanentError()).isTrue();
+    assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
   }
 }

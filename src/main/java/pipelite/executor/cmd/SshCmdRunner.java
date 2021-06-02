@@ -78,7 +78,8 @@ public class SshCmdRunner implements CmdRunner {
       }
 
       int exitCode = channel.getExitStatus();
-      return CmdRunner.result(cmd, exitCode, getStream(stdoutStream), getStream(stderrStream));
+      return CmdRunner.result(
+          cmd, exitCode, getStream(stdoutStream), getStream(stderrStream), executorParams);
 
     } catch (Exception ex) {
       throw new PipeliteException("Failed to execute ssh call: " + cmd, ex);

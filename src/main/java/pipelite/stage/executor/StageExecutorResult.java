@@ -37,6 +37,9 @@ public class StageExecutorResult {
   /** True if an interrupted error has been registered. */
   private boolean interruptedError;
 
+  /** True if a permanent error has been registered. */
+  private boolean permanentError;
+
   private final Map<String, String> attributes = new HashMap<>();
 
   public StageExecutorResult(StageState stageState) {
@@ -60,6 +63,10 @@ public class StageExecutorResult {
 
   public boolean isError() {
     return StageState.isError(stageState);
+  }
+
+  public boolean isPermanentError() {
+    return permanentError;
   }
 
   public static StageExecutorResult active() {
@@ -108,6 +115,17 @@ public class StageExecutorResult {
   public static StageExecutorResult interruptedError() {
     StageExecutorResult result = error();
     result.interruptedError = true;
+    return result;
+  }
+
+  /**
+   * Creates a permanent error.
+   *
+   * @return the stage execution result
+   */
+  public static StageExecutorResult permanentError() {
+    StageExecutorResult result = error();
+    result.permanentError = true;
     return result;
   }
 

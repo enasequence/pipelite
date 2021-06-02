@@ -10,6 +10,7 @@
  */
 package pipelite.stage.parameters;
 
+import java.util.HashMap;
 import java.util.Map;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -56,6 +57,9 @@ public class LsfExecutorParameters extends CmdExecutorParameters {
     super.applyDefaults(defaultParams);
     applyDefault(this::getDefinition, this::setDefinition, defaultParams::getDefinition);
     applyDefault(this::getFormat, this::setFormat, defaultParams::getFormat);
+    if (parameters == null) {
+      parameters = new HashMap<>();
+    }
     applyMapDefaults(parameters, defaultParams.parameters);
   }
 

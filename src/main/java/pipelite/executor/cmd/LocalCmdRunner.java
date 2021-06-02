@@ -10,8 +10,12 @@
  */
 package pipelite.executor.cmd;
 
-import java.io.*;
-import java.nio.file.*;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import lombok.extern.flogger.Flogger;
@@ -74,7 +78,8 @@ public class LocalCmdRunner implements CmdRunner {
       log.atInfo().log("Executing local call: %s", cmd);
 
       int exitCode = apacheExecutor.execute(commandLine, executorParams.getEnv());
-      return CmdRunner.result(cmd, exitCode, getStream(stdoutStream), getStream(stderrStream));
+      return CmdRunner.result(
+          cmd, exitCode, getStream(stdoutStream), getStream(stderrStream), executorParams);
 
     } catch (Exception ex) {
       throw new PipeliteException("Failed to execute local call: " + cmd, ex);

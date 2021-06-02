@@ -139,6 +139,10 @@ public class StageService {
   public StageEntity endExecution(Stage stage, StageExecutorResult result) {
     stage.incrementImmediateExecutionCount();
     StageEntity stageEntity = stage.getStageEntity();
+    if (result.isPermanentError()) {
+      // Set the execution count to maximum retries to prevent further executions.
+      stageEntity.setExecutionCount(stage.getExecutor().getExecutorParams().getMaximumRetries());
+    }
     stageEntity.endExecution(result);
     StageEntity savedStage = saveStage(stageEntity);
     saveStageLog(StageLogEntity.endExecution(stageEntity, result));
