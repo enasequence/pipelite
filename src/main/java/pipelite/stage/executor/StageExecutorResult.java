@@ -65,10 +65,6 @@ public class StageExecutorResult {
     return StageState.isError(stageState);
   }
 
-  public boolean isPermanentError() {
-    return permanentError;
-  }
-
   public static StageExecutorResult active() {
     return new StageExecutorResult(StageState.ACTIVE);
   }
@@ -97,13 +93,14 @@ public class StageExecutorResult {
   }
 
   /**
-   * Creates an timeout error.
+   * Creates an timeout error that is a type of permanent error.
    *
    * @return the stage execution result
    */
   public static StageExecutorResult timeoutError() {
     StageExecutorResult result = error();
     result.timeoutError = true;
+    result.permanentError = true;
     return result;
   }
 
