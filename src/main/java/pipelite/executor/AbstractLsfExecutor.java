@@ -12,22 +12,10 @@ package pipelite.executor;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.flogger.FluentLogger;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
 import pipelite.exception.PipeliteException;
-import pipelite.exception.PipeliteInterruptedException;
 import pipelite.exception.PipeliteTimeoutException;
 import pipelite.executor.cmd.CmdRunner;
 import pipelite.executor.context.LsfContextCache;
@@ -41,11 +29,23 @@ import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.time.Time;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 /** Executes a command using LSF. */
 @Flogger
 @Getter
 @Setter
-@JsonIgnoreProperties({"cmdRunner"})
+@JsonIgnoreProperties({"cmdRunner", "pollResult", "pollTimeout"})
 public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
     extends AbstractExecutor<T> implements JsonSerializableExecutor {
 
@@ -62,6 +62,11 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
 
   /** The LSF output file. */
   private String outFile;
+
+  private StageExecutorResult pollResult;
+
+  /* Log file timeout. */
+  private ZonedDateTime pollTimeout;
 
   protected LsfContextCache.Context getSharedContext() {
     return getExecutorContextCache()
@@ -162,13 +167,20 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
   private StageExecutorResult poll(StageExecutorRequest request) {
     logContext(log.atFine(), request).log("Checking LSF job result using bjobs.");
 
-    Optional<StageExecutorResult> result =
-        getSharedContext().describeJobs.getResult(getDescribeJobsRequest());
-    if (result == null || !result.isPresent()) {
-      return StageExecutorResult.active();
+    if (pollResult == null) {
+      Optional<StageExecutorResult> result =
+          getSharedContext().describeJobs.getResult(getDescribeJobsRequest());
+      if (result == null || !result.isPresent()) {
+        return StageExecutorResult.active();
+      }
+      pollResult = result.get();
+      pollTimeout = ZonedDateTime.now().plus(OUT_FILE_POLL_TIMEOUT);
     }
-    result.get().setStageLog(readOutFile(request));
-    return result.get();
+
+    if (readOutFile(request, pollResult)) {
+      return pollResult;
+    }
+    return StageExecutorResult.active();
   }
 
   private static String bjobs(CmdRunner cmdRunner, List<String> jobIds) {
@@ -325,20 +337,37 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
         r -> getCmdRunner().execute(MKDIR_CMD + getWorkDir(request, getExecutorParams())));
   }
 
-  protected String readOutFile(StageExecutorRequest request) {
+  /**
+   * Read the output file at end job execution.
+   *
+   * @param request the stage executor request
+   * @param result the stage executor result
+   * @return true if the output file was available or if the LSF output file poll timeout was
+   *     exceeded
+   */
+  protected boolean readOutFile(StageExecutorRequest request, StageExecutorResult result) {
     logContext(log.atFine(), request).log("Reading LSF out file: %s", outFile);
 
-    // Check if the out file exists. The file may not be immediately available after the job
-    // execution finishes.
-    ZonedDateTime timeout = ZonedDateTime.now().plus(OUT_FILE_POLL_TIMEOUT);
-    try {
-      while (!stdoutFileExists(outFile)) {
-        Time.waitUntil(OUT_FILE_POLL_FREQUENCY, timeout);
-      }
-    } catch (PipeliteInterruptedException ex) {
-      return null;
+    // The LSF output file may not be immediately available after the job execution finishes.
+
+    if (pollTimeout.isBefore(ZonedDateTime.now())) {
+      // LSF output file poll timeout was exceeded
+      result.setStageLog(
+          "Missing LSF output file. Not available within "
+              + OUT_FILE_POLL_TIMEOUT.toMinutes()
+              + " minutes.");
+      return true;
     }
-    return readOutFile(getCmdRunner(), outFile, getExecutorParams());
+
+    // Check if the out file exists.
+    if (!stdoutFileExists(outFile)) {
+      // LSF output file is not available yet
+      return false;
+    }
+
+    // LSF output file is available
+    result.setStageLog(readOutFile(getCmdRunner(), outFile, getExecutorParams()));
+    return true;
   }
 
   private static String readOutFile(
