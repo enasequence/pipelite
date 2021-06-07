@@ -10,35 +10,36 @@
  */
 package pipelite.executor.task;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.Assert;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.exception.PipeliteTimeoutException;
 import pipelite.service.InternalErrorService;
+import pipelite.stage.executor.StageExecutorResult;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Aggregates requests and executes tasks with retries using {@link RetryTemplate}.
  *
  * @param <Request> The request type.
- * @param <Result> The result type.
  * @param <ExecutorContext>> The execution context.
  */
 @Flogger
-public class RetryTaskAggregator<Request, Result, ExecutorContext> {
+public class RetryTaskAggregator<Request, ExecutorContext> {
 
   private final InternalErrorService internalErrorService;
   private final String serviceName;
   private final RetryTemplate retryTemplate;
-  private final Map<Request, Optional<Result>> requests = new ConcurrentHashMap<>();
+  private final Map<Request, Optional<StageExecutorResult>> requests = new ConcurrentHashMap<>();
   private final int requestLimit;
   private final ExecutorContext executorContext;
-  private final RetryTaskAggregatorCallback<Request, Result, ExecutorContext> task;
+  private final RetryTaskAggregatorCallback<Request, ExecutorContext> task;
 
   /**
    * Aggregates requests into a list, passes the list to the given task and expects the task to
@@ -56,7 +57,7 @@ public class RetryTaskAggregator<Request, Result, ExecutorContext> {
       RetryTemplate retryTemplate,
       int requestLimit,
       ExecutorContext executorContext,
-      RetryTaskAggregatorCallback<Request, Result, ExecutorContext> task) {
+      RetryTaskAggregatorCallback<Request, ExecutorContext> task) {
     Assert.notNull(serviceConfiguration, "Missing service configuration");
     Assert.notNull(internalErrorService, "Missing internal error service");
     this.internalErrorService = internalErrorService;
@@ -81,7 +82,7 @@ public class RetryTaskAggregator<Request, Result, ExecutorContext> {
       InternalErrorService internalErrorService,
       int requestLimit,
       ExecutorContext executorContext,
-      RetryTaskAggregatorCallback<Request, Result, ExecutorContext> task) {
+      RetryTaskAggregatorCallback<Request, ExecutorContext> task) {
     this(
         serviceConfiguration,
         internalErrorService,
@@ -103,10 +104,19 @@ public class RetryTaskAggregator<Request, Result, ExecutorContext> {
       try {
         retryTemplate.execute(
             r -> {
-              Map<Request, Result> results = task.execute(applyRequests, executorContext);
+              Map<Request, StageExecutorResult> results =
+                  task.execute(applyRequests, executorContext);
               // Set results for the requests.
               results.entrySet().stream()
-                  .filter(e -> e.getKey() != null && e.getValue() != null)
+                  .filter(
+                      e ->
+                          e.getKey() != null
+                              // Filter out empty results.
+                              && e.getValue() != null
+                              // Filter out pending results.
+                              && !e.getValue().isPending()
+                              // Filter out active results.
+                              && !e.getValue().isActive())
                   .forEach(e -> requests.put(e.getKey(), Optional.of(e.getValue())));
               return null;
             });
@@ -136,8 +146,8 @@ public class RetryTaskAggregator<Request, Result, ExecutorContext> {
    * @throws PipeliteTimeoutException if no result has been available for a request within the
    *     request timeout
    */
-  public Optional<Result> getResult(Request request) {
-    Optional<Result> result = this.requests.get(request);
+  public Optional<StageExecutorResult> getResult(Request request) {
+    Optional<StageExecutorResult> result = this.requests.get(request);
     if (result == null) {
       addRequest(request);
       return this.requests.get(request);

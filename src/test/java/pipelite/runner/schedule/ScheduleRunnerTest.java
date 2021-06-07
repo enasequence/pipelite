@@ -71,32 +71,32 @@ public class ScheduleRunnerTest {
   @TestConfiguration
   static class TestConfig {
     @Bean
-    public TestSchedule firstProcessSuccess() {
+    public TestSchedule firstScheduleSuccess() {
       return new TestSchedule(2, 1, 2, StageTestResult.SUCCESS);
     }
 
     @Bean
-    public TestSchedule secondProcessSuccess() {
+    public TestSchedule secondScheduleSuccess() {
       return new TestSchedule(1, 2, 4, StageTestResult.SUCCESS);
     }
 
     @Bean
-    public TestSchedule firstProcessFailure() {
+    public TestSchedule firstScheduleFailure() {
       return new TestSchedule(2, 1, 2, StageTestResult.ERROR);
     }
 
     @Bean
-    public TestSchedule secondProcessFailure() {
+    public TestSchedule secondPScheduleFailure() {
       return new TestSchedule(1, 2, 4, StageTestResult.ERROR);
     }
 
     @Bean
-    public TestSchedule firstProcessException() {
+    public TestSchedule firstScheduleException() {
       return new TestSchedule(2, 1, 2, StageTestResult.EXCEPTION);
     }
 
     @Bean
-    public TestSchedule secondProcessException() {
+    public TestSchedule secondScheduleException() {
       return new TestSchedule(1, 2, 4, StageTestResult.EXCEPTION);
     }
   }

@@ -40,7 +40,7 @@ public class LsfContextCache
   }
 
   public static final class Context extends SharedContextCache.Context<CmdRunner> {
-    public final RetryTaskAggregator<Request, StageExecutorResult, CmdRunner> describeJobs;
+    public final RetryTaskAggregator<Request, CmdRunner> describeJobs;
 
     public Context(
         CmdRunner cmdRunner,

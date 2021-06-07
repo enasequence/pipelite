@@ -32,7 +32,7 @@ public class AwsBatchContextCache
   }
 
   public static final class Context extends SharedContextCache.Context<AWSBatch> {
-    public final RetryTaskAggregator<String, StageExecutorResult, AWSBatch> describeJobs;
+    public final RetryTaskAggregator<String, AWSBatch> describeJobs;
 
     public Context(
         AWSBatch awsBatch,

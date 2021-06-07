@@ -10,17 +10,19 @@
  */
 package pipelite.executor.task;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.Mockito.mock;
+import org.junit.jupiter.api.Test;
+import org.springframework.retry.support.RetryTemplate;
+import pipelite.configuration.ServiceConfiguration;
+import pipelite.service.InternalErrorService;
+import pipelite.stage.executor.StageExecutorResult;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.junit.jupiter.api.Test;
-import org.springframework.retry.support.RetryTemplate;
-import pipelite.configuration.ServiceConfiguration;
-import pipelite.service.InternalErrorService;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.Mockito.mock;
 
 public class RetryTaskAggregatorTest {
 
@@ -37,16 +39,17 @@ public class RetryTaskAggregatorTest {
     AtomicInteger taskCnt = new AtomicInteger();
     AtomicInteger requestCnt = new AtomicInteger();
 
-    RetryTaskAggregatorCallback<Integer, String, String> task =
+    RetryTaskAggregatorCallback<Integer, String> task =
         (requestList, context) -> {
           taskCnt.incrementAndGet();
           requestCnt.addAndGet(requestList.size());
-          return requestList.stream().collect(Collectors.toMap(i -> i, i -> "result:" + i));
+          return requestList.stream()
+              .collect(Collectors.toMap(i -> i, i -> StageExecutorResult.success()));
         };
 
     String context = "test";
 
-    final RetryTaskAggregator aggregator =
+    final RetryTaskAggregator<Integer, String> aggregator =
         new RetryTaskAggregator(
             mock(ServiceConfiguration.class),
             mock(InternalErrorService.class),
@@ -69,7 +72,11 @@ public class RetryTaskAggregatorTest {
 
     // Check that the results are correct.
     IntStream.range(0, requestTotalCnt)
-        .forEach(i -> assertThat(aggregator.getResult(i).get()).isEqualTo("result:" + i));
+        .forEach(
+            i -> {
+              StageExecutorResult result = aggregator.getResult(i).get();
+              assertThat(result.isSuccess()).isTrue();
+            });
 
     // IntStream.range(0, requestTotalCnt).forEach(i -> aggregator.removeRequest(i));
 
@@ -89,7 +96,7 @@ public class RetryTaskAggregatorTest {
     AtomicInteger taskCnt = new AtomicInteger();
     AtomicInteger requestCnt = new AtomicInteger();
 
-    RetryTaskAggregatorCallback<Integer, String, String> task =
+    RetryTaskAggregatorCallback<Integer, String> task =
         (requestList, context) -> {
           taskCnt.incrementAndGet();
           requestCnt.addAndGet(requestList.size());

@@ -174,6 +174,10 @@ public abstract class AbstractLsfExecutor<T extends CmdExecutorParameters>
         return StageExecutorResult.active();
       }
       pollResult = result.get();
+      if (pollResult.isPending() || pollResult.isActive()) {
+        throw new PipeliteException(
+            "Unexpected stage execution state: " + pollResult.getStageState().name());
+      }
       pollTimeout = ZonedDateTime.now().plus(OUT_FILE_POLL_TIMEOUT);
     }
 
