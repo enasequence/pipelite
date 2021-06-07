@@ -48,6 +48,9 @@ public class StageEntity {
   @Column(name = "STATE", length = 15, nullable = false)
   private StageState stageState;
 
+  @Column(name = "ERROR_TYPE", length = 64)
+  private String errorType;
+
   @Column(name = "EXEC_CNT", nullable = false)
   private int executionCount = 0;
 
@@ -101,6 +104,7 @@ public class StageEntity {
   public void startExecution(Stage stage) {
     StageExecutor stageExecutor = stage.getExecutor();
     this.stageState = StageState.ACTIVE;
+    this.errorType = null;
     this.resultParams = null;
     this.startTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.endTime = null;
@@ -132,6 +136,17 @@ public class StageEntity {
    */
   public void endExecution(StageExecutorResult result) {
     this.stageState = result.getStageState();
+    if (result.isInterruptedError()) {
+      errorType = "INTERRUPTED_ERROR";
+    } else if (result.isTimeoutError()) {
+      errorType = "TIMEOUT_ERROR";
+    } else if (result.isPermanentError()) {
+      errorType = "PERMANENT_ERROR";
+    } else if (result.isInternalError()) {
+      errorType = "INTERNAL_ERROR";
+    } else if (result.isError()) {
+      errorType = "EXECUTION_ERROR";
+    }
     this.resultParams = result.attributesJson();
     this.endTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.executionCount++;
@@ -140,6 +155,7 @@ public class StageEntity {
   /** Called when the stage execution is reset. */
   public void resetExecution() {
     this.stageState = StageState.PENDING;
+    this.errorType = null;
     this.resultParams = null;
     this.startTime = null;
     this.endTime = null;

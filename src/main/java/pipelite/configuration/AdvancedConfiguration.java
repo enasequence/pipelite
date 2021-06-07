@@ -42,6 +42,9 @@ public class AdvancedConfiguration {
   private static final Duration DEFAULT_PIPELINE_RUNNER_PROCESS_QUEUE_MIN_REPLENISH_FREQUENCY =
       Duration.ofMinutes(10);
 
+  // public static final int DEFAULT_LOG_BYTES = 1024 * 1024;
+  public static final int DEFAULT_MAIL_LOG_BYTES = 5 * 1024;
+
   public AdvancedConfiguration() {}
 
   /** The frequency of renewing service locks. */
@@ -75,4 +78,10 @@ public class AdvancedConfiguration {
 
   /** The {@link PipelineRunner} can be shut down if it is idle. */
   private boolean shutdownIfIdle;
+
+  /** The maximum size of pipelite stage execution logs saved. */
+  // private int logBytes = DEFAULT_LOG_BYTES;
+
+  /** The maximum size of pipelite stage execution logs emailed. */
+  private int mailLogBytes = DEFAULT_MAIL_LOG_BYTES;
 }

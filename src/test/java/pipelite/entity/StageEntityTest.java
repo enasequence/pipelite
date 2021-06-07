@@ -67,6 +67,7 @@ class StageEntityTest {
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getExecutionCount()).isEqualTo(0);
     assertThat(stageEntity.getStageState()).isEqualTo(StageState.PENDING);
+    assertThat(stageEntity.getErrorType()).isNull();
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNull();
     assertThat(stageEntity.getEndTime()).isNull();
@@ -83,6 +84,7 @@ class StageEntityTest {
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getExecutionCount()).isEqualTo(0);
     assertThat(stageEntity.getStageState()).isEqualTo(StageState.ACTIVE);
+    assertThat(stageEntity.getErrorType()).isNull();
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNull();
@@ -108,6 +110,7 @@ class StageEntityTest {
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
     assertThat(stageEntity.getStageState()).isEqualTo(StageState.ERROR);
+    assertThat(stageEntity.getErrorType()).isEqualTo("EXECUTION_ERROR");
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNotNull();
@@ -133,6 +136,7 @@ class StageEntityTest {
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
     assertThat(stageEntity.getStageState()).isEqualTo(StageState.ACTIVE);
+    assertThat(stageEntity.getErrorType()).isNull();
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNull();
@@ -158,6 +162,7 @@ class StageEntityTest {
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getExecutionCount()).isEqualTo(2);
     assertThat(stageEntity.getStageState()).isEqualTo(StageState.SUCCESS);
+    assertThat(stageEntity.getErrorType()).isNull();
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNotNull();
@@ -183,11 +188,48 @@ class StageEntityTest {
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getExecutionCount()).isEqualTo(0);
     assertThat(stageEntity.getStageState()).isEqualTo(StageState.PENDING);
+    assertThat(stageEntity.getErrorType()).isNull();
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNull();
     assertThat(stageEntity.getEndTime()).isNull();
     assertThat(stageEntity.getExecutorName()).isNull();
     assertThat(stageEntity.getExecutorData()).isNull();
     assertThat(stageEntity.getExecutorParams()).isNull();
+  }
+
+  @Test
+  public void errorType() {
+    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
+    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    String stageName = UniqueStringGenerator.randomStageName(this.getClass());
+
+    TestExecutor executor = new TestExecutor();
+    Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
+
+    // Create execution.
+    StageEntity stageEntity = StageEntity.createExecution(pipelineName, processId, stage);
+    assertThat(stageEntity.getErrorType()).isNull();
+    stageEntity.endExecution(StageExecutorResult.permanentError());
+    assertThat(stageEntity.getErrorType()).isEqualTo("PERMANENT_ERROR");
+
+    stageEntity = StageEntity.createExecution(pipelineName, processId, stage);
+    assertThat(stageEntity.getErrorType()).isNull();
+    stageEntity.endExecution(StageExecutorResult.internalError(new RuntimeException()));
+    assertThat(stageEntity.getErrorType()).isEqualTo("INTERNAL_ERROR");
+
+    stageEntity = StageEntity.createExecution(pipelineName, processId, stage);
+    assertThat(stageEntity.getErrorType()).isNull();
+    stageEntity.endExecution(StageExecutorResult.interruptedError());
+    assertThat(stageEntity.getErrorType()).isEqualTo("INTERRUPTED_ERROR");
+
+    stageEntity = StageEntity.createExecution(pipelineName, processId, stage);
+    assertThat(stageEntity.getErrorType()).isNull();
+    stageEntity.endExecution(StageExecutorResult.timeoutError());
+    assertThat(stageEntity.getErrorType()).isEqualTo("TIMEOUT_ERROR");
+
+    stageEntity = StageEntity.createExecution(pipelineName, processId, stage);
+    assertThat(stageEntity.getErrorType()).isNull();
+    stageEntity.endExecution(StageExecutorResult.error());
+    assertThat(stageEntity.getErrorType()).isEqualTo("EXECUTION_ERROR");
   }
 }

@@ -50,6 +50,7 @@ $(document).ready(function () {
             {data: "processId", visible: false, searchable: false},
             {data: "stageName"},
             {data: "stageState"},
+            {data: "errorType"},
             {
                 data: "startTime",
                 render: function (data) {

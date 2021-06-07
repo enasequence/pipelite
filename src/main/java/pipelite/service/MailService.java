@@ -10,14 +10,17 @@
  */
 package pipelite.service;
 
+import java.util.Optional;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
+import pipelite.configuration.AdvancedConfiguration;
 import pipelite.configuration.MailConfiguration;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.ProcessEntity;
+import pipelite.entity.StageLogEntity;
 import pipelite.executor.task.RetryTask;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
@@ -29,19 +32,25 @@ import pipelite.stage.StageState;
 public class MailService {
 
   private final ServiceConfiguration serviceConfiguration;
+  private final AdvancedConfiguration advancedConfiguration;
   private final MailConfiguration mailConfiguration;
   private final InternalErrorService internalErrorService;
+  private final StageService stageService;
 
   @Autowired(required = false)
   private JavaMailSender mailSender;
 
   public MailService(
       @Autowired ServiceConfiguration serviceConfiguration,
+      @Autowired AdvancedConfiguration advancedConfiguration,
       @Autowired MailConfiguration mailConfiguration,
-      @Autowired InternalErrorService internalErrorService) {
+      @Autowired InternalErrorService internalErrorService,
+      @Autowired StageService stageService) {
     this.serviceConfiguration = serviceConfiguration;
+    this.advancedConfiguration = advancedConfiguration;
     this.mailConfiguration = mailConfiguration;
     this.internalErrorService = internalErrorService;
+    this.stageService = stageService;
   }
 
   /**
@@ -139,7 +148,11 @@ public class MailService {
   }
 
   public String getExecutionBody(Process process, String subject) {
-    return subject + "\n" + getProcessText(process) + getStagesText(process);
+    return subject
+        + "\n"
+        + getProcessText(process)
+        + getStagesText(process)
+        + getStagesLogText(process);
   }
 
   public String getProcessText(Process process) {
@@ -157,6 +170,32 @@ public class MailService {
     for (Stage stage : process.getStages()) {
       if (stage.getStageEntity() != null) {
         text += stage.getStageEntity().serialize() + "\n";
+      }
+    }
+    return text;
+  }
+
+  public String getStagesLogText(Process process) {
+    if (!process.getStages().stream().anyMatch(s -> s.isError())) {
+      return "";
+    }
+    String text = "\nError logs:\n---------------\n";
+    for (Stage stage : process.getStages()) {
+      if (stage.isError()) {
+        Optional<StageLogEntity> stageLogEntity =
+            stageService.getSavedStageLog(
+                process.getProcessEntity().getPipelineName(),
+                process.getProcessId(),
+                stage.getStageName());
+        if (stageLogEntity.isPresent()) {
+          String log = stageLogEntity.get().getStageLog();
+          if (log != null && !log.isEmpty()) {
+            text += "\nStage: " + stage.getStageName() + "\n===============\n";
+            text +=
+                log.substring(Math.max(0, log.length() - advancedConfiguration.getMailLogBytes()))
+                    + "\n";
+          }
+        }
       }
     }
     return text;

@@ -286,6 +286,7 @@ value is not overriden in ```ProcessBuilder```.
 - pipelite.executor.cmd.env: the environmental variables passed to the command executor
 - pipelite.executor.cmd.workDir: the working directory where the output file and job definition files are written
 - pipelite.executor.cmd.logBytes: the number of last bytes from the output file saved in the stage log
+- pipelite.executor.cmd.permanentErrors: exit codes that are considered permanent errors. Permanent error stage execution count is set to maximum retries + 1.
 
 ##### Simple LSF executor parameters
 
@@ -300,6 +301,7 @@ value is not overriden in ```ProcessBuilder```.
 - pipelite.executor.simpleLsf.memory: the amount of requested memory (-M and -R rusage[mem=] option)
 - pipelite.executor.simpleLsf.memoryUnits: the LSF memory units (-M and -R rusage[mem=] option)
 - pipelite.executor.simpleLsf.memoryTimeout: the LSF memory duration (-R rusage[mem=:duration=] option)
+- pipelite.executor.simplelsf.permanentErrors: exit codes that are considered permanent errors. Permanent error stage execution count is set to maximum retries + 1.
 
 The unit for the resource usage limit can be one of:
 - KB or K (kilobytes)
@@ -322,6 +324,7 @@ The unit for the resource usage limit can be one of:
 - pipelite.executor.lsf.format: the job definition file format: YAML, JSON, or JSDL
 - pipelite.executor.lsf.parameters: the job definition parameters applied to the job definition file. The key is the
   parameter placeholder that if found in the job definition file will be replaced with the corresponding value.
+- pipelite.executor.lsf.permanentErrors: exit codes that are considered permanent errors. Permanent error stage execution count is set to maximum retries + 1.
 
 ##### AwsBatch executor parameters
 
@@ -385,6 +388,7 @@ The unit for the resource usage limit can be one of:
 - pipelite.advanced.pipelineRunnerProcessQueueMaxRefreshFrequency: the maximum frequency for process queue to be refreshed
   to allow process re-prioritisation. Default value: 4 hours
 - pipelite.advanced.pipelineRunnerProcessQueueMinReplenishFrequency: the minimum frequency for process queue to be replenished. Default value: 10 minutes
+- pipelite.advanced.mailLogBytes: the maximum number of log bytes in mail for failed stage executions
 
 #### Test profiles
 

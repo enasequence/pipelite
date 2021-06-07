@@ -21,6 +21,7 @@ public class StageInfo {
   private String processId;
   private String stageName;
   private String stageState;
+  private String errorType;
   private String startTime;
   private String endTime;
   private String executionTime;
