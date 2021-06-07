@@ -18,7 +18,6 @@ import pipelite.executor.AbstractLsfExecutor;
 import pipelite.executor.cmd.CmdRunner;
 import pipelite.executor.task.RetryTaskAggregator;
 import pipelite.service.InternalErrorService;
-import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
 @Flogger

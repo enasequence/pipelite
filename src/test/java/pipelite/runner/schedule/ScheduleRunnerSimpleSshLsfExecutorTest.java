@@ -10,6 +10,10 @@
  */
 package pipelite.runner.schedule;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.Duration;
+import java.util.List;
 import lombok.Getter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,11 +43,6 @@ import pipelite.service.ScheduleService;
 import pipelite.service.StageService;
 import pipelite.stage.StageState;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
-
-import java.time.Duration;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithManager.class,

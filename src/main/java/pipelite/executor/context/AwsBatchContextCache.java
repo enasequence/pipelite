@@ -18,7 +18,6 @@ import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.AwsBatchExecutor;
 import pipelite.executor.task.RetryTaskAggregator;
 import pipelite.service.InternalErrorService;
-import pipelite.stage.executor.StageExecutorResult;
 
 /** Context for tasks that can be shared between AWSBatch executors. */
 @Flogger

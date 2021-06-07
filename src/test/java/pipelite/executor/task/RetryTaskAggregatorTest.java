@@ -10,19 +10,18 @@
  */
 package pipelite.executor.task;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.retry.support.RetryTemplate;
-import pipelite.configuration.ServiceConfiguration;
-import pipelite.service.InternalErrorService;
-import pipelite.stage.executor.StageExecutorResult;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.Mockito.mock;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.Mockito.mock;
+import org.junit.jupiter.api.Test;
+import org.springframework.retry.support.RetryTemplate;
+import pipelite.configuration.ServiceConfiguration;
+import pipelite.service.InternalErrorService;
+import pipelite.stage.executor.StageExecutorResult;
 
 public class RetryTaskAggregatorTest {
 

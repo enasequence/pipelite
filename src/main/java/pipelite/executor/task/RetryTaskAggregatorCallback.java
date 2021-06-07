@@ -10,10 +10,9 @@
  */
 package pipelite.executor.task;
 
-import pipelite.stage.executor.StageExecutorResult;
-
 import java.util.List;
 import java.util.Map;
+import pipelite.stage.executor.StageExecutorResult;
 
 /**
  * Callback interface for a task executed using {@link RetryTaskAggregator}.
@@ -30,5 +29,6 @@ public interface RetryTaskAggregatorCallback<Request, ExecutorContext> {
    * @param executorContext execution context
    * @return a map or requests and results
    */
-  Map<Request, StageExecutorResult> execute(List<Request> requests, ExecutorContext executorContext);
+  Map<Request, StageExecutorResult> execute(
+      List<Request> requests, ExecutorContext executorContext);
 }
