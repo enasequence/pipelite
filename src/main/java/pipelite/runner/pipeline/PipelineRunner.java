@@ -11,10 +11,6 @@
 package pipelite.runner.pipeline;
 
 import com.google.common.flogger.FluentLogger;
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.Pipeline;
@@ -30,6 +26,11 @@ import pipelite.runner.process.ProcessRunnerFactory;
 import pipelite.runner.process.ProcessRunnerPool;
 import pipelite.runner.process.creator.ProcessCreator;
 import pipelite.service.PipeliteServices;
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /** Executes processes in parallel for one pipeline. */
 @Flogger
@@ -62,7 +63,6 @@ public class PipelineRunner extends ProcessRunnerPool {
         serviceName(pipeliteConfiguration, pipeline.pipelineName()),
         processRunnerFactory);
     Assert.notNull(pipeline, "Missing pipeline");
-    Assert.notNull(processCreator, "Missing process creator");
     Assert.notNull(processQueueFactory, "Missing process queue factory");
     this.pipeliteServices = pipeliteServices;
     this.pipeline = pipeline;
@@ -122,7 +122,7 @@ public class PipelineRunner extends ProcessRunnerPool {
                     // Refresh process queue.
                     p.refreshQueue();
 
-                    if (p.getProcessQueueSize() == 0) {
+                    if (processCreator != null && p.getProcessQueueSize() == 0) {
                       // The process queue is empty.
                       // Create new processes.
                       int createdProcessCount =
@@ -150,6 +150,9 @@ public class PipelineRunner extends ProcessRunnerPool {
   }
 
   private void replenishQueue() {
+    if (processCreator == null) {
+      return;
+    }
     if (processQueue.get() != null
         && (replenishTime == null
             || replenishTime.plus(minReplenishFrequency).isBefore(ZonedDateTime.now()))) {

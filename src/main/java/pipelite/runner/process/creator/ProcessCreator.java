@@ -11,13 +11,14 @@
 package pipelite.runner.process.creator;
 
 import com.google.common.flogger.FluentLogger;
-import java.util.Optional;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.PrioritizedPipeline;
 import pipelite.entity.ProcessEntity;
 import pipelite.log.LogKey;
 import pipelite.service.ProcessService;
+
+import java.util.Optional;
 
 @Flogger
 public class ProcessCreator {
@@ -27,6 +28,7 @@ public class ProcessCreator {
   private final String pipelineName;
 
   public ProcessCreator(PrioritizedPipeline prioritizedPipeline, ProcessService processService) {
+    Assert.notNull(prioritizedPipeline, "Missing prioritized pipeline");
     Assert.notNull(processService, "Missing process service");
     this.prioritizedPipeline = prioritizedPipeline;
     this.processService = processService;

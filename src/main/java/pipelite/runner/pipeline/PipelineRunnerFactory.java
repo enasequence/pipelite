@@ -41,11 +41,16 @@ public class PipelineRunnerFactory {
       throw new PipeliteException("Missing pipeline: " + pipelineName);
     }
 
-    ProcessCreator processCreator =
-        new ProcessCreator(
-            registeredPipelineService.getRegisteredPipeline(
-                pipelineName, PrioritizedPipeline.class),
-            pipeliteServices.process());
+    // Get process creator.
+    ProcessCreator processCreator = null;
+    try {
+      // Get registered prioritized pipeline.
+      PrioritizedPipeline prioritizedPipeline =
+          registeredPipelineService.getRegisteredPipeline(pipelineName, PrioritizedPipeline.class);
+      processCreator = new ProcessCreator(prioritizedPipeline, pipeliteServices.process());
+    } catch (PipeliteException ex) {
+      // Do nothing
+    }
 
     ProcessQueueFactory processQueueFactory =
         (pipeline1) -> new ProcessQueue(pipeliteConfiguration, pipeliteServices, pipeline1);
