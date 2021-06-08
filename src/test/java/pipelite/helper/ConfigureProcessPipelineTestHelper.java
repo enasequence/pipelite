@@ -17,16 +17,16 @@ import pipelite.Pipeline;
 import pipelite.UniqueStringGenerator;
 import pipelite.process.builder.ProcessBuilder;
 
-public abstract class PipelineTestHelper implements Pipeline {
+public abstract class ConfigureProcessPipelineTestHelper implements Pipeline {
 
   private final String pipelineName;
   private final Set<String> configuredProcessIds = ConcurrentHashMap.newKeySet();
 
-  public PipelineTestHelper() {
-    this(UniqueStringGenerator.randomPipelineName(PipelineTestHelper.class));
+  public ConfigureProcessPipelineTestHelper() {
+    this(UniqueStringGenerator.randomPipelineName(ConfigureProcessPipelineTestHelper.class));
   }
 
-  public PipelineTestHelper(String pipelineName) {
+  public ConfigureProcessPipelineTestHelper(String pipelineName) {
     this.pipelineName = pipelineName;
   }
 

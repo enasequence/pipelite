@@ -11,32 +11,30 @@
 package pipelite.helper;
 
 import com.google.common.util.concurrent.Monitor;
-import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import pipelite.PrioritizedPipeline;
 import pipelite.UniqueStringGenerator;
 
-public abstract class PrioritizedPipelineTestHelper extends PipelineTestHelper
-    implements PrioritizedPipeline {
+public abstract class CreateProcessPipelineTestHelper extends ConfigureProcessPipelineTestHelper {
 
   private final int processCount;
-  private final Set<String> newProcessIds = ConcurrentHashMap.newKeySet();
+  private final Set<String> createdProcessIds = ConcurrentHashMap.newKeySet();
   private final Set<String> returnedProcessIds = ConcurrentHashMap.newKeySet();
   private final Set<String> confirmedProcessIds = ConcurrentHashMap.newKeySet();
   private final Monitor monitor = new Monitor();
 
-  public PrioritizedPipelineTestHelper(int processCount) {
+  public CreateProcessPipelineTestHelper(int processCount) {
     this(
-        UniqueStringGenerator.randomPipelineName(PrioritizedPipelineTestHelper.class),
+        UniqueStringGenerator.randomPipelineName(CreateProcessPipelineTestHelper.class),
         processCount);
   }
 
-  public PrioritizedPipelineTestHelper(String pipelineName, int processCount) {
+  public CreateProcessPipelineTestHelper(String pipelineName, int processCount) {
     super(pipelineName);
     this.processCount = processCount;
     for (int i = 0; i < processCount; ++i) {
-      newProcessIds.add(UniqueStringGenerator.randomProcessId(PrioritizedPipelineTestHelper.class));
+      createdProcessIds.add(
+          UniqueStringGenerator.randomProcessId(CreateProcessPipelineTestHelper.class));
     }
   }
 
@@ -44,16 +42,16 @@ public abstract class PrioritizedPipelineTestHelper extends PipelineTestHelper
     return processCount;
   }
 
-  public final PrioritizedPipeline.PrioritizedProcess nextProcess() {
+  public final Process nextProcess() {
     monitor.enter();
     try {
-      if (newProcessIds.isEmpty()) {
+      if (createdProcessIds.isEmpty()) {
         return null;
       }
-      String processId = newProcessIds.iterator().next();
+      String processId = createdProcessIds.iterator().next();
       returnedProcessIds.add(processId);
-      newProcessIds.remove(processId);
-      return new PrioritizedPipeline.PrioritizedProcess(processId);
+      createdProcessIds.remove(processId);
+      return new Process(processId);
     } finally {
       monitor.leave();
     }
@@ -68,8 +66,8 @@ public abstract class PrioritizedPipelineTestHelper extends PipelineTestHelper
     }
   }
 
-  public int newProcessCount() {
-    return newProcessIds.size();
+  public int createdProcessCount() {
+    return createdProcessIds.size();
   }
 
   public int returnedProcessCount() {
@@ -78,17 +76,5 @@ public abstract class PrioritizedPipelineTestHelper extends PipelineTestHelper
 
   public int confirmedProcessCount() {
     return confirmedProcessIds.size();
-  }
-
-  public Collection<String> newProcessIds() {
-    return newProcessIds;
-  }
-
-  public Collection<String> returnedProcessIds() {
-    return returnedProcessIds;
-  }
-
-  public Collection<String> confirmedProcessIds() {
-    return confirmedProcessIds;
   }
 }

@@ -6,7 +6,6 @@ Pipelite workflow manager
 - [How to configure schedules](#how-to-configure-schedules)
     * [SimpleLsfExecutor example](#simplelsfexecutor-example)
 - [How to configure pipelines](#how-to-configure-pipelines)
-- [How to configure prioritized pipelines](#how-to-configure-prioritized-pipelines)
 - [Stage dependency types](#stage-dependency-types)
 - [Stage executor backends](#stage-executor-backends)
 - [Configuration parameters](#configuration-parameters)
@@ -183,22 +182,6 @@ annotation.
 
 Pipelines should be declared in the ```pipelite.pipeline``` package to allow the configurations to be picked up pipelite.
 
-Pipelines are configured exactly like schedules except for differences in the ```configurePipelines``` method.
-
-When using the ```Pipelite.Pipeline``` interface the user is responsible for inserting new processes to be executed into
-the ```PIPELITE2_PROCESS``` table. For example:
-
-```sql
---  New process with default priority (5). Priority is between 9 (highest) and 0 (lowest).
-insert into pipelite2_process(pipeline_name, process_id)
-values ('testPipelite', 'testProcess1');
-
-
---  New process with priority 4. Priority is between 9 (highest) and 0 (lowest).
-insert into pipelite2_process(pipeline_name, process_id, priority)
-values ('testPipelite', 'testProcess2', 4);
-```
-
 A pipeline would look like the following:
 
 ```java
@@ -214,32 +197,39 @@ public class MyPipeline implements Pipelite.Pipeline {
         // The maximum number of parallel process executions.
         return new Options().pipelineParallelism(10);
     }
-}
-```
-
-### How to configure prioritized pipelines
-
-Prioritized pipelines are configured exactly like pipelines except for two additional methods:
-
-```java
-  @Override
-public PrioritizedProcess nextProcess(){
+    
+    @Override
+    public PrioritizedProcess nextProcess() {
         // To be implemented by the user.
-        }
+    }
 
-@Override
-public void confirmProcess(String processId){
-        // To be implemented by the user.    
-        }
+    @Override
+    public void confirmProcess(String processId) {
+        // To be implemented by the user.
+    }
 ```
 
-The ```nextProcess``` method is called by Pipelite and should return ```PrioritizedProcess``` instances or null if no
-new processes are available at the time. The ```PrioritizedProcess``` contains the process id and its priority for the
+The ```nextProcess``` method is called by Pipelite and should return ```Process``` instances or null if no
+new processes are available at the time. The ```Process``` contains the process id and its priority for the
 new process.
 
 The ```confirmProcess``` method is called by Pipelite to confirm that the process with the ```processId``` has been
 registered for execution. This ```processId``` should no longer be returned by ```nextProcess```. However, if it is then
 it will simply be ignored.
+
+An alternative to defining ```nextProcess``` and ```confirmProcess``` is to directly insert processes to be executed into
+the ```PIPELITE2_PROCESS``` table. For example:
+
+```sql
+--  New process with default priority (5). Priority is between 9 (highest) and 0 (lowest).
+insert into pipelite2_process(pipeline_name, process_id)
+values ('testPipelite', 'testProcess1');
+
+
+--  New process with priority 4. Priority is between 9 (highest) and 0 (lowest).
+insert into pipelite2_process(pipeline_name, process_id, priority)
+values ('testPipelite', 'testProcess2', 4);
+```
 
 ### Stage dependency types
 

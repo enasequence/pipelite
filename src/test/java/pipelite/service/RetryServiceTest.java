@@ -35,7 +35,7 @@ import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.entity.StageEntity;
 import pipelite.exception.PipeliteRetryException;
-import pipelite.helper.PipelineTestHelper;
+import pipelite.helper.ConfigureProcessPipelineTestHelper;
 import pipelite.helper.ScheduleTestHelper;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.process.Process;
@@ -108,7 +108,7 @@ class RetryServiceTest {
     }
   }
 
-  public static class TestPipeline extends PipelineTestHelper {
+  public static class TestPipeline extends ConfigureProcessPipelineTestHelper {
     public TestPipeline() {
       super(PIPELINE_NAME);
     }

@@ -22,11 +22,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
+import pipelite.Pipeline;
 import pipelite.PipeliteTestConfigWithManager;
-import pipelite.PrioritizedPipeline;
 import pipelite.Schedule;
 import pipelite.UniqueStringGenerator;
-import pipelite.helper.PrioritizedPipelineTestHelper;
+import pipelite.helper.CreateProcessPipelineTestHelper;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.runner.schedule.ScheduleRunner;
 import pipelite.service.RunnerService;
@@ -86,8 +86,8 @@ public class ProcessRunnerPoolManagerTest {
     }
 
     @Bean
-    PrioritizedPipeline testPipeline() {
-      return new PrioritizedPipelineTestHelper(PIPELINE_NAME, 1) {
+    Pipeline testPipeline() {
+      return new CreateProcessPipelineTestHelper(PIPELINE_NAME, 1) {
 
         @Override
         public int testConfigureParallelism() {

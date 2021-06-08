@@ -30,7 +30,7 @@ import pipelite.PipeliteTestConfigWithManager;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageLogEntity;
-import pipelite.helper.PrioritizedPipelineTestHelper;
+import pipelite.helper.CreateProcessPipelineTestHelper;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
@@ -98,7 +98,7 @@ public class PipelineRunnerTest {
 
   @Accessors(fluent = true)
   @Getter
-  public static class TestPipeline extends PrioritizedPipelineTestHelper {
+  public static class TestPipeline extends CreateProcessPipelineTestHelper {
     private final int stageCount;
     private final StageTestResult stageTestResult;
     private final AtomicLong executeCalledCount = new AtomicLong();

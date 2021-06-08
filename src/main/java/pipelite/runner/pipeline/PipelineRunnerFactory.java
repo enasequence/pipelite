@@ -11,7 +11,6 @@
 package pipelite.runner.pipeline;
 
 import pipelite.Pipeline;
-import pipelite.PrioritizedPipeline;
 import pipelite.configuration.PipeliteConfiguration;
 import pipelite.exception.PipeliteException;
 import pipelite.metrics.PipeliteMetrics;
@@ -42,15 +41,7 @@ public class PipelineRunnerFactory {
     }
 
     // Get process creator.
-    ProcessCreator processCreator = null;
-    try {
-      // Get registered prioritized pipeline.
-      PrioritizedPipeline prioritizedPipeline =
-          registeredPipelineService.getRegisteredPipeline(pipelineName, PrioritizedPipeline.class);
-      processCreator = new ProcessCreator(prioritizedPipeline, pipeliteServices.process());
-    } catch (PipeliteException ex) {
-      // Do nothing
-    }
+    ProcessCreator processCreator = new ProcessCreator(pipeline, pipeliteServices.process());
 
     ProcessQueueFactory processQueueFactory =
         (pipeline1) -> new ProcessQueue(pipeliteConfiguration, pipeliteServices, pipeline1);

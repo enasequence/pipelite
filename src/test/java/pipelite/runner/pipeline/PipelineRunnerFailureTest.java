@@ -28,7 +28,7 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
-import pipelite.helper.PrioritizedPipelineTestHelper;
+import pipelite.helper.CreateProcessPipelineTestHelper;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
@@ -120,7 +120,7 @@ public class PipelineRunnerFailureTest {
   }
 
   @Getter
-  public static class TestPipeline extends PrioritizedPipelineTestHelper {
+  public static class TestPipeline extends CreateProcessPipelineTestHelper {
     private final StageTestResult stageTestResult;
     private StageExecutorResult firstStageExecResult;
     private StageExecutorResult secondStageExecResult;
@@ -205,7 +205,7 @@ public class PipelineRunnerFailureTest {
 
     assertThat(pipelineRunner.getActiveProcessRunners().size()).isEqualTo(0);
 
-    assertThat(testPipeline.newProcessCount()).isEqualTo(0);
+    assertThat(testPipeline.createdProcessCount()).isEqualTo(0);
     assertThat(testPipeline.returnedProcessCount()).isEqualTo(PROCESS_CNT);
     assertThat(testPipeline.confirmedProcessCount()).isEqualTo(PROCESS_CNT);
 

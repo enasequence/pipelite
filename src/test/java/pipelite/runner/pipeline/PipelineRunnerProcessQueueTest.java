@@ -22,11 +22,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
+import pipelite.Pipeline;
 import pipelite.PipeliteTestConfigWithServices;
-import pipelite.PrioritizedPipeline;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.PipeliteConfiguration;
-import pipelite.helper.PrioritizedPipelineTestHelper;
+import pipelite.helper.CreateProcessPipelineTestHelper;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.runner.process.ProcessQueue;
@@ -69,8 +69,8 @@ public class PipelineRunnerProcessQueueTest {
   @Test
   public void sync() {
 
-    PrioritizedPipeline prioritizedPipeline =
-        new PrioritizedPipelineTestHelper(PIPELINE_NAME, PROCESS_CNT) {
+    Pipeline pipeline =
+        new CreateProcessPipelineTestHelper(PIPELINE_NAME, PROCESS_CNT) {
 
           @Override
           public int testConfigureParallelism() {
@@ -89,14 +89,14 @@ public class PipelineRunnerProcessQueueTest {
           }
         };
 
-    test(prioritizedPipeline, syncExecutionCount);
+    test(pipeline, syncExecutionCount);
   }
 
   @Test
   public void async() {
 
-    PrioritizedPipeline prioritizedPipeline =
-        new PrioritizedPipelineTestHelper(PIPELINE_NAME, PROCESS_CNT) {
+    Pipeline pipeline =
+        new CreateProcessPipelineTestHelper(PIPELINE_NAME, PROCESS_CNT) {
 
           @Override
           public int testConfigureParallelism() {
@@ -115,16 +115,15 @@ public class PipelineRunnerProcessQueueTest {
           }
         };
 
-    test(prioritizedPipeline, asyncExecutionCount);
+    test(pipeline, asyncExecutionCount);
   }
 
-  private void test(PrioritizedPipeline prioritizedPipeline, AtomicInteger executionCount) {
+  private void test(Pipeline pipeline, AtomicInteger executionCount) {
 
-    ProcessCreator processCreator =
-        new ProcessCreator(prioritizedPipeline, pipeliteServices.process());
+    ProcessCreator processCreator = new ProcessCreator(pipeline, pipeliteServices.process());
 
     ProcessQueue processQueue =
-        spy(new ProcessQueue(pipeliteConfiguration, pipeliteServices, prioritizedPipeline));
+        spy(new ProcessQueue(pipeliteConfiguration, pipeliteServices, pipeline));
 
     // Queue should be filled
     assertThat(processQueue.isRefreshQueue()).isTrue();
@@ -137,7 +136,7 @@ public class PipelineRunnerProcessQueueTest {
             pipeliteConfiguration,
             pipeliteServices,
             pipeliteMetrics,
-            prioritizedPipeline,
+            pipeline,
             processCreator,
             (pipeline1) -> processQueue,
             (pipelineName1, process1) ->

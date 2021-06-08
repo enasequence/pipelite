@@ -29,7 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.PipeliteConfiguration;
 import pipelite.entity.ProcessEntity;
-import pipelite.helper.PipelineTestHelper;
+import pipelite.helper.ConfigureProcessPipelineTestHelper;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.PipeliteServices;
 import pipelite.service.ProcessService;
@@ -51,7 +51,7 @@ public class ProcessQueueTest {
   @Autowired PipeliteServices pipeliteServices;
   @MockBean ProcessService processService;
 
-  private class TestPipeline extends PipelineTestHelper {
+  private class TestPipeline extends ConfigureProcessPipelineTestHelper {
     @Override
     protected int testConfigureParallelism() {
       return 10;

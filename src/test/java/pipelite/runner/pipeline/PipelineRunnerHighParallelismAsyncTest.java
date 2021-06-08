@@ -23,7 +23,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
 import pipelite.UniqueStringGenerator;
-import pipelite.helper.PrioritizedPipelineTestHelper;
+import pipelite.helper.CreateProcessPipelineTestHelper;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
@@ -104,7 +104,7 @@ public class PipelineRunnerHighParallelismAsyncTest {
     }
   }
 
-  public static class AsyncTestPipeline extends PrioritizedPipelineTestHelper {
+  public static class AsyncTestPipeline extends CreateProcessPipelineTestHelper {
     public AsyncTestPipeline(String pipelineName) {
       super(pipelineName, PROCESS_CNT);
     }

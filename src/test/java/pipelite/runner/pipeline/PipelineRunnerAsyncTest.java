@@ -26,7 +26,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
 import pipelite.executor.AbstractExecutor;
-import pipelite.helper.PrioritizedPipelineTestHelper;
+import pipelite.helper.CreateProcessPipelineTestHelper;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
@@ -91,7 +91,8 @@ public class PipelineRunnerAsyncTest {
   }
 
   @Getter
-  public static class TestPipeline<T extends StageExecutor> extends PrioritizedPipelineTestHelper {
+  public static class TestPipeline<T extends StageExecutor>
+      extends CreateProcessPipelineTestHelper {
     private final T stageExecutor;
 
     public TestPipeline(T stageExecutor) {

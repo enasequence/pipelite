@@ -25,8 +25,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.*;
 import pipelite.exception.PipeliteException;
-import pipelite.helper.PipelineTestHelper;
-import pipelite.helper.PrioritizedPipelineTestHelper;
+import pipelite.helper.ConfigureProcessPipelineTestHelper;
 import pipelite.helper.ScheduleTestHelper;
 import pipelite.process.builder.ProcessBuilder;
 
@@ -45,8 +44,6 @@ public class RegisteredPipelineServiceTest {
   @Autowired TestPipeline pipeline2;
   @Autowired TestSchedule schedule1;
   @Autowired TestSchedule schedule2;
-  @Autowired TestPrioritizedPipeline prioritizedPipeline1;
-  @Autowired TestPrioritizedPipeline prioritizedPipeline2;
 
   @TestConfiguration
   @Profile("RegisteredPipelineServiceTest")
@@ -70,19 +67,9 @@ public class RegisteredPipelineServiceTest {
     public TestSchedule schedule2() {
       return new TestSchedule();
     }
-
-    @Bean
-    public TestPrioritizedPipeline prioritizedPipeline1() {
-      return new TestPrioritizedPipeline();
-    }
-
-    @Bean
-    public TestPrioritizedPipeline prioritizedPipeline2() {
-      return new TestPrioritizedPipeline();
-    }
   }
 
-  public static class TestPipeline extends PipelineTestHelper {
+  public static class TestPipeline extends ConfigureProcessPipelineTestHelper {
 
     @Override
     public int testConfigureParallelism() {
@@ -101,20 +88,6 @@ public class RegisteredPipelineServiceTest {
 
     @Override
     public void _configureProcess(ProcessBuilder builder) {}
-  }
-
-  public static class TestPrioritizedPipeline extends PrioritizedPipelineTestHelper {
-    public TestPrioritizedPipeline() {
-      super(0);
-    }
-
-    @Override
-    public int testConfigureParallelism() {
-      return 1;
-    }
-
-    @Override
-    public void testConfigureProcess(ProcessBuilder builder) {}
   }
 
   private void assertGetRegisteredPipelineByName(
@@ -141,8 +114,6 @@ public class RegisteredPipelineServiceTest {
     assertGetRegisteredPipelineByName(pipeline2, pipeline2.pipelineName());
     assertGetRegisteredPipelineByName(schedule1, schedule1.pipelineName());
     assertGetRegisteredPipelineByName(schedule2, schedule2.pipelineName());
-    assertGetRegisteredPipelineByName(prioritizedPipeline1, prioritizedPipeline1.pipelineName());
-    assertGetRegisteredPipelineByName(prioritizedPipeline2, prioritizedPipeline2.pipelineName());
   }
 
   @Test
@@ -151,10 +122,6 @@ public class RegisteredPipelineServiceTest {
     assertGetRegisteredPipelineByName(pipeline2, Pipeline.class, pipeline2.pipelineName());
     assertGetRegisteredPipelineByName(schedule1, Schedule.class, schedule1.pipelineName());
     assertGetRegisteredPipelineByName(schedule2, Schedule.class, schedule2.pipelineName());
-    assertGetRegisteredPipelineByName(
-        prioritizedPipeline1, PrioritizedPipeline.class, prioritizedPipeline1.pipelineName());
-    assertGetRegisteredPipelineByName(
-        prioritizedPipeline2, PrioritizedPipeline.class, prioritizedPipeline2.pipelineName());
   }
 
   @Test
@@ -175,12 +142,8 @@ public class RegisteredPipelineServiceTest {
 
   @Test
   public void getRegisteredPipelinesByType() {
-    assertGetRegisteredPipelinesByType(
-        Arrays.asList(pipeline1, pipeline2, prioritizedPipeline1, prioritizedPipeline2),
-        Pipeline.class);
+    assertGetRegisteredPipelinesByType(Arrays.asList(pipeline1, pipeline2), Pipeline.class);
     assertGetRegisteredPipelinesByType(Arrays.asList(schedule1, schedule2), Schedule.class);
-    assertGetRegisteredPipelinesByType(
-        Arrays.asList(prioritizedPipeline1, prioritizedPipeline2), PrioritizedPipeline.class);
   }
 
   @Test

@@ -23,7 +23,7 @@ public abstract class ScheduleTestHelper implements Schedule {
   private final Set<String> configuredProcessIds = ConcurrentHashMap.newKeySet();
 
   public ScheduleTestHelper() {
-    this(UniqueStringGenerator.randomPipelineName(PipelineTestHelper.class));
+    this(UniqueStringGenerator.randomPipelineName(ConfigureProcessPipelineTestHelper.class));
   }
 
   public ScheduleTestHelper(String pipelineName) {

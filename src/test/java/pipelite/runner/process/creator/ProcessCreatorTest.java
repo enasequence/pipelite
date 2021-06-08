@@ -16,7 +16,7 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 import org.junit.jupiter.api.Test;
 import pipelite.entity.ProcessEntity;
-import pipelite.helper.PrioritizedPipelineTestHelper;
+import pipelite.helper.CreateProcessPipelineTestHelper;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.ProcessService;
 
@@ -24,7 +24,7 @@ public class ProcessCreatorTest {
 
   private static final int PROCESS_CNT = 100;
 
-  private static final class TestPipeline extends PrioritizedPipelineTestHelper {
+  private static final class TestPipeline extends CreateProcessPipelineTestHelper {
 
     public TestPipeline() {
       super(PROCESS_CNT);
