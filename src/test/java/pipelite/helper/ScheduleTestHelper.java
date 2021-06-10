@@ -19,14 +19,18 @@ import pipelite.process.builder.ProcessBuilder;
 
 public abstract class ScheduleTestHelper implements Schedule {
 
+  private final String cron;
   private final String pipelineName;
   private final Set<String> configuredProcessIds = ConcurrentHashMap.newKeySet();
 
-  public ScheduleTestHelper() {
-    this(UniqueStringGenerator.randomPipelineName(ConfigureProcessPipelineTestHelper.class));
+  public ScheduleTestHelper(String cron) {
+    this.cron = cron;
+    this.pipelineName =
+        UniqueStringGenerator.randomPipelineName(ConfigureProcessPipelineTestHelper.class);
   }
 
-  public ScheduleTestHelper(String pipelineName) {
+  public ScheduleTestHelper(String cron, String pipelineName) {
+    this.cron = cron;
     this.pipelineName = pipelineName;
   }
 
@@ -35,24 +39,22 @@ public abstract class ScheduleTestHelper implements Schedule {
     return pipelineName;
   }
 
+  public String cron() {
+    return cron;
+  }
+
   @Override
   public final Options configurePipeline() {
-    return new Options().cron(_configureCron());
+    return new Options().cron(cron);
   }
-
-  public String cron() {
-    return _configureCron();
-  }
-
-  protected abstract String _configureCron();
 
   @Override
   public final void configureProcess(ProcessBuilder builder) {
     configuredProcessIds.add(builder.getProcessId());
-    _configureProcess(builder);
+    testConfigureProcess(builder);
   }
 
-  protected abstract void _configureProcess(ProcessBuilder builder);
+  protected abstract void testConfigureProcess(ProcessBuilder builder);
 
   public int configuredProcessCount() {
     return configuredProcessIds.size();

@@ -15,66 +15,61 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.flogger.Flogger;
 import pipelite.json.Json;
 import pipelite.stage.StageState;
 
 @Getter
-@Setter
 @Flogger
 public class StageExecutorResult {
 
-  private StageState stageState;
+  private StageExecutorState executorState;
   private String stageLog;
-
-  /** True if an internal error has been registered. */
-  private boolean internalError;
-
-  /** True if an timeout error has been registered. */
-  private boolean timeoutError;
-
-  /** True if an interrupted error has been registered. */
-  private boolean interruptedError;
-
-  /** True if a permanent error has been registered. */
-  private boolean permanentError;
+  private ErrorType errorType;
 
   private final Map<String, String> attributes = new HashMap<>();
 
-  public StageExecutorResult(StageState stageState) {
-    if (stageState == null) {
-      throw new IllegalArgumentException("Missing stage state");
+  public StageExecutorResult(StageExecutorState executorState) {
+    if (executorState == null) {
+      throw new IllegalArgumentException("Missing executor state");
     }
-    this.stageState = stageState;
+    this.executorState = executorState;
   }
 
-  public boolean isPending() {
-    return StageState.isPending(stageState);
+  public boolean isSubmitted() {
+    return executorState == StageExecutorState.SUBMITTED;
   }
 
   public boolean isActive() {
-    return StageState.isActive(stageState);
+    return executorState == StageExecutorState.ACTIVE;
   }
 
   public boolean isSuccess() {
-    return StageState.isSuccess(stageState);
+    return executorState == StageExecutorState.SUCCESS;
   }
 
   public boolean isError() {
-    return StageState.isError(stageState);
+    return executorState == StageExecutorState.ERROR;
+  }
+
+  public StageState getStageState() {
+    return executorState.toStageState();
+  }
+
+  public static StageExecutorResult submitted() {
+    return new StageExecutorResult(StageExecutorState.SUBMITTED);
   }
 
   public static StageExecutorResult active() {
-    return new StageExecutorResult(StageState.ACTIVE);
+    return new StageExecutorResult(StageExecutorState.ACTIVE);
   }
 
   public static StageExecutorResult success() {
-    return new StageExecutorResult(StageState.SUCCESS);
+    return new StageExecutorResult(StageExecutorState.SUCCESS);
   }
 
   public static StageExecutorResult error() {
-    return new StageExecutorResult(StageState.ERROR);
+    return new StageExecutorResult(StageExecutorState.ERROR);
   }
 
   /**
@@ -84,8 +79,7 @@ public class StageExecutorResult {
    * @return the stage execution result
    */
   public static StageExecutorResult internalError(Exception ex) {
-    StageExecutorResult result = error();
-    result.internalError = true;
+    StageExecutorResult result = error().setInternalError();
     StringWriter str = new StringWriter();
     ex.printStackTrace(new PrintWriter(str));
     result.setStageLog(str.toString());
@@ -98,10 +92,7 @@ public class StageExecutorResult {
    * @return the stage execution result
    */
   public static StageExecutorResult timeoutError() {
-    StageExecutorResult result = error();
-    result.timeoutError = true;
-    result.permanentError = true;
-    return result;
+    return error().setTimeoutError();
   }
 
   /**
@@ -110,9 +101,7 @@ public class StageExecutorResult {
    * @return the stage execution result
    */
   public static StageExecutorResult interruptedError() {
-    StageExecutorResult result = error();
-    result.interruptedError = true;
-    return result;
+    return error().setInterruptedError();
   }
 
   /**
@@ -121,9 +110,39 @@ public class StageExecutorResult {
    * @return the stage execution result
    */
   public static StageExecutorResult permanentError() {
-    StageExecutorResult result = error();
-    result.permanentError = true;
-    return result;
+    return error().setPermanentError();
+  }
+
+  public StageExecutorResult setSubmitted() {
+    executorState = StageExecutorState.SUBMITTED;
+    errorType = null;
+    return this;
+  }
+
+  public StageExecutorResult setErrorType(ErrorType errorType) {
+    executorState = StageExecutorState.ERROR;
+    this.errorType = errorType;
+    return this;
+  }
+
+  public StageExecutorResult setInternalError() {
+    return setErrorType(ErrorType.INTERNAL_ERROR);
+  }
+
+  public StageExecutorResult setTimeoutError() {
+    return setErrorType(ErrorType.TIMEOUT_ERROR);
+  }
+
+  public StageExecutorResult setInterruptedError() {
+    return setErrorType(ErrorType.INTERRUPTED_ERROR);
+  }
+
+  public StageExecutorResult setPermanentError() {
+    return setErrorType(ErrorType.PERMANENT_ERROR);
+  }
+
+  public void setStageLog(String stageLog) {
+    this.stageLog = stageLog;
   }
 
   public String getAttribute(String value) {
@@ -135,6 +154,18 @@ public class StageExecutorResult {
       return;
     }
     attributes.put(key, value.toString());
+  }
+
+  public boolean isErrorType(ErrorType errorType) {
+    return this.errorType == errorType;
+  }
+
+  public static boolean isExecutableErrorType(String errorType) {
+    if (errorType == null) {
+      return true;
+    }
+    return !errorType.equals(ErrorType.PERMANENT_ERROR.name())
+        && !errorType.equals(ErrorType.TIMEOUT_ERROR.name());
   }
 
   public String attributesJson() {

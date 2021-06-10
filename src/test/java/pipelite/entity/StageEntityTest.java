@@ -102,7 +102,7 @@ class StageEntityTest {
 
     // End first execution.
 
-    StageExecutorResult firstExecutionResult = new StageExecutorResult(StageState.ERROR);
+    StageExecutorResult firstExecutionResult = StageExecutorResult.error();
     stageEntity.endExecution(firstExecutionResult);
 
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
@@ -154,7 +154,7 @@ class StageEntityTest {
 
     // End second execution.
 
-    StageExecutorResult secondExecutionResult = new StageExecutorResult(StageState.SUCCESS);
+    StageExecutorResult secondExecutionResult = StageExecutorResult.success();
     stageEntity.endExecution(secondExecutionResult);
 
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);

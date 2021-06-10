@@ -11,6 +11,7 @@
 package pipelite.stage.parameters;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -25,7 +26,7 @@ import pipelite.configuration.ExecutorConfiguration;
 @NoArgsConstructor
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
-public class SimpleLsfExecutorParameters extends CmdExecutorParameters {
+public class SimpleLsfExecutorParameters extends SharedLsfExecutorParameters {
 
   /** The LSF queue name. */
   private String queue;
@@ -54,5 +55,9 @@ public class SimpleLsfExecutorParameters extends CmdExecutorParameters {
     applyDefault(this::getMemory, this::setMemory, defaultParams::getMemory);
     applyDefault(this::getMemoryUnits, this::setMemoryUnits, defaultParams::getMemoryUnits);
     applyDefault(this::getMemoryTimeout, this::setMemoryTimeout, defaultParams::getMemoryTimeout);
+    if (permanentErrors == null) {
+      permanentErrors = new ArrayList<>();
+    }
+    applyListDefaults(permanentErrors, defaultParams.permanentErrors);
   }
 }

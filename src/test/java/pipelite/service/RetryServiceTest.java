@@ -46,6 +46,7 @@ import pipelite.runner.schedule.ScheduleRunner;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.time.Time;
 
@@ -94,16 +95,11 @@ class RetryServiceTest {
 
   public static class TestSchedule extends ScheduleTestHelper {
     public TestSchedule() {
-      super(SCHEDULE_NAME);
+      super(PipeliteTestConstants.CRON_EVERY_HOUR, SCHEDULE_NAME);
     }
 
     @Override
-    protected String _configureCron() {
-      return PipeliteTestConstants.CRON_EVERY_HOUR;
-    }
-
-    @Override
-    protected void _configureProcess(ProcessBuilder builder) {
+    protected void testConfigureProcess(ProcessBuilder builder) {
       builder.execute(STAGE_NAME).withSyncTestExecutor().build();
     }
   }
@@ -123,7 +119,7 @@ class RetryServiceTest {
       builder
           .execute(STAGE_NAME)
           .withSyncTestExecutor(
-              StageState.ERROR,
+              StageExecutorState.ERROR,
               ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build())
           .build();
     }

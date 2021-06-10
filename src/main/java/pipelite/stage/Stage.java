@@ -74,6 +74,10 @@ public class Stage {
     return stageEntity.getStageState() == StageState.SUCCESS;
   }
 
+  public boolean isExecutableErrorType() {
+    return StageExecutorResult.isExecutableErrorType(stageEntity.getErrorType());
+  }
+
   /**
    * Returns true if the stage has maximum retries left.
    *

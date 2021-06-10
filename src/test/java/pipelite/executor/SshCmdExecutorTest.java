@@ -22,6 +22,7 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.properties.SshTestConfiguration;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
+import pipelite.stage.executor.ErrorType;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
@@ -54,7 +55,7 @@ public class SshCmdExecutorTest {
 
     StageExecutorResult result = stage.execute(PIPELINE_NAME, PROCESS_ID);
     // Ignore timeout errors.
-    if (result.isTimeoutError()) {
+    if (result.isErrorType(ErrorType.TIMEOUT_ERROR)) {
       return;
     }
     assertThat(result.getStageState()).isEqualTo(StageState.SUCCESS);

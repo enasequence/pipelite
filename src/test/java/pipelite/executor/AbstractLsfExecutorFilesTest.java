@@ -24,10 +24,11 @@ import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.CmdExecutorParameters;
+import pipelite.stage.parameters.SharedLsfExecutorParameters;
 
 public class AbstractLsfExecutorFilesTest {
 
-  private static class TestLsfExecutor extends AbstractLsfExecutor<CmdExecutorParameters> {
+  private static class TestLsfExecutor extends AbstractLsfExecutor<SharedLsfExecutorParameters> {
     @Override
     public String getSubmitCmd(StageExecutorRequest request) {
       throw new PipeliteException("");

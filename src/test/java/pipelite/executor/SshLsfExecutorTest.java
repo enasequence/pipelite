@@ -23,10 +23,7 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
-import pipelite.stage.executor.StageExecutor;
-import pipelite.stage.executor.StageExecutorRequest;
-import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultAttribute;
+import pipelite.stage.executor.*;
 import pipelite.stage.parameters.LsfExecutorParameters;
 import pipelite.time.Time;
 
@@ -81,7 +78,7 @@ public class SshLsfExecutorTest {
     }
 
     // Ignore timeout errors.
-    if (result.isTimeoutError()) {
+    if (result.isErrorType(ErrorType.TIMEOUT_ERROR)) {
       return;
     }
 

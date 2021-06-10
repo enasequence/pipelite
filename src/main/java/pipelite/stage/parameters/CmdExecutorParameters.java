@@ -10,9 +10,7 @@
  */
 package pipelite.stage.parameters;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -38,9 +36,6 @@ public class CmdExecutorParameters extends ExecutorParameters {
   /** The working directory where the output file and job definition files are written. */
   private String workDir;
 
-  /** The permanent error exit codes. Permanent errors are never retried. */
-  @Singular private List<Integer> permanentErrors;
-
   /** The number of last bytes from the output file saved in the stage log. */
   @Builder.Default private int logBytes = DEFAULT_LOG_BYTES;
 
@@ -58,10 +53,6 @@ public class CmdExecutorParameters extends ExecutorParameters {
       env = new HashMap<>();
     }
     applyMapDefaults(env, defaultParams.env);
-    if (permanentErrors == null) {
-      permanentErrors = new ArrayList<>();
-    }
-    applyListDefaults(permanentErrors, defaultParams.permanentErrors);
   }
 
   @Override

@@ -46,14 +46,4 @@ public class LocalCmdRunnerTest {
     assertThat(result.isError()).isFalse();
     assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
   }
-
-  @Test
-  public void permanentError() {
-    LocalCmdRunner cmdRunner =
-        new LocalCmdRunner(CmdExecutorParameters.builder().permanentError(0).build());
-    StageExecutorResult result = cmdRunner.execute("date");
-    assertThat(result.isError()).isTrue();
-    assertThat(result.isPermanentError()).isTrue();
-    assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
-  }
 }

@@ -81,13 +81,12 @@ public class RegisteredPipelineServiceTest {
   }
 
   public static class TestSchedule extends ScheduleTestHelper {
-    @Override
-    protected String _configureCron() {
-      return PipeliteTestConstants.CRON_EVERY_TWO_SECONDS;
+    public TestSchedule() {
+      super(PipeliteTestConstants.CRON_EVERY_TWO_SECONDS);
     }
 
     @Override
-    public void _configureProcess(ProcessBuilder builder) {}
+    public void testConfigureProcess(ProcessBuilder builder) {}
   }
 
   private void assertGetRegisteredPipelineByName(

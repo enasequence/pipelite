@@ -11,8 +11,6 @@
 package pipelite.runner.stage;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static pipelite.runner.stage.DependencyResolver.isEventuallyExecutableStage;
-import static pipelite.runner.stage.DependencyResolver.isImmediatelyExecutableStage;
 import static pipelite.stage.StageState.*;
 
 import java.util.Arrays;
@@ -28,17 +26,25 @@ import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
+import pipelite.stage.executor.ErrorType;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.ExecutorParameters;
 
 public class DependencyResolverTest {
+
+  private static final ExecutorParameters NO_RETRIES_EXECUTOR_PARAMS =
+      ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build();
+
+  private ProcessBuilder createProcessBuilder() {
+    return new ProcessBuilder(UniqueStringGenerator.randomProcessId(DependencyResolverTest.class));
+  }
 
   @Test
   public void allActivePendingDependOnPrevious() {
     for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
 
-      ProcessBuilder builder =
-          new ProcessBuilder(UniqueStringGenerator.randomProcessId(DependencyResolverTest.class));
+      ProcessBuilder builder = createProcessBuilder();
       Process process =
           builder
               .execute("STAGE1")
@@ -50,18 +56,18 @@ public class DependencyResolverTest {
               .build();
       List<Stage> stages = process.getStages();
       for (Stage stage : process.getStages()) {
-        createStageEntity(stage, stageState);
+        simulateStageExecution(stage, stageState);
       }
 
-      assertGetDependsOnStages(stages, "STAGE1", Arrays.asList());
+      assertGetDependsOnStages(stages, "STAGE1", Collections.emptyList());
       assertGetDependsOnStages(stages, "STAGE2", Arrays.asList("STAGE1"));
       assertGetDependsOnStages(stages, "STAGE3", Arrays.asList("STAGE1", "STAGE2"));
 
       assertGetDependentStages(stages, "STAGE1", Arrays.asList("STAGE2", "STAGE3"));
       assertGetDependentStages(stages, "STAGE2", Arrays.asList("STAGE3"));
-      assertGetDependentStages(stages, "STAGE3", Arrays.asList());
+      assertGetDependentStages(stages, "STAGE3", Collections.emptyList());
 
-      assertGetPermanentFailedStages(stages, Arrays.asList());
+      assertGetPermanentFailedStages(stages, Collections.emptyList());
       assertGetImmediatelyExecutableStages(stages, Arrays.asList("STAGE1"));
       assertGetEventuallyExecutableStages(stages, Arrays.asList("STAGE1", "STAGE2", "STAGE3"));
     }
@@ -70,8 +76,7 @@ public class DependencyResolverTest {
   @Test
   public void allActivePendingOthersDependOnFirstAllActive() {
     for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
-      ProcessBuilder builder =
-          new ProcessBuilder(UniqueStringGenerator.randomProcessId(DependencyResolverTest.class));
+      ProcessBuilder builder = createProcessBuilder();
       Process process =
           builder
               .execute("STAGE1")
@@ -83,18 +88,18 @@ public class DependencyResolverTest {
               .build();
       List<Stage> stages = process.getStages();
       for (Stage stage : process.getStages()) {
-        createStageEntity(stage, stageState);
+        simulateStageExecution(stage, stageState);
       }
 
-      assertGetDependsOnStages(stages, "STAGE1", Arrays.asList());
+      assertGetDependsOnStages(stages, "STAGE1", Collections.emptyList());
       assertGetDependsOnStages(stages, "STAGE2", Arrays.asList("STAGE1"));
       assertGetDependsOnStages(stages, "STAGE3", Arrays.asList("STAGE1"));
 
       assertGetDependentStages(stages, "STAGE1", Arrays.asList("STAGE2", "STAGE3"));
-      assertGetDependentStages(stages, "STAGE2", Arrays.asList());
-      assertGetDependentStages(stages, "STAGE3", Arrays.asList());
+      assertGetDependentStages(stages, "STAGE2", Collections.emptyList());
+      assertGetDependentStages(stages, "STAGE3", Collections.emptyList());
 
-      assertGetPermanentFailedStages(stages, Arrays.asList());
+      assertGetPermanentFailedStages(stages, Collections.emptyList());
       assertGetImmediatelyExecutableStages(stages, Arrays.asList("STAGE1"));
       assertGetEventuallyExecutableStages(stages, Arrays.asList("STAGE1", "STAGE2", "STAGE3"));
     }
@@ -104,8 +109,7 @@ public class DependencyResolverTest {
   public void othersActivePendingDependOnFirstThatSucceeded() {
     for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
 
-      ProcessBuilder builder =
-          new ProcessBuilder(UniqueStringGenerator.randomProcessId(DependencyResolverTest.class));
+      ProcessBuilder builder = createProcessBuilder();
       Process process =
           builder
               .execute("STAGE1")
@@ -119,22 +123,22 @@ public class DependencyResolverTest {
       int stageNumber = 0;
       for (Stage stage : process.getStages()) {
         if (stageNumber == 0) {
-          createStageEntity(stage, StageState.SUCCESS);
+          simulateStageExecution(stage, StageState.SUCCESS);
         } else {
-          createStageEntity(stage, stageState);
+          simulateStageExecution(stage, stageState);
         }
         stageNumber++;
       }
 
-      assertGetDependsOnStages(stages, "STAGE1", Arrays.asList());
+      assertGetDependsOnStages(stages, "STAGE1", Collections.emptyList());
       assertGetDependsOnStages(stages, "STAGE2", Arrays.asList("STAGE1"));
       assertGetDependsOnStages(stages, "STAGE3", Arrays.asList("STAGE1"));
 
       assertGetDependentStages(stages, "STAGE1", Arrays.asList("STAGE2", "STAGE3"));
-      assertGetDependentStages(stages, "STAGE2", Arrays.asList());
-      assertGetDependentStages(stages, "STAGE3", Arrays.asList());
+      assertGetDependentStages(stages, "STAGE2", Collections.emptyList());
+      assertGetDependentStages(stages, "STAGE3", Collections.emptyList());
 
-      assertGetPermanentFailedStages(stages, Arrays.asList());
+      assertGetPermanentFailedStages(stages, Collections.emptyList());
       assertGetImmediatelyExecutableStages(stages, Arrays.asList("STAGE2", "STAGE3"));
       assertGetEventuallyExecutableStages(stages, Arrays.asList("STAGE2", "STAGE3"));
     }
@@ -144,12 +148,11 @@ public class DependencyResolverTest {
   public void othersActivePendingDependOnFirstInErrorNoRetriesLeft() {
     for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
 
-      ProcessBuilder builder =
-          new ProcessBuilder(UniqueStringGenerator.randomProcessId(DependencyResolverTest.class));
+      ProcessBuilder builder = createProcessBuilder();
       Process process =
           builder
               .execute("STAGE1")
-              .withSyncTestExecutor(ERROR, ExecutorParameters.builder().maximumRetries(0).build())
+              .withSyncTestExecutor(StageExecutorState.ERROR, NO_RETRIES_EXECUTOR_PARAMS)
               .executeAfter("STAGE2", "STAGE1")
               .withSyncTestExecutor()
               .executeAfter("STAGE3", "STAGE1")
@@ -159,24 +162,24 @@ public class DependencyResolverTest {
       int stageNumber = 0;
       for (Stage stage : process.getStages()) {
         if (stageNumber == 0) {
-          createStageEntity(stage, StageState.ERROR);
+          simulateStageExecution(stage, StageState.ERROR);
         } else {
-          createStageEntity(stage, stageState);
+          simulateStageExecution(stage, stageState);
         }
         stageNumber++;
       }
 
-      assertGetDependsOnStages(stages, "STAGE1", Arrays.asList());
+      assertGetDependsOnStages(stages, "STAGE1", Collections.emptyList());
       assertGetDependsOnStages(stages, "STAGE2", Arrays.asList("STAGE1"));
       assertGetDependsOnStages(stages, "STAGE3", Arrays.asList("STAGE1"));
 
       assertGetDependentStages(stages, "STAGE1", Arrays.asList("STAGE2", "STAGE3"));
-      assertGetDependentStages(stages, "STAGE2", Arrays.asList());
-      assertGetDependentStages(stages, "STAGE3", Arrays.asList());
+      assertGetDependentStages(stages, "STAGE2", Collections.emptyList());
+      assertGetDependentStages(stages, "STAGE3", Collections.emptyList());
 
       assertGetPermanentFailedStages(stages, Arrays.asList("STAGE1"));
-      assertGetImmediatelyExecutableStages(stages, Arrays.asList());
-      assertGetEventuallyExecutableStages(stages, Arrays.asList());
+      assertGetImmediatelyExecutableStages(stages, Collections.emptyList());
+      assertGetEventuallyExecutableStages(stages, Collections.emptyList());
     }
   }
 
@@ -184,13 +187,13 @@ public class DependencyResolverTest {
   public void othersActivePendingDependOnFirstInErrorMaxRetriesLeft() {
     for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
 
-      ProcessBuilder builder =
-          new ProcessBuilder(UniqueStringGenerator.randomProcessId(DependencyResolverTest.class));
+      ProcessBuilder builder = createProcessBuilder();
       Process process =
           builder
               .execute("STAGE1")
               .withSyncTestExecutor(
-                  ERROR, ExecutorParameters.builder().maximumRetries(3).immediateRetries(0).build())
+                  StageExecutorState.ERROR,
+                  ExecutorParameters.builder().maximumRetries(3).immediateRetries(0).build())
               .executeAfter("STAGE2", "STAGE1")
               .withSyncTestExecutor()
               .executeAfter("STAGE3", "STAGE1")
@@ -200,37 +203,75 @@ public class DependencyResolverTest {
       int stageNumber = 0;
       for (Stage stage : process.getStages()) {
         if (stageNumber == 0) {
-          createStageEntity(stage, StageState.ERROR);
+          simulateStageExecution(stage, StageState.ERROR);
         } else {
-          createStageEntity(stage, stageState);
+          simulateStageExecution(stage, stageState);
         }
         stageNumber++;
       }
 
-      assertGetDependsOnStages(stages, "STAGE1", Arrays.asList());
+      assertGetDependsOnStages(stages, "STAGE1", Collections.emptyList());
       assertGetDependsOnStages(stages, "STAGE2", Arrays.asList("STAGE1"));
       assertGetDependsOnStages(stages, "STAGE3", Arrays.asList("STAGE1"));
 
       assertGetDependentStages(stages, "STAGE1", Arrays.asList("STAGE2", "STAGE3"));
-      assertGetDependentStages(stages, "STAGE2", Arrays.asList());
-      assertGetDependentStages(stages, "STAGE3", Arrays.asList());
+      assertGetDependentStages(stages, "STAGE2", Collections.emptyList());
+      assertGetDependentStages(stages, "STAGE3", Collections.emptyList());
 
-      assertGetPermanentFailedStages(stages, Arrays.asList());
-      assertGetImmediatelyExecutableStages(stages, Arrays.asList());
+      assertGetPermanentFailedStages(stages, Collections.emptyList());
+      assertGetImmediatelyExecutableStages(stages, Collections.emptyList());
       assertGetEventuallyExecutableStages(stages, Arrays.asList("STAGE1", "STAGE2", "STAGE3"));
+    }
+  }
+
+  @Test
+  public void othersActivePendingDependOnFirstInPermanentError() {
+    for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
+      ProcessBuilder builder = createProcessBuilder();
+      Process process =
+          builder
+              .execute("STAGE1")
+              .withSyncTestExecutor(StageExecutorState.ERROR)
+              .executeAfter("STAGE2", "STAGE1")
+              .withSyncTestExecutor()
+              .executeAfter("STAGE3", "STAGE1")
+              .withSyncTestExecutor()
+              .build();
+      List<Stage> stages = process.getStages();
+      int stageNumber = 0;
+      for (Stage stage : process.getStages()) {
+        if (stageNumber == 0) {
+          simulateStageExecution(stage, ErrorType.PERMANENT_ERROR);
+        } else {
+          simulateStageExecution(stage, stageState);
+        }
+        stageNumber++;
+      }
+
+      assertGetDependsOnStages(stages, "STAGE1", Collections.emptyList());
+      assertGetDependsOnStages(stages, "STAGE2", Arrays.asList("STAGE1"));
+      assertGetDependsOnStages(stages, "STAGE3", Arrays.asList("STAGE1"));
+
+      assertGetDependentStages(stages, "STAGE1", Arrays.asList("STAGE2", "STAGE3"));
+      assertGetDependentStages(stages, "STAGE2", Collections.emptyList());
+      assertGetDependentStages(stages, "STAGE3", Collections.emptyList());
+
+      assertGetPermanentFailedStages(stages, Arrays.asList("STAGE1"));
+      assertGetImmediatelyExecutableStages(stages, Collections.emptyList());
+      assertGetEventuallyExecutableStages(stages, Collections.emptyList());
     }
   }
 
   @Test
   public void othersActivePendingIndependentOneErrorMaxAndImmediateRetriesLeft() {
     for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
-      ProcessBuilder builder =
-          new ProcessBuilder(UniqueStringGenerator.randomProcessId(DependencyResolverTest.class));
+      ProcessBuilder builder = createProcessBuilder();
       Process process =
           builder
               .execute("STAGE1")
               .withSyncTestExecutor(
-                  ERROR, ExecutorParameters.builder().maximumRetries(1).immediateRetries(1).build())
+                  StageExecutorState.ERROR,
+                  ExecutorParameters.builder().maximumRetries(1).immediateRetries(1).build())
               .execute("STAGE2")
               .withSyncTestExecutor()
               .execute("STAGE3")
@@ -240,22 +281,22 @@ public class DependencyResolverTest {
       int stageNumber = 0;
       for (Stage stage : process.getStages()) {
         if (stageNumber == 0) {
-          createStageEntity(stage, StageState.ERROR);
+          simulateStageExecution(stage, StageState.ERROR);
         } else {
-          createStageEntity(stage, stageState);
+          simulateStageExecution(stage, stageState);
         }
         stageNumber++;
       }
 
-      assertGetDependsOnStages(stages, "STAGE1", Arrays.asList());
-      assertGetDependsOnStages(stages, "STAGE2", Arrays.asList());
-      assertGetDependsOnStages(stages, "STAGE3", Arrays.asList());
+      assertGetDependsOnStages(stages, "STAGE1", Collections.emptyList());
+      assertGetDependsOnStages(stages, "STAGE2", Collections.emptyList());
+      assertGetDependsOnStages(stages, "STAGE3", Collections.emptyList());
 
-      assertGetDependentStages(stages, "STAGE1", Arrays.asList());
-      assertGetDependentStages(stages, "STAGE2", Arrays.asList());
-      assertGetDependentStages(stages, "STAGE3", Arrays.asList());
+      assertGetDependentStages(stages, "STAGE1", Collections.emptyList());
+      assertGetDependentStages(stages, "STAGE2", Collections.emptyList());
+      assertGetDependentStages(stages, "STAGE3", Collections.emptyList());
 
-      assertGetPermanentFailedStages(stages, Arrays.asList());
+      assertGetPermanentFailedStages(stages, Collections.emptyList());
       assertGetImmediatelyExecutableStages(stages, Arrays.asList("STAGE1", "STAGE2", "STAGE3"));
       assertGetEventuallyExecutableStages(stages, Arrays.asList("STAGE1", "STAGE2", "STAGE3"));
     }
@@ -264,13 +305,13 @@ public class DependencyResolverTest {
   @Test
   public void othersActivePendingIndependentOneErrorMaxRetriesLeft() {
     for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
-      ProcessBuilder builder =
-          new ProcessBuilder(UniqueStringGenerator.randomProcessId(DependencyResolverTest.class));
+      ProcessBuilder builder = createProcessBuilder();
       Process process =
           builder
               .execute("STAGE1")
               .withSyncTestExecutor(
-                  ERROR, ExecutorParameters.builder().maximumRetries(1).immediateRetries(0).build())
+                  StageExecutorState.ERROR,
+                  ExecutorParameters.builder().maximumRetries(1).immediateRetries(0).build())
               .execute("STAGE2")
               .withSyncTestExecutor()
               .execute("STAGE3")
@@ -282,24 +323,24 @@ public class DependencyResolverTest {
       int stageNumber = 0;
       for (Stage stage : process.getStages()) {
         if (stageNumber == 0) {
-          createStageEntity(stage, StageState.ERROR);
+          simulateStageExecution(stage, StageState.ERROR);
         } else {
-          createStageEntity(stage, stageState);
+          simulateStageExecution(stage, stageState);
         }
         stageNumber++;
       }
 
-      assertGetDependsOnStages(stages, "STAGE1", Arrays.asList());
-      assertGetDependsOnStages(stages, "STAGE2", Arrays.asList());
-      assertGetDependsOnStages(stages, "STAGE3", Arrays.asList());
-      assertGetDependsOnStages(stages, "STAGE4", Arrays.asList());
+      assertGetDependsOnStages(stages, "STAGE1", Collections.emptyList());
+      assertGetDependsOnStages(stages, "STAGE2", Collections.emptyList());
+      assertGetDependsOnStages(stages, "STAGE3", Collections.emptyList());
+      assertGetDependsOnStages(stages, "STAGE4", Collections.emptyList());
 
-      assertGetDependentStages(stages, "STAGE1", Arrays.asList());
-      assertGetDependentStages(stages, "STAGE2", Arrays.asList());
-      assertGetDependentStages(stages, "STAGE3", Arrays.asList());
-      assertGetDependentStages(stages, "STAGE4", Arrays.asList());
+      assertGetDependentStages(stages, "STAGE1", Collections.emptyList());
+      assertGetDependentStages(stages, "STAGE2", Collections.emptyList());
+      assertGetDependentStages(stages, "STAGE3", Collections.emptyList());
+      assertGetDependentStages(stages, "STAGE4", Collections.emptyList());
 
-      assertGetPermanentFailedStages(stages, Arrays.asList());
+      assertGetPermanentFailedStages(stages, Collections.emptyList());
       assertGetImmediatelyExecutableStages(stages, Arrays.asList("STAGE2", "STAGE3", "STAGE4"));
       assertGetEventuallyExecutableStages(
           stages, Arrays.asList("STAGE1", "STAGE2", "STAGE3", "STAGE4"));
@@ -309,13 +350,13 @@ public class DependencyResolverTest {
   @Test
   public void othersActivePendingIndependentOneErrorNoRetriesLeft() {
     for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
-      ProcessBuilder builder =
-          new ProcessBuilder(UniqueStringGenerator.randomProcessId(DependencyResolverTest.class));
+      ProcessBuilder builder = createProcessBuilder();
       Process process =
           builder
               .execute("STAGE1")
               .withSyncTestExecutor(
-                  ERROR, ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build())
+                  StageExecutorState.ERROR,
+                  ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build())
               .execute("STAGE2")
               .withSyncTestExecutor()
               .execute("STAGE3")
@@ -327,21 +368,62 @@ public class DependencyResolverTest {
       int stageNumber = 0;
       for (Stage stage : stages) {
         if (stageNumber == 0) {
-          createStageEntity(stage, StageState.ERROR);
+          simulateStageExecution(stage, StageState.ERROR);
         } else {
-          createStageEntity(stage, stageState);
+          simulateStageExecution(stage, stageState);
         }
         stageNumber++;
       }
-      assertGetDependsOnStages(stages, "STAGE1", Arrays.asList());
-      assertGetDependsOnStages(stages, "STAGE2", Arrays.asList());
-      assertGetDependsOnStages(stages, "STAGE3", Arrays.asList());
-      assertGetDependsOnStages(stages, "STAGE4", Arrays.asList());
+      assertGetDependsOnStages(stages, "STAGE1", Collections.emptyList());
+      assertGetDependsOnStages(stages, "STAGE2", Collections.emptyList());
+      assertGetDependsOnStages(stages, "STAGE3", Collections.emptyList());
+      assertGetDependsOnStages(stages, "STAGE4", Collections.emptyList());
 
-      assertGetDependentStages(stages, "STAGE1", Arrays.asList());
-      assertGetDependentStages(stages, "STAGE2", Arrays.asList());
-      assertGetDependentStages(stages, "STAGE3", Arrays.asList());
-      assertGetDependentStages(stages, "STAGE4", Arrays.asList());
+      assertGetDependentStages(stages, "STAGE1", Collections.emptyList());
+      assertGetDependentStages(stages, "STAGE2", Collections.emptyList());
+      assertGetDependentStages(stages, "STAGE3", Collections.emptyList());
+      assertGetDependentStages(stages, "STAGE4", Collections.emptyList());
+
+      assertGetPermanentFailedStages(stages, Arrays.asList("STAGE1"));
+      assertGetImmediatelyExecutableStages(stages, Arrays.asList("STAGE2", "STAGE3", "STAGE4"));
+      assertGetEventuallyExecutableStages(stages, Arrays.asList("STAGE2", "STAGE3", "STAGE4"));
+    }
+  }
+
+  @Test
+  public void othersActivePendingIndependentOnePermanentError() {
+    for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
+      ProcessBuilder builder = createProcessBuilder();
+      Process process =
+          builder
+              .execute("STAGE1")
+              .withSyncTestExecutor(StageExecutorState.ERROR)
+              .execute("STAGE2")
+              .withSyncTestExecutor()
+              .execute("STAGE3")
+              .withSyncTestExecutor()
+              .execute("STAGE4")
+              .withSyncTestExecutor()
+              .build();
+      List<Stage> stages = process.getStages();
+      int stageNumber = 0;
+      for (Stage stage : stages) {
+        if (stageNumber == 0) {
+          simulateStageExecution(stage, ErrorType.PERMANENT_ERROR);
+        } else {
+          simulateStageExecution(stage, stageState);
+        }
+        stageNumber++;
+      }
+      assertGetDependsOnStages(stages, "STAGE1", Collections.emptyList());
+      assertGetDependsOnStages(stages, "STAGE2", Collections.emptyList());
+      assertGetDependsOnStages(stages, "STAGE3", Collections.emptyList());
+      assertGetDependsOnStages(stages, "STAGE4", Collections.emptyList());
+
+      assertGetDependentStages(stages, "STAGE1", Collections.emptyList());
+      assertGetDependentStages(stages, "STAGE2", Collections.emptyList());
+      assertGetDependentStages(stages, "STAGE3", Collections.emptyList());
+      assertGetDependentStages(stages, "STAGE4", Collections.emptyList());
 
       assertGetPermanentFailedStages(stages, Arrays.asList("STAGE1"));
       assertGetImmediatelyExecutableStages(stages, Arrays.asList("STAGE2", "STAGE3", "STAGE4"));
@@ -352,8 +434,7 @@ public class DependencyResolverTest {
   @Test
   public void allActivePendingOthersDependOnPrevious() {
     for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
-      ProcessBuilder builder =
-          new ProcessBuilder(UniqueStringGenerator.randomProcessId(DependencyResolverTest.class));
+      ProcessBuilder builder = createProcessBuilder();
       Process process =
           builder
               .execute("STAGE1")
@@ -370,7 +451,7 @@ public class DependencyResolverTest {
         stage.setStageEntity(new StageEntity());
         stage.getStageEntity().setStageState(stageState);
       }
-      assertGetDependsOnStages(stages, "STAGE1", Arrays.asList());
+      assertGetDependsOnStages(stages, "STAGE1", Collections.emptyList());
       assertGetDependsOnStages(stages, "STAGE2", Arrays.asList("STAGE1"));
       assertGetDependsOnStages(stages, "STAGE3", Arrays.asList("STAGE1", "STAGE2"));
       assertGetDependsOnStages(stages, "STAGE4", Arrays.asList("STAGE1", "STAGE2", "STAGE3"));
@@ -378,9 +459,9 @@ public class DependencyResolverTest {
       assertGetDependentStages(stages, "STAGE1", Arrays.asList("STAGE2", "STAGE3", "STAGE4"));
       assertGetDependentStages(stages, "STAGE2", Arrays.asList("STAGE3", "STAGE4"));
       assertGetDependentStages(stages, "STAGE3", Arrays.asList("STAGE4"));
-      assertGetDependentStages(stages, "STAGE4", Arrays.asList());
+      assertGetDependentStages(stages, "STAGE4", Collections.emptyList());
 
-      assertGetPermanentFailedStages(stages, Arrays.asList());
+      assertGetPermanentFailedStages(stages, Collections.emptyList());
       assertGetImmediatelyExecutableStages(stages, Arrays.asList("STAGE1"));
       assertGetEventuallyExecutableStages(
           stages, Arrays.asList("STAGE1", "STAGE2", "STAGE3", "STAGE4"));
@@ -390,8 +471,7 @@ public class DependencyResolverTest {
   @Test
   public void allActivePendingOthersDependOnFirstTransitively() {
     for (StageState stageState : EnumSet.of(ACTIVE, PENDING)) {
-      ProcessBuilder builder =
-          new ProcessBuilder(UniqueStringGenerator.randomProcessId(DependencyResolverTest.class));
+      ProcessBuilder builder = createProcessBuilder();
       Process process =
           builder
               .execute("STAGE1")
@@ -408,7 +488,7 @@ public class DependencyResolverTest {
         stage.setStageEntity(new StageEntity());
         stage.getStageEntity().setStageState(stageState);
       }
-      assertGetDependsOnStages(stages, "STAGE1", Arrays.asList());
+      assertGetDependsOnStages(stages, "STAGE1", Collections.emptyList());
       assertGetDependsOnStages(stages, "STAGE2", Arrays.asList("STAGE1"));
       assertGetDependsOnStages(stages, "STAGE3", Arrays.asList("STAGE1", "STAGE2"));
       assertGetDependsOnStages(stages, "STAGE4", Arrays.asList("STAGE1", "STAGE2", "STAGE3"));
@@ -416,9 +496,9 @@ public class DependencyResolverTest {
       assertGetDependentStages(stages, "STAGE1", Arrays.asList("STAGE2", "STAGE3", "STAGE4"));
       assertGetDependentStages(stages, "STAGE2", Arrays.asList("STAGE3", "STAGE4"));
       assertGetDependentStages(stages, "STAGE3", Arrays.asList("STAGE4"));
-      assertGetDependentStages(stages, "STAGE4", Arrays.asList());
+      assertGetDependentStages(stages, "STAGE4", Collections.emptyList());
 
-      assertGetPermanentFailedStages(stages, Arrays.asList());
+      assertGetPermanentFailedStages(stages, Collections.emptyList());
       assertGetImmediatelyExecutableStages(stages, Arrays.asList("STAGE1"));
       assertGetEventuallyExecutableStages(
           stages, Arrays.asList("STAGE1", "STAGE2", "STAGE3", "STAGE4"));
@@ -427,59 +507,89 @@ public class DependencyResolverTest {
 
   @Test
   public void independentAllErrorNoRetriesLeft() {
-    ProcessBuilder builder =
-        new ProcessBuilder(UniqueStringGenerator.randomProcessId(DependencyResolverTest.class));
+    ProcessBuilder builder = createProcessBuilder();
     Process process =
         builder
             .execute("STAGE1")
-            .withSyncTestExecutor(
-                ERROR, ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build())
+            .withSyncTestExecutor(StageExecutorState.ERROR, NO_RETRIES_EXECUTOR_PARAMS)
             .execute("STAGE2")
-            .withSyncTestExecutor(
-                ERROR, ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build())
+            .withSyncTestExecutor(StageExecutorState.ERROR, NO_RETRIES_EXECUTOR_PARAMS)
             .execute("STAGE3")
-            .withSyncTestExecutor(
-                ERROR, ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build())
+            .withSyncTestExecutor(StageExecutorState.ERROR, NO_RETRIES_EXECUTOR_PARAMS)
             .execute("STAGE4")
-            .withSyncTestExecutor(
-                ERROR, ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build())
+            .withSyncTestExecutor(StageExecutorState.ERROR, NO_RETRIES_EXECUTOR_PARAMS)
             .build();
     List<Stage> stages = process.getStages();
     for (Stage stage : stages) {
-      createStageEntity(stage, StageState.ERROR);
+      simulateStageExecution(stage, StageState.ERROR);
     }
-    assertGetDependsOnStages(stages, "STAGE1", Arrays.asList());
-    assertGetDependsOnStages(stages, "STAGE2", Arrays.asList());
-    assertGetDependsOnStages(stages, "STAGE3", Arrays.asList());
-    assertGetDependsOnStages(stages, "STAGE4", Arrays.asList());
+    assertGetDependsOnStages(stages, "STAGE1", Collections.emptyList());
+    assertGetDependsOnStages(stages, "STAGE2", Collections.emptyList());
+    assertGetDependsOnStages(stages, "STAGE3", Collections.emptyList());
+    assertGetDependsOnStages(stages, "STAGE4", Collections.emptyList());
 
-    assertGetDependentStages(stages, "STAGE1", Arrays.asList());
-    assertGetDependentStages(stages, "STAGE2", Arrays.asList());
-    assertGetDependentStages(stages, "STAGE3", Arrays.asList());
-    assertGetDependentStages(stages, "STAGE4", Arrays.asList());
+    assertGetDependentStages(stages, "STAGE1", Collections.emptyList());
+    assertGetDependentStages(stages, "STAGE2", Collections.emptyList());
+    assertGetDependentStages(stages, "STAGE3", Collections.emptyList());
+    assertGetDependentStages(stages, "STAGE4", Collections.emptyList());
 
     assertGetPermanentFailedStages(stages, Arrays.asList("STAGE1", "STAGE2", "STAGE3", "STAGE4"));
-    assertGetImmediatelyExecutableStages(stages, Arrays.asList());
-    assertGetEventuallyExecutableStages(stages, Arrays.asList());
+    assertGetImmediatelyExecutableStages(stages, Collections.emptyList());
+    assertGetEventuallyExecutableStages(stages, Collections.emptyList());
   }
 
   @Test
-  public void isImmediatelyExecutableSingleStage() {
-    for (int totalCnt = 0; totalCnt < 2; totalCnt++) {
-      for (int immedCnt = 0; immedCnt < 2; immedCnt++) {
-        for (int maxRetry = 0; maxRetry < 2; maxRetry++) {
-          for (int immedRetry = 0; immedRetry < 2; immedRetry++) {
-            List<Stage> pending = getStage(PENDING, totalCnt, immedCnt, maxRetry, immedRetry);
-            List<Stage> active = getStage(ACTIVE, totalCnt, immedCnt, maxRetry, immedRetry);
-            List<Stage> error = getStage(ERROR, totalCnt, immedCnt, maxRetry, immedRetry);
-            List<Stage> success = getStage(SUCCESS, totalCnt, immedCnt, maxRetry, immedRetry);
-            assertIsImmediatelyExecutableStage(pending, active.get(0), true);
-            assertIsImmediatelyExecutableStage(active, active.get(0), true);
-            assertIsImmediatelyExecutableStage(
-                error,
-                error.get(0),
-                totalCnt <= maxRetry && immedCnt <= Math.min(immedRetry, maxRetry));
-            assertIsImmediatelyExecutableStage(success, success.get(0), false);
+  public void independentAllPermanentError() {
+    ProcessBuilder builder = createProcessBuilder();
+    Process process =
+        builder
+            .execute("STAGE1")
+            .withSyncTestExecutor(StageExecutorState.ERROR)
+            .execute("STAGE2")
+            .withSyncTestExecutor(StageExecutorState.ERROR)
+            .execute("STAGE3")
+            .withSyncTestExecutor(StageExecutorState.ERROR)
+            .execute("STAGE4")
+            .withSyncTestExecutor(StageExecutorState.ERROR)
+            .build();
+    List<Stage> stages = process.getStages();
+    for (Stage stage : stages) {
+      simulateStageExecution(stage, ErrorType.PERMANENT_ERROR);
+    }
+    assertGetDependsOnStages(stages, "STAGE1", Collections.emptyList());
+    assertGetDependsOnStages(stages, "STAGE2", Collections.emptyList());
+    assertGetDependsOnStages(stages, "STAGE3", Collections.emptyList());
+    assertGetDependsOnStages(stages, "STAGE4", Collections.emptyList());
+
+    assertGetDependentStages(stages, "STAGE1", Collections.emptyList());
+    assertGetDependentStages(stages, "STAGE2", Collections.emptyList());
+    assertGetDependentStages(stages, "STAGE3", Collections.emptyList());
+    assertGetDependentStages(stages, "STAGE4", Collections.emptyList());
+
+    assertGetPermanentFailedStages(stages, Arrays.asList("STAGE1", "STAGE2", "STAGE3", "STAGE4"));
+    assertGetImmediatelyExecutableStages(stages, Collections.emptyList());
+    assertGetEventuallyExecutableStages(stages, Collections.emptyList());
+  }
+
+  @Test
+  public void isImmediatelyExecutableStage() {
+    final int MAX_EXEC_CNT = 3;
+    for (int execCnt = 0; execCnt < MAX_EXEC_CNT; execCnt++) {
+      for (int immCnt = 0; immCnt < MAX_EXEC_CNT; immCnt++) {
+        for (int maxRetry = 0; maxRetry < MAX_EXEC_CNT; maxRetry++) {
+          for (int immRetry = 0; immRetry < MAX_EXEC_CNT; immRetry++) {
+            assertThat(isImmediatelyExecutableStage(PENDING, execCnt, immCnt, maxRetry, immRetry))
+                .isTrue();
+            assertThat(isImmediatelyExecutableStage(ACTIVE, execCnt, immCnt, maxRetry, immRetry))
+                .isTrue();
+            assertThat(isImmediatelyExecutableStage(ERROR, execCnt, immCnt, maxRetry, immRetry))
+                .isEqualTo(execCnt <= maxRetry && immCnt <= Math.min(immRetry, maxRetry));
+            assertThat(isImmediatelyExecutableStage(SUCCESS, execCnt, immCnt, maxRetry, immRetry))
+                .isFalse();
+            assertThat(
+                    isImmediatelyExecutableStage(
+                        ErrorType.PERMANENT_ERROR, execCnt, immCnt, maxRetry, immRetry))
+                .isFalse();
           }
         }
       }
@@ -487,37 +597,64 @@ public class DependencyResolverTest {
   }
 
   @Test
-  public void isEventuallyExecutableSingleStage() {
-    for (int totalCnt = 0; totalCnt < 2; totalCnt++) {
-      for (int immedCnt = 0; immedCnt < 2; immedCnt++) {
-        for (int maxRetry = 0; maxRetry < 2; maxRetry++) {
-          for (int immedRetry = 0; immedRetry < 2; immedRetry++) {
-            List<Stage> pending = getStage(PENDING, totalCnt, immedCnt, maxRetry, immedRetry);
-            List<Stage> active = getStage(ACTIVE, totalCnt, immedCnt, maxRetry, immedRetry);
-            List<Stage> error = getStage(ERROR, totalCnt, immedCnt, maxRetry, immedRetry);
-            List<Stage> success = getStage(SUCCESS, totalCnt, immedCnt, maxRetry, immedRetry);
-            assertIsEventuallyExecutableStage(pending, active.get(0), true);
-            assertIsEventuallyExecutableStage(active, active.get(0), true);
-            assertIsEventuallyExecutableStage(error, error.get(0), totalCnt <= maxRetry);
-            assertIsEventuallyExecutableStage(success, success.get(0), false);
+  public void isEventuallyExecutableStage() {
+    final int MAX_EXEC_CNT = 3;
+    for (int execCnt = 0; execCnt < MAX_EXEC_CNT; execCnt++) {
+      for (int immCnt = 0; immCnt < MAX_EXEC_CNT; immCnt++) {
+        for (int maxRetry = 0; maxRetry < MAX_EXEC_CNT; maxRetry++) {
+          for (int immRetry = 0; immRetry < MAX_EXEC_CNT; immRetry++) {
+            assertThat(isEventuallyExecutableStage(PENDING, execCnt, immCnt, maxRetry, immRetry))
+                .isTrue();
+            assertThat(isEventuallyExecutableStage(ACTIVE, execCnt, immCnt, maxRetry, immRetry))
+                .isTrue();
+            assertThat(isEventuallyExecutableStage(ERROR, execCnt, immCnt, maxRetry, immRetry))
+                .isEqualTo(execCnt <= maxRetry);
+            assertThat(isEventuallyExecutableStage(SUCCESS, execCnt, immCnt, maxRetry, immRetry))
+                .isFalse();
+            assertThat(
+                    isEventuallyExecutableStage(
+                        ErrorType.PERMANENT_ERROR, execCnt, immCnt, maxRetry, immRetry))
+                .isFalse();
           }
         }
       }
     }
   }
 
-  /** Returns a single stage with the given stage state, execution counts and retries. */
-  private List<Stage> getStage(
+  private Stage simulatedStageExecution(
       StageState stageState,
+      int executionCount,
+      int immediateExecutionCount,
+      int maximumRetries,
+      int immediateRetries) {
+    StageEntity stageEntity = new StageEntity();
+    stageEntity.setExecutionCount(executionCount);
+    stageEntity.setStageState(stageState);
+    TestExecutor executor = TestExecutor.sync(StageExecutorState.SUCCESS);
+    executor.setExecutorParams(
+        ExecutorParameters.builder()
+            .immediateRetries(immediateRetries)
+            .maximumRetries(maximumRetries)
+            .build());
+    Stage stage = Stage.builder().stageName("STAGE").executor(executor).build();
+    stage.setStageEntity(stageEntity);
+    for (int i = 0; i < immediateExecutionCount; ++i) {
+      stage.incrementImmediateExecutionCount();
+    }
+    return stage;
+  }
+
+  private Stage simulatedStageExecution(
+      ErrorType errorType,
       int executionCount,
       int immediateCount,
       int maximumRetries,
       int immediateRetries) {
     StageEntity stageEntity = new StageEntity();
     stageEntity.setExecutionCount(executionCount);
-    stageEntity.setStageState(stageState);
-
-    TestExecutor executor = TestExecutor.sync(StageState.SUCCESS);
+    stageEntity.setStageState(ERROR);
+    stageEntity.setErrorType(errorType.name());
+    TestExecutor executor = TestExecutor.sync(StageExecutorState.SUCCESS);
     executor.setExecutorParams(
         ExecutorParameters.builder()
             .immediateRetries(immediateRetries)
@@ -528,18 +665,57 @@ public class DependencyResolverTest {
     for (int i = 0; i < immediateCount; ++i) {
       stage.incrementImmediateExecutionCount();
     }
-    return Arrays.asList(stage);
+    return stage;
   }
 
-  private void assertIsImmediatelyExecutableStage(
-      List<Stage> stages, Stage stage, boolean expected) {
-    assertThat(isImmediatelyExecutableStage(stages, Collections.emptySet(), stage))
-        .isEqualTo(expected);
+  private boolean isImmediatelyExecutableStage(
+      StageState stageState,
+      int executionCount,
+      int immediateExecutionCount,
+      int maximumRetries,
+      int immediateRetries) {
+    Stage stage =
+        simulatedStageExecution(
+            stageState, executionCount, immediateExecutionCount, maximumRetries, immediateRetries);
+    return DependencyResolver.isImmediatelyExecutableStage(
+        Arrays.asList(stage), Collections.emptySet(), stage);
   }
 
-  private void assertIsEventuallyExecutableStage(
-      List<Stage> stages, Stage stage, boolean expected) {
-    assertThat(isEventuallyExecutableStage(stages, stage)).isEqualTo(expected);
+  private boolean isImmediatelyExecutableStage(
+      ErrorType errorType,
+      int executionCount,
+      int immediateExecutionCount,
+      int maximumRetries,
+      int immediateRetries) {
+    Stage stage =
+        simulatedStageExecution(
+            errorType, executionCount, immediateExecutionCount, maximumRetries, immediateRetries);
+    return DependencyResolver.isImmediatelyExecutableStage(
+        Arrays.asList(stage), Collections.emptySet(), stage);
+  }
+
+  private boolean isEventuallyExecutableStage(
+      StageState stageState,
+      int executionCount,
+      int immediateExecutionCount,
+      int maximumRetries,
+      int immediateRetries) {
+    Stage stage =
+        simulatedStageExecution(
+            stageState, executionCount, immediateExecutionCount, maximumRetries, immediateRetries);
+    return DependencyResolver.isEventuallyExecutableStage(Arrays.asList(stage), stage);
+  }
+
+  private boolean isEventuallyExecutableStage(
+      ErrorType errorType,
+      int executionCount,
+      int immediateExecutionCount,
+      int maximumRetries,
+      int immediateRetries) {
+    Stage stage =
+        simulatedStageExecution(
+            errorType, executionCount, immediateExecutionCount, maximumRetries, immediateRetries);
+    return DependencyResolver.isEventuallyExecutableStage(Arrays.asList(stage), stage);
   }
 
   private void assertGetDependentStages(
@@ -602,10 +778,10 @@ public class DependencyResolverTest {
     return null;
   }
 
-  private static void createStageEntity(Stage stage, StageState stageState) {
+  private static void simulateStageExecution(Stage stage, StageState stageState) {
     StageEntity stageEntity = new StageEntity();
-    stageEntity.setStageState(stageState);
     stage.setStageEntity(stageEntity);
+    stageEntity.setStageState(PENDING);
     if (stageState == PENDING) {
       return;
     }
@@ -616,11 +792,17 @@ public class DependencyResolverTest {
     stage.incrementImmediateExecutionCount();
     if (stageState == SUCCESS) {
       stageEntity.endExecution(StageExecutorResult.success());
-      return;
-    }
-    if (stageState == ERROR) {
+    } else if (stageState == ERROR) {
       stageEntity.endExecution(StageExecutorResult.error());
-      return;
     }
+  }
+
+  private static void simulateStageExecution(Stage stage, ErrorType errorType) {
+    StageEntity stageEntity = new StageEntity();
+    stage.setStageEntity(stageEntity);
+    stageEntity.setStageState(ERROR);
+    stageEntity.startExecution(stage);
+    stage.incrementImmediateExecutionCount();
+    stageEntity.endExecution(StageExecutorResult.error().setErrorType(errorType));
   }
 }

@@ -18,12 +18,12 @@ import pipelite.executor.AbstractLsfExecutor;
 import pipelite.executor.cmd.CmdRunner;
 import pipelite.executor.task.RetryTaskAggregator;
 import pipelite.service.InternalErrorService;
-import pipelite.stage.parameters.CmdExecutorParameters;
+import pipelite.stage.parameters.SharedLsfExecutorParameters;
 
 @Flogger
 public class LsfContextCache
     extends SharedContextCache<
-        AbstractLsfExecutor<CmdExecutorParameters>,
+        AbstractLsfExecutor<SharedLsfExecutorParameters>,
         LsfContextCache.ContextId,
         LsfContextCache.Context> {
 

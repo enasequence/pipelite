@@ -29,7 +29,7 @@ import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.PipeliteServices;
-import pipelite.stage.StageState;
+import pipelite.stage.executor.StageExecutorState;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithManager.class,
@@ -116,7 +116,7 @@ public class PipelineRunnerHighParallelismAsyncTest {
 
     @Override
     public void testConfigureProcess(ProcessBuilder builder) {
-      builder.execute("STAGE").withAsyncTestExecutor(StageState.SUCCESS, EXECUTION_TIME);
+      builder.execute("STAGE").withAsyncTestExecutor(StageExecutorState.SUCCESS, EXECUTION_TIME);
     }
   }
 

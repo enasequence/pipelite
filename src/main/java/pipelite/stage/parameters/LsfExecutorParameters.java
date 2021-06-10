@@ -10,6 +10,7 @@
  */
 package pipelite.stage.parameters;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Data;
@@ -28,7 +29,7 @@ import pipelite.configuration.ExecutorConfiguration;
 @NoArgsConstructor
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
-public class LsfExecutorParameters extends CmdExecutorParameters {
+public class LsfExecutorParameters extends SharedLsfExecutorParameters {
   public enum Format {
     YAML,
     JSON,
@@ -61,6 +62,10 @@ public class LsfExecutorParameters extends CmdExecutorParameters {
       parameters = new HashMap<>();
     }
     applyMapDefaults(parameters, defaultParams.parameters);
+    if (permanentErrors == null) {
+      permanentErrors = new ArrayList<>();
+    }
+    applyListDefaults(permanentErrors, defaultParams.permanentErrors);
   }
 
   @Override

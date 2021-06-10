@@ -136,15 +136,9 @@ public class StageEntity {
    */
   public void endExecution(StageExecutorResult result) {
     this.stageState = result.getStageState();
-    if (result.isInterruptedError()) {
-      errorType = "INTERRUPTED_ERROR";
-    } else if (result.isTimeoutError()) {
-      errorType = "TIMEOUT_ERROR";
-    } else if (result.isPermanentError()) {
-      errorType = "PERMANENT_ERROR";
-    } else if (result.isInternalError()) {
-      errorType = "INTERNAL_ERROR";
-    } else if (result.isError()) {
+    if (result.getErrorType() != null) {
+      errorType = result.getErrorType().name();
+    } else if (result.getStageState() == StageState.ERROR) {
       errorType = "EXECUTION_ERROR";
     }
     this.resultParams = result.attributesJson();

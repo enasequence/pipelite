@@ -15,9 +15,9 @@ import java.time.ZonedDateTime;
 import java.util.function.Function;
 import org.springframework.util.Assert;
 import pipelite.exception.PipeliteException;
-import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.time.Time;
 
@@ -25,7 +25,7 @@ import pipelite.time.Time;
 public class TestExecutor extends AbstractExecutor<ExecutorParameters> {
 
   private final TestExecutorType executorType;
-  private final StageState stageState;
+  private final StageExecutorState executorState;
   private final Function<StageExecutorRequest, StageExecutorResult> callback;
   private ZonedDateTime startTime;
   private final Duration executionTime;
@@ -39,42 +39,42 @@ public class TestExecutor extends AbstractExecutor<ExecutorParameters> {
   /**
    * Creates a synchronous test executor that returns the given stage stage.
    *
-   * @param stageState the returned stage state
+   * @param executorState the state returned by the executor
    * @return a synchronous test executor that returns the given stage stage
    */
-  public static TestExecutor sync(StageState stageState) {
-    return new TestExecutor(TestExecutorType.SYNC_EXECUTOR, stageState, null);
+  public static TestExecutor sync(StageExecutorState executorState) {
+    return new TestExecutor(TestExecutorType.SYNC_EXECUTOR, executorState, null);
   }
   /**
    * Creates a synchronous test executor that returns the given stage stage.
    *
-   * @param stageState the returned stage state
+   * @param executorState the state returned by the executor
    * @paran executionTime the stage execution time
    * @return a synchronous test executor that returns the given stage stage
    */
-  public static TestExecutor sync(StageState stageState, Duration executionTime) {
-    return new TestExecutor(TestExecutorType.SYNC_EXECUTOR, stageState, executionTime);
+  public static TestExecutor sync(StageExecutorState executorState, Duration executionTime) {
+    return new TestExecutor(TestExecutorType.SYNC_EXECUTOR, executorState, executionTime);
   }
 
   /**
    * Creates an asynchronous test executor that returns the given stage stage.
    *
-   * @param stageState the returned stage state
+   * @param executorState the state returned by the executor
    * @return an asynchronous test executor that returns the given stage stage
    */
-  public static TestExecutor async(StageState stageState) {
-    return new TestExecutor(TestExecutorType.ASYNC_EXECUTOR, stageState, null);
+  public static TestExecutor async(StageExecutorState executorState) {
+    return new TestExecutor(TestExecutorType.ASYNC_EXECUTOR, executorState, null);
   }
 
   /**
    * Creates an asynchronous test executor that returns the given stage stage.
    *
-   * @param stageState the returned stage state
+   * @param executorState the state returned by the executor
    * @paran executionTime the stage execution time
    * @return an asynchronous test executor that returns the given stage stage
    */
-  public static TestExecutor async(StageState stageState, Duration executionTime) {
-    return new TestExecutor(TestExecutorType.ASYNC_EXECUTOR, stageState, executionTime);
+  public static TestExecutor async(StageExecutorState executorState, Duration executionTime) {
+    return new TestExecutor(TestExecutorType.ASYNC_EXECUTOR, executorState, executionTime);
   }
 
   /**
@@ -98,11 +98,11 @@ public class TestExecutor extends AbstractExecutor<ExecutorParameters> {
   }
 
   private TestExecutor(
-      TestExecutorType executorType, StageState stageState, Duration executionTime) {
+      TestExecutorType executorType, StageExecutorState executorState, Duration executionTime) {
     Assert.notNull(executorType, "Missing executorType");
-    Assert.notNull(stageState, "Missing stageState");
+    Assert.notNull(executorState, "Missing executorState");
     this.executorType = executorType;
-    this.stageState = stageState;
+    this.executorState = executorState;
     this.callback = null;
     this.executionTime = executionTime;
   }
@@ -112,7 +112,7 @@ public class TestExecutor extends AbstractExecutor<ExecutorParameters> {
     Assert.notNull(executorType, "Missing executorType");
     Assert.notNull(callback, "Missing callback");
     this.executorType = executorType;
-    this.stageState = null;
+    this.executorState = null;
     this.callback = callback;
     this.executionTime = null;
   }
@@ -130,24 +130,24 @@ public class TestExecutor extends AbstractExecutor<ExecutorParameters> {
         if (executionTime != null) {
           Time.wait(executionTime);
         }
-        return new StageExecutorResult(stageState);
+        return new StageExecutorResult(executorState);
       }
     } else {
       boolean isFirstExecution = startTime == null;
       if (isFirstExecution) {
         startTime = ZonedDateTime.now();
-        return new StageExecutorResult(StageState.ACTIVE);
+        return StageExecutorResult.active();
       }
       if (executionTime != null) {
         if (ZonedDateTime.now().isBefore(startTime.plus(executionTime))) {
-          return new StageExecutorResult(StageState.ACTIVE);
+          return StageExecutorResult.active();
         }
       }
       complete = true;
       if (callback != null) {
         return callback.apply(request);
       } else {
-        return new StageExecutorResult(stageState);
+        return new StageExecutorResult(executorState);
       }
     }
   }

@@ -51,22 +51,12 @@ public interface CmdRunner {
    * @param stderr the stderr
    * @return the execution result
    */
-  static StageExecutorResult result(
-      String cmd,
-      int exitCode,
-      String stdout,
-      String stderr,
-      CmdExecutorParameters executorParams) {
+  static StageExecutorResult result(String cmd, int exitCode, String stdout, String stderr) {
     StageExecutorResult result;
-    if (executorParams.getPermanentErrors() != null
-        && executorParams.getPermanentErrors().contains(exitCode)) {
-      result = StageExecutorResult.permanentError();
-    } else {
-      result =
-          (exitCode == EXIT_CODE_SUCCESS)
-              ? StageExecutorResult.success()
-              : StageExecutorResult.error();
-    }
+    result =
+        (exitCode == EXIT_CODE_SUCCESS)
+            ? StageExecutorResult.success()
+            : StageExecutorResult.error();
     result.addAttribute(StageExecutorResultAttribute.COMMAND, cmd);
     result.addAttribute(StageExecutorResultAttribute.EXIT_CODE, exitCode);
     result.setStageLog((stdout != null ? stdout : "") + (stderr != null ? stderr : ""));

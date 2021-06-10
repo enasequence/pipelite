@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 import pipelite.executor.TestExecutor;
+import pipelite.stage.executor.StageExecutorState;
 
 public class StageTest {
 
@@ -30,14 +31,14 @@ public class StageTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> {
-          TestExecutor executor = TestExecutor.sync(StageState.SUCCESS);
+          TestExecutor executor = TestExecutor.sync(StageExecutorState.SUCCESS);
           Stage.builder().stageName(null).executor(executor).build();
         });
   }
 
   @Test
   public void constructor() {
-    TestExecutor executor = TestExecutor.sync(StageState.SUCCESS);
+    TestExecutor executor = TestExecutor.sync(StageExecutorState.SUCCESS);
     Stage stage = Stage.builder().stageName("TEST").executor(executor).build();
     assertThat(stage.getStageName()).isEqualTo("TEST");
     assertThat(stage.getExecutor()).isInstanceOf(TestExecutor.class);

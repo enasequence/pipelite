@@ -63,8 +63,8 @@ public class PipelineRunnerTest {
   private TestPipeline successPipeline;
 
   @Autowired
-  @Qualifier("failurePipeline")
-  private TestPipeline failurePipeline;
+  @Qualifier("nonPermanentErrorPipeline")
+  private TestPipeline nonPermanentErrorPipeline;
 
   @Autowired
   @Qualifier("exceptionPipeline")
@@ -79,8 +79,8 @@ public class PipelineRunnerTest {
       return new TestPipeline(4, 2, StageTestResult.SUCCESS);
     }
 
-    @Bean("failurePipeline")
-    public TestPipeline failurePipeline() {
+    @Bean("nonPermanentErrorPipeline")
+    public TestPipeline nonPermanentErrorPipeline() {
       return new TestPipeline(4, 2, StageTestResult.ERROR);
     }
 
@@ -248,7 +248,7 @@ public class PipelineRunnerTest {
     processRunnerPoolManager.waitPoolsToStop();
 
     assertPipeline(successPipeline);
-    assertPipeline(failurePipeline);
+    assertPipeline(nonPermanentErrorPipeline);
     assertPipeline(exceptionPipeline);
   }
 }

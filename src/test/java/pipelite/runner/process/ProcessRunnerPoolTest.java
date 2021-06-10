@@ -34,7 +34,6 @@ import pipelite.metrics.TimeSeriesMetrics;
 import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.PipeliteServices;
-import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.time.Time;
@@ -107,7 +106,7 @@ public class ProcessRunnerPoolTest {
     AtomicInteger runProcessCnt = new AtomicInteger();
 
     for (int i = 0; i < PROCESS_CNT; i++) {
-      Process process = createProcess((request) -> new StageExecutorResult(StageState.SUCCESS));
+      Process process = createProcess((request) -> StageExecutorResult.success());
       pool.runProcess(PIPELINE_NAME, process, (p) -> runProcessCnt.incrementAndGet());
     }
 
@@ -158,7 +157,7 @@ public class ProcessRunnerPoolTest {
     AtomicInteger runProcessCnt = new AtomicInteger();
 
     for (int i = 0; i < PROCESS_CNT; i++) {
-      Process process = createProcess((request) -> new StageExecutorResult(StageState.ERROR));
+      Process process = createProcess((request) -> StageExecutorResult.error());
       pool.runProcess(PIPELINE_NAME, process, (p) -> runProcessCnt.incrementAndGet());
     }
 

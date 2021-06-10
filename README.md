@@ -276,7 +276,6 @@ value is not overriden in ```ProcessBuilder```.
 - pipelite.executor.cmd.env: the environmental variables passed to the command executor
 - pipelite.executor.cmd.workDir: the working directory where the output file and job definition files are written
 - pipelite.executor.cmd.logBytes: the number of last bytes from the output file saved in the stage log
-- pipelite.executor.cmd.permanentErrors: exit codes that are considered permanent errors. Permanent error stage execution count is set to maximum retries + 1.
 
 ##### Simple LSF executor parameters
 

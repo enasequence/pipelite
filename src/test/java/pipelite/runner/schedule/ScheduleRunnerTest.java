@@ -81,12 +81,12 @@ public class ScheduleRunnerTest {
     }
 
     @Bean
-    public TestSchedule firstScheduleFailure() {
+    public TestSchedule firstScheduleNonPermanentError() {
       return new TestSchedule(2, 1, 2, StageTestResult.ERROR);
     }
 
     @Bean
-    public TestSchedule secondPScheduleFailure() {
+    public TestSchedule secondScheduleNonPermanentError() {
       return new TestSchedule(1, 2, 4, StageTestResult.ERROR);
     }
 
@@ -111,26 +111,19 @@ public class ScheduleRunnerTest {
   protected static class TestSchedule extends ScheduleTestHelper {
     public final int processCnt;
     public final int stageCnt;
-    public final int schedulerSeconds; // 60 must be divisible by schedulerSeconds.
     public final StageTestResult stageTestResult;
     public final AtomicLong stageExecCnt = new AtomicLong();
 
     public TestSchedule(
         int processCnt, int stageCnt, int schedulerSeconds, StageTestResult stageTestResult) {
-      super();
+      super("0/" + schedulerSeconds + " * * * * ?");
       this.processCnt = processCnt;
       this.stageCnt = stageCnt;
-      this.schedulerSeconds = schedulerSeconds;
       this.stageTestResult = stageTestResult;
     }
 
     @Override
-    protected String _configureCron() {
-      return "0/" + schedulerSeconds + " * * * * ?";
-    }
-
-    @Override
-    public void _configureProcess(ProcessBuilder builder) {
+    public void testConfigureProcess(ProcessBuilder builder) {
       ExecutorParameters executorParams =
           ExecutorParameters.builder()
               .immediateRetries(0)
@@ -213,7 +206,6 @@ public class ScheduleRunnerTest {
     assertThat(scheduleEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(scheduleEntity.getProcessId()).isNotNull();
     assertThat(scheduleEntity.getExecutionCount()).isEqualTo(f.processCnt);
-    assertThat(scheduleEntity.getCron()).isEqualTo(f.cron());
     assertThat(scheduleEntity.getStartTime()).isNotNull();
     assertThat(scheduleEntity.getEndTime()).isNotNull();
   }

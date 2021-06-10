@@ -112,8 +112,8 @@ public class RetryTaskAggregator<Request, ExecutorContext> {
                           e.getKey() != null
                               // Filter out empty results.
                               && e.getValue() != null
-                              // Filter out pending results.
-                              && !e.getValue().isPending()
+                              // Filter out submitted results.
+                              && !e.getValue().isSubmitted()
                               // Filter out active results.
                               && !e.getValue().isActive())
                   .forEach(e -> requests.put(e.getKey(), Optional.of(e.getValue())));

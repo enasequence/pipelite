@@ -78,8 +78,7 @@ public class LocalCmdRunner implements CmdRunner {
       log.atInfo().log("Executing local call: %s", cmd);
 
       int exitCode = apacheExecutor.execute(commandLine, executorParams.getEnv());
-      return CmdRunner.result(
-          cmd, exitCode, getStream(stdoutStream), getStream(stderrStream), executorParams);
+      return CmdRunner.result(cmd, exitCode, getStream(stdoutStream), getStream(stderrStream));
 
     } catch (Exception ex) {
       throw new PipeliteException("Failed to execute local call: " + cmd, ex);

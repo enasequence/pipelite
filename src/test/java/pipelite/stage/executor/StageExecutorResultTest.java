@@ -17,6 +17,62 @@ import org.junit.jupiter.api.Test;
 public class StageExecutorResultTest {
 
   @Test
+  public void isSubmitted() {
+    assertThat(new StageExecutorResult(StageExecutorState.SUBMITTED).isSubmitted()).isTrue();
+  }
+
+  @Test
+  public void isError() {
+    assertThat(new StageExecutorResult(StageExecutorState.ERROR).isError()).isTrue();
+  }
+
+  @Test
+  public void isSuccess() {
+    assertThat(new StageExecutorResult(StageExecutorState.SUCCESS).isSuccess()).isTrue();
+  }
+
+  @Test
+  public void submitted() {
+    assertThat(StageExecutorResult.submitted().getExecutorState())
+        .isEqualTo(StageExecutorState.SUBMITTED);
+  }
+
+  @Test
+  public void active() {
+    assertThat(StageExecutorResult.active().getExecutorState())
+        .isEqualTo(StageExecutorState.ACTIVE);
+  }
+
+  @Test
+  public void error() {
+    assertThat(StageExecutorResult.error().getExecutorState()).isEqualTo(StageExecutorState.ERROR);
+  }
+
+  @Test
+  public void success() {
+    assertThat(StageExecutorResult.success().getExecutorState())
+        .isEqualTo(StageExecutorState.SUCCESS);
+  }
+
+  @Test
+  public void setSubmitted() {
+    assertThat(StageExecutorResult.success().setSubmitted().getExecutorState())
+        .isEqualTo(StageExecutorState.SUBMITTED);
+  }
+
+  @Test
+  public void isExecutableErrorType() {
+    assertThat(StageExecutorResult.isExecutableErrorType(ErrorType.PERMANENT_ERROR.name()))
+        .isFalse();
+    assertThat(StageExecutorResult.isExecutableErrorType(ErrorType.TIMEOUT_ERROR.name())).isFalse();
+    assertThat(StageExecutorResult.isExecutableErrorType(ErrorType.INTERNAL_ERROR.name())).isTrue();
+    assertThat(StageExecutorResult.isExecutableErrorType(ErrorType.INTERRUPTED_ERROR.name()))
+        .isTrue();
+    assertThat(StageExecutorResult.isExecutableErrorType("TEST")).isTrue();
+    assertThat(StageExecutorResult.isExecutableErrorType(null)).isTrue();
+  }
+
+  @Test
   public void getAttributesAsJson() {
     StageExecutorResult result = StageExecutorResult.success();
     result.addAttribute(StageExecutorResultAttribute.HOST, "test");

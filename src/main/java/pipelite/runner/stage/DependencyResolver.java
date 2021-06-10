@@ -137,15 +137,19 @@ public class DependencyResolver {
       return false;
     }
     if (stage.isError()) {
+      if (!stage.isExecutableErrorType()) {
+        // Stage error type prevents further executions.
+        return false;
+      }
+
       // Stage that has previously failed execution can be executed if it has not been retried the
       // maximum number of times.
       return stage.hasMaximumRetriesLeft();
     }
     // Stage is pending or active.
     for (Stage dependsOn : getDependsOnStages(stages, stage)) {
-      if (dependsOn.isError() && !dependsOn.hasMaximumRetriesLeft()) {
-        // Stage can't be executed if it depends on a stage that has been retried the maximum number
-        // of times.
+      if (isPermanentlyFailedStage(dependsOn)) {
+        // Stage can't be executed if it depends on a permanently failed stage.
         return false;
       }
     }
@@ -181,6 +185,11 @@ public class DependencyResolver {
     }
 
     if (stage.isError()) {
+      if (!stage.isExecutableErrorType()) {
+        // Stage error type prevents further executions.
+        return false;
+      }
+
       // Stage that has previously failed execution can be executed if it has not been retried the
       // maximum number of times.
       return stage.hasImmediateRetriesLeft();
@@ -191,12 +200,14 @@ public class DependencyResolver {
   }
 
   /**
-   * Returns true if the stage has failed and exceeded the maximum execution count
+   * Returns true if the stage has failed and exceeded the maximum execution count or if the error
+   * type prevents further executions
    *
    * @param stage the stage of interest
-   * @return true if the stage has failed and exceeded the maximum execution count
+   * @return true if the stage has failed and exceeded the maximum execution count or if
+   * the error type prevents further executions
    */
   public static boolean isPermanentlyFailedStage(Stage stage) {
-    return stage.isError() && !stage.hasMaximumRetriesLeft();
+    return (stage.isError() && !stage.hasMaximumRetriesLeft()) || !stage.isExecutableErrorType();
   }
 }

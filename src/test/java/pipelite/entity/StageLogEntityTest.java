@@ -16,8 +16,8 @@ import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.executor.TestExecutor;
 import pipelite.stage.Stage;
-import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorState;
 
 class StageLogEntityTest {
 
@@ -30,7 +30,7 @@ class StageLogEntityTest {
     Stage stage =
         Stage.builder()
             .stageName(stageName)
-            .executor(TestExecutor.sync(StageState.SUCCESS))
+            .executor(TestExecutor.sync(StageExecutorState.SUCCESS))
             .build();
 
     // Create execution.
@@ -39,7 +39,7 @@ class StageLogEntityTest {
 
     // End execution.
 
-    StageExecutorResult result = new StageExecutorResult(StageState.ERROR);
+    StageExecutorResult result = StageExecutorResult.error();
     result.setStageLog("TEST3");
     StageLogEntity stageLogEntity = StageLogEntity.endExecution(stageEntity, result);
     assertThat(stageLogEntity.getPipelineName()).isEqualTo(pipelineName);

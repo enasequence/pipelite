@@ -15,13 +15,11 @@ import java.time.Duration;
 import java.time.ZonedDateTime;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
-import pipelite.exception.PipeliteException;
 import pipelite.log.LogKey;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
-import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
 
@@ -117,7 +115,7 @@ public class StageRunner {
         startTime = ZonedDateTime.now();
         startStageExecution();
       }
-      executeStage(isFirstIteration, resultCallback);
+      executeStage(resultCallback);
 
       pipeliteMetrics
           .getStageRunnerOneIterationTimer()
@@ -135,14 +133,10 @@ public class StageRunner {
     stage.getExecutor().prepareExecute(pipeliteServices.stage().getExecutorContextCache());
   }
 
-  private void executeStage(boolean isFirstIteration, StageRunnerResultCallback resultCallback) {
+  private void executeStage(StageRunnerResultCallback resultCallback) {
     StageExecutorResult result;
     try {
       result = stage.execute(pipelineName, process.getProcessId());
-
-      if (result.isPending()) {
-        throw new PipeliteException("Invalid stage state: " + StageState.PENDING.name());
-      }
 
       if (result.isActive() && ZonedDateTime.now().isAfter(timeout)) {
         logContext(log.atSevere())
@@ -163,15 +157,14 @@ public class StageRunner {
               ex);
     }
 
-    if (result.isActive()) {
+    if (result.isSubmitted()) {
+      logContext(log.atFine()).log("Started asynchronous stage execution");
+      pipeliteServices.stage().startAsyncExecution(stage);
+    } else if (result.isActive()) {
       logContext(log.atFine()).log("Waiting asynchronous stage execution to complete");
-    } else {
-      String executorType = isFirstIteration ? "Synchronous" : "Asynchronous";
-      if (result.isSuccess()) {
-        logContext(log.atInfo()).log(executorType + " stage execution succeeded");
-      } else if (result.isError()) {
-        logContext(log.atInfo()).log(executorType + " stage execution failed");
-      }
+    } else if (result.isSuccess() || result.isError()) {
+      logContext(log.atFine())
+          .log("Stage execution " + (result.isSuccess() ? "succeeded" : "failed"));
       endStageExecution(stage, result);
       resultCallback.accept(result);
     }
