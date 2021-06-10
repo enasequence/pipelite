@@ -204,8 +204,8 @@ public class DependencyResolver {
    * type prevents further executions
    *
    * @param stage the stage of interest
-   * @return true if the stage has failed and exceeded the maximum execution count or if
-   * the error type prevents further executions
+   * @return true if the stage has failed and exceeded the maximum execution count or if the error
+   *     type prevents further executions
    */
   public static boolean isPermanentlyFailedStage(Stage stage) {
     return (stage.isError() && !stage.hasMaximumRetriesLeft()) || !stage.isExecutableErrorType();
