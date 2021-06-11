@@ -653,7 +653,7 @@ public class DependencyResolverTest {
     StageEntity stageEntity = new StageEntity();
     stageEntity.setExecutionCount(executionCount);
     stageEntity.setStageState(ERROR);
-    stageEntity.setErrorType(errorType.name());
+    stageEntity.setErrorType(errorType);
     TestExecutor executor = TestExecutor.sync(StageExecutorState.SUCCESS);
     executor.setExecutorParams(
         ExecutorParameters.builder()

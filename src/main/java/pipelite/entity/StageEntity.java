@@ -21,6 +21,7 @@ import pipelite.executor.JsonSerializableExecutor;
 import pipelite.json.Json;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
+import pipelite.stage.executor.ErrorType;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 
@@ -49,7 +50,7 @@ public class StageEntity {
   private StageState stageState;
 
   @Column(name = "ERROR_TYPE", length = 64)
-  private String errorType;
+  private ErrorType errorType;
 
   @Column(name = "EXEC_CNT", nullable = false)
   private int executionCount = 0;
@@ -136,11 +137,7 @@ public class StageEntity {
    */
   public void endExecution(StageExecutorResult result) {
     this.stageState = result.getStageState();
-    if (result.getErrorType() != null) {
-      errorType = result.getErrorType().name();
-    } else if (result.getStageState() == StageState.ERROR) {
-      errorType = "EXECUTION_ERROR";
-    }
+    this.errorType = result.getErrorType();
     this.resultParams = result.attributesJson();
     this.endTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.executionCount++;

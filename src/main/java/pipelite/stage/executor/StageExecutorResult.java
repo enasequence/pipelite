@@ -156,16 +156,23 @@ public class StageExecutorResult {
     attributes.put(key, value.toString());
   }
 
+  public ErrorType getErrorType() {
+    if (executorState == StageExecutorState.ERROR && errorType == null) {
+      return ErrorType.EXECUTION_ERROR;
+    }
+    return errorType;
+  }
+
   public boolean isErrorType(ErrorType errorType) {
     return this.errorType == errorType;
   }
 
-  public static boolean isExecutableErrorType(String errorType) {
+  public static boolean isExecutableErrorType(ErrorType errorType) {
     if (errorType == null) {
       return true;
     }
-    return !errorType.equals(ErrorType.PERMANENT_ERROR.name())
-        && !errorType.equals(ErrorType.TIMEOUT_ERROR.name());
+    return !errorType.equals(ErrorType.PERMANENT_ERROR)
+        && !errorType.equals(ErrorType.TIMEOUT_ERROR);
   }
 
   public String attributesJson() {

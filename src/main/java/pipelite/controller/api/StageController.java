@@ -105,7 +105,7 @@ public class StageController {
         .processId(stageEntity.getProcessId())
         .stageName(stageEntity.getStageName())
         .stageState(stageEntity.getStageState().name())
-        .errorType(stageEntity.getErrorType())
+        .errorType(stageEntity.getErrorType().name())
         .startTime(TimeUtils.humanReadableDate(stageEntity.getStartTime()))
         .endTime(TimeUtils.humanReadableDate(stageEntity.getEndTime()))
         .executionTime(executionTime)

@@ -35,6 +35,7 @@ import pipelite.service.ProcessService;
 import pipelite.service.RunnerService;
 import pipelite.service.StageService;
 import pipelite.stage.StageState;
+import pipelite.stage.executor.ErrorType;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 
 @SpringBootTest(
@@ -229,9 +230,9 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
       assertThat(stageEntity.getStageState()).isEqualTo(StageState.SUCCESS);
     }
     if (isExpectedPermanentError(f)) {
-      assertThat(stageEntity.getErrorType()).isEqualTo("PERMANENT_ERROR");
+      assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.PERMANENT_ERROR);
     } else if (isExpectedNonPermanentError(f)) {
-      assertThat(stageEntity.getErrorType()).isEqualTo("EXECUTION_ERROR");
+      assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.EXECUTION_ERROR);
     } else {
       assertThat(stageEntity.getErrorType()).isNull();
     }

@@ -14,5 +14,7 @@ public enum ErrorType {
   INTERNAL_ERROR,
   TIMEOUT_ERROR,
   INTERRUPTED_ERROR,
-  PERMANENT_ERROR
+  PERMANENT_ERROR,
+  /* Any other type of stage execution error. */
+  EXECUTION_ERROR
 }

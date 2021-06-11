@@ -19,6 +19,7 @@ import pipelite.executor.AbstractExecutor;
 import pipelite.executor.JsonSerializableExecutor;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
+import pipelite.stage.executor.ErrorType;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
@@ -110,7 +111,7 @@ class StageEntityTest {
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
     assertThat(stageEntity.getStageState()).isEqualTo(StageState.ERROR);
-    assertThat(stageEntity.getErrorType()).isEqualTo("EXECUTION_ERROR");
+    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.EXECUTION_ERROR);
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isNotNull();
@@ -210,26 +211,26 @@ class StageEntityTest {
     StageEntity stageEntity = StageEntity.createExecution(pipelineName, processId, stage);
     assertThat(stageEntity.getErrorType()).isNull();
     stageEntity.endExecution(StageExecutorResult.permanentError());
-    assertThat(stageEntity.getErrorType()).isEqualTo("PERMANENT_ERROR");
+    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.PERMANENT_ERROR);
 
     stageEntity = StageEntity.createExecution(pipelineName, processId, stage);
     assertThat(stageEntity.getErrorType()).isNull();
     stageEntity.endExecution(StageExecutorResult.internalError(new RuntimeException()));
-    assertThat(stageEntity.getErrorType()).isEqualTo("INTERNAL_ERROR");
+    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.INTERNAL_ERROR);
 
     stageEntity = StageEntity.createExecution(pipelineName, processId, stage);
     assertThat(stageEntity.getErrorType()).isNull();
     stageEntity.endExecution(StageExecutorResult.interruptedError());
-    assertThat(stageEntity.getErrorType()).isEqualTo("INTERRUPTED_ERROR");
+    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.INTERRUPTED_ERROR);
 
     stageEntity = StageEntity.createExecution(pipelineName, processId, stage);
     assertThat(stageEntity.getErrorType()).isNull();
     stageEntity.endExecution(StageExecutorResult.timeoutError());
-    assertThat(stageEntity.getErrorType()).isEqualTo("TIMEOUT_ERROR");
+    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.TIMEOUT_ERROR);
 
     stageEntity = StageEntity.createExecution(pipelineName, processId, stage);
     assertThat(stageEntity.getErrorType()).isNull();
     stageEntity.endExecution(StageExecutorResult.error());
-    assertThat(stageEntity.getErrorType()).isEqualTo("EXECUTION_ERROR");
+    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.EXECUTION_ERROR);
   }
 }

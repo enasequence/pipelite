@@ -10,9 +10,9 @@
  */
 package pipelite.stage.executor;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class StageExecutorResultTest {
 
@@ -62,14 +62,55 @@ public class StageExecutorResultTest {
 
   @Test
   public void isExecutableErrorType() {
-    assertThat(StageExecutorResult.isExecutableErrorType(ErrorType.PERMANENT_ERROR.name()))
-        .isFalse();
-    assertThat(StageExecutorResult.isExecutableErrorType(ErrorType.TIMEOUT_ERROR.name())).isFalse();
-    assertThat(StageExecutorResult.isExecutableErrorType(ErrorType.INTERNAL_ERROR.name())).isTrue();
-    assertThat(StageExecutorResult.isExecutableErrorType(ErrorType.INTERRUPTED_ERROR.name()))
-        .isTrue();
-    assertThat(StageExecutorResult.isExecutableErrorType("TEST")).isTrue();
+    assertThat(StageExecutorResult.isExecutableErrorType(ErrorType.PERMANENT_ERROR)).isFalse();
+    assertThat(StageExecutorResult.isExecutableErrorType(ErrorType.TIMEOUT_ERROR)).isFalse();
+    assertThat(StageExecutorResult.isExecutableErrorType(ErrorType.INTERNAL_ERROR)).isTrue();
+    assertThat(StageExecutorResult.isExecutableErrorType(ErrorType.INTERRUPTED_ERROR)).isTrue();
     assertThat(StageExecutorResult.isExecutableErrorType(null)).isTrue();
+  }
+
+  @Test
+  public void getErrorType() {
+    // Set and check error type using static factory methods.
+    assertThat(StageExecutorResult.submitted().getErrorType()).isNull();
+    assertThat(StageExecutorResult.active().getErrorType()).isNull();
+    assertThat(StageExecutorResult.success().getErrorType()).isNull();
+    assertThat(StageExecutorResult.error().getErrorType()).isEqualTo(ErrorType.EXECUTION_ERROR);
+    assertThat(StageExecutorResult.internalError(new RuntimeException()).getErrorType())
+        .isEqualTo(ErrorType.INTERNAL_ERROR);
+    assertThat(StageExecutorResult.timeoutError().getErrorType())
+        .isEqualTo(ErrorType.TIMEOUT_ERROR);
+    assertThat(StageExecutorResult.interruptedError().getErrorType())
+        .isEqualTo(ErrorType.INTERRUPTED_ERROR);
+    assertThat(StageExecutorResult.permanentError().getErrorType())
+        .isEqualTo(ErrorType.PERMANENT_ERROR);
+
+    // Set and check error type using set*Error.
+    assertThat(StageExecutorResult.submitted().setInternalError().getErrorType())
+        .isEqualTo(ErrorType.INTERNAL_ERROR);
+    assertThat(StageExecutorResult.submitted().setTimeoutError().getErrorType())
+        .isEqualTo(ErrorType.TIMEOUT_ERROR);
+    assertThat(StageExecutorResult.submitted().setInterruptedError().getErrorType())
+        .isEqualTo(ErrorType.INTERRUPTED_ERROR);
+    assertThat(StageExecutorResult.submitted().setPermanentError().getErrorType())
+        .isEqualTo(ErrorType.PERMANENT_ERROR);
+
+    // Set and check error type using setErrorType.
+    for (ErrorType errorType : ErrorType.values()) {
+      assertThat(StageExecutorResult.submitted().setErrorType(errorType).getErrorType())
+          .isEqualTo(errorType);
+    }
+
+    // Set error type to null after setting it using setErrorType.
+    // Error type should be the default EXECUTION_ERROR.
+    for (ErrorType errorType : ErrorType.values()) {
+      assertThat(
+              StageExecutorResult.submitted()
+                  .setErrorType(errorType)
+                  .setErrorType(null)
+                  .getErrorType())
+          .isEqualTo(ErrorType.EXECUTION_ERROR);
+    }
   }
 
   @Test
