@@ -25,6 +25,7 @@ public abstract class CreateProcessSingleStageSimpleLsfPipelineTestHelper
   private final int maximumRetries;
   private final LsfTestConfiguration lsfTestConfiguration;
   private final String stageName = "STAGE";
+  private SimpleLsfExecutorParameters executorParams;
 
   public CreateProcessSingleStageSimpleLsfPipelineTestHelper(
       int processCnt,
@@ -34,7 +35,7 @@ public abstract class CreateProcessSingleStageSimpleLsfPipelineTestHelper
       int maximumRetries,
       LsfTestConfiguration lsfTestConfiguration) {
     super(processCnt);
-    this.cmd = "bash -c 'exit '" + exitCode;
+    this.cmd = cmd(exitCode);
     this.exitCode = exitCode;
     this.parallelism = parallelism;
     this.immediateRetries = immediateRetries;
@@ -58,7 +59,7 @@ public abstract class CreateProcessSingleStageSimpleLsfPipelineTestHelper
         .maximumRetries(maximumRetries)
         .immediateRetries(immediateRetries);
     testExecutorParams(executorParamsBuilder);
-    SimpleLsfExecutorParameters executorParams = executorParamsBuilder.build();
+    executorParams = executorParamsBuilder.build();
     builder.execute(stageName).withSimpleLsfExecutor(cmd, executorParams);
   }
 
@@ -69,11 +70,19 @@ public abstract class CreateProcessSingleStageSimpleLsfPipelineTestHelper
     return cmd;
   }
 
+  public static String cmd(int exitCode) {
+    return "bash -c 'exit '" + exitCode;
+  }
+
   public int exitCode() {
     return exitCode;
   }
 
   public String stageName() {
     return stageName;
+  }
+
+  public SimpleLsfExecutorParameters executorParams() {
+    return executorParams;
   }
 }

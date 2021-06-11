@@ -24,8 +24,8 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.entity.ProcessEntity;
-import pipelite.entity.StageEntity;
 import pipelite.helper.CreateProcessSingleStageSimpleLsfPipelineTestHelper;
+import pipelite.helper.SimpleLsfExecutorTestHelper;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
@@ -34,8 +34,6 @@ import pipelite.process.ProcessState;
 import pipelite.service.ProcessService;
 import pipelite.service.RunnerService;
 import pipelite.service.StageService;
-import pipelite.stage.StageState;
-import pipelite.stage.executor.ErrorType;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 
 @SpringBootTest(
@@ -114,17 +112,14 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
     }
   }
 
-  private boolean isExpectedError(TestPipeline testPipeline) {
-    return testPipeline instanceof NonPermanentErrorPipeline
-        || testPipeline instanceof PermanentErrorPipeline;
-  }
-
-  private boolean isExpectedNonPermanentError(TestPipeline testPipeline) {
-    return testPipeline instanceof NonPermanentErrorPipeline;
-  }
-
-  private boolean isExpectedPermanentError(TestPipeline testPipeline) {
-    return testPipeline instanceof PermanentErrorPipeline;
+  private SimpleLsfExecutorTestHelper.TestType getTestType(TestPipeline testPipeline) {
+    if (testPipeline instanceof PermanentErrorPipeline) {
+      return SimpleLsfExecutorTestHelper.TestType.PERMANENT_ERROR;
+    }
+    if (testPipeline instanceof NonPermanentErrorPipeline) {
+      return SimpleLsfExecutorTestHelper.TestType.NON_PERMANENT_ERROR;
+    }
+    return SimpleLsfExecutorTestHelper.TestType.SUCCESS;
   }
 
   private void assertMetrics(TestPipeline f) {
@@ -132,7 +127,7 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
 
     PipelineMetrics pipelineMetrics = metrics.pipeline(pipelineName);
 
-    if (isExpectedPermanentError(f)) {
+    if (getTestType(f) == SimpleLsfExecutorTestHelper.TestType.PERMANENT_ERROR) {
       assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(0L);
       assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(PROCESS_CNT);
       assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(0L);
@@ -144,7 +139,7 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
           .isEqualTo(PROCESS_CNT);
       assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getSuccessTimeSeries()))
           .isEqualTo(0);
-    } else if (isExpectedNonPermanentError(f)) {
+    } else if (getTestType(f) == SimpleLsfExecutorTestHelper.TestType.NON_PERMANENT_ERROR) {
       assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(0L);
       assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(PROCESS_CNT * (1 + RETRY_CNT));
       assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(0L);
@@ -178,7 +173,7 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
     assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);
-    if (!isExpectedError(f)) {
+    if (getTestType(f) == SimpleLsfExecutorTestHelper.TestType.SUCCESS) {
       assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.COMPLETED);
     } else {
       assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.FAILED);
@@ -188,56 +183,17 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
   }
 
   private void assertStageEntity(TestPipeline f, String processId) {
-    String pipelineName = f.pipelineName();
-
-    StageEntity stageEntity =
-        stageService.getSavedStage(f.pipelineName(), processId, f.stageName()).get();
-    assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
-    assertThat(stageEntity.getProcessId()).isEqualTo(processId);
-    if (isExpectedNonPermanentError(f)) {
-      assertThat(stageEntity.getExecutionCount()).isEqualTo(RETRY_CNT + 1);
-    } else {
-      assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
-    }
-    assertThat(stageEntity.getStartTime()).isNotNull();
-    assertThat(stageEntity.getEndTime()).isAfter(stageEntity.getStartTime());
-    assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.SimpleLsfExecutor");
-    assertThat(stageEntity.getExecutorData()).contains("  \"cmd\" : \"" + f.cmd() + "\"");
-    assertThat(stageEntity.getExecutorData()).contains("  \"jobId\" : \"");
-    assertThat(stageEntity.getExecutorData()).contains("  \"outFile\" : \"");
-    assertThat(stageEntity.getExecutorParams())
-        .isEqualTo(
-            "{\n"
-                + "  \"timeout\" : 180000,\n"
-                + "  \"maximumRetries\" : "
-                + RETRY_CNT
-                + ",\n"
-                + "  \"immediateRetries\" : "
-                + RETRY_CNT
-                + ",\n"
-                + "  \"host\" : \"noah-login\",\n"
-                + "  \"workDir\" : \"pipelite-test\",\n"
-                + (isExpectedPermanentError(f)
-                    ? "  \"logBytes\" : 1048576,\n"
-                        + "  \"permanentErrors\" : [ "
-                        + f.exitCode()
-                        + " ]\n"
-                    : "  \"logBytes\" : 1048576\n")
-                + "}");
-    if (isExpectedError(f)) {
-      assertThat(stageEntity.getStageState()).isEqualTo(StageState.ERROR);
-    } else {
-      assertThat(stageEntity.getStageState()).isEqualTo(StageState.SUCCESS);
-    }
-    if (isExpectedPermanentError(f)) {
-      assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.PERMANENT_ERROR);
-    } else if (isExpectedNonPermanentError(f)) {
-      assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.EXECUTION_ERROR);
-    } else {
-      assertThat(stageEntity.getErrorType()).isNull();
-    }
-    assertThat(stageEntity.getResultParams()).contains("\"exit code\" : \"" + f.exitCode() + "\"");
-    assertThat(stageEntity.getResultParams()).contains("\"job id\" :");
+    SimpleLsfExecutorTestHelper.assertStageEntity(
+        stageService,
+        f.pipelineName(),
+        processId,
+        f.stageName(),
+        getTestType(f),
+        f.executorParams().getPermanentErrors(),
+        f.cmd(),
+        f.exitCode(),
+        RETRY_CNT,
+        RETRY_CNT);
   }
 
   private void assertPipeline(TestPipeline f) {
@@ -254,7 +210,7 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
   }
 
   @Test
-  public void runSchedules() {
+  public void runPipelines() {
     processRunnerPoolManager.createPools();
     processRunnerPoolManager.startPools();
     processRunnerPoolManager.waitPoolsToStop();

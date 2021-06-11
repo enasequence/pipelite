@@ -23,6 +23,7 @@ public abstract class SingleStageSimpleLsfScheduleTestHelper extends ScheduleTes
   private final int maximumRetries;
   private final LsfTestConfiguration lsfTestConfiguration;
   private final String stageName = "STAGE";
+  private SimpleLsfExecutorParameters executorParams;
 
   public SingleStageSimpleLsfScheduleTestHelper(
       String cron,
@@ -49,7 +50,7 @@ public abstract class SingleStageSimpleLsfScheduleTestHelper extends ScheduleTes
         .maximumRetries(maximumRetries)
         .immediateRetries(immediateRetries);
     testExecutorParams(executorParamsBuilder);
-    SimpleLsfExecutorParameters executorParams = executorParamsBuilder.build();
+    executorParams = executorParamsBuilder.build();
     builder.execute(stageName).withSimpleLsfExecutor(cmd, executorParams);
   }
 
@@ -66,5 +67,9 @@ public abstract class SingleStageSimpleLsfScheduleTestHelper extends ScheduleTes
 
   public String stageName() {
     return stageName;
+  }
+
+  public SimpleLsfExecutorParameters executorParams() {
+    return executorParams;
   }
 }

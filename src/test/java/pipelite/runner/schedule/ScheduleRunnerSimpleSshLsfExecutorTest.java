@@ -27,7 +27,7 @@ import pipelite.configuration.ServiceConfiguration;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
-import pipelite.entity.StageEntity;
+import pipelite.helper.SimpleLsfExecutorTestHelper;
 import pipelite.helper.SingleStageSimpleLsfScheduleTestHelper;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
@@ -38,8 +38,6 @@ import pipelite.service.ProcessService;
 import pipelite.service.RunnerService;
 import pipelite.service.ScheduleService;
 import pipelite.service.StageService;
-import pipelite.stage.StageState;
-import pipelite.stage.executor.ErrorType;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 
 @SpringBootTest(
@@ -125,16 +123,14 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
     }
   }
 
-  private boolean isExpectedError(TestSchedule testSchedule) {
-    return isExpectedPermanentError(testSchedule) || isExpectedNonPermanentError(testSchedule);
-  }
-
-  private boolean isExpectedPermanentError(TestSchedule testSchedule) {
-    return testSchedule instanceof PermanentErrorSchedule;
-  }
-
-  private boolean isExpectedNonPermanentError(TestSchedule testSchedule) {
-    return testSchedule instanceof NonPermanentErrorSchedule;
+  private SimpleLsfExecutorTestHelper.TestType getTestType(TestSchedule testSchedule) {
+    if (testSchedule instanceof PermanentErrorSchedule) {
+      return SimpleLsfExecutorTestHelper.TestType.PERMANENT_ERROR;
+    }
+    if (testSchedule instanceof NonPermanentErrorSchedule) {
+      return SimpleLsfExecutorTestHelper.TestType.NON_PERMANENT_ERROR;
+    }
+    return SimpleLsfExecutorTestHelper.TestType.SUCCESS;
   }
 
   private void deleteSchedule(TestSchedule testSchedule) {
@@ -149,7 +145,7 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
 
     PipelineMetrics pipelineMetrics = metrics.pipeline(pipelineName);
 
-    if (isExpectedPermanentError(f)) {
+    if (getTestType(f) == SimpleLsfExecutorTestHelper.TestType.PERMANENT_ERROR) {
       assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(0L);
       assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(PROCESS_CNT);
       assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(0L);
@@ -161,7 +157,7 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
           .isEqualTo(PROCESS_CNT);
       assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getSuccessTimeSeries()))
           .isEqualTo(0);
-    } else if (isExpectedNonPermanentError(f)) {
+    } else if (getTestType(f) == SimpleLsfExecutorTestHelper.TestType.NON_PERMANENT_ERROR) {
       assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(0L);
       assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(PROCESS_CNT * (1 + RETRY_CNT));
       assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(0L);
@@ -208,7 +204,8 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
     assertThat(scheduleEntity.getExecutionCount()).isEqualTo(PROCESS_CNT);
     assertThat(scheduleEntity.getStartTime()).isNotNull();
     assertThat(scheduleEntity.getEndTime()).isAfter(scheduleEntity.getStartTime());
-    if (isExpectedError(f)) {
+    if (getTestType(f) == SimpleLsfExecutorTestHelper.TestType.NON_PERMANENT_ERROR
+        || getTestType(f) == SimpleLsfExecutorTestHelper.TestType.PERMANENT_ERROR) {
       assertThat(scheduleEntity.getLastFailed()).isAfter(scheduleEntity.getStartTime());
       assertThat(scheduleEntity.getLastCompleted()).isNull();
       assertThat(scheduleEntity.getStreakFailed()).isEqualTo(PROCESS_CNT);
@@ -228,7 +225,7 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
     assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);
-    if (!isExpectedError(f)) {
+    if (getTestType(f) == SimpleLsfExecutorTestHelper.TestType.SUCCESS) {
       assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.COMPLETED);
     } else {
       assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.FAILED);
@@ -238,56 +235,17 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
   }
 
   private void assertStageEntity(TestSchedule f, String processId) {
-    String pipelineName = f.pipelineName();
-
-    StageEntity stageEntity =
-        stageService.getSavedStage(f.pipelineName(), processId, f.stageName()).get();
-    assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
-    assertThat(stageEntity.getProcessId()).isEqualTo(processId);
-    if (isExpectedNonPermanentError(f)) {
-      assertThat(stageEntity.getExecutionCount()).isEqualTo(RETRY_CNT + 1);
-    } else {
-      assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
-    }
-    assertThat(stageEntity.getStartTime()).isNotNull();
-    assertThat(stageEntity.getEndTime()).isAfter(stageEntity.getStartTime());
-    assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.SimpleLsfExecutor");
-    assertThat(stageEntity.getExecutorData()).contains("  \"cmd\" : \"" + f.cmd() + "\"");
-    assertThat(stageEntity.getExecutorData()).contains("  \"jobId\" : \"");
-    assertThat(stageEntity.getExecutorData()).contains("  \"outFile\" : \"");
-    assertThat(stageEntity.getExecutorParams())
-        .isEqualTo(
-            "{\n"
-                + "  \"timeout\" : 180000,\n"
-                + "  \"maximumRetries\" : "
-                + RETRY_CNT
-                + ",\n"
-                + "  \"immediateRetries\" : "
-                + RETRY_CNT
-                + ",\n"
-                + "  \"host\" : \"noah-login\",\n"
-                + "  \"workDir\" : \"pipelite-test\",\n"
-                + (isExpectedPermanentError(f)
-                    ? "  \"logBytes\" : 1048576,\n"
-                        + "  \"permanentErrors\" : [ "
-                        + f.exitCode()
-                        + " ]\n"
-                    : "  \"logBytes\" : 1048576\n")
-                + "}");
-    if (isExpectedError(f)) {
-      assertThat(stageEntity.getStageState()).isEqualTo(StageState.ERROR);
-    } else {
-      assertThat(stageEntity.getStageState()).isEqualTo(StageState.SUCCESS);
-    }
-    if (isExpectedPermanentError(f)) {
-      assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.PERMANENT_ERROR);
-    } else if (isExpectedNonPermanentError(f)) {
-      assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.EXECUTION_ERROR);
-    } else {
-      assertThat(stageEntity.getErrorType()).isNull();
-    }
-    assertThat(stageEntity.getResultParams()).contains("\"exit code\" : \"" + f.exitCode() + "\"");
-    assertThat(stageEntity.getResultParams()).contains("\"job id\" :");
+    SimpleLsfExecutorTestHelper.assertStageEntity(
+        stageService,
+        f.pipelineName(),
+        processId,
+        f.stageName(),
+        getTestType(f),
+        f.executorParams().getPermanentErrors(),
+        f.cmd(),
+        f.exitCode(),
+        RETRY_CNT,
+        RETRY_CNT);
   }
 
   private void assertSchedule(TestSchedule f) {
