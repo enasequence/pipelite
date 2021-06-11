@@ -136,7 +136,7 @@ public class TestExecutor extends AbstractExecutor<ExecutorParameters> {
       boolean isFirstExecution = startTime == null;
       if (isFirstExecution) {
         startTime = ZonedDateTime.now();
-        return StageExecutorResult.active();
+        return StageExecutorResult.submitted();
       }
       if (executionTime != null) {
         if (ZonedDateTime.now().isBefore(startTime.plus(executionTime))) {

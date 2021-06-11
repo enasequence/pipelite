@@ -35,6 +35,7 @@ public class StageRunner {
   private final Stage stage;
   private ZonedDateTime startTime;
   private final ZonedDateTime timeout;
+  private StageExecutorResult executorResult;
 
   public StageRunner(
       PipeliteServices pipeliteServices,
@@ -134,18 +135,17 @@ public class StageRunner {
   }
 
   private void executeStage(StageRunnerResultCallback resultCallback) {
-    StageExecutorResult result;
     try {
-      result = stage.execute(pipelineName, process.getProcessId());
+      executorResult = stage.execute(pipelineName, process.getProcessId());
 
-      if (result.isActive() && ZonedDateTime.now().isAfter(timeout)) {
+      if (executorResult.isActive() && ZonedDateTime.now().isAfter(timeout)) {
         logContext(log.atSevere())
             .log("Maximum stage execution time exceeded. Terminating stage execution.");
         stage.getExecutor().terminate();
-        result = StageExecutorResult.timeoutError();
+        executorResult = StageExecutorResult.timeoutError();
       }
     } catch (Exception ex) {
-      result = StageExecutorResult.internalError(ex);
+      executorResult = StageExecutorResult.internalError(ex);
       pipeliteServices
           .internalError()
           .saveInternalError(
@@ -157,16 +157,16 @@ public class StageRunner {
               ex);
     }
 
-    if (result.isSubmitted()) {
+    if (executorResult.isSubmitted()) {
       logContext(log.atFine()).log("Started asynchronous stage execution");
       pipeliteServices.stage().startAsyncExecution(stage);
-    } else if (result.isActive()) {
+    } else if (executorResult.isActive()) {
       logContext(log.atFine()).log("Waiting asynchronous stage execution to complete");
-    } else if (result.isSuccess() || result.isError()) {
+    } else if (executorResult.isSuccess() || executorResult.isError()) {
       logContext(log.atFine())
-          .log("Stage execution " + (result.isSuccess() ? "succeeded" : "failed"));
-      endStageExecution(stage, result);
-      resultCallback.accept(result);
+          .log("Stage execution " + (executorResult.isSuccess() ? "succeeded" : "failed"));
+      endStageExecution(stage, executorResult);
+      resultCallback.accept(executorResult);
     }
   }
 
@@ -180,6 +180,18 @@ public class StageRunner {
 
   public void terminate() {
     stage.getExecutor().terminate();
+  }
+
+  public Process getProcess() {
+    return process;
+  }
+
+  public Stage getStage() {
+    return stage;
+  }
+
+  public StageExecutorResult getExecutorResult() {
+    return executorResult;
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {
