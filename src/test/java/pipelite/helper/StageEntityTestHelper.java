@@ -78,11 +78,11 @@ public class StageEntityTestHelper {
   }
 
   public static void assertCompletedTestExecutorStageEntity(
+      TestType testType,
       StageService stageService,
       String pipelineName,
       String processId,
       String stageName,
-      TestType testType,
       int immediateRetries,
       int maximumRetries) {
 
@@ -158,11 +158,11 @@ public class StageEntityTestHelper {
   }
 
   public static void assertCompletedSimpleLsfExecutorStageEntity(
+      TestType testType,
       StageService stageService,
       String pipelineName,
       String processId,
       String stageName,
-      TestType testType,
       List<Integer> permanentErrors,
       String cmd,
       int exitCode,

@@ -26,14 +26,9 @@ import pipelite.PipeliteTestConfigWithManager;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.entity.ScheduleEntity;
-import pipelite.helper.ProcessEntityTestHelper;
-import pipelite.helper.SingleStageSimpleLsfScheduleTestHelper;
-import pipelite.helper.StageEntityTestHelper;
-import pipelite.helper.TestType;
+import pipelite.helper.*;
 import pipelite.manager.ProcessRunnerPoolManager;
-import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
-import pipelite.metrics.TimeSeriesMetrics;
 import pipelite.service.ProcessService;
 import pipelite.service.RunnerService;
 import pipelite.service.ScheduleService;
@@ -63,7 +58,8 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
   @Autowired private List<TestSchedule> testSchedules;
 
   private static final int PROCESS_CNT = 2;
-  private static final int RETRY_CNT = 3;
+  private static final int IMMEDIATE_RETRIES = 3;
+  private static final int MAXIMUM_RETRIES = 3;
   private static final int SCHEDULER_SECONDS = 1;
 
   @Profile("ScheduleRunnerSimpleSshLsfExecutorTest")
@@ -92,8 +88,8 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
       super(
           "0/" + SCHEDULER_SECONDS + " * * * * ?",
           exitCode,
-          RETRY_CNT,
-          RETRY_CNT,
+          IMMEDIATE_RETRIES,
+          MAXIMUM_RETRIES,
           lsfTestConfiguration);
     }
   }
@@ -141,47 +137,8 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
   }
 
   private void assertMetrics(TestSchedule f) {
-    String pipelineName = f.pipelineName();
-
-    PipelineMetrics pipelineMetrics = metrics.pipeline(pipelineName);
-
-    if (getTestType(f) == TestType.PERMANENT_ERROR) {
-      assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(0L);
-      assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(PROCESS_CNT);
-      assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(0L);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getFailedTimeSeries()))
-          .isEqualTo(PROCESS_CNT);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getCompletedTimeSeries()))
-          .isEqualTo(0);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getFailedTimeSeries()))
-          .isEqualTo(PROCESS_CNT);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getSuccessTimeSeries()))
-          .isEqualTo(0);
-    } else if (getTestType(f) == TestType.NON_PERMANENT_ERROR) {
-      assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(0L);
-      assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(PROCESS_CNT * (1 + RETRY_CNT));
-      assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(0L);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getFailedTimeSeries()))
-          .isEqualTo(PROCESS_CNT);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getCompletedTimeSeries()))
-          .isEqualTo(0);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getFailedTimeSeries()))
-          .isEqualTo(PROCESS_CNT * (1 + RETRY_CNT));
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getSuccessTimeSeries()))
-          .isEqualTo(0);
-    } else {
-      assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(PROCESS_CNT);
-      assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(0L);
-      assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(PROCESS_CNT);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getFailedTimeSeries()))
-          .isEqualTo(0);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getCompletedTimeSeries()))
-          .isEqualTo(PROCESS_CNT);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getFailedTimeSeries()))
-          .isEqualTo(0);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getSuccessTimeSeries()))
-          .isEqualTo(PROCESS_CNT);
-    }
+    MetricsTestHelper.assertCompletedMetrics(
+        getTestType(f), metrics, f.pipelineName(), PROCESS_CNT, IMMEDIATE_RETRIES, MAXIMUM_RETRIES);
   }
 
   private void assertScheduleEntity(List<ScheduleEntity> scheduleEntities, TestSchedule f) {
@@ -225,16 +182,16 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
 
   private void assertStageEntity(TestSchedule f, String processId) {
     StageEntityTestHelper.assertCompletedSimpleLsfExecutorStageEntity(
+        getTestType(f),
         stageService,
         f.pipelineName(),
         processId,
         f.stageName(),
-        getTestType(f),
         f.executorParams().getPermanentErrors(),
         f.cmd(),
         f.exitCode(),
-        RETRY_CNT,
-        RETRY_CNT);
+        IMMEDIATE_RETRIES,
+        MAXIMUM_RETRIES);
   }
 
   private void assertSchedule(TestSchedule f) {

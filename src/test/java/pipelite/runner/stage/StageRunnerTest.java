@@ -251,11 +251,11 @@ public class StageRunnerTest {
           // AssertCompletedStageEntity
           ((pipelineName, processId, stageName) ->
               StageEntityTestHelper.assertCompletedTestExecutorStageEntity(
+                  testType,
                   pipeliteServices.stage(),
                   pipelineName,
                   processId,
                   stageName,
-                  testType,
                   IMMEDIATE_RETRIES,
                   MAXIMUM_RETRIES)));
     }
@@ -275,11 +275,11 @@ public class StageRunnerTest {
           // AssertCompletedStageEntity
           ((pipelineName, processId, stageName) ->
               StageEntityTestHelper.assertCompletedTestExecutorStageEntity(
+                  testType,
                   pipeliteServices.stage(),
                   pipelineName,
                   processId,
                   stageName,
-                  testType,
                   IMMEDIATE_RETRIES,
                   MAXIMUM_RETRIES)));
     }
@@ -311,11 +311,11 @@ public class StageRunnerTest {
           // AssertCompletedStageEntity
           ((pipelineName, processId, stageName) -> {
             StageEntityTestHelper.assertCompletedSimpleLsfExecutorStageEntity(
+                testType,
                 pipeliteServices.stage(),
                 pipelineName,
                 processId,
                 stageName,
-                testType,
                 Collections.emptyList(),
                 getCmd(isError),
                 getExitCode(isError),
