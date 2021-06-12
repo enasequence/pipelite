@@ -224,7 +224,7 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
   }
 
   private void assertStageEntity(TestSchedule f, String processId) {
-    StageEntityTestHelper.assertSimpleLsfExecutorStageEntity(
+    StageEntityTestHelper.assertCompletedSimpleLsfExecutorStageEntity(
         stageService,
         f.pipelineName(),
         processId,

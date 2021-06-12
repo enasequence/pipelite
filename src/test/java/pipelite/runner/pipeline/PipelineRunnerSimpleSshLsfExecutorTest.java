@@ -172,7 +172,7 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
   }
 
   private void assertStageEntity(TestPipeline f, String processId) {
-    StageEntityTestHelper.assertSimpleLsfExecutorStageEntity(
+    StageEntityTestHelper.assertCompletedSimpleLsfExecutorStageEntity(
         stageService,
         f.pipelineName(),
         processId,

@@ -22,7 +22,22 @@ import pipelite.stage.executor.ErrorType;
 public class StageEntityTestHelper {
   private StageEntityTestHelper() {}
 
-  private static StageEntity assertAnyExecutorStageEntity(
+  private static StageEntity assertSubmittedExecutorStageEntity(
+      StageService stageService, String pipelineName, String processId, String stageName) {
+
+    StageEntity stageEntity = stageService.getSavedStage(pipelineName, processId, stageName).get();
+    assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
+    assertThat(stageEntity.getProcessId()).isEqualTo(processId);
+    assertThat(stageEntity.getStageName()).isEqualTo(stageName);
+    assertThat(stageEntity.getStageState()).isEqualTo(StageState.ACTIVE);
+    assertThat(stageEntity.getErrorType()).isNull();
+    assertThat(stageEntity.getExecutionCount()).isZero();
+    assertThat(stageEntity.getStartTime()).isNotNull();
+    assertThat(stageEntity.getEndTime()).isNull();
+    return stageEntity;
+  }
+
+  private static StageEntity assertCompletedExecutorStageEntity(
       StageService stageService,
       String pipelineName,
       String processId,
@@ -42,8 +57,10 @@ public class StageEntityTestHelper {
     } else {
       expectedStageState = StageState.SUCCESS;
     }
-    int expectedExecutionCount =
+    int expectedExecutionCountBasedOnImmediateRetries =
         testType == TestType.NON_PERMANENT_ERROR ? immediateRetries + 1 : 1;
+    int expectedExecutionCountBasedOnMaximumRetries =
+        testType == TestType.NON_PERMANENT_ERROR ? maximumRetries + 1 : 1;
 
     StageEntity stageEntity = stageService.getSavedStage(pipelineName, processId, stageName).get();
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
@@ -51,13 +68,16 @@ public class StageEntityTestHelper {
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
     assertThat(stageEntity.getStageState()).isEqualTo(expectedStageState);
     assertThat(stageEntity.getErrorType()).isEqualTo(expectedErrorType);
-    assertThat(stageEntity.getExecutionCount()).isEqualTo(expectedExecutionCount);
+    assertThat(stageEntity.getExecutionCount())
+        .isIn(
+            expectedExecutionCountBasedOnImmediateRetries,
+            expectedExecutionCountBasedOnMaximumRetries);
     assertThat(stageEntity.getStartTime()).isNotNull();
     assertThat(stageEntity.getEndTime()).isAfterOrEqualTo(stageEntity.getStartTime());
     return stageEntity;
   }
 
-  public static void assertTestExecutorStageEntity(
+  public static void assertCompletedTestExecutorStageEntity(
       StageService stageService,
       String pipelineName,
       String processId,
@@ -67,7 +87,7 @@ public class StageEntityTestHelper {
       int maximumRetries) {
 
     StageEntity stageEntity =
-        assertAnyExecutorStageEntity(
+        assertCompletedExecutorStageEntity(
             stageService,
             pipelineName,
             processId,
@@ -83,28 +103,12 @@ public class StageEntityTestHelper {
         .contains("\"immediateRetries\" : " + immediateRetries);
   }
 
-  public static void assertSimpleLsfExecutorStageEntity(
-      StageService stageService,
-      String pipelineName,
-      String processId,
-      String stageName,
-      TestType testType,
+  private static void assertSimpleLsfExecutorStageEntity(
       List<Integer> permanentErrors,
       String cmd,
-      int exitCode,
       int immediateRetries,
-      int maximumRetries) {
-
-    StageEntity stageEntity =
-        assertAnyExecutorStageEntity(
-            stageService,
-            pipelineName,
-            processId,
-            stageName,
-            testType,
-            immediateRetries,
-            maximumRetries);
-
+      int maximumRetries,
+      StageEntity stageEntity) {
     assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.SimpleLsfExecutor");
 
     assertThat(stageEntity.getExecutorData()).contains("  \"cmd\" : \"" + cmd + "\"");
@@ -134,6 +138,49 @@ public class StageEntityTestHelper {
                         + " ]\n"
                     : "  \"logBytes\" : 1048576\n")
                 + "}");
+  }
+
+  public static void assertSubmittedSimpleLsfExecutorStageEntity(
+      StageService stageService,
+      String pipelineName,
+      String processId,
+      String stageName,
+      List<Integer> permanentErrors,
+      String cmd,
+      int immediateRetries,
+      int maximumRetries) {
+
+    StageEntity stageEntity =
+        assertSubmittedExecutorStageEntity(stageService, pipelineName, processId, stageName);
+
+    assertSimpleLsfExecutorStageEntity(
+        permanentErrors, cmd, immediateRetries, maximumRetries, stageEntity);
+  }
+
+  public static void assertCompletedSimpleLsfExecutorStageEntity(
+      StageService stageService,
+      String pipelineName,
+      String processId,
+      String stageName,
+      TestType testType,
+      List<Integer> permanentErrors,
+      String cmd,
+      int exitCode,
+      int immediateRetries,
+      int maximumRetries) {
+
+    StageEntity stageEntity =
+        assertCompletedExecutorStageEntity(
+            stageService,
+            pipelineName,
+            processId,
+            stageName,
+            testType,
+            immediateRetries,
+            maximumRetries);
+
+    assertSimpleLsfExecutorStageEntity(
+        permanentErrors, cmd, immediateRetries, maximumRetries, stageEntity);
 
     assertThat(stageEntity.getResultParams()).contains("\"exit code\" : \"" + exitCode + "\"");
     assertThat(stageEntity.getResultParams()).contains("\"job id\" :");
