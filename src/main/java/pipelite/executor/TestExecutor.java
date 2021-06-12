@@ -14,7 +14,6 @@ import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.function.Function;
 import org.springframework.util.Assert;
-import pipelite.exception.PipeliteException;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorState;
@@ -29,7 +28,6 @@ public class TestExecutor extends AbstractExecutor<ExecutorParameters> {
   private final Function<StageExecutorRequest, StageExecutorResult> callback;
   private ZonedDateTime startTime;
   private final Duration executionTime;
-  private boolean complete;
 
   private enum TestExecutorType {
     ASYNC_EXECUTOR,
@@ -119,11 +117,7 @@ public class TestExecutor extends AbstractExecutor<ExecutorParameters> {
 
   @Override
   public StageExecutorResult execute(StageExecutorRequest request) {
-    if (complete) {
-      throw new PipeliteException("Unexpected test executor execute call");
-    }
     if (executorType == TestExecutorType.SYNC_EXECUTOR) {
-      complete = true;
       if (callback != null) {
         return callback.apply(request);
       } else {
@@ -143,7 +137,6 @@ public class TestExecutor extends AbstractExecutor<ExecutorParameters> {
           return StageExecutorResult.active();
         }
       }
-      complete = true;
       if (callback != null) {
         return callback.apply(request);
       } else {

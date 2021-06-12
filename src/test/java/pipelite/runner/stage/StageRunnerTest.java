@@ -10,7 +10,6 @@
  */
 package pipelite.runner.stage;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.spy;
 
@@ -18,7 +17,6 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
@@ -29,7 +27,8 @@ import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.helper.CreateProcessSingleStageSimpleLsfPipelineTestHelper;
-import pipelite.helper.SimpleLsfExecutorTestHelper;
+import pipelite.helper.StageEntityTestHelper;
+import pipelite.helper.TestType;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
@@ -57,7 +56,7 @@ public class StageRunnerTest {
     Process create(StageExecutorState executorState, int immediateRetries, int maximumRetries);
   }
 
-  private Process singleStageProcessSyncTestExecutorFactory(
+  private Process createSingleStageProcessSyncTestExecutor(
       StageExecutorState executorState, int immediateRetries, int maximumRetries) {
     String processId = UniqueStringGenerator.randomProcessId(StageRunnerTest.class);
     return new ProcessBuilder(processId)
@@ -71,7 +70,7 @@ public class StageRunnerTest {
         .build();
   }
 
-  private Process singleStageProcessAsyncTestExecutorFactory(
+  private Process createSingleStageProcessAsyncTestExecutor(
       StageExecutorState executorState, int immediateRetries, int maximumRetries) {
     String processId = UniqueStringGenerator.randomProcessId(StageRunnerTest.class);
     return new ProcessBuilder(processId)
@@ -96,7 +95,7 @@ public class StageRunnerTest {
     }
   }
 
-  private Process singleStageProcessSimpleLsfExecutorFactory(
+  private Process createSingleStageProcessSimpleLsfExecutor(
       StageExecutorState executorState, int immediateRetries, int maximumRetries) {
     SimpleLsfPipeline pipeline =
         new SimpleLsfPipeline(
@@ -126,6 +125,10 @@ public class StageRunnerTest {
     return process;
   }
 
+  private interface SimulateExecutionFirstIterationFactory {
+    StageExecutorResult create(Process process, StageRunner stageRunner);
+  }
+
   private StageExecutorResult simulateSyncExecutionFirstIteration(
       Process process, StageRunner stageRunner) {
     process.getProcessEntity().startExecution();
@@ -138,7 +141,8 @@ public class StageRunnerTest {
     return result.get();
   }
 
-  private void simulateAsyncExecutionFirstIteration(Process process, StageRunner stageRunner) {
+  private StageExecutorResult simulateAsyncExecutionFirstIteration(
+      Process process, StageRunner stageRunner) {
     process.getProcessEntity().startExecution();
     Stage stage = stageRunner.getStage();
     stage.getStageEntity().startExecution(stage);
@@ -148,6 +152,8 @@ public class StageRunnerTest {
     assertThat(result.get()).isNull();
     assertThat(stageRunner.getExecutorResult().getExecutorState())
         .isEqualTo(StageExecutorState.SUBMITTED);
+    assertThat(stageRunner.getExecutorResult().getStageState()).isEqualTo(StageState.ACTIVE);
+    return StageExecutorResult.submitted();
   }
 
   private StageExecutorResult simulateExecutionNextIterations(StageRunner stageRunner) {
@@ -165,42 +171,12 @@ public class StageRunnerTest {
     }
   }
 
-  private interface StageEntityAssert {
-    void doAssert(String pipelineName, String processId, StageEntity stageEntity);
-  }
-
-  private void assertStageEntity(
-      StageExecutorState executorState,
-      String pipelineName,
-      String processId,
-      String stageName,
-      StageEntityAssert stageEntityAssert) {
-    // General asserts
-    StageEntity stageEntity =
-        pipeliteServices.stage().getSavedStage(pipelineName, processId, stageName).get();
-    assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
-    assertThat(stageEntity.getProcessId()).isEqualTo(processId);
-    assertThat(stageEntity.getStageName()).isEqualTo(stageName);
-    assertThat(stageEntity.getStageState()).isEqualTo(executorState.toStageState());
-    if (stageEntity.getStageState() == StageState.ERROR) {
-      assertThat(stageEntity.getExecutionCount()).isEqualTo(RETRY_CNT + 1);
-    } else {
-      assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
-    }
-    assertThat(stageEntity.getStartTime()).isNotNull();
-    assertThat(stageEntity.getEndTime()).isAfterOrEqualTo(stageEntity.getStartTime());
-    assertThat(stageEntity.getExecutorParams()).contains("\"maximumRetries\" : " + RETRY_CNT);
-    assertThat(stageEntity.getExecutorParams()).contains("\"immediateRetries\" : " + RETRY_CNT);
-
-    // Executor specific asserts
-    stageEntityAssert.doAssert(pipelineName, processId, stageEntity);
-  }
-
-  private void simulateSyncExecution(
+  private void simulateExecution(
       StageExecutorState executorState,
       int immediateRetries,
       int maximumRetries,
       SingleStageProcessFactory singleStageProcessFactory,
+      SimulateExecutionFirstIterationFactory simulateExecutionFirstIterationFactory,
       StageEntityAssert stageEntityAssert) {
     String serviceName = UniqueStringGenerator.randomServiceName(StageRunnerTest.class);
     String pipelineName = UniqueStringGenerator.randomPipelineName(StageRunnerTest.class);
@@ -220,78 +196,56 @@ public class StageRunnerTest {
                 pipeliteServices, pipeliteMetrics, serviceName, pipelineName, process, stage));
 
     // Run first iteration
-    StageExecutorResult result = simulateSyncExecutionFirstIteration(process, stageRunner);
+    StageExecutorResult result =
+        simulateExecutionFirstIterationFactory.create(process, stageRunner);
 
     // Run next iterations
-    if (result.isError()) {
+    if (result.isSubmitted()
+        || (result.isError()
+            && DependencyResolver.isImmediatelyExecutableStage(
+                stageRunner.getProcess().getStages(),
+                Collections.emptyList(),
+                stageRunner.getStage()))) {
       result = simulateExecutionNextIterations(stageRunner);
     }
 
     assertThat(result.getExecutorState()).isEqualTo(executorState);
     assertThat(result.getStageState()).isEqualTo(executorState.toStageState());
 
-    assertStageEntity(
-        executorState,
-        pipelineName,
-        process.getProcessId(),
-        stage.getStageName(),
-        stageEntityAssert);
+    TestType testType = result.isError() ? TestType.NON_PERMANENT_ERROR : TestType.SUCCESS;
+
+    // ProcessEntity is not created in this test
+
+    stageEntityAssert.assertStageEntity(
+        pipelineName, process.getProcessId(), stage.getStageName(), testType);
   }
 
-  private void simulateAsyncExecution(
-      StageExecutorState executorState,
-      int immediateRetries,
-      int maximumRetries,
-      SingleStageProcessFactory singleStageProcessFactory,
-      StageEntityAssert stageEntityAssert) {
-    String serviceName = UniqueStringGenerator.randomServiceName(StageRunnerTest.class);
-    String pipelineName = UniqueStringGenerator.randomPipelineName(StageRunnerTest.class);
-
-    Process process =
-        simulateProcessCreation(
-            singleStageProcessFactory,
-            executorState,
-            pipelineName,
-            immediateRetries,
-            maximumRetries);
-
-    Stage stage = process.getStages().get(0);
-    StageRunner stageRunner =
-        spy(
-            new StageRunner(
-                pipeliteServices, pipeliteMetrics, serviceName, pipelineName, process, stage));
-
-    // Run first iteration
-    simulateAsyncExecutionFirstIteration(process, stageRunner);
-
-    assertThat(stage.getStageEntity().getStageState()).isEqualTo(StageState.ACTIVE);
-
-    // Run next iterations
-    StageExecutorResult result = simulateExecutionNextIterations(stageRunner);
-
-    assertThat(result.getExecutorState()).isEqualTo(executorState);
-    assertThat(result.getStageState()).isEqualTo(executorState.toStageState());
-
-    assertStageEntity(
-        executorState,
-        pipelineName,
-        process.getProcessId(),
-        stage.getStageName(),
-        stageEntityAssert);
+  private interface StageEntityAssert {
+    void assertStageEntity(
+        String pipelineName, String processId, String stageName, TestType testType);
   }
 
   @Test
   public void testExecutionUsingSyncTestExecutor() {
     for (StageExecutorState executorState :
         EnumSet.of(StageExecutorState.SUCCESS, StageExecutorState.ERROR)) {
-      simulateSyncExecution(
+      simulateExecution(
           executorState,
           RETRY_CNT,
           RETRY_CNT,
-          (executorState2, immediateRetries2, maximumRetries2) ->
-              singleStageProcessSyncTestExecutorFactory(
-                  executorState2, immediateRetries2, maximumRetries2),
-          ((pipelineName, processId, stageEntity) -> {}));
+          (executorState2, immediateRetries, maximumRetries) ->
+              createSingleStageProcessSyncTestExecutor(
+                  executorState2, immediateRetries, maximumRetries),
+          (process, stageRunner) -> simulateSyncExecutionFirstIteration(process, stageRunner),
+          ((pipelineName, processId, stageName, testType) ->
+              StageEntityTestHelper.assertTestExecutorStageEntity(
+                  pipeliteServices.stage(),
+                  pipelineName,
+                  processId,
+                  stageName,
+                  testType,
+                  RETRY_CNT,
+                  RETRY_CNT)));
     }
   }
 
@@ -299,14 +253,23 @@ public class StageRunnerTest {
   public void testExecutionUsingAsyncTestExecutor() {
     for (StageExecutorState executorState :
         EnumSet.of(StageExecutorState.SUCCESS, StageExecutorState.ERROR)) {
-      simulateAsyncExecution(
+      simulateExecution(
           executorState,
           RETRY_CNT,
           RETRY_CNT,
-          (executorState2, immediateRetries2, maximumRetries2) ->
-              singleStageProcessAsyncTestExecutorFactory(
-                  executorState2, immediateRetries2, maximumRetries2),
-          ((pipelineName, processId, stageEntity) -> {}));
+          (executorState2, immediateRetries, maximumRetries) ->
+              createSingleStageProcessAsyncTestExecutor(
+                  executorState2, immediateRetries, maximumRetries),
+          (process, stageRunner) -> simulateAsyncExecutionFirstIteration(process, stageRunner),
+          ((pipelineName, processId, stageName, testType) ->
+              StageEntityTestHelper.assertTestExecutorStageEntity(
+                  pipeliteServices.stage(),
+                  pipelineName,
+                  processId,
+                  stageName,
+                  testType,
+                  RETRY_CNT,
+                  RETRY_CNT)));
     }
   }
 
@@ -315,25 +278,21 @@ public class StageRunnerTest {
   public void testExecutionUsingSimpleLsfExecutor() {
     for (StageExecutorState executorState :
         EnumSet.of(StageExecutorState.SUCCESS, StageExecutorState.ERROR)) {
-      simulateAsyncExecution(
+      simulateExecution(
           executorState,
           RETRY_CNT,
           RETRY_CNT,
           (executorState2, immediateRetries2, maximumRetries2) ->
-              singleStageProcessSimpleLsfExecutorFactory(
+              createSingleStageProcessSimpleLsfExecutor(
                   executorState2, immediateRetries2, maximumRetries2),
-          ((pipelineName, processId, stageEntity) -> {
-            // Executor specific assert
-            boolean isError = stageEntity.getStageState().equals(StageState.ERROR);
-            SimpleLsfExecutorTestHelper.TestType testType =
-                isError
-                    ? SimpleLsfExecutorTestHelper.TestType.NON_PERMANENT_ERROR
-                    : SimpleLsfExecutorTestHelper.TestType.SUCCESS;
-            SimpleLsfExecutorTestHelper.assertStageEntity(
+          (process, stageRunner) -> simulateAsyncExecutionFirstIteration(process, stageRunner),
+          ((pipelineName, processId, stageName, testType) -> {
+            boolean isError = testType != TestType.SUCCESS;
+            StageEntityTestHelper.assertSimpleLsfExecutorStageEntity(
                 pipeliteServices.stage(),
                 pipelineName,
                 processId,
-                stageEntity.getStageName(),
+                stageName,
                 testType,
                 Collections.emptyList(),
                 CreateProcessSingleStageSimpleLsfPipelineTestHelper.cmd(isError ? 1 : 0),

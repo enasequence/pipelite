@@ -25,15 +25,15 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.configuration.properties.LsfTestConfiguration;
-import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
-import pipelite.helper.SimpleLsfExecutorTestHelper;
+import pipelite.helper.ProcessEntityTestHelper;
 import pipelite.helper.SingleStageSimpleLsfScheduleTestHelper;
+import pipelite.helper.StageEntityTestHelper;
+import pipelite.helper.TestType;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.TimeSeriesMetrics;
-import pipelite.process.ProcessState;
 import pipelite.service.ProcessService;
 import pipelite.service.RunnerService;
 import pipelite.service.ScheduleService;
@@ -123,14 +123,14 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
     }
   }
 
-  private SimpleLsfExecutorTestHelper.TestType getTestType(TestSchedule testSchedule) {
+  private TestType getTestType(TestSchedule testSchedule) {
     if (testSchedule instanceof PermanentErrorSchedule) {
-      return SimpleLsfExecutorTestHelper.TestType.PERMANENT_ERROR;
+      return TestType.PERMANENT_ERROR;
     }
     if (testSchedule instanceof NonPermanentErrorSchedule) {
-      return SimpleLsfExecutorTestHelper.TestType.NON_PERMANENT_ERROR;
+      return TestType.NON_PERMANENT_ERROR;
     }
-    return SimpleLsfExecutorTestHelper.TestType.SUCCESS;
+    return TestType.SUCCESS;
   }
 
   private void deleteSchedule(TestSchedule testSchedule) {
@@ -145,7 +145,7 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
 
     PipelineMetrics pipelineMetrics = metrics.pipeline(pipelineName);
 
-    if (getTestType(f) == SimpleLsfExecutorTestHelper.TestType.PERMANENT_ERROR) {
+    if (getTestType(f) == TestType.PERMANENT_ERROR) {
       assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(0L);
       assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(PROCESS_CNT);
       assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(0L);
@@ -157,7 +157,7 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
           .isEqualTo(PROCESS_CNT);
       assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getSuccessTimeSeries()))
           .isEqualTo(0);
-    } else if (getTestType(f) == SimpleLsfExecutorTestHelper.TestType.NON_PERMANENT_ERROR) {
+    } else if (getTestType(f) == TestType.NON_PERMANENT_ERROR) {
       assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(0L);
       assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(PROCESS_CNT * (1 + RETRY_CNT));
       assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(0L);
@@ -204,8 +204,8 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
     assertThat(scheduleEntity.getExecutionCount()).isEqualTo(PROCESS_CNT);
     assertThat(scheduleEntity.getStartTime()).isNotNull();
     assertThat(scheduleEntity.getEndTime()).isAfter(scheduleEntity.getStartTime());
-    if (getTestType(f) == SimpleLsfExecutorTestHelper.TestType.NON_PERMANENT_ERROR
-        || getTestType(f) == SimpleLsfExecutorTestHelper.TestType.PERMANENT_ERROR) {
+    if (getTestType(f) == TestType.NON_PERMANENT_ERROR
+        || getTestType(f) == TestType.PERMANENT_ERROR) {
       assertThat(scheduleEntity.getLastFailed()).isAfter(scheduleEntity.getStartTime());
       assertThat(scheduleEntity.getLastCompleted()).isNull();
       assertThat(scheduleEntity.getStreakFailed()).isEqualTo(PROCESS_CNT);
@@ -219,23 +219,12 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
   }
 
   private void assertProcessEntity(TestSchedule f, String processId) {
-    String pipelineName = f.pipelineName();
-
-    ProcessEntity processEntity = processService.getSavedProcess(f.pipelineName(), processId).get();
-    assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
-    assertThat(processEntity.getProcessId()).isEqualTo(processId);
-    assertThat(processEntity.getExecutionCount()).isEqualTo(1);
-    if (getTestType(f) == SimpleLsfExecutorTestHelper.TestType.SUCCESS) {
-      assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.COMPLETED);
-    } else {
-      assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.FAILED);
-    }
-    assertThat(processEntity.getStartTime()).isNotNull();
-    assertThat(processEntity.getEndTime()).isAfter(processEntity.getStartTime());
+    ProcessEntityTestHelper.assertProcessEntity(
+        processService, f.pipelineName(), processId, getTestType(f));
   }
 
   private void assertStageEntity(TestSchedule f, String processId) {
-    SimpleLsfExecutorTestHelper.assertStageEntity(
+    StageEntityTestHelper.assertSimpleLsfExecutorStageEntity(
         stageService,
         f.pipelineName(),
         processId,
