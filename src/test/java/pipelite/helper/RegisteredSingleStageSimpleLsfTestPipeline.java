@@ -12,26 +12,50 @@ package pipelite.helper;
 
 import java.time.Duration;
 import pipelite.configuration.properties.LsfTestConfiguration;
+import pipelite.helper.entity.StageEntityTestHelper;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.service.StageService;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 
-public class SingleStageSimpleLsfTestProcessFactory extends SingleStageTestProcessFactory {
+public class RegisteredSingleStageSimpleLsfTestPipeline
+    extends RegisteredSingleStageTestPipeline<RegisteredSingleStageSimpleLsfTestPipeline> {
 
   private final String cmd;
   private final int exitCode;
   private final LsfTestConfiguration lsfTestConfiguration;
   private SimpleLsfExecutorParameters executorParams;
 
-  public SingleStageSimpleLsfTestProcessFactory(
+  public RegisteredSingleStageSimpleLsfTestPipeline(
       TestType testType,
-      int processCnt,
-      int parallelism,
       int exitCode,
       int immediateRetries,
       int maximumRetries,
       LsfTestConfiguration lsfTestConfiguration) {
-    super(testType, processCnt, parallelism, immediateRetries, maximumRetries);
+    super(
+        testType,
+        immediateRetries,
+        maximumRetries,
+        (stageService, pipelineName, processId, stageName, thisPipeline) ->
+            StageEntityTestHelper.assertSubmittedSimpleLsfExecutorStageEntity(
+                stageService,
+                pipelineName,
+                processId,
+                stageName,
+                thisPipeline.executorParams().getPermanentErrors(),
+                thisPipeline.cmd(),
+                immediateRetries,
+                maximumRetries),
+        (stageService, pipelineName, processId, stageName, thisPipeline) ->
+            StageEntityTestHelper.assertCompletedSimpleLsfExecutorStageEntity(
+                testType,
+                stageService,
+                pipelineName,
+                processId,
+                stageName,
+                thisPipeline.executorParams().getPermanentErrors(),
+                thisPipeline.cmd(),
+                thisPipeline.exitCode(),
+                immediateRetries,
+                maximumRetries));
     this.cmd = cmd(exitCode);
     this.exitCode = exitCode;
     this.lsfTestConfiguration = lsfTestConfiguration;
@@ -69,33 +93,5 @@ public class SingleStageSimpleLsfTestProcessFactory extends SingleStageTestProce
 
   public SimpleLsfExecutorParameters executorParams() {
     return executorParams;
-  }
-
-  @Override
-  public void assertSubmittedStageEntity(StageService stageService, String processId) {
-    StageEntityTestHelper.assertSubmittedSimpleLsfExecutorStageEntity(
-        stageService,
-        pipelineName(),
-        processId,
-        stageName(),
-        executorParams.getPermanentErrors(),
-        cmd(),
-        immediateRetries(),
-        maximumRetries());
-  }
-
-  @Override
-  public void assertCompletedStageEntity(StageService stageService, String processId) {
-    StageEntityTestHelper.assertCompletedSimpleLsfExecutorStageEntity(
-        testType(),
-        stageService,
-        pipelineName(),
-        processId,
-        stageName(),
-        executorParams.getPermanentErrors(),
-        cmd(),
-        exitCode(),
-        immediateRetries(),
-        maximumRetries());
   }
 }

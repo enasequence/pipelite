@@ -24,9 +24,9 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.Pipeline;
 import pipelite.PipeliteTestConfigWithServices;
-import pipelite.UniqueStringGenerator;
 import pipelite.configuration.PipeliteConfiguration;
-import pipelite.helper.CreateProcessPipelineTestHelper;
+import pipelite.helper.RegisteredConfiguredTestPipeline;
+import pipelite.helper.RegisteredTestPipelineWrappingPipeline;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.runner.process.ProcessQueue;
@@ -59,62 +59,50 @@ public class PipelineRunnerProcessQueueTest {
   @Autowired private PipeliteServices pipeliteServices;
   @Autowired private PipeliteMetrics pipeliteMetrics;
 
-  private static final String PIPELINE_NAME =
-      UniqueStringGenerator.randomPipelineName(PipelineRunnerProcessQueueTest.class);
+  private static final int PARALLELISM = 10;
   private static final int PROCESS_CNT = 10;
-  private static final Duration PROCESS_QUEUE_REFRESH_FREQUENCY = Duration.ofDays(1);
   private static final AtomicInteger syncExecutionCount = new AtomicInteger();
   private static final AtomicInteger asyncExecutionCount = new AtomicInteger();
 
+  private static final class SyncRegisteredTestPipeline extends RegisteredConfiguredTestPipeline {
+    @Override
+    protected void testConfigureProcess(ProcessBuilder builder) {
+      builder
+          .execute("STAGE")
+          .withSyncTestExecutor(
+              (request) -> {
+                syncExecutionCount.incrementAndGet();
+                return StageExecutorResult.success();
+              });
+    }
+  }
+
+  private static final class AsyncRegisteredTestPipeline extends RegisteredConfiguredTestPipeline {
+    @Override
+    protected void testConfigureProcess(ProcessBuilder builder) {
+      builder
+          .execute("STAGE")
+          .withAsyncTestExecutor(
+              (request) -> {
+                asyncExecutionCount.incrementAndGet();
+                return StageExecutorResult.success();
+              });
+    }
+  }
+
   @Test
   public void sync() {
-
     Pipeline pipeline =
-        new CreateProcessPipelineTestHelper(PIPELINE_NAME, PROCESS_CNT) {
-
-          @Override
-          public int testConfigureParallelism() {
-            return PROCESS_CNT;
-          }
-
-          @Override
-          public void testConfigureProcess(ProcessBuilder builder) {
-            builder
-                .execute("STAGE")
-                .withSyncTestExecutor(
-                    (request) -> {
-                      syncExecutionCount.incrementAndGet();
-                      return StageExecutorResult.success();
-                    });
-          }
-        };
-
+        new RegisteredTestPipelineWrappingPipeline<>(
+            PARALLELISM, PROCESS_CNT, new SyncRegisteredTestPipeline());
     test(pipeline, syncExecutionCount);
   }
 
   @Test
   public void async() {
-
     Pipeline pipeline =
-        new CreateProcessPipelineTestHelper(PIPELINE_NAME, PROCESS_CNT) {
-
-          @Override
-          public int testConfigureParallelism() {
-            return PROCESS_CNT;
-          }
-
-          @Override
-          public void testConfigureProcess(ProcessBuilder builder) {
-            builder
-                .execute("STAGE")
-                .withAsyncTestExecutor(
-                    (request) -> {
-                      asyncExecutionCount.incrementAndGet();
-                      return StageExecutorResult.success();
-                    });
-          }
-        };
-
+        new RegisteredTestPipelineWrappingPipeline<>(
+            PARALLELISM, PROCESS_CNT, new AsyncRegisteredTestPipeline());
     test(pipeline, asyncExecutionCount);
   }
 

@@ -25,8 +25,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.*;
 import pipelite.exception.PipeliteException;
-import pipelite.helper.ConfigureProcessPipelineTestHelper;
-import pipelite.helper.ScheduleTestHelper;
+import pipelite.helper.RegisteredNamedTestPipeline;
 import pipelite.process.builder.ProcessBuilder;
 
 @SpringBootTest(
@@ -69,24 +68,26 @@ public class RegisteredPipelineServiceTest {
     }
   }
 
-  public static class TestPipeline extends ConfigureProcessPipelineTestHelper {
+  public static class TestPipeline extends RegisteredNamedTestPipeline implements Pipeline {
 
     @Override
-    public int testConfigureParallelism() {
-      return 1;
+    public Options configurePipeline() {
+      return new Options();
     }
 
     @Override
-    public void testConfigureProcess(ProcessBuilder builder) {}
+    public void configureProcess(ProcessBuilder builder) {}
   }
 
-  public static class TestSchedule extends ScheduleTestHelper {
-    public TestSchedule() {
-      super(PipeliteTestConstants.CRON_EVERY_TWO_SECONDS);
+  public static class TestSchedule extends RegisteredNamedTestPipeline implements Schedule {
+
+    @Override
+    public Options configurePipeline() {
+      return new Options().cron(PipeliteTestConstants.CRON_EVERY_TWO_SECONDS);
     }
 
     @Override
-    public void testConfigureProcess(ProcessBuilder builder) {}
+    public void configureProcess(ProcessBuilder builder) {}
   }
 
   private void assertGetRegisteredPipelineByName(

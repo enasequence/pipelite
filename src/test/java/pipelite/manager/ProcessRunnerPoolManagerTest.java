@@ -25,8 +25,9 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.Pipeline;
 import pipelite.PipeliteTestConfigWithManager;
 import pipelite.Schedule;
-import pipelite.UniqueStringGenerator;
-import pipelite.helper.CreateProcessPipelineTestHelper;
+import pipelite.helper.RegisteredConfiguredTestPipeline;
+import pipelite.helper.RegisteredTestPipelineWrappingPipeline;
+import pipelite.helper.RegisteredTestPipelineWrappingSchedule;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.runner.schedule.ScheduleRunner;
 import pipelite.service.RunnerService;
@@ -44,10 +45,8 @@ import pipelite.stage.executor.StageExecutorResult;
 @DirtiesContext
 public class ProcessRunnerPoolManagerTest {
 
-  private static final String SCHEDULE_NAME =
-      UniqueStringGenerator.randomPipelineName(ProcessRunnerPoolManagerTest.class);
-  private static final String PIPELINE_NAME =
-      UniqueStringGenerator.randomPipelineName(ProcessRunnerPoolManagerTest.class);
+  private static final int PARALLELISM = 1;
+  private static final int PROCESS_CNT = 1;
 
   private static final AtomicInteger scheduleExecutionCount = new AtomicInteger();
   private static final AtomicInteger pipelineExecutionCount = new AtomicInteger();
@@ -55,56 +54,47 @@ public class ProcessRunnerPoolManagerTest {
   @Autowired ProcessRunnerPoolManager processRunnerPoolManager;
   @Autowired RunnerService runnerService;
 
+  @Autowired Schedule testSchedule;
+
   @Profile("ProcessRunnerPoolManagerTest")
   @TestConfiguration
   static class TestConfig {
 
     @Bean
     Schedule testSchedule() {
-      return new Schedule() {
-        @Override
-        public String pipelineName() {
-          return SCHEDULE_NAME;
-        }
-
-        @Override
-        public Options configurePipeline() {
-          return new Options().cron(CRON_EVERY_TWO_SECONDS);
-        }
-
-        @Override
-        public void configureProcess(ProcessBuilder builder) {
-          builder
-              .execute("STAGE")
-              .withSyncTestExecutor(
-                  request -> {
-                    scheduleExecutionCount.incrementAndGet();
-                    return StageExecutorResult.success();
-                  });
-        }
-      };
+      return new RegisteredTestPipelineWrappingSchedule(
+          CRON_EVERY_TWO_SECONDS,
+          new RegisteredConfiguredTestPipeline() {
+            @Override
+            protected void testConfigureProcess(ProcessBuilder builder) {
+              builder
+                  .execute("STAGE")
+                  .withSyncTestExecutor(
+                      request -> {
+                        scheduleExecutionCount.incrementAndGet();
+                        return StageExecutorResult.success();
+                      });
+            }
+          });
     }
 
     @Bean
     Pipeline testPipeline() {
-      return new CreateProcessPipelineTestHelper(PIPELINE_NAME, 1) {
-
-        @Override
-        public int testConfigureParallelism() {
-          return 1;
-        }
-
-        @Override
-        public void testConfigureProcess(ProcessBuilder builder) {
-          builder
-              .execute("STAGE")
-              .withSyncTestExecutor(
-                  request -> {
-                    pipelineExecutionCount.incrementAndGet();
-                    return StageExecutorResult.success();
-                  });
-        }
-      };
+      return new RegisteredTestPipelineWrappingPipeline(
+          PARALLELISM,
+          PROCESS_CNT,
+          new RegisteredConfiguredTestPipeline() {
+            @Override
+            protected void testConfigureProcess(ProcessBuilder builder) {
+              builder
+                  .execute("STAGE")
+                  .withSyncTestExecutor(
+                      request -> {
+                        pipelineExecutionCount.incrementAndGet();
+                        return StageExecutorResult.success();
+                      });
+            }
+          });
     }
   }
 
@@ -116,7 +106,7 @@ public class ProcessRunnerPoolManagerTest {
     assertThat(runnerService.getPipelineRunners().size()).isEqualTo(1);
 
     ScheduleRunner scheduleRunner = runnerService.getScheduleRunner();
-    scheduleRunner.setMaximumExecutions(SCHEDULE_NAME, 1);
+    scheduleRunner.setMaximumExecutions(testSchedule.pipelineName(), PROCESS_CNT);
 
     processRunnerPoolManager.startPools();
     processRunnerPoolManager.waitPoolsToStop();

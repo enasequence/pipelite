@@ -8,25 +8,22 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite;
+package pipelite.helper;
 
-import lombok.Data;
-import lombok.experimental.Accessors;
+import pipelite.RegisteredPipeline;
+import pipelite.UniqueStringGenerator;
 
-/** A scheduled pipeline to be executed by pipelite. */
-public interface Schedule extends RegisteredPipeline {
+public abstract class RegisteredNamedTestPipeline implements RegisteredPipeline {
 
-  @Data
-  @Accessors(fluent = true)
-  class Options {
-    /** The cron expression for the scheduled pipeline. */
-    private String cron;
+  private final String pipelineName;
+
+  public RegisteredNamedTestPipeline() {
+    this.pipelineName =
+        UniqueStringGenerator.randomPipelineName(RegisteredTestPipelineWrappingPipeline.class);
   }
 
-  /**
-   * Configures the schedule by returning schedule specific configuration options.
-   *
-   * @return the schedule configuration options
-   */
-  Options configurePipeline();
+  @Override
+  public final String pipelineName() {
+    return pipelineName;
+  }
 }

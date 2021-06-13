@@ -15,7 +15,7 @@ import lombok.Value;
 import lombok.experimental.Accessors;
 
 /** A pipeline to be executed by pipelite. */
-public interface Pipeline extends RegisteredPipeline<Pipeline.Options> {
+public interface Pipeline extends RegisteredPipeline {
 
   @Data
   @Accessors(fluent = true)
@@ -23,6 +23,13 @@ public interface Pipeline extends RegisteredPipeline<Pipeline.Options> {
     /** The maximum number of parallel process executions. Default value is 1. */
     private int pipelineParallelism = 1;
   }
+
+  /**
+   * Configures the pipeline by returning pipeline specific configuration options.
+   *
+   * @return the pipeline configuration options
+   */
+  Pipeline.Options configurePipeline();
 
   enum Priority {
     LOWEST(1),

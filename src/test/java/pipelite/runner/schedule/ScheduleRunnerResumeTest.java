@@ -58,13 +58,19 @@ public class ScheduleRunnerResumeTest {
     @Bean
     public ScheduleRunnerTest.TestSchedule resume1() {
       return new ScheduleRunnerTest.TestSchedule(
-          1, 2, 2, ScheduleRunnerTest.StageTestResult.SUCCESS);
+          1,
+          2,
+          new ScheduleRunnerTest.RegisteredTestPipeline(
+              2, ScheduleRunnerTest.StageTestResult.SUCCESS));
     }
 
     @Bean
     public ScheduleRunnerTest.TestSchedule resume2() {
       return new ScheduleRunnerTest.TestSchedule(
-          1, 2, 1, ScheduleRunnerTest.StageTestResult.SUCCESS);
+          1,
+          1,
+          new ScheduleRunnerTest.RegisteredTestPipeline(
+              2, ScheduleRunnerTest.StageTestResult.SUCCESS));
     }
   }
 

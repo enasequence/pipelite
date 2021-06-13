@@ -13,6 +13,7 @@ package pipelite.runner.pipeline;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,8 +23,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
-import pipelite.UniqueStringGenerator;
-import pipelite.helper.CreateProcessPipelineTestHelper;
+import pipelite.helper.RegisteredConfiguredTestPipeline;
+import pipelite.helper.RegisteredTestPipelineWrappingPipeline;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
@@ -52,75 +53,63 @@ public class PipelineRunnerHighParallelismAsyncTest {
   // for the asynchronous vs synchronous stage execution.
 
   private static final int PROCESS_CNT = 20; // Increase process count for a more intensive test
-  private static final int PIPELINE_PARALLELISM = Integer.MAX_VALUE;
+  private static final int PARALLELISM = Integer.MAX_VALUE;
   private static final Duration EXECUTION_TIME = Duration.ofSeconds(5);
-  private static final String PIPELINE_NAME_1 =
-      UniqueStringGenerator.randomPipelineName(PipelineRunnerHighParallelismAsyncTest.class);
-  private static final String PIPELINE_NAME_2 =
-      UniqueStringGenerator.randomPipelineName(PipelineRunnerHighParallelismAsyncTest.class);
-  private static final String PIPELINE_NAME_3 =
-      UniqueStringGenerator.randomPipelineName(PipelineRunnerHighParallelismAsyncTest.class);
-  private static final String PIPELINE_NAME_4 =
-      UniqueStringGenerator.randomPipelineName(PipelineRunnerHighParallelismAsyncTest.class);
-  private static final String PIPELINE_NAME_5 =
-      UniqueStringGenerator.randomPipelineName(PipelineRunnerHighParallelismAsyncTest.class);
 
   @Autowired private ProcessRunnerPoolManager processRunnerPoolManager;
   @Autowired private PipeliteServices pipeliteServices;
   @Autowired private PipeliteMetrics metrics;
 
-  @Autowired private AsyncTestPipeline asyncTestPipeline1;
-  @Autowired private AsyncTestPipeline asyncTestPipeline2;
-  @Autowired private AsyncTestPipeline asyncTestPipeline3;
-  @Autowired private AsyncTestPipeline asyncTestPipeline4;
-  @Autowired private AsyncTestPipeline asyncTestPipeline5;
+  @Autowired private List<AsyncTestPipeline> pipelines;
 
   @Profile("PipelineRunnerHighParallelismAsyncTest")
   @TestConfiguration
   static class TestConfig {
     @Bean
     public AsyncTestPipeline asyncTestPipeline1() {
-      return new AsyncTestPipeline(PIPELINE_NAME_1);
+      return new AsyncTestPipeline();
     }
 
     @Bean
     public AsyncTestPipeline asyncTestPipeline2() {
-      return new AsyncTestPipeline(PIPELINE_NAME_2);
+      return new AsyncTestPipeline();
     }
 
     @Bean
     public AsyncTestPipeline asyncTestPipeline3() {
-      return new AsyncTestPipeline(PIPELINE_NAME_3);
+      return new AsyncTestPipeline();
     }
 
     @Bean
     public AsyncTestPipeline asyncTestPipeline4() {
-      return new AsyncTestPipeline(PIPELINE_NAME_4);
+      return new AsyncTestPipeline();
     }
 
     @Bean
     public AsyncTestPipeline asyncTestPipeline5() {
-      return new AsyncTestPipeline(PIPELINE_NAME_5);
+      return new AsyncTestPipeline();
     }
   }
 
-  public static class AsyncTestPipeline extends CreateProcessPipelineTestHelper {
-    public AsyncTestPipeline(String pipelineName) {
-      super(pipelineName, PROCESS_CNT);
-    }
-
-    @Override
-    public int testConfigureParallelism() {
-      return PIPELINE_PARALLELISM;
-    }
-
-    @Override
-    public void testConfigureProcess(ProcessBuilder builder) {
-      builder.execute("STAGE").withAsyncTestExecutor(StageExecutorState.SUCCESS, EXECUTION_TIME);
+  public static class AsyncTestPipeline
+      extends RegisteredTestPipelineWrappingPipeline<RegisteredConfiguredTestPipeline> {
+    public AsyncTestPipeline() {
+      super(
+          PARALLELISM,
+          PROCESS_CNT,
+          new RegisteredConfiguredTestPipeline() {
+            @Override
+            public void testConfigureProcess(ProcessBuilder builder) {
+              builder
+                  .execute("STAGE")
+                  .withAsyncTestExecutor(StageExecutorState.SUCCESS, EXECUTION_TIME);
+            }
+          });
     }
   }
 
-  private void test(String pipelineName) {
+  private void test(AsyncTestPipeline pipeline) {
+    String pipelineName = pipeline.pipelineName();
     PipelineRunner pipelineRunner = pipeliteServices.runner().getPipelineRunner(pipelineName).get();
     assertThat(pipelineRunner.getActiveProcessRunners().size()).isEqualTo(0);
 
@@ -139,10 +128,8 @@ public class PipelineRunnerHighParallelismAsyncTest {
     processRunnerPoolManager.startPools();
     processRunnerPoolManager.waitPoolsToStop();
 
-    test(PIPELINE_NAME_1);
-    test(PIPELINE_NAME_2);
-    test(PIPELINE_NAME_3);
-    test(PIPELINE_NAME_4);
-    test(PIPELINE_NAME_5);
+    for (AsyncTestPipeline pipeline : pipelines) {
+      test(pipeline);
+    }
   }
 }

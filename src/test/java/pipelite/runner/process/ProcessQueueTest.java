@@ -29,7 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.PipeliteConfiguration;
 import pipelite.entity.ProcessEntity;
-import pipelite.helper.ConfigureProcessPipelineTestHelper;
+import pipelite.helper.RegisteredConfiguredTestPipeline;
+import pipelite.helper.RegisteredTestPipelineWrappingPipeline;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.PipeliteServices;
 import pipelite.service.ProcessService;
@@ -51,15 +52,20 @@ public class ProcessQueueTest {
   @Autowired PipeliteServices pipeliteServices;
   @MockBean ProcessService processService;
 
-  private class TestPipeline extends ConfigureProcessPipelineTestHelper {
-    @Override
-    protected int testConfigureParallelism() {
-      return 10;
-    }
+  private static final int ACTIVE_PROCESS_CNT = 25;
+  private static final int PENDING_PROCESS_CNT = 10;
 
-    @Override
-    protected void testConfigureProcess(ProcessBuilder builder) {
-      builder.execute("STAGE").withSyncTestExecutor().build();
+  private class TestPipeline extends RegisteredTestPipelineWrappingPipeline {
+    public TestPipeline() {
+      super(
+          10,
+          ACTIVE_PROCESS_CNT + PENDING_PROCESS_CNT,
+          new RegisteredConfiguredTestPipeline() {
+            @Override
+            protected void testConfigureProcess(ProcessBuilder builder) {
+              builder.execute("STAGE").withSyncTestExecutor().build();
+            }
+          });
     }
   }
 
@@ -91,23 +97,20 @@ public class ProcessQueueTest {
 
   @Test
   public void lifecycle() {
-    final int activeProcessCnt = 25;
-    final int pendingProcessCnt = 10;
-
     final TestPipeline pipeline = new TestPipeline();
     final int pipelineParallelism = pipeline.configurePipeline().pipelineParallelism();
     final int processQueueMaxSize = pipelineParallelism * MAX_QUEUE_SIZE_PARALLELISM_MULTIPLIER;
 
     List<ProcessEntity> activeEntities =
-        Collections.nCopies(activeProcessCnt, mock(ProcessEntity.class));
+        Collections.nCopies(ACTIVE_PROCESS_CNT, mock(ProcessEntity.class));
     List<ProcessEntity> pendingEntities =
-        Collections.nCopies(pendingProcessCnt, mock(ProcessEntity.class));
+        Collections.nCopies(PENDING_PROCESS_CNT, mock(ProcessEntity.class));
     doReturn(activeEntities)
         .when(processService)
         .getUnlockedActiveProcesses(any(), eq(processQueueMaxSize));
     doReturn(pendingEntities)
         .when(processService)
-        .getPendingProcesses(any(), eq(processQueueMaxSize - activeProcessCnt));
+        .getPendingProcesses(any(), eq(processQueueMaxSize - ACTIVE_PROCESS_CNT));
 
     ProcessQueue processQueue =
         spy(new ProcessQueue(pipeliteConfiguration, pipeliteServices, pipeline));
@@ -122,18 +125,19 @@ public class ProcessQueueTest {
     verify(processQueue, times(1)).refreshQueue();
 
     assertThat(processQueue.isRefreshQueue()).isFalse();
-    assertThat(processQueue.getProcessQueueSize()).isEqualTo(activeProcessCnt + pendingProcessCnt);
+    assertThat(processQueue.getProcessQueueSize())
+        .isEqualTo(ACTIVE_PROCESS_CNT + PENDING_PROCESS_CNT);
     assertThat(processQueue.getProcessQueueMaxSize()).isEqualTo(processQueueMaxSize);
     assertThat(processQueue.getProcessQueueRefreshSize())
-        .isEqualTo(activeProcessCnt + pendingProcessCnt);
+        .isEqualTo(ACTIVE_PROCESS_CNT + PENDING_PROCESS_CNT);
 
-    for (int i = 0; i < activeProcessCnt + pendingProcessCnt; ++i) {
+    for (int i = 0; i < ACTIVE_PROCESS_CNT + PENDING_PROCESS_CNT; ++i) {
       assertThat(processQueue.nextProcess(0)).isNotNull();
     }
     assertThat(processQueue.isRefreshQueue()).isTrue();
     assertThat(processQueue.getProcessQueueSize()).isZero();
     assertThat(processQueue.getProcessQueueMaxSize()).isEqualTo(processQueueMaxSize);
     assertThat(processQueue.getProcessQueueRefreshSize())
-        .isEqualTo(activeProcessCnt + pendingProcessCnt);
+        .isEqualTo(ACTIVE_PROCESS_CNT + PENDING_PROCESS_CNT);
   }
 }

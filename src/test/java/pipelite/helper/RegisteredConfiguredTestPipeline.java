@@ -13,34 +13,11 @@ package pipelite.helper;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import pipelite.Pipeline;
-import pipelite.UniqueStringGenerator;
 import pipelite.process.builder.ProcessBuilder;
 
-public abstract class ConfigureProcessPipelineTestHelper implements Pipeline {
+public abstract class RegisteredConfiguredTestPipeline extends RegisteredNamedTestPipeline {
 
-  private final String pipelineName;
   private final Set<String> configuredProcessIds = ConcurrentHashMap.newKeySet();
-
-  public ConfigureProcessPipelineTestHelper() {
-    this(UniqueStringGenerator.randomPipelineName(ConfigureProcessPipelineTestHelper.class));
-  }
-
-  public ConfigureProcessPipelineTestHelper(String pipelineName) {
-    this.pipelineName = pipelineName;
-  }
-
-  @Override
-  public final String pipelineName() {
-    return pipelineName;
-  }
-
-  @Override
-  public final Options configurePipeline() {
-    return new Options().pipelineParallelism(testConfigureParallelism());
-  }
-
-  protected abstract int testConfigureParallelism();
 
   @Override
   public final void configureProcess(ProcessBuilder builder) {
@@ -50,11 +27,11 @@ public abstract class ConfigureProcessPipelineTestHelper implements Pipeline {
 
   protected abstract void testConfigureProcess(ProcessBuilder builder);
 
-  public int configuredProcessCount() {
+  public final int configuredProcessCount() {
     return configuredProcessIds.size();
   }
 
-  public Collection<String> configuredProcessIds() {
+  public final Collection<String> configuredProcessIds() {
     return configuredProcessIds;
   }
 }

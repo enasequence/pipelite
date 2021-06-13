@@ -26,13 +26,13 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
 import pipelite.executor.AbstractExecutor;
-import pipelite.helper.CreateProcessPipelineTestHelper;
+import pipelite.helper.RegisteredConfiguredTestPipeline;
+import pipelite.helper.RegisteredTestPipelineWrappingPipeline;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.PipeliteServices;
-import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
@@ -50,66 +50,65 @@ import pipelite.stage.parameters.ExecutorParameters;
 public class PipelineRunnerAsyncTest {
 
   private static final int PROCESS_CNT = 2;
+  private static final int PARALLELISM = 2;
 
   @Autowired private ProcessRunnerPoolManager processRunnerPoolManager;
   @Autowired private PipeliteServices pipeliteServices;
   @Autowired private PipeliteMetrics metrics;
-  @Autowired private TestPipeline<SubmitSuccessPollSuccessExecutor> submitSuccessPollSuccess;
+  @Autowired private TestPipeline submitSuccessPollSuccess;
 
-  @Autowired private TestPipeline<SubmitErrorExecutor> submitError;
-  @Autowired private TestPipeline<SubmitExceptionExecutor> submitException;
-  @Autowired private TestPipeline<PollErrorExecutor> pollError;
-  @Autowired private TestPipeline<PollExceptionExecutor> pollException;
+  @Autowired private TestPipeline submitError;
+  @Autowired private TestPipeline submitException;
+  @Autowired private TestPipeline pollError;
+  @Autowired private TestPipeline pollException;
 
   @Profile("PipelineRunnerAsyncTest")
   @TestConfiguration
   static class TestConfig {
     @Bean
-    public TestPipeline<SubmitSuccessPollSuccessExecutor> submitSuccessPollSuccess() {
-      return new TestPipeline<>(new SubmitSuccessPollSuccessExecutor());
+    public TestPipeline submitSuccessPollSuccess() {
+      return new TestPipeline(new SubmitSuccessPollSuccessExecutor());
     }
 
     @Bean
-    public TestPipeline<SubmitErrorExecutor> submitError() {
-      return new TestPipeline<>(new SubmitErrorExecutor());
+    public TestPipeline submitError() {
+      return new TestPipeline(new SubmitErrorExecutor());
     }
 
     @Bean
-    public TestPipeline<SubmitExceptionExecutor> submitException() {
-      return new TestPipeline<>(new SubmitExceptionExecutor());
+    public TestPipeline submitException() {
+      return new TestPipeline(new SubmitExceptionExecutor());
     }
 
     @Bean
-    public TestPipeline<PollErrorExecutor> pollError() {
-      return new TestPipeline<>(new PollErrorExecutor());
+    public TestPipeline pollError() {
+      return new TestPipeline(new PollErrorExecutor());
     }
 
     @Bean
-    public TestPipeline<PollExceptionExecutor> pollException() {
-      return new TestPipeline<>(new PollExceptionExecutor());
+    public TestPipeline pollException() {
+      return new TestPipeline(new PollExceptionExecutor());
     }
   }
 
   @Getter
-  public static class TestPipeline<T extends StageExecutor>
-      extends CreateProcessPipelineTestHelper {
+  public static class TestPipeline<T extends TestExecutor>
+      extends RegisteredTestPipelineWrappingPipeline<RegisteredConfiguredTestPipeline> {
     private final T stageExecutor;
 
     public TestPipeline(T stageExecutor) {
-      super(PROCESS_CNT);
+      super(
+          PARALLELISM,
+          PROCESS_CNT,
+          new RegisteredConfiguredTestPipeline() {
+            @Override
+            protected void testConfigureProcess(ProcessBuilder builder) {
+              ExecutorParameters executorParams =
+                  ExecutorParameters.builder().immediateRetries(0).maximumRetries(0).build();
+              builder.execute("STAGE").with(stageExecutor, executorParams);
+            }
+          });
       this.stageExecutor = stageExecutor;
-    }
-
-    @Override
-    public int testConfigureParallelism() {
-      return 2;
-    }
-
-    @Override
-    public void testConfigureProcess(ProcessBuilder builder) {
-      ExecutorParameters executorParams =
-          ExecutorParameters.builder().immediateRetries(0).maximumRetries(0).build();
-      builder.execute("STAGE").with(stageExecutor, executorParams);
     }
   }
 
@@ -196,7 +195,7 @@ public class PipelineRunnerAsyncTest {
   }
 
   private void assertSubmitSuccessPollSuccess() {
-    TestPipeline<SubmitSuccessPollSuccessExecutor> f = submitSuccessPollSuccess;
+    TestPipeline f = submitSuccessPollSuccess;
 
     PipelineRunner pipelineRunner =
         pipeliteServices.runner().getPipelineRunner(f.pipelineName()).get();
@@ -215,7 +214,7 @@ public class PipelineRunnerAsyncTest {
   }
 
   private void assertSubmitError() {
-    TestPipeline<SubmitErrorExecutor> f = submitError;
+    TestPipeline f = submitError;
 
     PipelineRunner pipelineRunner =
         pipeliteServices.runner().getPipelineRunner(f.pipelineName()).get();
@@ -235,7 +234,7 @@ public class PipelineRunnerAsyncTest {
   }
 
   private void assertSubmitException() {
-    TestPipeline<SubmitExceptionExecutor> f = submitException;
+    TestPipeline f = submitException;
 
     PipelineRunner pipelineRunner =
         pipeliteServices.runner().getPipelineRunner(f.pipelineName()).get();
@@ -254,7 +253,7 @@ public class PipelineRunnerAsyncTest {
   }
 
   private void assertPollError() {
-    TestPipeline<PollErrorExecutor> f = pollError;
+    TestPipeline f = pollError;
 
     PipelineRunner pipelineRunner =
         pipeliteServices.runner().getPipelineRunner(f.pipelineName()).get();
@@ -273,7 +272,7 @@ public class PipelineRunnerAsyncTest {
   }
 
   private void assertPollException() {
-    TestPipeline<PollExceptionExecutor> f = pollException;
+    TestPipeline f = pollException;
 
     PipelineRunner pipelineRunner =
         pipeliteServices.runner().getPipelineRunner(f.pipelineName()).get();

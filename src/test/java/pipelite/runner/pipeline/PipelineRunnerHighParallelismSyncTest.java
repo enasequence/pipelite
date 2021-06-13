@@ -13,6 +13,7 @@ package pipelite.runner.pipeline;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
+import java.util.List;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,8 +24,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
-import pipelite.UniqueStringGenerator;
-import pipelite.helper.CreateProcessPipelineTestHelper;
+import pipelite.helper.RegisteredConfiguredTestPipeline;
+import pipelite.helper.RegisteredTestPipelineWrappingPipeline;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
@@ -53,75 +54,63 @@ public class PipelineRunnerHighParallelismSyncTest {
   // for the asynchronous vs synchronous stage execution.
 
   private static final int PROCESS_CNT = 20; // Increase process count for a more intensive test
-  private static final int PIPELINE_PARALLELISM = Integer.MAX_VALUE;
+  private static final int PARALLELISM = Integer.MAX_VALUE;
   private static final Duration EXECUTION_TIME = Duration.ofSeconds(5);
-  private static final String PIPELINE_NAME_1 =
-      UniqueStringGenerator.randomPipelineName(PipelineRunnerHighParallelismSyncTest.class);
-  private static final String PIPELINE_NAME_2 =
-      UniqueStringGenerator.randomPipelineName(PipelineRunnerHighParallelismSyncTest.class);
-  private static final String PIPELINE_NAME_3 =
-      UniqueStringGenerator.randomPipelineName(PipelineRunnerHighParallelismSyncTest.class);
-  private static final String PIPELINE_NAME_4 =
-      UniqueStringGenerator.randomPipelineName(PipelineRunnerHighParallelismSyncTest.class);
-  private static final String PIPELINE_NAME_5 =
-      UniqueStringGenerator.randomPipelineName(PipelineRunnerHighParallelismSyncTest.class);
 
   @Autowired private ProcessRunnerPoolManager processRunnerPoolManager;
   @Autowired private PipeliteServices pipeliteServices;
   @Autowired private PipeliteMetrics metrics;
 
-  @Autowired private SyncTestPipeline syncTestPipeline1;
-  @Autowired private SyncTestPipeline syncTestPipeline2;
-  @Autowired private SyncTestPipeline syncTestPipeline3;
-  @Autowired private SyncTestPipeline syncTestPipeline4;
-  @Autowired private SyncTestPipeline syncTestPipeline5;
+  @Autowired private List<SyncTestPipeline> pipelines;
 
   @Profile("PipelineRunnerHighParallelismSyncTest")
   @TestConfiguration
   static class TestConfig {
     @Bean
     public SyncTestPipeline syncTestPipeline1() {
-      return new SyncTestPipeline(PIPELINE_NAME_1);
+      return new SyncTestPipeline();
     }
 
     @Bean
     public SyncTestPipeline syncTestPipeline2() {
-      return new SyncTestPipeline(PIPELINE_NAME_2);
+      return new SyncTestPipeline();
     }
 
     @Bean
     public SyncTestPipeline syncTestPipeline3() {
-      return new SyncTestPipeline(PIPELINE_NAME_3);
+      return new SyncTestPipeline();
     }
 
     @Bean
     public SyncTestPipeline syncTestPipeline4() {
-      return new SyncTestPipeline(PIPELINE_NAME_4);
+      return new SyncTestPipeline();
     }
 
     @Bean
     public SyncTestPipeline syncTestPipeline5() {
-      return new SyncTestPipeline(PIPELINE_NAME_5);
+      return new SyncTestPipeline();
     }
   }
 
-  public static class SyncTestPipeline extends CreateProcessPipelineTestHelper {
-    public SyncTestPipeline(String pipelineName) {
-      super(pipelineName, PROCESS_CNT);
-    }
-
-    @Override
-    public int testConfigureParallelism() {
-      return PIPELINE_PARALLELISM;
-    }
-
-    @Override
-    public void testConfigureProcess(ProcessBuilder builder) {
-      builder.execute("STAGE").withSyncTestExecutor(StageExecutorState.SUCCESS, EXECUTION_TIME);
+  public static class SyncTestPipeline
+      extends RegisteredTestPipelineWrappingPipeline<RegisteredConfiguredTestPipeline> {
+    public SyncTestPipeline() {
+      super(
+          PARALLELISM,
+          PROCESS_CNT,
+          new RegisteredConfiguredTestPipeline() {
+            @Override
+            public void testConfigureProcess(ProcessBuilder builder) {
+              builder
+                  .execute("STAGE")
+                  .withSyncTestExecutor(StageExecutorState.SUCCESS, EXECUTION_TIME);
+            }
+          });
     }
   }
 
-  private void test(String pipelineName) {
+  private void test(SyncTestPipeline pipeline) {
+    String pipelineName = pipeline.pipelineName();
     PipelineRunner pipelineRunner = pipeliteServices.runner().getPipelineRunner(pipelineName).get();
     assertThat(pipelineRunner.getActiveProcessRunners().size()).isEqualTo(0);
 
@@ -141,10 +130,8 @@ public class PipelineRunnerHighParallelismSyncTest {
     processRunnerPoolManager.startPools();
     processRunnerPoolManager.waitPoolsToStop();
 
-    test(PIPELINE_NAME_1);
-    test(PIPELINE_NAME_2);
-    test(PIPELINE_NAME_3);
-    test(PIPELINE_NAME_4);
-    test(PIPELINE_NAME_5);
+    for (SyncTestPipeline pipeline : pipelines) {
+      test(pipeline);
+    }
   }
 }

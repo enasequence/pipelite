@@ -28,7 +28,8 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
-import pipelite.helper.CreateProcessPipelineTestHelper;
+import pipelite.helper.RegisteredConfiguredTestPipeline;
+import pipelite.helper.RegisteredTestPipelineWrappingPipeline;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
@@ -53,6 +54,7 @@ import pipelite.stage.parameters.ExecutorParameters;
 @DirtiesContext
 public class PipelineRunnerFailureTest {
 
+  private static final int PARALLELISM = 5;
   private static final int PROCESS_CNT = 1;
 
   @Autowired private ProcessRunnerPoolManager processRunnerPoolManager;
@@ -120,7 +122,7 @@ public class PipelineRunnerFailureTest {
   }
 
   @Getter
-  public static class TestPipeline extends CreateProcessPipelineTestHelper {
+  private static class RegisteredTestPipeline extends RegisteredConfiguredTestPipeline {
     private final StageTestResult stageTestResult;
     private StageExecutorResult firstStageExecResult;
     private StageExecutorResult secondStageExecResult;
@@ -131,8 +133,7 @@ public class PipelineRunnerFailureTest {
     public final AtomicLong thirdStageExecCnt = new AtomicLong();
     public final AtomicLong fourthStageExecCnt = new AtomicLong();
 
-    public TestPipeline(StageTestResult stageTestResult) {
-      super(PROCESS_CNT);
+    public RegisteredTestPipeline(StageTestResult stageTestResult) {
       this.stageTestResult = stageTestResult;
       this.firstStageExecResult =
           stageTestResult == StageTestResult.FIRST_ERROR
@@ -150,11 +151,6 @@ public class PipelineRunnerFailureTest {
           stageTestResult == StageTestResult.FOURTH_ERROR
               ? StageExecutorResult.error()
               : StageExecutorResult.success();
-    }
-
-    @Override
-    public int testConfigureParallelism() {
-      return 5;
     }
 
     @Override
@@ -198,44 +194,52 @@ public class PipelineRunnerFailureTest {
     }
   }
 
-  public void assertPipeline(TestPipeline testPipeline) {
+  @Getter
+  private static class TestPipeline
+      extends RegisteredTestPipelineWrappingPipeline<RegisteredTestPipeline> {
+    public TestPipeline(StageTestResult stageTestResult) {
+      super(PARALLELISM, PROCESS_CNT, new RegisteredTestPipeline(stageTestResult));
+    }
+  }
 
-    PipelineRunner pipelineRunner =
-        runnerService.getPipelineRunner(testPipeline.pipelineName()).get();
+  public void assertPipeline(TestPipeline f) {
+
+    PipelineRunner pipelineRunner = runnerService.getPipelineRunner(f.pipelineName()).get();
 
     assertThat(pipelineRunner.getActiveProcessRunners().size()).isEqualTo(0);
 
-    assertThat(testPipeline.createdProcessCount()).isEqualTo(0);
-    assertThat(testPipeline.returnedProcessCount()).isEqualTo(PROCESS_CNT);
-    assertThat(testPipeline.confirmedProcessCount()).isEqualTo(PROCESS_CNT);
+    assertThat(f.createdProcessCount()).isEqualTo(0);
+    assertThat(f.returnedProcessCount()).isEqualTo(PROCESS_CNT);
+    assertThat(f.confirmedProcessCount()).isEqualTo(PROCESS_CNT);
 
-    if (testPipeline.stageTestResult == StageTestResult.FIRST_ERROR) {
-      assertThat(testPipeline.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
-      assertThat(testPipeline.secondStageExecCnt.get()).isEqualTo(0);
-      assertThat(testPipeline.thirdStageExecCnt.get()).isEqualTo(0);
-      assertThat(testPipeline.fourthStageExecCnt.get()).isEqualTo(0);
-    } else if (testPipeline.stageTestResult == StageTestResult.SECOND_ERROR) {
-      assertThat(testPipeline.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
-      assertThat(testPipeline.secondStageExecCnt.get()).isEqualTo(PROCESS_CNT);
-      assertThat(testPipeline.thirdStageExecCnt.get()).isEqualTo(0);
-      assertThat(testPipeline.fourthStageExecCnt.get()).isEqualTo(0);
-    } else if (testPipeline.stageTestResult == StageTestResult.THIRD_ERROR) {
-      assertThat(testPipeline.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
-      assertThat(testPipeline.secondStageExecCnt.get()).isEqualTo(PROCESS_CNT);
-      assertThat(testPipeline.thirdStageExecCnt.get()).isEqualTo(PROCESS_CNT);
-      assertThat(testPipeline.fourthStageExecCnt.get()).isEqualTo(0);
+    RegisteredTestPipeline t = f.getRegisteredTestPipeline();
+    if (t.stageTestResult == StageTestResult.FIRST_ERROR) {
+      assertThat(t.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(t.secondStageExecCnt.get()).isEqualTo(0);
+      assertThat(t.thirdStageExecCnt.get()).isEqualTo(0);
+      assertThat(t.fourthStageExecCnt.get()).isEqualTo(0);
+    } else if (t.stageTestResult == StageTestResult.SECOND_ERROR) {
+      assertThat(t.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(t.secondStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(t.thirdStageExecCnt.get()).isEqualTo(0);
+      assertThat(t.fourthStageExecCnt.get()).isEqualTo(0);
+    } else if (t.stageTestResult == StageTestResult.THIRD_ERROR) {
+      assertThat(t.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(t.secondStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(t.thirdStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(t.fourthStageExecCnt.get()).isEqualTo(0);
     } else {
-      assertThat(testPipeline.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
-      assertThat(testPipeline.secondStageExecCnt.get()).isEqualTo(PROCESS_CNT);
-      assertThat(testPipeline.thirdStageExecCnt.get()).isEqualTo(PROCESS_CNT);
-      assertThat(testPipeline.fourthStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(t.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(t.secondStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(t.thirdStageExecCnt.get()).isEqualTo(PROCESS_CNT);
+      assertThat(t.fourthStageExecCnt.get()).isEqualTo(PROCESS_CNT);
     }
 
-    assertThat(testPipeline.configuredProcessCount()).isEqualTo(PROCESS_CNT);
-    assertMetrics(testPipeline);
-    for (String processId : testPipeline.configuredProcessIds()) {
-      assertProcessEntity(testPipeline, processId);
-      assertStageEntities(testPipeline, processId);
+    assertThat(t.configuredProcessCount()).isEqualTo(PROCESS_CNT);
+    assertMetrics(f);
+    for (String processId : t.configuredProcessIds()) {
+      assertProcessEntity(f, processId);
+      assertStageEntities(f, processId);
     }
   }
 
@@ -246,7 +250,9 @@ public class PipelineRunnerFailureTest {
     assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);
-    if (f.stageTestResult == StageTestResult.NO_ERROR) {
+
+    RegisteredTestPipeline t = f.getRegisteredTestPipeline();
+    if (t.stageTestResult == StageTestResult.NO_ERROR) {
       assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.COMPLETED);
     } else {
       assertThat(processEntity.getProcessState())
@@ -265,10 +271,11 @@ public class PipelineRunnerFailureTest {
       assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
       assertThat(stageEntity.getProcessId()).isEqualTo(processId);
 
-      if ((i > 0 && f.stageTestResult == StageTestResult.FIRST_ERROR)
-          || (i > 1 && f.stageTestResult == StageTestResult.SECOND_ERROR)
-          || (i > 2 && f.stageTestResult == StageTestResult.THIRD_ERROR)
-          || (i > 3 && f.stageTestResult == StageTestResult.FOURTH_ERROR)) {
+      RegisteredTestPipeline t = f.getRegisteredTestPipeline();
+      if ((i > 0 && t.stageTestResult == StageTestResult.FIRST_ERROR)
+          || (i > 1 && t.stageTestResult == StageTestResult.SECOND_ERROR)
+          || (i > 2 && t.stageTestResult == StageTestResult.THIRD_ERROR)
+          || (i > 3 && t.stageTestResult == StageTestResult.FOURTH_ERROR)) {
 
         // Stage has been created but not executed.
 
@@ -298,10 +305,10 @@ public class PipelineRunnerFailureTest {
                     + "  \"immediateRetries\" : 0\n"
                     + "}");
 
-        if ((i == 0 && f.stageTestResult == StageTestResult.FIRST_ERROR)
-            || (i == 1 && f.stageTestResult == StageTestResult.SECOND_ERROR)
-            || (i == 2 && f.stageTestResult == StageTestResult.THIRD_ERROR)
-            || (i == 3 && f.stageTestResult == StageTestResult.FOURTH_ERROR)) {
+        if ((i == 0 && t.stageTestResult == StageTestResult.FIRST_ERROR)
+            || (i == 1 && t.stageTestResult == StageTestResult.SECOND_ERROR)
+            || (i == 2 && t.stageTestResult == StageTestResult.THIRD_ERROR)
+            || (i == 3 && t.stageTestResult == StageTestResult.FOURTH_ERROR)) {
           assertThat(stageEntity.getStageState()).isEqualTo(StageState.ERROR);
           assertThat(stageEntity.getResultParams()).isNull();
         } else {
@@ -314,10 +321,11 @@ public class PipelineRunnerFailureTest {
 
   private void assertMetrics(TestPipeline f) {
     PipelineMetrics pipelineMetrics = metrics.pipeline(f.pipelineName());
-    if (f.getFirstStageExecResult().isSuccess()
-        && f.getSecondStageExecResult().isSuccess()
-        && f.getThirdStageExecResult().isSuccess()
-        && f.getFourthStageExecResult().isSuccess()) {
+    RegisteredTestPipeline t = f.getRegisteredTestPipeline();
+    if (t.getFirstStageExecResult().isSuccess()
+        && t.getSecondStageExecResult().isSuccess()
+        && t.getThirdStageExecResult().isSuccess()
+        && t.getFourthStageExecResult().isSuccess()) {
       assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(PROCESS_CNT);
       assertThat(pipelineMetrics.process().getFailedCount()).isEqualTo(0);
     } else {
@@ -327,13 +335,13 @@ public class PipelineRunnerFailureTest {
 
     int stageSuccessCount = 0;
     int stageFailedCount = PROCESS_CNT;
-    if (f.getFirstStageExecResult().isSuccess()) {
+    if (t.getFirstStageExecResult().isSuccess()) {
       stageSuccessCount += PROCESS_CNT;
-      if (f.getSecondStageExecResult().isSuccess()) {
+      if (t.getSecondStageExecResult().isSuccess()) {
         stageSuccessCount += PROCESS_CNT;
-        if (f.getThirdStageExecResult().isSuccess()) {
+        if (t.getThirdStageExecResult().isSuccess()) {
           stageSuccessCount += PROCESS_CNT;
-          if (f.getFourthStageExecResult().isSuccess()) {
+          if (t.getFourthStageExecResult().isSuccess()) {
             stageSuccessCount += PROCESS_CNT;
             stageFailedCount = 0;
           }

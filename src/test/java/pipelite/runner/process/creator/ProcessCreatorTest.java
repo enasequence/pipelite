@@ -16,27 +16,26 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 import org.junit.jupiter.api.Test;
 import pipelite.entity.ProcessEntity;
-import pipelite.helper.CreateProcessPipelineTestHelper;
+import pipelite.helper.RegisteredNamedTestPipeline;
+import pipelite.helper.RegisteredTestPipelineWrappingPipeline;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.ProcessService;
 
 public class ProcessCreatorTest {
 
   private static final int PROCESS_CNT = 100;
+  private static final int PARALLELISM = 1;
 
-  private static final class TestPipeline extends CreateProcessPipelineTestHelper {
-
+  private static final class TestPipeline extends RegisteredTestPipelineWrappingPipeline {
     public TestPipeline() {
-      super(PROCESS_CNT);
+      super(
+          PARALLELISM,
+          PROCESS_CNT,
+          new RegisteredNamedTestPipeline() {
+            @Override
+            public void configureProcess(ProcessBuilder builder) {}
+          });
     }
-
-    @Override
-    public int testConfigureParallelism() {
-      return 1;
-    }
-
-    @Override
-    public void testConfigureProcess(ProcessBuilder builder) {}
   }
 
   @Test

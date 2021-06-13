@@ -57,48 +57,43 @@ public class StageRunnerDifferentExecutorsTest {
         : StageExecutorState.SUCCESS;
   }
 
-  private String getCmd(boolean isError) {
-    return SingleStageSimpleLsfTestProcessFactory.cmd(getExitCode(isError));
-  }
-
   private int getExitCode(boolean isError) {
     return isError ? 1 : 0;
   }
 
-  private SingleStageTestProcessFactory syncTestProcessFactory(TestType testType) {
-    return new SingleStageSyncTestProcessFactory(
-        testType,
-        PROCESS_CNT,
+  private RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline>
+      syncTestProcessFactory(TestType testType) {
+    return new RegisteredTestPipelineWrappingPipeline(
         PARALLELISM,
-        getCompletedExecutorState(testType),
-        IMMEDIATE_RETRIES,
-        MAXIMUM_RETRIES);
+        PROCESS_CNT,
+        new RegisteredSingleStageSyncTestPipeline(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES));
   }
 
-  private SingleStageTestProcessFactory asyncTestProcessFactory(TestType testType) {
-    return new SingleStageAsyncTestProcessFactory(
-        testType,
-        PROCESS_CNT,
+  private RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline>
+      asyncTestProcessFactory(TestType testType) {
+    return new RegisteredTestPipelineWrappingPipeline(
         PARALLELISM,
-        getCompletedExecutorState(testType),
-        IMMEDIATE_RETRIES,
-        MAXIMUM_RETRIES);
+        PROCESS_CNT,
+        new RegisteredSingleStageAsyncTestPipeline(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES));
   }
 
-  private SingleStageTestProcessFactory simpleLsfProcessFactory(TestType testType) {
-    return new SingleStageSimpleLsfTestProcessFactory(
-        testType,
-        PROCESS_CNT,
+  private RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline>
+      simpleLsfProcessFactory(TestType testType) {
+    return new RegisteredTestPipelineWrappingPipeline(
         PARALLELISM,
-        getExitCode(testType == TestType.NON_PERMANENT_ERROR),
-        IMMEDIATE_RETRIES,
-        MAXIMUM_RETRIES,
-        lsfTestConfiguration);
+        PROCESS_CNT,
+        new RegisteredSingleStageSimpleLsfTestPipeline(
+            testType,
+            getExitCode(testType == TestType.NON_PERMANENT_ERROR),
+            IMMEDIATE_RETRIES,
+            MAXIMUM_RETRIES,
+            lsfTestConfiguration));
   }
 
   private Process simulateProcessCreation(
-      SingleStageTestProcessFactory processFactory, String pipelineName) {
-    Process process = processFactory.create();
+      RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline> processFactory,
+      String pipelineName) {
+    Process process = processFactory.createProcess();
     process.setProcessEntity(
         ProcessEntity.createExecution(
             pipelineName, process.getProcessId(), ProcessEntity.DEFAULT_PRIORITY));
@@ -155,7 +150,7 @@ public class StageRunnerDifferentExecutorsTest {
 
   private void simulateExecution(
       TestType testType,
-      SingleStageTestProcessFactory processFactory,
+      RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline> processFactory,
       SimulateExecutionFirstIterationFactory simulateExecutionFirstIterationFactory) {
     String serviceName =
         UniqueStringGenerator.randomServiceName(StageRunnerDifferentExecutorsTest.class);
@@ -174,7 +169,9 @@ public class StageRunnerDifferentExecutorsTest {
         simulateExecutionFirstIterationFactory.create(process, stageRunner);
 
     if (result.isSubmitted()) {
-      processFactory.assertSubmittedStageEntity(pipeliteServices.stage(), process.getProcessId());
+      processFactory
+          .getRegisteredTestPipeline()
+          .assertSubmittedStageEntities(pipeliteServices.stage(), PROCESS_CNT);
     }
 
     // Run next iterations
@@ -193,13 +190,16 @@ public class StageRunnerDifferentExecutorsTest {
 
     // ProcessEntity is not created nor asserted in this test
 
-    processFactory.assertCompletedStageEntity(pipeliteServices.stage(), process.getProcessId());
+    processFactory
+        .getRegisteredTestPipeline()
+        .assertCompletedStageEntities(pipeliteServices.stage(), PROCESS_CNT);
   }
 
   @Test
   public void testExecutionUsingSyncTestExecutor() {
     for (TestType testType : EnumSet.of(TestType.NON_PERMANENT_ERROR, TestType.SUCCESS)) {
-      SingleStageTestProcessFactory processFactory = syncTestProcessFactory(testType);
+      RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline> processFactory =
+          syncTestProcessFactory(testType);
       simulateExecution(
           testType,
           processFactory,
@@ -210,7 +210,8 @@ public class StageRunnerDifferentExecutorsTest {
   @Test
   public void testExecutionUsingAsyncTestExecutor() {
     for (TestType testType : EnumSet.of(TestType.NON_PERMANENT_ERROR, TestType.SUCCESS)) {
-      SingleStageTestProcessFactory processFactory = asyncTestProcessFactory(testType);
+      RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline> processFactory =
+          asyncTestProcessFactory(testType);
       simulateExecution(
           testType,
           processFactory,
@@ -222,7 +223,8 @@ public class StageRunnerDifferentExecutorsTest {
   // @Timeout(value = 60, unit = SECONDS)
   public void testExecutionUsingSimpleLsfExecutor() {
     for (TestType testType : EnumSet.of(TestType.NON_PERMANENT_ERROR, TestType.SUCCESS)) {
-      SingleStageTestProcessFactory processFactory = simpleLsfProcessFactory(testType);
+      RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline> processFactory =
+          simpleLsfProcessFactory(testType);
       simulateExecution(
           testType,
           processFactory,

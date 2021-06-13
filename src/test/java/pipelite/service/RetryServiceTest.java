@@ -26,17 +26,12 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
-import pipelite.PipeliteTestConfigWithManager;
-import pipelite.PipeliteTestConstants;
-import pipelite.RegisteredPipeline;
-import pipelite.UniqueStringGenerator;
+import pipelite.*;
 import pipelite.cron.CronUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.entity.StageEntity;
 import pipelite.exception.PipeliteRetryException;
-import pipelite.helper.ConfigureProcessPipelineTestHelper;
-import pipelite.helper.ScheduleTestHelper;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
@@ -66,8 +61,8 @@ class RetryServiceTest {
       UniqueStringGenerator.randomPipelineName(RetryServiceTest.class);
   private static final String SCHEDULE_NAME =
       UniqueStringGenerator.randomPipelineName(RetryServiceTest.class);
-
   private static final String STAGE_NAME = "STAGE";
+  private static final String CRON = PipeliteTestConstants.CRON_EVERY_HOUR;
 
   @Autowired RegisteredPipelineService registeredPipelineService;
   @Autowired ProcessRunnerPoolManager processRunnerPoolManager;
@@ -76,8 +71,6 @@ class RetryServiceTest {
   @Autowired ProcessService processService;
   @Autowired StageService stageService;
   @Autowired RunnerService runnerService;
-
-  @Autowired TestSchedule testSchedule;
 
   @Profile("RetryServiceTest")
   @TestConfiguration
@@ -93,29 +86,36 @@ class RetryServiceTest {
     }
   }
 
-  public static class TestSchedule extends ScheduleTestHelper {
-    public TestSchedule() {
-      super(PipeliteTestConstants.CRON_EVERY_HOUR, SCHEDULE_NAME);
+  public static class TestSchedule implements Schedule {
+    @Override
+    public String pipelineName() {
+      return SCHEDULE_NAME;
     }
 
     @Override
-    protected void testConfigureProcess(ProcessBuilder builder) {
+    public void configureProcess(ProcessBuilder builder) {
       builder.execute(STAGE_NAME).withSyncTestExecutor().build();
+    }
+
+    @Override
+    public Options configurePipeline() {
+      return new Options().cron(CRON);
     }
   }
 
-  public static class TestPipeline extends ConfigureProcessPipelineTestHelper {
-    public TestPipeline() {
-      super(PIPELINE_NAME);
+  public static class TestPipeline implements Pipeline {
+    @Override
+    public String pipelineName() {
+      return PIPELINE_NAME;
     }
 
     @Override
-    public int testConfigureParallelism() {
-      return 5;
+    public Options configurePipeline() {
+      return new Options().pipelineParallelism(5);
     }
 
     @Override
-    public void testConfigureProcess(ProcessBuilder builder) {
+    public void configureProcess(ProcessBuilder builder) {
       builder
           .execute(STAGE_NAME)
           .withSyncTestExecutor(
@@ -286,10 +286,9 @@ class RetryServiceTest {
     assertThat(stageEntity.getStageState()).isEqualTo(StageState.ERROR);
 
     // Failed schedule
-    String cron = testSchedule.cron();
-    scheduleService.createSchedule(serviceName, SCHEDULE_NAME, cron);
+    scheduleService.createSchedule(serviceName, SCHEDULE_NAME, CRON);
     ScheduleEntity scheduleEntity = scheduleService.startExecution(SCHEDULE_NAME, processId);
-    ZonedDateTime nextTime = CronUtils.launchTime(cron, ZonedDateTime.now().plusHours(1));
+    ZonedDateTime nextTime = CronUtils.launchTime(CRON, ZonedDateTime.now().plusHours(1));
     scheduleEntity = scheduleService.endExecution(processEntity, nextTime);
 
     assertThat(scheduleEntity.isFailed()).isTrue();
@@ -305,7 +304,7 @@ class RetryServiceTest {
     scheduleRunner.startUp();
 
     // Check schedule state
-    assertSetupSchedule(serviceName, SCHEDULE_NAME, processId, cron, nextTime);
+    assertSetupSchedule(serviceName, SCHEDULE_NAME, processId, CRON, nextTime);
 
     ZonedDateTime retryTime = ZonedDateTime.now();
 
@@ -318,7 +317,7 @@ class RetryServiceTest {
     }
 
     // Check schedule state
-    assertRetriedSchedule(serviceName, SCHEDULE_NAME, processId, cron, retryTime);
+    assertRetriedSchedule(serviceName, SCHEDULE_NAME, processId, CRON, retryTime);
 
     // Check process state
     processEntity = processService.getSavedProcess(SCHEDULE_NAME, processId).get();

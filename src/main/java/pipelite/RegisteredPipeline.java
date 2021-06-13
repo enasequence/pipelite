@@ -12,12 +12,8 @@ package pipelite;
 
 import pipelite.process.builder.ProcessBuilder;
 
-/**
- * Configures a pipeline to be executed by Pipelite. Pipelines are identified by a unique name and
- * configured using {@link RegisteredPipeline#configurePipeline}. Pipeline executions are called
- * processes and are configured using {@link RegisteredPipeline#configureProcess}.
- */
-public interface RegisteredPipeline<PipelineOptions> {
+/** Configures a registered pipeline to be executed by Pipelite. */
+public interface RegisteredPipeline {
 
   /**
    * A unique name for the pipeline.
@@ -25,13 +21,6 @@ public interface RegisteredPipeline<PipelineOptions> {
    * @return a unique name for the pipeline
    */
   String pipelineName();
-
-  /**
-   * Configures the pipeline by returning pipeline type specific configuration options.
-   *
-   * @return the pipeline configuration options
-   */
-  PipelineOptions configurePipeline();
 
   /**
    * Configures the processes to be executed for the pipeline. Processes are identified by a unique

@@ -29,7 +29,6 @@ import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.ProcessService;
 import pipelite.service.RunnerService;
 import pipelite.service.StageService;
-import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 
 @SpringBootTest(
@@ -55,7 +54,9 @@ public class PipelineRunnerDifferentExecutorsTest {
   @Autowired private RunnerService runnerService;
   @Autowired private PipeliteMetrics metrics;
 
-  @Autowired private List<SingleStageTestProcessFactory> testPipelines;
+  @Autowired
+  private List<RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline>>
+      testPipelines;
 
   @Profile("PipelineRunnerSimpleSshLsfExecutorTest")
   @TestConfiguration
@@ -98,76 +99,74 @@ public class PipelineRunnerDifferentExecutorsTest {
     }
   }
 
-  private static StageExecutorState getCompletedExecutorState(TestType testType) {
-    return testType == TestType.NON_PERMANENT_ERROR
-        ? StageExecutorState.ERROR
-        : StageExecutorState.SUCCESS;
-  }
-
   private static int getExitCode(TestType testType) {
     return testType == TestType.NON_PERMANENT_ERROR ? 1 : 0;
   }
 
-  private static class SimpleSyncTestPipeline extends SingleStageSyncTestProcessFactory {
+  private static class SimpleSyncTestPipeline extends RegisteredTestPipelineWrappingPipeline {
     public SimpleSyncTestPipeline(TestType testType) {
       super(
-          testType,
-          PROCESS_CNT,
           PARALLELISM,
-          PipelineRunnerDifferentExecutorsTest.getCompletedExecutorState(testType),
-          IMMEDIATE_RETRIES,
-          MAXIMUM_RETRIES);
+          PROCESS_CNT,
+          new RegisteredSingleStageSyncTestPipeline(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES));
     }
   }
 
-  private static class SimpleAsyncTestPipeline extends SingleStageAsyncTestProcessFactory {
+  private static class SimpleAsyncTestPipeline extends RegisteredTestPipelineWrappingPipeline {
     public SimpleAsyncTestPipeline(TestType testType) {
       super(
-          testType,
-          PROCESS_CNT,
           PARALLELISM,
-          PipelineRunnerDifferentExecutorsTest.getCompletedExecutorState(testType),
-          IMMEDIATE_RETRIES,
-          MAXIMUM_RETRIES);
+          PROCESS_CNT,
+          new RegisteredSingleStageAsyncTestPipeline(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES));
     }
   }
 
-  private static class SimpleLsfPipeline extends SingleStageSimpleLsfTestProcessFactory {
+  private static class SimpleLsfPipeline extends RegisteredTestPipelineWrappingPipeline {
     public SimpleLsfPipeline(TestType testType, LsfTestConfiguration lsfTestConfiguration) {
       super(
-          testType,
-          PROCESS_CNT,
           PARALLELISM,
-          getExitCode(testType),
-          IMMEDIATE_RETRIES,
-          MAXIMUM_RETRIES,
-          lsfTestConfiguration);
+          PROCESS_CNT,
+          new RegisteredSingleStageSimpleLsfTestPipeline(
+              testType,
+              getExitCode(testType),
+              IMMEDIATE_RETRIES,
+              MAXIMUM_RETRIES,
+              lsfTestConfiguration));
     }
   }
 
-  private static class SimpleLsfPermanentErrorPipeline extends SimpleLsfPipeline {
+  private static class SimpleLsfPermanentErrorPipeline
+      extends RegisteredTestPipelineWrappingPipeline {
     public SimpleLsfPermanentErrorPipeline(LsfTestConfiguration lsfTestConfiguration) {
-      super(TestType.PERMANENT_ERROR, lsfTestConfiguration);
-    }
-
-    @Override
-    protected void testExecutorParams(
-        SimpleLsfExecutorParameters.SimpleLsfExecutorParametersBuilder<?, ?>
-            executorParamsBuilder) {
-      executorParamsBuilder.permanentError(0);
+      super(
+          PARALLELISM,
+          PROCESS_CNT,
+          new RegisteredSingleStageSimpleLsfTestPipeline(
+              TestType.PERMANENT_ERROR,
+              getExitCode(TestType.PERMANENT_ERROR),
+              IMMEDIATE_RETRIES,
+              MAXIMUM_RETRIES,
+              lsfTestConfiguration) {
+            @Override
+            protected void testExecutorParams(
+                SimpleLsfExecutorParameters.SimpleLsfExecutorParametersBuilder<?, ?>
+                    executorParamsBuilder) {
+              executorParamsBuilder.permanentError(0);
+            }
+          });
     }
   }
 
-  private void assertPipeline(SingleStageTestProcessFactory f) {
+  private void assertPipeline(
+      RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline> f) {
     for (PipelineRunner pipelineRunner : runnerService.getPipelineRunners()) {
       assertThat(pipelineRunner.getActiveProcessRunners().size()).isEqualTo(0);
     }
-    assertThat(f.configuredProcessIds().size()).isEqualTo(PROCESS_CNT);
-    f.assertCompletedMetrics(metrics);
-    for (String processId : f.configuredProcessIds()) {
-      f.assertCompletedProcessEntity(processService, processId);
-      f.assertCompletedStageEntity(stageService, processId);
-    }
+    RegisteredSingleStageTestPipeline registeredTestPipeline = f.getRegisteredTestPipeline();
+    assertThat(registeredTestPipeline.configuredProcessIds().size()).isEqualTo(PROCESS_CNT);
+    registeredTestPipeline.assertCompletedMetrics(metrics, PROCESS_CNT);
+    registeredTestPipeline.assertCompletedProcessEntities(processService, PROCESS_CNT);
+    registeredTestPipeline.assertCompletedStageEntities(stageService, PROCESS_CNT);
   }
 
   @Test
@@ -176,7 +175,8 @@ public class PipelineRunnerDifferentExecutorsTest {
     processRunnerPoolManager.startPools();
     processRunnerPoolManager.waitPoolsToStop();
 
-    for (SingleStageTestProcessFactory f : testPipelines) {
+    for (RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline> f :
+        testPipelines) {
       assertPipeline(f);
     }
   }

@@ -10,25 +10,35 @@
  */
 package pipelite.helper;
 
+import pipelite.helper.entity.StageEntityTestHelper;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.service.StageService;
 import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.ExecutorParameters;
 
-public class SingleStageAsyncTestProcessFactory extends SingleStageTestProcessFactory {
+public class RegisteredSingleStageAsyncTestPipeline
+    extends RegisteredSingleStageTestPipeline<RegisteredSingleStageAsyncTestPipeline> {
 
   private final StageExecutorState completedExecutorState;
   private ExecutorParameters executorParams;
 
-  public SingleStageAsyncTestProcessFactory(
-      TestType testType,
-      int processCnt,
-      int parallelism,
-      StageExecutorState completedExecutorState,
-      int immediateRetries,
-      int maximumRetries) {
-    super(testType, processCnt, parallelism, immediateRetries, maximumRetries);
-    this.completedExecutorState = completedExecutorState;
+  public RegisteredSingleStageAsyncTestPipeline(
+      TestType testType, int immediateRetries, int maximumRetries) {
+    super(
+        testType,
+        immediateRetries,
+        maximumRetries,
+        (stageService, pipelineName, processId, stageName, thisPipeline) -> {},
+        (stageService, pipelineName, processId, stageName, thisPipeline) ->
+            StageEntityTestHelper.assertCompletedTestExecutorStageEntity(
+                testType,
+                stageService,
+                pipelineName,
+                processId,
+                stageName,
+                immediateRetries,
+                maximumRetries));
+    this.completedExecutorState =
+        testType == TestType.SUCCESS ? StageExecutorState.SUCCESS : StageExecutorState.ERROR;
   }
 
   @Override
@@ -48,18 +58,7 @@ public class SingleStageAsyncTestProcessFactory extends SingleStageTestProcessFa
     return completedExecutorState;
   }
 
-  @Override
-  public void assertSubmittedStageEntity(StageService stageService, String processId) {}
-
-  @Override
-  public void assertCompletedStageEntity(StageService stageService, String processId) {
-    StageEntityTestHelper.assertCompletedTestExecutorStageEntity(
-        testType(),
-        stageService,
-        pipelineName(),
-        processId,
-        stageName(),
-        immediateRetries(),
-        maximumRetries());
+  public ExecutorParameters executorParams() {
+    return executorParams;
   }
 }

@@ -12,7 +12,6 @@ package pipelite.runner.schedule;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.collect.Iterables;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +25,10 @@ import pipelite.PipeliteTestConfigWithManager;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.entity.ScheduleEntity;
-import pipelite.helper.*;
+import pipelite.helper.RegisteredSingleStageSimpleLsfTestPipeline;
+import pipelite.helper.RegisteredSingleStageTestPipeline;
+import pipelite.helper.RegisteredTestPipelineWrappingSchedule;
+import pipelite.helper.TestType;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.ProcessService;
@@ -55,7 +57,9 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
   @Autowired private RunnerService runnerService;
   @Autowired private PipeliteMetrics metrics;
 
-  @Autowired private List<TestSchedule> testSchedules;
+  @Autowired
+  private List<RegisteredTestPipelineWrappingSchedule<RegisteredSingleStageTestPipeline>>
+      testSchedules;
 
   private static final int PROCESS_CNT = 2;
   private static final int IMMEDIATE_RETRIES = 3;
@@ -68,145 +72,80 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
     @Autowired private LsfTestConfiguration lsfTestConfiguration;
 
     @Bean
-    public SuccessSchedule successSchedule() {
-      return new SuccessSchedule(lsfTestConfiguration);
+    public SimpleLsfSchedule simpleLsfSuccessSchedule() {
+      return new SimpleLsfSchedule(TestType.SUCCESS, lsfTestConfiguration);
     }
 
     @Bean
-    public NonPermanentErrorSchedule nonPermanentErrorSchedule() {
-      return new NonPermanentErrorSchedule(lsfTestConfiguration);
+    public SimpleLsfSchedule simpleLsfNonPermanentErrorSchedule() {
+      return new SimpleLsfSchedule(TestType.NON_PERMANENT_ERROR, lsfTestConfiguration);
     }
 
     @Bean
-    public PermanentErrorSchedule permanentErrorSchedule() {
-      return new PermanentErrorSchedule(lsfTestConfiguration);
+    public SimpleLsfPermanentErrorSchedule simpleLsfPermanentErrorSchedule() {
+      return new SimpleLsfPermanentErrorSchedule(lsfTestConfiguration);
     }
   }
 
-  protected static class TestSchedule extends SingleStageSimpleLsfTestSchedule {
-    public TestSchedule(int exitCode, LsfTestConfiguration lsfTestConfiguration) {
+  private static int getExitCode(TestType testType) {
+    return testType == TestType.NON_PERMANENT_ERROR ? 1 : 0;
+  }
+
+  private static class SimpleLsfSchedule
+      extends RegisteredTestPipelineWrappingSchedule<RegisteredSingleStageTestPipeline> {
+    public SimpleLsfSchedule(TestType testType, LsfTestConfiguration lsfTestConfiguration) {
       super(
           "0/" + SCHEDULER_SECONDS + " * * * * ?",
-          exitCode,
-          IMMEDIATE_RETRIES,
-          MAXIMUM_RETRIES,
-          lsfTestConfiguration);
+          new RegisteredSingleStageSimpleLsfTestPipeline(
+              testType,
+              getExitCode(testType),
+              IMMEDIATE_RETRIES,
+              MAXIMUM_RETRIES,
+              lsfTestConfiguration));
     }
   }
 
-  protected static class SuccessSchedule extends TestSchedule {
-    public SuccessSchedule(LsfTestConfiguration lsfTestConfiguration) {
-      super(0, lsfTestConfiguration);
+  private static class SimpleLsfPermanentErrorSchedule
+      extends RegisteredTestPipelineWrappingSchedule<RegisteredSingleStageTestPipeline> {
+    public SimpleLsfPermanentErrorSchedule(LsfTestConfiguration lsfTestConfiguration) {
+      super(
+          "0/" + SCHEDULER_SECONDS + " * * * * ?",
+          new RegisteredSingleStageSimpleLsfTestPipeline(
+              TestType.PERMANENT_ERROR,
+              getExitCode(TestType.PERMANENT_ERROR),
+              IMMEDIATE_RETRIES,
+              MAXIMUM_RETRIES,
+              lsfTestConfiguration) {
+            @Override
+            protected void testExecutorParams(
+                SimpleLsfExecutorParameters.SimpleLsfExecutorParametersBuilder<?, ?>
+                    executorParamsBuilder) {
+              executorParamsBuilder.permanentError(0);
+            }
+          });
     }
   }
 
-  protected static class NonPermanentErrorSchedule extends TestSchedule {
-    public NonPermanentErrorSchedule(LsfTestConfiguration lsfTestConfiguration) {
-      super(1, lsfTestConfiguration);
-    }
-  }
-
-  protected static class PermanentErrorSchedule extends TestSchedule {
-    public PermanentErrorSchedule(LsfTestConfiguration lsfTestConfiguration) {
-      super(0, lsfTestConfiguration);
-    }
-
-    @Override
-    protected void testExecutorParams(
-        SimpleLsfExecutorParameters.SimpleLsfExecutorParametersBuilder<?, ?>
-            executorParamsBuilder) {
-      executorParamsBuilder.permanentError(0);
-    }
-  }
-
-  private TestType getTestType(TestSchedule testSchedule) {
-    if (testSchedule instanceof PermanentErrorSchedule) {
-      return TestType.PERMANENT_ERROR;
-    }
-    if (testSchedule instanceof NonPermanentErrorSchedule) {
-      return TestType.NON_PERMANENT_ERROR;
-    }
-    return TestType.SUCCESS;
-  }
-
-  private void deleteSchedule(TestSchedule testSchedule) {
+  private void deleteSchedule(
+      RegisteredTestPipelineWrappingSchedule<RegisteredSingleStageTestPipeline> testSchedule) {
     ScheduleEntity schedule = new ScheduleEntity();
     schedule.setPipelineName(testSchedule.pipelineName());
     scheduleService.delete(schedule);
     System.out.println("deleted schedule for pipeline: " + testSchedule.pipelineName());
   }
 
-  private void assertMetrics(TestSchedule f) {
-    MetricsTestHelper.assertCompletedMetrics(
-        getTestType(f), metrics, f.pipelineName(), PROCESS_CNT, IMMEDIATE_RETRIES, MAXIMUM_RETRIES);
-  }
-
-  private void assertScheduleEntity(List<ScheduleEntity> scheduleEntities, TestSchedule f) {
-    String pipelineName = f.pipelineName();
-
-    assertThat(
-            scheduleEntities.stream()
-                .filter(e -> e.getPipelineName().equals(f.pipelineName()))
-                .count())
-        .isEqualTo(1);
-    ScheduleEntity scheduleEntity =
-        scheduleEntities.stream()
-            .filter(e -> e.getPipelineName().equals(f.pipelineName()))
-            .findFirst()
-            .get();
-    assertThat(scheduleEntity.getServiceName()).isEqualTo(serviceConfiguration.getName());
-    assertThat(scheduleEntity.getPipelineName()).isEqualTo(pipelineName);
-    assertThat(scheduleEntity.getProcessId())
-        .isEqualTo(Iterables.getLast(f.configuredProcessIds()));
-    assertThat(scheduleEntity.getExecutionCount()).isEqualTo(PROCESS_CNT);
-    assertThat(scheduleEntity.getStartTime()).isNotNull();
-    assertThat(scheduleEntity.getEndTime()).isAfter(scheduleEntity.getStartTime());
-    if (getTestType(f) == TestType.NON_PERMANENT_ERROR
-        || getTestType(f) == TestType.PERMANENT_ERROR) {
-      assertThat(scheduleEntity.getLastFailed()).isAfter(scheduleEntity.getStartTime());
-      assertThat(scheduleEntity.getLastCompleted()).isNull();
-      assertThat(scheduleEntity.getStreakFailed()).isEqualTo(PROCESS_CNT);
-      assertThat(scheduleEntity.getStreakCompleted()).isEqualTo(0);
-    } else {
-      assertThat(scheduleEntity.getLastFailed()).isNull();
-      assertThat(scheduleEntity.getLastCompleted()).isAfter(scheduleEntity.getStartTime());
-      assertThat(scheduleEntity.getStreakFailed()).isEqualTo(0);
-      assertThat(scheduleEntity.getStreakCompleted()).isEqualTo(PROCESS_CNT);
-    }
-  }
-
-  private void assertProcessEntity(TestSchedule f, String processId) {
-    ProcessEntityTestHelper.assertCompletedProcessEntity(
-        processService, f.pipelineName(), processId, getTestType(f));
-  }
-
-  private void assertStageEntity(TestSchedule f, String processId) {
-    StageEntityTestHelper.assertCompletedSimpleLsfExecutorStageEntity(
-        getTestType(f),
-        stageService,
-        f.pipelineName(),
-        processId,
-        f.stageName(),
-        f.executorParams().getPermanentErrors(),
-        f.cmd(),
-        f.exitCode(),
-        IMMEDIATE_RETRIES,
-        MAXIMUM_RETRIES);
-  }
-
-  private void assertSchedule(TestSchedule f) {
+  private void assertSchedule(
+      RegisteredTestPipelineWrappingSchedule<RegisteredSingleStageTestPipeline> f) {
     ScheduleRunner scheduleRunner = runnerService.getScheduleRunner();
 
     assertThat(scheduleRunner.getActiveProcessRunners().size()).isEqualTo(0);
-    assertThat(f.configuredProcessIds().size()).isEqualTo(PROCESS_CNT);
-    assertMetrics(f);
-    List<ScheduleEntity> scheduleEntities =
-        scheduleService.getSchedules(serviceConfiguration.getName());
-    assertScheduleEntity(scheduleEntities, f);
-    for (String processId : f.configuredProcessIds()) {
-      assertProcessEntity(f, processId);
-      assertStageEntity(f, processId);
-    }
+    RegisteredSingleStageTestPipeline registeredTestPipeline = f.getRegisteredTestPipeline();
+    assertThat(registeredTestPipeline.configuredProcessIds().size()).isEqualTo(PROCESS_CNT);
+    registeredTestPipeline.assertCompletedMetrics(metrics, PROCESS_CNT);
+    registeredTestPipeline.assertCompletedScheduleEntity(
+        scheduleService, serviceConfiguration.getName(), PROCESS_CNT);
+    registeredTestPipeline.assertCompletedProcessEntities(processService, PROCESS_CNT);
+    registeredTestPipeline.assertCompletedStageEntities(stageService, PROCESS_CNT);
   }
 
   @Test
@@ -215,18 +154,21 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
       processRunnerPoolManager.createPools();
 
       ScheduleRunner scheduleRunner = runnerService.getScheduleRunner();
-      for (TestSchedule f : testSchedules) {
+      for (RegisteredTestPipelineWrappingSchedule<RegisteredSingleStageTestPipeline> f :
+          testSchedules) {
         scheduleRunner.setMaximumExecutions(f.pipelineName(), PROCESS_CNT);
       }
 
       processRunnerPoolManager.startPools();
       processRunnerPoolManager.waitPoolsToStop();
 
-      for (TestSchedule f : testSchedules) {
+      for (RegisteredTestPipelineWrappingSchedule<RegisteredSingleStageTestPipeline> f :
+          testSchedules) {
         assertSchedule(f);
       }
     } finally {
-      for (TestSchedule f : testSchedules) {
+      for (RegisteredTestPipelineWrappingSchedule<RegisteredSingleStageTestPipeline> f :
+          testSchedules) {
         deleteSchedule(f);
       }
     }

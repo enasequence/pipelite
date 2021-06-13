@@ -8,13 +8,14 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.helper;
+package pipelite.helper.entity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.stream.Collectors;
 import pipelite.entity.StageEntity;
+import pipelite.helper.TestType;
 import pipelite.service.StageService;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.ErrorType;

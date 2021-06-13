@@ -13,33 +13,58 @@ package pipelite.helper;
 import com.google.common.util.concurrent.Monitor;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import pipelite.Pipeline;
+import pipelite.RegisteredPipeline;
 import pipelite.UniqueStringGenerator;
+import pipelite.process.builder.ProcessBuilder;
 
-public abstract class CreateProcessPipelineTestHelper extends ConfigureProcessPipelineTestHelper {
+public class RegisteredTestPipelineWrappingPipeline<T extends RegisteredPipeline>
+    implements Pipeline {
 
+  private final int parallelism;
   private final int processCount;
+  private final T registeredTestPipeline;
   private final Set<String> createdProcessIds = ConcurrentHashMap.newKeySet();
   private final Set<String> returnedProcessIds = ConcurrentHashMap.newKeySet();
   private final Set<String> confirmedProcessIds = ConcurrentHashMap.newKeySet();
   private final Monitor monitor = new Monitor();
 
-  public CreateProcessPipelineTestHelper(int processCount) {
-    this(
-        UniqueStringGenerator.randomPipelineName(CreateProcessPipelineTestHelper.class),
-        processCount);
-  }
-
-  public CreateProcessPipelineTestHelper(String pipelineName, int processCount) {
-    super(pipelineName);
+  public RegisteredTestPipelineWrappingPipeline(
+      int parallelism, int processCount, T registeredTestPipeline) {
+    this.parallelism = parallelism;
     this.processCount = processCount;
+    this.registeredTestPipeline = registeredTestPipeline;
     for (int i = 0; i < processCount; ++i) {
       createdProcessIds.add(
-          UniqueStringGenerator.randomProcessId(CreateProcessPipelineTestHelper.class));
+          UniqueStringGenerator.randomProcessId(RegisteredTestPipelineWrappingPipeline.class));
     }
+  }
+
+  public int parallelism() {
+    return parallelism;
   }
 
   public int processCnt() {
     return processCount;
+  }
+
+  public T getRegisteredTestPipeline() {
+    return registeredTestPipeline;
+  }
+
+  @Override
+  public final String pipelineName() {
+    return registeredTestPipeline.pipelineName();
+  }
+
+  @Override
+  public final void configureProcess(ProcessBuilder builder) {
+    registeredTestPipeline.configureProcess(builder);
+  }
+
+  @Override
+  public final Options configurePipeline() {
+    return new Options().pipelineParallelism(parallelism);
   }
 
   public final Process nextProcess() {
@@ -64,6 +89,15 @@ public abstract class CreateProcessPipelineTestHelper extends ConfigureProcessPi
     } finally {
       monitor.leave();
     }
+  }
+
+  /** Creates a process for without using PipelineRunner or ScheduleRunner. */
+  public pipelite.process.Process createProcess() {
+    String processId =
+        UniqueStringGenerator.randomProcessId(RegisteredSingleStageTestPipeline.class);
+    ProcessBuilder processBuilder = new ProcessBuilder(processId);
+    configureProcess(processBuilder);
+    return processBuilder.build();
   }
 
   public int createdProcessCount() {
