@@ -13,6 +13,7 @@ package pipelite.helper;
 import java.time.Duration;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.service.StageService;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 
 public class SingleStageSimpleLsfTestProcessFactory extends SingleStageTestProcessFactory {
@@ -23,13 +24,14 @@ public class SingleStageSimpleLsfTestProcessFactory extends SingleStageTestProce
   private SimpleLsfExecutorParameters executorParams;
 
   public SingleStageSimpleLsfTestProcessFactory(
+      TestType testType,
       int processCnt,
       int parallelism,
       int exitCode,
       int immediateRetries,
       int maximumRetries,
       LsfTestConfiguration lsfTestConfiguration) {
-    super(processCnt, parallelism, immediateRetries, maximumRetries);
+    super(testType, processCnt, parallelism, immediateRetries, maximumRetries);
     this.cmd = cmd(exitCode);
     this.exitCode = exitCode;
     this.lsfTestConfiguration = lsfTestConfiguration;
@@ -67,5 +69,33 @@ public class SingleStageSimpleLsfTestProcessFactory extends SingleStageTestProce
 
   public SimpleLsfExecutorParameters executorParams() {
     return executorParams;
+  }
+
+  @Override
+  public void assertSubmittedStageEntity(StageService stageService, String processId) {
+    StageEntityTestHelper.assertSubmittedSimpleLsfExecutorStageEntity(
+        stageService,
+        pipelineName(),
+        processId,
+        stageName(),
+        executorParams.getPermanentErrors(),
+        cmd(),
+        immediateRetries(),
+        maximumRetries());
+  }
+
+  @Override
+  public void assertCompletedStageEntity(StageService stageService, String processId) {
+    StageEntityTestHelper.assertCompletedSimpleLsfExecutorStageEntity(
+        testType(),
+        stageService,
+        pipelineName(),
+        processId,
+        stageName(),
+        executorParams.getPermanentErrors(),
+        cmd(),
+        exitCode(),
+        immediateRetries(),
+        maximumRetries());
   }
 }

@@ -29,6 +29,7 @@ import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.ProcessService;
 import pipelite.service.RunnerService;
 import pipelite.service.StageService;
+import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 
 @SpringBootTest(
@@ -41,7 +42,7 @@ import pipelite.stage.parameters.SimpleLsfExecutorParameters;
     })
 @ActiveProfiles({"test", "PipelineRunnerSimpleSshLsfExecutorTest"})
 @DirtiesContext
-public class PipelineRunnerSimpleSshLsfExecutorTest {
+public class PipelineRunnerDifferentExecutorsTest {
 
   private static final int PROCESS_CNT = 2;
   private static final int IMMEDIATE_RETRIES = 3;
@@ -54,7 +55,7 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
   @Autowired private RunnerService runnerService;
   @Autowired private PipeliteMetrics metrics;
 
-  @Autowired private List<PipelineRunnerSimpleSshLsfExecutorTest.TestPipeline> testPipelines;
+  @Autowired private List<SingleStageTestProcessFactory> testPipelines;
 
   @Profile("PipelineRunnerSimpleSshLsfExecutorTest")
   @TestConfiguration
@@ -62,48 +63,91 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
     @Autowired private LsfTestConfiguration lsfTestConfiguration;
 
     @Bean
-    public SuccessPipeline successPipeline() {
-      return new SuccessPipeline(lsfTestConfiguration);
+    public SimpleSyncTestPipeline simpleSyncTestSuccessPipeline() {
+      return new SimpleSyncTestPipeline(TestType.SUCCESS);
     }
 
     @Bean
-    public NonPermanentErrorPipeline nonPermanentErrorPipeline() {
-      return new NonPermanentErrorPipeline(lsfTestConfiguration);
+    public SimpleSyncTestPipeline simpleSyncTestSNonPermanentErrorPipeline() {
+      return new SimpleSyncTestPipeline(TestType.NON_PERMANENT_ERROR);
     }
 
     @Bean
-    public PermanentErrorPipeline permanentErrorPipeline() {
-      return new PermanentErrorPipeline(lsfTestConfiguration);
+    public SimpleAsyncTestPipeline simpleAsyncTestSuccessPipeline() {
+      return new SimpleAsyncTestPipeline(TestType.SUCCESS);
+    }
+
+    @Bean
+    public SimpleAsyncTestPipeline simpleAsyncTestSNonPermanentErrorPipeline() {
+      return new SimpleAsyncTestPipeline(TestType.NON_PERMANENT_ERROR);
+    }
+
+    @Bean
+    public SimpleLsfPipeline simpleLsfSuccessPipeline() {
+      return new SimpleLsfPipeline(TestType.SUCCESS, lsfTestConfiguration);
+    }
+
+    @Bean
+    public SimpleLsfPipeline simpleLsfNonPermanentErrorPipeline() {
+      return new SimpleLsfPipeline(TestType.NON_PERMANENT_ERROR, lsfTestConfiguration);
+    }
+
+    @Bean
+    public SimpleLsfPermanentErrorPipeline simpleLsfPermanentErrorPipeline() {
+      return new SimpleLsfPermanentErrorPipeline(lsfTestConfiguration);
     }
   }
 
-  protected static class TestPipeline extends SingleStageSimpleLsfTestProcessFactory {
-    public TestPipeline(int exitCode, LsfTestConfiguration lsfTestConfiguration) {
+  private static StageExecutorState getCompletedExecutorState(TestType testType) {
+    return testType == TestType.NON_PERMANENT_ERROR
+        ? StageExecutorState.ERROR
+        : StageExecutorState.SUCCESS;
+  }
+
+  private static int getExitCode(TestType testType) {
+    return testType == TestType.NON_PERMANENT_ERROR ? 1 : 0;
+  }
+
+  private static class SimpleSyncTestPipeline extends SingleStageSyncTestProcessFactory {
+    public SimpleSyncTestPipeline(TestType testType) {
       super(
+          testType,
           PROCESS_CNT,
           PARALLELISM,
-          exitCode,
+          PipelineRunnerDifferentExecutorsTest.getCompletedExecutorState(testType),
+          IMMEDIATE_RETRIES,
+          MAXIMUM_RETRIES);
+    }
+  }
+
+  private static class SimpleAsyncTestPipeline extends SingleStageAsyncTestProcessFactory {
+    public SimpleAsyncTestPipeline(TestType testType) {
+      super(
+          testType,
+          PROCESS_CNT,
+          PARALLELISM,
+          PipelineRunnerDifferentExecutorsTest.getCompletedExecutorState(testType),
+          IMMEDIATE_RETRIES,
+          MAXIMUM_RETRIES);
+    }
+  }
+
+  private static class SimpleLsfPipeline extends SingleStageSimpleLsfTestProcessFactory {
+    public SimpleLsfPipeline(TestType testType, LsfTestConfiguration lsfTestConfiguration) {
+      super(
+          testType,
+          PROCESS_CNT,
+          PARALLELISM,
+          getExitCode(testType),
           IMMEDIATE_RETRIES,
           MAXIMUM_RETRIES,
           lsfTestConfiguration);
     }
   }
 
-  protected static class SuccessPipeline extends TestPipeline {
-    public SuccessPipeline(LsfTestConfiguration lsfTestConfiguration) {
-      super(0, lsfTestConfiguration);
-    }
-  }
-
-  protected static class NonPermanentErrorPipeline extends TestPipeline {
-    public NonPermanentErrorPipeline(LsfTestConfiguration lsfTestConfiguration) {
-      super(1, lsfTestConfiguration);
-    }
-  }
-
-  protected static class PermanentErrorPipeline extends TestPipeline {
-    public PermanentErrorPipeline(LsfTestConfiguration lsfTestConfiguration) {
-      super(0, lsfTestConfiguration);
+  private static class SimpleLsfPermanentErrorPipeline extends SimpleLsfPipeline {
+    public SimpleLsfPermanentErrorPipeline(LsfTestConfiguration lsfTestConfiguration) {
+      super(TestType.PERMANENT_ERROR, lsfTestConfiguration);
     }
 
     @Override
@@ -114,50 +158,15 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
     }
   }
 
-  private TestType getTestType(TestPipeline testPipeline) {
-    if (testPipeline instanceof PermanentErrorPipeline) {
-      return TestType.PERMANENT_ERROR;
-    }
-    if (testPipeline instanceof NonPermanentErrorPipeline) {
-      return TestType.NON_PERMANENT_ERROR;
-    }
-    return TestType.SUCCESS;
-  }
-
-  private void assertMetrics(TestPipeline f) {
-    MetricsTestHelper.assertCompletedMetrics(
-        getTestType(f), metrics, f.pipelineName(), PROCESS_CNT, IMMEDIATE_RETRIES, MAXIMUM_RETRIES);
-  }
-
-  private void assertProcessEntity(TestPipeline f, String processId) {
-    ProcessEntityTestHelper.assertProcessEntity(
-        processService, f.pipelineName(), processId, getTestType(f));
-  }
-
-  private void assertStageEntity(TestPipeline f, String processId) {
-    StageEntityTestHelper.assertCompletedSimpleLsfExecutorStageEntity(
-        getTestType(f),
-        stageService,
-        f.pipelineName(),
-        processId,
-        f.stageName(),
-        f.executorParams().getPermanentErrors(),
-        f.cmd(),
-        f.exitCode(),
-        IMMEDIATE_RETRIES,
-        MAXIMUM_RETRIES);
-  }
-
-  private void assertPipeline(TestPipeline f) {
-
+  private void assertPipeline(SingleStageTestProcessFactory f) {
     for (PipelineRunner pipelineRunner : runnerService.getPipelineRunners()) {
       assertThat(pipelineRunner.getActiveProcessRunners().size()).isEqualTo(0);
     }
     assertThat(f.configuredProcessIds().size()).isEqualTo(PROCESS_CNT);
-    assertMetrics(f);
+    f.assertCompletedMetrics(metrics);
     for (String processId : f.configuredProcessIds()) {
-      assertProcessEntity(f, processId);
-      assertStageEntity(f, processId);
+      f.assertCompletedProcessEntity(processService, processId);
+      f.assertCompletedStageEntity(stageService, processId);
     }
   }
 
@@ -167,7 +176,7 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
     processRunnerPoolManager.startPools();
     processRunnerPoolManager.waitPoolsToStop();
 
-    for (TestPipeline f : testPipelines) {
+    for (SingleStageTestProcessFactory f : testPipelines) {
       assertPipeline(f);
     }
   }

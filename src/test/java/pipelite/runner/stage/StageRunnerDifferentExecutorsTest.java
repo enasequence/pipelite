@@ -16,7 +16,6 @@ import static org.mockito.Mockito.spy;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -41,7 +40,7 @@ import pipelite.stage.executor.StageExecutorState;
     properties = {"pipelite.service.force=true", "pipelite.service.name=StageRunnerTest"})
 @ActiveProfiles({"test"})
 @DirtiesContext
-public class StageRunnerTest {
+public class StageRunnerDifferentExecutorsTest {
 
   @Autowired PipeliteServices pipeliteServices;
   @Autowired PipeliteMetrics pipeliteMetrics;
@@ -66,39 +65,40 @@ public class StageRunnerTest {
     return isError ? 1 : 0;
   }
 
-  private SingleStageTestProcessFactory syncTestProcessFactory(
-      TestType testType, int immediateRetries, int maximumRetries) {
+  private SingleStageTestProcessFactory syncTestProcessFactory(TestType testType) {
     return new SingleStageSyncTestProcessFactory(
+        testType,
         PROCESS_CNT,
         PARALLELISM,
         getCompletedExecutorState(testType),
-        immediateRetries,
-        maximumRetries);
+        IMMEDIATE_RETRIES,
+        MAXIMUM_RETRIES);
   }
 
-  private SingleStageTestProcessFactory asyncTestProcessFactory(
-      TestType testType, int immediateRetries, int maximumRetries) {
+  private SingleStageTestProcessFactory asyncTestProcessFactory(TestType testType) {
     return new SingleStageAsyncTestProcessFactory(
+        testType,
         PROCESS_CNT,
         PARALLELISM,
         getCompletedExecutorState(testType),
-        immediateRetries,
-        maximumRetries);
+        IMMEDIATE_RETRIES,
+        MAXIMUM_RETRIES);
   }
 
-  private SingleStageTestProcessFactory simpleLsfProcessFactory(
-      TestType testType, int immediateRetries, int maximumRetries) {
+  private SingleStageTestProcessFactory simpleLsfProcessFactory(TestType testType) {
     return new SingleStageSimpleLsfTestProcessFactory(
+        testType,
         PROCESS_CNT,
         PARALLELISM,
         getExitCode(testType == TestType.NON_PERMANENT_ERROR),
-        immediateRetries,
-        maximumRetries,
+        IMMEDIATE_RETRIES,
+        MAXIMUM_RETRIES,
         lsfTestConfiguration);
   }
 
-  private Process simulateProcessCreation(Supplier<Process> processSupplier, String pipelineName) {
-    Process process = processSupplier.get();
+  private Process simulateProcessCreation(
+      SingleStageTestProcessFactory processFactory, String pipelineName) {
+    Process process = processFactory.create();
     process.setProcessEntity(
         ProcessEntity.createExecution(
             pipelineName, process.getProcessId(), ProcessEntity.DEFAULT_PRIORITY));
@@ -155,14 +155,13 @@ public class StageRunnerTest {
 
   private void simulateExecution(
       TestType testType,
-      Supplier<Process> processSupplier,
-      SimulateExecutionFirstIterationFactory simulateExecutionFirstIterationFactory,
-      AssertStageEntity assertSubmittedStageEntity,
-      AssertStageEntity assertCompletedStageEntity) {
-    String serviceName = UniqueStringGenerator.randomServiceName(StageRunnerTest.class);
-    String pipelineName = UniqueStringGenerator.randomPipelineName(StageRunnerTest.class);
+      SingleStageTestProcessFactory processFactory,
+      SimulateExecutionFirstIterationFactory simulateExecutionFirstIterationFactory) {
+    String serviceName =
+        UniqueStringGenerator.randomServiceName(StageRunnerDifferentExecutorsTest.class);
 
-    Process process = simulateProcessCreation(processSupplier, pipelineName);
+    String pipelineName = processFactory.pipelineName();
+    Process process = simulateProcessCreation(processFactory, pipelineName);
 
     Stage stage = process.getStages().get(0);
     StageRunner stageRunner =
@@ -175,8 +174,7 @@ public class StageRunnerTest {
         simulateExecutionFirstIterationFactory.create(process, stageRunner);
 
     if (result.isSubmitted()) {
-      assertSubmittedStageEntity.assertStageEntity(
-          pipelineName, process.getProcessId(), stage.getStageName());
+      processFactory.assertSubmittedStageEntity(pipeliteServices.stage(), process.getProcessId());
     }
 
     // Run next iterations
@@ -195,59 +193,28 @@ public class StageRunnerTest {
 
     // ProcessEntity is not created nor asserted in this test
 
-    assertCompletedStageEntity.assertStageEntity(
-        pipelineName, process.getProcessId(), stage.getStageName());
-  }
-
-  private interface AssertStageEntity {
-    void assertStageEntity(String pipelineName, String processId, String stageName);
+    processFactory.assertCompletedStageEntity(pipeliteServices.stage(), process.getProcessId());
   }
 
   @Test
   public void testExecutionUsingSyncTestExecutor() {
     for (TestType testType : EnumSet.of(TestType.NON_PERMANENT_ERROR, TestType.SUCCESS)) {
-      SingleStageTestProcessFactory processFactory =
-          syncTestProcessFactory(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES);
+      SingleStageTestProcessFactory processFactory = syncTestProcessFactory(testType);
       simulateExecution(
           testType,
-          () -> processFactory.create(),
-          (process, stageRunner) -> simulateSyncExecutionFirstIteration(process, stageRunner),
-          // AssertSubmittedStageEntity
-          (pipelineName, processId, stageName) -> {},
-          // AssertCompletedStageEntity
-          ((pipelineName, processId, stageName) ->
-              StageEntityTestHelper.assertCompletedTestExecutorStageEntity(
-                  testType,
-                  pipeliteServices.stage(),
-                  pipelineName,
-                  processId,
-                  stageName,
-                  IMMEDIATE_RETRIES,
-                  MAXIMUM_RETRIES)));
+          processFactory,
+          (process, stageRunner) -> simulateSyncExecutionFirstIteration(process, stageRunner));
     }
   }
 
   @Test
   public void testExecutionUsingAsyncTestExecutor() {
     for (TestType testType : EnumSet.of(TestType.NON_PERMANENT_ERROR, TestType.SUCCESS)) {
-      SingleStageTestProcessFactory processFactory =
-          asyncTestProcessFactory(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES);
+      SingleStageTestProcessFactory processFactory = asyncTestProcessFactory(testType);
       simulateExecution(
           testType,
-          () -> processFactory.create(),
-          (process, stageRunner) -> simulateAsyncExecutionFirstIteration(process, stageRunner),
-          // AssertSubmittedStageEntity
-          (pipelineName, processId, stageName) -> {},
-          // AssertCompletedStageEntity
-          ((pipelineName, processId, stageName) ->
-              StageEntityTestHelper.assertCompletedTestExecutorStageEntity(
-                  testType,
-                  pipeliteServices.stage(),
-                  pipelineName,
-                  processId,
-                  stageName,
-                  IMMEDIATE_RETRIES,
-                  MAXIMUM_RETRIES)));
+          processFactory,
+          (process, stageRunner) -> simulateAsyncExecutionFirstIteration(process, stageRunner));
     }
   }
 
@@ -255,40 +222,11 @@ public class StageRunnerTest {
   // @Timeout(value = 60, unit = SECONDS)
   public void testExecutionUsingSimpleLsfExecutor() {
     for (TestType testType : EnumSet.of(TestType.NON_PERMANENT_ERROR, TestType.SUCCESS)) {
-      SingleStageTestProcessFactory processFactory =
-          simpleLsfProcessFactory(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES);
-
-      boolean isError = testType != TestType.SUCCESS;
+      SingleStageTestProcessFactory processFactory = simpleLsfProcessFactory(testType);
       simulateExecution(
           testType,
-          () -> processFactory.create(),
-          (process, stageRunner) -> simulateAsyncExecutionFirstIteration(process, stageRunner),
-          // AssertSubmittedStageEntity
-          (pipelineName, processId, stageName) -> {
-            StageEntityTestHelper.assertSubmittedSimpleLsfExecutorStageEntity(
-                pipeliteServices.stage(),
-                pipelineName,
-                processId,
-                stageName,
-                Collections.emptyList(),
-                getCmd(isError),
-                IMMEDIATE_RETRIES,
-                MAXIMUM_RETRIES);
-          },
-          // AssertCompletedStageEntity
-          ((pipelineName, processId, stageName) -> {
-            StageEntityTestHelper.assertCompletedSimpleLsfExecutorStageEntity(
-                testType,
-                pipeliteServices.stage(),
-                pipelineName,
-                processId,
-                stageName,
-                Collections.emptyList(),
-                getCmd(isError),
-                getExitCode(isError),
-                IMMEDIATE_RETRIES,
-                MAXIMUM_RETRIES);
-          }));
+          processFactory,
+          (process, stageRunner) -> simulateAsyncExecutionFirstIteration(process, stageRunner));
     }
   }
 }

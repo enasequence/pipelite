@@ -176,7 +176,7 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
   }
 
   private void assertProcessEntity(TestSchedule f, String processId) {
-    ProcessEntityTestHelper.assertProcessEntity(
+    ProcessEntityTestHelper.assertCompletedProcessEntity(
         processService, f.pipelineName(), processId, getTestType(f));
   }
 

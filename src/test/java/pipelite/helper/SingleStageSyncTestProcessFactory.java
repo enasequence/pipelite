@@ -11,6 +11,7 @@
 package pipelite.helper;
 
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.service.StageService;
 import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.ExecutorParameters;
 
@@ -20,12 +21,13 @@ public class SingleStageSyncTestProcessFactory extends SingleStageTestProcessFac
   private ExecutorParameters executorParams;
 
   public SingleStageSyncTestProcessFactory(
+      TestType testType,
       int processCnt,
       int parallelism,
       StageExecutorState completedExecutorState,
       int immediateRetries,
       int maximumRetries) {
-    super(processCnt, parallelism, immediateRetries, maximumRetries);
+    super(testType, processCnt, parallelism, immediateRetries, maximumRetries);
     this.completedExecutorState = completedExecutorState;
   }
 
@@ -44,5 +46,20 @@ public class SingleStageSyncTestProcessFactory extends SingleStageTestProcessFac
 
   public StageExecutorState getCompletedExecutorState() {
     return completedExecutorState;
+  }
+
+  @Override
+  public void assertSubmittedStageEntity(StageService stageService, String processId) {}
+
+  @Override
+  public void assertCompletedStageEntity(StageService stageService, String processId) {
+    StageEntityTestHelper.assertCompletedTestExecutorStageEntity(
+        testType(),
+        stageService,
+        pipelineName(),
+        processId,
+        stageName(),
+        immediateRetries(),
+        maximumRetries());
   }
 }

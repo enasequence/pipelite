@@ -11,18 +11,27 @@
 package pipelite.helper;
 
 import pipelite.UniqueStringGenerator;
+import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.service.ProcessService;
+import pipelite.service.StageService;
 
 public abstract class SingleStageTestProcessFactory extends CreateProcessPipelineTestHelper {
 
+  private final TestType testType;
   private final int parallelism;
   private final int immediateRetries;
   private final int maximumRetries;
   private final String stageName = "STAGE";
 
   public SingleStageTestProcessFactory(
-      int processCnt, int parallelism, int immediateRetries, int maximumRetries) {
+      TestType testType,
+      int processCnt,
+      int parallelism,
+      int immediateRetries,
+      int maximumRetries) {
     super(processCnt);
+    this.testType = testType;
     this.parallelism = parallelism;
     this.immediateRetries = immediateRetries;
     this.maximumRetries = maximumRetries;
@@ -33,6 +42,10 @@ public abstract class SingleStageTestProcessFactory extends CreateProcessPipelin
     ProcessBuilder processBuilder = new ProcessBuilder(processId);
     configureProcess(processBuilder);
     return processBuilder.build();
+  }
+
+  public TestType testType() {
+    return testType;
   }
 
   @Override
@@ -54,5 +67,19 @@ public abstract class SingleStageTestProcessFactory extends CreateProcessPipelin
 
   public String stageName() {
     return stageName;
+  }
+
+  public void assertCompletedProcessEntity(ProcessService processService, String processId) {
+    ProcessEntityTestHelper.assertCompletedProcessEntity(
+        processService, pipelineName(), processId, testType());
+  }
+
+  public abstract void assertSubmittedStageEntity(StageService stageService, String processId);
+
+  public abstract void assertCompletedStageEntity(StageService stageService, String processId);
+
+  public void assertCompletedMetrics(PipeliteMetrics metrics) {
+    MetricsTestHelper.assertCompletedMetrics(
+        testType(), metrics, pipelineName(), processCnt(), immediateRetries(), maximumRetries());
   }
 }

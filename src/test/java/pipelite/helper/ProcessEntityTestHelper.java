@@ -19,7 +19,7 @@ import pipelite.service.ProcessService;
 public class ProcessEntityTestHelper {
   private ProcessEntityTestHelper() {}
 
-  public static void assertProcessEntity(
+  public static void assertCompletedProcessEntity(
       ProcessService processService,
       String pipelineName,
       String processId,
@@ -34,6 +34,6 @@ public class ProcessEntityTestHelper {
       assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.FAILED);
     }
     assertThat(processEntity.getStartTime()).isNotNull();
-    assertThat(processEntity.getEndTime()).isAfter(processEntity.getStartTime());
+    assertThat(processEntity.getEndTime()).isAfterOrEqualTo(processEntity.getStartTime());
   }
 }
