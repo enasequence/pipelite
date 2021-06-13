@@ -83,7 +83,7 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
     }
   }
 
-  protected static class TestSchedule extends SingleStageSimpleLsfScheduleTestHelper {
+  protected static class TestSchedule extends SingleStageSimpleLsfTestSchedule {
     public TestSchedule(int exitCode, LsfTestConfiguration lsfTestConfiguration) {
       super(
           "0/" + SCHEDULER_SECONDS + " * * * * ?",

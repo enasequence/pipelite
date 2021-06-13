@@ -77,12 +77,12 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
     }
   }
 
-  protected static class TestPipeline extends CreateProcessSingleStageSimpleLsfPipelineTestHelper {
+  protected static class TestPipeline extends SingleStageSimpleLsfTestProcessFactory {
     public TestPipeline(int exitCode, LsfTestConfiguration lsfTestConfiguration) {
       super(
           PROCESS_CNT,
-          exitCode,
           PARALLELISM,
+          exitCode,
           IMMEDIATE_RETRIES,
           MAXIMUM_RETRIES,
           lsfTestConfiguration);

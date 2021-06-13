@@ -15,7 +15,7 @@ import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 
-public abstract class SingleStageSimpleLsfScheduleTestHelper extends ScheduleTestHelper {
+public abstract class SingleStageSimpleLsfTestSchedule extends ScheduleTestHelper {
 
   private final String cmd;
   private final int exitCode;
@@ -25,7 +25,7 @@ public abstract class SingleStageSimpleLsfScheduleTestHelper extends ScheduleTes
   private final String stageName = "STAGE";
   private SimpleLsfExecutorParameters executorParams;
 
-  public SingleStageSimpleLsfScheduleTestHelper(
+  public SingleStageSimpleLsfTestSchedule(
       String cron,
       int exitCode,
       int immediateRetries,

@@ -10,11 +10,11 @@
  */
 package pipelite.helper;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.TimeSeriesMetrics;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class MetricsTestHelper {
 

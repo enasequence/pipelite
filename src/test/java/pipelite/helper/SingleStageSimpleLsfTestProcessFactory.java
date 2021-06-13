@@ -15,37 +15,24 @@ import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 
-public abstract class CreateProcessSingleStageSimpleLsfPipelineTestHelper
-    extends CreateProcessPipelineTestHelper {
+public class SingleStageSimpleLsfTestProcessFactory extends SingleStageTestProcessFactory {
 
   private final String cmd;
   private final int exitCode;
-  private final int parallelism;
-  private final int immediateRetries;
-  private final int maximumRetries;
   private final LsfTestConfiguration lsfTestConfiguration;
-  private final String stageName = "STAGE";
   private SimpleLsfExecutorParameters executorParams;
 
-  public CreateProcessSingleStageSimpleLsfPipelineTestHelper(
+  public SingleStageSimpleLsfTestProcessFactory(
       int processCnt,
-      int exitCode,
       int parallelism,
+      int exitCode,
       int immediateRetries,
       int maximumRetries,
       LsfTestConfiguration lsfTestConfiguration) {
-    super(processCnt);
+    super(processCnt, parallelism, immediateRetries, maximumRetries);
     this.cmd = cmd(exitCode);
     this.exitCode = exitCode;
-    this.parallelism = parallelism;
-    this.immediateRetries = immediateRetries;
-    this.maximumRetries = maximumRetries;
     this.lsfTestConfiguration = lsfTestConfiguration;
-  }
-
-  @Override
-  protected final int testConfigureParallelism() {
-    return parallelism;
   }
 
   @Override
@@ -56,11 +43,11 @@ public abstract class CreateProcessSingleStageSimpleLsfPipelineTestHelper
         .host(lsfTestConfiguration.getHost())
         .workDir(lsfTestConfiguration.getWorkDir())
         .timeout(Duration.ofSeconds(180))
-        .maximumRetries(maximumRetries)
-        .immediateRetries(immediateRetries);
+        .maximumRetries(maximumRetries())
+        .immediateRetries(immediateRetries());
     testExecutorParams(executorParamsBuilder);
     executorParams = executorParamsBuilder.build();
-    builder.execute(stageName).withSimpleLsfExecutor(cmd, executorParams);
+    builder.execute(stageName()).withSimpleLsfExecutor(cmd, executorParams);
   }
 
   protected void testExecutorParams(
@@ -76,10 +63,6 @@ public abstract class CreateProcessSingleStageSimpleLsfPipelineTestHelper
 
   public int exitCode() {
     return exitCode;
-  }
-
-  public String stageName() {
-    return stageName;
   }
 
   public SimpleLsfExecutorParameters executorParams() {
