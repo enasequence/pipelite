@@ -20,4 +20,5 @@ import org.springframework.context.annotation.Configuration;
 public class LsfTestConfiguration {
   private String host;
   private String workDir;
+  private String user;
 }

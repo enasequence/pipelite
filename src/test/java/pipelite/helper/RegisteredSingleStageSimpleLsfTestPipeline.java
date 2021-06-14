@@ -66,6 +66,7 @@ public class RegisteredSingleStageSimpleLsfTestPipeline
     SimpleLsfExecutorParameters.SimpleLsfExecutorParametersBuilder<?, ?> executorParamsBuilder =
         SimpleLsfExecutorParameters.builder();
     executorParamsBuilder
+        .user(lsfTestConfiguration.getUser())
         .host(lsfTestConfiguration.getHost())
         .workDir(lsfTestConfiguration.getWorkDir())
         .timeout(Duration.ofSeconds(180))

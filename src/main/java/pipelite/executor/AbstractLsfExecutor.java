@@ -460,7 +460,10 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
         jobResult.jobId = jobId;
         results.add(jobResult);
       } else {
-        results.add(extractResultFromBjobsOutput(line));
+        JobResult jobResult = extractResultFromBjobsOutput(line);
+        if (jobResult != null) {
+          results.add(jobResult);
+        }
       }
     }
     return results;
@@ -470,7 +473,8 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
   public static JobResult extractResultFromBjobsOutput(String str) {
     String[] column = str.split("\\|");
     if (column.length != 7) {
-      throw new PipeliteException("Unexpected LSF bjobs output: " + str);
+      log.atWarning().log("Unexpected bjobs output line: " + str);
+      return null;
     }
 
     StageExecutorResult result;
