@@ -13,10 +13,7 @@ package pipelite.service;
 import static java.util.stream.Collectors.groupingBy;
 
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.Data;
@@ -27,12 +24,14 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import pipelite.configuration.AdvancedConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ProcessEntityId;
 import pipelite.exception.PipeliteRetryException;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.repository.ProcessRepository;
+import pipelite.runner.process.ProcessQueuePriorityPolicy;
 
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -47,13 +46,17 @@ import pipelite.repository.ProcessRepository;
     exceptionExpression = "#{@dataSourceRetryConfiguration.recoverableException(#root)}")
 public class ProcessService {
 
+  private final ProcessQueuePriorityPolicy priorityPolicy;
   private final ProcessRepository processRepository;
   private final MailService mailService;
 
   @Autowired JdbcTemplate jdbcTemplate;
 
   public ProcessService(
-      @Autowired ProcessRepository processRepository, @Autowired MailService mailService) {
+      @Autowired AdvancedConfiguration advancedConfiguration,
+      @Autowired ProcessRepository processRepository,
+      @Autowired MailService mailService) {
+    this.priorityPolicy = advancedConfiguration.getProcessQueuePriorityPolicy();
     this.processRepository = processRepository;
     this.mailService = mailService;
   }
@@ -81,11 +84,65 @@ public class ProcessService {
    * @return the pending processes for a pipeline in priority order
    */
   public List<ProcessEntity> getPendingProcesses(String pipelineName, int maxProcessCount) {
-    try (Stream<ProcessEntity> processes =
-        processRepository.findAllByPipelineNameAndProcessStateOrderByPriorityDesc(
-            pipelineName, ProcessState.PENDING)) {
-      return getProcesses(processes, maxProcessCount);
+    try (Stream<ProcessEntity> fifoProcessStream =
+            processRepository.findAllByPipelineNameAndProcessStateOrderByCreateTimeAsc(
+                pipelineName, ProcessState.PENDING);
+        Stream<ProcessEntity> priorityProcessStream =
+            processRepository.findAllByPipelineNameAndProcessStateOrderByPriorityDesc(
+                pipelineName, ProcessState.PENDING)) {
+
+      List<ProcessEntity> fifoProcesses = getProcesses(fifoProcessStream, maxProcessCount);
+      List<ProcessEntity> priorityProcesses = getProcesses(priorityProcessStream, maxProcessCount);
+
+      return getPendingProcesses(priorityPolicy, maxProcessCount, fifoProcesses, priorityProcesses);
     }
+  }
+
+  public static List<ProcessEntity> getPendingProcesses(
+      ProcessQueuePriorityPolicy priorityPolicy,
+      int maxProcessCount,
+      List<ProcessEntity> fifoProcesses,
+      List<ProcessEntity> priorityProcesses) {
+    int fifoTarget = 0;
+    switch (priorityPolicy) {
+      case PRIORITY:
+        fifoTarget = 0;
+        break;
+      case PREFER_PRIORITY:
+        fifoTarget = maxProcessCount / 4;
+        break;
+      case BALANCED:
+        fifoTarget = maxProcessCount / 2;
+        break;
+      case PREFER_FIFO:
+        fifoTarget = maxProcessCount * 3 / 4;
+        break;
+      case FIFO:
+        fifoTarget = maxProcessCount;
+        break;
+    }
+
+    List<ProcessEntity> processes = new ArrayList<>(maxProcessCount);
+
+    fifoProcesses.stream()
+        .sequential()
+        .limit(fifoTarget)
+        .collect(Collectors.toCollection(() -> processes));
+
+    // Make sure that each process is added only once
+    HashSet<String> processesSet = new HashSet<>();
+    processes.stream()
+        .sequential()
+        .map(p -> p.getProcessId())
+        .collect(Collectors.toCollection(() -> processesSet));
+
+    priorityProcesses.stream()
+        .sequential()
+        .filter(p -> !processesSet.contains(p.getProcessId()))
+        .limit(maxProcessCount - processes.size())
+        .collect(Collectors.toCollection(() -> processes));
+
+    return processes;
   }
 
   /**

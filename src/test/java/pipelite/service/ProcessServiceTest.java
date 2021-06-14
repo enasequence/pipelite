@@ -10,11 +10,6 @@
  */
 package pipelite.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -28,16 +23,28 @@ import pipelite.exception.PipeliteRetryException;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.runner.process.ProcessQueuePriorityPolicy;
+
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
-    properties = {"pipelite.service.force=true", "pipelite.service.name=ProcessServiceTest"})
+    properties = {
+      "pipelite.service.force=true",
+      "pipelite.service.name=ProcessServiceTest",
+      "pipelite.advanced.processQueuePriorityPolicy=PRIORITY"
+    })
 @DirtiesContext
 @ActiveProfiles("test")
 @Transactional
 class ProcessServiceTest {
 
-  private static final int MAX_PROCESS_COUNT = Integer.MAX_VALUE;
+  private static final int MAX_PROCESS_COUNT = 1000;
 
   @Autowired ProcessService processService;
   @Autowired StageService stageService;
@@ -248,5 +255,66 @@ class ProcessServiceTest {
     assertThat(processService.getSavedProcess(pipelineName, processId).isPresent()).isFalse();
     assertThrows(
         PipeliteRetryException.class, () -> processService.isRetryProcess(pipelineName, processId));
+  }
+
+  private ProcessEntity createProcessEntity(Integer priority, ZonedDateTime initTime) {
+    ProcessEntity processEntity = new ProcessEntity();
+    processEntity.setProcessId(UniqueStringGenerator.randomProcessId(ProcessServiceTest.class));
+    processEntity.setPriority(priority);
+    processEntity.setCreateTime(initTime);
+    return processEntity;
+  }
+
+  @Test
+  public void testPendingProcesses() {
+
+    ProcessEntity p1 = createProcessEntity(1, ZonedDateTime.now().minusDays(5));
+    ProcessEntity p2 = createProcessEntity(2, ZonedDateTime.now().minusDays(4));
+    ProcessEntity p3 = createProcessEntity(3, ZonedDateTime.now().minusDays(3));
+    ProcessEntity p4 = createProcessEntity(4, ZonedDateTime.now().minusDays(2));
+    ProcessEntity p5 = createProcessEntity(5, ZonedDateTime.now().minusDays(1));
+
+    List<ProcessEntity> fifoProcesses = Arrays.asList(p1, p2, p3, p4, p5);
+    List<ProcessEntity> priorityProcesses = Arrays.asList(p5, p4, p3, p2, p1);
+
+    // Test lower max process count
+    assertThat(
+            ProcessService.getPendingProcesses(
+                ProcessQueuePriorityPolicy.PRIORITY, 2, fifoProcesses, priorityProcesses))
+        .containsExactly(p5, p4);
+
+    assertThat(
+            ProcessService.getPendingProcesses(
+                ProcessQueuePriorityPolicy.FIFO, 2, fifoProcesses, priorityProcesses))
+        .containsExactly(p1, p2);
+
+    // Test higher max process count
+    assertThat(
+            ProcessService.getPendingProcesses(
+                ProcessQueuePriorityPolicy.PRIORITY, 50, fifoProcesses, priorityProcesses))
+        .containsExactly(p5, p4, p3, p2, p1);
+
+    assertThat(
+            ProcessService.getPendingProcesses(
+                ProcessQueuePriorityPolicy.FIFO, 50, fifoProcesses, priorityProcesses))
+        .containsExactly(p1, p2, p3, p4, p5);
+
+    // Test prefer priority
+    assertThat(
+            ProcessService.getPendingProcesses(
+                ProcessQueuePriorityPolicy.PREFER_PRIORITY, 5, fifoProcesses, priorityProcesses))
+        .containsExactly(p1, p5, p4, p3, p2);
+
+    // Test prefer fifo
+    assertThat(
+            ProcessService.getPendingProcesses(
+                ProcessQueuePriorityPolicy.PREFER_FIFO, 5, fifoProcesses, priorityProcesses))
+        .containsExactly(p1, p2, p3, p5, p4);
+
+    // Test balanced
+    assertThat(
+            ProcessService.getPendingProcesses(
+                ProcessQueuePriorityPolicy.BALANCED, 5, fifoProcesses, priorityProcesses))
+        .containsExactly(p1, p2, p5, p4, p3);
   }
 }

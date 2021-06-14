@@ -40,8 +40,8 @@ import pipelite.service.ProcessService;
     properties = {
       "pipelite.service.force=true",
       "pipelite.service.name=ProcessQueueTest",
-      "pipelite.advanced.pipelineRunnerProcessQueueMinRefreshFrequency=0s",
-      "pipelite.advanced.pipelineRunnerProcessQueueMaxRefreshFrequency=1d"
+      "pipelite.advanced.processQueueMinRefreshFrequency=0s",
+      "pipelite.advanced.processQueueMaxRefreshFrequency=1d"
     })
 @DirtiesContext
 @ActiveProfiles("test")

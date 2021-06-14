@@ -12,6 +12,7 @@ package pipelite.entity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.ZonedDateTime;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.process.ProcessState;
@@ -30,6 +31,8 @@ class ProcessEntityTest {
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getPriority()).isEqualTo(priority);
     assertThat(processEntity.getExecutionCount()).isEqualTo(0);
+    assertThat(processEntity.getCreateTime()).isNotNull();
+    ZonedDateTime createTime = processEntity.getCreateTime();
     assertThat(processEntity.getStartTime()).isNull();
     assertThat(processEntity.getEndTime()).isNull();
     assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.PENDING);
@@ -40,6 +43,7 @@ class ProcessEntityTest {
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getPriority()).isEqualTo(priority);
     assertThat(processEntity.getExecutionCount()).isEqualTo(0);
+    assertThat(processEntity.getCreateTime()).isEqualTo(createTime);
     assertThat(processEntity.getStartTime()).isNotNull();
     assertThat(processEntity.getEndTime()).isNull();
     assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.ACTIVE);
@@ -50,6 +54,7 @@ class ProcessEntityTest {
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getPriority()).isEqualTo(priority);
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);
+    assertThat(processEntity.getCreateTime()).isEqualTo(createTime);
     assertThat(processEntity.getStartTime()).isNotNull();
     assertThat(processEntity.getEndTime()).isNotNull();
     assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.COMPLETED);

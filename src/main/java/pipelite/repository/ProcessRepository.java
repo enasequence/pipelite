@@ -75,6 +75,16 @@ public interface ProcessRepository extends CrudRepository<ProcessEntity, Process
       String pipelineName, ProcessState state);
 
   /**
+   * Finds processes given pipeline name and process state in creation order.
+   *
+   * @param pipelineName the pipeline name
+   * @param state the process state
+   * @return the processes given pipeline name and process state in creation order
+   */
+  Stream<ProcessEntity> findAllByPipelineNameAndProcessStateOrderByCreateTimeAsc(
+      String pipelineName, ProcessState state);
+
+  /**
    * Finds active processes that are not locked.
    *
    * @param pipelineName the pipeline name

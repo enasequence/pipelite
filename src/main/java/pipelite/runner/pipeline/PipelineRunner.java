@@ -70,7 +70,7 @@ public class PipelineRunner extends ProcessRunnerPool {
     this.processQueueFactory = processQueueFactory;
     this.pipelineName = pipeline.pipelineName();
     this.minReplenishFrequency =
-        pipeliteConfiguration.advanced().getPipelineRunnerProcessQueueMinReplenishFrequency();
+        pipeliteConfiguration.advanced().getProcessQueueMinReplenishFrequency();
     this.startTime = ZonedDateTime.now();
   }
 

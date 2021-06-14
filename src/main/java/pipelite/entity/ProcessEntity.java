@@ -41,6 +41,9 @@ public class ProcessEntity {
   @Column(name = "STATE", length = 15, nullable = false)
   private ProcessState processState = ProcessState.PENDING;
 
+  @Column(name = "CREATED")
+  private ZonedDateTime createTime;
+
   @Column(name = "EXEC_CNT", nullable = false)
   private Integer executionCount = 0;
 
@@ -69,6 +72,7 @@ public class ProcessEntity {
     processEntity.setPriority(getBoundedPriority(priority));
     processEntity.setExecutionCount(0);
     processEntity.setProcessState(ProcessState.PENDING);
+    processEntity.setCreateTime(ZonedDateTime.now());
     return processEntity;
   }
 
