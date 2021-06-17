@@ -10,6 +10,12 @@
  */
 package pipelite.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -24,13 +30,6 @@ import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.runner.process.ProcessQueuePriorityPolicy;
-
-import java.time.ZonedDateTime;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
