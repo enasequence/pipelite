@@ -51,6 +51,7 @@ public class SshCmdExecutorTest {
     executor.setExecutorParams(
         CmdExecutorParameters.builder()
             .host(sshTestConfiguration.getHost())
+            .user(sshTestConfiguration.getUser())
             .timeout(Duration.ofSeconds(30))
             .build());
     Stage stage = Stage.builder().stageName(stageName).executor(executor).build();

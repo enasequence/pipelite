@@ -19,4 +19,5 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "pipelite.test.ssh")
 public class SshTestConfiguration {
   private String host;
+  private String user;
 }

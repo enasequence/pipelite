@@ -405,6 +405,7 @@ Example values when using the HSQLDB in-memory database:
 When the following environment variable is defined then ssh unit tests are executed:
 
 - PIPELITE_TEST_SSH_HOST
+- PIPELITE_TEST_SSH_USER (Default value: current user)
 
 When the following environment variable is defined then lsf unit tests are executed:
 
