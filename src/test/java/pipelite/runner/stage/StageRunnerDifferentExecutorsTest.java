@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
@@ -220,6 +221,7 @@ public class StageRunnerDifferentExecutorsTest {
   }
 
   @Test
+  @EnabledIfEnvironmentVariable(named = "PIPELITE_TEST_LSF_HOST", matches = ".+")
   // @Timeout(value = 60, unit = SECONDS)
   public void testExecutionUsingSimpleLsfExecutor() {
     for (TestType testType : EnumSet.of(TestType.NON_PERMANENT_ERROR, TestType.SUCCESS)) {

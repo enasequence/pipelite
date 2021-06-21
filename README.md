@@ -19,6 +19,7 @@ Pipelite workflow manager
     * [Database parameters](#database-parameters)
     * [Advanced parameters](#advanced-parameters)
     * [Test profiles](#test-profiles)
+    * [Environment variables for unit testing](#environment-variables-for-unit-testing)
 - [Database schema](#database-schema)
     * [PIPELITE2_SCHEDULE table](#pipelite2-schedule-table)
     * [PIPELITE2_PROCESS table](#pipelite2-process-table)
@@ -382,8 +383,33 @@ The unit for the resource usage limit can be one of:
 
 #### Test profiles
 
-- if Spring active profiles contain 'pipelite-test' then uses an in memory database unsuitable for production purposes.
+- if Spring active profiles contain 'pipelite-test' then uses HSQLDB in-memory database unsuitable for production purposes.
 - if Spring active profiles contain 'pipelite-lorem' then generates test content for the web interface.
+
+#### Environment variables for unit testing
+
+The following environment variables are mandatory for running the unit test:
+
+- PIPELITE_TEST_DATABASE_DRIVER
+- PIPELITE_TEST_DATABASE_URL
+- PIPELITE_TEST_DATABASE_USERNAME
+- PIPELITE_TEST_DATABASE_PASSWORD
+
+Example values when using the HSQLDB in-memory database:
+
+- PIPELITE_TEST_DATABASE_DRIVER: org.hsqldb.jdbc.JDBCDriver
+- PIPELITE_TEST_DATABASE_URL: jdbc:hsqldb:mem:testdb;DB_CLOSE_DELAY: -1
+- PIPELITE_TEST_DATABASE_USERNAME: sa
+- PIPELITE_TEST_DATABASE_PASSWORD:
+
+When the following environment variable is defined then ssh unit tests are executed:
+
+- PIPELITE_TEST_SSH_HOST
+
+When the following environment variable is defined then lsf unit tests are executed:
+
+- PIPELITE_TEST_LSF_HOST 
+- PIPELITE_TEST_LSF_USER (Default value: current user)
 
 ### Database schema
 

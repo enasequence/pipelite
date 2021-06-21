@@ -1,31 +1,6 @@
 spring:
   config:
     activate:
-      on-profile: test-ignore
-  jpa:
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-pipelite:
-  test:
-    lsf:
-      host: noah-login
-      workdir: pipelite-test
-    ssh:
-      host: noah-login
-  datasource:
-    driverClassName: org.hsqldb.jdbc.JDBCDriver
-    url: 'jdbc:hsqldb:mem:testdb;DB_CLOSE_DELAY: -1'
-    username: sa
-    password:
-    maxActive: 25
-    ddlAuto: create
-    dialect: org.hibernate.dialect.HSQLDialect
----
-spring:
-  config:
-    activate:
       on-profile: test
   jpa:
     show-sql: true
@@ -35,15 +10,15 @@ spring:
 pipelite:
   test:
     lsf:
-      host: noah-login
+      host: ${PIPELITE_TEST_LSF_HOST:}
+      user: ${PIPELITE_TEST_LSF_USER:}
       workdir: pipelite-test
     ssh:
-      host: noah-login
+      host: ${PIPELITE_TEST_SSH_HOST:}
   datasource:
-    driverClassName: oracle.jdbc.driver.OracleDriver
-    url: 'jdbc:oracle:thin:@ora-dlvm5-008.ebi.ac.uk:1521:VERADEVT'
-    username: era
-    password: eradevt1
+    driverClassName: ${PIPELITE_TEST_DATABASE_DRIVER:}
+    url: ${PIPELITE_TEST_DATABASE_URL:}
+    username: ${PIPELITE_TEST_DATABASE_USERNAME:}
+    password: ${PIPELITE_TEST_DATABASE_PASSWORD:}
     maxActive: 25
     ddlAuto: none
-    dialect: org.hibernate.dialect.Oracle10gDialect

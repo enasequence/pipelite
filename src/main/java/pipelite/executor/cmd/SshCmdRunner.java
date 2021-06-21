@@ -10,14 +10,6 @@
  */
 package pipelite.executor.cmd;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Path;
-import java.time.Duration;
-import java.util.EnumSet;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import lombok.extern.flogger.Flogger;
 import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.channel.ClientChannel;
@@ -29,6 +21,15 @@ import org.apache.sshd.common.session.SessionHeartbeatController;
 import pipelite.exception.PipeliteException;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.CmdExecutorParameters;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.util.EnumSet;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /** Executes a command over ssh. */
 @Flogger
@@ -120,7 +121,7 @@ public class SshCmdRunner implements CmdRunner {
 
   private ClientSession createSession(CmdExecutorParameters executorParams) throws IOException {
     String user =
-        executorParams.getUser() != null
+        executorParams.getUser() != null && !executorParams.getUser().isEmpty()
             ? executorParams.getUser()
             : System.getProperty("user.name");
     return sshClient

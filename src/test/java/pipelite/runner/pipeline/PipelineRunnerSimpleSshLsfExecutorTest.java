@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -23,7 +24,10 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
 import pipelite.configuration.properties.LsfTestConfiguration;
-import pipelite.helper.*;
+import pipelite.helper.RegisteredSingleStageSimpleLsfTestPipeline;
+import pipelite.helper.RegisteredSingleStageTestPipeline;
+import pipelite.helper.RegisteredTestPipelineWrappingPipeline;
+import pipelite.helper.TestType;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.ProcessService;
@@ -41,7 +45,7 @@ import pipelite.stage.parameters.SimpleLsfExecutorParameters;
     })
 @ActiveProfiles({"test", "PipelineRunnerSimpleSshLsfExecutorTest"})
 @DirtiesContext
-public class PipelineRunnerDifferentExecutorsTest {
+public class PipelineRunnerSimpleSshLsfExecutorTest {
 
   private static final int PROCESS_CNT = 2;
   private static final int IMMEDIATE_RETRIES = 3;
@@ -64,26 +68,6 @@ public class PipelineRunnerDifferentExecutorsTest {
     @Autowired private LsfTestConfiguration lsfTestConfiguration;
 
     @Bean
-    public SimpleSyncTestPipeline simpleSyncTestSuccessPipeline() {
-      return new SimpleSyncTestPipeline(TestType.SUCCESS);
-    }
-
-    @Bean
-    public SimpleSyncTestPipeline simpleSyncTestSNonPermanentErrorPipeline() {
-      return new SimpleSyncTestPipeline(TestType.NON_PERMANENT_ERROR);
-    }
-
-    @Bean
-    public SimpleAsyncTestPipeline simpleAsyncTestSuccessPipeline() {
-      return new SimpleAsyncTestPipeline(TestType.SUCCESS);
-    }
-
-    @Bean
-    public SimpleAsyncTestPipeline simpleAsyncTestSNonPermanentErrorPipeline() {
-      return new SimpleAsyncTestPipeline(TestType.NON_PERMANENT_ERROR);
-    }
-
-    @Bean
     public SimpleLsfPipeline simpleLsfSuccessPipeline() {
       return new SimpleLsfPipeline(TestType.SUCCESS, lsfTestConfiguration);
     }
@@ -101,24 +85,6 @@ public class PipelineRunnerDifferentExecutorsTest {
 
   private static int getExitCode(TestType testType) {
     return testType == TestType.NON_PERMANENT_ERROR ? 1 : 0;
-  }
-
-  private static class SimpleSyncTestPipeline extends RegisteredTestPipelineWrappingPipeline {
-    public SimpleSyncTestPipeline(TestType testType) {
-      super(
-          PARALLELISM,
-          PROCESS_CNT,
-          new RegisteredSingleStageSyncTestPipeline(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES));
-    }
-  }
-
-  private static class SimpleAsyncTestPipeline extends RegisteredTestPipelineWrappingPipeline {
-    public SimpleAsyncTestPipeline(TestType testType) {
-      super(
-          PARALLELISM,
-          PROCESS_CNT,
-          new RegisteredSingleStageAsyncTestPipeline(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES));
-    }
   }
 
   private static class SimpleLsfPipeline extends RegisteredTestPipelineWrappingPipeline {
@@ -170,6 +136,7 @@ public class PipelineRunnerDifferentExecutorsTest {
   }
 
   @Test
+  @EnabledIfEnvironmentVariable(named = "PIPELITE_TEST_LSF_HOST", matches = ".+")
   public void runPipelines() {
     processRunnerPoolManager.createPools();
     processRunnerPoolManager.startPools();

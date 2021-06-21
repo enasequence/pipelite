@@ -10,11 +10,9 @@
  */
 package pipelite.executor;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.time.Duration;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -26,6 +24,10 @@ import pipelite.stage.StageState;
 import pipelite.stage.executor.*;
 import pipelite.stage.parameters.LsfExecutorParameters;
 import pipelite.time.Time;
+
+import java.time.Duration;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
@@ -41,8 +43,8 @@ public class SshLsfExecutorTest {
 
   @Test
   @Disabled
+  @EnabledIfEnvironmentVariable(named = "PIPELITE_TEST_LSF_HOST", matches = ".+")
   public void test() {
-
     LsfExecutor executor = StageExecutor.createLsfExecutor("");
     executor.setExecutorParams(
         LsfExecutorParameters.builder()
