@@ -37,6 +37,7 @@ public class RegisteredSingleStageSimpleLsfTestPipeline
         (stageService, pipelineName, processId, stageName, thisPipeline) ->
             StageEntityTestHelper.assertSubmittedSimpleLsfExecutorStageEntity(
                 stageService,
+                lsfTestConfiguration,
                 pipelineName,
                 processId,
                 stageName,
@@ -48,6 +49,7 @@ public class RegisteredSingleStageSimpleLsfTestPipeline
             StageEntityTestHelper.assertCompletedSimpleLsfExecutorStageEntity(
                 testType,
                 stageService,
+                lsfTestConfiguration,
                 pipelineName,
                 processId,
                 stageName,

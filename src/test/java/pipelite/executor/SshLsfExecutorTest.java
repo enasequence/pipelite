@@ -10,6 +10,9 @@
  */
 package pipelite.executor;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.Duration;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -24,10 +27,6 @@ import pipelite.stage.StageState;
 import pipelite.stage.executor.*;
 import pipelite.stage.parameters.LsfExecutorParameters;
 import pipelite.time.Time;
-
-import java.time.Duration;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,

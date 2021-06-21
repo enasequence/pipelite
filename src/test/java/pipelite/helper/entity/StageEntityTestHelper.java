@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.entity.StageEntity;
 import pipelite.helper.TestType;
 import pipelite.service.StageService;
@@ -109,7 +110,8 @@ public class StageEntityTestHelper {
       String cmd,
       int immediateRetries,
       int maximumRetries,
-      StageEntity stageEntity) {
+      StageEntity stageEntity,
+      LsfTestConfiguration lsfTestConfiguration) {
     assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.SimpleLsfExecutor");
 
     assertThat(stageEntity.getExecutorData()).contains("  \"cmd\" : \"" + cmd + "\"");
@@ -126,8 +128,12 @@ public class StageEntityTestHelper {
                 + "  \"immediateRetries\" : "
                 + immediateRetries
                 + ",\n"
-                + "  \"host\" : \"noah-login\",\n"
-                + "  \"workDir\" : \"pipelite-test\",\n"
+                + "  \"host\" : \""
+                + lsfTestConfiguration.getHost()
+                + "\",\n"
+                + "  \"workDir\" : \""
+                + lsfTestConfiguration.getWorkDir()
+                + "\",\n"
                 + (permanentErrors != null && !permanentErrors.isEmpty()
                     ? "  \"logBytes\" : 1048576,\n"
                         + "  \"permanentErrors\" : [ "
@@ -143,6 +149,7 @@ public class StageEntityTestHelper {
 
   public static void assertSubmittedSimpleLsfExecutorStageEntity(
       StageService stageService,
+      LsfTestConfiguration lsfTestConfiguration,
       String pipelineName,
       String processId,
       String stageName,
@@ -155,12 +162,13 @@ public class StageEntityTestHelper {
         assertSubmittedExecutorStageEntity(stageService, pipelineName, processId, stageName);
 
     assertSimpleLsfExecutorStageEntity(
-        permanentErrors, cmd, immediateRetries, maximumRetries, stageEntity);
+        permanentErrors, cmd, immediateRetries, maximumRetries, stageEntity, lsfTestConfiguration);
   }
 
   public static void assertCompletedSimpleLsfExecutorStageEntity(
       TestType testType,
       StageService stageService,
+      LsfTestConfiguration lsfTestConfiguration,
       String pipelineName,
       String processId,
       String stageName,
@@ -181,7 +189,7 @@ public class StageEntityTestHelper {
             maximumRetries);
 
     assertSimpleLsfExecutorStageEntity(
-        permanentErrors, cmd, immediateRetries, maximumRetries, stageEntity);
+        permanentErrors, cmd, immediateRetries, maximumRetries, stageEntity, lsfTestConfiguration);
 
     assertThat(stageEntity.getResultParams()).contains("\"exit code\" : \"" + exitCode + "\"");
     assertThat(stageEntity.getResultParams()).contains("\"job id\" :");

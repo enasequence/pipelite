@@ -165,9 +165,9 @@ public class MySchedule implements Pipelite.Schedule {
                     // The timeout after which the stage execution will be considered as failed.
                     .timeout(Duration.ofMinutes(30))
                     // The LSF login node.
-                    .host("noah-login")
+                    .host("TODO")
                     // The LSF queue.
-                    .queue("production-rh74")
+                    .queue("TODO")
                     // The LSF working directoy where stage specific output files are written.
                     .workDir("pipelite_tmp")
                     .build();
