@@ -49,6 +49,7 @@ public class StageEntity {
   @Column(name = "STATE", length = 15, nullable = false)
   private StageState stageState;
 
+  @Enumerated(EnumType.STRING)
   @Column(name = "ERROR_TYPE", length = 64)
   private ErrorType errorType;
 
