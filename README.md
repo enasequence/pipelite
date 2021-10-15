@@ -388,7 +388,7 @@ The unit for the resource usage limit can be one of:
 
 #### Environment variables for unit testing
 
-The following environment variables are mandatory for running the unit test:
+The following environment variables are mandatory for running the unit tests:
 
 - PIPELITE_TEST_DATABASE_DRIVER
 - PIPELITE_TEST_DATABASE_URL

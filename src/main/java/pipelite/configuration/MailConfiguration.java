@@ -33,7 +33,7 @@ public class MailConfiguration {
       log.atWarning().log("Missing optional pipelite property: pipelite.mail.host");
     }
     if (port == null) {
-      log.atWarning().log("Missing optional pipelite property: ppipelite.mail.port");
+      log.atWarning().log("Missing optional pipelite property: pipelite.mail.port");
     }
     if (from == null) {
       log.atWarning().log("Missing optional pipelite property: pipelite.mail.from");

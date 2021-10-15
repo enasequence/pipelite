@@ -62,19 +62,19 @@ public class RepositoryConfiguration {
   private boolean checkRequiredProperties() {
     boolean isValid = true;
     if (driverClassName == null || driverClassName.trim().isEmpty()) {
-      log.atSevere().log("Missing required pipelite property: pipelite.repository.driverClassName");
+      log.atSevere().log("Missing required pipelite property: pipelite.datasource.driverClassName");
       isValid = false;
     }
     if (url == null) {
-      log.atSevere().log("Missing required pipelite property: pipelite.repository.url");
+      log.atSevere().log("Missing required pipelite property: pipelite.datasource.url");
       isValid = false;
     }
     if (username == null) {
-      log.atSevere().log("Missing required pipelite property: pipelite.repository.username");
+      log.atSevere().log("Missing required pipelite property: pipelite.datasource.username");
       isValid = false;
     }
     if (password == null) {
-      log.atSevere().log("Missing required pipelite property: pipelite.repository.password");
+      log.atSevere().log("Missing required pipelite property: pipelite.datasource.password");
       isValid = false;
     }
 
@@ -99,7 +99,7 @@ public class RepositoryConfiguration {
   @Primary
   public LocalContainerEntityManagerFactoryBean pipeliteEntityManager() {
     if (!checkRequiredProperties()) {
-      throw new RuntimeException("Missing required pipelite properties: pipelite.repository.*");
+      throw new RuntimeException("Missing required pipelite properties: pipelite.datasource.*");
     }
 
     LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
