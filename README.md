@@ -459,6 +459,8 @@ The Pipeline process stages are stored in this table with associated execution i
 - EXEC_DATA: the stage executor data
 - EXEC_PARAMS: the stage executor parameters
 - EXEC_RESULT_PARAMS: the stage executor result parameters
+- EXEC_ERROR: the last error message {{PIPELITE_ERROR: <error message>}} in the stdout and stderr output of the stage execution
+- EXEC_TRACE: the last stack trace in the stdout and stderr output of the stage execution
 
 #### PIPELITE2_STAGE_LOG table
 
