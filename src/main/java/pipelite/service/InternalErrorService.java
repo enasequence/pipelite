@@ -10,11 +10,6 @@
  */
 package pipelite.service;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.UUID;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Backoff;
@@ -26,6 +21,12 @@ import org.springframework.transaction.annotation.Transactional;
 import pipelite.entity.InternalErrorEntity;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.repository.InternalErrorRepository;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -71,9 +72,9 @@ public class InternalErrorService {
       String processId,
       String stageName,
       Class cls,
-      Throwable exception) {
+      Throwable ex) {
     try {
-      log.atSevere().withCause(exception).log(
+      log.atSevere().withCause(ex).log(
           "Internal error in service: %s, pipeline: %s, process: %s, stage: %s, class %s",
           serviceName != null ? serviceName : "",
           pipelineName != null ? pipelineName : "",
@@ -93,14 +94,18 @@ public class InternalErrorService {
       internalErrorEntity.setProcessId(processId);
       internalErrorEntity.setStageName(stageName);
       internalErrorEntity.setClassName(cls.getName());
-      internalErrorEntity.setErrorMessage(exception.getMessage());
-      StringWriter sw = new StringWriter();
-      PrintWriter pw = new PrintWriter(sw);
-      exception.printStackTrace(pw);
-      internalErrorEntity.setErrorLog(sw.toString());
+      internalErrorEntity.setErrorMessage(ex.getMessage());
+      internalErrorEntity.setErrorLog(getStackTraceAsString(ex));
       return repository.save(internalErrorEntity);
     } catch (Exception ignored) {
     }
     return null;
+  }
+
+  public static String getStackTraceAsString(Throwable ex) {
+    StringWriter sw = new StringWriter();
+    PrintWriter pw = new PrintWriter(sw);
+    ex.printStackTrace(pw);
+    return sw.toString();
   }
 }

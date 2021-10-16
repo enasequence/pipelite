@@ -267,6 +267,8 @@ public class ScheduleRunnerTest {
         assertThat(stageEntity.getResultParams()).isNull();
       } else if (t.stageTestResult == StageTestResult.EXCEPTION) {
         assertThat(stageEntity.getStageState()).isEqualTo(StageState.ERROR);
+        assertThat(stageEntity.getTrace()).startsWith("java.lang.RuntimeException: Expected exception\n" +
+                "\tat pipelite.runner.schedule.ScheduleRunnerTest");
         assertThat(stageLogEntity.getStageLog())
             .contains("java.lang.RuntimeException: Expected exception");
       } else {

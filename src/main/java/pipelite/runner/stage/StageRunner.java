@@ -11,8 +11,6 @@
 package pipelite.runner.stage;
 
 import com.google.common.flogger.FluentLogger;
-import java.time.Duration;
-import java.time.ZonedDateTime;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.log.LogKey;
@@ -22,6 +20,9 @@ import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
 
 @Flogger
 /** Executes a stage and returns the stage execution result. */

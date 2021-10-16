@@ -10,14 +10,14 @@
  */
 package pipelite.stage.executor;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.Map;
 import lombok.Getter;
 import lombok.extern.flogger.Flogger;
 import pipelite.json.Json;
+import pipelite.service.InternalErrorService;
 import pipelite.stage.StageState;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Getter
 @Flogger
@@ -80,9 +80,7 @@ public class StageExecutorResult {
    */
   public static StageExecutorResult internalError(Exception ex) {
     StageExecutorResult result = error().setInternalError();
-    StringWriter str = new StringWriter();
-    ex.printStackTrace(new PrintWriter(str));
-    result.setStageLog(str.toString());
+    result.setStageLog(InternalErrorService.getStackTraceAsString(ex));
     return result;
   }
 

@@ -11,19 +11,21 @@
 package pipelite.entity;
 
 import com.fasterxml.jackson.annotation.JsonRawValue;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
-import javax.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.JsonSerializableExecutor;
 import pipelite.json.Json;
+import pipelite.log.StageLogParser;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.ErrorType;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
+
+import javax.persistence.*;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 
 @Entity
 @Table(name = "PIPELITE2_STAGE")
@@ -80,6 +82,14 @@ public class StageEntity {
   @JsonRawValue
   private String resultParams;
 
+  @Column(name = "EXEC_ERROR", length = 256)
+  private String error;
+
+  @Column(name = "EXEC_TRACE", columnDefinition = "CLOB")
+  @Lob
+  @JsonRawValue
+  private String trace;
+
   /**
    * Creates a new stage.
    *
@@ -107,6 +117,8 @@ public class StageEntity {
     StageExecutor stageExecutor = stage.getExecutor();
     this.stageState = StageState.ACTIVE;
     this.errorType = null;
+    this.error = null;
+    this.trace = null;
     this.resultParams = null;
     this.startTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.endTime = null;
@@ -139,6 +151,15 @@ public class StageEntity {
   public void endExecution(StageExecutorResult result) {
     this.stageState = result.getStageState();
     this.errorType = result.getErrorType();
+    if (result.getStageLog() != null && !result.getStageLog().isEmpty()) {
+      try {
+        StageLogParser stageLogParser = new StageLogParser(result.getStageLog());
+        this.error = stageLogParser.getError();
+        this.trace = stageLogParser.getTrace();
+      } catch (Exception ex) {
+        log.atSevere().withCause(ex).log("Failed to parse stage log");
+      }
+    }
     this.resultParams = result.attributesJson();
     this.endTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.executionCount++;
@@ -148,6 +169,8 @@ public class StageEntity {
   public void resetExecution() {
     this.stageState = StageState.PENDING;
     this.errorType = null;
+    this.error = null;
+    this.trace = null;
     this.resultParams = null;
     this.startTime = null;
     this.endTime = null;
