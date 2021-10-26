@@ -301,12 +301,13 @@ class RetryServiceTest {
     assertThat(scheduleRunner.getScheduleCrons().size()).isOne();
     assertThat(scheduleRunner.getScheduleCrons().get(0).getPipelineName()).isEqualTo(SCHEDULE_NAME);
 
-    scheduleRunner.startUp();
-
     // Check schedule state
     assertSetupSchedule(serviceName, SCHEDULE_NAME, processId, CRON, nextTime);
 
     ZonedDateTime retryTime = ZonedDateTime.now();
+
+    Time.wait(Duration.ofMillis(1000));
+    scheduleRunner.startUp();
 
     // Retry
     retryService.retry(SCHEDULE_NAME, processId);

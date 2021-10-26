@@ -193,5 +193,6 @@ public class StageEntityTestHelper {
 
     assertThat(stageEntity.getResultParams()).contains("\"exit code\" : \"" + exitCode + "\"");
     assertThat(stageEntity.getResultParams()).contains("\"job id\" :");
+    assertThat(stageEntity.getExitCode()).isEqualTo(exitCode);
   }
 }

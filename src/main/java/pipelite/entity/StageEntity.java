@@ -24,6 +24,7 @@ import pipelite.stage.StageState;
 import pipelite.stage.executor.ErrorType;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultAttribute;
 
 @Entity
 @Table(name = "PIPELITE2_STAGE")
@@ -79,6 +80,9 @@ public class StageEntity {
   @Lob
   @JsonRawValue
   private String resultParams;
+
+  @Column(name = "EXIT_CODE")
+  private Integer exitCode;
 
   /**
    * Creates a new stage.
@@ -141,6 +145,11 @@ public class StageEntity {
     this.errorType = result.getErrorType();
     this.resultParams = result.attributesJson();
     this.endTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    String exitCodeAttribute = result.getAttribute(StageExecutorResultAttribute.EXIT_CODE);
+    try {
+      this.exitCode = Integer.parseInt(exitCodeAttribute);
+    } catch (Exception e) {
+    }
     this.executionCount++;
   }
 

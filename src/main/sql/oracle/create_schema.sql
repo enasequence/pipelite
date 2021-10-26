@@ -277,6 +277,7 @@ create table pipelite2_stage
     exec_data          clob,
     exec_params        clob,
     exec_result_params clob,
+    exit_code          number(5,0),
     audit_time         timestamp with time zone default cast(sysdate as timestamp with time zone) not null
 ) tablespace &table_tablespace;
 
@@ -309,6 +310,7 @@ create table pipelite2_stage_audit
     exec_data          clob,
     exec_params        clob,
     exec_result_params clob,
+    exit_code          number(5,0),
     audit_time         timestamp with time zone,
     audit_stmt         char(1)
 ) tablespace &table_tablespace;
@@ -345,6 +347,7 @@ begin
         exec_data,
         exec_params,
         exec_result_params,
+        exit_code,
         audit_time,
         audit_stmt
       )
@@ -362,6 +365,7 @@ begin
         :old.exec_data,
         :old.exec_params,
         :old.exec_result_params,
+        :old.exit_code,
         :old.audit_time,
         audit_stmt
       );
