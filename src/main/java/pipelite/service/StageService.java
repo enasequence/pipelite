@@ -167,12 +167,12 @@ public class StageService {
   }
 
   /**
-   * Returns the saved stage output.
+   * Returns the saved stage log.
    *
    * @param pipelineName the pipeline name
    * @param processId the process id
    * @param stageName the stage name
-   * @return the saved stage output
+   * @return the saved stage log
    */
   public Optional<StageLogEntity> getSavedStageLog(
       String pipelineName, String processId, String stageName) {
@@ -190,10 +190,10 @@ public class StageService {
   }
 
   /**
-   * Saves the stage output.
+   * Saves the stage log.
    *
    * @param stageLogEntity the stage logs to save
-   * @return the saved stage output
+   * @return the saved stage log
    */
   public StageLogEntity saveStageLog(StageLogEntity stageLogEntity) {
     return logRepository.save(stageLogEntity);
