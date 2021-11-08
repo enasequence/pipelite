@@ -70,20 +70,25 @@ public class ProcessQueue {
     Assert.notNull(pipeline.pipelineName(), "Missing pipeline name");
     Assert.notNull(
         pipeline.configurePipeline().pipelineParallelism(), "Missing pipeline parallelism");
-    Assert.notNull(
-        pipeliteConfiguration.advanced().getProcessQueueMinRefreshFrequency(),
-        "Missing process queue min refresh frequency");
-    Assert.notNull(
-        pipeliteConfiguration.advanced().getProcessQueueMaxRefreshFrequency(),
-        "Missing process queue max refresh frequency");
+
     this.processService = pipeliteServices.process();
     this.pipelineName = pipeline.pipelineName();
     this.pipelineParallelism =
         Math.min(MAX_PARALLELISM, Math.max(pipeline.configurePipeline().pipelineParallelism(), 1));
+
     this.minRefreshFrequency =
-        pipeliteConfiguration.advanced().getProcessQueueMinRefreshFrequency();
+        pipeline.configurePipeline().processQueueMinRefreshFrequency() != null
+            ? pipeline.configurePipeline().processQueueMinRefreshFrequency()
+            : pipeliteConfiguration.advanced().getProcessQueueMinRefreshFrequency();
+
     this.maxRefreshFrequency =
-        pipeliteConfiguration.advanced().getProcessQueueMaxRefreshFrequency();
+        pipeline.configurePipeline().processQueueMaxRefreshFrequency() != null
+            ? pipeline.configurePipeline().processQueueMaxRefreshFrequency()
+            : pipeliteConfiguration.advanced().getProcessQueueMaxRefreshFrequency();
+
+    Assert.notNull(this.minRefreshFrequency, "Missing process queue min refresh frequency");
+    Assert.notNull(this.maxRefreshFrequency, "Missing process queue max refresh frequency");
+
     this.processQueueMaxSize = pipelineParallelism * MAX_QUEUE_SIZE_PARALLELISM_MULTIPLIER;
   }
 

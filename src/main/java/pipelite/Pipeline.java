@@ -10,6 +10,7 @@
  */
 package pipelite;
 
+import java.time.Duration;
 import lombok.Data;
 import lombok.Value;
 import lombok.experimental.Accessors;
@@ -22,6 +23,9 @@ public interface Pipeline extends RegisteredPipeline {
   class Options {
     /** The maximum number of parallel process executions. Default value is 1. */
     private int pipelineParallelism = 1;
+
+    private Duration processQueueMinRefreshFrequency;
+    private Duration processQueueMaxRefreshFrequency;
   }
 
   /**
