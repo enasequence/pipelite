@@ -276,7 +276,9 @@ value is not overriden in ```ProcessBuilder```.
   Pipelite service
 - pipelite.executor.cmd.env: the environmental variables passed to the command executor
 - pipelite.executor.cmd.workDir: the working directory where the output file and job definition files are written
-- pipelite.executor.cmd.logBytes: the number of last bytes from the output file saved in the stage log
+- pipelite.executor.cmd.saveLog: if true then the stage log will be saved in the database. Default value: true
+- pipelite.executor.cmd.logBytes: the number of last bytes from the output file saved in the stage log. Default value: 1 MiB
+- pipelite.executor.cmd.logTimeout: the maximum wait time for the stage log to become available. Default value: 10 seconds
 
 ##### Simple LSF executor parameters
 

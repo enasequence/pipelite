@@ -80,8 +80,6 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
   }
 
   private static final String OUT_FILE_SUFFIX = ".out";
-  private static final Duration OUT_FILE_POLL_TIMEOUT = Duration.ofMinutes(5);
-  private static final Duration OUT_FILE_POLL_FREQUENCY = Duration.ofSeconds(10);
 
   private static final String MKDIR_CMD = "mkdir -p ";
 
@@ -179,10 +177,10 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
             "Unexpected executor state: " + pollResult.getExecutorState().name());
       }
       setPermanentError();
-      pollTimeout = ZonedDateTime.now().plus(OUT_FILE_POLL_TIMEOUT);
+      pollTimeout = ZonedDateTime.now().plus(getExecutorParams().getLogTimeout());
     }
 
-    if (readOutFile(request)) {
+    if (!getExecutorParams().isSaveLog() || readOutFile(request)) {
       return pollResult;
     }
     return StageExecutorResult.active();
@@ -369,8 +367,8 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
       // LSF output file poll timeout was exceeded
       pollResult.setStageLog(
           "Missing LSF output file. Not available within "
-              + OUT_FILE_POLL_TIMEOUT.toMinutes()
-              + " minutes.");
+              + (getExecutorParams().getLogTimeout().toMillis() / 1000)
+              + " seconds.");
       return true;
     }
 

@@ -134,8 +134,10 @@ public class StageEntityTestHelper {
                 + "  \"workDir\" : \""
                 + lsfTestConfiguration.getWorkDir()
                 + "\",\n"
+                + "  \"saveLog\" : true,\n"
                 + (permanentErrors != null && !permanentErrors.isEmpty()
                     ? "  \"logBytes\" : 1048576,\n"
+                        + "  \"logTimeout\" : 10000,\n"
                         + "  \"permanentErrors\" : [ "
                         + String.join(
                             ", ",
@@ -143,7 +145,7 @@ public class StageEntityTestHelper {
                                 .map(i -> i.toString())
                                 .collect(Collectors.toList()))
                         + " ]\n"
-                    : "  \"logBytes\" : 1048576\n")
+                    : "  \"logBytes\" : 1048576,\n" + "  \"logTimeout\" : 10000\n")
                 + "}");
   }
 
