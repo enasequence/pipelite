@@ -46,7 +46,10 @@ active for a pipeline at any given time.
 Pipeline starts up a web service with a basic monitoring interface, takes care of the pipeline and schedule executions
 and stores the execution state in a relational database.
 
-Please note that no new classes should be added to the ```pipelite```  package or any of its sub-packages except for pipeline and schedule configurations that should be in ```pipelite.pipeline``` and ```pipelite.schedule``` packages. This will allow pipeline and schedule configurations to be picked up pipelite while no other classes will accidentially override any pipelite classes.
+Please note that no new classes should be added to the ```pipelite```  package or any of its sub-packages except for
+pipeline and schedule configurations that should be in ```pipelite.pipeline``` and ```pipelite.schedule``` packages.
+This will allow pipeline and schedule configurations to be picked up pipelite while no other classes will accidentially
+override any pipelite classes.
 
 ### How to start up Pipelite
 
@@ -70,6 +73,7 @@ implementation 'pipelite:pipelite:1.0.89'
 and the minimal application would call  ```Pipelite.main``` to start up the Pipelite services:
 
 ```java
+
 @SpringBootApplication
 public class Application {
     public static void main(String[] args) {
@@ -81,6 +85,7 @@ public class Application {
 The ```SpringApplication``` can be configured using a ```Consumer<SpringApplication>``` callback:
 
 ```java
+
 @SpringBootApplication
 public class Application {
     public static void main(String[] args) {
@@ -95,9 +100,10 @@ public class Application {
 Schedules are used for executing processes according to a cron schedule.
 
 Schedules are registered by implementing the ```Pipelite.Schedule``` interface and using the ```@Component```
-annotation. 
+annotation.
 
-Schedules should be declared in the ```pipelite.schedule``` package to allow the configurations to be picked up pipelite.
+Schedules should be declared in the ```pipelite.schedule``` package to allow the configurations to be picked up
+pipelite.
 
 #### SimpleLsfExecutor example
 
@@ -181,7 +187,8 @@ Pipelines are used for executing unscheduled process instances.
 Pipelines are registered by implementing the ```Pipelite.Pipeline``` interface and using the ```@Component```
 annotation.
 
-Pipelines should be declared in the ```pipelite.pipeline``` package to allow the configurations to be picked up pipelite.
+Pipelines should be declared in the ```pipelite.pipeline``` package to allow the configurations to be picked up
+pipelite.
 
 A pipeline would look like the following:
 
@@ -198,7 +205,7 @@ public class MyPipeline implements Pipelite.Pipeline {
         // The maximum number of parallel process executions.
         return new Options().pipelineParallelism(10);
     }
-    
+
     @Override
     public PrioritizedProcess nextProcess() {
         // To be implemented by the user.
@@ -210,16 +217,15 @@ public class MyPipeline implements Pipelite.Pipeline {
     }
 ```
 
-The ```nextProcess``` method is called by Pipelite and should return ```Process``` instances or null if no
-new processes are available at the time. The ```Process``` contains the process id and its priority for the
-new process.
+The ```nextProcess``` method is called by Pipelite and should return ```Process``` instances or null if no new processes
+are available at the time. The ```Process``` contains the process id and its priority for the new process.
 
 The ```confirmProcess``` method is called by Pipelite to confirm that the process with the ```processId``` has been
 registered for execution. This ```processId``` should no longer be returned by ```nextProcess```. However, if it is then
 it will simply be ignored.
 
-An alternative to defining ```nextProcess``` and ```confirmProcess``` is to directly insert processes to be executed into
-the ```PIPELITE2_PROCESS``` table. For example:
+An alternative to defining ```nextProcess``` and ```confirmProcess``` is to directly insert processes to be executed
+into the ```PIPELITE2_PROCESS``` table. For example:
 
 ```sql
 --  New process with default priority (5). Priority is between 9 (highest) and 0 (lowest).
@@ -250,6 +256,7 @@ The following dependency types are supported by the ProcessBuilder:
 
 The following executor backends are supported by the ProcessBuilder:
 
+- ```withKubernetesExecutor```: a Kubernetes executor that runs images.
 - ```withCmdExecutor```: a local or ssh command executor. Ssh will be used if ```host``` has been set
   in ```CmdExecutorParameters```.
 - ```withLsfExecutor```: an LSF executor that uses YAML configuration files with parameter placeholders. Ssh will be
@@ -269,6 +276,35 @@ The following executor backends are supported by the ProcessBuilder:
 Executor parameters provide default values for all ```ProcessBuilder``` stage parameters and are used in cases where the
 value is not overriden in ```ProcessBuilder```.
 
+##### Common executor parameters
+
+The following parameters are available for all executors. Please replace '*' below with the executor name (e.g. 'kubernetes').
+
+- pipelite.executor.*.saveLog: if true then the stage log will be saved in the database. Default value: true
+- pipelite.executor.*.logBytes: the number of last bytes from the output file saved in the stage log. Default value: 1
+  MiB
+- pipelite.executor.*.logTimeout: the maximum wait time for the stage log to become available. Default value: 10
+  seconds
+- pipelite.executor.*.permanentErrors: exit codes that are considered permanent errors that will not be retried.
+  
+##### Kubernetes executor parameters
+
+- pipelite.executor.kubernetes.context: the Kubernetes context.
+- pipelite.executor.kubernetes.namespace: the Kubernetes namespace. Default value: 'default'.
+- pipelite.executor.kubernetes.cpu: the Kubernetes pod cpu request
+- pipelite.executor.kubernetes.memory: the Kubernetes pod memory request
+- pipelite.executor.kubernetes.cpuLimit: the Kubernetes pod cpu limit
+- pipelite.executor.kubernetes.memoryLimit: the Kubernetes pod memory limit
+
+Kubernetes cluster configuration options are described in
+https://github.com/fabric8io/kubernetes-client#configuring-the-client.
+Be default, the cluster configuration is read from the kubeconfig file in ~/.kube/config.
+The kubeconfig file location can also be given using the system property 'kubeconfig' or
+the environmental variable KUBECONIG.
+
+Kubernetes cpu and memory requests and limits are described in:
+https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/.
+
 ##### Cmd executor parameters
 
 - pipelite.executor.cmd.host: the remote host. Ssh will be used if the ```host``` has been set.
@@ -276,9 +312,6 @@ value is not overriden in ```ProcessBuilder```.
   Pipelite service
 - pipelite.executor.cmd.env: the environmental variables passed to the command executor
 - pipelite.executor.cmd.workDir: the working directory where the output file and job definition files are written
-- pipelite.executor.cmd.saveLog: if true then the stage log will be saved in the database. Default value: true
-- pipelite.executor.cmd.logBytes: the number of last bytes from the output file saved in the stage log. Default value: 1 MiB
-- pipelite.executor.cmd.logTimeout: the maximum wait time for the stage log to become available. Default value: 10 seconds
 
 ##### Simple LSF executor parameters
 
@@ -287,15 +320,14 @@ value is not overriden in ```ProcessBuilder```.
   Pipelite service
 - pipelite.executor.simpleLsf.env: the environmental variables passed to the command executor
 - pipelite.executor.simpleLsf.workDir: the working directory where the output file and job definition files are written
-- pipelite.executor.simpleLsf.logBytes: the number of last bytes from the output file saved in the stage log
 - pipelite.executor.simpleLsf.queue: the queue name
 - pipelite.executor.simpleLsf.cpu: the number of requested cpus (-n option)
 - pipelite.executor.simpleLsf.memory: the amount of requested memory (-M and -R rusage[mem=] option)
 - pipelite.executor.simpleLsf.memoryUnits: the LSF memory units (-M and -R rusage[mem=] option)
 - pipelite.executor.simpleLsf.memoryTimeout: the LSF memory duration (-R rusage[mem=:duration=] option)
-- pipelite.executor.simplelsf.permanentErrors: exit codes that are considered permanent errors. Permanent error stage execution count is set to maximum retries + 1.
 
 The unit for the resource usage limit can be one of:
+
 - KB or K (kilobytes)
 - MB or M (megabytes)
 - GB or G (gigabytes)
@@ -311,12 +343,10 @@ The unit for the resource usage limit can be one of:
   Pipelite service
 - pipelite.executor.lsf.env: the environmental variables passed to the command executor
 - pipelite.executor.lsf.workDir: the working directory where the output file and job definition files are written
-- pipelite.executor.lsf.logBytes: the number of last bytes from the output file saved in the stage log
 - pipelite.executor.lsf.definition: the job definition resource name, file name or URL
 - pipelite.executor.lsf.format: the job definition file format: YAML, JSON, or JSDL
 - pipelite.executor.lsf.parameters: the job definition parameters applied to the job definition file. The key is the
   parameter placeholder that if found in the job definition file will be replaced with the corresponding value.
-- pipelite.executor.lsf.permanentErrors: exit codes that are considered permanent errors. Permanent error stage execution count is set to maximum retries + 1.
 
 ##### AwsBatch executor parameters
 
@@ -333,10 +363,11 @@ The unit for the resource usage limit can be one of:
 - pipelite.service.contextPath: the http port for the pipeline web interface. Default value: /pipelite
 - pipelite.service.username: the pipelite web service username. Default value: pipelite
 - pipelite.service.password: the pipelite web service password. Default value: pipelite
-- pipelite.service.shutdownPeriod: the pipelite service shutdown period to allow the service to finish gracefully. Minimum value: 10 seconds. Default value: 1 minute.
+- pipelite.service.shutdownPeriod: the pipelite service shutdown period to allow the service to finish gracefully.
+  Minimum value: 10 seconds. Default value: 1 minute.
 - pipelite.service.force: forces the pipelite service to start by removing all service locks and by updating service
   names attached to schedules if necessary. Default value: false
-  
+
 #### Mail parameters
 
 - pipelite.mail.host: the SMTP host
@@ -361,11 +392,16 @@ The unit for the resource usage limit can be one of:
 - pipelite.datasource.dialect: see Hibernate dialect options
 - pipelite.datasource.minimumIdle: minimum number of database connections in the connection pool. Default value: 10
 - pipelite.datasource.maximumPoolSize: maximum number of database connections in the connection pool. Default value: 25
-- pipelite.datasource.connectionTimeout: maximum duration waiting for a connection from the connection pool. Default value: 1m
-- pipelite.datasource.retry.attempts: number of retry attempts to use the data source for an operation. Default value: 10
-- pipelite.datasource.retry.delay: the delay between first and second attempt to use the data source for an operation. Default value: 1 second
-- pipelite.datasource.retry.multiplier: the exponential multiplier between subsequent attempts to use the data source for an operation. Default value: 2
-- pipelite.datasource.test: if set to true then uses an in memory database unsuitable for production purposes. Default value: false
+- pipelite.datasource.connectionTimeout: maximum duration waiting for a connection from the connection pool. Default
+  value: 1m
+- pipelite.datasource.retry.attempts: number of retry attempts to use the data source for an operation. Default value:
+  10
+- pipelite.datasource.retry.delay: the delay between first and second attempt to use the data source for an operation.
+  Default value: 1 second
+- pipelite.datasource.retry.multiplier: the exponential multiplier between subsequent attempts to use the data source
+  for an operation. Default value: 2
+- pipelite.datasource.test: if set to true then uses an in memory database unsuitable for production purposes. Default
+  value: false
 
 #### Advanced parameters
 
@@ -373,19 +409,23 @@ The unit for the resource usage limit can be one of:
 - pipelite.advanced.lockDuration: the duration after which service and process locks expire unless the service lock is
   renewed. Default value: 60 minutes
 - pipelite.advanced.processRunnerFrequency: the running frequency for executing new processes. Default value: 10 seconds
-- pipelite.advanced.processRunnerWorkers: the number or parallel workers running processes in the main event loop. Default value: 25
-- pipelite.advanced.stageRunnerWorkers:the number or parallel workers running stages in the main event loop. Default value: 25
-- pipelite.advanced.processQueueMinRefreshFrequency: the minimum frequency for process queue to be refreshed
-  to allow process re-prioritisation. Default value: 10 minutes
-- pipelite.advanced.processQueueMaxRefreshFrequency: the maximum frequency for process queue to be refreshed
-  to allow process re-prioritisation. Default value: 4 hours
-- pipelite.advanced.processQueueMinReplenishFrequency: the minimum frequency for process queue to be replenished. Default value: 10 minutes
+- pipelite.advanced.processRunnerWorkers: the number or parallel workers running processes in the main event loop.
+  Default value: 25
+- pipelite.advanced.stageRunnerWorkers:the number or parallel workers running stages in the main event loop. Default
+  value: 25
+- pipelite.advanced.processQueueMinRefreshFrequency: the minimum frequency for process queue to be refreshed to allow
+  process re-prioritisation. Default value: 10 minutes
+- pipelite.advanced.processQueueMaxRefreshFrequency: the maximum frequency for process queue to be refreshed to allow
+  process re-prioritisation. Default value: 4 hours
+- pipelite.advanced.processQueueMinReplenishFrequency: the minimum frequency for process queue to be replenished.
+  Default value: 10 minutes
 - pipelite.advanced.processQueuePriorityPolicy: the process queue prioritisation policy. Default value: BALANCED
 - pipelite.advanced.mailLogBytes: the maximum number of log bytes in mail for failed stage executions
 
 #### Test profiles
 
-- if Spring active profiles contain 'pipelite-test' then uses HSQLDB in-memory database unsuitable for production purposes.
+- if Spring active profiles contain 'pipelite-test' then uses HSQLDB in-memory database unsuitable for production
+  purposes.
 - if Spring active profiles contain 'pipelite-lorem' then generates test content for the web interface.
 
 #### Environment variables for unit testing
@@ -411,7 +451,7 @@ When the following environment variable is defined then ssh unit tests are execu
 
 When the following environment variable is defined then lsf unit tests are executed:
 
-- PIPELITE_TEST_LSF_HOST 
+- PIPELITE_TEST_LSF_HOST
 - PIPELITE_TEST_LSF_USER (Default value: current user)
 
 ### Database schema
