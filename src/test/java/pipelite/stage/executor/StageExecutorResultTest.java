@@ -17,47 +17,43 @@ import org.junit.jupiter.api.Test;
 public class StageExecutorResultTest {
 
   @Test
-  public void isSubmitted() {
-    assertThat(new StageExecutorResult(StageExecutorState.SUBMITTED).isSubmitted()).isTrue();
-  }
-
-  @Test
-  public void isError() {
-    assertThat(new StageExecutorResult(StageExecutorState.ERROR).isError()).isTrue();
-  }
-
-  @Test
-  public void isSuccess() {
-    assertThat(new StageExecutorResult(StageExecutorState.SUCCESS).isSuccess()).isTrue();
-  }
-
-  @Test
   public void submitted() {
-    assertThat(StageExecutorResult.submitted().getExecutorState())
-        .isEqualTo(StageExecutorState.SUBMITTED);
+    StageExecutorResult result = StageExecutorResult.submitted();
+    assertThat(result.isSubmitted()).isTrue();
+    assertThat(result.isActive()).isFalse();
+    assertThat(result.isSuccess()).isFalse();
+    assertThat(result.isError()).isFalse();
+    assertThat(result.getExecutorState()).isEqualTo(StageExecutorState.SUBMITTED);
   }
 
   @Test
   public void active() {
-    assertThat(StageExecutorResult.active().getExecutorState())
-        .isEqualTo(StageExecutorState.ACTIVE);
+    StageExecutorResult result = StageExecutorResult.active();
+    assertThat(result.isSubmitted()).isFalse();
+    assertThat(result.isActive()).isTrue();
+    assertThat(result.isSuccess()).isFalse();
+    assertThat(result.isError()).isFalse();
+    assertThat(result.getExecutorState()).isEqualTo(StageExecutorState.ACTIVE);
   }
 
   @Test
-  public void error() {
-    assertThat(StageExecutorResult.error().getExecutorState()).isEqualTo(StageExecutorState.ERROR);
+  public void isSuccess() {
+    StageExecutorResult result = StageExecutorResult.success();
+    assertThat(result.isSubmitted()).isFalse();
+    assertThat(result.isActive()).isFalse();
+    assertThat(result.isSuccess()).isTrue();
+    assertThat(result.isError()).isFalse();
+    assertThat(result.getExecutorState()).isEqualTo(StageExecutorState.SUCCESS);
   }
 
   @Test
-  public void success() {
-    assertThat(StageExecutorResult.success().getExecutorState())
-        .isEqualTo(StageExecutorState.SUCCESS);
-  }
-
-  @Test
-  public void setSubmitted() {
-    assertThat(StageExecutorResult.success().setSubmitted().getExecutorState())
-        .isEqualTo(StageExecutorState.SUBMITTED);
+  public void isError() {
+    StageExecutorResult result = StageExecutorResult.error();
+    assertThat(result.isSubmitted()).isFalse();
+    assertThat(result.isActive()).isFalse();
+    assertThat(result.isSuccess()).isFalse();
+    assertThat(result.isError()).isTrue();
+    assertThat(result.getExecutorState()).isEqualTo(StageExecutorState.ERROR);
   }
 
   @Test

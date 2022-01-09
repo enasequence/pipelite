@@ -10,16 +10,21 @@
  */
 package pipelite.stage.executor;
 
-import pipelite.executor.context.AwsBatchContextCache;
-import pipelite.executor.context.LsfContextCache;
+import pipelite.executor.describe.cache.AwsBatchDescribeJobsCache;
+import pipelite.executor.describe.cache.KubernetesDescribeJobsCache;
+import pipelite.executor.describe.cache.LsfDescribeJobsCache;
 
-/** Context caches shared by stage executors. */
-public class StageExecutorContextCache {
-  public final LsfContextCache lsf;
-  public final AwsBatchContextCache awsBatch;
+public class StageExecutorDescribeJobsCache {
+  public final LsfDescribeJobsCache lsf;
+  public final AwsBatchDescribeJobsCache awsBatch;
+  public final KubernetesDescribeJobsCache kubernetes;
 
-  public StageExecutorContextCache(LsfContextCache lsf, AwsBatchContextCache awsBatch) {
+  public StageExecutorDescribeJobsCache(
+      LsfDescribeJobsCache lsf,
+      AwsBatchDescribeJobsCache awsBatch,
+      KubernetesDescribeJobsCache kubernetes) {
     this.lsf = lsf;
     this.awsBatch = awsBatch;
+    this.kubernetes = kubernetes;
   }
 }

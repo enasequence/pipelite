@@ -10,16 +10,19 @@
  */
 package pipelite.stage.parameters;
 
-import com.google.common.base.Supplier;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Singular;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.flogger.Flogger;
 import pipelite.configuration.ExecutorConfiguration;
@@ -36,6 +39,8 @@ public class ExecutorParameters {
   public static final Duration DEFAULT_TIMEOUT = Duration.ofDays(7);
   public static final int DEFAULT_MAX_RETRIES = 0;
   public static final int DEFAULT_IMMEDIATE_RETRIES = 0;
+  public static final int DEFAULT_LOG_BYTES = 1024 * 1024;
+  public static final Duration DEFAULT_LOG_TIMEOUT = Duration.ofSeconds(10);
 
   /** The execution timeout. */
   @Builder.Default private Duration timeout = DEFAULT_TIMEOUT;
@@ -45,6 +50,18 @@ public class ExecutorParameters {
 
   /** The maximum number of immediate retries. */
   @Builder.Default private Integer immediateRetries = DEFAULT_IMMEDIATE_RETRIES;
+
+  /** The permanent error exit codes. Permanent errors are never retried. */
+  @Singular protected List<Integer> permanentErrors;
+
+  /** If true then the stage log will be saved in the database. */
+  @Builder.Default private boolean saveLog = true;
+
+  /** The number of last bytes from the output file saved in the stage log. */
+  @Builder.Default private int logBytes = DEFAULT_LOG_BYTES;
+
+  /** The maximum wait time for the stage log to become available. */
+  @Builder.Default private Duration logTimeout = DEFAULT_LOG_TIMEOUT;
 
   public static <T> void applyDefault(
       Supplier<T> thisGetter, Consumer<T> thisSetter, Supplier<T> defaultGetter) {
@@ -92,6 +109,14 @@ public class ExecutorParameters {
     applyDefault(this::getTimeout, this::setTimeout, params::getTimeout);
     applyDefault(this::getMaximumRetries, this::setMaximumRetries, params::getMaximumRetries);
     applyDefault(this::getImmediateRetries, this::setImmediateRetries, params::getImmediateRetries);
+    applyDefault(this::isSaveLog, this::setSaveLog, params::isSaveLog);
+    applyDefault(this::getLogBytes, this::setLogBytes, params::getLogBytes);
+    applyDefault(this::getLogTimeout, this::setLogTimeout, params::getLogTimeout);
+
+    if (permanentErrors == null) {
+      permanentErrors = new ArrayList<>();
+    }
+    applyListDefaults(permanentErrors, params.permanentErrors);
   }
 
   /** Validates the parameters after applying defaults. */
@@ -146,6 +171,10 @@ public class ExecutorParameters {
   /** Deserializes the executor from json. */
   public static <T extends ExecutorParameters> T deserialize(String json, Class<T> cls) {
     return Json.deserialize(json, cls);
+  }
+
+  public int getLogBytes() {
+    return (logBytes < 1) ? DEFAULT_LOG_BYTES : logBytes;
   }
 
   @Override

@@ -124,7 +124,7 @@ public class TestExecutor extends AbstractExecutor<ExecutorParameters> {
         if (executionTime != null) {
           Time.wait(executionTime);
         }
-        return new StageExecutorResult(executorState);
+        return StageExecutorResult.from(executorState);
       }
     } else {
       boolean isFirstExecution = startTime == null;
@@ -140,7 +140,7 @@ public class TestExecutor extends AbstractExecutor<ExecutorParameters> {
       if (callback != null) {
         return callback.apply(request);
       } else {
-        return new StageExecutorResult(executorState);
+        return StageExecutorResult.from(executorState);
       }
     }
   }

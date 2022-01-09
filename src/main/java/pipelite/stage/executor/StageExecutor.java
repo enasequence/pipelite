@@ -10,10 +10,8 @@
  */
 package pipelite.stage.executor;
 
-import pipelite.executor.AwsBatchExecutor;
-import pipelite.executor.CmdExecutor;
-import pipelite.executor.LsfExecutor;
-import pipelite.executor.SimpleLsfExecutor;
+import java.util.List;
+import pipelite.executor.*;
 import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.ExecutorParameters;
 
@@ -44,9 +42,9 @@ public interface StageExecutor<T extends ExecutorParameters> {
   /**
    * Prepares stage executor for execution.
    *
-   * @param executorContextCache stage executor context cache
+   * @param describeJobsCache the describe jobs cache used by asynchronous executors
    */
-  void prepareExecute(StageExecutorContextCache executorContextCache);
+  void prepareExecute(StageExecutorDescribeJobsCache describeJobsCache);
 
   /**
    * Called repeatedly to execute the stage until it is not ACTIVE.
@@ -93,6 +91,20 @@ public interface StageExecutor<T extends ExecutorParameters> {
     SimpleLsfExecutor lsfExecutor = new SimpleLsfExecutor();
     lsfExecutor.setCmd(cmd);
     return lsfExecutor;
+  }
+
+  /**
+   * Creates an executor that executes the command using Kubernetes.
+   *
+   * @param image the image
+   * @param imageArgs the image arguments
+   * @return the command executor
+   */
+  static KubernetesExecutor createKubernetesExecutor(String image, List<String> imageArgs) {
+    KubernetesExecutor kubernetesExecutor = new KubernetesExecutor();
+    kubernetesExecutor.setImage(image);
+    kubernetesExecutor.setImageArgs(imageArgs);
+    return kubernetesExecutor;
   }
 
   /**

@@ -11,26 +11,24 @@
 package pipelite.stage;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static pipelite.stage.StageState.*;
 
 import org.junit.jupiter.api.Test;
+import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorState;
 
 public class StageStateTest {
   @Test
-  public void test() {
-    assertThat(StageState.isActive(ACTIVE)).isTrue();
-    assertThat(StageState.isActive(SUCCESS)).isFalse();
-    assertThat(StageState.isActive(ERROR)).isFalse();
-    assertThat(StageState.isActive(null)).isFalse();
+  public void fromStageExecutorResult() {
+    assertThat(StageState.from(StageExecutorResult.submitted())).isEqualTo(StageState.ACTIVE);
+    assertThat(StageState.from(StageExecutorResult.active())).isEqualTo(StageState.ACTIVE);
+    assertThat(StageState.from(StageExecutorResult.success())).isEqualTo(StageState.SUCCESS);
+    assertThat(StageState.from(StageExecutorResult.error())).isEqualTo(StageState.ERROR);
+  }
 
-    assertThat(StageState.isSuccess(ACTIVE)).isFalse();
-    assertThat(StageState.isSuccess(SUCCESS)).isTrue();
-    assertThat(StageState.isSuccess(ERROR)).isFalse();
-    assertThat(StageState.isSuccess(null)).isFalse();
-
-    assertThat(StageState.isError(ACTIVE)).isFalse();
-    assertThat(StageState.isError(SUCCESS)).isFalse();
-    assertThat(StageState.isError(ERROR)).isTrue();
-    assertThat(StageState.isError(null)).isFalse();
+  @Test
+  public void fromStageExecutorState() {
+    assertThat(StageState.from(StageExecutorState.ACTIVE)).isEqualTo(StageState.ACTIVE);
+    assertThat(StageState.from(StageExecutorState.SUCCESS)).isEqualTo(StageState.SUCCESS);
+    assertThat(StageState.from(StageExecutorState.ERROR)).isEqualTo(StageState.ERROR);
   }
 }

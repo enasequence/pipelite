@@ -131,7 +131,7 @@ public class StageRunner {
 
   private void startStageExecution() {
     logContext(log.atInfo()).log("Executing stage");
-    stage.getExecutor().prepareExecute(pipeliteServices.stage().getExecutorContextCache());
+    stage.getExecutor().prepareExecute(pipeliteServices.stage().getExecutorDescribeJobsCache());
   }
 
   private void executeStage(StageRunnerResultCallback resultCallback) {

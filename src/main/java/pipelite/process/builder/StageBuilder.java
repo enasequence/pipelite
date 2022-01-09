@@ -11,10 +11,7 @@
 package pipelite.process.builder;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import pipelite.executor.*;
 import pipelite.stage.Stage;
@@ -107,6 +104,53 @@ public class StageBuilder {
    */
   public ProcessBuilder withSimpleLsfExecutor(String cmd) {
     return withSimpleLsfExecutor(cmd, new SimpleLsfExecutorParameters());
+  }
+
+  /**
+   * An executor that runs a command using Kubernetes.
+   *
+   * @param image the image
+   * @param image the image arguments
+   * @param params the executor parameters
+   */
+  public ProcessBuilder withKubernetesExecutor(
+      String image, List<String> imageArgs, KubernetesExecutorParameters params) {
+    KubernetesExecutor executor = StageExecutor.createKubernetesExecutor(image, imageArgs);
+    executor.setExecutorParams(params);
+    return addStage(executor);
+  }
+
+  /**
+   * An executor that runs a command using Kubernetes.
+   *
+   * @param image the image
+   * @param params the executor parameters
+   */
+  public ProcessBuilder withKubernetesExecutor(String image, KubernetesExecutorParameters params) {
+    KubernetesExecutor executor =
+        StageExecutor.createKubernetesExecutor(image, Collections.emptyList());
+    executor.setExecutorParams(params);
+    return addStage(executor);
+  }
+
+  /**
+   * An executor that runs a command using Kubernetes.
+   *
+   * @param image the image
+   * @param image the image arguments
+   */
+  public ProcessBuilder withKubernetesExecutor(String image, List<String> imageArgs) {
+    return withKubernetesExecutor(image, imageArgs, new KubernetesExecutorParameters());
+  }
+
+  /**
+   * An executor that runs a command using Kubernetes.
+   *
+   * @param image the image
+   */
+  public ProcessBuilder withKubernetesExecutor(String image) {
+    return withKubernetesExecutor(
+        image, Collections.emptyList(), new KubernetesExecutorParameters());
   }
 
   /**

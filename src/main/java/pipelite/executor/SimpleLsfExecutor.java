@@ -45,7 +45,7 @@ public class SimpleLsfExecutor extends AbstractLsfExecutor<SimpleLsfExecutorPara
 
     Integer memory = getExecutorParams().getMemory();
     String memoryUnits = getExecutorParams().getMemoryUnits();
-    ;
+
     Duration memoryTimeout = getExecutorParams().getMemoryTimeout();
     if (memory != null && memory > 0) {
       String memStr = memory.toString();

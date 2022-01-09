@@ -8,20 +8,16 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.stage.executor;
+package pipelite.configuration.properties;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
 
-import org.junit.jupiter.api.Test;
-import pipelite.stage.StageState;
-
-public class StageExecutorStateTest {
-
-  @Test
-  public void test() {
-    assertThat(StageExecutorState.SUBMITTED.toStageState()).isEqualTo(StageState.ACTIVE);
-    assertThat(StageExecutorState.ACTIVE.toStageState()).isEqualTo(StageState.ACTIVE);
-    assertThat(StageExecutorState.SUCCESS.toStageState()).isEqualTo(StageState.SUCCESS);
-    assertThat(StageExecutorState.ERROR.toStageState()).isEqualTo(StageState.ERROR);
-  }
+@Data
+@Configuration
+@ConfigurationProperties(prefix = "pipelite.test.kubernetes")
+public class KubernetesTestConfiguration {
+  private String kubeconfig;
+  private String namespace;
 }

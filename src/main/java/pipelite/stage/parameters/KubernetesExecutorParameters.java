@@ -10,49 +10,54 @@
  */
 package pipelite.stage.parameters;
 
-import java.time.Duration;
+import io.fabric8.kubernetes.api.model.Quantity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import pipelite.configuration.ExecutorConfiguration;
 
-/**
- * Simple LSF executor parameters. Only some LSF options are available. For more information please
- * refer to LSF documentation.
- */
 @Data
 @NoArgsConstructor
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
-public class SimpleLsfExecutorParameters extends SharedLsfExecutorParameters {
+public class KubernetesExecutorParameters extends ExecutorParameters {
 
-  /** The LSF queue name. */
-  private String queue;
+  /** The Kubernetes context. */
+  private String context;
 
-  /** The LSF number of requested cpus (-n option). */
-  private Integer cpu;
+  /** The Kubernetes namespace. */
+  private String namespace;
 
-  /** The LSF amount of requested memory (-M and -R rusage[mem=] option). */
-  private Integer memory;
+  /** The Job cpu request. */
+  private Quantity cpu;
 
-  /** The LSF memory units (-M and -R rusage[mem=] option). */
-  private String memoryUnits;
+  /** The Job memory request. */
+  private Quantity memory;
 
-  /** The LSF memory duration (-R rusage[mem=:duration=] option). */
-  private Duration memoryTimeout;
+  /** The Job cpu limit. */
+  private Quantity cpuLimit;
+
+  /** The Job memory limit. */
+  private Quantity memoryLimit;
 
   @Override
   public void applyDefaults(ExecutorConfiguration executorConfiguration) {
-    SimpleLsfExecutorParameters defaultParams = executorConfiguration.getSimpleLsf();
+    KubernetesExecutorParameters defaultParams = executorConfiguration.getKubernetes();
     if (defaultParams == null) {
       return;
     }
     super.applyDefaults(defaultParams);
-    applyDefault(this::getQueue, this::setQueue, defaultParams::getQueue);
+    applyDefault(this::getContext, this::setContext, defaultParams::getContext);
+    applyDefault(this::getNamespace, this::setNamespace, defaultParams::getNamespace);
     applyDefault(this::getCpu, this::setCpu, defaultParams::getCpu);
     applyDefault(this::getMemory, this::setMemory, defaultParams::getMemory);
-    applyDefault(this::getMemoryUnits, this::setMemoryUnits, defaultParams::getMemoryUnits);
-    applyDefault(this::getMemoryTimeout, this::setMemoryTimeout, defaultParams::getMemoryTimeout);
+    applyDefault(this::getCpuLimit, this::setCpuLimit, defaultParams::getCpuLimit);
+    applyDefault(this::getMemoryLimit, this::setMemoryLimit, defaultParams::getMemoryLimit);
+  }
+
+  @Override
+  public void validate() {
+    super.validate();
   }
 }

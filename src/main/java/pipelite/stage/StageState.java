@@ -10,25 +10,29 @@
  */
 package pipelite.stage;
 
+import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorState;
+
 public enum StageState {
   PENDING,
   ACTIVE,
   SUCCESS,
   ERROR;
 
-  public static boolean isPending(StageState stageState) {
-    return stageState == PENDING;
+  public static StageState from(StageExecutorState stageExecutorState) {
+    switch (stageExecutorState) {
+      case SUBMITTED:
+      case ACTIVE:
+        return StageState.ACTIVE;
+      case ERROR:
+        return StageState.ERROR;
+      case SUCCESS:
+        return StageState.SUCCESS;
+    }
+    return null;
   }
 
-  public static boolean isActive(StageState stageState) {
-    return stageState == ACTIVE;
-  }
-
-  public static boolean isError(StageState stageState) {
-    return stageState == ERROR;
-  }
-
-  public static boolean isSuccess(StageState stageState) {
-    return stageState == SUCCESS;
+  public static StageState from(StageExecutorResult stageExecutorResult) {
+    return from(stageExecutorResult.getExecutorState());
   }
 }

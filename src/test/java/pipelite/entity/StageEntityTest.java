@@ -98,7 +98,10 @@ class StageEntityTest {
             "{\n"
                 + "  \"timeout\" : 0,\n"
                 + "  \"maximumRetries\" : 0,\n"
-                + "  \"immediateRetries\" : 0\n"
+                + "  \"immediateRetries\" : 0,\n"
+                + "  \"saveLog\" : true,\n"
+                + "  \"logBytes\" : 1048576,\n"
+                + "  \"logTimeout\" : 10000\n"
                 + "}");
 
     // End first execution.
@@ -125,7 +128,10 @@ class StageEntityTest {
             "{\n"
                 + "  \"timeout\" : 0,\n"
                 + "  \"maximumRetries\" : 0,\n"
-                + "  \"immediateRetries\" : 0\n"
+                + "  \"immediateRetries\" : 0,\n"
+                + "  \"saveLog\" : true,\n"
+                + "  \"logBytes\" : 1048576,\n"
+                + "  \"logTimeout\" : 10000\n"
                 + "}");
 
     // Start second execution.
@@ -150,7 +156,10 @@ class StageEntityTest {
             "{\n"
                 + "  \"timeout\" : 0,\n"
                 + "  \"maximumRetries\" : 0,\n"
-                + "  \"immediateRetries\" : 0\n"
+                + "  \"immediateRetries\" : 0,\n"
+                + "  \"saveLog\" : true,\n"
+                + "  \"logBytes\" : 1048576,\n"
+                + "  \"logTimeout\" : 10000\n"
                 + "}");
 
     // End second execution.
@@ -177,7 +186,10 @@ class StageEntityTest {
             "{\n"
                 + "  \"timeout\" : 0,\n"
                 + "  \"maximumRetries\" : 0,\n"
-                + "  \"immediateRetries\" : 0\n"
+                + "  \"immediateRetries\" : 0,\n"
+                + "  \"saveLog\" : true,\n"
+                + "  \"logBytes\" : 1048576,\n"
+                + "  \"logTimeout\" : 10000\n"
                 + "}");
 
     // Reset execution.

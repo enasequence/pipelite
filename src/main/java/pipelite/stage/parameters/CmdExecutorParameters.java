@@ -10,10 +10,11 @@
  */
 package pipelite.stage.parameters;
 
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.*;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import pipelite.configuration.ExecutorConfiguration;
 
@@ -22,9 +23,6 @@ import pipelite.configuration.ExecutorConfiguration;
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class CmdExecutorParameters extends ExecutorParameters {
-
-  public static final int DEFAULT_LOG_BYTES = 1024 * 1024;
-  public static final Duration DEFAULT_LOG_TIMEOUT = Duration.ofSeconds(10);
 
   /** The remote host. */
   private String host;
@@ -38,15 +36,6 @@ public class CmdExecutorParameters extends ExecutorParameters {
   /** The working directory where the output file and job definition files are written. */
   private String workDir;
 
-  /** If true then the stage log will be saved in the database. */
-  @Builder.Default private boolean saveLog = true;
-
-  /** The number of last bytes from the output file saved in the stage log. */
-  @Builder.Default private int logBytes = DEFAULT_LOG_BYTES;
-
-  /** The maximum wait time for the stage log to become available. */
-  @Builder.Default private Duration logTimeout = DEFAULT_LOG_TIMEOUT;
-
   public void applyDefaults(ExecutorConfiguration executorConfiguration) {
     CmdExecutorParameters defaultParams = executorConfiguration.getCmd();
     if (defaultParams == null) {
@@ -56,9 +45,6 @@ public class CmdExecutorParameters extends ExecutorParameters {
     applyDefault(this::getHost, this::setHost, defaultParams::getHost);
     applyDefault(this::getUser, this::setUser, defaultParams::getUser);
     applyDefault(this::getWorkDir, this::setWorkDir, defaultParams::getWorkDir);
-    applyDefault(this::isSaveLog, this::setSaveLog, defaultParams::isSaveLog);
-    applyDefault(this::getLogBytes, this::setLogBytes, defaultParams::getLogBytes);
-    applyDefault(this::getLogTimeout, this::setLogTimeout, defaultParams::getLogTimeout);
     if (env == null) {
       env = new HashMap<>();
     }

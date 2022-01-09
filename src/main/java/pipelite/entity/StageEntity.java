@@ -141,7 +141,7 @@ public class StageEntity {
    * @param result the stage execution result
    */
   public void endExecution(StageExecutorResult result) {
-    this.stageState = result.getStageState();
+    this.stageState = StageState.from(result);
     this.errorType = result.getErrorType();
     this.resultParams = result.attributesJson();
     this.endTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);

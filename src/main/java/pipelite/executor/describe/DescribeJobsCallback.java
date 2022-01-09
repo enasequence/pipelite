@@ -8,27 +8,27 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.executor.task;
+package pipelite.executor.describe;
 
 import java.util.List;
 import java.util.Map;
 import pipelite.stage.executor.StageExecutorResult;
 
 /**
- * Callback interface for a task executed using {@link RetryTaskAggregator}.
+ * Callback interface for a task executed using {@link DescribeJobs}.
  *
- * @param <ExecutorContext> the execution context
- * @param <Request>> the request
+ * @param <RequestContext>> the request context.
+ * @param <ExecutorContext> the executor context.
  */
-public interface RetryTaskAggregatorCallback<Request, ExecutorContext> {
+public interface DescribeJobsCallback<RequestContext, ExecutorContext> {
 
   /**
-   * Execute a {@link RetryTaskAggregator} task.
+   * Execute a {@link DescribeJobs} task.
    *
    * @param requests the requests
-   * @param executorContext execution context
+   * @param executorContext the executor
    * @return a map or requests and results
    */
-  Map<Request, StageExecutorResult> execute(
-      List<Request> requests, ExecutorContext executorContext);
+  Map<RequestContext, StageExecutorResult> execute(
+      List<RequestContext> requests, ExecutorContext executorContext);
 }

@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import pipelite.configuration.properties.KubernetesTestConfiguration;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.entity.StageEntity;
 import pipelite.helper.TestType;
@@ -128,24 +129,68 @@ public class StageEntityTestHelper {
                 + "  \"immediateRetries\" : "
                 + immediateRetries
                 + ",\n"
-                + "  \"host\" : \""
-                + lsfTestConfiguration.getHost()
-                + "\",\n"
-                + "  \"workDir\" : \""
-                + lsfTestConfiguration.getWorkDir()
-                + "\",\n"
-                + "  \"saveLog\" : true,\n"
                 + (permanentErrors != null && !permanentErrors.isEmpty()
-                    ? "  \"logBytes\" : 1048576,\n"
-                        + "  \"logTimeout\" : 10000,\n"
-                        + "  \"permanentErrors\" : [ "
+                    ? "  \"permanentErrors\" : [ "
                         + String.join(
                             ", ",
                             permanentErrors.stream()
                                 .map(i -> i.toString())
                                 .collect(Collectors.toList()))
-                        + " ]\n"
-                    : "  \"logBytes\" : 1048576,\n" + "  \"logTimeout\" : 10000\n")
+                        + " ],\n"
+                    : "")
+                + "  \"saveLog\" : true,\n"
+                + "  \"logBytes\" : 1048576,\n"
+                + "  \"logTimeout\" : 10000,\n"
+                + "  \"host\" : \""
+                + lsfTestConfiguration.getHost()
+                + "\",\n"
+                + "  \"workDir\" : \""
+                + lsfTestConfiguration.getWorkDir()
+                + "\"\n"
+                + "}");
+  }
+
+  private static void assertKubernetesExecutorStageEntity(
+      List<Integer> permanentErrors,
+      String image,
+      List<String> imageArgs,
+      String namespace,
+      int immediateRetries,
+      int maximumRetries,
+      StageEntity stageEntity,
+      KubernetesTestConfiguration kubernetesTestConfiguration) {
+    assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.KubernetesExecutor");
+
+    assertThat(stageEntity.getExecutorData()).contains("  \"image\" : \"" + image + "\"");
+    assertThat(stageEntity.getExecutorData()).contains("  \"imageArgs\" : [");
+    assertThat(stageEntity.getExecutorData()).contains("  \"namespace\" : \"" + namespace + "\"");
+    assertThat(stageEntity.getExecutorData()).contains("  \"jobName\" : \"");
+
+    assertThat(stageEntity.getExecutorParams())
+        .isEqualTo(
+            "{\n"
+                + "  \"timeout\" : 180000,\n"
+                + "  \"maximumRetries\" : "
+                + maximumRetries
+                + ",\n"
+                + "  \"immediateRetries\" : "
+                + immediateRetries
+                + ",\n"
+                + (permanentErrors != null && !permanentErrors.isEmpty()
+                    ? "  \"permanentErrors\" : [ "
+                        + String.join(
+                            ", ",
+                            permanentErrors.stream()
+                                .map(i -> i.toString())
+                                .collect(Collectors.toList()))
+                        + " ],\n"
+                    : "")
+                + "  \"saveLog\" : true,\n"
+                + "  \"logBytes\" : 1048576,\n"
+                + "  \"logTimeout\" : 10000,\n"
+                + "  \"namespace\" : \""
+                + namespace
+                + "\"\n"
                 + "}");
   }
 
@@ -165,6 +210,33 @@ public class StageEntityTestHelper {
 
     assertSimpleLsfExecutorStageEntity(
         permanentErrors, cmd, immediateRetries, maximumRetries, stageEntity, lsfTestConfiguration);
+  }
+
+  public static void assertSubmittedKubernetesExecutorStageEntity(
+      StageService stageService,
+      KubernetesTestConfiguration kubernetesTestConfiguration,
+      String pipelineName,
+      String processId,
+      String stageName,
+      List<Integer> permanentErrors,
+      String image,
+      List<String> imageArgs,
+      String namespace,
+      int immediateRetries,
+      int maximumRetries) {
+
+    StageEntity stageEntity =
+        assertSubmittedExecutorStageEntity(stageService, pipelineName, processId, stageName);
+
+    assertKubernetesExecutorStageEntity(
+        permanentErrors,
+        image,
+        imageArgs,
+        namespace,
+        immediateRetries,
+        maximumRetries,
+        stageEntity,
+        kubernetesTestConfiguration);
   }
 
   public static void assertCompletedSimpleLsfExecutorStageEntity(
@@ -192,6 +264,46 @@ public class StageEntityTestHelper {
 
     assertSimpleLsfExecutorStageEntity(
         permanentErrors, cmd, immediateRetries, maximumRetries, stageEntity, lsfTestConfiguration);
+
+    assertThat(stageEntity.getResultParams()).contains("\"exit code\" : \"" + exitCode + "\"");
+    assertThat(stageEntity.getResultParams()).contains("\"job id\" :");
+    assertThat(stageEntity.getExitCode()).isEqualTo(exitCode);
+  }
+
+  public static void assertCompletedKubernetesExecutorStageEntity(
+      TestType testType,
+      StageService stageService,
+      KubernetesTestConfiguration kubernetesTestConfiguration,
+      String pipelineName,
+      String processId,
+      String stageName,
+      List<Integer> permanentErrors,
+      String image,
+      List<String> imageArgs,
+      String namespace,
+      int exitCode,
+      int immediateRetries,
+      int maximumRetries) {
+
+    StageEntity stageEntity =
+        assertCompletedExecutorStageEntity(
+            stageService,
+            pipelineName,
+            processId,
+            stageName,
+            testType,
+            immediateRetries,
+            maximumRetries);
+
+    assertKubernetesExecutorStageEntity(
+        permanentErrors,
+        image,
+        imageArgs,
+        namespace,
+        immediateRetries,
+        maximumRetries,
+        stageEntity,
+        kubernetesTestConfiguration);
 
     assertThat(stageEntity.getResultParams()).contains("\"exit code\" : \"" + exitCode + "\"");
     assertThat(stageEntity.getResultParams()).contains("\"job id\" :");

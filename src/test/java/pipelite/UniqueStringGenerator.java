@@ -15,23 +15,23 @@ import java.util.UUID;
 public class UniqueStringGenerator {
 
   public static <T> String randomServiceName(Class<T> cls) {
-    return cls.getSimpleName() + "_service_" + id();
+    return cls.getSimpleName() + "-service-" + id();
   }
 
   public static <T> String randomPipelineName(Class<T> cls) {
-    return cls.getSimpleName() + "_pipeline_" + id();
+    return cls.getSimpleName() + "-pipeline-" + id();
   }
 
   public static <T> String randomProcessRunnerPoolName(Class<T> cls) {
-    return cls.getSimpleName() + "process_runner_pool_" + id();
+    return cls.getSimpleName() + "-pool-" + id();
   }
 
   public static <T> String randomProcessId(Class<T> cls) {
-    return cls.getSimpleName() + "_process_" + id();
+    return cls.getSimpleName() + "-process-" + id();
   }
 
   public static <T> String randomStageName(Class<T> cls) {
-    return cls.getSimpleName() + "_stage_" + id();
+    return cls.getSimpleName() + "-stage-" + id();
   }
 
   private static String id() {

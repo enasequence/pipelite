@@ -10,28 +10,9 @@
  */
 package pipelite.stage.executor;
 
-import pipelite.stage.StageState;
-
 public enum StageExecutorState {
-  /** Asynchronous execution has started. */
   SUBMITTED,
-  /** Asynchronous execution is ongoing. */
   ACTIVE,
-  /** Execution has completed. */
   SUCCESS,
-  /** Execution has failed. */
   ERROR;
-
-  public StageState toStageState() {
-    switch (this) {
-      case SUBMITTED:
-      case ACTIVE:
-        return StageState.ACTIVE;
-      case ERROR:
-        return StageState.ERROR;
-      case SUCCESS:
-        return StageState.SUCCESS;
-    }
-    return null;
-  }
 }

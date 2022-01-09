@@ -8,16 +8,9 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.stage.parameters;
+package pipelite.executor.state;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
-
-/** Shared LSF executor parameters. */
-@Data
-@NoArgsConstructor
-@SuperBuilder
-@EqualsAndHashCode(callSuper = true)
-public class SharedLsfExecutorParameters extends CmdExecutorParameters {}
+public enum AsyncExecutorState {
+  SUBMIT,
+  POLL
+}

@@ -17,7 +17,6 @@ import java.util.Map;
 import lombok.Getter;
 import lombok.extern.flogger.Flogger;
 import pipelite.json.Json;
-import pipelite.stage.StageState;
 
 @Getter
 @Flogger
@@ -36,6 +35,26 @@ public class StageExecutorResult {
     this.executorState = executorState;
   }
 
+  public static StageExecutorResult submitted() {
+    return new StageExecutorResult(StageExecutorState.SUBMITTED);
+  }
+
+  public static StageExecutorResult active() {
+    return new StageExecutorResult(StageExecutorState.ACTIVE);
+  }
+
+  public static StageExecutorResult success() {
+    return new StageExecutorResult(StageExecutorState.SUCCESS);
+  }
+
+  public static StageExecutorResult error() {
+    return new StageExecutorResult(StageExecutorState.ERROR);
+  }
+
+  public static StageExecutorResult from(StageExecutorState stageExecutorState) {
+    return new StageExecutorResult(stageExecutorState);
+  }
+
   public boolean isSubmitted() {
     return executorState == StageExecutorState.SUBMITTED;
   }
@@ -52,24 +71,10 @@ public class StageExecutorResult {
     return executorState == StageExecutorState.ERROR;
   }
 
-  public StageState getStageState() {
-    return executorState.toStageState();
-  }
-
-  public static StageExecutorResult submitted() {
-    return new StageExecutorResult(StageExecutorState.SUBMITTED);
-  }
-
-  public static StageExecutorResult active() {
-    return new StageExecutorResult(StageExecutorState.ACTIVE);
-  }
-
-  public static StageExecutorResult success() {
-    return new StageExecutorResult(StageExecutorState.SUCCESS);
-  }
-
-  public static StageExecutorResult error() {
-    return new StageExecutorResult(StageExecutorState.ERROR);
+  public StageExecutorResult setSubmitted() {
+    executorState = StageExecutorState.SUBMITTED;
+    errorType = null;
+    return this;
   }
 
   /**
@@ -111,12 +116,6 @@ public class StageExecutorResult {
    */
   public static StageExecutorResult permanentError() {
     return error().setPermanentError();
-  }
-
-  public StageExecutorResult setSubmitted() {
-    executorState = StageExecutorState.SUBMITTED;
-    errorType = null;
-    return this;
   }
 
   public StageExecutorResult setErrorType(ErrorType errorType) {

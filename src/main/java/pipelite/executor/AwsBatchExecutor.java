@@ -11,65 +11,61 @@
 package pipelite.executor;
 
 import com.amazonaws.services.batch.AWSBatch;
+import com.amazonaws.services.batch.AWSBatchClientBuilder;
 import com.amazonaws.services.batch.model.*;
 import com.google.common.flogger.FluentLogger;
-import java.util.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
 import pipelite.exception.PipeliteException;
-import pipelite.executor.context.AwsBatchContextCache;
+import pipelite.executor.describe.DescribeJobs;
+import pipelite.executor.describe.cache.AwsBatchDescribeJobsCache;
 import pipelite.executor.task.RetryTask;
 import pipelite.log.LogKey;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.AwsBatchExecutorParameters;
 
-/** Executes a command using AWSBatch. */
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 @Flogger
 @Getter
 @Setter
-public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameters>
+public class AwsBatchExecutor extends AbstractAsyncExecutor<AwsBatchExecutorParameters>
     implements JsonSerializableExecutor {
 
   // Json deserialization requires a no argument constructor.
   public AwsBatchExecutor() {}
 
-  // TODO: capture logs
+  /** The AWSBatch region. Set during submit. */
+  private String region;
 
-  private SubmitJobResult submitJobResult;
+  /** The AWSBatch job id. Set during submit. */
+  private String jobId;
 
-  private AwsBatchContextCache.Context getSharedContext() {
-    return getExecutorContextCache().awsBatch.getContext(this);
+  private DescribeJobs<String, AwsBatchDescribeJobsCache.ExecutorContext> describeJobs() {
+    return describeJobsCache.awsBatch.getDescribeJobs(this);
   }
 
   @Override
-  public StageExecutorResult execute(StageExecutorRequest request) {
-    if (submitJobResult == null) {
-      return submit(request);
-    }
-
-    return poll(request);
+  protected void prepareSubmit(StageExecutorRequest request) {
+    region = null;
+    jobId = null;
   }
 
   @Override
-  public void terminate() {
-    TerminateJobRequest terminateJobRequest =
-        new TerminateJobRequest()
-            .withJobId(getDescribeJobRequest())
-            .withReason("Job terminated by pipelite");
-    RetryTask.DEFAULT.execute(r -> getSharedContext().get().terminateJob(terminateJobRequest));
-    // Remove request because the execution is being terminated.
-    getSharedContext().describeJobs.removeRequest(getDescribeJobRequest());
-  }
-
-  private StageExecutorResult submit(StageExecutorRequest request) {
+  protected StageExecutorResult submit(StageExecutorRequest request) {
     logContext(log.atFine(), request).log("Submitting AWSBatch job.");
 
     AwsBatchExecutorParameters params = getExecutorParams();
+    region = params.getRegion();
+
     SubmitJobRequest submitJobRequest =
         new SubmitJobRequest()
-            .withJobName(getJobName(request))
+            .withJobName(awsBatchJobName(request))
             .withJobQueue(params.getQueue())
             .withJobDefinition(params.getDefinition())
             .withParameters(params.getParameters())
@@ -78,51 +74,78 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
                     .withAttemptDurationSeconds((int) params.getTimeout().getSeconds()));
     // TODO: .withContainerOverrides()
 
-    submitJobResult =
-        RetryTask.DEFAULT.execute(r -> getSharedContext().get().submitJob(submitJobRequest));
+    AWSBatch awsBatch = awsBatchClient(region);
+    SubmitJobResult submitJobResult =
+        RetryTask.DEFAULT.execute(r -> awsBatch.submitJob(submitJobRequest));
 
     if (submitJobResult == null || submitJobResult.getJobId() == null) {
       throw new PipeliteException("Missing AWSBatch submit job id.");
     }
+    jobId = submitJobResult.getJobId();
     return StageExecutorResult.submitted();
   }
 
-  private StageExecutorResult poll(StageExecutorRequest request) {
+  @Override
+  protected StageExecutorResult poll(StageExecutorRequest request) {
     logContext(log.atFine(), request).log("Checking AWSBatch job result.");
-    Optional<StageExecutorResult> result =
-        getSharedContext().describeJobs.getResult(getDescribeJobRequest());
-    if (result == null || !result.isPresent()) {
+    StageExecutorResult result =
+        describeJobs().getResult(jobId, getExecutorParams().getPermanentErrors());
+    if (result.isActive()) {
       return StageExecutorResult.active();
     }
-    return result.get();
+    if (getExecutorParams().isSaveLog()) {
+      // TODO: save log
+    }
+    return result;
+  }
+
+  @Override
+  public void terminate() {
+    if (jobId == null) {
+      return;
+    }
+    TerminateJobRequest terminateJobRequest =
+        new TerminateJobRequest().withJobId(jobId).withReason("Job terminated by pipelite");
+    RetryTask.DEFAULT.execute(
+        r -> describeJobs().getExecutorContext().getAwsBatch().terminateJob(terminateJobRequest));
+    // Remove request because the execution is being terminated.
+    describeJobs().removeRequest(jobId);
   }
 
   public static Map<String, StageExecutorResult> describeJobs(
-      List<String> jobIds, AWSBatch awsBatch) {
+      List<String> requests, AwsBatchDescribeJobsCache.ExecutorContext executorContext) {
+
     Map<String, StageExecutorResult> results = new HashMap<>();
     DescribeJobsResult jobResult =
-        awsBatch.describeJobs(new DescribeJobsRequest().withJobs(jobIds));
-    jobResult
-        .getJobs()
-        .forEach(
-            j -> {
-              StageExecutorResult result;
-              switch (j.getStatus()) {
-                case "SUCCEEDED":
-                  result = StageExecutorResult.success();
-                  break;
-                case "FAILED":
-                  result = StageExecutorResult.error();
-                  break;
-                default:
-                  result = StageExecutorResult.active();
-              }
-              results.put(j.getJobId(), result);
-            });
+        RetryTask.DEFAULT.execute(
+            r ->
+                executorContext
+                    .getAwsBatch()
+                    .describeJobs(new DescribeJobsRequest().withJobs(requests)));
+    jobResult.getJobs().forEach(j -> results.put(j.getJobId(), describeJobsResult(j)));
     return results;
   }
 
-  private String getJobName(StageExecutorRequest request) {
+  // TOOO: exit codes
+  protected static StageExecutorResult describeJobsResult(JobDetail jobDetail) {
+    switch (jobDetail.getStatus()) {
+      case "SUCCEEDED":
+        return StageExecutorResult.success();
+      case "FAILED":
+        return StageExecutorResult.error();
+    }
+    return StageExecutorResult.active();
+  }
+
+  public static AWSBatch awsBatchClient(String region) {
+    AWSBatchClientBuilder awsBuilder = AWSBatchClientBuilder.standard();
+    if (region != null) {
+      awsBuilder.setRegion(region);
+    }
+    return awsBuilder.build();
+  }
+
+  private String awsBatchJobName(StageExecutorRequest request) {
     String jobName =
         "pipelite"
             + '_'
@@ -137,13 +160,6 @@ public class AwsBatchExecutor extends AbstractExecutor<AwsBatchExecutorParameter
       jobName = "pipelite" + "_" + UUID.randomUUID();
     }
     return jobName;
-  }
-
-  private String getDescribeJobRequest() {
-    if (submitJobResult == null) {
-      return null;
-    }
-    return submitJobResult.getJobId();
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log, StageExecutorRequest request) {

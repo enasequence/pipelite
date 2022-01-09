@@ -10,10 +10,6 @@
  */
 package pipelite.executor;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.time.Duration;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,11 +18,15 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithServices;
 import pipelite.UniqueStringGenerator;
 import pipelite.configuration.properties.LsfTestConfiguration;
+import pipelite.service.StageService;
 import pipelite.stage.Stage;
-import pipelite.stage.StageState;
 import pipelite.stage.executor.*;
 import pipelite.stage.parameters.LsfExecutorParameters;
 import pipelite.time.Time;
+
+import java.time.Duration;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
@@ -35,13 +35,13 @@ import pipelite.time.Time;
 public class SshLsfExecutorTest {
 
   @Autowired LsfTestConfiguration lsfTestConfiguration;
+  @Autowired StageService stageService;
 
   private final String PIPELINE_NAME =
       UniqueStringGenerator.randomPipelineName(SshLsfExecutorTest.class);
   private final String PROCESS_ID = UniqueStringGenerator.randomProcessId(SshLsfExecutorTest.class);
 
   @Test
-  @Disabled
   @EnabledIfEnvironmentVariable(named = "PIPELITE_TEST_LSF_HOST", matches = ".+")
   public void test() {
     LsfExecutor executor = StageExecutor.createLsfExecutor("");
@@ -64,8 +64,10 @@ public class SshLsfExecutorTest {
             .stage(stage)
             .build();
 
+    executor.prepareExecute(stageService.getExecutorDescribeJobsCache());
+
     StageExecutorResult result = executor.execute(request);
-    assertThat(result.getStageState()).isEqualTo(StageState.ACTIVE);
+    assertThat(result.isSubmitted()).isTrue();
     assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).startsWith("bsub");
     assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
     assertThat(result.getStageLog()).contains("is submitted to default queue");
@@ -83,7 +85,7 @@ public class SshLsfExecutorTest {
       return;
     }
 
-    assertThat(result.getStageState()).isEqualTo(StageState.SUCCESS);
+    assertThat(result.isSuccess()).isTrue();
     assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
     assertThat(result.getStageLog()).contains("test\n");
   }

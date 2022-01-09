@@ -61,18 +61,18 @@ public class StageExecutorSerializerTest {
       StageEntity stageEntity = new StageEntity();
       stageEntity.setExecutorName(TestExecutor.class.getName());
       stageEntity.setExecutorData(
-          "{\n" + "  \"stageState\" : \"" + result.getStageState().name() + "\"\n}");
+          "{\n" + "  \"stageState\" : \"" + StageState.from(result).name() + "\"\n}");
       Stage stage =
           Stage.builder()
               .stageName("STAGE1")
-              .executor(new TestExecutor(result.getStageState()))
+              .executor(new TestExecutor(StageState.from(result)))
               .build();
       stage.setStageEntity(stageEntity);
       StageExecutor deserializedExecutor = StageExecutorSerializer.deserializeExecutor(stage);
       assertThat(deserializedExecutor).isNotNull();
       assertThat(stage.getExecutor()).isInstanceOf(TestExecutor.class);
       assertThat(((TestExecutor) stage.getExecutor()).getStageState())
-          .isEqualTo(result.getStageState());
+          .isEqualTo(StageState.from(result));
     }
   }
 
@@ -103,20 +103,20 @@ public class StageExecutorSerializerTest {
       Stage stage =
           Stage.builder()
               .stageName("STAGE1")
-              .executor(new TestExecutor(result.getStageState()))
+              .executor(new TestExecutor(StageState.from(result)))
               .build();
       stage.setStageEntity(stageEntity);
       stageEntity.startExecution(stage);
       stageEntity.setExecutorName(TestExecutor.class.getName());
       stageEntity.setExecutorData(
-          "{\n" + "  \"stageState\" : \"" + result.getStageState().name() + "\"\n}");
+          "{\n" + "  \"stageState\" : \"" + StageState.from(result).name() + "\"\n}");
       stageEntity.setExecutorParams(
           "{\n" + "  \"maximumRetries\" : 3,\n" + "  \"immediateRetries\" : 3\n" + "}");
       assertThat(StageExecutorSerializer.deserializeExecution(stage)).isTrue();
       assertThat(stage.getExecutor()).isNotNull();
       assertThat(stage.getExecutor()).isInstanceOf(TestExecutor.class);
       assertThat(((TestExecutor) stage.getExecutor()).getStageState())
-          .isEqualTo(result.getStageState());
+          .isEqualTo(StageState.from(result));
       assertThat(stage.getExecutor().getExecutorParams()).isNotNull();
       assertThat(stage.getExecutor().getExecutorParams().getImmediateRetries()).isEqualTo(3);
       assertThat(stage.getExecutor().getExecutorParams().getMaximumRetries()).isEqualTo(3);

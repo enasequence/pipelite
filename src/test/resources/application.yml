@@ -9,6 +9,9 @@ spring:
         format_sql: true
 pipelite:
   test:
+    kubernetes:
+      kubeconfig: ${PIPELITE_TEST_KUBERNETES_KUBECONFIG:}
+      namespace: ${PIPELITE_TEST_KUBERNETES_NAMESPACE:}
     lsf:
       host: ${PIPELITE_TEST_LSF_HOST:}
       user: ${PIPELITE_TEST_LSF_USER:}

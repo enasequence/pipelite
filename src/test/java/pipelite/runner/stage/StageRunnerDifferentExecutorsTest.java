@@ -32,7 +32,6 @@ import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
-import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorState;
 
@@ -128,9 +127,7 @@ public class StageRunnerDifferentExecutorsTest {
     AtomicReference<StageExecutorResult> result = new AtomicReference<>();
     stageRunner.runOneIteration(r -> result.set(r));
     assertThat(result.get()).isNull();
-    assertThat(stageRunner.getExecutorResult().getExecutorState())
-        .isEqualTo(StageExecutorState.SUBMITTED);
-    assertThat(stageRunner.getExecutorResult().getStageState()).isEqualTo(StageState.ACTIVE);
+    assertThat(stageRunner.getExecutorResult().isSubmitted()).isTrue();
     return StageExecutorResult.submitted();
   }
 
@@ -187,7 +184,6 @@ public class StageRunnerDifferentExecutorsTest {
 
     StageExecutorState executorState = getCompletedExecutorState(testType);
     assertThat(result.getExecutorState()).isEqualTo(executorState);
-    assertThat(result.getStageState()).isEqualTo(executorState.toStageState());
 
     // ProcessEntity is not created nor asserted in this test
 

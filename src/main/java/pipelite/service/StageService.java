@@ -23,12 +23,13 @@ import pipelite.entity.StageEntity;
 import pipelite.entity.StageEntityId;
 import pipelite.entity.StageLogEntity;
 import pipelite.entity.StageLogEntityId;
-import pipelite.executor.context.AwsBatchContextCache;
-import pipelite.executor.context.LsfContextCache;
+import pipelite.executor.describe.cache.AwsBatchDescribeJobsCache;
+import pipelite.executor.describe.cache.KubernetesDescribeJobsCache;
+import pipelite.executor.describe.cache.LsfDescribeJobsCache;
 import pipelite.repository.StageLogRepository;
 import pipelite.repository.StageRepository;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.StageExecutorContextCache;
+import pipelite.stage.executor.StageExecutorDescribeJobsCache;
 import pipelite.stage.executor.StageExecutorResult;
 
 @Service
@@ -46,7 +47,7 @@ public class StageService {
 
   private final StageRepository repository;
   private final StageLogRepository logRepository;
-  private final StageExecutorContextCache executorContextCache;
+  private final StageExecutorDescribeJobsCache executorDescribeJobsCache;
 
   public StageService(
       @Autowired StageRepository repository,
@@ -56,10 +57,11 @@ public class StageService {
 
     this.repository = repository;
     this.logRepository = logRepository;
-    this.executorContextCache =
-        new StageExecutorContextCache(
-            new LsfContextCache(serviceConfiguration, internalErrorService),
-            new AwsBatchContextCache(serviceConfiguration, internalErrorService));
+    this.executorDescribeJobsCache =
+        new StageExecutorDescribeJobsCache(
+            new LsfDescribeJobsCache(serviceConfiguration, internalErrorService),
+            new AwsBatchDescribeJobsCache(serviceConfiguration, internalErrorService),
+            new KubernetesDescribeJobsCache(serviceConfiguration, internalErrorService));
   }
 
   /**
@@ -208,7 +210,7 @@ public class StageService {
     repository.delete(stageEntity);
   }
 
-  public StageExecutorContextCache getExecutorContextCache() {
-    return executorContextCache;
+  public StageExecutorDescribeJobsCache getExecutorDescribeJobsCache() {
+    return executorDescribeJobsCache;
   }
 }

@@ -32,7 +32,7 @@ public class StageExecutorSerializer {
    */
   public static <T extends ExecutorParameters> Boolean deserializeExecution(Stage stage) {
     StageEntity stageEntity = stage.getStageEntity();
-    if (StageState.isActive(stageEntity.getStageState())
+    if (stageEntity.getStageState() == StageState.ACTIVE
         && stageEntity.getExecutorName() != null
         && stageEntity.getExecutorData() != null
         && stageEntity.getExecutorParams() != null) {

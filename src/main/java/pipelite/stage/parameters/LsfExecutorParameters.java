@@ -10,7 +10,6 @@
  */
 package pipelite.stage.parameters;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Data;
@@ -62,10 +61,6 @@ public class LsfExecutorParameters extends SharedLsfExecutorParameters {
       parameters = new HashMap<>();
     }
     applyMapDefaults(parameters, defaultParams.parameters);
-    if (permanentErrors == null) {
-      permanentErrors = new ArrayList<>();
-    }
-    applyListDefaults(permanentErrors, defaultParams.permanentErrors);
   }
 
   @Override
