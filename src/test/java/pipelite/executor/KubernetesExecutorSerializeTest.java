@@ -16,7 +16,6 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import pipelite.json.Json;
-import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
 
 public class KubernetesExecutorSerializeTest {
@@ -26,26 +25,26 @@ public class KubernetesExecutorSerializeTest {
     String image = "debian";
     List<String> imageArgs = Arrays.asList("bash", "-c", "exit 1");
     KubernetesExecutor executor = StageExecutor.createKubernetesExecutor(image, imageArgs);
-    Stage stage = Stage.builder().stageName("STAGE_NAME").executor(executor).build();
 
     executor.setContext("test");
     executor.setNamespace("test");
-    executor.setJobName("test");
+    executor.setJobId("test");
     String json = Json.serialize(executor);
     assertThat(json)
         .isEqualTo(
             "{\n"
+                + "  \"state\" : \"SUBMIT\",\n"
+                + "  \"jobId\" : \"test\",\n"
                 + "  \"image\" : \"debian\",\n"
                 + "  \"imageArgs\" : [ \"bash\", \"-c\", \"exit 1\" ],\n"
                 + "  \"context\" : \"test\",\n"
-                + "  \"namespace\" : \"test\",\n"
-                + "  \"jobName\" : \"test\"\n"
+                + "  \"namespace\" : \"test\"\n"
                 + "}");
     KubernetesExecutor deserializedExecutor = Json.deserialize(json, KubernetesExecutor.class);
     assertThat(deserializedExecutor.getImage()).isEqualTo(image);
     assertThat(deserializedExecutor.getImageArgs()).containsExactly("bash", "-c", "exit 1");
     assertThat(deserializedExecutor.getContext()).isEqualTo("test");
     assertThat(deserializedExecutor.getNamespace()).isEqualTo("test");
-    assertThat(deserializedExecutor.getJobName()).isEqualTo("test");
+    assertThat(deserializedExecutor.getJobId()).isEqualTo("test");
   }
 }

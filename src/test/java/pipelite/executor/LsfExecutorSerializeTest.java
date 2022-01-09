@@ -10,13 +10,13 @@
  */
 package pipelite.executor;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import org.junit.jupiter.api.Test;
 import pipelite.json.Json;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorRequest;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class LsfExecutorSerializeTest {
 
@@ -39,8 +39,9 @@ public class LsfExecutorSerializeTest {
     assertThat(json)
         .isEqualTo(
             "{\n"
-                + "  \"cmd\" : \"echo test\",\n"
+                + "  \"state\" : \"SUBMIT\",\n"
                 + "  \"jobId\" : \"test\",\n"
+                + "  \"cmd\" : \"echo test\",\n"
                 + "  \"outFile\" : \"pipelite/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.out\",\n"
                 + "  \"definitionFile\" : \"pipelite/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.job\"\n"
                 + "}");

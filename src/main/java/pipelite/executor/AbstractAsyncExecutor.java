@@ -10,22 +10,38 @@
  */
 package pipelite.executor;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Getter;
+import lombok.Setter;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.state.AsyncExecutorState;
-import pipelite.stage.executor.StageExecutorDescribeJobsCache;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
 
 /** Executes a stage. Must be serializable to json. */
+@Getter
+@Setter
 public abstract class AbstractAsyncExecutor<T extends ExecutorParameters>
     extends AbstractExecutor<T> {
 
-  @JsonIgnore
-  private AsyncExecutorState asyncExecutorState = AsyncExecutorState.SUBMIT;
+  /**
+   * Asynchronous executor state. Serialize in database to continue execution after service restart.
+   */
+  private AsyncExecutorState state = AsyncExecutorState.SUBMIT;
 
-  protected abstract void prepareSubmit(StageExecutorRequest request);
+  /**
+   * Asynchronous executor job id. Serialize in database to continue execution after service
+   * restart.
+   */
+  private String jobId;
+
+  protected final void prepareSubmit(StageExecutorRequest request) {
+    // Reset job id to allow execution retry.
+    jobId = null;
+    prepareAsyncSubmit(request);
+  }
+
+  protected abstract void prepareAsyncSubmit(StageExecutorRequest request);
 
   protected abstract StageExecutorResult submit(StageExecutorRequest request);
 
@@ -33,7 +49,7 @@ public abstract class AbstractAsyncExecutor<T extends ExecutorParameters>
 
   @Override
   public final StageExecutorResult execute(StageExecutorRequest request) {
-    if (asyncExecutorState == AsyncExecutorState.SUBMIT) {
+    if (state == AsyncExecutorState.SUBMIT) {
       prepareSubmit(request);
       StageExecutorResult result = submit(request);
       if (result.isError()) {
@@ -43,9 +59,13 @@ public abstract class AbstractAsyncExecutor<T extends ExecutorParameters>
         throw new PipeliteException(
             "Unexpected state during asynchronous submit: " + result.getExecutorState().name());
       }
-      asyncExecutorState = AsyncExecutorState.POLL;
+      state = AsyncExecutorState.POLL;
+      // Asynchronous executor state is saved in database after submit by stage runner.
       return result;
     } else {
+      if (jobId == null) {
+        throw new PipeliteException("Missing job id during asynchronous poll");
+      }
       StageExecutorResult result = poll(request);
       if (result.isSubmitted()) {
         throw new PipeliteException(
@@ -53,7 +73,7 @@ public abstract class AbstractAsyncExecutor<T extends ExecutorParameters>
       }
       if (!result.isActive()) {
         // Prepare for next asynchronous execution.
-        asyncExecutorState = AsyncExecutorState.SUBMIT;
+        state = AsyncExecutorState.SUBMIT;
       }
       return result;
     }

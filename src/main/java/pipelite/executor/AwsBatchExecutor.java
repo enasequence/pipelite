@@ -40,20 +40,20 @@ public class AwsBatchExecutor extends AbstractAsyncExecutor<AwsBatchExecutorPara
   // Json deserialization requires a no argument constructor.
   public AwsBatchExecutor() {}
 
-  /** The AWSBatch region. Set during submit. */
+  /**
+   * The AWSBatch region. Set during submit. Serialize in database to continue execution after
+   * service restart.
+   */
   private String region;
-
-  /** The AWSBatch job id. Set during submit. */
-  private String jobId;
 
   private DescribeJobs<String, AwsBatchDescribeJobsCache.ExecutorContext> describeJobs() {
     return describeJobsCache.awsBatch.getDescribeJobs(this);
   }
 
   @Override
-  protected void prepareSubmit(StageExecutorRequest request) {
+  protected void prepareAsyncSubmit(StageExecutorRequest request) {
+    // Reset to allow execution retry.
     region = null;
-    jobId = null;
   }
 
   @Override
@@ -81,13 +81,15 @@ public class AwsBatchExecutor extends AbstractAsyncExecutor<AwsBatchExecutorPara
     if (submitJobResult == null || submitJobResult.getJobId() == null) {
       throw new PipeliteException("Missing AWSBatch submit job id.");
     }
-    jobId = submitJobResult.getJobId();
+    setJobId(submitJobResult.getJobId());
+    logContext(log.atInfo(), request).log("Submitted AWSBatch job " + getJobId());
     return StageExecutorResult.submitted();
   }
 
   @Override
   protected StageExecutorResult poll(StageExecutorRequest request) {
-    logContext(log.atFine(), request).log("Checking AWSBatch job result.");
+    String jobId = getJobId();
+    logContext(log.atFine(), request).log("Polling AWSBatch job result " + jobId);
     StageExecutorResult result =
         describeJobs().getResult(jobId, getExecutorParams().getPermanentErrors());
     if (result.isActive()) {
@@ -101,6 +103,7 @@ public class AwsBatchExecutor extends AbstractAsyncExecutor<AwsBatchExecutorPara
 
   @Override
   public void terminate() {
+    String jobId = getJobId();
     if (jobId == null) {
       return;
     }
@@ -114,6 +117,7 @@ public class AwsBatchExecutor extends AbstractAsyncExecutor<AwsBatchExecutorPara
 
   public static Map<String, StageExecutorResult> describeJobs(
       List<String> requests, AwsBatchDescribeJobsCache.ExecutorContext executorContext) {
+    log.atFine().log("Describing AWSBatch job results");
 
     Map<String, StageExecutorResult> results = new HashMap<>();
     DescribeJobsResult jobResult =

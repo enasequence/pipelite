@@ -68,13 +68,13 @@ public class KubernetesExecutorTest {
   }
 
   @Test
-  public void kubernetesJobName() {
-    String jobName = KubernetesExecutor.kubernetesJobName();
-    assertThat(jobName)
+  public void kubernetesJobId() {
+    String jobId = KubernetesExecutor.kubernetesJobId();
+    assertThat(jobId)
         .matches(
             "^pipelite-\\b[0-9a-f]{8}\\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\\b[0-9a-f]{12}\\b$");
-    assertThat(jobName).matches("[a-z0-9]([\\-a-z0-9]*[a-z0-9])?");
-    assertThat(jobName.length()).isLessThan(64);
+    assertThat(jobId).matches("[a-z0-9]([\\-a-z0-9]*[a-z0-9])?");
+    assertThat(jobId.length()).isLessThan(64);
   }
 
   @Test

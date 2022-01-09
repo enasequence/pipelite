@@ -65,8 +65,8 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
   }
 
   @Override
-  protected void prepareSubmit(StageExecutorRequest request) {
-    super.prepareSubmit(request);
+  protected void prepareAsyncSubmit(StageExecutorRequest request) {
+    super.prepareAsyncSubmit(request);
     definitionFile = getDefinitionFile(request, getExecutorParams());
     URL definitionUrl =
         ExecutorParameters.validateUrl(getExecutorParams().getDefinition(), "definition");

@@ -10,6 +10,7 @@
  */
 package pipelite.executor;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.flogger.FluentLogger;
 import lombok.Getter;
@@ -49,7 +50,7 @@ import java.util.stream.Collectors;
 @Flogger
 @Getter
 @Setter
-@JsonIgnoreProperties({"cmdRunner", "pollResult", "pollTimeout"})
+@JsonIgnoreProperties({"cmdRunner"})
 public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
     extends AbstractAsyncExecutor<T> implements JsonSerializableExecutor {
 
@@ -82,20 +83,23 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
   private static final Pattern BHIST_EXIT_CODE_PATTERN =
       Pattern.compile("Exited with exit code (\\d+)");
 
-  /** The command to execute using LSF. Set during executor creation. */
+  /**
+   * The command to execute using LSF. Set during executor creation. Serialize in database to
+   * continue execution after service restart.
+   */
   private String cmd;
 
-  /** The LSF job id. Set during submit. */
-  private String jobId;
-
-  /** The LSF output file. Set during submit. */
+  /**
+   * The LSF output file. Set during submit. Serialize in database to continue execution after
+   * service restart.
+   */
   private String outFile;
 
   /** Set during poll. */
-  private StageExecutorResult pollResult;
+  @JsonIgnore private StageExecutorResult pollResult;
 
   /** Set during poll. */
-  private ZonedDateTime pollTimeout;
+  @JsonIgnore private ZonedDateTime pollTimeout;
 
   protected DescribeJobs<LsfDescribeJobsCache.RequestContext, LsfDescribeJobsCache.ExecutorContext>
       describeJobs() {
@@ -125,12 +129,12 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
   }
 
   @Override
-  protected void prepareSubmit(StageExecutorRequest request) {
+  protected void prepareAsyncSubmit(StageExecutorRequest request) {
     StageExecutorResult result = createWorkDir(request);
     if (result.isError()) {
       throw new PipeliteException("Failed to create LSF work dir");
     }
-    jobId = null;
+    // Reset to allow execution retry.
     outFile = null;
     pollResult = null;
     pollTimeout = null;
@@ -145,16 +149,16 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
       return submitResult;
     }
 
-    jobId = extractSubmittedJobIdFromBsubOutput(submitResult.getStageLog());
-
-    logContext(log.atInfo(), request).log("LSF submit job id: %s", jobId);
+    setJobId(extractSubmittedJobIdFromBsubOutput(submitResult.getStageLog()));
+    logContext(log.atInfo(), request).log("Submitted LSF job " + getJobId());
     submitResult.setSubmitted();
     return submitResult;
   }
 
   @Override
   protected StageExecutorResult poll(StageExecutorRequest request) {
-    logContext(log.atFine(), request).log("Checking LSF job result using bjobs.");
+    String jobId = getJobId();
+    logContext(log.atFine(), request).log("Polling LSF job result " + jobId);
 
     if (pollResult == null) {
       StageExecutorResult result =
@@ -175,6 +179,7 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
 
   @Override
   public void terminate() {
+    String jobId = getJobId();
     if (jobId == null) {
       return;
     }
@@ -191,7 +196,7 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
   }
 
   private static String bhist(CmdRunner cmdRunner, String jobId) {
-    log.atWarning().log("Checking LSF job result using bhist: " + jobId);
+    log.atWarning().log("Checking LSF job results using bhist: " + jobId);
     StageExecutorResult bhistResult = cmdRunner.execute(BHIST_CMD + jobId);
     return bhistResult.getStageLog();
   }
@@ -204,7 +209,7 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
   public static Map<LsfDescribeJobsCache.RequestContext, StageExecutorResult> describeJobs(
       List<LsfDescribeJobsCache.RequestContext> requests,
       LsfDescribeJobsCache.ExecutorContext executorContext) {
-    log.atFine().log("Checking LSF job results.");
+    log.atFine().log("Describing LSF job results");
 
     // Create a map for job id -> LsfContextCache.Request.
     Map<String, LsfDescribeJobsCache.RequestContext> requestMap = new HashMap<>();
@@ -228,7 +233,7 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
   }
 
   private LsfDescribeJobsCache.RequestContext describeJobsRequestContext() {
-    return new LsfDescribeJobsCache.RequestContext(jobId, outFile);
+    return new LsfDescribeJobsCache.RequestContext(getJobId(), outFile);
   }
 
   /**

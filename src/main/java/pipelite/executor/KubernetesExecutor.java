@@ -57,20 +57,29 @@ public class KubernetesExecutor extends AbstractAsyncExecutor<KubernetesExecutor
   private static final int KUBERNETES_TTL_SECONDS_AFTER_FINISHED =
       (int) java.time.Duration.ofHours(8).getSeconds();
 
-  /** The image. Set during executor creation. */
+  /**
+   * The image. Set during executor creation. Serialize in database to continue execution after
+   * service restart.
+   */
   private String image;
 
-  /** The image arguments. Set during executor creation. */
+  /**
+   * The image arguments. Set during executor creation. Serialize in database to continue execution
+   * after service restart.
+   */
   private List<String> imageArgs;
 
-  /** The Kubernetes context. Set during submit. */
+  /**
+   * The Kubernetes context. Set during submit. Serialize in database to continue execution after
+   * service restart.
+   */
   private String context;
 
-  /** The Kubernetes namespace. Set during submit. */
+  /**
+   * The Kubernetes namespace. Set during submit. Serialize in database to continue execution after
+   * service restart.
+   */
   private String namespace;
-
-  /** The Kubernetes job name. Set during submit. */
-  private String jobName;
 
   // Json deserialization requires a no argument constructor.
   public KubernetesExecutor() {}
@@ -80,10 +89,10 @@ public class KubernetesExecutor extends AbstractAsyncExecutor<KubernetesExecutor
   }
 
   @Override
-  protected void prepareSubmit(StageExecutorRequest request) {
+  protected void prepareAsyncSubmit(StageExecutorRequest request) {
+    // Reset to allow execution retry.
     context = null;
     namespace = null;
-    jobName = null;
   }
 
   @Override
@@ -91,9 +100,9 @@ public class KubernetesExecutor extends AbstractAsyncExecutor<KubernetesExecutor
     KubernetesExecutorParameters executorParams = getExecutorParams();
     context = executorParams.getContext();
     namespace = kubernetesNamespace(executorParams);
-    jobName = kubernetesJobName();
-
-    logContext(log.atFine(), request).log("Submitting Kubernetes job " + jobName);
+    setJobId(kubernetesJobId());
+    String jobId = getJobId();
+    logContext(log.atFine(), request).log("Submitting Kubernetes job " + jobId);
 
     // Map<String, String> labelMap = new HashMap<>();
     // labelMap.put(..., ...);
@@ -111,7 +120,7 @@ public class KubernetesExecutor extends AbstractAsyncExecutor<KubernetesExecutor
           new JobBuilder()
               .withApiVersion("batch/v1")
               .withNewMetadata()
-              .withName(jobName)
+              .withName(jobId)
               // .withLabels(...)
               // .withAnnotations(...)
               .endMetadata()
@@ -121,7 +130,7 @@ public class KubernetesExecutor extends AbstractAsyncExecutor<KubernetesExecutor
               .withNewTemplate()
               .withNewSpec()
               .addNewContainer()
-              .withName(jobName)
+              .withName(jobId)
               .withImage(image)
               .withArgs(imageArgs)
               .withNewResources()
@@ -138,9 +147,7 @@ public class KubernetesExecutor extends AbstractAsyncExecutor<KubernetesExecutor
 
       RetryTask.DEFAULT.execute(r -> client.batch().v1().jobs().inNamespace(namespace).create(job));
 
-      // TODO: make fine
-      logContext(log.atInfo(), request).log("Submitted Kubernetes job " + jobName);
-
+      logContext(log.atInfo(), request).log("Submitted Kubernetes job " + jobId);
     } catch (KubernetesClientException e) {
       throw new PipeliteException("Kubernetes error", e);
     }
@@ -150,28 +157,22 @@ public class KubernetesExecutor extends AbstractAsyncExecutor<KubernetesExecutor
 
   @Override
   protected StageExecutorResult poll(StageExecutorRequest request) {
-    logContext(log.atFine(), request).log("Checking Kubernetes job result.");
+    String jobId = getJobId();
+    logContext(log.atFine(), request).log("Polling Kubernetes job result " + jobId);
     StageExecutorResult result =
-        describeJobs().getResult(jobName, getExecutorParams().getPermanentErrors());
+        describeJobs().getResult(jobId, getExecutorParams().getPermanentErrors());
     if (result.isActive()) {
       return StageExecutorResult.active();
     }
 
-    log.atFine().log(
-        "Completed Kubernetes job in poll "
-            + jobName
-            + " with state "
-            + result.getExecutorState().name());
-
     try (KubernetesClient client = kubernetesClient(context)) {
       // TODO: user LogReader
       if (getExecutorParams().isSaveLog()) {
-        String log = client.batch().v1().jobs().inNamespace(namespace).withName(jobName).getLog();
+        String log = client.batch().v1().jobs().inNamespace(namespace).withName(jobId).getLog();
         log = log.substring(max(0, log.length() - getExecutorParams().getLogBytes()));
         result.setStageLog(log);
       }
 
-      log.atFine().log("Terminating Kubernetes job in poll " + jobName);
       kubernetesTerminateJob(client);
     } catch (KubernetesClientException e) {
       throw new PipeliteException("Kubernetes error", e);
@@ -181,13 +182,13 @@ public class KubernetesExecutor extends AbstractAsyncExecutor<KubernetesExecutor
 
   @Override
   public void terminate() {
-    if (jobName == null) {
+    String jobId = getJobId();
+    if (jobId == null) {
       return;
     }
     try (KubernetesClient client = kubernetesClient(context)) {
-      log.atFine().log("Terminating Kubernetes job in terminate " + jobName);
       kubernetesTerminateJob(client);
-      describeJobs().removeRequest(jobName);
+      describeJobs().removeRequest(jobId);
     } catch (KubernetesClientException e) {
       throw new PipeliteException("Kubernetes error", e);
     }
@@ -195,23 +196,24 @@ public class KubernetesExecutor extends AbstractAsyncExecutor<KubernetesExecutor
 
   public static Map<String, StageExecutorResult> describeJobs(
       List<String> requests, KubernetesDescribeJobsCache.ExecutorContext executorContext) {
+    log.atFine().log("Describing Kubernetes job results");
 
     Map<String, StageExecutorResult> results = new HashMap<>();
-    Set<String> jobNames = new HashSet();
+    Set<String> jobIds = new HashSet();
     String namespace = executorContext.getNamespace();
     try {
       KubernetesClient client = executorContext.getKubernetesClient();
       JobList jobList =
           RetryTask.DEFAULT.execute(r -> client.batch().v1().jobs().inNamespace(namespace).list());
       for (Job job : jobList.getItems()) {
-        String jobName = job.getMetadata().getName();
-        jobNames.add(jobName);
-        results.put(jobName, describeJobsResult(namespace, jobName, client, job.getStatus()));
+        String jobId = job.getMetadata().getName();
+        jobIds.add(jobId);
+        results.put(jobId, describeJobsResult(namespace, jobId, client, job.getStatus()));
       }
-      for (String jobName : requests) {
-        if (!jobNames.contains(jobName)) {
+      for (String jobId : requests) {
+        if (!jobIds.contains(jobId)) {
           // Consider jobs that can't be found as failed.
-          results.put(jobName, StageExecutorResult.error());
+          results.put(jobId, StageExecutorResult.error());
         }
       }
     } catch (KubernetesClientException e) {
@@ -221,7 +223,7 @@ public class KubernetesExecutor extends AbstractAsyncExecutor<KubernetesExecutor
   }
 
   static StageExecutorResult describeJobsResult(
-      String namespace, String jobName, KubernetesClient client, JobStatus jobStatus) {
+      String namespace, String jobId, KubernetesClient client, JobStatus jobStatus) {
     // Only one pod per job.
 
     StageExecutorResult result = describeJobsResultFromStatus(jobStatus);
@@ -233,7 +235,7 @@ public class KubernetesExecutor extends AbstractAsyncExecutor<KubernetesExecutor
     Integer exitCode = -1;
     LocalDateTime lastFinishedAt = null;
     try {
-      PodList podList = client.pods().inNamespace(namespace).withLabel("job-name", jobName).list();
+      PodList podList = client.pods().inNamespace(namespace).withLabel("job-name", jobId).list();
       for (Pod pod : podList.getItems()) {
         for (ContainerStatus containerStatus : pod.getStatus().getContainerStatuses()) {
           // Example: 2022-01-08T21:56:16Z
@@ -252,7 +254,7 @@ public class KubernetesExecutor extends AbstractAsyncExecutor<KubernetesExecutor
 
     result.addAttribute(
         StageExecutorResultAttribute.EXIT_CODE, exitCode > -1 ? String.valueOf(exitCode) : "");
-    result.addAttribute(StageExecutorResultAttribute.JOB_ID, jobName);
+    result.addAttribute(StageExecutorResultAttribute.JOB_ID, jobId);
     return result;
   }
 
@@ -276,7 +278,7 @@ public class KubernetesExecutor extends AbstractAsyncExecutor<KubernetesExecutor
     return executorParams.getNamespace() != null ? executorParams.getNamespace() : "default";
   }
 
-  static String kubernetesJobName() {
+  static String kubernetesJobId() {
     // Job name requirements
     // =====================
     // must contain no more than 253 characters
@@ -295,10 +297,12 @@ public class KubernetesExecutor extends AbstractAsyncExecutor<KubernetesExecutor
   }
 
   private void kubernetesTerminateJob(KubernetesClient client) {
-    if (jobName == null) {
+    String jobId = getJobId();
+    if (jobId == null) {
       return;
     }
-    ScalableResource<Job> job = client.batch().v1().jobs().inNamespace(namespace).withName(jobName);
+    log.atFine().log("Terminating Kubernetes job " + jobId);
+    ScalableResource<Job> job = client.batch().v1().jobs().inNamespace(namespace).withName(jobId);
     RetryTask.DEFAULT.execute(r -> job.delete());
   }
 

@@ -115,8 +115,9 @@ public class StageEntityTestHelper {
       LsfTestConfiguration lsfTestConfiguration) {
     assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.SimpleLsfExecutor");
 
+    assertThat(stageEntity.getExecutorData()).contains("\"state\" : \"POLL\"");
+    assertThat(stageEntity.getExecutorData()).contains("\"jobId\" : \"");
     assertThat(stageEntity.getExecutorData()).contains("  \"cmd\" : \"" + cmd + "\"");
-    assertThat(stageEntity.getExecutorData()).contains("  \"jobId\" : \"");
     assertThat(stageEntity.getExecutorData()).contains("  \"outFile\" : \"");
 
     assertThat(stageEntity.getExecutorParams())
@@ -161,10 +162,11 @@ public class StageEntityTestHelper {
       KubernetesTestConfiguration kubernetesTestConfiguration) {
     assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.KubernetesExecutor");
 
-    assertThat(stageEntity.getExecutorData()).contains("  \"image\" : \"" + image + "\"");
-    assertThat(stageEntity.getExecutorData()).contains("  \"imageArgs\" : [");
-    assertThat(stageEntity.getExecutorData()).contains("  \"namespace\" : \"" + namespace + "\"");
-    assertThat(stageEntity.getExecutorData()).contains("  \"jobName\" : \"");
+    assertThat(stageEntity.getExecutorData()).contains("\"state\" : \"POLL\"");
+    assertThat(stageEntity.getExecutorData()).contains("\"jobId\" : \"");
+    assertThat(stageEntity.getExecutorData()).contains("\"image\" : \"" + image + "\"");
+    assertThat(stageEntity.getExecutorData()).contains("\"imageArgs\" : [");
+    assertThat(stageEntity.getExecutorData()).contains("\"namespace\" : \"" + namespace + "\"");
 
     assertThat(stageEntity.getExecutorParams())
         .isEqualTo(
