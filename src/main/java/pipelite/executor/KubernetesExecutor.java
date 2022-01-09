@@ -32,6 +32,7 @@ import pipelite.executor.describe.DescribeJobs;
 import pipelite.executor.describe.cache.KubernetesDescribeJobsCache;
 import pipelite.executor.task.RetryTask;
 import pipelite.log.LogKey;
+import pipelite.service.StageService;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
@@ -51,7 +52,8 @@ import static java.lang.Math.max;
 @Flogger
 @Getter
 @Setter
-public class KubernetesExecutor extends AbstractAsyncExecutor<KubernetesExecutorParameters>
+public class KubernetesExecutor
+    extends AbstractAsyncExecutor<KubernetesExecutorParameters, KubernetesDescribeJobsCache>
     implements JsonSerializableExecutor {
 
   private static final int KUBERNETES_TTL_SECONDS_AFTER_FINISHED =
@@ -84,8 +86,13 @@ public class KubernetesExecutor extends AbstractAsyncExecutor<KubernetesExecutor
   // Json deserialization requires a no argument constructor.
   public KubernetesExecutor() {}
 
+  @Override
+  protected KubernetesDescribeJobsCache initDescribeJobsCache(StageService stageService) {
+    return stageService.getKubernetesDescribeJobsCache();
+  }
+
   private DescribeJobs<String, KubernetesDescribeJobsCache.ExecutorContext> describeJobs() {
-    return describeJobsCache.kubernetes.getDescribeJobs(this);
+    return getDescribeJobsCache().getDescribeJobs(this);
   }
 
   @Override

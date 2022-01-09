@@ -22,6 +22,7 @@ import pipelite.executor.describe.DescribeJobs;
 import pipelite.executor.describe.cache.AwsBatchDescribeJobsCache;
 import pipelite.executor.task.RetryTask;
 import pipelite.log.LogKey;
+import pipelite.service.StageService;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.AwsBatchExecutorParameters;
@@ -34,7 +35,8 @@ import java.util.UUID;
 @Flogger
 @Getter
 @Setter
-public class AwsBatchExecutor extends AbstractAsyncExecutor<AwsBatchExecutorParameters>
+public class AwsBatchExecutor
+    extends AbstractAsyncExecutor<AwsBatchExecutorParameters, AwsBatchDescribeJobsCache>
     implements JsonSerializableExecutor {
 
   // Json deserialization requires a no argument constructor.
@@ -46,8 +48,13 @@ public class AwsBatchExecutor extends AbstractAsyncExecutor<AwsBatchExecutorPara
    */
   private String region;
 
+  @Override
+  protected AwsBatchDescribeJobsCache initDescribeJobsCache(StageService stageService) {
+    return stageService.getAwsBatchDescribeJobsCache();
+  }
+
   private DescribeJobs<String, AwsBatchDescribeJobsCache.ExecutorContext> describeJobs() {
-    return describeJobsCache.awsBatch.getDescribeJobs(this);
+    return getDescribeJobsCache().getDescribeJobs(this);
   }
 
   @Override

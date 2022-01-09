@@ -23,6 +23,7 @@ import pipelite.executor.describe.DescribeJobs;
 import pipelite.executor.describe.cache.LsfDescribeJobsCache;
 import pipelite.executor.task.RetryTask;
 import pipelite.log.LogKey;
+import pipelite.service.StageService;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
@@ -52,7 +53,7 @@ import java.util.stream.Collectors;
 @Setter
 @JsonIgnoreProperties({"cmdRunner"})
 public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
-    extends AbstractAsyncExecutor<T> implements JsonSerializableExecutor {
+    extends AbstractAsyncExecutor<T, LsfDescribeJobsCache> implements JsonSerializableExecutor {
 
   private static final int JOB_RECOVERY_PARALLELISM = 10;
   private static final int JOB_RECOVERY_LOG_BYTES = 5 * 1024;
@@ -101,10 +102,15 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
   /** Set during poll. */
   @JsonIgnore private ZonedDateTime pollTimeout;
 
+  @Override
+  protected LsfDescribeJobsCache initDescribeJobsCache(StageService stageService) {
+    return stageService.getLsfDescribeJobsCache();
+  }
+
   protected DescribeJobs<LsfDescribeJobsCache.RequestContext, LsfDescribeJobsCache.ExecutorContext>
       describeJobs() {
-    return describeJobsCache.lsf.getDescribeJobs(
-        (AbstractLsfExecutor<SharedLsfExecutorParameters>) this);
+    return getDescribeJobsCache()
+        .getDescribeJobs((AbstractLsfExecutor<SharedLsfExecutorParameters>) this);
   }
 
   protected static class JobResult {

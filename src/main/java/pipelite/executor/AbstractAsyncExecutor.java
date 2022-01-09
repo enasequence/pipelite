@@ -10,10 +10,13 @@
  */
 package pipelite.executor;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 import pipelite.exception.PipeliteException;
+import pipelite.executor.describe.cache.DescribeJobsCache;
 import pipelite.executor.state.AsyncExecutorState;
+import pipelite.service.StageService;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
@@ -21,19 +24,48 @@ import pipelite.stage.parameters.ExecutorParameters;
 /** Executes a stage. Must be serializable to json. */
 @Getter
 @Setter
-public abstract class AbstractAsyncExecutor<T extends ExecutorParameters>
+public abstract class AbstractAsyncExecutor<
+        T extends ExecutorParameters, D extends DescribeJobsCache>
     extends AbstractExecutor<T> {
 
   /**
    * Asynchronous executor state. Serialize in database to continue execution after service restart.
+   * State is initialized in prepareAsyncExecute for backward compatibility between 1.4.* and
+   * previous versions.
    */
-  private AsyncExecutorState state = AsyncExecutorState.SUBMIT;
+  private AsyncExecutorState state;
 
   /**
    * Asynchronous executor job id. Serialize in database to continue execution after service
    * restart.
    */
   private String jobId;
+
+  @JsonIgnore private D describeJobsCache;
+
+  /**
+   * Prepares stage executor for asynchronous execution.
+   *
+   * @param stageService the stage service
+   */
+  public void prepareAsyncExecute(StageService stageService) {
+    this.describeJobsCache = initDescribeJobsCache(stageService);
+    // For backward compatibility between 1.4.* and previous versions. Versions older than 1.4.*
+    // do not serialize state. Set state to POLL if job id has been set.
+    if (state == null) {
+      if (jobId != null) {
+        state = AsyncExecutorState.POLL;
+      } else {
+        state = AsyncExecutorState.SUBMIT;
+      }
+    }
+  }
+
+  protected abstract D initDescribeJobsCache(StageService stageService);
+
+  public D getDescribeJobsCache() {
+    return describeJobsCache;
+  }
 
   protected final void prepareSubmit(StageExecutorRequest request) {
     // Reset job id to allow execution retry.
@@ -62,7 +94,8 @@ public abstract class AbstractAsyncExecutor<T extends ExecutorParameters>
       state = AsyncExecutorState.POLL;
       // Asynchronous executor state is saved in database after submit by stage runner.
       return result;
-    } else {
+    }
+    if (state == AsyncExecutorState.POLL) {
       if (jobId == null) {
         throw new PipeliteException("Missing job id during asynchronous poll");
       }
@@ -77,5 +110,6 @@ public abstract class AbstractAsyncExecutor<T extends ExecutorParameters>
       }
       return result;
     }
+    throw new PipeliteException("Missing state during asynchronous execution");
   }
 }

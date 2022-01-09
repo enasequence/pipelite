@@ -10,8 +10,6 @@
  */
 package pipelite.service;
 
-import java.util.List;
-import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
@@ -29,8 +27,10 @@ import pipelite.executor.describe.cache.LsfDescribeJobsCache;
 import pipelite.repository.StageLogRepository;
 import pipelite.repository.StageRepository;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.StageExecutorDescribeJobsCache;
 import pipelite.stage.executor.StageExecutorResult;
+
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -47,7 +47,10 @@ public class StageService {
 
   private final StageRepository repository;
   private final StageLogRepository logRepository;
-  private final StageExecutorDescribeJobsCache executorDescribeJobsCache;
+
+  private final LsfDescribeJobsCache lsfDescribeJobsCache;
+  private final AwsBatchDescribeJobsCache awsBatchDescribeJobsCache;
+  private final KubernetesDescribeJobsCache kubernetesDescribeJobsCache;
 
   public StageService(
       @Autowired StageRepository repository,
@@ -57,11 +60,13 @@ public class StageService {
 
     this.repository = repository;
     this.logRepository = logRepository;
-    this.executorDescribeJobsCache =
-        new StageExecutorDescribeJobsCache(
-            new LsfDescribeJobsCache(serviceConfiguration, internalErrorService),
-            new AwsBatchDescribeJobsCache(serviceConfiguration, internalErrorService),
-            new KubernetesDescribeJobsCache(serviceConfiguration, internalErrorService));
+
+    this.lsfDescribeJobsCache =
+        new LsfDescribeJobsCache(serviceConfiguration, internalErrorService);
+    this.awsBatchDescribeJobsCache =
+        new AwsBatchDescribeJobsCache(serviceConfiguration, internalErrorService);
+    this.kubernetesDescribeJobsCache =
+        new KubernetesDescribeJobsCache(serviceConfiguration, internalErrorService);
   }
 
   /**
@@ -210,7 +215,15 @@ public class StageService {
     repository.delete(stageEntity);
   }
 
-  public StageExecutorDescribeJobsCache getExecutorDescribeJobsCache() {
-    return executorDescribeJobsCache;
+  public LsfDescribeJobsCache getLsfDescribeJobsCache() {
+    return lsfDescribeJobsCache;
+  }
+
+  public AwsBatchDescribeJobsCache getAwsBatchDescribeJobsCache() {
+    return awsBatchDescribeJobsCache;
+  }
+
+  public KubernetesDescribeJobsCache getKubernetesDescribeJobsCache() {
+    return kubernetesDescribeJobsCache;
   }
 }

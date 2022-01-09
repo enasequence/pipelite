@@ -61,7 +61,8 @@ public class SshSimpleLsfExecutorTest {
             .stage(stage)
             .build();
 
-    executor.prepareExecute(stageService.getExecutorDescribeJobsCache());
+    executor.prepareAsyncExecute(stageService);
+
     StageExecutorResult result = executor.execute(request);
     assertThat(result.isSubmitted()).isTrue();
     assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).startsWith("bsub");

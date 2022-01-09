@@ -99,7 +99,7 @@ public class KubernetesExecutorTest {
             .stage(stage)
             .build();
 
-    executor.prepareExecute(stageService.getExecutorDescribeJobsCache());
+    executor.prepareAsyncExecute(stageService);
 
     StageExecutorResult result = executor.execute(request);
     assertThat(result.isSubmitted()).isTrue();
@@ -148,7 +148,7 @@ public class KubernetesExecutorTest {
             .stage(stage)
             .build();
 
-    executor.prepareExecute(stageService.getExecutorDescribeJobsCache());
+    executor.prepareAsyncExecute(stageService);
 
     StageExecutorResult result = executor.execute(request);
     assertThat(result.isSubmitted()).isTrue();

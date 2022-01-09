@@ -11,6 +11,7 @@
 package pipelite.executor;
 
 import org.junit.jupiter.api.Test;
+import pipelite.executor.state.AsyncExecutorState;
 import pipelite.json.Json;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
@@ -32,6 +33,7 @@ public class LsfExecutorSerializeTest {
             .stage(stage)
             .build();
 
+    executor.setState(AsyncExecutorState.SUBMIT);
     executor.setJobId("test");
     executor.setOutFile(AbstractLsfExecutor.getOutFile(request, null));
     executor.setDefinitionFile(LsfExecutor.getDefinitionFile(request, null));

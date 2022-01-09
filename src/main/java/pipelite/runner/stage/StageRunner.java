@@ -11,10 +11,9 @@
 package pipelite.runner.stage;
 
 import com.google.common.flogger.FluentLogger;
-import java.time.Duration;
-import java.time.ZonedDateTime;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
+import pipelite.executor.AbstractAsyncExecutor;
 import pipelite.log.LogKey;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
@@ -22,6 +21,9 @@ import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
 
 @Flogger
 /** Executes a stage and returns the stage execution result. */
@@ -131,7 +133,10 @@ public class StageRunner {
 
   private void startStageExecution() {
     logContext(log.atInfo()).log("Executing stage");
-    stage.getExecutor().prepareExecute(pipeliteServices.stage().getExecutorDescribeJobsCache());
+    if (stage.getExecutor() instanceof AbstractAsyncExecutor<?, ?>) {
+      ((AbstractAsyncExecutor<?, ?>) stage.getExecutor())
+          .prepareAsyncExecute(pipeliteServices.stage());
+    }
   }
 
   private void executeStage(StageRunnerResultCallback resultCallback) {

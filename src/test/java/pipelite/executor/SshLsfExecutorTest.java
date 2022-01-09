@@ -64,7 +64,7 @@ public class SshLsfExecutorTest {
             .stage(stage)
             .build();
 
-    executor.prepareExecute(stageService.getExecutorDescribeJobsCache());
+    executor.prepareAsyncExecute(stageService);
 
     StageExecutorResult result = executor.execute(request);
     assertThat(result.isSubmitted()).isTrue();

@@ -40,13 +40,6 @@ public interface StageExecutor<T extends ExecutorParameters> {
   void setExecutorParams(T executorParams);
 
   /**
-   * Prepares stage executor for execution.
-   *
-   * @param describeJobsCache the describe jobs cache used by asynchronous executors
-   */
-  void prepareExecute(StageExecutorDescribeJobsCache describeJobsCache);
-
-  /**
    * Called repeatedly to execute the stage until it is not ACTIVE.
    *
    * @param request the execution request

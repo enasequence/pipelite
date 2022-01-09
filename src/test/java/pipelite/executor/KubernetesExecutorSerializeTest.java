@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import pipelite.executor.state.AsyncExecutorState;
 import pipelite.json.Json;
 import pipelite.stage.executor.StageExecutor;
 
@@ -26,6 +27,7 @@ public class KubernetesExecutorSerializeTest {
     List<String> imageArgs = Arrays.asList("bash", "-c", "exit 1");
     KubernetesExecutor executor = StageExecutor.createKubernetesExecutor(image, imageArgs);
 
+    executor.setState(AsyncExecutorState.SUBMIT);
     executor.setContext("test");
     executor.setNamespace("test");
     executor.setJobId("test");

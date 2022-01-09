@@ -13,7 +13,6 @@ package pipelite.executor;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.reflect.TypeToken;
 import pipelite.stage.executor.StageExecutor;
-import pipelite.stage.executor.StageExecutorDescribeJobsCache;
 import pipelite.stage.parameters.ExecutorParameters;
 
 /** Executes a stage. Must be serializable to json. */
@@ -39,13 +38,5 @@ public abstract class AbstractExecutor<T extends ExecutorParameters> implements 
   @Override
   public void setExecutorParams(T executorParams) {
     this.executorParams = executorParams;
-  }
-
-  @JsonIgnore
-  protected StageExecutorDescribeJobsCache describeJobsCache;
-
-  @Override
-  public void prepareExecute(StageExecutorDescribeJobsCache describeJobsCache) {
-    this.describeJobsCache = describeJobsCache;
   }
 }
