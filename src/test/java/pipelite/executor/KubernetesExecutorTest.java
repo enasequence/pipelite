@@ -69,7 +69,7 @@ public class KubernetesExecutorTest {
 
   @Test
   public void kubernetesJobId() {
-    String jobId = KubernetesExecutor.kubernetesJobId();
+    String jobId = KubernetesExecutor.createJobId();
     assertThat(jobId)
         .matches(
             "^pipelite-\\b[0-9a-f]{8}\\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\\b[0-9a-f]{12}\\b$");

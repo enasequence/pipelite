@@ -281,8 +281,7 @@ value is not overriden in ```ProcessBuilder```.
 The following parameters are available for all executors. Please replace '*' below with the executor name (e.g. 'kubernetes').
 
 - pipelite.executor.*.saveLog: if true then the stage log will be saved in the database. Default value: true
-- pipelite.executor.*.logBytes: the number of last bytes from the output file saved in the stage log. Default value: 1
-  MiB
+- pipelite.executor.*.logLines: the number of last lines from the output file saved in the stage log. Default value: 1000
 - pipelite.executor.*.logTimeout: the maximum wait time for the stage log to become available. Default value: 10
   seconds
 - pipelite.executor.*.permanentErrors: exit codes that are considered permanent errors that will not be retried.

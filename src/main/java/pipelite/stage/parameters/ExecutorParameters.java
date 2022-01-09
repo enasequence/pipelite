@@ -39,7 +39,7 @@ public class ExecutorParameters {
   public static final Duration DEFAULT_TIMEOUT = Duration.ofDays(7);
   public static final int DEFAULT_MAX_RETRIES = 0;
   public static final int DEFAULT_IMMEDIATE_RETRIES = 0;
-  public static final int DEFAULT_LOG_BYTES = 1024 * 1024;
+  public static final int DEFAULT_LOG_LINES = 1000;
   public static final Duration DEFAULT_LOG_TIMEOUT = Duration.ofSeconds(10);
 
   /** The execution timeout. */
@@ -57,8 +57,8 @@ public class ExecutorParameters {
   /** If true then the stage log will be saved in the database. */
   @Builder.Default private boolean saveLog = true;
 
-  /** The number of last bytes from the output file saved in the stage log. */
-  @Builder.Default private int logBytes = DEFAULT_LOG_BYTES;
+  /** The number of last lines from the output file saved in the stage log. */
+  @Builder.Default private int logLines = DEFAULT_LOG_LINES;
 
   /** The maximum wait time for the stage log to become available. */
   @Builder.Default private Duration logTimeout = DEFAULT_LOG_TIMEOUT;
@@ -110,7 +110,7 @@ public class ExecutorParameters {
     applyDefault(this::getMaximumRetries, this::setMaximumRetries, params::getMaximumRetries);
     applyDefault(this::getImmediateRetries, this::setImmediateRetries, params::getImmediateRetries);
     applyDefault(this::isSaveLog, this::setSaveLog, params::isSaveLog);
-    applyDefault(this::getLogBytes, this::setLogBytes, params::getLogBytes);
+    applyDefault(this::getLogLines, this::setLogLines, params::getLogLines);
     applyDefault(this::getLogTimeout, this::setLogTimeout, params::getLogTimeout);
 
     if (permanentErrors == null) {
@@ -173,8 +173,8 @@ public class ExecutorParameters {
     return Json.deserialize(json, cls);
   }
 
-  public int getLogBytes() {
-    return (logBytes < 1) ? DEFAULT_LOG_BYTES : logBytes;
+  public int getLogLines() {
+    return (logLines < 1) ? DEFAULT_LOG_LINES : logLines;
   }
 
   @Override

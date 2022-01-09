@@ -13,7 +13,6 @@ package pipelite.executor;
 import com.google.common.flogger.FluentLogger;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
@@ -41,8 +40,6 @@ import pipelite.stage.parameters.KubernetesExecutorParameters;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-
-import static java.lang.Math.max;
 
 // https://github.com/fabric8io
 // https://github.com/fabric8io/kubernetes-client/blob/master/README.md
@@ -106,8 +103,8 @@ public class KubernetesExecutor
   protected StageExecutorResult submit(StageExecutorRequest request) {
     KubernetesExecutorParameters executorParams = getExecutorParams();
     context = executorParams.getContext();
-    namespace = kubernetesNamespace(executorParams);
-    setJobId(kubernetesJobId());
+    namespace = executorParams.getNamespace() != null ? executorParams.getNamespace() : "default";
+    setJobId(createJobId());
     String jobId = getJobId();
     logContext(log.atFine(), request).log("Submitting Kubernetes job " + jobId);
 
@@ -173,14 +170,20 @@ public class KubernetesExecutor
     }
 
     try (KubernetesClient client = kubernetesClient(context)) {
-      // TODO: user LogReader
       if (getExecutorParams().isSaveLog()) {
-        String log = client.batch().v1().jobs().inNamespace(namespace).withName(jobId).getLog();
-        log = log.substring(max(0, log.length() - getExecutorParams().getLogBytes()));
+        List<Pod> pods =
+            client.pods().inNamespace(namespace).withLabel("job-name", jobId).list().getItems();
+        Pod pod = lastPodToStart(pods);
+        String log =
+            client
+                .pods()
+                .inNamespace(namespace)
+                .withName(pod.getMetadata().getName())
+                .tailingLines(getExecutorParams().getLogLines())
+                .getLog();
         result.setStageLog(log);
       }
-
-      kubernetesTerminateJob(client);
+      terminateJob(client);
     } catch (KubernetesClientException e) {
       throw new PipeliteException("Kubernetes error", e);
     }
@@ -194,7 +197,7 @@ public class KubernetesExecutor
       return;
     }
     try (KubernetesClient client = kubernetesClient(context)) {
-      kubernetesTerminateJob(client);
+      terminateJob(client);
       describeJobs().removeRequest(jobId);
     } catch (KubernetesClientException e) {
       throw new PipeliteException("Kubernetes error", e);
@@ -239,28 +242,20 @@ public class KubernetesExecutor
     }
 
     // Get exit code.
-    Integer exitCode = -1;
-    LocalDateTime lastFinishedAt = null;
+    Integer exitCode;
     try {
-      PodList podList = client.pods().inNamespace(namespace).withLabel("job-name", jobId).list();
-      for (Pod pod : podList.getItems()) {
-        for (ContainerStatus containerStatus : pod.getStatus().getContainerStatuses()) {
-          // Example: 2022-01-08T21:56:16Z
-          String finishedAtStr = containerStatus.getState().getTerminated().getFinishedAt();
-          DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
-          LocalDateTime finishedAt = LocalDateTime.parse(finishedAtStr, formatter);
-          if (lastFinishedAt == null || lastFinishedAt.isBefore(finishedAt)) {
-            lastFinishedAt = finishedAt;
-            exitCode = max(exitCode, containerStatus.getState().getTerminated().getExitCode());
-          }
-        }
-      }
+      List<Pod> pods =
+          client.pods().inNamespace(namespace).withLabel("job-name", jobId).list().getItems();
+      Pod pod = lastPodToStart(pods);
+      List<ContainerStatus> containerStatuses = pod.getStatus().getContainerStatuses();
+      ContainerStatus containerStatus = lastContainerToFinish(containerStatuses);
+      exitCode = containerStatus.getState().getTerminated().getExitCode();
     } catch (KubernetesClientException e) {
       throw new PipeliteException("Kubernetes error", e);
     }
 
     result.addAttribute(
-        StageExecutorResultAttribute.EXIT_CODE, exitCode > -1 ? String.valueOf(exitCode) : "");
+        StageExecutorResultAttribute.EXIT_CODE, exitCode != null ? String.valueOf(exitCode) : "");
     result.addAttribute(StageExecutorResultAttribute.JOB_ID, jobId);
     return result;
   }
@@ -281,11 +276,7 @@ public class KubernetesExecutor
         : new DefaultKubernetesClient();
   }
 
-  static String kubernetesNamespace(KubernetesExecutorParameters executorParams) {
-    return executorParams.getNamespace() != null ? executorParams.getNamespace() : "default";
-  }
-
-  static String kubernetesJobId() {
+  static String createJobId() {
     // Job name requirements
     // =====================
     // must contain no more than 253 characters
@@ -303,7 +294,7 @@ public class KubernetesExecutor
     return "pipelite-" + UUID.randomUUID();
   }
 
-  private void kubernetesTerminateJob(KubernetesClient client) {
+  private void terminateJob(KubernetesClient client) {
     String jobId = getJobId();
     if (jobId == null) {
       return;
@@ -311,6 +302,26 @@ public class KubernetesExecutor
     log.atFine().log("Terminating Kubernetes job " + jobId);
     ScalableResource<Job> job = client.batch().v1().jobs().inNamespace(namespace).withName(jobId);
     RetryTask.DEFAULT.execute(r -> job.delete());
+  }
+
+  private static Pod lastPodToStart(List<Pod> pods) {
+    return pods.stream()
+        .max(Comparator.comparing(p -> toLocalDateTime(p.getStatus().getStartTime())))
+        .orElse(null);
+  }
+
+  private static ContainerStatus lastContainerToFinish(List<ContainerStatus> containerStatuses) {
+    return containerStatuses.stream()
+        .max(
+            Comparator.comparing(
+                s -> toLocalDateTime(s.getState().getTerminated().getFinishedAt())))
+        .orElse(null);
+  }
+
+  static LocalDateTime toLocalDateTime(String str) {
+    // Example: 2022-01-08T21:56:16Z
+    final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+    return LocalDateTime.parse(str, formatter);
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log, StageExecutorRequest request) {

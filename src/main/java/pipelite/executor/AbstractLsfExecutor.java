@@ -56,7 +56,7 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
     extends AbstractAsyncExecutor<T, LsfDescribeJobsCache> implements JsonSerializableExecutor {
 
   private static final int JOB_RECOVERY_PARALLELISM = 10;
-  private static final int JOB_RECOVERY_LOG_BYTES = 5 * 1024;
+  private static final int JOB_RECOVERY_LOG_LINES = 1000;
   private static final Duration JOB_RECOVERY_TIMEOUT = Duration.ofMinutes(10);
   private static final Duration JOB_RECOVERY_POLL_FREQUENCY = Duration.ofSeconds(5);
 
@@ -405,7 +405,7 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
     return RetryTask.DEFAULT.execute(
         r ->
             cmdRunner.execute(
-                "sh -c 'tail -c " + executorParams.getLogBytes() + " " + stdoutFile + "'"));
+                "sh -c 'tail -n " + executorParams.getLogLines() + " " + stdoutFile + "'"));
   }
 
   public static String extractSubmittedJobIdFromBsubOutput(String str) {
@@ -534,7 +534,7 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
     // Extract the job execution result from the out file. The format
     // is the same as in the bhist result.
     CmdExecutorParameters executorParams =
-        CmdExecutorParameters.builder().logBytes(JOB_RECOVERY_LOG_BYTES).build();
+        CmdExecutorParameters.builder().logLines(JOB_RECOVERY_LOG_LINES).build();
     String str = readOutFile(cmdRunner, outFile, executorParams);
     return extractResultFromBhistOutputOrOutFile(str);
   }
