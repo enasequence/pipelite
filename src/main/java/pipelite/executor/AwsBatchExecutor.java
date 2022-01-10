@@ -14,6 +14,10 @@ import com.amazonaws.services.batch.AWSBatch;
 import com.amazonaws.services.batch.AWSBatchClientBuilder;
 import com.amazonaws.services.batch.model.*;
 import com.google.common.flogger.FluentLogger;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
@@ -26,11 +30,6 @@ import pipelite.service.StageService;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.AwsBatchExecutorParameters;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 @Flogger
 @Getter

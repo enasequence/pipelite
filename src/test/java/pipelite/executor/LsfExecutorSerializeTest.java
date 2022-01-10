@@ -10,14 +10,14 @@
  */
 package pipelite.executor;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.Test;
 import pipelite.executor.state.AsyncExecutorState;
 import pipelite.json.Json;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorRequest;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class LsfExecutorSerializeTest {
 

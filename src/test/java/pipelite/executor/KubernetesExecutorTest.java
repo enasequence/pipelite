@@ -23,24 +23,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithServices;
-import pipelite.UniqueStringGenerator;
 import pipelite.configuration.properties.KubernetesTestConfiguration;
 import pipelite.service.StageService;
-import pipelite.stage.Stage;
-import pipelite.stage.executor.*;
+import pipelite.stage.executor.StageExecutor;
+import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
-import pipelite.time.Time;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
     properties = {"pipelite.service.force=true", "pipelite.service.name=KubernetesExecutorTest"})
 @ActiveProfiles("test")
 public class KubernetesExecutorTest {
-
-  private final String PIPELINE_NAME =
-      UniqueStringGenerator.randomPipelineName(KubernetesExecutorTest.class);
-  private final String PROCESS_ID =
-      UniqueStringGenerator.randomProcessId(KubernetesExecutorTest.class);
 
   @Autowired StageService stageService;
   @Autowired KubernetesTestConfiguration testConfiguration;
@@ -79,7 +72,7 @@ public class KubernetesExecutorTest {
 
   @Test
   @EnabledIfEnvironmentVariable(named = "PIPELITE_TEST_KUBERNETES_KUBECONFIG", matches = ".+")
-  public void testSuccess() {
+  public void testExecuteSuccess() {
     String image = "hello-world";
     List<String> imageArgs = Collections.emptyList();
     KubernetesExecutor executor = StageExecutor.createKubernetesExecutor(image, imageArgs);
@@ -87,48 +80,27 @@ public class KubernetesExecutorTest {
     executor.setExecutorParams(
         KubernetesExecutorParameters.builder()
             .namespace(testConfiguration.getNamespace())
-            .timeout(Duration.ofSeconds(180))
+            .timeout(Duration.ofSeconds(30))
             .build());
 
-    String stageName = UniqueStringGenerator.randomStageName(this.getClass());
-    Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
-    StageExecutorRequest request =
-        StageExecutorRequest.builder()
-            .pipelineName(PIPELINE_NAME)
-            .processId(PROCESS_ID)
-            .stage(stage)
-            .build();
-
-    executor.prepareAsyncExecute(stageService);
-
-    StageExecutorResult result = executor.execute(request);
-    assertThat(result.isSubmitted()).isTrue();
-
-    while (true) {
-      result = executor.execute(request);
-      if (!result.isActive()) {
-        break;
-      }
-      Time.wait(Duration.ofSeconds(1));
-    }
-
-    // Ignore timeout errors.
-    if (result.isErrorType(ErrorType.TIMEOUT_ERROR)) {
-      return;
-    }
-
-    assertThat(result.isSuccess()).isTrue();
-    assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
-    assertThat(result.getStageLog())
-        .startsWith(
-            "\n"
-                + "Hello from Docker!\n"
-                + "This message shows that your installation appears to be working correctly.");
+    AsyncExecutorTestHelper.testExecute(
+        executor,
+        stageService,
+        result -> {},
+        result -> {
+          assertThat(result.isSuccess()).isTrue();
+          assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+          assertThat(result.getStageLog())
+              .startsWith(
+                  "\n"
+                      + "Hello from Docker!\n"
+                      + "This message shows that your installation appears to be working correctly.");
+        });
   }
 
   @Test
   @EnabledIfEnvironmentVariable(named = "PIPELITE_TEST_KUBERNETES_KUBECONFIG", matches = ".+")
-  public void testError() {
+  public void testExecuteError() {
     String image = "debian";
     List<String> imageArgs = Arrays.asList("bash", "-c", "exit 5");
     KubernetesExecutor executor = StageExecutor.createKubernetesExecutor(image, imageArgs);
@@ -136,38 +108,16 @@ public class KubernetesExecutorTest {
     executor.setExecutorParams(
         KubernetesExecutorParameters.builder()
             .namespace(testConfiguration.getNamespace())
-            .timeout(Duration.ofSeconds(180))
+            .timeout(Duration.ofSeconds(30))
             .build());
 
-    String stageName = UniqueStringGenerator.randomStageName(this.getClass());
-    Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
-    StageExecutorRequest request =
-        StageExecutorRequest.builder()
-            .pipelineName(PIPELINE_NAME)
-            .processId(PROCESS_ID)
-            .stage(stage)
-            .build();
-
-    executor.prepareAsyncExecute(stageService);
-
-    StageExecutorResult result = executor.execute(request);
-    assertThat(result.isSubmitted()).isTrue();
-
-    while (true) {
-      result = executor.execute(request);
-      if (!result.isActive()) {
-        break;
-      }
-      // Time.wait(Duration.ofSeconds(1));
-      Time.wait(Duration.ofMillis(100));
-    }
-
-    // Ignore timeout errors.
-    if (result.isErrorType(ErrorType.TIMEOUT_ERROR)) {
-      return;
-    }
-
-    assertThat(result.isSuccess()).isFalse();
-    assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("5");
+    AsyncExecutorTestHelper.testExecute(
+        executor,
+        stageService,
+        result -> {},
+        result -> {
+          assertThat(result.isSuccess()).isFalse();
+          assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("5");
+        });
   }
 }

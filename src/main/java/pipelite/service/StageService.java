@@ -10,6 +10,8 @@
  */
 package pipelite.service;
 
+import java.util.List;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
@@ -28,9 +30,6 @@ import pipelite.repository.StageLogRepository;
 import pipelite.repository.StageRepository;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
-
-import java.util.List;
-import java.util.Optional;
 
 @Service
 @Transactional(propagation = Propagation.REQUIRES_NEW)

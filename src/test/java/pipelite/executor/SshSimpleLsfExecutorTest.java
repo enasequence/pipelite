@@ -19,13 +19,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithServices;
-import pipelite.UniqueStringGenerator;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.service.StageService;
-import pipelite.stage.Stage;
-import pipelite.stage.executor.*;
+import pipelite.stage.executor.StageExecutor;
+import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
-import pipelite.time.Time;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
@@ -36,55 +34,55 @@ public class SshSimpleLsfExecutorTest {
   @Autowired LsfTestConfiguration lsfTestConfiguration;
   @Autowired StageService stageService;
 
-  private final String PIPELINE_NAME =
-      UniqueStringGenerator.randomPipelineName(SshSimpleLsfExecutorTest.class);
-  private final String PROCESS_ID =
-      UniqueStringGenerator.randomProcessId(SshSimpleLsfExecutorTest.class);
-
   @Test
   @EnabledIfEnvironmentVariable(named = "PIPELITE_TEST_LSF_HOST", matches = ".+")
-  public void test() {
+  public void testExecuteSuccess() {
     SimpleLsfExecutor executor = StageExecutor.createSimpleLsfExecutor("echo test");
     executor.setExecutorParams(
         SimpleLsfExecutorParameters.builder()
             .host(lsfTestConfiguration.getHost())
             .workDir(lsfTestConfiguration.getWorkDir())
-            .timeout(Duration.ofSeconds(180))
+            .timeout(Duration.ofSeconds(30))
             .build());
 
-    String stageName = UniqueStringGenerator.randomStageName(this.getClass());
-    Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
-    StageExecutorRequest request =
-        StageExecutorRequest.builder()
-            .pipelineName(PIPELINE_NAME)
-            .processId(PROCESS_ID)
-            .stage(stage)
-            .build();
+    AsyncExecutorTestHelper.testExecute(
+        executor,
+        stageService,
+        result -> {
+          assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).startsWith("bsub");
+          assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND))
+              .endsWith("echo test");
+          assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+          assertThat(result.getStageLog()).contains("is submitted to default queue");
+        },
+        result -> {
+          assertThat(result.isSuccess()).isTrue();
+          assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+          assertThat(result.getStageLog()).contains("test\n");
+        });
+  }
 
-    executor.prepareAsyncExecute(stageService);
+  @Test
+  @EnabledIfEnvironmentVariable(named = "PIPELITE_TEST_LSF_HOST", matches = ".+")
+  public void testExecuteError() {
+    SimpleLsfExecutor executor = StageExecutor.createSimpleLsfExecutor("exit 5");
+    executor.setExecutorParams(
+        SimpleLsfExecutorParameters.builder()
+            .host(lsfTestConfiguration.getHost())
+            .workDir(lsfTestConfiguration.getWorkDir())
+            .timeout(Duration.ofSeconds(30))
+            .build());
 
-    StageExecutorResult result = executor.execute(request);
-    assertThat(result.isSubmitted()).isTrue();
-    assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).startsWith("bsub");
-    assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).endsWith("echo test");
-    assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
-    assertThat(result.getStageLog()).contains("is submitted to default queue");
-
-    while (true) {
-      result = executor.execute(request);
-      if (!result.isActive()) {
-        break;
-      }
-      Time.wait(Duration.ofSeconds(5));
-    }
-
-    // Ignore timeout errors.
-    if (result.isErrorType(ErrorType.TIMEOUT_ERROR)) {
-      return;
-    }
-
-    assertThat(result.isSuccess()).isTrue();
-    assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
-    assertThat(result.getStageLog()).contains("test\n");
+    AsyncExecutorTestHelper.testExecute(
+        executor,
+        stageService,
+        result -> {
+          assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).startsWith("bsub");
+          assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).endsWith("exit 5");
+        },
+        result -> {
+          assertThat(result.isSuccess()).isFalse();
+          assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("5");
+        });
   }
 }
