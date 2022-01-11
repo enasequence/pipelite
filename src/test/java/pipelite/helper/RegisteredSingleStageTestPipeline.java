@@ -12,12 +12,41 @@ package pipelite.helper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import pipelite.helper.entity.ProcessEntityTestHelper;
+import pipelite.helper.entity.ScheduleEntityTestHelper;
+import pipelite.helper.metrics.MetricsTestHelper;
+import pipelite.metrics.PipeliteMetrics;
+import pipelite.service.ProcessService;
+import pipelite.service.ScheduleService;
 import pipelite.service.StageService;
 
 public abstract class RegisteredSingleStageTestPipeline<T extends RegisteredSingleStageTestPipeline>
-    extends RegisteredTestPipeline<T> {
+    extends RegisteredConfiguredTestPipeline {
 
+  private final TestType testType;
+  private final int immediateRetries;
+  private final int maximumRetries;
+  private final AssertSubmittedStageEntity assertSubmittedStageEntity;
+  private final AssertCompletedStageEntity assertCompletedStageEntity;
   private final String stageName = "STAGE";
+
+  protected interface AssertSubmittedStageEntity<T> {
+    void assertSubmittedStageEntity(
+        StageService stageService,
+        String pipelineName,
+        String processId,
+        String stageName,
+        T registeredTestPipeline);
+  }
+
+  protected interface AssertCompletedStageEntity<T> {
+    void assertCompletedStageEntity(
+        StageService stageService,
+        String pipelineName,
+        String processId,
+        String stageName,
+        T registeredTestPipeline);
+  }
 
   public RegisteredSingleStageTestPipeline(
       TestType testType,
@@ -25,19 +54,68 @@ public abstract class RegisteredSingleStageTestPipeline<T extends RegisteredSing
       int maximumRetries,
       AssertSubmittedStageEntity<T> assertSubmittedStageEntity,
       AssertCompletedStageEntity<T> assertCompletedStageEntity) {
-    super(
-        testType,
-        immediateRetries,
-        maximumRetries,
-        assertSubmittedStageEntity,
-        assertCompletedStageEntity);
+    this.testType = testType;
+    this.immediateRetries = immediateRetries;
+    this.maximumRetries = maximumRetries;
+    this.assertSubmittedStageEntity = assertSubmittedStageEntity;
+    this.assertCompletedStageEntity = assertCompletedStageEntity;
   }
 
   public String stageName() {
     return stageName;
   }
 
-  @Override
+  public TestType testType() {
+    return testType;
+  }
+
+  public int immediateRetries() {
+    return immediateRetries;
+  }
+
+  public int maximumRetries() {
+    return maximumRetries;
+  }
+
+  public AssertSubmittedStageEntity assertSubmittedStageEntity() {
+    return assertSubmittedStageEntity;
+  }
+
+  public AssertCompletedStageEntity assertCompletedStageEntity() {
+    return assertCompletedStageEntity;
+  }
+
+  public final void assertCompletedScheduleEntity(
+      ScheduleService scheduleService, String serviceName, int expectedProcessCnt) {
+    ScheduleEntityTestHelper.assertCompletedSchduleEntity(
+        scheduleService,
+        serviceName,
+        pipelineName(),
+        expectedProcessCnt,
+        configuredProcessIds(),
+        testType());
+  }
+
+  public final void assertCompletedProcessEntities(
+      ProcessService processService, int expectedProcessCnt) {
+    assertThat(expectedProcessCnt).isEqualTo(configuredProcessCount());
+    for (String processId : configuredProcessIds()) {
+      ProcessEntityTestHelper.assertCompletedProcessEntity(
+          processService, pipelineName(), processId, testType());
+    }
+  }
+
+  public final void assertCompletedMetrics(PipeliteMetrics metrics, int expectedProcessCnt) {
+    assertThat(expectedProcessCnt).isEqualTo(configuredProcessCount());
+    MetricsTestHelper.assertCompletedMetrics(
+        testType(),
+        metrics,
+        pipelineName(),
+        expectedProcessCnt,
+        immediateRetries(),
+        maximumRetries());
+  }
+
   public final void assertSubmittedStageEntities(
       StageService stageService, int expectedProcessCnt) {
     assertThat(expectedProcessCnt).isEqualTo(configuredProcessCount());
@@ -47,7 +125,6 @@ public abstract class RegisteredSingleStageTestPipeline<T extends RegisteredSing
     }
   }
 
-  @Override
   public final void assertCompletedStageEntities(
       StageService stageService, int expectedProcessCnt) {
     assertThat(expectedProcessCnt).isEqualTo(configuredProcessCount());

@@ -74,8 +74,7 @@ public class PipelineRunnerKubernetesExecutorTest {
 
     @Bean
     public KubernetesPipeline KubernetesNonPermanentErrorPipeline() {
-      return new KubernetesPipeline(
-          TestType.NON_PERMANENT_ERROR, kubernetesTestConfiguration);
+      return new KubernetesPipeline(TestType.NON_PERMANENT_ERROR, kubernetesTestConfiguration);
     }
 
     @Bean
