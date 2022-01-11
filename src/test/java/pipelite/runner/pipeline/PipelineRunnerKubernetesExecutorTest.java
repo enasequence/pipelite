@@ -68,19 +68,19 @@ public class PipelineRunnerKubernetesExecutorTest {
     @Autowired private KubernetesTestConfiguration kubernetesTestConfiguration;
 
     @Bean
-    public SimpleKubernetesPipeline simpleKubernetesSuccessPipeline() {
-      return new SimpleKubernetesPipeline(TestType.SUCCESS, kubernetesTestConfiguration);
+    public KubernetesPipeline KubernetesSuccessPipeline() {
+      return new KubernetesPipeline(TestType.SUCCESS, kubernetesTestConfiguration);
     }
 
     @Bean
-    public SimpleKubernetesPipeline simpleKubernetesNonPermanentErrorPipeline() {
-      return new SimpleKubernetesPipeline(
+    public KubernetesPipeline KubernetesNonPermanentErrorPipeline() {
+      return new KubernetesPipeline(
           TestType.NON_PERMANENT_ERROR, kubernetesTestConfiguration);
     }
 
     @Bean
-    public SimpleKubernetesPermanentErrorPipeline simpleKubernetesPermanentErrorPipeline() {
-      return new SimpleKubernetesPermanentErrorPipeline(kubernetesTestConfiguration);
+    public KubernetesPermanentErrorPipeline KubernetesPermanentErrorPipeline() {
+      return new KubernetesPermanentErrorPipeline(kubernetesTestConfiguration);
     }
   }
 
@@ -88,8 +88,8 @@ public class PipelineRunnerKubernetesExecutorTest {
     return testType == TestType.NON_PERMANENT_ERROR ? 1 : 0;
   }
 
-  private static class SimpleKubernetesPipeline extends RegisteredTestPipelineWrappingPipeline {
-    public SimpleKubernetesPipeline(
+  private static class KubernetesPipeline extends RegisteredTestPipelineWrappingPipeline {
+    public KubernetesPipeline(
         TestType testType, KubernetesTestConfiguration kubernetesTestConfiguration) {
       super(
           PARALLELISM,
@@ -103,9 +103,9 @@ public class PipelineRunnerKubernetesExecutorTest {
     }
   }
 
-  private static class SimpleKubernetesPermanentErrorPipeline
+  private static class KubernetesPermanentErrorPipeline
       extends RegisteredTestPipelineWrappingPipeline {
-    public SimpleKubernetesPermanentErrorPipeline(
+    public KubernetesPermanentErrorPipeline(
         KubernetesTestConfiguration kubernetesTestConfiguration) {
       super(
           PARALLELISM,
