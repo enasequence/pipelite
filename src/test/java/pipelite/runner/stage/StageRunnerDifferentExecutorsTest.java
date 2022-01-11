@@ -28,6 +28,10 @@ import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.helper.*;
+import pipelite.helper.process.SingleStageAsyncTestProcessConfiguration;
+import pipelite.helper.process.SingleStageSimpleLsfTestProcessConfiguration;
+import pipelite.helper.process.SingleStageSyncTestProcessConfiguration;
+import pipelite.helper.process.SingleStageTestProcessConfiguration;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.service.PipeliteServices;
@@ -61,28 +65,28 @@ public class StageRunnerDifferentExecutorsTest {
     return isError ? 1 : 0;
   }
 
-  private RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline>
-      syncTestProcessFactory(TestType testType) {
-    return new RegisteredTestPipelineWrappingPipeline(
+  private ConfigurableTestPipeline<SingleStageTestProcessConfiguration>
+      syncConfigurableTestPipeline(TestType testType) {
+    return new ConfigurableTestPipeline(
         PARALLELISM,
         PROCESS_CNT,
-        new RegisteredSingleStageSyncTestPipeline(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES));
+        new SingleStageSyncTestProcessConfiguration(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES));
   }
 
-  private RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline>
-      asyncTestProcessFactory(TestType testType) {
-    return new RegisteredTestPipelineWrappingPipeline(
+  private ConfigurableTestPipeline<SingleStageTestProcessConfiguration>
+      asyncConfigurableTestPipeline(TestType testType) {
+    return new ConfigurableTestPipeline(
         PARALLELISM,
         PROCESS_CNT,
-        new RegisteredSingleStageAsyncTestPipeline(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES));
+        new SingleStageAsyncTestProcessConfiguration(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES));
   }
 
-  private RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline>
-      simpleLsfProcessFactory(TestType testType) {
-    return new RegisteredTestPipelineWrappingPipeline(
+  private ConfigurableTestPipeline<SingleStageTestProcessConfiguration>
+      simpleLsfConfigurableTestPipeline(TestType testType) {
+    return new ConfigurableTestPipeline(
         PARALLELISM,
         PROCESS_CNT,
-        new RegisteredSingleStageSimpleLsfTestPipeline(
+        new SingleStageSimpleLsfTestProcessConfiguration(
             testType,
             getExitCode(testType == TestType.NON_PERMANENT_ERROR),
             IMMEDIATE_RETRIES,
@@ -91,9 +95,9 @@ public class StageRunnerDifferentExecutorsTest {
   }
 
   private Process simulateProcessCreation(
-      RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline> processFactory,
+      ConfigurableTestPipeline<SingleStageTestProcessConfiguration> configurableTestPipeline,
       String pipelineName) {
-    Process process = processFactory.createProcess();
+    Process process = configurableTestPipeline.createProcess();
     process.setProcessEntity(
         ProcessEntity.createExecution(
             pipelineName, process.getProcessId(), ProcessEntity.DEFAULT_PRIORITY));
@@ -148,13 +152,13 @@ public class StageRunnerDifferentExecutorsTest {
 
   private void simulateExecution(
       TestType testType,
-      RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline> processFactory,
+      ConfigurableTestPipeline<SingleStageTestProcessConfiguration> configurableTestPipeline,
       SimulateExecutionFirstIterationFactory simulateExecutionFirstIterationFactory) {
     String serviceName =
         UniqueStringGenerator.randomServiceName(StageRunnerDifferentExecutorsTest.class);
 
-    String pipelineName = processFactory.pipelineName();
-    Process process = simulateProcessCreation(processFactory, pipelineName);
+    String pipelineName = configurableTestPipeline.pipelineName();
+    Process process = simulateProcessCreation(configurableTestPipeline, pipelineName);
 
     Stage stage = process.getStages().get(0);
     StageRunner stageRunner =
@@ -167,8 +171,8 @@ public class StageRunnerDifferentExecutorsTest {
         simulateExecutionFirstIterationFactory.create(process, stageRunner);
 
     if (result.isSubmitted()) {
-      processFactory
-          .getRegisteredTestPipeline()
+      configurableTestPipeline
+          .getRegisteredPipeline()
           .assertSubmittedStageEntities(pipeliteServices.stage(), PROCESS_CNT);
     }
 
@@ -187,19 +191,19 @@ public class StageRunnerDifferentExecutorsTest {
 
     // ProcessEntity is not created nor asserted in this test
 
-    processFactory
-        .getRegisteredTestPipeline()
+    configurableTestPipeline
+        .getRegisteredPipeline()
         .assertCompletedStageEntities(pipeliteServices.stage(), PROCESS_CNT);
   }
 
   @Test
   public void testExecutionUsingSyncTestExecutor() {
     for (TestType testType : EnumSet.of(TestType.NON_PERMANENT_ERROR, TestType.SUCCESS)) {
-      RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline> processFactory =
-          syncTestProcessFactory(testType);
+      ConfigurableTestPipeline<SingleStageTestProcessConfiguration> configurableTestPipeline =
+          syncConfigurableTestPipeline(testType);
       simulateExecution(
           testType,
-          processFactory,
+          configurableTestPipeline,
           (process, stageRunner) -> simulateSyncExecutionFirstIteration(process, stageRunner));
     }
   }
@@ -207,8 +211,8 @@ public class StageRunnerDifferentExecutorsTest {
   @Test
   public void testExecutionUsingAsyncTestExecutor() {
     for (TestType testType : EnumSet.of(TestType.NON_PERMANENT_ERROR, TestType.SUCCESS)) {
-      RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline> processFactory =
-          asyncTestProcessFactory(testType);
+      ConfigurableTestPipeline<SingleStageTestProcessConfiguration> processFactory =
+          asyncConfigurableTestPipeline(testType);
       simulateExecution(
           testType,
           processFactory,
@@ -221,11 +225,11 @@ public class StageRunnerDifferentExecutorsTest {
   // @Timeout(value = 60, unit = SECONDS)
   public void testExecutionUsingSimpleLsfExecutor() {
     for (TestType testType : EnumSet.of(TestType.NON_PERMANENT_ERROR, TestType.SUCCESS)) {
-      RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline> processFactory =
-          simpleLsfProcessFactory(testType);
+      ConfigurableTestPipeline<SingleStageTestProcessConfiguration> configurableTestPipeline =
+          simpleLsfConfigurableTestPipeline(testType);
       simulateExecution(
           testType,
-          processFactory,
+          configurableTestPipeline,
           (process, stageRunner) -> simulateAsyncExecutionFirstIteration(process, stageRunner));
     }
   }

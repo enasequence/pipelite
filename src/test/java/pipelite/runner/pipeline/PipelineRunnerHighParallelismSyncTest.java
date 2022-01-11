@@ -24,8 +24,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
-import pipelite.helper.RegisteredConfiguredTestPipeline;
-import pipelite.helper.RegisteredTestPipelineWrappingPipeline;
+import pipelite.helper.ConfigurableTestPipeline;
+import pipelite.helper.process.TestProcessConfiguration;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
@@ -92,13 +92,12 @@ public class PipelineRunnerHighParallelismSyncTest {
     }
   }
 
-  public static class SyncTestPipeline
-      extends RegisteredTestPipelineWrappingPipeline<RegisteredConfiguredTestPipeline> {
+  public static class SyncTestPipeline extends ConfigurableTestPipeline<TestProcessConfiguration> {
     public SyncTestPipeline() {
       super(
           PARALLELISM,
           PROCESS_CNT,
-          new RegisteredConfiguredTestPipeline() {
+          new TestProcessConfiguration() {
             @Override
             public void testConfigureProcess(ProcessBuilder builder) {
               builder

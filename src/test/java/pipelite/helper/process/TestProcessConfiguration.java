@@ -8,16 +8,26 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.helper;
+package pipelite.helper.process;
 
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import pipelite.RegisteredPipeline;
+import pipelite.UniqueStringGenerator;
+import pipelite.helper.ConfigurableTestPipeline;
 import pipelite.process.builder.ProcessBuilder;
 
-public abstract class RegisteredConfiguredTestPipeline extends RegisteredNamedTestPipeline {
+public abstract class TestProcessConfiguration implements RegisteredPipeline {
 
+  private final String pipelineName =
+      UniqueStringGenerator.randomPipelineName(ConfigurableTestPipeline.class);
   private final Set<String> configuredProcessIds = ConcurrentHashMap.newKeySet();
+
+  @Override
+  public final String pipelineName() {
+    return pipelineName;
+  }
 
   @Override
   public final void configureProcess(ProcessBuilder builder) {

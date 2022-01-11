@@ -24,10 +24,10 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
 import pipelite.configuration.properties.LsfTestConfiguration;
-import pipelite.helper.RegisteredSingleStageSimpleLsfTestPipeline;
-import pipelite.helper.RegisteredSingleStageTestPipeline;
-import pipelite.helper.RegisteredTestPipelineWrappingPipeline;
+import pipelite.helper.ConfigurableTestPipeline;
 import pipelite.helper.TestType;
+import pipelite.helper.process.SingleStageSimpleLsfTestProcessConfiguration;
+import pipelite.helper.process.SingleStageTestProcessConfiguration;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.ProcessService;
@@ -59,8 +59,7 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
   @Autowired private PipeliteMetrics metrics;
 
   @Autowired
-  private List<RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline>>
-      testPipelines;
+  private List<ConfigurableTestPipeline<SingleStageTestProcessConfiguration>> testPipelines;
 
   @Profile("PipelineRunnerSimpleSshLsfExecutorTest")
   @TestConfiguration
@@ -87,12 +86,12 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
     return testType == TestType.NON_PERMANENT_ERROR ? 1 : 0;
   }
 
-  private static class SimpleLsfPipeline extends RegisteredTestPipelineWrappingPipeline {
+  private static class SimpleLsfPipeline extends ConfigurableTestPipeline {
     public SimpleLsfPipeline(TestType testType, LsfTestConfiguration lsfTestConfiguration) {
       super(
           PARALLELISM,
           PROCESS_CNT,
-          new RegisteredSingleStageSimpleLsfTestPipeline(
+          new SingleStageSimpleLsfTestProcessConfiguration(
               testType,
               getExitCode(testType),
               IMMEDIATE_RETRIES,
@@ -101,13 +100,12 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
     }
   }
 
-  private static class SimpleLsfPermanentErrorPipeline
-      extends RegisteredTestPipelineWrappingPipeline {
+  private static class SimpleLsfPermanentErrorPipeline extends ConfigurableTestPipeline {
     public SimpleLsfPermanentErrorPipeline(LsfTestConfiguration lsfTestConfiguration) {
       super(
           PARALLELISM,
           PROCESS_CNT,
-          new RegisteredSingleStageSimpleLsfTestPipeline(
+          new SingleStageSimpleLsfTestProcessConfiguration(
               TestType.PERMANENT_ERROR,
               getExitCode(TestType.PERMANENT_ERROR),
               IMMEDIATE_RETRIES,
@@ -123,16 +121,15 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
     }
   }
 
-  private void assertPipeline(
-      RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline> f) {
+  private void assertPipeline(ConfigurableTestPipeline<SingleStageTestProcessConfiguration> f) {
     for (PipelineRunner pipelineRunner : runnerService.getPipelineRunners()) {
       assertThat(pipelineRunner.getActiveProcessRunners().size()).isEqualTo(0);
     }
-    RegisteredSingleStageTestPipeline registeredTestPipeline = f.getRegisteredTestPipeline();
-    assertThat(registeredTestPipeline.configuredProcessIds().size()).isEqualTo(PROCESS_CNT);
-    registeredTestPipeline.assertCompletedMetrics(metrics, PROCESS_CNT);
-    registeredTestPipeline.assertCompletedProcessEntities(processService, PROCESS_CNT);
-    registeredTestPipeline.assertCompletedStageEntities(stageService, PROCESS_CNT);
+    SingleStageTestProcessConfiguration testProcessConfiguration = f.getRegisteredPipeline();
+    assertThat(testProcessConfiguration.configuredProcessIds().size()).isEqualTo(PROCESS_CNT);
+    testProcessConfiguration.assertCompletedMetrics(metrics, PROCESS_CNT);
+    testProcessConfiguration.assertCompletedProcessEntities(processService, PROCESS_CNT);
+    testProcessConfiguration.assertCompletedStageEntities(stageService, PROCESS_CNT);
   }
 
   @Test
@@ -142,8 +139,7 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
     processRunnerPoolManager.startPools();
     processRunnerPoolManager.waitPoolsToStop();
 
-    for (RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline> f :
-        testPipelines) {
+    for (ConfigurableTestPipeline<SingleStageTestProcessConfiguration> f : testPipelines) {
       assertPipeline(f);
     }
   }

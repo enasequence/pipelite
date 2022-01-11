@@ -8,18 +8,19 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.helper;
+package pipelite.helper.process;
 
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import pipelite.configuration.properties.KubernetesTestConfiguration;
+import pipelite.helper.TestType;
 import pipelite.helper.entity.StageEntityTestHelper;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
 
-public class RegisteredSingleStageKubernetesTestPipeline
-    extends RegisteredSingleStageTestPipeline<RegisteredSingleStageKubernetesTestPipeline> {
+public class SingleStageKubernetesTestProcessConfiguration
+    extends SingleStageTestProcessConfiguration<SingleStageKubernetesTestProcessConfiguration> {
 
   private final String image = "debian";
   private final List<String> imageArgs;
@@ -27,7 +28,7 @@ public class RegisteredSingleStageKubernetesTestPipeline
   private final KubernetesTestConfiguration kubernetesTestConfiguration;
   private KubernetesExecutorParameters executorParams;
 
-  public RegisteredSingleStageKubernetesTestPipeline(
+  public SingleStageKubernetesTestProcessConfiguration(
       TestType testType,
       int exitCode,
       int immediateRetries,

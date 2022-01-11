@@ -25,9 +25,9 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.Pipeline;
 import pipelite.PipeliteTestConfigWithManager;
 import pipelite.Schedule;
-import pipelite.helper.RegisteredConfiguredTestPipeline;
-import pipelite.helper.RegisteredTestPipelineWrappingPipeline;
-import pipelite.helper.RegisteredTestPipelineWrappingSchedule;
+import pipelite.helper.ConfigurableTestPipeline;
+import pipelite.helper.ConfigurableTestSchedule;
+import pipelite.helper.process.TestProcessConfiguration;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.runner.schedule.ScheduleRunner;
 import pipelite.service.RunnerService;
@@ -39,7 +39,7 @@ import pipelite.stage.executor.StageExecutorResult;
       "pipelite.advanced.processRunnerFrequency=250ms",
       "pipelite.advanced.shutdownIfIdle=true",
       "pipelite.service.force=true",
-      "pipelite.service.name=RegisteredServiceManagerTest"
+      "pipelite.service.name=ProcessRunnerPoolManagerTest"
     })
 @ActiveProfiles({"test", "ProcessRunnerPoolManagerTest"})
 @DirtiesContext
@@ -62,9 +62,9 @@ public class ProcessRunnerPoolManagerTest {
 
     @Bean
     Schedule testSchedule() {
-      return new RegisteredTestPipelineWrappingSchedule(
+      return new ConfigurableTestSchedule(
           CRON_EVERY_TWO_SECONDS,
-          new RegisteredConfiguredTestPipeline() {
+          new TestProcessConfiguration() {
             @Override
             protected void testConfigureProcess(ProcessBuilder builder) {
               builder
@@ -80,10 +80,10 @@ public class ProcessRunnerPoolManagerTest {
 
     @Bean
     Pipeline testPipeline() {
-      return new RegisteredTestPipelineWrappingPipeline(
+      return new ConfigurableTestPipeline(
           PARALLELISM,
           PROCESS_CNT,
-          new RegisteredConfiguredTestPipeline() {
+          new TestProcessConfiguration() {
             @Override
             protected void testConfigureProcess(ProcessBuilder builder) {
               builder

@@ -25,8 +25,8 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.Pipeline;
 import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.PipeliteConfiguration;
-import pipelite.helper.RegisteredConfiguredTestPipeline;
-import pipelite.helper.RegisteredTestPipelineWrappingPipeline;
+import pipelite.helper.ConfigurableTestPipeline;
+import pipelite.helper.process.TestProcessConfiguration;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.runner.process.ProcessQueue;
@@ -64,7 +64,7 @@ public class PipelineRunnerProcessQueueTest {
   private static final AtomicInteger syncExecutionCount = new AtomicInteger();
   private static final AtomicInteger asyncExecutionCount = new AtomicInteger();
 
-  private static final class SyncRegisteredTestPipeline extends RegisteredConfiguredTestPipeline {
+  private static final class SyncTestProcessConfiguration extends TestProcessConfiguration {
     @Override
     protected void testConfigureProcess(ProcessBuilder builder) {
       builder
@@ -77,7 +77,7 @@ public class PipelineRunnerProcessQueueTest {
     }
   }
 
-  private static final class AsyncRegisteredTestPipeline extends RegisteredConfiguredTestPipeline {
+  private static final class AsyncTestProcessConfiguration extends TestProcessConfiguration {
     @Override
     protected void testConfigureProcess(ProcessBuilder builder) {
       builder
@@ -93,16 +93,16 @@ public class PipelineRunnerProcessQueueTest {
   @Test
   public void sync() {
     Pipeline pipeline =
-        new RegisteredTestPipelineWrappingPipeline<>(
-            PARALLELISM, PROCESS_CNT, new SyncRegisteredTestPipeline());
+        new ConfigurableTestPipeline<>(
+            PARALLELISM, PROCESS_CNT, new SyncTestProcessConfiguration());
     test(pipeline, syncExecutionCount);
   }
 
   @Test
   public void async() {
     Pipeline pipeline =
-        new RegisteredTestPipelineWrappingPipeline<>(
-            PARALLELISM, PROCESS_CNT, new AsyncRegisteredTestPipeline());
+        new ConfigurableTestPipeline<>(
+            PARALLELISM, PROCESS_CNT, new AsyncTestProcessConfiguration());
     test(pipeline, asyncExecutionCount);
   }
 

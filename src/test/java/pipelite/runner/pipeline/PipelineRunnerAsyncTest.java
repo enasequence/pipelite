@@ -26,8 +26,8 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
 import pipelite.executor.AbstractExecutor;
-import pipelite.helper.RegisteredConfiguredTestPipeline;
-import pipelite.helper.RegisteredTestPipelineWrappingPipeline;
+import pipelite.helper.ConfigurableTestPipeline;
+import pipelite.helper.process.TestProcessConfiguration;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
@@ -93,14 +93,14 @@ public class PipelineRunnerAsyncTest {
 
   @Getter
   public static class TestPipeline<T extends TestExecutor>
-      extends RegisteredTestPipelineWrappingPipeline<RegisteredConfiguredTestPipeline> {
+      extends ConfigurableTestPipeline<TestProcessConfiguration> {
     private final T stageExecutor;
 
     public TestPipeline(T stageExecutor) {
       super(
           PARALLELISM,
           PROCESS_CNT,
-          new RegisteredConfiguredTestPipeline() {
+          new TestProcessConfiguration() {
             @Override
             protected void testConfigureProcess(ProcessBuilder builder) {
               ExecutorParameters executorParams =

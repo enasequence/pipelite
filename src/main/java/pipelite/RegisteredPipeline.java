@@ -12,7 +12,7 @@ package pipelite;
 
 import pipelite.process.builder.ProcessBuilder;
 
-/** Configures a registered pipeline to be executed by Pipelite. */
+/** Registers a pipeline to be executed by Pipelite. */
 public interface RegisteredPipeline {
 
   /**

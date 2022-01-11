@@ -30,8 +30,7 @@ import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageLogEntity;
-import pipelite.helper.RegisteredConfiguredTestPipeline;
-import pipelite.helper.RegisteredTestPipelineWrappingSchedule;
+import pipelite.helper.ConfigurableTestSchedule;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
@@ -73,32 +72,32 @@ public class ScheduleRunnerTest {
   static class TestConfig {
     @Bean
     public TestSchedule firstScheduleSuccess() {
-      return new TestSchedule(2, 2, new RegisteredTestPipeline(1, StageTestResult.SUCCESS));
+      return new TestSchedule(2, 2, new TestProcessConfiguration(1, StageTestResult.SUCCESS));
     }
 
     @Bean
     public TestSchedule secondScheduleSuccess() {
-      return new TestSchedule(1, 4, new RegisteredTestPipeline(2, StageTestResult.SUCCESS));
+      return new TestSchedule(1, 4, new TestProcessConfiguration(2, StageTestResult.SUCCESS));
     }
 
     @Bean
     public TestSchedule firstScheduleNonPermanentError() {
-      return new TestSchedule(2, 2, new RegisteredTestPipeline(1, StageTestResult.ERROR));
+      return new TestSchedule(2, 2, new TestProcessConfiguration(1, StageTestResult.ERROR));
     }
 
     @Bean
     public TestSchedule secondScheduleNonPermanentError() {
-      return new TestSchedule(1, 4, new RegisteredTestPipeline(2, StageTestResult.ERROR));
+      return new TestSchedule(1, 4, new TestProcessConfiguration(2, StageTestResult.ERROR));
     }
 
     @Bean
     public TestSchedule firstScheduleException() {
-      return new TestSchedule(2, 2, new RegisteredTestPipeline(1, StageTestResult.EXCEPTION));
+      return new TestSchedule(2, 2, new TestProcessConfiguration(1, StageTestResult.EXCEPTION));
     }
 
     @Bean
     public TestSchedule secondScheduleException() {
-      return new TestSchedule(1, 4, new RegisteredTestPipeline(2, StageTestResult.EXCEPTION));
+      return new TestSchedule(1, 4, new TestProcessConfiguration(2, StageTestResult.EXCEPTION));
     }
   }
 
@@ -109,12 +108,13 @@ public class ScheduleRunnerTest {
   }
 
   @Getter
-  protected static class RegisteredTestPipeline extends RegisteredConfiguredTestPipeline {
+  protected static class TestProcessConfiguration
+      extends pipelite.helper.process.TestProcessConfiguration {
     public final int stageCnt;
     public final StageTestResult stageTestResult;
     public final AtomicLong stageExecCnt = new AtomicLong();
 
-    public RegisteredTestPipeline(int stageCnt, StageTestResult stageTestResult) {
+    public TestProcessConfiguration(int stageCnt, StageTestResult stageTestResult) {
       this.stageCnt = stageCnt;
       this.stageTestResult = stageTestResult;
     }
@@ -150,13 +150,12 @@ public class ScheduleRunnerTest {
   }
 
   @Getter
-  protected static class TestSchedule
-      extends RegisteredTestPipelineWrappingSchedule<RegisteredTestPipeline> {
+  protected static class TestSchedule extends ConfigurableTestSchedule<TestProcessConfiguration> {
     public final int processCnt;
 
     public TestSchedule(
-        int processCnt, int schedulerSeconds, RegisteredTestPipeline registeredTestPipeline) {
-      super("0/" + schedulerSeconds + " * * * * ?", registeredTestPipeline);
+        int processCnt, int schedulerSeconds, TestProcessConfiguration testProcessConfiguration) {
+      super("0/" + schedulerSeconds + " * * * * ?", testProcessConfiguration);
       this.processCnt = processCnt;
     }
   }
@@ -173,7 +172,7 @@ public class ScheduleRunnerTest {
 
     PipelineMetrics pipelineMetrics = metrics.pipeline(pipelineName);
 
-    RegisteredTestPipeline t = f.getRegisteredTestPipeline();
+    TestProcessConfiguration t = f.getRegisteredPipeline();
     if (t.stageTestResult != StageTestResult.SUCCESS) {
       assertThat(pipelineMetrics.process().getFailedCount())
           .isEqualTo(t.stageExecCnt.get() / t.stageCnt);
@@ -228,7 +227,7 @@ public class ScheduleRunnerTest {
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);
 
-    RegisteredTestPipeline t = f.getRegisteredTestPipeline();
+    TestProcessConfiguration t = f.getRegisteredPipeline();
     if (t.stageTestResult != StageTestResult.SUCCESS) {
       assertThat(processEntity.getProcessState())
           .isEqualTo(ProcessState.FAILED); // no re-executions allowed
@@ -240,7 +239,7 @@ public class ScheduleRunnerTest {
   private void assertStageEntities(TestSchedule f, String processId) {
     String pipelineName = f.pipelineName();
 
-    RegisteredTestPipeline t = f.getRegisteredTestPipeline();
+    TestProcessConfiguration t = f.getRegisteredPipeline();
     for (int i = 0; i < t.stageCnt; ++i) {
       StageEntity stageEntity =
           stageService.getSavedStage(f.pipelineName(), processId, "STAGE" + i).get();
@@ -286,7 +285,7 @@ public class ScheduleRunnerTest {
     List<ScheduleEntity> scheduleEntities =
         scheduleService.getSchedules(serviceConfiguration.getName());
 
-    RegisteredTestPipeline t = f.getRegisteredTestPipeline();
+    TestProcessConfiguration t = f.getRegisteredPipeline();
     assertThat(t.stageExecCnt.get() / t.stageCnt).isEqualTo(f.processCnt);
     assertThat(t.configuredProcessIds().size()).isEqualTo(f.processCnt);
     assertSchedulerMetrics(f);

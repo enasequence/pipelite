@@ -8,10 +8,11 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.helper;
+package pipelite.helper.process;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import pipelite.helper.TestType;
 import pipelite.helper.entity.ProcessEntityTestHelper;
 import pipelite.helper.entity.ScheduleEntityTestHelper;
 import pipelite.helper.metrics.MetricsTestHelper;
@@ -20,8 +21,9 @@ import pipelite.service.ProcessService;
 import pipelite.service.ScheduleService;
 import pipelite.service.StageService;
 
-public abstract class RegisteredSingleStageTestPipeline<T extends RegisteredSingleStageTestPipeline>
-    extends RegisteredConfiguredTestPipeline {
+public abstract class SingleStageTestProcessConfiguration<
+        T extends SingleStageTestProcessConfiguration>
+    extends TestProcessConfiguration {
 
   private final TestType testType;
   private final int immediateRetries;
@@ -36,7 +38,7 @@ public abstract class RegisteredSingleStageTestPipeline<T extends RegisteredSing
         String pipelineName,
         String processId,
         String stageName,
-        T registeredTestPipeline);
+        T testProcessConfiguration);
   }
 
   protected interface AssertCompletedStageEntity<T> {
@@ -45,10 +47,10 @@ public abstract class RegisteredSingleStageTestPipeline<T extends RegisteredSing
         String pipelineName,
         String processId,
         String stageName,
-        T registeredTestPipeline);
+        T testProcessConfiguration);
   }
 
-  public RegisteredSingleStageTestPipeline(
+  public SingleStageTestProcessConfiguration(
       TestType testType,
       int immediateRetries,
       int maximumRetries,

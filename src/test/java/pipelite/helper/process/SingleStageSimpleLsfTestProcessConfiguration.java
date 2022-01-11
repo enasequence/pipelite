@@ -8,23 +8,24 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.helper;
+package pipelite.helper.process;
 
 import java.time.Duration;
 import pipelite.configuration.properties.LsfTestConfiguration;
+import pipelite.helper.TestType;
 import pipelite.helper.entity.StageEntityTestHelper;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 
-public class RegisteredSingleStageSimpleLsfTestPipeline
-    extends RegisteredSingleStageTestPipeline<RegisteredSingleStageSimpleLsfTestPipeline> {
+public class SingleStageSimpleLsfTestProcessConfiguration
+    extends SingleStageTestProcessConfiguration<SingleStageSimpleLsfTestProcessConfiguration> {
 
   private final String cmd;
   private final int exitCode;
   private final LsfTestConfiguration lsfTestConfiguration;
   private SimpleLsfExecutorParameters executorParams;
 
-  public RegisteredSingleStageSimpleLsfTestPipeline(
+  public SingleStageSimpleLsfTestProcessConfiguration(
       TestType testType,
       int exitCode,
       int immediateRetries,

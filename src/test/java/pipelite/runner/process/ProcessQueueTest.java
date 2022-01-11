@@ -29,8 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.PipeliteConfiguration;
 import pipelite.entity.ProcessEntity;
-import pipelite.helper.RegisteredConfiguredTestPipeline;
-import pipelite.helper.RegisteredTestPipelineWrappingPipeline;
+import pipelite.helper.ConfigurableTestPipeline;
+import pipelite.helper.process.TestProcessConfiguration;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.PipeliteServices;
 import pipelite.service.ProcessService;
@@ -55,12 +55,12 @@ public class ProcessQueueTest {
   private static final int ACTIVE_PROCESS_CNT = 25;
   private static final int PENDING_PROCESS_CNT = 10;
 
-  private class TestPipeline extends RegisteredTestPipelineWrappingPipeline {
+  private class TestPipeline extends ConfigurableTestPipeline {
     public TestPipeline() {
       super(
           10,
           ACTIVE_PROCESS_CNT + PENDING_PROCESS_CNT,
-          new RegisteredConfiguredTestPipeline() {
+          new TestProcessConfiguration() {
             @Override
             protected void testConfigureProcess(ProcessBuilder builder) {
               builder.execute("STAGE").withSyncTestExecutor().build();

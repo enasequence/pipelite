@@ -60,7 +60,7 @@ public class ScheduleRunnerResumeTest {
       return new ScheduleRunnerTest.TestSchedule(
           1,
           2,
-          new ScheduleRunnerTest.RegisteredTestPipeline(
+          new ScheduleRunnerTest.TestProcessConfiguration(
               2, ScheduleRunnerTest.StageTestResult.SUCCESS));
     }
 
@@ -69,7 +69,7 @@ public class ScheduleRunnerResumeTest {
       return new ScheduleRunnerTest.TestSchedule(
           1,
           1,
-          new ScheduleRunnerTest.RegisteredTestPipeline(
+          new ScheduleRunnerTest.TestProcessConfiguration(
               2, ScheduleRunnerTest.StageTestResult.SUCCESS));
     }
   }

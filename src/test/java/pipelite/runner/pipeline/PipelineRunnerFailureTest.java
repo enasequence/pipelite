@@ -28,8 +28,8 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
-import pipelite.helper.RegisteredConfiguredTestPipeline;
-import pipelite.helper.RegisteredTestPipelineWrappingPipeline;
+import pipelite.helper.ConfigurableTestPipeline;
+import pipelite.helper.process.TestProcessConfiguration;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
@@ -122,7 +122,7 @@ public class PipelineRunnerFailureTest {
   }
 
   @Getter
-  private static class RegisteredTestPipeline extends RegisteredConfiguredTestPipeline {
+  private static class TestProcess extends TestProcessConfiguration {
     private final StageTestResult stageTestResult;
     private StageExecutorResult firstStageExecResult;
     private StageExecutorResult secondStageExecResult;
@@ -133,7 +133,7 @@ public class PipelineRunnerFailureTest {
     public final AtomicLong thirdStageExecCnt = new AtomicLong();
     public final AtomicLong fourthStageExecCnt = new AtomicLong();
 
-    public RegisteredTestPipeline(StageTestResult stageTestResult) {
+    public TestProcess(StageTestResult stageTestResult) {
       this.stageTestResult = stageTestResult;
       this.firstStageExecResult =
           stageTestResult == StageTestResult.FIRST_ERROR
@@ -195,10 +195,9 @@ public class PipelineRunnerFailureTest {
   }
 
   @Getter
-  private static class TestPipeline
-      extends RegisteredTestPipelineWrappingPipeline<RegisteredTestPipeline> {
+  private static class TestPipeline extends ConfigurableTestPipeline<TestProcess> {
     public TestPipeline(StageTestResult stageTestResult) {
-      super(PARALLELISM, PROCESS_CNT, new RegisteredTestPipeline(stageTestResult));
+      super(PARALLELISM, PROCESS_CNT, new TestProcess(stageTestResult));
     }
   }
 
@@ -212,7 +211,7 @@ public class PipelineRunnerFailureTest {
     assertThat(f.returnedProcessCount()).isEqualTo(PROCESS_CNT);
     assertThat(f.confirmedProcessCount()).isEqualTo(PROCESS_CNT);
 
-    RegisteredTestPipeline t = f.getRegisteredTestPipeline();
+    TestProcess t = f.getRegisteredPipeline();
     if (t.stageTestResult == StageTestResult.FIRST_ERROR) {
       assertThat(t.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
       assertThat(t.secondStageExecCnt.get()).isEqualTo(0);
@@ -251,7 +250,7 @@ public class PipelineRunnerFailureTest {
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);
 
-    RegisteredTestPipeline t = f.getRegisteredTestPipeline();
+    TestProcess t = f.getRegisteredPipeline();
     if (t.stageTestResult == StageTestResult.NO_ERROR) {
       assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.COMPLETED);
     } else {
@@ -271,7 +270,7 @@ public class PipelineRunnerFailureTest {
       assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
       assertThat(stageEntity.getProcessId()).isEqualTo(processId);
 
-      RegisteredTestPipeline t = f.getRegisteredTestPipeline();
+      TestProcess t = f.getRegisteredPipeline();
       if ((i > 0 && t.stageTestResult == StageTestResult.FIRST_ERROR)
           || (i > 1 && t.stageTestResult == StageTestResult.SECOND_ERROR)
           || (i > 2 && t.stageTestResult == StageTestResult.THIRD_ERROR)
@@ -324,7 +323,7 @@ public class PipelineRunnerFailureTest {
 
   private void assertMetrics(TestPipeline f) {
     PipelineMetrics pipelineMetrics = metrics.pipeline(f.pipelineName());
-    RegisteredTestPipeline t = f.getRegisteredTestPipeline();
+    TestProcess t = f.getRegisteredPipeline();
     if (t.getFirstStageExecResult().isSuccess()
         && t.getSecondStageExecResult().isSuccess()
         && t.getThirdStageExecResult().isSuccess()

@@ -8,20 +8,21 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.helper;
+package pipelite.helper.process;
 
+import pipelite.helper.TestType;
 import pipelite.helper.entity.StageEntityTestHelper;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.ExecutorParameters;
 
-public class RegisteredSingleStageAsyncTestPipeline
-    extends RegisteredSingleStageTestPipeline<RegisteredSingleStageAsyncTestPipeline> {
+public class SingleStageAsyncTestProcessConfiguration
+    extends SingleStageTestProcessConfiguration<SingleStageAsyncTestProcessConfiguration> {
 
   private final StageExecutorState completedExecutorState;
   private ExecutorParameters executorParams;
 
-  public RegisteredSingleStageAsyncTestPipeline(
+  public SingleStageAsyncTestProcessConfiguration(
       TestType testType, int immediateRetries, int maximumRetries) {
     super(
         testType,

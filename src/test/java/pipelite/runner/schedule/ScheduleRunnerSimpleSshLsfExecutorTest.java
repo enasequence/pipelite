@@ -26,10 +26,10 @@ import pipelite.PipeliteTestConfigWithManager;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.entity.ScheduleEntity;
-import pipelite.helper.RegisteredSingleStageSimpleLsfTestPipeline;
-import pipelite.helper.RegisteredSingleStageTestPipeline;
-import pipelite.helper.RegisteredTestPipelineWrappingSchedule;
+import pipelite.helper.ConfigurableTestSchedule;
 import pipelite.helper.TestType;
+import pipelite.helper.process.SingleStageSimpleLsfTestProcessConfiguration;
+import pipelite.helper.process.SingleStageTestProcessConfiguration;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.ProcessService;
@@ -59,8 +59,7 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
   @Autowired private PipeliteMetrics metrics;
 
   @Autowired
-  private List<RegisteredTestPipelineWrappingSchedule<RegisteredSingleStageTestPipeline>>
-      testSchedules;
+  private List<ConfigurableTestSchedule<SingleStageTestProcessConfiguration>> testSchedules;
 
   private static final int PROCESS_CNT = 2;
   private static final int IMMEDIATE_RETRIES = 3;
@@ -93,11 +92,11 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
   }
 
   private static class SimpleLsfSchedule
-      extends RegisteredTestPipelineWrappingSchedule<RegisteredSingleStageTestPipeline> {
+      extends ConfigurableTestSchedule<SingleStageTestProcessConfiguration> {
     public SimpleLsfSchedule(TestType testType, LsfTestConfiguration lsfTestConfiguration) {
       super(
           "0/" + SCHEDULER_SECONDS + " * * * * ?",
-          new RegisteredSingleStageSimpleLsfTestPipeline(
+          new SingleStageSimpleLsfTestProcessConfiguration(
               testType,
               getExitCode(testType),
               IMMEDIATE_RETRIES,
@@ -107,11 +106,11 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
   }
 
   private static class SimpleLsfPermanentErrorSchedule
-      extends RegisteredTestPipelineWrappingSchedule<RegisteredSingleStageTestPipeline> {
+      extends ConfigurableTestSchedule<SingleStageTestProcessConfiguration> {
     public SimpleLsfPermanentErrorSchedule(LsfTestConfiguration lsfTestConfiguration) {
       super(
           "0/" + SCHEDULER_SECONDS + " * * * * ?",
-          new RegisteredSingleStageSimpleLsfTestPipeline(
+          new SingleStageSimpleLsfTestProcessConfiguration(
               TestType.PERMANENT_ERROR,
               getExitCode(TestType.PERMANENT_ERROR),
               IMMEDIATE_RETRIES,
@@ -128,25 +127,24 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
   }
 
   private void deleteSchedule(
-      RegisteredTestPipelineWrappingSchedule<RegisteredSingleStageTestPipeline> testSchedule) {
+      ConfigurableTestSchedule<SingleStageTestProcessConfiguration> testSchedule) {
     ScheduleEntity schedule = new ScheduleEntity();
     schedule.setPipelineName(testSchedule.pipelineName());
     scheduleService.delete(schedule);
     System.out.println("deleted schedule for pipeline: " + testSchedule.pipelineName());
   }
 
-  private void assertSchedule(
-      RegisteredTestPipelineWrappingSchedule<RegisteredSingleStageTestPipeline> f) {
+  private void assertSchedule(ConfigurableTestSchedule<SingleStageTestProcessConfiguration> f) {
     ScheduleRunner scheduleRunner = runnerService.getScheduleRunner();
 
     assertThat(scheduleRunner.getActiveProcessRunners().size()).isEqualTo(0);
-    RegisteredSingleStageTestPipeline registeredTestPipeline = f.getRegisteredTestPipeline();
-    assertThat(registeredTestPipeline.configuredProcessIds().size()).isEqualTo(PROCESS_CNT);
-    registeredTestPipeline.assertCompletedMetrics(metrics, PROCESS_CNT);
-    registeredTestPipeline.assertCompletedScheduleEntity(
+    SingleStageTestProcessConfiguration testProcessConfiguration = f.getRegisteredPipeline();
+    assertThat(testProcessConfiguration.configuredProcessIds().size()).isEqualTo(PROCESS_CNT);
+    testProcessConfiguration.assertCompletedMetrics(metrics, PROCESS_CNT);
+    testProcessConfiguration.assertCompletedScheduleEntity(
         scheduleService, serviceConfiguration.getName(), PROCESS_CNT);
-    registeredTestPipeline.assertCompletedProcessEntities(processService, PROCESS_CNT);
-    registeredTestPipeline.assertCompletedStageEntities(stageService, PROCESS_CNT);
+    testProcessConfiguration.assertCompletedProcessEntities(processService, PROCESS_CNT);
+    testProcessConfiguration.assertCompletedStageEntities(stageService, PROCESS_CNT);
   }
 
   @Test
@@ -156,21 +154,18 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
       processRunnerPoolManager.createPools();
 
       ScheduleRunner scheduleRunner = runnerService.getScheduleRunner();
-      for (RegisteredTestPipelineWrappingSchedule<RegisteredSingleStageTestPipeline> f :
-          testSchedules) {
+      for (ConfigurableTestSchedule<SingleStageTestProcessConfiguration> f : testSchedules) {
         scheduleRunner.setMaximumExecutions(f.pipelineName(), PROCESS_CNT);
       }
 
       processRunnerPoolManager.startPools();
       processRunnerPoolManager.waitPoolsToStop();
 
-      for (RegisteredTestPipelineWrappingSchedule<RegisteredSingleStageTestPipeline> f :
-          testSchedules) {
+      for (ConfigurableTestSchedule<SingleStageTestProcessConfiguration> f : testSchedules) {
         assertSchedule(f);
       }
     } finally {
-      for (RegisteredTestPipelineWrappingSchedule<RegisteredSingleStageTestPipeline> f :
-          testSchedules) {
+      for (ConfigurableTestSchedule<SingleStageTestProcessConfiguration> f : testSchedules) {
         deleteSchedule(f);
       }
     }

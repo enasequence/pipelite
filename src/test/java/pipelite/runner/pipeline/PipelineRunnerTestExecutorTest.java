@@ -23,6 +23,9 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
 import pipelite.helper.*;
+import pipelite.helper.process.SingleStageAsyncTestProcessConfiguration;
+import pipelite.helper.process.SingleStageSyncTestProcessConfiguration;
+import pipelite.helper.process.SingleStageTestProcessConfiguration;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.ProcessService;
@@ -53,8 +56,7 @@ public class PipelineRunnerTestExecutorTest {
   @Autowired private PipeliteMetrics metrics;
 
   @Autowired
-  private List<RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline>>
-      testPipelines;
+  private List<ConfigurableTestPipeline<SingleStageTestProcessConfiguration>> testPipelines;
 
   @Profile("PipelineRunnerTestExecutorTest")
   @TestConfiguration
@@ -80,34 +82,35 @@ public class PipelineRunnerTestExecutorTest {
     }
   }
 
-  private static class SimpleSyncTestPipeline extends RegisteredTestPipelineWrappingPipeline {
+  private static class SimpleSyncTestPipeline extends ConfigurableTestPipeline {
     public SimpleSyncTestPipeline(TestType testType) {
       super(
           PARALLELISM,
           PROCESS_CNT,
-          new RegisteredSingleStageSyncTestPipeline(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES));
+          new SingleStageSyncTestProcessConfiguration(
+              testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES));
     }
   }
 
-  private static class SimpleAsyncTestPipeline extends RegisteredTestPipelineWrappingPipeline {
+  private static class SimpleAsyncTestPipeline extends ConfigurableTestPipeline {
     public SimpleAsyncTestPipeline(TestType testType) {
       super(
           PARALLELISM,
           PROCESS_CNT,
-          new RegisteredSingleStageAsyncTestPipeline(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES));
+          new SingleStageAsyncTestProcessConfiguration(
+              testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES));
     }
   }
 
-  private void assertPipeline(
-      RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline> f) {
+  private void assertPipeline(ConfigurableTestPipeline<SingleStageTestProcessConfiguration> f) {
     for (PipelineRunner pipelineRunner : runnerService.getPipelineRunners()) {
       assertThat(pipelineRunner.getActiveProcessRunners().size()).isEqualTo(0);
     }
-    RegisteredSingleStageTestPipeline registeredTestPipeline = f.getRegisteredTestPipeline();
-    assertThat(registeredTestPipeline.configuredProcessIds().size()).isEqualTo(PROCESS_CNT);
-    registeredTestPipeline.assertCompletedMetrics(metrics, PROCESS_CNT);
-    registeredTestPipeline.assertCompletedProcessEntities(processService, PROCESS_CNT);
-    registeredTestPipeline.assertCompletedStageEntities(stageService, PROCESS_CNT);
+    SingleStageTestProcessConfiguration testProcessConfiguration = f.getRegisteredPipeline();
+    assertThat(testProcessConfiguration.configuredProcessIds().size()).isEqualTo(PROCESS_CNT);
+    testProcessConfiguration.assertCompletedMetrics(metrics, PROCESS_CNT);
+    testProcessConfiguration.assertCompletedProcessEntities(processService, PROCESS_CNT);
+    testProcessConfiguration.assertCompletedStageEntities(stageService, PROCESS_CNT);
   }
 
   @Test
@@ -116,8 +119,7 @@ public class PipelineRunnerTestExecutorTest {
     processRunnerPoolManager.startPools();
     processRunnerPoolManager.waitPoolsToStop();
 
-    for (RegisteredTestPipelineWrappingPipeline<RegisteredSingleStageTestPipeline> f :
-        testPipelines) {
+    for (ConfigurableTestPipeline<SingleStageTestProcessConfiguration> f : testPipelines) {
       assertPipeline(f);
     }
   }

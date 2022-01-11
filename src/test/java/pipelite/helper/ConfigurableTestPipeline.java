@@ -16,27 +16,33 @@ import java.util.concurrent.ConcurrentHashMap;
 import pipelite.Pipeline;
 import pipelite.RegisteredPipeline;
 import pipelite.UniqueStringGenerator;
+import pipelite.helper.process.SingleStageTestProcessConfiguration;
 import pipelite.process.builder.ProcessBuilder;
 
-public class RegisteredTestPipelineWrappingPipeline<T extends RegisteredPipeline>
-    implements Pipeline {
+/**
+ * The configurable test pipeline creates processes for testing purposes. The created processes are
+ * configured using the given RegisteredPipeline. The process execution parallelism and the number
+ * of processes are defined. The configurable test pipeline should to be registered in tests for the
+ * processes to be created and executed. Alternatively, processes can be created by calling
+ * createProcess and executed explicitly.
+ */
+public class ConfigurableTestPipeline<T extends RegisteredPipeline> implements Pipeline {
 
   private final int parallelism;
   private final int processCount;
-  private final T registeredTestPipeline;
+  private final T registeredPipeline;
+
   private final Set<String> createdProcessIds = ConcurrentHashMap.newKeySet();
   private final Set<String> returnedProcessIds = ConcurrentHashMap.newKeySet();
   private final Set<String> confirmedProcessIds = ConcurrentHashMap.newKeySet();
   private final Monitor monitor = new Monitor();
 
-  public RegisteredTestPipelineWrappingPipeline(
-      int parallelism, int processCount, T registeredTestPipeline) {
+  public ConfigurableTestPipeline(int parallelism, int processCount, T registeredPipeline) {
     this.parallelism = parallelism;
     this.processCount = processCount;
-    this.registeredTestPipeline = registeredTestPipeline;
+    this.registeredPipeline = registeredPipeline;
     for (int i = 0; i < processCount; ++i) {
-      createdProcessIds.add(
-          UniqueStringGenerator.randomProcessId(RegisteredTestPipelineWrappingPipeline.class));
+      createdProcessIds.add(UniqueStringGenerator.randomProcessId(ConfigurableTestPipeline.class));
     }
   }
 
@@ -48,18 +54,18 @@ public class RegisteredTestPipelineWrappingPipeline<T extends RegisteredPipeline
     return processCount;
   }
 
-  public T getRegisteredTestPipeline() {
-    return registeredTestPipeline;
+  public T getRegisteredPipeline() {
+    return registeredPipeline;
   }
 
   @Override
   public final String pipelineName() {
-    return registeredTestPipeline.pipelineName();
+    return registeredPipeline.pipelineName();
   }
 
   @Override
   public final void configureProcess(ProcessBuilder builder) {
-    registeredTestPipeline.configureProcess(builder);
+    registeredPipeline.configureProcess(builder);
   }
 
   @Override
@@ -91,10 +97,13 @@ public class RegisteredTestPipelineWrappingPipeline<T extends RegisteredPipeline
     }
   }
 
-  /** Creates a process for without using PipelineRunner or ScheduleRunner. */
+  /**
+   * Creates a process without registering the pipeline. The created processes should be executed
+   * explicitly.
+   */
   public pipelite.process.Process createProcess() {
     String processId =
-        UniqueStringGenerator.randomProcessId(RegisteredSingleStageTestPipeline.class);
+        UniqueStringGenerator.randomProcessId(SingleStageTestProcessConfiguration.class);
     ProcessBuilder processBuilder = new ProcessBuilder(processId);
     configureProcess(processBuilder);
     return processBuilder.build();
