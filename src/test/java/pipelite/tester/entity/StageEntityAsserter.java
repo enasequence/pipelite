@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.helper.entity;
+package pipelite.tester.entity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -17,15 +17,15 @@ import java.util.stream.Collectors;
 import pipelite.configuration.properties.KubernetesTestConfiguration;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.entity.StageEntity;
-import pipelite.helper.TestType;
 import pipelite.service.StageService;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.ErrorType;
+import pipelite.tester.TestType;
 
-public class StageEntityTestHelper {
-  private StageEntityTestHelper() {}
+public class StageEntityAsserter {
+  private StageEntityAsserter() {}
 
-  private static StageEntity assertSubmittedExecutorStageEntity(
+  private static StageEntity assertSubmittedStageEntity(
       StageService stageService, String pipelineName, String processId, String stageName) {
 
     StageEntity stageEntity = stageService.getSavedStage(pipelineName, processId, stageName).get();
@@ -40,7 +40,7 @@ public class StageEntityTestHelper {
     return stageEntity;
   }
 
-  private static StageEntity assertCompletedExecutorStageEntity(
+  private static StageEntity assertCompletedStageEntity(
       TestType testType,
       StageService stageService,
       String pipelineName,
@@ -80,7 +80,7 @@ public class StageEntityTestHelper {
     return stageEntity;
   }
 
-  public static void assertCompletedTestExecutorStageEntity(
+  public static void assertTestExecutorStageEntity(
       TestType testType,
       StageService stageService,
       String pipelineName,
@@ -90,7 +90,7 @@ public class StageEntityTestHelper {
       int maximumRetries) {
 
     StageEntity stageEntity =
-        assertCompletedExecutorStageEntity(
+        assertCompletedStageEntity(
             testType,
             stageService,
             pipelineName,
@@ -106,7 +106,7 @@ public class StageEntityTestHelper {
         .contains("\"immediateRetries\" : " + immediateRetries);
   }
 
-  private static void assertSimpleLsfExecutorStageEntity(
+  private static void assertSimpleLsfStageEntity(
       TestType testType,
       StageEntity stageEntity,
       LsfTestConfiguration lsfTestConfiguration,
@@ -153,7 +153,7 @@ public class StageEntityTestHelper {
                 + "}");
   }
 
-  private static void assertKubernetesExecutorStageEntity(
+  private static void assertKubernetesStageEntity(
       TestType testType,
       StageEntity stageEntity,
       KubernetesTestConfiguration kubernetesTestConfiguration,
@@ -198,7 +198,7 @@ public class StageEntityTestHelper {
                 + "}");
   }
 
-  public static void assertSubmittedSimpleLsfExecutorStageEntity(
+  public static void assertSubmittedSimpleLsfStageEntity(
       TestType testType,
       StageService stageService,
       LsfTestConfiguration lsfTestConfiguration,
@@ -209,13 +209,13 @@ public class StageEntityTestHelper {
       int maximumRetries) {
 
     StageEntity stageEntity =
-        assertSubmittedExecutorStageEntity(stageService, pipelineName, processId, stageName);
+        assertSubmittedStageEntity(stageService, pipelineName, processId, stageName);
 
-    assertSimpleLsfExecutorStageEntity(
+    assertSimpleLsfStageEntity(
         testType, stageEntity, lsfTestConfiguration, immediateRetries, maximumRetries);
   }
 
-  public static void assertSubmittedKubernetesExecutorStageEntity(
+  public static void assertSubmittedKubernetesStageEntity(
       TestType testType,
       StageService stageService,
       KubernetesTestConfiguration kubernetesTestConfiguration,
@@ -226,13 +226,13 @@ public class StageEntityTestHelper {
       int maximumRetries) {
 
     StageEntity stageEntity =
-        assertSubmittedExecutorStageEntity(stageService, pipelineName, processId, stageName);
+        assertSubmittedStageEntity(stageService, pipelineName, processId, stageName);
 
-    assertKubernetesExecutorStageEntity(
+    assertKubernetesStageEntity(
         testType, stageEntity, kubernetesTestConfiguration, immediateRetries, maximumRetries);
   }
 
-  public static void assertCompletedSimpleLsfExecutorStageEntity(
+  public static void assertCompletedSimpleLsfStageEntity(
       TestType testType,
       StageService stageService,
       LsfTestConfiguration lsfTestConfiguration,
@@ -244,7 +244,7 @@ public class StageEntityTestHelper {
     int exitCode = testType.exitCode();
 
     StageEntity stageEntity =
-        assertCompletedExecutorStageEntity(
+        assertCompletedStageEntity(
             testType,
             stageService,
             pipelineName,
@@ -253,7 +253,7 @@ public class StageEntityTestHelper {
             immediateRetries,
             maximumRetries);
 
-    assertSimpleLsfExecutorStageEntity(
+    assertSimpleLsfStageEntity(
         testType, stageEntity, lsfTestConfiguration, immediateRetries, maximumRetries);
 
     assertThat(stageEntity.getResultParams()).contains("\"exit code\" : \"" + exitCode + "\"");
@@ -261,7 +261,7 @@ public class StageEntityTestHelper {
     assertThat(stageEntity.getExitCode()).isEqualTo(exitCode);
   }
 
-  public static void assertCompletedKubernetesExecutorStageEntity(
+  public static void assertCompletedKubernetesStageEntity(
       TestType testType,
       StageService stageService,
       KubernetesTestConfiguration kubernetesTestConfiguration,
@@ -273,7 +273,7 @@ public class StageEntityTestHelper {
     int exitCode = testType.exitCode();
 
     StageEntity stageEntity =
-        assertCompletedExecutorStageEntity(
+        assertCompletedStageEntity(
             testType,
             stageService,
             pipelineName,
@@ -282,7 +282,7 @@ public class StageEntityTestHelper {
             immediateRetries,
             maximumRetries);
 
-    assertKubernetesExecutorStageEntity(
+    assertKubernetesStageEntity(
         testType, stageEntity, kubernetesTestConfiguration, immediateRetries, maximumRetries);
 
     assertThat(stageEntity.getResultParams()).contains("\"exit code\" : \"" + exitCode + "\"");

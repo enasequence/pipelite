@@ -8,18 +8,18 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.helper.metrics;
+package pipelite.tester.metrics;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import pipelite.helper.TestType;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.TimeSeriesMetrics;
+import pipelite.tester.TestType;
 
-public class MetricsTestHelper {
+public class MetricsTestAsserter {
 
-  private MetricsTestHelper() {}
+  private MetricsTestAsserter() {}
 
   public static void assertCompletedMetrics(
       TestType testType,

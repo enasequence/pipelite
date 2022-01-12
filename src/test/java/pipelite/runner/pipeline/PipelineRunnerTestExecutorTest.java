@@ -22,15 +22,16 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
-import pipelite.helper.*;
-import pipelite.helper.process.SingleStageAsyncTestProcessConfiguration;
-import pipelite.helper.process.SingleStageSyncTestProcessConfiguration;
-import pipelite.helper.process.SingleStageTestProcessConfiguration;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.ProcessService;
 import pipelite.service.RunnerService;
 import pipelite.service.StageService;
+import pipelite.tester.TestType;
+import pipelite.tester.pipeline.ConfigurableTestPipeline;
+import pipelite.tester.process.SingleStageAsyncTestProcessConfiguration;
+import pipelite.tester.process.SingleStageSyncTestProcessConfiguration;
+import pipelite.tester.process.SingleStageTestProcessConfiguration;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithManager.class,

@@ -27,17 +27,15 @@ import pipelite.UniqueStringGenerator;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
-import pipelite.helper.*;
-import pipelite.helper.process.SingleStageAsyncTestProcessConfiguration;
-import pipelite.helper.process.SingleStageSimpleLsfTestProcessConfiguration;
-import pipelite.helper.process.SingleStageSyncTestProcessConfiguration;
-import pipelite.helper.process.SingleStageTestProcessConfiguration;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorState;
+import pipelite.tester.*;
+import pipelite.tester.pipeline.ConfigurableTestPipeline;
+import pipelite.tester.process.*;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithManager.class,

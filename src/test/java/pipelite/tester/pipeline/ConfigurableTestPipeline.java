@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.helper;
+package pipelite.tester.pipeline;
 
 import com.google.common.util.concurrent.Monitor;
 import java.util.Set;
@@ -16,8 +16,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import pipelite.Pipeline;
 import pipelite.RegisteredPipeline;
 import pipelite.UniqueStringGenerator;
-import pipelite.helper.process.SingleStageTestProcessConfiguration;
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.tester.process.SingleStageTestProcessConfiguration;
 
 /**
  * The configurable test pipeline creates processes for testing purposes. The created processes are

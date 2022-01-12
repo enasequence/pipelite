@@ -25,13 +25,13 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.Pipeline;
 import pipelite.PipeliteTestConfigWithManager;
 import pipelite.Schedule;
-import pipelite.helper.ConfigurableTestPipeline;
-import pipelite.helper.ConfigurableTestSchedule;
-import pipelite.helper.process.TestProcessConfiguration;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.runner.schedule.ScheduleRunner;
 import pipelite.service.RunnerService;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.tester.pipeline.ConfigurableTestPipeline;
+import pipelite.tester.pipeline.ConfigurableTestSchedule;
+import pipelite.tester.process.TestProcessConfiguration;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithManager.class,
@@ -66,7 +66,7 @@ public class ProcessRunnerPoolManagerTest {
           CRON_EVERY_TWO_SECONDS,
           new TestProcessConfiguration() {
             @Override
-            protected void testConfigureProcess(ProcessBuilder builder) {
+            protected void configure(ProcessBuilder builder) {
               builder
                   .execute("STAGE")
                   .withSyncTestExecutor(
@@ -85,7 +85,7 @@ public class ProcessRunnerPoolManagerTest {
           PROCESS_CNT,
           new TestProcessConfiguration() {
             @Override
-            protected void testConfigureProcess(ProcessBuilder builder) {
+            protected void configure(ProcessBuilder builder) {
               builder
                   .execute("STAGE")
                   .withSyncTestExecutor(

@@ -16,10 +16,10 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 import org.junit.jupiter.api.Test;
 import pipelite.entity.ProcessEntity;
-import pipelite.helper.ConfigurableTestPipeline;
-import pipelite.helper.process.TestProcessConfiguration;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.ProcessService;
+import pipelite.tester.pipeline.ConfigurableTestPipeline;
+import pipelite.tester.process.TestProcessConfiguration;
 
 public class ProcessCreatorTest {
 
@@ -34,7 +34,7 @@ public class ProcessCreatorTest {
           PROCESS_CNT,
           new TestProcessConfiguration() {
             @Override
-            protected void testConfigureProcess(ProcessBuilder builder) {}
+            protected void configure(ProcessBuilder builder) {}
           });
     }
   }

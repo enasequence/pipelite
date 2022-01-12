@@ -8,20 +8,20 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.helper.process;
+package pipelite.tester.process;
 
-import pipelite.helper.TestType;
-import pipelite.helper.entity.StageEntityTestHelper;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.ExecutorParameters;
+import pipelite.tester.TestType;
+import pipelite.tester.entity.StageEntityAsserter;
 
-public class SingleStageAsyncTestProcessConfiguration
-    extends SingleStageTestProcessConfiguration<SingleStageAsyncTestProcessConfiguration> {
+public class SingleStageSyncTestProcessConfiguration
+    extends SingleStageTestProcessConfiguration<SingleStageSyncTestProcessConfiguration> {
 
   private final StageExecutorState completedExecutorState;
 
-  public SingleStageAsyncTestProcessConfiguration(
+  public SingleStageSyncTestProcessConfiguration(
       TestType testType, int immediateRetries, int maximumRetries) {
     super(
         testType,
@@ -29,7 +29,7 @@ public class SingleStageAsyncTestProcessConfiguration
         maximumRetries,
         (stageService, pipelineName, processId, stageName) -> {},
         (stageService, pipelineName, processId, stageName) ->
-            StageEntityTestHelper.assertCompletedTestExecutorStageEntity(
+            StageEntityAsserter.assertTestExecutorStageEntity(
                 testType,
                 stageService,
                 pipelineName,
@@ -42,13 +42,13 @@ public class SingleStageAsyncTestProcessConfiguration
   }
 
   @Override
-  protected void testConfigureProcess(ProcessBuilder builder) {
+  protected void configure(ProcessBuilder builder) {
     ExecutorParameters.ExecutorParametersBuilder<?, ?> executorParamsBuilder =
         ExecutorParameters.builder();
     executorParamsBuilder.maximumRetries(maximumRetries()).immediateRetries(immediateRetries());
     testExecutorParams(executorParamsBuilder);
     ExecutorParameters executorParams = executorParamsBuilder.build();
-    builder.execute(stageName()).withAsyncTestExecutor(completedExecutorState, executorParams);
+    builder.execute(stageName()).withSyncTestExecutor(completedExecutorState, executorParams);
   }
 
   protected void testExecutorParams(

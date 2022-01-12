@@ -8,18 +8,18 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.helper.process;
+package pipelite.tester.process;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import pipelite.helper.TestType;
-import pipelite.helper.entity.ProcessEntityTestHelper;
-import pipelite.helper.entity.ScheduleEntityTestHelper;
-import pipelite.helper.metrics.MetricsTestHelper;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.ProcessService;
 import pipelite.service.ScheduleService;
 import pipelite.service.StageService;
+import pipelite.tester.TestType;
+import pipelite.tester.entity.ProcessEntityAsserter;
+import pipelite.tester.entity.ScheduleEntityAsserter;
+import pipelite.tester.metrics.MetricsTestAsserter;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class SingleStageTestProcessConfiguration<
         T extends SingleStageTestProcessConfiguration>
@@ -81,27 +81,27 @@ public abstract class SingleStageTestProcessConfiguration<
 
   public final void assertCompletedScheduleEntity(
       ScheduleService scheduleService, String serviceName, int expectedProcessCnt) {
-    ScheduleEntityTestHelper.assertCompletedSchduleEntity(
+    ScheduleEntityAsserter.assertCompletedScheduleEntity(
+        testType(),
         scheduleService,
         serviceName,
         pipelineName(),
         expectedProcessCnt,
-        configuredProcessIds(),
-        testType());
+        configuredProcessIds());
   }
 
   public final void assertCompletedProcessEntities(
       ProcessService processService, int expectedProcessCnt) {
     assertThat(expectedProcessCnt).isEqualTo(configuredProcessCount());
     for (String processId : configuredProcessIds()) {
-      ProcessEntityTestHelper.assertCompletedProcessEntity(
-          processService, pipelineName(), processId, testType());
+      ProcessEntityAsserter.assertCompletedProcessEntity(
+          testType(), processService, pipelineName(), processId);
     }
   }
 
   public final void assertCompletedMetrics(PipeliteMetrics metrics, int expectedProcessCnt) {
     assertThat(expectedProcessCnt).isEqualTo(configuredProcessCount());
-    MetricsTestHelper.assertCompletedMetrics(
+    MetricsTestAsserter.assertCompletedMetrics(
         testType(),
         metrics,
         pipelineName(),

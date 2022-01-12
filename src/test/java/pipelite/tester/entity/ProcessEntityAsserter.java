@@ -8,27 +8,25 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.helper.entity;
+package pipelite.tester.entity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import pipelite.entity.ProcessEntity;
 import pipelite.process.ProcessState;
 import pipelite.service.ProcessService;
+import pipelite.tester.TestType;
 
-public class ProcessEntityTestHelper {
-  private ProcessEntityTestHelper() {}
+public class ProcessEntityAsserter {
+  private ProcessEntityAsserter() {}
 
   public static void assertCompletedProcessEntity(
-      ProcessService processService,
-      String pipelineName,
-      String processId,
-      pipelite.helper.TestType testType) {
+      TestType testType, ProcessService processService, String pipelineName, String processId) {
     ProcessEntity processEntity = processService.getSavedProcess(pipelineName, processId).get();
     assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);
-    if (testType == pipelite.helper.TestType.SUCCESS) {
+    if (testType == TestType.SUCCESS) {
       assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.COMPLETED);
     } else {
       assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.FAILED);

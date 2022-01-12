@@ -24,16 +24,16 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
 import pipelite.configuration.properties.KubernetesTestConfiguration;
-import pipelite.helper.ConfigurableTestPipeline;
-import pipelite.helper.TestType;
-import pipelite.helper.process.SingleStageKubernetesTestProcessConfiguration;
-import pipelite.helper.process.SingleStageTestProcessConfiguration;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.ProcessService;
 import pipelite.service.RunnerService;
 import pipelite.service.StageService;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
+import pipelite.tester.TestType;
+import pipelite.tester.pipeline.ConfigurableTestPipeline;
+import pipelite.tester.process.SingleStageKubernetesTestProcessConfiguration;
+import pipelite.tester.process.SingleStageTestProcessConfiguration;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithManager.class,

@@ -8,69 +8,70 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.helper.process;
+package pipelite.tester.process;
 
 import java.time.Duration;
-import pipelite.configuration.properties.LsfTestConfiguration;
-import pipelite.helper.TestType;
-import pipelite.helper.entity.StageEntityTestHelper;
+import pipelite.configuration.properties.KubernetesTestConfiguration;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.stage.parameters.SimpleLsfExecutorParameters;
+import pipelite.stage.parameters.KubernetesExecutorParameters;
+import pipelite.tester.TestType;
+import pipelite.tester.entity.StageEntityAsserter;
 
-public class SingleStageSimpleLsfTestProcessConfiguration
-    extends SingleStageTestProcessConfiguration<SingleStageSimpleLsfTestProcessConfiguration> {
+public class SingleStageKubernetesTestProcessConfiguration
+    extends SingleStageTestProcessConfiguration<SingleStageKubernetesTestProcessConfiguration> {
 
-  private final LsfTestConfiguration lsfTestConfiguration;
+  private final KubernetesTestConfiguration kubernetesTestConfiguration;
 
-  public SingleStageSimpleLsfTestProcessConfiguration(
+  public SingleStageKubernetesTestProcessConfiguration(
       TestType testType,
       int immediateRetries,
       int maximumRetries,
-      LsfTestConfiguration lsfTestConfiguration) {
+      KubernetesTestConfiguration kubernetesTestConfiguration) {
     super(
         testType,
         immediateRetries,
         maximumRetries,
         (stageService, pipelineName, processId, stageName) ->
-            StageEntityTestHelper.assertSubmittedSimpleLsfExecutorStageEntity(
+            StageEntityAsserter.assertSubmittedKubernetesStageEntity(
                 testType,
                 stageService,
-                lsfTestConfiguration,
+                kubernetesTestConfiguration,
                 pipelineName,
                 processId,
                 stageName,
                 immediateRetries,
                 maximumRetries),
         (stageService, pipelineName, processId, stageName) ->
-            StageEntityTestHelper.assertCompletedSimpleLsfExecutorStageEntity(
+            StageEntityAsserter.assertCompletedKubernetesStageEntity(
                 testType,
                 stageService,
-                lsfTestConfiguration,
+                kubernetesTestConfiguration,
                 pipelineName,
                 processId,
                 stageName,
                 immediateRetries,
                 maximumRetries));
-    this.lsfTestConfiguration = lsfTestConfiguration;
+    this.kubernetesTestConfiguration = kubernetesTestConfiguration;
   }
 
   @Override
-  protected void testConfigureProcess(ProcessBuilder builder) {
-    SimpleLsfExecutorParameters.SimpleLsfExecutorParametersBuilder<?, ?> executorParamsBuilder =
-        SimpleLsfExecutorParameters.builder();
+  protected void configure(ProcessBuilder builder) {
+    KubernetesExecutorParameters.KubernetesExecutorParametersBuilder<?, ?> executorParamsBuilder =
+        KubernetesExecutorParameters.builder();
     executorParamsBuilder
-        .user(lsfTestConfiguration.getUser())
-        .host(lsfTestConfiguration.getHost())
-        .workDir(lsfTestConfiguration.getWorkDir())
+        .namespace(kubernetesTestConfiguration.getNamespace())
         .timeout(Duration.ofSeconds(180))
         .maximumRetries(maximumRetries())
         .immediateRetries(immediateRetries());
     testExecutorParams(executorParamsBuilder);
-    SimpleLsfExecutorParameters executorParams = executorParamsBuilder.build();
+    KubernetesExecutorParameters executorParams = executorParamsBuilder.build();
     executorParams.setPermanentErrors(testType().permanentErrors());
-    builder.execute(stageName()).withSimpleLsfExecutor(testType().cmd(), executorParams);
+    builder
+        .execute(stageName())
+        .withKubernetesExecutor(testType().image(), testType().imageArgs(), executorParams);
   }
 
   protected void testExecutorParams(
-      SimpleLsfExecutorParameters.SimpleLsfExecutorParametersBuilder<?, ?> executorParamsBuilder) {}
+      KubernetesExecutorParameters.KubernetesExecutorParametersBuilder<?, ?>
+          executorParamsBuilder) {}
 }

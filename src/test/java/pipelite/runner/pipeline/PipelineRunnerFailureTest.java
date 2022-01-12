@@ -28,8 +28,6 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
-import pipelite.helper.ConfigurableTestPipeline;
-import pipelite.helper.process.TestProcessConfiguration;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
@@ -41,6 +39,8 @@ import pipelite.service.StageService;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
+import pipelite.tester.pipeline.ConfigurableTestPipeline;
+import pipelite.tester.process.TestProcessConfiguration;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithManager.class,
@@ -154,7 +154,7 @@ public class PipelineRunnerFailureTest {
     }
 
     @Override
-    public void testConfigureProcess(ProcessBuilder builder) {
+    public void configure(ProcessBuilder builder) {
       ExecutorParameters executorParams =
           ExecutorParameters.builder()
               .immediateRetries(0)

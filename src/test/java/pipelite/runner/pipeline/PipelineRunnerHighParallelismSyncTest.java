@@ -24,14 +24,14 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
-import pipelite.helper.ConfigurableTestPipeline;
-import pipelite.helper.process.TestProcessConfiguration;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorState;
+import pipelite.tester.pipeline.ConfigurableTestPipeline;
+import pipelite.tester.process.TestProcessConfiguration;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithManager.class,
@@ -99,7 +99,7 @@ public class PipelineRunnerHighParallelismSyncTest {
           PROCESS_CNT,
           new TestProcessConfiguration() {
             @Override
-            public void testConfigureProcess(ProcessBuilder builder) {
+            public void configure(ProcessBuilder builder) {
               builder
                   .execute("STAGE")
                   .withSyncTestExecutor(StageExecutorState.SUCCESS, EXECUTION_TIME);

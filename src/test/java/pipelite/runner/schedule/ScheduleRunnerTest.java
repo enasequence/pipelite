@@ -30,7 +30,6 @@ import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageLogEntity;
-import pipelite.helper.ConfigurableTestSchedule;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
@@ -44,6 +43,7 @@ import pipelite.service.StageService;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
+import pipelite.tester.pipeline.ConfigurableTestSchedule;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithManager.class,
@@ -109,7 +109,7 @@ public class ScheduleRunnerTest {
 
   @Getter
   protected static class TestProcessConfiguration
-      extends pipelite.helper.process.TestProcessConfiguration {
+      extends pipelite.tester.process.TestProcessConfiguration {
     public final int stageCnt;
     public final StageTestResult stageTestResult;
     public final AtomicLong stageExecCnt = new AtomicLong();
@@ -120,7 +120,7 @@ public class ScheduleRunnerTest {
     }
 
     @Override
-    protected void testConfigureProcess(ProcessBuilder builder) {
+    protected void configure(ProcessBuilder builder) {
       ExecutorParameters executorParams =
           ExecutorParameters.builder()
               .immediateRetries(0)

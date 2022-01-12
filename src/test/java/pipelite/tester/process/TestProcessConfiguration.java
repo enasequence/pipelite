@@ -8,15 +8,16 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.helper.process;
+package pipelite.tester.process;
+
+import pipelite.RegisteredPipeline;
+import pipelite.UniqueStringGenerator;
+import pipelite.process.builder.ProcessBuilder;
+import pipelite.tester.pipeline.ConfigurableTestPipeline;
 
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import pipelite.RegisteredPipeline;
-import pipelite.UniqueStringGenerator;
-import pipelite.helper.ConfigurableTestPipeline;
-import pipelite.process.builder.ProcessBuilder;
 
 public abstract class TestProcessConfiguration implements RegisteredPipeline {
 
@@ -32,10 +33,10 @@ public abstract class TestProcessConfiguration implements RegisteredPipeline {
   @Override
   public final void configureProcess(ProcessBuilder builder) {
     configuredProcessIds.add(builder.getProcessId());
-    testConfigureProcess(builder);
+    configure(builder);
   }
 
-  protected abstract void testConfigureProcess(ProcessBuilder builder);
+  protected abstract void configure(ProcessBuilder builder);
 
   public final int configuredProcessCount() {
     return configuredProcessIds.size();

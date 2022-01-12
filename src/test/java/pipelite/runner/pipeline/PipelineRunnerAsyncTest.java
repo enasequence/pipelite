@@ -26,8 +26,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
 import pipelite.executor.AbstractExecutor;
-import pipelite.helper.ConfigurableTestPipeline;
-import pipelite.helper.process.TestProcessConfiguration;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
@@ -36,6 +34,8 @@ import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
+import pipelite.tester.pipeline.ConfigurableTestPipeline;
+import pipelite.tester.process.TestProcessConfiguration;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithManager.class,
@@ -102,7 +102,7 @@ public class PipelineRunnerAsyncTest {
           PROCESS_CNT,
           new TestProcessConfiguration() {
             @Override
-            protected void testConfigureProcess(ProcessBuilder builder) {
+            protected void configure(ProcessBuilder builder) {
               ExecutorParameters executorParams =
                   ExecutorParameters.builder().immediateRetries(0).maximumRetries(0).build();
               builder.execute("STAGE").with(stageExecutor, executorParams);

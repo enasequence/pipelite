@@ -8,25 +8,25 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.helper.entity;
+package pipelite.tester.entity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.Iterables;
 import java.util.Collection;
 import pipelite.entity.ScheduleEntity;
-import pipelite.helper.TestType;
 import pipelite.service.ScheduleService;
+import pipelite.tester.TestType;
 
-public class ScheduleEntityTestHelper {
+public class ScheduleEntityAsserter {
 
-  public static void assertCompletedSchduleEntity(
+  public static void assertCompletedScheduleEntity(
+      TestType testType,
       ScheduleService scheduleService,
       String serviceName,
       String pipelineName,
       int processCnt,
-      Collection<String> processIds,
-      pipelite.helper.TestType testType) {
+      Collection<String> processIds) {
 
     ScheduleEntity scheduleEntity = scheduleService.getSavedSchedule(pipelineName).get();
 

@@ -26,10 +26,6 @@ import pipelite.PipeliteTestConfigWithManager;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.entity.ScheduleEntity;
-import pipelite.helper.ConfigurableTestSchedule;
-import pipelite.helper.TestType;
-import pipelite.helper.process.SingleStageSimpleLsfTestProcessConfiguration;
-import pipelite.helper.process.SingleStageTestProcessConfiguration;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.ProcessService;
@@ -37,6 +33,10 @@ import pipelite.service.RunnerService;
 import pipelite.service.ScheduleService;
 import pipelite.service.StageService;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
+import pipelite.tester.TestType;
+import pipelite.tester.pipeline.ConfigurableTestSchedule;
+import pipelite.tester.process.SingleStageSimpleLsfTestProcessConfiguration;
+import pipelite.tester.process.SingleStageTestProcessConfiguration;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithManager.class,

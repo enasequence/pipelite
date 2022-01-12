@@ -25,8 +25,6 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.Pipeline;
 import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.PipeliteConfiguration;
-import pipelite.helper.ConfigurableTestPipeline;
-import pipelite.helper.process.TestProcessConfiguration;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.runner.process.ProcessQueue;
@@ -34,6 +32,8 @@ import pipelite.runner.process.ProcessRunner;
 import pipelite.runner.process.creator.ProcessCreator;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.tester.pipeline.ConfigurableTestPipeline;
+import pipelite.tester.process.TestProcessConfiguration;
 import pipelite.time.Time;
 
 /**
@@ -66,7 +66,7 @@ public class PipelineRunnerProcessQueueTest {
 
   private static final class SyncTestProcessConfiguration extends TestProcessConfiguration {
     @Override
-    protected void testConfigureProcess(ProcessBuilder builder) {
+    protected void configure(ProcessBuilder builder) {
       builder
           .execute("STAGE")
           .withSyncTestExecutor(
@@ -79,7 +79,7 @@ public class PipelineRunnerProcessQueueTest {
 
   private static final class AsyncTestProcessConfiguration extends TestProcessConfiguration {
     @Override
-    protected void testConfigureProcess(ProcessBuilder builder) {
+    protected void configure(ProcessBuilder builder) {
       builder
           .execute("STAGE")
           .withAsyncTestExecutor(
