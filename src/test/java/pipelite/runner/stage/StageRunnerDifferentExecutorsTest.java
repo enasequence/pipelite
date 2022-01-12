@@ -87,11 +87,7 @@ public class StageRunnerDifferentExecutorsTest {
         PARALLELISM,
         PROCESS_CNT,
         new SingleStageSimpleLsfTestProcessConfiguration(
-            testType,
-            getExitCode(testType == TestType.NON_PERMANENT_ERROR),
-            IMMEDIATE_RETRIES,
-            MAXIMUM_RETRIES,
-            lsfTestConfiguration));
+            testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES, lsfTestConfiguration));
   }
 
   private Process simulateProcessCreation(

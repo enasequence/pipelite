@@ -82,10 +82,6 @@ public class PipelineRunnerKubernetesExecutorTest {
     }
   }
 
-  private static int getExitCode(TestType testType) {
-    return testType == TestType.NON_PERMANENT_ERROR ? 1 : 0;
-  }
-
   private static class KubernetesPipeline extends ConfigurableTestPipeline {
     public KubernetesPipeline(
         TestType testType, KubernetesTestConfiguration kubernetesTestConfiguration) {
@@ -93,11 +89,7 @@ public class PipelineRunnerKubernetesExecutorTest {
           PARALLELISM,
           PROCESS_CNT,
           new SingleStageKubernetesTestProcessConfiguration(
-              testType,
-              getExitCode(testType),
-              IMMEDIATE_RETRIES,
-              MAXIMUM_RETRIES,
-              kubernetesTestConfiguration));
+              testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES, kubernetesTestConfiguration));
     }
   }
 
@@ -109,7 +101,6 @@ public class PipelineRunnerKubernetesExecutorTest {
           PROCESS_CNT,
           new SingleStageKubernetesTestProcessConfiguration(
               TestType.PERMANENT_ERROR,
-              getExitCode(TestType.PERMANENT_ERROR),
               IMMEDIATE_RETRIES,
               MAXIMUM_RETRIES,
               kubernetesTestConfiguration) {

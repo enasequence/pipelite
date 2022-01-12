@@ -34,20 +34,12 @@ public abstract class SingleStageTestProcessConfiguration<
 
   protected interface AssertSubmittedStageEntity<T> {
     void assertSubmittedStageEntity(
-        StageService stageService,
-        String pipelineName,
-        String processId,
-        String stageName,
-        T testProcessConfiguration);
+        StageService stageService, String pipelineName, String processId, String stageName);
   }
 
   protected interface AssertCompletedStageEntity<T> {
     void assertCompletedStageEntity(
-        StageService stageService,
-        String pipelineName,
-        String processId,
-        String stageName,
-        T testProcessConfiguration);
+        StageService stageService, String pipelineName, String processId, String stageName);
   }
 
   public SingleStageTestProcessConfiguration(
@@ -123,7 +115,7 @@ public abstract class SingleStageTestProcessConfiguration<
     assertThat(expectedProcessCnt).isEqualTo(configuredProcessCount());
     for (String processId : configuredProcessIds()) {
       assertSubmittedStageEntity()
-          .assertSubmittedStageEntity(stageService, pipelineName(), processId, stageName(), this);
+          .assertSubmittedStageEntity(stageService, pipelineName(), processId, stageName());
     }
   }
 
@@ -132,7 +124,7 @@ public abstract class SingleStageTestProcessConfiguration<
     assertThat(expectedProcessCnt).isEqualTo(configuredProcessCount());
     for (String processId : configuredProcessIds()) {
       assertCompletedStageEntity()
-          .assertCompletedStageEntity(stageService, pipelineName(), processId, stageName(), this);
+          .assertCompletedStageEntity(stageService, pipelineName(), processId, stageName());
     }
   }
 }

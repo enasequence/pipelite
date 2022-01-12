@@ -20,14 +20,10 @@ import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 public class SingleStageSimpleLsfTestProcessConfiguration
     extends SingleStageTestProcessConfiguration<SingleStageSimpleLsfTestProcessConfiguration> {
 
-  private final String cmd;
-  private final int exitCode;
   private final LsfTestConfiguration lsfTestConfiguration;
-  private SimpleLsfExecutorParameters executorParams;
 
   public SingleStageSimpleLsfTestProcessConfiguration(
       TestType testType,
-      int exitCode,
       int immediateRetries,
       int maximumRetries,
       LsfTestConfiguration lsfTestConfiguration) {
@@ -35,18 +31,17 @@ public class SingleStageSimpleLsfTestProcessConfiguration
         testType,
         immediateRetries,
         maximumRetries,
-        (stageService, pipelineName, processId, stageName, thisPipeline) ->
+        (stageService, pipelineName, processId, stageName) ->
             StageEntityTestHelper.assertSubmittedSimpleLsfExecutorStageEntity(
+                testType,
                 stageService,
                 lsfTestConfiguration,
                 pipelineName,
                 processId,
                 stageName,
-                thisPipeline.executorParams().getPermanentErrors(),
-                thisPipeline.cmd(),
                 immediateRetries,
                 maximumRetries),
-        (stageService, pipelineName, processId, stageName, thisPipeline) ->
+        (stageService, pipelineName, processId, stageName) ->
             StageEntityTestHelper.assertCompletedSimpleLsfExecutorStageEntity(
                 testType,
                 stageService,
@@ -54,13 +49,8 @@ public class SingleStageSimpleLsfTestProcessConfiguration
                 pipelineName,
                 processId,
                 stageName,
-                thisPipeline.executorParams().getPermanentErrors(),
-                thisPipeline.cmd(),
-                thisPipeline.exitCode(),
                 immediateRetries,
                 maximumRetries));
-    this.cmd = cmd(exitCode);
-    this.exitCode = exitCode;
     this.lsfTestConfiguration = lsfTestConfiguration;
   }
 
@@ -76,26 +66,11 @@ public class SingleStageSimpleLsfTestProcessConfiguration
         .maximumRetries(maximumRetries())
         .immediateRetries(immediateRetries());
     testExecutorParams(executorParamsBuilder);
-    executorParams = executorParamsBuilder.build();
-    builder.execute(stageName()).withSimpleLsfExecutor(cmd, executorParams);
+    SimpleLsfExecutorParameters executorParams = executorParamsBuilder.build();
+    executorParams.setPermanentErrors(testType().permanentErrors());
+    builder.execute(stageName()).withSimpleLsfExecutor(testType().cmd(), executorParams);
   }
 
   protected void testExecutorParams(
       SimpleLsfExecutorParameters.SimpleLsfExecutorParametersBuilder<?, ?> executorParamsBuilder) {}
-
-  public String cmd() {
-    return cmd;
-  }
-
-  public static String cmd(int exitCode) {
-    return "bash -c 'exit '" + exitCode;
-  }
-
-  public int exitCode() {
-    return exitCode;
-  }
-
-  public SimpleLsfExecutorParameters executorParams() {
-    return executorParams;
-  }
 }

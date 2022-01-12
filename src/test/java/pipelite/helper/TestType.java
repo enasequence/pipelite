@@ -10,8 +10,41 @@
  */
 package pipelite.helper;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 public enum TestType {
-  SUCCESS,
-  NON_PERMANENT_ERROR,
-  PERMANENT_ERROR
+  SUCCESS(0),
+  NON_PERMANENT_ERROR(1),
+  PERMANENT_ERROR(2);
+
+  private final int exitCode;
+
+  TestType(int exitCode) {
+    this.exitCode = exitCode;
+  }
+
+  public int exitCode() {
+    return exitCode;
+  }
+
+  public List<Integer> permanentErrors() {
+    if (this == TestType.PERMANENT_ERROR) {
+      return Arrays.asList(exitCode);
+    }
+    return Collections.emptyList();
+  }
+
+  public String cmd() {
+    return "bash -c 'exit '" + exitCode;
+  }
+
+  public String image() {
+    return "debian";
+  }
+
+  public List<String> imageArgs() {
+    return Arrays.asList("bash", "-c", "exit " + exitCode);
+  }
 }

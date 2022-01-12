@@ -82,21 +82,13 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
     }
   }
 
-  private static int getExitCode(TestType testType) {
-    return testType == TestType.NON_PERMANENT_ERROR ? 1 : 0;
-  }
-
   private static class SimpleLsfPipeline extends ConfigurableTestPipeline {
     public SimpleLsfPipeline(TestType testType, LsfTestConfiguration lsfTestConfiguration) {
       super(
           PARALLELISM,
           PROCESS_CNT,
           new SingleStageSimpleLsfTestProcessConfiguration(
-              testType,
-              getExitCode(testType),
-              IMMEDIATE_RETRIES,
-              MAXIMUM_RETRIES,
-              lsfTestConfiguration));
+              testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES, lsfTestConfiguration));
     }
   }
 
@@ -106,11 +98,7 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
           PARALLELISM,
           PROCESS_CNT,
           new SingleStageSimpleLsfTestProcessConfiguration(
-              TestType.PERMANENT_ERROR,
-              getExitCode(TestType.PERMANENT_ERROR),
-              IMMEDIATE_RETRIES,
-              MAXIMUM_RETRIES,
-              lsfTestConfiguration) {
+              TestType.PERMANENT_ERROR, IMMEDIATE_RETRIES, MAXIMUM_RETRIES, lsfTestConfiguration) {
             @Override
             protected void testExecutorParams(
                 SimpleLsfExecutorParameters.SimpleLsfExecutorParametersBuilder<?, ?>

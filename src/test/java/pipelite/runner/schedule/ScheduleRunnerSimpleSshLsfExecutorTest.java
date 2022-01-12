@@ -97,11 +97,7 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
       super(
           "0/" + SCHEDULER_SECONDS + " * * * * ?",
           new SingleStageSimpleLsfTestProcessConfiguration(
-              testType,
-              getExitCode(testType),
-              IMMEDIATE_RETRIES,
-              MAXIMUM_RETRIES,
-              lsfTestConfiguration));
+              testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES, lsfTestConfiguration));
     }
   }
 
@@ -111,11 +107,7 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
       super(
           "0/" + SCHEDULER_SECONDS + " * * * * ?",
           new SingleStageSimpleLsfTestProcessConfiguration(
-              TestType.PERMANENT_ERROR,
-              getExitCode(TestType.PERMANENT_ERROR),
-              IMMEDIATE_RETRIES,
-              MAXIMUM_RETRIES,
-              lsfTestConfiguration) {
+              TestType.PERMANENT_ERROR, IMMEDIATE_RETRIES, MAXIMUM_RETRIES, lsfTestConfiguration) {
             @Override
             protected void testExecutorParams(
                 SimpleLsfExecutorParameters.SimpleLsfExecutorParametersBuilder<?, ?>

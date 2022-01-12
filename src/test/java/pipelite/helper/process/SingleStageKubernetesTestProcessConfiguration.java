@@ -11,8 +11,6 @@
 package pipelite.helper.process;
 
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.List;
 import pipelite.configuration.properties.KubernetesTestConfiguration;
 import pipelite.helper.TestType;
 import pipelite.helper.entity.StageEntityTestHelper;
@@ -22,15 +20,10 @@ import pipelite.stage.parameters.KubernetesExecutorParameters;
 public class SingleStageKubernetesTestProcessConfiguration
     extends SingleStageTestProcessConfiguration<SingleStageKubernetesTestProcessConfiguration> {
 
-  private final String image = "debian";
-  private final List<String> imageArgs;
-  private final int exitCode;
   private final KubernetesTestConfiguration kubernetesTestConfiguration;
-  private KubernetesExecutorParameters executorParams;
 
   public SingleStageKubernetesTestProcessConfiguration(
       TestType testType,
-      int exitCode,
       int immediateRetries,
       int maximumRetries,
       KubernetesTestConfiguration kubernetesTestConfiguration) {
@@ -38,20 +31,17 @@ public class SingleStageKubernetesTestProcessConfiguration
         testType,
         immediateRetries,
         maximumRetries,
-        (stageService, pipelineName, processId, stageName, thisPipeline) ->
+        (stageService, pipelineName, processId, stageName) ->
             StageEntityTestHelper.assertSubmittedKubernetesExecutorStageEntity(
+                testType,
                 stageService,
                 kubernetesTestConfiguration,
                 pipelineName,
                 processId,
                 stageName,
-                thisPipeline.executorParams().getPermanentErrors(),
-                thisPipeline.image,
-                thisPipeline.imageArgs,
-                thisPipeline.kubernetesTestConfiguration.getNamespace(),
                 immediateRetries,
                 maximumRetries),
-        (stageService, pipelineName, processId, stageName, thisPipeline) ->
+        (stageService, pipelineName, processId, stageName) ->
             StageEntityTestHelper.assertCompletedKubernetesExecutorStageEntity(
                 testType,
                 stageService,
@@ -59,15 +49,8 @@ public class SingleStageKubernetesTestProcessConfiguration
                 pipelineName,
                 processId,
                 stageName,
-                thisPipeline.executorParams().getPermanentErrors(),
-                thisPipeline.image,
-                thisPipeline.imageArgs,
-                thisPipeline.kubernetesTestConfiguration.getNamespace(),
-                thisPipeline.exitCode(),
                 immediateRetries,
                 maximumRetries));
-    this.imageArgs = imageArgs(exitCode);
-    this.exitCode = exitCode;
     this.kubernetesTestConfiguration = kubernetesTestConfiguration;
   }
 
@@ -81,23 +64,14 @@ public class SingleStageKubernetesTestProcessConfiguration
         .maximumRetries(maximumRetries())
         .immediateRetries(immediateRetries());
     testExecutorParams(executorParamsBuilder);
-    executorParams = executorParamsBuilder.build();
-    builder.execute(stageName()).withKubernetesExecutor(image, imageArgs, executorParams);
+    KubernetesExecutorParameters executorParams = executorParamsBuilder.build();
+    executorParams.setPermanentErrors(testType().permanentErrors());
+    builder
+        .execute(stageName())
+        .withKubernetesExecutor(testType().image(), testType().imageArgs(), executorParams);
   }
 
   protected void testExecutorParams(
       KubernetesExecutorParameters.KubernetesExecutorParametersBuilder<?, ?>
           executorParamsBuilder) {}
-
-  public static List<String> imageArgs(int exitCode) {
-    return Arrays.asList("bash", "-c", "exit " + exitCode);
-  }
-
-  public int exitCode() {
-    return exitCode;
-  }
-
-  public KubernetesExecutorParameters executorParams() {
-    return executorParams;
-  }
 }

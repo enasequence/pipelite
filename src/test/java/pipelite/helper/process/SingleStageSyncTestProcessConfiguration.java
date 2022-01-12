@@ -20,7 +20,6 @@ public class SingleStageSyncTestProcessConfiguration
     extends SingleStageTestProcessConfiguration<SingleStageSyncTestProcessConfiguration> {
 
   private final StageExecutorState completedExecutorState;
-  private ExecutorParameters executorParams;
 
   public SingleStageSyncTestProcessConfiguration(
       TestType testType, int immediateRetries, int maximumRetries) {
@@ -28,8 +27,8 @@ public class SingleStageSyncTestProcessConfiguration
         testType,
         immediateRetries,
         maximumRetries,
-        (stageService, pipelineName, processId, stageName, thisPipeline) -> {},
-        (stageService, pipelineName, processId, stageName, thisPipeline) ->
+        (stageService, pipelineName, processId, stageName) -> {},
+        (stageService, pipelineName, processId, stageName) ->
             StageEntityTestHelper.assertCompletedTestExecutorStageEntity(
                 testType,
                 stageService,
@@ -48,18 +47,10 @@ public class SingleStageSyncTestProcessConfiguration
         ExecutorParameters.builder();
     executorParamsBuilder.maximumRetries(maximumRetries()).immediateRetries(immediateRetries());
     testExecutorParams(executorParamsBuilder);
-    executorParams = executorParamsBuilder.build();
+    ExecutorParameters executorParams = executorParamsBuilder.build();
     builder.execute(stageName()).withSyncTestExecutor(completedExecutorState, executorParams);
   }
 
   protected void testExecutorParams(
       ExecutorParameters.ExecutorParametersBuilder<?, ?> executorParamsBuilder) {}
-
-  public StageExecutorState getCompletedExecutorState() {
-    return completedExecutorState;
-  }
-
-  public ExecutorParameters executorParams() {
-    return executorParams;
-  }
 }
