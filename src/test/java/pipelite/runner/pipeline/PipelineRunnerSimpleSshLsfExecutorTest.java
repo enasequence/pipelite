@@ -31,6 +31,7 @@ import pipelite.service.RunnerService;
 import pipelite.service.StageService;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 import pipelite.tester.TestType;
+import pipelite.tester.TestTypeConfiguration;
 import pipelite.tester.pipeline.ConfigurableTestPipeline;
 import pipelite.tester.process.SingleStageSimpleLsfTestProcessConfiguration;
 import pipelite.tester.process.SingleStageTestProcessConfiguration;
@@ -61,6 +62,10 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
   @Autowired
   private List<ConfigurableTestPipeline<SingleStageTestProcessConfiguration>> testPipelines;
 
+  private static TestTypeConfiguration testTypeConfiguration(TestType testType) {
+    return new TestTypeConfiguration(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES);
+  }
+
   @Profile("PipelineRunnerSimpleSshLsfExecutorTest")
   @TestConfiguration
   static class TestConfig {
@@ -88,7 +93,7 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
           PARALLELISM,
           PROCESS_CNT,
           new SingleStageSimpleLsfTestProcessConfiguration(
-              testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES, lsfTestConfiguration));
+              testTypeConfiguration(testType), lsfTestConfiguration));
     }
   }
 
@@ -98,7 +103,7 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
           PARALLELISM,
           PROCESS_CNT,
           new SingleStageSimpleLsfTestProcessConfiguration(
-              TestType.PERMANENT_ERROR, IMMEDIATE_RETRIES, MAXIMUM_RETRIES, lsfTestConfiguration) {
+              testTypeConfiguration(TestType.PERMANENT_ERROR), lsfTestConfiguration) {
             @Override
             protected void testExecutorParams(
                 SimpleLsfExecutorParameters.SimpleLsfExecutorParametersBuilder<?, ?>

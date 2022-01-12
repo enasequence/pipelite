@@ -16,13 +16,19 @@ import pipelite.entity.ProcessEntity;
 import pipelite.process.ProcessState;
 import pipelite.service.ProcessService;
 import pipelite.tester.TestType;
+import pipelite.tester.TestTypeConfiguration;
 
 public class ProcessEntityAsserter {
   private ProcessEntityAsserter() {}
 
   public static void assertCompletedProcessEntity(
-      TestType testType, ProcessService processService, String pipelineName, String processId) {
+      ProcessService processService,
+      TestTypeConfiguration testConfiguration,
+      String pipelineName,
+      String processId) {
     ProcessEntity processEntity = processService.getSavedProcess(pipelineName, processId).get();
+
+    TestType testType = testConfiguration.testType();
     assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);

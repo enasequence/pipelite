@@ -10,65 +10,62 @@
  */
 package pipelite.tester.process;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.ProcessService;
 import pipelite.service.ScheduleService;
 import pipelite.service.StageService;
 import pipelite.tester.TestType;
+import pipelite.tester.TestTypeConfiguration;
 import pipelite.tester.entity.ProcessEntityAsserter;
 import pipelite.tester.entity.ScheduleEntityAsserter;
 import pipelite.tester.metrics.MetricsTestAsserter;
 
-import static org.assertj.core.api.Assertions.assertThat;
+public abstract class SingleStageTestProcessConfiguration extends TestProcessConfiguration {
 
-public abstract class SingleStageTestProcessConfiguration<
-        T extends SingleStageTestProcessConfiguration>
-    extends TestProcessConfiguration {
-
-  private final TestType testType;
-  private final int immediateRetries;
-  private final int maximumRetries;
+  private final TestTypeConfiguration testConfiguration;
   private final AssertSubmittedStageEntity assertSubmittedStageEntity;
   private final AssertCompletedStageEntity assertCompletedStageEntity;
   private final String stageName = "STAGE";
 
-  protected interface AssertSubmittedStageEntity<T> {
+  protected interface AssertSubmittedStageEntity {
     void assertSubmittedStageEntity(
         StageService stageService, String pipelineName, String processId, String stageName);
   }
 
-  protected interface AssertCompletedStageEntity<T> {
+  protected interface AssertCompletedStageEntity {
     void assertCompletedStageEntity(
         StageService stageService, String pipelineName, String processId, String stageName);
   }
 
   public SingleStageTestProcessConfiguration(
-      TestType testType,
-      int immediateRetries,
-      int maximumRetries,
-      AssertSubmittedStageEntity<T> assertSubmittedStageEntity,
-      AssertCompletedStageEntity<T> assertCompletedStageEntity) {
-    this.testType = testType;
-    this.immediateRetries = immediateRetries;
-    this.maximumRetries = maximumRetries;
+      TestTypeConfiguration testConfiguration,
+      AssertSubmittedStageEntity assertSubmittedStageEntity,
+      AssertCompletedStageEntity assertCompletedStageEntity) {
+    this.testConfiguration = testConfiguration;
     this.assertSubmittedStageEntity = assertSubmittedStageEntity;
     this.assertCompletedStageEntity = assertCompletedStageEntity;
   }
 
-  public String stageName() {
-    return stageName;
-  }
-
   public TestType testType() {
-    return testType;
+    return testConfiguration.testType();
   }
 
   public int immediateRetries() {
-    return immediateRetries;
+    return testConfiguration.immediateRetries();
   }
 
   public int maximumRetries() {
-    return maximumRetries;
+    return testConfiguration.maximumRetries();
+  }
+
+  public TestTypeConfiguration testConfiguration() {
+    return testConfiguration;
+  }
+
+  public String stageName() {
+    return stageName;
   }
 
   public AssertSubmittedStageEntity assertSubmittedStageEntity() {
@@ -82,8 +79,8 @@ public abstract class SingleStageTestProcessConfiguration<
   public final void assertCompletedScheduleEntity(
       ScheduleService scheduleService, String serviceName, int expectedProcessCnt) {
     ScheduleEntityAsserter.assertCompletedScheduleEntity(
-        testType(),
         scheduleService,
+        testConfiguration,
         serviceName,
         pipelineName(),
         expectedProcessCnt,
@@ -95,7 +92,7 @@ public abstract class SingleStageTestProcessConfiguration<
     assertThat(expectedProcessCnt).isEqualTo(configuredProcessCount());
     for (String processId : configuredProcessIds()) {
       ProcessEntityAsserter.assertCompletedProcessEntity(
-          testType(), processService, pipelineName(), processId);
+          processService, testConfiguration, pipelineName(), processId);
     }
   }
 

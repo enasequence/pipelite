@@ -33,9 +33,13 @@ import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorState;
-import pipelite.tester.*;
+import pipelite.tester.TestType;
+import pipelite.tester.TestTypeConfiguration;
 import pipelite.tester.pipeline.ConfigurableTestPipeline;
-import pipelite.tester.process.*;
+import pipelite.tester.process.SingleStageAsyncTestProcessConfiguration;
+import pipelite.tester.process.SingleStageSimpleLsfTestProcessConfiguration;
+import pipelite.tester.process.SingleStageSyncTestProcessConfiguration;
+import pipelite.tester.process.SingleStageTestProcessConfiguration;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithManager.class,
@@ -53,14 +57,14 @@ public class StageRunnerDifferentExecutorsTest {
   private static final int PROCESS_CNT = 1;
   private static final int PARALLELISM = 1;
 
+  public static TestTypeConfiguration testTypeConfiguration(TestType testType) {
+    return new TestTypeConfiguration(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES);
+  }
+
   private StageExecutorState getCompletedExecutorState(TestType testType) {
     return testType == TestType.NON_PERMANENT_ERROR
         ? StageExecutorState.ERROR
         : StageExecutorState.SUCCESS;
-  }
-
-  private int getExitCode(boolean isError) {
-    return isError ? 1 : 0;
   }
 
   private ConfigurableTestPipeline<SingleStageTestProcessConfiguration>
@@ -68,7 +72,7 @@ public class StageRunnerDifferentExecutorsTest {
     return new ConfigurableTestPipeline(
         PARALLELISM,
         PROCESS_CNT,
-        new SingleStageSyncTestProcessConfiguration(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES));
+        new SingleStageSyncTestProcessConfiguration(testTypeConfiguration(testType)));
   }
 
   private ConfigurableTestPipeline<SingleStageTestProcessConfiguration>
@@ -76,7 +80,7 @@ public class StageRunnerDifferentExecutorsTest {
     return new ConfigurableTestPipeline(
         PARALLELISM,
         PROCESS_CNT,
-        new SingleStageAsyncTestProcessConfiguration(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES));
+        new SingleStageAsyncTestProcessConfiguration(testTypeConfiguration(testType)));
   }
 
   private ConfigurableTestPipeline<SingleStageTestProcessConfiguration>
@@ -85,7 +89,7 @@ public class StageRunnerDifferentExecutorsTest {
         PARALLELISM,
         PROCESS_CNT,
         new SingleStageSimpleLsfTestProcessConfiguration(
-            testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES, lsfTestConfiguration));
+            testTypeConfiguration(testType), lsfTestConfiguration));
   }
 
   private Process simulateProcessCreation(

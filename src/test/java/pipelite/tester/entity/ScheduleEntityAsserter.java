@@ -17,12 +17,13 @@ import java.util.Collection;
 import pipelite.entity.ScheduleEntity;
 import pipelite.service.ScheduleService;
 import pipelite.tester.TestType;
+import pipelite.tester.TestTypeConfiguration;
 
 public class ScheduleEntityAsserter {
 
   public static void assertCompletedScheduleEntity(
-      TestType testType,
       ScheduleService scheduleService,
+      TestTypeConfiguration testConfiguration,
       String serviceName,
       String pipelineName,
       int processCnt,
@@ -30,6 +31,7 @@ public class ScheduleEntityAsserter {
 
     ScheduleEntity scheduleEntity = scheduleService.getSavedSchedule(pipelineName).get();
 
+    TestType testType = testConfiguration.testType();
     assertThat(scheduleEntity.getServiceName()).isEqualTo(serviceName);
     assertThat(scheduleEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(scheduleEntity.getProcessId()).isEqualTo(Iterables.getLast(processIds));

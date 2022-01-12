@@ -14,31 +14,24 @@ import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.tester.TestType;
+import pipelite.tester.TestTypeConfiguration;
 import pipelite.tester.entity.StageEntityAsserter;
 
-public class SingleStageAsyncTestProcessConfiguration
-    extends SingleStageTestProcessConfiguration<SingleStageAsyncTestProcessConfiguration> {
+public class SingleStageAsyncTestProcessConfiguration extends SingleStageTestProcessConfiguration {
 
   private final StageExecutorState completedExecutorState;
 
-  public SingleStageAsyncTestProcessConfiguration(
-      TestType testType, int immediateRetries, int maximumRetries) {
+  public SingleStageAsyncTestProcessConfiguration(TestTypeConfiguration testConfiguration) {
     super(
-        testType,
-        immediateRetries,
-        maximumRetries,
+        testConfiguration,
         (stageService, pipelineName, processId, stageName) -> {},
         (stageService, pipelineName, processId, stageName) ->
             StageEntityAsserter.assertTestExecutorStageEntity(
-                testType,
-                stageService,
-                pipelineName,
-                processId,
-                stageName,
-                immediateRetries,
-                maximumRetries));
+                stageService, testConfiguration, pipelineName, processId, stageName));
     this.completedExecutorState =
-        testType == TestType.SUCCESS ? StageExecutorState.SUCCESS : StageExecutorState.ERROR;
+        testConfiguration.testType() == TestType.SUCCESS
+            ? StageExecutorState.SUCCESS
+            : StageExecutorState.ERROR;
   }
 
   @Override

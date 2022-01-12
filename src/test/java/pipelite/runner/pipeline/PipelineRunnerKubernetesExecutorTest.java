@@ -31,6 +31,7 @@ import pipelite.service.RunnerService;
 import pipelite.service.StageService;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
 import pipelite.tester.TestType;
+import pipelite.tester.TestTypeConfiguration;
 import pipelite.tester.pipeline.ConfigurableTestPipeline;
 import pipelite.tester.process.SingleStageKubernetesTestProcessConfiguration;
 import pipelite.tester.process.SingleStageTestProcessConfiguration;
@@ -61,6 +62,10 @@ public class PipelineRunnerKubernetesExecutorTest {
   @Autowired
   private List<ConfigurableTestPipeline<SingleStageTestProcessConfiguration>> testPipelines;
 
+  private static TestTypeConfiguration testTypeConfiguration(TestType testType) {
+    return new TestTypeConfiguration(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES);
+  }
+
   @Profile("PipelineRunnerKubernetesExecutorTest")
   @TestConfiguration
   static class TestConfig {
@@ -89,7 +94,7 @@ public class PipelineRunnerKubernetesExecutorTest {
           PARALLELISM,
           PROCESS_CNT,
           new SingleStageKubernetesTestProcessConfiguration(
-              testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES, kubernetesTestConfiguration));
+              testTypeConfiguration(testType), kubernetesTestConfiguration));
     }
   }
 
@@ -100,10 +105,7 @@ public class PipelineRunnerKubernetesExecutorTest {
           PARALLELISM,
           PROCESS_CNT,
           new SingleStageKubernetesTestProcessConfiguration(
-              TestType.PERMANENT_ERROR,
-              IMMEDIATE_RETRIES,
-              MAXIMUM_RETRIES,
-              kubernetesTestConfiguration) {
+              testTypeConfiguration(TestType.PERMANENT_ERROR), kubernetesTestConfiguration) {
             @Override
             protected void testExecutorParams(
                 KubernetesExecutorParameters.KubernetesExecutorParametersBuilder<?, ?>

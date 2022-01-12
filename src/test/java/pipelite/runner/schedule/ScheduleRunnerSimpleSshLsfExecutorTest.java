@@ -34,6 +34,7 @@ import pipelite.service.ScheduleService;
 import pipelite.service.StageService;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 import pipelite.tester.TestType;
+import pipelite.tester.TestTypeConfiguration;
 import pipelite.tester.pipeline.ConfigurableTestSchedule;
 import pipelite.tester.process.SingleStageSimpleLsfTestProcessConfiguration;
 import pipelite.tester.process.SingleStageTestProcessConfiguration;
@@ -57,6 +58,10 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
   @Autowired private StageService stageService;
   @Autowired private RunnerService runnerService;
   @Autowired private PipeliteMetrics metrics;
+
+  private static TestTypeConfiguration testTypeConfiguration(TestType testType) {
+    return new TestTypeConfiguration(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES);
+  }
 
   @Autowired
   private List<ConfigurableTestSchedule<SingleStageTestProcessConfiguration>> testSchedules;
@@ -87,17 +92,13 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
     }
   }
 
-  private static int getExitCode(TestType testType) {
-    return testType == TestType.NON_PERMANENT_ERROR ? 1 : 0;
-  }
-
   private static class SimpleLsfSchedule
       extends ConfigurableTestSchedule<SingleStageTestProcessConfiguration> {
     public SimpleLsfSchedule(TestType testType, LsfTestConfiguration lsfTestConfiguration) {
       super(
           "0/" + SCHEDULER_SECONDS + " * * * * ?",
           new SingleStageSimpleLsfTestProcessConfiguration(
-              testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES, lsfTestConfiguration));
+              testTypeConfiguration(testType), lsfTestConfiguration));
     }
   }
 
@@ -107,7 +108,7 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
       super(
           "0/" + SCHEDULER_SECONDS + " * * * * ?",
           new SingleStageSimpleLsfTestProcessConfiguration(
-              TestType.PERMANENT_ERROR, IMMEDIATE_RETRIES, MAXIMUM_RETRIES, lsfTestConfiguration) {
+              testTypeConfiguration(TestType.PERMANENT_ERROR), lsfTestConfiguration) {
             @Override
             protected void testExecutorParams(
                 SimpleLsfExecutorParameters.SimpleLsfExecutorParametersBuilder<?, ?>

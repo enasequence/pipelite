@@ -21,12 +21,17 @@ import pipelite.service.StageService;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.ErrorType;
 import pipelite.tester.TestType;
+import pipelite.tester.TestTypeConfiguration;
 
 public class StageEntityAsserter {
   private StageEntityAsserter() {}
 
   private static StageEntity assertSubmittedStageEntity(
-      StageService stageService, String pipelineName, String processId, String stageName) {
+      StageService stageService,
+      TestTypeConfiguration testConfiguration,
+      String pipelineName,
+      String processId,
+      String stageName) {
 
     StageEntity stageEntity = stageService.getSavedStage(pipelineName, processId, stageName).get();
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
@@ -41,14 +46,15 @@ public class StageEntityAsserter {
   }
 
   private static StageEntity assertCompletedStageEntity(
-      TestType testType,
       StageService stageService,
+      TestTypeConfiguration testConfiguration,
       String pipelineName,
       String processId,
-      String stageName,
-      int immediateRetries,
-      int maximumRetries) {
+      String stageName) {
 
+    TestType testType = testConfiguration.testType();
+    int immediateRetries = testConfiguration.immediateRetries();
+    int maximumRetries = testConfiguration.maximumRetries();
     StageState expectedStageState;
     ErrorType expectedErrorType = null;
     if (testType == TestType.PERMANENT_ERROR) {
@@ -81,37 +87,29 @@ public class StageEntityAsserter {
   }
 
   public static void assertTestExecutorStageEntity(
-      TestType testType,
       StageService stageService,
+      TestTypeConfiguration testConfiguration,
       String pipelineName,
       String processId,
-      String stageName,
-      int immediateRetries,
-      int maximumRetries) {
+      String stageName) {
 
     StageEntity stageEntity =
         assertCompletedStageEntity(
-            testType,
-            stageService,
-            pipelineName,
-            processId,
-            stageName,
-            immediateRetries,
-            maximumRetries);
+            stageService, testConfiguration, pipelineName, processId, stageName);
 
     assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.TestExecutor");
 
-    assertThat(stageEntity.getExecutorParams()).contains("\"maximumRetries\" : " + maximumRetries);
     assertThat(stageEntity.getExecutorParams())
-        .contains("\"immediateRetries\" : " + immediateRetries);
+        .contains("\"maximumRetries\" : " + testConfiguration.maximumRetries());
+    assertThat(stageEntity.getExecutorParams())
+        .contains("\"immediateRetries\" : " + testConfiguration.immediateRetries());
   }
 
   private static void assertSimpleLsfStageEntity(
-      TestType testType,
-      StageEntity stageEntity,
+      TestTypeConfiguration testConfiguration,
       LsfTestConfiguration lsfTestConfiguration,
-      int immediateRetries,
-      int maximumRetries) {
+      StageEntity stageEntity) {
+    TestType testType = testConfiguration.testType();
     String cmd = testType.cmd();
     List<Integer> permanentErrors = testType.permanentErrors();
 
@@ -127,10 +125,10 @@ public class StageEntityAsserter {
             "{\n"
                 + "  \"timeout\" : 180000,\n"
                 + "  \"maximumRetries\" : "
-                + maximumRetries
+                + testConfiguration.maximumRetries()
                 + ",\n"
                 + "  \"immediateRetries\" : "
-                + immediateRetries
+                + testConfiguration.immediateRetries()
                 + ",\n"
                 + (permanentErrors != null && !permanentErrors.isEmpty()
                     ? "  \"permanentErrors\" : [ "
@@ -154,11 +152,10 @@ public class StageEntityAsserter {
   }
 
   private static void assertKubernetesStageEntity(
-      TestType testType,
-      StageEntity stageEntity,
+      TestTypeConfiguration testConfiguration,
       KubernetesTestConfiguration kubernetesTestConfiguration,
-      int immediateRetries,
-      int maximumRetries) {
+      StageEntity stageEntity) {
+    TestType testType = testConfiguration.testType();
     List<Integer> permanentErrors = testType.permanentErrors();
     String namespace = kubernetesTestConfiguration.getNamespace();
 
@@ -175,10 +172,10 @@ public class StageEntityAsserter {
             "{\n"
                 + "  \"timeout\" : 180000,\n"
                 + "  \"maximumRetries\" : "
-                + maximumRetries
+                + testConfiguration.maximumRetries()
                 + ",\n"
                 + "  \"immediateRetries\" : "
-                + immediateRetries
+                + testConfiguration.immediateRetries()
                 + ",\n"
                 + (permanentErrors != null && !permanentErrors.isEmpty()
                     ? "  \"permanentErrors\" : [ "
@@ -199,62 +196,50 @@ public class StageEntityAsserter {
   }
 
   public static void assertSubmittedSimpleLsfStageEntity(
-      TestType testType,
       StageService stageService,
+      TestTypeConfiguration testConfiguration,
       LsfTestConfiguration lsfTestConfiguration,
       String pipelineName,
       String processId,
-      String stageName,
-      int immediateRetries,
-      int maximumRetries) {
+      String stageName) {
 
     StageEntity stageEntity =
-        assertSubmittedStageEntity(stageService, pipelineName, processId, stageName);
+        assertSubmittedStageEntity(
+            stageService, testConfiguration, pipelineName, processId, stageName);
 
-    assertSimpleLsfStageEntity(
-        testType, stageEntity, lsfTestConfiguration, immediateRetries, maximumRetries);
+    assertSimpleLsfStageEntity(testConfiguration, lsfTestConfiguration, stageEntity);
   }
 
   public static void assertSubmittedKubernetesStageEntity(
-      TestType testType,
       StageService stageService,
+      TestTypeConfiguration testConfiguration,
       KubernetesTestConfiguration kubernetesTestConfiguration,
       String pipelineName,
       String processId,
-      String stageName,
-      int immediateRetries,
-      int maximumRetries) {
+      String stageName) {
 
     StageEntity stageEntity =
-        assertSubmittedStageEntity(stageService, pipelineName, processId, stageName);
+        assertSubmittedStageEntity(
+            stageService, testConfiguration, pipelineName, processId, stageName);
 
-    assertKubernetesStageEntity(
-        testType, stageEntity, kubernetesTestConfiguration, immediateRetries, maximumRetries);
+    assertKubernetesStageEntity(testConfiguration, kubernetesTestConfiguration, stageEntity);
   }
 
   public static void assertCompletedSimpleLsfStageEntity(
-      TestType testType,
       StageService stageService,
+      TestTypeConfiguration testConfiguration,
       LsfTestConfiguration lsfTestConfiguration,
       String pipelineName,
       String processId,
-      String stageName,
-      int immediateRetries,
-      int maximumRetries) {
+      String stageName) {
+    TestType testType = testConfiguration.testType();
     int exitCode = testType.exitCode();
 
     StageEntity stageEntity =
         assertCompletedStageEntity(
-            testType,
-            stageService,
-            pipelineName,
-            processId,
-            stageName,
-            immediateRetries,
-            maximumRetries);
+            stageService, testConfiguration, pipelineName, processId, stageName);
 
-    assertSimpleLsfStageEntity(
-        testType, stageEntity, lsfTestConfiguration, immediateRetries, maximumRetries);
+    assertSimpleLsfStageEntity(testConfiguration, lsfTestConfiguration, stageEntity);
 
     assertThat(stageEntity.getResultParams()).contains("\"exit code\" : \"" + exitCode + "\"");
     assertThat(stageEntity.getResultParams()).contains("\"job id\" :");
@@ -262,28 +247,20 @@ public class StageEntityAsserter {
   }
 
   public static void assertCompletedKubernetesStageEntity(
-      TestType testType,
       StageService stageService,
+      TestTypeConfiguration testConfiguration,
       KubernetesTestConfiguration kubernetesTestConfiguration,
       String pipelineName,
       String processId,
-      String stageName,
-      int immediateRetries,
-      int maximumRetries) {
+      String stageName) {
+    TestType testType = testConfiguration.testType();
     int exitCode = testType.exitCode();
 
     StageEntity stageEntity =
         assertCompletedStageEntity(
-            testType,
-            stageService,
-            pipelineName,
-            processId,
-            stageName,
-            immediateRetries,
-            maximumRetries);
+            stageService, testConfiguration, pipelineName, processId, stageName);
 
-    assertKubernetesStageEntity(
-        testType, stageEntity, kubernetesTestConfiguration, immediateRetries, maximumRetries);
+    assertKubernetesStageEntity(testConfiguration, kubernetesTestConfiguration, stageEntity);
 
     assertThat(stageEntity.getResultParams()).contains("\"exit code\" : \"" + exitCode + "\"");
     assertThat(stageEntity.getResultParams()).contains("\"job id\" :");

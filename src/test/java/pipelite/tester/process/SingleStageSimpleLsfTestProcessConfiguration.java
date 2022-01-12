@@ -14,43 +14,34 @@ import java.time.Duration;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
-import pipelite.tester.TestType;
+import pipelite.tester.TestTypeConfiguration;
 import pipelite.tester.entity.StageEntityAsserter;
 
 public class SingleStageSimpleLsfTestProcessConfiguration
-    extends SingleStageTestProcessConfiguration<SingleStageSimpleLsfTestProcessConfiguration> {
+    extends SingleStageTestProcessConfiguration {
 
   private final LsfTestConfiguration lsfTestConfiguration;
 
   public SingleStageSimpleLsfTestProcessConfiguration(
-      TestType testType,
-      int immediateRetries,
-      int maximumRetries,
-      LsfTestConfiguration lsfTestConfiguration) {
+      TestTypeConfiguration testConfiguration, LsfTestConfiguration lsfTestConfiguration) {
     super(
-        testType,
-        immediateRetries,
-        maximumRetries,
+        testConfiguration,
         (stageService, pipelineName, processId, stageName) ->
             StageEntityAsserter.assertSubmittedSimpleLsfStageEntity(
-                testType,
                 stageService,
+                testConfiguration,
                 lsfTestConfiguration,
                 pipelineName,
                 processId,
-                stageName,
-                immediateRetries,
-                maximumRetries),
+                stageName),
         (stageService, pipelineName, processId, stageName) ->
             StageEntityAsserter.assertCompletedSimpleLsfStageEntity(
-                testType,
                 stageService,
+                testConfiguration,
                 lsfTestConfiguration,
                 pipelineName,
                 processId,
-                stageName,
-                immediateRetries,
-                maximumRetries));
+                stageName));
     this.lsfTestConfiguration = lsfTestConfiguration;
   }
 

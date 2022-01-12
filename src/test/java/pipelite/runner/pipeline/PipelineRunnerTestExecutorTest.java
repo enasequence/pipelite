@@ -28,6 +28,7 @@ import pipelite.service.ProcessService;
 import pipelite.service.RunnerService;
 import pipelite.service.StageService;
 import pipelite.tester.TestType;
+import pipelite.tester.TestTypeConfiguration;
 import pipelite.tester.pipeline.ConfigurableTestPipeline;
 import pipelite.tester.process.SingleStageAsyncTestProcessConfiguration;
 import pipelite.tester.process.SingleStageSyncTestProcessConfiguration;
@@ -59,6 +60,10 @@ public class PipelineRunnerTestExecutorTest {
   @Autowired
   private List<ConfigurableTestPipeline<SingleStageTestProcessConfiguration>> testPipelines;
 
+  private static TestTypeConfiguration testTypeConfiguration(TestType testType) {
+    return new TestTypeConfiguration(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES);
+  }
+
   @Profile("PipelineRunnerTestExecutorTest")
   @TestConfiguration
   static class TestConfig {
@@ -68,7 +73,7 @@ public class PipelineRunnerTestExecutorTest {
     }
 
     @Bean
-    public SimpleSyncTestPipeline simpleSyncTestSNonPermanentErrorPipeline() {
+    public SimpleSyncTestPipeline simpleSyncTestNonPermanentErrorPipeline() {
       return new SimpleSyncTestPipeline(TestType.NON_PERMANENT_ERROR);
     }
 
@@ -88,8 +93,7 @@ public class PipelineRunnerTestExecutorTest {
       super(
           PARALLELISM,
           PROCESS_CNT,
-          new SingleStageSyncTestProcessConfiguration(
-              testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES));
+          new SingleStageSyncTestProcessConfiguration(testTypeConfiguration(testType)));
     }
   }
 
@@ -98,8 +102,7 @@ public class PipelineRunnerTestExecutorTest {
       super(
           PARALLELISM,
           PROCESS_CNT,
-          new SingleStageAsyncTestProcessConfiguration(
-              testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES));
+          new SingleStageAsyncTestProcessConfiguration(testTypeConfiguration(testType)));
     }
   }
 

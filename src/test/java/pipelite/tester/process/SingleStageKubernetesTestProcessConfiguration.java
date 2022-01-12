@@ -14,43 +14,35 @@ import java.time.Duration;
 import pipelite.configuration.properties.KubernetesTestConfiguration;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
-import pipelite.tester.TestType;
+import pipelite.tester.TestTypeConfiguration;
 import pipelite.tester.entity.StageEntityAsserter;
 
 public class SingleStageKubernetesTestProcessConfiguration
-    extends SingleStageTestProcessConfiguration<SingleStageKubernetesTestProcessConfiguration> {
+    extends SingleStageTestProcessConfiguration {
 
   private final KubernetesTestConfiguration kubernetesTestConfiguration;
 
   public SingleStageKubernetesTestProcessConfiguration(
-      TestType testType,
-      int immediateRetries,
-      int maximumRetries,
+      TestTypeConfiguration testConfiguration,
       KubernetesTestConfiguration kubernetesTestConfiguration) {
     super(
-        testType,
-        immediateRetries,
-        maximumRetries,
+        testConfiguration,
         (stageService, pipelineName, processId, stageName) ->
             StageEntityAsserter.assertSubmittedKubernetesStageEntity(
-                testType,
                 stageService,
+                testConfiguration,
                 kubernetesTestConfiguration,
                 pipelineName,
                 processId,
-                stageName,
-                immediateRetries,
-                maximumRetries),
+                stageName),
         (stageService, pipelineName, processId, stageName) ->
             StageEntityAsserter.assertCompletedKubernetesStageEntity(
-                testType,
                 stageService,
+                testConfiguration,
                 kubernetesTestConfiguration,
                 pipelineName,
                 processId,
-                stageName,
-                immediateRetries,
-                maximumRetries));
+                stageName));
     this.kubernetesTestConfiguration = kubernetesTestConfiguration;
   }
 
