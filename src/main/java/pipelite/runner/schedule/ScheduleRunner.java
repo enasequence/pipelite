@@ -23,6 +23,7 @@ import pipelite.configuration.PipeliteConfiguration;
 import pipelite.cron.CronUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
+import pipelite.error.InternalErrorHandler;
 import pipelite.exception.PipeliteException;
 import pipelite.exception.PipeliteRetryException;
 import pipelite.log.LogKey;
@@ -32,7 +33,10 @@ import pipelite.process.ProcessFactory;
 import pipelite.runner.process.ProcessRunnerFactory;
 import pipelite.runner.process.ProcessRunnerPool;
 import pipelite.runner.stage.StageRunner;
-import pipelite.service.*;
+import pipelite.service.HealthCheckService;
+import pipelite.service.PipeliteServices;
+import pipelite.service.ProcessService;
+import pipelite.service.ScheduleService;
 
 /** Executes non-parallel processes using cron expressions. */
 @Flogger
@@ -40,12 +44,12 @@ public class ScheduleRunner extends ProcessRunnerPool {
 
   private final ScheduleService scheduleService;
   private final ProcessService processService;
-  private final InternalErrorService internalErrorService;
   private final HealthCheckService healthCheckService;
   private final ScheduleCache scheduleCache;
   private final List<ScheduleCron> scheduleCrons = Collections.synchronizedList(new ArrayList<>());
   private final Map<String, AtomicLong> maximumExecutions = new ConcurrentHashMap<>();
   private final String serviceName;
+  private final InternalErrorHandler internalErrorHandler;
 
   public ScheduleRunner(
       PipeliteConfiguration pipeliteConfiguration,
@@ -63,41 +67,29 @@ public class ScheduleRunner extends ProcessRunnerPool {
     Assert.notNull(pipeliteServices, "Missing services");
     this.scheduleService = pipeliteServices.schedule();
     this.processService = pipeliteServices.process();
-    this.internalErrorService = pipeliteServices.internalError();
     this.healthCheckService = pipeliteServices.healthCheck();
     this.scheduleCache = new ScheduleCache(pipeliteServices.registeredPipeline());
     this.serviceName = pipeliteConfiguration.service().getName();
+    this.internalErrorHandler =
+        new InternalErrorHandler(pipeliteServices.internalError(), serviceName, this);
     schedules.forEach(s -> this.scheduleCrons.add(new ScheduleCron(s.pipelineName())));
   }
 
   // From AbstractScheduledService.
   @Override
   public void runOneIteration() {
-    try {
-      if (!healthCheckService.isDataSourceHealthy()) {
-        logContext(log.atSevere())
-            .log("Waiting data source to be healthy before starting new schedules");
-        return;
-      }
-      getExecutableSchedules()
-          .forEach(
-              s -> {
-                try {
-                  executeSchedule(s, createProcessEntity(s), ExecuteMode.NEW);
-                } catch (Exception ex) {
-                  // Catching exceptions here to allow other schedules to continue execution.
-                  internalErrorService.saveInternalError(
-                      serviceName, s.getPipelineName(), this.getClass(), ex);
-                }
-              });
-
-      // Must call ProcessRunnerPool.runOneIteration()
-      super.runOneIteration();
-
-    } catch (Exception ex) {
-      // Catching exceptions here in case they have not already been caught.
-      internalErrorService.saveInternalError(serviceName, this.getClass(), ex);
-    }
+    internalErrorHandler.execute(
+        () -> {
+          if (!healthCheckService.isDataSourceHealthy()) {
+            logContext(log.atSevere())
+                .log("Waiting data source to be healthy before starting new schedules");
+            return;
+          }
+          getExecutableSchedules()
+              .forEach(s -> executeSchedule(s, createProcessEntity(s), ExecuteMode.NEW));
+          // Must call ProcessRunnerPool.runOneIteration()
+          super.runOneIteration();
+        });
   }
 
   private static String serviceName(PipeliteConfiguration pipeliteConfiguration) {
@@ -234,49 +226,44 @@ public class ScheduleRunner extends ProcessRunnerPool {
 
   protected void executeSchedule(
       ScheduleCron scheduleCron, ProcessEntity processEntity, ExecuteMode executeMode) {
-    String pipelineName = processEntity.getPipelineName();
-    String processId = processEntity.getProcessId();
-    logContext(log.atInfo(), pipelineName, processId).log("Executing scheduled process");
+    internalErrorHandler.execute(
+        () -> {
+          String pipelineName = processEntity.getPipelineName();
+          String processId = processEntity.getProcessId();
+          logContext(log.atInfo(), pipelineName, processId).log("Executing scheduled process");
 
-    Schedule schedule = getSchedule(pipelineName);
-    if (schedule == null) {
-      return;
-    }
+          Schedule schedule = getSchedule(pipelineName);
+          if (schedule == null) {
+            return;
+          }
 
-    Process process = getProcess(processEntity, schedule);
-    if (process == null) {
-      return;
-    }
+          Process process = getProcess(processEntity, schedule);
+          if (process == null) {
+            return;
+          }
 
-    setMaximumRetries(process);
+          setMaximumRetries(process);
 
-    if (executeMode != ExecuteMode.RESUME) {
-      scheduleService.startExecution(pipelineName, processId);
-    }
+          if (executeMode != ExecuteMode.RESUME) {
+            scheduleService.startExecution(pipelineName, processId);
+          }
 
-    scheduleCron.setLaunchTime(null);
+          scheduleCron.setLaunchTime(null);
 
-    try {
-      runProcess(
-          pipelineName,
-          process,
-          (p) -> {
-            ScheduleEntity scheduleEntity = scheduleService.getSavedSchedule(pipelineName).get();
-            ZonedDateTime nextLaunchTime =
-                CronUtils.launchTime(scheduleCron.getCron(), scheduleEntity.getStartTime());
-            try {
-              scheduleService.endExecution(processEntity, nextLaunchTime);
-            } catch (Exception ex) {
-              internalErrorService.saveInternalError(
-                  serviceName, pipelineName, this.getClass(), ex);
-            } finally {
-              scheduleCron.setLaunchTime(nextLaunchTime);
-              decreaseMaximumExecutions(pipelineName);
-            }
-          });
-    } catch (Exception ex) {
-      internalErrorService.saveInternalError(serviceName, pipelineName, this.getClass(), ex);
-    }
+          runProcess(
+              pipelineName,
+              process,
+              (p) -> {
+                ScheduleEntity scheduleEntity =
+                    scheduleService.getSavedSchedule(pipelineName).get();
+                ZonedDateTime nextLaunchTime =
+                    CronUtils.launchTime(scheduleCron.getCron(), scheduleEntity.getStartTime());
+                internalErrorHandler.execute(
+                    () -> scheduleService.endExecution(processEntity, nextLaunchTime));
+                scheduleCron.setLaunchTime(nextLaunchTime);
+                decreaseMaximumExecutions(pipelineName);
+              });
+        });
   }
 
   private Schedule getSchedule(String pipelineName) {

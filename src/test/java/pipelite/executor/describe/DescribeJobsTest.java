@@ -10,18 +10,17 @@
  */
 package pipelite.executor.describe;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.Mockito.mock;
+import org.junit.jupiter.api.Test;
+import pipelite.configuration.ServiceConfiguration;
+import pipelite.service.InternalErrorService;
+import pipelite.stage.executor.StageExecutorResult;
 
-import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.junit.jupiter.api.Test;
-import pipelite.configuration.ServiceConfiguration;
-import pipelite.executor.task.RetryTask;
-import pipelite.service.InternalErrorService;
-import pipelite.stage.executor.StageExecutorResult;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.Mockito.mock;
 
 public class DescribeJobsTest {
 
@@ -47,9 +46,6 @@ public class DescribeJobsTest {
         new DescribeJobs(
             mock(ServiceConfiguration.class),
             mock(InternalErrorService.class),
-            RetryTask.retryTemplate(
-                RetryTask.fixedBackoffPolicy(Duration.ofMillis(1)),
-                RetryTask.maxAttemptsRetryPolicy(3)),
             requestLimit,
             executorContext,
             describeJobsCallback);
@@ -100,9 +96,6 @@ public class DescribeJobsTest {
         new DescribeJobs(
             mock(ServiceConfiguration.class),
             mock(InternalErrorService.class),
-            RetryTask.retryTemplate(
-                RetryTask.fixedBackoffPolicy(Duration.ofMillis(1)),
-                RetryTask.maxAttemptsRetryPolicy(3)),
             requestLimit,
             executorContext,
             describeJobsCallback);
@@ -153,9 +146,6 @@ public class DescribeJobsTest {
         new DescribeJobs(
             mock(ServiceConfiguration.class),
             mock(InternalErrorService.class),
-            RetryTask.retryTemplate(
-                RetryTask.fixedBackoffPolicy(Duration.ofMillis(1)),
-                RetryTask.maxAttemptsRetryPolicy(3)),
             requestLimit,
             executorContext,
             describeJobsCallback);
@@ -185,10 +175,9 @@ public class DescribeJobsTest {
   }
 
   @Test
-  public void exceptionWithRetry() {
+  public void exception() {
     int requestLimit = 10;
     int requestCnt = 100;
-    int retryCnt = 3;
 
     AtomicInteger actualDescribeJobsCallCnt = new AtomicInteger();
     AtomicInteger actualRequestCnt = new AtomicInteger();
@@ -206,9 +195,6 @@ public class DescribeJobsTest {
         new DescribeJobs(
             mock(ServiceConfiguration.class),
             mock(InternalErrorService.class),
-            RetryTask.retryTemplate(
-                RetryTask.fixedBackoffPolicy(Duration.ofMillis(1)),
-                RetryTask.maxAttemptsRetryPolicy(retryCnt)),
             requestLimit,
             executorContext,
             describeJobsCallback);
@@ -219,54 +205,10 @@ public class DescribeJobsTest {
 
     describeJobs.makeRequests();
 
-    assertThat(actualDescribeJobsCallCnt.get()).isEqualTo(retryCnt * requestCnt / requestLimit);
-    assertThat(actualRequestCnt.get()).isEqualTo(retryCnt * requestCnt);
-
-    // All tasks should still be active.
-    assertThat(describeJobs.getActiveRequests().size()).isEqualTo(requestCnt);
-
-    // Check that the requests have not been removed.
-    IntStream.range(0, requestCnt).forEach(i -> assertThat(describeJobs.isRequest(i)).isTrue());
-  }
-
-  // Exceptions from describeJobs are logged but otherwise ignored.
-  @Test
-  public void exceptionWithoutRetry() {
-    int requestLimit = 10;
-    int requestCnt = 100;
-    int retryCnt = 0;
-
-    AtomicInteger actualDescribeJobsCallCnt = new AtomicInteger();
-    AtomicInteger actualRequestCnt = new AtomicInteger();
-
-    DescribeJobsCallback<Integer, String> describeJobsCallback =
-        (requestList, context) -> {
-          actualDescribeJobsCallCnt.incrementAndGet();
-          actualRequestCnt.addAndGet(requestList.size());
-          throw new RuntimeException("Expected exception");
-        };
-
-    String executorContext = "test";
-
-    final DescribeJobs describeJobs =
-        new DescribeJobs(
-            mock(ServiceConfiguration.class),
-            mock(InternalErrorService.class),
-            RetryTask.retryTemplate(
-                RetryTask.fixedBackoffPolicy(Duration.ofMillis(1)),
-                RetryTask.maxAttemptsRetryPolicy(retryCnt)),
-            requestLimit,
-            executorContext,
-            describeJobsCallback);
-
-    IntStream.range(0, requestCnt).forEach(i -> describeJobs.addRequest(i));
-
-    assertThat(describeJobs.getActiveRequests().size()).isEqualTo(requestCnt);
-
-    describeJobs.makeRequests();
-
-    assertThat(actualDescribeJobsCallCnt.get()).isEqualTo(retryCnt * requestCnt / requestLimit);
-    assertThat(actualRequestCnt.get()).isEqualTo(retryCnt * requestCnt);
+    // DescribeJobsCallback should be called only once with requestLimit because exception is
+    // thrown.
+    assertThat(actualDescribeJobsCallCnt.get()).isEqualTo(1);
+    assertThat(actualRequestCnt.get()).isEqualTo(requestLimit);
 
     // All tasks should still be active.
     assertThat(describeJobs.getActiveRequests().size()).isEqualTo(requestCnt);

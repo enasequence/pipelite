@@ -28,6 +28,7 @@ import org.springframework.util.Assert;
 import pipelite.configuration.ExecutorConfiguration;
 import pipelite.configuration.PipeliteConfiguration;
 import pipelite.entity.StageEntity;
+import pipelite.error.InternalErrorHandler;
 import pipelite.exception.PipeliteProcessLockedException;
 import pipelite.log.LogKey;
 import pipelite.metrics.PipeliteMetrics;
@@ -54,6 +55,7 @@ public class ProcessRunner {
   private final String processId;
   private ZonedDateTime startTime;
   private final Set<ActiveStageRunner> active = ConcurrentHashMap.newKeySet();
+  private final InternalErrorHandler internalErrorHandler;
 
   @Data
   public static class ActiveStageRunner {
@@ -82,6 +84,9 @@ public class ProcessRunner {
     this.pipelineName = pipelineName;
     this.process = process;
     this.processId = process.getProcessId();
+    this.internalErrorHandler =
+        new InternalErrorHandler(
+            pipeliteServices.internalError(), serviceName, pipelineName, processId, this);
     if (lockProcess) {
       lockProcess(pipelineName);
     }
@@ -104,33 +109,27 @@ public class ProcessRunner {
    * @param resultCallback process runner result callback
    */
   public void runOneIteration(ProcessRunnerResultCallback resultCallback) {
-    boolean isFirstIteration = startTime == null;
-    ZonedDateTime runOneIterationStartTime = ZonedDateTime.now();
+    internalErrorHandler.execute(
+        () -> {
+          boolean isFirstIteration = startTime == null;
+          ZonedDateTime runOneIterationStartTime = ZonedDateTime.now();
+          if (isFirstIteration) {
+            startTime = ZonedDateTime.now();
+            startProcessExecution();
+          }
+          executeProcess(resultCallback);
 
-    try {
-      if (isFirstIteration) {
-        startTime = ZonedDateTime.now();
-        startProcessExecution();
-      }
-      executeProcess(resultCallback);
-
-      // ProcessRunner runOneIteration is called from AbstractScheduledService schedule.
-      // It is guaranteed not to be called concurrently. We use an executor service to call
-      // StageRunner runOneIteration. The StageRunner runOneIteration will not execute stages
-      // in the same thread and should complete fairly quickly. We capture the StageRunner
-      // runOneIteration future to make sure not to call StageRunner runOneIteration again
-      // until the future has completed.
-
-      runOneIterationForActiveStageRunners();
-
-      pipeliteMetrics
-          .getProcessRunnerOneIterationTimer()
-          .record(Duration.between(runOneIterationStartTime, ZonedDateTime.now()));
-    } catch (Exception ex) {
-      pipeliteServices
-          .internalError()
-          .saveInternalError(serviceName, pipelineName, processId, this.getClass(), ex);
-    }
+          // ProcessRunner runOneIteration is called from AbstractScheduledService schedule.
+          // It is guaranteed not to be called concurrently. We use an executor service to call
+          // StageRunner runOneIteration. The StageRunner runOneIteration will not execute stages
+          // in the same thread and should complete fairly quickly. We capture the StageRunner
+          // runOneIteration future to make sure not to call StageRunner runOneIteration again
+          // until the future has completed.
+          runOneIterationForActiveStageRunners();
+          pipeliteMetrics
+              .getProcessRunnerOneIterationTimer()
+              .record(Duration.between(runOneIterationStartTime, ZonedDateTime.now()));
+        });
   }
 
   private void runOneIterationForActiveStageRunners() {
@@ -146,31 +145,20 @@ public class ProcessRunner {
             .runStage()
             .submit(
                 () -> {
-                  try {
-                    activeStageRunner
-                        .getStageRunner()
-                        .runOneIteration(
-                            (result) -> stageRunnerEndExecutionHandler(activeStageRunner, result));
-                  } catch (Exception ex) {
-                    pipeliteServices
-                        .internalError()
-                        .saveInternalError(
-                            serviceName, pipelineName, processId, this.getClass(), ex);
-                  }
+                  internalErrorHandler.execute(
+                      () ->
+                          activeStageRunner
+                              .getStageRunner()
+                              .runOneIteration(
+                                  (result) ->
+                                      stageRunnerEndExecutionHandler(activeStageRunner, result)));
                 }));
   }
 
   private void stageRunnerEndExecutionHandler(
       ActiveStageRunner activeStageRunner, StageExecutorResult result) {
-    try {
-      endStageExecution(activeStageRunner.getStage(), result);
-    } catch (Exception ex) {
-      pipeliteServices
-          .internalError()
-          .saveInternalError(serviceName, pipelineName, processId, this.getClass(), ex);
-    } finally {
-      active.remove(activeStageRunner);
-    }
+    internalErrorHandler.execute(() -> endStageExecution(activeStageRunner.getStage(), result));
+    active.remove(activeStageRunner);
   }
 
   private void startProcessExecution() {

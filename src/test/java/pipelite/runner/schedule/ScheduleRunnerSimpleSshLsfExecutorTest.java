@@ -10,6 +10,10 @@
  */
 package pipelite.runner.schedule;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
+import javax.annotation.PostConstruct;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,11 +39,6 @@ import pipelite.tester.TestTypeConfiguration;
 import pipelite.tester.pipeline.ConfigurableTestSchedule;
 import pipelite.tester.process.SingleStageSimpleLsfTestProcessConfiguration;
 import pipelite.tester.process.SingleStageTestProcessConfiguration;
-
-import javax.annotation.PostConstruct;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithManager.class,

@@ -21,6 +21,7 @@ import pipelite.configuration.MailConfiguration;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageLogEntity;
+import pipelite.error.InternalErrorHandler;
 import pipelite.executor.task.RetryTask;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
@@ -31,11 +32,10 @@ import pipelite.stage.StageState;
 @Flogger
 public class MailService {
 
-  private final ServiceConfiguration serviceConfiguration;
   private final AdvancedConfiguration advancedConfiguration;
   private final MailConfiguration mailConfiguration;
-  private final InternalErrorService internalErrorService;
   private final StageService stageService;
+  private final InternalErrorHandler internalErrorHandler;
 
   @Autowired(required = false)
   private JavaMailSender mailSender;
@@ -46,11 +46,11 @@ public class MailService {
       @Autowired MailConfiguration mailConfiguration,
       @Autowired InternalErrorService internalErrorService,
       @Autowired StageService stageService) {
-    this.serviceConfiguration = serviceConfiguration;
     this.advancedConfiguration = advancedConfiguration;
     this.mailConfiguration = mailConfiguration;
-    this.internalErrorService = internalErrorService;
     this.stageService = stageService;
+    this.internalErrorHandler =
+        new InternalErrorHandler(internalErrorService, serviceConfiguration.getName(), this);
   }
 
   /**
@@ -62,27 +62,26 @@ public class MailService {
     if (mailSender == null) {
       return;
     }
-    try {
-      if ((mailConfiguration.isProcessCompleted()
-              && process.getProcessEntity().getProcessState() == ProcessState.COMPLETED)
-          || (mailConfiguration.isProcessFailed()
-              && process.getProcessEntity().getProcessState() == ProcessState.FAILED)) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(mailConfiguration.getFrom());
-        message.setTo(mailConfiguration.getTo().split("\\s*,\\s*"));
-        String subject = getProcessExecutionSubject(process);
-        message.setSubject(subject);
-        String text = getExecutionBody(process, subject);
-        message.setText(text);
-        RetryTask.DEFAULT.execute(
-            r -> {
-              mailSender.send(message);
-              return null;
-            });
-      }
-    } catch (Exception ex) {
-      internalErrorService.saveInternalError(serviceConfiguration.getName(), this.getClass(), ex);
-    }
+    internalErrorHandler.execute(
+        () -> {
+          if ((mailConfiguration.isProcessCompleted()
+                  && process.getProcessEntity().getProcessState() == ProcessState.COMPLETED)
+              || (mailConfiguration.isProcessFailed()
+                  && process.getProcessEntity().getProcessState() == ProcessState.FAILED)) {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(mailConfiguration.getFrom());
+            message.setTo(mailConfiguration.getTo().split("\\s*,\\s*"));
+            String subject = getProcessExecutionSubject(process);
+            message.setSubject(subject);
+            String text = getExecutionBody(process, subject);
+            message.setText(text);
+            RetryTask.DEFAULT.execute(
+                r -> {
+                  mailSender.send(message);
+                  return null;
+                });
+          }
+        });
   }
 
   /**
@@ -95,30 +94,29 @@ public class MailService {
     if (mailSender == null) {
       return;
     }
-    try {
-      if ((mailConfiguration.isStageSuccess()
-              && stage.getStageEntity().getStageState() == StageState.SUCCESS)
-          || (mailConfiguration.isStageError()
-              && stage.getStageEntity().getStageState() == StageState.ERROR)) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(mailConfiguration.getFrom());
-        message.setTo(mailConfiguration.getTo().split("\\s*,\\s*"));
-        String subject = getStageExecutionSubject(process, stage);
-        message.setSubject(subject);
-        String text = getExecutionBody(process, subject);
-        message.setText(text);
-        RetryTask.DEFAULT.execute(
-            r -> {
-              mailSender.send(message);
-              return null;
-            });
-      }
-    } catch (Exception ex) {
-      internalErrorService.saveInternalError(serviceConfiguration.getName(), this.getClass(), ex);
-    }
+    internalErrorHandler.execute(
+        () -> {
+          if ((mailConfiguration.isStageSuccess()
+                  && stage.getStageEntity().getStageState() == StageState.SUCCESS)
+              || (mailConfiguration.isStageError()
+                  && stage.getStageEntity().getStageState() == StageState.ERROR)) {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(mailConfiguration.getFrom());
+            message.setTo(mailConfiguration.getTo().split("\\s*,\\s*"));
+            String subject = getStageExecutionSubject(process, stage);
+            message.setSubject(subject);
+            String text = getExecutionBody(process, subject);
+            message.setText(text);
+            RetryTask.DEFAULT.execute(
+                r -> {
+                  mailSender.send(message);
+                  return null;
+                });
+          }
+        });
   }
 
-  public String getProcessExecutionSubject(Process process) {
+  String getProcessExecutionSubject(Process process) {
     ProcessEntity processEntity = process.getProcessEntity();
     String state = "";
     if (processEntity.getProcessState() != null) {
@@ -132,7 +130,7 @@ public class MailService {
         + process.getProcessId();
   }
 
-  public String getStageExecutionSubject(Process process, Stage stage) {
+  String getStageExecutionSubject(Process process, Stage stage) {
     String state = "";
     if (stage.getStageEntity() != null) {
       state = stage.getStageEntity().getStageState().name();
@@ -147,7 +145,7 @@ public class MailService {
         + stage.getStageName();
   }
 
-  public String getExecutionBody(Process process, String subject) {
+  String getExecutionBody(Process process, String subject) {
     return subject
         + "\n"
         + getProcessText(process)
@@ -155,14 +153,14 @@ public class MailService {
         + getStagesLogText(process);
   }
 
-  public String getProcessText(Process process) {
+  String getProcessText(Process process) {
     if (process.getProcessEntity() == null) {
       return "";
     }
     return "\nProcess:\n---------------\n" + process.getProcessEntity().serialize() + "\n";
   }
 
-  public String getStagesText(Process process) {
+  String getStagesText(Process process) {
     String text = "";
     if (!process.getStages().isEmpty()) {
       text += "\nStages:\n---------------\n";
@@ -175,7 +173,7 @@ public class MailService {
     return text;
   }
 
-  public String getStagesLogText(Process process) {
+  String getStagesLogText(Process process) {
     if (!process.getStages().stream().anyMatch(s -> s.isError())) {
       return "";
     }

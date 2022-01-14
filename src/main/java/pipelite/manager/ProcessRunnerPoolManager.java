@@ -43,7 +43,6 @@ public class ProcessRunnerPoolManager {
   private final PipeliteConfiguration pipeliteConfiguration;
   private final PipeliteServices pipeliteServices;
   private final PipeliteMetrics pipeliteMetrics;
-
   private final List<ProcessRunnerPool> pools = new ArrayList<>();
   private ServiceManager serviceManager;
   private State state;

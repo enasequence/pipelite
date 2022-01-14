@@ -10,6 +10,14 @@
  */
 package pipelite.tester;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.experimental.Accessors;
@@ -24,15 +32,6 @@ import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
 
 /** Requires stageService to be spied. @SpyBean private StageService stageService; */
 @Flogger
@@ -120,13 +119,13 @@ public class TestTypeConfiguration {
     return new StageMapKey(pipelineName, processId, stageName);
   }
 
-  private static StageMapKey registeredKey(String pipelineName, String processId, String stageName) {
+  private static StageMapKey registeredKey(
+      String pipelineName, String processId, String stageName) {
     StageMapKey key = key(pipelineName, processId, stageName);
     // Check that stage has been registered.
     testConfiguration(key);
     return key;
   }
-
 
   private static ConcurrentHashMap<StageMapKey, TestTypeConfiguration> stageTestConfiguration =
       new ConcurrentHashMap<>();
@@ -214,8 +213,8 @@ public class TestTypeConfiguration {
                   }
                 }
               } catch (Exception ex) {
-                log.atSevere().log(
-                    "Unexpected exception when spying stage service end execution", ex);
+                log.atSevere().withCause(ex).log(
+                    "Unexpected exception when spying stage service end execution");
               }
               return stageEntity;
             })

@@ -26,6 +26,7 @@ import pipelite.configuration.AdvancedConfiguration;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.ProcessLockEntity;
 import pipelite.entity.ServiceLockEntity;
+import pipelite.error.InternalErrorHandler;
 import pipelite.log.LogKey;
 import pipelite.repository.ProcessLockRepository;
 import pipelite.repository.ServiceLockRepository;
@@ -45,10 +46,10 @@ import pipelite.repository.ServiceLockRepository;
 public class LockService {
 
   private final ServiceConfiguration serviceConfiguration;
-  private final InternalErrorService internalErrorService;
   private final ServiceLockRepository serviceLockRepository;
   private final ProcessLockRepository processLockRepository;
   private final Duration lockDuration;
+  private final InternalErrorHandler internalErrorHandler;
 
   public LockService(
       @Autowired ServiceConfiguration serviceConfiguration,
@@ -57,10 +58,11 @@ public class LockService {
       @Autowired ServiceLockRepository serviceLockRepository,
       @Autowired ProcessLockRepository processLockRepository) {
     this.serviceConfiguration = serviceConfiguration;
-    this.internalErrorService = internalErrorService;
     this.serviceLockRepository = serviceLockRepository;
     this.processLockRepository = processLockRepository;
     this.lockDuration = advancedConfiguration.getLockDuration();
+    this.internalErrorHandler =
+        new InternalErrorHandler(internalErrorService, serviceConfiguration.getName(), this);
   }
 
   /**
@@ -126,20 +128,16 @@ public class LockService {
    * @return true if successful
    */
   public boolean relockService(ServiceLockEntity serviceLock) {
-    String serviceName = serviceLock.getServiceName();
-    log.atFine()
-        .with(LogKey.SERVICE_NAME, serviceName)
-        .log("Attempting to relock pipelite service");
-    try {
-      serviceLock.setExpiry(ZonedDateTime.now().plus(lockDuration));
-      serviceLockRepository.save(serviceLock);
-      log.atFine().with(LogKey.SERVICE_NAME, serviceName).log("Relocked pipelite service");
-      return true;
-    } catch (Exception ex) {
-      // Catching exceptions here to allow relocking to be retried later.
-      internalErrorService.saveInternalError(serviceName, this.getClass(), ex);
-      return false;
-    }
+    return internalErrorHandler.execute(
+        () -> {
+          String serviceName = serviceLock.getServiceName();
+          log.atFine()
+              .with(LogKey.SERVICE_NAME, serviceName)
+              .log("Attempting to relock pipelite service");
+          serviceLock.setExpiry(ZonedDateTime.now().plus(lockDuration));
+          serviceLockRepository.save(serviceLock);
+          log.atFine().with(LogKey.SERVICE_NAME, serviceName).log("Relocked pipelite service");
+        });
   }
 
   /**

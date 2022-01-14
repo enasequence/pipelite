@@ -10,13 +10,12 @@
  */
 package pipelite.tester.process;
 
+import java.time.Duration;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 import pipelite.tester.TestTypeConfiguration;
 import pipelite.tester.entity.StageEntityAsserter;
-
-import java.time.Duration;
 
 public class SingleStageSimpleLsfTestProcessConfiguration
     extends SingleStageTestProcessConfiguration {

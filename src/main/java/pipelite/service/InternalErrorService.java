@@ -51,16 +51,6 @@ public class InternalErrorService {
     this.metrics = metrics;
   }
 
-  public InternalErrorEntity saveInternalError(
-      String serviceName, String pipelineName, String processId, Class cls, Throwable exception) {
-    return saveInternalError(serviceName, pipelineName, processId, null, cls, exception);
-  }
-
-  public InternalErrorEntity saveInternalError(
-      String serviceName, String pipelineName, Class cls, Throwable exception) {
-    return saveInternalError(serviceName, pipelineName, null, null, cls, exception);
-  }
-
   public InternalErrorEntity saveInternalError(String serviceName, Class cls, Throwable exception) {
     return saveInternalError(serviceName, null, null, null, cls, exception);
   }
@@ -75,11 +65,11 @@ public class InternalErrorService {
     try {
       log.atSevere().withCause(exception).log(
           "Internal error in service: %s, pipeline: %s, process: %s, stage: %s, class %s",
-          serviceName != null ? serviceName : "",
-          pipelineName != null ? pipelineName : "",
-          processId != null ? processId : "",
-          stageName != null ? stageName : "",
-          cls != null ? cls.getName() : "");
+          serviceName != null ? serviceName : "?",
+          pipelineName != null ? pipelineName : "?",
+          processId != null ? processId : "?",
+          stageName != null ? stageName : "?",
+          cls != null ? cls.getName() : "?");
       if (pipelineName != null) {
         metrics.pipeline(pipelineName).process().incrementInternalErrorCount();
       } else {

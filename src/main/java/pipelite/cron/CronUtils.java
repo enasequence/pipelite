@@ -64,7 +64,7 @@ public abstract class CronUtils {
       parse(cron);
       return true;
     } catch (Exception ex) {
-      log.atSevere().log(ex.getMessage());
+      log.atSevere().withCause(ex).log(ex.getMessage());
       return false;
     }
   }

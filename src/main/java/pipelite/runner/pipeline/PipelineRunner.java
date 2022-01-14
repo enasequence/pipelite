@@ -20,6 +20,7 @@ import org.springframework.util.Assert;
 import pipelite.Pipeline;
 import pipelite.configuration.PipeliteConfiguration;
 import pipelite.entity.ProcessEntity;
+import pipelite.error.InternalErrorHandler;
 import pipelite.log.LogKey;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
@@ -46,6 +47,7 @@ public class PipelineRunner extends ProcessRunnerPool {
   private ZonedDateTime replenishTime;
   private AtomicBoolean activeRefreshQueue = new AtomicBoolean();
   private AtomicBoolean activeReplenishQueue = new AtomicBoolean();
+  private InternalErrorHandler internalErrorHandler;
 
   public PipelineRunner(
       PipeliteConfiguration pipeliteConfiguration,
@@ -72,31 +74,27 @@ public class PipelineRunner extends ProcessRunnerPool {
     this.minReplenishFrequency =
         pipeliteConfiguration.advanced().getProcessQueueMinReplenishFrequency();
     this.startTime = ZonedDateTime.now();
+    this.internalErrorHandler =
+        new InternalErrorHandler(
+            pipeliteServices.internalError(), serviceName(), pipelineName, this);
   }
 
   // From AbstractScheduledService.
   @Override
   public void runOneIteration() {
-    try {
-      if (!pipeliteServices.healthCheck().isDataSourceHealthy()) {
-        logContext(log.atSevere())
-            .log("Waiting data source to be healthy before starting new processes");
-        return;
-      }
-
-      refreshQueue();
-      replenishQueue();
-      runProcesses();
-
-      // Must call ProcessRunnerPool.runOneIteration()
-      super.runOneIteration();
-
-    } catch (Exception ex) {
-      // Catching exceptions here in case they have not already been caught.
-      pipeliteServices
-          .internalError()
-          .saveInternalError(serviceName(), pipelineName, this.getClass(), ex);
-    }
+    internalErrorHandler.execute(
+        () -> {
+          if (!pipeliteServices.healthCheck().isDataSourceHealthy()) {
+            logContext(log.atSevere())
+                .log("Waiting data source to be healthy before starting new processes");
+            return;
+          }
+          refreshQueue();
+          replenishQueue();
+          runProcesses();
+          // Must call ProcessRunnerPool.runOneIteration()
+          super.runOneIteration();
+        });
   }
 
   private void refreshQueue() {
@@ -107,43 +105,39 @@ public class PipelineRunner extends ProcessRunnerPool {
             .refreshQueue()
             .execute(
                 () -> {
-                  try {
-                    ProcessQueue p = processQueue.get();
-                    boolean firstRefresh = p == null;
-                    if (firstRefresh) {
-                      // Create process queue.
-                      // The process queue creation is intentionally deferred to
-                      // happen here so that we will only assign the process queue
-                      // after it has been refreshed once and processes have been
-                      // created if needed.
-                      p = processQueueFactory.create(pipeline);
-                    }
+                  internalErrorHandler.execute(
+                      () -> {
+                        ProcessQueue p = processQueue.get();
+                        boolean firstRefresh = p == null;
+                        if (firstRefresh) {
+                          // Create process queue.
+                          // The process queue creation is intentionally deferred to
+                          // happen here so that we will only assign the process queue
+                          // after it has been refreshed once and processes have been
+                          // created if needed.
+                          p = processQueueFactory.create(pipeline);
+                        }
 
-                    // Refresh process queue.
-                    p.refreshQueue();
-
-                    if (p.getProcessQueueSize() == 0) {
-                      // The process queue is empty.
-                      // Create new processes.
-                      int createdProcessCount =
-                          processCreator.createProcesses(p.getProcessQueueMaxSize());
-                      replenishTime = ZonedDateTime.now();
-                      if (createdProcessCount > 0) {
                         // Refresh process queue.
                         p.refreshQueue();
-                      }
-                    }
 
-                    if (firstRefresh) {
-                      processQueue.set(p);
-                    }
-                  } catch (Exception ex) {
-                    pipeliteServices
-                        .internalError()
-                        .saveInternalError(serviceName(), pipelineName, this.getClass(), ex);
-                  } finally {
-                    activeRefreshQueue.set(false);
-                  }
+                        if (p.getProcessQueueSize() == 0) {
+                          // The process queue is empty.
+                          // Create new processes.
+                          int createdProcessCount =
+                              processCreator.createProcesses(p.getProcessQueueMaxSize());
+                          replenishTime = ZonedDateTime.now();
+                          if (createdProcessCount > 0) {
+                            // Refresh process queue.
+                            p.refreshQueue();
+                          }
+                        }
+
+                        if (firstRefresh) {
+                          processQueue.set(p);
+                        }
+                      });
+                  activeRefreshQueue.set(false);
                 });
       }
     }
@@ -159,17 +153,13 @@ public class PipelineRunner extends ProcessRunnerPool {
             .replenishQueue()
             .execute(
                 () -> {
-                  try {
-                    // Create new processes.
-                    processCreator.createProcesses(processQueue.get().getProcessQueueMaxSize());
-                    replenishTime = ZonedDateTime.now();
-                  } catch (Exception ex) {
-                    pipeliteServices
-                        .internalError()
-                        .saveInternalError(serviceName(), pipelineName, this.getClass(), ex);
-                  } finally {
-                    activeReplenishQueue.set(false);
-                  }
+                  internalErrorHandler.execute(
+                      () -> {
+                        // Create new processes.
+                        processCreator.createProcesses(processQueue.get().getProcessQueueMaxSize());
+                        replenishTime = ZonedDateTime.now();
+                      });
+                  activeReplenishQueue.set(false);
                 });
       }
     }
@@ -205,15 +195,11 @@ public class PipelineRunner extends ProcessRunnerPool {
   }
 
   protected void runProcess(ProcessEntity processEntity) {
-    try {
-      Process process = ProcessFactory.create(processEntity, pipeline);
-      runProcess(pipelineName, process, (p) -> {});
-    } catch (Exception ex) {
-      // Catching exceptions here to allow other processes to continue execution.
-      pipeliteServices
-          .internalError()
-          .saveInternalError(serviceName(), pipelineName, this.getClass(), ex);
-    }
+    internalErrorHandler.execute(
+        () -> {
+          Process process = ProcessFactory.create(processEntity, pipeline);
+          runProcess(pipelineName, process, (p) -> {});
+        });
   }
 
   public String getPipelineName() {

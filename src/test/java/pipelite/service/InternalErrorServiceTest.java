@@ -54,52 +54,6 @@ class InternalErrorServiceTest {
   }
 
   @Test
-  public void withPipelineName() {
-    String serviceName = UniqueStringGenerator.randomServiceName(this.getClass());
-    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
-
-    try {
-      throw new RuntimeException("Test");
-    } catch (Exception ex) {
-      InternalErrorEntity error =
-          service.saveInternalError(serviceName, pipelineName, this.getClass(), ex);
-      assertThat(error.getErrorId()).isNotNull();
-      assertThat(error.getErrorTime()).isNotNull();
-      assertThat(error.getServiceName()).isEqualTo(serviceName);
-      assertThat(error.getPipelineName()).isEqualTo(pipelineName);
-      assertThat(error.getErrorMessage()).isEqualTo(ex.getMessage());
-      StringWriter sw = new StringWriter();
-      PrintWriter pw = new PrintWriter(sw);
-      ex.printStackTrace(pw);
-      assertThat(error.getErrorLog()).isEqualTo(sw.toString());
-    }
-  }
-
-  @Test
-  public void withProcessId() {
-    String serviceName = UniqueStringGenerator.randomServiceName(this.getClass());
-    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
-    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
-
-    try {
-      throw new RuntimeException("Test");
-    } catch (Exception ex) {
-      InternalErrorEntity error =
-          service.saveInternalError(serviceName, pipelineName, processId, this.getClass(), ex);
-      assertThat(error.getErrorId()).isNotNull();
-      assertThat(error.getErrorTime()).isNotNull();
-      assertThat(error.getServiceName()).isEqualTo(serviceName);
-      assertThat(error.getPipelineName()).isEqualTo(pipelineName);
-      assertThat(error.getProcessId()).isEqualTo(processId);
-      assertThat(error.getErrorMessage()).isEqualTo(ex.getMessage());
-      StringWriter sw = new StringWriter();
-      PrintWriter pw = new PrintWriter(sw);
-      ex.printStackTrace(pw);
-      assertThat(error.getErrorLog()).isEqualTo(sw.toString());
-    }
-  }
-
-  @Test
   public void withStageName() {
     String serviceName = UniqueStringGenerator.randomServiceName(this.getClass());
     String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());

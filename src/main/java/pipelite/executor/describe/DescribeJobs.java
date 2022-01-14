@@ -16,12 +16,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
-import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.Assert;
 import pipelite.configuration.ServiceConfiguration;
+import pipelite.error.InternalErrorHandler;
 import pipelite.exception.PipeliteException;
 import pipelite.exception.PipeliteTimeoutException;
-import pipelite.executor.task.RetryTask;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
@@ -36,44 +35,26 @@ import pipelite.stage.executor.StageExecutorResultAttribute;
 @Flogger
 public class DescribeJobs<RequestContext, ExecutorContext> {
 
-  private final InternalErrorService internalErrorService;
   private final String serviceName;
-  private final RetryTemplate retryTemplate;
   private final Integer requestLimit;
   private final ExecutorContext executorContext;
   private final DescribeJobsCallback<RequestContext, ExecutorContext> describeJobsCallback;
+  private final InternalErrorHandler internalErrorHandler;
   private final Map<RequestContext, StageExecutorResult> requests = new ConcurrentHashMap<>();
 
   public DescribeJobs(
       ServiceConfiguration serviceConfiguration,
       InternalErrorService internalErrorService,
-      RetryTemplate retryTemplate,
       Integer requestLimit,
       ExecutorContext executorContext,
       DescribeJobsCallback<RequestContext, ExecutorContext> describeJobsCallback) {
     Assert.notNull(serviceConfiguration, "Missing service configuration");
     Assert.notNull(internalErrorService, "Missing internal error service");
-    this.internalErrorService = internalErrorService;
     this.serviceName = serviceConfiguration.getName();
-    this.retryTemplate = retryTemplate;
     this.requestLimit = requestLimit;
     this.executorContext = executorContext;
     this.describeJobsCallback = describeJobsCallback;
-  }
-
-  public DescribeJobs(
-      ServiceConfiguration serviceConfiguration,
-      InternalErrorService internalErrorService,
-      Integer requestLimit,
-      ExecutorContext executorContext,
-      DescribeJobsCallback<RequestContext, ExecutorContext> describeJobsCallback) {
-    this(
-        serviceConfiguration,
-        internalErrorService,
-        RetryTask.DEFAULT,
-        requestLimit,
-        executorContext,
-        describeJobsCallback);
+    this.internalErrorHandler = new InternalErrorHandler(internalErrorService, serviceName, this);
   }
 
   protected void addRequest(RequestContext request) {
@@ -81,34 +62,29 @@ public class DescribeJobs<RequestContext, ExecutorContext> {
   }
 
   public void makeRequests() {
-    List<RequestContext> activeRequests = getActiveRequests();
-    while (!activeRequests.isEmpty()) {
-      int toIndex =
-          requestLimit == null
-              ? activeRequests.size()
-              : Math.min(requestLimit, activeRequests.size());
-      final List<RequestContext> activeSubRequests = activeRequests.subList(0, toIndex);
-      try {
-        retryTemplate.execute(
-            r -> {
-              Map<RequestContext, StageExecutorResult> results =
-                  describeJobsCallback.execute(activeSubRequests, executorContext);
-              // Set results for the requests.
-              results.entrySet().stream()
-                  .filter(
-                      // Filter out empty and active results.
-                      e -> e.getKey() != null && e.getValue() != null && !e.getValue().isActive())
-                  .forEach(e -> this.requests.put(e.getKey(), e.getValue()));
-              return null;
-            });
-      } catch (Exception ex) {
-        internalErrorService.saveInternalError(serviceName, this.getClass(), ex);
-      }
-      if (toIndex == activeRequests.size()) {
-        return;
-      }
-      activeRequests = activeRequests.subList(toIndex, activeRequests.size());
-    }
+    internalErrorHandler.execute(
+        () -> {
+          List<RequestContext> activeRequests = getActiveRequests();
+          while (!activeRequests.isEmpty()) {
+            int toIndex =
+                requestLimit == null
+                    ? activeRequests.size()
+                    : Math.min(requestLimit, activeRequests.size());
+            final List<RequestContext> activeSubRequests = activeRequests.subList(0, toIndex);
+            Map<RequestContext, StageExecutorResult> results =
+                describeJobsCallback.execute(activeSubRequests, executorContext);
+            // Set results for the requests.
+            results.entrySet().stream()
+                .filter(
+                    // Filter out empty and active results.
+                    e -> e.getKey() != null && e.getValue() != null && !e.getValue().isActive())
+                .forEach(e -> this.requests.put(e.getKey(), e.getValue()));
+            if (toIndex == activeRequests.size()) {
+              return;
+            }
+            activeRequests = activeRequests.subList(toIndex, activeRequests.size());
+          }
+        });
   }
 
   protected List<RequestContext> getActiveRequests() {

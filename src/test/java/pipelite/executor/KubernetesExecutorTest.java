@@ -10,8 +10,14 @@
  */
 package pipelite.executor;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import io.fabric8.kubernetes.api.model.batch.v1.JobCondition;
 import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,13 +29,6 @@ import pipelite.service.StageService;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
-
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
