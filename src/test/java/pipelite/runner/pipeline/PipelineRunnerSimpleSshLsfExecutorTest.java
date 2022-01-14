@@ -13,11 +13,13 @@ package pipelite.runner.pipeline;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import javax.annotation.PostConstruct;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
@@ -29,7 +31,6 @@ import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.ProcessService;
 import pipelite.service.RunnerService;
 import pipelite.service.StageService;
-import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 import pipelite.tester.TestType;
 import pipelite.tester.TestTypeConfiguration;
 import pipelite.tester.pipeline.ConfigurableTestPipeline;
@@ -55,16 +56,24 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
 
   @Autowired private ProcessRunnerPoolManager processRunnerPoolManager;
   @Autowired private ProcessService processService;
-  @Autowired private StageService stageService;
   @Autowired private RunnerService runnerService;
   @Autowired private PipeliteMetrics metrics;
 
   @Autowired
   private List<ConfigurableTestPipeline<SingleStageTestProcessConfiguration>> testPipelines;
 
+  // TestTypeConfiguration ->
+  @SpyBean private StageService stageService;
+
+  @PostConstruct
+  public void init() {
+    TestTypeConfiguration.init(stageService);
+  }
+
   private static TestTypeConfiguration testTypeConfiguration(TestType testType) {
     return new TestTypeConfiguration(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES);
   }
+  // <- TestTypeConfiguration
 
   @Profile("PipelineRunnerSimpleSshLsfExecutorTest")
   @TestConfiguration
@@ -77,13 +86,19 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
     }
 
     @Bean
+    public SimpleLsfPipeline simpleLsfSuccessSuccessAfterOneNonPermanentErrorPipeline() {
+      return new SimpleLsfPipeline(
+          TestType.SUCCESS_AFTER_ONE_NON_PERMANENT_ERROR, lsfTestConfiguration);
+    }
+
+    @Bean
     public SimpleLsfPipeline simpleLsfNonPermanentErrorPipeline() {
       return new SimpleLsfPipeline(TestType.NON_PERMANENT_ERROR, lsfTestConfiguration);
     }
 
     @Bean
-    public SimpleLsfPermanentErrorPipeline simpleLsfPermanentErrorPipeline() {
-      return new SimpleLsfPermanentErrorPipeline(lsfTestConfiguration);
+    public SimpleLsfPipeline simpleLsfPermanentErrorPipeline() {
+      return new SimpleLsfPipeline(TestType.PERMANENT_ERROR, lsfTestConfiguration);
     }
   }
 
@@ -97,32 +112,11 @@ public class PipelineRunnerSimpleSshLsfExecutorTest {
     }
   }
 
-  private static class SimpleLsfPermanentErrorPipeline extends ConfigurableTestPipeline {
-    public SimpleLsfPermanentErrorPipeline(LsfTestConfiguration lsfTestConfiguration) {
-      super(
-          PARALLELISM,
-          PROCESS_CNT,
-          new SingleStageSimpleLsfTestProcessConfiguration(
-              testTypeConfiguration(TestType.PERMANENT_ERROR), lsfTestConfiguration) {
-            @Override
-            protected void testExecutorParams(
-                SimpleLsfExecutorParameters.SimpleLsfExecutorParametersBuilder<?, ?>
-                    executorParamsBuilder) {
-              executorParamsBuilder.permanentError(0);
-            }
-          });
-    }
-  }
-
   private void assertPipeline(ConfigurableTestPipeline<SingleStageTestProcessConfiguration> f) {
     for (PipelineRunner pipelineRunner : runnerService.getPipelineRunners()) {
       assertThat(pipelineRunner.getActiveProcessRunners().size()).isEqualTo(0);
     }
-    SingleStageTestProcessConfiguration testProcessConfiguration = f.getRegisteredPipeline();
-    assertThat(testProcessConfiguration.configuredProcessIds().size()).isEqualTo(PROCESS_CNT);
-    testProcessConfiguration.assertCompletedMetrics(metrics, PROCESS_CNT);
-    testProcessConfiguration.assertCompletedProcessEntities(processService, PROCESS_CNT);
-    testProcessConfiguration.assertCompletedStageEntities(stageService, PROCESS_CNT);
+    f.assertCompleted(processService, stageService, metrics);
   }
 
   @Test

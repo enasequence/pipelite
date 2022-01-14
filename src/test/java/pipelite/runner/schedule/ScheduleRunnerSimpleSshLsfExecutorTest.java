@@ -10,14 +10,12 @@
  */
 package pipelite.runner.schedule;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
@@ -32,12 +30,16 @@ import pipelite.service.ProcessService;
 import pipelite.service.RunnerService;
 import pipelite.service.ScheduleService;
 import pipelite.service.StageService;
-import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 import pipelite.tester.TestType;
 import pipelite.tester.TestTypeConfiguration;
 import pipelite.tester.pipeline.ConfigurableTestSchedule;
 import pipelite.tester.process.SingleStageSimpleLsfTestProcessConfiguration;
 import pipelite.tester.process.SingleStageTestProcessConfiguration;
+
+import javax.annotation.PostConstruct;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithManager.class,
@@ -55,13 +57,21 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
   @Autowired private ServiceConfiguration serviceConfiguration;
   @Autowired private ScheduleService scheduleService;
   @Autowired private ProcessService processService;
-  @Autowired private StageService stageService;
   @Autowired private RunnerService runnerService;
   @Autowired private PipeliteMetrics metrics;
+
+  // TestTypeConfiguration ->
+  @SpyBean private StageService stageService;
+
+  @PostConstruct
+  public void init() {
+    TestTypeConfiguration.init(stageService);
+  }
 
   private static TestTypeConfiguration testTypeConfiguration(TestType testType) {
     return new TestTypeConfiguration(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES);
   }
+  // <- TestTypeConfiguration
 
   @Autowired
   private List<ConfigurableTestSchedule<SingleStageTestProcessConfiguration>> testSchedules;
@@ -108,14 +118,7 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
       super(
           "0/" + SCHEDULER_SECONDS + " * * * * ?",
           new SingleStageSimpleLsfTestProcessConfiguration(
-              testTypeConfiguration(TestType.PERMANENT_ERROR), lsfTestConfiguration) {
-            @Override
-            protected void testExecutorParams(
-                SimpleLsfExecutorParameters.SimpleLsfExecutorParametersBuilder<?, ?>
-                    executorParamsBuilder) {
-              executorParamsBuilder.permanentError(0);
-            }
-          });
+              testTypeConfiguration(TestType.PERMANENT_ERROR), lsfTestConfiguration));
     }
   }
 
@@ -131,7 +134,7 @@ public class ScheduleRunnerSimpleSshLsfExecutorTest {
     ScheduleRunner scheduleRunner = runnerService.getScheduleRunner();
 
     assertThat(scheduleRunner.getActiveProcessRunners().size()).isEqualTo(0);
-    SingleStageTestProcessConfiguration testProcessConfiguration = f.getRegisteredPipeline();
+    SingleStageTestProcessConfiguration testProcessConfiguration = f.getTestProcessConfiguration();
     assertThat(testProcessConfiguration.configuredProcessIds().size()).isEqualTo(PROCESS_CNT);
     testProcessConfiguration.assertCompletedMetrics(metrics, PROCESS_CNT);
     testProcessConfiguration.assertCompletedScheduleEntity(

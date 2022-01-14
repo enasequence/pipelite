@@ -32,7 +32,8 @@ public class ProcessEntityAsserter {
     assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);
-    if (testType == TestType.SUCCESS) {
+    if (testType == TestType.SUCCESS
+        || testType == TestType.SUCCESS_AFTER_ONE_NON_PERMANENT_ERROR) {
       assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.COMPLETED);
     } else {
       assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.FAILED);

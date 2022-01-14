@@ -172,7 +172,7 @@ public class ScheduleRunnerTest {
 
     PipelineMetrics pipelineMetrics = metrics.pipeline(pipelineName);
 
-    TestProcessConfiguration t = f.getRegisteredPipeline();
+    TestProcessConfiguration t = f.getTestProcessConfiguration();
     if (t.stageTestResult != StageTestResult.SUCCESS) {
       assertThat(pipelineMetrics.process().getFailedCount())
           .isEqualTo(t.stageExecCnt.get() / t.stageCnt);
@@ -227,7 +227,7 @@ public class ScheduleRunnerTest {
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);
 
-    TestProcessConfiguration t = f.getRegisteredPipeline();
+    TestProcessConfiguration t = f.getTestProcessConfiguration();
     if (t.stageTestResult != StageTestResult.SUCCESS) {
       assertThat(processEntity.getProcessState())
           .isEqualTo(ProcessState.FAILED); // no re-executions allowed
@@ -239,7 +239,7 @@ public class ScheduleRunnerTest {
   private void assertStageEntities(TestSchedule f, String processId) {
     String pipelineName = f.pipelineName();
 
-    TestProcessConfiguration t = f.getRegisteredPipeline();
+    TestProcessConfiguration t = f.getTestProcessConfiguration();
     for (int i = 0; i < t.stageCnt; ++i) {
       StageEntity stageEntity =
           stageService.getSavedStage(f.pipelineName(), processId, "STAGE" + i).get();
@@ -285,7 +285,7 @@ public class ScheduleRunnerTest {
     List<ScheduleEntity> scheduleEntities =
         scheduleService.getSchedules(serviceConfiguration.getName());
 
-    TestProcessConfiguration t = f.getRegisteredPipeline();
+    TestProcessConfiguration t = f.getTestProcessConfiguration();
     assertThat(t.stageExecCnt.get() / t.stageCnt).isEqualTo(f.processCnt);
     assertThat(t.configuredProcessIds().size()).isEqualTo(f.processCnt);
     assertSchedulerMetrics(f);

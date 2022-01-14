@@ -15,7 +15,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 import javax.annotation.PostConstruct;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -25,7 +24,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
-import pipelite.configuration.properties.KubernetesTestConfiguration;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.ProcessService;
@@ -34,7 +32,7 @@ import pipelite.service.StageService;
 import pipelite.tester.TestType;
 import pipelite.tester.TestTypeConfiguration;
 import pipelite.tester.pipeline.ConfigurableTestPipeline;
-import pipelite.tester.process.SingleStageKubernetesTestProcessConfiguration;
+import pipelite.tester.process.SingleStageCmdTestProcessConfiguration;
 import pipelite.tester.process.SingleStageTestProcessConfiguration;
 
 @SpringBootTest(
@@ -45,14 +43,14 @@ import pipelite.tester.process.SingleStageTestProcessConfiguration;
       "pipelite.advanced.processRunnerFrequency=250ms",
       "pipelite.advanced.shutdownIfIdle=true"
     })
-@ActiveProfiles({"test", "PipelineRunnerKubernetesExecutorTest"})
+@ActiveProfiles({"test", "PipelineRunnerCmdExecutorTest"})
 @DirtiesContext
-public class PipelineRunnerKubernetesExecutorTest {
+public class PipelineRunnerCmdExecutorTest {
 
-  private static final int PROCESS_CNT = 2;
+  private static final int PROCESS_CNT = 10;
   private static final int IMMEDIATE_RETRIES = 3;
   private static final int MAXIMUM_RETRIES = 3;
-  private static final int PARALLELISM = 1;
+  private static final int PARALLELISM = 10;
 
   @Autowired private ProcessRunnerPoolManager processRunnerPoolManager;
   @Autowired private ProcessService processService;
@@ -75,41 +73,36 @@ public class PipelineRunnerKubernetesExecutorTest {
   }
   // <- TestTypeConfiguration
 
-  @Profile("PipelineRunnerKubernetesExecutorTest")
+  @Profile("PipelineRunnerCmdExecutorTest")
   @TestConfiguration
   static class TestConfig {
-    @Autowired private KubernetesTestConfiguration kubernetesTestConfiguration;
-
     @Bean
-    public KubernetesPipeline KubernetesSuccessPipeline() {
-      return new KubernetesPipeline(TestType.SUCCESS, kubernetesTestConfiguration);
+    public SingleStageTestPipeline singleStageTestSuccessPipeline() {
+      return new SingleStageTestPipeline(TestType.SUCCESS);
     }
 
     @Bean
-    public KubernetesPipeline KubernetesSuccessAfterOneNonPermanentErrorPipeline() {
-      return new KubernetesPipeline(
-          TestType.SUCCESS_AFTER_ONE_NON_PERMANENT_ERROR, kubernetesTestConfiguration);
+    public SingleStageTestPipeline singleStageTestSuccessAfterOneNonPermanentErrorPipeline() {
+      return new SingleStageTestPipeline(TestType.SUCCESS_AFTER_ONE_NON_PERMANENT_ERROR);
     }
 
     @Bean
-    public KubernetesPipeline KubernetesNonPermanentErrorPipeline() {
-      return new KubernetesPipeline(TestType.NON_PERMANENT_ERROR, kubernetesTestConfiguration);
+    public SingleStageTestPipeline singleStageTestNonPermanentErrorPipeline() {
+      return new SingleStageTestPipeline(TestType.NON_PERMANENT_ERROR);
     }
 
     @Bean
-    public KubernetesPipeline KubernetesPermanentErrorPipeline() {
-      return new KubernetesPipeline(TestType.PERMANENT_ERROR, kubernetesTestConfiguration);
+    public SingleStageTestPipeline singleStageTestPermanentErrorPipeline() {
+      return new SingleStageTestPipeline(TestType.PERMANENT_ERROR);
     }
   }
 
-  private static class KubernetesPipeline extends ConfigurableTestPipeline {
-    public KubernetesPipeline(
-        TestType testType, KubernetesTestConfiguration kubernetesTestConfiguration) {
+  private static class SingleStageTestPipeline extends ConfigurableTestPipeline {
+    public SingleStageTestPipeline(TestType testType) {
       super(
           PARALLELISM,
           PROCESS_CNT,
-          new SingleStageKubernetesTestProcessConfiguration(
-              testTypeConfiguration(testType), kubernetesTestConfiguration));
+          new SingleStageCmdTestProcessConfiguration(testTypeConfiguration(testType)));
     }
   }
 
@@ -121,7 +114,6 @@ public class PipelineRunnerKubernetesExecutorTest {
   }
 
   @Test
-  @EnabledIfEnvironmentVariable(named = "PIPELITE_TEST_KUBERNETES_KUBECONFIG", matches = ".+")
   public void runPipelines() {
     processRunnerPoolManager.createPools();
     processRunnerPoolManager.startPools();

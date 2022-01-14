@@ -10,12 +10,13 @@
  */
 package pipelite.tester.process;
 
-import java.time.Duration;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 import pipelite.tester.TestTypeConfiguration;
 import pipelite.tester.entity.StageEntityAsserter;
+
+import java.time.Duration;
 
 public class SingleStageSimpleLsfTestProcessConfiguration
     extends SingleStageTestProcessConfiguration {
@@ -54,14 +55,17 @@ public class SingleStageSimpleLsfTestProcessConfiguration
         .host(lsfTestConfiguration.getHost())
         .workDir(lsfTestConfiguration.getWorkDir())
         .timeout(Duration.ofSeconds(180))
+        // .saveLog(false)
         .maximumRetries(maximumRetries())
         .immediateRetries(immediateRetries());
-    testExecutorParams(executorParamsBuilder);
     SimpleLsfExecutorParameters executorParams = executorParamsBuilder.build();
-    executorParams.setPermanentErrors(testType().permanentErrors());
-    builder.execute(stageName()).withSimpleLsfExecutor(testType().cmd(), executorParams);
+    executorParams.setPermanentErrors(
+        testConfiguration()
+            .nextPermanentErrors(pipelineName(), builder.getProcessId(), stageName()));
+    builder
+        .execute(stageName())
+        .withSimpleLsfExecutor(
+            testConfiguration().nextCmd(pipelineName(), builder.getProcessId(), stageName()),
+            executorParams);
   }
-
-  protected void testExecutorParams(
-      SimpleLsfExecutorParameters.SimpleLsfExecutorParametersBuilder<?, ?> executorParamsBuilder) {}
 }

@@ -11,35 +11,34 @@
 package pipelite.tester.process;
 
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.stage.executor.StageExecutorState;
-import pipelite.stage.parameters.ExecutorParameters;
-import pipelite.tester.TestType;
+import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.tester.TestTypeConfiguration;
 import pipelite.tester.entity.StageEntityAsserter;
 
-public class SingleStageSyncTestProcessConfiguration extends SingleStageTestProcessConfiguration {
+public class SingleStageCmdTestProcessConfiguration extends SingleStageTestProcessConfiguration {
 
-  private final StageExecutorState completedExecutorState;
-
-  public SingleStageSyncTestProcessConfiguration(TestTypeConfiguration testConfiguration) {
+  public SingleStageCmdTestProcessConfiguration(TestTypeConfiguration testConfiguration) {
     super(
         testConfiguration,
         (stageService, pipelineName, processId, stageName) -> {},
         (stageService, pipelineName, processId, stageName) ->
-            StageEntityAsserter.assertTestExecutorStageEntity(
+            StageEntityAsserter.assertCompletedCmdStageEntity(
                 stageService, testConfiguration, pipelineName, processId, stageName));
-    this.completedExecutorState =
-        testConfiguration.testType() == TestType.SUCCESS
-            ? StageExecutorState.SUCCESS
-            : StageExecutorState.ERROR;
   }
 
   @Override
   protected void configure(ProcessBuilder builder) {
-    ExecutorParameters.ExecutorParametersBuilder<?, ?> executorParamsBuilder =
-        ExecutorParameters.builder();
+    CmdExecutorParameters.CmdExecutorParametersBuilder<?, ?> executorParamsBuilder =
+        CmdExecutorParameters.builder();
     executorParamsBuilder.maximumRetries(maximumRetries()).immediateRetries(immediateRetries());
-    ExecutorParameters executorParams = executorParamsBuilder.build();
-    builder.execute(stageName()).withSyncTestExecutor(completedExecutorState, executorParams);
+    CmdExecutorParameters executorParams = executorParamsBuilder.build();
+    executorParams.setPermanentErrors(
+        testConfiguration()
+            .nextPermanentErrors(pipelineName(), builder.getProcessId(), stageName()));
+    builder
+        .execute(stageName())
+        .withCmdExecutor(
+            testConfiguration().nextCmd(pipelineName(), builder.getProcessId(), stageName()),
+            executorParams);
   }
 }

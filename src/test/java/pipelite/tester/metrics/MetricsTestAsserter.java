@@ -56,6 +56,18 @@ public class MetricsTestAsserter {
           .isIn(processCnt * (1.0 + immediateRetries), processCnt * (1.0 + maximumRetries));
       assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getSuccessTimeSeries()))
           .isEqualTo(0);
+    } else if (testType == TestType.SUCCESS_AFTER_ONE_NON_PERMANENT_ERROR) {
+      assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(processCnt);
+      assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(processCnt);
+      assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(processCnt);
+      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getFailedTimeSeries()))
+          .isEqualTo(0);
+      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getCompletedTimeSeries()))
+          .isEqualTo(processCnt);
+      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getFailedTimeSeries()))
+          .isEqualTo(processCnt);
+      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getSuccessTimeSeries()))
+          .isEqualTo(processCnt);
     } else {
       assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(processCnt);
       assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(0L);

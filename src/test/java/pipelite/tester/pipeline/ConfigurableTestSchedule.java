@@ -10,36 +10,36 @@
  */
 package pipelite.tester.pipeline;
 
-import pipelite.RegisteredPipeline;
 import pipelite.Schedule;
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.tester.process.TestProcessConfiguration;
 
-public class ConfigurableTestSchedule<T extends RegisteredPipeline> implements Schedule {
+public class ConfigurableTestSchedule<T extends TestProcessConfiguration> implements Schedule {
 
   private final String cron;
-  private final T registeredPipeline;
+  private final T testProcessConfiguration;
 
-  public ConfigurableTestSchedule(String cron, T registeredPipeline) {
+  public ConfigurableTestSchedule(String cron, T testProcessConfiguration) {
     this.cron = cron;
-    this.registeredPipeline = registeredPipeline;
+    this.testProcessConfiguration = testProcessConfiguration;
   }
 
   public String cron() {
     return cron;
   }
 
-  public T getRegisteredPipeline() {
-    return registeredPipeline;
+  public T getTestProcessConfiguration() {
+    return testProcessConfiguration;
   }
 
   @Override
   public final String pipelineName() {
-    return registeredPipeline.pipelineName();
+    return testProcessConfiguration.pipelineName();
   }
 
   @Override
   public final void configureProcess(ProcessBuilder builder) {
-    registeredPipeline.configureProcess(builder);
+    testProcessConfiguration.configureProcess(builder);
   }
 
   @Override

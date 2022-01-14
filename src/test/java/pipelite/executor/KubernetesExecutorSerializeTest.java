@@ -23,7 +23,7 @@ public class KubernetesExecutorSerializeTest {
 
   @Test
   public void test() {
-    String image = "debian";
+    String image = "debian:10.11";
     List<String> imageArgs = Arrays.asList("bash", "-c", "exit 1");
     KubernetesExecutor executor = StageExecutor.createKubernetesExecutor(image, imageArgs);
 
@@ -37,7 +37,7 @@ public class KubernetesExecutorSerializeTest {
             "{\n"
                 + "  \"state\" : \"SUBMIT\",\n"
                 + "  \"jobId\" : \"test\",\n"
-                + "  \"image\" : \"debian\",\n"
+                + "  \"image\" : \"debian:10.11\",\n"
                 + "  \"imageArgs\" : [ \"bash\", \"-c\", \"exit 1\" ],\n"
                 + "  \"context\" : \"test\",\n"
                 + "  \"namespace\" : \"test\"\n"

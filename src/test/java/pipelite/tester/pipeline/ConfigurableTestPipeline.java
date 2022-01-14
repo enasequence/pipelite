@@ -10,14 +10,19 @@
  */
 package pipelite.tester.pipeline;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.google.common.util.concurrent.Monitor;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import pipelite.Pipeline;
-import pipelite.RegisteredPipeline;
 import pipelite.UniqueStringGenerator;
+import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.service.ProcessService;
+import pipelite.service.StageService;
 import pipelite.tester.process.SingleStageTestProcessConfiguration;
+import pipelite.tester.process.TestProcessConfiguration;
 
 /**
  * The configurable test pipeline creates processes for testing purposes. The created processes are
@@ -26,23 +31,24 @@ import pipelite.tester.process.SingleStageTestProcessConfiguration;
  * processes to be created and executed. Alternatively, processes can be created by calling
  * createProcess and executed explicitly.
  */
-public class ConfigurableTestPipeline<T extends RegisteredPipeline> implements Pipeline {
+public class ConfigurableTestPipeline<T extends TestProcessConfiguration> implements Pipeline {
 
   private final int parallelism;
   private final int processCount;
-  private final T registeredPipeline;
+  private final T testProcessConfiguration;
 
   private final Set<String> createdProcessIds = ConcurrentHashMap.newKeySet();
   private final Set<String> returnedProcessIds = ConcurrentHashMap.newKeySet();
   private final Set<String> confirmedProcessIds = ConcurrentHashMap.newKeySet();
   private final Monitor monitor = new Monitor();
 
-  public ConfigurableTestPipeline(int parallelism, int processCount, T registeredPipeline) {
+  public ConfigurableTestPipeline(int parallelism, int processCount, T testProcessConfiguration) {
     this.parallelism = parallelism;
     this.processCount = processCount;
-    this.registeredPipeline = registeredPipeline;
+    this.testProcessConfiguration = testProcessConfiguration;
     for (int i = 0; i < processCount; ++i) {
-      createdProcessIds.add(UniqueStringGenerator.randomProcessId(ConfigurableTestPipeline.class));
+      String processId = UniqueStringGenerator.randomProcessId(ConfigurableTestPipeline.class);
+      createdProcessIds.add(processId);
     }
   }
 
@@ -54,18 +60,18 @@ public class ConfigurableTestPipeline<T extends RegisteredPipeline> implements P
     return processCount;
   }
 
-  public T getRegisteredPipeline() {
-    return registeredPipeline;
+  public T testProcessConfiguration() {
+    return testProcessConfiguration;
   }
 
   @Override
   public final String pipelineName() {
-    return registeredPipeline.pipelineName();
+    return testProcessConfiguration.pipelineName();
   }
 
   @Override
   public final void configureProcess(ProcessBuilder builder) {
-    registeredPipeline.configureProcess(builder);
+    testProcessConfiguration.configureProcess(builder);
   }
 
   @Override
@@ -119,5 +125,14 @@ public class ConfigurableTestPipeline<T extends RegisteredPipeline> implements P
 
   public int confirmedProcessCount() {
     return confirmedProcessIds.size();
+  }
+
+  public void assertCompleted(
+      ProcessService processService, StageService stageService, PipeliteMetrics metrics) {
+    assertThat(testProcessConfiguration.configuredProcessIds().size()).isEqualTo(processCount);
+    if (testProcessConfiguration instanceof SingleStageTestProcessConfiguration) {
+      ((SingleStageTestProcessConfiguration) testProcessConfiguration)
+          .assertCompleted(processService, stageService, metrics, processCount);
+    }
   }
 }

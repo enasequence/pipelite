@@ -452,6 +452,7 @@ When the following environment variable is defined then lsf unit tests are execu
 
 - PIPELITE_TEST_LSF_HOST
 - PIPELITE_TEST_LSF_USER (Default value: current user)
+- PIPELITE_TEST_LSF_WORKDIR
 
 ### Database schema
 

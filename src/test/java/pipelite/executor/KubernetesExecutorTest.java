@@ -10,13 +10,8 @@
  */
 package pipelite.executor;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
+import io.fabric8.kubernetes.api.model.batch.v1.JobCondition;
 import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +23,13 @@ import pipelite.service.StageService;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
+
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
@@ -49,14 +51,24 @@ public class KubernetesExecutorTest {
   @Test
   public void describeJobsStateSuccess() {
     JobStatus jobStatus = new JobStatus();
-    jobStatus.setSucceeded(1);
+    jobStatus.setCompletionTime("test");
+    assertThat(KubernetesExecutor.describeJobsResultFromStatus(jobStatus).isSuccess()).isTrue();
+
+    jobStatus = new JobStatus();
+    JobCondition jobCondition = new JobCondition();
+    jobCondition.setType("Complete");
+    jobCondition.setStatus("true");
+    jobStatus.setConditions(Arrays.asList(jobCondition));
     assertThat(KubernetesExecutor.describeJobsResultFromStatus(jobStatus).isSuccess()).isTrue();
   }
 
   @Test
   public void describeJobsStateError() {
     JobStatus jobStatus = new JobStatus();
-    jobStatus.setFailed(1);
+    JobCondition jobCondition = new JobCondition();
+    jobCondition.setType("Failed");
+    jobCondition.setStatus("true");
+    jobStatus.setConditions(Arrays.asList(jobCondition));
     assertThat(KubernetesExecutor.describeJobsResultFromStatus(jobStatus).isError()).isTrue();
   }
 
@@ -73,7 +85,7 @@ public class KubernetesExecutorTest {
   @Test
   @EnabledIfEnvironmentVariable(named = "PIPELITE_TEST_KUBERNETES_KUBECONFIG", matches = ".+")
   public void testExecuteSuccess() {
-    String image = "hello-world";
+    String image = "hello-world:linux";
     List<String> imageArgs = Collections.emptyList();
     KubernetesExecutor executor = StageExecutor.createKubernetesExecutor(image, imageArgs);
 
@@ -101,7 +113,7 @@ public class KubernetesExecutorTest {
   @Test
   @EnabledIfEnvironmentVariable(named = "PIPELITE_TEST_KUBERNETES_KUBECONFIG", matches = ".+")
   public void testExecuteError() {
-    String image = "debian";
+    String image = "debian:10.11";
     List<String> imageArgs = Arrays.asList("bash", "-c", "exit 5");
     KubernetesExecutor executor = StageExecutor.createKubernetesExecutor(image, imageArgs);
 

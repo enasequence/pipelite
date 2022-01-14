@@ -12,6 +12,7 @@ package pipelite.tester.process;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import pipelite.UniqueStringGenerator;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.ProcessService;
 import pipelite.service.ScheduleService;
@@ -27,7 +28,8 @@ public abstract class SingleStageTestProcessConfiguration extends TestProcessCon
   private final TestTypeConfiguration testConfiguration;
   private final AssertSubmittedStageEntity assertSubmittedStageEntity;
   private final AssertCompletedStageEntity assertCompletedStageEntity;
-  private final String stageName = "STAGE";
+  private final String stageName =
+      UniqueStringGenerator.randomStageName(SingleStageTestProcessConfiguration.class);
 
   protected interface AssertSubmittedStageEntity {
     void assertSubmittedStageEntity(
@@ -48,6 +50,15 @@ public abstract class SingleStageTestProcessConfiguration extends TestProcessCon
     this.assertCompletedStageEntity = assertCompletedStageEntity;
   }
 
+  @Override
+  protected void register(String processId) {
+    testConfiguration.register(pipelineName(), processId, stageName);
+  }
+
+  public TestTypeConfiguration testConfiguration() {
+    return testConfiguration;
+  }
+
   public TestType testType() {
     return testConfiguration.testType();
   }
@@ -60,10 +71,6 @@ public abstract class SingleStageTestProcessConfiguration extends TestProcessCon
     return testConfiguration.maximumRetries();
   }
 
-  public TestTypeConfiguration testConfiguration() {
-    return testConfiguration;
-  }
-
   public String stageName() {
     return stageName;
   }
@@ -74,6 +81,18 @@ public abstract class SingleStageTestProcessConfiguration extends TestProcessCon
 
   public AssertCompletedStageEntity assertCompletedStageEntity() {
     return assertCompletedStageEntity;
+  }
+
+  public void assertCompleted(
+      ProcessService processService,
+      StageService stageService,
+      PipeliteMetrics metrics,
+      int processCnt) {
+    assertThat(configuredProcessIds().size()).isEqualTo(processCnt);
+    assertCompletedMetrics(metrics, processCnt);
+    assertCompletedProcessEntities(processService, processCnt);
+    assertCompletedStageEntities(stageService, processCnt);
+    assertThat(testConfiguration.failedAsserts()).isEmpty();
   }
 
   public final void assertCompletedScheduleEntity(

@@ -15,7 +15,7 @@ pipelite:
     lsf:
       host: ${PIPELITE_TEST_LSF_HOST:}
       user: ${PIPELITE_TEST_LSF_USER:}
-      workdir: pipelite-test
+      workdir: ${PIPELITE_TEST_LSF_WORKDIR:}
     ssh:
       host: ${PIPELITE_TEST_SSH_HOST:}
       user: ${PIPELITE_TEST_SSH_USER:}

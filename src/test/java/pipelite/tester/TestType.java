@@ -10,41 +10,50 @@
  */
 package pipelite.tester;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import static pipelite.tester.TestTypeConfiguration.*;
+
+import java.util.function.Function;
 
 public enum TestType {
-  SUCCESS(0),
-  NON_PERMANENT_ERROR(1),
-  PERMANENT_ERROR(2);
+  SUCCESS(
+      execCount -> {
+        if (execCount == 0) {
+          return EXIT_CODE_SUCCESS;
+        } else {
+          return null;
+        }
+      }),
+  NON_PERMANENT_ERROR(execCount -> EXIT_CODE_NON_PERMANENT_ERROR),
+  SUCCESS_AFTER_ONE_NON_PERMANENT_ERROR(
+      execCount -> {
+        if (execCount == 0) {
+          return EXIT_CODE_NON_PERMANENT_ERROR;
+        } else if (execCount == 1) {
+          return EXIT_CODE_SUCCESS;
+        } else {
+          return null;
+        }
+      }),
+  PERMANENT_ERROR(
+      execCount -> {
+        if (execCount == 0) {
+          return EXIT_CODE_PERMANENT_ERROR;
+        } else {
+          return null;
+        }
+      });
 
-  private final int exitCode;
+  private final Function<Integer, Integer> exitCodeResolver;
 
-  TestType(int exitCode) {
-    this.exitCode = exitCode;
+  TestType(Function<Integer, Integer> exitCodeResolver) {
+    this.exitCodeResolver = exitCodeResolver;
   }
 
-  public int exitCode() {
-    return exitCode;
-  }
-
-  public List<Integer> permanentErrors() {
-    if (this == TestType.PERMANENT_ERROR) {
-      return Arrays.asList(exitCode);
+  public String exitCode(int execCount) {
+    Integer exitCode = exitCodeResolver.apply(execCount);
+    if (exitCode == null) {
+      return "";
     }
-    return Collections.emptyList();
-  }
-
-  public String cmd() {
-    return "bash -c 'exit '" + exitCode;
-  }
-
-  public String image() {
-    return "debian";
-  }
-
-  public List<String> imageArgs() {
-    return Arrays.asList("bash", "-c", "exit " + exitCode);
+    return String.valueOf(exitCode);
   }
 }

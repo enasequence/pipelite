@@ -14,10 +14,7 @@ import com.google.common.flogger.FluentLogger;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.batch.v1.Job;
-import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
-import io.fabric8.kubernetes.api.model.batch.v1.JobList;
-import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
+import io.fabric8.kubernetes.api.model.batch.v1.*;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -246,8 +243,20 @@ public class KubernetesExecutor
       List<Pod> pods =
           client.pods().inNamespace(namespace).withLabel("job-name", jobId).list().getItems();
       Pod pod = lastPodToStart(pods);
+      if (pod == null || pod.getStatus() == null) {
+        throw new PipeliteException(
+            "Could not get pod status for completed Kubernetes job: " + jobId);
+      }
       List<ContainerStatus> containerStatuses = pod.getStatus().getContainerStatuses();
       ContainerStatus containerStatus = lastContainerToFinish(containerStatuses);
+
+      if (containerStatus == null
+          || containerStatus.getState() == null
+          || containerStatus.getState().getTerminated() == null
+          || containerStatus.getState().getTerminated().getExitCode() == null) {
+        throw new PipeliteException(
+            "Could not get container status for completed Kubernetes job: " + jobId);
+      }
       exitCode = containerStatus.getState().getTerminated().getExitCode();
     } catch (KubernetesClientException e) {
       throw new PipeliteException("Kubernetes error", e);
@@ -260,13 +269,30 @@ public class KubernetesExecutor
   }
 
   static StageExecutorResult describeJobsResultFromStatus(JobStatus jobStatus) {
-    if (jobStatus.getFailed() != null && jobStatus.getFailed() > 0) {
-      return StageExecutorResult.error();
-    } else if (jobStatus.getSucceeded() != null && jobStatus.getSucceeded() > 0) {
+    // https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/V1JobStatus.md
+
+    // The completion time is only set when the job finishes successfully.
+    if (jobStatus.getCompletionTime() != null) {
       return StageExecutorResult.success();
-    } else {
-      return StageExecutorResult.active();
     }
+
+    // When a Job fails, one of the conditions will have type 'Failed' and status true.
+    for (JobCondition jobCondition : jobStatus.getConditions()) {
+      if ("Failed".equalsIgnoreCase(jobCondition.getType())
+          && "true".equalsIgnoreCase(jobCondition.getStatus())) {
+        return StageExecutorResult.error();
+      }
+    }
+
+    // When a Job completes, one of the conditions will have type 'Complete' and status true.
+    for (JobCondition jobCondition : jobStatus.getConditions()) {
+      if ("Complete".equalsIgnoreCase(jobCondition.getType())
+          && "true".equalsIgnoreCase(jobCondition.getStatus())) {
+        return StageExecutorResult.success();
+      }
+    }
+
+    return StageExecutorResult.active();
   }
 
   public static KubernetesClient kubernetesClient(String context) {

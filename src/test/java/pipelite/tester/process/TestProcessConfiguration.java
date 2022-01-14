@@ -10,13 +10,14 @@
  */
 package pipelite.tester.process;
 
-import java.util.Collection;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import pipelite.RegisteredPipeline;
 import pipelite.UniqueStringGenerator;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.tester.pipeline.ConfigurableTestPipeline;
+
+import java.util.Collection;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class TestProcessConfiguration implements RegisteredPipeline {
 
@@ -31,6 +32,7 @@ public abstract class TestProcessConfiguration implements RegisteredPipeline {
 
   @Override
   public final void configureProcess(ProcessBuilder builder) {
+    register(builder.getProcessId());
     configuredProcessIds.add(builder.getProcessId());
     configure(builder);
   }
@@ -44,4 +46,6 @@ public abstract class TestProcessConfiguration implements RegisteredPipeline {
   public final Collection<String> configuredProcessIds() {
     return configuredProcessIds;
   }
+
+  protected void register(String processId) {}
 }

@@ -143,10 +143,26 @@ public class StageRunner {
       executorResult = stage.execute(pipelineName, process.getProcessId());
 
       if (executorResult.isActive() && ZonedDateTime.now().isAfter(timeout)) {
+        // End stage execution.
         logContext(log.atSevere())
             .log("Maximum stage execution time exceeded. Terminating stage execution.");
         stage.getExecutor().terminate();
         executorResult = StageExecutorResult.timeoutError();
+        endStageExecution(stage, executorResult);
+        resultCallback.accept(executorResult);
+      } else if (executorResult.isSubmitted()) {
+        // Continue stage execution.
+        logContext(log.atFine()).log("Started asynchronous stage execution");
+        pipeliteServices.stage().startAsyncExecution(stage);
+      } else if (executorResult.isActive()) {
+        // Continue stage execution.
+        logContext(log.atFine()).log("Waiting asynchronous stage execution to complete");
+      } else if (executorResult.isSuccess() || executorResult.isError()) {
+        // End stage execution.
+        logContext(log.atFine())
+            .log("Stage execution " + (executorResult.isSuccess() ? "succeeded" : "failed"));
+        endStageExecution(stage, executorResult);
+        resultCallback.accept(executorResult);
       }
     } catch (Exception ex) {
       executorResult = StageExecutorResult.internalError(ex);
@@ -159,16 +175,8 @@ public class StageRunner {
               stage.getStageName(),
               this.getClass(),
               ex);
-    }
-
-    if (executorResult.isSubmitted()) {
-      logContext(log.atFine()).log("Started asynchronous stage execution");
-      pipeliteServices.stage().startAsyncExecution(stage);
-    } else if (executorResult.isActive()) {
-      logContext(log.atFine()).log("Waiting asynchronous stage execution to complete");
-    } else if (executorResult.isSuccess() || executorResult.isError()) {
-      logContext(log.atFine())
-          .log("Stage execution " + (executorResult.isSuccess() ? "succeeded" : "failed"));
+      // End stage execution.
+      logContext(log.atSevere()).log("Stage execution failed because of internal error");
       endStageExecution(stage, executorResult);
       resultCallback.accept(executorResult);
     }

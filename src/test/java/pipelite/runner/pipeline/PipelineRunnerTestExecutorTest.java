@@ -13,10 +13,12 @@ package pipelite.runner.pipeline;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import javax.annotation.PostConstruct;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
@@ -46,50 +48,58 @@ import pipelite.tester.process.SingleStageTestProcessConfiguration;
 @DirtiesContext
 public class PipelineRunnerTestExecutorTest {
 
-  private static final int PROCESS_CNT = 2;
+  private static final int PROCESS_CNT = 10;
   private static final int IMMEDIATE_RETRIES = 3;
   private static final int MAXIMUM_RETRIES = 3;
-  private static final int PARALLELISM = 1;
+  private static final int PARALLELISM = 10;
 
   @Autowired private ProcessRunnerPoolManager processRunnerPoolManager;
   @Autowired private ProcessService processService;
-  @Autowired private StageService stageService;
   @Autowired private RunnerService runnerService;
   @Autowired private PipeliteMetrics metrics;
 
   @Autowired
   private List<ConfigurableTestPipeline<SingleStageTestProcessConfiguration>> testPipelines;
 
+  // TestTypeConfiguration ->
+  @SpyBean private StageService stageService;
+
+  @PostConstruct
+  public void init() {
+    TestTypeConfiguration.init(stageService);
+  }
+
   private static TestTypeConfiguration testTypeConfiguration(TestType testType) {
     return new TestTypeConfiguration(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES);
   }
+  // <- TestTypeConfiguration
 
   @Profile("PipelineRunnerTestExecutorTest")
   @TestConfiguration
   static class TestConfig {
     @Bean
-    public SimpleSyncTestPipeline simpleSyncTestSuccessPipeline() {
-      return new SimpleSyncTestPipeline(TestType.SUCCESS);
+    public SingleStageSyncTestPipeline singleStageSyncTestSuccessPipeline() {
+      return new SingleStageSyncTestPipeline(TestType.SUCCESS);
     }
 
     @Bean
-    public SimpleSyncTestPipeline simpleSyncTestNonPermanentErrorPipeline() {
-      return new SimpleSyncTestPipeline(TestType.NON_PERMANENT_ERROR);
+    public SingleStageSyncTestPipeline singleStageSyncTestNonPermanentErrorPipeline() {
+      return new SingleStageSyncTestPipeline(TestType.NON_PERMANENT_ERROR);
     }
 
     @Bean
-    public SimpleAsyncTestPipeline simpleAsyncTestSuccessPipeline() {
-      return new SimpleAsyncTestPipeline(TestType.SUCCESS);
+    public SingleStageAsyncTestPipeline singleStageAsyncTestSuccessPipeline() {
+      return new SingleStageAsyncTestPipeline(TestType.SUCCESS);
     }
 
     @Bean
-    public SimpleAsyncTestPipeline simpleAsyncTestSNonPermanentErrorPipeline() {
-      return new SimpleAsyncTestPipeline(TestType.NON_PERMANENT_ERROR);
+    public SingleStageAsyncTestPipeline singleStageAsyncTestSNonPermanentErrorPipeline() {
+      return new SingleStageAsyncTestPipeline(TestType.NON_PERMANENT_ERROR);
     }
   }
 
-  private static class SimpleSyncTestPipeline extends ConfigurableTestPipeline {
-    public SimpleSyncTestPipeline(TestType testType) {
+  private static class SingleStageSyncTestPipeline extends ConfigurableTestPipeline {
+    public SingleStageSyncTestPipeline(TestType testType) {
       super(
           PARALLELISM,
           PROCESS_CNT,
@@ -97,8 +107,8 @@ public class PipelineRunnerTestExecutorTest {
     }
   }
 
-  private static class SimpleAsyncTestPipeline extends ConfigurableTestPipeline {
-    public SimpleAsyncTestPipeline(TestType testType) {
+  private static class SingleStageAsyncTestPipeline extends ConfigurableTestPipeline {
+    public SingleStageAsyncTestPipeline(TestType testType) {
       super(
           PARALLELISM,
           PROCESS_CNT,
@@ -110,11 +120,7 @@ public class PipelineRunnerTestExecutorTest {
     for (PipelineRunner pipelineRunner : runnerService.getPipelineRunners()) {
       assertThat(pipelineRunner.getActiveProcessRunners().size()).isEqualTo(0);
     }
-    SingleStageTestProcessConfiguration testProcessConfiguration = f.getRegisteredPipeline();
-    assertThat(testProcessConfiguration.configuredProcessIds().size()).isEqualTo(PROCESS_CNT);
-    testProcessConfiguration.assertCompletedMetrics(metrics, PROCESS_CNT);
-    testProcessConfiguration.assertCompletedProcessEntities(processService, PROCESS_CNT);
-    testProcessConfiguration.assertCompletedStageEntities(stageService, PROCESS_CNT);
+    f.assertCompleted(processService, stageService, metrics);
   }
 
   @Test
@@ -122,7 +128,6 @@ public class PipelineRunnerTestExecutorTest {
     processRunnerPoolManager.createPools();
     processRunnerPoolManager.startPools();
     processRunnerPoolManager.waitPoolsToStop();
-
     for (ConfigurableTestPipeline<SingleStageTestProcessConfiguration> f : testPipelines) {
       assertPipeline(f);
     }

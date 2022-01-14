@@ -10,10 +10,13 @@
  */
 package pipelite.executor;
 
+import static pipelite.stage.executor.StageExecutorResultAttribute.EXIT_CODE;
+
+import com.google.common.primitives.Ints;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
-import pipelite.executor.cmd.*;
+import pipelite.executor.cmd.CmdRunner;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.CmdExecutorParameters;
@@ -34,7 +37,13 @@ public class CmdExecutor<T extends CmdExecutorParameters> extends AbstractExecut
   @Override
   public StageExecutorResult execute(StageExecutorRequest request) {
     CmdRunner cmdRunner = CmdRunner.create(getExecutorParams());
-    return cmdRunner.execute(cmd);
+    StageExecutorResult result = cmdRunner.execute(cmd);
+    if (getExecutorParams()
+        .getPermanentErrors()
+        .contains(Ints.tryParse(result.getAttribute(EXIT_CODE)))) {
+      result.setPermanentError();
+    }
+    return result;
   }
 
   @Override

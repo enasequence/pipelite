@@ -211,7 +211,7 @@ public class PipelineRunnerFailureTest {
     assertThat(f.returnedProcessCount()).isEqualTo(PROCESS_CNT);
     assertThat(f.confirmedProcessCount()).isEqualTo(PROCESS_CNT);
 
-    TestProcess t = f.getRegisteredPipeline();
+    TestProcess t = f.testProcessConfiguration();
     if (t.stageTestResult == StageTestResult.FIRST_ERROR) {
       assertThat(t.firstStageExecCnt.get()).isEqualTo(PROCESS_CNT);
       assertThat(t.secondStageExecCnt.get()).isEqualTo(0);
@@ -250,7 +250,7 @@ public class PipelineRunnerFailureTest {
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);
 
-    TestProcess t = f.getRegisteredPipeline();
+    TestProcess t = f.testProcessConfiguration();
     if (t.stageTestResult == StageTestResult.NO_ERROR) {
       assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.COMPLETED);
     } else {
@@ -270,7 +270,7 @@ public class PipelineRunnerFailureTest {
       assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
       assertThat(stageEntity.getProcessId()).isEqualTo(processId);
 
-      TestProcess t = f.getRegisteredPipeline();
+      TestProcess t = f.testProcessConfiguration();
       if ((i > 0 && t.stageTestResult == StageTestResult.FIRST_ERROR)
           || (i > 1 && t.stageTestResult == StageTestResult.SECOND_ERROR)
           || (i > 2 && t.stageTestResult == StageTestResult.THIRD_ERROR)
@@ -323,7 +323,7 @@ public class PipelineRunnerFailureTest {
 
   private void assertMetrics(TestPipeline f) {
     PipelineMetrics pipelineMetrics = metrics.pipeline(f.pipelineName());
-    TestProcess t = f.getRegisteredPipeline();
+    TestProcess t = f.testProcessConfiguration();
     if (t.getFirstStageExecResult().isSuccess()
         && t.getSecondStageExecResult().isSuccess()
         && t.getThirdStageExecResult().isSuccess()

@@ -55,15 +55,15 @@ public class SingleStageKubernetesTestProcessConfiguration
         .timeout(Duration.ofSeconds(180))
         .maximumRetries(maximumRetries())
         .immediateRetries(immediateRetries());
-    testExecutorParams(executorParamsBuilder);
     KubernetesExecutorParameters executorParams = executorParamsBuilder.build();
-    executorParams.setPermanentErrors(testType().permanentErrors());
+    executorParams.setPermanentErrors(
+        testConfiguration()
+            .nextPermanentErrors(pipelineName(), builder.getProcessId(), stageName()));
     builder
         .execute(stageName())
-        .withKubernetesExecutor(testType().image(), testType().imageArgs(), executorParams);
+        .withKubernetesExecutor(
+            testConfiguration().image(),
+            testConfiguration().nextImageArgs(pipelineName(), builder.getProcessId(), stageName()),
+            executorParams);
   }
-
-  protected void testExecutorParams(
-      KubernetesExecutorParameters.KubernetesExecutorParametersBuilder<?, ?>
-          executorParamsBuilder) {}
 }

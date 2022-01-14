@@ -10,6 +10,8 @@
  */
 package pipelite.executor;
 
+import static pipelite.stage.executor.StageExecutorResultAttribute.EXIT_CODE;
+
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.function.Function;
@@ -124,7 +126,9 @@ public class TestExecutor extends AbstractExecutor<ExecutorParameters> {
         if (executionTime != null) {
           Time.wait(executionTime);
         }
-        return StageExecutorResult.from(executorState);
+        StageExecutorResult result = StageExecutorResult.from(executorState);
+        result.addAttribute(EXIT_CODE, String.valueOf(result.isSuccess() ? 0 : 1));
+        return result;
       }
     } else {
       boolean isFirstExecution = startTime == null;
@@ -140,7 +144,9 @@ public class TestExecutor extends AbstractExecutor<ExecutorParameters> {
       if (callback != null) {
         return callback.apply(request);
       } else {
-        return StageExecutorResult.from(executorState);
+        StageExecutorResult result = StageExecutorResult.from(executorState);
+        result.addAttribute(EXIT_CODE, String.valueOf(result.isSuccess() ? 0 : 1));
+        return result;
       }
     }
   }
