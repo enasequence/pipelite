@@ -10,18 +10,12 @@
  */
 package pipelite.tester.pipeline;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.google.common.util.concurrent.Monitor;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import pipelite.Pipeline;
 import pipelite.UniqueStringGenerator;
-import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.service.ProcessService;
-import pipelite.service.StageService;
-import pipelite.tester.process.SingleStageTestProcessConfiguration;
 import pipelite.tester.process.TestProcessConfiguration;
 
 /**
@@ -113,14 +107,5 @@ public class ConfigurableTestPipeline<T extends TestProcessConfiguration> implem
 
   public int confirmedProcessCount() {
     return confirmedProcessIds.size();
-  }
-
-  public void assertCompleted(
-      ProcessService processService, StageService stageService, PipeliteMetrics metrics) {
-    assertThat(testProcessConfiguration.configuredProcessIds().size()).isEqualTo(processCount);
-    if (testProcessConfiguration instanceof SingleStageTestProcessConfiguration) {
-      ((SingleStageTestProcessConfiguration) testProcessConfiguration)
-          .assertCompleted(processService, stageService, metrics, processCount);
-    }
   }
 }

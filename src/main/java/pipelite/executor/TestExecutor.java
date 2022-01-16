@@ -10,17 +10,16 @@
  */
 package pipelite.executor;
 
-import static pipelite.stage.executor.StageExecutorResultAttribute.EXIT_CODE;
-
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.function.Function;
 import org.springframework.util.Assert;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.time.Time;
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.function.Function;
 
 /** Test executor. */
 public class TestExecutor extends AbstractExecutor<ExecutorParameters> {
@@ -126,9 +125,7 @@ public class TestExecutor extends AbstractExecutor<ExecutorParameters> {
         if (executionTime != null) {
           Time.wait(executionTime);
         }
-        StageExecutorResult result = StageExecutorResult.from(executorState);
-        result.addAttribute(EXIT_CODE, String.valueOf(result.isSuccess() ? 0 : 1));
-        return result;
+        return StageExecutorResult.from(executorState);
       }
     } else {
       boolean isFirstExecution = startTime == null;
@@ -144,9 +141,7 @@ public class TestExecutor extends AbstractExecutor<ExecutorParameters> {
       if (callback != null) {
         return callback.apply(request);
       } else {
-        StageExecutorResult result = StageExecutorResult.from(executorState);
-        result.addAttribute(EXIT_CODE, String.valueOf(result.isSuccess() ? 0 : 1));
-        return result;
+        return StageExecutorResult.from(executorState);
       }
     }
   }

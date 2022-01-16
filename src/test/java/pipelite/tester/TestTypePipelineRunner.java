@@ -63,8 +63,16 @@ public class TestTypePipelineRunner {
     for (PipelineRunner pipelineRunner : runnerService.getPipelineRunners()) {
       assertThat(pipelineRunner.getActiveProcessRunners().size()).isEqualTo(0);
     }
-    for (ConfigurableTestPipeline<?> testPipeline : testPipelines) {
-      testPipeline.assertCompleted(processService, stageServiceSpy, metrics);
+    for (ConfigurableTestPipeline<T> testPipeline : testPipelines) {
+      assertPipeline(stageServiceSpy, testPipeline, processCnt);
     }
+  }
+
+  private <T extends SingleStageTestProcessConfiguration> void assertPipeline(
+      StageService stageServiceSpy, ConfigurableTestPipeline<T> testPipeline, int processCnt) {
+    SingleStageTestProcessConfiguration testProcessConfiguration =
+        testPipeline.testProcessConfiguration();
+    assertThat(testProcessConfiguration.configuredProcessIds().size()).isEqualTo(processCnt);
+    testProcessConfiguration.assertCompleted(processService, stageServiceSpy, metrics, processCnt);
   }
 }

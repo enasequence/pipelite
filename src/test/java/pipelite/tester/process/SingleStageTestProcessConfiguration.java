@@ -90,7 +90,7 @@ public abstract class SingleStageTestProcessConfiguration extends TestProcessCon
     assertThat(testType.failedAsserts()).isEmpty();
   }
 
-  public final void assertCompletedScheduleEntity(
+  public void assertCompletedScheduleEntity(
       ScheduleService scheduleService, String serviceName, int expectedProcessCnt) {
     ScheduleEntityAsserter.assertCompletedScheduleEntity(
         scheduleService,
@@ -101,7 +101,7 @@ public abstract class SingleStageTestProcessConfiguration extends TestProcessCon
         configuredProcessIds());
   }
 
-  public final void assertCompletedProcessEntities(
+  private void assertCompletedProcessEntities(
       ProcessService processService, int expectedProcessCnt) {
     assertThat(expectedProcessCnt).isEqualTo(configuredProcessCount());
     for (String processId : configuredProcessIds()) {
@@ -110,14 +110,13 @@ public abstract class SingleStageTestProcessConfiguration extends TestProcessCon
     }
   }
 
-  public final void assertCompletedMetrics(PipeliteMetrics metrics, int expectedProcessCnt) {
+  private void assertCompletedMetrics(PipeliteMetrics metrics, int expectedProcessCnt) {
     assertThat(expectedProcessCnt).isEqualTo(configuredProcessCount());
     MetricsTestAsserter.assertCompletedMetrics(
         testType(), metrics, pipelineName(), expectedProcessCnt);
   }
 
-  public final void assertSubmittedStageEntities(
-      StageService stageService, int expectedProcessCnt) {
+  private void assertSubmittedStageEntities(StageService stageService, int expectedProcessCnt) {
     assertThat(expectedProcessCnt).isEqualTo(configuredProcessCount());
     for (String processId : configuredProcessIds()) {
       assertSubmittedStageEntity()
@@ -125,8 +124,7 @@ public abstract class SingleStageTestProcessConfiguration extends TestProcessCon
     }
   }
 
-  public final void assertCompletedStageEntities(
-      StageService stageService, int expectedProcessCnt) {
+  private void assertCompletedStageEntities(StageService stageService, int expectedProcessCnt) {
     assertThat(expectedProcessCnt).isEqualTo(configuredProcessCount());
     for (String processId : configuredProcessIds()) {
       assertCompletedStageEntity()

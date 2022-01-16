@@ -88,11 +88,9 @@ public class TestTypeScheduleRunner {
     SingleStageTestProcessConfiguration testProcessConfiguration = f.getTestProcessConfiguration();
     assertThat(testProcessConfiguration.configuredProcessIds().size()).isEqualTo(processCnt);
 
-    testProcessConfiguration.assertCompletedMetrics(metrics, processCnt);
+    testProcessConfiguration.assertCompleted(processService, stageServiceSpy, metrics, processCnt);
     testProcessConfiguration.assertCompletedScheduleEntity(
         scheduleService, serviceConfiguration.getName(), processCnt);
-    testProcessConfiguration.assertCompletedProcessEntities(processService, processCnt);
-    testProcessConfiguration.assertCompletedStageEntities(stageServiceSpy, processCnt);
   }
 
   private <T extends SingleStageTestProcessConfiguration> void deleteSchedule(
