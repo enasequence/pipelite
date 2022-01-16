@@ -106,7 +106,7 @@ public class StageExecutorSerializerTest {
               .executor(new TestExecutor(StageState.from(result)))
               .build();
       stage.setStageEntity(stageEntity);
-      stageEntity.startExecution(stage);
+      stageEntity.startExecution(stage.getExecutor());
       stageEntity.setExecutorName(TestExecutor.class.getName());
       stageEntity.setExecutorData(
           "{\n" + "  \"stageState\" : \"" + StageState.from(result).name() + "\"\n}");

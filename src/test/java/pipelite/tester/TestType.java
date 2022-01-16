@@ -13,20 +13,28 @@ package pipelite.tester;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import lombok.Value;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.mockito.Mockito;
 import pipelite.entity.StageEntity;
-import pipelite.executor.*;
+import pipelite.executor.AbstractAsyncExecutor;
+import pipelite.executor.AbstractLsfExecutor;
+import pipelite.executor.CmdExecutor;
+import pipelite.executor.KubernetesExecutor;
+import pipelite.executor.describe.cache.DescribeJobsCache;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.StageExecutor;
+import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
-import pipelite.stage.parameters.CmdExecutorParameters;
+import pipelite.stage.executor.StageExecutorSerializer;
 
 public class TestType {
   static final int EXIT_CODE_SUCCESS = 0;
@@ -39,8 +47,8 @@ public class TestType {
   private final List<Integer> exitCodes;
   private final int immediateRetries;
   private final int maximumRetries;
-  private final boolean resetStageEntity;
-  private final boolean resetExecutor;
+  private final boolean deserializeActiveStageEntity;
+
   private List<String> failedAsserts = new ArrayList<>();
 
   public static final List<TestType> tests = new ArrayList<>();
@@ -57,7 +65,6 @@ public class TestType {
             Arrays.asList(EXIT_CODE_SUCCESS),
             DEFAULT_IMMEDIATE_RETRIES,
             DEFAULT_MAXIMUM_RETRIES,
-            false,
             false);
     tests.add(firstExecutionIsSuccessful);
 
@@ -67,7 +74,6 @@ public class TestType {
             Arrays.asList(EXIT_CODE_PERMANENT_ERROR),
             DEFAULT_IMMEDIATE_RETRIES,
             DEFAULT_MAXIMUM_RETRIES,
-            false,
             false);
     tests.add(firstExecutionIsPermanentError);
 
@@ -77,7 +83,6 @@ public class TestType {
             Collections.nCopies(DEFAULT_MAXIMUM_RETRIES + 1, EXIT_CODE_NON_PERMANENT_ERROR),
             DEFAULT_IMMEDIATE_RETRIES,
             DEFAULT_MAXIMUM_RETRIES,
-            false,
             false);
     tests.add(nonPermanentErrorUntilMaximumRetries);
 
@@ -87,9 +92,17 @@ public class TestType {
             Arrays.asList(EXIT_CODE_NON_PERMANENT_ERROR, EXIT_CODE_SUCCESS),
             DEFAULT_IMMEDIATE_RETRIES,
             DEFAULT_MAXIMUM_RETRIES,
-            false,
             false);
     tests.add(nonPermanentErrorAndThenSuccess);
+
+    TestType nonPermanentErrorAndThenSuccessWithDeserializeActiveStageEntity =
+        new TestType(
+            "Non permanent error and then success with deserialize active stage entity",
+            Arrays.asList(EXIT_CODE_NON_PERMANENT_ERROR, EXIT_CODE_SUCCESS),
+            DEFAULT_IMMEDIATE_RETRIES,
+            DEFAULT_MAXIMUM_RETRIES,
+            true);
+    tests.add(nonPermanentErrorAndThenSuccessWithDeserializeActiveStageEntity);
 
     nonPermanentErrorAndThenPermanentError =
         new TestType(
@@ -97,9 +110,17 @@ public class TestType {
             Arrays.asList(EXIT_CODE_NON_PERMANENT_ERROR, EXIT_CODE_PERMANENT_ERROR),
             DEFAULT_IMMEDIATE_RETRIES,
             DEFAULT_MAXIMUM_RETRIES,
-            false,
             false);
     tests.add(nonPermanentErrorAndThenPermanentError);
+
+    TestType nonPermanentErrorAndThenPermanentErrorWithDeserializeActiveStageEntity =
+        new TestType(
+            "Non permanent error and then permanent error with deserialize active stage entity",
+            Arrays.asList(EXIT_CODE_NON_PERMANENT_ERROR, EXIT_CODE_PERMANENT_ERROR),
+            DEFAULT_IMMEDIATE_RETRIES,
+            DEFAULT_MAXIMUM_RETRIES,
+            true);
+    tests.add(nonPermanentErrorAndThenPermanentErrorWithDeserializeActiveStageEntity);
   }
 
   @Value
@@ -121,8 +142,7 @@ public class TestType {
       List<Integer> exitCodes,
       int immediateRetries,
       int maximumRetries,
-      boolean resetStageEntity,
-      boolean resetExecutor) {
+      boolean deserializeActiveStageEntity) {
     this.description =
         description
             + ", ExitCodes: "
@@ -133,15 +153,16 @@ public class TestType {
             + maximumRetries
             + ", Success: "
             + EXIT_CODE_SUCCESS
-            + ",NonPermanentError: "
+            + ", NonPermanentError: "
             + EXIT_CODE_NON_PERMANENT_ERROR
-            + ",PermanentError: "
-            + EXIT_CODE_PERMANENT_ERROR;
+            + ", PermanentError: "
+            + EXIT_CODE_PERMANENT_ERROR
+            + ", DeserializeStageEntity: "
+            + deserializeActiveStageEntity;
     this.exitCodes = exitCodes;
     this.immediateRetries = immediateRetries;
     this.maximumRetries = maximumRetries;
-    this.resetStageEntity = resetStageEntity;
-    this.resetExecutor = resetExecutor;
+    this.deserializeActiveStageEntity = deserializeActiveStageEntity;
   }
 
   public String description() {
@@ -282,14 +303,6 @@ public class TestType {
     return expectedStageSuccessCnt() > 0 ? 1 : 0;
   }
 
-  public boolean resetStageEntity() {
-    return resetStageEntity;
-  }
-
-  public boolean resetExecutor() {
-    return resetExecutor;
-  }
-
   public List<String> failedAsserts() {
     return failedAsserts;
   }
@@ -353,6 +366,13 @@ public class TestType {
     return key;
   }
 
+  private static StageMapKey registeredKey(Stage stage) {
+    return registeredKey(
+        stage.getStageEntity().getPipelineName(),
+        stage.getStageEntity().getProcessId(),
+        stage.getStageName());
+  }
+
   public void register(String pipelineName, String processId, String stageName) {
     StageMapKey key = key(pipelineName, processId, stageName);
     if (stageTestType.contains(key)) {
@@ -362,75 +382,127 @@ public class TestType {
     stageNextExitCode.put(key, exitCode(0));
   }
 
+  private interface Action {
+    void apply();
+  }
+
+  private static <T> void handleErrors(AtomicReference<TestType> testTypeRef, Action action) {
+    try {
+      action.apply();
+    } catch (Exception ex) {
+      TestType testType = testTypeRef.get();
+      if (testType != null) {
+        testType.failedAsserts.add(
+            "Unexpected exception from TestType spyStageService: "
+                + ExceptionUtils.getStackTrace(ex));
+      } else {
+        throw new RuntimeException(
+            "Unexpected exception from TestType spyStageService: " + ex.getMessage(), ex);
+      }
+    }
+  }
+
   public static void spyStageService(StageService stageServiceSpy) {
     if (!Mockito.mockingDetails(stageServiceSpy).isSpy()) {
       throw new RuntimeException("StageService must be a spy");
     }
-    // Intercept stage execution end.
+    // Last and next exit code
     doAnswer(
             invocation -> {
               StageEntity stageEntity = (StageEntity) invocation.callRealMethod();
-              TestType testType = null;
-              // Do not throw any additional exception from the spied method.
-              try {
-                Stage stage = invocation.getArgument(0);
-                StageExecutorResult result = invocation.getArgument(1);
-                String pipelineName = stage.getStageEntity().getPipelineName();
-                String processId = stage.getStageEntity().getProcessId();
-                String stageName = stage.getStageName();
+              AtomicReference<TestType> testTypeRef = new AtomicReference<>();
+              handleErrors(
+                  testTypeRef,
+                  () -> {
+                    Stage stage = invocation.getArgument(0);
+                    StageExecutorResult result = invocation.getArgument(1);
 
-                StageMapKey key = registeredKey(pipelineName, processId, stageName);
-                testType = testType(key);
+                    StageMapKey key = registeredKey(stage);
+                    TestType testType = testType(key);
+                    testTypeRef.set(testType);
 
-                // Last exit code.
-                String lastExitCode = result.getAttribute(StageExecutorResultAttribute.EXIT_CODE);
-                if (lastExitCode == null) {
-                  testType.failedAsserts.add("Stage has no exit code: " + stageName);
-                }
-                if (!lastExitCode.equals(stageNextExitCode.get(key))) {
-                  testType.failedAsserts.add(
-                      "Unexpected stage exit code "
-                          + lastExitCode
-                          + " and not "
-                          + stageNextExitCode.get(key)
-                          + ": "
-                          + stageName);
-                }
-
-                setLastExitCode(lastExitCode, pipelineName, processId, stageName);
-
-                resetStageExecutor(testType, stage);
-
-                resetStageEntity(
-                    stageServiceSpy, testType, stage, pipelineName, processId, stageName);
-
-                setNextExitCode(testType, stage, pipelineName, processId, stageName);
-
-              } catch (Exception ex) {
-                if (testType != null) {
-                  testType.failedAsserts.add(
-                      "Unexpected exception from TestType: " + ExceptionUtils.getStackTrace(ex));
-                } else {
-                  throw new RuntimeException(
-                      "Unexpected exception from TestType: " + ex.getMessage(), ex);
-                }
-              }
+                    String lastExitCode =
+                        result.getAttribute(StageExecutorResultAttribute.EXIT_CODE);
+                    if (lastExitCode == null) {
+                      testType.failedAsserts.add("Stage has no exit code");
+                    }
+                    if (!lastExitCode.equals(stageNextExitCode.get(key))) {
+                      testType.failedAsserts.add(
+                          "Unexpected stage exit code "
+                              + lastExitCode
+                              + " and not "
+                              + stageNextExitCode.get(key));
+                    }
+                    setLastExitCode(lastExitCode, key);
+                    setNextExitCode(testType, stage, key);
+                  });
               return stageEntity;
             })
         .when(stageServiceSpy)
         .endExecution(any(), any());
+
+    // Stage deserialization
+    doAnswer(
+            invocation -> {
+              Stage stage = invocation.getArgument(0);
+              StageEntity savedStageEntity = (StageEntity) invocation.callRealMethod();
+              AtomicReference<TestType> testTypeRef = new AtomicReference<>();
+              handleErrors(
+                  testTypeRef,
+                  () -> {
+                    StageMapKey key = registeredKey(stage);
+                    TestType testType = testType(key);
+                    testTypeRef.set(testType);
+
+                    if (!stage.getStageEntity().equals(savedStageEntity)) {
+                      testType.failedAsserts.add(
+                          "Stage entity "
+                              + stage.getStageEntity().toString()
+                              + " is different from saved stage entity: "
+                              + savedStageEntity.toString());
+                    }
+
+                    if (testType.deserializeActiveStageEntity
+                        && stage.getStageEntity().getStageState() == StageState.ACTIVE) {
+                      // Use saved stage entity.
+                      stage.setStageEntity(savedStageEntity);
+                      // Deserialize saved stage entity.
+                      // Preserve describe jobs cache.
+                      DescribeJobsCache describeJobsCache = null;
+                      if (stage.getExecutor() instanceof AbstractAsyncExecutor) {
+                        describeJobsCache =
+                            ((AbstractAsyncExecutor) stage.getExecutor()).getDescribeJobsCache();
+                      }
+                      if (!StageExecutorSerializer.deserializeExecution(stage)) {
+                        testType.failedAsserts.add("Could not deserialize stage entity");
+                      }
+                      if (describeJobsCache != null) {
+                        ((AbstractAsyncExecutor) stage.getExecutor())
+                            .setDescribeJobsCache(describeJobsCache);
+                      }
+                    }
+                  });
+              return null;
+            })
+        .when(stageServiceSpy)
+        .saveStage(any());
   }
 
   static void setLastExitCode(
       String lastExitCode, String pipelineName, String processId, String stageName) {
-    StageMapKey key = key(pipelineName, processId, stageName);
+    setLastExitCode(lastExitCode, key(pipelineName, processId, stageName));
+  }
+
+  static void setLastExitCode(String lastExitCode, StageMapKey key) {
     stageLastExitCode.put(key, lastExitCode);
   }
 
   static void setNextExitCode(
       TestType testType, Stage stage, String pipelineName, String processId, String stageName) {
-    StageMapKey key = key(pipelineName, processId, stageName);
+    setNextExitCode(testType, stage, key(pipelineName, processId, stageName));
+  }
 
+  static void setNextExitCode(TestType testType, Stage stage, StageMapKey key) {
     // Execution count.
     Integer execCount = stageExecCount.get(key);
     if (execCount == null) {
@@ -441,6 +513,10 @@ public class TestType {
     // Next exit code.
     String nextExitCode = testType.exitCode(execCount);
     stageNextExitCode.put(key, nextExitCode);
+
+    String pipelineName = key.getPipelineName();
+    String processId = key.getProcessId();
+    String stageName = key.getStageName();
 
     if (!nextExitCode.equals("")) {
       if (stage.getExecutor() instanceof KubernetesExecutor) {
@@ -455,58 +531,6 @@ public class TestType {
       } else {
         testType.failedAsserts.add(
             "Unexpected executor type when changing executor exit code: "
-                + stage.getExecutor().getClass().getSimpleName());
-      }
-    }
-  }
-
-  private static void resetStageEntity(
-      StageService stageServiceSpy,
-      TestType testType,
-      Stage stage,
-      String pipelineName,
-      String processId,
-      String stageName) {
-    if (testType.resetStageEntity()) {
-      Optional<StageEntity> savedStageEntity =
-          stageServiceSpy.getSavedStage(pipelineName, processId, stageName);
-      if (savedStageEntity == null) {
-        testType.failedAsserts.add("Could not get saved stage");
-      }
-      stage.setStageEntity(savedStageEntity.get());
-    }
-  }
-
-  static void resetStageExecutor(TestType testType, Stage stage) {
-    if (testType.resetExecutor()) {
-      if (stage.getExecutor() instanceof KubernetesExecutor) {
-        KubernetesExecutor lastExecutor = (KubernetesExecutor) stage.getExecutor();
-        KubernetesExecutor nextExecutor =
-            StageExecutor.createKubernetesExecutor(
-                lastExecutor.getImage(), lastExecutor.getImageArgs());
-        nextExecutor.setExecutorParams(lastExecutor.getExecutorParams());
-        stage.setExecutor(nextExecutor);
-      } else if (stage.getExecutor() instanceof SimpleLsfExecutor) {
-        SimpleLsfExecutor lastExecutor = (SimpleLsfExecutor) stage.getExecutor();
-        SimpleLsfExecutor nextExecutor =
-            StageExecutor.createSimpleLsfExecutor(lastExecutor.getCmd());
-        nextExecutor.setExecutorParams(lastExecutor.getExecutorParams());
-        stage.setExecutor(nextExecutor);
-      } else if (stage.getExecutor() instanceof LsfExecutor) {
-        LsfExecutor lastExecutor = (LsfExecutor) stage.getExecutor();
-        LsfExecutor nextExecutor = StageExecutor.createLsfExecutor(lastExecutor.getCmd());
-        nextExecutor.setExecutorParams(lastExecutor.getExecutorParams());
-        stage.setExecutor(nextExecutor);
-      } else if (stage.getExecutor() instanceof CmdExecutor<?>) {
-        CmdExecutor<CmdExecutorParameters> lastExecutor =
-            (CmdExecutor<CmdExecutorParameters>) stage.getExecutor();
-        CmdExecutor<CmdExecutorParameters> nextExecutor =
-            StageExecutor.createCmdExecutor(lastExecutor.getCmd());
-        nextExecutor.setExecutorParams(lastExecutor.getExecutorParams());
-        stage.setExecutor(nextExecutor);
-      } else {
-        testType.failedAsserts.add(
-            "Unexpected executor type when resetting executor: "
                 + stage.getExecutor().getClass().getSimpleName());
       }
     }

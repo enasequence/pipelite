@@ -68,7 +68,7 @@ public class RetryService {
       stage.setStageEntity(getSavedStage(pipelineName, processId, stage.getStageName()));
       if (DependencyResolver.isPermanentlyFailedStage(stage)) {
         stage.getStageEntity().resetExecution();
-        stageService.saveStage(stage.getStageEntity());
+        stageService.saveStage(stage);
       }
     }
 

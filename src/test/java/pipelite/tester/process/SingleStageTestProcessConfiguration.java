@@ -84,10 +84,10 @@ public abstract class SingleStageTestProcessConfiguration extends TestProcessCon
       PipeliteMetrics metrics,
       int processCnt) {
     assertThat(configuredProcessIds().size()).isEqualTo(processCnt);
+    assertThat(testType.failedAsserts()).isEmpty();
     assertCompletedMetrics(metrics, processCnt);
     assertCompletedProcessEntities(processService, processCnt);
     assertCompletedStageEntities(stageService, processCnt);
-    assertThat(testType.failedAsserts()).isEmpty();
   }
 
   public void assertCompletedScheduleEntity(

@@ -82,9 +82,8 @@ class StageServiceTest {
 
     // Create execution.
 
-    StageEntity stageEntity = service.createExecution(pipelineName, processId, stage);
-
-    stage.setStageEntity(stageEntity);
+    service.createExecution(pipelineName, processId, stage);
+    StageEntity stageEntity = stage.getStageEntity();
 
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);

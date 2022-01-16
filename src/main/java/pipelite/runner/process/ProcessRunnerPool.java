@@ -117,27 +117,29 @@ public class ProcessRunnerPool extends AbstractScheduledService {
   }
 
   private void runOneIterationForActiveProcessRunners() {
-    active.stream()
-        .filter(a -> a.getFuture() == null || a.getFuture().isDone())
-        .forEach(a -> runOneIterationForActiveProcessRunner(a));
+    active.stream().forEach(a -> runOneIterationForActiveProcessRunner(a));
   }
 
   private void runOneIterationForActiveProcessRunner(ActiveProcessRunner activeProcessRunner) {
-    activeProcessRunner.setFuture(
-        pipeliteServices
-            .executor()
-            .runProcess()
-            .submit(
-                () -> {
-                  internalErrorHandler.execute(
-                      () ->
-                          activeProcessRunner
-                              .getProcessRunner()
-                              .runOneIteration(
-                                  (process) ->
-                                      processRunnerEndExecutionHandler(
-                                          activeProcessRunner, process)));
-                }));
+    synchronized (activeProcessRunner) {
+      if (activeProcessRunner.getFuture() == null || activeProcessRunner.getFuture().isDone()) {
+        activeProcessRunner.setFuture(
+            pipeliteServices
+                .executor()
+                .runProcess()
+                .submit(
+                    () -> {
+                      internalErrorHandler.execute(
+                          () ->
+                              activeProcessRunner
+                                  .getProcessRunner()
+                                  .runOneIteration(
+                                      (process) ->
+                                          processRunnerEndExecutionHandler(
+                                              activeProcessRunner, process)));
+                    }));
+      }
+    }
   }
 
   private void processRunnerEndExecutionHandler(

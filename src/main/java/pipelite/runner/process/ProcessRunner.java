@@ -217,9 +217,7 @@ public class ProcessRunner {
     // Apply default executor parameters.
     stage.getExecutor().getExecutorParams().applyDefaults(executorConfiguration);
     stage.getExecutor().getExecutorParams().validate();
-    StageEntity stageEntity =
-        pipeliteServices.stage().createExecution(pipelineName, process.getProcessId(), stage);
-    stage.setStageEntity(stageEntity);
+    pipeliteServices.stage().createExecution(pipelineName, process.getProcessId(), stage);
   }
 
   private void endStageExecution(Stage stage, StageExecutorResult result) {

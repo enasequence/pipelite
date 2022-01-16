@@ -78,7 +78,7 @@ class StageEntityTest {
 
     // Start first execution.
 
-    stageEntity.startExecution(stage);
+    stageEntity.startExecution(stage.getExecutor());
 
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
@@ -136,7 +136,7 @@ class StageEntityTest {
 
     // Start second execution.
 
-    stageEntity.startExecution(stage);
+    stageEntity.startExecution(stage.getExecutor());
 
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);

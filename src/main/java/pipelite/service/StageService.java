@@ -23,6 +23,7 @@ import pipelite.entity.StageEntity;
 import pipelite.entity.StageEntityId;
 import pipelite.entity.StageLogEntity;
 import pipelite.entity.StageLogEntityId;
+import pipelite.exception.PipeliteException;
 import pipelite.executor.describe.cache.AwsBatchDescribeJobsCache;
 import pipelite.executor.describe.cache.KubernetesDescribeJobsCache;
 import pipelite.executor.describe.cache.LsfDescribeJobsCache;
@@ -93,23 +94,25 @@ public class StageService {
   }
 
   /**
-   * Returns a saves stage if it exists or created a new one. Saves the stage.
+   * Assigns a stage entity to the stage. Uses a saved stage entity if it exists or creates a new
+   * one. Saves the stage.
    *
    * @param pipelineName the pipeline name
    * @param processId the process id
    * @param stage the stage
-   * @return the saved or new stage
    */
-  public StageEntity createExecution(String pipelineName, String processId, Stage stage) {
-    // Return saved stage if it exists.
+  public void createExecution(String pipelineName, String processId, Stage stage) {
+    // Uses saved stage if it exists.
     Optional<StageEntity> savedStageEntity =
         repository.findById(new StageEntityId(processId, pipelineName, stage.getStageName()));
     if (savedStageEntity.isPresent()) {
-      return savedStageEntity.get();
+      stage.setStageEntity(savedStageEntity.get());
     }
-    StageEntity stageEntity = StageEntity.createExecution(pipelineName, processId, stage);
-    saveStage(stageEntity);
-    return stageEntity;
+    StageEntity.createExecution(pipelineName, processId, stage);
+    if (stage.getStageEntity() == null) {
+      throw new PipeliteException("Failed to create new stage entity");
+    }
+    saveStage(stage);
   }
 
   /**
@@ -117,12 +120,10 @@ public class StageService {
    *
    * @param stage the stage
    */
-  public StageEntity startExecution(Stage stage) {
-    StageEntity stageEntity = stage.getStageEntity();
-    stageEntity.startExecution(stage);
-    StageEntity savedStage = saveStage(stageEntity);
-    deleteStageLog(logRepository, stageEntity);
-    return savedStage;
+  public void startExecution(Stage stage) {
+    stage.getStageEntity().startExecution(stage.getExecutor());
+    saveStage(stage);
+    deleteStageLog(logRepository, stage);
   }
 
   /**
@@ -130,10 +131,9 @@ public class StageService {
    *
    * @param stage the stage
    */
-  public StageEntity startAsyncExecution(Stage stage) {
-    StageEntity stageEntity = stage.getStageEntity();
-    stageEntity.startAsyncExecution(stage);
-    return saveStage(stageEntity);
+  public void startAsyncExecution(Stage stage) {
+    stage.getStageEntity().startAsyncExecution(stage);
+    saveStage(stage);
   }
 
   /**
@@ -142,13 +142,12 @@ public class StageService {
    * @param stage the stage
    * @param result the stage execution result
    */
-  public StageEntity endExecution(Stage stage, StageExecutorResult result) {
+  public void endExecution(Stage stage, StageExecutorResult result) {
     stage.incrementImmediateExecutionCount();
     StageEntity stageEntity = stage.getStageEntity();
     stageEntity.endExecution(result);
-    StageEntity savedStage = saveStage(stageEntity);
+    saveStage(stage);
     saveStageLog(StageLogEntity.endExecution(stageEntity, result));
-    return savedStage;
   }
 
   /**
@@ -157,13 +156,13 @@ public class StageService {
    * @param stage the stage
    */
   public void resetExecution(Stage stage) {
-    StageEntity stageEntity = stage.getStageEntity();
-    stageEntity.resetExecution();
-    saveStage(stageEntity);
-    deleteStageLog(logRepository, stageEntity);
+    stage.getStageEntity().resetExecution();
+    saveStage(stage);
+    deleteStageLog(logRepository, stage);
   }
 
-  public static void deleteStageLog(StageLogRepository logRepository, StageEntity stageEntity) {
+  public static void deleteStageLog(StageLogRepository logRepository, Stage stage) {
+    StageEntity stageEntity = stage.getStageEntity();
     StageLogEntityId stageLogEntityId =
         new StageLogEntityId(
             stageEntity.getProcessId(), stageEntity.getPipelineName(), stageEntity.getStageName());
@@ -188,11 +187,11 @@ public class StageService {
   /**
    * Saves the stage.
    *
-   * @param stageEntity the stage to save
-   * @return the saved stage
+   * @param stage the stage to save
+   * @return the saved stage entity
    */
-  public StageEntity saveStage(StageEntity stageEntity) {
-    return repository.save(stageEntity);
+  public StageEntity saveStage(Stage stage) {
+    return repository.save(stage.getStageEntity());
   }
 
   /**

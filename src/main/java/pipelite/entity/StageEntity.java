@@ -85,12 +85,12 @@ public class StageEntity {
   private Integer exitCode;
 
   /**
-   * Creates a new stage.
+   * Creates a new stage entity and assigns it to the stage.
    *
    * @param pipelineName the pipeline name
    * @param processId the process id
    * @param stage the stage
-   * @return the new stage
+   * @return the new stage entity
    */
   public static StageEntity createExecution(String pipelineName, String processId, Stage stage) {
     StageEntity stageEntity = new StageEntity();
@@ -99,16 +99,16 @@ public class StageEntity {
     stageEntity.setPipelineName(pipelineName);
     stageEntity.setStageName(stage.getStageName());
     stageEntity.setExecutionCount(0);
+    stage.setStageEntity(stageEntity);
     return stageEntity;
   }
 
   /**
    * Called when the stage execution starts.
    *
-   * @param stage the stage
+   * @param stageExecutor the stage executor
    */
-  public void startExecution(Stage stage) {
-    StageExecutor stageExecutor = stage.getExecutor();
+  public void startExecution(StageExecutor stageExecutor) {
     this.stageState = StageState.ACTIVE;
     this.errorType = null;
     this.resultParams = null;

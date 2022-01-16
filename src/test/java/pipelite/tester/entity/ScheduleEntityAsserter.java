@@ -35,7 +35,7 @@ public class ScheduleEntityAsserter {
     assertThat(scheduleEntity.getProcessId()).isEqualTo(Iterables.getLast(processIds));
     assertThat(scheduleEntity.getExecutionCount()).isEqualTo(processCnt);
     assertThat(scheduleEntity.getStartTime()).isNotNull();
-    assertThat(scheduleEntity.getEndTime()).isAfter(scheduleEntity.getStartTime());
+    assertThat(scheduleEntity.getEndTime()).isAfterOrEqualTo(scheduleEntity.getStartTime());
 
     if (testType.expectedStageSuccessCnt() > 0) {
       assertThat(scheduleEntity.getLastFailed()).isNull();

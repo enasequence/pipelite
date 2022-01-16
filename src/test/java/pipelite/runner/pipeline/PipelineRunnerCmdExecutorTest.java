@@ -25,7 +25,7 @@ import pipelite.tester.process.SingleStageCmdTestProcessConfiguration;
     classes = PipeliteTestConfigWithManager.class,
     properties = {
       "pipelite.service.force=true",
-      "pipelite.service.name=PipelineRunnerTest",
+      "pipelite.service.name=PipelineRunnerCmdExecutorTest",
       "pipelite.advanced.processRunnerFrequency=250ms",
       "pipelite.advanced.shutdownIfIdle=true"
     })
@@ -34,7 +34,7 @@ import pipelite.tester.process.SingleStageCmdTestProcessConfiguration;
 public class PipelineRunnerCmdExecutorTest {
 
   private static final int PARALLELISM = 10;
-  private static final int PROCESS_CNT = 10;
+  private static final int PROCESS_CNT = 20;
 
   @Autowired TestTypePipelineRunner testRunner;
 

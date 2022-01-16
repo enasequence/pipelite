@@ -35,13 +35,13 @@ class StageLogEntityTest {
 
     // Create execution.
 
-    StageEntity stageEntity = StageEntity.createExecution(pipelineName, processId, stage);
+    StageEntity.createExecution(pipelineName, processId, stage);
 
     // End execution.
 
     StageExecutorResult result = StageExecutorResult.error();
     result.setStageLog("TEST3");
-    StageLogEntity stageLogEntity = StageLogEntity.endExecution(stageEntity, result);
+    StageLogEntity stageLogEntity = StageLogEntity.endExecution(stage.getStageEntity(), result);
     assertThat(stageLogEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(stageLogEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageLogEntity.getStageName()).isEqualTo(stageName);
