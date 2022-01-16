@@ -33,7 +33,7 @@ public class RegisteredPipelineService {
     registeredPipelines.forEach(p -> registerPipeline(p));
   }
 
-  private void registerPipeline(RegisteredPipeline registeredPipeline) {
+  public void registerPipeline(RegisteredPipeline registeredPipeline) {
     String pipelineName = registeredPipeline.pipelineName();
     if (pipelineName == null || pipelineName.trim().isEmpty()) {
       throw new PipeliteException("Missing pipeline name");

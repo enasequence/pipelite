@@ -8,45 +8,51 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.runner.pipeline;
+package pipelite.runner.schedule;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
+import pipelite.configuration.properties.KubernetesTestConfiguration;
 import pipelite.service.StageService;
-import pipelite.tester.TestTypePipelineRunner;
-import pipelite.tester.process.SingleStageCmdTestProcessConfiguration;
+import pipelite.tester.TestTypeScheduleRunner;
+import pipelite.tester.process.SingleStageKubernetesTestProcessConfiguration;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithManager.class,
     properties = {
       "pipelite.service.force=true",
-      "pipelite.service.name=PipelineRunnerTest",
+      "pipelite.service.name=ScheduleRunnerTest",
       "pipelite.advanced.processRunnerFrequency=250ms",
       "pipelite.advanced.shutdownIfIdle=true"
     })
 @ActiveProfiles({"test"})
 @DirtiesContext
-public class PipelineRunnerCmdExecutorTest {
+public class ScheduleRunnerKubernetesExecutorTest {
 
-  private static final int PARALLELISM = 10;
-  private static final int PROCESS_CNT = 10;
+  private static final int SCHEDULER_SECONDS = 1;
+  private static final int PROCESS_CNT = 2;
 
-  @Autowired TestTypePipelineRunner testRunner;
+  @Autowired private TestTypeScheduleRunner testRunner;
+  @Autowired private KubernetesTestConfiguration kubernetesTestConfiguration;
 
   // For TestType.spyStageService
   @SpyBean private StageService stageServiceSpy;
 
   @Test
-  public void runPipelines() {
-    testRunner.runPipelines(
+  @EnabledIfEnvironmentVariable(named = "PIPELITE_TEST_KUBERNETES_KUBECONFIG", matches = ".+")
+  public void runSchedules() {
+    testRunner.runSchedules(
         stageServiceSpy,
-        PARALLELISM,
+        SCHEDULER_SECONDS,
         PROCESS_CNT,
-        testType -> new SingleStageCmdTestProcessConfiguration(testType));
+        testType ->
+            new SingleStageKubernetesTestProcessConfiguration(
+                testType, kubernetesTestConfiguration));
   }
 }

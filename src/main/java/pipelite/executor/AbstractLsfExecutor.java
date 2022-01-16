@@ -129,7 +129,7 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
    *
    * @return the command runner.
    */
-  public CmdRunner getCmdRunner() {
+  protected CmdRunner getCmdRunner() {
     return CmdRunner.create(getExecutorParams());
   }
 

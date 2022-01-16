@@ -14,7 +14,7 @@ import java.time.Duration;
 import pipelite.configuration.properties.KubernetesTestConfiguration;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
-import pipelite.tester.TestTypeConfiguration;
+import pipelite.tester.TestType;
 import pipelite.tester.entity.StageEntityAsserter;
 
 public class SingleStageKubernetesTestProcessConfiguration
@@ -23,14 +23,13 @@ public class SingleStageKubernetesTestProcessConfiguration
   private final KubernetesTestConfiguration kubernetesTestConfiguration;
 
   public SingleStageKubernetesTestProcessConfiguration(
-      TestTypeConfiguration testConfiguration,
-      KubernetesTestConfiguration kubernetesTestConfiguration) {
+      TestType testType, KubernetesTestConfiguration kubernetesTestConfiguration) {
     super(
-        testConfiguration,
+        testType,
         (stageService, pipelineName, processId, stageName) ->
             StageEntityAsserter.assertSubmittedKubernetesStageEntity(
                 stageService,
-                testConfiguration,
+                testType,
                 kubernetesTestConfiguration,
                 pipelineName,
                 processId,
@@ -38,7 +37,7 @@ public class SingleStageKubernetesTestProcessConfiguration
         (stageService, pipelineName, processId, stageName) ->
             StageEntityAsserter.assertCompletedKubernetesStageEntity(
                 stageService,
-                testConfiguration,
+                testType,
                 kubernetesTestConfiguration,
                 pipelineName,
                 processId,
@@ -56,14 +55,12 @@ public class SingleStageKubernetesTestProcessConfiguration
         .maximumRetries(maximumRetries())
         .immediateRetries(immediateRetries());
     KubernetesExecutorParameters executorParams = executorParamsBuilder.build();
-    executorParams.setPermanentErrors(
-        testConfiguration()
-            .nextPermanentErrors(pipelineName(), builder.getProcessId(), stageName()));
+    executorParams.setPermanentErrors(testType().permanentErrors());
     builder
         .execute(stageName())
         .withKubernetesExecutor(
-            testConfiguration().image(),
-            testConfiguration().nextImageArgs(pipelineName(), builder.getProcessId(), stageName()),
+            testType().image(),
+            testType().nextImageArgs(pipelineName(), builder.getProcessId(), stageName()),
             executorParams);
   }
 }

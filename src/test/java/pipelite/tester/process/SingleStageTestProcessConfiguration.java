@@ -18,14 +18,13 @@ import pipelite.service.ProcessService;
 import pipelite.service.ScheduleService;
 import pipelite.service.StageService;
 import pipelite.tester.TestType;
-import pipelite.tester.TestTypeConfiguration;
 import pipelite.tester.entity.ProcessEntityAsserter;
 import pipelite.tester.entity.ScheduleEntityAsserter;
 import pipelite.tester.metrics.MetricsTestAsserter;
 
 public abstract class SingleStageTestProcessConfiguration extends TestProcessConfiguration {
 
-  private final TestTypeConfiguration testConfiguration;
+  private final TestType testType;
   private final AssertSubmittedStageEntity assertSubmittedStageEntity;
   private final AssertCompletedStageEntity assertCompletedStageEntity;
   private final String stageName =
@@ -42,33 +41,29 @@ public abstract class SingleStageTestProcessConfiguration extends TestProcessCon
   }
 
   public SingleStageTestProcessConfiguration(
-      TestTypeConfiguration testConfiguration,
+      TestType testType,
       AssertSubmittedStageEntity assertSubmittedStageEntity,
       AssertCompletedStageEntity assertCompletedStageEntity) {
-    this.testConfiguration = testConfiguration;
+    this.testType = testType;
     this.assertSubmittedStageEntity = assertSubmittedStageEntity;
     this.assertCompletedStageEntity = assertCompletedStageEntity;
   }
 
   @Override
   protected void register(String processId) {
-    testConfiguration.register(pipelineName(), processId, stageName);
-  }
-
-  public TestTypeConfiguration testConfiguration() {
-    return testConfiguration;
+    testType.register(pipelineName(), processId, stageName);
   }
 
   public TestType testType() {
-    return testConfiguration.testType();
+    return testType;
   }
 
   public int immediateRetries() {
-    return testConfiguration.immediateRetries();
+    return testType.immediateRetries();
   }
 
   public int maximumRetries() {
-    return testConfiguration.maximumRetries();
+    return testType.maximumRetries();
   }
 
   public String stageName() {
@@ -92,14 +87,14 @@ public abstract class SingleStageTestProcessConfiguration extends TestProcessCon
     assertCompletedMetrics(metrics, processCnt);
     assertCompletedProcessEntities(processService, processCnt);
     assertCompletedStageEntities(stageService, processCnt);
-    assertThat(testConfiguration.failedAsserts()).isEmpty();
+    assertThat(testType.failedAsserts()).isEmpty();
   }
 
   public final void assertCompletedScheduleEntity(
       ScheduleService scheduleService, String serviceName, int expectedProcessCnt) {
     ScheduleEntityAsserter.assertCompletedScheduleEntity(
         scheduleService,
-        testConfiguration,
+        testType,
         serviceName,
         pipelineName(),
         expectedProcessCnt,
@@ -111,19 +106,14 @@ public abstract class SingleStageTestProcessConfiguration extends TestProcessCon
     assertThat(expectedProcessCnt).isEqualTo(configuredProcessCount());
     for (String processId : configuredProcessIds()) {
       ProcessEntityAsserter.assertCompletedProcessEntity(
-          processService, testConfiguration, pipelineName(), processId);
+          processService, testType, pipelineName(), processId);
     }
   }
 
   public final void assertCompletedMetrics(PipeliteMetrics metrics, int expectedProcessCnt) {
     assertThat(expectedProcessCnt).isEqualTo(configuredProcessCount());
     MetricsTestAsserter.assertCompletedMetrics(
-        testType(),
-        metrics,
-        pipelineName(),
-        expectedProcessCnt,
-        immediateRetries(),
-        maximumRetries());
+        testType(), metrics, pipelineName(), expectedProcessCnt);
   }
 
   public final void assertSubmittedStageEntities(

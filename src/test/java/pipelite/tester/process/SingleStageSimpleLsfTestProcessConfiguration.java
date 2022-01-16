@@ -14,7 +14,7 @@ import java.time.Duration;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
-import pipelite.tester.TestTypeConfiguration;
+import pipelite.tester.TestType;
 import pipelite.tester.entity.StageEntityAsserter;
 
 public class SingleStageSimpleLsfTestProcessConfiguration
@@ -23,25 +23,15 @@ public class SingleStageSimpleLsfTestProcessConfiguration
   private final LsfTestConfiguration lsfTestConfiguration;
 
   public SingleStageSimpleLsfTestProcessConfiguration(
-      TestTypeConfiguration testConfiguration, LsfTestConfiguration lsfTestConfiguration) {
+      TestType testType, LsfTestConfiguration lsfTestConfiguration) {
     super(
-        testConfiguration,
+        testType,
         (stageService, pipelineName, processId, stageName) ->
             StageEntityAsserter.assertSubmittedSimpleLsfStageEntity(
-                stageService,
-                testConfiguration,
-                lsfTestConfiguration,
-                pipelineName,
-                processId,
-                stageName),
+                stageService, testType, lsfTestConfiguration, pipelineName, processId, stageName),
         (stageService, pipelineName, processId, stageName) ->
             StageEntityAsserter.assertCompletedSimpleLsfStageEntity(
-                stageService,
-                testConfiguration,
-                lsfTestConfiguration,
-                pipelineName,
-                processId,
-                stageName));
+                stageService, testType, lsfTestConfiguration, pipelineName, processId, stageName));
     this.lsfTestConfiguration = lsfTestConfiguration;
   }
 
@@ -58,13 +48,11 @@ public class SingleStageSimpleLsfTestProcessConfiguration
         .maximumRetries(maximumRetries())
         .immediateRetries(immediateRetries());
     SimpleLsfExecutorParameters executorParams = executorParamsBuilder.build();
-    executorParams.setPermanentErrors(
-        testConfiguration()
-            .nextPermanentErrors(pipelineName(), builder.getProcessId(), stageName()));
+    executorParams.setPermanentErrors(testType().permanentErrors());
     builder
         .execute(stageName())
         .withSimpleLsfExecutor(
-            testConfiguration().nextCmd(pipelineName(), builder.getProcessId(), stageName()),
+            testType().nextCmd(pipelineName(), builder.getProcessId(), stageName()),
             executorParams);
   }
 }

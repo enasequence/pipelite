@@ -16,24 +16,18 @@ import pipelite.entity.ProcessEntity;
 import pipelite.process.ProcessState;
 import pipelite.service.ProcessService;
 import pipelite.tester.TestType;
-import pipelite.tester.TestTypeConfiguration;
 
 public class ProcessEntityAsserter {
   private ProcessEntityAsserter() {}
 
   public static void assertCompletedProcessEntity(
-      ProcessService processService,
-      TestTypeConfiguration testConfiguration,
-      String pipelineName,
-      String processId) {
+      ProcessService processService, TestType testType, String pipelineName, String processId) {
     ProcessEntity processEntity = processService.getSavedProcess(pipelineName, processId).get();
 
-    TestType testType = testConfiguration.testType();
     assertThat(processEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);
-    if (testType == TestType.SUCCESS
-        || testType == TestType.SUCCESS_AFTER_ONE_NON_PERMANENT_ERROR) {
+    if (testType.expectedProcessCompletedCnt() > 0) {
       assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.COMPLETED);
     } else {
       assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.FAILED);

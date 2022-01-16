@@ -41,7 +41,7 @@ public class RegisteredScheduleService {
   }
 
   @PostConstruct
-  private void saveSchedules() {
+  public void saveSchedules() {
     registeredPipelineService
         .getRegisteredPipelines(Schedule.class)
         .forEach(

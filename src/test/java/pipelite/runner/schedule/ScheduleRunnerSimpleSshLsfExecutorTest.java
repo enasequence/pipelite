@@ -10,35 +10,18 @@
  */
 package pipelite.runner.schedule;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.util.List;
-import javax.annotation.PostConstruct;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.SpyBean;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
-import pipelite.configuration.ServiceConfiguration;
 import pipelite.configuration.properties.LsfTestConfiguration;
-import pipelite.entity.ScheduleEntity;
-import pipelite.manager.ProcessRunnerPoolManager;
-import pipelite.metrics.PipeliteMetrics;
-import pipelite.service.ProcessService;
-import pipelite.service.RunnerService;
-import pipelite.service.ScheduleService;
 import pipelite.service.StageService;
-import pipelite.tester.TestType;
-import pipelite.tester.TestTypeConfiguration;
-import pipelite.tester.pipeline.ConfigurableTestSchedule;
+import pipelite.tester.TestTypeScheduleRunner;
 import pipelite.tester.process.SingleStageSimpleLsfTestProcessConfiguration;
-import pipelite.tester.process.SingleStageTestProcessConfiguration;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithManager.class,
@@ -48,121 +31,27 @@ import pipelite.tester.process.SingleStageTestProcessConfiguration;
       "pipelite.advanced.processRunnerFrequency=250ms",
       "pipelite.advanced.shutdownIfIdle=true"
     })
-@ActiveProfiles({"test", "ScheduleRunnerSimpleSshLsfExecutorTest"})
+@ActiveProfiles({"test"})
 @DirtiesContext
 public class ScheduleRunnerSimpleSshLsfExecutorTest {
 
-  @Autowired private ProcessRunnerPoolManager processRunnerPoolManager;
-  @Autowired private ServiceConfiguration serviceConfiguration;
-  @Autowired private ScheduleService scheduleService;
-  @Autowired private ProcessService processService;
-  @Autowired private RunnerService runnerService;
-  @Autowired private PipeliteMetrics metrics;
-
-  // TestTypeConfiguration ->
-  @SpyBean private StageService stageService;
-
-  @PostConstruct
-  public void init() {
-    TestTypeConfiguration.init(stageService);
-  }
-
-  private static TestTypeConfiguration testTypeConfiguration(TestType testType) {
-    return new TestTypeConfiguration(testType, IMMEDIATE_RETRIES, MAXIMUM_RETRIES);
-  }
-  // <- TestTypeConfiguration
-
-  @Autowired
-  private List<ConfigurableTestSchedule<SingleStageTestProcessConfiguration>> testSchedules;
-
-  private static final int PROCESS_CNT = 2;
-  private static final int IMMEDIATE_RETRIES = 3;
-  private static final int MAXIMUM_RETRIES = 3;
   private static final int SCHEDULER_SECONDS = 1;
+  private static final int PROCESS_CNT = 2;
 
-  @Profile("ScheduleRunnerSimpleSshLsfExecutorTest")
-  @TestConfiguration
-  static class TestConfig {
-    @Autowired private LsfTestConfiguration lsfTestConfiguration;
+  @Autowired private TestTypeScheduleRunner testRunner;
+  @Autowired private LsfTestConfiguration lsfTestConfiguration;
 
-    @Bean
-    public SimpleLsfSchedule simpleLsfSuccessSchedule() {
-      return new SimpleLsfSchedule(TestType.SUCCESS, lsfTestConfiguration);
-    }
-
-    @Bean
-    public SimpleLsfSchedule simpleLsfNonPermanentErrorSchedule() {
-      return new SimpleLsfSchedule(TestType.NON_PERMANENT_ERROR, lsfTestConfiguration);
-    }
-
-    @Bean
-    public SimpleLsfPermanentErrorSchedule simpleLsfPermanentErrorSchedule() {
-      return new SimpleLsfPermanentErrorSchedule(lsfTestConfiguration);
-    }
-  }
-
-  private static class SimpleLsfSchedule
-      extends ConfigurableTestSchedule<SingleStageTestProcessConfiguration> {
-    public SimpleLsfSchedule(TestType testType, LsfTestConfiguration lsfTestConfiguration) {
-      super(
-          "0/" + SCHEDULER_SECONDS + " * * * * ?",
-          new SingleStageSimpleLsfTestProcessConfiguration(
-              testTypeConfiguration(testType), lsfTestConfiguration));
-    }
-  }
-
-  private static class SimpleLsfPermanentErrorSchedule
-      extends ConfigurableTestSchedule<SingleStageTestProcessConfiguration> {
-    public SimpleLsfPermanentErrorSchedule(LsfTestConfiguration lsfTestConfiguration) {
-      super(
-          "0/" + SCHEDULER_SECONDS + " * * * * ?",
-          new SingleStageSimpleLsfTestProcessConfiguration(
-              testTypeConfiguration(TestType.PERMANENT_ERROR), lsfTestConfiguration));
-    }
-  }
-
-  private void deleteSchedule(
-      ConfigurableTestSchedule<SingleStageTestProcessConfiguration> testSchedule) {
-    ScheduleEntity schedule = new ScheduleEntity();
-    schedule.setPipelineName(testSchedule.pipelineName());
-    scheduleService.delete(schedule);
-    System.out.println("deleted schedule for pipeline: " + testSchedule.pipelineName());
-  }
-
-  private void assertSchedule(ConfigurableTestSchedule<SingleStageTestProcessConfiguration> f) {
-    ScheduleRunner scheduleRunner = runnerService.getScheduleRunner();
-
-    assertThat(scheduleRunner.getActiveProcessRunners().size()).isEqualTo(0);
-    SingleStageTestProcessConfiguration testProcessConfiguration = f.getTestProcessConfiguration();
-    assertThat(testProcessConfiguration.configuredProcessIds().size()).isEqualTo(PROCESS_CNT);
-    testProcessConfiguration.assertCompletedMetrics(metrics, PROCESS_CNT);
-    testProcessConfiguration.assertCompletedScheduleEntity(
-        scheduleService, serviceConfiguration.getName(), PROCESS_CNT);
-    testProcessConfiguration.assertCompletedProcessEntities(processService, PROCESS_CNT);
-    testProcessConfiguration.assertCompletedStageEntities(stageService, PROCESS_CNT);
-  }
+  // For TestType.spyStageService
+  @SpyBean private StageService stageServiceSpy;
 
   @Test
   @EnabledIfEnvironmentVariable(named = "PIPELITE_TEST_LSF_HOST", matches = ".+")
   public void runSchedules() {
-    try {
-      processRunnerPoolManager.createPools();
-
-      ScheduleRunner scheduleRunner = runnerService.getScheduleRunner();
-      for (ConfigurableTestSchedule<SingleStageTestProcessConfiguration> f : testSchedules) {
-        scheduleRunner.setMaximumExecutions(f.pipelineName(), PROCESS_CNT);
-      }
-
-      processRunnerPoolManager.startPools();
-      processRunnerPoolManager.waitPoolsToStop();
-
-      for (ConfigurableTestSchedule<SingleStageTestProcessConfiguration> f : testSchedules) {
-        assertSchedule(f);
-      }
-    } finally {
-      for (ConfigurableTestSchedule<SingleStageTestProcessConfiguration> f : testSchedules) {
-        deleteSchedule(f);
-      }
-    }
+    testRunner.runSchedules(
+        stageServiceSpy,
+        SCHEDULER_SECONDS,
+        PROCESS_CNT,
+        testType ->
+            new SingleStageSimpleLsfTestProcessConfiguration(testType, lsfTestConfiguration));
   }
 }

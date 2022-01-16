@@ -12,8 +12,7 @@ package pipelite.stage.executor;
 
 import java.util.List;
 import pipelite.executor.*;
-import pipelite.stage.parameters.CmdExecutorParameters;
-import pipelite.stage.parameters.ExecutorParameters;
+import pipelite.stage.parameters.*;
 
 /** Executes a stage. Must be serializable to json. */
 public interface StageExecutor<T extends ExecutorParameters> {

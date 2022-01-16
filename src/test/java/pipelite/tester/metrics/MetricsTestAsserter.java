@@ -22,64 +22,30 @@ public class MetricsTestAsserter {
   private MetricsTestAsserter() {}
 
   public static void assertCompletedMetrics(
-      TestType testType,
-      PipeliteMetrics metrics,
-      String pipelineName,
-      int processCnt,
-      int immediateRetries,
-      int maximumRetries) {
+      TestType testType, PipeliteMetrics metrics, String pipelineName, int processCnt) {
 
     PipelineMetrics pipelineMetrics = metrics.pipeline(pipelineName);
 
-    if (testType == TestType.PERMANENT_ERROR) {
-      assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(0L);
-      assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(processCnt);
-      assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(0L);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getFailedTimeSeries()))
-          .isEqualTo(processCnt);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getCompletedTimeSeries()))
-          .isEqualTo(0);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getFailedTimeSeries()))
-          .isEqualTo(processCnt);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getSuccessTimeSeries()))
-          .isEqualTo(0);
-    } else if (testType == TestType.NON_PERMANENT_ERROR) {
-      assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(0L);
-      assertThat(pipelineMetrics.stage().getFailedCount())
-          .isIn(processCnt * (1.0 + immediateRetries), processCnt * (1.0 + maximumRetries));
-      assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(0L);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getFailedTimeSeries()))
-          .isEqualTo(processCnt);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getCompletedTimeSeries()))
-          .isEqualTo(0);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getFailedTimeSeries()))
-          .isIn(processCnt * (1.0 + immediateRetries), processCnt * (1.0 + maximumRetries));
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getSuccessTimeSeries()))
-          .isEqualTo(0);
-    } else if (testType == TestType.SUCCESS_AFTER_ONE_NON_PERMANENT_ERROR) {
-      assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(processCnt);
-      assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(processCnt);
-      assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(processCnt);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getFailedTimeSeries()))
-          .isEqualTo(0);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getCompletedTimeSeries()))
-          .isEqualTo(processCnt);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getFailedTimeSeries()))
-          .isEqualTo(processCnt);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getSuccessTimeSeries()))
-          .isEqualTo(processCnt);
-    } else {
-      assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(processCnt);
-      assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(0L);
-      assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(processCnt);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getFailedTimeSeries()))
-          .isEqualTo(0);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getCompletedTimeSeries()))
-          .isEqualTo(processCnt);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getFailedTimeSeries()))
-          .isEqualTo(0);
-      assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getSuccessTimeSeries()))
-          .isEqualTo(processCnt);
-    }
+    // Assuming single stage in process.
+
+    assertThat(pipelineMetrics.process().getCompletedCount())
+        .isEqualTo(processCnt * testType.expectedProcessCompletedCnt());
+    assertThat(pipelineMetrics.process().getFailedCount())
+        .isEqualTo(processCnt * testType.expectedProcessFailedCnt());
+
+    assertThat(pipelineMetrics.stage().getFailedCount())
+        .isEqualTo(processCnt * testType.expectedStageFailedCnt());
+    assertThat(pipelineMetrics.stage().getSuccessCount())
+        .isEqualTo(processCnt * testType.expectedStageSuccessCnt());
+
+    assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getCompletedTimeSeries()))
+        .isEqualTo(processCnt * testType.expectedProcessCompletedCnt());
+    assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getFailedTimeSeries()))
+        .isEqualTo(processCnt * testType.expectedProcessFailedCnt());
+
+    assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getFailedTimeSeries()))
+        .isEqualTo(processCnt * testType.expectedStageFailedCnt());
+    assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getSuccessTimeSeries()))
+        .isEqualTo(processCnt * testType.expectedStageSuccessCnt());
   }
 }

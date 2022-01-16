@@ -12,18 +12,18 @@ package pipelite.tester.process;
 
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.parameters.CmdExecutorParameters;
-import pipelite.tester.TestTypeConfiguration;
+import pipelite.tester.TestType;
 import pipelite.tester.entity.StageEntityAsserter;
 
 public class SingleStageCmdTestProcessConfiguration extends SingleStageTestProcessConfiguration {
 
-  public SingleStageCmdTestProcessConfiguration(TestTypeConfiguration testConfiguration) {
+  public SingleStageCmdTestProcessConfiguration(TestType testType) {
     super(
-        testConfiguration,
+        testType,
         (stageService, pipelineName, processId, stageName) -> {},
         (stageService, pipelineName, processId, stageName) ->
             StageEntityAsserter.assertCompletedCmdStageEntity(
-                stageService, testConfiguration, pipelineName, processId, stageName));
+                stageService, testType, pipelineName, processId, stageName));
   }
 
   @Override
@@ -32,13 +32,11 @@ public class SingleStageCmdTestProcessConfiguration extends SingleStageTestProce
         CmdExecutorParameters.builder();
     executorParamsBuilder.maximumRetries(maximumRetries()).immediateRetries(immediateRetries());
     CmdExecutorParameters executorParams = executorParamsBuilder.build();
-    executorParams.setPermanentErrors(
-        testConfiguration()
-            .nextPermanentErrors(pipelineName(), builder.getProcessId(), stageName()));
+    executorParams.setPermanentErrors(testType().permanentErrors());
     builder
         .execute(stageName())
         .withCmdExecutor(
-            testConfiguration().nextCmd(pipelineName(), builder.getProcessId(), stageName()),
+            testType().nextCmd(pipelineName(), builder.getProcessId(), stageName()),
             executorParams);
   }
 }

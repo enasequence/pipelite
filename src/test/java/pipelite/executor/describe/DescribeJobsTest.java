@@ -10,17 +10,16 @@
  */
 package pipelite.executor.describe;
 
-import org.junit.jupiter.api.Test;
-import pipelite.configuration.ServiceConfiguration;
-import pipelite.service.InternalErrorService;
-import pipelite.stage.executor.StageExecutorResult;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.Mockito.mock;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.Mockito.mock;
+import org.junit.jupiter.api.Test;
+import pipelite.configuration.ServiceConfiguration;
+import pipelite.service.InternalErrorService;
+import pipelite.stage.executor.StageExecutorResult;
 
 public class DescribeJobsTest {
 

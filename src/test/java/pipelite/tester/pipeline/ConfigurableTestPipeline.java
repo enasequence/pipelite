@@ -103,18 +103,6 @@ public class ConfigurableTestPipeline<T extends TestProcessConfiguration> implem
     }
   }
 
-  /**
-   * Creates a process without registering the pipeline. The created processes should be executed
-   * explicitly.
-   */
-  public pipelite.process.Process createProcess() {
-    String processId =
-        UniqueStringGenerator.randomProcessId(SingleStageTestProcessConfiguration.class);
-    ProcessBuilder processBuilder = new ProcessBuilder(processId);
-    configureProcess(processBuilder);
-    return processBuilder.build();
-  }
-
   public int createdProcessCount() {
     return createdProcessIds.size();
   }
