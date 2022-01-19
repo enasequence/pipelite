@@ -37,8 +37,8 @@ import pipelite.json.Json;
 public class ExecutorParameters {
 
   public static final Duration DEFAULT_TIMEOUT = Duration.ofDays(7);
-  public static final int DEFAULT_MAX_RETRIES = 0;
-  public static final int DEFAULT_IMMEDIATE_RETRIES = 0;
+  public static final int DEFAULT_MAX_RETRIES = 3;
+  public static final int DEFAULT_IMMEDIATE_RETRIES = 3;
   public static final int DEFAULT_LOG_LINES = 1000;
   public static final Duration DEFAULT_LOG_TIMEOUT = Duration.ofSeconds(10);
 

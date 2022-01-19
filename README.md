@@ -278,14 +278,20 @@ value is not overriden in ```ProcessBuilder```.
 
 ##### Common executor parameters
 
-The following parameters are available for all executors. Please replace '*' below with the executor name (e.g. 'kubernetes').
+The following parameters are available for all executors. Please replace '*' below with the executor name (e.g. '
+kubernetes').
 
-- pipelite.executor.*.saveLog: if true then the stage log will be saved in the database. Default value: true
-- pipelite.executor.*.logLines: the number of last lines from the output file saved in the stage log. Default value: 1000
-- pipelite.executor.*.logTimeout: the maximum wait time for the stage log to become available. Default value: 10
-  seconds
+- pipelite.executor.*.immediateRetries: the maximum number of times a stage will be re-executed immediately in case of a
+  non-permanent error. If immediate retries is larger than maximumRetries it will be set to the same value as
+  maximumRetries. Default value: 3
+- pipelite.executor.*.maximumRetries: the maximum number of times a stage will be re-executed in case of a non-permanent
+  error before it is considered as failed. Default value: 3
 - pipelite.executor.*.permanentErrors: exit codes that are considered permanent errors that will not be retried.
-  
+- pipelite.executor.*.saveLog: if true then the stage log will be saved in the database. Default value: true
+- pipelite.executor.*.logLines: the number of last lines from the output file saved in the stage log. Default value:
+  1000
+- pipelite.executor.*.logTimeout: the maximum wait time for the stage log to become available. Default value: 10 seconds
+
 ##### Kubernetes executor parameters
 
 - pipelite.executor.kubernetes.context: the Kubernetes context.
@@ -296,10 +302,9 @@ The following parameters are available for all executors. Please replace '*' bel
 - pipelite.executor.kubernetes.memoryLimit: the Kubernetes pod memory limit
 
 Kubernetes cluster configuration options are described in
-https://github.com/fabric8io/kubernetes-client#configuring-the-client.
-Be default, the cluster configuration is read from the kubeconfig file in ~/.kube/config.
-The kubeconfig file location can also be given using the system property 'kubeconfig' or
-the environmental variable KUBECONIG.
+https://github.com/fabric8io/kubernetes-client#configuring-the-client. Be default, the cluster configuration is read
+from the kubeconfig file in ~/.kube/config. The kubeconfig file location can also be given using the system property '
+kubeconfig' or the environmental variable KUBECONIG.
 
 Kubernetes cpu and memory requests and limits are described in:
 https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/.

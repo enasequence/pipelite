@@ -10,14 +10,6 @@
  */
 package pipelite.runner.process;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -36,7 +28,17 @@ import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.time.Time;
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
@@ -90,8 +92,13 @@ public class ProcessRunnerPoolTest {
 
   private Process createProcess(Function<StageExecutorRequest, StageExecutorResult> callback) {
     String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    ExecutorParameters executorParams = new ExecutorParameters();
+    executorParams.setMaximumRetries(0);
     Process process =
-        new ProcessBuilder(processId).execute("STAGE1").withAsyncTestExecutor(callback).build();
+        new ProcessBuilder(processId)
+            .execute("STAGE1")
+            .withAsyncTestExecutor(callback, executorParams)
+            .build();
     ProcessEntity processEntity =
         ProcessEntity.createExecution(PIPELINE_NAME, processId, ProcessEntity.DEFAULT_PRIORITY);
     process.setProcessEntity(processEntity);
