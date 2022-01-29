@@ -14,15 +14,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.List;
 import lombok.extern.flogger.Flogger;
 import org.apache.commons.exec.*;
-import org.apache.commons.text.StringTokenizer;
-import org.apache.commons.text.matcher.StringMatcher;
-import org.apache.commons.text.matcher.StringMatcherFactory;
 import pipelite.exception.PipeliteException;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.CmdExecutorParameters;
@@ -38,23 +33,14 @@ public class LocalCmdRunner implements CmdRunner {
 
   @Override
   public StageExecutorResult execute(String cmd) {
-    if (cmd == null) {
-      throw new PipeliteException("No command to execute");
-    }
-
-    StringTokenizer st = new StringTokenizer(cmd);
-    StringMatcher sm = StringMatcherFactory.INSTANCE.quoteMatcher();
-    st.setQuoteMatcher(sm);
-    List<String> args = st.getTokenList();
-    if (args.isEmpty()) {
+    if (cmd == null || cmd.isEmpty()) {
       throw new PipeliteException("No command to execute");
     }
 
     try {
-      CommandLine commandLine = new CommandLine(args.get(0));
-      if (args.size() > 1) {
-        commandLine.addArguments(args.subList(1, args.size()).toArray(new String[0]), false);
-      }
+      CommandLine commandLine = new CommandLine("/bin/sh");
+      commandLine.addArgument("-c");
+      commandLine.addArgument(cmd, false);
 
       OutputStream stdoutStream = new ByteArrayOutputStream();
       OutputStream stderrStream = new ByteArrayOutputStream();
@@ -92,16 +78,6 @@ public class LocalCmdRunner implements CmdRunner {
       CmdRunnerUtils.write(str, new FileOutputStream(path.toFile()));
     } catch (IOException ex) {
       throw new PipeliteException("Failed to write file " + path, ex);
-    }
-  }
-
-  @Override
-  public void deleteFile(Path path) {
-    log.atInfo().log("Deleting file %s", path);
-    try {
-      Files.delete(path);
-    } catch (IOException ex) {
-      throw new PipeliteException("Failed to delete file " + path, ex);
     }
   }
 

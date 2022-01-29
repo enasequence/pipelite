@@ -20,6 +20,7 @@ import lombok.experimental.SuperBuilder;
 import pipelite.configuration.ExecutorConfiguration;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.cmd.OutputFileResolver;
+import pipelite.stage.parameters.cmd.OutputFileRetentionPolicy;
 import pipelite.stage.parameters.cmd.WorkDirResolver;
 
 @Data
@@ -45,6 +46,9 @@ public class CmdExecutorParameters extends ExecutorParameters {
    */
   private String workDir;
 
+  /** The stage output file retention policy. */
+  private OutputFileRetentionPolicy outFileRetention;
+
   public void applyDefaults(ExecutorConfiguration executorConfiguration) {
     CmdExecutorParameters defaultParams = executorConfiguration.getCmd();
     if (defaultParams == null) {
@@ -54,6 +58,8 @@ public class CmdExecutorParameters extends ExecutorParameters {
     applyDefault(this::getHost, this::setHost, defaultParams::getHost);
     applyDefault(this::getUser, this::setUser, defaultParams::getUser);
     applyDefault(this::getWorkDir, this::setWorkDir, defaultParams::getWorkDir);
+    applyDefault(
+        this::getOutFileRetention, this::setOutFileRetention, defaultParams::getOutFileRetention);
     if (env == null) {
       env = new HashMap<>();
     }

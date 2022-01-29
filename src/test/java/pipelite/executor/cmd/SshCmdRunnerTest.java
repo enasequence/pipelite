@@ -15,18 +15,37 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.PipeliteTestConfigWithServices;
 import pipelite.UniqueStringGenerator;
+import pipelite.configuration.properties.SshTestConfiguration;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
-public class LocalCmdRunnerTest {
+@SpringBootTest(
+    classes = PipeliteTestConfigWithServices.class,
+    properties = {"pipelite.service.force=true", "pipelite.service.name=SshCmdRunnerTest"})
+@ActiveProfiles("test")
+public class SshCmdRunnerTest {
 
   private static final String TMP_DIR = "/tmp";
 
+  @Autowired SshTestConfiguration sshTestConfiguration;
+
+  private SshCmdRunner cmdRunner() {
+    return new SshCmdRunner(
+        CmdExecutorParameters.builder()
+            .host(sshTestConfiguration.getHost())
+            .user(sshTestConfiguration.getUser())
+            .build());
+  }
+
   @Test
   public void writeFileAndReadFile() {
-    LocalCmdRunner cmdRunner = new LocalCmdRunner(CmdExecutorParameters.builder().build());
+    SshCmdRunner cmdRunner = cmdRunner();
     String str = "test";
 
     // Create file in temp dir
@@ -45,7 +64,7 @@ public class LocalCmdRunnerTest {
 
   @Test
   public void createFileAndFileExistsAndDeleteFile() {
-    LocalCmdRunner cmdRunner = new LocalCmdRunner(CmdExecutorParameters.builder().build());
+    SshCmdRunner cmdRunner = cmdRunner();
 
     // Create file in temp dir
     String fileName = UniqueStringGenerator.id();
@@ -61,7 +80,7 @@ public class LocalCmdRunnerTest {
 
   @Test
   public void createDirAndDirExists() {
-    LocalCmdRunner cmdRunner = new LocalCmdRunner(CmdExecutorParameters.builder().build());
+    SshCmdRunner cmdRunner = cmdRunner();
 
     // Create directory in temp dir
     String dirName = UniqueStringGenerator.id();
@@ -73,7 +92,7 @@ public class LocalCmdRunnerTest {
 
   @Test
   public void echo() {
-    LocalCmdRunner cmdRunner = new LocalCmdRunner(CmdExecutorParameters.builder().build());
+    SshCmdRunner cmdRunner = cmdRunner();
     StageExecutorResult result = cmdRunner.execute("echo test");
     assertThat(result.isError()).isFalse();
     assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
@@ -82,7 +101,7 @@ public class LocalCmdRunnerTest {
 
   @Test
   public void unknownCommand() {
-    LocalCmdRunner cmdRunner = new LocalCmdRunner(CmdExecutorParameters.builder().build());
+    SshCmdRunner cmdRunner = cmdRunner();
     StageExecutorResult result = cmdRunner.execute(UniqueStringGenerator.id());
     assertThat(result.isError()).isTrue();
     assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isNotEqualTo("0");

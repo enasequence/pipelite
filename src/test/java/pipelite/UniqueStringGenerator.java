@@ -34,7 +34,7 @@ public class UniqueStringGenerator {
     return cls.getSimpleName() + "-stage-" + id();
   }
 
-  private static String id() {
+  public static String id() {
     return UUID.randomUUID().toString();
   }
 }

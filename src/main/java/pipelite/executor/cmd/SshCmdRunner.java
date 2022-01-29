@@ -106,20 +106,6 @@ public class SshCmdRunner implements CmdRunner {
     }
   }
 
-  @Override
-  public void deleteFile(Path path) {
-    log.atInfo().log("Deleting file %s", path);
-    try (ClientSession session = createSession(executorParams)) {
-      authSession(session);
-      try (ClientChannel channel = session.createExecChannel("rm -f " + path, null, null)) {
-        channel.open().verify(SSH_VERIFY_TIMEOUT, TimeUnit.SECONDS);
-        channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), SSH_VERIFY_TIMEOUT);
-      }
-    } catch (IOException ex) {
-      throw new PipeliteException("Failed to delete file " + path, ex);
-    }
-  }
-
   private ClientSession createSession(CmdExecutorParameters executorParams) throws IOException {
     String user =
         executorParams.getUser() != null && !executorParams.getUser().isEmpty()

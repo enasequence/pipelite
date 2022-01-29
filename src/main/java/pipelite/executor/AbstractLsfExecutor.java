@@ -13,6 +13,8 @@ package pipelite.executor;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.flogger.FluentLogger;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -41,6 +43,7 @@ import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.SharedLsfExecutorParameters;
+import pipelite.stage.parameters.cmd.OutputFileRetentionPolicy;
 import pipelite.time.Time;
 
 /** Executes a command using LSF. */
@@ -56,7 +59,6 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
   private static final Duration JOB_RECOVERY_TIMEOUT = Duration.ofMinutes(10);
   private static final Duration JOB_RECOVERY_POLL_FREQUENCY = Duration.ofSeconds(5);
 
-  private static final String MKDIR_CMD = "mkdir -p ";
   protected static final String BSUB_CMD = "bsub";
   private static final String BKILL_CMD = "bkill ";
   private static final String BJOBS_CMD =
@@ -131,8 +133,8 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
 
   @Override
   protected void prepareAsyncSubmit(StageExecutorRequest request) {
-    StageExecutorResult result = createWorkDir(request);
-    if (result.isError()) {
+    Path workDir = CmdExecutorParameters.getWorkDir(request, getExecutorParams());
+    if (!getCmdRunner().createDir(workDir)) {
       throw new PipeliteException("Failed to create LSF work dir");
     }
     // Reset to allow execution retry.
@@ -173,6 +175,11 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
     }
 
     if (!getExecutorParams().isSaveLog() || readOutFile(request)) {
+      OutputFileRetentionPolicy policy = getExecutorParams().getOutFileRetention();
+      if (OutputFileRetentionPolicy.isDelete(policy, pollResult)) {
+        logContext(log.atFine(), request).log("Deleting output file: " + outFile);
+        getCmdRunner().deleteFile(Paths.get(outFile));
+      }
       return pollResult;
     }
     return StageExecutorResult.active();
@@ -338,14 +345,6 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
     }
   }
 
-  private StageExecutorResult createWorkDir(StageExecutorRequest request) {
-    return RetryTask.DEFAULT.execute(
-        r ->
-            getCmdRunner()
-                .execute(
-                    MKDIR_CMD + CmdExecutorParameters.getWorkDir(request, getExecutorParams())));
-  }
-
   /**
    * Read the output file at end job execution.
    *
@@ -368,7 +367,7 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
     }
 
     // Check if the out file exists.
-    if (!outFileExists(outFile)) {
+    if (!getCmdRunner().fileExists(Paths.get(outFile))) {
       // LSF output file is not available yet
       return false;
     }
@@ -387,14 +386,6 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
       log.atSevere().withCause(ex).log("Failed to read LSF out file: %s", outFile);
       return null;
     }
-  }
-
-  private boolean outFileExists(String outFile) {
-    // Check if the out file exists. The file may not be immediately available after the job
-    // execution finishes.
-    StageExecutorResult result =
-        RetryTask.DEFAULT.execute(r -> getCmdRunner().execute("sh -c 'test -f " + outFile + "'"));
-    return result.isSuccess();
   }
 
   public static StageExecutorResult writeFileToStdout(
