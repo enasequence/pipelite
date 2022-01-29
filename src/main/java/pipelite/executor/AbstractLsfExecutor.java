@@ -43,7 +43,7 @@ import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.SharedLsfExecutorParameters;
-import pipelite.stage.parameters.cmd.OutputFileRetentionPolicy;
+import pipelite.stage.parameters.cmd.LogFileRetentionPolicy;
 import pipelite.time.Time;
 
 /** Executes a command using LSF. */
@@ -88,8 +88,8 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
   private String cmd;
 
   /**
-   * The LSF output file. Set during submit. Serialize in database to continue execution after
-   * service restart.
+   * The file containing the concatenated stdout and stderr output of the stage execution. Set
+   * during submit. Serialize in database to continue execution after service restart.
    */
   private String outFile;
 
@@ -145,7 +145,7 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
 
   @Override
   protected StageExecutorResult submit(StageExecutorRequest request) {
-    outFile = CmdExecutorParameters.getOutFile(request, getExecutorParams()).toString();
+    outFile = CmdExecutorParameters.getLogFile(request, getExecutorParams()).toString();
     StageExecutorResult submitResult =
         RetryTask.DEFAULT.execute(r -> getCmdRunner().execute(getSubmitCmd(request)));
     if (submitResult.isError()) {
@@ -175,8 +175,8 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
     }
 
     if (!getExecutorParams().isSaveLog() || readOutFile(request)) {
-      OutputFileRetentionPolicy policy = getExecutorParams().getOutFileRetention();
-      if (OutputFileRetentionPolicy.isDelete(policy, pollResult)) {
+      LogFileRetentionPolicy logFileRetention = getExecutorParams().getLogRetention();
+      if (LogFileRetentionPolicy.isDelete(logFileRetention, pollResult)) {
         logContext(log.atFine(), request).log("Deleting output file: " + outFile);
         getCmdRunner().deleteFile(Paths.get(outFile));
       }
@@ -353,7 +353,7 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
    *     exceeded
    */
   protected boolean readOutFile(StageExecutorRequest request) {
-    logContext(log.atFine(), request).log("Reading LSF out file: %s", outFile);
+    logContext(log.atFine(), request).log("Reading LSF output file: %s", outFile);
 
     // The LSF output file may not be immediately available after the job execution finishes.
 
@@ -380,21 +380,11 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
   private static String readOutFile(
       CmdRunner cmdRunner, String outFile, CmdExecutorParameters executorParams) {
     try {
-      StageExecutorResult result = writeFileToStdout(cmdRunner, outFile, executorParams);
-      return result.getStageLog();
+      return cmdRunner.readFile(Paths.get(outFile), executorParams.getLogLines());
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Failed to read LSF out file: %s", outFile);
       return null;
     }
-  }
-
-  public static StageExecutorResult writeFileToStdout(
-      CmdRunner cmdRunner, String stdoutFile, CmdExecutorParameters executorParams) {
-    // Execute through sh required by LocalRunner to direct output to stdout/err.
-    return RetryTask.DEFAULT.execute(
-        r ->
-            cmdRunner.execute(
-                "sh -c 'tail -n " + executorParams.getLogLines() + " " + stdoutFile + "'"));
   }
 
   public static String extractSubmittedJobIdFromBsubOutput(String str) {
@@ -518,7 +508,7 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
    * extracted.
    */
   public static StageExecutorResult extractResultFromOutFile(CmdRunner cmdRunner, String outFile) {
-    log.atWarning().log("Checking LSF job result from out file: " + outFile);
+    log.atWarning().log("Checking LSF job result from output file: " + outFile);
 
     // Extract the job execution result from the out file. The format
     // is the same as in the bhist result.

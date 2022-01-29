@@ -12,17 +12,11 @@ package pipelite.executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
 import pipelite.exception.PipeliteException;
-import pipelite.executor.cmd.CmdRunner;
-import pipelite.executor.cmd.LocalCmdRunner;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorRequest;
-import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.SharedLsfExecutorParameters;
 
@@ -64,20 +58,7 @@ public class AbstractLsfExecutorFilesTest {
             .build();
     CmdExecutorParameters params = CmdExecutorParameters.builder().workDir("WORKDIR").build();
 
-    assertThat(CmdExecutorParameters.getOutFile(request, params).toString())
+    assertThat(CmdExecutorParameters.getLogFile(request, params).toString())
         .isEqualTo("WORKDIR/PIPELINE_NAME_PROCESS_ID_STAGE_NAME.out");
-  }
-
-  @Test
-  public void writeFileToStdout() throws IOException {
-    File file = File.createTempFile("pipelite-test", "");
-    file.createNewFile();
-    Files.write(file.toPath(), "test".getBytes());
-
-    CmdRunner cmdRunner = new LocalCmdRunner(CmdExecutorParameters.builder().build());
-    StageExecutorResult result =
-        AbstractLsfExecutor.writeFileToStdout(
-            cmdRunner, file.getAbsolutePath(), CmdExecutorParameters.builder().build());
-    assertThat(result.getStageLog()).isEqualTo("test");
   }
 }

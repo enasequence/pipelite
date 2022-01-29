@@ -320,10 +320,10 @@ https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/.
   with the stage name. Default value: pipelite. Pipelite version 1.* did not support placeholders, suffixed the working
   directory with the placeholder equivalent of pipelite/%PIPELINE%/%PROCESS%/%STAGE% and the default value was the
   placeholder equivalent of pipelite/%PIPELINE%/%PROCESS%/%STAGE%.
-- pipelite.executor.cmd.outFileRetention: depending on the executor the stage execution stdout and stderr may be
-  concatenated into an output file written in the working directory: DELETE_ALWAYS removes the output file after the
-  stage execution has completed, DELETE_SUCCESS removes the output file if the execution completed successfully and
-  DELETE_NEVER does not delete the output file.
+- pipelite.executor.cmd.logRetention: the file retention policy for the concatenated stdout and stderr output of the
+  stage execution that is written in the working directory: DELETE_ALWAYS removes the file after the stage execution has
+  completed, DELETE_SUCCESS removes the file if the execution completes successfully and DELETE_NEVER does not remove
+  the file. Default value: DELETE_NEVER.
 
 ##### Simple LSF executor parameters
 

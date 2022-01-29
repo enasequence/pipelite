@@ -45,7 +45,7 @@ public class LsfExecutorSubmitCmdTest {
             .stage(stage)
             .build();
 
-    String outFile = CmdExecutorParameters.getOutFile(request, params).toString();
+    String outFile = CmdExecutorParameters.getLogFile(request, params).toString();
     String definitionFile = LsfExecutor.getDefinitionFile(request, params);
     executor.setOutFile(outFile);
     executor.setDefinitionFile(definitionFile);

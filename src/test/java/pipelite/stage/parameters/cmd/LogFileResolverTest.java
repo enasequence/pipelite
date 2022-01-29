@@ -19,7 +19,7 @@ import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
-public class OutputFileResolverTest {
+public class LogFileResolverTest {
 
   private static final String PIPELITE_NAME = "TEST_PIPELINE";
   private static final String PROCESS_ID = "TEST_PROCESS";
@@ -36,7 +36,7 @@ public class OutputFileResolverTest {
   public void testDefaultWorkDir() {
     StageExecutorRequest request = request();
     CmdExecutorParameters params = CmdExecutorParameters.builder().build();
-    assertThat(OutputFileResolver.resolve(request, params))
+    assertThat(LogFileResolver.resolve(request, params))
         .isEqualTo("pipelite" + "/" + PIPELITE_NAME + "_" + PROCESS_ID + "_" + STAGE_NAME + ".out");
   }
 
@@ -44,16 +44,16 @@ public class OutputFileResolverTest {
   public void testWithoutSubstitutionsWorkDir() {
     StageExecutorRequest request = request();
     CmdExecutorParameters params = CmdExecutorParameters.builder().workDir("a/b/c/d").build();
-    assertThat(OutputFileResolver.resolve(request, params))
+    assertThat(LogFileResolver.resolve(request, params))
         .isEqualTo("a/b/c/d/" + PIPELITE_NAME + "_" + PROCESS_ID + "_" + STAGE_NAME + ".out");
   }
 
   @Test
-  public void testWitSubstitutionsWorkDir() {
+  public void testWithSubstitutionsWorkDir() {
     StageExecutorRequest request = request();
     CmdExecutorParameters params =
         CmdExecutorParameters.builder().workDir("a/%PIPELINE%/%PROCESS%/%STAGE%").build();
-    assertThat(OutputFileResolver.resolve(request, params))
+    assertThat(LogFileResolver.resolve(request, params))
         .isEqualTo(
             "a/"
                 + PIPELITE_NAME

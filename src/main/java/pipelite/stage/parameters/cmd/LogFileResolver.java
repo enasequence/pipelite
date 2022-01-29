@@ -17,14 +17,14 @@ import java.nio.file.Paths;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
-/** Resolves the output file written to the output directory. */
-public class OutputFileResolver {
+/** Resolves the stage log file written to the working directory. */
+public class LogFileResolver {
 
   public static final String OUT_FILE_SUFFIX = ".out";
 
-  private OutputFileResolver() {}
+  private LogFileResolver() {}
 
-  /** Resolves the output file written to the output directory. */
+  /** Resolves the stage log file written to the working directory. */
   public static String resolve(StageExecutorRequest request, CmdExecutorParameters params) {
     return resolveNoSuffix(request, params) + OUT_FILE_SUFFIX;
   }

@@ -36,7 +36,7 @@ public class LsfExecutorSerializeTest {
 
     executor.setState(AsyncExecutorState.SUBMIT);
     executor.setJobId("test");
-    executor.setOutFile(CmdExecutorParameters.getOutFile(request, null).toString());
+    executor.setOutFile(CmdExecutorParameters.getLogFile(request, null).toString());
     executor.setDefinitionFile(LsfExecutor.getDefinitionFile(request, null));
     String json = Json.serialize(executor);
     assertThat(json)

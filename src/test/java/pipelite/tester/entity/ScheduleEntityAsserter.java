@@ -43,7 +43,7 @@ public class ScheduleEntityAsserter {
       assertThat(scheduleEntity.getStreakFailed()).isEqualTo(0);
       assertThat(scheduleEntity.getStreakCompleted()).isEqualTo(processCnt);
     } else {
-      assertThat(scheduleEntity.getLastFailed()).isAfter(scheduleEntity.getStartTime());
+      assertThat(scheduleEntity.getLastFailed()).isAfterOrEqualTo(scheduleEntity.getStartTime());
       assertThat(scheduleEntity.getLastCompleted()).isNull();
       assertThat(scheduleEntity.getStreakFailed()).isEqualTo(processCnt);
       assertThat(scheduleEntity.getStreakCompleted()).isEqualTo(0);

@@ -22,7 +22,7 @@ import pipelite.executor.task.RetryTask;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.ExecutorParametersValidator;
 import pipelite.stage.parameters.LsfExecutorParameters;
-import pipelite.stage.parameters.cmd.OutputFileResolver;
+import pipelite.stage.parameters.cmd.LogFileResolver;
 
 /** Executes a command using LSF. */
 @Flogger
@@ -87,7 +87,7 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
 
   public static <T extends LsfExecutorParameters> String getDefinitionFile(
       StageExecutorRequest request, T params) {
-    return OutputFileResolver.resolveNoSuffix(request, params) + JOB_FILE_SUFFIX;
+    return LogFileResolver.resolveNoSuffix(request, params) + JOB_FILE_SUFFIX;
   }
 
   public String applyDefinitionParameters(String definition, Map<String, String> params) {

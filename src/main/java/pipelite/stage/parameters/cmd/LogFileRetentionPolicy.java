@@ -12,17 +12,28 @@ package pipelite.stage.parameters.cmd;
 
 import pipelite.stage.executor.StageExecutorResult;
 
-public enum OutputFileRetentionPolicy {
-  /** Delete stage output file after execution has completed. */
+/**
+ * The retention policy for stage log files that contain the stdout and stderr output of the stage
+ * execution.
+ */
+public enum LogFileRetentionPolicy {
+  /** Delete stage log files after stage execution has completed. */
   DELETE_ALWAYS,
-  /** Delete stage output file if execution has completed successfully. */
+  /** Delete stage log files if stage execution has completed successfully. */
   DELETE_SUCCESS,
-  /** Do not delete stage output file. */
+  /** Do not delete stage log files. */
   DELETE_NEVER;
 
-  public static boolean isDelete(OutputFileRetentionPolicy policy, StageExecutorResult result) {
-    return (policy == OutputFileRetentionPolicy.DELETE_ALWAYS
+  /**
+   * Returns true if the stage log file should be deleted.
+   *
+   * @param policy the stage log retention policy
+   * @param result the stage execution result
+   * @return true if the stage log file should be deleted
+   */
+  public static boolean isDelete(LogFileRetentionPolicy policy, StageExecutorResult result) {
+    return (policy == LogFileRetentionPolicy.DELETE_ALWAYS
             && (result.isSuccess() || result.isError()))
-        || (policy == OutputFileRetentionPolicy.DELETE_SUCCESS && result.isSuccess());
+        || (policy == LogFileRetentionPolicy.DELETE_SUCCESS && result.isSuccess());
   }
 }

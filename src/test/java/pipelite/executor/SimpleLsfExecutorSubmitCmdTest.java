@@ -51,7 +51,7 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .processId(PROCESS_ID)
             .stage(stage)
             .build();
-    String outFile = CmdExecutorParameters.getOutFile(request, params).toString();
+    String outFile = CmdExecutorParameters.getLogFile(request, params).toString();
     executor.setOutFile(outFile);
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
@@ -84,7 +84,7 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .processId(PROCESS_ID)
             .stage(stage)
             .build();
-    String outFile = CmdExecutorParameters.getOutFile(request, params).toString();
+    String outFile = CmdExecutorParameters.getLogFile(request, params).toString();
     executor.setOutFile(outFile);
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
@@ -114,7 +114,7 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .processId(PROCESS_ID)
             .stage(stage)
             .build();
-    String outFile = CmdExecutorParameters.getOutFile(request, params).toString();
+    String outFile = CmdExecutorParameters.getLogFile(request, params).toString();
     executor.setOutFile(outFile);
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
@@ -144,7 +144,7 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .processId(PROCESS_ID)
             .stage(stage)
             .build();
-    String outFile = CmdExecutorParameters.getOutFile(request, params).toString();
+    String outFile = CmdExecutorParameters.getLogFile(request, params).toString();
     executor.setOutFile(outFile);
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)

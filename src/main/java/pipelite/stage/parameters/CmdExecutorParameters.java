@@ -19,8 +19,8 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import pipelite.configuration.ExecutorConfiguration;
 import pipelite.stage.executor.StageExecutorRequest;
-import pipelite.stage.parameters.cmd.OutputFileResolver;
-import pipelite.stage.parameters.cmd.OutputFileRetentionPolicy;
+import pipelite.stage.parameters.cmd.LogFileResolver;
+import pipelite.stage.parameters.cmd.LogFileRetentionPolicy;
 import pipelite.stage.parameters.cmd.WorkDirResolver;
 
 @Data
@@ -46,8 +46,8 @@ public class CmdExecutorParameters extends ExecutorParameters {
    */
   private String workDir;
 
-  /** The stage output file retention policy. */
-  private OutputFileRetentionPolicy outFileRetention;
+  /** The stage log file retention policy. */
+  private LogFileRetentionPolicy logRetention;
 
   public void applyDefaults(ExecutorConfiguration executorConfiguration) {
     CmdExecutorParameters defaultParams = executorConfiguration.getCmd();
@@ -58,8 +58,7 @@ public class CmdExecutorParameters extends ExecutorParameters {
     applyDefault(this::getHost, this::setHost, defaultParams::getHost);
     applyDefault(this::getUser, this::setUser, defaultParams::getUser);
     applyDefault(this::getWorkDir, this::setWorkDir, defaultParams::getWorkDir);
-    applyDefault(
-        this::getOutFileRetention, this::setOutFileRetention, defaultParams::getOutFileRetention);
+    applyDefault(this::getLogRetention, this::setLogRetention, defaultParams::getLogRetention);
     if (env == null) {
       env = new HashMap<>();
     }
@@ -80,9 +79,9 @@ public class CmdExecutorParameters extends ExecutorParameters {
     return ExecutorParametersValidator.validatePath(workDir, "workDir");
   }
 
-  /** Returns the output file. */
-  public static Path getOutFile(StageExecutorRequest request, CmdExecutorParameters params) {
-    String outputFile = OutputFileResolver.resolve(request, params);
-    return ExecutorParametersValidator.validatePath(outputFile, "outputFile");
+  /** Returns the stage log file. */
+  public static Path getLogFile(StageExecutorRequest request, CmdExecutorParameters params) {
+    String outputFile = LogFileResolver.resolve(request, params);
+    return ExecutorParametersValidator.validatePath(outputFile, "logFile");
   }
 }
