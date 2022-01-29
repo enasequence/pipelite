@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import org.junit.jupiter.api.Test;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorRequest;
+import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.LsfExecutorParameters;
 
 public class LsfExecutorSubmitCmdTest {
@@ -44,7 +45,7 @@ public class LsfExecutorSubmitCmdTest {
             .stage(stage)
             .build();
 
-    String outFile = AbstractLsfExecutor.getOutFile(request, params);
+    String outFile = CmdExecutorParameters.getOutFile(request, params).toString();
     String definitionFile = LsfExecutor.getDefinitionFile(request, params);
     executor.setOutFile(outFile);
     executor.setDefinitionFile(definitionFile);

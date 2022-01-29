@@ -66,10 +66,10 @@ public class LsfExecutorParameters extends SharedLsfExecutorParameters {
   @Override
   public void validate() {
     super.validate();
-    validateNotNull(definition, "definition");
-    validateNotNull(format, "format");
+    ExecutorParametersValidator.validateNotNull(definition, "definition");
+    ExecutorParametersValidator.validateNotNull(format, "format");
     if (definition != null) {
-      validateUrl(definition, "definition");
+      ExecutorParametersValidator.validateUrl(definition, "definition");
     }
   }
 }

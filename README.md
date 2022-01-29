@@ -315,7 +315,11 @@ https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/.
 - pipelite.executor.cmd.user: the user used to connect to the remote host. Default value: the user who restarted the
   Pipelite service
 - pipelite.executor.cmd.env: the environmental variables passed to the command executor
-- pipelite.executor.cmd.workDir: the working directory where the output file and job definition files are written
+- pipelite.executor.cmd.workDir: the working directory where the output file and job definition files are written.
+  Substitutes the following placeholders: %PIPELINE% with the pipeline name, %PROCESS% with the process id, and %STAGE%
+  with the stage name. Default value: pipelite. Pipelite version 1.* did not support placeholders, suffixed the working
+  directory with the placeholder equivalent of pipelite/%PIPELINE%/%PROCESS%/%STAGE% and the default value was the
+  placeholder equivalent of pipelite/%PIPELINE%/%PROCESS%/%STAGE%.
 
 ##### Simple LSF executor parameters
 

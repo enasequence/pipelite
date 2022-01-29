@@ -10,6 +10,7 @@
  */
 package pipelite.stage.parameters;
 
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Data;
@@ -17,6 +18,9 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import pipelite.configuration.ExecutorConfiguration;
+import pipelite.stage.executor.StageExecutorRequest;
+import pipelite.stage.parameters.cmd.OutputFileResolver;
+import pipelite.stage.parameters.cmd.WorkDirResolver;
 
 @Data
 @NoArgsConstructor
@@ -33,7 +37,12 @@ public class CmdExecutorParameters extends ExecutorParameters {
   /** The environmental variables. */
   private Map<String, String> env;
 
-  /** The working directory where the output file and job definition files are written. */
+  /**
+   * The working directory where job definition files, output files or any other files required for
+   * the job execution are written. The default value is pipelite. The following placeholders can be
+   * used as part of the working directory: %PIPELINE% will be replaced by the pipeline name,
+   * %PROCESS% will be replaced by the process id, %STAGE% will be replaced by the stage name.
+   */
   private String workDir;
 
   public void applyDefaults(ExecutorConfiguration executorConfiguration) {
@@ -55,7 +64,19 @@ public class CmdExecutorParameters extends ExecutorParameters {
   public void validate() {
     super.validate();
     if (workDir != null) {
-      validatePath(workDir, "workDir");
+      ExecutorParametersValidator.validatePath(workDir, "workDir");
     }
+  }
+
+  /** Returns the working directory. */
+  public static Path getWorkDir(StageExecutorRequest request, CmdExecutorParameters params) {
+    String workDir = WorkDirResolver.resolve(request, params);
+    return ExecutorParametersValidator.validatePath(workDir, "workDir");
+  }
+
+  /** Returns the output file. */
+  public static Path getOutFile(StageExecutorRequest request, CmdExecutorParameters params) {
+    String outputFile = OutputFileResolver.resolve(request, params);
+    return ExecutorParametersValidator.validatePath(outputFile, "outputFile");
   }
 }

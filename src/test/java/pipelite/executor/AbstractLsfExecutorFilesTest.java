@@ -47,11 +47,9 @@ public class AbstractLsfExecutorFilesTest {
             .build();
     CmdExecutorParameters params = CmdExecutorParameters.builder().workDir("WORKDIR").build();
 
-    assertThat(AbstractLsfExecutor.getWorkDir(request, params))
-        .isEqualTo(Paths.get("WORKDIR/pipelite/PIPELINE_NAME/PROCESS_ID"));
+    assertThat(CmdExecutorParameters.getWorkDir(request, params)).isEqualTo(Paths.get("WORKDIR"));
 
-    assertThat(AbstractLsfExecutor.getWorkDir(request, null))
-        .isEqualTo(Paths.get("pipelite/PIPELINE_NAME/PROCESS_ID"));
+    assertThat(CmdExecutorParameters.getWorkDir(request, null)).isEqualTo(Paths.get("pipelite"));
   }
 
   @Test
@@ -66,8 +64,8 @@ public class AbstractLsfExecutorFilesTest {
             .build();
     CmdExecutorParameters params = CmdExecutorParameters.builder().workDir("WORKDIR").build();
 
-    assertThat(AbstractLsfExecutor.getOutFile(request, params))
-        .isEqualTo("WORKDIR/pipelite/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.out");
+    assertThat(CmdExecutorParameters.getOutFile(request, params).toString())
+        .isEqualTo("WORKDIR/PIPELINE_NAME_PROCESS_ID_STAGE_NAME.out");
   }
 
   @Test

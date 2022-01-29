@@ -56,7 +56,7 @@ public class AwsBatchExecutorParameters extends ExecutorParameters {
   @Override
   public void validate() {
     super.validate();
-    validateNotNull(queue, "queue");
-    validateNotNull(definition, "definition");
+    ExecutorParametersValidator.validateNotNull(queue, "queue");
+    ExecutorParametersValidator.validateNotNull(definition, "definition");
   }
 }

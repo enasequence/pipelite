@@ -18,6 +18,7 @@ import pipelite.json.Json;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorRequest;
+import pipelite.stage.parameters.CmdExecutorParameters;
 
 public class LsfExecutorSerializeTest {
 
@@ -35,7 +36,7 @@ public class LsfExecutorSerializeTest {
 
     executor.setState(AsyncExecutorState.SUBMIT);
     executor.setJobId("test");
-    executor.setOutFile(AbstractLsfExecutor.getOutFile(request, null));
+    executor.setOutFile(CmdExecutorParameters.getOutFile(request, null).toString());
     executor.setDefinitionFile(LsfExecutor.getDefinitionFile(request, null));
     String json = Json.serialize(executor);
     assertThat(json)
@@ -44,15 +45,15 @@ public class LsfExecutorSerializeTest {
                 + "  \"state\" : \"SUBMIT\",\n"
                 + "  \"jobId\" : \"test\",\n"
                 + "  \"cmd\" : \"echo test\",\n"
-                + "  \"outFile\" : \"pipelite/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.out\",\n"
-                + "  \"definitionFile\" : \"pipelite/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.job\"\n"
+                + "  \"outFile\" : \"pipelite/PIPELINE_NAME_PROCESS_ID_STAGE_NAME.out\",\n"
+                + "  \"definitionFile\" : \"pipelite/PIPELINE_NAME_PROCESS_ID_STAGE_NAME.job\"\n"
                 + "}");
     LsfExecutor deserializedLsfExecutor = Json.deserialize(json, LsfExecutor.class);
     assertThat(deserializedLsfExecutor.getCmd()).isEqualTo(cmd);
     assertThat(deserializedLsfExecutor.getJobId()).isEqualTo("test");
     assertThat(deserializedLsfExecutor.getOutFile())
-        .isEqualTo("pipelite/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.out");
+        .isEqualTo("pipelite/PIPELINE_NAME_PROCESS_ID_STAGE_NAME.out");
     assertThat(deserializedLsfExecutor.getDefinitionFile())
-        .isEqualTo("pipelite/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.job");
+        .isEqualTo("pipelite/PIPELINE_NAME_PROCESS_ID_STAGE_NAME.job");
   }
 }

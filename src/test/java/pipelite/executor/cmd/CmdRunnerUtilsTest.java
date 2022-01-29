@@ -17,7 +17,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import pipelite.stage.parameters.ExecutorParameters;
+import pipelite.stage.parameters.ExecutorParametersValidator;
 
 public class CmdRunnerUtilsTest {
 
@@ -38,7 +38,9 @@ public class CmdRunnerUtilsTest {
   public void readUrl() {
     // https
 
-    assertThat(CmdRunnerUtils.read(ExecutorParameters.validateUrl("https://www.ebi.ac.uk", "test")))
+    assertThat(
+            CmdRunnerUtils.read(
+                ExecutorParametersValidator.validateUrl("https://www.ebi.ac.uk", "test")))
         .contains("EMBL-EBI");
 
     // resource
@@ -52,7 +54,7 @@ public class CmdRunnerUtilsTest {
             + "command: echo test\n";
     assertThat(
             CmdRunnerUtils.read(
-                ExecutorParameters.validateUrl("pipelite/executor/lsf.yaml", "test")))
+                ExecutorParametersValidator.validateUrl("pipelite/executor/lsf.yaml", "test")))
         .isEqualTo(text);
   }
 

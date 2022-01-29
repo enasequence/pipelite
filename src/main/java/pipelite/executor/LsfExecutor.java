@@ -20,8 +20,9 @@ import lombok.extern.flogger.Flogger;
 import pipelite.executor.cmd.CmdRunnerUtils;
 import pipelite.executor.task.RetryTask;
 import pipelite.stage.executor.StageExecutorRequest;
-import pipelite.stage.parameters.ExecutorParameters;
+import pipelite.stage.parameters.ExecutorParametersValidator;
 import pipelite.stage.parameters.LsfExecutorParameters;
+import pipelite.stage.parameters.cmd.OutputFileResolver;
 
 /** Executes a command using LSF. */
 @Flogger
@@ -69,7 +70,7 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
     super.prepareAsyncSubmit(request);
     definitionFile = getDefinitionFile(request, getExecutorParams());
     URL definitionUrl =
-        ExecutorParameters.validateUrl(getExecutorParams().getDefinition(), "definition");
+        ExecutorParametersValidator.validateUrl(getExecutorParams().getDefinition(), "definition");
     final String definition =
         applyDefinitionParameters(
             CmdRunnerUtils.read(definitionUrl), getExecutorParams().getParameters());
@@ -85,10 +86,8 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
   }
 
   public static <T extends LsfExecutorParameters> String getDefinitionFile(
-      StageExecutorRequest context, T params) {
-    return getWorkDir(context, params)
-        .resolve(context.getStage().getStageName() + JOB_FILE_SUFFIX)
-        .toString();
+      StageExecutorRequest request, T params) {
+    return OutputFileResolver.resolveNoSuffix(request, params) + JOB_FILE_SUFFIX;
   }
 
   public String applyDefinitionParameters(String definition, Map<String, String> params) {

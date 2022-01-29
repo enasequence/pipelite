@@ -13,8 +13,6 @@ package pipelite.executor;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.flogger.FluentLogger;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -42,7 +40,6 @@ import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.CmdExecutorParameters;
-import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.stage.parameters.SharedLsfExecutorParameters;
 import pipelite.time.Time;
 
@@ -59,7 +56,6 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
   private static final Duration JOB_RECOVERY_TIMEOUT = Duration.ofMinutes(10);
   private static final Duration JOB_RECOVERY_POLL_FREQUENCY = Duration.ofSeconds(5);
 
-  private static final String OUT_FILE_SUFFIX = ".out";
   private static final String MKDIR_CMD = "mkdir -p ";
   protected static final String BSUB_CMD = "bsub";
   private static final String BKILL_CMD = "bkill ";
@@ -147,7 +143,7 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
 
   @Override
   protected StageExecutorResult submit(StageExecutorRequest request) {
-    outFile = getOutFile(request, getExecutorParams());
+    outFile = CmdExecutorParameters.getOutFile(request, getExecutorParams()).toString();
     StageExecutorResult submitResult =
         RetryTask.DEFAULT.execute(r -> getCmdRunner().execute(getSubmitCmd(request)));
     if (submitResult.isError()) {
@@ -344,7 +340,10 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
 
   private StageExecutorResult createWorkDir(StageExecutorRequest request) {
     return RetryTask.DEFAULT.execute(
-        r -> getCmdRunner().execute(MKDIR_CMD + getWorkDir(request, getExecutorParams())));
+        r ->
+            getCmdRunner()
+                .execute(
+                    MKDIR_CMD + CmdExecutorParameters.getWorkDir(request, getExecutorParams())));
   }
 
   /**
@@ -543,36 +542,8 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
     cmd.append(argument);
   }
 
-  public static <T extends CmdExecutorParameters> Path getWorkDir(
-      StageExecutorRequest request, T params) {
-    Path path;
-    if (params != null && params.getWorkDir() != null) {
-      path =
-          ExecutorParameters.validatePath(params.getWorkDir(), "workDir")
-              .resolve("pipelite")
-              .normalize();
-    } else {
-      path = Paths.get("pipelite");
-    }
-    return path.resolve(request.getPipelineName()).resolve(request.getProcessId());
-  }
-
   public void setOutFile(String outFile) {
     this.outFile = outFile;
-  }
-
-  /**
-   * Returns the output file in the working directory for stdout and stderr.
-   *
-   * @param request the pipeline name
-   * @param params the execution parameters
-   * @return the output file path
-   */
-  public static <T extends CmdExecutorParameters> String getOutFile(
-      StageExecutorRequest request, T params) {
-    return getWorkDir(request, params)
-        .resolve(request.getStage().getStageName() + OUT_FILE_SUFFIX)
-        .toString();
   }
 
   /**
