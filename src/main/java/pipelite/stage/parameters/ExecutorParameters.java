@@ -24,6 +24,8 @@ import lombok.experimental.SuperBuilder;
 import lombok.extern.flogger.Flogger;
 import pipelite.configuration.ExecutorConfiguration;
 import pipelite.json.Json;
+import pipelite.stage.parameters.cmd.LogFileRetentionPolicy;
+import pipelite.stage.parameters.cmd.LogFileSavePolicy;
 
 /** Parameters shared by all executors. */
 @Data
@@ -50,13 +52,16 @@ public class ExecutorParameters {
   /** The permanent error exit codes. Permanent errors are never retried. */
   @Singular protected List<Integer> permanentErrors;
 
-  /** If true then the stage log will be saved in the database. */
-  @Builder.Default private boolean saveLog = true;
+  /** The stage log file save policy in the database. */
+  private LogFileSavePolicy logSave;
 
-  /** The number of last lines from the output file saved in the stage log. */
+  /** The stage log file retention policy in the working directory. */
+  private LogFileRetentionPolicy logRetention;
+
+  /** The number of last lines from the stage log file saved in the database. */
   @Builder.Default private int logLines = DEFAULT_LOG_LINES;
 
-  /** The maximum wait time for the stage log to become available. */
+  /** The maximum wait time for the stage log file to become available. */
   @Builder.Default private Duration logTimeout = DEFAULT_LOG_TIMEOUT;
 
   public static <T> void applyDefault(
@@ -105,7 +110,8 @@ public class ExecutorParameters {
     applyDefault(this::getTimeout, this::setTimeout, params::getTimeout);
     applyDefault(this::getMaximumRetries, this::setMaximumRetries, params::getMaximumRetries);
     applyDefault(this::getImmediateRetries, this::setImmediateRetries, params::getImmediateRetries);
-    applyDefault(this::isSaveLog, this::setSaveLog, params::isSaveLog);
+    applyDefault(this::getLogSave, this::setLogSave, params::getLogSave);
+    applyDefault(this::getLogRetention, this::setLogRetention, params::getLogRetention);
     applyDefault(this::getLogLines, this::setLogLines, params::getLogLines);
     applyDefault(this::getLogTimeout, this::setLogTimeout, params::getLogTimeout);
 

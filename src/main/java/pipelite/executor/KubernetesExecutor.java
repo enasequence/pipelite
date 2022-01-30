@@ -166,7 +166,7 @@ public class KubernetesExecutor
     }
 
     try (KubernetesClient client = kubernetesClient(context)) {
-      if (getExecutorParams().isSaveLog()) {
+      if (isSaveLogFile(result)) {
         List<Pod> pods =
             client.pods().inNamespace(namespace).withLabel("job-name", jobId).list().getItems();
         Pod pod = lastPodToStart(pods);

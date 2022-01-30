@@ -43,7 +43,6 @@ import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.SharedLsfExecutorParameters;
-import pipelite.stage.parameters.cmd.LogFileRetentionPolicy;
 import pipelite.time.Time;
 
 /** Executes a command using LSF. */
@@ -174,9 +173,8 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
       pollTimeout = ZonedDateTime.now().plus(getExecutorParams().getLogTimeout());
     }
 
-    if (!getExecutorParams().isSaveLog() || readOutFile(request)) {
-      LogFileRetentionPolicy logFileRetention = getExecutorParams().getLogRetention();
-      if (LogFileRetentionPolicy.isDelete(logFileRetention, pollResult)) {
+    if (!isSaveLogFile(pollResult) || readOutFile(request)) {
+      if (isDeleteLogFile(pollResult)) {
         logContext(log.atFine(), request).log("Deleting output file: " + outFile);
         getCmdRunner().deleteFile(Paths.get(outFile));
       }

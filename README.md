@@ -287,7 +287,13 @@ kubernetes').
 - pipelite.executor.*.maximumRetries: the maximum number of times a stage will be re-executed in case of a non-permanent
   error before it is considered as failed. Default value: 3
 - pipelite.executor.*.permanentErrors: exit codes that are considered permanent errors that will not be retried.
-- pipelite.executor.*.saveLog: if true then the stage log will be saved in the database. Default value: true
+- pipelite.executor.*.logSave: the concatenated stdout and stderr output of the stage execution can be saved into the
+  pipelite database: ALWAYS saves the output, ERROR saves the output if the stage execution failed, NEVER does not save
+  the output. Default value: ERROR.
+- pipelite.executor.*.logRetention: Some executors save the stdout and stderr output of the stage execution to a working
+  directory. These files can be kept or deleted: ALWAYS keeps the file, ERROR keeps the file if the stage execution
+  failed, NEVER deletes the file. If the file is not available immediately after stage execution it may not get deleted.
+  Default value: ALWAYS.
 - pipelite.executor.*.logLines: the number of last lines from the output file saved in the stage log. Default value:
   1000
 - pipelite.executor.*.logTimeout: the maximum wait time for the stage log to become available. Default value: 10 seconds
@@ -320,10 +326,6 @@ https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/.
   with the stage name. Default value: pipelite. Pipelite version 1.* did not support placeholders, suffixed the working
   directory with the placeholder equivalent of pipelite/%PIPELINE%/%PROCESS%/%STAGE% and the default value was the
   placeholder equivalent of pipelite/%PIPELINE%/%PROCESS%/%STAGE%.
-- pipelite.executor.cmd.logRetention: the file retention policy for the concatenated stdout and stderr output of the
-  stage execution that is written in the working directory: DELETE_ALWAYS removes the file after the stage execution has
-  completed, DELETE_SUCCESS removes the file if the execution completes successfully and DELETE_NEVER does not remove
-  the file. Default value: DELETE_NEVER.
 
 ##### Simple LSF executor parameters
 

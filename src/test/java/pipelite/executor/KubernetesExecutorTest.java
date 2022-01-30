@@ -29,6 +29,7 @@ import pipelite.service.StageService;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
+import pipelite.stage.parameters.cmd.LogFileSavePolicy;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
@@ -92,6 +93,7 @@ public class KubernetesExecutorTest {
         KubernetesExecutorParameters.builder()
             .namespace(testConfiguration.getNamespace())
             .timeout(Duration.ofSeconds(30))
+            .logSave(LogFileSavePolicy.ALWAYS)
             .build());
 
     AsyncExecutorTestHelper.testExecute(
@@ -120,6 +122,7 @@ public class KubernetesExecutorTest {
         KubernetesExecutorParameters.builder()
             .namespace(testConfiguration.getNamespace())
             .timeout(Duration.ofSeconds(30))
+            .logSave(LogFileSavePolicy.ALWAYS)
             .build());
 
     AsyncExecutorTestHelper.testExecute(

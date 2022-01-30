@@ -13,35 +13,34 @@ package pipelite.stage.parameters.cmd;
 import pipelite.stage.executor.StageExecutorResult;
 
 /**
- * The retention policy for stage log files that contain the stdout and stderr output of the stage
- * execution.
+ * The policy for saving stage log files that contain the stdout and stderr output of the stage
+ * execution in the pipelite database.
  */
-public enum LogFileRetentionPolicy {
-  /** Keep the log file. */
+public enum LogFileSavePolicy {
+  /** Save the log file. */
   ALWAYS,
-  /** Keep the log file if the stage execution failed. */
+  /** Save the log file if the stage execution failed. */
   ERROR,
-  /** Delete the log file. */
+  /** Do not save the log file. */
   NEVER;
 
   /**
-   * Returns true if the stage log file should be deleted.
+   * Returns true if the stage log file should be saved.
    *
-   * @param policy the stage log file retention policy. If null then defaults to ALWAYS.
+   * @param policy the stage log file save policy. If null then defaults to SAVE_ERROR.
    * @param result the stage execution result
-   * @return true if the stage log file should be deleted
+   * @return true if the stage log file should be save
    */
-  public static boolean isDelete(LogFileRetentionPolicy policy, StageExecutorResult result) {
+  public static boolean isSave(LogFileSavePolicy policy, StageExecutorResult result) {
     if (policy == null) {
-      policy = LogFileRetentionPolicy.ALWAYS;
+      policy = LogFileSavePolicy.ERROR;
     }
     switch (policy) {
-      case NEVER:
+      case ALWAYS:
         return true;
       case ERROR:
-        return !result.isError();
+        return result.isError();
       default:
-        // ALWAYS
         return false;
     }
   }

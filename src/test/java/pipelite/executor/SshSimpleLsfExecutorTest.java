@@ -24,6 +24,7 @@ import pipelite.service.StageService;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
+import pipelite.stage.parameters.cmd.LogFileSavePolicy;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
@@ -43,6 +44,7 @@ public class SshSimpleLsfExecutorTest {
             .host(lsfTestConfiguration.getHost())
             .workDir(lsfTestConfiguration.getWorkDir())
             .timeout(Duration.ofSeconds(30))
+            .logSave(LogFileSavePolicy.ALWAYS)
             .build());
 
     AsyncExecutorTestHelper.testExecute(
@@ -71,6 +73,7 @@ public class SshSimpleLsfExecutorTest {
             .host(lsfTestConfiguration.getHost())
             .workDir(lsfTestConfiguration.getWorkDir())
             .timeout(Duration.ofSeconds(30))
+            .logSave(LogFileSavePolicy.ALWAYS)
             .build());
 
     AsyncExecutorTestHelper.testExecute(

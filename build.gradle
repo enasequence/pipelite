@@ -11,7 +11,7 @@ plugins {
 }
 
 group = 'pipelite'
-version = '2.0.1'
+version = '2.0.2'
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
 

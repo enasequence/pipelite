@@ -108,7 +108,6 @@ public class StageEntityAsserter {
                                 .collect(Collectors.toList()))
                         + " ],\n"
                     : "")
-                + "  \"saveLog\" : true,\n"
                 + "  \"logLines\" : 1000,\n"
                 + "  \"logTimeout\" : 10000,\n"
                 + "  \"host\" : \""
@@ -154,7 +153,6 @@ public class StageEntityAsserter {
                                 .collect(Collectors.toList()))
                         + " ],\n"
                     : "")
-                + "  \"saveLog\" : true,\n"
                 + "  \"logLines\" : 1000,\n"
                 + "  \"logTimeout\" : 10000,\n"
                 + "  \"namespace\" : \""
@@ -192,7 +190,6 @@ public class StageEntityAsserter {
                                 .collect(Collectors.toList()))
                         + " ],\n"
                     : "")
-                + "  \"saveLog\" : true,\n"
                 + "  \"logLines\" : 1000,\n"
                 + "  \"logTimeout\" : 10000\n"
                 + "}");

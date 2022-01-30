@@ -20,7 +20,6 @@ import lombok.experimental.SuperBuilder;
 import pipelite.configuration.ExecutorConfiguration;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.cmd.LogFileResolver;
-import pipelite.stage.parameters.cmd.LogFileRetentionPolicy;
 import pipelite.stage.parameters.cmd.WorkDirResolver;
 
 @Data
@@ -45,9 +44,6 @@ public class CmdExecutorParameters extends ExecutorParameters {
    * %PROCESS% will be replaced by the process id, %STAGE% will be replaced by the stage name.
    */
   private String workDir;
-
-  /** The stage log file retention policy. */
-  private LogFileRetentionPolicy logRetention;
 
   public void applyDefaults(ExecutorConfiguration executorConfiguration) {
     CmdExecutorParameters defaultParams = executorConfiguration.getCmd();

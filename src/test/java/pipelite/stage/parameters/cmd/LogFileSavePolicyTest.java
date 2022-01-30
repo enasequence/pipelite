@@ -11,12 +11,12 @@
 package pipelite.stage.parameters.cmd;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static pipelite.stage.parameters.cmd.LogFileRetentionPolicy.*;
+import static pipelite.stage.parameters.cmd.LogFileSavePolicy.*;
 
 import org.junit.jupiter.api.Test;
 import pipelite.stage.executor.StageExecutorResult;
 
-public class LogFileRetentionPolicyTest {
+public class LogFileSavePolicyTest {
 
   private StageExecutorResult error() {
     return StageExecutorResult.error();
@@ -28,13 +28,13 @@ public class LogFileRetentionPolicyTest {
 
   @Test
   public void test() {
-    assertThat(isDelete(ALWAYS, error())).isFalse();
-    assertThat(isDelete(ALWAYS, success())).isFalse();
+    assertThat(isSave(ALWAYS, error())).isTrue();
+    assertThat(isSave(ALWAYS, success())).isTrue();
 
-    assertThat(isDelete(ERROR, error())).isFalse();
-    assertThat(isDelete(ERROR, success())).isTrue();
+    assertThat(isSave(ERROR, error())).isTrue();
+    assertThat(isSave(ERROR, success())).isFalse();
 
-    assertThat(isDelete(NEVER, error())).isTrue();
-    assertThat(isDelete(NEVER, success())).isTrue();
+    assertThat(isSave(NEVER, error())).isFalse();
+    assertThat(isSave(NEVER, success())).isFalse();
   }
 }

@@ -101,7 +101,7 @@ public class AwsBatchExecutor
     if (result.isActive()) {
       return StageExecutorResult.active();
     }
-    if (getExecutorParams().isSaveLog()) {
+    if (isSaveLogFile(result)) {
       // TODO: save log
     }
     return result;
