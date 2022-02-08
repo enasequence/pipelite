@@ -55,8 +55,8 @@ $(document).ready(function () {
 
     autocompleteScheduleNamesText("scheduleScheduleName");
 
-    // Restore state after refresh.
-    let scheduleName = localStorage.getItem('scheduleScheduleName');
+    // Restore state.
+    let scheduleName = getTabParams('scheduleParams');
     if (scheduleName) {
         refreshSchedule(scheduleName);
     }
@@ -70,7 +70,8 @@ function refreshSchedule(scheduleName) {
     }
 
     if (scheduleName) {
-        localStorage.setItem('scheduleScheduleName', scheduleName);
+        setTabParams("scheduleParams", scheduleName);
+
         $("#scheduleScheduleNameAlert").hide();
 
         let scheduleTable = $("#scheduleTable").DataTable();

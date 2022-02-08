@@ -147,9 +147,9 @@ $(document).ready(function () {
 
     autocompleteProcessNamesText("processPipelineName");
 
-    // Restore state after refresh.
-    let pipelineName = localStorage.getItem('processPipelineName');
-    let processId = localStorage.getItem('processProcessId');
+    // Restore state from URL.
+
+    let [pipelineName, processId] = getTabParams("processParams").split(",");
     if (pipelineName && processId) {
         refreshProcess(pipelineName, processId);
     }
@@ -176,8 +176,8 @@ function refreshProcess(pipelineName, processId) {
     }
 
     if (pipelineName && processId) {
-        localStorage.setItem('processPipelineName', pipelineName);
-        localStorage.setItem('processProcessId', processId);
+        setTabParams("processParams", pipelineName + "," + processId);
+
         $("#processPipelineNameAndProcessIdAlert").hide();
 
         let processUrl = setPipelineNameBadgeAndGetProcessUrl(

@@ -57,8 +57,8 @@ $(document).ready(function () {
 
     autocompletePipelineNamesText("processesPipelineName");
 
-    // Restore state after refresh.
-    let pipelineName = localStorage.getItem('processesPipelineName');
+    // Restore state.
+    let pipelineName = getTabParams("processesParam");
     if (pipelineName) {
         refreshProcesses(pipelineName);
     }
@@ -68,13 +68,13 @@ function refreshProcesses(pipelineName) {
 
     if (pipelineName) {
         $("#processesPipelineName").val(pipelineName);
-    }
-    else {
+    } else {
         pipelineName = $("#processesPipelineName").val();
     }
 
     if (pipelineName) {
-        localStorage.setItem('processesPipelineName', pipelineName);
+        setTabParams("processesParams", pipelineName);
+
         $("#processesPipelineNameAlert").hide();
 
         let processesTable = $('#processesTable').DataTable();

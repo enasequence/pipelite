@@ -1,3 +1,23 @@
+function setTabParams(name, value) {
+    let searchParams = new URLSearchParams(document.location.search);
+    searchParams.set(name, value);
+    // Set to URL.
+    history.replaceState({}, '', '?' + searchParams.toString());
+    // Set to local storage.
+    localStorage.setItem(name, value);
+}
+
+function getTabParams(name) {
+    // Restore from URL.
+    let searchParams = new URLSearchParams(document.location.search);
+    let value = searchParams.get(name);
+    if (!value) {
+        // Restore from local storage.
+        value = localStorage.getItem(name);
+    }
+    return value;
+}
+
 function showSchedule(scheduleName) {
     refreshSchedule(scheduleName);
     showTab('scheduleTab');
@@ -56,6 +76,7 @@ function autocompleteText(textId, url) {
         });
     });
 }
+
 function setPipelineNameBadgeAndGetProcessUrl(pipelineNameBadgeId, pipelineName, processIdBadgeId, processId) {
     let pipelineNameBadgeLabel = "Pipeline";
     let pipelineNameBadgeText;
