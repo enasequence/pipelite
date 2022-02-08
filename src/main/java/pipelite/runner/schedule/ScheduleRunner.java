@@ -25,7 +25,8 @@ import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.error.InternalErrorHandler;
 import pipelite.exception.PipeliteException;
-import pipelite.exception.PipeliteRetryException;
+import pipelite.exception.PipeliteProcessRetryException;
+import pipelite.exception.PipeliteScheduleStartException;
 import pipelite.log.LogKey;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
@@ -165,15 +166,28 @@ public class ScheduleRunner extends ProcessRunnerPool {
     }
   }
 
+  public void startSchedule(String pipelineName) {
+    Optional<ScheduleCron> scheduleCron =
+        scheduleCrons.stream().filter(s -> s.getPipelineName().equals(pipelineName)).findAny();
+    if (!scheduleCron.isPresent()) {
+      throw new PipeliteScheduleStartException(pipelineName, "unknown schedule");
+    }
+    if (!scheduleCron.get().isExecutable()) {
+      scheduleCron.get().setLaunchTime(ZonedDateTime.now());
+    } else {
+      throw new PipeliteScheduleStartException(pipelineName, "schedule is already being started");
+    }
+  }
+
   public void retrySchedule(String pipelineName, String processId) {
     Optional<ScheduleCron> scheduleCron =
         scheduleCrons.stream().filter(s -> s.getPipelineName().equals(pipelineName)).findAny();
     if (!scheduleCron.isPresent()) {
-      throw new PipeliteRetryException(pipelineName, processId, "schedule not found");
+      throw new PipeliteProcessRetryException(pipelineName, processId, "unknown schedule");
     }
     Optional<ProcessEntity> processEntity = processService.getSavedProcess(pipelineName, processId);
     if (!processEntity.isPresent()) {
-      throw new PipeliteRetryException(pipelineName, processId, "process not found");
+      throw new PipeliteProcessRetryException(pipelineName, processId, "unknown process");
     }
     executeSchedule(scheduleCron.get(), processEntity.get(), ExecuteMode.RETRY);
   }
