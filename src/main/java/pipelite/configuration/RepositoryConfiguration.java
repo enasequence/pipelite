@@ -55,31 +55,31 @@ public class RepositoryConfiguration {
   private Integer minimumIdle;
   private Integer maximumPoolSize;
   private Duration connectionTimeout;
-  /** Uses an in memory database if a valid repository configuration has not been provided. */
+  /** Uses an in-memory database if a valid datasource has not been provided. */
   private boolean test;
 
   // Better error reporting for required properties.
   private boolean checkRequiredProperties() {
     boolean isValid = true;
-    if (driverClassName == null || driverClassName.trim().isEmpty()) {
+    if (!isDefinedValue(driverClassName)) {
       log.atSevere().log("Missing required pipelite property: pipelite.datasource.driverClassName");
       isValid = false;
     }
-    if (url == null) {
+    if (!isDefinedValue(url)) {
       log.atSevere().log("Missing required pipelite property: pipelite.datasource.url");
       isValid = false;
     }
-    if (username == null) {
+    if (!isDefinedValue(username)) {
       log.atSevere().log("Missing required pipelite property: pipelite.datasource.username");
       isValid = false;
     }
-    if (password == null) {
+    if (!isDefinedValue(password)) {
       log.atSevere().log("Missing required pipelite property: pipelite.datasource.password");
       isValid = false;
     }
 
     if (!isValid && (test || isTestProfile())) {
-      log.atSevere().log("Using an in memory database unsuitable for production purposes.");
+      log.atSevere().log("Using an in-memory database unsuitable for production purposes.");
       this.driverClassName = "org.hsqldb.jdbc.JDBCDriver";
       this.url = "jdbc:hsqldb:mem:testdb;DB_CLOSE_DELAY: -1";
       this.username = "sa";
@@ -93,6 +93,10 @@ public class RepositoryConfiguration {
     }
 
     return isValid;
+  }
+
+  private boolean isDefinedValue(String value) {
+    return value != null && !value.trim().isEmpty();
   }
 
   @Bean

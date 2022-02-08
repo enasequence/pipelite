@@ -10,13 +10,10 @@
  */
 package pipelite.controller.api;
 
-import com.thedeanda.lorem.Lorem;
-import com.thedeanda.lorem.LoremIpsum;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +27,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.RegisteredPipeline;
 import pipelite.controller.api.info.StageInfo;
-import pipelite.controller.utils.LoremUtils;
 import pipelite.controller.utils.TimeUtils;
 import pipelite.entity.StageEntity;
 import pipelite.process.Process;
@@ -74,7 +70,6 @@ public class StageController {
     stageService
         .getSavedStages(pipelineName, processId)
         .forEach(stageEntity -> list.add(getStage(stageEntity, process.get())));
-    getLoremIpsumStages(list);
     return list;
   }
 
@@ -116,42 +111,5 @@ public class StageController {
         .resultParams(stageEntity.getResultParams())
         .dependsOnStage(dependsOnStage)
         .build();
-  }
-
-  public void getLoremIpsumStages(List<StageInfo> list) {
-    if (LoremUtils.isActiveProfile(environment)) {
-      Lorem lorem = LoremIpsum.getInstance();
-      AtomicReference<String> previousStageName = new AtomicReference<>();
-      for (int i = 0; i < 10; ++i) {
-        // IntStream.range(1, 10)
-        //     .forEach(
-        //         i -> {
-        String stageName = String.valueOf(i);
-        List<String> dependsOnStages = new ArrayList<>();
-        if (previousStageName.get() != null) {
-          dependsOnStages.add(previousStageName.get());
-        }
-        previousStageName.set(String.valueOf(i));
-        list.add(
-            StageInfo.builder()
-                .pipelineName(lorem.getCountry())
-                .processId(lorem.getWords(1))
-                .stageName(stageName)
-                .stageState("SUCCESS")
-                .errorType(lorem.getNameFemale())
-                .startTime(TimeUtils.humanReadableDate(ZonedDateTime.now()))
-                .endTime(TimeUtils.humanReadableDate(ZonedDateTime.now()))
-                .executionCount(10)
-                .executionTime(
-                    TimeUtils.humanReadableDuration(
-                        ZonedDateTime.now(), ZonedDateTime.now().minus(Duration.ofHours(1))))
-                .executorName(lorem.getNameFemale())
-                .executorData(lorem.getWords(1))
-                .executorParams(lorem.getWords(2))
-                .resultParams(lorem.getWords(2))
-                .dependsOnStage(dependsOnStages)
-                .build());
-      }
-    }
   }
 }

@@ -10,23 +10,19 @@
  */
 package pipelite.controller.api;
 
-import com.thedeanda.lorem.Lorem;
-import com.thedeanda.lorem.LoremIpsum;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.controller.api.info.ProcessInfo;
-import pipelite.controller.utils.LoremUtils;
 import pipelite.controller.utils.TimeUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.process.Process;
@@ -39,6 +35,8 @@ import pipelite.service.RunnerService;
 @RequestMapping(value = "/api/process")
 @Tag(name = "ProcessAPI", description = "Process")
 public class ProcessController {
+
+  private static final int DEFAULT_MAX_PROCESS_CNT = 1000;
 
   @Autowired private Environment environment;
   @Autowired private ProcessService processService;
@@ -60,7 +58,27 @@ public class ProcessController {
     if (runnerService.isScheduleRunner()) {
       list.addAll(getProcesses(runnerService.getScheduleRunner(), pipelineName));
     }
-    getLoremIpsumProcess(list);
+    return list;
+  }
+
+  @GetMapping("/{pipelineName}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(description = "Processes")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "OK"),
+        @ApiResponse(responseCode = "500", description = "Internal Server error")
+      })
+  public List<ProcessInfo> process(
+      @PathVariable(value = "pipelineName") String pipelineName,
+      @PathVariable(value = "maxProcessCnt", required = false) Integer maxProcessCnt) {
+    if (maxProcessCnt == null) {
+      maxProcessCnt = DEFAULT_MAX_PROCESS_CNT;
+    }
+    List<ProcessInfo> list =
+        processService.getProcesses(pipelineName, null, maxProcessCnt).stream()
+            .map(p -> getProcess(p))
+            .collect(Collectors.toList());
     return list;
   }
 
@@ -80,7 +98,6 @@ public class ProcessController {
     if (processEntity.isPresent()) {
       list.add(getProcess(processEntity.get()));
     }
-    getLoremIpsumProcess(list);
     return list;
   }
 
@@ -108,22 +125,5 @@ public class ProcessController {
         .executionCount(processEntity.getExecutionCount())
         .priority(processEntity.getPriority())
         .build();
-  }
-
-  private void getLoremIpsumProcess(List<ProcessInfo> list) {
-    if (LoremUtils.isActiveProfile(environment)) {
-      Lorem lorem = LoremIpsum.getInstance();
-      Random random = new Random();
-      list.add(
-          ProcessInfo.builder()
-              .pipelineName(lorem.getCountry())
-              .processId(lorem.getWords(1))
-              .state(lorem.getFirstNameMale())
-              .startTime(TimeUtils.humanReadableDate(ZonedDateTime.now()))
-              .endTime(TimeUtils.humanReadableDate(ZonedDateTime.now()))
-              .executionCount(random.nextInt(10))
-              .priority(random.nextInt(10))
-              .build());
-    }
   }
 }

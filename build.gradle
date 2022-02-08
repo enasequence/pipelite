@@ -11,7 +11,7 @@ plugins {
 }
 
 group = 'pipelite'
-version = '2.0.2'
+version = '2.1.0'
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
 
@@ -98,7 +98,6 @@ dependencies {
     implementation 'tech.tablesaw:tablesaw-jsplot:0.38.1'
 
     implementation('com.cronutils:cron-utils:9.1.1')
-    implementation 'com.thedeanda:lorem:2.1'
 
     compileOnly 'org.projectlombok:lombok:1.18.6'
     annotationProcessor 'org.projectlombok:lombok:1.18.6'

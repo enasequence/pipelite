@@ -145,30 +145,14 @@ $(document).ready(function () {
         });
     });
 
-    // Set up autocomplete for pipeline name.
-    let url = "/pipelite/ui/api/process/";
-    $.get(url, function (data) {
-        let pipelineNames = data.map(function (obj) {
-            return obj.pipelineName;
-        });
+    autocompleteProcessNamesText("processPipelineName");
 
-        function onlyUnique(value, index, self) {
-            return self.indexOf(value) === index;
-        }
-
-        pipelineNames = pipelineNames.filter(onlyUnique);
-
-        $("#processPipelineName").autocomplete({
-            source: pipelineNames,
-            minLength: 0,
-            open: function () {
-                $(this).removeClass("ui-corner-all").addClass("ui-corner-top");
-            },
-            close: function () {
-                $(this).removeClass("ui-corner-top").addClass("ui-corner-all");
-            }
-        });
-    });
+    // Restore state after refresh.
+    let pipelineName = localStorage.getItem('processPipelineName');
+    let processId = localStorage.getItem('processProcessId');
+    if (pipelineName && processId) {
+        refreshProcess(pipelineName, processId);
+    }
 
     // Show graph when tab is changed.
     $('#processTabs a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
@@ -181,40 +165,30 @@ $(document).ready(function () {
 function refreshProcess(pipelineName, processId) {
     if (pipelineName) {
         $("#processPipelineName").val(pipelineName);
+    } else {
+        pipelineName = $("#processPipelineName").val();
     }
+
     if (processId) {
         $("#processProcessId").val(processId);
+    } else {
+        processId = $("#processProcessId").val();
     }
 
-    pipelineName = $("#processPipelineName").val();
-    processId = $("#processProcessId").val();
-
     if (pipelineName && processId) {
-        $("#processAlert").hide();
+        localStorage.setItem('processPipelineName', pipelineName);
+        localStorage.setItem('processProcessId', processId);
+        $("#processPipelineNameAndProcessIdAlert").hide();
 
-        // Show the filter badges.
-        let pipelineNameBadgeText;
-        let processIdBadgeText;
-        if (pipelineName) {
-            pipelineNameBadgeText = "Pipeline:" + pipelineName;
-        } else {
-            pipelineNameBadgeText = "";
-        }
-        if (processId) {
-            processIdBadgeText = "Process:" + processId;
-        } else {
-            processIdBadgeText = "";
-        }
-        $("#processPipelineNameBadge").text(pipelineNameBadgeText);
-        $("#processProcessIdBadge").text(processIdBadgeText);
+        let processUrl = setPipelineNameBadgeAndGetProcessUrl(
+            "processPipelineNameBadge", pipelineName,
+            "processProcessIdBadge", processId);
 
         // Show the tables.
         let processTable = $('#processTable').DataTable();
         let processStagesStatusTable = $('#processStagesStatusTable').DataTable();
         let processStagesDataTable = $('#processStagesDataTable').DataTable();
 
-        let processUrl = "/pipelite/ui/api/process/" + pipelineName + "/" + processId + "/";
-        console.log(processUrl);
         $.get(processUrl, function (data, status) {
             processTable.clear().rows.add(data).draw();
         });

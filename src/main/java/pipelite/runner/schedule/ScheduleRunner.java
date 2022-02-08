@@ -178,6 +178,13 @@ public class ScheduleRunner extends ProcessRunnerPool {
     executeSchedule(scheduleCron.get(), processEntity.get(), ExecuteMode.RETRY);
   }
 
+  public boolean isActiveSchedule(String pipelineName) {
+    return getActiveProcessRunners().stream()
+        .filter(p -> p.getPipelineName().equals(pipelineName))
+        .findFirst()
+        .isPresent();
+  }
+
   private Optional<ProcessEntity> getSavedProcess(ScheduleEntity scheduleEntity) {
     return processService.getSavedProcess(
         scheduleEntity.getPipelineName(), scheduleEntity.getProcessId());

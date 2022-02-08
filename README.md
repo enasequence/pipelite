@@ -29,6 +29,7 @@ Pipelite workflow manager
     * [PIPELITE2_PROCESS_LOCK table](#pipelite2-process-lock-table)
 - [Web interface](#web-interface)
     * [Schedules](#schedules)
+    * [Schedule](#schedule)
     * [Pipelines](#pipelines)
     * [Processes](#processes)
     * [Process](#process)
@@ -438,9 +439,8 @@ The unit for the resource usage limit can be one of:
 
 #### Test profiles
 
-- if Spring active profiles contain 'pipelite-test' then uses HSQLDB in-memory database unsuitable for production
+- if Spring active profiles contain 'test' then uses HSQLDB in-memory database unsuitable for production
   purposes.
-- if Spring active profiles contain 'pipelite-lorem' then generates test content for the web interface.
 
 #### Environment variables for unit testing
 
@@ -555,6 +555,13 @@ through a REST API documented using OpenAPI3.
 The Schedules page shows information for all schedules running on the Pipelite service.
 
 ![Schedules](readme/Schedules.png)
+
+#### Schedule
+
+The Schedule page shows the execution history for one schedule.
+
+![Schedules](readme/Schedule.png)
+
 
 #### Pipelines
 

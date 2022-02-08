@@ -1,0 +1,37 @@
+<th:block th:fragment="schedule">
+    <div class="card m-2">
+        <div class="card-body">
+            <h5 class="card-title">Select schedule</h5>
+
+            <div class="form-inline m-2">
+
+                <label class="mr-2" for="scheduleScheduleName">Schedule</label>
+                <input type="text" class="form-control m-2" id="scheduleScheduleName">
+
+                <button type="submit" class="btn btn-primary m-2" onclick="refreshSchedule()">Show schedule</button>
+            </div>
+            <h5 class="mb-4">
+                <span class="badge badge-secondary" id="scheduleScheduleNameBadge"></span>
+            </h5>
+            <div class="alert alert-danger" style="display: none;" role="alert"
+                 id="scheduleScheduleNameAlert">
+            </div>
+        </div>
+    </div>
+    <div class="card m-2">
+        <div class="card-body">
+            <h5 class="card-title">Schedule execution history</h5>
+
+            <table id="scheduleTable" class="table table-striped table-hover" style="width:100%">
+                <thead>
+                <tr>
+                    <th>Process</th>
+                    <th>Status</th>
+                    <th>Start time</th>
+                    <th>End time</th>
+                </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+</th:block>

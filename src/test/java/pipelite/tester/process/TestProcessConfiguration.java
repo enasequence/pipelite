@@ -20,9 +20,16 @@ import pipelite.tester.pipeline.ConfigurableTestPipeline;
 
 public abstract class TestProcessConfiguration implements RegisteredPipeline {
 
-  private final String pipelineName =
-      UniqueStringGenerator.randomPipelineName(ConfigurableTestPipeline.class);
+  private final String pipelineName;
   private final Set<String> configuredProcessIds = ConcurrentHashMap.newKeySet();
+
+  public TestProcessConfiguration() {
+    pipelineName = UniqueStringGenerator.randomPipelineName(ConfigurableTestPipeline.class);
+  }
+
+  public TestProcessConfiguration(String pipelineName) {
+    this.pipelineName = pipelineName;
+  }
 
   @Override
   public final String pipelineName() {

@@ -6,24 +6,63 @@
 
     <script type="text/javascript" src="/pipelite/static/scripts/index.js"></script>
     <script type="text/javascript" src="/pipelite/static/scripts/schedules.js"></script>
+    <script type="text/javascript" src="/pipelite/static/scripts/schedule.js"></script>
     <script type="text/javascript" src="/pipelite/static/scripts/pipelines.js"></script>
     <script type="text/javascript" src="/pipelite/static/scripts/processes.js"></script>
     <script type="text/javascript" src="/pipelite/static/scripts/process.js"></script>
     <script type="text/javascript" src="/pipelite/static/scripts/servers.js"></script>
     <script type="text/javascript" src="/pipelite/static/scripts/admin.js"></script>
 
+    <script>
+        $(document).ready(function () {
+            // Restore active tab after refresh.
+            $('a[data-toggle="pill"]').on('shown.bs.tab', function (e) {
+                localStorage.setItem('activeTab', $(e.target).attr('href'));
+            })
+            let activeTab = localStorage.getItem('activeTab');
+            if (activeTab) {
+                $('#indexTabs a[href="' + activeTab + '"]').tab('show');
+            }
+
+            // Page refresh frequency.
+            let refreshFrequency = localStorage.getItem('refreshFrequency');
+            if (refreshFrequency) {
+                $("#refreshFrequency").selectpicker('val', refreshFrequency);
+            } else {
+                refreshFrequency = $("#refreshFrequency").val();
+            }
+            var timeout = setTimeout("location.reload(true);", refreshFrequency * 1000);
+            $("#refreshFrequency").on('change', function (e) {
+                let refreshFrequency = $("#refreshFrequency").val();
+                localStorage.setItem('refreshFrequency', refreshFrequency);
+                console.log("Refresh frequency: " + refreshFrequency);
+                if (timeout) {
+                    clearTimeout(timeout);
+                }
+                timeout = setTimeout("location.reload(true);", refreshFrequency * 1000);
+            });
+
+            // Show the application.
+            $("#mainDiv").show();
+        });
+    </script>
+
     <title>Pipelite</title>
 </head>
 <body>
 
-<nav class="navbar navbar-expand navbar-dark bg-dark">
-    <a class="navbar-brand" href="#"><img src="/pipelite/static/favicon-32x32.png"/>
-        Pipelite</a>
+<div id="mainDiv" style="display:none">
+    <nav class="navbar navbar-expand navbar-dark bg-dark">
+        <a class="navbar-brand" href="#"><img src="/pipelite/static/favicon-32x32.png"/>
+            Pipelite</a>
 
         <div class="collapse navbar-collapse">
             <ul class="navbar-nav nav nav-pills" id="indexTabs">
                 <li class="nav-item">
                     <a class="nav-link active" data-toggle="pill" href="#schedulesTab">Schedules</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-toggle="pill" href="#scheduleTab">Schedule</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" data-toggle="pill" href="#pipelinesTab">Pipelines</a>
@@ -47,6 +86,20 @@
             </ul>
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item">
+                    <select class="form-select" id="refreshFrequency" >
+                        <option value="10">Refresh: 10 seconds</option>
+                        <option value="30">Refresh: 30 seconds</option>
+                        <option value="60">Refresh: 1 minute</option>
+                        <option value="300">Refresh: 5 minutes</option>
+                        <option value="600">Refresh: 10 minutes</option>
+                        <option value="1800">Refresh: 30 minutes</option>
+                        <option value="3600">Refresh: 1 hour</option>
+                        <option value="14400">Refresh: 4 hours</option>
+                        <option value="86400" selected="selected">Refresh: 24 hours</option>
+                    </select>
+                </li>
+
+                <li class="nav-item">
                     <a class="nav-link" href="javascript: document.logoutForm.submit()"> Logout</a>
                     <form name="logoutForm" th:action="@{/logout}" method="post" th:hidden="true">
                         <input hidden type="submit" value="Logout"/>
@@ -54,28 +107,32 @@
                 </li>
             </ul>
         </div>
-</nav>
+    </nav>
 
-<div class="tab-content">
-    <div id="schedulesTab" class="tab-pane fade show active" role="tabpanel">
-        <div th:replace="fragments/schedules :: schedules"></div>
-    </div>
-    <div id="pipelinesTab" class="tab-pane fade" role="tabpanel">
-        <div th:replace="fragments/pipelines :: pipelines"></div>
-    </div>
-    <div id="processesTab" class="tab-pane fade" role="tabpanel">
-        <div th:replace="fragments/processes :: processes"></div>
-    </div>
-    <div id="processTab" class="tab-pane fade" role="tabpanel">
-        <div th:replace="fragments/process :: process"></div>
-    </div>
-    <div id="serversTab" class="tab-pane fade" role="tabpanel">
-        <div th:replace="fragments/servers :: servers"></div>
-    </div>
-    <div id="adminTab" class="tab-pane fade" role="tabpanel">
-        <div th:replace="fragments/admin :: admin"></div>
+    <div class="tab-content">
+        <!-- Only first tab should be 'show active' -->
+        <div id="schedulesTab" class="tab-pane fade show active" role="tabpanel">
+            <div th:replace="fragments/schedules :: schedules"></div>
+        </div>
+        <div id="scheduleTab" class="tab-pane fade" role="tabpanel">
+            <div th:replace="fragments/schedule :: schedule"></div>
+        </div>
+        <div id="pipelinesTab" class="tab-pane fade" role="tabpanel">
+            <div th:replace="fragments/pipelines :: pipelines"></div>
+        </div>
+        <div id="processesTab" class="tab-pane fade" role="tabpanel">
+            <div th:replace="fragments/processes :: processes"></div>
+        </div>
+        <div id="processTab" class="tab-pane fade" role="tabpanel">
+            <div th:replace="fragments/process :: process"></div>
+        </div>
+        <div id="serversTab" class="tab-pane fade" role="tabpanel">
+            <div th:replace="fragments/servers :: servers"></div>
+        </div>
+        <div id="adminTab" class="tab-pane fade" role="tabpanel">
+            <div th:replace="fragments/admin :: admin"></div>
+        </div>
     </div>
 </div>
-
 </body>
 </html>

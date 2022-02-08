@@ -10,16 +10,12 @@
  */
 package pipelite.controller.api;
 
-import com.thedeanda.lorem.Lorem;
-import com.thedeanda.lorem.LoremIpsum;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.IntStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
@@ -30,7 +26,6 @@ import org.springframework.web.bind.annotation.RestController;
 import pipelite.PipeliteApplication;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.controller.api.info.ScheduleInfo;
-import pipelite.controller.utils.LoremUtils;
 import pipelite.controller.utils.TimeUtils;
 import pipelite.entity.ScheduleEntity;
 import pipelite.service.ScheduleService;
@@ -55,7 +50,6 @@ public class ScheduleController {
       })
   public List<ScheduleInfo> schedules() {
     List<ScheduleInfo> list = getSchedules(serviceConfiguration.getName());
-    getLoremIpsumSchedules(list);
     return list;
   }
 
@@ -88,36 +82,5 @@ public class ScheduleController {
         .failedStreak(s.getStreakFailed())
         .processId(s.getProcessId())
         .build();
-  }
-
-  private void getLoremIpsumSchedules(List<ScheduleInfo> list) {
-    if (LoremUtils.isActiveProfile(environment)) {
-      Lorem lorem = LoremIpsum.getInstance();
-      IntStream.range(1, 100)
-          .forEach(
-              i -> {
-                String startTime = TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(1));
-                String endTime = TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(2));
-                String nextTime = TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(3));
-                String lastCompleted =
-                    TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(4));
-                String lastFailed = TimeUtils.humanReadableDate(ZonedDateTime.now().minusHours(5));
-                list.add(
-                    ScheduleInfo.builder()
-                        .serviceName(lorem.getFirstNameFemale())
-                        .pipelineName(lorem.getCountry())
-                        .cron(lorem.getWords(1))
-                        .description(lorem.getWords(5))
-                        .startTime(startTime)
-                        .endTime(endTime)
-                        .nextTime(nextTime)
-                        .lastCompleted(lastCompleted)
-                        .lastFailed(lastFailed)
-                        .completedStreak(5)
-                        .failedStreak(1)
-                        .processId(lorem.getWords(1))
-                        .build());
-              });
-    }
   }
 }

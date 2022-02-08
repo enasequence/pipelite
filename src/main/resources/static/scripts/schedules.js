@@ -1,20 +1,16 @@
 $(document).ready(function () {
     $('#schedulesTable').DataTable({
         columns: [
-            {data: "pipelineName"},
-            {data: "cron"},
-            {data: "description"},
             {
-                data: "processId",
+                data: "pipelineName",
                 render: function (data, type, row) {
-                    if (row.processId) {
-                        let onClick = "showProcess('" + row.pipelineName + "','" + row.processId + "')";
-                        // console.log(onClick);
-                        return '<button type="button" class="btn btn-link" onclick="' + onClick + '">' + row.processId + '</button>';
-                    }
-                    return '';
+                    let onClick = "showSchedule('" + row.pipelineName + "')";
+                    // console.log(onClick);
+                    return '<button type="button" class="btn btn-link" onclick="' + onClick + '">' + row.pipelineName + '</button>';
                 }
             },
+            {data: "cron"},
+            {data: "description"},
             {
                 data: "startTime",
                 render: function (data) {

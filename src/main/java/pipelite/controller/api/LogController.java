@@ -10,8 +10,6 @@
  */
 package pipelite.controller.api;
 
-import com.thedeanda.lorem.Lorem;
-import com.thedeanda.lorem.LoremIpsum;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -22,7 +20,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.controller.api.info.LogInfo;
-import pipelite.controller.utils.LoremUtils;
 import pipelite.entity.StageLogEntity;
 import pipelite.service.StageService;
 
@@ -52,17 +49,6 @@ public class LogController {
     if (stageLogEntity.isPresent()) {
       logInfo.setLog(stageLogEntity.get().getStageLog());
     }
-    if (getLoremIpsumLogs() != null) {
-      logInfo.setLog(logInfo.getLog() + getLoremIpsumLogs());
-    }
     return logInfo;
-  }
-
-  public String getLoremIpsumLogs() {
-    if (LoremUtils.isActiveProfile(environment)) {
-      Lorem lorem = LoremIpsum.getInstance();
-      return lorem.getWords(10000);
-    }
-    return null;
   }
 }

@@ -169,7 +169,7 @@ public class ProcessService {
    */
   public List<ProcessEntity> getCompletedProcesses(String pipelineName, int maxProcessCount) {
     try (Stream<ProcessEntity> processes =
-        processRepository.findAllByPipelineNameAndProcessState(
+        processRepository.findAllByPipelineNameAndProcessStateOrderByStartTimeDesc(
             pipelineName, ProcessState.COMPLETED)) {
       return getProcesses(processes, maxProcessCount);
     }
@@ -193,7 +193,7 @@ public class ProcessService {
   /**
    * Returns processes.
    *
-   * @param pipelineName optional pipeline name
+   * @param pipelineName pipeline name
    * @param state optional process state
    * @param maxProcessCount the maximum number of processes to return
    * @return processes
@@ -201,28 +201,20 @@ public class ProcessService {
   public List<ProcessEntity> getProcesses(
       String pipelineName, ProcessState state, int maxProcessCount) {
     List<ProcessEntity> processes = new ArrayList<>();
-    // pipelineName state
-    // Y            Y
-    if (pipelineName != null && state != null) {
+    if (pipelineName == null) {
+      return processes;
+    }
+    if (state != null) {
       processes.addAll(
           getProcesses(
-              processRepository.findAllByPipelineNameAndProcessState(pipelineName, state),
+              processRepository.findAllByPipelineNameAndProcessStateOrderByStartTimeDesc(
+                  pipelineName, state),
               maxProcessCount));
-      // pipelineName state
-      // Y            N
-    } else if (pipelineName != null) {
+    } else {
       processes.addAll(
-          getProcesses(processRepository.findAllByPipelineName(pipelineName), maxProcessCount));
-      // pipelineName state
-      // N            Y
-    } else if (state != null) {
-      processes.addAll(
-          getProcesses(processRepository.findAllByProcessState(state), maxProcessCount));
-    }
-    // pipelineName state
-    // N            N
-    else {
-      processes.addAll(getProcesses(processRepository.findAllStream(), maxProcessCount));
+          getProcesses(
+              processRepository.findAllByPipelineNameOrderByStartTimeDesc(pipelineName),
+              maxProcessCount));
     }
     return processes;
   }

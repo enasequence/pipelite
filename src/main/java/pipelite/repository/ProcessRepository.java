@@ -31,28 +31,12 @@ public interface ProcessRepository extends CrudRepository<ProcessEntity, Process
   Stream<ProcessEntity> findAllStream();
 
   /**
-   * Finds all processes given process state.
-   *
-   * @param state the process state
-   * @return all processes given process state
-   */
-  Stream<ProcessEntity> findAllByProcessState(ProcessState state);
-
-  /**
-   * Finds all processes given process id.
-   *
-   * @param processId the process id
-   * @return all processes given process id
-   */
-  Stream<ProcessEntity> findAllByProcessId(String processId);
-
-  /**
    * Finds all processes given pipeline name.
    *
    * @param pipelineName the pipeline name
    * @return all processes given pipeline name
    */
-  Stream<ProcessEntity> findAllByPipelineName(String pipelineName);
+  Stream<ProcessEntity> findAllByPipelineNameOrderByStartTimeDesc(String pipelineName);
 
   /**
    * Finds all processes given pipeline name and process state.
@@ -61,7 +45,7 @@ public interface ProcessRepository extends CrudRepository<ProcessEntity, Process
    * @param state the process state
    * @return all processes given pipeline name and process state
    */
-  Stream<ProcessEntity> findAllByPipelineNameAndProcessState(
+  Stream<ProcessEntity> findAllByPipelineNameAndProcessStateOrderByStartTimeDesc(
       String pipelineName, ProcessState state);
 
   /**

@@ -1,7 +1,7 @@
 $(document).ready(function () {
-    $('#processesTable').DataTable({
+    $('#scheduleTable').DataTable({
+        "ordering": false,
         columns: [
-            {data: "pipelineName"},
             {
                 data: "processId",
                 render: function (data, type, row) {
@@ -30,9 +30,7 @@ $(document).ready(function () {
                         return '';
                     }
                 }
-            },
-            {data: "executionCount"},
-            {data: "priority"}
+            }
         ],
         dom: 'frtBip',
         buttons: {
@@ -55,36 +53,34 @@ $(document).ready(function () {
         },
     });
 
-    autocompletePipelineNamesText("processesPipelineName");
+    autocompleteScheduleNamesText("scheduleScheduleName");
 
     // Restore state after refresh.
-    let pipelineName = localStorage.getItem('processesPipelineName');
-    if (pipelineName) {
-        refreshProcesses(pipelineName);
+    let scheduleName = localStorage.getItem('scheduleScheduleName');
+    if (scheduleName) {
+        refreshSchedule(scheduleName);
     }
 });
 
-function refreshProcesses(pipelineName) {
-
-    if (pipelineName) {
-        $("#processesPipelineName").val(pipelineName);
-    }
-    else {
-        pipelineName = $("#processesPipelineName").val();
+function refreshSchedule(scheduleName) {
+    if (scheduleName) {
+        $("#scheduleScheduleName").val(scheduleName);
+    } else {
+        scheduleName = $("#scheduleScheduleName").val();
     }
 
-    if (pipelineName) {
-        localStorage.setItem('processesPipelineName', pipelineName);
-        $("#processesPipelineNameAlert").hide();
+    if (scheduleName) {
+        localStorage.setItem('scheduleScheduleName', scheduleName);
+        $("#scheduleScheduleNameAlert").hide();
 
-        let processesTable = $('#processesTable').DataTable();
-        let url = setPipelineNameBadgeAndGetProcessUrl("processesPipelineNameBadge", pipelineName);
+        let scheduleTable = $("#scheduleTable").DataTable();
+        let url = setScheduleNameBadgeAndGetProcessUrl("scheduleScheduleNameBadge", scheduleName);
 
         $.get(url, function (data, status) {
-            processesTable.clear().rows.add(data).draw();
+            scheduleTable.clear().rows.add(data).draw();
         });
     } else {
-        $("#processesPipelineNameAlert").text("Please provide pipeline name");
-        $("#processesPipelineNameAlert").show();
+        $("#scheduleScheduleNameAlert").text("Please provide schedule name");
+        $("#scheduleScheduleNameAlert").show();
     }
 }
