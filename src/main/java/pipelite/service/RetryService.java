@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 import pipelite.RegisteredPipeline;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
-import pipelite.exception.PipeliteRetryException;
+import pipelite.exception.PipeliteProcessRetryException;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
 import pipelite.runner.schedule.ScheduleRunner;
@@ -52,7 +52,7 @@ public class RetryService {
    *
    * @param pipelineName the pipeline name
    * @param processId the processId
-   * @throws PipeliteRetryException if the process can't be retried
+   * @throws PipeliteProcessRetryException if the process can't be retried
    */
   public void retry(String pipelineName, String processId) {
 
@@ -80,7 +80,7 @@ public class RetryService {
     if (isRetrySchedule) {
       ScheduleRunner scheduler = runnerService.getScheduleRunner();
       if (scheduler == null) {
-        throw new PipeliteRetryException(pipelineName, processId, "missing scheduler");
+        throw new PipeliteProcessRetryException(pipelineName, processId, "missing scheduler");
       }
       scheduler.retrySchedule(pipelineName, processId);
     }
@@ -89,7 +89,7 @@ public class RetryService {
   private ProcessEntity getSavedProcess(String pipelineName, String processId) {
     Optional<ProcessEntity> processEntity = processService.getSavedProcess(pipelineName, processId);
     if (!processEntity.isPresent()) {
-      throw new PipeliteRetryException(pipelineName, processId, "unknown process");
+      throw new PipeliteProcessRetryException(pipelineName, processId, "unknown process");
     }
     return processEntity.get();
   }
@@ -98,7 +98,8 @@ public class RetryService {
     Optional<StageEntity> stageEntity =
         stageService.getSavedStage(pipelineName, processId, stageName);
     if (!stageEntity.isPresent()) {
-      throw new PipeliteRetryException(pipelineName, processId, "unknown stage " + stageName);
+      throw new PipeliteProcessRetryException(
+          pipelineName, processId, "unknown stage " + stageName);
     }
     return stageEntity.get();
   }

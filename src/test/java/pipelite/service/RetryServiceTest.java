@@ -31,7 +31,7 @@ import pipelite.cron.CronUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.entity.StageEntity;
-import pipelite.exception.PipeliteRetryException;
+import pipelite.exception.PipeliteProcessRetryException;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
@@ -194,7 +194,8 @@ class RetryServiceTest {
     // Retry
     Exception exception =
         assertThrows(
-            PipeliteRetryException.class, () -> retryService.retry(PIPELINE_NAME, processId));
+            PipeliteProcessRetryException.class,
+            () -> retryService.retry(PIPELINE_NAME, processId));
     assertThat(exception.getMessage()).contains("process is not failed");
   }
 
@@ -217,7 +218,8 @@ class RetryServiceTest {
     // Retry
     Exception exception =
         assertThrows(
-            PipeliteRetryException.class, () -> retryService.retry(PIPELINE_NAME, processId));
+            PipeliteProcessRetryException.class,
+            () -> retryService.retry(PIPELINE_NAME, processId));
     assertThat(exception.getMessage()).contains("unknown stage");
   }
 

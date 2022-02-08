@@ -1,4 +1,6 @@
 $(document).ready(function () {
+    $("#retryProcess").prop( "disabled", true );
+
     $('#processTable').DataTable({
         columns: [
             // { data: "pipelineName" },
@@ -7,9 +9,7 @@ $(document).ready(function () {
                 data: "state",
                 render: function (data) {
                     if (data == 'FAILED') {
-                        $("#processRetry").show();
-                    } else {
-                        $("#processRetry").hide();
+                        $("#retryProcess").prop( "disabled", false );
                     }
                     return data;
                 }
@@ -54,22 +54,22 @@ $(document).ready(function () {
             {
                 data: "startTime",
                 render: function (data) {
-                    if (data) {
-                        return moment(data).format('YYYY/MM/DD HH:mm:ss');
-                    } else {
-                        return '';
-                    }
+                if (data) {
+                    return moment(data).format('YYYY/MM/DD HH:mm:ss');
+                } else {
+                    return '';
                 }
+            }
             },
             {
                 data: "endTime",
                 render: function (data) {
-                    if (data) {
-                        return moment(data).format('YYYY/MM/DD HH:mm:ss');
-                    } else {
-                        return '';
-                    }
+                if (data) {
+                    return moment(data).format('YYYY/MM/DD HH:mm:ss');
+                } else {
+                    return '';
                 }
+            }
             },
             {data: "executionTime"},
             {data: "executionCount"},
@@ -304,9 +304,9 @@ function processCopyLogs() {
     window.getSelection().addRange(range); // to select text
     document.execCommand("copy");
     window.getSelection().removeAllRanges();// to deselect
-};
+}
 
-function processRetry() {
+function retryProcess() {
     let pipelineName = $("#processPipelineName").val();
     let processId = $("#processProcessId").val();
 
@@ -323,10 +323,14 @@ function processRetry() {
                 message = JSON.parse(context.responseText)[0].message;
             } catch (err) {
             }
-            $("#processRetryAlert").text("Failed to retry process. " + message);
-            $("#processRetryAlert").show();
-        },
-        success: function () {
+            $("#retryProcessAlert").text(message);
+            $("#retryProcessAlert").show();
+            $("#retryProcessInfo").hide();
+        }, success: function () {
+            $("#retryProcessInfo").text("Process " + pipelineName + " " + processId + " execution will start shortly");
+            $("#retryProcessInfo").show();
+            $("#retryProcessAlert").hide();
+
             refreshProcess();
         }
     });

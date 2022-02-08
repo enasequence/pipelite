@@ -25,7 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pipelite.PipeliteTestConfigWithServices;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.ProcessEntity;
-import pipelite.exception.PipeliteRetryException;
+import pipelite.exception.PipeliteProcessRetryException;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
@@ -243,7 +243,8 @@ class ProcessServiceTest {
 
     assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.COMPLETED);
     assertThrows(
-        PipeliteRetryException.class, () -> processService.isRetryProcess(pipelineName, processId));
+        PipeliteProcessRetryException.class,
+        () -> processService.isRetryProcess(pipelineName, processId));
   }
 
   @Test
@@ -253,7 +254,8 @@ class ProcessServiceTest {
 
     assertThat(processService.getSavedProcess(pipelineName, processId).isPresent()).isFalse();
     assertThrows(
-        PipeliteRetryException.class, () -> processService.isRetryProcess(pipelineName, processId));
+        PipeliteProcessRetryException.class,
+        () -> processService.isRetryProcess(pipelineName, processId));
   }
 
   private ProcessEntity createProcessEntity(Integer priority, ZonedDateTime initTime) {

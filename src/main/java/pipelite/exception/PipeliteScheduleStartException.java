@@ -10,9 +10,9 @@
  */
 package pipelite.exception;
 
-public class PipeliteRetryException extends PipeliteUnrecoverableException {
+public class PipeliteScheduleStartException extends PipeliteUnrecoverableException {
 
-  public PipeliteRetryException(String pipelineName, String processId, String reason) {
-    super("Failed to retry " + pipelineName + " " + processId + ": " + reason);
+  public PipeliteScheduleStartException(String scheduleName, String reason) {
+    super("Failed to start schedule " + scheduleName + ": " + reason);
   }
 }

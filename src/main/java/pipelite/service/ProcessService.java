@@ -27,7 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pipelite.configuration.AdvancedConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ProcessEntityId;
-import pipelite.exception.PipeliteRetryException;
+import pipelite.exception.PipeliteProcessRetryException;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.repository.ProcessRepository;
@@ -349,15 +349,15 @@ public class ProcessService {
    * @param pipelineName the pipeline name
    * @param processId the process id
    * @return true if there is a process that has failed and can be retried
-   * @throws PipeliteRetryException if there is a process that can't be retried
+   * @throws PipeliteProcessRetryException if there is a process that can't be retried
    */
   public boolean isRetryProcess(String pipelineName, String processId) {
     Optional<ProcessEntity> processEntity = getSavedProcess(pipelineName, processId);
     if (!processEntity.isPresent()) {
-      throw new PipeliteRetryException(pipelineName, processId, "process does not exist");
+      throw new PipeliteProcessRetryException(pipelineName, processId, "process does not exist");
     }
     if (processEntity.get().getProcessState() != ProcessState.FAILED) {
-      throw new PipeliteRetryException(pipelineName, processId, "process is not failed");
+      throw new PipeliteProcessRetryException(pipelineName, processId, "process is not failed");
     }
     return true;
   }

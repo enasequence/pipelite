@@ -37,13 +37,17 @@
             </div>
         </div>
     </div>
-    <div class="card m-2" id="processRetry">
+    <div class="card m-2">
         <div class="card-body">
             <h5 class="card-title">Retry failed process</h5>
             <div class="form-inline m-2">
-                <button type="submit" class="btn btn-primary m-2" onclick="processRetry()">Retry process</button>
+                <button type="submit" class="btn btn-primary m-2" onclick="retryProcess()" id="retryProcess">Retry
+                    process
+                </button>
             </div>
-            <div class="alert alert-danger" style="display: none;" role="alert" id="processRetryAlert">
+            <div class="alert alert-danger" style="display: none;" role="alert" id="retryProcessAlert">
+            </div>
+            <div class="alert alert-primary" style="display: none;" role="alert" id="retryProcessInfo">
             </div>
         </div>
     </div>

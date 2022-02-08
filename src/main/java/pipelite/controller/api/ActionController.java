@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import pipelite.service.PipeliteServices;
 import pipelite.service.RetryService;
 
 @RestController
@@ -31,12 +32,21 @@ import pipelite.service.RetryService;
 public class ActionController {
 
   @Autowired private RetryService retryService;
+  @Autowired private PipeliteServices pipeliteServices;
 
   @Value
   @Builder
   public static class RetryResult {
     private final String pipelineName;
     private final String processId;
+    private final boolean success;
+    private final String message;
+  }
+
+  @Value
+  @Builder
+  public static class StartResult {
+    private final String scheduleName;
     private final boolean success;
     private final String message;
   }
@@ -74,5 +84,26 @@ public class ActionController {
       }
     }
     return result;
+  }
+
+  @PutMapping("/schedule/start/{scheduleName}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(description = "Starts a schedule")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "OK"),
+        @ApiResponse(responseCode = "500", description = "Internal Server error")
+      })
+  public ResponseEntity<StartResult> start(
+      @PathVariable(value = "scheduleName") String scheduleName) {
+    StartResult.StartResultBuilder resultBuilder = StartResult.builder().scheduleName(scheduleName);
+    try {
+      pipeliteServices.runner().getScheduleRunner().startSchedule(scheduleName);
+      return new ResponseEntity<>(resultBuilder.success(true).build(), HttpStatus.OK);
+    } catch (Exception ex) {
+      StartResult startResult =
+          StartResult.builder().success(false).message(ex.getMessage()).build();
+      return new ResponseEntity<>(startResult, HttpStatus.BAD_REQUEST);
+    }
   }
 }

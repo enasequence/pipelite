@@ -18,6 +18,20 @@
             </div>
         </div>
     </div>
+    <div class="card m-2" id="startSchedule">
+        <div class="card-body">
+            <h5 class="card-title">Start schedule</h5>
+            <p>Press the 'Start schedule' button to start the execution now instead of waiting for the next scheduled
+                execution time.</p>
+            <div class="form-inline m-2">
+                <button type="submit" class="btn btn-primary m-2" onclick="startSchedule()">Start schedule</button>
+            </div>
+            <div class="alert alert-danger" style="display: none;" role="alert" id="startScheduleAlert">
+            </div>
+            <div class="alert alert-primary" style="display: none;" role="alert" id="startScheduleInfo">
+            </div>
+        </div>
+    </div>
     <div class="card m-2">
         <div class="card-body">
             <h5 class="card-title">Schedule execution history</h5>

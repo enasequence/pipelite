@@ -26,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pipelite.cron.CronUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
-import pipelite.exception.PipeliteRetryException;
+import pipelite.exception.PipeliteProcessRetryException;
 import pipelite.process.ProcessState;
 import pipelite.repository.ScheduleRepository;
 
@@ -143,7 +143,7 @@ public class ScheduleService {
    * @param pipelineName the pipeline name
    * @param processId the process id
    * @return true if there is a schedule that has failed and can be retried
-   * @throws PipeliteRetryException if there is a schedule that can't be retried
+   * @throws PipeliteProcessRetryException if there is a schedule that can't be retried
    */
   public boolean isRetrySchedule(String pipelineName, String processId) {
     Optional<ScheduleEntity> scheduleEntityOpt = getSavedSchedule(pipelineName);
@@ -154,24 +154,27 @@ public class ScheduleService {
     ScheduleEntity scheduleEntity = scheduleEntityOpt.get();
 
     if (!scheduleEntity.isFailed()) {
-      throw new PipeliteRetryException(pipelineName, processId, "schedule is not failed");
+      throw new PipeliteProcessRetryException(
+          pipelineName, processId, "the process for the schedule is not failed");
     }
 
     if (!processId.equals(scheduleEntity.getProcessId())) {
-      throw new PipeliteRetryException(
+      throw new PipeliteProcessRetryException(
           pipelineName,
           processId,
-          "last execution is a different process " + scheduleEntity.getProcessId());
+          "a newer process execution exists for the schedule: " + scheduleEntity.getProcessId());
     }
 
     if (scheduleEntity.getNextTime() != null
         && Duration.between(ZonedDateTime.now(), scheduleEntity.getNextTime())
                 .compareTo(RETRY_MARGIN)
             < 0) {
-      throw new PipeliteRetryException(
+      throw new PipeliteProcessRetryException(
           pipelineName,
           processId,
-          "next execution is in less than " + RETRY_MARGIN.toMinutes() + " minutes");
+          "the next process for the schedule will be executed in less than "
+              + RETRY_MARGIN.toMinutes()
+              + " minutes");
     }
 
     return true;

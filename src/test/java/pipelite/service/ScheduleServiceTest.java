@@ -28,7 +28,7 @@ import pipelite.UniqueStringGenerator;
 import pipelite.cron.CronUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
-import pipelite.exception.PipeliteRetryException;
+import pipelite.exception.PipeliteProcessRetryException;
 import pipelite.process.ProcessState;
 
 @SpringBootTest(
@@ -280,11 +280,11 @@ class ScheduleServiceTest {
     ScheduleEntity scheduleEntity = scheduleService.createSchedule(serviceName, pipelineName, cron);
     assertThat(scheduleEntity.isFailed()).isFalse();
 
-    PipeliteRetryException ex =
+    PipeliteProcessRetryException ex =
         assertThrows(
-            PipeliteRetryException.class,
+            PipeliteProcessRetryException.class,
             () -> scheduleService.isRetrySchedule(pipelineName, processId));
-    assertThat(ex.getMessage()).contains("schedule is not failed");
+    assertThat(ex.getMessage()).contains("the process for the schedule is not failed");
   }
 
   @Test
@@ -306,11 +306,11 @@ class ScheduleServiceTest {
     scheduleEntity = scheduleService.endExecution(processEntity, ZonedDateTime.now());
     assertThat(scheduleEntity.isFailed()).isTrue();
 
-    PipeliteRetryException ex =
+    PipeliteProcessRetryException ex =
         assertThrows(
-            PipeliteRetryException.class,
+            PipeliteProcessRetryException.class,
             () -> scheduleService.isRetrySchedule(pipelineName, differentProcessId));
-    assertThat(ex.getMessage()).contains("last execution is a different process");
+    assertThat(ex.getMessage()).contains("a newer process execution exists for the schedule");
   }
 
   @Test
@@ -331,11 +331,11 @@ class ScheduleServiceTest {
     scheduleEntity = scheduleService.endExecution(processEntity, ZonedDateTime.now());
     assertThat(scheduleEntity.isFailed()).isTrue();
 
-    PipeliteRetryException ex =
+    PipeliteProcessRetryException ex =
         assertThrows(
-            PipeliteRetryException.class,
+            PipeliteProcessRetryException.class,
             () -> scheduleService.isRetrySchedule(pipelineName, processId));
-    assertThat(ex.getMessage()).contains("next execution is in less than");
+    assertThat(ex.getMessage()).contains("the next process for the schedule will be executed in less than");
   }
 
   @Test
