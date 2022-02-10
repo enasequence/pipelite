@@ -42,6 +42,9 @@ public class SimpleLsfExecutorParameters extends SharedLsfExecutorParameters {
   /** The LSF memory duration (-R rusage[mem=:duration=] option). */
   private Duration memoryTimeout;
 
+  /** The LSF job group name. */
+  private String jobGroup;
+
   @Override
   public void applyDefaults(ExecutorConfiguration executorConfiguration) {
     SimpleLsfExecutorParameters defaultParams = executorConfiguration.getSimpleLsf();

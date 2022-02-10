@@ -74,6 +74,12 @@ public class SimpleLsfExecutor extends AbstractLsfExecutor<SimpleLsfExecutorPara
       addArgument(cmd, String.valueOf(timeout.toMinutes()));
     }
 
+    String jobGroup = getExecutorParams().getJobGroup();
+    if (jobGroup != null) {
+      addArgument(cmd, "-g");
+      addArgument(cmd, jobGroup);
+    }
+
     String queue = getExecutorParams().getQueue();
     if (queue != null) {
       addArgument(cmd, "-q");

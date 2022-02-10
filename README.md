@@ -340,6 +340,7 @@ https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/.
 - pipelite.executor.simpleLsf.memory: the amount of requested memory (-M and -R rusage[mem=] option)
 - pipelite.executor.simpleLsf.memoryUnits: the LSF memory units (-M and -R rusage[mem=] option)
 - pipelite.executor.simpleLsf.memoryTimeout: the LSF memory duration (-R rusage[mem=:duration=] option)
+- pipelite.executor.simpleLsf.jobGroup: the LSF job group name (-g option)
 
 The unit for the resource usage limit can be one of:
 

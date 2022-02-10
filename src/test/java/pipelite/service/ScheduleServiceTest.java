@@ -335,7 +335,8 @@ class ScheduleServiceTest {
         assertThrows(
             PipeliteProcessRetryException.class,
             () -> scheduleService.isRetrySchedule(pipelineName, processId));
-    assertThat(ex.getMessage()).contains("the next process for the schedule will be executed in less than");
+    assertThat(ex.getMessage())
+        .contains("the next process for the schedule will be executed in less than");
   }
 
   @Test

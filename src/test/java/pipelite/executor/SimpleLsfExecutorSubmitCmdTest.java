@@ -150,4 +150,32 @@ public class SimpleLsfExecutorSubmitCmdTest {
     assertThat(submitCmd)
         .isEqualTo("bsub -oo " + outFile + " -n 2 -M 1 -R \"rusage[mem=1]\" -W 1 -q TEST test");
   }
+
+  @Test
+  public void cmdJobGroup() throws IOException {
+
+    SimpleLsfExecutor executor = new SimpleLsfExecutor();
+    executor.setCmd("test");
+    SimpleLsfExecutorParameters params =
+        SimpleLsfExecutorParameters.builder()
+            .workDir(Files.createTempDirectory("TEMP").toString())
+            .cpu(2)
+            .jobGroup("testGroup")
+            .timeout(Duration.ofMinutes(1))
+            .queue("TEST")
+            .build();
+    executor.setExecutorParams(params);
+
+    Stage stage = Stage.builder().stageName(STAGE_NAME).executor(executor).build();
+    StageExecutorRequest request =
+        StageExecutorRequest.builder()
+            .pipelineName(PIPELINE_NAME)
+            .processId(PROCESS_ID)
+            .stage(stage)
+            .build();
+    String outFile = CmdExecutorParameters.getLogFile(request, params).toString();
+    executor.setOutFile(outFile);
+    String submitCmd = executor.getSubmitCmd(request);
+    assertThat(submitCmd).isEqualTo("bsub -oo " + outFile + " -n 2 -W 1 -g testGroup -q TEST test");
+  }
 }
