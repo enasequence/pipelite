@@ -10,12 +10,17 @@
  */
 package pipelite.process;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
+import pipelite.exception.PipeliteProcessStagesException;
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.runner.stage.DependencyResolver;
+import pipelite.stage.Stage;
+
+import java.util.Arrays;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ProcessBuilderTest {
 
@@ -24,11 +29,11 @@ public class ProcessBuilderTest {
 
   @Test
   public void test() {
-    String stageName1 = UniqueStringGenerator.randomStageName(this.getClass());
-    String stageName2 = UniqueStringGenerator.randomStageName(this.getClass());
-    String stageName3 = UniqueStringGenerator.randomStageName(this.getClass());
-    String stageName4 = UniqueStringGenerator.randomStageName(this.getClass());
-    String stageName5 = UniqueStringGenerator.randomStageName(this.getClass());
+    String stageName1 = "STAGE1";
+    String stageName2 = "STAGE2";
+    String stageName3 = "STAGE3";
+    String stageName4 = "STAGE4";
+    String stageName5 = "STAGE5";
 
     Process process =
         new ProcessBuilder(PROCESS_ID)
@@ -44,19 +49,103 @@ public class ProcessBuilderTest {
             .withSyncTestExecutor()
             .build();
 
+    Stage stage1 = process.getStage(stageName1).get();
+    Stage stage2 = process.getStage(stageName2).get();
+    Stage stage3 = process.getStage(stageName3).get();
+    Stage stage4 = process.getStage(stageName4).get();
+    Stage stage5 = process.getStage(stageName5).get();
+
     assertThat(process).isNotNull();
     assertThat(process.getProcessId()).isEqualTo(PROCESS_ID);
-    assertThat(process.getStage(stageName1).get().getDependsOn()).isEmpty();
-    assertThat(process.getStage(stageName2).get().getDependsOn().get(0).getStageName())
-        .isEqualTo(stageName1);
-    assertThat(process.getStage(stageName3).get().getDependsOn().get(0).getStageName())
-        .isEqualTo(stageName2);
-    assertThat(process.getStage(stageName4).get().getDependsOn().get(0).getStageName())
-        .isEqualTo(stageName1);
-    assertThat(process.getStage(stageName5).get().getDependsOn().get(0).getStageName())
-        .isEqualTo(stageName1);
-    assertThat(process.getStage(stageName5).get().getDependsOn().get(1).getStageName())
-        .isEqualTo(stageName2);
     assertThat(process.getStages()).hasSize(5);
+
+    assertThat(DependencyResolver.getDependsOnStages(process, stage1)).isEmpty();
+    assertThat(DependencyResolver.getDependsOnStages(process, stage2).size()).isOne();
+    assertThat(DependencyResolver.getDependsOnStages(process, stage3).size()).isEqualTo(2);
+    assertThat(DependencyResolver.getDependsOnStages(process, stage4).size()).isOne();
+    assertThat(DependencyResolver.getDependsOnStages(process, stage5).size()).isEqualTo(2);
+
+    assertThat(DependencyResolver.getDependsOnStages(process, stage2).contains(stage1)).isTrue();
+    assertThat(DependencyResolver.getDependsOnStages(process, stage3).contains(stage1)).isTrue();
+    assertThat(DependencyResolver.getDependsOnStages(process, stage3).contains(stage2)).isTrue();
+    assertThat(DependencyResolver.getDependsOnStages(process, stage4).contains(stage1)).isTrue();
+    assertThat(DependencyResolver.getDependsOnStages(process, stage5).contains(stage1)).isTrue();
+    assertThat(DependencyResolver.getDependsOnStages(process, stage5).contains(stage2)).isTrue();
+
+    assertThat(DependencyResolver.getDependentStages(process, stage1).size()).isEqualTo(4);
+    assertThat(DependencyResolver.getDependentStages(process, stage2).size()).isEqualTo(2);
+    assertThat(DependencyResolver.getDependentStages(process, stage3)).isEmpty();
+    assertThat(DependencyResolver.getDependentStages(process, stage4)).isEmpty();
+    assertThat(DependencyResolver.getDependentStages(process, stage5)).isEmpty();
+
+    assertThat(DependencyResolver.getDependentStages(process, stage1).contains(stage2)).isTrue();
+    assertThat(DependencyResolver.getDependentStages(process, stage1).contains(stage3)).isTrue();
+    assertThat(DependencyResolver.getDependentStages(process, stage1).contains(stage4)).isTrue();
+    assertThat(DependencyResolver.getDependentStages(process, stage1).contains(stage5)).isTrue();
+    assertThat(DependencyResolver.getDependentStages(process, stage2).contains(stage3)).isTrue();
+    assertThat(DependencyResolver.getDependentStages(process, stage2).contains(stage5)).isTrue();
+  }
+
+  @Test
+  public void testNonStages() {
+    assertThatThrownBy(() -> new ProcessBuilder("TEST").build())
+        .isInstanceOf(PipeliteProcessStagesException.class)
+        .hasMessageContaining(
+            "Invalid stages in process TEST, process has no stages");
+  }
+
+  @Test
+  public void testNonUniqueStages() {
+    String stageName1 = "STAGE1";
+    String stageName2 = "STAGE1";
+    assertThatThrownBy(
+            () ->
+                new ProcessBuilder("TEST")
+                    .execute(stageName1)
+                    .withSyncTestExecutor()
+                    .executeAfterPrevious(stageName2)
+                    .withSyncTestExecutor()
+                    .build())
+        .isInstanceOf(PipeliteProcessStagesException.class)
+        .hasMessageContaining(
+            "Invalid stages in process TEST, process has non-unique stage names: STAGE1");
+  }
+
+  @Test
+  public void testNonExistingStages() {
+    String stageName1 = "STAGE1";
+    String stageName2 = "STAGE2";
+    assertThatThrownBy(
+            () ->
+                new ProcessBuilder("TEST")
+                    .execute(stageName1)
+                    .withSyncTestExecutor()
+                    .executeAfter(stageName2, Arrays.asList(stageName1, "INVALID"))
+                    .withSyncTestExecutor()
+                    .build())
+        .isInstanceOf(PipeliteProcessStagesException.class)
+        .hasMessageContaining(
+            "Invalid stages in process TEST, process has non-existing stage dependencies: INVALID");
+  }
+
+  @Test
+  public void testCyclicStages() {
+    String stageName1 = "STAGE1";
+    String stageName2 = "STAGE2";
+    String stageName3 = "STAGE3";
+    assertThatThrownBy(
+            () -> {
+              new ProcessBuilder("TEST")
+                  .execute(stageName1)
+                  .withSyncTestExecutor()
+                  .executeAfter(stageName2, Arrays.asList(stageName3))
+                  .withSyncTestExecutor()
+                  .executeAfter(stageName3, Arrays.asList(stageName2))
+                  .withSyncTestExecutor()
+                  .build();
+            })
+        .isInstanceOf(PipeliteProcessStagesException.class)
+        .hasMessageContaining(
+            "Invalid stages in process TEST, process has cyclic stage dependencies: STAGE3,STAGE2");
   }
 }

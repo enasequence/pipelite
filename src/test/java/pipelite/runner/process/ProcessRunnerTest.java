@@ -71,23 +71,23 @@ public class ProcessRunnerTest {
       StageState firstStageState, StageState secondStageState, ProcessState state) {
     int firstStageExecutions = firstStageState != null ? 1 : 0;
     int secondStageExecutions = secondStageState != null ? 1 : 0;
-    List<Stage> stages =
-        getTwoIndependentStages(
+    Process process =
+        twoIndependentStagesProcess(
             firstStageState, secondStageState, firstStageExecutions, secondStageExecutions, 0, 0);
-    Assertions.assertThat(ProcessRunner.evaluateProcessState(stages)).isEqualTo(state);
+    Assertions.assertThat(ProcessRunner.evaluateProcessState(process)).isEqualTo(state);
   }
 
   private void evaluateProcessStateWithRetries(
       StageState firstStageState, StageState secondStageState, ProcessState state) {
     int firstStageExecutions = firstStageState != null ? 1 : 0;
     int secondStageExecutions = secondStageState != null ? 1 : 0;
-    List<Stage> stages =
-        getTwoIndependentStages(
+    Process process =
+        twoIndependentStagesProcess(
             firstStageState, secondStageState, firstStageExecutions, secondStageExecutions, 1, 1);
-    assertThat(ProcessRunner.evaluateProcessState(stages)).isEqualTo(state);
+    assertThat(ProcessRunner.evaluateProcessState(process)).isEqualTo(state);
   }
 
-  public static List<Stage> getTwoIndependentStages(
+  public static Process twoIndependentStagesProcess(
       StageState firstStageState,
       StageState secondStageState,
       int firstStageExecutions,
@@ -108,7 +108,7 @@ public class ProcessRunnerTest {
             .build();
     List<Stage> stages = new ArrayList<>();
 
-    Stage firstStage = process.getStages().get(0);
+    Stage firstStage = process.getStage("STAGE0").get();
     StageEntity firstStageEntity = new StageEntity();
     firstStage.setStageEntity(firstStageEntity);
     firstStageEntity.setStageState(firstStageState);
@@ -118,7 +118,7 @@ public class ProcessRunnerTest {
     }
     stages.add(firstStage);
 
-    Stage secondStage = process.getStages().get(1);
+    Stage secondStage = process.getStage("STAGE1").get();
     StageEntity secondStageEntity = new StageEntity();
     secondStage.setStageEntity(secondStageEntity);
     secondStageEntity.setStageState(secondStageState);
@@ -128,6 +128,6 @@ public class ProcessRunnerTest {
     }
     stages.add(secondStage);
 
-    return stages;
+    return process;
   }
 }

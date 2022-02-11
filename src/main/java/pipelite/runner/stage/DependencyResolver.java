@@ -10,9 +10,11 @@
  */
 package pipelite.runner.stage;
 
+import pipelite.process.Process;
+import pipelite.stage.Stage;
+
 import java.util.*;
 import java.util.stream.Collectors;
-import pipelite.stage.Stage;
 
 public class DependencyResolver {
 
@@ -21,78 +23,97 @@ public class DependencyResolver {
   /**
    * Returns the list of stages that depend on this stage directly or transitively.
    *
-   * @param stages all stages
+   * @param process the process
    * @param stage the stage of interest
    * @return the list of stages that depend on this stage directly or transitively
    */
-  public static List<Stage> getDependentStages(List<Stage> stages, Stage stage) {
+  public static List<Stage> getDependentStages(Process process, Stage stage) {
     Set<Stage> dependentStages = new HashSet<>();
-    getDependentStages(stages, dependentStages, stage, false);
+    getDependentStages(process, stage, false, dependentStages);
     return new ArrayList<>(dependentStages);
   }
 
   private static void getDependentStages(
-      List<Stage> stages, Set<Stage> dependentStages, Stage from, boolean include) {
-
-    for (Stage stage : stages) {
-      if (stage.equals(from)) {
-        continue;
-      }
-
-      if (stage.getDependsOn() != null) {
-        for (Stage dependsOn : stage.getDependsOn()) {
-          if (dependsOn.getStageName().equals(from.getStageName())) {
-            getDependentStages(stages, dependentStages, stage, true);
-          }
-        }
-      }
-    }
-
+      Process process, Stage stage, boolean include, Set<Stage> dependentStages) {
+    process
+        .getStageGraph()
+        .edgesOf(stage)
+        .forEach(
+            e -> {
+              Stage edgeSource = process.getStageGraph().getEdgeSource(e);
+              Stage edgeTarget = process.getStageGraph().getEdgeTarget(e);
+              if (edgeSource.equals(stage)) {
+                dependentStages.add(edgeTarget);
+                getDependentStages(process, edgeTarget, true, dependentStages);
+              }
+            });
     if (include) {
-      dependentStages.add(from);
+      dependentStages.add(stage);
     }
   }
 
   /**
    * Returns the list of stages that the stage depends on directly or transitively.
    *
-   * @param stages all stages
+   * @param process the process
    * @param stage the stage of interest
    * @return the list of stages that the stage depends on directly or transitively
    */
-  public static List<Stage> getDependsOnStages(List<Stage> stages, Stage stage) {
-    List<Stage> dependsOnStages = new ArrayList<>();
-    getDependsOnStages(stages, dependsOnStages, stage);
+  public static Set<Stage> getDependsOnStages(Process process, Stage stage) {
+    Set<Stage> dependsOnStages = new HashSet<>();
+    getDependsOnStages(process, stage, dependsOnStages);
     return dependsOnStages;
   }
 
-  private static void getDependsOnStages(
-      List<Stage> stages, List<Stage> dependsOnStages, Stage from) {
-    if (from.getDependsOn() != null) {
-      for (Stage dependsOn : from.getDependsOn()) {
-        for (Stage stage : stages) {
-          if (stage.equals(dependsOn)) {
-            if (!dependsOnStages.contains(stage)) {
-              dependsOnStages.add(stage);
-              getDependsOnStages(stages, dependsOnStages, stage);
-            }
-          }
-        }
-      }
-    }
+  private static void getDependsOnStages(Process process, Stage stage, Set<Stage> dependsOnStages) {
+    process
+        .getStageGraph()
+        .edgesOf(stage)
+        .forEach(
+            e -> {
+              Stage edgeSource = process.getStageGraph().getEdgeSource(e);
+              Stage edgeTarget = process.getStageGraph().getEdgeTarget(e);
+              if (edgeTarget.equals(stage)) {
+                dependsOnStages.add(edgeSource);
+                getDependsOnStages(process, edgeSource, dependsOnStages);
+              }
+            });
+  }
+
+  /**
+   * Returns the list of stages that the stage depends on directly.
+   *
+   * @param process the process
+   * @param stage the stage of interest
+   * @return the list of stages that the stage depends on directly
+   */
+  public static Set<Stage> getDependsOnStagesDirectly(Process process, Stage stage) {
+    Set<Stage> dependsOnStages = new HashSet<>();
+    process
+        .getStageGraph()
+        .edgesOf(stage)
+        .forEach(
+            e -> {
+              Stage edgeSource = process.getStageGraph().getEdgeSource(e);
+              Stage edgeTarget = process.getStageGraph().getEdgeTarget(e);
+              if (edgeTarget.equals(stage)) {
+                dependsOnStages.add(edgeSource);
+              }
+            });
+    return dependsOnStages;
   }
 
   /**
    * Returns the list of stages that may be eventually executed based on the current execution
    * results of all stages in the process
    *
-   * @param stages all stages
+   * @param process the process
    * @return the list of stages that may be eventually executed based on the current execution
    *     results of all stages in the process
    */
-  public static List<Stage> getEventuallyExecutableStages(List<Stage> stages) {
-    return stages.stream()
-        .filter(stage -> isEventuallyExecutableStage(stages, stage))
+  public static List<Stage> getEventuallyExecutableStages(Process process) {
+    return process.getStages().stream()
+        .filter(stage -> isEventuallyExecutableStage(process, stage))
         .collect(Collectors.toList());
   }
 
@@ -102,7 +123,7 @@ public class DependencyResolver {
    * @param stages all stages
    * @return the list of stages that have failed and exceeded the maximum execution count
    */
-  public static List<Stage> getPermanentlyFailedStages(List<Stage> stages) {
+  public static List<Stage> getPermanentlyFailedStages(Collection<Stage> stages) {
     return stages.stream()
         .filter(stage -> isPermanentlyFailedStage(stage))
         .collect(Collectors.toList());
@@ -111,14 +132,14 @@ public class DependencyResolver {
   /**
    * Returns the list of stages that can be immediately executed.
    *
-   * @param stages all stages
+   * @param process the process
    * @param active active stages that are currently being executed
    * @return the list of stages that can be immediately executed
    */
   public static List<Stage> getImmediatelyExecutableStages(
-      List<Stage> stages, Collection<Stage> active) {
-    return stages.stream()
-        .filter(stage -> isImmediatelyExecutableStage(stages, active, stage))
+      Process process, Collection<Stage> active) {
+    return process.getStages().stream()
+        .filter(stage -> isImmediatelyExecutableStage(process, active, stage))
         .collect(Collectors.toList());
   }
 
@@ -126,12 +147,12 @@ public class DependencyResolver {
    * Returns true if the stage can be eventually executed based on the current execution results of
    * all stages in the process.
    *
-   * @param stages all stages
+   * @param process the process
    * @param stage the stage of interest
    * @return true if the stage can be eventually executed based on the current execution results of
    *     all stages in the process
    */
-  public static boolean isEventuallyExecutableStage(List<Stage> stages, Stage stage) {
+  public static boolean isEventuallyExecutableStage(Process process, Stage stage) {
     if (stage.isSuccess()) {
       // Stage can't be executed as it has already been executed successfully.
       return false;
@@ -147,7 +168,7 @@ public class DependencyResolver {
       return stage.hasMaximumRetriesLeft();
     }
     // Stage is pending or active.
-    for (Stage dependsOn : getDependsOnStages(stages, stage)) {
+    for (Stage dependsOn : getDependsOnStages(process, stage)) {
       if (isPermanentlyFailedStage(dependsOn)) {
         // Stage can't be executed if it depends on a permanently failed stage.
         return false;
@@ -160,26 +181,26 @@ public class DependencyResolver {
   /**
    * Returns true if the stage can be immediately executed.
    *
-   * @param stages all stages
+   * @param process the process
    * @param active active stages that are currently being executed
    * @param stage the stage of interest
    * @return true if the stage can be immediately executed
    */
   public static boolean isImmediatelyExecutableStage(
-      List<Stage> stages, Collection<Stage> active, Stage stage) {
+      Process process, Collection<Stage> active, Stage stage) {
     if (active.contains(stage)) {
       // Stage can't be executed as it is currently being executed.
       return false;
     }
 
-    List<Stage> dependsOnStages = getDependsOnStages(stages, stage);
+    Set<Stage> dependsOnStages = getDependsOnStages(process, stage);
 
     if (dependsOnStages.stream().anyMatch(s -> active.contains(s))) {
       // Stage can't be executed as it depends on stages that are currently being executed.
       return false;
     }
 
-    if (!isEventuallyExecutableStage(stages, stage)) {
+    if (!isEventuallyExecutableStage(process, stage)) {
       // Stage can't be executed as it is not eventually executable.
       return false;
     }

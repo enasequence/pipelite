@@ -11,7 +11,10 @@
 package pipelite.process.builder;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Function;
 import pipelite.executor.*;
 import pipelite.stage.Stage;
@@ -317,21 +320,7 @@ public class StageBuilder {
   }
 
   private <T extends ExecutorParameters> ProcessBuilder addStage(StageExecutor<T> executor) {
-    List<Stage> dependsOn = new ArrayList<>();
-    for (String dependsOnStageName : dependsOnStageNames) {
-      Optional<Stage> dependsOnOptional =
-          processBuilder.stages.stream()
-              .filter(stage -> stage.getStageName().equals(dependsOnStageName))
-              .findFirst();
-
-      if (!dependsOnOptional.isPresent()) {
-        throw new IllegalArgumentException("Unknown stage dependency: " + dependsOnStageName);
-      }
-      dependsOn.add(dependsOnOptional.get());
-    }
-
-    processBuilder.stages.add(
-        Stage.builder().stageName(stageName).executor(executor).dependsOn(dependsOn).build());
+    processBuilder.addStage(new Stage(stageName, executor), dependsOnStageNames);
     return processBuilder;
   }
 }

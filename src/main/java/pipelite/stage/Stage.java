@@ -10,7 +10,6 @@
  */
 package pipelite.stage;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -27,15 +26,13 @@ import pipelite.stage.executor.StageExecutorResult;
 public class Stage {
   private final String stageName;
   @EqualsAndHashCode.Exclude private StageExecutor executor;
-  @EqualsAndHashCode.Exclude private final List<Stage> dependsOn;
   @EqualsAndHashCode.Exclude private StageEntity stageEntity;
   @EqualsAndHashCode.Exclude private AtomicInteger immediateExecutionCount = new AtomicInteger();
 
   @Builder
-  public Stage(String stageName, StageExecutor executor, List<Stage> dependsOn) {
+  public Stage(String stageName, StageExecutor executor) {
     this.stageName = stageName;
     this.executor = executor;
-    this.dependsOn = dependsOn;
 
     if (stageName == null || stageName.isEmpty()) {
       throw new IllegalArgumentException("Missing stage name");

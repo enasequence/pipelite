@@ -171,7 +171,7 @@ public class ProcessRunner {
     logContext(log.atFine()).log("Executing stages");
     List<Stage> activeStages = active.stream().map(a -> a.getStage()).collect(Collectors.toList());
     List<Stage> executableStages =
-        DependencyResolver.getImmediatelyExecutableStages(process.getStages(), activeStages);
+        DependencyResolver.getImmediatelyExecutableStages(process, activeStages);
 
     if (activeStages.isEmpty() && executableStages.isEmpty()) {
       logContext(log.atInfo()).log("No more executable stages");
@@ -202,7 +202,7 @@ public class ProcessRunner {
   }
 
   private void endProcessExecution() {
-    ProcessState processState = evaluateProcessState(process.getStages());
+    ProcessState processState = evaluateProcessState(process);
     logContext(log.atInfo()).log("Process execution finished: %s", processState.name());
     pipeliteServices.process().endExecution(process, processState);
   }
@@ -229,18 +229,18 @@ public class ProcessRunner {
   /**
    * Evaluates the process state using the stage execution result types.
    *
-   * @param stages list of stages
+   * @param process the process
    * @return the process state
    */
-  public static ProcessState evaluateProcessState(List<Stage> stages) {
+  public static ProcessState evaluateProcessState(Process process) {
     int errorCount = 0;
-    for (Stage stage : stages) {
+    for (Stage stage : process.getStages()) {
       StageEntity stageEntity = stage.getStageEntity();
       StageState stageState = stageEntity.getStageState();
       if (stageState == SUCCESS) {
         continue;
       }
-      if (DependencyResolver.isEventuallyExecutableStage(stages, stage)) {
+      if (DependencyResolver.isEventuallyExecutableStage(process, stage)) {
         return ProcessState.ACTIVE;
       } else {
         errorCount++;
@@ -258,7 +258,7 @@ public class ProcessRunner {
    * @param from the stage that has dependent stages
    */
   private void resetDependentStageExecution(Process process, Stage from) {
-    for (Stage stage : DependencyResolver.getDependentStages(process.getStages(), from)) {
+    for (Stage stage : DependencyResolver.getDependentStages(process, from)) {
       if (stage.getStageEntity().getStageState() != PENDING) {
         pipeliteServices.stage().resetExecution(stage);
       }

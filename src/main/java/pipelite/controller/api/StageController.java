@@ -31,6 +31,7 @@ import pipelite.controller.utils.TimeUtils;
 import pipelite.entity.StageEntity;
 import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.runner.stage.DependencyResolver;
 import pipelite.service.RegisteredPipelineService;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
@@ -74,15 +75,13 @@ public class StageController {
   }
 
   public StageInfo getStage(StageEntity stageEntity, Process process) {
-    List<String> dependsOnStage = new ArrayList<>();
+    String stageName = stageEntity.getStageName();
+    List<String> dependsOnStageNames = new ArrayList<>();
     if (process != null) {
-      Optional<Stage> stage =
-          process.getStages().stream()
-              .filter(s -> s.getStageName().equals(stageEntity.getStageName()))
-              .findAny();
+      Optional<Stage> stage = process.getStage(stageName);
       if (stage.isPresent()) {
-        dependsOnStage =
-            stage.get().getDependsOn().stream()
+        dependsOnStageNames =
+            DependencyResolver.getDependsOnStagesDirectly(process, stage.get()).stream()
                 .map(s -> s.getStageName())
                 .collect(Collectors.toList());
       }
@@ -98,7 +97,7 @@ public class StageController {
     return StageInfo.builder()
         .pipelineName(stageEntity.getPipelineName())
         .processId(stageEntity.getProcessId())
-        .stageName(stageEntity.getStageName())
+        .stageName(stageName)
         .stageState(stageEntity.getStageState().name())
         .errorType(stageEntity.getErrorType() != null ? stageEntity.getErrorType().name() : null)
         .startTime(TimeUtils.humanReadableDate(stageEntity.getStartTime()))
@@ -109,7 +108,7 @@ public class StageController {
         .executorData(stageEntity.getExecutorData())
         .executorParams(stageEntity.getExecutorParams())
         .resultParams(stageEntity.getResultParams())
-        .dependsOnStage(dependsOnStage)
+        .dependsOnStage(dependsOnStageNames)
         .build();
   }
 }

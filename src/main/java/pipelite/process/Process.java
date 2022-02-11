@@ -10,42 +10,38 @@
  */
 package pipelite.process;
 
-import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.flogger.Flogger;
+import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.SimpleDirectedGraph;
 import pipelite.entity.ProcessEntity;
+import pipelite.exception.PipeliteException;
 import pipelite.stage.Stage;
 
 @Flogger
 @Data
 public class Process {
   private final String processId;
-  @EqualsAndHashCode.Exclude private final List<Stage> stages;
+  @EqualsAndHashCode.Exclude private final SimpleDirectedGraph<Stage, DefaultEdge> stageGraph;
   private ProcessEntity processEntity;
 
-  public Process(String processId, List<Stage> stages) {
+  public Process(String processId, SimpleDirectedGraph<Stage, DefaultEdge> stageGraph) {
     this.processId = processId;
-    this.stages = stages;
+    this.stageGraph = stageGraph;
 
     if (processId == null) {
-      throw new IllegalArgumentException("Missing process id");
-    }
-    if (stages == null || stages.isEmpty()) {
-      throw new IllegalArgumentException("Missing stages");
-    }
-    HashSet<String> stageNames = new HashSet<>();
-    for (Stage stage : stages) {
-      if (stageNames.contains(stage.getStageName())) {
-        throw new IllegalArgumentException("Duplicate stage name: " + stage.getStageName());
-      }
-      stageNames.add(stage.getStageName());
+      throw new PipeliteException("Missing process id");
     }
   }
 
+  public Set<Stage> getStages() {
+    return stageGraph.vertexSet();
+  }
+
   public Optional<Stage> getStage(String stageName) {
-    return stages.stream().filter(s -> s.getStageName().equals(stageName)).findFirst();
+    return getStages().stream().filter(s -> s.getStageName().equals(stageName)).findFirst();
   }
 }

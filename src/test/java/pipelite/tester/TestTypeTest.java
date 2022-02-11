@@ -240,7 +240,7 @@ public class TestTypeTest {
     assertThat(testType.permanentErrors()).containsExactly(EXIT_CODE_PERMANENT_ERROR);
 
     SimpleLsfExecutor executor = new SimpleLsfExecutor();
-    Stage stage = new Stage(stageName, executor, Collections.emptyList());
+    Stage stage = new Stage(stageName, executor);
 
     TestType.setLastExitCode(
         String.valueOf(EXIT_CODE_NON_PERMANENT_ERROR), pipelineName, processId, stageName);

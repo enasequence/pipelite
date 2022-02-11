@@ -11,13 +11,22 @@
 package pipelite.process.builder;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.SimpleDirectedGraph;
+import pipelite.exception.PipeliteProcessStagesException;
 import pipelite.process.Process;
 import pipelite.stage.Stage;
 
 public class ProcessBuilder {
 
-  final String processId;
-  final List<Stage> stages = new ArrayList<>();
+  private final String processId;
+
+  private final List<ProcessBuilderHelper.AddedStage> addedStages = new ArrayList<>();
+
+  void addStage(Stage stage, List<String> dependsOnStageNames) {
+    addedStages.add(new ProcessBuilderHelper.AddedStage(stage, dependsOnStageNames));
+  }
 
   public ProcessBuilder(String processId) {
     this.processId = processId;
@@ -40,22 +49,54 @@ public class ProcessBuilder {
   }
 
   public StageBuilder executeAfterPrevious(String stageName) {
-    return new StageBuilder(this, stageName, Arrays.asList(lastStage().getStageName()));
+    return new StageBuilder(this, stageName, Arrays.asList(lastAddedStage().stage.getStageName()));
   }
 
   public StageBuilder executeAfterFirst(String stageName) {
-    return new StageBuilder(this, stageName, Arrays.asList(firstStage().getStageName()));
+    return new StageBuilder(this, stageName, Arrays.asList(firstAddedStage().stage.getStageName()));
   }
 
   public Process build() {
-    return new Process(processId, this.stages);
+    // Build the graph
+
+    if (addedStages.isEmpty()) {
+      throw new PipeliteProcessStagesException(processId, "process has no stages");
+    }
+
+    HashSet<String> nonUniqueStageNames = ProcessBuilderHelper.nonUniqueStageNames(addedStages);
+    if (!nonUniqueStageNames.isEmpty()) {
+      throw new PipeliteProcessStagesException(
+          processId, "process has non-unique stage names: " + String.join(",", nonUniqueStageNames));
+    }
+
+    HashSet<String> nonExistingStageNames = ProcessBuilderHelper.nonExistingStageNames(addedStages);
+    if (!nonExistingStageNames.isEmpty()) {
+      throw new PipeliteProcessStagesException(
+          processId,
+          "process has non-existing stage dependencies: " + String.join(",", nonExistingStageNames));
+    }
+
+    SimpleDirectedGraph<Stage, DefaultEdge> stageGraph =
+        ProcessBuilderHelper.stageGraph(addedStages);
+
+    Set<Stage> stageCycles = ProcessBuilderHelper.stageCycles(stageGraph);
+    if (!stageCycles.isEmpty()) {
+      throw new PipeliteProcessStagesException(
+          processId,
+          "process has cyclic stage dependencies: "
+              + String.join(
+                  ",",
+                  stageCycles.stream().map(s -> s.getStageName()).collect(Collectors.toList())));
+    }
+
+    return new Process(processId, stageGraph);
   }
 
-  private Stage lastStage() {
-    return this.stages.get(this.stages.size() - 1);
+  private ProcessBuilderHelper.AddedStage lastAddedStage() {
+    return addedStages.get(addedStages.size() - 1);
   }
 
-  private Stage firstStage() {
-    return this.stages.get(0);
+  private ProcessBuilderHelper.AddedStage firstAddedStage() {
+    return addedStages.get(0);
   }
 }
