@@ -70,6 +70,19 @@ public class ProcessBuilderHelper {
     return nonExistingStageNames;
   }
 
+  public static HashSet<String> dependsOnSelfStageNames(List<AddedStage> addedStages) {
+    HashSet<String> dependsOnSelfStageNames = new HashSet<>();
+    addedStages.forEach(
+        addedStage -> {
+          for (String dependsOnStageName : addedStage.dependsOnStageNames) {
+            if (addedStage.stage.getStageName().equals(dependsOnStageName)) {
+              dependsOnSelfStageNames.add(dependsOnStageName);
+            }
+          }
+        });
+    return dependsOnSelfStageNames;
+  }
+
   public static SimpleDirectedGraph<Stage, DefaultEdge> stageGraph(
       Collection<AddedStage> addedStages) {
     SimpleDirectedGraph<Stage, DefaultEdge> stageGraph =

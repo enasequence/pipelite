@@ -12,7 +12,7 @@ package pipelite.exception;
 
 public class PipeliteProcessStagesException extends PipeliteUnrecoverableException {
 
-  public PipeliteProcessStagesException(String processId, String reason) {
-    super("Invalid stages in process " + processId + ", " + reason);
+  public PipeliteProcessStagesException(String message) {
+    super(message);
   }
 }

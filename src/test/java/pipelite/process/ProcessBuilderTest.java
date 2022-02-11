@@ -10,17 +10,16 @@
  */
 package pipelite.process;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.exception.PipeliteProcessStagesException;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.runner.stage.DependencyResolver;
 import pipelite.stage.Stage;
-
-import java.util.Arrays;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ProcessBuilderTest {
 
@@ -90,8 +89,7 @@ public class ProcessBuilderTest {
   public void testNonStages() {
     assertThatThrownBy(() -> new ProcessBuilder("TEST").build())
         .isInstanceOf(PipeliteProcessStagesException.class)
-        .hasMessageContaining(
-            "Invalid stages in process TEST, process has no stages");
+        .hasMessageContaining("Process has no stages");
   }
 
   @Test
@@ -107,8 +105,7 @@ public class ProcessBuilderTest {
                     .withSyncTestExecutor()
                     .build())
         .isInstanceOf(PipeliteProcessStagesException.class)
-        .hasMessageContaining(
-            "Invalid stages in process TEST, process has non-unique stage names: STAGE1");
+        .hasMessageContaining("Process has non-unique stage names: STAGE1");
   }
 
   @Test
@@ -124,8 +121,7 @@ public class ProcessBuilderTest {
                     .withSyncTestExecutor()
                     .build())
         .isInstanceOf(PipeliteProcessStagesException.class)
-        .hasMessageContaining(
-            "Invalid stages in process TEST, process has non-existing stage dependencies: INVALID");
+        .hasMessageContaining("Process has non-existing stage dependencies: INVALID");
   }
 
   @Test
@@ -134,18 +130,32 @@ public class ProcessBuilderTest {
     String stageName2 = "STAGE2";
     String stageName3 = "STAGE3";
     assertThatThrownBy(
-            () -> {
-              new ProcessBuilder("TEST")
-                  .execute(stageName1)
-                  .withSyncTestExecutor()
-                  .executeAfter(stageName2, Arrays.asList(stageName3))
-                  .withSyncTestExecutor()
-                  .executeAfter(stageName3, Arrays.asList(stageName2))
-                  .withSyncTestExecutor()
-                  .build();
-            })
+            () ->
+                new ProcessBuilder("TEST")
+                    .execute(stageName1)
+                    .withSyncTestExecutor()
+                    .executeAfter(stageName2, Arrays.asList(stageName3))
+                    .withSyncTestExecutor()
+                    .executeAfter(stageName3, Arrays.asList(stageName2))
+                    .withSyncTestExecutor()
+                    .build())
         .isInstanceOf(PipeliteProcessStagesException.class)
-        .hasMessageContaining(
-            "Invalid stages in process TEST, process has cyclic stage dependencies: STAGE3,STAGE2");
+        .hasMessageContaining("Process has cyclic stage dependencies: STAGE3,STAGE2");
+  }
+
+  @Test
+  public void testSelfReferencingStages() {
+    String stageName1 = "STAGE1";
+    String stageName2 = "STAGE2";
+    assertThatThrownBy(
+            () ->
+                new ProcessBuilder("TEST")
+                    .execute(stageName1)
+                    .withSyncTestExecutor()
+                    .executeAfter(stageName2, Arrays.asList(stageName2))
+                    .withSyncTestExecutor()
+                    .build())
+        .isInstanceOf(PipeliteProcessStagesException.class)
+        .hasMessageContaining("Process has self-referencing stage dependencies: STAGE2");
   }
 }

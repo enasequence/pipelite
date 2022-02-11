@@ -10,6 +10,11 @@
  */
 package pipelite.runner.stage;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static pipelite.stage.StageState.*;
+
+import java.util.*;
+import java.util.stream.Collectors;
 import lombok.Value;
 import lombok.experimental.Accessors;
 import org.junit.jupiter.api.Test;
@@ -25,12 +30,6 @@ import pipelite.stage.executor.ErrorType;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.ExecutorParameters;
-
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static pipelite.stage.StageState.*;
 
 public class DependencyResolverTest {
 

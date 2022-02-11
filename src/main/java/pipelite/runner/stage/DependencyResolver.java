@@ -10,11 +10,10 @@
  */
 package pipelite.runner.stage;
 
-import pipelite.process.Process;
-import pipelite.stage.Stage;
-
 import java.util.*;
 import java.util.stream.Collectors;
+import pipelite.process.Process;
+import pipelite.stage.Stage;
 
 public class DependencyResolver {
 
