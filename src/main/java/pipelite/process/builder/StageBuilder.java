@@ -36,12 +36,7 @@ public class StageBuilder {
     this.dependsOnStageNames.addAll(dependsOnStageNames);
   }
 
-  public ProcessBuilder with(StageExecutor<ExecutorParameters> executor) {
-    return with(executor, ExecutorParameters.builder().build());
-  }
-
-  public ProcessBuilder with(
-      StageExecutor<ExecutorParameters> executor, ExecutorParameters params) {
+  public <T extends ExecutorParameters> ProcessBuilder with(StageExecutor<T> executor, T params) {
     executor.setExecutorParams(params);
     return addStage(executor);
   }

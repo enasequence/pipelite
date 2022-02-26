@@ -11,15 +11,18 @@
 package pipelite.executor;
 
 import java.net.URL;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
+import pipelite.exception.PipeliteException;
 import pipelite.executor.cmd.CmdRunnerUtils;
 import pipelite.executor.task.RetryTask;
 import pipelite.stage.executor.StageExecutorRequest;
+import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.ExecutorParametersValidator;
 import pipelite.stage.parameters.LsfExecutorParameters;
 import pipelite.stage.parameters.cmd.LogFileResolver;
@@ -41,14 +44,7 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
   @Override
   public final String getSubmitCmd(StageExecutorRequest request) {
 
-    StringBuilder cmd = new StringBuilder();
-    cmd.append(BSUB_CMD);
-
-    // Write both stderr and stdout to the stdout file. The parameters that are specified in the
-    // command line override other parameters.
-
-    addArgument(cmd, "-oo");
-    addArgument(cmd, getOutFile());
+    StringBuilder cmd = createSubmitCmdBuilder();
 
     switch (getExecutorParams().getFormat()) {
       case JSDL:
@@ -68,6 +64,10 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
   @Override
   protected void prepareAsyncSubmit(StageExecutorRequest request) {
     super.prepareAsyncSubmit(request);
+    Path workDir = CmdExecutorParameters.getWorkDir(request, getExecutorParams());
+    if (!getCmdRunner().createDir(workDir)) {
+      throw new PipeliteException("Failed to create LSF work dir");
+    }
     definitionFile = getDefinitionFile(request, getExecutorParams());
     URL definitionUrl =
         ExecutorParametersValidator.validateUrl(getExecutorParams().getDefinition(), "definition");

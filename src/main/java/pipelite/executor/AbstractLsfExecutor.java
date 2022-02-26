@@ -13,7 +13,7 @@ package pipelite.executor;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.flogger.FluentLogger;
-import java.nio.file.Path;
+import java.io.File;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -58,7 +58,7 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
   private static final Duration JOB_RECOVERY_TIMEOUT = Duration.ofMinutes(10);
   private static final Duration JOB_RECOVERY_POLL_FREQUENCY = Duration.ofSeconds(5);
 
-  protected static final String BSUB_CMD = "bsub";
+  private static final String BSUB_CMD = "bsub";
   private static final String BKILL_CMD = "bkill ";
   private static final String BJOBS_CMD =
       "bjobs -o \"jobid stat exit_code cpu_used max_mem avg_mem exec_host delimiter='|'\" -noheader ";
@@ -121,6 +121,24 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
    */
   public abstract String getSubmitCmd(StageExecutorRequest request);
 
+  protected StringBuilder createSubmitCmdBuilder() {
+    StringBuilder cmd = new StringBuilder();
+    cmd.append(BSUB_CMD);
+
+    String outDir = AbstractLsfExecutor.getOutDir(outFile);
+    if (outDir != null) {
+      addArgument(cmd, "-outdir");
+      addArgument(cmd, outDir);
+      addArgument(cmd, "-cwd");
+      addArgument(cmd, outDir);
+    }
+
+    addArgument(cmd, "-oo");
+    addArgument(cmd, AbstractLsfExecutor.getOutFileName(outFile));
+
+    return cmd;
+  }
+
   /**
    * Returns the command runner.
    *
@@ -132,10 +150,6 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
 
   @Override
   protected void prepareAsyncSubmit(StageExecutorRequest request) {
-    Path workDir = CmdExecutorParameters.getWorkDir(request, getExecutorParams());
-    if (!getCmdRunner().createDir(workDir)) {
-      throw new PipeliteException("Failed to create LSF work dir");
-    }
     // Reset to allow execution retry.
     outFile = null;
     pollResult = null;
@@ -532,6 +546,16 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
    */
   public String getOutFile() {
     return outFile;
+  }
+
+  public static String getOutDir(String outFile) {
+    File file = new File(outFile);
+    return file.getParent();
+  }
+
+  public static String getOutFileName(String outFile) {
+    File file = new File(outFile);
+    return file.getName();
   }
 
   protected FluentLogger.Api logContext(FluentLogger.Api log, StageExecutorRequest request) {

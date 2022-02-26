@@ -16,17 +16,18 @@ import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.Pipeline;
 import pipelite.entity.ProcessEntity;
+import pipelite.exception.PipeliteException;
 import pipelite.log.LogKey;
 import pipelite.service.ProcessService;
 
 @Flogger
-public class ProcessCreator {
+public class ProcessEntityCreator {
 
   private final Pipeline pipeline;
   private final ProcessService processService;
   private final String pipelineName;
 
-  public ProcessCreator(Pipeline pipeline, ProcessService processService) {
+  public ProcessEntityCreator(Pipeline pipeline, ProcessService processService) {
     Assert.notNull(pipeline, "Missing pipeline");
     Assert.notNull(processService, "Missing process service");
     this.pipeline = pipeline;
@@ -36,12 +37,12 @@ public class ProcessCreator {
   }
 
   /**
-   * Creates and saves processes.
+   * Creates and saves process entities.
    *
-   * @param processCnt the number of requested processes to create
-   * @return the number of created processes
+   * @param processCnt the number of process entities to create
+   * @return the number of created process entities
    */
-  public int createProcesses(int processCnt) {
+  public int create(int processCnt) {
     if (pipeline == null) {
       return 0;
     }
@@ -52,7 +53,9 @@ public class ProcessCreator {
       if (process == null) {
         return createCnt;
       }
-      if (createProcess(process) != null) {
+      ProcessEntity processEntity = create(processService, pipelineName, process);
+      if (processEntity != null) {
+        pipeline.confirmProcess(processEntity.getProcessId());
         createCnt++;
       }
     }
@@ -61,43 +64,38 @@ public class ProcessCreator {
   }
 
   /**
-   * Creates and saves one process.
+   * Creates and saves a process entity.
    *
-   * @param process the next process
-   * @return the created process or null if it could not be created
+   * @param processService the process service
+   * @param pipelineName the pipeline name
+   * @param process the process for which the process entity is created
+   * @return the created process entity or null if it could not be created
    */
-  public ProcessEntity createProcess(Pipeline.Process process) {
+  public static ProcessEntity create(
+      ProcessService processService, String pipelineName, Pipeline.Process process) {
     String processId = process.getProcessId();
     if (processId == null || processId.trim().isEmpty()) {
-      logContext(log.atWarning()).log("New process does not have process id");
-      return null;
+      throw new PipeliteException("Failed to create process: missing process id");
     }
     ProcessEntity processEntity;
     String trimmedProcessId = processId.trim();
     Optional<ProcessEntity> savedProcessEntity =
         processService.getSavedProcess(pipelineName, trimmedProcessId);
     if (savedProcessEntity.isPresent()) {
+      // Process entity already exists
       processEntity = savedProcessEntity.get();
-      logContext(log.atWarning(), trimmedProcessId).log("Ignoring existing new process");
     } else {
-      logContext(log.atInfo(), trimmedProcessId).log("Creating new process");
       processEntity =
           processService.createExecution(
               pipelineName, trimmedProcessId, process.getPriority().getInt());
       if (processEntity == null) {
-        logContext(log.atSevere(), trimmedProcessId).log("Failed to create process");
         throw new RuntimeException("Failed to create process: " + trimmedProcessId);
       }
     }
-    pipeline.confirmProcess(processId);
     return processEntity;
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {
     return log.with(LogKey.PIPELINE_NAME, pipelineName);
-  }
-
-  private FluentLogger.Api logContext(FluentLogger.Api log, String processId) {
-    return log.with(LogKey.PIPELINE_NAME, pipelineName).with(LogKey.PROCESS_ID, processId);
   }
 }

@@ -49,7 +49,9 @@ public class PipeliteTest {
         builder ->
             builder
                 .execute("SCHEDULE_STAGE_SUCCESS_1")
-                .with(new TestExecutor(StageExecutorResult.success())));
+                .with(
+                    new TestExecutor(StageExecutorResult.success()),
+                    ExecutorParameters.builder().build()));
   }
 
   @Bean
@@ -59,7 +61,9 @@ public class PipeliteTest {
         builder ->
             builder
                 .execute("SCHEDULE_STAGE_ERROR_1")
-                .with(new TestExecutor(StageExecutorResult.error())));
+                .with(
+                    new TestExecutor(StageExecutorResult.error()),
+                    ExecutorParameters.builder().build()));
   }
   // }
 

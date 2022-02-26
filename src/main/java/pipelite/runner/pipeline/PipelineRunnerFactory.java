@@ -18,7 +18,7 @@ import pipelite.runner.process.ProcessQueue;
 import pipelite.runner.process.ProcessQueueFactory;
 import pipelite.runner.process.ProcessRunner;
 import pipelite.runner.process.ProcessRunnerFactory;
-import pipelite.runner.process.creator.ProcessCreator;
+import pipelite.runner.process.creator.ProcessEntityCreator;
 import pipelite.service.PipeliteServices;
 import pipelite.service.RegisteredPipelineService;
 
@@ -41,7 +41,8 @@ public class PipelineRunnerFactory {
     }
 
     // Get process creator.
-    ProcessCreator processCreator = new ProcessCreator(pipeline, pipeliteServices.process());
+    ProcessEntityCreator processEntityCreator =
+        new ProcessEntityCreator(pipeline, pipeliteServices.process());
 
     ProcessQueueFactory processQueueFactory =
         (pipeline1) -> new ProcessQueue(pipeliteConfiguration, pipeliteServices, pipeline1);
@@ -62,7 +63,7 @@ public class PipelineRunnerFactory {
         pipeliteServices,
         pipeliteMetrics,
         pipeline,
-        processCreator,
+        processEntityCreator,
         processQueueFactory,
         processRunnerFactory);
   }
@@ -72,7 +73,7 @@ public class PipelineRunnerFactory {
       PipeliteServices pipeliteServices,
       PipeliteMetrics pipeliteMetrics,
       Pipeline pipeline,
-      ProcessCreator processCreator,
+      ProcessEntityCreator processEntityCreator,
       ProcessQueueFactory processQueueFactory,
       ProcessRunnerFactory processRunnerFactory) {
     return new PipelineRunner(
@@ -80,7 +81,7 @@ public class PipelineRunnerFactory {
         pipeliteServices,
         pipeliteMetrics,
         pipeline,
-        processCreator,
+        processEntityCreator,
         processQueueFactory,
         processRunnerFactory);
   }

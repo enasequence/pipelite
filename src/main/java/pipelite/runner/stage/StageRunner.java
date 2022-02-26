@@ -16,6 +16,7 @@ import java.time.ZonedDateTime;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.error.InternalErrorHandler;
+import pipelite.exception.PipeliteException;
 import pipelite.executor.AbstractAsyncExecutor;
 import pipelite.log.LogKey;
 import pipelite.metrics.PipeliteMetrics;
@@ -23,6 +24,7 @@ import pipelite.process.Process;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorSerializer;
 import pipelite.stage.parameters.ExecutorParameters;
 
 @Flogger
@@ -68,6 +70,9 @@ public class StageRunner {
             process.getProcessId(),
             stage.getStageName(),
             this);
+    if (!StageExecutorSerializer.deserializeExecution(stage)) {
+      pipeliteServices.stage().startExecution(stage);
+    }
   }
 
   /**
@@ -112,7 +117,8 @@ public class StageRunner {
   }
 
   /**
-   * Called until the stage has been executed and the result callback has been called.
+   * Called until the stage has been executed and the result callback has been called. The result
+   * callback is called when the stage execution result is success or error.
    *
    * @param resultCallback stage runner result callback
    */
@@ -145,47 +151,42 @@ public class StageRunner {
     internalErrorHandler.execute(
         () -> {
           executorResult = stage.execute(pipelineName, process.getProcessId());
+          if (executorResult == null) {
+            throw new PipeliteException("Missing executor result");
+          }
           if (executorResult.isActive() && ZonedDateTime.now().isAfter(timeout)) {
-            // End stage execution.
-            logContext(log.atSevere())
-                .log("Maximum stage execution time exceeded. Terminating stage execution.");
-            stage.getExecutor().terminate();
+            logContext(log.atSevere()).log("Maximum stage execution time exceeded.");
             executorResult = StageExecutorResult.timeoutError();
-            endStageExecution(stage, executorResult);
-            resultCallback.accept(executorResult);
+            // Terminate executor if possible.
+            internalErrorHandler.execute(() -> stage.getExecutor().terminate());
+            endStageExecution(resultCallback);
           } else if (executorResult.isSubmitted()) {
-            // Continue stage execution.
             logContext(log.atFine()).log("Started asynchronous stage execution");
             pipeliteServices.stage().startAsyncExecution(stage);
           } else if (executorResult.isActive()) {
-            // Continue stage execution.
-            logContext(log.atFine()).log("Waiting asynchronous stage execution to complete");
+            logContext(log.atFiner()).log("Waiting asynchronous stage execution to complete");
           } else if (executorResult.isSuccess() || executorResult.isError()) {
-            // End stage execution.
-            logContext(log.atFine())
-                .log("Stage execution " + (executorResult.isSuccess() ? "succeeded" : "failed"));
-            endStageExecution(stage, executorResult);
-            resultCallback.accept(executorResult);
+            endStageExecution(resultCallback);
           }
         },
         (ex) -> {
-          // An exception was thrown.
           executorResult = StageExecutorResult.internalError(ex);
-          // End stage execution.
-          logContext(log.atSevere())
-              .withCause(ex)
-              .log("Stage execution failed because of an internal error: " + ex.getMessage());
-          endStageExecution(stage, executorResult);
-          resultCallback.accept(executorResult);
+          endStageExecution(resultCallback);
         });
   }
 
-  private void endStageExecution(Stage stage, StageExecutorResult result) {
-    pipeliteServices.stage().endExecution(stage, result);
-    if (!result.isSuccess()) {
-      pipeliteServices.mail().sendStageExecutionMessage(process, stage);
-    }
-    pipeliteMetrics.pipeline(pipelineName).stage().endStageExecution(result);
+  private void endStageExecution(StageRunnerResultCallback resultCallback) {
+    internalErrorHandler.execute(
+        () -> {
+          logContext(log.atFine())
+              .log("Stage execution ended with " + executorResult.getExecutorState().name());
+          pipeliteServices.stage().endExecution(stage, executorResult);
+          internalErrorHandler.execute(() -> resultCallback.accept(executorResult));
+          if (!executorResult.isSuccess()) {
+            pipeliteServices.mail().sendStageExecutionMessage(process, stage);
+          }
+          pipeliteMetrics.pipeline(pipelineName).stage().endStageExecution(executorResult);
+        });
   }
 
   public void terminate() {

@@ -92,7 +92,6 @@ public class InternalErrorHandler {
       return true;
     } catch (Exception ex) {
       try {
-        log.atSevere().withCause(ex).log("Internal error: " + ex.getMessage());
         internalErrorService.saveInternalError(
             serviceName, pipelineName, processId, stageName, caller.getClass(), ex);
       } catch (Exception ex2) {

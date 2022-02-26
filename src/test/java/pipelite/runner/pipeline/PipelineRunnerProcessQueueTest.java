@@ -29,7 +29,7 @@ import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.runner.process.ProcessQueue;
 import pipelite.runner.process.ProcessRunner;
-import pipelite.runner.process.creator.ProcessCreator;
+import pipelite.runner.process.creator.ProcessEntityCreator;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.tester.pipeline.ConfigurableTestPipeline;
@@ -108,7 +108,8 @@ public class PipelineRunnerProcessQueueTest {
 
   private void test(Pipeline pipeline, AtomicInteger executionCount) {
 
-    ProcessCreator processCreator = new ProcessCreator(pipeline, pipeliteServices.process());
+    ProcessEntityCreator processEntityCreator =
+        new ProcessEntityCreator(pipeline, pipeliteServices.process());
 
     ProcessQueue processQueue =
         spy(new ProcessQueue(pipeliteConfiguration, pipeliteServices, pipeline));
@@ -125,7 +126,7 @@ public class PipelineRunnerProcessQueueTest {
             pipeliteServices,
             pipeliteMetrics,
             pipeline,
-            processCreator,
+            processEntityCreator,
             (pipeline1) -> processQueue,
             (pipelineName1, process1) ->
                 new ProcessRunner(

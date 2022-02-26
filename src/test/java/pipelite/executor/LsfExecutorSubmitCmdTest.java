@@ -46,10 +46,23 @@ public class LsfExecutorSubmitCmdTest {
             .build();
 
     String outFile = CmdExecutorParameters.getLogFile(request, params).toString();
+    String outDir = AbstractLsfExecutor.getOutDir(outFile);
+    String outFileName = AbstractLsfExecutor.getOutFileName(outFile);
     String definitionFile = LsfExecutor.getDefinitionFile(request, params);
     executor.setOutFile(outFile);
     executor.setDefinitionFile(definitionFile);
     String submitCmd = executor.getSubmitCmd(request);
-    assertThat(submitCmd).isEqualTo("bsub -oo " + outFile + " -yaml " + definitionFile + " test");
+    assertThat(submitCmd)
+        .isEqualTo(
+            "bsub"
+                + " -outdir "
+                + outDir
+                + " -cwd "
+                + outDir
+                + " -oo "
+                + outFileName
+                + " -yaml "
+                + definitionFile
+                + " test");
   }
 }

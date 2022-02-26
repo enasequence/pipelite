@@ -29,7 +29,7 @@ import pipelite.runner.process.ProcessQueue;
 import pipelite.runner.process.ProcessQueueFactory;
 import pipelite.runner.process.ProcessRunnerFactory;
 import pipelite.runner.process.ProcessRunnerPool;
-import pipelite.runner.process.creator.ProcessCreator;
+import pipelite.runner.process.creator.ProcessEntityCreator;
 import pipelite.service.PipeliteServices;
 
 /** Executes processes in parallel for one pipeline. */
@@ -39,7 +39,7 @@ public class PipelineRunner extends ProcessRunnerPool {
   private final PipeliteServices pipeliteServices;
   private final String pipelineName;
   private final Pipeline pipeline;
-  private final ProcessCreator processCreator;
+  private final ProcessEntityCreator processEntityCreator;
   private final ProcessQueueFactory processQueueFactory;
   private final AtomicReference<ProcessQueue> processQueue = new AtomicReference<>();
   private final Duration minReplenishFrequency;
@@ -54,7 +54,7 @@ public class PipelineRunner extends ProcessRunnerPool {
       PipeliteServices pipeliteServices,
       PipeliteMetrics pipeliteMetrics,
       Pipeline pipeline,
-      ProcessCreator processCreator,
+      ProcessEntityCreator processEntityCreator,
       ProcessQueueFactory processQueueFactory,
       ProcessRunnerFactory processRunnerFactory) {
     super(
@@ -65,10 +65,10 @@ public class PipelineRunner extends ProcessRunnerPool {
         processRunnerFactory);
     Assert.notNull(pipeline, "Missing pipeline");
     Assert.notNull(processQueueFactory, "Missing process queue factory");
-    Assert.notNull(processCreator, "Missing process creator");
+    Assert.notNull(processEntityCreator, "Missing process entity creator");
     this.pipeliteServices = pipeliteServices;
     this.pipeline = pipeline;
-    this.processCreator = processCreator;
+    this.processEntityCreator = processEntityCreator;
     this.processQueueFactory = processQueueFactory;
     this.pipelineName = pipeline.pipelineName();
     this.minReplenishFrequency =
@@ -123,9 +123,9 @@ public class PipelineRunner extends ProcessRunnerPool {
 
                         if (p.getProcessQueueSize() == 0) {
                           // The process queue is empty.
-                          // Create new processes.
+                          // Create new process entities.
                           int createdProcessCount =
-                              processCreator.createProcesses(p.getProcessQueueMaxSize());
+                              processEntityCreator.create(p.getProcessQueueMaxSize());
                           replenishTime = ZonedDateTime.now();
                           if (createdProcessCount > 0) {
                             // Refresh process queue.
@@ -155,8 +155,8 @@ public class PipelineRunner extends ProcessRunnerPool {
                 () -> {
                   internalErrorHandler.execute(
                       () -> {
-                        // Create new processes.
-                        processCreator.createProcesses(processQueue.get().getProcessQueueMaxSize());
+                        // Create new process entities.
+                        processEntityCreator.create(processQueue.get().getProcessQueueMaxSize());
                         replenishTime = ZonedDateTime.now();
                       });
                   activeReplenishQueue.set(false);

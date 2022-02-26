@@ -29,13 +29,7 @@ public class SimpleLsfExecutor extends AbstractLsfExecutor<SimpleLsfExecutorPara
   @Override
   public final String getSubmitCmd(StageExecutorRequest request) {
 
-    StringBuilder cmd = new StringBuilder();
-    cmd.append(BSUB_CMD);
-
-    // Write both stderr and stdout to the stdout file.
-
-    addArgument(cmd, "-oo");
-    addArgument(cmd, getOutFile());
+    StringBuilder cmd = createSubmitCmdBuilder();
 
     Integer cpu = getExecutorParams().getCpu();
     if (cpu != null && cpu > 0) {

@@ -52,12 +52,19 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .stage(stage)
             .build();
     String outFile = CmdExecutorParameters.getLogFile(request, params).toString();
+    String outDir = AbstractLsfExecutor.getOutDir(outFile);
+    String outFileName = AbstractLsfExecutor.getOutFileName(outFile);
     executor.setOutFile(outFile);
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
         .isEqualTo(
-            "bsub -oo "
-                + outFile
+            "bsub"
+                + " -outdir "
+                + outDir
+                + " -cwd "
+                + outDir
+                + " -oo "
+                + outFileName
                 + " -n 2 -M 1M -R \"rusage[mem=1M:duration=1]\" -W 1 -q TEST test");
   }
 
@@ -86,9 +93,19 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .build();
     String outFile = CmdExecutorParameters.getLogFile(request, params).toString();
     executor.setOutFile(outFile);
+    String outDir = AbstractLsfExecutor.getOutDir(outFile);
+    String outFileName = AbstractLsfExecutor.getOutFileName(outFile);
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
-        .isEqualTo("bsub -oo " + outFile + " -n 2 -M 1M -R \"rusage[mem=1M]\" -W 1 -q TEST test");
+        .isEqualTo(
+            "bsub"
+                + " -outdir "
+                + outDir
+                + " -cwd "
+                + outDir
+                + " -oo "
+                + outFileName
+                + " -n 2 -M 1M -R \"rusage[mem=1M]\" -W 1 -q TEST test");
   }
 
   @Test
@@ -115,11 +132,20 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .stage(stage)
             .build();
     String outFile = CmdExecutorParameters.getLogFile(request, params).toString();
+    String outDir = AbstractLsfExecutor.getOutDir(outFile);
+    String outFileName = AbstractLsfExecutor.getOutFileName(outFile);
     executor.setOutFile(outFile);
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
         .isEqualTo(
-            "bsub -oo " + outFile + " -n 2 -M 1 -R \"rusage[mem=1:duration=1]\" -W 1 -q TEST test");
+            "bsub"
+                + " -outdir "
+                + outDir
+                + " -cwd "
+                + outDir
+                + " -oo "
+                + outFileName
+                + " -n 2 -M 1 -R \"rusage[mem=1:duration=1]\" -W 1 -q TEST test");
   }
 
   @Test
@@ -145,10 +171,20 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .stage(stage)
             .build();
     String outFile = CmdExecutorParameters.getLogFile(request, params).toString();
+    String outDir = AbstractLsfExecutor.getOutDir(outFile);
+    String outFileName = AbstractLsfExecutor.getOutFileName(outFile);
     executor.setOutFile(outFile);
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
-        .isEqualTo("bsub -oo " + outFile + " -n 2 -M 1 -R \"rusage[mem=1]\" -W 1 -q TEST test");
+        .isEqualTo(
+            "bsub"
+                + " -outdir "
+                + outDir
+                + " -cwd "
+                + outDir
+                + " -oo "
+                + outFileName
+                + " -n 2 -M 1 -R \"rusage[mem=1]\" -W 1 -q TEST test");
   }
 
   @Test
@@ -174,8 +210,19 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .stage(stage)
             .build();
     String outFile = CmdExecutorParameters.getLogFile(request, params).toString();
+    String outDir = AbstractLsfExecutor.getOutDir(outFile);
+    String outFileName = AbstractLsfExecutor.getOutFileName(outFile);
     executor.setOutFile(outFile);
     String submitCmd = executor.getSubmitCmd(request);
-    assertThat(submitCmd).isEqualTo("bsub -oo " + outFile + " -n 2 -W 1 -g testGroup -q TEST test");
+    assertThat(submitCmd)
+        .isEqualTo(
+            "bsub"
+                + " -outdir "
+                + outDir
+                + " -cwd "
+                + outDir
+                + " -oo "
+                + outFileName
+                + " -n 2 -W 1 -g testGroup -q TEST test");
   }
 }

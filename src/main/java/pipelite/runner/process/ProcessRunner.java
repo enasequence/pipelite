@@ -40,7 +40,6 @@ import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorSerializer;
 
 /** Executes a process and returns the process state. */
 @Flogger
@@ -115,7 +114,8 @@ public class ProcessRunner {
           ZonedDateTime runOneIterationStartTime = ZonedDateTime.now();
           if (isFirstIteration) {
             startTime = ZonedDateTime.now();
-            startProcessExecution();
+            logContext(log.atInfo()).log("Executing process");
+            startProcessExecution(pipeliteServices, executorConfiguration, pipelineName, process);
           }
           executeProcess(resultCallback);
 
@@ -161,9 +161,12 @@ public class ProcessRunner {
     active.remove(activeStageRunner);
   }
 
-  private void startProcessExecution() {
-    logContext(log.atInfo()).log("Executing process");
-    startStagesExecution();
+  public static void startProcessExecution(
+      PipeliteServices pipeliteServices,
+      ExecutorConfiguration executorConfiguration,
+      String pipelineName,
+      Process process) {
+    startStagesExecution(pipeliteServices, executorConfiguration, pipelineName, process);
     pipeliteServices.process().startExecution(process.getProcessEntity());
   }
 
@@ -191,9 +194,6 @@ public class ProcessRunner {
   }
 
   private void runStage(Stage stage) {
-    if (!StageExecutorSerializer.deserializeExecution(stage)) {
-      pipeliteServices.stage().startExecution(stage);
-    }
     StageRunner stageRunner =
         new StageRunner(
             pipeliteServices, pipeliteMetrics, serviceName, pipelineName, process, stage);
@@ -207,13 +207,22 @@ public class ProcessRunner {
     pipeliteServices.process().endExecution(process, processState);
   }
 
-  private void startStagesExecution() {
+  private static void startStagesExecution(
+      PipeliteServices pipeliteServices,
+      ExecutorConfiguration executorConfiguration,
+      String pipelineName,
+      Process process) {
     for (Stage stage : process.getStages()) {
-      startStageExecution(stage);
+      startStageExecution(pipeliteServices, executorConfiguration, pipelineName, process, stage);
     }
   }
 
-  private void startStageExecution(Stage stage) {
+  private static void startStageExecution(
+      PipeliteServices pipeliteServices,
+      ExecutorConfiguration executorConfiguration,
+      String pipelineName,
+      Process process,
+      Stage stage) {
     // Apply default executor parameters.
     stage.getExecutor().getExecutorParams().applyDefaults(executorConfiguration);
     stage.getExecutor().getExecutorParams().validate();
