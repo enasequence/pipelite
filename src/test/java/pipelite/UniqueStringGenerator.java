@@ -14,24 +14,24 @@ import java.util.UUID;
 
 public class UniqueStringGenerator {
 
-  public static <T> String randomServiceName(Class<T> cls) {
-    return cls.getSimpleName() + "-service-" + id();
+  public static <T> String randomServiceName() {
+    return "service-" + id();
   }
 
-  public static <T> String randomPipelineName(Class<T> cls) {
-    return cls.getSimpleName() + "-pipeline-" + id();
+  public static <T> String randomPipelineName() {
+    return "pipeline-" + id();
   }
 
-  public static <T> String randomProcessRunnerPoolName(Class<T> cls) {
-    return cls.getSimpleName() + "-pool-" + id();
+  public static <T> String randomProcessRunnerPoolName() {
+    return "pool-" + id();
   }
 
-  public static <T> String randomProcessId(Class<T> cls) {
-    return cls.getSimpleName() + "-process-" + id();
+  public static <T> String randomProcessId() {
+    return "process-" + id();
   }
 
-  public static <T> String randomStageName(Class<T> cls) {
-    return cls.getSimpleName() + "-stage-" + id();
+  public static <T> String randomStageName() {
+    return "stage-" + id();
   }
 
   public static String id() {

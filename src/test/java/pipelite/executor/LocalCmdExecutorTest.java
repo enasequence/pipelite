@@ -20,14 +20,12 @@ import pipelite.stage.parameters.CmdExecutorParameters;
 
 public class LocalCmdExecutorTest {
 
-  private final String PIPELINE_NAME =
-      UniqueStringGenerator.randomPipelineName(LocalCmdExecutorTest.class);
-  private final String PROCESS_ID =
-      UniqueStringGenerator.randomProcessId(LocalCmdExecutorTest.class);
+  private final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
+  private final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
 
   @Test
   public void test() {
-    String stageName = UniqueStringGenerator.randomStageName(this.getClass());
+    String stageName = UniqueStringGenerator.randomStageName();
 
     CmdExecutor<CmdExecutorParameters> executor = StageExecutor.createCmdExecutor("echo test");
     executor.setExecutorParams(CmdExecutorParameters.builder().build());

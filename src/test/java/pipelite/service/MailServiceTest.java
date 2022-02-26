@@ -119,8 +119,8 @@ public class MailServiceTest {
 
   @Test
   public void sendFailedStageExecutionMessageWithLog() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
-    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String processId = UniqueStringGenerator.randomProcessId();
 
     Process process =
         new ProcessBuilder(processId).execute("STAGE1").withSyncTestExecutor().build();
@@ -184,8 +184,8 @@ public class MailServiceTest {
 
   @Test
   public void sendFailedStageExecutionMessageWithEmptyLog() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
-    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String processId = UniqueStringGenerator.randomProcessId();
 
     Process process =
         new ProcessBuilder(processId).execute("STAGE1").withSyncTestExecutor().build();
@@ -245,8 +245,8 @@ public class MailServiceTest {
 
   @Test
   public void sendFailedStageExecutionMessageWithNullLog() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
-    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String processId = UniqueStringGenerator.randomProcessId();
 
     Process process =
         new ProcessBuilder(processId).execute("STAGE1").withSyncTestExecutor().build();
@@ -306,8 +306,8 @@ public class MailServiceTest {
 
   @Test
   public void sendFailedStageExecutionMessageWithNoLog() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
-    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String processId = UniqueStringGenerator.randomProcessId();
 
     Process process =
         new ProcessBuilder(processId).execute("STAGE1").withSyncTestExecutor().build();

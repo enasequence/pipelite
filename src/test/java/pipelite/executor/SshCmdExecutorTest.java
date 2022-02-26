@@ -36,15 +36,13 @@ public class SshCmdExecutorTest {
 
   @Autowired SshTestConfiguration sshTestConfiguration;
 
-  private static final String PIPELINE_NAME =
-      UniqueStringGenerator.randomPipelineName(SshCmdExecutorTest.class);
-  private static final String PROCESS_ID =
-      UniqueStringGenerator.randomProcessId(SshCmdExecutorTest.class);
+  private static final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
+  private static final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
 
   @Test
   @EnabledIfEnvironmentVariable(named = "PIPELITE_TEST_SSH_HOST", matches = ".+")
   public void test() {
-    String stageName = UniqueStringGenerator.randomStageName(this.getClass());
+    String stageName = UniqueStringGenerator.randomStageName();
 
     CmdExecutor<CmdExecutorParameters> executor = StageExecutor.createCmdExecutor("echo test");
     executor.setExecutorParams(

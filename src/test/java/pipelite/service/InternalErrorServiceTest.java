@@ -36,7 +36,7 @@ class InternalErrorServiceTest {
 
   @Test
   public void withServiceName() {
-    String serviceName = UniqueStringGenerator.randomServiceName(this.getClass());
+    String serviceName = UniqueStringGenerator.randomServiceName();
 
     try {
       throw new RuntimeException("Test");
@@ -55,10 +55,10 @@ class InternalErrorServiceTest {
 
   @Test
   public void withStageName() {
-    String serviceName = UniqueStringGenerator.randomServiceName(this.getClass());
-    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
-    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
-    String stageName = UniqueStringGenerator.randomStageName(this.getClass());
+    String serviceName = UniqueStringGenerator.randomServiceName();
+    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String processId = UniqueStringGenerator.randomProcessId();
+    String stageName = UniqueStringGenerator.randomStageName();
 
     try {
       throw new RuntimeException("Test");

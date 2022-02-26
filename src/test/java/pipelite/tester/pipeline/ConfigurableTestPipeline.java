@@ -41,7 +41,7 @@ public class ConfigurableTestPipeline<T extends TestProcessConfiguration> implem
     this.processCount = processCount;
     this.testProcessConfiguration = testProcessConfiguration;
     for (int i = 0; i < processCount; ++i) {
-      String processId = UniqueStringGenerator.randomProcessId(ConfigurableTestPipeline.class);
+      String processId = UniqueStringGenerator.randomProcessId();
       createdProcessIds.add(processId);
     }
   }

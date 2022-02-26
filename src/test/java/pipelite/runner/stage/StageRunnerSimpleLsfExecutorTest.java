@@ -57,12 +57,9 @@ public class StageRunnerSimpleLsfExecutorTest {
   @Autowired private PipeliteMetrics pipeliteMetrics;
   @Autowired private ExecutorConfiguration executorConfiguration;
   @Autowired private LsfTestConfiguration lsfTestConfiguration;
-  private final String serviceName =
-      UniqueStringGenerator.randomServiceName(StageRunnerSimpleLsfExecutorTest.class);
-  private final String pipelineName =
-      UniqueStringGenerator.randomPipelineName(StageRunnerSimpleLsfExecutorTest.class);
-  private final String stageName =
-      UniqueStringGenerator.randomStageName(StageRunnerSimpleLsfExecutorTest.class);
+  private final String serviceName = UniqueStringGenerator.randomServiceName();
+  private final String pipelineName = UniqueStringGenerator.randomPipelineName();
+  private final String stageName = UniqueStringGenerator.randomStageName();
 
   private StageRunner stageRunner(SimpleLsfExecutor executor) {
     // Create executor parameters
@@ -79,9 +76,7 @@ public class StageRunnerSimpleLsfExecutorTest {
     executor.setExecutorParams(params);
 
     // Create process
-    ProcessBuilder processBuilder =
-        new ProcessBuilder(
-            UniqueStringGenerator.randomProcessId(StageRunnerSimpleLsfExecutorTest.class));
+    ProcessBuilder processBuilder = new ProcessBuilder(UniqueStringGenerator.randomProcessId());
     processBuilder.execute(stageName).with(executor, params);
     Process process = processBuilder.build();
 
@@ -109,6 +104,7 @@ public class StageRunnerSimpleLsfExecutorTest {
   private class SubmitSubmittedExecutor extends SimpleLsfExecutor {
     @Override
     public StageExecutorResult submit(StageExecutorRequest request) {
+      setJobId(UniqueStringGenerator.id());
       return StageExecutorResult.submitted();
     }
   }
@@ -179,7 +175,8 @@ public class StageRunnerSimpleLsfExecutorTest {
 
   @Test
   public void pollMissingJobid() {
-    StageRunner stageRunner = stageRunner(new SubmitSubmittedExecutor());
+    SubmitSubmittedExecutor executor = new SubmitSubmittedExecutor();
+    StageRunner stageRunner = stageRunner(executor);
 
     Process process = stageRunner.getProcess();
     Stage stage = process.getStage(stageName).get();
@@ -193,6 +190,8 @@ public class StageRunnerSimpleLsfExecutorTest {
     assertThat(stage.getStageEntity().getStageState()).isEqualTo(StageState.ACTIVE);
     assertThat(((SimpleLsfExecutor) stage.getExecutor()).getState())
         .isEqualTo(AsyncExecutorState.POLL);
+
+    executor.setJobId(null);
 
     stageRunner.runOneIteration(r -> {});
 

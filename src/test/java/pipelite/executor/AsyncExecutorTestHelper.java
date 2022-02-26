@@ -30,9 +30,9 @@ public class AsyncExecutorTestHelper {
       Consumer<StageExecutorResult> assertAfterSubmit,
       Consumer<StageExecutorResult> assertAfterPoll) {
 
-    String pipelineName = UniqueStringGenerator.randomPipelineName(AsyncExecutorTestHelper.class);
-    String processId = UniqueStringGenerator.randomProcessId(AsyncExecutorTestHelper.class);
-    String stageName = UniqueStringGenerator.randomStageName(AsyncExecutorTestHelper.class);
+    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String processId = UniqueStringGenerator.randomProcessId();
+    String stageName = UniqueStringGenerator.randomStageName();
     Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
     StageExecutorRequest request =
         StageExecutorRequest.builder()

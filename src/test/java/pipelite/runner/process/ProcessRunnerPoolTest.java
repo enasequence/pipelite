@@ -53,8 +53,7 @@ import pipelite.time.Time;
 public class ProcessRunnerPoolTest {
 
   private static final int PROCESS_CNT = 100;
-  private static final String PIPELINE_NAME =
-      UniqueStringGenerator.randomPipelineName(ProcessRunnerPoolTest.class);
+  private static final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
 
   @Autowired private PipeliteConfiguration pipeliteConfiguration;
   @Autowired private PipeliteServices pipeliteServices;
@@ -85,12 +84,12 @@ public class ProcessRunnerPoolTest {
         pipeliteConfiguration,
         pipeliteServices,
         metrics,
-        UniqueStringGenerator.randomProcessRunnerPoolName(this.getClass()),
+        UniqueStringGenerator.randomProcessRunnerPoolName(),
         createProcessRunnerFactory(lockProcessCnt, unlockProcessCnt));
   }
 
   private Process createProcess(Function<StageExecutorRequest, StageExecutorResult> callback) {
-    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    String processId = UniqueStringGenerator.randomProcessId();
     ExecutorParameters executorParams = new ExecutorParameters();
     executorParams.setMaximumRetries(0);
     Process process =

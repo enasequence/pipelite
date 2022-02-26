@@ -57,10 +57,8 @@ import pipelite.time.Time;
 @Transactional
 class RetryServiceTest {
 
-  private static final String PIPELINE_NAME =
-      UniqueStringGenerator.randomPipelineName(RetryServiceTest.class);
-  private static final String SCHEDULE_NAME =
-      UniqueStringGenerator.randomPipelineName(RetryServiceTest.class);
+  private static final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
+  private static final String SCHEDULE_NAME = UniqueStringGenerator.randomPipelineName();
   private static final String STAGE_NAME = "STAGE";
   private static final String CRON = PipeliteTestConstants.CRON_EVERY_HOUR;
 
@@ -134,7 +132,7 @@ class RetryServiceTest {
 
   @Test
   public void retryFailedProcess() {
-    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    String processId = UniqueStringGenerator.randomProcessId();
     RegisteredPipeline registeredPipeline =
         registeredPipelineService.getRegisteredPipeline(PIPELINE_NAME);
     Process process = ProcessFactory.create(processId, registeredPipeline);
@@ -177,7 +175,7 @@ class RetryServiceTest {
 
   @Test
   public void retryFailedProcessThrowsBecauseNotFailed() {
-    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    String processId = UniqueStringGenerator.randomProcessId();
     RegisteredPipeline registeredPipeline =
         registeredPipelineService.getRegisteredPipeline(PIPELINE_NAME);
     Process process = ProcessFactory.create(processId, registeredPipeline);
@@ -201,7 +199,7 @@ class RetryServiceTest {
 
   @Test
   public void retryFailedProcessThrowsUnknownStage() {
-    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    String processId = UniqueStringGenerator.randomProcessId();
     RegisteredPipeline registeredPipeline =
         registeredPipelineService.getRegisteredPipeline(PIPELINE_NAME);
     Process process = ProcessFactory.create(processId, registeredPipeline);
@@ -225,7 +223,7 @@ class RetryServiceTest {
 
   @Test
   public void retryFailedProcessNoPermanentlyFailedStages() {
-    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    String processId = UniqueStringGenerator.randomProcessId();
     RegisteredPipeline registeredPipeline =
         registeredPipelineService.getRegisteredPipeline(PIPELINE_NAME);
     Process process = ProcessFactory.create(processId, registeredPipeline);
@@ -268,8 +266,8 @@ class RetryServiceTest {
 
   @Test
   public void retryFailedSchedule() {
-    String serviceName = UniqueStringGenerator.randomServiceName(ScheduleServiceTest.class);
-    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    String serviceName = UniqueStringGenerator.randomServiceName();
+    String processId = UniqueStringGenerator.randomProcessId();
     RegisteredPipeline registeredPipeline =
         registeredPipelineService.getRegisteredPipeline(SCHEDULE_NAME);
     Process process = ProcessFactory.create(processId, registeredPipeline);

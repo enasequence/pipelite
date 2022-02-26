@@ -21,8 +21,8 @@ class ProcessEntityTest {
 
   @Test
   public void lifecycle() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName(ProcessEntityTest.class);
-    String processId = UniqueStringGenerator.randomProcessId(ProcessEntityTest.class);
+    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String processId = UniqueStringGenerator.randomProcessId();
     int priority = 1;
 
     ProcessEntity processEntity = ProcessEntity.createExecution(pipelineName, processId, priority);
@@ -62,8 +62,8 @@ class ProcessEntityTest {
 
   @Test
   public void priority() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName(ProcessEntityTest.class);
-    String processId = UniqueStringGenerator.randomProcessId(ProcessEntityTest.class);
+    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String processId = UniqueStringGenerator.randomProcessId();
 
     assertThat(ProcessEntity.getBoundedPriority(null)).isEqualTo(ProcessEntity.DEFAULT_PRIORITY);
     assertThat(ProcessEntity.getBoundedPriority(ProcessEntity.MIN_PRIORITY - 1))

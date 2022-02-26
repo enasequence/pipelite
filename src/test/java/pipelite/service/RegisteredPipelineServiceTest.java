@@ -69,8 +69,7 @@ public class RegisteredPipelineServiceTest {
 
   public static class TestPipeline implements Pipeline {
 
-    private final String pipelineName =
-        UniqueStringGenerator.randomPipelineName(RegisteredPipelineServiceTest.class);
+    private final String pipelineName = UniqueStringGenerator.randomPipelineName();
 
     @Override
     public String pipelineName() {
@@ -88,8 +87,7 @@ public class RegisteredPipelineServiceTest {
 
   public static class TestSchedule implements Schedule {
 
-    private final String pipelineName =
-        UniqueStringGenerator.randomPipelineName(RegisteredPipelineServiceTest.class);
+    private final String pipelineName = UniqueStringGenerator.randomPipelineName();
 
     @Override
     public String pipelineName() {
@@ -151,7 +149,7 @@ public class RegisteredPipelineServiceTest {
         .isThrownBy(
             () ->
                 registeredPipelineService.getRegisteredPipeline(
-                    UniqueStringGenerator.randomPipelineName(RegisteredPipelineServiceTest.class)))
+                    UniqueStringGenerator.randomPipelineName()))
         .withMessageStartingWith("Unknown pipeline");
   }
 

@@ -27,8 +27,7 @@ public abstract class SingleStageTestProcessConfiguration extends TestProcessCon
   private final TestType testType;
   private final AssertSubmittedStageEntity assertSubmittedStageEntity;
   private final AssertCompletedStageEntity assertCompletedStageEntity;
-  private final String stageName =
-      UniqueStringGenerator.randomStageName(SingleStageTestProcessConfiguration.class);
+  private final String stageName = UniqueStringGenerator.randomStageName();
 
   protected interface AssertSubmittedStageEntity {
     void assertSubmittedStageEntity(

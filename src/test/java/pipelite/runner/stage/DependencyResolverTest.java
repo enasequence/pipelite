@@ -37,7 +37,7 @@ public class DependencyResolverTest {
       ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build();
 
   private ProcessBuilder createProcessBuilder() {
-    return new ProcessBuilder(UniqueStringGenerator.randomProcessId(DependencyResolverTest.class));
+    return new ProcessBuilder(UniqueStringGenerator.randomProcessId());
   }
 
   @Test

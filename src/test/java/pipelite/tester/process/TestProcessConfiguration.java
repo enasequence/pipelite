@@ -16,7 +16,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import pipelite.RegisteredPipeline;
 import pipelite.UniqueStringGenerator;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.tester.pipeline.ConfigurableTestPipeline;
 
 public abstract class TestProcessConfiguration implements RegisteredPipeline {
 
@@ -24,7 +23,7 @@ public abstract class TestProcessConfiguration implements RegisteredPipeline {
   private final Set<String> configuredProcessIds = ConcurrentHashMap.newKeySet();
 
   public TestProcessConfiguration() {
-    pipelineName = UniqueStringGenerator.randomPipelineName(ConfigurableTestPipeline.class);
+    pipelineName = UniqueStringGenerator.randomPipelineName();
   }
 
   public TestProcessConfiguration(String pipelineName) {

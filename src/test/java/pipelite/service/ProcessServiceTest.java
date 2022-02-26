@@ -51,8 +51,8 @@ class ProcessServiceTest {
   @Test
   public void lifecycle() {
 
-    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
-    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String processId = UniqueStringGenerator.randomProcessId();
     int priority = 1;
 
     ProcessEntity processEntity = processService.createExecution(pipelineName, processId, priority);
@@ -97,7 +97,7 @@ class ProcessServiceTest {
 
   @Test
   public void getUnlockedActiveCompletedFailedPendingProcessesWithSamePriority() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
+    String pipelineName = UniqueStringGenerator.randomPipelineName();
 
     saveProcess(pipelineName, ProcessState.ACTIVE, 1);
     saveProcess(pipelineName, ProcessState.ACTIVE, 1);
@@ -120,7 +120,7 @@ class ProcessServiceTest {
 
   @Test
   public void getUnlockedActiveCompletedFailedPendingProcessesWithDifferentPriority() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
+    String pipelineName = UniqueStringGenerator.randomPipelineName();
 
     saveProcess(pipelineName, ProcessState.ACTIVE, 1);
     saveProcess(pipelineName, ProcessState.ACTIVE, 2);
@@ -150,7 +150,7 @@ class ProcessServiceTest {
 
   @Test
   public void getProcesses() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
+    String pipelineName = UniqueStringGenerator.randomPipelineName();
 
     List<ProcessEntity> processes =
         Arrays.asList(
@@ -188,7 +188,7 @@ class ProcessServiceTest {
   private ProcessEntity saveProcess(String pipelineName, ProcessState state, int priority) {
     ProcessEntity processEntity =
         ProcessEntity.createExecution(
-            pipelineName, UniqueStringGenerator.randomProcessId(this.getClass()), priority);
+            pipelineName, UniqueStringGenerator.randomProcessId(), priority);
     processEntity.setProcessState(state);
     processEntity.setExecutionCount(0);
     return processService.saveProcess(processEntity);
@@ -219,8 +219,8 @@ class ProcessServiceTest {
 
   @Test
   public void isRetryProcessWithFailedProcess() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
-    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String processId = UniqueStringGenerator.randomProcessId();
     int priority = 1;
 
     ProcessEntity processEntity = processService.createExecution(pipelineName, processId, priority);
@@ -233,8 +233,8 @@ class ProcessServiceTest {
 
   @Test
   public void isRetryProcessWithNotFailedProcess() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
-    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String processId = UniqueStringGenerator.randomProcessId();
     int priority = 1;
 
     ProcessEntity processEntity = processService.createExecution(pipelineName, processId, priority);
@@ -249,8 +249,8 @@ class ProcessServiceTest {
 
   @Test
   public void isRetryProcessWithMissingProcess() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName(this.getClass());
-    String processId = UniqueStringGenerator.randomProcessId(this.getClass());
+    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String processId = UniqueStringGenerator.randomProcessId();
 
     assertThat(processService.getSavedProcess(pipelineName, processId).isPresent()).isFalse();
     assertThrows(
@@ -260,7 +260,7 @@ class ProcessServiceTest {
 
   private ProcessEntity createProcessEntity(Integer priority, ZonedDateTime initTime) {
     ProcessEntity processEntity = new ProcessEntity();
-    processEntity.setProcessId(UniqueStringGenerator.randomProcessId(ProcessServiceTest.class));
+    processEntity.setProcessId(UniqueStringGenerator.randomProcessId());
     processEntity.setPriority(priority);
     processEntity.setCreateTime(initTime);
     return processEntity;

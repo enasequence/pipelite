@@ -91,6 +91,9 @@ public abstract class AbstractAsyncExecutor<
         throw new PipeliteException(
             "Unexpected state during asynchronous submit: " + result.getExecutorState().name());
       }
+      if (jobId == null) {
+        throw new PipeliteException("Missing job id.");
+      }
       state = AsyncExecutorState.POLL;
       // Asynchronous executor state is saved in database after submit by stage runner.
       return result;

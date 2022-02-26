@@ -23,8 +23,7 @@ import pipelite.stage.Stage;
 
 public class ProcessBuilderTest {
 
-  private static final String PROCESS_ID =
-      UniqueStringGenerator.randomProcessId(ProcessBuilderTest.class);
+  private static final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
 
   @Test
   public void test() {

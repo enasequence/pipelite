@@ -215,9 +215,9 @@ public class TestTypeTest {
   @Test
   public void next() {
     TestType testType = TestType.nonPermanentErrorAndThenSuccess;
-    String pipelineName = UniqueStringGenerator.randomPipelineName(TestTypeTest.class);
-    String processId = UniqueStringGenerator.randomProcessId(TestTypeTest.class);
-    String stageName = UniqueStringGenerator.randomStageName(TestTypeTest.class);
+    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String processId = UniqueStringGenerator.randomProcessId();
+    String stageName = UniqueStringGenerator.randomStageName();
     testType.register(pipelineName, processId, stageName);
 
     assertThatThrownBy(() -> testType.lastExitCode(pipelineName, processId, stageName))
