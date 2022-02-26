@@ -425,8 +425,7 @@ public class TestType {
                         result.getAttribute(StageExecutorResultAttribute.EXIT_CODE);
                     if (lastExitCode == null) {
                       testType.failedAsserts.add("Stage has no exit code");
-                    }
-                    else if (!lastExitCode.equals(stageNextExitCode.get(key))) {
+                    } else if (!lastExitCode.equals(stageNextExitCode.get(key))) {
                       testType.failedAsserts.add(
                           "Unexpected stage exit code "
                               + lastExitCode
