@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.stage.parameters.cmd;
+package pipelite.stage.path;
 
 /**
  * Sanitizes a file or directory name by removing all non-word characters. A word character is a
@@ -20,14 +20,14 @@ public class FilePathSanitizer {
   private FilePathSanitizer() {}
 
   /**
-   * Sanitizes a file or directory name by removing all non-word characters. A word character is a
-   * character a-z, A-Z, 0-9, including _ (underscore ). If the file name is file path with
-   * directory separator then they will be sanitized as well.
+   * Sanitizes a file or directory name by replacing '-' with '_' and removing all other non-word
+   * characters. A word character is a character a-z, A-Z, 0-9, including '_' (underscore). If the
+   * file name is file path with directory separator then they will be sanitized as well.
    *
    * @name file or directory name
    * @return the sanitized name
    */
   public static String sanitize(String name) {
-    return name.replaceAll("\\W+", "");
+    return name.replaceAll("-", "_").replaceAll("\\W+", "");
   }
 }

@@ -291,13 +291,8 @@ kubernetes').
 - pipelite.executor.*.logSave: the concatenated stdout and stderr output of the stage execution can be saved into the
   pipelite database: ALWAYS saves the output, ERROR saves the output if the stage execution failed, NEVER does not save
   the output. Default value: ERROR.
-- pipelite.executor.*.logRetention: Some executors save the stdout and stderr output of the stage execution to a working
-  directory. These files can be kept or deleted: ALWAYS keeps the file, ERROR keeps the file if the stage execution
-  failed, NEVER deletes the file. If the file is not available immediately after stage execution it may not get deleted.
-  Default value: ALWAYS.
 - pipelite.executor.*.logLines: the number of last lines from the output file saved in the stage log. Default value:
   1000
-- pipelite.executor.*.logTimeout: the maximum wait time for the stage log to become available. Default value: 10 seconds
 
 ##### Kubernetes executor parameters
 
@@ -322,11 +317,6 @@ https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/.
 - pipelite.executor.cmd.user: the user used to connect to the remote host. Default value: the user who restarted the
   Pipelite service
 - pipelite.executor.cmd.env: the environmental variables passed to the command executor
-- pipelite.executor.cmd.workDir: the working directory where the output file and job definition files are written.
-  Substitutes the following placeholders: %PIPELINE% with the pipeline name, %PROCESS% with the process id, and %STAGE%
-  with the stage name. Default value: pipelite. Pipelite version 1.* did not support placeholders, suffixed the working
-  directory with the placeholder equivalent of pipelite/%PIPELINE%/%PROCESS%/%STAGE% and the default value was the
-  placeholder equivalent of pipelite/%PIPELINE%/%PROCESS%/%STAGE%.
 
 ##### Simple LSF executor parameters
 
@@ -334,13 +324,16 @@ https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/.
 - pipelite.executor.simpleLsf.user: the user used to connect to the remote host. Default value: user who restarted the
   Pipelite service
 - pipelite.executor.simpleLsf.env: the environmental variables passed to the command executor
-- pipelite.executor.simpleLsf.workDir: the working directory where the output file and job definition files are written
 - pipelite.executor.simpleLsf.queue: the queue name
 - pipelite.executor.simpleLsf.cpu: the number of requested cpus (-n option)
 - pipelite.executor.simpleLsf.memory: the amount of requested memory (-M and -R rusage[mem=] option)
 - pipelite.executor.simpleLsf.memoryUnits: the LSF memory units (-M and -R rusage[mem=] option)
 - pipelite.executor.simpleLsf.memoryTimeout: the LSF memory duration (-R rusage[mem=:duration=] option)
 - pipelite.executor.simpleLsf.jobGroup: the LSF job group name (-g option)
+- pipelite.executor.simpleLsf.logDir: the directory where stage log files are written: <logDir>/<user>
+  /<pipeline>/<process>. The <logDir> must exist on the LSF cluster and must be writable on the LSF execution nodes.
+- pipelite.executor.simpleLsf.logTimeout: the maximum wait time for the stage log to become available. Default value: 10
+  seconds
 
 The unit for the resource usage limit can be one of:
 
@@ -358,11 +351,17 @@ The unit for the resource usage limit can be one of:
 - pipelite.executor.lsf.user: the user used to connect to the remote host. Default value: user who restarted the
   Pipelite service
 - pipelite.executor.lsf.env: the environmental variables passed to the command executor
-- pipelite.executor.lsf.workDir: the working directory where the output file and job definition files are written
 - pipelite.executor.lsf.definition: the job definition resource name, file name or URL
 - pipelite.executor.lsf.format: the job definition file format: YAML, JSON, or JSDL
 - pipelite.executor.lsf.parameters: the job definition parameters applied to the job definition file. The key is the
   parameter placeholder that if found in the job definition file will be replaced with the corresponding value.
+- pipelite.executor.lsf.definitionDir: the directory where stage definition files are written: <definitionDir>/<user>
+  /<pipeline>/<process>. The <definitionDir> must exist on the LSF cluster and must be writable on the LSF submission
+  nodes.
+- pipelite.executor.lsf.logDir: the directory where stage log files are written: <logDir>/<user>
+  /<pipeline>/<process>. The <logDir> must exist on the LSF cluster and must be writable on the LSF execution nodes.
+- pipelite.executor.lsf.logTimeout: the maximum wait time for the stage log to become available. Default value: 10
+  seconds
 
 ##### AwsBatch executor parameters
 
@@ -440,8 +439,7 @@ The unit for the resource usage limit can be one of:
 
 #### Test profiles
 
-- if Spring active profiles contain 'test' then uses HSQLDB in-memory database unsuitable for production
-  purposes.
+- if Spring active profiles contain 'test' then uses HSQLDB in-memory database unsuitable for production purposes.
 
 #### Environment variables for unit testing
 
@@ -459,16 +457,17 @@ Example values when using the HSQLDB in-memory database:
 - PIPELITE_TEST_DATABASE_USERNAME: sa
 - PIPELITE_TEST_DATABASE_PASSWORD:
 
-When the following environment variable is defined then ssh unit tests are executed:
+Ssh unit tests require the following environment variables:
 
 - PIPELITE_TEST_SSH_HOST
-- PIPELITE_TEST_SSH_USER (Default value: current user)
+- PIPELITE_TEST_SSH_USER
 
-When the following environment variable is defined then lsf unit tests are executed:
+Lsf unit tests require the following environment variables:
 
 - PIPELITE_TEST_LSF_HOST
-- PIPELITE_TEST_LSF_USER (Default value: current user)
-- PIPELITE_TEST_LSF_WORKDIR
+- PIPELITE_TEST_LSF_USER
+- PIPELITE_TEST_LSF_LOG_DIR
+- PIPELITE_TEST_LSF_DEFINITION_DIR
 
 ### Database schema
 
@@ -562,7 +561,6 @@ The Schedules page shows information for all schedules running on the Pipelite s
 The Schedule page shows the execution history for one schedule.
 
 ![Schedules](readme/Schedule.png)
-
 
 #### Pipelines
 

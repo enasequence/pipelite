@@ -29,7 +29,7 @@ public class SimpleLsfExecutor extends AbstractLsfExecutor<SimpleLsfExecutorPara
   @Override
   public final String getSubmitCmd(StageExecutorRequest request) {
 
-    StringBuilder cmd = createSubmitCmdBuilder();
+    StringBuilder cmd = getSharedSubmitCmd(request);
 
     Integer cpu = getExecutorParams().getCpu();
     if (cpu != null && cpu > 0) {

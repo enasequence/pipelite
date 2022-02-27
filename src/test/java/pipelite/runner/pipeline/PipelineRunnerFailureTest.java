@@ -302,8 +302,7 @@ public class PipelineRunnerFailureTest {
                     + "  \"timeout\" : 10000,\n"
                     + "  \"maximumRetries\" : 0,\n"
                     + "  \"immediateRetries\" : 0,\n"
-                    + "  \"logLines\" : 1000,\n"
-                    + "  \"logTimeout\" : 10000\n"
+                    + "  \"logLines\" : 1000\n"
                     + "}");
 
         if ((i == 0 && t.stageTestResult == StageTestResult.FIRST_ERROR)

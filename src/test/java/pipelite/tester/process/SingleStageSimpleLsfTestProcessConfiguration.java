@@ -40,9 +40,9 @@ public class SingleStageSimpleLsfTestProcessConfiguration
     SimpleLsfExecutorParameters.SimpleLsfExecutorParametersBuilder<?, ?> executorParamsBuilder =
         SimpleLsfExecutorParameters.builder();
     executorParamsBuilder
-        .user(lsfTestConfiguration.getUser())
         .host(lsfTestConfiguration.getHost())
-        .workDir(lsfTestConfiguration.getWorkDir())
+        .user(lsfTestConfiguration.getUser())
+        .logDir(lsfTestConfiguration.getLogDir())
         .timeout(Duration.ofSeconds(180))
         // .saveLog(false)
         .maximumRetries(maximumRetries())

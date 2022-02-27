@@ -16,7 +16,6 @@ import static pipelite.stage.parameters.cmd.LogFileSavePolicy.NEVER;
 
 import org.junit.jupiter.api.Test;
 import pipelite.stage.parameters.ExecutorParameters;
-import pipelite.stage.parameters.cmd.LogFileRetentionPolicy;
 import pipelite.stage.parameters.cmd.LogFileSavePolicy;
 
 public class StageExecutorTest {
@@ -25,9 +24,8 @@ public class StageExecutorTest {
 
     private final ExecutorParameters params;
 
-    public TestExecutor(LogFileSavePolicy savePolicy, LogFileRetentionPolicy retentionPolicy) {
-      params =
-          ExecutorParameters.builder().logSave(savePolicy).logRetention(retentionPolicy).build();
+    public TestExecutor(LogFileSavePolicy savePolicy) {
+      params = ExecutorParameters.builder().logSave(savePolicy).build();
     }
 
     @Override
@@ -53,13 +51,8 @@ public class StageExecutorTest {
   }
 
   private boolean isSaveLogFile(LogFileSavePolicy policy, StageExecutorResult result) {
-    TestExecutor testExecutor = new TestExecutor(policy, null);
+    TestExecutor testExecutor = new TestExecutor(policy);
     return testExecutor.isSaveLogFile(result);
-  }
-
-  private boolean isDeleteLogFile(LogFileRetentionPolicy policy, StageExecutorResult result) {
-    TestExecutor testExecutor = new TestExecutor(null, policy);
-    return testExecutor.isDeleteLogFile(result);
   }
 
   private StageExecutorResult error() {
@@ -80,17 +73,5 @@ public class StageExecutorTest {
 
     assertThat(isSaveLogFile(LogFileSavePolicy.ALWAYS, error())).isTrue();
     assertThat(isSaveLogFile(LogFileSavePolicy.ALWAYS, success())).isTrue();
-  }
-
-  @Test
-  public void testIsDeleteLogFile() {
-    assertThat(isDeleteLogFile(LogFileRetentionPolicy.ALWAYS, error())).isFalse();
-    assertThat(isDeleteLogFile(LogFileRetentionPolicy.ALWAYS, success())).isFalse();
-
-    assertThat(isDeleteLogFile(LogFileRetentionPolicy.ERROR, error())).isFalse();
-    assertThat(isDeleteLogFile(LogFileRetentionPolicy.ERROR, success())).isTrue();
-
-    assertThat(isDeleteLogFile(LogFileRetentionPolicy.NEVER, error())).isTrue();
-    assertThat(isDeleteLogFile(LogFileRetentionPolicy.NEVER, success())).isTrue();
   }
 }

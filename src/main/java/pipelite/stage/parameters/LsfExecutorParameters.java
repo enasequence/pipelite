@@ -17,6 +17,9 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import pipelite.configuration.ExecutorConfiguration;
+import pipelite.stage.executor.StageExecutorRequest;
+import pipelite.stage.path.LsfDefinitionFilePathResolver;
+import pipelite.stage.path.LsfFilePathResolver;
 
 /**
  * LSF executor parameters given using a job definition file and job definition parameters. The job
@@ -28,7 +31,7 @@ import pipelite.configuration.ExecutorConfiguration;
 @NoArgsConstructor
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
-public class LsfExecutorParameters extends SharedLsfExecutorParameters {
+public class LsfExecutorParameters extends AbstractLsfExecutorParameters {
   public enum Format {
     YAML,
     JSON,
@@ -40,6 +43,12 @@ public class LsfExecutorParameters extends SharedLsfExecutorParameters {
 
   /** The LSF job definition file format. */
   private Format format;
+
+  /**
+   * The directory where stage definition file is uploaded. The <definitionDir> must exist on the
+   * LSF cluster.
+   */
+  private String definitionDir;
 
   /**
    * The LSF job definition parameters applied to the job definition file. The key is the parameter
@@ -57,6 +66,7 @@ public class LsfExecutorParameters extends SharedLsfExecutorParameters {
     super.applyDefaults(defaultParams);
     applyDefault(this::getDefinition, this::setDefinition, defaultParams::getDefinition);
     applyDefault(this::getFormat, this::setFormat, defaultParams::getFormat);
+    applyDefault(this::getDefinitionDir, this::setDefinitionDir, defaultParams::getDefinitionDir);
     if (parameters == null) {
       parameters = new HashMap<>();
     }
@@ -71,5 +81,15 @@ public class LsfExecutorParameters extends SharedLsfExecutorParameters {
     if (definition != null) {
       ExecutorParametersValidator.validateUrl(definition, "definition");
     }
+    if (definitionDir != null) {
+      ExecutorParametersValidator.validatePath(definitionDir, "definitionDir");
+    }
+  }
+
+  public String resolveDefinitionFile(
+      StageExecutorRequest request, LsfFilePathResolver.Format format) {
+    return ExecutorParametersValidator.validatePath(
+            new LsfDefinitionFilePathResolver(request, this).getFile(format), "definitionFile")
+        .toString();
   }
 }

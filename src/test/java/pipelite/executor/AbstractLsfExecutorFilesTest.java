@@ -12,17 +12,16 @@ package pipelite.executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
 import pipelite.exception.PipeliteException;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorRequest;
-import pipelite.stage.parameters.CmdExecutorParameters;
-import pipelite.stage.parameters.SharedLsfExecutorParameters;
+import pipelite.stage.parameters.AbstractLsfExecutorParameters;
+import pipelite.stage.path.LsfFilePathResolver;
 
 public class AbstractLsfExecutorFilesTest {
 
-  private static class TestLsfExecutor extends AbstractLsfExecutor<SharedLsfExecutorParameters> {
+  private static class TestLsfExecutor extends AbstractLsfExecutor<AbstractLsfExecutorParameters> {
     @Override
     public String getSubmitCmd(StageExecutorRequest request) {
       throw new PipeliteException("");
@@ -30,7 +29,7 @@ public class AbstractLsfExecutorFilesTest {
   }
 
   @Test
-  public void getWorkDir() {
+  public void resolveDefaultLogDir() {
     TestLsfExecutor executor = new TestLsfExecutor();
     Stage stage = Stage.builder().stageName("STAGE_NAME").executor(executor).build();
     StageExecutorRequest request =
@@ -39,15 +38,19 @@ public class AbstractLsfExecutorFilesTest {
             .processId("PROCESS_ID")
             .stage(stage)
             .build();
-    CmdExecutorParameters params = CmdExecutorParameters.builder().workDir("WORKDIR").build();
+    AbstractLsfExecutorParameters params = AbstractLsfExecutorParameters.builder().build();
 
-    assertThat(CmdExecutorParameters.getWorkDir(request, params)).isEqualTo(Paths.get("WORKDIR"));
+    assertThat(params.resolveLogDir(request, LsfFilePathResolver.Format.WITH_LSF_PATTERN))
+        .isEqualTo("%U/PIPELINE_NAME/PROCESS_ID");
 
-    assertThat(CmdExecutorParameters.getWorkDir(request, null)).isEqualTo(Paths.get("pipelite"));
+    params = AbstractLsfExecutorParameters.builder().user("user").build();
+
+    assertThat(params.resolveLogDir(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN))
+        .isEqualTo("user/PIPELINE_NAME/PROCESS_ID");
   }
 
   @Test
-  public void outFile() {
+  public void resolveDefaultLogFile() {
     TestLsfExecutor executor = new TestLsfExecutor();
     Stage stage = Stage.builder().stageName("STAGE_NAME").executor(executor).build();
     StageExecutorRequest request =
@@ -56,9 +59,14 @@ public class AbstractLsfExecutorFilesTest {
             .processId("PROCESS_ID")
             .stage(stage)
             .build();
-    CmdExecutorParameters params = CmdExecutorParameters.builder().workDir("WORKDIR").build();
+    AbstractLsfExecutorParameters params = AbstractLsfExecutorParameters.builder().build();
 
-    assertThat(CmdExecutorParameters.getLogFile(request, params).toString())
-        .isEqualTo("WORKDIR/PIPELINE_NAME_PROCESS_ID_STAGE_NAME.out");
+    assertThat(params.resolveLogFile(request, LsfFilePathResolver.Format.WITH_LSF_PATTERN))
+        .isEqualTo("%U/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.out");
+
+    params = AbstractLsfExecutorParameters.builder().user("user").build();
+
+    assertThat(params.resolveLogFile(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN))
+        .isEqualTo("user/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.out");
   }
 }

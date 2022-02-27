@@ -14,7 +14,6 @@ import java.util.List;
 import pipelite.executor.*;
 import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.ExecutorParameters;
-import pipelite.stage.parameters.cmd.LogFileRetentionPolicy;
 import pipelite.stage.parameters.cmd.LogFileSavePolicy;
 
 /** Executes a stage. Must be serializable to json. */
@@ -121,17 +120,5 @@ public interface StageExecutor<T extends ExecutorParameters> {
    */
   default boolean isSaveLogFile(StageExecutorResult result) {
     return LogFileSavePolicy.isSave(getExecutorParams().getLogSave(), result);
-  }
-
-  /**
-   * Returns true if the concatenated stdout and stderr output of stage execution should be deleted
-   * from the working directory.
-   *
-   * @param result the stage execution result
-   * @return true if the concatenated stdout and stderr output of stage execution should be deleted
-   *     from the working directory.
-   */
-  default boolean isDeleteLogFile(StageExecutorResult result) {
-    return LogFileRetentionPolicy.isDelete(getExecutorParams().getLogRetention(), result);
   }
 }

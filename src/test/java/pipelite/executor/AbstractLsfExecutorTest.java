@@ -10,23 +10,4 @@
  */
 package pipelite.executor;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import org.junit.jupiter.api.Test;
-
-public class AbstractLsfExecutorTest {
-
-  @Test
-  public void getOutDir() {
-    assertThat(AbstractLsfExecutor.getOutDir("d.txt")).isNull();
-    assertThat(AbstractLsfExecutor.getOutDir("a/b/c/d.txt")).isEqualTo("a/b/c");
-    assertThat(AbstractLsfExecutor.getOutDir("/a/b/c/d.txt")).isEqualTo("/a/b/c");
-  }
-
-  @Test
-  public void getOutFileName() {
-    assertThat(AbstractLsfExecutor.getOutFileName("d.txt")).isEqualTo("d.txt");
-    assertThat(AbstractLsfExecutor.getOutFileName("a/b/c/d.txt")).isEqualTo("d.txt");
-    assertThat(AbstractLsfExecutor.getOutFileName("/a/b/c/d.txt")).isEqualTo("d.txt");
-  }
-}
+public class AbstractLsfExecutorTest {}

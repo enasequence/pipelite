@@ -259,8 +259,7 @@ public class ScheduleRunnerTest {
                   + "  \"timeout\" : 10000,\n"
                   + "  \"maximumRetries\" : 0,\n"
                   + "  \"immediateRetries\" : 0,\n"
-                  + "  \"logLines\" : 1000,\n"
-                  + "  \"logTimeout\" : 10000\n"
+                  + "  \"logLines\" : 1000\n"
                   + "}");
 
       if (t.stageTestResult == StageTestResult.ERROR) {

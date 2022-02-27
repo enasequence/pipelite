@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.stage.parameters.cmd;
+package pipelite.stage.path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,6 +22,6 @@ public class FilePathSanitizerTest {
     assertThat(
             FilePathSanitizer.sanitize(
                 " ./()\"':,.;<>~!@#$%^&*|+=[]{}`?- test ./()\"':,.;<>~!@#$%^&*|+=[]{}`?-"))
-        .isEqualTo("test");
+        .isEqualTo("_test_");
   }
 }

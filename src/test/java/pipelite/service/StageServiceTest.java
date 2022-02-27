@@ -119,8 +119,7 @@ class StageServiceTest {
                 + "  \"timeout\" : 0,\n"
                 + "  \"maximumRetries\" : 1,\n"
                 + "  \"immediateRetries\" : 0,\n"
-                + "  \"logLines\" : 1000,\n"
-                + "  \"logTimeout\" : 10000\n"
+                + "  \"logLines\" : 1000\n"
                 + "}");
 
     assertThat(service.getSavedStage(pipelineName, processId, stageName).get())
@@ -152,8 +151,7 @@ class StageServiceTest {
                 + "  \"timeout\" : 0,\n"
                 + "  \"maximumRetries\" : 1,\n"
                 + "  \"immediateRetries\" : 0,\n"
-                + "  \"logLines\" : 1000,\n"
-                + "  \"logTimeout\" : 10000\n"
+                + "  \"logLines\" : 1000\n"
                 + "}");
 
     assertThat(service.getSavedStage(pipelineName, processId, stageName).get())
@@ -185,8 +183,7 @@ class StageServiceTest {
                 + "  \"timeout\" : 0,\n"
                 + "  \"maximumRetries\" : 1,\n"
                 + "  \"immediateRetries\" : 0,\n"
-                + "  \"logLines\" : 1000,\n"
-                + "  \"logTimeout\" : 10000\n"
+                + "  \"logLines\" : 1000\n"
                 + "}");
 
     assertThat(service.getSavedStage(pipelineName, processId, stageName).get())
@@ -218,8 +215,7 @@ class StageServiceTest {
                 + "  \"timeout\" : 0,\n"
                 + "  \"maximumRetries\" : 1,\n"
                 + "  \"immediateRetries\" : 0,\n"
-                + "  \"logLines\" : 1000,\n"
-                + "  \"logTimeout\" : 10000\n"
+                + "  \"logLines\" : 1000\n"
                 + "}");
 
     assertThat(service.getSavedStage(pipelineName, processId, stageName).get())

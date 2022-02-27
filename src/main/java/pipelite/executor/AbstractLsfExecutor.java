@@ -13,7 +13,6 @@ package pipelite.executor;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.flogger.FluentLogger;
-import java.io.File;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -41,8 +40,8 @@ import pipelite.service.StageService;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
-import pipelite.stage.parameters.CmdExecutorParameters;
-import pipelite.stage.parameters.SharedLsfExecutorParameters;
+import pipelite.stage.parameters.AbstractLsfExecutorParameters;
+import pipelite.stage.path.LsfFilePathResolver;
 import pipelite.time.Time;
 
 /** Executes a command using LSF. */
@@ -50,7 +49,7 @@ import pipelite.time.Time;
 @Getter
 @Setter
 @JsonIgnoreProperties({"cmdRunner"})
-public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
+public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameters>
     extends AbstractAsyncExecutor<T, LsfDescribeJobsCache> implements JsonSerializableExecutor {
 
   private static final int JOB_RECOVERY_PARALLELISM = 10;
@@ -106,7 +105,7 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
   protected DescribeJobs<LsfDescribeJobsCache.RequestContext, LsfDescribeJobsCache.ExecutorContext>
       describeJobs() {
     return getDescribeJobsCache()
-        .getDescribeJobs((AbstractLsfExecutor<SharedLsfExecutorParameters>) this);
+        .getDescribeJobs((AbstractLsfExecutor<AbstractLsfExecutorParameters>) this);
   }
 
   protected static class JobResult {
@@ -121,21 +120,21 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
    */
   public abstract String getSubmitCmd(StageExecutorRequest request);
 
-  protected StringBuilder createSubmitCmdBuilder() {
+  protected StringBuilder getSharedSubmitCmd(StageExecutorRequest request) {
     StringBuilder cmd = new StringBuilder();
     cmd.append(BSUB_CMD);
 
-    String outDir = AbstractLsfExecutor.getOutDir(outFile);
-    if (outDir != null) {
+    String logDir =
+        getExecutorParams().resolveLogDir(request, LsfFilePathResolver.Format.WITH_LSF_PATTERN);
+    String logFileName = getExecutorParams().resolveLogFileName(request);
+    if (logDir != null) {
       addArgument(cmd, "-outdir");
-      addArgument(cmd, outDir);
+      addArgument(cmd, "\"" + logDir + "\"");
       addArgument(cmd, "-cwd");
-      addArgument(cmd, outDir);
+      addArgument(cmd, "\"" + logDir + "\"");
     }
-
     addArgument(cmd, "-oo");
-    addArgument(cmd, AbstractLsfExecutor.getOutFileName(outFile));
-
+    addArgument(cmd, logFileName);
     return cmd;
   }
 
@@ -158,7 +157,8 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
 
   @Override
   protected StageExecutorResult submit(StageExecutorRequest request) {
-    outFile = CmdExecutorParameters.getLogFile(request, getExecutorParams()).toString();
+    outFile =
+        getExecutorParams().resolveLogFile(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN);
     StageExecutorResult submitResult =
         RetryTask.DEFAULT.execute(r -> getCmdRunner().execute(getSubmitCmd(request)));
     if (submitResult.isError()) {
@@ -188,10 +188,6 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
     }
 
     if (!isSaveLogFile(pollResult) || readOutFile(request)) {
-      if (isDeleteLogFile(pollResult)) {
-        logContext(log.atFine(), request).log("Deleting output file: " + outFile);
-        getCmdRunner().deleteFile(Paths.get(outFile));
-      }
       return pollResult;
     }
     return StageExecutorResult.active();
@@ -390,7 +386,7 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
   }
 
   private static String readOutFile(
-      CmdRunner cmdRunner, String outFile, CmdExecutorParameters executorParams) {
+      CmdRunner cmdRunner, String outFile, AbstractLsfExecutorParameters executorParams) {
     try {
       return cmdRunner.readFile(Paths.get(outFile), executorParams.getLogLines());
     } catch (Exception ex) {
@@ -524,8 +520,8 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
 
     // Extract the job execution result from the out file. The format
     // is the same as in the bhist result.
-    CmdExecutorParameters executorParams =
-        CmdExecutorParameters.builder().logLines(JOB_RECOVERY_LOG_LINES).build();
+    AbstractLsfExecutorParameters executorParams =
+        AbstractLsfExecutorParameters.builder().logLines(JOB_RECOVERY_LOG_LINES).build();
     String str = readOutFile(cmdRunner, outFile, executorParams);
     return extractResultFromBhistOutputOrOutFile(str);
   }
@@ -546,16 +542,6 @@ public abstract class AbstractLsfExecutor<T extends SharedLsfExecutorParameters>
    */
   public String getOutFile() {
     return outFile;
-  }
-
-  public static String getOutDir(String outFile) {
-    File file = new File(outFile);
-    return file.getParent();
-  }
-
-  public static String getOutFileName(String outFile) {
-    File file = new File(outFile);
-    return file.getName();
   }
 
   protected FluentLogger.Api logContext(FluentLogger.Api log, StageExecutorRequest request) {

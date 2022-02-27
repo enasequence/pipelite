@@ -109,13 +109,16 @@ public class StageEntityAsserter {
                         + " ],\n"
                     : "")
                 + "  \"logLines\" : 1000,\n"
-                + "  \"logTimeout\" : 10000,\n"
                 + "  \"host\" : \""
                 + lsfTestConfiguration.getHost()
                 + "\",\n"
-                + "  \"workDir\" : \""
-                + lsfTestConfiguration.getWorkDir()
-                + "\"\n"
+                + "  \"user\" : \""
+                + lsfTestConfiguration.getUser()
+                + "\",\n"
+                + "  \"logDir\" : \""
+                + lsfTestConfiguration.getLogDir()
+                + "\",\n"
+                + "  \"logTimeout\" : 10000\n"
                 + "}");
   }
 
@@ -154,7 +157,6 @@ public class StageEntityAsserter {
                         + " ],\n"
                     : "")
                 + "  \"logLines\" : 1000,\n"
-                + "  \"logTimeout\" : 10000,\n"
                 + "  \"namespace\" : \""
                 + namespace
                 + "\"\n"
@@ -190,8 +192,7 @@ public class StageEntityAsserter {
                                 .collect(Collectors.toList()))
                         + " ],\n"
                     : "")
-                + "  \"logLines\" : 1000,\n"
-                + "  \"logTimeout\" : 10000\n"
+                + "  \"logLines\" : 1000\n"
                 + "}");
   }
 

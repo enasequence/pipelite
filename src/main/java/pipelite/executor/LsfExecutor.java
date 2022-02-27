@@ -11,7 +11,6 @@
 package pipelite.executor;
 
 import java.net.URL;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -22,10 +21,10 @@ import pipelite.exception.PipeliteException;
 import pipelite.executor.cmd.CmdRunnerUtils;
 import pipelite.executor.task.RetryTask;
 import pipelite.stage.executor.StageExecutorRequest;
-import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.ExecutorParametersValidator;
 import pipelite.stage.parameters.LsfExecutorParameters;
-import pipelite.stage.parameters.cmd.LogFileResolver;
+import pipelite.stage.path.LsfDefinitionFilePathResolver;
+import pipelite.stage.path.LsfFilePathResolver;
 
 /** Executes a command using LSF. */
 @Flogger
@@ -39,12 +38,10 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
 
   private String definitionFile;
 
-  private static final String JOB_FILE_SUFFIX = ".job";
-
   @Override
   public final String getSubmitCmd(StageExecutorRequest request) {
 
-    StringBuilder cmd = createSubmitCmdBuilder();
+    StringBuilder cmd = getSharedSubmitCmd(request);
 
     switch (getExecutorParams().getFormat()) {
       case JSDL:
@@ -64,11 +61,13 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
   @Override
   protected void prepareAsyncSubmit(StageExecutorRequest request) {
     super.prepareAsyncSubmit(request);
-    Path workDir = CmdExecutorParameters.getWorkDir(request, getExecutorParams());
-    if (!getCmdRunner().createDir(workDir)) {
-      throw new PipeliteException("Failed to create LSF work dir");
+    LsfDefinitionFilePathResolver resolver =
+        new LsfDefinitionFilePathResolver(request, getExecutorParams());
+    LsfFilePathResolver.Format format = LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN;
+    if (!getCmdRunner().createDir(Paths.get(resolver.getDir(format)))) {
+      throw new PipeliteException("Failed to create LSF definition dir");
     }
-    definitionFile = getDefinitionFile(request, getExecutorParams());
+    definitionFile = resolver.getFile(format);
     URL definitionUrl =
         ExecutorParametersValidator.validateUrl(getExecutorParams().getDefinition(), "definition");
     final String definition =
@@ -83,11 +82,6 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
 
   public void setDefinitionFile(String definitionFile) {
     this.definitionFile = definitionFile;
-  }
-
-  public static <T extends LsfExecutorParameters> String getDefinitionFile(
-      StageExecutorRequest request, T params) {
-    return LogFileResolver.resolveNoSuffix(request, params) + JOB_FILE_SUFFIX;
   }
 
   public String applyDefinitionParameters(String definition, Map<String, String> params) {

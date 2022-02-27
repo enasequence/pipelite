@@ -42,7 +42,8 @@ public class SshSimpleLsfExecutorTest {
     executor.setExecutorParams(
         SimpleLsfExecutorParameters.builder()
             .host(lsfTestConfiguration.getHost())
-            .workDir(lsfTestConfiguration.getWorkDir())
+            .user(lsfTestConfiguration.getUser())
+            .logDir(lsfTestConfiguration.getLogDir())
             .timeout(Duration.ofSeconds(30))
             .logSave(LogFileSavePolicy.ALWAYS)
             .build());
@@ -71,7 +72,8 @@ public class SshSimpleLsfExecutorTest {
     executor.setExecutorParams(
         SimpleLsfExecutorParameters.builder()
             .host(lsfTestConfiguration.getHost())
-            .workDir(lsfTestConfiguration.getWorkDir())
+            .user(lsfTestConfiguration.getUser())
+            .logDir(lsfTestConfiguration.getLogDir())
             .timeout(Duration.ofSeconds(30))
             .logSave(LogFileSavePolicy.ALWAYS)
             .build());

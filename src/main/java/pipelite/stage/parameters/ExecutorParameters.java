@@ -24,7 +24,6 @@ import lombok.experimental.SuperBuilder;
 import lombok.extern.flogger.Flogger;
 import pipelite.configuration.ExecutorConfiguration;
 import pipelite.json.Json;
-import pipelite.stage.parameters.cmd.LogFileRetentionPolicy;
 import pipelite.stage.parameters.cmd.LogFileSavePolicy;
 
 /** Parameters shared by all executors. */
@@ -38,7 +37,6 @@ public class ExecutorParameters {
   public static final int DEFAULT_MAX_RETRIES = 3;
   public static final int DEFAULT_IMMEDIATE_RETRIES = 3;
   public static final int DEFAULT_LOG_LINES = 1000;
-  public static final Duration DEFAULT_LOG_TIMEOUT = Duration.ofSeconds(10);
 
   /** The execution timeout. */
   @Builder.Default private Duration timeout = DEFAULT_TIMEOUT;
@@ -55,14 +53,8 @@ public class ExecutorParameters {
   /** The stage log file save policy in the database. */
   private LogFileSavePolicy logSave;
 
-  /** The stage log file retention policy in the working directory. */
-  private LogFileRetentionPolicy logRetention;
-
   /** The number of last lines from the stage log file saved in the database. */
   @Builder.Default private int logLines = DEFAULT_LOG_LINES;
-
-  /** The maximum wait time for the stage log file to become available. */
-  @Builder.Default private Duration logTimeout = DEFAULT_LOG_TIMEOUT;
 
   public static <T> void applyDefault(
       Supplier<T> thisGetter, Consumer<T> thisSetter, Supplier<T> defaultGetter) {
@@ -111,9 +103,7 @@ public class ExecutorParameters {
     applyDefault(this::getMaximumRetries, this::setMaximumRetries, params::getMaximumRetries);
     applyDefault(this::getImmediateRetries, this::setImmediateRetries, params::getImmediateRetries);
     applyDefault(this::getLogSave, this::setLogSave, params::getLogSave);
-    applyDefault(this::getLogRetention, this::setLogRetention, params::getLogRetention);
     applyDefault(this::getLogLines, this::setLogLines, params::getLogLines);
-    applyDefault(this::getLogTimeout, this::setLogTimeout, params::getLogTimeout);
 
     if (permanentErrors == null) {
       permanentErrors = new ArrayList<>();
@@ -128,6 +118,10 @@ public class ExecutorParameters {
     ExecutorParametersValidator.validateNotNull(immediateRetries, "immediateRetries");
   }
 
+  public int getLogLines() {
+    return (logLines < 1) ? DEFAULT_LOG_LINES : logLines;
+  }
+
   /** Serializes the executor to json. */
   public String serialize() {
     return Json.serialize(this);
@@ -136,10 +130,6 @@ public class ExecutorParameters {
   /** Deserializes the executor from json. */
   public static <T extends ExecutorParameters> T deserialize(String json, Class<T> cls) {
     return Json.deserialize(json, cls);
-  }
-
-  public int getLogLines() {
-    return (logLines < 1) ? DEFAULT_LOG_LINES : logLines;
   }
 
   @Override

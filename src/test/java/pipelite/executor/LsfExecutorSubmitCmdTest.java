@@ -17,8 +17,8 @@ import java.nio.file.Files;
 import org.junit.jupiter.api.Test;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorRequest;
-import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.LsfExecutorParameters;
+import pipelite.stage.path.LsfFilePathResolver;
 
 public class LsfExecutorSubmitCmdTest {
 
@@ -32,7 +32,7 @@ public class LsfExecutorSubmitCmdTest {
     executor.setCmd("test");
     LsfExecutorParameters params =
         LsfExecutorParameters.builder()
-            .workDir(Files.createTempDirectory("TEMP").toString())
+            .logDir(Files.createTempDirectory("TEMP").toString())
             .definition("pipelite/executor/lsf.yaml")
             .format(LsfExecutorParameters.Format.YAML)
             .build();
@@ -45,22 +45,25 @@ public class LsfExecutorSubmitCmdTest {
             .stage(stage)
             .build();
 
-    String outFile = CmdExecutorParameters.getLogFile(request, params).toString();
-    String outDir = AbstractLsfExecutor.getOutDir(outFile);
-    String outFileName = AbstractLsfExecutor.getOutFileName(outFile);
-    String definitionFile = LsfExecutor.getDefinitionFile(request, params);
-    executor.setOutFile(outFile);
+    String definitionFile =
+        params.resolveDefinitionFile(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN);
+    String logDir =
+        "\"" + params.resolveLogDir(request, LsfFilePathResolver.Format.WITH_LSF_PATTERN) + "\"";
+    String logFileName = params.resolveLogFileName(request);
+    executor.setOutFile(
+        params.resolveLogDir(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN));
     executor.setDefinitionFile(definitionFile);
     String submitCmd = executor.getSubmitCmd(request);
+
     assertThat(submitCmd)
         .isEqualTo(
             "bsub"
                 + " -outdir "
-                + outDir
+                + logDir
                 + " -cwd "
-                + outDir
+                + logDir
                 + " -oo "
-                + outFileName
+                + logFileName
                 + " -yaml "
                 + definitionFile
                 + " test");

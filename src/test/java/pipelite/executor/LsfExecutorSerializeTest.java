@@ -18,7 +18,10 @@ import pipelite.json.Json;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorRequest;
-import pipelite.stage.parameters.CmdExecutorParameters;
+import pipelite.stage.parameters.LsfExecutorParameters;
+import pipelite.stage.path.LsfDefinitionFilePathResolver;
+import pipelite.stage.path.LsfFilePathResolver;
+import pipelite.stage.path.LsfLogFilePathResolver;
 
 public class LsfExecutorSerializeTest {
 
@@ -34,10 +37,18 @@ public class LsfExecutorSerializeTest {
             .stage(stage)
             .build();
 
+    LsfExecutorParameters params =
+        LsfExecutorParameters.builder()
+            .user("user")
+            .logDir("logDir")
+            .definitionDir("definitionDir")
+            .build();
+    LsfFilePathResolver.Format format = LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN;
+
     executor.setState(AsyncExecutorState.SUBMIT);
     executor.setJobId("test");
-    executor.setOutFile(CmdExecutorParameters.getLogFile(request, null).toString());
-    executor.setDefinitionFile(LsfExecutor.getDefinitionFile(request, null));
+    executor.setOutFile(new LsfLogFilePathResolver(request, params).getFile(format));
+    executor.setDefinitionFile(new LsfDefinitionFilePathResolver(request, params).getFile(format));
     String json = Json.serialize(executor);
     assertThat(json)
         .isEqualTo(
@@ -45,15 +56,15 @@ public class LsfExecutorSerializeTest {
                 + "  \"state\" : \"SUBMIT\",\n"
                 + "  \"jobId\" : \"test\",\n"
                 + "  \"cmd\" : \"echo test\",\n"
-                + "  \"outFile\" : \"pipelite/PIPELINE_NAME_PROCESS_ID_STAGE_NAME.out\",\n"
-                + "  \"definitionFile\" : \"pipelite/PIPELINE_NAME_PROCESS_ID_STAGE_NAME.job\"\n"
+                + "  \"outFile\" : \"logDir/user/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.out\",\n"
+                + "  \"definitionFile\" : \"definitionDir/user/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.job\"\n"
                 + "}");
     LsfExecutor deserializedLsfExecutor = Json.deserialize(json, LsfExecutor.class);
     assertThat(deserializedLsfExecutor.getCmd()).isEqualTo(cmd);
     assertThat(deserializedLsfExecutor.getJobId()).isEqualTo("test");
     assertThat(deserializedLsfExecutor.getOutFile())
-        .isEqualTo("pipelite/PIPELINE_NAME_PROCESS_ID_STAGE_NAME.out");
+        .isEqualTo("logDir/user/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.out");
     assertThat(deserializedLsfExecutor.getDefinitionFile())
-        .isEqualTo("pipelite/PIPELINE_NAME_PROCESS_ID_STAGE_NAME.job");
+        .isEqualTo("definitionDir/user/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.job");
   }
 }

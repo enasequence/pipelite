@@ -18,7 +18,7 @@ import pipelite.executor.AbstractLsfExecutor;
 import pipelite.executor.cmd.CmdRunner;
 import pipelite.executor.describe.DescribeJobs;
 import pipelite.service.InternalErrorService;
-import pipelite.stage.parameters.SharedLsfExecutorParameters;
+import pipelite.stage.parameters.AbstractLsfExecutorParameters;
 
 @Flogger
 public class LsfDescribeJobsCache
@@ -26,7 +26,7 @@ public class LsfDescribeJobsCache
         LsfDescribeJobsCache.RequestContext,
         LsfDescribeJobsCache.ExecutorContext,
         LsfDescribeJobsCache.CacheContext,
-        AbstractLsfExecutor<SharedLsfExecutorParameters>> {
+        AbstractLsfExecutor<AbstractLsfExecutorParameters>> {
 
   @Value
   public static final class RequestContext {
@@ -58,12 +58,12 @@ public class LsfDescribeJobsCache
   }
 
   private static LsfDescribeJobsCache.ExecutorContext executorContext(
-      AbstractLsfExecutor<SharedLsfExecutorParameters> executor) {
+      AbstractLsfExecutor<AbstractLsfExecutorParameters> executor) {
     return new ExecutorContext(CmdRunner.create(executor.getExecutorParams()));
   }
 
   private static LsfDescribeJobsCache.CacheContext cacheContext(
-      AbstractLsfExecutor<SharedLsfExecutorParameters> executor) {
+      AbstractLsfExecutor<AbstractLsfExecutorParameters> executor) {
     return new CacheContext(executor.getExecutorParams().getHost());
   }
 }

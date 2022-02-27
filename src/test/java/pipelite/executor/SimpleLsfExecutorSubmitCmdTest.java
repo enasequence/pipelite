@@ -18,8 +18,8 @@ import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorRequest;
-import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
+import pipelite.stage.path.LsfFilePathResolver;
 
 public class SimpleLsfExecutorSubmitCmdTest {
 
@@ -34,7 +34,7 @@ public class SimpleLsfExecutorSubmitCmdTest {
     executor.setCmd("test");
     SimpleLsfExecutorParameters params =
         SimpleLsfExecutorParameters.builder()
-            .workDir(Files.createTempDirectory("TEMP").toString())
+            .logDir(Files.createTempDirectory("TEMP").toString())
             .cpu(2)
             .memory(1)
             .memoryUnits("M")
@@ -51,20 +51,23 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .processId(PROCESS_ID)
             .stage(stage)
             .build();
-    String outFile = CmdExecutorParameters.getLogFile(request, params).toString();
-    String outDir = AbstractLsfExecutor.getOutDir(outFile);
-    String outFileName = AbstractLsfExecutor.getOutFileName(outFile);
-    executor.setOutFile(outFile);
+
+    String logDir =
+        "\"" + params.resolveLogDir(request, LsfFilePathResolver.Format.WITH_LSF_PATTERN) + "\"";
+    String logFileName = params.resolveLogFileName(request);
+
+    executor.setOutFile(
+        params.resolveLogDir(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN));
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
         .isEqualTo(
             "bsub"
                 + " -outdir "
-                + outDir
+                + logDir
                 + " -cwd "
-                + outDir
+                + logDir
                 + " -oo "
-                + outFileName
+                + logFileName
                 + " -n 2 -M 1M -R \"rusage[mem=1M:duration=1]\" -W 1 -q TEST test");
   }
 
@@ -75,7 +78,7 @@ public class SimpleLsfExecutorSubmitCmdTest {
     executor.setCmd("test");
     SimpleLsfExecutorParameters params =
         SimpleLsfExecutorParameters.builder()
-            .workDir(Files.createTempDirectory("TEMP").toString())
+            .logDir(Files.createTempDirectory("TEMP").toString())
             .cpu(2)
             .memory(1)
             .memoryUnits("M")
@@ -91,20 +94,21 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .processId(PROCESS_ID)
             .stage(stage)
             .build();
-    String outFile = CmdExecutorParameters.getLogFile(request, params).toString();
-    executor.setOutFile(outFile);
-    String outDir = AbstractLsfExecutor.getOutDir(outFile);
-    String outFileName = AbstractLsfExecutor.getOutFileName(outFile);
+    String logDir =
+        "\"" + params.resolveLogDir(request, LsfFilePathResolver.Format.WITH_LSF_PATTERN) + "\"";
+    String logFileName = params.resolveLogFileName(request);
+    executor.setOutFile(
+        params.resolveLogDir(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN));
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
         .isEqualTo(
             "bsub"
                 + " -outdir "
-                + outDir
+                + logDir
                 + " -cwd "
-                + outDir
+                + logDir
                 + " -oo "
-                + outFileName
+                + logFileName
                 + " -n 2 -M 1M -R \"rusage[mem=1M]\" -W 1 -q TEST test");
   }
 
@@ -115,7 +119,7 @@ public class SimpleLsfExecutorSubmitCmdTest {
     executor.setCmd("test");
     SimpleLsfExecutorParameters params =
         SimpleLsfExecutorParameters.builder()
-            .workDir(Files.createTempDirectory("TEMP").toString())
+            .logDir(Files.createTempDirectory("TEMP").toString())
             .cpu(2)
             .memory(1)
             .memoryTimeout(Duration.ofMinutes(1))
@@ -131,20 +135,21 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .processId(PROCESS_ID)
             .stage(stage)
             .build();
-    String outFile = CmdExecutorParameters.getLogFile(request, params).toString();
-    String outDir = AbstractLsfExecutor.getOutDir(outFile);
-    String outFileName = AbstractLsfExecutor.getOutFileName(outFile);
-    executor.setOutFile(outFile);
+    String logDir =
+        "\"" + params.resolveLogDir(request, LsfFilePathResolver.Format.WITH_LSF_PATTERN) + "\"";
+    String logFileName = params.resolveLogFileName(request);
+    executor.setOutFile(
+        params.resolveLogDir(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN));
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
         .isEqualTo(
             "bsub"
                 + " -outdir "
-                + outDir
+                + logDir
                 + " -cwd "
-                + outDir
+                + logDir
                 + " -oo "
-                + outFileName
+                + logFileName
                 + " -n 2 -M 1 -R \"rusage[mem=1:duration=1]\" -W 1 -q TEST test");
   }
 
@@ -155,7 +160,7 @@ public class SimpleLsfExecutorSubmitCmdTest {
     executor.setCmd("test");
     SimpleLsfExecutorParameters params =
         SimpleLsfExecutorParameters.builder()
-            .workDir(Files.createTempDirectory("TEMP").toString())
+            .logDir(Files.createTempDirectory("TEMP").toString())
             .cpu(2)
             .memory(1)
             .queue("TEST")
@@ -170,20 +175,21 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .processId(PROCESS_ID)
             .stage(stage)
             .build();
-    String outFile = CmdExecutorParameters.getLogFile(request, params).toString();
-    String outDir = AbstractLsfExecutor.getOutDir(outFile);
-    String outFileName = AbstractLsfExecutor.getOutFileName(outFile);
-    executor.setOutFile(outFile);
+    String logDir =
+        "\"" + params.resolveLogDir(request, LsfFilePathResolver.Format.WITH_LSF_PATTERN) + "\"";
+    String logFileName = params.resolveLogFileName(request);
+    executor.setOutFile(
+        params.resolveLogDir(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN));
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
         .isEqualTo(
             "bsub"
                 + " -outdir "
-                + outDir
+                + logDir
                 + " -cwd "
-                + outDir
+                + logDir
                 + " -oo "
-                + outFileName
+                + logFileName
                 + " -n 2 -M 1 -R \"rusage[mem=1]\" -W 1 -q TEST test");
   }
 
@@ -194,7 +200,7 @@ public class SimpleLsfExecutorSubmitCmdTest {
     executor.setCmd("test");
     SimpleLsfExecutorParameters params =
         SimpleLsfExecutorParameters.builder()
-            .workDir(Files.createTempDirectory("TEMP").toString())
+            .logDir(Files.createTempDirectory("TEMP").toString())
             .cpu(2)
             .jobGroup("testGroup")
             .timeout(Duration.ofMinutes(1))
@@ -209,20 +215,22 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .processId(PROCESS_ID)
             .stage(stage)
             .build();
-    String outFile = CmdExecutorParameters.getLogFile(request, params).toString();
-    String outDir = AbstractLsfExecutor.getOutDir(outFile);
-    String outFileName = AbstractLsfExecutor.getOutFileName(outFile);
-    executor.setOutFile(outFile);
+    String logDir =
+        "\"" + params.resolveLogDir(request, LsfFilePathResolver.Format.WITH_LSF_PATTERN) + "\"";
+    String logFileName = params.resolveLogFileName(request);
+    executor.setOutFile(
+        params.resolveLogDir(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN));
+    ;
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
         .isEqualTo(
             "bsub"
                 + " -outdir "
-                + outDir
+                + logDir
                 + " -cwd "
-                + outDir
+                + logDir
                 + " -oo "
-                + outFileName
+                + logFileName
                 + " -n 2 -W 1 -g testGroup -q TEST test");
   }
 }

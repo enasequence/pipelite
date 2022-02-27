@@ -32,7 +32,8 @@ import pipelite.stage.parameters.LsfExecutorParameters;
       "pipelite.executor.cmd.timeout=10s",
       "pipelite.executor.lsf.definition=TEST",
       "pipelite.executor.lsf.format=YAML",
-      "pipelite.executor.lsf.workdir=",
+      "pipelite.executor.lsf.logDir=TEST_DIR1",
+      "pipelite.executor.lsf.definitionDir=TEST_DIR2",
       "pipelite.executor.simpleLsf.memory=1",
       "pipelite.executor.simpleLsf.cpu=1",
       "pipelite.executor.simpleLsf.queue=TEST",
@@ -41,6 +42,7 @@ import pipelite.stage.parameters.LsfExecutorParameters;
       "pipelite.executor.simpleLsf.maximumRetries=3",
       "pipelite.executor.simpleLsf.workdir=",
       "pipelite.executor.simpleLsf.timeout=10s",
+      "pipelite.executor.simpleLsf.logDir=TEST_DIR1",
       "pipelite.executor.awsBatch.region=TEST",
       "pipelite.executor.awsBatch.queue=TEST",
       "pipelite.executor.awsBatch.definition=TEST",
@@ -66,7 +68,8 @@ public class ExecutorConfigurationTest {
   public void lsfProperties() {
     assertThat(config.getLsf().getDefinition()).isEqualTo("TEST");
     assertThat(config.getLsf().getFormat()).isEqualTo(LsfExecutorParameters.Format.YAML);
-    assertThat(config.getSimpleLsf().getWorkDir()).isBlank();
+    assertThat(config.getLsf().getLogDir()).isEqualTo("TEST_DIR1");
+    assertThat(config.getLsf().getDefinitionDir()).isEqualTo("TEST_DIR2");
     assertThat(config.getSimpleLsf().getMemory()).isEqualTo(1);
     assertThat(config.getSimpleLsf().getCpu()).isEqualTo(1);
     assertThat(config.getSimpleLsf().getQueue()).isEqualTo("TEST");
@@ -74,7 +77,7 @@ public class ExecutorConfigurationTest {
     assertThat(config.getSimpleLsf().getImmediateRetries()).isEqualTo(2);
     assertThat(config.getSimpleLsf().getImmediateRetries()).isEqualTo(2);
     assertThat(config.getSimpleLsf().getMaximumRetries()).isEqualTo(3);
-    assertThat(config.getSimpleLsf().getWorkDir()).isBlank();
+    assertThat(config.getSimpleLsf().getLogDir()).isEqualTo("TEST_DIR1");
     assertThat(config.getSimpleLsf().getTimeout()).isEqualTo(Duration.ofSeconds(10));
   }
 

@@ -25,7 +25,7 @@ import pipelite.configuration.ExecutorConfiguration;
 @NoArgsConstructor
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
-public class SimpleLsfExecutorParameters extends SharedLsfExecutorParameters {
+public class SimpleLsfExecutorParameters extends AbstractLsfExecutorParameters {
 
   /** The LSF queue name. */
   private String queue;

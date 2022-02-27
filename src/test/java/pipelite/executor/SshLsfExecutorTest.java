@@ -42,7 +42,9 @@ public class SshLsfExecutorTest {
     executor.setExecutorParams(
         LsfExecutorParameters.builder()
             .host(lsfTestConfiguration.getHost())
-            .workDir(lsfTestConfiguration.getWorkDir())
+            .user(lsfTestConfiguration.getUser())
+            .logDir(lsfTestConfiguration.getLogDir())
+            .definitionDir(lsfTestConfiguration.getDefinitionDir())
             .timeout(Duration.ofSeconds(60))
             .logSave(LogFileSavePolicy.ALWAYS)
             .definition("pipelite/executor/lsf.yaml")
