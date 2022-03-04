@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import pipelite.configuration.properties.KubernetesTestConfiguration;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.entity.StageEntity;
+import pipelite.executor.state.AsyncExecutorState;
 import pipelite.service.StageService;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.ErrorType;
@@ -76,7 +77,10 @@ public class StageEntityAsserter {
   }
 
   private static void assertSimpleLsfStageEntity(
-      TestType testType, LsfTestConfiguration lsfTestConfiguration, StageEntity stageEntity) {
+      TestType testType,
+      LsfTestConfiguration lsfTestConfiguration,
+      StageEntity stageEntity,
+      AsyncExecutorState state) {
     String cmd =
         testType.lastCmd(
             stageEntity.getPipelineName(), stageEntity.getProcessId(), stageEntity.getStageName());
@@ -84,7 +88,7 @@ public class StageEntityAsserter {
 
     assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.SimpleLsfExecutor");
 
-    assertThat(stageEntity.getExecutorData()).contains("\"state\" : \"POLL\"");
+    assertThat(stageEntity.getExecutorData()).contains("\"state\" : \"" + state.name() + "\"");
     assertThat(stageEntity.getExecutorData()).contains("\"jobId\" : \"");
     assertThat(stageEntity.getExecutorData()).contains("  \"cmd\" : \"" + cmd + "\"");
     assertThat(stageEntity.getExecutorData()).contains("  \"outFile\" : \"");
@@ -125,13 +129,14 @@ public class StageEntityAsserter {
   private static void assertKubernetesStageEntity(
       TestType testType,
       KubernetesTestConfiguration kubernetesTestConfiguration,
-      StageEntity stageEntity) {
+      StageEntity stageEntity,
+      AsyncExecutorState state) {
     List<Integer> permanentErrors = testType.permanentErrors();
     String namespace = kubernetesTestConfiguration.getNamespace();
 
     assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.KubernetesExecutor");
 
-    assertThat(stageEntity.getExecutorData()).contains("\"state\" : \"POLL\"");
+    assertThat(stageEntity.getExecutorData()).contains("\"state\" : \"" + state + "\"");
     assertThat(stageEntity.getExecutorData()).contains("\"jobId\" : \"");
     assertThat(stageEntity.getExecutorData()).contains("\"image\" : \"" + testType.image() + "\"");
     assertThat(stageEntity.getExecutorData()).contains("\"imageArgs\" : [");
@@ -207,7 +212,8 @@ public class StageEntityAsserter {
     StageEntity stageEntity =
         assertSubmittedStageEntity(stageService, testType, pipelineName, processId, stageName);
 
-    assertSimpleLsfStageEntity(testType, lsfTestConfiguration, stageEntity);
+    assertSimpleLsfStageEntity(
+        testType, lsfTestConfiguration, stageEntity, AsyncExecutorState.POLL);
   }
 
   public static void assertSubmittedKubernetesStageEntity(
@@ -221,7 +227,8 @@ public class StageEntityAsserter {
     StageEntity stageEntity =
         assertSubmittedStageEntity(stageService, testType, pipelineName, processId, stageName);
 
-    assertKubernetesStageEntity(testType, kubernetesTestConfiguration, stageEntity);
+    assertKubernetesStageEntity(
+        testType, kubernetesTestConfiguration, stageEntity, AsyncExecutorState.POLL);
   }
 
   public static void assertCompletedSimpleLsfStageEntity(
@@ -236,7 +243,8 @@ public class StageEntityAsserter {
     StageEntity stageEntity =
         assertCompletedStageEntity(stageService, testType, pipelineName, processId, stageName);
 
-    assertSimpleLsfStageEntity(testType, lsfTestConfiguration, stageEntity);
+    assertSimpleLsfStageEntity(
+        testType, lsfTestConfiguration, stageEntity, AsyncExecutorState.DONE);
 
     assertThat(stageEntity.getResultParams()).contains("\"exit code\" : \"" + exitCode + "\"");
     assertThat(stageEntity.getResultParams()).contains("\"job id\" :");
@@ -255,7 +263,8 @@ public class StageEntityAsserter {
     StageEntity stageEntity =
         assertCompletedStageEntity(stageService, testType, pipelineName, processId, stageName);
 
-    assertKubernetesStageEntity(testType, kubernetesTestConfiguration, stageEntity);
+    assertKubernetesStageEntity(
+        testType, kubernetesTestConfiguration, stageEntity, AsyncExecutorState.DONE);
 
     assertThat(stageEntity.getResultParams()).contains("\"exit code\" : \"" + exitCode + "\"");
     assertThat(stageEntity.getResultParams()).contains("\"job id\" :");

@@ -148,14 +148,6 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
   }
 
   @Override
-  protected void prepareAsyncSubmit(StageExecutorRequest request) {
-    // Reset to allow execution retry.
-    outFile = null;
-    pollResult = null;
-    pollTimeout = null;
-  }
-
-  @Override
   protected StageExecutorResult submit(StageExecutorRequest request) {
     outFile =
         getExecutorParams().resolveLogFile(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN);

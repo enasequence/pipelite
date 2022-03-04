@@ -89,13 +89,6 @@ public class KubernetesExecutor
   }
 
   @Override
-  protected void prepareAsyncSubmit(StageExecutorRequest request) {
-    // Reset to allow execution retry.
-    context = null;
-    namespace = null;
-  }
-
-  @Override
   protected StageExecutorResult submit(StageExecutorRequest request) {
     KubernetesExecutorParameters executorParams = getExecutorParams();
     context = executorParams.getContext();

@@ -11,7 +11,9 @@
 package pipelite.stage.executor;
 
 import java.util.List;
+import pipelite.exception.PipeliteException;
 import pipelite.executor.*;
+import pipelite.stage.Stage;
 import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.stage.parameters.cmd.LogFileSavePolicy;
@@ -51,6 +53,23 @@ public interface StageExecutor<T extends ExecutorParameters> {
   /** Terminates the stage execution. */
   void terminate();
 
+  /** Resets asynchronous executor state. */
+  static void resetAsyncExecutorState(Stage stage) {
+    StageExecutor executor = stage.getExecutor();
+    if (executor instanceof LsfExecutor) {
+      stage.setExecutor(resetLsfExecutorState((LsfExecutor) executor));
+    } else if (executor instanceof SimpleLsfExecutor) {
+      stage.setExecutor(resetSimpleLsfExecutorState((SimpleLsfExecutor) executor));
+    } else if (executor instanceof KubernetesExecutor) {
+      stage.setExecutor(resetKubernetesExecutorState((KubernetesExecutor) executor));
+    } else if (executor instanceof AwsBatchExecutor) {
+      stage.setExecutor(resetAwsBatchExecutorState((AwsBatchExecutor) executor));
+    } else {
+      throw new PipeliteException(
+          "Failed to reset async executor: " + executor.getClass().getSimpleName());
+    }
+  }
+
   /**
    * Creates a command executor that executes commands locally or on a remote host using ssh.
    *
@@ -75,6 +94,12 @@ public interface StageExecutor<T extends ExecutorParameters> {
     return lsfExecutor;
   }
 
+  private static LsfExecutor resetLsfExecutorState(LsfExecutor lsfExecutor) {
+    LsfExecutor resetExecutor = StageExecutor.createLsfExecutor(lsfExecutor.getCmd());
+    resetExecutor.setExecutorParams(lsfExecutor.getExecutorParams());
+    return resetExecutor;
+  }
+
   /**
    * Creates an executor that executes the command using LSF locally or on a remote host using ssh.
    *
@@ -85,6 +110,12 @@ public interface StageExecutor<T extends ExecutorParameters> {
     SimpleLsfExecutor lsfExecutor = new SimpleLsfExecutor();
     lsfExecutor.setCmd(cmd);
     return lsfExecutor;
+  }
+
+  private static SimpleLsfExecutor resetSimpleLsfExecutorState(SimpleLsfExecutor lsfExecutor) {
+    SimpleLsfExecutor resetExecutor = StageExecutor.createSimpleLsfExecutor(lsfExecutor.getCmd());
+    resetExecutor.setExecutorParams(lsfExecutor.getExecutorParams());
+    return resetExecutor;
   }
 
   /**
@@ -101,6 +132,15 @@ public interface StageExecutor<T extends ExecutorParameters> {
     return kubernetesExecutor;
   }
 
+  private static KubernetesExecutor resetKubernetesExecutorState(
+      KubernetesExecutor kubernetesExecutor) {
+    KubernetesExecutor resetExecutor =
+        StageExecutor.createKubernetesExecutor(
+            kubernetesExecutor.getImage(), kubernetesExecutor.getImageArgs());
+    resetExecutor.setExecutorParams(kubernetesExecutor.getExecutorParams());
+    return resetExecutor;
+  }
+
   /**
    * Creates an executor that uses AWSBatch.
    *
@@ -110,6 +150,11 @@ public interface StageExecutor<T extends ExecutorParameters> {
     return new AwsBatchExecutor();
   }
 
+  private static AwsBatchExecutor resetAwsBatchExecutorState(AwsBatchExecutor awsBatchExecutor) {
+    AwsBatchExecutor resetExecutor = StageExecutor.createAwsBatchExecutor();
+    resetExecutor.setExecutorParams(awsBatchExecutor.getExecutorParams());
+    return resetExecutor;
+  }
   /**
    * Returns true if the concatenated stdout and stderr output of stage execution should be saved in
    * pipelite database.

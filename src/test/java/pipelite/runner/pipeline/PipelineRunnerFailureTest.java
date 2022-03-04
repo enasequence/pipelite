@@ -281,9 +281,16 @@ public class PipelineRunnerFailureTest {
         assertThat(stageEntity.getExecutionCount()).isZero();
         assertThat(stageEntity.getStartTime()).isNull();
         assertThat(stageEntity.getEndTime()).isNull();
-        assertThat(stageEntity.getExecutorName()).isNull();
+        assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.TestExecutor");
         assertThat(stageEntity.getExecutorData()).isNull();
-        assertThat(stageEntity.getExecutorParams()).isNull();
+        assertThat(stageEntity.getExecutorParams())
+            .isEqualTo(
+                "{\n"
+                    + "  \"timeout\" : 10000,\n"
+                    + "  \"maximumRetries\" : 0,\n"
+                    + "  \"immediateRetries\" : 0,\n"
+                    + "  \"logLines\" : 1000\n"
+                    + "}");
         assertThat(stageEntity.getStageState()).isEqualTo(StageState.PENDING);
         assertThat(stageEntity.getResultParams()).isNull();
       } else {

@@ -13,49 +13,87 @@ package pipelite.stage.executor;
 import com.google.common.flogger.FluentLogger;
 import lombok.extern.flogger.Flogger;
 import pipelite.entity.StageEntity;
+import pipelite.executor.AbstractAsyncExecutor;
 import pipelite.executor.JsonSerializableExecutor;
+import pipelite.executor.state.AsyncExecutorState;
 import pipelite.log.LogKey;
 import pipelite.stage.Stage;
-import pipelite.stage.StageState;
 import pipelite.stage.parameters.ExecutorParameters;
 
 @Flogger
 public class StageExecutorSerializer {
   private StageExecutorSerializer() {}
 
+  public enum Deserialize {
+    /** Deserialize JsonSerializableExecutor. */
+    JSON_EXECUTOR,
+    /** Deserialize AbstractAsyncExecutor with state AsyncExecutorState.POLL. */
+    ASYNC_EXECUTOR_POLL;
+  }
+
   /**
-   * Deserialize stage executor and stage parameters to allow an asynchronous executor to continue
-   * executing an active stage.
+   * Deserialize stage executor and stage executor parameters. An asynchronous executor must be in
+   * the POLL state to be deserialized.
    *
    * @oaran stage the stage being executed
    * @return true if the executor was deserialized
    */
-  public static <T extends ExecutorParameters> Boolean deserializeExecution(Stage stage) {
+  public static <T extends ExecutorParameters> Boolean deserializeExecution(
+      Stage stage, Deserialize deserialize) {
+    if (!(stage.getExecutor() instanceof JsonSerializableExecutor)) {
+      return false;
+    }
     StageEntity stageEntity = stage.getStageEntity();
-    if (stageEntity.getStageState() == StageState.ACTIVE
-        && stageEntity.getExecutorName() != null
-        && stageEntity.getExecutorData() != null
-        && stageEntity.getExecutorParams() != null) {
-      StageExecutor deserializedExecutor = deserializeExecutor(stage);
-      if (deserializedExecutor != null) {
-        ExecutorParameters deserializedExecutorParams =
-            deserializeExecutorParameters(stage, deserializedExecutor.getExecutorParamsType());
-        if (deserializedExecutorParams != null) {
-          logContext(log.atInfo(), stage).log("Using deserialized executor");
-          stage.setExecutor(deserializedExecutor);
-          deserializedExecutor.setExecutorParams(deserializedExecutorParams);
-          return true;
-        }
+    if (stageEntity.getExecutorName() == null
+        || stageEntity.getExecutorData() == null
+        || stageEntity.getExecutorParams() == null) {
+      return false;
+    }
+    StageExecutor deserializedExecutor = deserializeExecutor(stage, deserialize);
+    if (deserializedExecutor == null) {
+      logContext(log.atSevere(), stage).log("Failed to deserialize executor");
+      return false;
+    }
+
+    if (deserialize == Deserialize.ASYNC_EXECUTOR_POLL) {
+      AbstractAsyncExecutor deserializedAsyncExecutor =
+          (AbstractAsyncExecutor) deserializedExecutor;
+      // Backward compatible with version < 1.4.* without AsyncExecutorState.
+      if (deserializedAsyncExecutor.getState() == null
+          && deserializedAsyncExecutor.getJobId() != null) {
+        deserializedAsyncExecutor.setState(AsyncExecutorState.POLL);
+      }
+      if (deserializedAsyncExecutor.getState() != AsyncExecutorState.POLL) {
+        return false;
       }
     }
-    return false;
+
+    ExecutorParameters deserializedExecutorParams =
+        deserializeExecutorParameters(stage, deserializedExecutor.getExecutorParamsType());
+    if (deserializedExecutorParams == null) {
+      return false;
+    }
+
+    logContext(log.atInfo(), stage).log("Using deserialized executor");
+    stage.setExecutor(deserializedExecutor);
+    deserializedExecutor.setExecutorParams(deserializedExecutorParams);
+    return true;
   }
 
   /** Deserialize stage executor. */
-  public static StageExecutor deserializeExecutor(Stage stage) {
+  public static StageExecutor deserializeExecutor(Stage stage, Deserialize deserialize) {
     StageEntity stageEntity = stage.getStageEntity();
     try {
-      if (stage.getExecutor() instanceof JsonSerializableExecutor) {
+      boolean action = false;
+      switch (deserialize) {
+        case JSON_EXECUTOR:
+          action = stage.getExecutor() instanceof JsonSerializableExecutor;
+          break;
+        case ASYNC_EXECUTOR_POLL:
+          action = stage.getExecutor() instanceof AbstractAsyncExecutor;
+          break;
+      }
+      if (action) {
         return JsonSerializableExecutor.deserialize(
             stageEntity.getExecutorName(), stageEntity.getExecutorData());
       }

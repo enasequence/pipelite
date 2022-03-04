@@ -30,10 +30,8 @@ public abstract class AbstractAsyncExecutor<
 
   /**
    * Asynchronous executor state. Serialize in database to continue execution after service restart.
-   * State is initialized in prepareAsyncExecute for backward compatibility between 1.4.* and
-   * previous versions.
    */
-  private AsyncExecutorState state;
+  private AsyncExecutorState state = AsyncExecutorState.SUBMIT;
 
   /**
    * Asynchronous executor job id. Serialize in database to continue execution after service
@@ -50,15 +48,6 @@ public abstract class AbstractAsyncExecutor<
    */
   public void prepareAsyncExecute(StageService stageService) {
     this.describeJobsCache = initDescribeJobsCache(stageService);
-    // For backward compatibility between 1.4.* and previous versions. Versions older than 1.4.*
-    // do not serialize state. Set state to POLL if job id has been set.
-    if (state == null) {
-      if (jobId != null) {
-        state = AsyncExecutorState.POLL;
-      } else {
-        state = AsyncExecutorState.SUBMIT;
-      }
-    }
   }
 
   protected abstract D initDescribeJobsCache(StageService stageService);
@@ -67,13 +56,7 @@ public abstract class AbstractAsyncExecutor<
     return describeJobsCache;
   }
 
-  protected final void prepareSubmit(StageExecutorRequest request) {
-    // Reset job id to allow execution retry.
-    jobId = null;
-    prepareAsyncSubmit(request);
-  }
-
-  protected abstract void prepareAsyncSubmit(StageExecutorRequest request);
+  protected void prepareSubmit(StageExecutorRequest request) {}
 
   protected abstract StageExecutorResult submit(StageExecutorRequest request);
 
@@ -89,16 +72,15 @@ public abstract class AbstractAsyncExecutor<
       }
       if (!result.isSubmitted()) {
         throw new PipeliteException(
-            "Unexpected state during asynchronous submit: " + result.getExecutorState().name());
+            "Unexpected state after asynchronous submit: " + result.getExecutorState().name());
       }
       if (jobId == null) {
-        throw new PipeliteException("Missing job id.");
+        throw new PipeliteException("Missing job id after asynchronous submit");
       }
       state = AsyncExecutorState.POLL;
       // Asynchronous executor state is saved in database after submit by stage runner.
       return result;
-    }
-    if (state == AsyncExecutorState.POLL) {
+    } else if (state == AsyncExecutorState.POLL) {
       if (jobId == null) {
         throw new PipeliteException("Missing job id during asynchronous poll");
       }
@@ -108,10 +90,12 @@ public abstract class AbstractAsyncExecutor<
             "Unexpected state during asynchronous poll: " + result.getExecutorState().name());
       }
       if (!result.isActive()) {
-        // Prepare for next asynchronous execution.
-        state = AsyncExecutorState.SUBMIT;
+        state = AsyncExecutorState.DONE;
       }
       return result;
+    } else if (state == AsyncExecutorState.DONE) {
+      throw new PipeliteException(
+          "Unexpected state during asynchronous execution: " + state.name());
     }
     throw new PipeliteException("Missing state during asynchronous execution");
   }

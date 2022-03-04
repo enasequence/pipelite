@@ -24,17 +24,13 @@ import lombok.Value;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.mockito.Mockito;
 import pipelite.entity.StageEntity;
-import pipelite.executor.AbstractAsyncExecutor;
 import pipelite.executor.AbstractLsfExecutor;
 import pipelite.executor.CmdExecutor;
 import pipelite.executor.KubernetesExecutor;
-import pipelite.executor.describe.cache.DescribeJobsCache;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
-import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
-import pipelite.stage.executor.StageExecutorSerializer;
 
 public class TestType {
   static final int EXIT_CODE_SUCCESS = 0;
@@ -47,7 +43,6 @@ public class TestType {
   private final List<Integer> exitCodes;
   private final int immediateRetries;
   private final int maximumRetries;
-  private final boolean deserializeActiveStageEntity;
 
   private List<String> failedAsserts = new ArrayList<>();
 
@@ -64,8 +59,7 @@ public class TestType {
             "First execution is successful",
             Arrays.asList(EXIT_CODE_SUCCESS),
             DEFAULT_IMMEDIATE_RETRIES,
-            DEFAULT_MAXIMUM_RETRIES,
-            false);
+            DEFAULT_MAXIMUM_RETRIES);
     tests.add(firstExecutionIsSuccessful);
 
     firstExecutionIsPermanentError =
@@ -73,8 +67,7 @@ public class TestType {
             "First execution is permanent error",
             Arrays.asList(EXIT_CODE_PERMANENT_ERROR),
             DEFAULT_IMMEDIATE_RETRIES,
-            DEFAULT_MAXIMUM_RETRIES,
-            false);
+            DEFAULT_MAXIMUM_RETRIES);
     tests.add(firstExecutionIsPermanentError);
 
     nonPermanentErrorUntilMaximumRetries =
@@ -82,8 +75,7 @@ public class TestType {
             "Non permanent error until maximum retries",
             Collections.nCopies(DEFAULT_MAXIMUM_RETRIES + 1, EXIT_CODE_NON_PERMANENT_ERROR),
             DEFAULT_IMMEDIATE_RETRIES,
-            DEFAULT_MAXIMUM_RETRIES,
-            false);
+            DEFAULT_MAXIMUM_RETRIES);
     tests.add(nonPermanentErrorUntilMaximumRetries);
 
     nonPermanentErrorAndThenSuccess =
@@ -91,36 +83,16 @@ public class TestType {
             "Non permanent error and then success",
             Arrays.asList(EXIT_CODE_NON_PERMANENT_ERROR, EXIT_CODE_SUCCESS),
             DEFAULT_IMMEDIATE_RETRIES,
-            DEFAULT_MAXIMUM_RETRIES,
-            false);
+            DEFAULT_MAXIMUM_RETRIES);
     tests.add(nonPermanentErrorAndThenSuccess);
-
-    TestType nonPermanentErrorAndThenSuccessWithDeserializeActiveStageEntity =
-        new TestType(
-            "Non permanent error and then success with deserialize active stage entity",
-            Arrays.asList(EXIT_CODE_NON_PERMANENT_ERROR, EXIT_CODE_SUCCESS),
-            DEFAULT_IMMEDIATE_RETRIES,
-            DEFAULT_MAXIMUM_RETRIES,
-            true);
-    tests.add(nonPermanentErrorAndThenSuccessWithDeserializeActiveStageEntity);
 
     nonPermanentErrorAndThenPermanentError =
         new TestType(
             "Non permanent error and then permanent error",
             Arrays.asList(EXIT_CODE_NON_PERMANENT_ERROR, EXIT_CODE_PERMANENT_ERROR),
             DEFAULT_IMMEDIATE_RETRIES,
-            DEFAULT_MAXIMUM_RETRIES,
-            false);
+            DEFAULT_MAXIMUM_RETRIES);
     tests.add(nonPermanentErrorAndThenPermanentError);
-
-    TestType nonPermanentErrorAndThenPermanentErrorWithDeserializeActiveStageEntity =
-        new TestType(
-            "Non permanent error and then permanent error with deserialize active stage entity",
-            Arrays.asList(EXIT_CODE_NON_PERMANENT_ERROR, EXIT_CODE_PERMANENT_ERROR),
-            DEFAULT_IMMEDIATE_RETRIES,
-            DEFAULT_MAXIMUM_RETRIES,
-            true);
-    tests.add(nonPermanentErrorAndThenPermanentErrorWithDeserializeActiveStageEntity);
   }
 
   @Value
@@ -137,12 +109,7 @@ public class TestType {
   private static ConcurrentHashMap<StageMapKey, String> stageNextExitCode =
       new ConcurrentHashMap<>();
 
-  TestType(
-      String description,
-      List<Integer> exitCodes,
-      int immediateRetries,
-      int maximumRetries,
-      boolean deserializeActiveStageEntity) {
+  TestType(String description, List<Integer> exitCodes, int immediateRetries, int maximumRetries) {
     this.description =
         description
             + ", ExitCodes: "
@@ -156,13 +123,10 @@ public class TestType {
             + ", NonPermanentError: "
             + EXIT_CODE_NON_PERMANENT_ERROR
             + ", PermanentError: "
-            + EXIT_CODE_PERMANENT_ERROR
-            + ", DeserializeStageEntity: "
-            + deserializeActiveStageEntity;
+            + EXIT_CODE_PERMANENT_ERROR;
     this.exitCodes = exitCodes;
     this.immediateRetries = immediateRetries;
     this.maximumRetries = maximumRetries;
-    this.deserializeActiveStageEntity = deserializeActiveStageEntity;
   }
 
   public String description() {
@@ -459,26 +423,6 @@ public class TestType {
                               + stage.getStageEntity().toString()
                               + " is different from saved stage entity: "
                               + savedStageEntity.toString());
-                    }
-
-                    if (testType.deserializeActiveStageEntity
-                        && stage.getStageEntity().getStageState() == StageState.ACTIVE) {
-                      // Use saved stage entity.
-                      stage.setStageEntity(savedStageEntity);
-                      // Deserialize saved stage entity.
-                      // Preserve describe jobs cache.
-                      DescribeJobsCache describeJobsCache = null;
-                      if (stage.getExecutor() instanceof AbstractAsyncExecutor) {
-                        describeJobsCache =
-                            ((AbstractAsyncExecutor) stage.getExecutor()).getDescribeJobsCache();
-                      }
-                      if (!StageExecutorSerializer.deserializeExecution(stage)) {
-                        testType.failedAsserts.add("Could not deserialize stage entity");
-                      }
-                      if (describeJobsCache != null) {
-                        ((AbstractAsyncExecutor) stage.getExecutor())
-                            .setDescribeJobsCache(describeJobsCache);
-                      }
                     }
                   });
               return null;

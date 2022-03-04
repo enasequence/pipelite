@@ -866,7 +866,7 @@ public class DependencyResolverTest {
     if (stageState == PENDING) {
       return;
     }
-    stageEntity.startExecution(stage.getExecutor());
+    stageEntity.startExecution();
     if (stageState == ACTIVE) {
       return;
     }
@@ -882,7 +882,7 @@ public class DependencyResolverTest {
     StageEntity stageEntity = new StageEntity();
     stage.setStageEntity(stageEntity);
     stageEntity.setStageState(ERROR);
-    stageEntity.startExecution(stage.getExecutor());
+    stageEntity.startExecution();
     stage.incrementImmediateExecutionCount();
     stageEntity.endExecution(StageExecutorResult.error().setErrorType(errorType));
   }

@@ -28,7 +28,7 @@ import pipelite.tester.process.SingleStageSimpleLsfTestProcessConfiguration;
     properties = {
       "pipelite.service.force=true",
       "pipelite.service.name=PipelineRunnerSimpleSshLsfExecutorTest",
-      "pipelite.advanced.processRunnerFrequency=250ms",
+      "pipelite.advanced.processRunnerFrequency=2s",
       "pipelite.advanced.shutdownIfIdle=true"
     })
 @ActiveProfiles({"test"})

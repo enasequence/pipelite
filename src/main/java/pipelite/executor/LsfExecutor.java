@@ -59,8 +59,7 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
   }
 
   @Override
-  protected void prepareAsyncSubmit(StageExecutorRequest request) {
-    super.prepareAsyncSubmit(request);
+  protected void prepareSubmit(StageExecutorRequest request) {
     LsfDefinitionFilePathResolver resolver =
         new LsfDefinitionFilePathResolver(request, getExecutorParams());
     LsfFilePathResolver.Format format = LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN;

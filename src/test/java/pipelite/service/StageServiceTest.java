@@ -93,9 +93,18 @@ class StageServiceTest {
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNull();
     assertThat(stageEntity.getEndTime()).isNull();
-    assertThat(stageEntity.getExecutorName()).isNull();
-    assertThat(stageEntity.getExecutorData()).isNull();
-    assertThat(stageEntity.getExecutorParams()).isNull();
+    assertThat(stageEntity.getExecutorName())
+        .isEqualTo("pipelite.service.StageServiceTest$TestExecutor");
+    assertThat(stageEntity.getExecutorData())
+        .isEqualTo("{\n" + "  \"stageState\" : \"SUCCESS\"\n" + "}");
+    assertThat(stageEntity.getExecutorParams())
+        .isEqualTo(
+            "{\n"
+                + "  \"timeout\" : 0,\n"
+                + "  \"maximumRetries\" : 1,\n"
+                + "  \"immediateRetries\" : 0,\n"
+                + "  \"logLines\" : 1000\n"
+                + "}");
 
     // Start first execution.
 
@@ -236,9 +245,18 @@ class StageServiceTest {
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNull();
     assertThat(stageEntity.getEndTime()).isNull();
-    assertThat(stageEntity.getExecutorName()).isNull();
-    assertThat(stageEntity.getExecutorData()).isNull();
-    assertThat(stageEntity.getExecutorParams()).isNull();
+    assertThat(stageEntity.getExecutorName())
+        .isEqualTo("pipelite.service.StageServiceTest$TestExecutor");
+    assertThat(stageEntity.getExecutorData())
+        .isEqualTo("{\n" + "  \"stageState\" : \"SUCCESS\"\n" + "}");
+    assertThat(stageEntity.getExecutorParams())
+        .isEqualTo(
+            "{\n"
+                + "  \"timeout\" : 0,\n"
+                + "  \"maximumRetries\" : 1,\n"
+                + "  \"immediateRetries\" : 0,\n"
+                + "  \"logLines\" : 1000\n"
+                + "}");
 
     assertThat(service.getSavedStage(pipelineName, processId, stageName).get())
         .isEqualTo(stageEntity);

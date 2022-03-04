@@ -12,5 +12,6 @@ package pipelite.executor.state;
 
 public enum AsyncExecutorState {
   SUBMIT,
-  POLL
+  POLL,
+  DONE;
 }

@@ -132,6 +132,10 @@ public class ProcessRunner {
         });
   }
 
+  private List<Stage> activeStages() {
+    return active.stream().map(a -> a.getStage()).collect(Collectors.toList());
+  }
+
   private void runOneIterationForActiveStageRunners() {
     active.stream()
         .filter(a -> a.getFuture() == null || a.getFuture().isDone())
@@ -171,12 +175,8 @@ public class ProcessRunner {
   }
 
   private void executeProcess(ProcessRunnerResultCallback resultCallback) {
-    logContext(log.atFine()).log("Executing stages");
-    List<Stage> activeStages = active.stream().map(a -> a.getStage()).collect(Collectors.toList());
-    List<Stage> executableStages =
-        DependencyResolver.getImmediatelyExecutableStages(process, activeStages);
-
-    if (activeStages.isEmpty() && executableStages.isEmpty()) {
+    createStageRunners();
+    if (activeStages().isEmpty()) {
       logContext(log.atInfo()).log("No more executable stages");
       endProcessExecution();
       unlockProcess();
@@ -186,19 +186,21 @@ public class ProcessRunner {
           .endProcessExecution(process.getProcessEntity().getProcessState());
       resultCallback.accept(process);
     }
-    runStages(executableStages);
   }
 
-  private void runStages(List<Stage> executableStages) {
-    executableStages.forEach(stage -> runStage(stage));
+  private void createStageRunners() {
+    // Create stage runners for executable stages that are not already active.
+    List<Stage> executableStages =
+        DependencyResolver.getImmediatelyExecutableStages(process, activeStages());
+    executableStages.forEach(stage -> createStageRunner(stage));
   }
 
-  private void runStage(Stage stage) {
+  private void createStageRunner(Stage stage) {
+    logContext(log.atInfo()).log("Creating stage runner for stage: " + stage.getStageName());
     StageRunner stageRunner =
         new StageRunner(
             pipeliteServices, pipeliteMetrics, serviceName, pipelineName, process, stage);
-    ActiveStageRunner activeStageRunner = new ActiveStageRunner(stage, stageRunner);
-    active.add(activeStageRunner);
+    active.add(new ActiveStageRunner(stage, stageRunner));
   }
 
   private void endProcessExecution() {

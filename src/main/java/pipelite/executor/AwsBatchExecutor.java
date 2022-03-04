@@ -57,12 +57,6 @@ public class AwsBatchExecutor
   }
 
   @Override
-  protected void prepareAsyncSubmit(StageExecutorRequest request) {
-    // Reset to allow execution retry.
-    region = null;
-  }
-
-  @Override
   protected StageExecutorResult submit(StageExecutorRequest request) {
     logContext(log.atFine(), request).log("Submitting AWSBatch job.");
 

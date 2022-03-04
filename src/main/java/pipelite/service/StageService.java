@@ -12,6 +12,7 @@ package pipelite.service;
 
 import java.util.List;
 import java.util.Optional;
+import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
@@ -24,12 +25,14 @@ import pipelite.entity.StageEntityId;
 import pipelite.entity.StageLogEntity;
 import pipelite.entity.StageLogEntityId;
 import pipelite.exception.PipeliteException;
+import pipelite.executor.JsonSerializableExecutor;
 import pipelite.executor.describe.cache.AwsBatchDescribeJobsCache;
 import pipelite.executor.describe.cache.KubernetesDescribeJobsCache;
 import pipelite.executor.describe.cache.LsfDescribeJobsCache;
 import pipelite.repository.StageLogRepository;
 import pipelite.repository.StageRepository;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 
 @Service
@@ -43,6 +46,7 @@ import pipelite.stage.executor.StageExecutorResult;
             maxDelayExpression = "#{@dataSourceRetryConfiguration.getMaxDelay()}",
             multiplierExpression = "#{@dataSourceRetryConfiguration.getMultiplier()}"),
     exceptionExpression = "#{@dataSourceRetryConfiguration.recoverableException(#root)}")
+@Flogger
 public class StageService {
 
   private final StageRepository repository;
@@ -121,19 +125,9 @@ public class StageService {
    * @param stage the stage
    */
   public void startExecution(Stage stage) {
-    stage.getStageEntity().startExecution(stage.getExecutor());
+    stage.getStageEntity().startExecution();
     saveStage(stage);
     deleteStageLog(logRepository, stage);
-  }
-
-  /**
-   * Called when the asynchronous stage execution starts. Saves the stage.
-   *
-   * @param stage the stage
-   */
-  public void startAsyncExecution(Stage stage) {
-    stage.getStageEntity().startAsyncExecution(stage);
-    saveStage(stage);
   }
 
   /**
@@ -184,6 +178,18 @@ public class StageService {
     return logRepository.findById(new StageLogEntityId(processId, pipelineName, stageName));
   }
 
+  public static void prepareSaveStage(Stage stage) {
+    StageExecutor stageExecutor = stage.getExecutor();
+    StageEntity stageEntity = stage.getStageEntity();
+    stageEntity.setExecutorName(stageExecutor.getClass().getName());
+    if (stageExecutor instanceof JsonSerializableExecutor) {
+      stageEntity.setExecutorData(((JsonSerializableExecutor) stageExecutor).serialize());
+    }
+    if (stageExecutor.getExecutorParams() != null) {
+      stageEntity.setExecutorParams(stageExecutor.getExecutorParams().serialize());
+    }
+  }
+
   /**
    * Saves the stage.
    *
@@ -191,7 +197,10 @@ public class StageService {
    * @return the saved stage entity
    */
   public StageEntity saveStage(Stage stage) {
-    return repository.save(stage.getStageEntity());
+    prepareSaveStage(stage);
+    StageEntity stageEntity = stage.getStageEntity();
+    log.atInfo().log("Saving stage: " + stageEntity.toString());
+    return repository.save(stageEntity);
   }
 
   /**

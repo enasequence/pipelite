@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.executor.AbstractExecutor;
 import pipelite.executor.JsonSerializableExecutor;
+import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.ErrorType;
@@ -62,6 +63,7 @@ class StageEntityTest {
     // Create execution.
 
     StageEntity stageEntity = StageEntity.createExecution(pipelineName, processId, stage);
+    StageService.prepareSaveStage(stage);
 
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
@@ -72,13 +74,22 @@ class StageEntityTest {
     assertThat(stageEntity.getResultParams()).isNull();
     assertThat(stageEntity.getStartTime()).isNull();
     assertThat(stageEntity.getEndTime()).isNull();
-    assertThat(stageEntity.getExecutorName()).isNull();
-    assertThat(stageEntity.getExecutorData()).isNull();
-    assertThat(stageEntity.getExecutorParams()).isNull();
+    assertThat(stageEntity.getExecutorName())
+        .isEqualTo("pipelite.entity.StageEntityTest$TestExecutor");
+    assertThat(stageEntity.getExecutorData())
+        .isEqualTo("{\n" + "  \"test\" : \"TEST_EXECUTOR_DATA\"\n" + "}");
+    assertThat(stageEntity.getExecutorParams())
+        .isEqualTo(
+            "{\n"
+                + "  \"timeout\" : 0,\n"
+                + "  \"maximumRetries\" : 0,\n"
+                + "  \"immediateRetries\" : 0,\n"
+                + "  \"logLines\" : 1000\n"
+                + "}");
 
     // Start first execution.
 
-    stageEntity.startExecution(stage.getExecutor());
+    stageEntity.startExecution();
 
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
@@ -132,7 +143,7 @@ class StageEntityTest {
 
     // Start second execution.
 
-    stageEntity.startExecution(stage.getExecutor());
+    stageEntity.startExecution();
 
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);

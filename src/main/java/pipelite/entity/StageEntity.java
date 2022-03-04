@@ -17,12 +17,10 @@ import javax.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.flogger.Flogger;
-import pipelite.executor.JsonSerializableExecutor;
 import pipelite.json.Json;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.ErrorType;
-import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 
@@ -103,36 +101,13 @@ public class StageEntity {
     return stageEntity;
   }
 
-  /**
-   * Called when the stage execution starts.
-   *
-   * @param stageExecutor the stage executor
-   */
-  public void startExecution(StageExecutor stageExecutor) {
+  /** Called when the stage execution starts. */
+  public void startExecution() {
     this.stageState = StageState.ACTIVE;
     this.errorType = null;
     this.resultParams = null;
     this.startTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.endTime = null;
-    this.executorName = stageExecutor.getClass().getName();
-    if (stageExecutor instanceof JsonSerializableExecutor) {
-      this.executorData = ((JsonSerializableExecutor) stageExecutor).serialize();
-    }
-    if (stageExecutor.getExecutorParams() != null) {
-      this.executorParams = stageExecutor.getExecutorParams().serialize();
-    }
-  }
-
-  /**
-   * Called when the asynchronous stage execution starts to save stage executor data.
-   *
-   * @param stage the stage
-   */
-  public void startAsyncExecution(Stage stage) {
-    StageExecutor stageExecutor = stage.getExecutor();
-    if (stageExecutor instanceof JsonSerializableExecutor) {
-      this.executorData = ((JsonSerializableExecutor) stageExecutor).serialize();
-    }
   }
 
   /**

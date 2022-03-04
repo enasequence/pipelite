@@ -23,6 +23,7 @@ import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorSerializer;
 import pipelite.stage.parameters.ExecutorParameters;
@@ -70,7 +71,25 @@ public class StageRunner {
             process.getProcessId(),
             stage.getStageName(),
             this);
-    if (!StageExecutorSerializer.deserializeExecution(stage)) {
+
+    boolean isStartExecution = true;
+    if (stage.getExecutor() instanceof AbstractAsyncExecutor) {
+      // Attempt to recover asynchronous execution POLL state.
+      boolean isDeserializeExecution =
+          StageExecutorSerializer.deserializeExecution(
+              stage, StageExecutorSerializer.Deserialize.ASYNC_EXECUTOR_POLL);
+      if (isDeserializeExecution) {
+        // Asynchronous execution POLL state was recovered.
+        // Continue existing execution.
+        isStartExecution = false;
+      } else {
+        // Asynchronous execution POLL state was not recovered.
+        // Reset asynchronous execution state.
+        StageExecutor.resetAsyncExecutorState(stage);
+      }
+    }
+    if (isStartExecution) {
+      // Start new execution.
       pipeliteServices.stage().startExecution(stage);
     }
   }
@@ -132,7 +151,6 @@ public class StageRunner {
             startStageExecution();
           }
           executeStage(resultCallback);
-
           pipeliteMetrics
               .getStageRunnerOneIterationTimer()
               .record(Duration.between(runOneIterationStartTime, ZonedDateTime.now()));
@@ -162,7 +180,7 @@ public class StageRunner {
             endStageExecution(resultCallback);
           } else if (executorResult.isSubmitted()) {
             logContext(log.atFine()).log("Started asynchronous stage execution");
-            pipeliteServices.stage().startAsyncExecution(stage);
+            pipeliteServices.stage().saveStage(stage);
           } else if (executorResult.isActive()) {
             logContext(log.atFiner()).log("Waiting asynchronous stage execution to complete");
           } else if (executorResult.isSuccess() || executorResult.isError()) {

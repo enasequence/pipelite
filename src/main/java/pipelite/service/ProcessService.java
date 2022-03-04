@@ -17,6 +17,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.Data;
+import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.retry.annotation.Backoff;
@@ -44,6 +45,7 @@ import pipelite.runner.process.ProcessQueuePriorityPolicy;
             maxDelayExpression = "#{@dataSourceRetryConfiguration.getMaxDelay()}",
             multiplierExpression = "#{@dataSourceRetryConfiguration.getMultiplier()}"),
     exceptionExpression = "#{@dataSourceRetryConfiguration.recoverableException(#root)}")
+@Flogger
 public class ProcessService {
 
   private final ProcessQueuePriorityPolicy priorityPolicy;
@@ -292,6 +294,7 @@ public class ProcessService {
    * @return the saved process
    */
   public ProcessEntity saveProcess(ProcessEntity processEntity) {
+    log.atInfo().log("Saving process: " + processEntity.toString());
     return processRepository.save(processEntity);
   }
 
