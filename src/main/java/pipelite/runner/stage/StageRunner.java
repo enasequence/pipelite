@@ -72,23 +72,18 @@ public class StageRunner {
             stage.getStageName(),
             this);
 
-    boolean isStartExecution = true;
-    if (stage.getExecutor() instanceof AbstractAsyncExecutor) {
-      // Attempt to recover asynchronous execution POLL state.
-      boolean isDeserializeExecution =
-          StageExecutorSerializer.deserializeExecution(
-              stage, StageExecutorSerializer.Deserialize.ASYNC_EXECUTOR_POLL);
-      if (isDeserializeExecution) {
-        // Asynchronous execution POLL state was recovered.
-        // Continue existing execution.
-        isStartExecution = false;
-      } else {
-        // Asynchronous execution POLL state was not recovered.
+    boolean startExecution = true;
+    if (stage.isActive() && stage.getExecutor() instanceof AbstractAsyncExecutor) {
+      // Attempt to recover active asynchronous execution.
+      startExecution =
+          !StageExecutorSerializer.deserializeExecution(
+              stage, StageExecutorSerializer.Deserialize.ASYNC_EXECUTOR);
+    }
+    if (startExecution) {
+      if (stage.getExecutor() instanceof AbstractAsyncExecutor) {
         // Reset asynchronous execution state.
         StageExecutor.resetAsyncExecutorState(stage);
       }
-    }
-    if (isStartExecution) {
       // Start new execution.
       pipeliteServices.stage().startExecution(stage);
     }

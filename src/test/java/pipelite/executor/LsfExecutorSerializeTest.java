@@ -13,7 +13,6 @@ package pipelite.executor;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import pipelite.executor.state.AsyncExecutorState;
 import pipelite.json.Json;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
@@ -45,7 +44,6 @@ public class LsfExecutorSerializeTest {
             .build();
     LsfFilePathResolver.Format format = LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN;
 
-    executor.setState(AsyncExecutorState.SUBMIT);
     executor.setJobId("test");
     executor.setOutFile(new LsfLogFilePathResolver(request, params).getFile(format));
     executor.setDefinitionFile(new LsfDefinitionFilePathResolver(request, params).getFile(format));
@@ -53,7 +51,6 @@ public class LsfExecutorSerializeTest {
     assertThat(json)
         .isEqualTo(
             "{\n"
-                + "  \"state\" : \"SUBMIT\",\n"
                 + "  \"jobId\" : \"test\",\n"
                 + "  \"cmd\" : \"echo test\",\n"
                 + "  \"outFile\" : \"logDir/user/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.out\",\n"

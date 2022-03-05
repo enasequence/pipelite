@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import pipelite.UniqueStringGenerator;
 import pipelite.exception.PipeliteException;
-import pipelite.executor.state.AsyncExecutorState;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorRequest;
@@ -45,7 +44,6 @@ public class AbstractAsyncExecutorTest {
   @Test
   public void executeSubmitMissingJobId() {
     AbstractAsyncExecutor executor = executor();
-    executor.setState(AsyncExecutorState.SUBMIT);
     doReturn(StageExecutorResult.submitted()).when(executor).submit(any());
 
     Stage stage = new Stage(STAGE_NAME, executor);
@@ -61,7 +59,6 @@ public class AbstractAsyncExecutorTest {
     AbstractAsyncExecutor executor = executor();
     for (StageExecutorState stageExecutorState :
         EnumSet.of(StageExecutorState.ACTIVE, StageExecutorState.SUCCESS)) {
-      executor.setState(AsyncExecutorState.SUBMIT);
       doReturn(StageExecutorResult.from(stageExecutorState)).when(executor).submit(any());
 
       Stage stage = new Stage(STAGE_NAME, executor);
@@ -76,7 +73,6 @@ public class AbstractAsyncExecutorTest {
   @Test
   public void executeSubmitException() {
     AbstractAsyncExecutor executor = executor();
-    executor.setState(AsyncExecutorState.SUBMIT);
     doThrow(new RuntimeException("test")).when(executor).submit(any());
 
     Stage stage = new Stage(STAGE_NAME, executor);
@@ -90,45 +86,11 @@ public class AbstractAsyncExecutorTest {
   @Test
   public void executeSubmitError() {
     AbstractAsyncExecutor executor = executor();
-    executor.setState(AsyncExecutorState.SUBMIT);
     doReturn(StageExecutorResult.error()).when(executor).submit(any());
 
     Stage stage = new Stage(STAGE_NAME, executor);
     StageExecutorRequest request = new StageExecutorRequest(PIPELINE_NAME, PROCESS_ID, stage);
 
     assertThat(executor.execute(request).isError()).isTrue();
-  }
-
-  @Test
-  public void executePollStateMissingJobid() {
-    AbstractAsyncExecutor executor = new SimpleLsfExecutor();
-    executor.setState(AsyncExecutorState.POLL);
-    Stage stage = new Stage(STAGE_NAME, executor);
-    StageExecutorRequest request = new StageExecutorRequest(PIPELINE_NAME, PROCESS_ID, stage);
-    assertThatThrownBy(() -> executor.execute(request))
-        .isInstanceOf(PipeliteException.class)
-        .hasMessage("Missing job id during asynchronous poll");
-  }
-
-  @Test
-  public void executeDoneState() {
-    AbstractAsyncExecutor executor = new SimpleLsfExecutor();
-    executor.setState(AsyncExecutorState.DONE);
-    Stage stage = new Stage(STAGE_NAME, executor);
-    StageExecutorRequest request = new StageExecutorRequest(PIPELINE_NAME, PROCESS_ID, stage);
-    assertThatThrownBy(() -> executor.execute(request))
-        .isInstanceOf(PipeliteException.class)
-        .hasMessage("Unexpected state during asynchronous execution: DONE");
-  }
-
-  @Test
-  public void executeMissingState() {
-    AbstractAsyncExecutor executor = new SimpleLsfExecutor();
-    executor.setState(null);
-    Stage stage = new Stage(STAGE_NAME, executor);
-    StageExecutorRequest request = new StageExecutorRequest(PIPELINE_NAME, PROCESS_ID, stage);
-    assertThatThrownBy(() -> executor.execute(request))
-        .isInstanceOf(PipeliteException.class)
-        .hasMessage("Missing state during asynchronous execution");
   }
 }

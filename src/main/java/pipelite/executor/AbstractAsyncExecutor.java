@@ -15,7 +15,6 @@ import lombok.Getter;
 import lombok.Setter;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.describe.cache.DescribeJobsCache;
-import pipelite.executor.state.AsyncExecutorState;
 import pipelite.service.StageService;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
@@ -27,11 +26,6 @@ import pipelite.stage.parameters.ExecutorParameters;
 public abstract class AbstractAsyncExecutor<
         T extends ExecutorParameters, D extends DescribeJobsCache>
     extends AbstractExecutor<T> {
-
-  /**
-   * Asynchronous executor state. Serialize in database to continue execution after service restart.
-   */
-  private AsyncExecutorState state = AsyncExecutorState.SUBMIT;
 
   /**
    * Asynchronous executor job id. Serialize in database to continue execution after service
@@ -64,7 +58,8 @@ public abstract class AbstractAsyncExecutor<
 
   @Override
   public final StageExecutorResult execute(StageExecutorRequest request) {
-    if (state == AsyncExecutorState.SUBMIT) {
+    if (jobId == null) {
+      // Submit.
       prepareSubmit(request);
       StageExecutorResult result = submit(request);
       if (result.isError()) {
@@ -77,26 +72,15 @@ public abstract class AbstractAsyncExecutor<
       if (jobId == null) {
         throw new PipeliteException("Missing job id after asynchronous submit");
       }
-      state = AsyncExecutorState.POLL;
-      // Asynchronous executor state is saved in database after submit by stage runner.
       return result;
-    } else if (state == AsyncExecutorState.POLL) {
-      if (jobId == null) {
-        throw new PipeliteException("Missing job id during asynchronous poll");
-      }
+    } else {
+      // Poll.
       StageExecutorResult result = poll(request);
       if (result.isSubmitted()) {
         throw new PipeliteException(
             "Unexpected state during asynchronous poll: " + result.getExecutorState().name());
       }
-      if (!result.isActive()) {
-        state = AsyncExecutorState.DONE;
-      }
       return result;
-    } else if (state == AsyncExecutorState.DONE) {
-      throw new PipeliteException(
-          "Unexpected state during asynchronous execution: " + state.name());
     }
-    throw new PipeliteException("Missing state during asynchronous execution");
   }
 }

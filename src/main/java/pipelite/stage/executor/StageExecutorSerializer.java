@@ -15,9 +15,9 @@ import lombok.extern.flogger.Flogger;
 import pipelite.entity.StageEntity;
 import pipelite.executor.AbstractAsyncExecutor;
 import pipelite.executor.JsonSerializableExecutor;
-import pipelite.executor.state.AsyncExecutorState;
 import pipelite.log.LogKey;
 import pipelite.stage.Stage;
+import pipelite.stage.StageState;
 import pipelite.stage.parameters.ExecutorParameters;
 
 @Flogger
@@ -27,13 +27,13 @@ public class StageExecutorSerializer {
   public enum Deserialize {
     /** Deserialize JsonSerializableExecutor. */
     JSON_EXECUTOR,
-    /** Deserialize AbstractAsyncExecutor with state AsyncExecutorState.POLL. */
-    ASYNC_EXECUTOR_POLL;
+    /** Deserialize AbstractAsyncExecutor with jobId. */
+    ASYNC_EXECUTOR;
   }
 
   /**
-   * Deserialize stage executor and stage executor parameters. An asynchronous executor must be in
-   * the POLL state to be deserialized.
+   * Deserialize active stage executor and stage executor parameters. An asynchronous executor must
+   * be in the POLL state to be deserialized.
    *
    * @oaran stage the stage being executed
    * @return true if the executor was deserialized
@@ -41,6 +41,9 @@ public class StageExecutorSerializer {
   public static <T extends ExecutorParameters> Boolean deserializeExecution(
       Stage stage, Deserialize deserialize) {
     if (!(stage.getExecutor() instanceof JsonSerializableExecutor)) {
+      return false;
+    }
+    if (stage.getStageEntity().getStageState() != StageState.ACTIVE) {
       return false;
     }
     StageEntity stageEntity = stage.getStageEntity();
@@ -55,15 +58,10 @@ public class StageExecutorSerializer {
       return false;
     }
 
-    if (deserialize == Deserialize.ASYNC_EXECUTOR_POLL) {
+    if (deserialize == Deserialize.ASYNC_EXECUTOR) {
       AbstractAsyncExecutor deserializedAsyncExecutor =
           (AbstractAsyncExecutor) deserializedExecutor;
-      // Backward compatible with version < 1.4.* without AsyncExecutorState.
-      if (deserializedAsyncExecutor.getState() == null
-          && deserializedAsyncExecutor.getJobId() != null) {
-        deserializedAsyncExecutor.setState(AsyncExecutorState.POLL);
-      }
-      if (deserializedAsyncExecutor.getState() != AsyncExecutorState.POLL) {
+      if (deserializedAsyncExecutor.getJobId() == null) {
         return false;
       }
     }
@@ -89,7 +87,7 @@ public class StageExecutorSerializer {
         case JSON_EXECUTOR:
           action = stage.getExecutor() instanceof JsonSerializableExecutor;
           break;
-        case ASYNC_EXECUTOR_POLL:
+        case ASYNC_EXECUTOR:
           action = stage.getExecutor() instanceof AbstractAsyncExecutor;
           break;
       }

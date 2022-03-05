@@ -17,7 +17,6 @@ import pipelite.entity.StageEntity;
 import pipelite.executor.AbstractExecutor;
 import pipelite.executor.JsonSerializableExecutor;
 import pipelite.executor.SimpleLsfExecutor;
-import pipelite.executor.state.AsyncExecutorState;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
@@ -124,8 +123,7 @@ public class StageExecutorSerializerTest {
   @Test
   public void deserializeExecutionAsync() {
     SimpleLsfExecutor lsfExecutor = StageExecutor.createSimpleLsfExecutor("test");
-    lsfExecutor.setState(AsyncExecutorState.POLL);
-    lsfExecutor.setJobId("1");
+    lsfExecutor.setJobId("test");
 
     SimpleLsfExecutorParameters params = new SimpleLsfExecutorParameters();
     params.setHost("host");
@@ -141,18 +139,13 @@ public class StageExecutorSerializerTest {
 
     assertThat(
             StageExecutorSerializer.deserializeExecution(
-                stage, StageExecutorSerializer.Deserialize.ASYNC_EXECUTOR_POLL))
+                stage, StageExecutorSerializer.Deserialize.ASYNC_EXECUTOR))
         .isTrue();
     assertThat(stage.getExecutor()).isNotNull();
     assertThat(stage.getExecutor()).isInstanceOf(SimpleLsfExecutor.class);
     assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.SimpleLsfExecutor");
     assertThat(stageEntity.getExecutorData())
-        .isEqualTo(
-            "{\n"
-                + "  \"state\" : \"POLL\",\n"
-                + "  \"jobId\" : \"1\",\n"
-                + "  \"cmd\" : \"test\"\n"
-                + "}");
+        .isEqualTo("{\n" + "  \"jobId\" : \"test\",\n" + "  \"cmd\" : \"test\"\n" + "}");
     assertThat(stageEntity.getExecutorParams())
         .isEqualTo(
             "{\n"
