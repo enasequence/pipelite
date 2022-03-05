@@ -84,7 +84,7 @@ public class StageRunner {
         // Reset asynchronous execution state.
         StageExecutor.resetAsyncExecutorState(stage);
       }
-      // Start new execution.
+      // Start new stage execution and set stage status to active.
       pipeliteServices.stage().startExecution(stage);
     }
   }
