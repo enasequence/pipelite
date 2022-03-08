@@ -26,7 +26,7 @@ import pipelite.tester.pipeline.ConfigurableTestPipeline;
 import pipelite.tester.process.TestProcessConfiguration;
 
 @Configuration
-public class PipeliteTest {
+public class PipeliteWebServerTest {
 
   private static final int PROCESS_CNT = 10000;
   private static final int PROCESS_PARALLELISM = 10;
@@ -155,7 +155,7 @@ public class PipeliteTest {
 
   // @Test
   public static void main(String[] args) {
-    System.setProperty("pipelite.service.name", "PipeliteTest");
+    System.setProperty("pipelite.service.name", "PipeliteWebServerTest");
     System.setProperty("pipelite.advanced.processRunnerFrequency", "1s");
     System.setProperty("pipelite.advanced.processQueueMinRefreshFrequency", "10s");
     System.setProperty("pipelite.advanced.processQueueMaxRefreshFrequency", "60s");

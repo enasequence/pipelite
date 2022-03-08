@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    $("#retryProcess").prop( "disabled", true );
+    $("#retryProcess").prop("disabled", true);
 
     $('#processTable').DataTable({
         columns: [
@@ -9,7 +9,7 @@ $(document).ready(function () {
                 data: "state",
                 render: function (data) {
                     if (data == 'FAILED') {
-                        $("#retryProcess").prop( "disabled", false );
+                        $("#retryProcess").prop("disabled", false);
                     }
                     return data;
                 }
@@ -54,22 +54,22 @@ $(document).ready(function () {
             {
                 data: "startTime",
                 render: function (data) {
-                if (data) {
-                    return moment(data).format('YYYY/MM/DD HH:mm:ss');
-                } else {
-                    return '';
+                    if (data) {
+                        return moment(data).format('YYYY/MM/DD HH:mm:ss');
+                    } else {
+                        return '';
+                    }
                 }
-            }
             },
             {
                 data: "endTime",
                 render: function (data) {
-                if (data) {
-                    return moment(data).format('YYYY/MM/DD HH:mm:ss');
-                } else {
-                    return '';
+                    if (data) {
+                        return moment(data).format('YYYY/MM/DD HH:mm:ss');
+                    } else {
+                        return '';
+                    }
                 }
-            }
             },
             {data: "executionTime"},
             {data: "executionCount"},
@@ -149,9 +149,12 @@ $(document).ready(function () {
 
     // Restore state from URL.
 
-    let [pipelineName, processId] = getTabParams("processParams").split(",");
-    if (pipelineName && processId) {
-        refreshProcess(pipelineName, processId);
+    let processParams = getTabParams("processParams");
+    if (processParams) {
+        let [pipelineName, processId] = processParams.split(",");
+        if (pipelineName && processId) {
+            refreshProcess(pipelineName, processId);
+        }
     }
 
     // Show graph when tab is changed.
