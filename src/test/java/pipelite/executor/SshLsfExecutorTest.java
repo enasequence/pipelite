@@ -20,6 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.properties.LsfTestConfiguration;
+import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.StageService;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResultAttribute;
@@ -34,6 +35,7 @@ public class SshLsfExecutorTest {
 
   @Autowired LsfTestConfiguration lsfTestConfiguration;
   @Autowired StageService stageService;
+  @Autowired PipeliteMetrics pipeliteMetrics;
 
   @Test
   @EnabledIfEnvironmentVariable(named = "PIPELITE_TEST_LSF_HOST", matches = ".+")
@@ -54,6 +56,7 @@ public class SshLsfExecutorTest {
     AsyncExecutorTestHelper.testExecute(
         executor,
         stageService,
+        pipeliteMetrics,
         result -> {
           assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).startsWith("bsub");
           assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).contains("-yaml");

@@ -11,10 +11,13 @@
 package pipelite.executor;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import lombok.Getter;
 import lombok.Setter;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.describe.cache.DescribeJobsCache;
+import pipelite.metrics.StageMetrics;
 import pipelite.service.StageService;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
@@ -34,14 +37,16 @@ public abstract class AbstractAsyncExecutor<
   private String jobId;
 
   @JsonIgnore private D describeJobsCache;
+  @JsonIgnore private StageMetrics stageMetrics;
 
   /**
    * Prepares stage executor for asynchronous execution.
    *
    * @param stageService the stage service
    */
-  public void prepareAsyncExecute(StageService stageService) {
+  public void prepareAsyncExecute(StageService stageService, StageMetrics stageMetrics) {
     this.describeJobsCache = initDescribeJobsCache(stageService);
+    this.stageMetrics = stageMetrics;
   }
 
   protected abstract D initDescribeJobsCache(StageService stageService);
@@ -60,8 +65,18 @@ public abstract class AbstractAsyncExecutor<
   public final StageExecutorResult execute(StageExecutorRequest request) {
     if (jobId == null) {
       // Submit.
+      ZonedDateTime submitStartTime = ZonedDateTime.now();
+
       prepareSubmit(request);
       StageExecutorResult result = submit(request);
+
+      if (stageMetrics != null) {
+        stageMetrics
+            .getAsyncSubmitTimer()
+            .record(Duration.between(submitStartTime, ZonedDateTime.now()));
+        stageMetrics.endAsyncSubmit();
+      }
+
       if (result.isError()) {
         return result;
       }

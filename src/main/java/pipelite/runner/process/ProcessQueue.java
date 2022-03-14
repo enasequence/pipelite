@@ -47,16 +47,16 @@ public class ProcessQueue {
   private int processQueueRefreshSize = 0;
 
   /**
-   * The refreshQueue and nextProcess methods are called from different threads. The refreshLock is
-   * makes sure that these method are not called at the same time. The refreshQueue method will wait
-   * until the lock can be acquired. The nextProcess method will return null if the lock can't be
+   * The refreshQueue and nextProcess methods are called from different threads. The refreshLock
+   * makes sure that they are not called at the same time. The refreshQueue method will wait until
+   * the lock can be acquired. The nextProcess method will return null if the lock can't be
    * acquired.
    */
   private final ReentrantLock refreshLock = new ReentrantLock();
 
   /**
-   * When the refreshQueue method is called some of the new processes may already have been returned
-   * by the nextProcess method call. These processes are removed using the returnedProcesses set.
+   * When the refreshQueue method is called some new processes may already have been returned by the
+   * nextProcess method call. These processes are removed using the returnedProcesses set.
    */
   private final Set<String> returnedProcesses = new HashSet();
 

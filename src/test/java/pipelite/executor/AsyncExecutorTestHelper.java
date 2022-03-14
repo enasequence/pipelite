@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Duration;
 import java.util.function.Consumer;
 import pipelite.UniqueStringGenerator;
+import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.ErrorType;
@@ -27,6 +28,7 @@ public class AsyncExecutorTestHelper {
   public static void testExecute(
       AbstractAsyncExecutor<?, ?> executor,
       StageService stageService,
+      PipeliteMetrics pipeliteMetrics,
       Consumer<StageExecutorResult> assertAfterSubmit,
       Consumer<StageExecutorResult> assertAfterPoll) {
 
@@ -41,7 +43,7 @@ public class AsyncExecutorTestHelper {
             .stage(stage)
             .build();
 
-    executor.prepareAsyncExecute(stageService);
+    executor.prepareAsyncExecute(stageService, pipeliteMetrics.pipeline(pipelineName).stage());
 
     StageExecutorResult result = executor.execute(request);
     assertThat(result.isSubmitted()).isTrue();

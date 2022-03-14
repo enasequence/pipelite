@@ -78,7 +78,7 @@ public class RepositoryConfiguration {
       isValid = false;
     }
 
-    if (!isValid && (test || isTestProfile())) {
+    if (!isValid && (test || isTestProfile(environment))) {
       log.atSevere().log("Using an in-memory database unsuitable for production purposes.");
       this.driverClassName = "org.hsqldb.jdbc.JDBCDriver";
       this.url = "jdbc:hsqldb:mem:testdb;DB_CLOSE_DELAY: -1";
@@ -157,7 +157,7 @@ public class RepositoryConfiguration {
     return transactionManager;
   }
 
-  private boolean isTestProfile() {
+  public static boolean isTestProfile(Environment environment) {
     return Arrays.asList(environment.getActiveProfiles()).contains("test");
   }
 }

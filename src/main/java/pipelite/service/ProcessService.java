@@ -294,7 +294,7 @@ public class ProcessService {
    * @return the saved process
    */
   public ProcessEntity saveProcess(ProcessEntity processEntity) {
-    log.atInfo().log("Saving process: " + processEntity.toString());
+    log.atFiner().log("Saving process: " + processEntity.toString());
     return processRepository.save(processEntity);
   }
 

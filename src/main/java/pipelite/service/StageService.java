@@ -199,7 +199,7 @@ public class StageService {
   public StageEntity saveStage(Stage stage) {
     prepareSaveStage(stage);
     StageEntity stageEntity = stage.getStageEntity();
-    log.atInfo().log("Saving stage: " + stageEntity.toString());
+    log.atFiner().log("Saving stage: " + stageEntity.toString());
     return repository.save(stageEntity);
   }
 

@@ -156,7 +156,8 @@ public class StageRunner {
     logContext(log.atInfo()).log("Executing stage");
     if (stage.getExecutor() instanceof AbstractAsyncExecutor<?, ?>) {
       ((AbstractAsyncExecutor<?, ?>) stage.getExecutor())
-          .prepareAsyncExecute(pipeliteServices.stage());
+          .prepareAsyncExecute(
+              pipeliteServices.stage(), pipeliteMetrics.pipeline(pipelineName).stage());
     }
   }
 
