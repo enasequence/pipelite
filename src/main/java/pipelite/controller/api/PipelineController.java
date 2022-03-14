@@ -18,7 +18,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
@@ -58,19 +60,17 @@ public class PipelineController {
   public Collection<PipelineInfo> pipelines() {
     List<PipelineInfo> list =
         getPipelines(
-            runnerService,
-            registeredPipelineService.getRegisteredPipelines(Pipeline.class),
-            processService.getProcessStateSummary());
+            runnerService, registeredPipelineService.getRegisteredPipelines(Pipeline.class));
     return list;
   }
 
   private List<PipelineInfo> getPipelines(
-      RunnerService runnerService,
-      Collection<Pipeline> pipelines,
-      List<ProcessService.ProcessStateSummary> summaries) {
+      RunnerService runnerService, Collection<Pipeline> pipelines) {
 
-    Map<String, ProcessService.ProcessStateSummary> summaryMap = new HashMap<>();
-    summaries.forEach(s -> summaryMap.put(s.getPipelineName(), s));
+    // Process state summary takes a long time to construct.
+    // List<ProcessService.ProcessStateSummary> summaries = processService.getProcessStateSummary();
+    // Map<String, ProcessService.ProcessStateSummary> summaryMap = new HashMap<>();
+    // summaries.forEach(s -> summaryMap.put(s.getPipelineName(), s));
 
     List<PipelineInfo> list = new ArrayList<>();
 
@@ -83,40 +83,27 @@ public class PipelineController {
               int maxRunningCount = p.configurePipeline().pipelineParallelism();
               Integer runningCount =
                   pipelineRunner != null ? pipelineRunner.getActiveProcessCount() : null;
-              return getPipelineInfo(summaryMap, p.pipelineName(), maxRunningCount, runningCount);
+              return getPipelineInfo(p.pipelineName(), maxRunningCount, runningCount);
             })
         .collect(Collectors.toCollection(() -> list));
-
-    // Add schedules
-    /*
-    schedules.stream()
-        .filter(p -> runnerService.getScheduleRunner().isActiveSchedule(p.pipelineName()))
-        .map(
-            p -> {
-              int maxRunningCount = 1;
-              Integer runningCount = 1;
-              return getPipelineInfo(summaryMap, p.pipelineName(), maxRunningCount, runningCount);
-            })
-        .collect(Collectors.toCollection(() -> list));
-     */
 
     return list;
   }
 
   private PipelineInfo getPipelineInfo(
-      Map<String, ProcessService.ProcessStateSummary> summaryMap,
-      String pipelineName,
-      Integer maxRunningCount,
-      Integer runningCount) {
-    ProcessService.ProcessStateSummary summary = summaryMap.get(pipelineName);
+      String pipelineName, Integer maxRunningCount, Integer runningCount) {
+    // Process state summary takes a long time to construct.
+    // ProcessService.ProcessStateSummary summary = summaryMap.get(pipelineName);
     return PipelineInfo.builder()
         .pipelineName(pipelineName)
         .maxRunningCount(maxRunningCount)
         .runningCount(runningCount)
+        /*
         .pendingCount(summary.getPendingCount())
         .activeCount(summary.getActiveCount())
         .completedCount(summary.getCompletedCount())
         .failedCount(summary.getFailedCount())
+          */
         .build();
   }
 
