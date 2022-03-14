@@ -72,7 +72,6 @@ public class PipelineController {
     Map<String, ProcessService.ProcessStateSummary> summaryMap = new HashMap<>();
     summaries.forEach(s -> summaryMap.put(s.getPipelineName(), s));
 
-    runnerService.getScheduleRunner().getActiveProcessRunners();
     List<PipelineInfo> list = new ArrayList<>();
 
     // Add pipelines

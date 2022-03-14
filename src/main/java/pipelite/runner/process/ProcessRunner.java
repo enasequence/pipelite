@@ -10,17 +10,7 @@
  */
 package pipelite.runner.process;
 
-import static pipelite.stage.StageState.PENDING;
-import static pipelite.stage.StageState.SUCCESS;
-
 import com.google.common.flogger.FluentLogger;
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.flogger.Flogger;
@@ -40,6 +30,17 @@ import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+
+import static pipelite.stage.StageState.PENDING;
+import static pipelite.stage.StageState.SUCCESS;
 
 /** Executes a process and returns the process state. */
 @Flogger
@@ -228,6 +229,8 @@ public class ProcessRunner {
     // Apply default executor parameters.
     stage.getExecutor().getExecutorParams().applyDefaults(executorConfiguration);
     stage.getExecutor().getExecutorParams().validate();
+    // Assigns a stage entity to the stage. Uses a saved stage entity if it exists or creates a new
+    // one. Saves the stage.
     pipeliteServices.stage().createExecution(pipelineName, process.getProcessId(), stage);
   }
 
