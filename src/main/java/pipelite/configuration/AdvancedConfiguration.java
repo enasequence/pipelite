@@ -33,7 +33,7 @@ public class AdvancedConfiguration {
   public static final Duration DEFAULT_LOCK_FREQUENCY = Duration.ofMinutes(5);
   public static final Duration DEFAULT_LOCK_DURATION = Duration.ofMinutes(60);
   private static final Duration DEFAULT_PROCESS_RUNNER_FREQUENCY = Duration.ofSeconds(10);
-  private static final int DEFAULT_PROCESS_RUNNER_WORKERS = 100;
+  private static final int DEFAULT_PROCESS_RUNNER_WORKERS = 25;
   private static final Duration DEFAULT_SCHEDULE_REFRESH_FREQUENCY = Duration.ofHours(4);
 
   private static final ProcessQueuePriorityPolicy DEFAULT_PROCESS_QUEUE_PRIORITY_POLICY =

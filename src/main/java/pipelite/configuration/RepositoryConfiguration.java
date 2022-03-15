@@ -144,6 +144,7 @@ public class RepositoryConfiguration {
     hikariConfig.setMinimumIdle(minimumIdle);
     hikariConfig.setMaximumPoolSize(maximumPoolSize);
     hikariConfig.setConnectionTimeout(connectionTimeout.toMillis());
+    hikariConfig.setLeakDetectionThreshold(5000);
     hikariConfig.setPoolName("pipelite");
     hikariConfig.setAutoCommit(false);
     return new HikariDataSource(hikariConfig);

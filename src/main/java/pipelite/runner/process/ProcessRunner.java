@@ -19,7 +19,6 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -60,7 +59,6 @@ public class ProcessRunner {
   public static class ActiveStageRunner {
     private final Stage stage;
     @EqualsAndHashCode.Exclude private final StageRunner StageRunner;
-    @EqualsAndHashCode.Exclude private Future<?> future;
   }
 
   public ProcessRunner(
@@ -137,9 +135,7 @@ public class ProcessRunner {
   }
 
   private void runOneIterationForActiveStageRunners() {
-    active.stream()
-        .filter(a -> a.getFuture() == null || a.getFuture().isDone())
-        .forEach(a -> runOneIterationForActiveStageRunner(a));
+    active.stream().forEach(a -> runOneIterationForActiveStageRunner(a));
   }
 
   private void runOneIterationForActiveStageRunner(ActiveStageRunner activeStageRunner) {
@@ -294,7 +290,6 @@ public class ProcessRunner {
 
   /** Detaches from the process execution. Asynchronous process execution can be continued later. */
   public void detach() {
-    active.forEach(a -> a.getFuture().cancel(true));
     unlockProcess();
   }
 
