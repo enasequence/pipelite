@@ -10,7 +10,9 @@ $(document).ready(function () {
                     // console.log(onClick);
                     return '<button type="button" class="btn btn-link" onclick="' + onClick + '">' + row.runningCount + '</button>';
                 }
-            }
+            },
+            {data: "submitCount"},
+            {data: "pollCount"}
             /*,
             {data: "pendingCount"},
             {data: "activeCount"},

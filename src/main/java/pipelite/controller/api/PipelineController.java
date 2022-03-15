@@ -28,13 +28,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Pipeline;
 import pipelite.controller.api.info.PipelineInfo;
+import pipelite.executor.AbstractAsyncExecutor;
 import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.TimeSeriesMetrics;
 import pipelite.runner.pipeline.PipelineRunner;
+import pipelite.runner.process.ProcessRunner;
 import pipelite.service.ProcessService;
 import pipelite.service.RegisteredPipelineService;
 import pipelite.service.RunnerService;
+import pipelite.stage.Stage;
 import tech.tablesaw.api.Table;
 import tech.tablesaw.plotly.components.Figure;
 
@@ -83,7 +86,22 @@ public class PipelineController {
               int maxRunningCount = p.configurePipeline().pipelineParallelism();
               Integer runningCount =
                   pipelineRunner != null ? pipelineRunner.getActiveProcessCount() : null;
-              return getPipelineInfo(p.pipelineName(), maxRunningCount, runningCount);
+              int submitCount = 0;
+              int pollCount = 0;
+              for (ProcessRunner processRunner : pipelineRunner.getActiveProcessRunners()) {
+                for (Stage stage : processRunner.activeStages()) {
+                  if (stage.getExecutor() instanceof AbstractAsyncExecutor) {
+                    String jobId = ((AbstractAsyncExecutor) stage.getExecutor()).getJobId();
+                    if (jobId == null) {
+                      submitCount++;
+                    } else {
+                      pollCount++;
+                    }
+                  }
+                }
+              }
+              return getPipelineInfo(
+                  p.pipelineName(), maxRunningCount, runningCount, submitCount, pollCount);
             })
         .collect(Collectors.toCollection(() -> list));
 
@@ -91,13 +109,19 @@ public class PipelineController {
   }
 
   private PipelineInfo getPipelineInfo(
-      String pipelineName, Integer maxRunningCount, Integer runningCount) {
+      String pipelineName,
+      Integer maxRunningCount,
+      Integer runningCount,
+      Integer submitCount,
+      Integer pollCount) {
     // Process state summary takes a long time to construct.
     // ProcessService.ProcessStateSummary summary = summaryMap.get(pipelineName);
     return PipelineInfo.builder()
         .pipelineName(pipelineName)
         .maxRunningCount(maxRunningCount)
         .runningCount(runningCount)
+        .submitCount(submitCount)
+        .pollCount(pollCount)
         /*
         .pendingCount(summary.getPendingCount())
         .activeCount(summary.getActiveCount())

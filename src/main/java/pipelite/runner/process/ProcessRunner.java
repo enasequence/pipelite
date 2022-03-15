@@ -132,7 +132,7 @@ public class ProcessRunner {
         });
   }
 
-  private List<Stage> activeStages() {
+  public List<Stage> activeStages() {
     return active.stream().map(a -> a.getStage()).collect(Collectors.toList());
   }
 
