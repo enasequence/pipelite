@@ -21,7 +21,7 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.metrics.PipeliteMetrics;
-import pipelite.service.StageService;
+import pipelite.service.DescribeJobsCacheService;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.LsfExecutorParameters;
@@ -34,7 +34,7 @@ import pipelite.stage.parameters.cmd.LogFileSavePolicy;
 public class SshLsfExecutorTest {
 
   @Autowired LsfTestConfiguration lsfTestConfiguration;
-  @Autowired StageService stageService;
+  @Autowired DescribeJobsCacheService describeJobsCacheService;
   @Autowired PipeliteMetrics pipeliteMetrics;
 
   @Test
@@ -55,7 +55,7 @@ public class SshLsfExecutorTest {
 
     AsyncExecutorTestHelper.testExecute(
         executor,
-        stageService,
+        describeJobsCacheService,
         pipeliteMetrics,
         result -> {
           assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).startsWith("bsub");

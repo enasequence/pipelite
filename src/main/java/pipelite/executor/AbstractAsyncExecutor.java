@@ -18,7 +18,7 @@ import lombok.Setter;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.describe.cache.DescribeJobsCache;
 import pipelite.metrics.StageMetrics;
-import pipelite.service.StageService;
+import pipelite.service.DescribeJobsCacheService;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
@@ -39,17 +39,14 @@ public abstract class AbstractAsyncExecutor<
   @JsonIgnore private D describeJobsCache;
   @JsonIgnore private StageMetrics stageMetrics;
 
-  /**
-   * Prepares stage executor for asynchronous execution.
-   *
-   * @param stageService the stage service
-   */
-  public void prepareAsyncExecute(StageService stageService, StageMetrics stageMetrics) {
-    this.describeJobsCache = initDescribeJobsCache(stageService);
+  /** Prepares stage executor for asynchronous execution. */
+  public void prepareAsyncExecute(
+      DescribeJobsCacheService describeJobsCacheService, StageMetrics stageMetrics) {
+    this.describeJobsCache = initDescribeJobsCache(describeJobsCacheService);
     this.stageMetrics = stageMetrics;
   }
 
-  protected abstract D initDescribeJobsCache(StageService stageService);
+  protected abstract D initDescribeJobsCache(DescribeJobsCacheService describeJobsCacheService);
 
   public D getDescribeJobsCache() {
     return describeJobsCache;

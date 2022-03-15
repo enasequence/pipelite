@@ -31,7 +31,7 @@ import pipelite.executor.describe.DescribeJobs;
 import pipelite.executor.describe.cache.KubernetesDescribeJobsCache;
 import pipelite.executor.task.RetryTask;
 import pipelite.log.LogKey;
-import pipelite.service.StageService;
+import pipelite.service.DescribeJobsCacheService;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
@@ -80,8 +80,9 @@ public class KubernetesExecutor
   public KubernetesExecutor() {}
 
   @Override
-  protected KubernetesDescribeJobsCache initDescribeJobsCache(StageService stageService) {
-    return stageService.getKubernetesDescribeJobsCache();
+  protected KubernetesDescribeJobsCache initDescribeJobsCache(
+      DescribeJobsCacheService describeJobsCacheService) {
+    return describeJobsCacheService.kubernetesDescribeJobsCache();
   }
 
   private DescribeJobs<String, KubernetesDescribeJobsCache.ExecutorContext> describeJobs() {

@@ -36,7 +36,7 @@ import pipelite.executor.describe.DescribeJobs;
 import pipelite.executor.describe.cache.LsfDescribeJobsCache;
 import pipelite.executor.task.RetryTask;
 import pipelite.log.LogKey;
-import pipelite.service.StageService;
+import pipelite.service.DescribeJobsCacheService;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
@@ -98,8 +98,9 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
   @JsonIgnore private ZonedDateTime pollTimeout;
 
   @Override
-  protected LsfDescribeJobsCache initDescribeJobsCache(StageService stageService) {
-    return stageService.getLsfDescribeJobsCache();
+  protected LsfDescribeJobsCache initDescribeJobsCache(
+      DescribeJobsCacheService describeJobsCacheService) {
+    return describeJobsCacheService.lsfDescribeJobsCache();
   }
 
   protected DescribeJobs<LsfDescribeJobsCache.RequestContext, LsfDescribeJobsCache.ExecutorContext>

@@ -19,16 +19,12 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageEntityId;
 import pipelite.entity.StageLogEntity;
 import pipelite.entity.StageLogEntityId;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.JsonSerializableExecutor;
-import pipelite.executor.describe.cache.AwsBatchDescribeJobsCache;
-import pipelite.executor.describe.cache.KubernetesDescribeJobsCache;
-import pipelite.executor.describe.cache.LsfDescribeJobsCache;
 import pipelite.repository.StageLogRepository;
 import pipelite.repository.StageRepository;
 import pipelite.stage.Stage;
@@ -52,25 +48,10 @@ public class StageService {
   private final StageRepository repository;
   private final StageLogRepository logRepository;
 
-  private final LsfDescribeJobsCache lsfDescribeJobsCache;
-  private final AwsBatchDescribeJobsCache awsBatchDescribeJobsCache;
-  private final KubernetesDescribeJobsCache kubernetesDescribeJobsCache;
-
   public StageService(
-      @Autowired StageRepository repository,
-      @Autowired StageLogRepository logRepository,
-      @Autowired ServiceConfiguration serviceConfiguration,
-      @Autowired InternalErrorService internalErrorService) {
-
+      @Autowired StageRepository repository, @Autowired StageLogRepository logRepository) {
     this.repository = repository;
     this.logRepository = logRepository;
-
-    this.lsfDescribeJobsCache =
-        new LsfDescribeJobsCache(serviceConfiguration, internalErrorService);
-    this.awsBatchDescribeJobsCache =
-        new AwsBatchDescribeJobsCache(serviceConfiguration, internalErrorService);
-    this.kubernetesDescribeJobsCache =
-        new KubernetesDescribeJobsCache(serviceConfiguration, internalErrorService);
   }
 
   /**
@@ -220,17 +201,5 @@ public class StageService {
    */
   public void delete(StageEntity stageEntity) {
     repository.delete(stageEntity);
-  }
-
-  public LsfDescribeJobsCache getLsfDescribeJobsCache() {
-    return lsfDescribeJobsCache;
-  }
-
-  public AwsBatchDescribeJobsCache getAwsBatchDescribeJobsCache() {
-    return awsBatchDescribeJobsCache;
-  }
-
-  public KubernetesDescribeJobsCache getKubernetesDescribeJobsCache() {
-    return kubernetesDescribeJobsCache;
   }
 }

@@ -16,7 +16,7 @@ import java.time.Duration;
 import java.util.function.Consumer;
 import pipelite.UniqueStringGenerator;
 import pipelite.metrics.PipeliteMetrics;
-import pipelite.service.StageService;
+import pipelite.service.DescribeJobsCacheService;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.ErrorType;
 import pipelite.stage.executor.StageExecutorRequest;
@@ -27,7 +27,7 @@ public class AsyncExecutorTestHelper {
 
   public static void testExecute(
       AbstractAsyncExecutor<?, ?> executor,
-      StageService stageService,
+      DescribeJobsCacheService describeJobsCacheService,
       PipeliteMetrics pipeliteMetrics,
       Consumer<StageExecutorResult> assertAfterSubmit,
       Consumer<StageExecutorResult> assertAfterPoll) {
@@ -43,7 +43,8 @@ public class AsyncExecutorTestHelper {
             .stage(stage)
             .build();
 
-    executor.prepareAsyncExecute(stageService, pipeliteMetrics.pipeline(pipelineName).stage());
+    executor.prepareAsyncExecute(
+        describeJobsCacheService, pipeliteMetrics.pipeline(pipelineName).stage());
 
     StageExecutorResult result = executor.execute(request);
     assertThat(result.isSubmitted()).isTrue();

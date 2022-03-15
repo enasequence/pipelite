@@ -26,7 +26,7 @@ import pipelite.executor.describe.DescribeJobs;
 import pipelite.executor.describe.cache.AwsBatchDescribeJobsCache;
 import pipelite.executor.task.RetryTask;
 import pipelite.log.LogKey;
-import pipelite.service.StageService;
+import pipelite.service.DescribeJobsCacheService;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.AwsBatchExecutorParameters;
@@ -48,8 +48,9 @@ public class AwsBatchExecutor
   private String region;
 
   @Override
-  protected AwsBatchDescribeJobsCache initDescribeJobsCache(StageService stageService) {
-    return stageService.getAwsBatchDescribeJobsCache();
+  protected AwsBatchDescribeJobsCache initDescribeJobsCache(
+      DescribeJobsCacheService describeJobsCacheService) {
+    return describeJobsCacheService.awsBatchDescribeJobsCache();
   }
 
   private DescribeJobs<String, AwsBatchDescribeJobsCache.ExecutorContext> describeJobs() {
