@@ -2,17 +2,18 @@ $(document).ready(function () {
     $('#pipelinesTable').DataTable({
         columns: [
             {data: "pipelineName"},
-            {data: "maxRunningCount"},
+            {data: "maxProcessRunningCount"},
             {
-                data: "runningCount",
+                data: "processRunningCount",
                 render: function (data, type, row) {
                     let onClick = "showProcesses('" + row.pipelineName + "')";
                     // console.log(onClick);
-                    return '<button type="button" class="btn btn-link" onclick="' + onClick + '">' + row.runningCount + '</button>';
+                    return '<button type="button" class="btn btn-link" onclick="' + onClick + '">' + row.processRunningCount + '</button>';
                 }
             },
-            {data: "submitCount"},
-            {data: "pollCount"}
+            {data: "stageRunningCount"},
+            {data: "stageSubmitCount"},
+            {data: "stagePollCount"}
             /*,
             {data: "pendingCount"},
             {data: "activeCount"},

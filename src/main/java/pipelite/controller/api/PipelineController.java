@@ -83,25 +83,34 @@ public class PipelineController {
             p -> {
               PipelineRunner pipelineRunner =
                   runnerService.getPipelineRunner(p.pipelineName()).orElse(null);
-              int maxRunningCount = p.configurePipeline().pipelineParallelism();
-              Integer runningCount =
-                  pipelineRunner != null ? pipelineRunner.getActiveProcessCount() : null;
-              int submitCount = 0;
-              int pollCount = 0;
-              for (ProcessRunner processRunner : pipelineRunner.getActiveProcessRunners()) {
-                for (Stage stage : processRunner.activeStages()) {
-                  if (stage.getExecutor() instanceof AbstractAsyncExecutor) {
-                    String jobId = ((AbstractAsyncExecutor) stage.getExecutor()).getJobId();
-                    if (jobId == null) {
-                      submitCount++;
-                    } else {
-                      pollCount++;
+              int maxProcessRunningCount = p.configurePipeline().pipelineParallelism();
+              int processRunningCount = 0;
+              int stageRunningCount = 0;
+              int stageSubmitCount = 0;
+              int stagePollCount = 0;
+              if (pipelineRunner != null) {
+                processRunningCount = pipelineRunner.getActiveProcessCount();
+                for (ProcessRunner processRunner : pipelineRunner.getActiveProcessRunners()) {
+                  for (Stage stage : processRunner.activeStages()) {
+                    stageRunningCount++;
+                    if (stage.getExecutor() instanceof AbstractAsyncExecutor) {
+                      String jobId = ((AbstractAsyncExecutor) stage.getExecutor()).getJobId();
+                      if (jobId == null) {
+                        stageSubmitCount++;
+                      } else {
+                        stagePollCount++;
+                      }
                     }
                   }
                 }
               }
               return getPipelineInfo(
-                  p.pipelineName(), maxRunningCount, runningCount, submitCount, pollCount);
+                  p.pipelineName(),
+                  maxProcessRunningCount,
+                  processRunningCount,
+                  stageRunningCount,
+                  stageSubmitCount,
+                  stagePollCount);
             })
         .collect(Collectors.toCollection(() -> list));
 
@@ -110,18 +119,20 @@ public class PipelineController {
 
   private PipelineInfo getPipelineInfo(
       String pipelineName,
-      Integer maxRunningCount,
-      Integer runningCount,
-      Integer submitCount,
-      Integer pollCount) {
+      int maxProcessRunningCount,
+      int processRunningCount,
+      int stageRunningCount,
+      int stageSubmitCount,
+      int stagePollCount) {
     // Process state summary takes a long time to construct.
     // ProcessService.ProcessStateSummary summary = summaryMap.get(pipelineName);
     return PipelineInfo.builder()
         .pipelineName(pipelineName)
-        .maxRunningCount(maxRunningCount)
-        .runningCount(runningCount)
-        .submitCount(submitCount)
-        .pollCount(pollCount)
+        .maxProcessRunningCount(maxProcessRunningCount)
+        .processRunningCount(processRunningCount)
+        .stageRunningCount(stageRunningCount)
+        .stageSubmitCount(stageSubmitCount)
+        .stagePollCount(stagePollCount)
         /*
         .pendingCount(summary.getPendingCount())
         .activeCount(summary.getActiveCount())

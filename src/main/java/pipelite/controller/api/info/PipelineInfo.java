@@ -17,10 +17,11 @@ import lombok.Data;
 @Builder
 public class PipelineInfo {
   private String pipelineName;
-  private Integer maxRunningCount;
-  private Integer runningCount;
-  private Integer submitCount;
-  private Integer pollCount;
+  private Integer maxProcessRunningCount;
+  private Integer processRunningCount;
+  private Integer stageRunningCount;
+  private Integer stageSubmitCount;
+  private Integer stagePollCount;
   /*
   private Long pendingCount;
   private Long activeCount;
