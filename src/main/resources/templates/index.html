@@ -10,7 +10,6 @@
     <script type="text/javascript" src="/pipelite/static/scripts/pipelines.js"></script>
     <script type="text/javascript" src="/pipelite/static/scripts/processes.js"></script>
     <script type="text/javascript" src="/pipelite/static/scripts/process.js"></script>
-    <script type="text/javascript" src="/pipelite/static/scripts/servers.js"></script>
     <script type="text/javascript" src="/pipelite/static/scripts/admin.js"></script>
 
     <script>
@@ -86,9 +85,6 @@
                     <a class="nav-link" data-toggle="pill" href="#processTab">Process</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" data-toggle="pill" href="#serversTab">Servers</a>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link" data-toggle="pill" href="#adminTab">Admin</a>
                 </li>
                 <li class="nav-item">
@@ -137,9 +133,6 @@
         </div>
         <div id="processTab" class="tab-pane fade" role="tabpanel">
             <div th:replace="fragments/process :: process"></div>
-        </div>
-        <div id="serversTab" class="tab-pane fade" role="tabpanel">
-            <div th:replace="fragments/servers :: servers"></div>
         </div>
         <div id="adminTab" class="tab-pane fade" role="tabpanel">
             <div th:replace="fragments/admin :: admin"></div>

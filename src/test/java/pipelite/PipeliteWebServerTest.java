@@ -15,7 +15,6 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import pipelite.executor.AbstractExecutor;
@@ -154,7 +153,7 @@ public class PipeliteWebServerTest {
     public void terminate() {}
   }
 
-  @Test
+  // @Test
   public static void main(String[] args) {
     System.setProperty("pipelite.service.name", "PipeliteWebServerTest");
     System.setProperty("pipelite.advanced.processRunnerFrequency", "1s");
