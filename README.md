@@ -425,9 +425,7 @@ The unit for the resource usage limit can be one of:
   renewed. Default value: 60 minutes
 - pipelite.advanced.processRunnerFrequency: the running frequency for executing new processes. Default value: 10 seconds
 - pipelite.advanced.processRunnerWorkers: the number or parallel workers running processes in the main event loop.
-  Default value: 25
-- pipelite.advanced.stageRunnerWorkers:the number or parallel workers running stages in the main event loop. Default
-  value: 25
+  Default value: 100
 - pipelite.advanced.processQueueMinRefreshFrequency: the minimum frequency for process queue to be refreshed to allow
   process re-prioritisation. Default value: 10 minutes
 - pipelite.advanced.processQueueMaxRefreshFrequency: the maximum frequency for process queue to be refreshed to allow

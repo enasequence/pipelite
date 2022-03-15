@@ -143,20 +143,12 @@ public class ProcessRunner {
   }
 
   private void runOneIterationForActiveStageRunner(ActiveStageRunner activeStageRunner) {
-    activeStageRunner.setFuture(
-        pipeliteServices
-            .executor()
-            .runStage()
-            .submit(
-                () -> {
-                  internalErrorHandler.execute(
-                      () ->
-                          activeStageRunner
-                              .getStageRunner()
-                              .runOneIteration(
-                                  (result) ->
-                                      stageRunnerEndExecutionHandler(activeStageRunner, result)));
-                }));
+    internalErrorHandler.execute(
+        () ->
+            activeStageRunner
+                .getStageRunner()
+                .runOneIteration(
+                    (result) -> stageRunnerEndExecutionHandler(activeStageRunner, result)));
   }
 
   private void stageRunnerEndExecutionHandler(

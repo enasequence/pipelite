@@ -34,7 +34,6 @@ public class PipeliteExecutorService {
   }
 
   private AtomicReference<ExecutorService> runProcessExecutorService = new AtomicReference<>();
-  private AtomicReference<ExecutorService> runStageExecutorService = new AtomicReference<>();
   private AtomicReference<ExecutorService> refreshQueueExecutorService = new AtomicReference<>();
   private AtomicReference<ExecutorService> replenishQueueExecutorService = new AtomicReference<>();
 
@@ -43,9 +42,6 @@ public class PipeliteExecutorService {
     initExecutorService(
         "pipelite-process-%d",
         pipeliteConfiguration.advanced().getProcessRunnerWorkers(), runProcessExecutorService);
-    initExecutorService(
-        "pipelite-stage-%d",
-        pipeliteConfiguration.advanced().getStageRunnerWorkers(), runStageExecutorService);
     initExecutorService("pipelite-refresh-%d", 5, refreshQueueExecutorService);
     initExecutorService("pipelite-replenish-%d", 5, replenishQueueExecutorService);
   }
@@ -66,11 +62,6 @@ public class PipeliteExecutorService {
   /** Used in ProcessRunnerPool.runOneIteration to run processes. */
   public ExecutorService runProcess() {
     return runProcessExecutorService.get();
-  }
-
-  /** Used in ProcessRunner.runOneIteration to run stages. */
-  public ExecutorService runStage() {
-    return runStageExecutorService.get();
   }
 
   /** Used in PipelineRunner runOneIteration to refresh process queue. */
