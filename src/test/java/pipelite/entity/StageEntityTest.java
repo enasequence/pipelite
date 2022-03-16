@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
-import pipelite.UniqueStringGenerator;
+import pipelite.PipeliteIdCreator;
 import pipelite.executor.AbstractExecutor;
 import pipelite.executor.JsonSerializableExecutor;
 import pipelite.service.StageService;
@@ -45,9 +45,9 @@ class StageEntityTest {
 
   @Test
   public void lifecycle() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
-    String stageName = UniqueStringGenerator.randomStageName();
+    String pipelineName = PipeliteIdCreator.pipelineName();
+    String processId = PipeliteIdCreator.processId();
+    String stageName = PipeliteIdCreator.stageName();
 
     TestExecutor executor = new TestExecutor();
     executor.setExecutorParams(
@@ -214,9 +214,9 @@ class StageEntityTest {
 
   @Test
   public void errorType() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
-    String stageName = UniqueStringGenerator.randomStageName();
+    String pipelineName = PipeliteIdCreator.pipelineName();
+    String processId = PipeliteIdCreator.processId();
+    String stageName = PipeliteIdCreator.stageName();
 
     TestExecutor executor = new TestExecutor();
     Stage stage = Stage.builder().stageName(stageName).executor(executor).build();

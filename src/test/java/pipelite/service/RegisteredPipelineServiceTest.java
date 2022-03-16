@@ -69,7 +69,7 @@ public class RegisteredPipelineServiceTest {
 
   public static class TestPipeline implements Pipeline {
 
-    private final String pipelineName = UniqueStringGenerator.randomPipelineName();
+    private final String pipelineName = PipeliteIdCreator.pipelineName();
 
     @Override
     public String pipelineName() {
@@ -87,7 +87,7 @@ public class RegisteredPipelineServiceTest {
 
   public static class TestSchedule implements Schedule {
 
-    private final String pipelineName = UniqueStringGenerator.randomPipelineName();
+    private final String pipelineName = PipeliteIdCreator.pipelineName();
 
     @Override
     public String pipelineName() {
@@ -147,9 +147,7 @@ public class RegisteredPipelineServiceTest {
         .withMessage("Missing pipeline name");
     assertThatExceptionOfType(PipeliteException.class)
         .isThrownBy(
-            () ->
-                registeredPipelineService.getRegisteredPipeline(
-                    UniqueStringGenerator.randomPipelineName()))
+            () -> registeredPipelineService.getRegisteredPipeline(PipeliteIdCreator.pipelineName()))
         .withMessageStartingWith("Unknown pipeline");
   }
 

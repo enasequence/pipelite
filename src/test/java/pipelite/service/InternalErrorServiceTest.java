@@ -20,8 +20,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import pipelite.PipeliteIdCreator;
 import pipelite.PipeliteTestConfigWithServices;
-import pipelite.UniqueStringGenerator;
 import pipelite.entity.InternalErrorEntity;
 
 @SpringBootTest(
@@ -36,7 +36,7 @@ class InternalErrorServiceTest {
 
   @Test
   public void withServiceName() {
-    String serviceName = UniqueStringGenerator.randomServiceName();
+    String serviceName = PipeliteIdCreator.serviceName();
 
     try {
       throw new RuntimeException("Test");
@@ -55,10 +55,10 @@ class InternalErrorServiceTest {
 
   @Test
   public void withStageName() {
-    String serviceName = UniqueStringGenerator.randomServiceName();
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
-    String stageName = UniqueStringGenerator.randomStageName();
+    String serviceName = PipeliteIdCreator.serviceName();
+    String pipelineName = PipeliteIdCreator.pipelineName();
+    String processId = PipeliteIdCreator.processId();
+    String stageName = PipeliteIdCreator.stageName();
 
     try {
       throw new RuntimeException("Test");

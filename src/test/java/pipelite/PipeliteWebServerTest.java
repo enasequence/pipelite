@@ -27,7 +27,7 @@ public class PipeliteWebServerTest {
   private static final int PROCESS_PARALLELISM = 500;
   private static final Duration SUBMIT_TIME = Duration.ofSeconds(10);
   private static final Duration EXECUTION_TIME = Duration.ofSeconds(10);
-  private static final String ID = UniqueStringGenerator.id();
+  private static final String ID = PipeliteIdCreator.id();
 
   @Bean
   public TestPipeline successPipeline1() {

@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
-import pipelite.UniqueStringGenerator;
+import pipelite.PipeliteIdCreator;
 import pipelite.exception.PipeliteProcessStagesException;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.runner.stage.DependencyResolver;
@@ -23,7 +23,7 @@ import pipelite.stage.Stage;
 
 public class ProcessBuilderTest {
 
-  private static final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
+  private static final String PROCESS_ID = PipeliteIdCreator.processId();
 
   @Test
   public void test() {

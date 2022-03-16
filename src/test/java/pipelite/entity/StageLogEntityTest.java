@@ -13,7 +13,7 @@ package pipelite.entity;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import pipelite.UniqueStringGenerator;
+import pipelite.PipeliteIdCreator;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
@@ -23,9 +23,9 @@ class StageLogEntityTest {
 
   @Test
   public void lifecycle() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
-    String stageName = UniqueStringGenerator.randomStageName();
+    String pipelineName = PipeliteIdCreator.pipelineName();
+    String processId = PipeliteIdCreator.processId();
+    String stageName = PipeliteIdCreator.stageName();
 
     Stage stage =
         Stage.builder()

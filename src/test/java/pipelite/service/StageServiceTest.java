@@ -20,8 +20,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import pipelite.PipeliteIdCreator;
 import pipelite.PipeliteTestConfigWithServices;
-import pipelite.UniqueStringGenerator;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageLogEntity;
 import pipelite.executor.AbstractExecutor;
@@ -65,9 +65,9 @@ class StageServiceTest {
   @Test
   public void lifecycle() {
 
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
-    String stageName = UniqueStringGenerator.randomStageName();
+    String pipelineName = PipeliteIdCreator.pipelineName();
+    String processId = PipeliteIdCreator.processId();
+    String stageName = PipeliteIdCreator.stageName();
 
     TestExecutor executor = new TestExecutor(StageState.SUCCESS);
     executor.setExecutorParams(

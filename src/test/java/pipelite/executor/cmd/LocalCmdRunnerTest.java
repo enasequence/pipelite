@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
-import pipelite.UniqueStringGenerator;
+import pipelite.PipeliteIdCreator;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.CmdExecutorParameters;
@@ -30,7 +30,7 @@ public class LocalCmdRunnerTest {
     String str = "test";
 
     // Create file in temp dir
-    String fileName = UniqueStringGenerator.id();
+    String fileName = PipeliteIdCreator.id();
     Path file = Paths.get(TMP_DIR, fileName);
     assertThat(cmdRunner.fileExists(file)).isFalse();
     cmdRunner.createFile(file);
@@ -48,7 +48,7 @@ public class LocalCmdRunnerTest {
     LocalCmdRunner cmdRunner = new LocalCmdRunner(CmdExecutorParameters.builder().build());
 
     // Create file in temp dir
-    String fileName = UniqueStringGenerator.id();
+    String fileName = PipeliteIdCreator.id();
     Path file = Paths.get(TMP_DIR, fileName);
     assertThat(cmdRunner.fileExists(file)).isFalse();
     cmdRunner.createFile(file);
@@ -64,7 +64,7 @@ public class LocalCmdRunnerTest {
     LocalCmdRunner cmdRunner = new LocalCmdRunner(CmdExecutorParameters.builder().build());
 
     // Create directory in temp dir
-    String dirName = UniqueStringGenerator.id();
+    String dirName = PipeliteIdCreator.id();
     Path dir = Paths.get(TMP_DIR, dirName);
     assertThat(cmdRunner.dirExists(dir)).isFalse();
     cmdRunner.createDir(dir);
@@ -83,7 +83,7 @@ public class LocalCmdRunnerTest {
   @Test
   public void unknownCommand() {
     LocalCmdRunner cmdRunner = new LocalCmdRunner(CmdExecutorParameters.builder().build());
-    StageExecutorResult result = cmdRunner.execute(UniqueStringGenerator.id());
+    StageExecutorResult result = cmdRunner.execute(PipeliteIdCreator.id());
     assertThat(result.isError()).isTrue();
     assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isNotEqualTo("0");
   }

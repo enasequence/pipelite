@@ -18,8 +18,8 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import pipelite.PipeliteIdCreator;
 import pipelite.PipeliteTestConfigWithServices;
-import pipelite.UniqueStringGenerator;
 import pipelite.configuration.properties.SshTestConfiguration;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.ErrorType;
@@ -35,13 +35,13 @@ public class SshCmdExecutorTest {
 
   @Autowired SshTestConfiguration sshTestConfiguration;
 
-  private static final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
-  private static final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
+  private static final String PIPELINE_NAME = PipeliteIdCreator.pipelineName();
+  private static final String PROCESS_ID = PipeliteIdCreator.processId();
 
   @Test
   @EnabledIfEnvironmentVariable(named = "PIPELITE_TEST_SSH_HOST", matches = ".+")
   public void test() {
-    String stageName = UniqueStringGenerator.randomStageName();
+    String stageName = PipeliteIdCreator.stageName();
 
     CmdExecutor<CmdExecutorParameters> executor = StageExecutor.createCmdExecutor("echo test");
     executor.setExecutorParams(

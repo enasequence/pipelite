@@ -13,7 +13,7 @@ package pipelite.executor;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import pipelite.UniqueStringGenerator;
+import pipelite.PipeliteIdCreator;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResultAttribute;
@@ -21,12 +21,12 @@ import pipelite.stage.parameters.CmdExecutorParameters;
 
 public class LocalCmdExecutorTest {
 
-  private final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
-  private final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
+  private final String PIPELINE_NAME = PipeliteIdCreator.pipelineName();
+  private final String PROCESS_ID = PipeliteIdCreator.processId();
 
   @Test
   public void test() {
-    String stageName = UniqueStringGenerator.randomStageName();
+    String stageName = PipeliteIdCreator.stageName();
 
     CmdExecutor<CmdExecutorParameters> executor = StageExecutor.createCmdExecutor("echo test");
     executor.setExecutorParams(CmdExecutorParameters.builder().build());

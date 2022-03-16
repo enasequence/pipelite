@@ -20,7 +20,7 @@ import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import pipelite.UniqueStringGenerator;
+import pipelite.PipeliteIdCreator;
 import pipelite.service.PipeliteExecutorService;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.*;
@@ -29,9 +29,9 @@ import pipelite.time.Time;
 
 public class AbstractAsyncExecutorTest {
 
-  private static final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
-  private static final String PROCESS_ID = UniqueStringGenerator.randomProcessId();
-  private static final String STAGE_NAME = UniqueStringGenerator.randomStageName();
+  private static final String PIPELINE_NAME = PipeliteIdCreator.pipelineName();
+  private static final String PROCESS_ID = PipeliteIdCreator.processId();
+  private static final String STAGE_NAME = PipeliteIdCreator.stageName();
 
   private AbstractAsyncExecutor executor() {
     SimpleLsfExecutor simpleLsfExecutor =

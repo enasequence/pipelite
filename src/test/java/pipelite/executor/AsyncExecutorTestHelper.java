@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
-import pipelite.UniqueStringGenerator;
+import pipelite.PipeliteIdCreator;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.DescribeJobsCacheService;
 import pipelite.service.PipeliteExecutorService;
@@ -35,9 +35,9 @@ public class AsyncExecutorTestHelper {
       StageExecutorResultCallback assertAfterSubmit,
       StageExecutorResultCallback assertAfterPoll) {
 
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
-    String stageName = UniqueStringGenerator.randomStageName();
+    String pipelineName = PipeliteIdCreator.pipelineName();
+    String processId = PipeliteIdCreator.processId();
+    String stageName = PipeliteIdCreator.stageName();
     Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
     StageExecutorRequest request =
         StageExecutorRequest.builder()

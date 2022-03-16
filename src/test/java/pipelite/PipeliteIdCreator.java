@@ -12,25 +12,25 @@ package pipelite;
 
 import java.util.UUID;
 
-public class UniqueStringGenerator {
+public class PipeliteIdCreator {
 
-  public static <T> String randomServiceName() {
+  public static <T> String serviceName() {
     return "service-" + id();
   }
 
-  public static <T> String randomPipelineName() {
+  public static <T> String pipelineName() {
     return "pipeline-" + id();
   }
 
-  public static <T> String randomProcessRunnerPoolName() {
+  public static <T> String processRunnerPoolName() {
     return "pool-" + id();
   }
 
-  public static <T> String randomProcessId() {
+  public static <T> String processId() {
     return "process-" + id();
   }
 
-  public static <T> String randomStageName() {
+  public static <T> String stageName() {
     return "stage-" + id();
   }
 

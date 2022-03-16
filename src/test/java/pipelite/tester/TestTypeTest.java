@@ -17,7 +17,7 @@ import static pipelite.tester.TestType.*;
 import java.util.Arrays;
 import java.util.Collections;
 import org.junit.jupiter.api.Test;
-import pipelite.UniqueStringGenerator;
+import pipelite.PipeliteIdCreator;
 import pipelite.executor.SimpleLsfExecutor;
 import pipelite.stage.Stage;
 
@@ -215,9 +215,9 @@ public class TestTypeTest {
   @Test
   public void next() {
     TestType testType = TestType.nonPermanentErrorAndThenSuccess;
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
-    String stageName = UniqueStringGenerator.randomStageName();
+    String pipelineName = PipeliteIdCreator.pipelineName();
+    String processId = PipeliteIdCreator.processId();
+    String stageName = PipeliteIdCreator.stageName();
     testType.register(pipelineName, processId, stageName);
 
     assertThatThrownBy(() -> testType.lastExitCode(pipelineName, processId, stageName))

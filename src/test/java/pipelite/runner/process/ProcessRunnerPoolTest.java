@@ -24,8 +24,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import pipelite.PipeliteIdCreator;
 import pipelite.PipeliteTestConfigWithServices;
-import pipelite.UniqueStringGenerator;
 import pipelite.configuration.PipeliteConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.metrics.PipelineMetrics;
@@ -53,7 +53,7 @@ import pipelite.time.Time;
 public class ProcessRunnerPoolTest {
 
   private static final int PROCESS_CNT = 100;
-  private static final String PIPELINE_NAME = UniqueStringGenerator.randomPipelineName();
+  private static final String PIPELINE_NAME = PipeliteIdCreator.pipelineName();
 
   @Autowired private PipeliteConfiguration pipeliteConfiguration;
   @Autowired private PipeliteServices pipeliteServices;
@@ -84,12 +84,12 @@ public class ProcessRunnerPoolTest {
         pipeliteConfiguration,
         pipeliteServices,
         metrics,
-        UniqueStringGenerator.randomProcessRunnerPoolName(),
+        PipeliteIdCreator.processRunnerPoolName(),
         createProcessRunnerFactory(lockProcessCnt, unlockProcessCnt));
   }
 
   private Process createProcess(Function<StageExecutorRequest, StageExecutorResult> callback) {
-    String processId = UniqueStringGenerator.randomProcessId();
+    String processId = PipeliteIdCreator.processId();
     ExecutorParameters executorParams = new ExecutorParameters();
     executorParams.setMaximumRetries(0);
     Process process =

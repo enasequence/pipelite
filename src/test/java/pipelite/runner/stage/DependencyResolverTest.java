@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 import lombok.Value;
 import lombok.experimental.Accessors;
 import org.junit.jupiter.api.Test;
-import pipelite.UniqueStringGenerator;
+import pipelite.PipeliteIdCreator;
 import pipelite.entity.StageEntity;
 import pipelite.executor.SyncTestExecutor;
 import pipelite.process.Process;
@@ -38,7 +38,7 @@ public class DependencyResolverTest {
       ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build();
 
   private ProcessBuilder createProcessBuilder() {
-    return new ProcessBuilder(UniqueStringGenerator.randomProcessId());
+    return new ProcessBuilder(PipeliteIdCreator.processId());
   }
 
   @Test

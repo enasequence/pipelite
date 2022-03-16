@@ -13,8 +13,8 @@ package pipelite.tester.process;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import pipelite.PipeliteIdCreator;
 import pipelite.RegisteredPipeline;
-import pipelite.UniqueStringGenerator;
 import pipelite.process.builder.ProcessBuilder;
 
 public abstract class TestProcessConfiguration implements RegisteredPipeline {
@@ -23,7 +23,7 @@ public abstract class TestProcessConfiguration implements RegisteredPipeline {
   private final Set<String> configuredProcessIds = ConcurrentHashMap.newKeySet();
 
   public TestProcessConfiguration() {
-    pipelineName = UniqueStringGenerator.randomPipelineName();
+    pipelineName = PipeliteIdCreator.pipelineName();
   }
 
   public TestProcessConfiguration(String pipelineName) {

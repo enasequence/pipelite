@@ -18,8 +18,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import pipelite.PipeliteIdCreator;
 import pipelite.PipeliteTestConfigWithServices;
-import pipelite.UniqueStringGenerator;
 import pipelite.configuration.properties.SshTestConfiguration;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
@@ -49,7 +49,7 @@ public class SshCmdRunnerTest {
     String str = "test";
 
     // Create file in temp dir
-    String fileName = UniqueStringGenerator.id();
+    String fileName = PipeliteIdCreator.id();
     Path file = Paths.get(TMP_DIR, fileName);
     assertThat(cmdRunner.fileExists(file)).isFalse();
     cmdRunner.createFile(file);
@@ -67,7 +67,7 @@ public class SshCmdRunnerTest {
     SshCmdRunner cmdRunner = cmdRunner();
 
     // Create file in temp dir
-    String fileName = UniqueStringGenerator.id();
+    String fileName = PipeliteIdCreator.id();
     Path file = Paths.get(TMP_DIR, fileName);
     assertThat(cmdRunner.fileExists(file)).isFalse();
     cmdRunner.createFile(file);
@@ -83,7 +83,7 @@ public class SshCmdRunnerTest {
     SshCmdRunner cmdRunner = cmdRunner();
 
     // Create directory in temp dir
-    String dirName = UniqueStringGenerator.id();
+    String dirName = PipeliteIdCreator.id();
     Path dir = Paths.get(TMP_DIR, dirName);
     assertThat(cmdRunner.dirExists(dir)).isFalse();
     cmdRunner.createDir(dir);
@@ -102,7 +102,7 @@ public class SshCmdRunnerTest {
   @Test
   public void unknownCommand() {
     SshCmdRunner cmdRunner = cmdRunner();
-    StageExecutorResult result = cmdRunner.execute(UniqueStringGenerator.id());
+    StageExecutorResult result = cmdRunner.execute(PipeliteIdCreator.id());
     assertThat(result.isError()).isTrue();
     assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isNotEqualTo("0");
   }

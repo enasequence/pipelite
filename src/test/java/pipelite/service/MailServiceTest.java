@@ -17,8 +17,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
+import pipelite.PipeliteIdCreator;
 import pipelite.PipeliteTestConfigWithServices;
-import pipelite.UniqueStringGenerator;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageLogEntity;
@@ -119,8 +119,8 @@ public class MailServiceTest {
 
   @Test
   public void sendFailedStageExecutionMessageWithLog() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
+    String pipelineName = PipeliteIdCreator.pipelineName();
+    String processId = PipeliteIdCreator.processId();
 
     Process process =
         new ProcessBuilder(processId).execute("STAGE1").withSyncTestExecutor().build();
@@ -184,8 +184,8 @@ public class MailServiceTest {
 
   @Test
   public void sendFailedStageExecutionMessageWithEmptyLog() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
+    String pipelineName = PipeliteIdCreator.pipelineName();
+    String processId = PipeliteIdCreator.processId();
 
     Process process =
         new ProcessBuilder(processId).execute("STAGE1").withSyncTestExecutor().build();
@@ -245,8 +245,8 @@ public class MailServiceTest {
 
   @Test
   public void sendFailedStageExecutionMessageWithNullLog() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
+    String pipelineName = PipeliteIdCreator.pipelineName();
+    String processId = PipeliteIdCreator.processId();
 
     Process process =
         new ProcessBuilder(processId).execute("STAGE1").withSyncTestExecutor().build();
@@ -306,8 +306,8 @@ public class MailServiceTest {
 
   @Test
   public void sendFailedStageExecutionMessageWithNoLog() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
+    String pipelineName = PipeliteIdCreator.pipelineName();
+    String processId = PipeliteIdCreator.processId();
 
     Process process =
         new ProcessBuilder(processId).execute("STAGE1").withSyncTestExecutor().build();

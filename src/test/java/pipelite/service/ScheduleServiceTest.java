@@ -22,9 +22,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import pipelite.PipeliteIdCreator;
 import pipelite.PipeliteTestConfigWithServices;
 import pipelite.PipeliteTestConstants;
-import pipelite.UniqueStringGenerator;
 import pipelite.cron.CronUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
@@ -43,8 +43,8 @@ class ScheduleServiceTest {
 
   @Test
   public void lifecycle() {
-    String serviceName = UniqueStringGenerator.randomServiceName();
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
+    String serviceName = PipeliteIdCreator.serviceName();
+    String pipelineName = PipeliteIdCreator.pipelineName();
     String cron = PipeliteTestConstants.CRON_EVERY_TWO_SECONDS;
     String description = CronUtils.describe(cron);
 
@@ -251,9 +251,9 @@ class ScheduleServiceTest {
 
   @Test
   public void isRetryScheduleWithFailedSchedule() {
-    String serviceName = UniqueStringGenerator.randomServiceName();
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
+    String serviceName = PipeliteIdCreator.serviceName();
+    String pipelineName = PipeliteIdCreator.pipelineName();
+    String processId = PipeliteIdCreator.processId();
 
     String cron = PipeliteTestConstants.CRON_EVERY_TWO_SECONDS;
     ScheduleEntity scheduleEntity = scheduleService.createSchedule(serviceName, pipelineName, cron);
@@ -272,9 +272,9 @@ class ScheduleServiceTest {
 
   @Test
   public void isRetryScheduleWithNotFailedSchedule() {
-    String serviceName = UniqueStringGenerator.randomServiceName();
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
+    String serviceName = PipeliteIdCreator.serviceName();
+    String pipelineName = PipeliteIdCreator.pipelineName();
+    String processId = PipeliteIdCreator.processId();
 
     String cron = PipeliteTestConstants.CRON_EVERY_TWO_SECONDS;
     ScheduleEntity scheduleEntity = scheduleService.createSchedule(serviceName, pipelineName, cron);
@@ -289,10 +289,10 @@ class ScheduleServiceTest {
 
   @Test
   public void isRetryScheduleWithDifferentProcessId() {
-    String serviceName = UniqueStringGenerator.randomServiceName();
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
-    String differentProcessId = UniqueStringGenerator.randomProcessId();
+    String serviceName = PipeliteIdCreator.serviceName();
+    String pipelineName = PipeliteIdCreator.pipelineName();
+    String processId = PipeliteIdCreator.processId();
+    String differentProcessId = PipeliteIdCreator.processId();
 
     String cron = PipeliteTestConstants.CRON_EVERY_TWO_SECONDS;
     ScheduleEntity scheduleEntity = scheduleService.createSchedule(serviceName, pipelineName, cron);
@@ -315,9 +315,9 @@ class ScheduleServiceTest {
 
   @Test
   public void isRetryScheduleWithNewExecutionWithinRetryMargin() {
-    String serviceName = UniqueStringGenerator.randomServiceName();
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
+    String serviceName = PipeliteIdCreator.serviceName();
+    String pipelineName = PipeliteIdCreator.pipelineName();
+    String processId = PipeliteIdCreator.processId();
 
     String cron = PipeliteTestConstants.CRON_EVERY_TWO_SECONDS;
     ScheduleEntity scheduleEntity = scheduleService.createSchedule(serviceName, pipelineName, cron);
@@ -341,8 +341,8 @@ class ScheduleServiceTest {
 
   @Test
   public void isRetryScheduleWithMissingSchedule() {
-    String pipelineName = UniqueStringGenerator.randomPipelineName();
-    String processId = UniqueStringGenerator.randomProcessId();
+    String pipelineName = PipeliteIdCreator.pipelineName();
+    String processId = PipeliteIdCreator.processId();
 
     assertThat(scheduleService.getSavedSchedule(pipelineName).isPresent()).isFalse();
     assertThat(scheduleService.isRetrySchedule(pipelineName, processId)).isFalse();
