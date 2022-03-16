@@ -8,10 +8,18 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.runner.stage;
+package pipelite.configuration;
 
-import java.util.function.Consumer;
-import pipelite.stage.executor.StageExecutorResult;
+import io.micrometer.core.aop.TimedAspect;
+import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-/** Callback at the end of process execution. */
-public interface StageRunnerResultCallback extends Consumer<StageExecutorResult> {}
+/** Enable @Timed annotation. */
+@Configuration
+public class TimedConfiguration {
+  @Bean
+  public TimedAspect timedAspect(MeterRegistry registry) {
+    return new TimedAspect(registry);
+  }
+}

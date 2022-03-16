@@ -408,7 +408,7 @@ The unit for the resource usage limit can be one of:
 - pipelite.datasource.minimumIdle: minimum number of database connections in the connection pool. Default value: 10
 - pipelite.datasource.maximumPoolSize: maximum number of database connections in the connection pool. Default value: 25
 - pipelite.datasource.connectionTimeout: maximum duration waiting for a connection from the connection pool. Default
-  value: 1m
+  value: 5m
 - pipelite.datasource.retry.attempts: number of retry attempts to use the data source for an operation. Default value:
   10
 - pipelite.datasource.retry.delay: the delay between first and second attempt to use the data source for an operation.
@@ -423,9 +423,11 @@ The unit for the resource usage limit can be one of:
 - pipelite.advanced.lockFrequency: the frequency of renewing service locks. Default value: 5 minutes
 - pipelite.advanced.lockDuration: the duration after which service and process locks expire unless the service lock is
   renewed. Default value: 60 minutes
-- pipelite.advanced.processRunnerFrequency: the running frequency for executing new processes. Default value: 10 seconds
+- pipelite.advanced.processRunnerFrequency: the running frequency for executing new processes. Default value: 1 second
 - pipelite.advanced.processRunnerWorkers: the number or parallel workers running processes in the main event loop.
   Default value: 25
+- pipelite.advanced.stageSubmitWorkers: the number or parallel workers submitting asynchronous stages in the main event
+  loop. Default value: 100
 - pipelite.advanced.processQueueMinRefreshFrequency: the minimum frequency for process queue to be refreshed to allow
   process re-prioritisation. Default value: 10 minutes
 - pipelite.advanced.processQueueMaxRefreshFrequency: the maximum frequency for process queue to be refreshed to allow
@@ -466,6 +468,7 @@ Lsf unit tests require the following environment variables:
 - PIPELITE_TEST_LSF_USER
 - PIPELITE_TEST_LSF_LOG_DIR
 - PIPELITE_TEST_LSF_DEFINITION_DIR
+- PIPELITE_TEST_LSF_QUEUE
 
 ### Database schema
 

@@ -22,6 +22,7 @@ import lombok.extern.flogger.Flogger;
 import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.channel.ClientChannel;
 import org.apache.sshd.client.channel.ClientChannelEvent;
+import org.apache.sshd.client.keyverifier.AcceptAllServerKeyVerifier;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.client.subsystem.sftp.SftpClient;
 import org.apache.sshd.client.subsystem.sftp.impl.DefaultSftpClientFactory;
@@ -48,6 +49,7 @@ public class SshCmdRunner implements CmdRunner {
 
   static {
     sshClient = SshClient.setUpDefaultClient();
+    sshClient.setServerKeyVerifier(AcceptAllServerKeyVerifier.INSTANCE);
     sshClient.start();
   }
 

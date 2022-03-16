@@ -14,8 +14,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
-import pipelite.executor.TestExecutor;
 import pipelite.stage.Stage;
+import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorState;
 
@@ -30,7 +30,7 @@ class StageLogEntityTest {
     Stage stage =
         Stage.builder()
             .stageName(stageName)
-            .executor(TestExecutor.sync(StageExecutorState.SUCCESS))
+            .executor(StageExecutor.createSyncTestExecutor(StageExecutorState.SUCCESS, null))
             .build();
 
     // Create execution.

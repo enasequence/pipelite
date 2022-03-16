@@ -82,7 +82,7 @@ public class KubernetesExecutor
   @Override
   protected KubernetesDescribeJobsCache initDescribeJobsCache(
       DescribeJobsCacheService describeJobsCacheService) {
-    return describeJobsCacheService.kubernetesDescribeJobsCache();
+    return describeJobsCacheService.kubernetes();
   }
 
   private DescribeJobs<String, KubernetesDescribeJobsCache.ExecutorContext> describeJobs() {
@@ -90,12 +90,11 @@ public class KubernetesExecutor
   }
 
   @Override
-  protected StageExecutorResult submit(StageExecutorRequest request) {
+  protected SubmitResult submit(StageExecutorRequest request) {
     KubernetesExecutorParameters executorParams = getExecutorParams();
     context = executorParams.getContext();
     namespace = executorParams.getNamespace() != null ? executorParams.getNamespace() : "default";
-    setJobId(createJobId());
-    String jobId = getJobId();
+    String jobId = createJobId();
     logContext(log.atFine(), request).log("Submitting Kubernetes job " + jobId);
 
     // Map<String, String> labelMap = new HashMap<>();
@@ -146,7 +145,7 @@ public class KubernetesExecutor
       throw new PipeliteException("Kubernetes error", e);
     }
 
-    return StageExecutorResult.submitted();
+    return new SubmitResult(jobId, StageExecutorResult.submitted());
   }
 
   @Override

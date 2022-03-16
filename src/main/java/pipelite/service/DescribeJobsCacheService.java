@@ -17,6 +17,7 @@ import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.describe.cache.AwsBatchDescribeJobsCache;
 import pipelite.executor.describe.cache.KubernetesDescribeJobsCache;
 import pipelite.executor.describe.cache.LsfDescribeJobsCache;
+import pipelite.executor.describe.cache.TestDescribeJobsCache;
 
 @Service
 @Flogger
@@ -25,6 +26,7 @@ public class DescribeJobsCacheService {
   private final LsfDescribeJobsCache lsfDescribeJobsCache;
   private final AwsBatchDescribeJobsCache awsBatchDescribeJobsCache;
   private final KubernetesDescribeJobsCache kubernetesDescribeJobsCache;
+  private final TestDescribeJobsCache testDescribeJobsCache;
 
   public DescribeJobsCacheService(
       @Autowired ServiceConfiguration serviceConfiguration,
@@ -36,17 +38,23 @@ public class DescribeJobsCacheService {
         new AwsBatchDescribeJobsCache(serviceConfiguration, internalErrorService);
     this.kubernetesDescribeJobsCache =
         new KubernetesDescribeJobsCache(serviceConfiguration, internalErrorService);
+    this.testDescribeJobsCache =
+        new TestDescribeJobsCache(serviceConfiguration, internalErrorService);
   }
 
-  public LsfDescribeJobsCache lsfDescribeJobsCache() {
+  public LsfDescribeJobsCache lsf() {
     return lsfDescribeJobsCache;
   }
 
-  public AwsBatchDescribeJobsCache awsBatchDescribeJobsCache() {
+  public AwsBatchDescribeJobsCache awsBatch() {
     return awsBatchDescribeJobsCache;
   }
 
-  public KubernetesDescribeJobsCache kubernetesDescribeJobsCache() {
+  public KubernetesDescribeJobsCache kubernetes() {
     return kubernetesDescribeJobsCache;
+  }
+
+  public TestDescribeJobsCache test() {
+    return testDescribeJobsCache;
   }
 }

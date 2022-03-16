@@ -43,6 +43,7 @@ public class SingleStageSimpleLsfTestProcessConfiguration
         .host(lsfTestConfiguration.getHost())
         .user(lsfTestConfiguration.getUser())
         .logDir(lsfTestConfiguration.getLogDir())
+        .queue(lsfTestConfiguration.getQueue())
         .timeout(Duration.ofSeconds(180))
         // .saveLog(false)
         .maximumRetries(maximumRetries())

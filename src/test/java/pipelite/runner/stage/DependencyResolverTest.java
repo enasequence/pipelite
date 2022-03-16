@@ -20,13 +20,14 @@ import lombok.experimental.Accessors;
 import org.junit.jupiter.api.Test;
 import pipelite.UniqueStringGenerator;
 import pipelite.entity.StageEntity;
-import pipelite.executor.TestExecutor;
+import pipelite.executor.SyncTestExecutor;
 import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.process.builder.ProcessBuilderHelper;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.ErrorType;
+import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.ExecutorParameters;
@@ -693,7 +694,8 @@ public class DependencyResolverTest {
     StageEntity stageEntity = new StageEntity();
     stageEntity.setExecutionCount(executionCount);
     stageEntity.setStageState(stageState);
-    TestExecutor executor = TestExecutor.sync(StageExecutorState.SUCCESS);
+    SyncTestExecutor executor =
+        StageExecutor.createSyncTestExecutor(StageExecutorState.SUCCESS, null);
     executor.setExecutorParams(
         ExecutorParameters.builder()
             .immediateRetries(immediateRetries)
@@ -729,7 +731,8 @@ public class DependencyResolverTest {
     stageEntity.setExecutionCount(executionCount);
     stageEntity.setStageState(ERROR);
     stageEntity.setErrorType(errorType);
-    TestExecutor executor = TestExecutor.sync(StageExecutorState.SUCCESS);
+    SyncTestExecutor executor =
+        StageExecutor.createSyncTestExecutor(StageExecutorState.SUCCESS, null);
     executor.setExecutorParams(
         ExecutorParameters.builder()
             .immediateRetries(immediateRetries)

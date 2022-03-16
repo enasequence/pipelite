@@ -8,19 +8,9 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.configuration.properties;
+package pipelite.stage.executor;
 
-import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
+import java.util.function.Consumer;
 
-@Data
-@Configuration
-@ConfigurationProperties(prefix = "pipelite.test.lsf")
-public class LsfTestConfiguration {
-  private String host;
-  private String user;
-  private String logDir;
-  private String definitionDir;
-  private String queue;
-}
+@FunctionalInterface
+public interface StageExecutorResultCallback extends Consumer<StageExecutorResult> {}

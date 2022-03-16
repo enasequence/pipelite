@@ -22,6 +22,7 @@ import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.DescribeJobsCacheService;
+import pipelite.service.PipeliteExecutorService;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
@@ -33,6 +34,7 @@ import pipelite.stage.parameters.cmd.LogFileSavePolicy;
 @ActiveProfiles("test")
 public class SshSimpleLsfExecutorTest {
 
+  @Autowired PipeliteExecutorService pipeliteExecutorService;
   @Autowired LsfTestConfiguration lsfTestConfiguration;
   @Autowired DescribeJobsCacheService describeJobsCacheService;
   @Autowired PipeliteMetrics pipeliteMetrics;
@@ -46,12 +48,14 @@ public class SshSimpleLsfExecutorTest {
             .host(lsfTestConfiguration.getHost())
             .user(lsfTestConfiguration.getUser())
             .logDir(lsfTestConfiguration.getLogDir())
+            .queue(lsfTestConfiguration.getQueue())
             .timeout(Duration.ofSeconds(30))
             .logSave(LogFileSavePolicy.ALWAYS)
             .build());
 
     AsyncExecutorTestHelper.testExecute(
         executor,
+        pipeliteExecutorService,
         describeJobsCacheService,
         pipeliteMetrics,
         result -> {
@@ -59,7 +63,7 @@ public class SshSimpleLsfExecutorTest {
           assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND))
               .endsWith("echo test");
           assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
-          assertThat(result.getStageLog()).contains("is submitted to default queue");
+          assertThat(result.getStageLog()).contains("is submitted to");
         },
         result -> {
           assertThat(result.isSuccess()).isTrue();
@@ -77,12 +81,14 @@ public class SshSimpleLsfExecutorTest {
             .host(lsfTestConfiguration.getHost())
             .user(lsfTestConfiguration.getUser())
             .logDir(lsfTestConfiguration.getLogDir())
+            .queue(lsfTestConfiguration.getQueue())
             .timeout(Duration.ofSeconds(30))
             .logSave(LogFileSavePolicy.ALWAYS)
             .build());
 
     AsyncExecutorTestHelper.testExecute(
         executor,
+        pipeliteExecutorService,
         describeJobsCacheService,
         pipeliteMetrics,
         result -> {

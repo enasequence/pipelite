@@ -30,6 +30,7 @@ import pipelite.stage.Stage;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultCallback;
 import pipelite.stage.parameters.ExecutorParameters;
 
 @SpringBootTest(
@@ -51,9 +52,7 @@ class StageServiceTest {
     }
 
     @Override
-    public StageExecutorResult execute(StageExecutorRequest request) {
-      return null;
-    }
+    public void execute(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {}
 
     @Override
     public void terminate() {}

@@ -251,7 +251,7 @@ public class ScheduleRunnerTest {
       assertThat(stageEntity.getStartTime()).isNotNull();
       assertThat(stageEntity.getEndTime()).isNotNull();
       assertThat(stageEntity.getStartTime()).isBeforeOrEqualTo(stageEntity.getEndTime());
-      assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.TestExecutor");
+      assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.SyncTestExecutor");
       assertThat(stageEntity.getExecutorData()).isNull();
       assertThat(stageEntity.getExecutorParams())
           .isEqualTo(

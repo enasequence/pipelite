@@ -34,34 +34,58 @@ public class PipeliteExecutorService {
   }
 
   private AtomicReference<ExecutorService> runProcessExecutorService = new AtomicReference<>();
+  private AtomicReference<ExecutorService> submitStageExecutorService = new AtomicReference<>();
   private AtomicReference<ExecutorService> refreshQueueExecutorService = new AtomicReference<>();
   private AtomicReference<ExecutorService> replenishQueueExecutorService = new AtomicReference<>();
 
   @PostConstruct
   private void initExecutorServices() {
-    initExecutorService(
-        "pipelite-process-%d",
-        pipeliteConfiguration.advanced().getProcessRunnerWorkers(), runProcessExecutorService);
-    initExecutorService("pipelite-refresh-%d", 5, refreshQueueExecutorService);
-    initExecutorService("pipelite-replenish-%d", 5, replenishQueueExecutorService);
+    String serviceName = pipeliteConfiguration.service().getName();
+    runProcessExecutorService.set(
+        createExecutorService(
+            serviceName,
+            "pipelite-process-%d",
+            pipeliteConfiguration.advanced().getProcessRunnerWorkers(),
+            internalErrorService));
+    submitStageExecutorService.set(
+        createExecutorService(
+            serviceName,
+            "pipelite-submit-%d",
+            pipeliteConfiguration.advanced().getStageSubmitWorkers(),
+            internalErrorService));
+    refreshQueueExecutorService.set(
+        createExecutorService(serviceName, "pipelite-refresh-%d", 5, internalErrorService));
+    replenishQueueExecutorService.set(
+        createExecutorService(serviceName, "pipelite-replenish-%d", 5, internalErrorService));
   }
 
-  private void initExecutorService(
-      String nameFormat, int workers, AtomicReference<ExecutorService> executorService) {
+  public static ExecutorService createExecutorService(
+      String serviceName,
+      String nameFormat,
+      int workers,
+      InternalErrorService internalErrorService) {
     ThreadFactory threadFactory =
         new ThreadFactoryBuilder()
             .setNameFormat(nameFormat)
             .setUncaughtExceptionHandler(
-                (thread, throwable) ->
+                (thread, throwable) -> {
+                  if (internalErrorService != null) {
                     internalErrorService.saveInternalError(
-                        pipeliteConfiguration.service().getName(), this.getClass(), throwable))
+                        serviceName, PipeliteExecutorService.class, throwable);
+                  }
+                })
             .build();
-    executorService.set(Executors.newFixedThreadPool(workers, threadFactory));
+    return Executors.newFixedThreadPool(workers, threadFactory);
   }
 
   /** Used in ProcessRunnerPool.runOneIteration to run processes. */
   public ExecutorService runProcess() {
     return runProcessExecutorService.get();
+  }
+
+  /** Used AbstractAsyncExecutor.execute to submit stages. */
+  public ExecutorService submitStage() {
+    return submitStageExecutorService.get();
   }
 
   /** Used in PipelineRunner runOneIteration to refresh process queue. */

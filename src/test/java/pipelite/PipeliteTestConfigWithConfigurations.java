@@ -19,7 +19,7 @@ import pipelite.configuration.WebServerCustomizer;
 @EnableAutoConfiguration
 @EnableRetry
 @ComponentScan(
-    basePackages = {"pipelite.configuration"},
+    basePackages = {"pipelite.configuration", "pipelite.metrics"},
     excludeFilters =
         @ComponentScan.Filter(
             type = FilterType.ASSIGNABLE_TYPE,

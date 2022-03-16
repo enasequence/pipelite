@@ -20,6 +20,7 @@ import pipelite.runner.stage.StageRunner;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultCallback;
 
 @Flogger
 @Data
@@ -42,13 +43,15 @@ public class Stage {
     }
   }
 
-  public StageExecutorResult execute(String pipelineName, String processId) {
-    return executor.execute(
+  public void execute(
+      String pipelineName, String processId, StageExecutorResultCallback resultCallback) {
+    executor.execute(
         StageExecutorRequest.builder()
             .pipelineName(pipelineName)
             .processId(processId)
             .stage(this)
-            .build());
+            .build(),
+        resultCallback);
   }
 
   public int getImmediateExecutionCount() {

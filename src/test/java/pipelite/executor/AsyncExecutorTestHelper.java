@@ -13,24 +13,27 @@ package pipelite.executor;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
-import java.util.function.Consumer;
+import java.util.concurrent.atomic.AtomicReference;
 import pipelite.UniqueStringGenerator;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.DescribeJobsCacheService;
+import pipelite.service.PipeliteExecutorService;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.ErrorType;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultCallback;
 import pipelite.time.Time;
 
 public class AsyncExecutorTestHelper {
 
   public static void testExecute(
       AbstractAsyncExecutor<?, ?> executor,
+      PipeliteExecutorService pipeliteExecutorService,
       DescribeJobsCacheService describeJobsCacheService,
       PipeliteMetrics pipeliteMetrics,
-      Consumer<StageExecutorResult> assertAfterSubmit,
-      Consumer<StageExecutorResult> assertAfterPoll) {
+      StageExecutorResultCallback assertAfterSubmit,
+      StageExecutorResultCallback assertAfterPoll) {
 
     String pipelineName = UniqueStringGenerator.randomPipelineName();
     String processId = UniqueStringGenerator.randomProcessId();
@@ -43,26 +46,31 @@ public class AsyncExecutorTestHelper {
             .stage(stage)
             .build();
 
-    executor.prepareAsyncExecute(
-        describeJobsCacheService, pipeliteMetrics.pipeline(pipelineName).stage());
+    executor.setSubmitExecutorService(pipeliteExecutorService.submitStage());
+    executor.setDescribeJobsService(describeJobsCacheService);
+    executor.setStageMetrics(pipeliteMetrics.pipeline(pipelineName).stage());
 
-    StageExecutorResult result = executor.execute(request);
-    assertThat(result.isSubmitted()).isTrue();
-    assertAfterSubmit.accept(result);
+    AtomicReference<StageExecutorResult> result = new AtomicReference<>();
 
-    while (true) {
-      result = executor.execute(request);
-      if (!result.isActive()) {
-        break;
-      }
+    executor.execute(request, (r) -> result.set(r));
+
+    while (result.get() == null) {
+      Time.wait(Duration.ofSeconds(1));
+    }
+
+    assertThat(result.get().isSubmitted()).isTrue();
+    assertAfterSubmit.accept(result.get());
+
+    while (!result.get().isSuccess() && !result.get().isError()) {
+      executor.execute(request, (r) -> result.set(r));
       Time.wait(Duration.ofSeconds(1));
     }
 
     // Ignore timeout errors.
-    if (result.isErrorType(ErrorType.TIMEOUT_ERROR)) {
+    if (result.get().isErrorType(ErrorType.TIMEOUT_ERROR)) {
       return;
     }
 
-    assertAfterPoll.accept(result);
+    assertAfterPoll.accept(result.get());
   }
 }

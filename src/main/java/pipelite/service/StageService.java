@@ -10,6 +10,7 @@
  */
 package pipelite.service;
 
+import io.micrometer.core.annotation.Timed;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.flogger.Flogger;
@@ -61,6 +62,7 @@ public class StageService {
    * @param processId the process id
    * @return the saved stages
    */
+  @Timed("pipelite.transactional")
   public List<StageEntity> getSavedStages(String pipelineName, String processId) {
     return repository.findByPipelineNameAndProcessId(pipelineName, processId);
   }
@@ -73,6 +75,7 @@ public class StageService {
    * @param stageName the stage name
    * @return the saved stage
    */
+  @Timed("pipelite.transactional")
   public Optional<StageEntity> getSavedStage(
       String pipelineName, String processId, String stageName) {
     return repository.findById(new StageEntityId(processId, pipelineName, stageName));
@@ -86,6 +89,7 @@ public class StageService {
    * @param processId the process id
    * @param stage the stage
    */
+  @Timed("pipelite.transactional")
   public void createExecution(String pipelineName, String processId, Stage stage) {
     // Uses saved stage if it exists.
     Optional<StageEntity> savedStageEntity =
@@ -105,6 +109,7 @@ public class StageService {
    *
    * @param stage the stage
    */
+  @Timed("pipelite.transactional")
   public void startExecution(Stage stage) {
     stage.getStageEntity().startExecution();
     saveStage(stage);
@@ -117,6 +122,7 @@ public class StageService {
    * @param stage the stage
    * @param result the stage execution result
    */
+  @Timed("pipelite.transactional")
   public void endExecution(Stage stage, StageExecutorResult result) {
     stage.incrementImmediateExecutionCount();
     StageEntity stageEntity = stage.getStageEntity();
@@ -130,6 +136,7 @@ public class StageService {
    *
    * @param stage the stage
    */
+  @Timed("pipelite.transactional")
   public void resetExecution(Stage stage) {
     stage.getStageEntity().resetExecution();
     saveStage(stage);
@@ -154,6 +161,7 @@ public class StageService {
    * @param stageName the stage name
    * @return the saved stage log
    */
+  @Timed("pipelite.transactional")
   public Optional<StageLogEntity> getSavedStageLog(
       String pipelineName, String processId, String stageName) {
     return logRepository.findById(new StageLogEntityId(processId, pipelineName, stageName));
@@ -177,6 +185,7 @@ public class StageService {
    * @param stage the stage to save
    * @return the saved stage entity
    */
+  @Timed("pipelite.transactional")
   public StageEntity saveStage(Stage stage) {
     prepareSaveStage(stage);
     StageEntity stageEntity = stage.getStageEntity();
@@ -190,6 +199,7 @@ public class StageService {
    * @param stageLogEntity the stage logs to save
    * @return the saved stage log
    */
+  @Timed("pipelite.transactional")
   public StageLogEntity saveStageLog(StageLogEntity stageLogEntity) {
     return logRepository.save(stageLogEntity);
   }
@@ -199,6 +209,7 @@ public class StageService {
    *
    * @param stageEntity the stage to delete
    */
+  @Timed("pipelite.transactional")
   public void delete(StageEntity stageEntity) {
     repository.delete(stageEntity);
   }

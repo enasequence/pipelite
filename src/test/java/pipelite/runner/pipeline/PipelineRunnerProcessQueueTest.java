@@ -16,7 +16,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 import java.time.Duration;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -31,7 +30,7 @@ import pipelite.runner.process.ProcessQueue;
 import pipelite.runner.process.ProcessRunner;
 import pipelite.runner.process.creator.ProcessEntityCreator;
 import pipelite.service.PipeliteServices;
-import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorState;
 import pipelite.tester.pipeline.ConfigurableTestPipeline;
 import pipelite.tester.process.TestProcessConfiguration;
 import pipelite.time.Time;
@@ -60,33 +59,19 @@ public class PipelineRunnerProcessQueueTest {
   @Autowired private PipeliteMetrics pipeliteMetrics;
 
   private static final int PARALLELISM = 10;
-  private static final int PROCESS_CNT = 10;
-  private static final AtomicInteger syncExecutionCount = new AtomicInteger();
-  private static final AtomicInteger asyncExecutionCount = new AtomicInteger();
+  private static final int PROCESS_CNT = 10;;
 
   private static final class SyncTestProcessConfiguration extends TestProcessConfiguration {
     @Override
     protected void configure(ProcessBuilder builder) {
-      builder
-          .execute("STAGE")
-          .withSyncTestExecutor(
-              (request) -> {
-                syncExecutionCount.incrementAndGet();
-                return StageExecutorResult.success();
-              });
+      builder.execute("STAGE").withSyncTestExecutor(StageExecutorState.SUCCESS);
     }
   }
 
   private static final class AsyncTestProcessConfiguration extends TestProcessConfiguration {
     @Override
     protected void configure(ProcessBuilder builder) {
-      builder
-          .execute("STAGE")
-          .withAsyncTestExecutor(
-              (request) -> {
-                asyncExecutionCount.incrementAndGet();
-                return StageExecutorResult.success();
-              });
+      builder.execute("STAGE").withAsyncTestExecutor(StageExecutorState.SUCCESS, null, null);
     }
   }
 
@@ -95,7 +80,7 @@ public class PipelineRunnerProcessQueueTest {
     Pipeline pipeline =
         new ConfigurableTestPipeline<>(
             PARALLELISM, PROCESS_CNT, new SyncTestProcessConfiguration());
-    test(pipeline, syncExecutionCount);
+    test(pipeline);
   }
 
   @Test
@@ -103,10 +88,10 @@ public class PipelineRunnerProcessQueueTest {
     Pipeline pipeline =
         new ConfigurableTestPipeline<>(
             PARALLELISM, PROCESS_CNT, new AsyncTestProcessConfiguration());
-    test(pipeline, asyncExecutionCount);
+    test(pipeline);
   }
 
-  private void test(Pipeline pipeline, AtomicInteger executionCount) {
+  private void test(Pipeline pipeline) {
 
     ProcessEntityCreator processEntityCreator =
         new ProcessEntityCreator(pipeline, pipeliteServices.process());
@@ -147,7 +132,8 @@ public class PipelineRunnerProcessQueueTest {
     // the process queue is created empty and immediately after
     // creating processing.
     verify(processQueue, times(2)).refreshQueue();
-    assertThat(executionCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteMetrics.pipeline(pipeline.pipelineName()).stage().getSuccessCount())
+        .isEqualTo(PROCESS_CNT);
     assertThat(processQueue.isRefreshQueue()).isFalse();
     assertThat(processQueue.getProcessQueueSize()).isZero();
   }

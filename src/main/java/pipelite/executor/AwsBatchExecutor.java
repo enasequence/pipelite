@@ -50,7 +50,7 @@ public class AwsBatchExecutor
   @Override
   protected AwsBatchDescribeJobsCache initDescribeJobsCache(
       DescribeJobsCacheService describeJobsCacheService) {
-    return describeJobsCacheService.awsBatchDescribeJobsCache();
+    return describeJobsCacheService.awsBatch();
   }
 
   private DescribeJobs<String, AwsBatchDescribeJobsCache.ExecutorContext> describeJobs() {
@@ -58,7 +58,7 @@ public class AwsBatchExecutor
   }
 
   @Override
-  protected StageExecutorResult submit(StageExecutorRequest request) {
+  protected SubmitResult submit(StageExecutorRequest request) {
     logContext(log.atFine(), request).log("Submitting AWSBatch job.");
 
     AwsBatchExecutorParameters params = getExecutorParams();
@@ -82,9 +82,9 @@ public class AwsBatchExecutor
     if (submitJobResult == null || submitJobResult.getJobId() == null) {
       throw new PipeliteException("Missing AWSBatch submit job id.");
     }
-    setJobId(submitJobResult.getJobId());
+    String jobId = submitJobResult.getJobId();
     logContext(log.atInfo(), request).log("Submitted AWSBatch job " + getJobId());
-    return StageExecutorResult.submitted();
+    return new SubmitResult(jobId, StageExecutorResult.submitted());
   }
 
   @Override

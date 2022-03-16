@@ -13,7 +13,6 @@ package pipelite.manager;
 import static org.assertj.core.api.Assertions.assertThat;
 import static pipelite.PipeliteTestConstants.CRON_EVERY_TWO_SECONDS;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,10 +24,11 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.Pipeline;
 import pipelite.PipeliteTestConfigWithManager;
 import pipelite.Schedule;
+import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.runner.schedule.ScheduleRunner;
 import pipelite.service.RunnerService;
-import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorState;
 import pipelite.tester.pipeline.ConfigurableTestPipeline;
 import pipelite.tester.pipeline.ConfigurableTestSchedule;
 import pipelite.tester.process.TestProcessConfiguration;
@@ -48,13 +48,11 @@ public class ProcessRunnerPoolManagerTest {
   private static final int PARALLELISM = 1;
   private static final int PROCESS_CNT = 1;
 
-  private static final AtomicInteger scheduleExecutionCount = new AtomicInteger();
-  private static final AtomicInteger pipelineExecutionCount = new AtomicInteger();
-
   @Autowired ProcessRunnerPoolManager processRunnerPoolManager;
   @Autowired RunnerService runnerService;
-
+  @Autowired PipeliteMetrics pipeliteMetrics;
   @Autowired Schedule testSchedule;
+  @Autowired Pipeline testPipeline;
 
   @Profile("ProcessRunnerPoolManagerTest")
   @TestConfiguration
@@ -67,13 +65,7 @@ public class ProcessRunnerPoolManagerTest {
           new TestProcessConfiguration() {
             @Override
             protected void configure(ProcessBuilder builder) {
-              builder
-                  .execute("STAGE")
-                  .withSyncTestExecutor(
-                      request -> {
-                        scheduleExecutionCount.incrementAndGet();
-                        return StageExecutorResult.success();
-                      });
+              builder.execute("STAGE").withSyncTestExecutor(StageExecutorState.SUCCESS);
             }
           });
     }
@@ -86,13 +78,7 @@ public class ProcessRunnerPoolManagerTest {
           new TestProcessConfiguration() {
             @Override
             protected void configure(ProcessBuilder builder) {
-              builder
-                  .execute("STAGE")
-                  .withSyncTestExecutor(
-                      request -> {
-                        pipelineExecutionCount.incrementAndGet();
-                        return StageExecutorResult.success();
-                      });
+              builder.execute("STAGE").withSyncTestExecutor(StageExecutorState.SUCCESS);
             }
           });
     }
@@ -111,7 +97,9 @@ public class ProcessRunnerPoolManagerTest {
     processRunnerPoolManager.startPools();
     processRunnerPoolManager.waitPoolsToStop();
 
-    assertThat(scheduleExecutionCount.get()).isEqualTo(1);
-    assertThat(pipelineExecutionCount.get()).isEqualTo(1);
+    assertThat(pipeliteMetrics.pipeline(testSchedule.pipelineName()).stage().getSuccessCount())
+        .isEqualTo(1);
+    assertThat(pipeliteMetrics.pipeline(testPipeline.pipelineName()).stage().getSuccessCount())
+        .isEqualTo(1);
   }
 }

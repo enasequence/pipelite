@@ -27,6 +27,7 @@ import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.properties.KubernetesTestConfiguration;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.DescribeJobsCacheService;
+import pipelite.service.PipeliteExecutorService;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
@@ -38,6 +39,7 @@ import pipelite.stage.parameters.cmd.LogFileSavePolicy;
 @ActiveProfiles("test")
 public class KubernetesExecutorTest {
 
+  @Autowired PipeliteExecutorService pipeliteExecutorService;
   @Autowired DescribeJobsCacheService describeJobsCacheService;
   @Autowired PipeliteMetrics pipeliteMetrics;
   @Autowired KubernetesTestConfiguration testConfiguration;
@@ -100,6 +102,7 @@ public class KubernetesExecutorTest {
 
     AsyncExecutorTestHelper.testExecute(
         executor,
+        pipeliteExecutorService,
         describeJobsCacheService,
         pipeliteMetrics,
         result -> {},
@@ -130,6 +133,7 @@ public class KubernetesExecutorTest {
 
     AsyncExecutorTestHelper.testExecute(
         executor,
+        pipeliteExecutorService,
         describeJobsCacheService,
         pipeliteMetrics,
         result -> {},

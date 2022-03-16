@@ -10,7 +10,6 @@
  */
 package pipelite.executor;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.flogger.FluentLogger;
 import java.nio.file.Paths;
@@ -91,16 +90,10 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
    */
   private String outFile;
 
-  /** Set during poll. */
-  @JsonIgnore private StageExecutorResult pollResult;
-
-  /** Set during poll. */
-  @JsonIgnore private ZonedDateTime pollTimeout;
-
   @Override
   protected LsfDescribeJobsCache initDescribeJobsCache(
       DescribeJobsCacheService describeJobsCacheService) {
-    return describeJobsCacheService.lsfDescribeJobsCache();
+    return describeJobsCacheService.lsf();
   }
 
   protected DescribeJobs<LsfDescribeJobsCache.RequestContext, LsfDescribeJobsCache.ExecutorContext>
@@ -149,19 +142,18 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
   }
 
   @Override
-  protected StageExecutorResult submit(StageExecutorRequest request) {
+  protected SubmitResult submit(StageExecutorRequest request) {
     outFile =
         getExecutorParams().resolveLogFile(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN);
-    StageExecutorResult submitResult =
+    StageExecutorResult result =
         RetryTask.DEFAULT.execute(r -> getCmdRunner().execute(getSubmitCmd(request)));
-    if (submitResult.isError()) {
-      return submitResult;
+    String jobId = null;
+    if (!result.isError()) {
+      jobId = extractSubmittedJobIdFromBsubOutput(result.getStageLog());
+      logContext(log.atInfo(), request).log("Submitted LSF job " + jobId);
+      result.setSubmitted();
     }
-
-    setJobId(extractSubmittedJobIdFromBsubOutput(submitResult.getStageLog()));
-    logContext(log.atInfo(), request).log("Submitted LSF job " + getJobId());
-    submitResult.setSubmitted();
-    return submitResult;
+    return new SubmitResult(jobId, result);
   }
 
   @Override
@@ -169,19 +161,17 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
     String jobId = getJobId();
     logContext(log.atFine(), request).log("Polling LSF job result " + jobId);
 
-    if (pollResult == null) {
-      StageExecutorResult result =
-          describeJobs()
-              .getResult(describeJobsRequestContext(), getExecutorParams().getPermanentErrors());
-      if (result.isActive()) {
-        return result;
-      }
-      pollResult = result;
-      pollTimeout = ZonedDateTime.now().plus(getExecutorParams().getLogTimeout());
+    StageExecutorResult result =
+        describeJobs()
+            .getResult(describeJobsRequestContext(), getExecutorParams().getPermanentErrors());
+    if (result.isActive()) {
+      return result;
     }
 
-    if (!isSaveLogFile(pollResult) || readOutFile(request)) {
-      return pollResult;
+    ZonedDateTime outFileTimeout = ZonedDateTime.now().plus(getExecutorParams().getLogTimeout());
+
+    if (!isSaveLogFile(result) || readOutFile(request, result, outFileTimeout)) {
+      return result;
     }
     return StageExecutorResult.active();
   }
@@ -350,17 +340,19 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
    * Read the output file at end job execution.
    *
    * @param request the stage executor request
+   * @param outFileTimeout the out file timeout
    * @return true if the output file was available or if the LSF output file poll timeout was
    *     exceeded
    */
-  protected boolean readOutFile(StageExecutorRequest request) {
+  protected boolean readOutFile(
+      StageExecutorRequest request, StageExecutorResult result, ZonedDateTime outFileTimeout) {
     logContext(log.atFine(), request).log("Reading LSF output file: %s", outFile);
 
     // The LSF output file may not be immediately available after the job execution finishes.
 
-    if (pollTimeout.isBefore(ZonedDateTime.now())) {
+    if (outFileTimeout.isBefore(ZonedDateTime.now())) {
       // LSF output file poll timeout was exceeded
-      pollResult.setStageLog(
+      result.setStageLog(
           "Missing LSF output file. Not available within "
               + (getExecutorParams().getLogTimeout().toMillis() / 1000)
               + " seconds.");
@@ -374,7 +366,7 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
     }
 
     // LSF output file is available
-    pollResult.setStageLog(readOutFile(getCmdRunner(), outFile, getExecutorParams()));
+    result.setStageLog(readOutFile(getCmdRunner(), outFile, getExecutorParams()));
     return true;
   }
 

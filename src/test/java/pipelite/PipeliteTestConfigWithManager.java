@@ -21,10 +21,10 @@ import pipelite.configuration.WebServerCustomizer;
 @ComponentScan(
     basePackages = {
       "pipelite.configuration",
+      "pipelite.metrics",
       "pipelite.repository",
       "pipelite.service",
       "pipelite.manager",
-      "pipelite.metrics",
       "pipelite.runner", // for beans created in tests
       "pipelite.tester"
     },

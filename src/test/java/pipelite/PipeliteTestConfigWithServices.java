@@ -21,9 +21,9 @@ import pipelite.configuration.WebServerCustomizer;
 @ComponentScan(
     basePackages = {
       "pipelite.configuration",
+      "pipelite.metrics",
       "pipelite.repository",
-      "pipelite.service",
-      "pipelite.metrics"
+      "pipelite.service"
     },
     excludeFilters =
         @ComponentScan.Filter(

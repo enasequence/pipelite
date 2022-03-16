@@ -19,6 +19,7 @@ import lombok.extern.flogger.Flogger;
 import pipelite.executor.cmd.CmdRunner;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultCallback;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
 /** Executes a command. Must be serializable to json. */
@@ -35,7 +36,7 @@ public class CmdExecutor<T extends CmdExecutorParameters> extends AbstractExecut
   private String cmd;
 
   @Override
-  public StageExecutorResult execute(StageExecutorRequest request) {
+  public void execute(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {
     CmdRunner cmdRunner = CmdRunner.create(getExecutorParams());
     StageExecutorResult result = cmdRunner.execute(cmd);
     if (getExecutorParams()
@@ -43,7 +44,7 @@ public class CmdExecutor<T extends CmdExecutorParameters> extends AbstractExecut
         .contains(Ints.tryParse(result.getAttribute(EXIT_CODE)))) {
       result.setPermanentError();
     }
-    return result;
+    resultCallback.accept(result);
   }
 
   @Override

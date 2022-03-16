@@ -22,7 +22,7 @@ import pipelite.stage.parameters.KubernetesExecutorParameters;
 @Flogger
 public class KubernetesDescribeJobsCache
     extends DescribeJobsCache<
-        String, // RequestContext: jobName
+        String, // RequestContext: jobId
         KubernetesDescribeJobsCache.ExecutorContext,
         KubernetesDescribeJobsCache.CacheContext,
         KubernetesExecutor> {

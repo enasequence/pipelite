@@ -19,7 +19,6 @@ import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.error.InternalErrorHandler;
-import pipelite.exception.PipeliteException;
 import pipelite.exception.PipeliteTimeoutException;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.executor.StageExecutorResult;
@@ -120,11 +119,13 @@ public class DescribeJobs<RequestContext, ExecutorContext> {
       return;
     }
     String exitCode = result.getAttribute(StageExecutorResultAttribute.EXIT_CODE);
-    if (exitCode == null || Ints.tryParse(exitCode) == null) {
-      throw new PipeliteException("Missing or invalid exit code: " + exitCode);
-    }
-    if (permanentErrors.contains(Ints.tryParse(exitCode))) {
-      result.setPermanentError();
+    if (exitCode != null) {
+      Integer exitCodeInt = Ints.tryParse(exitCode);
+      if (exitCodeInt != null) {
+        if (permanentErrors.contains(exitCodeInt)) {
+          result.setPermanentError();
+        }
+      }
     }
   }
 

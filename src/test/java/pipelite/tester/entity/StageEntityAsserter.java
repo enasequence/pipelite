@@ -117,7 +117,10 @@ public class StageEntityAsserter {
                 + "  \"logDir\" : \""
                 + lsfTestConfiguration.getLogDir()
                 + "\",\n"
-                + "  \"logTimeout\" : 10000\n"
+                + "  \"logTimeout\" : 10000,\n"
+                + "  \"queue\" : \""
+                + lsfTestConfiguration.getQueue()
+                + "\"\n"
                 + "}");
   }
 

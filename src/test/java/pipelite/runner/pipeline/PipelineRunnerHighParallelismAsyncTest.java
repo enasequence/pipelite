@@ -37,24 +37,18 @@ import pipelite.tester.process.TestProcessConfiguration;
     properties = {
       "pipelite.service.force=true",
       "pipelite.service.name=PipelineRunnerAsyncTest",
-      "pipelite.advanced.processRunnerFrequency=2s",
-      "pipelite.advanced.shutdownIfIdle=true",
-      "pipelite.advanced.processRunnerWorkers=5",
-      "pipelite.advanced.stageRunnerWorkers=5",
-      "pipelite.repository.maxActive=10"
+      "pipelite.advanced.shutdownIfIdle=true"
     })
 @ActiveProfiles({"test", "PipelineRunnerHighParallelismAsyncTest"})
 @DirtiesContext
 public class PipelineRunnerHighParallelismAsyncTest {
   // Testing high pipeline parallelism with limited number of process runner
   // and stage runner workers.
-  // PipelineRunnerHighParallelismAsyncTest is significantly faster than
-  // PipelineRunnerHighParallelismSyncTest. Both have identical configuration except
-  // for the asynchronous vs synchronous stage execution.
 
   private static final int PROCESS_CNT = 20; // Increase process count for a more intensive test
   private static final int PARALLELISM = Integer.MAX_VALUE;
-  private static final Duration EXECUTION_TIME = Duration.ofSeconds(5);
+  private static final Duration SUBMIT_TIME = Duration.ofSeconds(1);
+  private static final Duration EXECUTION_TIME = Duration.ofSeconds(1);
 
   @Autowired private ProcessRunnerPoolManager processRunnerPoolManager;
   @Autowired private PipeliteServices pipeliteServices;
@@ -101,7 +95,7 @@ public class PipelineRunnerHighParallelismAsyncTest {
             public void configure(ProcessBuilder builder) {
               builder
                   .execute("STAGE")
-                  .withAsyncTestExecutor(StageExecutorState.SUCCESS, EXECUTION_TIME);
+                  .withAsyncTestExecutor(StageExecutorState.SUCCESS, SUBMIT_TIME, EXECUTION_TIME);
             }
           });
     }
@@ -123,6 +117,7 @@ public class PipelineRunnerHighParallelismAsyncTest {
 
   @Test
   public void test() {
+    long begin = System.currentTimeMillis();
     processRunnerPoolManager.createPools();
     processRunnerPoolManager.startPools();
     processRunnerPoolManager.waitPoolsToStop();
@@ -130,5 +125,7 @@ public class PipelineRunnerHighParallelismAsyncTest {
     for (AsyncTestPipeline pipeline : pipelines) {
       test(pipeline);
     }
+    long end = System.currentTimeMillis();
+    System.out.println("Test duration:" + (end - begin) / 1000 + "s");
   }
 }

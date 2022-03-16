@@ -64,7 +64,7 @@ public class PipeliteServices {
     return stageService;
   }
 
-  public DescribeJobsCacheService cache() {
+  public DescribeJobsCacheService jobs() {
     return describeJobsCacheService;
   }
 

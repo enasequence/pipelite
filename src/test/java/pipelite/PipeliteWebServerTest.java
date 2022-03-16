@@ -11,16 +11,11 @@
 package pipelite;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import pipelite.executor.AbstractExecutor;
 import pipelite.process.builder.ProcessBuilder;
-import pipelite.stage.executor.StageExecutorRequest;
-import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.tester.pipeline.ConfigurableTestPipeline;
 import pipelite.tester.process.TestProcessConfiguration;
@@ -28,49 +23,55 @@ import pipelite.tester.process.TestProcessConfiguration;
 @Configuration
 public class PipeliteWebServerTest {
 
-  private static final int PROCESS_CNT = 10000;
-  private static final int PROCESS_PARALLELISM = 10;
-  private static final Duration STAGE_EXECUTION_TIME = Duration.ofSeconds(5);
+  private static final int PROCESS_CNT = 500;
+  private static final int PROCESS_PARALLELISM = 500;
+  private static final Duration SUBMIT_TIME = Duration.ofSeconds(10);
+  private static final Duration EXECUTION_TIME = Duration.ofSeconds(10);
+  private static final String ID = UniqueStringGenerator.id();
 
   @Bean
-  public TestPipeline successPipeline() {
-    return new TestPipeline("PIPELINE_SUCCESS_1", new TestExecutor(StageExecutorResult.success()));
+  public TestPipeline successPipeline1() {
+    return new TestPipeline("PIPELINE_SUCCESS_1_" + ID, StageExecutorState.SUCCESS);
+  }
+
+  @Bean
+  public TestPipeline successPipeline2() {
+    return new TestPipeline("PIPELINE_SUCCESS_2_" + ID, StageExecutorState.SUCCESS);
+  }
+
+  @Bean
+  public TestPipeline successPipeline3() {
+    return new TestPipeline("PIPELINE_SUCCESS_3_" + ID, StageExecutorState.SUCCESS);
   }
 
   @Bean
   public TestPipeline errorPipeline() {
-    return new TestPipeline("PIPELINE_ERROR_1", new TestExecutor(StageExecutorResult.error()));
+    return new TestPipeline("PIPELINE_ERROR_1_" + ID, StageExecutorState.ERROR);
   }
 
   @Bean
   public TestSchedule successSchedule() {
     return new TestSchedule(
-        "SCHEDULE_SUCCESS_1",
+        "SCHEDULE_SUCCESS_1_" + ID,
         builder ->
             builder
                 .execute("SCHEDULE_STAGE_SUCCESS_1")
-                .with(
-                    new TestExecutor(StageExecutorResult.success()),
-                    ExecutorParameters.builder().build()));
+                .withAsyncTestExecutor(StageExecutorState.SUCCESS, SUBMIT_TIME, EXECUTION_TIME));
   }
 
   @Bean
   public TestSchedule errorSchedule() {
     return new TestSchedule(
-        "SCHEDULE_ERROR_1",
+        "SCHEDULE_ERROR_1_" + ID,
         builder ->
             builder
                 .execute("SCHEDULE_STAGE_ERROR_1")
-                .with(
-                    new TestExecutor(StageExecutorResult.error()),
-                    ExecutorParameters.builder().build()));
+                .withAsyncTestExecutor(StageExecutorState.ERROR, SUBMIT_TIME, EXECUTION_TIME));
   }
-  // }
 
-  public static class TestPipeline<T extends TestExecutor>
-      extends ConfigurableTestPipeline<TestProcessConfiguration> {
+  public static class TestPipeline extends ConfigurableTestPipeline<TestProcessConfiguration> {
 
-    public TestPipeline(String pipelineName, T stageExecutor) {
+    public TestPipeline(String pipelineName, StageExecutorState state) {
       super(
           PROCESS_PARALLELISM,
           PROCESS_CNT,
@@ -80,9 +81,8 @@ public class PipeliteWebServerTest {
               ExecutorParameters executorParams =
                   ExecutorParameters.builder().immediateRetries(0).maximumRetries(0).build();
               builder
-                  .execute(
-                      "PIPELINE_STAGE_" + stageExecutor.result().getExecutorState().name() + "_1")
-                  .with(stageExecutor, executorParams);
+                  .execute("PIPELINE_STAGE_" + state.name() + "_1")
+                  .withAsyncTestExecutor(state, SUBMIT_TIME, EXECUTION_TIME, executorParams);
             }
           });
     }
@@ -114,56 +114,17 @@ public class PipeliteWebServerTest {
     }
   }
 
-  public static class TestExecutor extends AbstractExecutor<ExecutorParameters> {
-    private final StageExecutorResult result;
-    private final Map<String, LocalDateTime> firstExecute = new ConcurrentHashMap<>();
-
-    public TestExecutor(StageExecutorResult result) {
-      this.result = result;
-    }
-
-    @Override
-    public StageExecutorResult execute(StageExecutorRequest request) {
-      String processId = request.getProcessId();
-      if (!firstExecute.containsKey(processId)) {
-        firstExecute.put(processId, LocalDateTime.now());
-      }
-      if (Duration.between(firstExecute.get(processId), LocalDateTime.now())
-              .compareTo(STAGE_EXECUTION_TIME)
-          < 0) {
-        return StageExecutorResult.active();
-      }
-      result.setStageLog(
-          "Stage execution result "
-              + result.getExecutorState().name()
-              + " pipeline "
-              + request.getPipelineName()
-              + " process "
-              + request.getProcessId()
-              + " stage "
-              + request.getStage().getStageName());
-      return result;
-    }
-
-    public StageExecutorResult result() {
-      return result;
-    }
-
-    @Override
-    public void terminate() {}
-  }
-
   // @Test
   public static void main(String[] args) {
-    System.setProperty("pipelite.service.name", "PipeliteWebServerTest");
-    System.setProperty("pipelite.advanced.processRunnerFrequency", "1s");
-    System.setProperty("pipelite.advanced.processQueueMinRefreshFrequency", "10s");
-    System.setProperty("pipelite.advanced.processQueueMaxRefreshFrequency", "60s");
 
-    // Make sure we use the in-memory database.
-    System.setProperty("pipelite.datasource.driverClassName", "");
-    System.setProperty("spring.profiles.active", "test");
-
+    System.setProperty("pipelite.service.name", "PipeliteWebServerTest_" + ID);
+    System.setProperty(
+        "pipelite.datasource.driverClassName", System.getenv("PIPELITE_TEST_DATABASE_DRIVER"));
+    System.setProperty("pipelite.datasource.url", System.getenv("PIPELITE_TEST_DATABASE_URL"));
+    System.setProperty(
+        "pipelite.datasource.username", System.getenv("PIPELITE_TEST_DATABASE_USERNAME"));
+    System.setProperty(
+        "pipelite.datasource.password", System.getenv("PIPELITE_TEST_DATABASE_PASSWORD"));
     Pipelite.main(new String[0]);
   }
 }

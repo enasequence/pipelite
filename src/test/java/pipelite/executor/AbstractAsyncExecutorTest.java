@@ -11,22 +11,21 @@
 package pipelite.executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 
+import java.time.Duration;
 import java.util.EnumSet;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import pipelite.UniqueStringGenerator;
-import pipelite.exception.PipeliteException;
+import pipelite.service.PipeliteExecutorService;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.StageExecutor;
-import pipelite.stage.executor.StageExecutorRequest;
-import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorState;
+import pipelite.stage.executor.*;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
+import pipelite.time.Time;
 
 public class AbstractAsyncExecutorTest {
 
@@ -38,59 +37,95 @@ public class AbstractAsyncExecutorTest {
     SimpleLsfExecutor simpleLsfExecutor =
         Mockito.spy(StageExecutor.createSimpleLsfExecutor("test"));
     simpleLsfExecutor.setExecutorParams(new SimpleLsfExecutorParameters());
+    simpleLsfExecutor.setSubmitExecutorService(
+        PipeliteExecutorService.createExecutorService("test", "test-%d", 10, null));
     return simpleLsfExecutor;
   }
 
   @Test
   public void executeSubmitMissingJobId() {
     AbstractAsyncExecutor executor = executor();
-    doReturn(StageExecutorResult.submitted()).when(executor).submit(any());
+    doReturn(new AbstractAsyncExecutor.SubmitResult(null, StageExecutorResult.submitted()))
+        .when(executor)
+        .submit(any());
 
     Stage stage = new Stage(STAGE_NAME, executor);
     StageExecutorRequest request = new StageExecutorRequest(PIPELINE_NAME, PROCESS_ID, stage);
 
-    assertThatThrownBy(() -> executor.execute(request))
-        .isInstanceOf(PipeliteException.class)
-        .hasMessage("Missing job id after asynchronous submit");
+    AtomicReference<StageExecutorResult> result = new AtomicReference<>();
+    executor.execute(request, (r) -> result.set(r));
+
+    while (result.get() == null) {
+      Time.wait(Duration.ofSeconds(1));
+    }
+    assertThat(result.get().isError()).isTrue();
+    assertThat(result.get().isErrorType(ErrorType.INTERNAL_ERROR)).isTrue();
+    assertThat(result.get().getStageLog())
+        .contains("PipeliteException: Missing job id after asynchronous submit");
   }
 
   @Test
   public void executeSubmitUnexpectedState() {
-    AbstractAsyncExecutor executor = executor();
     for (StageExecutorState stageExecutorState :
         EnumSet.of(StageExecutorState.ACTIVE, StageExecutorState.SUCCESS)) {
-      doReturn(StageExecutorResult.from(stageExecutorState)).when(executor).submit(any());
+      AbstractAsyncExecutor executor = executor();
+      doReturn(
+              new AbstractAsyncExecutor.SubmitResult(
+                  "jobId", StageExecutorResult.from(stageExecutorState)))
+          .when(executor)
+          .submit(any());
 
       Stage stage = new Stage(STAGE_NAME, executor);
       StageExecutorRequest request = new StageExecutorRequest(PIPELINE_NAME, PROCESS_ID, stage);
 
-      assertThatThrownBy(() -> executor.execute(request))
-          .isInstanceOf(PipeliteException.class)
-          .hasMessage("Unexpected state after asynchronous submit: " + stageExecutorState.name());
+      AtomicReference<StageExecutorResult> result = new AtomicReference<>();
+      executor.execute(request, (r) -> result.set(r));
+
+      while (result.get() == null) {
+        Time.wait(Duration.ofSeconds(1));
+      }
+      assertThat(result.get().isError()).isTrue();
+      assertThat(result.get().isErrorType(ErrorType.INTERNAL_ERROR)).isTrue();
+      assertThat(result.get().getStageLog())
+          .contains("PipeliteException: Unexpected state after asynchronous submit");
     }
   }
 
   @Test
   public void executeSubmitException() {
     AbstractAsyncExecutor executor = executor();
-    doThrow(new RuntimeException("test")).when(executor).submit(any());
+    doThrow(new RuntimeException("test exception")).when(executor).submit(any());
 
     Stage stage = new Stage(STAGE_NAME, executor);
     StageExecutorRequest request = new StageExecutorRequest(PIPELINE_NAME, PROCESS_ID, stage);
 
-    assertThatThrownBy(() -> executor.execute(request))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessage("test");
+    AtomicReference<StageExecutorResult> result = new AtomicReference<>();
+    executor.execute(request, (r) -> result.set(r));
+
+    while (result.get() == null) {
+      Time.wait(Duration.ofSeconds(1));
+    }
+    assertThat(result.get().isError()).isTrue();
+    assertThat(result.get().isErrorType(ErrorType.INTERNAL_ERROR)).isTrue();
+    assertThat(result.get().getStageLog()).contains("java.lang.RuntimeException: test exception");
   }
 
   @Test
   public void executeSubmitError() {
     AbstractAsyncExecutor executor = executor();
-    doReturn(StageExecutorResult.error()).when(executor).submit(any());
+    doReturn(new AbstractAsyncExecutor.SubmitResult(null, StageExecutorResult.error()))
+        .when(executor)
+        .submit(any());
 
     Stage stage = new Stage(STAGE_NAME, executor);
     StageExecutorRequest request = new StageExecutorRequest(PIPELINE_NAME, PROCESS_ID, stage);
 
-    assertThat(executor.execute(request).isError()).isTrue();
+    AtomicReference<StageExecutorResult> result = new AtomicReference<>();
+    executor.execute(request, (r) -> result.set(r));
+
+    while (result.get() == null) {
+      Time.wait(Duration.ofSeconds(1));
+    }
+    assertThat(result.get().isError()).isTrue();
   }
 }

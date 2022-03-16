@@ -13,14 +13,18 @@ package pipelite.executor;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.locks.ReentrantLock;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.Value;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.describe.cache.DescribeJobsCache;
 import pipelite.metrics.StageMetrics;
 import pipelite.service.DescribeJobsCacheService;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultCallback;
 import pipelite.stage.parameters.ExecutorParameters;
 
 /** Executes a stage. Must be serializable to json. */
@@ -36,13 +40,25 @@ public abstract class AbstractAsyncExecutor<
    */
   private String jobId;
 
+  @JsonIgnore private ExecutorService submitExecutorService;
   @JsonIgnore private D describeJobsCache;
   @JsonIgnore private StageMetrics stageMetrics;
 
+  @JsonIgnore private ReentrantLock submitLock = new ReentrantLock();
+  @JsonIgnore private ReentrantLock pollLock = new ReentrantLock();
+
   /** Prepares stage executor for asynchronous execution. */
-  public void prepareAsyncExecute(
-      DescribeJobsCacheService describeJobsCacheService, StageMetrics stageMetrics) {
+  public void setSubmitExecutorService(ExecutorService submitExecutorService) {
+    this.submitExecutorService = submitExecutorService;
+  }
+
+  /** Prepares stage executor for asynchronous execution. */
+  public void setDescribeJobsService(DescribeJobsCacheService describeJobsCacheService) {
     this.describeJobsCache = initDescribeJobsCache(describeJobsCacheService);
+  }
+
+  /** Prepares stage executor for asynchronous execution. */
+  public void setStageMetrics(StageMetrics stageMetrics) {
     this.stageMetrics = stageMetrics;
   }
 
@@ -54,45 +70,87 @@ public abstract class AbstractAsyncExecutor<
 
   protected void prepareSubmit(StageExecutorRequest request) {}
 
-  protected abstract StageExecutorResult submit(StageExecutorRequest request);
+  @Value
+  protected static class SubmitResult {
+    private final String jobId;
+    private final StageExecutorResult result;
+  }
+
+  protected abstract SubmitResult submit(StageExecutorRequest request);
 
   protected abstract StageExecutorResult poll(StageExecutorRequest request);
 
   @Override
-  public final StageExecutorResult execute(StageExecutorRequest request) {
+  public void execute(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {
     if (jobId == null) {
-      // Submit.
-      ZonedDateTime submitStartTime = ZonedDateTime.now();
-
-      prepareSubmit(request);
-      StageExecutorResult result = submit(request);
-
-      if (stageMetrics != null) {
-        stageMetrics
-            .getAsyncSubmitTimer()
-            .record(Duration.between(submitStartTime, ZonedDateTime.now()));
-        stageMetrics.endAsyncSubmit();
+      if (submitLock.tryLock()) {
+        submit(request, resultCallback);
       }
-
-      if (result.isError()) {
-        return result;
-      }
-      if (!result.isSubmitted()) {
-        throw new PipeliteException(
-            "Unexpected state after asynchronous submit: " + result.getExecutorState().name());
-      }
-      if (jobId == null) {
-        throw new PipeliteException("Missing job id after asynchronous submit");
-      }
-      return result;
     } else {
-      // Poll.
+      if (pollLock.tryLock()) {
+        try {
+          poll(request, resultCallback);
+        } finally {
+          pollLock.unlock();
+        }
+      }
+    }
+  }
+
+  private void submit(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {
+    submitExecutorService.submit(
+        () -> {
+          try {
+            ZonedDateTime submitStartTime = ZonedDateTime.now();
+            prepareSubmit(request);
+            SubmitResult submitResult = submit(request);
+            jobId = submitResult.getJobId();
+            StageExecutorResult result = submitResult.getResult();
+
+            if (stageMetrics != null) {
+              stageMetrics
+                  .getAsyncSubmitTimer()
+                  .record(Duration.between(submitStartTime, ZonedDateTime.now()));
+              stageMetrics.endAsyncSubmit();
+            }
+
+            if (!result.isError()) {
+              if (!result.isSubmitted()) {
+                result =
+                    StageExecutorResult.internalError(
+                        new PipeliteException(
+                            "Unexpected state after asynchronous submit: "
+                                + result.getExecutorState().name()));
+              } else if (jobId == null) {
+                result =
+                    StageExecutorResult.internalError(
+                        new PipeliteException("Missing job id after asynchronous submit"));
+              }
+            }
+            resultCallback.accept(result);
+          } catch (Exception ex) {
+            StageExecutorResult result = StageExecutorResult.internalError(ex);
+            resultCallback.accept(result);
+          } finally {
+            submitLock.unlock();
+          }
+        });
+  }
+
+  private void poll(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {
+    try {
       StageExecutorResult result = poll(request);
       if (result.isSubmitted()) {
-        throw new PipeliteException(
-            "Unexpected state during asynchronous poll: " + result.getExecutorState().name());
+        result =
+            StageExecutorResult.internalError(
+                new PipeliteException(
+                    "Unexpected state during asynchronous poll: "
+                        + result.getExecutorState().name()));
       }
-      return result;
+      resultCallback.accept(result);
+    } catch (Exception ex) {
+      StageExecutorResult result = StageExecutorResult.internalError(ex);
+      resultCallback.accept(result);
     }
   }
 }

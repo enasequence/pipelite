@@ -8,29 +8,25 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.configuration;
-
-import static pipelite.configuration.DataSourceConfiguration.isTestProfile;
+package pipelite.metrics;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.logging.LoggingMeterRegistry;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Component;
 
-@Configuration
-public class MetricsConfiguration {
+@Component
+public class DataSourceMetrics {
 
-  @Autowired Environment environment;
+  // Micrometer timers.
 
-  @Bean
-  public MeterRegistry meterRegistry() {
-    if (isTestProfile(environment)) {
-      return new SimpleMeterRegistry();
-    } else {
-      return new LoggingMeterRegistry();
-    }
+  private final Timer getConnectionTimer;
+
+  public DataSourceMetrics(@Autowired MeterRegistry meterRegistry) {
+    getConnectionTimer = meterRegistry.timer("pipelite.dataSource.getConnectionTimer");
+  }
+
+  public Timer getConnectionTimer() {
+    return getConnectionTimer;
   }
 }

@@ -10,7 +10,9 @@
  */
 package pipelite.stage.executor;
 
+import java.time.Duration;
 import java.util.List;
+import java.util.function.Function;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.*;
 import pipelite.stage.Stage;
@@ -46,9 +48,9 @@ public interface StageExecutor<T extends ExecutorParameters> {
    * Called repeatedly to execute the stage until it is not ACTIVE.
    *
    * @param request the execution request
-   * @return stage execution result
+   * @param resultCallback execution result callback
    */
-  StageExecutorResult execute(StageExecutorRequest request);
+  void execute(StageExecutorRequest request, StageExecutorResultCallback resultCallback);
 
   /** Terminates the stage execution. */
   void terminate();
@@ -64,6 +66,8 @@ public interface StageExecutor<T extends ExecutorParameters> {
       stage.setExecutor(resetKubernetesExecutorState((KubernetesExecutor) executor));
     } else if (executor instanceof AwsBatchExecutor) {
       stage.setExecutor(resetAwsBatchExecutorState((AwsBatchExecutor) executor));
+    } else if (executor instanceof AsyncTestExecutor) {
+      stage.setExecutor(resetAsyncTestExecutorState((AsyncTestExecutor) executor));
     } else {
       throw new PipeliteException(
           "Failed to reset async executor: " + executor.getClass().getSimpleName());
@@ -94,10 +98,10 @@ public interface StageExecutor<T extends ExecutorParameters> {
     return lsfExecutor;
   }
 
-  private static LsfExecutor resetLsfExecutorState(LsfExecutor lsfExecutor) {
-    LsfExecutor resetExecutor = StageExecutor.createLsfExecutor(lsfExecutor.getCmd());
-    resetExecutor.setExecutorParams(lsfExecutor.getExecutorParams());
-    return resetExecutor;
+  private static LsfExecutor resetLsfExecutorState(LsfExecutor oldExecutor) {
+    LsfExecutor newExecutor = StageExecutor.createLsfExecutor(oldExecutor.getCmd());
+    newExecutor.setExecutorParams(oldExecutor.getExecutorParams());
+    return newExecutor;
   }
 
   /**
@@ -112,10 +116,10 @@ public interface StageExecutor<T extends ExecutorParameters> {
     return lsfExecutor;
   }
 
-  private static SimpleLsfExecutor resetSimpleLsfExecutorState(SimpleLsfExecutor lsfExecutor) {
-    SimpleLsfExecutor resetExecutor = StageExecutor.createSimpleLsfExecutor(lsfExecutor.getCmd());
-    resetExecutor.setExecutorParams(lsfExecutor.getExecutorParams());
-    return resetExecutor;
+  private static SimpleLsfExecutor resetSimpleLsfExecutorState(SimpleLsfExecutor oldExecutor) {
+    SimpleLsfExecutor newExecutor = StageExecutor.createSimpleLsfExecutor(oldExecutor.getCmd());
+    newExecutor.setExecutorParams(oldExecutor.getExecutorParams());
+    return newExecutor;
   }
 
   /**
@@ -150,11 +154,80 @@ public interface StageExecutor<T extends ExecutorParameters> {
     return new AwsBatchExecutor();
   }
 
-  private static AwsBatchExecutor resetAwsBatchExecutorState(AwsBatchExecutor awsBatchExecutor) {
-    AwsBatchExecutor resetExecutor = StageExecutor.createAwsBatchExecutor();
-    resetExecutor.setExecutorParams(awsBatchExecutor.getExecutorParams());
-    return resetExecutor;
+  private static AwsBatchExecutor resetAwsBatchExecutorState(AwsBatchExecutor oldExecutor) {
+    AwsBatchExecutor newExecutor = StageExecutor.createAwsBatchExecutor();
+    newExecutor.setExecutorParams(oldExecutor.getExecutorParams());
+    return newExecutor;
   }
+
+  /**
+   * Creates an asynchronous test executor that returns the given stage state.
+   *
+   * @param executorState the state returned by the executor
+   * @paran submitTime the stage submit time
+   * @paran executionTime the stage execution time
+   * @return an asynchronous test executor that returns the given stage state
+   */
+  static AsyncTestExecutor createAsyncTestExecutor(
+      StageExecutorState executorState, Duration submitTime, Duration executionTime) {
+    return new AsyncTestExecutor(executorState, submitTime, executionTime);
+  }
+
+  /**
+   * Creates an asynchronous test executor that executes the given callback.
+   *
+   * @param callback the callback to execute
+   * @return an asynchronous test executor that executes the given callback
+   */
+  static AsyncTestExecutor createAsyncTestExecutor(
+      Function<StageExecutorRequest, StageExecutorResult> callback) {
+    return new AsyncTestExecutor(callback);
+  }
+
+  private static AsyncTestExecutor resetAsyncTestExecutorState(AsyncTestExecutor oldExecutor) {
+    AsyncTestExecutor newExecutor =
+        oldExecutor.getExecutorState() != null
+            ? createAsyncTestExecutor(
+                oldExecutor.getExecutorState(),
+                oldExecutor.getSubmitTime(),
+                oldExecutor.getExecutionTime())
+            : createAsyncTestExecutor(oldExecutor.getCallback());
+    newExecutor.setExecutorParams(oldExecutor.getExecutorParams());
+    return newExecutor;
+  }
+
+  /**
+   * Creates a synchronous test executor that returns the given stage state.
+   *
+   * @param executorState the state returned by the executor
+   * @paran executionTime the stage execution time
+   * @return a synchronous test executor that returns the given stage state
+   */
+  static SyncTestExecutor createSyncTestExecutor(
+      StageExecutorState executorState, Duration executionTime) {
+    return new SyncTestExecutor(executorState, executionTime);
+  }
+
+  /**
+   * Creates a synchronous test executor that executes the given callback.
+   *
+   * @param callback the callback to execute
+   * @return a synchronous test executor that executes the given callback
+   */
+  static SyncTestExecutor createSyncTestExecutor(
+      Function<StageExecutorRequest, StageExecutorResult> callback) {
+    return new SyncTestExecutor(callback);
+  }
+
+  private static SyncTestExecutor resetSyncTestExecutorState(SyncTestExecutor oldExecutor) {
+    SyncTestExecutor newExecutor =
+        oldExecutor.getExecutorState() != null
+            ? createSyncTestExecutor(oldExecutor.getExecutorState(), oldExecutor.getExecutionTime())
+            : createSyncTestExecutor(oldExecutor.getCallback());
+    newExecutor.setExecutorParams(oldExecutor.getExecutorParams());
+    return newExecutor;
+  }
+
   /**
    * Returns true if the concatenated stdout and stderr output of stage execution should be saved in
    * pipelite database.

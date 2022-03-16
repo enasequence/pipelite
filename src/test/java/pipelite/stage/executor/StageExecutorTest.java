@@ -42,9 +42,7 @@ public class StageExecutorTest {
     public void setExecutorParams(ExecutorParameters executorParams) {}
 
     @Override
-    public StageExecutorResult execute(StageExecutorRequest request) {
-      return null;
-    }
+    public void execute(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {}
 
     @Override
     public void terminate() {}

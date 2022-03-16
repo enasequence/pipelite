@@ -17,6 +17,7 @@ pipelite:
       user: ${PIPELITE_TEST_LSF_USER:}
       logDir: ${PIPELITE_TEST_LSF_LOG_DIR:}
       definitionDir: ${PIPELITE_TEST_LSF_DEFINITION_DIR:}
+      queue: ${PIPELITE_TEST_LSF_QUEUE:}
     ssh:
       host: ${PIPELITE_TEST_SSH_HOST:}
       user: ${PIPELITE_TEST_SSH_USER:}
