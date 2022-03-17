@@ -167,24 +167,18 @@ public class StageBuilder {
     return withAwsBatchExecutor(AwsBatchExecutorParameters.builder().build());
   }
 
-  /**
-   * An executor that behaves like a synchronous executor that returns the given stage state.
-   *
-   * @param executorState the state returned by the executor
-   */
-  public ProcessBuilder withSyncTestExecutor(StageExecutorState executorState) {
-    return withSyncTestExecutor(executorState, ExecutorParameters.builder().build(), null);
+  /** An executor that behaves like a synchronous executor that returns the stage state SUCCESS. */
+  public ProcessBuilder withSyncTestExecutor() {
+    return withSyncTestExecutor(StageExecutorState.SUCCESS);
   }
 
   /**
    * An executor that behaves like a synchronous executor that returns the given stage state.
    *
    * @param executorState the state returned by the executor
-   * @param executionTime the stage execution time
    */
-  public ProcessBuilder withSyncTestExecutor(
-      StageExecutorState executorState, Duration executionTime) {
-    return withSyncTestExecutor(executorState, ExecutorParameters.builder().build(), executionTime);
+  public ProcessBuilder withSyncTestExecutor(StageExecutorState executorState) {
+    return withSyncTestExecutor(executorState, null, ExecutorParameters.builder().build());
   }
 
   /**
@@ -195,7 +189,18 @@ public class StageBuilder {
    */
   public ProcessBuilder withSyncTestExecutor(
       StageExecutorState executorState, ExecutorParameters params) {
-    return withSyncTestExecutor(executorState, params, null);
+    return withSyncTestExecutor(executorState, null, params);
+  }
+
+  /**
+   * An executor that behaves like a synchronous executor that returns the given stage state.
+   *
+   * @param executorState the state returned by the executor
+   * @param executionTime the stage execution time
+   */
+  public ProcessBuilder withSyncTestExecutor(
+      StageExecutorState executorState, Duration executionTime) {
+    return withSyncTestExecutor(executorState, executionTime, ExecutorParameters.builder().build());
   }
 
   /**
@@ -206,15 +211,10 @@ public class StageBuilder {
    * @param params the executor parameters
    */
   public ProcessBuilder withSyncTestExecutor(
-      StageExecutorState executorState, ExecutorParameters params, Duration executionTime) {
+      StageExecutorState executorState, Duration executionTime, ExecutorParameters params) {
     SyncTestExecutor executor = StageExecutor.createSyncTestExecutor(executorState, executionTime);
     executor.setExecutorParams(params);
     return addStage(executor);
-  }
-
-  /** An executor that behaves like a synchronous executor that returns the stage state SUCCESS. */
-  public ProcessBuilder withSyncTestExecutor() {
-    return withSyncTestExecutor(StageExecutorState.SUCCESS);
   }
 
   /**
@@ -224,7 +224,7 @@ public class StageBuilder {
    */
   public ProcessBuilder withSyncTestExecutor(
       Function<StageExecutorRequest, StageExecutorResult> callback) {
-    return withSyncTestExecutor(callback, ExecutorParameters.builder().build());
+    return withSyncTestExecutor(callback, null, ExecutorParameters.builder().build());
   }
 
   /**
@@ -235,9 +235,54 @@ public class StageBuilder {
    */
   public ProcessBuilder withSyncTestExecutor(
       Function<StageExecutorRequest, StageExecutorResult> callback, ExecutorParameters params) {
-    SyncTestExecutor executor = StageExecutor.createSyncTestExecutor(callback);
+    return withSyncTestExecutor(callback, null, params);
+  }
+
+  /**
+   * An executor that behaves like a synchronous executor that runs the given callback.
+   *
+   * @param callback the callback to be executed
+   * @param executionTime the stage execution time
+   */
+  public ProcessBuilder withSyncTestExecutor(
+      Function<StageExecutorRequest, StageExecutorResult> callback, Duration executionTime) {
+    return withSyncTestExecutor(callback, executionTime, ExecutorParameters.builder().build());
+  }
+
+  /**
+   * An executor that behaves like a synchronous executor that runs the given callback.
+   *
+   * @param callback the callback to be executed
+   * @param executionTime the stage execution time
+   * @param params the executor parameters
+   */
+  public ProcessBuilder withSyncTestExecutor(
+      Function<StageExecutorRequest, StageExecutorResult> callback,
+      Duration executionTime,
+      ExecutorParameters params) {
+    SyncTestExecutor executor = StageExecutor.createSyncTestExecutor(callback, executionTime);
     executor.setExecutorParams(params);
     return addStage(executor);
+  }
+
+  /**
+   * An executor that behaves like an asynchronous executor that returns the given stage state.
+   *
+   * @param executorState the state returned by the executor
+   */
+  public ProcessBuilder withAsyncTestExecutor(StageExecutorState executorState) {
+    return withAsyncTestExecutor(executorState, null, null, ExecutorParameters.builder().build());
+  }
+
+  /**
+   * An executor that behaves like an asynchronous executor that returns the given stage state.
+   *
+   * @param executorState the state returned by the executor
+   * @param params the executor parameters
+   */
+  public ProcessBuilder withAsyncTestExecutor(
+      StageExecutorState executorState, ExecutorParameters params) {
+    return withAsyncTestExecutor(executorState, null, null, params);
   }
 
   /**
@@ -279,7 +324,7 @@ public class StageBuilder {
    */
   public ProcessBuilder withAsyncTestExecutor(
       Function<StageExecutorRequest, StageExecutorResult> callback) {
-    return withAsyncTestExecutor(callback, ExecutorParameters.builder().build());
+    return withAsyncTestExecutor(callback, null, null, ExecutorParameters.builder().build());
   }
 
   /**
@@ -290,7 +335,39 @@ public class StageBuilder {
    */
   public ProcessBuilder withAsyncTestExecutor(
       Function<StageExecutorRequest, StageExecutorResult> callback, ExecutorParameters params) {
-    AsyncTestExecutor executor = StageExecutor.createAsyncTestExecutor(callback);
+    return withAsyncTestExecutor(callback, null, null, params);
+  }
+
+  /**
+   * An executor that behaves like an asynchronous executor that runs the given callback.
+   *
+   * @param callback the callback to be executed
+   * @param submitTime the stage submit time
+   * @param executionTime the stage execution time
+   */
+  public ProcessBuilder withAsyncTestExecutor(
+      Function<StageExecutorRequest, StageExecutorResult> callback,
+      Duration submitTime,
+      Duration executionTime) {
+    return withAsyncTestExecutor(
+        callback, submitTime, executionTime, ExecutorParameters.builder().build());
+  }
+
+  /**
+   * An executor that behaves like an asynchronous executor that runs the given callback.
+   *
+   * @param callback the callback to be executed
+   * @param submitTime the stage submit time
+   * @param executionTime the stage execution time
+   * @param params the executor parameters
+   */
+  public ProcessBuilder withAsyncTestExecutor(
+      Function<StageExecutorRequest, StageExecutorResult> callback,
+      Duration submitTime,
+      Duration executionTime,
+      ExecutorParameters params) {
+    AsyncTestExecutor executor =
+        StageExecutor.createAsyncTestExecutor(callback, submitTime, executionTime);
     executor.setExecutorParams(params);
     return addStage(executor);
   }

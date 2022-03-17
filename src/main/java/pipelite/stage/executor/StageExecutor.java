@@ -170,28 +170,29 @@ public interface StageExecutor<T extends ExecutorParameters> {
    */
   static AsyncTestExecutor createAsyncTestExecutor(
       StageExecutorState executorState, Duration submitTime, Duration executionTime) {
-    return new AsyncTestExecutor(executorState, submitTime, executionTime);
+    return new AsyncTestExecutor(
+        (request) -> StageExecutorResult.from(executorState), submitTime, executionTime);
   }
 
   /**
    * Creates an asynchronous test executor that executes the given callback.
    *
    * @param callback the callback to execute
+   * @paran submitTime the stage submit time
+   * @paran executionTime the stage execution time
    * @return an asynchronous test executor that executes the given callback
    */
   static AsyncTestExecutor createAsyncTestExecutor(
-      Function<StageExecutorRequest, StageExecutorResult> callback) {
-    return new AsyncTestExecutor(callback);
+      Function<StageExecutorRequest, StageExecutorResult> callback,
+      Duration submitTime,
+      Duration executionTime) {
+    return new AsyncTestExecutor(callback, submitTime, executionTime);
   }
 
   private static AsyncTestExecutor resetAsyncTestExecutorState(AsyncTestExecutor oldExecutor) {
     AsyncTestExecutor newExecutor =
-        oldExecutor.getExecutorState() != null
-            ? createAsyncTestExecutor(
-                oldExecutor.getExecutorState(),
-                oldExecutor.getSubmitTime(),
-                oldExecutor.getExecutionTime())
-            : createAsyncTestExecutor(oldExecutor.getCallback());
+        createAsyncTestExecutor(
+            oldExecutor.getCallback(), oldExecutor.getSubmitTime(), oldExecutor.getExecutionTime());
     newExecutor.setExecutorParams(oldExecutor.getExecutorParams());
     return newExecutor;
   }
@@ -205,27 +206,20 @@ public interface StageExecutor<T extends ExecutorParameters> {
    */
   static SyncTestExecutor createSyncTestExecutor(
       StageExecutorState executorState, Duration executionTime) {
-    return new SyncTestExecutor(executorState, executionTime);
+    return new SyncTestExecutor(
+        (request) -> StageExecutorResult.from(executorState), executionTime);
   }
 
   /**
    * Creates a synchronous test executor that executes the given callback.
    *
    * @param callback the callback to execute
+   * @paran executionTime the stage execution time
    * @return a synchronous test executor that executes the given callback
    */
   static SyncTestExecutor createSyncTestExecutor(
-      Function<StageExecutorRequest, StageExecutorResult> callback) {
-    return new SyncTestExecutor(callback);
-  }
-
-  private static SyncTestExecutor resetSyncTestExecutorState(SyncTestExecutor oldExecutor) {
-    SyncTestExecutor newExecutor =
-        oldExecutor.getExecutorState() != null
-            ? createSyncTestExecutor(oldExecutor.getExecutorState(), oldExecutor.getExecutionTime())
-            : createSyncTestExecutor(oldExecutor.getCallback());
-    newExecutor.setExecutorParams(oldExecutor.getExecutorParams());
-    return newExecutor;
+      Function<StageExecutorRequest, StageExecutorResult> callback, Duration executionTime) {
+    return new SyncTestExecutor(callback, executionTime);
   }
 
   /**

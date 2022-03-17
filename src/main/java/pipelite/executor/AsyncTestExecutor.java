@@ -24,7 +24,6 @@ import pipelite.executor.describe.cache.TestDescribeJobsCache;
 import pipelite.service.DescribeJobsCacheService;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.time.Time;
 
@@ -34,26 +33,18 @@ public class AsyncTestExecutor
     extends AbstractAsyncExecutor<ExecutorParameters, TestDescribeJobsCache> {
 
   private static final AtomicInteger nextJobId = new AtomicInteger();
-  private final StageExecutorState executorState;
   private final Function<StageExecutorRequest, StageExecutorResult> callback;
   private final Duration submitTime;
   private final Duration executionTime;
 
   public AsyncTestExecutor(
-      StageExecutorState executorState, Duration submitTime, Duration executionTime) {
-    Assert.notNull(executorState, "Missing executorState");
-    this.executorState = executorState;
-    this.callback = null;
+      Function<StageExecutorRequest, StageExecutorResult> callback,
+      Duration submitTime,
+      Duration executionTime) {
+    Assert.notNull(callback, "Missing callback");
+    this.callback = callback;
     this.submitTime = submitTime;
     this.executionTime = executionTime;
-  }
-
-  public AsyncTestExecutor(Function<StageExecutorRequest, StageExecutorResult> callback) {
-    Assert.notNull(callback, "Missing callback");
-    this.executorState = null;
-    this.callback = callback;
-    this.submitTime = null;
-    this.executionTime = null;
   }
 
   @Override
@@ -92,11 +83,8 @@ public class AsyncTestExecutor
           && ZonedDateTime.now()
               .isBefore(request.getStartTime().plus(request.getExecutionTime()))) {
         continue;
-      } else if (request.getCallback() != null) {
-        result.put(request, request.getCallback().apply(request.getRequest()));
-      } else {
-        result.put(request, StageExecutorResult.from(request.getExecutorState()));
       }
+      result.put(request, request.getCallback().apply(request.getRequest()));
     }
     return result;
   }
@@ -105,7 +93,7 @@ public class AsyncTestExecutor
       StageExecutorRequest request) {
     ZonedDateTime startTime = ZonedDateTime.now();
     return new TestDescribeJobsCache.RequestContext(
-        getJobId(), request, startTime, executionTime, executorState, callback);
+        getJobId(), request, startTime, executionTime, callback);
   }
 
   @Override

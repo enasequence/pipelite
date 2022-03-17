@@ -22,7 +22,6 @@ import pipelite.executor.describe.DescribeJobs;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorState;
 
 @Flogger
 public class TestDescribeJobsCache
@@ -38,7 +37,6 @@ public class TestDescribeJobsCache
     @EqualsAndHashCode.Exclude private final StageExecutorRequest request;
     @EqualsAndHashCode.Exclude private final ZonedDateTime startTime;
     @EqualsAndHashCode.Exclude private final Duration executionTime;
-    @EqualsAndHashCode.Exclude private final StageExecutorState executorState;
 
     @EqualsAndHashCode.Exclude
     private final Function<StageExecutorRequest, StageExecutorResult> callback;
