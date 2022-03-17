@@ -126,7 +126,7 @@ public class ProcessRunnerPool extends AbstractScheduledService {
         activeProcessRunner.setFuture(
             pipeliteServices
                 .executor()
-                .runProcess()
+                .process()
                 .submit(
                     () -> {
                       internalErrorHandler.execute(

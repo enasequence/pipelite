@@ -143,7 +143,7 @@ public class StageRunner {
           ZonedDateTime runOneIterationStartTime = ZonedDateTime.now();
           if (isFirstIteration) {
             startTime = ZonedDateTime.now();
-            startStageExecution();
+            prepareStageExecution();
           }
           executeStage(processRunnerResultCallback);
           pipeliteMetrics
@@ -152,14 +152,15 @@ public class StageRunner {
         });
   }
 
-  private void startStageExecution() {
+  private void prepareStageExecution() {
     logContext(log.atInfo()).log("Executing stage");
     if (stage.getExecutor() instanceof AbstractAsyncExecutor<?, ?>) {
       AbstractAsyncExecutor<?, ?> asyncExecutor =
           ((AbstractAsyncExecutor<?, ?>) stage.getExecutor());
-      asyncExecutor.setSubmitExecutorService(pipeliteServices.executor().submitStage());
-      asyncExecutor.setDescribeJobsService(pipeliteServices.jobs());
-      asyncExecutor.setStageMetrics(pipeliteMetrics.pipeline(pipelineName).stage());
+      asyncExecutor.prepareExecution(
+          pipeliteServices.executor().submit(),
+          pipeliteServices.jobs(),
+          pipeliteMetrics.pipeline(pipelineName).stage());
     }
   }
 

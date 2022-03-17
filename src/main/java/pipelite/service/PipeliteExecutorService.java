@@ -79,12 +79,12 @@ public class PipeliteExecutorService {
   }
 
   /** Used in ProcessRunnerPool.runOneIteration to run processes. */
-  public ExecutorService runProcess() {
+  public ExecutorService process() {
     return runProcessExecutorService.get();
   }
 
   /** Used AbstractAsyncExecutor.execute to submit stages. */
-  public ExecutorService submitStage() {
+  public ExecutorService submit() {
     return submitStageExecutorService.get();
   }
 

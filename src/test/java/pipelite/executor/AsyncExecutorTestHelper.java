@@ -46,9 +46,10 @@ public class AsyncExecutorTestHelper {
             .stage(stage)
             .build();
 
-    executor.setSubmitExecutorService(pipeliteExecutorService.submitStage());
-    executor.setDescribeJobsService(describeJobsCacheService);
-    executor.setStageMetrics(pipeliteMetrics.pipeline(pipelineName).stage());
+    executor.prepareExecution(
+        pipeliteExecutorService.submit(),
+        describeJobsCacheService,
+        pipeliteMetrics.pipeline(pipelineName).stage());
 
     AtomicReference<StageExecutorResult> result = new AtomicReference<>();
 

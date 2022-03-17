@@ -45,20 +45,14 @@ public abstract class AbstractAsyncExecutor<
   @JsonIgnore private StageMetrics stageMetrics;
 
   @JsonIgnore private ReentrantLock submitLock = new ReentrantLock();
-  @JsonIgnore private ReentrantLock pollLock = new ReentrantLock();
 
   /** Prepares stage executor for asynchronous execution. */
-  public void setSubmitExecutorService(ExecutorService submitExecutorService) {
+  public void prepareExecution(
+      ExecutorService submitExecutorService,
+      DescribeJobsCacheService describeJobsCacheService,
+      StageMetrics stageMetrics) {
     this.submitExecutorService = submitExecutorService;
-  }
-
-  /** Prepares stage executor for asynchronous execution. */
-  public void setDescribeJobsService(DescribeJobsCacheService describeJobsCacheService) {
     this.describeJobsCache = initDescribeJobsCache(describeJobsCacheService);
-  }
-
-  /** Prepares stage executor for asynchronous execution. */
-  public void setStageMetrics(StageMetrics stageMetrics) {
     this.stageMetrics = stageMetrics;
   }
 
@@ -87,13 +81,7 @@ public abstract class AbstractAsyncExecutor<
         submit(request, resultCallback);
       }
     } else {
-      if (pollLock.tryLock()) {
-        try {
-          poll(request, resultCallback);
-        } finally {
-          pollLock.unlock();
-        }
-      }
+      poll(request, resultCallback);
     }
   }
 
