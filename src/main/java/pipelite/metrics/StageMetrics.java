@@ -10,84 +10,26 @@
  */
 package pipelite.metrics;
 
-import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
-import java.time.ZonedDateTime;
-import pipelite.stage.executor.StageExecutorResult;
-import tech.tablesaw.api.Table;
+import pipelite.metrics.collector.StageExecutorMetrics;
+import pipelite.metrics.collector.StageRunnerMetrics;
 
 public class StageMetrics {
 
-  // Micrometer counters.
+  // Micrometer
+  private final StageRunnerMetrics stageRunnerMetrics;
+  private final StageExecutorMetrics stageExecutorMetrics;
 
-  private final Counter asyncSubmitCounter;
-  private final Counter successCounter;
-  private final Counter failedCounter;
-
-  // Time series.
-
-  private final Table asyncSubmitTimeSeries;
-  private final Table successTimeSeries;
-  private final Table failedTimeSeries;
-
-  // Micrometer timers.
-
-  private final Timer asyncSubmitTimer;
-
-  public StageMetrics(String pipelineName, MeterRegistry meterRegistry) {
-    asyncSubmitCounter =
-        meterRegistry.counter("pipelite.stage.asyncSubmit", "pipelineName", pipelineName);
-    failedCounter = meterRegistry.counter("pipelite.stage.failed", "pipelineName", pipelineName);
-    successCounter = meterRegistry.counter("pipelite.stage.success", "pipelineName", pipelineName);
-
-    asyncSubmitTimeSeries = TimeSeriesMetrics.getEmptyTimeSeries(pipelineName);
-    successTimeSeries = TimeSeriesMetrics.getEmptyTimeSeries(pipelineName);
-    failedTimeSeries = TimeSeriesMetrics.getEmptyTimeSeries(pipelineName);
-
-    asyncSubmitTimer = meterRegistry.timer("pipelite.stage.asyncSubmitTimer");
+  public StageMetrics(String pipelineName, String stageName, MeterRegistry meterRegistry) {
+    stageRunnerMetrics = new StageRunnerMetrics(pipelineName, stageName, meterRegistry);
+    stageExecutorMetrics = new StageExecutorMetrics(pipelineName, stageName, meterRegistry);
   }
 
-  public double getAsyncSubmitCount() {
-    return asyncSubmitCounter.count();
+  public StageRunnerMetrics runner() {
+    return stageRunnerMetrics;
   }
 
-  public double getSuccessCount() {
-    return successCounter.count();
-  }
-
-  public double getFailedCount() {
-    return failedCounter.count();
-  }
-
-  public Table getAsyncSubmitTimeSeries() {
-    return asyncSubmitTimeSeries;
-  }
-
-  public Table getSuccessTimeSeries() {
-    return successTimeSeries;
-  }
-
-  public Table getFailedTimeSeries() {
-    return failedTimeSeries;
-  }
-
-  public Timer getAsyncSubmitTimer() {
-    return asyncSubmitTimer;
-  }
-
-  public void endAsyncSubmit() {
-    asyncSubmitCounter.increment(1);
-    TimeSeriesMetrics.updateCounter(asyncSubmitTimeSeries, 1, ZonedDateTime.now());
-  }
-
-  public void endStageExecution(StageExecutorResult result) {
-    if (result.isSuccess()) {
-      successCounter.increment(1);
-      TimeSeriesMetrics.updateCounter(successTimeSeries, 1, ZonedDateTime.now());
-    } else if (result.isError()) {
-      failedCounter.increment(1);
-      TimeSeriesMetrics.updateCounter(failedTimeSeries, 1, ZonedDateTime.now());
-    }
+  public StageExecutorMetrics executor() {
+    return stageExecutorMetrics;
   }
 }

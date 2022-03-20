@@ -10,119 +10,58 @@
  */
 package pipelite.metrics;
 
-import com.google.common.util.concurrent.AtomicDouble;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import java.time.ZonedDateTime;
-import pipelite.process.ProcessState;
-import tech.tablesaw.api.Table;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import pipelite.exception.PipeliteException;
+import pipelite.metrics.collector.ProcessRunnerMetrics;
 
 public class ProcessMetrics {
 
-  // Micrometer counters.
+  private final MeterRegistry meterRegistry;
+  private final String pipelineName;
 
-  private final AtomicDouble runningGauge = new AtomicDouble();
-  private final Counter completedCounter;
-  private final Counter failedCounter;
-  private final Counter internalErrorCounter;
-
-  // Time series.
-
-  private final Table runningTimeSeries;
-  private final Table completedTimeSeries;
-  private final Table failedTimeSeries;
-  private final Table internalErrorTimeSeries;
+  // Micrometer
+  private final ProcessRunnerMetrics processRunnerMetrics;
+  private final Map<String, StageMetrics> stageMetrics = new ConcurrentHashMap<>();
 
   public ProcessMetrics(String pipelineName, MeterRegistry meterRegistry) {
-    Gauge.builder("pipelite.process.running", runningGauge, AtomicDouble::get)
-        .tags("pipelineName", pipelineName)
-        .register(meterRegistry);
-    completedCounter =
-        meterRegistry.counter("pipelite.process.completed", "pipelineName", pipelineName);
-    failedCounter = meterRegistry.counter("pipelite.process.failed", "pipelineName", pipelineName);
-    internalErrorCounter =
-        meterRegistry.counter("pipelite.process.error", "pipelineName", pipelineName);
-
-    runningTimeSeries = TimeSeriesMetrics.getEmptyTimeSeries(pipelineName);
-    completedTimeSeries = TimeSeriesMetrics.getEmptyTimeSeries(pipelineName);
-    failedTimeSeries = TimeSeriesMetrics.getEmptyTimeSeries(pipelineName);
-    internalErrorTimeSeries = TimeSeriesMetrics.getEmptyTimeSeries(pipelineName);
+    this.meterRegistry = meterRegistry;
+    this.pipelineName = pipelineName;
+    this.processRunnerMetrics = new ProcessRunnerMetrics(pipelineName, meterRegistry);
   }
 
-  public double getRunningCount() {
-    return runningGauge.get();
+  public ProcessRunnerMetrics runner() {
+    return processRunnerMetrics;
   }
 
-  public double getCompletedCount() {
-    return completedCounter.count();
-  }
-
-  public double getFailedCount() {
-    return failedCounter.count();
-  }
-
-  public double getInternalErrorCount() {
-    return internalErrorCounter.count();
-  }
-
-  public Table getRunningTimeSeries() {
-    return runningTimeSeries;
-  }
-
-  public Table getCompletedTimeSeries() {
-    return completedTimeSeries;
-  }
-
-  public Table getFailedTimeSeries() {
-    return failedTimeSeries;
-  }
-
-  public Table getInternalErrorTimeSeries() {
-    return internalErrorTimeSeries;
-  }
-
-  /** Called by internal error service. */
-  public void incrementInternalErrorCount() {
-    incrementInternalErrorCount(ZonedDateTime.now());
-  }
-
-  public void incrementInternalErrorCount(ZonedDateTime now) {
-    internalErrorCounter.increment(1);
-    TimeSeriesMetrics.updateCounter(internalErrorTimeSeries, 1, now);
-  }
-
-  /**
-   * Set the number of running processes.
-   *
-   * @param count the number of running processes
-   */
-  public void setRunningProcessesCount(int count) {
-    setRunningProcessesCount(count, ZonedDateTime.now());
-  }
-
-  /**
-   * Set the number of running processes.
-   *
-   * @param count the number of running processes
-   * @paran now the time when the running process count was measured
-   */
-  public void setRunningProcessesCount(int count, ZonedDateTime now) {
-    runningGauge.set(count);
-    TimeSeriesMetrics.updateGauge(runningTimeSeries, count, now);
-  }
-
-  public void endProcessExecution(ProcessState state) {
-    endProcessExecution(state, ZonedDateTime.now());
-  }
-
-  public void endProcessExecution(ProcessState state, ZonedDateTime now) {
-    if (state == ProcessState.COMPLETED) {
-      completedCounter.increment(1);
-      TimeSeriesMetrics.updateCounter(completedTimeSeries, 1, now);
-    } else if (state == ProcessState.FAILED) {
-      failedCounter.increment(1);
-      TimeSeriesMetrics.updateCounter(failedTimeSeries, 1, now);
+  public StageMetrics stage(String stageName) {
+    if (stageName == null) {
+      throw new PipeliteException("Missing stage name");
     }
+    try {
+      StageMetrics m = stageMetrics.get(stageName);
+      if (m == null) {
+        stageMetrics.putIfAbsent(
+            stageName, new StageMetrics(pipelineName, stageName, meterRegistry));
+        return stageMetrics.get(stageName);
+      }
+      return m;
+    } catch (Exception ex) {
+      stageMetrics.putIfAbsent(stageName, new StageMetrics(pipelineName, stageName, meterRegistry));
+      return stageMetrics.get(stageName);
+    }
+  }
+
+  public double stageSuccessCount() {
+    return stageMetrics.values().stream()
+        .mapToDouble(m -> m.runner().successCount())
+        .reduce(0, Double::sum);
+  }
+
+  public double stageFailedCount() {
+    return stageMetrics.values().stream()
+        .mapToDouble(m -> m.runner().failedCount())
+        .reduce(0, Double::sum);
   }
 }

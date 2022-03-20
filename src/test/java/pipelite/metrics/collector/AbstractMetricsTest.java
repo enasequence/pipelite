@@ -8,25 +8,24 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.metrics;
+package pipelite.metrics.collector;
 
-import io.micrometer.core.instrument.MeterRegistry;
+import static org.assertj.core.api.Assertions.assertThat;
 
-public class PipelineMetrics {
+import org.junit.jupiter.api.Test;
 
-  private final ProcessMetrics processMetrics;
-  private final StageMetrics stageMetrics;
+public class AbstractMetricsTest {
 
-  public PipelineMetrics(String pipelineName, MeterRegistry meterRegistry) {
-    processMetrics = new ProcessMetrics(pipelineName, meterRegistry);
-    stageMetrics = new StageMetrics(pipelineName, meterRegistry);
+  private static class TestMetrics extends AbstractMetrics {
+    public TestMetrics() {
+      super(".prefix..prefix.prefix");
+    }
   }
 
-  public ProcessMetrics process() {
-    return processMetrics;
-  }
-
-  public StageMetrics stage() {
-    return stageMetrics;
+  @Test
+  public void test() {
+    TestMetrics testMetrics = new TestMetrics();
+    assertThat(testMetrics.name("..hello..world..")).isEqualTo("prefix.prefix.prefix.hello.world");
+    assertThat(testMetrics.name("hello.world")).isEqualTo("prefix.prefix.prefix.hello.world");
   }
 }

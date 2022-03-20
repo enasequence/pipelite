@@ -10,7 +10,7 @@
  */
 package pipelite.controller.api;
 
-import static pipelite.metrics.TimeSeriesMetrics.getTimeSeries;
+import static pipelite.metrics.helper.TimeSeriesHelper.getTimeSeriesSince;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -28,10 +28,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Pipeline;
 import pipelite.controller.api.info.PipelineInfo;
-import pipelite.executor.AbstractAsyncExecutor;
-import pipelite.metrics.PipelineMetrics;
+import pipelite.executor.AsyncExecutor;
 import pipelite.metrics.PipeliteMetrics;
-import pipelite.metrics.TimeSeriesMetrics;
+import pipelite.metrics.ProcessMetrics;
+import pipelite.metrics.helper.TimeSeriesHelper;
 import pipelite.runner.pipeline.PipelineRunner;
 import pipelite.runner.process.ProcessRunner;
 import pipelite.service.ProcessService;
@@ -87,18 +87,15 @@ public class PipelineController {
               int processRunningCount = 0;
               int stageRunningCount = 0;
               int stageSubmitCount = 0;
-              int stagePollCount = 0;
               if (pipelineRunner != null) {
                 processRunningCount = pipelineRunner.getActiveProcessCount();
                 for (ProcessRunner processRunner : pipelineRunner.getActiveProcessRunners()) {
                   for (Stage stage : processRunner.activeStages()) {
                     stageRunningCount++;
-                    if (stage.getExecutor() instanceof AbstractAsyncExecutor) {
-                      String jobId = ((AbstractAsyncExecutor) stage.getExecutor()).getJobId();
-                      if (jobId == null) {
+                    if (stage.getExecutor() instanceof AsyncExecutor) {
+                      String jobId = ((AsyncExecutor) stage.getExecutor()).getJobId();
+                      if (jobId != null) {
                         stageSubmitCount++;
-                      } else {
-                        stagePollCount++;
                       }
                     }
                   }
@@ -109,8 +106,7 @@ public class PipelineController {
                   maxProcessRunningCount,
                   processRunningCount,
                   stageRunningCount,
-                  stageSubmitCount,
-                  stagePollCount);
+                  stageSubmitCount);
             })
         .collect(Collectors.toCollection(() -> list));
 
@@ -122,8 +118,7 @@ public class PipelineController {
       int maxProcessRunningCount,
       int processRunningCount,
       int stageRunningCount,
-      int stageSubmitCount,
-      int stagePollCount) {
+      int stageSubmitCount) {
     // Process state summary takes a long time to construct.
     // ProcessService.ProcessStateSummary summary = summaryMap.get(pipelineName);
     return PipelineInfo.builder()
@@ -132,7 +127,6 @@ public class PipelineController {
         .processRunningCount(processRunningCount)
         .stageRunningCount(stageRunningCount)
         .stageSubmitCount(stageSubmitCount)
-        .stagePollCount(stagePollCount)
         /*
         .pendingCount(summary.getPendingCount())
         .activeCount(summary.getActiveCount())
@@ -164,28 +158,37 @@ public class PipelineController {
         .getPipelineRunners()
         .forEach(
             p -> {
-              PipelineMetrics metrics = pipeliteMetrics.pipeline(p.getPipelineName());
+              ProcessMetrics metrics = pipeliteMetrics.process(p.getPipelineName());
               addRunningProcessesHistoryTable(metrics, tables, since, type);
             });
 
-    Figure figure = TimeSeriesMetrics.getPlot("", tables);
-    return TimeSeriesMetrics.getPlotJavaScript(figure, id);
+    Figure figure = TimeSeriesHelper.getPlot("", tables);
+    return TimeSeriesHelper.getPlotJavaScript(figure, id);
   }
 
   private void addRunningProcessesHistoryTable(
-      PipelineMetrics metrics, Collection<Table> tables, ZonedDateTime since, String type) {
+      ProcessMetrics metrics, Collection<Table> tables, ZonedDateTime since, String type) {
     switch (type) {
       case "running":
-        tables.add(getTimeSeries(metrics.process().getRunningTimeSeries(), since));
+        tables.add(getTimeSeriesSince(metrics.runner().runningTimeSeries(), since));
         break;
       case "completed":
-        tables.add(getTimeSeries(metrics.process().getCompletedTimeSeries(), since));
+        tables.add(getTimeSeriesSince(metrics.runner().completedTimeSeries(), since));
         break;
       case "failed":
-        tables.add(getTimeSeries(metrics.process().getFailedTimeSeries(), since));
+        tables.add(getTimeSeriesSince(metrics.runner().failedTimeSeries(), since));
         break;
-      case "error":
-        tables.add(getTimeSeries(metrics.process().getInternalErrorTimeSeries(), since));
+      case "runningStages":
+        tables.add(getTimeSeriesSince(metrics.runner().runningStagesTimeSeries(), since));
+        break;
+      case "submittedStages":
+        tables.add(getTimeSeriesSince(metrics.runner().submittedStagesTimeSeries(), since));
+        break;
+      case "completedStages":
+        tables.add(getTimeSeriesSince(metrics.runner().completedStagesTimeSeries(), since));
+        break;
+      case "failedStages":
+        tables.add(getTimeSeriesSince(metrics.runner().failedStagesTimeSeries(), since));
         break;
     }
   }

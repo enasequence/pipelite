@@ -13,7 +13,7 @@ package pipelite.stage.executor;
 import com.google.common.flogger.FluentLogger;
 import lombok.extern.flogger.Flogger;
 import pipelite.entity.StageEntity;
-import pipelite.executor.AbstractAsyncExecutor;
+import pipelite.executor.AsyncExecutor;
 import pipelite.executor.JsonSerializableExecutor;
 import pipelite.log.LogKey;
 import pipelite.stage.Stage;
@@ -59,8 +59,7 @@ public class StageExecutorSerializer {
     }
 
     if (deserialize == Deserialize.ASYNC_EXECUTOR) {
-      AbstractAsyncExecutor deserializedAsyncExecutor =
-          (AbstractAsyncExecutor) deserializedExecutor;
+      AsyncExecutor deserializedAsyncExecutor = (AsyncExecutor) deserializedExecutor;
       if (deserializedAsyncExecutor.getJobId() == null) {
         return false;
       }
@@ -88,7 +87,7 @@ public class StageExecutorSerializer {
           action = stage.getExecutor() instanceof JsonSerializableExecutor;
           break;
         case ASYNC_EXECUTOR:
-          action = stage.getExecutor() instanceof AbstractAsyncExecutor;
+          action = stage.getExecutor() instanceof AsyncExecutor;
           break;
       }
       if (action) {

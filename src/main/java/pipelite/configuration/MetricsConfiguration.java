@@ -10,24 +10,21 @@
  */
 package pipelite.configuration;
 
-import static pipelite.configuration.DataSourceConfiguration.isTestProfile;
-
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.logging.LoggingMeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
 
 @Configuration
 public class MetricsConfiguration {
 
-  @Autowired Environment environment;
+  @Autowired ProfileConfiguration profileConfiguration;
 
   @Bean
   public MeterRegistry meterRegistry() {
-    if (isTestProfile(environment)) {
+    if (profileConfiguration.isTestProfile()) {
       return new SimpleMeterRegistry();
     } else {
       return new LoggingMeterRegistry();

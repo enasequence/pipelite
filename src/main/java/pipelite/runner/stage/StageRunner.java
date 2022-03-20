@@ -17,7 +17,7 @@ import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.error.InternalErrorHandler;
 import pipelite.exception.PipeliteException;
-import pipelite.executor.AbstractAsyncExecutor;
+import pipelite.executor.AsyncExecutor;
 import pipelite.log.LogKey;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
@@ -73,14 +73,14 @@ public class StageRunner {
             this);
 
     boolean startExecution = true;
-    if (stage.isActive() && stage.getExecutor() instanceof AbstractAsyncExecutor) {
+    if (stage.isActive() && stage.getExecutor() instanceof AsyncExecutor) {
       // Attempt to recover active asynchronous execution.
       startExecution =
           !StageExecutorSerializer.deserializeExecution(
               stage, StageExecutorSerializer.Deserialize.ASYNC_EXECUTOR);
     }
     if (startExecution) {
-      if (stage.getExecutor() instanceof AbstractAsyncExecutor) {
+      if (stage.getExecutor() instanceof AsyncExecutor) {
         // Reset asynchronous execution state.
         StageExecutor.resetAsyncExecutorState(stage);
       }
@@ -147,21 +147,19 @@ public class StageRunner {
           }
           executeStage(processRunnerResultCallback);
           pipeliteMetrics
-              .getStageRunnerOneIterationTimer()
-              .record(Duration.between(runOneIterationStartTime, ZonedDateTime.now()));
+              .process(pipelineName)
+              .stage(stage.getStageName())
+              .runner()
+              .endRunOneIteration(runOneIterationStartTime);
         });
   }
 
   private void prepareStageExecution() {
     logContext(log.atInfo()).log("Executing stage");
-    if (stage.getExecutor() instanceof AbstractAsyncExecutor<?, ?>) {
-      AbstractAsyncExecutor<?, ?> asyncExecutor =
-          ((AbstractAsyncExecutor<?, ?>) stage.getExecutor());
-      asyncExecutor.prepareExecution(
-          pipeliteServices.executor().submit(),
-          pipeliteServices.jobs(),
-          pipeliteMetrics.pipeline(pipelineName).stage());
-    }
+    stage
+        .getExecutor()
+        .prepareExecution(
+            pipeliteServices, pipelineName, process.getProcessId(), stage.getStageName());
   }
 
   private void executeStage(StageExecutorResultCallback processRunnerResultCallback) {
@@ -216,7 +214,11 @@ public class StageRunner {
           if (!executorResult.isSuccess()) {
             pipeliteServices.mail().sendStageExecutionMessage(process, stage);
           }
-          pipeliteMetrics.pipeline(pipelineName).stage().endStageExecution(executorResult);
+          pipeliteMetrics
+              .process(pipelineName)
+              .stage(stage.getStageName())
+              .runner()
+              .endStageExecution(executorResult);
         });
   }
 

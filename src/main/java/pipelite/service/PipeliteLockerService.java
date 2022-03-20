@@ -113,7 +113,7 @@ public class PipeliteLockerService {
     }
   }
 
-  @Timed("pipelite.transactional")
+  @Timed("pipelite.service")
   public boolean lockProcess(String pipelineName, String processId) {
     Assert.notNull(serviceLock, "Missing lock");
     Assert.notNull(pipelineName, "Missing pipeline name");
@@ -121,7 +121,7 @@ public class PipeliteLockerService {
     return LockService.lockProcess(lockService, serviceLock, pipelineName, processId);
   }
 
-  @Timed("pipelite.transactional")
+  @Timed("pipelite.service")
   public void unlockProcess(String pipelineName, String processId) {
     Assert.notNull(serviceLock, "Missing lock");
     Assert.notNull(pipelineName, "Missing pipeline name");

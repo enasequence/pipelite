@@ -49,7 +49,7 @@ import pipelite.time.Time;
 @Setter
 @JsonIgnoreProperties({"cmdRunner"})
 public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameters>
-    extends AbstractAsyncExecutor<T, LsfDescribeJobsCache> implements JsonSerializableExecutor {
+    extends AsyncExecutor<T, LsfDescribeJobsCache> implements JsonSerializableExecutor {
 
   private static final int JOB_RECOVERY_PARALLELISM = 10;
   private static final int JOB_RECOVERY_LOG_LINES = 1000;

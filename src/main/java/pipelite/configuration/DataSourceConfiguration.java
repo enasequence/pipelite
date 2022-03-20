@@ -52,8 +52,8 @@ public class DataSourceConfiguration {
   private static final int DEFAULT_MAXIMUM_POOL_SIZE = 25;
   private static final Duration DEFAULT_CONNECTION_TIMEOUT = Duration.ofMinutes(5);
 
+  @Autowired ProfileConfiguration profileConfiguration;
   @Autowired DataSourceMetrics dataSourceMetrics;
-  @Autowired Environment environment;
 
   private String driverClassName;
   private String url;
@@ -87,7 +87,7 @@ public class DataSourceConfiguration {
       isValid = false;
     }
 
-    if (!isValid && (test || isTestProfile(environment))) {
+    if (!isValid && (test || profileConfiguration.isTestProfile())) {
       log.atSevere().log("Using an in-memory database unsuitable for production purposes.");
       this.driverClassName = "org.hsqldb.jdbc.JDBCDriver";
       this.url = "jdbc:hsqldb:mem:testdb;DB_CLOSE_DELAY: -1";

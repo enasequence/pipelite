@@ -29,8 +29,8 @@ import pipelite.PipeliteTestConfigWithManager;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.manager.ProcessRunnerPoolManager;
-import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
+import pipelite.metrics.ProcessMetrics;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.ProcessService;
@@ -327,36 +327,67 @@ public class PipelineRunnerFailureTest {
   }
 
   private void assertMetrics(TestPipeline f) {
-    PipelineMetrics pipelineMetrics = metrics.pipeline(f.pipelineName());
+    ProcessMetrics processMetrics = metrics.process(f.pipelineName());
     TestProcess t = f.testProcessConfiguration();
     if (t.getFirstStageExecResult().isSuccess()
         && t.getSecondStageExecResult().isSuccess()
         && t.getThirdStageExecResult().isSuccess()
         && t.getFourthStageExecResult().isSuccess()) {
-      assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(PROCESS_CNT);
-      assertThat(pipelineMetrics.process().getFailedCount()).isEqualTo(0);
+      assertThat(processMetrics.runner().completedCount()).isEqualTo(PROCESS_CNT);
+      assertThat(processMetrics.runner().failedCount()).isEqualTo(0);
     } else {
-      assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(0);
-      assertThat(pipelineMetrics.process().getFailedCount()).isEqualTo(PROCESS_CNT);
+      assertThat(processMetrics.runner().completedCount()).isEqualTo(0);
+      assertThat(processMetrics.runner().failedCount()).isEqualTo(PROCESS_CNT);
     }
 
-    int stageSuccessCount = 0;
-    int stageFailedCount = PROCESS_CNT;
+    int firstStageSuccessCount = 0;
+    int secondStageSuccessCount = 0;
+    int thirdStageSuccessCount = 0;
+    int fourthStageSuccessCount = 0;
+
+    int firstStageFailedCount = 0;
+    int secondStageFailedCount = 0;
+    int thirdStageFailedCount = 0;
+    int fourthStageFailedCount = 0;
+
     if (t.getFirstStageExecResult().isSuccess()) {
-      stageSuccessCount += PROCESS_CNT;
+      firstStageSuccessCount += PROCESS_CNT;
       if (t.getSecondStageExecResult().isSuccess()) {
-        stageSuccessCount += PROCESS_CNT;
+        secondStageSuccessCount += PROCESS_CNT;
         if (t.getThirdStageExecResult().isSuccess()) {
-          stageSuccessCount += PROCESS_CNT;
+          thirdStageSuccessCount += PROCESS_CNT;
           if (t.getFourthStageExecResult().isSuccess()) {
-            stageSuccessCount += PROCESS_CNT;
-            stageFailedCount = 0;
+            fourthStageSuccessCount += PROCESS_CNT;
+          } else {
+            fourthStageFailedCount += PROCESS_CNT;
           }
+        } else {
+          thirdStageFailedCount += PROCESS_CNT;
         }
+      } else {
+        secondStageFailedCount += PROCESS_CNT;
       }
+    } else {
+      firstStageFailedCount += PROCESS_CNT;
     }
-    assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(stageSuccessCount);
-    assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(stageFailedCount);
+
+    assertThat(processMetrics.stage("STAGE0").runner().successCount())
+        .isEqualTo(firstStageSuccessCount);
+    assertThat(processMetrics.stage("STAGE1").runner().successCount())
+        .isEqualTo(secondStageSuccessCount);
+    assertThat(processMetrics.stage("STAGE2").runner().successCount())
+        .isEqualTo(thirdStageSuccessCount);
+    assertThat(processMetrics.stage("STAGE3").runner().successCount())
+        .isEqualTo(fourthStageSuccessCount);
+
+    assertThat(processMetrics.stage("STAGE0").runner().failedCount())
+        .isEqualTo(firstStageFailedCount);
+    assertThat(processMetrics.stage("STAGE1").runner().failedCount())
+        .isEqualTo(secondStageFailedCount);
+    assertThat(processMetrics.stage("STAGE2").runner().failedCount())
+        .isEqualTo(thirdStageFailedCount);
+    assertThat(processMetrics.stage("STAGE3").runner().failedCount())
+        .isEqualTo(fourthStageFailedCount);
   }
 
   @Test

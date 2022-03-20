@@ -14,7 +14,6 @@ import static pipelite.stage.StageState.PENDING;
 import static pipelite.stage.StageState.SUCCESS;
 
 import com.google.common.flogger.FluentLogger;
-import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Set;
@@ -125,13 +124,21 @@ public class ProcessRunner {
           // until the future has completed.
           runOneIterationForActiveStageRunners();
           pipeliteMetrics
-              .getProcessRunnerOneIterationTimer()
-              .record(Duration.between(runOneIterationStartTime, ZonedDateTime.now()));
+              .process(pipelineName)
+              .runner()
+              .endRunOneIteration(runOneIterationStartTime);
         });
   }
 
   public List<Stage> activeStages() {
     return active.stream().map(a -> a.getStage()).collect(Collectors.toList());
+  }
+
+  public List<Stage> submittedStages() {
+    return active.stream()
+        .map(a -> a.getStage())
+        .filter(s -> s.getExecutor().isSubmitted())
+        .collect(Collectors.toList());
   }
 
   private void runOneIterationForActiveStageRunners() {
@@ -169,8 +176,8 @@ public class ProcessRunner {
       endProcessExecution();
       unlockProcess();
       pipeliteMetrics
-          .pipeline(pipelineName)
-          .process()
+          .process(pipelineName)
+          .runner()
           .endProcessExecution(process.getProcessEntity().getProcessState());
       resultCallback.accept(process);
     }
@@ -225,6 +232,10 @@ public class ProcessRunner {
     if (result.isSuccess()) {
       resetDependentStageExecution(process, stage);
     }
+    pipeliteMetrics
+        .process(pipelineName)
+        .runner()
+        .endStageExecution(stage.getStageEntity().getStageState());
   }
 
   /**

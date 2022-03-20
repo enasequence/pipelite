@@ -8,23 +8,17 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.controller.api.info;
+package pipelite.metrics.collector;
 
-import lombok.Builder;
-import lombok.Data;
+public class AbstractMetrics {
 
-@Data
-@Builder
-public class PipelineInfo {
-  private String pipelineName;
-  private Integer maxProcessRunningCount;
-  private Integer processRunningCount;
-  private Integer stageRunningCount;
-  private Integer stageSubmitCount;
-  /*
-  private Long pendingCount;
-  private Long activeCount;
-  private Long completedCount;
-  private Long failedCount;
-   */
+  private final String prefix;
+
+  public AbstractMetrics(String prefix) {
+    this.prefix = prefix.replaceFirst("^\\.+", "") + (prefix.endsWith(".") ? "" : ".");
+  }
+
+  public String name(String name) {
+    return (prefix + name).replaceAll("\\.+", "\\.").replaceFirst("\\.+$", "");
+  }
 }

@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.metrics;
+package pipelite.metrics.helper;
 
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
@@ -17,33 +17,44 @@ import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjuster;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import tech.tablesaw.api.DateTimeColumn;
 import tech.tablesaw.api.DoubleColumn;
+import tech.tablesaw.api.StringColumn;
 import tech.tablesaw.api.Table;
-import tech.tablesaw.plotly.components.Axis;
 import tech.tablesaw.plotly.components.Figure;
 import tech.tablesaw.plotly.components.Layout;
 import tech.tablesaw.plotly.traces.ScatterTrace;
 
-public class TimeSeriesMetrics {
+public class TimeSeriesHelper {
 
-  private static final int WINDOW_MINUTES = 5;
+  private static final int WINDOW_MINUTES = 1;
+
+  private static final String COLUMN_TIME = "time";
+  private static final String COLUMN_COUNT = "count";
+  private static final String COLUMN_WHO = "who";
 
   public static Table getEmptyTimeSeries(String name) {
-    return Table.create(name, DateTimeColumn.create("time"), DoubleColumn.create("count"));
+    return Table.create(
+        name,
+        DateTimeColumn.create(COLUMN_TIME),
+        DoubleColumn.create(COLUMN_COUNT),
+        StringColumn.create(COLUMN_WHO));
   }
 
-  public static Table getTimeSeries(Table table, ZonedDateTime since) {
+  public static Table getTimeSeriesSince(Table table, ZonedDateTime since) {
     return table.where(getTimeColumn(table).isOnOrAfter(since.toLocalDateTime()));
   }
 
   public static DateTimeColumn getTimeColumn(Table table) {
-    return table.dateTimeColumn("time");
+    return table.dateTimeColumn(COLUMN_TIME);
   }
 
   public static DoubleColumn getCountColumn(Table table) {
-    return table.doubleColumn("count");
+    return table.doubleColumn(COLUMN_COUNT);
+  }
+
+  public static StringColumn getWhoColumn(Table table) {
+    return table.stringColumn(COLUMN_WHO);
   }
 
   public static Double getCount(Table table) {
@@ -54,15 +65,15 @@ public class TimeSeriesMetrics {
     return getCount(table.where(getTimeColumn(table).isOnOrAfter(since.toLocalDateTime())));
   }
 
-  public static TemporalAdjuster getTimeSeriesWindow(int minutes) {
+  public static TemporalAdjuster getTimeSeriesWindow(int windowMinutes) {
     return temporal -> {
       int minute = temporal.get(ChronoField.MINUTE_OF_HOUR);
-      int nearestMinute = (int) Math.ceil(minute / 5d) * minutes;
+      int nearestMinute = (int) Math.ceil(minute / windowMinutes) * windowMinutes;
       int adjustBy = nearestMinute - minute;
       if (adjustBy == 0
           && (temporal.get(ChronoField.SECOND_OF_MINUTE) > 0
               || temporal.get(ChronoField.NANO_OF_SECOND) > 0)) {
-        adjustBy += 5;
+        adjustBy += windowMinutes;
       }
       return temporal
           .plus(adjustBy, ChronoUnit.MINUTES)
@@ -71,35 +82,40 @@ public class TimeSeriesMetrics {
     };
   }
 
-  public static void updateCounter(Table table, double count, ZonedDateTime now) {
-    if (count < 1) {
-      return;
-    }
+  /** The table must contain a constant value for the 'who' column. */
+  public static void replaceTimeSeriesCount(
+      Table table, double count, String who, ZonedDateTime now) {
     LocalDateTime window = now.with(getTimeSeriesWindow(WINDOW_MINUTES)).toLocalDateTime();
     DateTimeColumn timeColumn = getTimeColumn(table);
     DoubleColumn countColumn = getCountColumn(table);
+    StringColumn whoColumn = getWhoColumn(table);
     synchronized (timeColumn) {
       int i = timeColumn.size() - 1;
       if (i < 0 || timeColumn.get(i).isBefore(window)) {
         timeColumn.append(window);
         countColumn.append(count);
+        whoColumn.append(who);
       } else {
-        countColumn.set(i, countColumn.get(i) + count);
+        countColumn.set(i, count);
       }
     }
   }
 
-  public static void updateGauge(Table table, double count, ZonedDateTime now) {
+  /** The table must contain a constant value for the 'who' column. */
+  public static void incrementTimeSeriesCount(
+      Table table, double count, String who, ZonedDateTime now) {
     LocalDateTime window = now.with(getTimeSeriesWindow(WINDOW_MINUTES)).toLocalDateTime();
     DateTimeColumn timeColumn = getTimeColumn(table);
     DoubleColumn countColumn = getCountColumn(table);
+    StringColumn whoColumn = getWhoColumn(table);
     synchronized (timeColumn) {
       int i = timeColumn.size() - 1;
       if (i < 0 || timeColumn.get(i).isBefore(window)) {
         timeColumn.append(window);
         countColumn.append(count);
+        whoColumn.append(who);
       } else {
-        countColumn.set(i, count);
+        countColumn.set(i, countColumn.get(i) + count);
       }
     }
   }
@@ -117,26 +133,24 @@ public class TimeSeriesMetrics {
   }
 
   public static Figure getPlot(String title, Collection<Table> tables) {
-    String xTitle = "time";
-    String yTitle = "count";
-    Layout layout =
-        Layout.builder()
-            .title(title)
-            .xAxis(Axis.builder().title(xTitle).build())
-            .yAxis(Axis.builder().title(yTitle).build())
-            .autosize(true)
-            .build();
+    // Table plotTable = TimeSeriesHelper.getEmptyTimeSeries("plotTable");
+    // tables.forEach(t -> plotTable.append(t));
+    // return TimeSeriesPlot.create(title, plotTable, COLUMN_TIME, COLUMN_COUNT, COLUMN_WHO);
 
-    List<ScatterTrace> traces = new ArrayList<>(tables.size());
+    // https://github.com/jtablesaw/tablesaw/issues/782
+
+    Layout layout = Layout.builder(title, COLUMN_TIME, COLUMN_COUNT).build();
+
+    ArrayList<ScatterTrace> traces = new ArrayList<>();
     for (Table table : tables) {
-      // table = table.sortOn("time");
+      Table t = table.sortOn(COLUMN_TIME);
       traces.add(
-          ScatterTrace.builder(getTimeColumn(table), getCountColumn(table))
+          ScatterTrace.builder(getTimeColumn(t), getCountColumn(t))
               .showLegend(true)
               .name(table.name())
-              .mode(ScatterTrace.Mode.LINE)
+              .mode(ScatterTrace.Mode.LINE_AND_MARKERS)
               .build());
     }
-    return new Figure(layout, traces.toArray(new ScatterTrace[traces.size()]));
+    return new Figure(layout, traces.toArray(new ScatterTrace[0]));
   }
 }

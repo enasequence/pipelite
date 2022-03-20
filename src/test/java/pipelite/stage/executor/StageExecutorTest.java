@@ -15,12 +15,14 @@ import static pipelite.stage.parameters.cmd.LogFileSavePolicy.ERROR;
 import static pipelite.stage.parameters.cmd.LogFileSavePolicy.NEVER;
 
 import org.junit.jupiter.api.Test;
+import pipelite.executor.SyncExecutor;
+import pipelite.service.PipeliteServices;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.stage.parameters.cmd.LogFileSavePolicy;
 
 public class StageExecutorTest {
 
-  private static class TestExecutor implements StageExecutor {
+  private static class TestExecutor extends SyncExecutor<ExecutorParameters> {
 
     private final ExecutorParameters params;
 
@@ -40,6 +42,13 @@ public class StageExecutorTest {
 
     @Override
     public void setExecutorParams(ExecutorParameters executorParams) {}
+
+    @Override
+    public void prepareExecution(
+        PipeliteServices pipeliteServices,
+        String pipelineName,
+        String processId,
+        String stageName) {}
 
     @Override
     public void execute(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {}

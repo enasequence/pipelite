@@ -22,7 +22,7 @@ import pipelite.time.Time;
 
 /** Synchronous test executor. */
 @Getter
-public class SyncTestExecutor extends AbstractExecutor<ExecutorParameters> {
+public class SyncTestExecutor extends SyncExecutor<ExecutorParameters> {
 
   private final Function<StageExecutorRequest, StageExecutorResult> callback;
   private final Duration executionTime;

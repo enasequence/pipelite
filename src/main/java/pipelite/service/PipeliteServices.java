@@ -12,6 +12,7 @@ package pipelite.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import pipelite.metrics.PipeliteMetrics;
 
 @Component
 public class PipeliteServices {
@@ -26,6 +27,7 @@ public class PipeliteServices {
   private final HealthCheckService healthCheckService;
   private final RunnerService runnerService;
   private final PipeliteExecutorService pipeliteExecutorService;
+  private final PipeliteMetrics pipeliteMetrics;
 
   public PipeliteServices(
       @Autowired ScheduleService scheduleService,
@@ -38,7 +40,8 @@ public class PipeliteServices {
       @Autowired InternalErrorService internalErrorService,
       @Autowired HealthCheckService healthCheckService,
       @Autowired RunnerService runnerService,
-      @Autowired PipeliteExecutorService pipeliteExecutorService) {
+      @Autowired PipeliteExecutorService pipeliteExecutorService,
+      @Autowired PipeliteMetrics pipeliteMetrics) {
     this.scheduleService = scheduleService;
     this.processService = processService;
     this.stageService = stageService;
@@ -50,6 +53,7 @@ public class PipeliteServices {
     this.healthCheckService = healthCheckService;
     this.runnerService = runnerService;
     this.pipeliteExecutorService = pipeliteExecutorService;
+    this.pipeliteMetrics = pipeliteMetrics;
   }
 
   public ScheduleService schedule() {
@@ -94,5 +98,9 @@ public class PipeliteServices {
 
   public PipeliteExecutorService executor() {
     return pipeliteExecutorService;
+  }
+
+  public PipeliteMetrics metrics() {
+    return pipeliteMetrics;
   }
 }

@@ -59,19 +59,20 @@ public class PipelineRunnerProcessQueueTest {
   @Autowired private PipeliteMetrics pipeliteMetrics;
 
   private static final int PARALLELISM = 10;
-  private static final int PROCESS_CNT = 10;;
+  private static final int PROCESS_CNT = 10;
+  private static final String STAGE_NAME = "STAGE";
 
   private static final class SyncTestProcessConfiguration extends TestProcessConfiguration {
     @Override
     protected void configure(ProcessBuilder builder) {
-      builder.execute("STAGE").withSyncTestExecutor(StageExecutorState.SUCCESS);
+      builder.execute(STAGE_NAME).withSyncTestExecutor(StageExecutorState.SUCCESS);
     }
   }
 
   private static final class AsyncTestProcessConfiguration extends TestProcessConfiguration {
     @Override
     protected void configure(ProcessBuilder builder) {
-      builder.execute("STAGE").withAsyncTestExecutor(StageExecutorState.SUCCESS, null, null);
+      builder.execute(STAGE_NAME).withAsyncTestExecutor(StageExecutorState.SUCCESS, null, null);
     }
   }
 
@@ -132,7 +133,12 @@ public class PipelineRunnerProcessQueueTest {
     // the process queue is created empty and immediately after
     // creating processing.
     verify(processQueue, times(2)).refreshQueue();
-    assertThat(pipeliteMetrics.pipeline(pipeline.pipelineName()).stage().getSuccessCount())
+    assertThat(
+            pipeliteMetrics
+                .process(pipeline.pipelineName())
+                .stage(STAGE_NAME)
+                .runner()
+                .successCount())
         .isEqualTo(PROCESS_CNT);
     assertThat(processQueue.isRefreshQueue()).isFalse();
     assertThat(processQueue.getProcessQueueSize()).isZero();

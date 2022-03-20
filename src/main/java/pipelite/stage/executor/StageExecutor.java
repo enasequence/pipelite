@@ -10,11 +10,13 @@
  */
 package pipelite.stage.executor;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.Duration;
 import java.util.List;
 import java.util.function.Function;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.*;
+import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
 import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.ExecutorParameters;
@@ -45,12 +47,31 @@ public interface StageExecutor<T extends ExecutorParameters> {
   void setExecutorParams(T executorParams);
 
   /**
+   * Prepares the stage for execution.
+   *
+   * @param pipeliteServices the pipelite services
+   * @param pipelineName the pipeline name
+   * @param processId the process id
+   * @param stageName the stage name
+   */
+  void prepareExecution(
+      PipeliteServices pipeliteServices, String pipelineName, String processId, String stageName);
+
+  /**
    * Called repeatedly to execute the stage until it is not ACTIVE.
    *
    * @param request the execution request
    * @param resultCallback execution result callback
    */
   void execute(StageExecutorRequest request, StageExecutorResultCallback resultCallback);
+
+  /**
+   * Returns true if the execution has been submitted to the execution backed.
+   *
+   * @return true if the execution has been submitted to the execution backend.
+   */
+  @JsonIgnore
+  boolean isSubmitted();
 
   /** Terminates the stage execution. */
   void terminate();

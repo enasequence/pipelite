@@ -47,6 +47,7 @@ public class ProcessRunnerPoolManagerTest {
 
   private static final int PARALLELISM = 1;
   private static final int PROCESS_CNT = 1;
+  private static final String STAGE_NAME = "STAGE";
 
   @Autowired ProcessRunnerPoolManager processRunnerPoolManager;
   @Autowired RunnerService runnerService;
@@ -65,7 +66,7 @@ public class ProcessRunnerPoolManagerTest {
           new TestProcessConfiguration() {
             @Override
             protected void configure(ProcessBuilder builder) {
-              builder.execute("STAGE").withSyncTestExecutor(StageExecutorState.SUCCESS);
+              builder.execute(STAGE_NAME).withSyncTestExecutor(StageExecutorState.SUCCESS);
             }
           });
     }
@@ -78,7 +79,7 @@ public class ProcessRunnerPoolManagerTest {
           new TestProcessConfiguration() {
             @Override
             protected void configure(ProcessBuilder builder) {
-              builder.execute("STAGE").withSyncTestExecutor(StageExecutorState.SUCCESS);
+              builder.execute(STAGE_NAME).withSyncTestExecutor(StageExecutorState.SUCCESS);
             }
           });
     }
@@ -97,9 +98,19 @@ public class ProcessRunnerPoolManagerTest {
     processRunnerPoolManager.startPools();
     processRunnerPoolManager.waitPoolsToStop();
 
-    assertThat(pipeliteMetrics.pipeline(testSchedule.pipelineName()).stage().getSuccessCount())
+    assertThat(
+            pipeliteMetrics
+                .process(testSchedule.pipelineName())
+                .stage(STAGE_NAME)
+                .runner()
+                .successCount())
         .isEqualTo(1);
-    assertThat(pipeliteMetrics.pipeline(testPipeline.pipelineName()).stage().getSuccessCount())
+    assertThat(
+            pipeliteMetrics
+                .process(testPipeline.pipelineName())
+                .stage(STAGE_NAME)
+                .runner()
+                .successCount())
         .isEqualTo(1);
   }
 }

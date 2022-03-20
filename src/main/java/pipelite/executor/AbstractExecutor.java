@@ -12,6 +12,7 @@ package pipelite.executor;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.reflect.TypeToken;
+import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.parameters.ExecutorParameters;
 
@@ -39,4 +40,8 @@ public abstract class AbstractExecutor<T extends ExecutorParameters> implements 
   public void setExecutorParams(T executorParams) {
     this.executorParams = executorParams;
   }
+
+  @Override
+  public void prepareExecution(
+      PipeliteServices pipeliteServices, String pipelineName, String processId, String stageName) {}
 }

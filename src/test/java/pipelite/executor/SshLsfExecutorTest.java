@@ -22,7 +22,7 @@ import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.DescribeJobsCacheService;
-import pipelite.service.PipeliteExecutorService;
+import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.LsfExecutorParameters;
@@ -34,7 +34,7 @@ import pipelite.stage.parameters.cmd.LogFileSavePolicy;
 @ActiveProfiles("test")
 public class SshLsfExecutorTest {
 
-  @Autowired PipeliteExecutorService pipeliteExecutorService;
+  @Autowired PipeliteServices pipeliteServices;
   @Autowired LsfTestConfiguration lsfTestConfiguration;
   @Autowired DescribeJobsCacheService describeJobsCacheService;
   @Autowired PipeliteMetrics pipeliteMetrics;
@@ -57,9 +57,7 @@ public class SshLsfExecutorTest {
 
     AsyncExecutorTestHelper.testExecute(
         executor,
-        pipeliteExecutorService,
-        describeJobsCacheService,
-        pipeliteMetrics,
+        pipeliteServices,
         result -> {
           assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).startsWith("bsub");
           assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).contains("-yaml");

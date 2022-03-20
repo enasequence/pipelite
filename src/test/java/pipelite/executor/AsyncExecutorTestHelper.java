@@ -15,9 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
 import pipelite.PipeliteIdCreator;
-import pipelite.metrics.PipeliteMetrics;
-import pipelite.service.DescribeJobsCacheService;
-import pipelite.service.PipeliteExecutorService;
+import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.ErrorType;
 import pipelite.stage.executor.StageExecutorRequest;
@@ -28,10 +26,8 @@ import pipelite.time.Time;
 public class AsyncExecutorTestHelper {
 
   public static void testExecute(
-      AbstractAsyncExecutor<?, ?> executor,
-      PipeliteExecutorService pipeliteExecutorService,
-      DescribeJobsCacheService describeJobsCacheService,
-      PipeliteMetrics pipeliteMetrics,
+      AsyncExecutor<?, ?> executor,
+      PipeliteServices pipeliteServices,
       StageExecutorResultCallback assertAfterSubmit,
       StageExecutorResultCallback assertAfterPoll) {
 
@@ -46,10 +42,7 @@ public class AsyncExecutorTestHelper {
             .stage(stage)
             .build();
 
-    executor.prepareExecution(
-        pipeliteExecutorService.submit(),
-        describeJobsCacheService,
-        pipeliteMetrics.pipeline(pipelineName).stage());
+    executor.prepareExecution(pipeliteServices, pipelineName, processId, stageName);
 
     AtomicReference<StageExecutorResult> result = new AtomicReference<>();
 

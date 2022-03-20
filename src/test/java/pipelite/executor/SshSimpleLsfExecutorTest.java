@@ -20,9 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.properties.LsfTestConfiguration;
-import pipelite.metrics.PipeliteMetrics;
-import pipelite.service.DescribeJobsCacheService;
-import pipelite.service.PipeliteExecutorService;
+import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
@@ -34,10 +32,8 @@ import pipelite.stage.parameters.cmd.LogFileSavePolicy;
 @ActiveProfiles("test")
 public class SshSimpleLsfExecutorTest {
 
-  @Autowired PipeliteExecutorService pipeliteExecutorService;
   @Autowired LsfTestConfiguration lsfTestConfiguration;
-  @Autowired DescribeJobsCacheService describeJobsCacheService;
-  @Autowired PipeliteMetrics pipeliteMetrics;
+  @Autowired PipeliteServices pipeliteServices;
 
   @Test
   @EnabledIfEnvironmentVariable(named = "PIPELITE_TEST_LSF_HOST", matches = ".+")
@@ -55,9 +51,7 @@ public class SshSimpleLsfExecutorTest {
 
     AsyncExecutorTestHelper.testExecute(
         executor,
-        pipeliteExecutorService,
-        describeJobsCacheService,
-        pipeliteMetrics,
+        pipeliteServices,
         result -> {
           assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).startsWith("bsub");
           assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND))
@@ -88,9 +82,7 @@ public class SshSimpleLsfExecutorTest {
 
     AsyncExecutorTestHelper.testExecute(
         executor,
-        pipeliteExecutorService,
-        describeJobsCacheService,
-        pipeliteMetrics,
+        pipeliteServices,
         result -> {
           assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).startsWith("bsub");
           assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).endsWith("exit 5");

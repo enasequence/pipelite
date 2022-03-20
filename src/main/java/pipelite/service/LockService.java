@@ -128,7 +128,7 @@ public class LockService {
    * @param serviceLock the service lock
    * @return true if successful
    */
-  @Timed("pipelite.transactional")
+  @Timed("pipelite.service")
   public boolean relockService(ServiceLockEntity serviceLock) {
     return internalErrorHandler.execute(
         () -> {
@@ -147,7 +147,7 @@ public class LockService {
    *
    * @param serviceName the service name
    */
-  @Timed("pipelite.transactional")
+  @Timed("pipelite.service")
   public void unlockService(String serviceName) {
     log.atFine()
         .with(LogKey.SERVICE_NAME, serviceName)
@@ -172,7 +172,7 @@ public class LockService {
    * @param processId the process id
    * @return true if successful.
    */
-  @Timed("pipelite.transactional")
+  @Timed("pipelite.service")
   public static boolean lockProcess(
       LockService lockService,
       ServiceLockEntity serviceLock,
@@ -257,7 +257,7 @@ public class LockService {
    * @param processId the process id
    * @return true if successful.
    */
-  @Timed("pipelite.transactional")
+  @Timed("pipelite.service")
   public boolean unlockProcess(
       ServiceLockEntity serviceLock, String pipelineName, String processId) {
     String serviceName = serviceLock.getServiceName();
@@ -294,7 +294,7 @@ public class LockService {
    *
    * @param serviceName the service name
    */
-  @Timed("pipelite.transactional")
+  @Timed("pipelite.service")
   public void unlockProcesses(String serviceName) {
     log.atFine().with(LogKey.SERVICE_NAME, serviceName).log("Attempting to unlock processes");
     try {
@@ -314,7 +314,7 @@ public class LockService {
    * @param serviceName the service name
    * @return true if the pipelite service is locked
    */
-  @Timed("pipelite.transactional")
+  @Timed("pipelite.service")
   public boolean isServiceLocked(String serviceName) {
     Optional<ServiceLockEntity> serviceLock = serviceLockRepository.findByServiceName(serviceName);
     if (!serviceLock.isPresent()) {
@@ -330,7 +330,7 @@ public class LockService {
    * @param processId the process id
    * @return true if the process is locked
    */
-  @Timed("pipelite.transactional")
+  @Timed("pipelite.service")
   public boolean isProcessLocked(String pipelineName, String processId) {
     Optional<ProcessLockEntity> processLock =
         processLockRepository.findByPipelineNameAndProcessId(pipelineName, processId);

@@ -8,23 +8,21 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.controller.api.info;
+package pipelite.executor;
 
-import lombok.Builder;
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Getter;
+import lombok.Setter;
+import pipelite.stage.parameters.ExecutorParameters;
 
-@Data
-@Builder
-public class PipelineInfo {
-  private String pipelineName;
-  private Integer maxProcessRunningCount;
-  private Integer processRunningCount;
-  private Integer stageRunningCount;
-  private Integer stageSubmitCount;
-  /*
-  private Long pendingCount;
-  private Long activeCount;
-  private Long completedCount;
-  private Long failedCount;
-   */
+/** Executes a stage synchronously. Must be serializable to json. */
+@Getter
+@Setter
+public abstract class SyncExecutor<T extends ExecutorParameters> extends AbstractExecutor<T> {
+
+  @Override
+  @JsonIgnore
+  public final boolean isSubmitted() {
+    return true;
+  }
 }

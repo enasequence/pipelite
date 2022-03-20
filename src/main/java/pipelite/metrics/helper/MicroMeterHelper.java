@@ -8,23 +8,15 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.controller.api.info;
+package pipelite.metrics.helper;
 
-import lombok.Builder;
-import lombok.Data;
+public class MicroMeterHelper {
 
-@Data
-@Builder
-public class PipelineInfo {
-  private String pipelineName;
-  private Integer maxProcessRunningCount;
-  private Integer processRunningCount;
-  private Integer stageRunningCount;
-  private Integer stageSubmitCount;
-  /*
-  private Long pendingCount;
-  private Long activeCount;
-  private Long completedCount;
-  private Long failedCount;
-   */
+  public static String[] pipelineTags(String pipelineName) {
+    return new String[] {"pipelineName", pipelineName};
+  }
+
+  public static String[] stageTags(String pipelineName, String stageName) {
+    return new String[] {"pipelineName", pipelineName, "stageName", stageName};
+  }
 }

@@ -11,7 +11,6 @@
 package pipelite.executor;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.locks.ReentrantLock;
@@ -22,16 +21,16 @@ import pipelite.exception.PipeliteException;
 import pipelite.executor.describe.cache.DescribeJobsCache;
 import pipelite.metrics.StageMetrics;
 import pipelite.service.DescribeJobsCacheService;
+import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultCallback;
 import pipelite.stage.parameters.ExecutorParameters;
 
-/** Executes a stage. Must be serializable to json. */
+/** Executes a stage asynchronously. Must be serializable to json. */
 @Getter
 @Setter
-public abstract class AbstractAsyncExecutor<
-        T extends ExecutorParameters, D extends DescribeJobsCache>
+public abstract class AsyncExecutor<T extends ExecutorParameters, D extends DescribeJobsCache>
     extends AbstractExecutor<T> {
 
   /**
@@ -48,12 +47,11 @@ public abstract class AbstractAsyncExecutor<
 
   /** Prepares stage executor for asynchronous execution. */
   public void prepareExecution(
-      ExecutorService submitExecutorService,
-      DescribeJobsCacheService describeJobsCacheService,
-      StageMetrics stageMetrics) {
-    this.submitExecutorService = submitExecutorService;
-    this.describeJobsCache = initDescribeJobsCache(describeJobsCacheService);
-    this.stageMetrics = stageMetrics;
+      PipeliteServices pipeliteServices, String pipelineName, String processId, String stageName) {
+    super.prepareExecution(pipeliteServices, pipelineName, processId, stageName);
+    this.submitExecutorService = pipeliteServices.executor().submit();
+    this.describeJobsCache = initDescribeJobsCache(pipeliteServices.jobs());
+    this.stageMetrics = pipeliteServices.metrics().process(pipelineName).stage(stageName);
   }
 
   protected abstract D initDescribeJobsCache(DescribeJobsCacheService describeJobsCacheService);
@@ -85,6 +83,12 @@ public abstract class AbstractAsyncExecutor<
     }
   }
 
+  @Override
+  @JsonIgnore
+  public boolean isSubmitted() {
+    return jobId != null;
+  }
+
   private void submit(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {
     submitExecutorService.submit(
         () -> {
@@ -96,10 +100,7 @@ public abstract class AbstractAsyncExecutor<
             StageExecutorResult result = submitResult.getResult();
 
             if (stageMetrics != null) {
-              stageMetrics
-                  .getAsyncSubmitTimer()
-                  .record(Duration.between(submitStartTime, ZonedDateTime.now()));
-              stageMetrics.endAsyncSubmit();
+              stageMetrics.executor().endSubmit(submitStartTime);
             }
 
             if (!result.isError()) {

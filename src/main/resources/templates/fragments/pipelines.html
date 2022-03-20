@@ -10,8 +10,7 @@
                     <th>Maximum processes</th>
                     <th>Running processes</th>
                     <th>Running stages</th>
-                    <th>Submittable stages</th>
-                    <th>Pollable stages</th>
+                    <th>Submitted stages</th>
                     <!--
                     <th>Pending processes</th>
                     <th>Active processes</th>
@@ -30,18 +29,14 @@
                     <option value="running">Running processes</option>
                     <option value="completed">Completed processes</option>
                     <option value="failed">Failed processes</option>
-                    <option value="error">Internal errors</option>
+                    <option value="runningStages">Running stages</option>
+                    <option value="submittedStages">Submitted stages</option>
+                    <option value="completedStages">Completed stages</option>
+                    <option value="failedStages">Failed stages</option>
                 </select>
                 <select class="custom-select m-2" id="pipelinesRunningHistorySince">
-                    <!--
-                    <option value="5" selected>Last 5 minutes</option>
-                    <option value="15">Last 15 minutes</option>
-                    -->
-                    <option value="30">Last 30 minutes</option>
                     <option value="60">Last 1 hour</option>
-                    <option value="120">Last 2 hours</option>
                     <option value="240">Last 4 hours</option>
-                    <option value="480">Last 8 hours</option>
                     <option value="720">Last 12 hours</option>
                     <option value="1440">Last 1 day</option>
                     <option value="10080">Last 7 days</option>

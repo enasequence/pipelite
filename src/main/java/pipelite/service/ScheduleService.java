@@ -54,45 +54,45 @@ public class ScheduleService {
     this.repository = repository;
   }
 
-  @Timed("pipelite.transactional")
+  @Timed("pipelite.service")
   public List<ScheduleEntity> getSchedules() {
     return Lists.newArrayList(repository.findAll());
   }
 
-  @Timed("pipelite.transactional")
+  @Timed("pipelite.service")
   public List<ScheduleEntity> getSchedules(String serviceName) {
     return repository.findByServiceName(serviceName);
   }
 
-  @Timed("pipelite.transactional")
+  @Timed("pipelite.service")
   public Optional<ScheduleEntity> getSavedSchedule(String pipelineName) {
     return repository.findById(pipelineName);
   }
 
-  @Timed("pipelite.transactional")
+  @Timed("pipelite.service")
   public ScheduleEntity saveSchedule(ScheduleEntity scheduleEntity) {
     return repository.save(scheduleEntity);
   }
 
-  @Timed("pipelite.transactional")
+  @Timed("pipelite.service")
   public void delete(ScheduleEntity scheduleEntity) {
     repository.delete(scheduleEntity);
   }
 
-  @Timed("pipelite.transactional")
+  @Timed("pipelite.service")
   public ScheduleEntity scheduleExecution(ScheduleEntity scheduleEntity) {
     scheduleEntity.setNextTime(
         CronUtils.launchTime(scheduleEntity.getCron(), scheduleEntity.getStartTime()));
     return saveSchedule(scheduleEntity);
   }
 
-  @Timed("pipelite.transactional")
+  @Timed("pipelite.service")
   public ScheduleEntity scheduleExecution(ScheduleEntity scheduleEntity, ZonedDateTime nextTime) {
     scheduleEntity.setNextTime(nextTime);
     return saveSchedule(scheduleEntity);
   }
 
-  @Timed("pipelite.transactional")
+  @Timed("pipelite.service")
   public ScheduleEntity createSchedule(String serviceName, String pipelineName, String cron) {
     ScheduleEntity scheduleEntity = new ScheduleEntity();
     scheduleEntity.setCron(cron);
@@ -109,7 +109,7 @@ public class ScheduleService {
    * @param pipelineName the pipeline name
    * @param processId the process id
    */
-  @Timed("pipelite.transactional")
+  @Timed("pipelite.service")
   public ScheduleEntity startExecution(String pipelineName, String processId) {
     log.atInfo().log("Starting scheduled process execution: " + pipelineName);
     ScheduleEntity scheduleEntity = getSavedSchedule(pipelineName).get();
@@ -127,7 +127,7 @@ public class ScheduleService {
    * @param processEntity the process entity
    * @param nextTime the next execution time
    */
-  @Timed("pipelite.transactional")
+  @Timed("pipelite.service")
   public ScheduleEntity endExecution(ProcessEntity processEntity, ZonedDateTime nextTime) {
     String pipelineName = processEntity.getPipelineName();
     log.atInfo().log("Ending scheduled process execution: " + pipelineName);
@@ -156,7 +156,7 @@ public class ScheduleService {
    * @return true if there is a schedule that has failed and can be retried
    * @throws PipeliteProcessRetryException if there is a schedule that can't be retried
    */
-  @Timed("pipelite.transactional")
+  @Timed("pipelite.service")
   public boolean isRetrySchedule(String pipelineName, String processId) {
     Optional<ScheduleEntity> scheduleEntityOpt = getSavedSchedule(pipelineName);
     if (!scheduleEntityOpt.isPresent()) {

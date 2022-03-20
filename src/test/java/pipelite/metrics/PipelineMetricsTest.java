@@ -14,78 +14,60 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import pipelite.PipeliteMetricsTestFactory;
+import pipelite.metrics.helper.TimeSeriesHelper;
 import pipelite.process.ProcessState;
 import pipelite.stage.executor.StageExecutorResult;
 
 public class PipelineMetricsTest {
 
   @Test
-  public void processInternalError() {
-    PipelineMetrics metrics = PipeliteMetricsTestFactory.pipelineMetrics("PIPELINE_NAME");
-
-    assertThat(metrics.process().getInternalErrorCount()).isZero();
-    assertThat(metrics.process().getInternalErrorTimeSeries().rowCount()).isZero();
-    assertThat(metrics.process().getInternalErrorTimeSeries().dateTimeColumn("time")).isNotNull();
-    assertThat(metrics.process().getInternalErrorTimeSeries().doubleColumn("count")).isNotNull();
-
-    metrics.process().incrementInternalErrorCount();
-
-    assertThat(metrics.process().getInternalErrorCount()).isOne();
-    assertThat(metrics.process().getInternalErrorTimeSeries().rowCount()).isOne();
-  }
-
-  @Test
   public void processCompleted() {
-    PipelineMetrics metrics = PipeliteMetricsTestFactory.pipelineMetrics("PIPELINE_NAME");
+    ProcessMetrics metrics = PipeliteMetricsTestFactory.processMetrics("PIPELINE_NAME");
 
-    assertThat(metrics.process().getCompletedCount()).isZero();
-    assertThat(metrics.process().getFailedCount()).isZero();
-    assertThat(metrics.stage().getSuccessCount()).isZero();
-    assertThat(metrics.stage().getFailedCount()).isZero();
-    assertThat(TimeSeriesMetrics.getCount(metrics.process().getCompletedTimeSeries())).isZero();
-    assertThat(TimeSeriesMetrics.getCount(metrics.process().getFailedTimeSeries())).isZero();
-    assertThat(TimeSeriesMetrics.getCount(metrics.stage().getSuccessTimeSeries())).isZero();
-    assertThat(TimeSeriesMetrics.getCount(metrics.stage().getFailedTimeSeries())).isZero();
+    String stageName = "STAGE_NAME";
 
-    metrics.stage().endStageExecution(StageExecutorResult.success());
-    metrics.stage().endStageExecution(StageExecutorResult.error());
-    metrics.process().endProcessExecution(ProcessState.COMPLETED);
+    assertThat(metrics.runner().completedCount()).isZero();
+    assertThat(metrics.runner().failedCount()).isZero();
+    assertThat(metrics.stage(stageName).runner().successCount()).isZero();
+    assertThat(metrics.stage(stageName).runner().failedCount()).isZero();
+    assertThat(TimeSeriesHelper.getCount(metrics.runner().completedTimeSeries())).isZero();
+    assertThat(TimeSeriesHelper.getCount(metrics.runner().failedTimeSeries())).isZero();
 
-    assertThat(metrics.process().getCompletedCount()).isEqualTo(1);
-    assertThat(metrics.process().getFailedCount()).isZero();
-    assertThat(metrics.stage().getSuccessCount()).isEqualTo(1);
-    assertThat(metrics.stage().getFailedCount()).isEqualTo(1);
-    assertThat(TimeSeriesMetrics.getCount(metrics.process().getCompletedTimeSeries())).isEqualTo(1);
-    assertThat(TimeSeriesMetrics.getCount(metrics.process().getFailedTimeSeries())).isZero();
-    assertThat(TimeSeriesMetrics.getCount(metrics.stage().getSuccessTimeSeries())).isEqualTo(1);
-    assertThat(TimeSeriesMetrics.getCount(metrics.stage().getFailedTimeSeries())).isEqualTo(1);
+    metrics.stage(stageName).runner().endStageExecution(StageExecutorResult.success());
+    metrics.stage(stageName).runner().endStageExecution(StageExecutorResult.error());
+    metrics.runner().endProcessExecution(ProcessState.COMPLETED);
+
+    assertThat(metrics.runner().completedCount()).isEqualTo(1);
+    assertThat(metrics.runner().failedCount()).isZero();
+    assertThat(metrics.stage(stageName).runner().successCount()).isEqualTo(1);
+    assertThat(metrics.stage(stageName).runner().failedCount()).isEqualTo(1);
+    assertThat(TimeSeriesHelper.getCount(metrics.runner().completedTimeSeries())).isEqualTo(1);
+    assertThat(TimeSeriesHelper.getCount(metrics.runner().failedTimeSeries())).isZero();
   }
 
   @Test
   public void processFailed() {
-    PipelineMetrics metrics = PipeliteMetricsTestFactory.pipelineMetrics("PIPELINE_NAME");
+    ProcessMetrics metrics = PipeliteMetricsTestFactory.processMetrics("PIPELINE_NAME");
 
-    assertThat(metrics.process().getCompletedCount()).isZero();
-    assertThat(metrics.process().getFailedCount()).isZero();
-    assertThat(metrics.stage().getSuccessCount()).isZero();
-    assertThat(metrics.stage().getFailedCount()).isZero();
-    assertThat(TimeSeriesMetrics.getCount(metrics.process().getCompletedTimeSeries())).isZero();
-    assertThat(TimeSeriesMetrics.getCount(metrics.process().getFailedTimeSeries())).isZero();
-    assertThat(TimeSeriesMetrics.getCount(metrics.stage().getSuccessTimeSeries())).isZero();
-    assertThat(TimeSeriesMetrics.getCount(metrics.stage().getFailedTimeSeries())).isZero();
+    String stageName = "STAGE_NAME";
 
-    metrics.stage().endStageExecution(StageExecutorResult.success());
-    metrics.stage().endStageExecution(StageExecutorResult.error());
-    metrics.process().endProcessExecution(ProcessState.FAILED);
+    assertThat(metrics.runner().completedCount()).isZero();
+    assertThat(metrics.runner().failedCount()).isZero();
+    assertThat(metrics.stage(stageName).runner().successCount()).isZero();
+    assertThat(metrics.stage(stageName).runner().failedCount()).isZero();
+    assertThat(TimeSeriesHelper.getCount(metrics.runner().completedTimeSeries())).isZero();
+    assertThat(TimeSeriesHelper.getCount(metrics.runner().failedTimeSeries())).isZero();
 
-    assertThat(metrics.process().getCompletedCount()).isZero();
-    assertThat(metrics.process().getFailedCount()).isEqualTo(1);
-    assertThat(metrics.stage().getSuccessCount()).isEqualTo(1);
-    assertThat(metrics.stage().getFailedCount()).isEqualTo(1);
+    metrics.stage(stageName).runner().endStageExecution(StageExecutorResult.success());
+    metrics.stage(stageName).runner().endStageExecution(StageExecutorResult.error());
+    metrics.runner().endProcessExecution(ProcessState.FAILED);
 
-    assertThat(TimeSeriesMetrics.getCount(metrics.process().getCompletedTimeSeries())).isZero();
-    assertThat(TimeSeriesMetrics.getCount(metrics.process().getFailedTimeSeries())).isEqualTo(1);
-    assertThat(TimeSeriesMetrics.getCount(metrics.stage().getSuccessTimeSeries())).isEqualTo(1);
-    assertThat(TimeSeriesMetrics.getCount(metrics.stage().getFailedTimeSeries())).isEqualTo(1);
+    assertThat(metrics.runner().completedCount()).isZero();
+    assertThat(metrics.runner().failedCount()).isEqualTo(1);
+    assertThat(metrics.stage(stageName).runner().successCount()).isEqualTo(1);
+    assertThat(metrics.stage(stageName).runner().failedCount()).isEqualTo(1);
+
+    assertThat(TimeSeriesHelper.getCount(metrics.runner().completedTimeSeries())).isZero();
+    assertThat(TimeSeriesHelper.getCount(metrics.runner().failedTimeSeries())).isEqualTo(1);
   }
 }

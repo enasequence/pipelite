@@ -11,8 +11,8 @@
 package pipelite;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
+import pipelite.metrics.ProcessMetrics;
 
 public class PipeliteMetricsTestFactory {
 
@@ -22,7 +22,7 @@ public class PipeliteMetricsTestFactory {
     return new PipeliteMetrics(new SimpleMeterRegistry());
   }
 
-  public static PipelineMetrics pipelineMetrics(String pipelineName) {
-    return new PipelineMetrics(pipelineName, new SimpleMeterRegistry());
+  public static ProcessMetrics processMetrics(String pipelineName) {
+    return new ProcessMetrics(pipelineName, new SimpleMeterRegistry());
   }
 }

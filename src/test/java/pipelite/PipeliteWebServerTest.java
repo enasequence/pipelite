@@ -23,10 +23,10 @@ import pipelite.tester.process.TestProcessConfiguration;
 @Configuration
 public class PipeliteWebServerTest {
 
-  private static final int PROCESS_CNT = 500;
-  private static final int PROCESS_PARALLELISM = 500;
-  private static final Duration SUBMIT_TIME = Duration.ofSeconds(10);
-  private static final Duration EXECUTION_TIME = Duration.ofSeconds(10);
+  private static final int PROCESS_CNT = 250;
+  private static final int PROCESS_PARALLELISM = 50;
+  private static final Duration SUBMIT_TIME = Duration.ofSeconds(45);
+  private static final Duration EXECUTION_TIME = Duration.ofSeconds(65);
   private static final String ID = PipeliteIdCreator.id();
 
   @Bean
@@ -114,7 +114,6 @@ public class PipeliteWebServerTest {
     }
   }
 
-  // @Test
   public static void main(String[] args) {
 
     System.setProperty("pipelite.service.name", "PipeliteWebServerTest_" + ID);

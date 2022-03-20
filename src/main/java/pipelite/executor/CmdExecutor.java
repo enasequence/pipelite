@@ -26,7 +26,7 @@ import pipelite.stage.parameters.CmdExecutorParameters;
 @Flogger
 @Getter
 @Setter
-public class CmdExecutor<T extends CmdExecutorParameters> extends AbstractExecutor<T>
+public class CmdExecutor<T extends CmdExecutorParameters> extends SyncExecutor<T>
     implements JsonSerializableExecutor {
 
   // Json deserialization requires a no argument constructor.

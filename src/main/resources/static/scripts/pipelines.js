@@ -12,8 +12,7 @@ $(document).ready(function () {
                 }
             },
             {data: "stageRunningCount"},
-            {data: "stageSubmitCount"},
-            {data: "stagePollCount"}
+            {data: "stageSubmitCount"}
             /*,
             {data: "pendingCount"},
             {data: "activeCount"},
@@ -33,14 +32,24 @@ $(document).ready(function () {
     refreshPipelines();
 });
 
-// Show the table and filter badges.
+// Show the table.
 function refreshPipelines() {
     let pipelinesTable = $('#pipelinesTable').DataTable();
-    let pipelinesRunningHistoryType = $("#pipelinesRunningHistoryType").val();
+
+    let url = "/pipelite/ui/api/pipeline/";
+    console.log(url);
+    $.get(url, function (data, status) {
+        pipelinesTable.clear().rows.add(data).draw();
+    });
+
+    pipelinesPlot();
+}
+
+function pipelinesPlot() {
     let runningHistorySince = $("#pipelinesRunningHistorySince").val();
+    let runningHistoryTypeText = $("#pipelinesRunningHistoryType option:selected").text();
 
     // Show the filter badges.
-    let runningHistoryTypeText = $("#pipelinesRunningHistoryType option:selected").text();
     $("#pipelinesRunningHistoryTypeBadge").text(runningHistoryTypeText);
 
     let runningHistorySinceText = "Last ";
@@ -67,17 +76,7 @@ function refreshPipelines() {
     }
     $("#pipelinesRunningHistorySinceBadge").text(runningHistorySinceText);
 
-    let url = "/pipelite/ui/api/pipeline/";
-    console.log(url);
-    $.get(url, function (data, status) {
-        pipelinesTable.clear().rows.add(data).draw();
-    });
-
-    pipelinesPlot();
-}
-
-function pipelinesPlot() {
-    let runningHistorySince = $("#pipelinesRunningHistorySince").val();
+    // Show the plot.
     let pipelinesRunningHistoryType = $("#pipelinesRunningHistoryType").val();
     let url = "/pipelite/ui/api/pipeline/run/history/plot?since=" + runningHistorySince + "&type=" + pipelinesRunningHistoryType + "&id=pipelinesRunningHistoryPlot";
     console.log(url);

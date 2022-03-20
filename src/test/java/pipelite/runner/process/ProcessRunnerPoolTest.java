@@ -28,9 +28,9 @@ import pipelite.PipeliteIdCreator;
 import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.PipeliteConfiguration;
 import pipelite.entity.ProcessEntity;
-import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
-import pipelite.metrics.TimeSeriesMetrics;
+import pipelite.metrics.ProcessMetrics;
+import pipelite.metrics.helper.TimeSeriesHelper;
 import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.PipeliteServices;
@@ -120,33 +120,30 @@ public class ProcessRunnerPoolTest {
       pool.runOneIteration();
     }
 
-    PipelineMetrics pipelineMetrics = metrics.pipeline(PIPELINE_NAME);
+    ProcessMetrics processMetrics = metrics.process(PIPELINE_NAME);
 
     assertThat(runProcessCnt.get()).isEqualTo(PROCESS_CNT);
 
-    assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipelineMetrics.process().getFailedCount()).isZero();
-    assertThat(pipelineMetrics.process().getInternalErrorCount()).isZero();
-    assertThat(metrics.getProcessRunnerPoolOneIterationTimer().mean(TimeUnit.SECONDS))
+    assertThat(processMetrics.runner().completedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(processMetrics.runner().failedCount()).isZero();
+    assertThat(metrics.error().count()).isZero();
+    assertThat(metrics.processRunnerPool().runOneIterationTimer().mean(TimeUnit.SECONDS))
         .isLessThan(5);
-    assertThat(metrics.getProcessRunnerOneIterationTimer().mean(TimeUnit.SECONDS)).isLessThan(5);
+    assertThat(metrics.processRunnerPool().runOneIterationTimer().mean(TimeUnit.SECONDS))
+        .isLessThan(5);
 
-    assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getCompletedTimeSeries()))
+    assertThat(TimeSeriesHelper.getCount(processMetrics.runner().completedTimeSeries()))
         .isEqualTo(PROCESS_CNT);
     assertThat(
-            TimeSeriesMetrics.getCount(
-                pipelineMetrics.process().getCompletedTimeSeries(),
-                ZonedDateTime.now().minusHours(1)))
+            TimeSeriesHelper.getCount(
+                processMetrics.runner().completedTimeSeries(), ZonedDateTime.now().minusHours(1)))
         .isEqualTo(PROCESS_CNT);
     assertThat(
-            TimeSeriesMetrics.getCount(
-                pipelineMetrics.process().getCompletedTimeSeries(),
-                ZonedDateTime.now().plusHours(1)))
+            TimeSeriesHelper.getCount(
+                processMetrics.runner().completedTimeSeries(), ZonedDateTime.now().plusHours(1)))
         .isZero();
-    assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getFailedTimeSeries()))
-        .isZero();
-    assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getInternalErrorTimeSeries()))
-        .isZero();
+    assertThat(TimeSeriesHelper.getCount(processMetrics.runner().failedTimeSeries())).isZero();
+    assertThat(TimeSeriesHelper.getCount(metrics.error().timeSeries())).isZero();
 
     assertThat(lockProcessCnt.get()).isEqualTo(PROCESS_CNT);
     assertThat(unlockProcessCnt.get()).isEqualTo(PROCESS_CNT);
@@ -170,31 +167,30 @@ public class ProcessRunnerPoolTest {
       Time.wait(Duration.ofSeconds(1));
       pool.runOneIteration();
     }
-    PipelineMetrics pipelineMetrics = metrics.pipeline(PIPELINE_NAME);
+    ProcessMetrics processMetrics = metrics.process(PIPELINE_NAME);
 
     assertThat(runProcessCnt.get()).isEqualTo(PROCESS_CNT);
 
-    assertThat(pipelineMetrics.process().getCompletedCount()).isZero();
-    assertThat(pipelineMetrics.process().getFailedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipelineMetrics.process().getInternalErrorCount()).isZero();
-    assertThat(metrics.getProcessRunnerPoolOneIterationTimer().mean(TimeUnit.SECONDS))
+    assertThat(processMetrics.runner().completedCount()).isZero();
+    assertThat(processMetrics.runner().failedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(metrics.error().count()).isZero();
+    assertThat(metrics.processRunnerPool().runOneIterationTimer().mean(TimeUnit.SECONDS))
         .isLessThan(5);
-    assertThat(metrics.getProcessRunnerOneIterationTimer().mean(TimeUnit.SECONDS)).isLessThan(5);
+    assertThat(metrics.processRunnerPool().runOneIterationTimer().mean(TimeUnit.SECONDS))
+        .isLessThan(5);
 
-    assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getCompletedTimeSeries()))
-        .isZero();
-    assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getFailedTimeSeries()))
+    assertThat(TimeSeriesHelper.getCount(processMetrics.runner().completedTimeSeries())).isZero();
+    assertThat(TimeSeriesHelper.getCount(processMetrics.runner().failedTimeSeries()))
         .isEqualTo(PROCESS_CNT);
     assertThat(
-            TimeSeriesMetrics.getCount(
-                pipelineMetrics.process().getFailedTimeSeries(), ZonedDateTime.now().minusHours(1)))
+            TimeSeriesHelper.getCount(
+                processMetrics.runner().failedTimeSeries(), ZonedDateTime.now().minusHours(1)))
         .isEqualTo(PROCESS_CNT);
     assertThat(
-            TimeSeriesMetrics.getCount(
-                pipelineMetrics.process().getFailedTimeSeries(), ZonedDateTime.now().plusHours(1)))
+            TimeSeriesHelper.getCount(
+                processMetrics.runner().failedTimeSeries(), ZonedDateTime.now().plusHours(1)))
         .isZero();
-    assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getInternalErrorTimeSeries()))
-        .isZero();
+    assertThat(TimeSeriesHelper.getCount(metrics.error().timeSeries())).isZero();
 
     assertThat(lockProcessCnt.get()).isEqualTo(PROCESS_CNT);
     assertThat(unlockProcessCnt.get()).isEqualTo(PROCESS_CNT);

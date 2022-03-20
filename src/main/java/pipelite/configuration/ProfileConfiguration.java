@@ -8,23 +8,19 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.controller.api.info;
+package pipelite.configuration;
 
-import lombok.Builder;
-import lombok.Data;
+import java.util.Arrays;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 
-@Data
-@Builder
-public class PipelineInfo {
-  private String pipelineName;
-  private Integer maxProcessRunningCount;
-  private Integer processRunningCount;
-  private Integer stageRunningCount;
-  private Integer stageSubmitCount;
-  /*
-  private Long pendingCount;
-  private Long activeCount;
-  private Long completedCount;
-  private Long failedCount;
-   */
+@Configuration
+public class ProfileConfiguration {
+
+  @Autowired Environment environment;
+
+  public boolean isTestProfile() {
+    return Arrays.asList(environment.getActiveProfiles()).contains("test");
+  }
 }

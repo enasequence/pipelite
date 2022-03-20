@@ -25,9 +25,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.properties.KubernetesTestConfiguration;
-import pipelite.metrics.PipeliteMetrics;
-import pipelite.service.DescribeJobsCacheService;
-import pipelite.service.PipeliteExecutorService;
+import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
@@ -39,9 +37,7 @@ import pipelite.stage.parameters.cmd.LogFileSavePolicy;
 @ActiveProfiles("test")
 public class KubernetesExecutorTest {
 
-  @Autowired PipeliteExecutorService pipeliteExecutorService;
-  @Autowired DescribeJobsCacheService describeJobsCacheService;
-  @Autowired PipeliteMetrics pipeliteMetrics;
+  @Autowired PipeliteServices pipeliteServices;
   @Autowired KubernetesTestConfiguration testConfiguration;
 
   @Test
@@ -102,9 +98,7 @@ public class KubernetesExecutorTest {
 
     AsyncExecutorTestHelper.testExecute(
         executor,
-        pipeliteExecutorService,
-        describeJobsCacheService,
-        pipeliteMetrics,
+        pipeliteServices,
         result -> {},
         result -> {
           assertThat(result.isSuccess()).isTrue();
@@ -133,9 +127,7 @@ public class KubernetesExecutorTest {
 
     AsyncExecutorTestHelper.testExecute(
         executor,
-        pipeliteExecutorService,
-        describeJobsCacheService,
-        pipeliteMetrics,
+        pipeliteServices,
         result -> {},
         result -> {
           assertThat(result.isSuccess()).isFalse();

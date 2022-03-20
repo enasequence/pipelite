@@ -46,7 +46,7 @@ import pipelite.stage.parameters.KubernetesExecutorParameters;
 @Getter
 @Setter
 public class KubernetesExecutor
-    extends AbstractAsyncExecutor<KubernetesExecutorParameters, KubernetesDescribeJobsCache>
+    extends AsyncExecutor<KubernetesExecutorParameters, KubernetesDescribeJobsCache>
     implements JsonSerializableExecutor {
 
   private static final int KUBERNETES_TTL_SECONDS_AFTER_FINISHED =

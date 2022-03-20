@@ -24,8 +24,8 @@ import pipelite.PipeliteIdCreator;
 import pipelite.PipeliteTestConfigWithServices;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageLogEntity;
-import pipelite.executor.AbstractExecutor;
 import pipelite.executor.JsonSerializableExecutor;
+import pipelite.executor.SyncExecutor;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorRequest;
@@ -43,7 +43,8 @@ class StageServiceTest {
 
   @Autowired StageService service;
 
-  public static class TestExecutor extends AbstractExecutor implements JsonSerializableExecutor {
+  public static class TestExecutor extends SyncExecutor<ExecutorParameters>
+      implements JsonSerializableExecutor {
 
     private final StageState stageState;
 

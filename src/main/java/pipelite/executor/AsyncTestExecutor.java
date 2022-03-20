@@ -29,8 +29,7 @@ import pipelite.time.Time;
 
 /** Asynchronous test executor. */
 @Getter
-public class AsyncTestExecutor
-    extends AbstractAsyncExecutor<ExecutorParameters, TestDescribeJobsCache> {
+public class AsyncTestExecutor extends AsyncExecutor<ExecutorParameters, TestDescribeJobsCache> {
 
   private static final AtomicInteger nextJobId = new AtomicInteger();
   private final Function<StageExecutorRequest, StageExecutorResult> callback;

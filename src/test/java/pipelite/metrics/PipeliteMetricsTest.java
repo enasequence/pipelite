@@ -21,14 +21,14 @@ public class PipeliteMetricsTest {
   public void internalError() {
     PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
 
-    assertThat(metrics.getInternalErrorCount()).isZero();
-    assertThat(metrics.getInternalErrorTimeSeries().rowCount()).isZero();
-    assertThat(metrics.getInternalErrorTimeSeries().dateTimeColumn("time")).isNotNull();
-    assertThat(metrics.getInternalErrorTimeSeries().doubleColumn("count")).isNotNull();
+    assertThat(metrics.error().count()).isZero();
+    assertThat(metrics.error().timeSeries().rowCount()).isZero();
+    assertThat(metrics.error().timeSeries().dateTimeColumn("time")).isNotNull();
+    assertThat(metrics.error().timeSeries().doubleColumn("count")).isNotNull();
 
-    metrics.incrementInternalErrorCount();
+    metrics.error().incrementCount();
 
-    assertThat(metrics.getInternalErrorCount()).isOne();
-    assertThat(metrics.getInternalErrorTimeSeries().rowCount()).isOne();
+    assertThat(metrics.error().count()).isOne();
+    assertThat(metrics.error().timeSeries().rowCount()).isOne();
   }
 }

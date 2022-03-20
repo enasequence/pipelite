@@ -27,13 +27,13 @@ import pipelite.stage.executor.*;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 import pipelite.time.Time;
 
-public class AbstractAsyncExecutorTest {
+public class AsyncExecutorTest {
 
   private static final String PIPELINE_NAME = PipeliteIdCreator.pipelineName();
   private static final String PROCESS_ID = PipeliteIdCreator.processId();
   private static final String STAGE_NAME = PipeliteIdCreator.stageName();
 
-  private AbstractAsyncExecutor executor() {
+  private AsyncExecutor executor() {
     SimpleLsfExecutor simpleLsfExecutor =
         Mockito.spy(StageExecutor.createSimpleLsfExecutor("test"));
     simpleLsfExecutor.setExecutorParams(new SimpleLsfExecutorParameters());
@@ -44,8 +44,8 @@ public class AbstractAsyncExecutorTest {
 
   @Test
   public void executeSubmitMissingJobId() {
-    AbstractAsyncExecutor executor = executor();
-    doReturn(new AbstractAsyncExecutor.SubmitResult(null, StageExecutorResult.submitted()))
+    AsyncExecutor executor = executor();
+    doReturn(new AsyncExecutor.SubmitResult(null, StageExecutorResult.submitted()))
         .when(executor)
         .submit(any());
 
@@ -68,10 +68,9 @@ public class AbstractAsyncExecutorTest {
   public void executeSubmitUnexpectedState() {
     for (StageExecutorState stageExecutorState :
         EnumSet.of(StageExecutorState.ACTIVE, StageExecutorState.SUCCESS)) {
-      AbstractAsyncExecutor executor = executor();
+      AsyncExecutor executor = executor();
       doReturn(
-              new AbstractAsyncExecutor.SubmitResult(
-                  "jobId", StageExecutorResult.from(stageExecutorState)))
+              new AsyncExecutor.SubmitResult("jobId", StageExecutorResult.from(stageExecutorState)))
           .when(executor)
           .submit(any());
 
@@ -93,7 +92,7 @@ public class AbstractAsyncExecutorTest {
 
   @Test
   public void executeSubmitException() {
-    AbstractAsyncExecutor executor = executor();
+    AsyncExecutor executor = executor();
     doThrow(new RuntimeException("test exception")).when(executor).submit(any());
 
     Stage stage = new Stage(STAGE_NAME, executor);
@@ -112,8 +111,8 @@ public class AbstractAsyncExecutorTest {
 
   @Test
   public void executeSubmitError() {
-    AbstractAsyncExecutor executor = executor();
-    doReturn(new AbstractAsyncExecutor.SubmitResult(null, StageExecutorResult.error()))
+    AsyncExecutor executor = executor();
+    doReturn(new AsyncExecutor.SubmitResult(null, StageExecutorResult.error()))
         .when(executor)
         .submit(any());
 

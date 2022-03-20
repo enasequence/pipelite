@@ -52,12 +52,12 @@ public class InternalErrorService {
     this.metrics = metrics;
   }
 
-  @Timed("pipelite.transactional")
+  @Timed("pipelite.service")
   public InternalErrorEntity saveInternalError(String serviceName, Class cls, Throwable exception) {
     return saveInternalError(serviceName, null, null, null, cls, exception);
   }
 
-  @Timed("pipelite.transactional")
+  @Timed("pipelite.service")
   public InternalErrorEntity saveInternalError(
       String serviceName,
       String pipelineName,
@@ -73,11 +73,8 @@ public class InternalErrorService {
           processId != null ? processId : "?",
           stageName != null ? stageName : "?",
           cls != null ? cls.getName() : "?");
-      if (pipelineName != null) {
-        metrics.pipeline(pipelineName).process().incrementInternalErrorCount();
-      } else {
-        metrics.incrementInternalErrorCount();
-      }
+      metrics.error().incrementCount();
+
       InternalErrorEntity internalErrorEntity = new InternalErrorEntity();
       internalErrorEntity.setErrorId(UUID.randomUUID().toString());
       internalErrorEntity.setErrorTime(ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS));

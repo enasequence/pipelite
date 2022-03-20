@@ -24,8 +24,8 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
 import pipelite.manager.ProcessRunnerPoolManager;
-import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
+import pipelite.metrics.ProcessMetrics;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorState;
@@ -49,6 +49,7 @@ public class PipelineRunnerHighParallelismAsyncTest {
   private static final int PARALLELISM = Integer.MAX_VALUE;
   private static final Duration SUBMIT_TIME = Duration.ofSeconds(1);
   private static final Duration EXECUTION_TIME = Duration.ofSeconds(1);
+  private static final String STAGE_NAME = "STAGE";
 
   @Autowired private ProcessRunnerPoolManager processRunnerPoolManager;
   @Autowired private PipeliteServices pipeliteServices;
@@ -94,7 +95,7 @@ public class PipelineRunnerHighParallelismAsyncTest {
             @Override
             public void configure(ProcessBuilder builder) {
               builder
-                  .execute("STAGE")
+                  .execute(STAGE_NAME)
                   .withAsyncTestExecutor(StageExecutorState.SUCCESS, SUBMIT_TIME, EXECUTION_TIME);
             }
           });
@@ -106,13 +107,13 @@ public class PipelineRunnerHighParallelismAsyncTest {
     PipelineRunner pipelineRunner = pipeliteServices.runner().getPipelineRunner(pipelineName).get();
     assertThat(pipelineRunner.getActiveProcessRunners().size()).isEqualTo(0);
 
-    PipelineMetrics pipelineMetrics = metrics.pipeline(pipelineName);
-    assertThat(pipelineMetrics.process().getInternalErrorCount()).isEqualTo(0);
+    ProcessMetrics processMetrics = metrics.process(pipelineName);
+    assertThat(metrics.error().count()).isEqualTo(0);
     // TODO: higher than expected completed count
-    assertThat(pipelineMetrics.process().getCompletedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(pipelineMetrics.process().getFailedCount()).isZero();
-    assertThat(pipelineMetrics.stage().getFailedCount()).isEqualTo(0);
-    assertThat(pipelineMetrics.stage().getSuccessCount()).isEqualTo(PROCESS_CNT);
+    assertThat(processMetrics.runner().completedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(processMetrics.runner().failedCount()).isZero();
+    assertThat(processMetrics.stage(STAGE_NAME).runner().failedCount()).isEqualTo(0);
+    assertThat(processMetrics.stage(STAGE_NAME).runner().successCount()).isEqualTo(PROCESS_CNT);
   }
 
   @Test

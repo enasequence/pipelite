@@ -43,6 +43,8 @@ public class ProcessRunnerPool extends AbstractScheduledService {
   private final boolean shutdownIfIdle;
   private final Set<ProcessRunnerPool.ActiveProcessRunner> active = ConcurrentHashMap.newKeySet();
   private final InternalErrorHandler internalErrorHandler;
+  private ZonedDateTime lastRunOneIteration = ZonedDateTime.now();
+  private static final Duration timeSeriesUpdateFrequency = Duration.ofSeconds(15);
 
   @Data
   public static class ActiveProcessRunner {
@@ -105,14 +107,19 @@ public class ProcessRunnerPool extends AbstractScheduledService {
 
           runOneIterationForActiveProcessRunners();
 
-          pipeliteMetrics.setRunningProcessesCount(getActiveProcessRunners());
+          if (lastRunOneIteration.plus(timeSeriesUpdateFrequency).isBefore(ZonedDateTime.now())) {
+            lastRunOneIteration = ZonedDateTime.now();
+            List<ProcessRunner> activeProcessRunners = getActiveProcessRunners();
+            pipeliteMetrics.setRunningProcessesCount(activeProcessRunners, lastRunOneIteration);
+            pipeliteMetrics.setRunningStagesCount(activeProcessRunners, lastRunOneIteration);
+            pipeliteMetrics.setSubmittedStagesCount(activeProcessRunners, lastRunOneIteration);
+          }
+
           if (shutdownIfIdle && isIdle()) {
             log.atInfo().log("Stopping idle process runner pool: %s", serviceName());
             stopAsync();
           }
-          pipeliteMetrics
-              .getProcessRunnerPoolOneIterationTimer()
-              .record(Duration.between(runOneIterationStartTime, ZonedDateTime.now()));
+          pipeliteMetrics.processRunnerPool().endRunOneIteration(runOneIterationStartTime);
         });
   }
 

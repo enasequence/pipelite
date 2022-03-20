@@ -12,9 +12,9 @@ package pipelite.tester.metrics;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import pipelite.metrics.PipelineMetrics;
 import pipelite.metrics.PipeliteMetrics;
-import pipelite.metrics.TimeSeriesMetrics;
+import pipelite.metrics.ProcessMetrics;
+import pipelite.metrics.helper.TimeSeriesHelper;
 import pipelite.tester.TestType;
 
 public class MetricsTestAsserter {
@@ -24,28 +24,23 @@ public class MetricsTestAsserter {
   public static void assertCompletedMetrics(
       TestType testType, PipeliteMetrics metrics, String pipelineName, int processCnt) {
 
-    PipelineMetrics pipelineMetrics = metrics.pipeline(pipelineName);
+    ProcessMetrics processMetrics = metrics.process(pipelineName);
 
     // Assuming single stage in process.
 
-    assertThat(pipelineMetrics.process().getCompletedCount())
+    assertThat(processMetrics.runner().completedCount())
         .isEqualTo(processCnt * testType.expectedProcessCompletedCnt());
-    assertThat(pipelineMetrics.process().getFailedCount())
+    assertThat(processMetrics.runner().failedCount())
         .isEqualTo(processCnt * testType.expectedProcessFailedCnt());
 
-    assertThat(pipelineMetrics.stage().getFailedCount())
+    assertThat(processMetrics.stageFailedCount())
         .isEqualTo(processCnt * testType.expectedStageFailedCnt());
-    assertThat(pipelineMetrics.stage().getSuccessCount())
+    assertThat(processMetrics.stageSuccessCount())
         .isEqualTo(processCnt * testType.expectedStageSuccessCnt());
 
-    assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getCompletedTimeSeries()))
+    assertThat(TimeSeriesHelper.getCount(processMetrics.runner().completedTimeSeries()))
         .isEqualTo(processCnt * testType.expectedProcessCompletedCnt());
-    assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.process().getFailedTimeSeries()))
+    assertThat(TimeSeriesHelper.getCount(processMetrics.runner().failedTimeSeries()))
         .isEqualTo(processCnt * testType.expectedProcessFailedCnt());
-
-    assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getFailedTimeSeries()))
-        .isEqualTo(processCnt * testType.expectedStageFailedCnt());
-    assertThat(TimeSeriesMetrics.getCount(pipelineMetrics.stage().getSuccessTimeSeries()))
-        .isEqualTo(processCnt * testType.expectedStageSuccessCnt());
   }
 }

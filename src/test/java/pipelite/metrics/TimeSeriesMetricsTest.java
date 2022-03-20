@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import org.junit.jupiter.api.Test;
+import pipelite.metrics.helper.TimeSeriesHelper;
 
 public class TimeSeriesMetricsTest {
 
@@ -24,32 +25,33 @@ public class TimeSeriesMetricsTest {
 
   @Test
   public void getTimeSeriesWindow() {
-    int minutes = 5;
-    assertThat(SINCE.with(TimeSeriesMetrics.getTimeSeriesWindow(minutes))).isEqualTo(SINCE);
-    assertThat(SINCE.plusMinutes(1).with(TimeSeriesMetrics.getTimeSeriesWindow(minutes)))
-        .isEqualTo(SINCE.plusMinutes(minutes));
-    assertThat(SINCE.plusMinutes(2).with(TimeSeriesMetrics.getTimeSeriesWindow(minutes)))
-        .isEqualTo(SINCE.plusMinutes(minutes));
-    assertThat(SINCE.plusMinutes(3).with(TimeSeriesMetrics.getTimeSeriesWindow(minutes)))
-        .isEqualTo(SINCE.plusMinutes(minutes));
-    assertThat(SINCE.plusMinutes(4).with(TimeSeriesMetrics.getTimeSeriesWindow(minutes)))
-        .isEqualTo(SINCE.plusMinutes(minutes));
-    assertThat(SINCE.plusMinutes(minutes).with(TimeSeriesMetrics.getTimeSeriesWindow(minutes)))
-        .isEqualTo(SINCE.plusMinutes(minutes));
+    int windowMinutes = 1;
+    assertThat(SINCE.with(TimeSeriesHelper.getTimeSeriesWindow(windowMinutes))).isEqualTo(SINCE);
     assertThat(
             SINCE
-                .plusMinutes(minutes)
-                .plusSeconds(1)
-                .with(TimeSeriesMetrics.getTimeSeriesWindow(minutes)))
-        .isEqualTo(SINCE.plusMinutes(minutes * 2));
-    assertThat(
-            SINCE.plusMinutes(minutes * 100).with(TimeSeriesMetrics.getTimeSeriesWindow(minutes)))
-        .isEqualTo(SINCE.plusMinutes(minutes * 100));
+                .plusMinutes(windowMinutes)
+                .with(TimeSeriesHelper.getTimeSeriesWindow(windowMinutes)))
+        .isEqualTo(SINCE.plusMinutes(windowMinutes));
     assertThat(
             SINCE
-                .plusMinutes(minutes * 100)
+                .plusMinutes(2 * windowMinutes)
+                .with(TimeSeriesHelper.getTimeSeriesWindow(windowMinutes)))
+        .isEqualTo(SINCE.plusMinutes(2 * windowMinutes));
+    assertThat(
+            SINCE
+                .plusMinutes(3 * windowMinutes)
+                .with(TimeSeriesHelper.getTimeSeriesWindow(windowMinutes)))
+        .isEqualTo(SINCE.plusMinutes(3 * windowMinutes));
+    assertThat(
+            SINCE
+                .plusMinutes(windowMinutes * 100)
+                .with(TimeSeriesHelper.getTimeSeriesWindow(windowMinutes)))
+        .isEqualTo(SINCE.plusMinutes(windowMinutes * 100));
+    assertThat(
+            SINCE
+                .plusMinutes(windowMinutes * 100)
                 .plusSeconds(1)
-                .with(TimeSeriesMetrics.getTimeSeriesWindow(minutes)))
-        .isEqualTo(SINCE.plusMinutes(minutes * 101));
+                .with(TimeSeriesHelper.getTimeSeriesWindow(windowMinutes)))
+        .isEqualTo(SINCE.plusMinutes(windowMinutes * 101));
   }
 }

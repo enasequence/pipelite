@@ -15,8 +15,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import pipelite.PipeliteIdCreator;
-import pipelite.executor.AbstractExecutor;
 import pipelite.executor.JsonSerializableExecutor;
+import pipelite.executor.SyncExecutor;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
@@ -28,7 +28,7 @@ import pipelite.stage.parameters.ExecutorParameters;
 
 class StageEntityTest {
 
-  public static final class TestExecutor extends AbstractExecutor<ExecutorParameters>
+  public static final class TestExecutor extends SyncExecutor<ExecutorParameters>
       implements JsonSerializableExecutor {
     private static final String test = "TEST_EXECUTOR_DATA";
 
