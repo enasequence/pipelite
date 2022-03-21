@@ -29,8 +29,8 @@ import lombok.extern.flogger.Flogger;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.describe.DescribeJobs;
 import pipelite.executor.describe.cache.KubernetesDescribeJobsCache;
-import pipelite.executor.task.RetryTask;
 import pipelite.log.LogKey;
+import pipelite.retryable.RetryableExternalAction;
 import pipelite.service.DescribeJobsCacheService;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
@@ -138,7 +138,8 @@ public class KubernetesExecutor
               .endSpec()
               .build();
 
-      RetryTask.DEFAULT.execute(r -> client.batch().v1().jobs().inNamespace(namespace).create(job));
+      RetryableExternalAction.execute(
+          () -> client.batch().v1().jobs().inNamespace(namespace).create(job));
 
       logContext(log.atInfo(), request).log("Submitted Kubernetes job " + jobId);
     } catch (KubernetesClientException e) {
@@ -203,7 +204,8 @@ public class KubernetesExecutor
     try {
       KubernetesClient client = executorContext.getKubernetesClient();
       JobList jobList =
-          RetryTask.DEFAULT.execute(r -> client.batch().v1().jobs().inNamespace(namespace).list());
+          RetryableExternalAction.execute(
+              () -> client.batch().v1().jobs().inNamespace(namespace).list());
       for (Job job : jobList.getItems()) {
         String jobId = job.getMetadata().getName();
         jobIds.add(jobId);
@@ -319,7 +321,7 @@ public class KubernetesExecutor
     }
     log.atFine().log("Terminating Kubernetes job " + jobId);
     ScalableResource<Job> job = client.batch().v1().jobs().inNamespace(namespace).withName(jobId);
-    RetryTask.DEFAULT.execute(r -> job.delete());
+    RetryableExternalAction.execute(() -> job.delete());
   }
 
   private static Pod lastPodToStart(List<Pod> pods) {

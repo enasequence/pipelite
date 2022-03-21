@@ -19,7 +19,7 @@ import lombok.Setter;
 import lombok.extern.flogger.Flogger;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.cmd.CmdRunnerUtils;
-import pipelite.executor.task.RetryTask;
+import pipelite.retryable.RetryableExternalAction;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.ExecutorParametersValidator;
 import pipelite.stage.parameters.LsfExecutorParameters;
@@ -72,8 +72,8 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
     final String definition =
         applyDefinitionParameters(
             CmdRunnerUtils.read(definitionUrl), getExecutorParams().getParameters());
-    RetryTask.DEFAULT.execute(
-        r -> {
+    RetryableExternalAction.execute(
+        () -> {
           getCmdRunner().writeFile(definition, Paths.get(definitionFile));
           return null;
         });

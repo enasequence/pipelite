@@ -13,7 +13,7 @@ package pipelite.executor.cmd;
 import java.nio.file.Path;
 import lombok.extern.flogger.Flogger;
 import pipelite.exception.PipeliteException;
-import pipelite.executor.task.RetryTask;
+import pipelite.retryable.RetryableExternalAction;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.CmdExecutorParameters;
@@ -52,8 +52,8 @@ public interface CmdRunner {
   default String readFile(Path file, int lastLines) {
     try {
       StageExecutorResult result =
-          RetryTask.DEFAULT.execute(
-              r -> {
+          RetryableExternalAction.execute(
+              () -> {
                 StageExecutorResult retryResult = execute("tail -n " + lastLines + " " + file);
                 if (!retryResult.isSuccess()) {
                   throw new PipeliteException("Failed to read file: " + file);
@@ -141,8 +141,8 @@ public interface CmdRunner {
    */
   default boolean createDir(Path dir) {
     try {
-      RetryTask.DEFAULT.execute(
-          r -> {
+      RetryableExternalAction.execute(
+          () -> {
             StageExecutorResult retryResult = execute("mkdir -p " + dir);
             if (!retryResult.isSuccess()) {
               throw new PipeliteException("Failed to create directory: " + dir);

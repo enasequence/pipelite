@@ -33,8 +33,8 @@ import pipelite.exception.PipeliteTimeoutException;
 import pipelite.executor.cmd.CmdRunner;
 import pipelite.executor.describe.DescribeJobs;
 import pipelite.executor.describe.cache.LsfDescribeJobsCache;
-import pipelite.executor.task.RetryTask;
 import pipelite.log.LogKey;
+import pipelite.retryable.RetryableExternalAction;
 import pipelite.service.DescribeJobsCacheService;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
@@ -146,7 +146,7 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
     outFile =
         getExecutorParams().resolveLogFile(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN);
     StageExecutorResult result =
-        RetryTask.DEFAULT.execute(r -> getCmdRunner().execute(getSubmitCmd(request)));
+        RetryableExternalAction.execute(() -> getCmdRunner().execute(getSubmitCmd(request)));
     String jobId = null;
     if (!result.isError()) {
       jobId = extractSubmittedJobIdFromBsubOutput(result.getStageLog());
@@ -182,7 +182,7 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
     if (jobId == null) {
       return;
     }
-    RetryTask.DEFAULT.execute(r -> bkill(getCmdRunner(), jobId));
+    RetryableExternalAction.execute(() -> bkill(getCmdRunner(), jobId));
     describeJobs().removeRequest(describeJobsRequestContext());
   }
 

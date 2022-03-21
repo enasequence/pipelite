@@ -24,8 +24,8 @@ import lombok.extern.flogger.Flogger;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.describe.DescribeJobs;
 import pipelite.executor.describe.cache.AwsBatchDescribeJobsCache;
-import pipelite.executor.task.RetryTask;
 import pipelite.log.LogKey;
+import pipelite.retryable.RetryableExternalAction;
 import pipelite.service.DescribeJobsCacheService;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
@@ -77,7 +77,7 @@ public class AwsBatchExecutor
 
     AWSBatch awsBatch = awsBatchClient(region);
     SubmitJobResult submitJobResult =
-        RetryTask.DEFAULT.execute(r -> awsBatch.submitJob(submitJobRequest));
+        RetryableExternalAction.execute(() -> awsBatch.submitJob(submitJobRequest));
 
     if (submitJobResult == null || submitJobResult.getJobId() == null) {
       throw new PipeliteException("Missing AWSBatch submit job id.");
@@ -110,8 +110,8 @@ public class AwsBatchExecutor
     }
     TerminateJobRequest terminateJobRequest =
         new TerminateJobRequest().withJobId(jobId).withReason("Job terminated by pipelite");
-    RetryTask.DEFAULT.execute(
-        r -> describeJobs().getExecutorContext().getAwsBatch().terminateJob(terminateJobRequest));
+    RetryableExternalAction.execute(
+        () -> describeJobs().getExecutorContext().getAwsBatch().terminateJob(terminateJobRequest));
     // Remove request because the execution is being terminated.
     describeJobs().removeRequest(jobId);
   }
@@ -122,8 +122,8 @@ public class AwsBatchExecutor
 
     Map<String, StageExecutorResult> results = new HashMap<>();
     DescribeJobsResult jobResult =
-        RetryTask.DEFAULT.execute(
-            r ->
+        RetryableExternalAction.execute(
+            () ->
                 executorContext
                     .getAwsBatch()
                     .describeJobs(new DescribeJobsRequest().withJobs(requests)));

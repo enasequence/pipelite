@@ -31,11 +31,7 @@ public class RetryableDataAccessAction<T> {
     this.configuration = configuration;
   }
 
-  public interface Action<T> {
-    T get() throws Throwable;
-  }
-
-  public <T> T execute(Action<T> action) throws SQLException {
+  public <T> T execute(RetryableAction<T, SQLException> action) throws SQLException {
     ZonedDateTime since = ZonedDateTime.now();
     while (true) {
       try {

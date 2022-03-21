@@ -22,9 +22,9 @@ import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageLogEntity;
 import pipelite.error.InternalErrorHandler;
-import pipelite.executor.task.RetryTask;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
+import pipelite.retryable.RetryableExternalAction;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
 
@@ -75,8 +75,8 @@ public class MailService {
             message.setSubject(subject);
             String text = getExecutionBody(process, subject);
             message.setText(text);
-            RetryTask.DEFAULT.execute(
-                r -> {
+            RetryableExternalAction.execute(
+                () -> {
                   mailSender.send(message);
                   return null;
                 });
@@ -107,8 +107,8 @@ public class MailService {
             message.setSubject(subject);
             String text = getExecutionBody(process, subject);
             message.setText(text);
-            RetryTask.DEFAULT.execute(
-                r -> {
+            RetryableExternalAction.execute(
+                () -> {
                   mailSender.send(message);
                   return null;
                 });

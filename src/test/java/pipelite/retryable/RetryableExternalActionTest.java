@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.executor.task;
+package pipelite.retryable;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -18,16 +18,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.springframework.retry.support.RetryTemplate;
 
-public class RetryTaskTest {
+public class RetryableExternalActionTest {
 
   @Test
   public void fixedThrows() {
     int attempts = 3;
     AtomicInteger cnt = new AtomicInteger();
     RetryTemplate retry =
-        RetryTask.retryTemplate(
-            RetryTask.fixedBackoffPolicy(Duration.ofMillis(1)),
-            RetryTask.maxAttemptsRetryPolicy(attempts));
+        RetryableExternalAction.retryTemplate(
+            RetryableExternalAction.fixedBackoffPolicy(Duration.ofMillis(1)),
+            RetryableExternalAction.maxAttemptsRetryPolicy(attempts));
 
     assertThrows(
         RuntimeException.class,
@@ -45,9 +45,9 @@ public class RetryTaskTest {
     int attempts = 3;
     AtomicInteger cnt = new AtomicInteger();
     RetryTemplate retry =
-        RetryTask.retryTemplate(
-            RetryTask.fixedBackoffPolicy(Duration.ofMillis(1)),
-            RetryTask.maxAttemptsRetryPolicy(attempts));
+        RetryableExternalAction.retryTemplate(
+            RetryableExternalAction.fixedBackoffPolicy(Duration.ofMillis(1)),
+            RetryableExternalAction.maxAttemptsRetryPolicy(attempts));
 
     retry.execute(
         r -> {
@@ -62,9 +62,10 @@ public class RetryTaskTest {
     int attempts = 3;
     AtomicInteger cnt = new AtomicInteger();
     RetryTemplate retry =
-        RetryTask.retryTemplate(
-            RetryTask.expBackoffPolicy(Duration.ofMillis(1), Duration.ofMillis(10), 2.0),
-            RetryTask.maxAttemptsRetryPolicy(attempts));
+        RetryableExternalAction.retryTemplate(
+            RetryableExternalAction.expBackoffPolicy(
+                Duration.ofMillis(1), Duration.ofMillis(10), 2.0),
+            RetryableExternalAction.maxAttemptsRetryPolicy(attempts));
 
     assertThrows(
         RuntimeException.class,
@@ -82,9 +83,10 @@ public class RetryTaskTest {
     int attempts = 3;
     AtomicInteger cnt = new AtomicInteger();
     RetryTemplate retry =
-        RetryTask.retryTemplate(
-            RetryTask.expBackoffPolicy(Duration.ofMillis(1), Duration.ofMillis(10), 2.0),
-            RetryTask.maxAttemptsRetryPolicy(attempts));
+        RetryableExternalAction.retryTemplate(
+            RetryableExternalAction.expBackoffPolicy(
+                Duration.ofMillis(1), Duration.ofMillis(10), 2.0),
+            RetryableExternalAction.maxAttemptsRetryPolicy(attempts));
 
     retry.execute(
         r -> {

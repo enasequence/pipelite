@@ -8,9 +8,10 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.executor.task;
+package pipelite.retryable;
 
 import java.time.Duration;
+import lombok.extern.flogger.Flogger;
 import org.springframework.retry.RetryPolicy;
 import org.springframework.retry.backoff.BackOffPolicy;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
@@ -18,32 +19,30 @@ import org.springframework.retry.backoff.FixedBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 
-/** Execute a task with retries using {@link RetryTemplate}. */
-public class RetryTask {
+@Flogger
+public class RetryableExternalAction {
 
-  private RetryTask() {}
+  private static final RetryTemplate RETRY_TEMPLATE =
+      retryTemplate(fixedBackoffPolicy(Duration.ofSeconds(5)), maxAttemptsRetryPolicy(3));
 
-  /**
-   * The default retry policy makes three attempts separated by 5 seconds intervals. All exceptions
-   * will be retried.
-   */
-  public static final RetryTemplate DEFAULT =
-      RetryTask.retryTemplate(fixedBackoffPolicy(Duration.ofSeconds(5)), maxAttemptsRetryPolicy(3));
+  public static final <T, E extends Throwable> T execute(RetryableAction<T, E> action) throws E {
+    return RETRY_TEMPLATE.execute(r -> action.get());
+  }
 
-  public static RetryTemplate retryTemplate(BackOffPolicy backOffPolicy, RetryPolicy retryPolicy) {
+  static RetryTemplate retryTemplate(BackOffPolicy backOffPolicy, RetryPolicy retryPolicy) {
     RetryTemplate retryTemplate = new RetryTemplate();
     retryTemplate.setBackOffPolicy(backOffPolicy);
     retryTemplate.setRetryPolicy(retryPolicy);
     return retryTemplate;
   }
 
-  public static FixedBackOffPolicy fixedBackoffPolicy(Duration backoff) {
+  static FixedBackOffPolicy fixedBackoffPolicy(Duration backoff) {
     FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
     backOffPolicy.setBackOffPeriod(backoff.toMillis());
     return backOffPolicy;
   }
 
-  public static ExponentialBackOffPolicy expBackoffPolicy(
+  static ExponentialBackOffPolicy expBackoffPolicy(
       Duration minBackoff, Duration maxBackoff, Double multiplier) {
     ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
     backOffPolicy.setInitialInterval(minBackoff.toMillis());
@@ -52,7 +51,7 @@ public class RetryTask {
     return backOffPolicy;
   }
 
-  public static RetryPolicy maxAttemptsRetryPolicy(int attempts) {
+  static RetryPolicy maxAttemptsRetryPolicy(int attempts) {
     SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
     retryPolicy.setMaxAttempts(attempts);
     return retryPolicy;
