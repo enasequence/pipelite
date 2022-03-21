@@ -8,25 +8,13 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.metrics;
+package pipelite.service.annotation;
 
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-@Component
-public class DataSourceMetrics {
-
-  // Micrometer timers.
-
-  private final Timer getConnectionTimer;
-
-  public DataSourceMetrics(@Autowired MeterRegistry meterRegistry) {
-    getConnectionTimer = meterRegistry.timer("pipelite.dataSource.getConnectionTimer");
-  }
-
-  public Timer getConnectionTimer() {
-    return getConnectionTimer;
-  }
-}
+@Target({ElementType.TYPE, ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface RetryableDataAccess {}

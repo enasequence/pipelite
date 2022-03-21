@@ -15,14 +15,13 @@ import static org.mockito.Mockito.mock;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.jdbc.datasource.AbstractDataSource;
-import pipelite.configuration.DataSourceRetryConfiguration;
+import pipelite.configuration.RetryableDataSourceConfiguration;
 
-public class HealthCheckServiceTest {
+public class DataSourceHealthCheckServiceTest {
 
   public class TestDataSource extends AbstractDataSource {
 
@@ -44,37 +43,35 @@ public class HealthCheckServiceTest {
 
   @Test
   public void test() {
-    DataSourceRetryConfiguration dataSourceRetryConfiguration = new DataSourceRetryConfiguration();
-    dataSourceRetryConfiguration.setAttempts(2);
-    dataSourceRetryConfiguration.setDelay(Duration.ofHours(1));
-    dataSourceRetryConfiguration.setMultiplier(1);
+    RetryableDataSourceConfiguration configuration = new RetryableDataSourceConfiguration();
 
     TestDataSource testDataSource = new TestDataSource();
-    HealthCheckService h = new HealthCheckService(dataSourceRetryConfiguration, testDataSource);
+    DataSourceHealthCheckService h =
+        new DataSourceHealthCheckService(configuration, testDataSource);
 
-    // up healthy check
+    // data source is healthy
+
+    // health check
     assertThat(h.health().getStatus()).isEqualTo(Status.UP);
-    assertThat(h.health().getStatus()).isEqualTo(Status.UP);
+    assertThat(h.isHealthy()).isTrue();
+    assertThat(h.unhealthySince.get()).isNull();
 
     // data source throws
     testDataSource.error = true;
-    LocalDateTime now = LocalDateTime.now();
+    ZonedDateTime since = ZonedDateTime.now();
+    h.checkIfHealthy();
 
-    // up healthy check
-    assertThat(h.health(now).getStatus()).isEqualTo(Status.UP);
-    assertThat(h.health(now.plusMinutes(15)).getStatus()).isEqualTo(Status.UP);
-    assertThat(h.health(now.plusMinutes(45)).getStatus()).isEqualTo(Status.UP);
-    assertThat(h.health(now.plusMinutes(59).plusSeconds(59)).getStatus()).isEqualTo(Status.UP);
-
-    // down healthy check
-    assertThat(h.health(now.plusHours(1)).getStatus()).isEqualTo(Status.DOWN);
-    assertThat(h.health(now.plusHours(2)).getStatus()).isEqualTo(Status.DOWN);
-
-    // data source stops throwing
-    testDataSource.error = false;
-
-    // up healthy check
+    // health check
     assertThat(h.health().getStatus()).isEqualTo(Status.UP);
-    assertThat(h.health().getStatus()).isEqualTo(Status.UP);
+    assertThat(h.isHealthy()).isFalse();
+    assertThat(h.unhealthySince.get()).isAfterOrEqualTo(since);
+    assertThat(h.unhealthySince.get()).isBeforeOrEqualTo(ZonedDateTime.now());
+
+    // data source has been unhealthy for too long
+    h.unhealthySince.set(since.minus(RetryableDataSourceConfiguration.DURATION));
+
+    // health check
+    assertThat(h.health().getStatus()).isEqualTo(Status.DOWN);
+    assertThat(h.isHealthy()).isFalse();
   }
 }

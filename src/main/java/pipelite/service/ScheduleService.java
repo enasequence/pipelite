@@ -19,8 +19,6 @@ import java.util.List;
 import java.util.Optional;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,19 +28,12 @@ import pipelite.entity.ScheduleEntity;
 import pipelite.exception.PipeliteProcessRetryException;
 import pipelite.process.ProcessState;
 import pipelite.repository.ScheduleRepository;
+import pipelite.service.annotation.RetryableDataAccess;
 
 @Service
-@Flogger
+@RetryableDataAccess
 @Transactional(propagation = Propagation.REQUIRES_NEW)
-@Retryable(
-    listeners = {"dataSourceRetryListener"},
-    maxAttemptsExpression = "#{@dataSourceRetryConfiguration.getAttempts()}",
-    backoff =
-        @Backoff(
-            delayExpression = "#{@dataSourceRetryConfiguration.getDelay()}",
-            maxDelayExpression = "#{@dataSourceRetryConfiguration.getMaxDelay()}",
-            multiplierExpression = "#{@dataSourceRetryConfiguration.getMultiplier()}"),
-    exceptionExpression = "#{@dataSourceRetryConfiguration.recoverableException(#root)}")
+@Flogger
 public class ScheduleService {
 
   /** Retry margin until next scheduled execution. */

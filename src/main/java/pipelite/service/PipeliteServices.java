@@ -24,7 +24,7 @@ public class PipeliteServices {
   private final PipeliteLockerService pipeliteLockerService;
   private final RegisteredPipelineService registeredPipelineService;
   private final InternalErrorService internalErrorService;
-  private final HealthCheckService healthCheckService;
+  private final DataSourceHealthCheckService healthCheckService;
   private final RunnerService runnerService;
   private final PipeliteExecutorService pipeliteExecutorService;
   private final PipeliteMetrics pipeliteMetrics;
@@ -38,7 +38,7 @@ public class PipeliteServices {
       @Autowired PipeliteLockerService pipeliteLockerService,
       @Autowired RegisteredPipelineService registeredPipelineService,
       @Autowired InternalErrorService internalErrorService,
-      @Autowired HealthCheckService healthCheckService,
+      @Autowired DataSourceHealthCheckService healthCheckService,
       @Autowired RunnerService runnerService,
       @Autowired PipeliteExecutorService pipeliteExecutorService,
       @Autowired PipeliteMetrics pipeliteMetrics) {
@@ -88,7 +88,7 @@ public class PipeliteServices {
     return internalErrorService;
   }
 
-  public HealthCheckService healthCheck() {
+  public DataSourceHealthCheckService healthCheck() {
     return healthCheckService;
   }
 

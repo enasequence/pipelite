@@ -12,16 +12,8 @@ package pipelite.configuration;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import java.io.PrintWriter;
-import java.sql.Connection;
-import java.sql.ConnectionBuilder;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.logging.Logger;
 import javax.sql.DataSource;
 import lombok.Data;
 import lombok.extern.flogger.Flogger;
@@ -30,13 +22,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import org.springframework.core.env.Environment;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
-import pipelite.metrics.DataSourceMetrics;
+import pipelite.retryable.RetryableDataSource;
 
 @Configuration
 @ConfigurationProperties(prefix = "pipelite.datasource")
@@ -50,10 +41,11 @@ public class DataSourceConfiguration {
 
   private static final int DEFAULT_MINIMUM_IDLE = 10;
   private static final int DEFAULT_MAXIMUM_POOL_SIZE = 25;
-  private static final Duration DEFAULT_CONNECTION_TIMEOUT = Duration.ofMinutes(5);
+  private static final Duration CONNECTION_TIMEOUT = Duration.ofMinutes(1);
+  private static final Duration CONNECTION_LEAK_THRESHOLD = Duration.ofMinutes(1);
 
   @Autowired ProfileConfiguration profileConfiguration;
-  @Autowired DataSourceMetrics dataSourceMetrics;
+  @Autowired RetryableDataSourceConfiguration retryableDataSourceConfiguration;
 
   private String driverClassName;
   private String url;
@@ -61,13 +53,10 @@ public class DataSourceConfiguration {
   private String password;
   private String ddlAuto;
   private String dialect;
-  private Integer minimumIdle;
-  private Integer maximumPoolSize;
-  private Duration connectionTimeout;
-  /** Uses an in-memory database if a valid datasource has not been provided. */
+  private Integer minimumIdle = DEFAULT_MINIMUM_IDLE;
+  private Integer maximumPoolSize = DEFAULT_MAXIMUM_POOL_SIZE;
   private boolean test;
 
-  // Better error reporting for required properties.
   private boolean checkRequiredProperties() {
     boolean isValid = true;
     if (!isDefinedValue(driverClassName)) {
@@ -95,7 +84,6 @@ public class DataSourceConfiguration {
       this.password = "";
       this.minimumIdle = DEFAULT_MINIMUM_IDLE;
       this.maximumPoolSize = DEFAULT_MAXIMUM_POOL_SIZE;
-      this.connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
       this.ddlAuto = "create";
       this.dialect = "org.hibernate.dialect.HSQLDialect";
       return true;
@@ -136,15 +124,6 @@ public class DataSourceConfiguration {
   @Primary
   @Bean("pipeliteDataSource")
   public DataSource pipeliteDataSource() {
-    if (minimumIdle == null || minimumIdle < 1) {
-      minimumIdle = DEFAULT_MINIMUM_IDLE;
-    }
-    if (maximumPoolSize == null || maximumPoolSize < 1) {
-      maximumPoolSize = DEFAULT_MAXIMUM_POOL_SIZE;
-    }
-    if (connectionTimeout == null) {
-      connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
-    }
     HikariConfig hikariConfig = new HikariConfig();
     hikariConfig.setDriverClassName(driverClassName);
     hikariConfig.setJdbcUrl(url);
@@ -152,11 +131,12 @@ public class DataSourceConfiguration {
     hikariConfig.setPassword(password);
     hikariConfig.setMinimumIdle(minimumIdle);
     hikariConfig.setMaximumPoolSize(maximumPoolSize);
-    hikariConfig.setConnectionTimeout(connectionTimeout.toMillis());
-    hikariConfig.setLeakDetectionThreshold(5000);
+    hikariConfig.setConnectionTimeout(CONNECTION_TIMEOUT.toMillis());
+    hikariConfig.setLeakDetectionThreshold(CONNECTION_LEAK_THRESHOLD.toMillis());
     hikariConfig.setPoolName("pipelite");
     hikariConfig.setAutoCommit(false);
-    return new PipeliteDataSource(new HikariDataSource(hikariConfig), dataSourceMetrics);
+    return new RetryableDataSource(
+        new HikariDataSource(hikariConfig), retryableDataSourceConfiguration);
   }
 
   @Primary
@@ -165,75 +145,5 @@ public class DataSourceConfiguration {
     JpaTransactionManager transactionManager = new JpaTransactionManager();
     transactionManager.setEntityManagerFactory(pipeliteEntityManager().getObject());
     return transactionManager;
-  }
-
-  public static boolean isTestProfile(Environment environment) {
-    return Arrays.asList(environment.getActiveProfiles()).contains("test");
-  }
-
-  /** Data source that updates data source metrics. */
-  public static class PipeliteDataSource implements DataSource {
-    private final DataSource dataSource;
-    private final DataSourceMetrics dataSourceMetrics;
-
-    public PipeliteDataSource(DataSource dataSource, DataSourceMetrics dataSourceMetrics) {
-      this.dataSource = dataSource;
-      this.dataSourceMetrics = dataSourceMetrics;
-    }
-
-    @Override
-    public Connection getConnection() throws SQLException {
-      ZonedDateTime startTime = ZonedDateTime.now();
-      Connection connection = dataSource.getConnection();
-      dataSourceMetrics
-          .getConnectionTimer()
-          .record(Duration.between(startTime, ZonedDateTime.now()));
-      return connection;
-    }
-
-    @Override
-    public Connection getConnection(String username, String password) throws SQLException {
-      return dataSource.getConnection(username, password);
-    }
-
-    @Override
-    public PrintWriter getLogWriter() throws SQLException {
-      return dataSource.getLogWriter();
-    }
-
-    @Override
-    public void setLogWriter(PrintWriter out) throws SQLException {
-      dataSource.setLogWriter(out);
-    }
-
-    @Override
-    public void setLoginTimeout(int seconds) throws SQLException {
-      dataSource.setLoginTimeout(seconds);
-    }
-
-    @Override
-    public int getLoginTimeout() throws SQLException {
-      return dataSource.getLoginTimeout();
-    }
-
-    @Override
-    public <T> T unwrap(Class<T> iface) throws SQLException {
-      return dataSource.unwrap(iface);
-    }
-
-    @Override
-    public boolean isWrapperFor(Class<?> iface) throws SQLException {
-      return dataSource.isWrapperFor(iface);
-    }
-
-    @Override
-    public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-      return dataSource.getParentLogger();
-    }
-
-    @Override
-    public ConnectionBuilder createConnectionBuilder() throws SQLException {
-      return dataSource.createConnectionBuilder();
-    }
   }
 }

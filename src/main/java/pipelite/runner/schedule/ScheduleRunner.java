@@ -34,7 +34,7 @@ import pipelite.process.ProcessFactory;
 import pipelite.runner.process.ProcessRunnerFactory;
 import pipelite.runner.process.ProcessRunnerPool;
 import pipelite.runner.stage.StageRunner;
-import pipelite.service.HealthCheckService;
+import pipelite.service.DataSourceHealthCheckService;
 import pipelite.service.PipeliteServices;
 import pipelite.service.ProcessService;
 import pipelite.service.ScheduleService;
@@ -45,7 +45,7 @@ public class ScheduleRunner extends ProcessRunnerPool {
 
   private final ScheduleService scheduleService;
   private final ProcessService processService;
-  private final HealthCheckService healthCheckService;
+  private final DataSourceHealthCheckService healthCheckService;
   private final ScheduleCache scheduleCache;
   private final List<ScheduleCron> scheduleCrons = Collections.synchronizedList(new ArrayList<>());
   private final Map<String, AtomicLong> maximumExecutions = new ConcurrentHashMap<>();
@@ -81,7 +81,7 @@ public class ScheduleRunner extends ProcessRunnerPool {
   public void runOneIteration() {
     internalErrorHandler.execute(
         () -> {
-          if (!healthCheckService.isDataSourceHealthy()) {
+          if (!healthCheckService.isHealthy()) {
             logContext(log.atSevere())
                 .log("Waiting data source to be healthy before starting new schedules");
             return;

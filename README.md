@@ -407,16 +407,8 @@ The unit for the resource usage limit can be one of:
 - pipelite.datasource.dialect: see Hibernate dialect options
 - pipelite.datasource.minimumIdle: minimum number of database connections in the connection pool. Default value: 10
 - pipelite.datasource.maximumPoolSize: maximum number of database connections in the connection pool. Default value: 25
-- pipelite.datasource.connectionTimeout: maximum duration waiting for a connection from the connection pool. Default
-  value: 5m
-- pipelite.datasource.retry.attempts: number of retry attempts to use the data source for an operation. Default value:
-  10
-- pipelite.datasource.retry.delay: the delay between first and second attempt to use the data source for an operation.
-  Default value: 1 second
-- pipelite.datasource.retry.multiplier: the exponential multiplier between subsequent attempts to use the data source
-  for an operation. Default value: 2
-- pipelite.datasource.test: if set to true then uses an in memory database unsuitable for production purposes. Default
-  value: false
+- pipelite.datasource.test: if set to true and if no valid datasource configuration has been provided then uses an in
+  memory database unsuitable for production purposes. Default value: false
 
 #### Advanced parameters
 

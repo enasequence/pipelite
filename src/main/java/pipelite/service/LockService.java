@@ -17,8 +17,6 @@ import java.util.Optional;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,19 +29,12 @@ import pipelite.error.InternalErrorHandler;
 import pipelite.log.LogKey;
 import pipelite.repository.ProcessLockRepository;
 import pipelite.repository.ServiceLockRepository;
+import pipelite.service.annotation.RetryableDataAccess;
 
 @Service
+@RetryableDataAccess
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 @Flogger
-@Retryable(
-    listeners = {"dataSourceRetryListener"},
-    maxAttemptsExpression = "#{@dataSourceRetryConfiguration.getAttempts()}",
-    backoff =
-        @Backoff(
-            delayExpression = "#{@dataSourceRetryConfiguration.getDelay()}",
-            maxDelayExpression = "#{@dataSourceRetryConfiguration.getMaxDelay()}",
-            multiplierExpression = "#{@dataSourceRetryConfiguration.getMultiplier()}"),
-    exceptionExpression = "#{@dataSourceRetryConfiguration.recoverableException(#root)}")
 public class LockService {
 
   private final ServiceConfiguration serviceConfiguration;

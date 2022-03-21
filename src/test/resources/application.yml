@@ -28,3 +28,5 @@ pipelite:
     password: ${PIPELITE_TEST_DATABASE_PASSWORD:}
     maxActive: 25
     ddlAuto: none
+# logging:
+#   level:

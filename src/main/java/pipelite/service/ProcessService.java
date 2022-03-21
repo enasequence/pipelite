@@ -21,8 +21,6 @@ import lombok.Data;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,18 +32,11 @@ import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.repository.ProcessRepository;
 import pipelite.runner.process.ProcessQueuePriorityPolicy;
+import pipelite.service.annotation.RetryableDataAccess;
 
 @Service
+@RetryableDataAccess
 @Transactional(propagation = Propagation.REQUIRES_NEW)
-@Retryable(
-    listeners = {"dataSourceRetryListener"},
-    maxAttemptsExpression = "#{@dataSourceRetryConfiguration.getAttempts()}",
-    backoff =
-        @Backoff(
-            delayExpression = "#{@dataSourceRetryConfiguration.getDelay()}",
-            maxDelayExpression = "#{@dataSourceRetryConfiguration.getMaxDelay()}",
-            multiplierExpression = "#{@dataSourceRetryConfiguration.getMultiplier()}"),
-    exceptionExpression = "#{@dataSourceRetryConfiguration.recoverableException(#root)}")
 @Flogger
 public class ProcessService {
 
