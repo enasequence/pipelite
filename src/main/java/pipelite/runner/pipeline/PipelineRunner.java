@@ -84,7 +84,7 @@ public class PipelineRunner extends ProcessRunnerPool {
   public void runOneIteration() {
     internalErrorHandler.execute(
         () -> {
-          if (!pipeliteServices.healthCheck().isDataSourceHealthy()) {
+          if (!pipeliteServices.healthCheck().isHealthy()) {
             logContext(log.atSevere())
                 .log("Waiting data source to be healthy before starting new processes");
             return;
