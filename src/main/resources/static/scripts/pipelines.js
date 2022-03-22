@@ -29,6 +29,16 @@ $(document).ready(function () {
         },
     });
 
+    // Restore state.
+    let pipelinesParams = getState("pipelines");
+    if (pipelinesParams) {
+        let [historyType, historySince] = pipelinesParams.split(",");
+        if (historyType && historySince) {
+            $("#pipelinesRunningHistoryType").val(historyType);
+            $("#pipelinesRunningHistorySince").val(historySince);
+        }
+    }
+
     refreshPipelines();
 });
 
@@ -46,8 +56,12 @@ function refreshPipelines() {
 }
 
 function pipelinesPlot() {
-    let runningHistorySince = $("#pipelinesRunningHistorySince").val();
+    let runningHistoryType = $("#pipelinesRunningHistoryType").val();
     let runningHistoryTypeText = $("#pipelinesRunningHistoryType option:selected").text();
+    let runningHistorySince = $("#pipelinesRunningHistorySince").val();
+
+    // Save state.
+    setState("pipelines", runningHistoryType + "," + runningHistorySince);
 
     // Show the filter badges.
     $("#pipelinesRunningHistoryTypeBadge").text(runningHistoryTypeText);
