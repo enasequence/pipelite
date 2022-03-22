@@ -58,7 +58,7 @@ $(document).ready(function () {
     autocompletePipelineNamesText("processesPipelineName");
 
     // Restore state.
-    let pipelineName = getTabParams("processesParam");
+    let pipelineName = getState("processes");
     if (pipelineName) {
         refreshProcesses(pipelineName);
     }
@@ -73,7 +73,7 @@ function refreshProcesses(pipelineName) {
     }
 
     if (pipelineName) {
-        setTabParams("processesParams", pipelineName);
+        setState("processes", pipelineName);
 
         $("#processesPipelineNameAlert").hide();
 

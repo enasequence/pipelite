@@ -1,40 +1,52 @@
-function setTabParams(name, value) {
+function setState(name, value) {
+    // console.log("setState: " + name + "=" + value);
     let searchParams = new URLSearchParams(document.location.search);
-    searchParams.set(name, value);
+    if (value) {
+        searchParams.set(name, value);
+    }
+    else {
+        searchParams.delete(name);
+    }
     // Set to URL.
     history.replaceState({}, '', '?' + searchParams.toString());
     // Set to local storage.
-    localStorage.setItem(name, value);
+    if (value) {
+        localStorage.setItem(name, value);
+    }
+    else {
+        localStorage.removeItem(name);
+    }
 }
 
-function getTabParams(name) {
-    // Restore from URL.
+function getState(name) {
+    // Get from URL.
     let searchParams = new URLSearchParams(document.location.search);
     let value = searchParams.get(name);
     if (!value) {
-        // Restore from local storage.
+        // Get from local storage.
         value = localStorage.getItem(name);
     }
+    setState(name, value);
     return value;
 }
 
 function showSchedule(scheduleName) {
     refreshSchedule(scheduleName);
-    showTab('scheduleTab');
+    showIndexTab('scheduleTab');
 }
 
 function showProcesses(pipelineName) {
     refreshProcesses(pipelineName);
-    showTab('processesTab');
+    showIndexTab('processesTab');
 }
 
 function showProcess(pipelineName, processId) {
     refreshProcess(pipelineName, processId);
-    showTab('processTab');
+    showIndexTab('processTab');
 }
 
-function showTab(id) {
-    console.log("showTab: " + id);
+function showIndexTab(id) {
+    // console.log("showIndexTab: " + id);
     $('#indexTabs a[href="#' + id + '"]').tab('show');
 }
 

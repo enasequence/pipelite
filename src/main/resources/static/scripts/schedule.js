@@ -56,7 +56,7 @@ $(document).ready(function () {
     autocompleteScheduleNamesText("scheduleScheduleName");
 
     // Restore state.
-    let scheduleName = getTabParams('scheduleParams');
+    let scheduleName = getState("schedule");
     if (scheduleName) {
         refreshSchedule(scheduleName);
     }
@@ -70,7 +70,7 @@ function refreshSchedule(scheduleName) {
     }
 
     if (scheduleName) {
-        setTabParams("scheduleParams", scheduleName);
+        setState("schedule", scheduleName);
 
         $("#scheduleScheduleNameAlert").hide();
 

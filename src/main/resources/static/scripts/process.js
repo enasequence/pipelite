@@ -147,9 +147,8 @@ $(document).ready(function () {
 
     autocompleteProcessNamesText("processPipelineName");
 
-    // Restore state from URL.
-
-    let processParams = getTabParams("processParams");
+    // Restore state.
+    let processParams = getState("process");
     if (processParams) {
         let [pipelineName, processId] = processParams.split(",");
         if (pipelineName && processId) {
@@ -157,10 +156,22 @@ $(document).ready(function () {
         }
     }
 
-    // Show graph when tab is changed.
+    // Restore active tab.
+    let processTab = getState("processTab");
+    if (processTab) {
+        $('#processTabs a[href="#' + processTab + '"]').tab('show');
+    }
+
     $('#processTabs a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-        $('svg').remove();
-        plotProcess();
+        // Save active tab.
+        let id = $(e.target).attr("href");
+        id = id.replace(/^#/, ''); // remove #
+        setState("processTab", id);
+        // Show graph.
+        if (id == "processGraphTab") {
+            $('svg').remove();
+            plotProcess();
+        }
     });
 });
 
@@ -179,7 +190,7 @@ function refreshProcess(pipelineName, processId) {
     }
 
     if (pipelineName && processId) {
-        setTabParams("processParams", pipelineName + "," + processId);
+        setState("process", pipelineName + "," + processId);
 
         $("#processPipelineNameAndProcessIdAlert").hide();
 

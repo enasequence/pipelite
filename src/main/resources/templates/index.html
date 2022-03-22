@@ -14,26 +14,18 @@
 
     <script>
         $(document).ready(function () {
-            //  Restore active tab from URL.
-            let searchParams = new URLSearchParams(document.location.search);
-            if (searchParams.get("tab")) {
-                $('#indexTabs a[href="#' + searchParams.get("tab") + 'Tab"]').tab('show');
-            } else {
-                // Restore active tab from local store.
-                let tab = localStorage.getItem('tab');
-                if (tab) {
-                    $('#indexTabs a[href="' + tab + '"]').tab('show');
-                }
-            }
+            $('#indexTabs a[data-toggle="pill"]').on('shown.bs.tab', function (e) {
+                // Save active tab.
+                let id = $(e.target).attr("href");
+                id = id.replace(/^#/, ''); // remove #
+                setState("indexTab", id);
+            });
 
-            // Save active tab.
-            $('a[data-toggle="pill"]').on('shown.bs.tab', function (e) {
-                let href = $(e.target).attr('href');
-                let searchParams = new URLSearchParams(document.location.search);
-                searchParams.set("tab", href.slice(1, -3)); // Remove '#' and 'Tab'
-                history.replaceState({}, '', '?' + searchParams.toString());
-                localStorage.setItem('tab', href);
-            })
+            // Restore active tab.
+            let id = getState("indexTab");
+            if (id) {
+                showIndexTab(id);
+            }
 
             // Page refresh frequency.
             let refreshFrequency = localStorage.getItem('refreshFrequency');
