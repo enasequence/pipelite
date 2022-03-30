@@ -74,7 +74,8 @@ public class StageRunner {
 
     boolean startExecution = true;
     if (stage.isActive() && stage.getExecutor() instanceof AsyncExecutor) {
-      // Attempt to recover active asynchronous execution.
+      // Deserialize execution state.
+      logContext(log.atInfo()).log("Deserialize stage execution state");
       startExecution =
           !StageExecutorSerializer.deserializeExecution(
               stage, StageExecutorSerializer.Deserialize.ASYNC_EXECUTOR);
@@ -82,6 +83,7 @@ public class StageRunner {
     if (startExecution) {
       if (stage.getExecutor() instanceof AsyncExecutor) {
         // Reset asynchronous execution state.
+        logContext(log.atInfo()).log("Reset asynchronous stage execution state");
         StageExecutor.resetAsyncExecutorState(stage);
       }
       // Start new stage execution and set stage status to active.
