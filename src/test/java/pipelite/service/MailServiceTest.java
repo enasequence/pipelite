@@ -43,7 +43,8 @@ public class MailServiceTest {
   public void sendProcessExecutionMessage() {
     Process process =
         new ProcessBuilder("PROCESS_ID").execute("STAGE1").withSyncTestExecutor().build();
-    StageEntity.createExecution("PIPELINE_NAME", "PROCESS_ID", process.getStage("STAGE1").get());
+    Stage stage = process.getStage("STAGE1").get();
+    stage.setStageEntity(StageEntity.createExecution("PIPELINE_NAME", "PROCESS_ID", "STAGE1"));
     ProcessEntity processEntity = new ProcessEntity();
     processEntity.setPipelineName("PIPELINE_NAME");
     processEntity.setProcessId("PROCESS_ID");
@@ -82,7 +83,8 @@ public class MailServiceTest {
     Process process =
         new ProcessBuilder("PROCESS_ID").execute("STAGE1").withSyncTestExecutor().build();
     Stage stage = process.getStage("STAGE1").get();
-    StageEntity.createExecution("PIPELINE_NAME", "PROCESS_ID", stage);
+    stage.setStageEntity(
+        StageEntity.createExecution("PIPELINE_NAME", "PROCESS_ID", stage.getStageName()));
     ProcessEntity processEntity = new ProcessEntity();
     processEntity.setPipelineName("PIPELINE_NAME");
     processEntity.setProcessId("PROCESS_ID");
@@ -125,7 +127,9 @@ public class MailServiceTest {
     Process process =
         new ProcessBuilder(processId).execute("STAGE1").withSyncTestExecutor().build();
     Stage stage = process.getStage("STAGE1").get();
-    StageEntity.createExecution(pipelineName, processId, stage).setStageState(StageState.ERROR);
+    stage.setStageEntity(
+        StageEntity.createExecution(pipelineName, processId, stage.getStageName()));
+    stage.getStageEntity().setStageState(StageState.ERROR);
 
     StageLogEntity stageLogEntity = new StageLogEntity();
     stageLogEntity.setPipelineName(pipelineName);
@@ -190,7 +194,9 @@ public class MailServiceTest {
     Process process =
         new ProcessBuilder(processId).execute("STAGE1").withSyncTestExecutor().build();
     Stage stage = process.getStage("STAGE1").get();
-    StageEntity.createExecution(pipelineName, processId, stage).setStageState(StageState.ERROR);
+    stage.setStageEntity(
+        StageEntity.createExecution(pipelineName, processId, stage.getStageName()));
+    stage.getStageEntity().setStageState(StageState.ERROR);
 
     StageLogEntity stageLogEntity = new StageLogEntity();
     stageLogEntity.setPipelineName(pipelineName);
@@ -251,7 +257,9 @@ public class MailServiceTest {
     Process process =
         new ProcessBuilder(processId).execute("STAGE1").withSyncTestExecutor().build();
     Stage stage = process.getStage("STAGE1").get();
-    StageEntity.createExecution(pipelineName, processId, stage).setStageState(StageState.ERROR);
+    stage.setStageEntity(
+        StageEntity.createExecution(pipelineName, processId, stage.getStageName()));
+    stage.getStageEntity().setStageState(StageState.ERROR);
 
     StageLogEntity stageLogEntity = new StageLogEntity();
     stageLogEntity.setPipelineName(pipelineName);
@@ -312,7 +320,9 @@ public class MailServiceTest {
     Process process =
         new ProcessBuilder(processId).execute("STAGE1").withSyncTestExecutor().build();
     Stage stage = process.getStage("STAGE1").get();
-    StageEntity.createExecution(pipelineName, processId, stage).setStageState(StageState.ERROR);
+    stage.setStageEntity(
+        StageEntity.createExecution(pipelineName, processId, stage.getStageName()));
+    stage.getStageEntity().setStageState(StageState.ERROR);
     ProcessEntity processEntity = new ProcessEntity();
     processEntity.setPipelineName(pipelineName);
     processEntity.setProcessId(processId);

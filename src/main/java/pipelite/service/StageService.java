@@ -10,6 +10,7 @@
  */
 package pipelite.service;
 
+import com.google.common.flogger.FluentLogger;
 import io.micrometer.core.annotation.Timed;
 import java.util.List;
 import java.util.Optional;
@@ -24,12 +25,14 @@ import pipelite.entity.StageLogEntity;
 import pipelite.entity.StageLogEntityId;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.JsonSerializableExecutor;
+import pipelite.log.LogKey;
 import pipelite.repository.StageLogRepository;
 import pipelite.repository.StageRepository;
 import pipelite.service.annotation.RetryableDataAccess;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorSerializer;
 
 @Service
 @RetryableDataAccess
@@ -39,11 +42,15 @@ public class StageService {
 
   private final StageRepository repository;
   private final StageLogRepository logRepository;
+  private final InternalErrorService internalErrorService;
 
   public StageService(
-      @Autowired StageRepository repository, @Autowired StageLogRepository logRepository) {
+      @Autowired StageRepository repository,
+      @Autowired StageLogRepository logRepository,
+      @Autowired InternalErrorService internalErrorService) {
     this.repository = repository;
     this.logRepository = logRepository;
+    this.internalErrorService = internalErrorService;
   }
 
   /**
@@ -72,31 +79,63 @@ public class StageService {
     return repository.findById(new StageEntityId(processId, pipelineName, stageName));
   }
 
+  public enum PrepareExecutionResult {
+    CREATE_EXECUTION,
+    CONTINUE_EXECUTION
+  };
   /**
-   * Assigns a stage entity to the stage. Uses a saved stage entity if it exists or creates a new
-   * one. Saves the stage.
+   * Prepares stage entity before the stage execution starts.
    *
    * @param pipelineName the pipeline name
    * @param processId the process id
    * @param stage the stage
+   * @return prepare execution result
    */
   @Timed("pipelite.service")
-  public void createExecution(String pipelineName, String processId, Stage stage) {
-    // Uses saved stage if it exists.
+  public PrepareExecutionResult prepareExecution(
+      String pipelineName, String processId, Stage stage) {
     Optional<StageEntity> savedStageEntity =
         repository.findById(new StageEntityId(processId, pipelineName, stage.getStageName()));
+
     if (savedStageEntity.isPresent()) {
+      // Use saved stage entity.
       stage.setStageEntity(savedStageEntity.get());
+      if (stage.isActive()) {
+        // Attempt to deserialize executor.
+        StageExecutorSerializer.deserializeExecutor(stage, internalErrorService);
+      }
+      return prepareExecution(stage, PrepareExecutionResult.CONTINUE_EXECUTION);
     }
-    StageEntity.createExecution(pipelineName, processId, stage);
+
+    // Create new stage execution.
+    createExecution(pipelineName, processId, stage);
+    return prepareExecution(stage, PrepareExecutionResult.CREATE_EXECUTION);
+  }
+
+  private PrepareExecutionResult prepareExecution(
+      Stage stage, PrepareExecutionResult prepareExecutionResult) {
     if (stage.getStageEntity() == null) {
-      throw new PipeliteException("Failed to create new stage entity");
+      throw new PipeliteException(
+          "Failed to prepare stage execution because stage entity is missing");
     }
+    logContext(log.atInfo(), stage)
+        .log("Prepared stage execution: " + prepareExecutionResult.name());
+    return prepareExecutionResult;
+  }
+
+  /**
+   * Called when stage execution is created. Saves the stage.
+   *
+   * @param stage the stage
+   */
+  private void createExecution(String pipelineName, String processId, Stage stage) {
+    stage.setStageEntity(
+        StageEntity.createExecution(pipelineName, processId, stage.getStageName()));
     saveStage(stage);
   }
 
   /**
-   * Called when the stage execution starts. Saves the stage.
+   * Called when stage execution is started. Saves the stage.
    *
    * @param stage the stage
    */
@@ -203,5 +242,18 @@ public class StageService {
   @Timed("pipelite.service")
   public void delete(StageEntity stageEntity) {
     repository.delete(stageEntity);
+  }
+
+  private FluentLogger.Api logContext(FluentLogger.Api log, Stage stage) {
+    return log.with(LogKey.PIPELINE_NAME, stage.getStageEntity().getPipelineName())
+        .with(LogKey.PROCESS_ID, stage.getStageEntity().getProcessId())
+        .with(LogKey.STAGE_NAME, stage.getStageName());
+  }
+
+  private FluentLogger.Api logContext(
+      FluentLogger.Api log, String pipelineName, String processId, String stageName) {
+    return log.with(LogKey.PIPELINE_NAME, pipelineName)
+        .with(LogKey.PROCESS_ID, processId)
+        .with(LogKey.STAGE_NAME, stageName);
   }
 }

@@ -145,12 +145,11 @@ public class ProcessRunnerPoolManager {
             public void healthy() {}
 
             public void failure(Service service) {
-              String serviceName = ((ProcessRunnerPool) service).serviceName();
               log.atSevere().withCause(service.failureCause()).log(
-                  "Process runner pool has failed: " + serviceName);
+                  "Process runner pool has failed");
               pipeliteServices
                   .internalError()
-                  .saveInternalError(serviceName, this.getClass(), service.failureCause());
+                  .saveInternalError(this.getClass(), service.failureCause());
               stopPools();
             }
           },

@@ -10,7 +10,7 @@ plugins {
 }
 
 group = 'pipelite'
-version = '2.3.21'
+version = '2.3.22'
 sourceCompatibility = '1.11'
 
 java.withSourcesJar()

@@ -11,95 +11,105 @@
 package pipelite.stage.executor;
 
 import com.google.common.flogger.FluentLogger;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.flogger.Flogger;
 import pipelite.entity.StageEntity;
-import pipelite.executor.AsyncExecutor;
+import pipelite.error.InternalErrorHandler;
+import pipelite.exception.PipeliteException;
 import pipelite.executor.JsonSerializableExecutor;
 import pipelite.log.LogKey;
+import pipelite.service.InternalErrorService;
 import pipelite.stage.Stage;
-import pipelite.stage.StageState;
 import pipelite.stage.parameters.ExecutorParameters;
 
 @Flogger
 public class StageExecutorSerializer {
   private StageExecutorSerializer() {}
 
-  public enum Deserialize {
-    /** Deserialize JsonSerializableExecutor. */
-    JSON_EXECUTOR,
-    /** Deserialize AbstractAsyncExecutor with jobId. */
-    ASYNC_EXECUTOR;
-  }
-
   /**
-   * Deserialize active stage executor and stage executor parameters. An asynchronous executor must
-   * be in the POLL state to be deserialized.
+   * Deserialize the stage executor.
    *
-   * @oaran stage the stage being executed
-   * @return true if the executor was deserialized
+   * @oaran stage the stage
+   * @return true if the stage executor was deserialized
    */
-  public static <T extends ExecutorParameters> Boolean deserializeExecution(
-      Stage stage, Deserialize deserialize) {
+  public static <T extends ExecutorParameters> boolean deserializeExecutor(
+      Stage stage, InternalErrorService internalErrorService) {
     if (!(stage.getExecutor() instanceof JsonSerializableExecutor)) {
       return false;
     }
-    if (stage.getStageEntity().getStageState() != StageState.ACTIVE) {
-      return false;
-    }
-    StageEntity stageEntity = stage.getStageEntity();
-    if (stageEntity.getExecutorName() == null
-        || stageEntity.getExecutorData() == null
-        || stageEntity.getExecutorParams() == null) {
-      return false;
-    }
-    StageExecutor deserializedExecutor = deserializeExecutor(stage, deserialize);
-    if (deserializedExecutor == null) {
-      logContext(log.atSevere(), stage).log("Failed to deserialize executor");
-      return false;
-    }
 
-    if (deserialize == Deserialize.ASYNC_EXECUTOR) {
-      AsyncExecutor deserializedAsyncExecutor = (AsyncExecutor) deserializedExecutor;
-      if (deserializedAsyncExecutor.getJobId() == null) {
-        return false;
-      }
-    }
+    String pipelineName = stage.getStageEntity().getPipelineName();
+    String processId = stage.getStageEntity().getProcessId();
+    String stageName = stage.getStageName();
 
-    ExecutorParameters deserializedExecutorParams =
-        deserializeExecutorParameters(stage, deserializedExecutor.getExecutorParamsType());
-    if (deserializedExecutorParams == null) {
-      return false;
-    }
+    logContext(log.atInfo(), pipelineName, processId, stageName).log("Deserialize stage executor");
 
-    logContext(log.atInfo(), stage).log("Using deserialized executor");
-    stage.setExecutor(deserializedExecutor);
-    deserializedExecutor.setExecutorParams(deserializedExecutorParams);
-    return true;
+    InternalErrorHandler internalErrorHandler =
+        new InternalErrorHandler(
+            internalErrorService,
+            pipelineName,
+            processId,
+            stageName,
+            StageExecutorSerializer.class);
+
+    AtomicBoolean isDeserialize = new AtomicBoolean(false);
+    internalErrorHandler.execute(
+        () -> {
+          StageEntity stageEntity = stage.getStageEntity();
+          if (stageEntity.getExecutorName() == null) {
+            throw new PipeliteException(
+                "Failed to deserialize stage executor because of missing executor name");
+          }
+          if (stageEntity.getExecutorData() == null) {
+            throw new PipeliteException(
+                "Failed to deserialize stage executor because of missing executor data");
+          }
+          if (stageEntity.getExecutorParams() == null) {
+            throw new PipeliteException(
+                "Failed to deserialize stage executor because of missing executor parameters");
+          }
+
+          StageExecutor deserializedExecutor = deserializeExecutorData(stage);
+          if (deserializedExecutor == null) {
+            throw new PipeliteException(
+                "Failed to deserialize stage executor because executor data could not be deserialized");
+          }
+
+          if (!deserializedExecutor.isSubmitted()) {
+            logContext(log.atInfo(), pipelineName, processId, stageName)
+                .log("Did not deserialize stage executor because stage has not been submitted");
+            return;
+          }
+
+          ExecutorParameters deserializedExecutorParams =
+              deserializeExecutorParameters(stage, deserializedExecutor.getExecutorParamsType());
+          if (deserializedExecutorParams == null) {
+            throw new PipeliteException(
+                "Failed to deserialize stage executor because executor parameters could not be deserialized");
+          }
+
+          logContext(log.atInfo(), pipelineName, processId, stageName)
+              .log("Deserialized stage executor");
+
+          isDeserialize.set(true);
+          deserializedExecutor.setExecutorParams(deserializedExecutorParams);
+          stage.setExecutor(deserializedExecutor);
+        });
+
+    return isDeserialize.get();
   }
 
-  /** Deserialize stage executor. */
-  public static StageExecutor deserializeExecutor(Stage stage, Deserialize deserialize) {
+  /** Deserialize stage executor data. */
+  public static StageExecutor deserializeExecutorData(Stage stage) {
     StageEntity stageEntity = stage.getStageEntity();
     try {
-      boolean action = false;
-      switch (deserialize) {
-        case JSON_EXECUTOR:
-          action = stage.getExecutor() instanceof JsonSerializableExecutor;
-          break;
-        case ASYNC_EXECUTOR:
-          action = stage.getExecutor() instanceof AsyncExecutor;
-          break;
-      }
-      if (action) {
-        return JsonSerializableExecutor.deserialize(
-            stageEntity.getExecutorName(), stageEntity.getExecutorData());
-      }
+      return JsonSerializableExecutor.deserialize(
+          stageEntity.getExecutorName(), stageEntity.getExecutorData());
     } catch (Exception ex) {
-      logContext(log.atSevere(), stage)
-          .withCause(ex)
-          .log("Failed to deserialize executor: %s", stageEntity.getExecutorName());
+      throw new PipeliteException(
+          "Failed to deserialize stage executor because executor data could not be deserialized: "
+              + ex.getMessage());
     }
-    return null;
   }
 
   /** Deserialize stage executor parameters. */
@@ -109,15 +119,16 @@ public class StageExecutorSerializer {
     try {
       return ExecutorParameters.deserialize(stageEntity.getExecutorParams(), cls);
     } catch (Exception ex) {
-      logContext(log.atSevere(), stage)
-          .withCause(ex)
-          .log("Failed to deserialize executor parameters: %s", stageEntity.getExecutorName());
+      throw new PipeliteException(
+          "Failed to deserialize stage executor because executor parameters could not be deserialized: "
+              + ex.getMessage());
     }
-    return null;
   }
 
-  private static FluentLogger.Api logContext(FluentLogger.Api log, Stage stage) {
-    return log.with(LogKey.STAGE_NAME, stage.getStageName())
-        .with(LogKey.EXECUTOR_NAME, stage.getExecutor().getClass().getName());
+  private static FluentLogger.Api logContext(
+      FluentLogger.Api log, String pipelineName, String processId, String stageName) {
+    return log.with(LogKey.PIPELINE_NAME, pipelineName)
+        .with(LogKey.PROCESS_ID, processId)
+        .with(LogKey.STAGE_NAME, stageName);
   }
 }

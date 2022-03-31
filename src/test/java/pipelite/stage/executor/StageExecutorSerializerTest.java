@@ -11,12 +11,14 @@
 package pipelite.stage.executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import org.junit.jupiter.api.Test;
 import pipelite.entity.StageEntity;
 import pipelite.executor.JsonSerializableExecutor;
 import pipelite.executor.SimpleLsfExecutor;
 import pipelite.executor.SyncExecutor;
+import pipelite.service.InternalErrorService;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
@@ -24,6 +26,8 @@ import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 
 public class StageExecutorSerializerTest {
+
+  private final InternalErrorService internalErrorService = mock(InternalErrorService.class);
 
   private static class TestExecutor extends SyncExecutor<ExecutorParameters>
       implements JsonSerializableExecutor {
@@ -81,9 +85,7 @@ public class StageExecutorSerializerTest {
             .executor(new TestExecutor(StageState.from(result)))
             .build();
     stage.setStageEntity(stageEntity);
-    StageExecutor deserializedExecutor =
-        StageExecutorSerializer.deserializeExecutor(
-            stage, StageExecutorSerializer.Deserialize.JSON_EXECUTOR);
+    StageExecutor deserializedExecutor = StageExecutorSerializer.deserializeExecutorData(stage);
     assertThat(deserializedExecutor).isNotNull();
     assertThat(stage.getExecutor()).isInstanceOf(TestExecutor.class);
     assertThat(((TestExecutor) stage.getExecutor()).getStageState())
@@ -106,10 +108,7 @@ public class StageExecutorSerializerTest {
         "{\n" + "  \"stageState\" : \"" + StageState.from(result).name() + "\"\n}");
     stageEntity.setExecutorParams(
         "{\n" + "  \"maximumRetries\" : 3,\n" + "  \"immediateRetries\" : 3\n" + "}");
-    assertThat(
-            StageExecutorSerializer.deserializeExecution(
-                stage, StageExecutorSerializer.Deserialize.JSON_EXECUTOR))
-        .isTrue();
+    assertThat(StageExecutorSerializer.deserializeExecutor(stage, internalErrorService)).isTrue();
     assertThat(stage.getExecutor()).isNotNull();
     assertThat(stage.getExecutor()).isInstanceOf(TestExecutor.class);
     assertThat(((TestExecutor) stage.getExecutor()).getStageState())
@@ -136,10 +135,7 @@ public class StageExecutorSerializerTest {
     stageEntity.startExecution();
     StageService.prepareSaveStage(stage);
 
-    assertThat(
-            StageExecutorSerializer.deserializeExecution(
-                stage, StageExecutorSerializer.Deserialize.ASYNC_EXECUTOR))
-        .isTrue();
+    assertThat(StageExecutorSerializer.deserializeExecutor(stage, internalErrorService)).isTrue();
     assertThat(stage.getExecutor()).isNotNull();
     assertThat(stage.getExecutor()).isInstanceOf(SimpleLsfExecutor.class);
     assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.SimpleLsfExecutor");

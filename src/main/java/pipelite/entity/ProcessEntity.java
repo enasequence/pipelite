@@ -82,7 +82,9 @@ public class ProcessEntity {
    */
   public void startExecution() {
     this.processState = ProcessState.ACTIVE;
-    this.startTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    if (this.startTime == null) {
+      this.startTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    }
     this.endTime = null;
   }
 

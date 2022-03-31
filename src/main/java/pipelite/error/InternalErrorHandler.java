@@ -19,7 +19,6 @@ public class InternalErrorHandler {
 
   private final InternalErrorService internalErrorService;
 
-  private final String serviceName;
   private final String pipelineName;
   private final String processId;
   private final String stageName;
@@ -27,13 +26,11 @@ public class InternalErrorHandler {
 
   public InternalErrorHandler(
       InternalErrorService internalErrorService,
-      String serviceName,
       String pipelineName,
       String processId,
       String stageName,
       Object caller) {
     this.internalErrorService = internalErrorService;
-    this.serviceName = serviceName;
     this.pipelineName = pipelineName;
     this.processId = processId;
     this.stageName = stageName;
@@ -42,12 +39,10 @@ public class InternalErrorHandler {
 
   public InternalErrorHandler(
       InternalErrorService internalErrorService,
-      String serviceName,
       String pipelineName,
       String processId,
       Object caller) {
     this.internalErrorService = internalErrorService;
-    this.serviceName = serviceName;
     this.pipelineName = pipelineName;
     this.processId = processId;
     this.stageName = null;
@@ -55,22 +50,16 @@ public class InternalErrorHandler {
   }
 
   public InternalErrorHandler(
-      InternalErrorService internalErrorService,
-      String serviceName,
-      String pipelineName,
-      Object caller) {
+      InternalErrorService internalErrorService, String pipelineName, Object caller) {
     this.internalErrorService = internalErrorService;
-    this.serviceName = serviceName;
     this.pipelineName = pipelineName;
     this.processId = null;
     this.stageName = null;
     this.caller = caller;
   }
 
-  public InternalErrorHandler(
-      InternalErrorService internalErrorService, String serviceName, Object caller) {
+  public InternalErrorHandler(InternalErrorService internalErrorService, Object caller) {
     this.internalErrorService = internalErrorService;
-    this.serviceName = serviceName;
     this.pipelineName = null;
     this.processId = null;
     this.stageName = null;
@@ -93,7 +82,7 @@ public class InternalErrorHandler {
     } catch (Exception ex) {
       try {
         internalErrorService.saveInternalError(
-            serviceName, pipelineName, processId, stageName, caller.getClass(), ex);
+            pipelineName, processId, stageName, caller.getClass(), ex);
       } catch (Exception ex2) {
         // Do nothing
       }

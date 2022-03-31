@@ -165,7 +165,7 @@ public class ProcessRunner {
       ExecutorConfiguration executorConfiguration,
       String pipelineName,
       Process process) {
-    startStagesExecution(pipeliteServices, executorConfiguration, pipelineName, process);
+    prepareStagesExecution(pipeliteServices, executorConfiguration, pipelineName, process);
     pipeliteServices.process().startExecution(process.getProcessEntity());
   }
 
@@ -204,17 +204,17 @@ public class ProcessRunner {
     pipeliteServices.process().endExecution(process, processState);
   }
 
-  private static void startStagesExecution(
+  private static void prepareStagesExecution(
       PipeliteServices pipeliteServices,
       ExecutorConfiguration executorConfiguration,
       String pipelineName,
       Process process) {
     for (Stage stage : process.getStages()) {
-      startStageExecution(pipeliteServices, executorConfiguration, pipelineName, process, stage);
+      prepareStageExecution(pipeliteServices, executorConfiguration, pipelineName, process, stage);
     }
   }
 
-  private static void startStageExecution(
+  private static void prepareStageExecution(
       PipeliteServices pipeliteServices,
       ExecutorConfiguration executorConfiguration,
       String pipelineName,
@@ -223,9 +223,8 @@ public class ProcessRunner {
     // Apply default executor parameters.
     stage.getExecutor().getExecutorParams().applyDefaults(executorConfiguration);
     stage.getExecutor().getExecutorParams().validate();
-    // Assigns a stage entity to the stage. Uses a saved stage entity if it exists or creates a new
-    // one. Saves the stage.
-    pipeliteServices.stage().createExecution(pipelineName, process.getProcessId(), stage);
+    // Prepares stage entity before the stage execution starts.
+    pipeliteServices.stage().prepareExecution(pipelineName, process.getProcessId(), stage);
   }
 
   private void endStageExecution(Stage stage, StageExecutorResult result) {

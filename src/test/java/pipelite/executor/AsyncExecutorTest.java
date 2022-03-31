@@ -38,7 +38,7 @@ public class AsyncExecutorTest {
         Mockito.spy(StageExecutor.createSimpleLsfExecutor("test"));
     simpleLsfExecutor.setExecutorParams(new SimpleLsfExecutorParameters());
     simpleLsfExecutor.setSubmitExecutorService(
-        PipeliteExecutorService.createExecutorService("test", "test-%d", 10, null));
+        PipeliteExecutorService.createExecutorService("test-%d", 10, null));
     return simpleLsfExecutor;
   }
 

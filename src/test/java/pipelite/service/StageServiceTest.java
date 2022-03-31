@@ -11,6 +11,8 @@
 package pipelite.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -80,11 +82,107 @@ class StageServiceTest {
 
     Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
 
-    // Create execution.
+    assertFalse(service.getSavedStage(pipelineName, processId, stageName).isPresent());
 
-    service.createExecution(pipelineName, processId, stage);
-    StageEntity stageEntity = stage.getStageEntity();
+    // Prepare first execution.
 
+    assertEquals(
+        StageService.PrepareExecutionResult.CREATE_EXECUTION,
+        service.prepareExecution(pipelineName, processId, stage));
+
+    assertStageEntityAfterPrepareExecution(
+        pipelineName, processId, stageName, stage.getStageEntity());
+
+    assertThat(service.getSavedStage(pipelineName, processId, stageName).get())
+        .isEqualTo(stage.getStageEntity());
+
+    // Start first execution.
+
+    service.startExecution(stage);
+
+    assertStageEntityAfterFirstStartExecution(
+        pipelineName, processId, stageName, stage.getStageEntity());
+
+    assertThat(service.getSavedStage(pipelineName, processId, stageName).get())
+        .isEqualTo(stage.getStageEntity());
+
+    assertThat(service.getSavedStageLog(pipelineName, processId, stageName)).isNotPresent();
+
+    // End first execution.
+
+    StageExecutorResult firstExecutionResult = StageExecutorResult.error();
+    service.endExecution(stage, firstExecutionResult);
+
+    assertStageEntityAfterFirstEndExecution(
+        pipelineName, processId, stageName, stage.getStageEntity());
+
+    assertThat(service.getSavedStage(pipelineName, processId, stageName).get())
+        .isEqualTo(stage.getStageEntity());
+
+    Optional<StageLogEntity> stageLogEntity =
+        service.getSavedStageLog(pipelineName, processId, stageName);
+    assertThat(stageLogEntity).isPresent();
+
+    // Prepare second execution.
+
+    assertEquals(
+        StageService.PrepareExecutionResult.CONTINUE_EXECUTION,
+        service.prepareExecution(pipelineName, processId, stage));
+
+    // Stage state has not been changed.
+
+    assertStageEntityAfterFirstEndExecution(
+        pipelineName, processId, stageName, stage.getStageEntity());
+
+    assertThat(service.getSavedStage(pipelineName, processId, stageName).get())
+        .isEqualTo(stage.getStageEntity());
+
+    stageLogEntity = service.getSavedStageLog(pipelineName, processId, stageName);
+    assertThat(stageLogEntity).isPresent();
+
+    // Start second execution.
+
+    service.startExecution(stage);
+
+    // Stage state has been changed to ACTIVE.
+
+    assertStageEntityAfterSecondStartExecution(
+        pipelineName, processId, stageName, stage.getStageEntity());
+
+    assertThat(service.getSavedStage(pipelineName, processId, stageName).get())
+        .isEqualTo(stage.getStageEntity());
+
+    assertThat(service.getSavedStageLog(pipelineName, processId, stageName)).isNotPresent();
+
+    // End second execution.
+
+    StageExecutorResult secondExecutionResult = StageExecutorResult.success();
+    service.endExecution(stage, secondExecutionResult);
+
+    assertStageEntityAfterSecondEndExecution(
+        pipelineName, processId, stageName, stage.getStageEntity());
+
+    assertThat(service.getSavedStage(pipelineName, processId, stageName).get())
+        .isEqualTo(stage.getStageEntity());
+
+    stageLogEntity = service.getSavedStageLog(pipelineName, processId, stageName);
+    assertThat(stageLogEntity).isPresent();
+
+    // Reset execution.
+
+    service.resetExecution(stage);
+
+    assertStageEntityAfterResetExecution(
+        pipelineName, processId, stageName, stage.getStageEntity());
+
+    assertThat(service.getSavedStage(pipelineName, processId, stageName).get())
+        .isEqualTo(stage.getStageEntity());
+
+    assertThat(service.getSavedStageLog(pipelineName, processId, stageName)).isNotPresent();
+  }
+
+  private static void assertStageEntityAfterPrepareExecution(
+      String pipelineName, String processId, String stageName, StageEntity stageEntity) {
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
@@ -105,11 +203,10 @@ class StageServiceTest {
                 + "  \"immediateRetries\" : 0,\n"
                 + "  \"logLines\" : 1000\n"
                 + "}");
+  }
 
-    // Start first execution.
-
-    service.startExecution(stage);
-
+  private static void assertStageEntityAfterFirstStartExecution(
+      String pipelineName, String processId, String stageName, StageEntity stageEntity) {
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
@@ -130,17 +227,10 @@ class StageServiceTest {
                 + "  \"immediateRetries\" : 0,\n"
                 + "  \"logLines\" : 1000\n"
                 + "}");
+  }
 
-    assertThat(service.getSavedStage(pipelineName, processId, stageName).get())
-        .isEqualTo(stageEntity);
-
-    assertThat(service.getSavedStageLog(pipelineName, processId, stageName)).isNotPresent();
-
-    // End first execution.
-
-    StageExecutorResult firstExecutionResult = StageExecutorResult.error();
-    service.endExecution(stage, firstExecutionResult);
-
+  private static void assertStageEntityAfterFirstEndExecution(
+      String pipelineName, String processId, String stageName, StageEntity stageEntity) {
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
@@ -162,18 +252,10 @@ class StageServiceTest {
                 + "  \"immediateRetries\" : 0,\n"
                 + "  \"logLines\" : 1000\n"
                 + "}");
+  }
 
-    assertThat(service.getSavedStage(pipelineName, processId, stageName).get())
-        .isEqualTo(stageEntity);
-
-    Optional<StageLogEntity> stageLogEntity =
-        service.getSavedStageLog(pipelineName, processId, stageName);
-    assertThat(stageLogEntity).isPresent();
-
-    // Start second execution.
-
-    service.startExecution(stage);
-
+  private static void assertStageEntityAfterSecondStartExecution(
+      String pipelineName, String processId, String stageName, StageEntity stageEntity) {
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
@@ -194,17 +276,10 @@ class StageServiceTest {
                 + "  \"immediateRetries\" : 0,\n"
                 + "  \"logLines\" : 1000\n"
                 + "}");
+  }
 
-    assertThat(service.getSavedStage(pipelineName, processId, stageName).get())
-        .isEqualTo(stageEntity);
-
-    assertThat(service.getSavedStageLog(pipelineName, processId, stageName)).isNotPresent();
-
-    // End second execution.
-
-    StageExecutorResult secondExecutionResult = StageExecutorResult.success();
-    service.endExecution(stage, secondExecutionResult);
-
+  private static void assertStageEntityAfterSecondEndExecution(
+      String pipelineName, String processId, String stageName, StageEntity stageEntity) {
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
@@ -226,17 +301,10 @@ class StageServiceTest {
                 + "  \"immediateRetries\" : 0,\n"
                 + "  \"logLines\" : 1000\n"
                 + "}");
+  }
 
-    assertThat(service.getSavedStage(pipelineName, processId, stageName).get())
-        .isEqualTo(stageEntity);
-
-    stageLogEntity = service.getSavedStageLog(pipelineName, processId, stageName);
-    assertThat(stageLogEntity).isPresent();
-
-    // Reset execution.
-
-    service.resetExecution(stage);
-
+  private static void assertStageEntityAfterResetExecution(
+      String pipelineName, String processId, String stageName, StageEntity stageEntity) {
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
     assertThat(stageEntity.getStageName()).isEqualTo(stageName);
@@ -257,10 +325,5 @@ class StageServiceTest {
                 + "  \"immediateRetries\" : 0,\n"
                 + "  \"logLines\" : 1000\n"
                 + "}");
-
-    assertThat(service.getSavedStage(pipelineName, processId, stageName).get())
-        .isEqualTo(stageEntity);
-
-    assertThat(service.getSavedStageLog(pipelineName, processId, stageName)).isNotPresent();
   }
 }

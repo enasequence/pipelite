@@ -41,7 +41,7 @@ public class InternalErrorHandlerTest {
               return null;
             })
         .when(internalErrorService)
-        .saveInternalError(any(), any(), any(), any(), any(), any());
+        .saveInternalError(any(), any(), any(), any(), any());
 
     InternalErrorHandler handler =
         new InternalErrorHandler(internalErrorService, SERVICE_NAME, this);

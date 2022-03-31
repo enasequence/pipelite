@@ -40,30 +40,22 @@ public class PipeliteExecutorService {
 
   @PostConstruct
   private void initExecutorServices() {
-    String serviceName = pipeliteConfiguration.service().getName();
     runProcessExecutorService.set(
         createExecutorService(
-            serviceName,
             "pipelite-process-%d",
-            pipeliteConfiguration.advanced().getProcessRunnerWorkers(),
-            internalErrorService));
+            pipeliteConfiguration.advanced().getProcessRunnerWorkers(), internalErrorService));
     submitStageExecutorService.set(
         createExecutorService(
-            serviceName,
             "pipelite-submit-%d",
-            pipeliteConfiguration.advanced().getStageSubmitWorkers(),
-            internalErrorService));
+            pipeliteConfiguration.advanced().getStageSubmitWorkers(), internalErrorService));
     refreshQueueExecutorService.set(
-        createExecutorService(serviceName, "pipelite-refresh-%d", 5, internalErrorService));
+        createExecutorService("pipelite-refresh-%d", 5, internalErrorService));
     replenishQueueExecutorService.set(
-        createExecutorService(serviceName, "pipelite-replenish-%d", 5, internalErrorService));
+        createExecutorService("pipelite-replenish-%d", 5, internalErrorService));
   }
 
   public static ExecutorService createExecutorService(
-      String serviceName,
-      String nameFormat,
-      int workers,
-      InternalErrorService internalErrorService) {
+      String nameFormat, int workers, InternalErrorService internalErrorService) {
     ThreadFactory threadFactory =
         new ThreadFactoryBuilder()
             .setNameFormat(nameFormat)
@@ -71,7 +63,7 @@ public class PipeliteExecutorService {
                 (thread, throwable) -> {
                   if (internalErrorService != null) {
                     internalErrorService.saveInternalError(
-                        serviceName, PipeliteExecutorService.class, throwable);
+                        PipeliteExecutorService.class, throwable);
                   }
                 })
             .build();

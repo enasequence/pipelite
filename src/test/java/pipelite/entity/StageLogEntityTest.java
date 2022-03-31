@@ -35,7 +35,8 @@ class StageLogEntityTest {
 
     // Create execution.
 
-    StageEntity.createExecution(pipelineName, processId, stage);
+    stage.setStageEntity(
+        StageEntity.createExecution(pipelineName, processId, stage.getStageName()));
 
     // End execution.
 

@@ -23,10 +23,10 @@ import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
+import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultCallback;
-import pipelite.stage.executor.StageExecutorSerializer;
 import pipelite.stage.parameters.ExecutorParameters;
 
 @Flogger
@@ -66,27 +66,17 @@ public class StageRunner {
     this.internalErrorHandler =
         new InternalErrorHandler(
             pipeliteServices.internalError(),
-            serviceName,
             pipelineName,
             process.getProcessId(),
             stage.getStageName(),
             this);
-
-    boolean startExecution = true;
-    if (stage.isActive() && stage.getExecutor() instanceof AsyncExecutor) {
-      // Deserialize execution state.
-      logContext(log.atInfo()).log("Deserialize stage execution state");
-      startExecution =
-          !StageExecutorSerializer.deserializeExecution(
-              stage, StageExecutorSerializer.Deserialize.ASYNC_EXECUTOR);
-    }
-    if (startExecution) {
+    if (stage.getStageEntity().getStageState() != StageState.ACTIVE) {
+      // Reset executor state.
       if (stage.getExecutor() instanceof AsyncExecutor) {
-        // Reset asynchronous execution state.
-        logContext(log.atInfo()).log("Reset asynchronous stage execution state");
+        logContext(log.atInfo()).log("Reset async stage executor");
         StageExecutor.resetAsyncExecutorState(stage);
       }
-      // Start new stage execution and set stage status to active.
+      // Start execution.
       pipeliteServices.stage().startExecution(stage);
     }
   }

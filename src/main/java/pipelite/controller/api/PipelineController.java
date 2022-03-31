@@ -28,7 +28,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.Pipeline;
 import pipelite.controller.api.info.PipelineInfo;
-import pipelite.executor.AsyncExecutor;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.ProcessMetrics;
 import pipelite.metrics.helper.TimeSeriesHelper;
@@ -92,11 +91,8 @@ public class PipelineController {
                 for (ProcessRunner processRunner : pipelineRunner.getActiveProcessRunners()) {
                   for (Stage stage : processRunner.activeStages()) {
                     stageRunningCount++;
-                    if (stage.getExecutor() instanceof AsyncExecutor) {
-                      String jobId = ((AsyncExecutor) stage.getExecutor()).getJobId();
-                      if (jobId != null) {
-                        stageSubmitCount++;
-                      }
+                    if (stage.getExecutor().isSubmitted()) {
+                      stageSubmitCount++;
                     }
                   }
                 }

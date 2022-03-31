@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
 import pipelite.PipeliteIdCreator;
+import pipelite.exception.PipeliteException;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.ErrorType;

@@ -18,7 +18,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.flogger.Flogger;
 import pipelite.json.Json;
-import pipelite.stage.Stage;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.ErrorType;
 import pipelite.stage.executor.StageExecutorResult;
@@ -87,17 +86,16 @@ public class StageEntity {
    *
    * @param pipelineName the pipeline name
    * @param processId the process id
-   * @param stage the stage
    * @return the new stage entity
    */
-  public static StageEntity createExecution(String pipelineName, String processId, Stage stage) {
+  public static StageEntity createExecution(
+      String pipelineName, String processId, String stageName) {
     StageEntity stageEntity = new StageEntity();
     stageEntity.setStageState(StageState.PENDING);
     stageEntity.setProcessId(processId);
     stageEntity.setPipelineName(pipelineName);
-    stageEntity.setStageName(stage.getStageName());
+    stageEntity.setStageName(stageName);
     stageEntity.setExecutionCount(0);
-    stage.setStageEntity(stageEntity);
     return stageEntity;
   }
 
@@ -105,9 +103,10 @@ public class StageEntity {
   public void startExecution() {
     this.stageState = StageState.ACTIVE;
     this.errorType = null;
-    this.resultParams = null;
     this.startTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.endTime = null;
+    this.resultParams = null;
+    this.exitCode = null;
   }
 
   /**
@@ -118,8 +117,8 @@ public class StageEntity {
   public void endExecution(StageExecutorResult result) {
     this.stageState = StageState.from(result);
     this.errorType = result.getErrorType();
-    this.resultParams = result.attributesJson();
     this.endTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    this.resultParams = result.attributesJson();
     String exitCodeAttribute = result.getAttribute(StageExecutorResultAttribute.EXIT_CODE);
     try {
       this.exitCode = Integer.parseInt(exitCodeAttribute);

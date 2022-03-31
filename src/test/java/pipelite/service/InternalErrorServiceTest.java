@@ -36,15 +36,14 @@ class InternalErrorServiceTest {
 
   @Test
   public void withServiceName() {
-    String serviceName = PipeliteIdCreator.serviceName();
 
     try {
       throw new RuntimeException("Test");
     } catch (Exception ex) {
-      InternalErrorEntity error = service.saveInternalError(serviceName, this.getClass(), ex);
+      InternalErrorEntity error = service.saveInternalError(this.getClass(), ex);
       assertThat(error.getErrorId()).isNotNull();
       assertThat(error.getErrorTime()).isNotNull();
-      assertThat(error.getServiceName()).isEqualTo(serviceName);
+      assertThat(error.getServiceName()).isEqualTo("InternalErrorServiceTest");
       assertThat(error.getErrorMessage()).isEqualTo(ex.getMessage());
       StringWriter sw = new StringWriter();
       PrintWriter pw = new PrintWriter(sw);
@@ -64,11 +63,10 @@ class InternalErrorServiceTest {
       throw new RuntimeException("Test");
     } catch (Exception ex) {
       InternalErrorEntity error =
-          service.saveInternalError(
-              serviceName, pipelineName, processId, stageName, this.getClass(), ex);
+          service.saveInternalError(pipelineName, processId, stageName, this.getClass(), ex);
       assertThat(error.getErrorId()).isNotNull();
       assertThat(error.getErrorTime()).isNotNull();
-      assertThat(error.getServiceName()).isEqualTo(serviceName);
+      assertThat(error.getServiceName()).isEqualTo("InternalErrorServiceTest");
       assertThat(error.getPipelineName()).isEqualTo(pipelineName);
       assertThat(error.getProcessId()).isEqualTo(processId);
       assertThat(error.getStageName()).isEqualTo(stageName);

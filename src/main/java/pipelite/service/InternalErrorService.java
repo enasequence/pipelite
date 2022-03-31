@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import pipelite.configuration.PipeliteConfiguration;
 import pipelite.entity.InternalErrorEntity;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.repository.InternalErrorRepository;
@@ -34,26 +35,25 @@ public class InternalErrorService {
 
   private final InternalErrorRepository repository;
   private final PipeliteMetrics metrics;
+  private final String serviceName;
 
   public InternalErrorService(
-      @Autowired InternalErrorRepository repository, @Autowired PipeliteMetrics metrics) {
+      @Autowired PipeliteConfiguration pipeliteConfiguration,
+      @Autowired InternalErrorRepository repository,
+      @Autowired PipeliteMetrics metrics) {
     this.repository = repository;
     this.metrics = metrics;
+    this.serviceName = pipeliteConfiguration.service().getName();
   }
 
   @Timed("pipelite.service")
-  public InternalErrorEntity saveInternalError(String serviceName, Class cls, Throwable exception) {
-    return saveInternalError(serviceName, null, null, null, cls, exception);
+  public InternalErrorEntity saveInternalError(Class cls, Throwable exception) {
+    return saveInternalError(null, null, null, cls, exception);
   }
 
   @Timed("pipelite.service")
   public InternalErrorEntity saveInternalError(
-      String serviceName,
-      String pipelineName,
-      String processId,
-      String stageName,
-      Class cls,
-      Throwable exception) {
+      String pipelineName, String processId, String stageName, Class cls, Throwable exception) {
     try {
       log.atSevere().withCause(exception).log(
           "Internal error in service: %s, pipeline: %s, process: %s, stage: %s, class %s",
