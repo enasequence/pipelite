@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -61,6 +62,8 @@ public class SshCmdRunner implements CmdRunner {
 
     log.atInfo().log("Executing ssh call: %s", cmd);
 
+    ZonedDateTime startTIme = ZonedDateTime.now();
+
     try (ClientSession session = createSession(executorParams)) {
       authSession(session);
 
@@ -71,17 +74,52 @@ public class SshCmdRunner implements CmdRunner {
       channel.setOut(stdoutStream);
       channel.setErr(stderrStream);
 
-      channel.open().verify(SSH_VERIFY_TIMEOUT, TimeUnit.SECONDS);
+      try {
+        channel.open().verify(SSH_VERIFY_TIMEOUT, TimeUnit.SECONDS);
 
-      Set<ClientChannelEvent> events =
-          channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), executorParams.getTimeout());
-      if (events.contains(ClientChannelEvent.TIMEOUT)) {
-        throw new PipeliteException("Failed to execute ssh call because of timeout: " + cmd);
+        Set<ClientChannelEvent> events =
+            channel.waitFor(
+                EnumSet.of(
+                    ClientChannelEvent.EXIT_STATUS,
+                    ClientChannelEvent.EXIT_SIGNAL,
+                    ClientChannelEvent.CLOSED),
+                executorParams.getTimeout());
+        if (events.contains(ClientChannelEvent.TIMEOUT)) {
+          throw new PipeliteException("Failed to execute ssh call because of timeout: " + cmd);
+        }
+
+        Integer exitCode = channel.getExitStatus();
+
+        if (exitCode == null) {
+          String exitSignal = channel.getExitSignal();
+          String exitSignalStr = "";
+          if (exitSignal != null) {
+            exitSignalStr = " (exit signal " + exitSignal + ")";
+          }
+          throw new PipeliteException(
+              "Failed to execute ssh call because of missing exit code"
+                  + exitSignalStr
+                  + ": "
+                  + cmd);
+        }
+
+        Duration callDuration = Duration.between(startTIme, ZonedDateTime.now());
+
+        log.atInfo().log(
+            "Finished executing ssh call (exit code "
+                + exitCode
+                + ") in "
+                + callDuration.toSeconds()
+                + " seconds: %s",
+            cmd);
+        return CmdRunner.result(cmd, exitCode, getStream(stdoutStream), getStream(stderrStream));
+      } finally {
+        try {
+          channel.close();
+        } catch (Exception ex) {
+          // Do nothing.
+        }
       }
-
-      int exitCode = channel.getExitStatus();
-      log.atInfo().log("Finished executing ssh call: %s", cmd);
-      return CmdRunner.result(cmd, exitCode, getStream(stdoutStream), getStream(stderrStream));
     } catch (PipeliteException ex) {
       throw ex;
     } catch (Exception ex) {

@@ -11,6 +11,7 @@
 package pipelite.executor;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.locks.ReentrantLock;
@@ -52,6 +53,7 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
   @JsonIgnore private StageMetrics stageMetrics;
 
   @JsonIgnore private ReentrantLock submitLock = new ReentrantLock();
+  @JsonIgnore private ZonedDateTime submitStartTime;
 
   /** Prepares stage executor for asynchronous execution. */
   public void prepareExecution(
@@ -95,9 +97,10 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
             .with(LogKey.PROCESS_ID, processId)
             .with(LogKey.STAGE_NAME, stageName)
             .log("Submitting async job");
+        submitStartTime = ZonedDateTime.now();
         submit(request, resultCallback);
       } else {
-        log.atInfo()
+        log.atFine()
             .with(LogKey.PIPELINE_NAME, pipelineName)
             .with(LogKey.PROCESS_ID, processId)
             .with(LogKey.STAGE_NAME, stageName)
@@ -146,11 +149,17 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
             StageExecutorResult result = StageExecutorResult.internalError(ex);
             resultCallback.accept(result);
           } finally {
+            Duration submitDuration = Duration.between(submitStartTime, ZonedDateTime.now());
             log.atInfo()
                 .with(LogKey.PIPELINE_NAME, pipelineName)
                 .with(LogKey.PROCESS_ID, processId)
                 .with(LogKey.STAGE_NAME, stageName)
-                .log("Submitted async job with job id: " + getJobId());
+                .log(
+                    "Submitted async job with job id "
+                        + getJobId()
+                        + " in "
+                        + submitDuration.toSeconds()
+                        + " seconds");
             submitLock.unlock();
           }
         });
