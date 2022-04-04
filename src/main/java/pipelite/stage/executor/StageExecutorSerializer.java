@@ -82,7 +82,9 @@ public class StageExecutorSerializer {
           }
 
           ExecutorParameters deserializedExecutorParams =
-              deserializeExecutorParameters(stage, deserializedExecutor.getExecutorParamsType());
+              deserializeExecutorParameters(
+                  stage.getStageEntity().getExecutorParams(),
+                  deserializedExecutor.getExecutorParamsType());
           if (deserializedExecutorParams == null) {
             throw new PipeliteException(
                 "Failed to deserialize stage executor because executor parameters could not be deserialized");
@@ -114,10 +116,9 @@ public class StageExecutorSerializer {
 
   /** Deserialize stage executor parameters. */
   public static <T extends ExecutorParameters> T deserializeExecutorParameters(
-      Stage stage, Class<T> cls) {
-    StageEntity stageEntity = stage.getStageEntity();
+      String json, Class<T> cls) {
     try {
-      return ExecutorParameters.deserialize(stageEntity.getExecutorParams(), cls);
+      return ExecutorParameters.deserialize(json, cls);
     } catch (Exception ex) {
       throw new PipeliteException(
           "Failed to deserialize stage executor because executor parameters could not be deserialized: "

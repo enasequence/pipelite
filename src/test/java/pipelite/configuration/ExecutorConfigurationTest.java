@@ -40,7 +40,6 @@ import pipelite.stage.parameters.LsfExecutorParameters;
       "pipelite.executor.simpleLsf.memoryTimeout=15s",
       "pipelite.executor.simpleLsf.immediateRetries=2",
       "pipelite.executor.simpleLsf.maximumRetries=3",
-      "pipelite.executor.simpleLsf.workdir=",
       "pipelite.executor.simpleLsf.timeout=10s",
       "pipelite.executor.simpleLsf.logDir=TEST_DIR1",
       "pipelite.executor.awsBatch.region=TEST",

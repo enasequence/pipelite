@@ -70,9 +70,12 @@ public class StageRunner {
             process.getProcessId(),
             stage.getStageName(),
             this);
-    if (stage.getStageEntity().getStageState() != StageState.ACTIVE) {
+    if (stage.getStageEntity().getStageState() == StageState.ACTIVE) {
+      // Continue active execution.
+    } else {
       // Reset executor state.
-      if (stage.getExecutor() instanceof AsyncExecutor) {
+      if (stage.getStageEntity().getStageState() != StageState.PENDING
+          && stage.getExecutor() instanceof AsyncExecutor) {
         logContext(log.atInfo()).log("Reset async stage executor");
         StageExecutor.resetAsyncExecutorState(stage);
       }
@@ -147,7 +150,7 @@ public class StageRunner {
   }
 
   private void prepareStageExecution() {
-    logContext(log.atInfo()).log("Executing stage");
+    logContext(log.atInfo()).log("Preparing stage execution");
     stage
         .getExecutor()
         .prepareExecution(
@@ -163,7 +166,7 @@ public class StageRunner {
                     throw new PipeliteException("Missing executor result");
                   }
                   if (executorResult.isSubmitted()) {
-                    logContext(log.atFine()).log("Submitted asynchronous stage execution");
+                    logContext(log.atInfo()).log("Submitted async stage");
                     pipeliteServices.stage().saveStage(stage);
                   } else if (executorResult.isActive()) {
                     if (ZonedDateTime.now().isAfter(timeout)) {

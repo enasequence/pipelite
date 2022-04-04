@@ -76,4 +76,11 @@ public class AbstractLsfExecutorParameters extends CmdExecutorParameters {
             new LsfLogFilePathResolver(request, this).getFile(format), "logFile")
         .toString();
   }
+
+  // Json deserialization backwards compatibility for workDir field.
+  public void setWorkDir(String workDir) {
+    if (workDir != null && !workDir.isEmpty()) {
+      this.logDir = workDir;
+    }
+  }
 }

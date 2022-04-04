@@ -132,6 +132,11 @@ public class ExecutorParameters {
     return Json.deserialize(json, cls);
   }
 
+  // Json deserialization backwards compatibility for logBytes field.
+  public void setLogBytes(int logBytes) {
+    this.logLines = Math.max(logBytes / 100, 1);
+  }
+
   @Override
   public String toString() {
     return serialize();

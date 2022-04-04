@@ -13,6 +13,7 @@ package pipelite.stage.executor;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import pipelite.entity.StageEntity;
 import pipelite.executor.JsonSerializableExecutor;
@@ -58,56 +59,66 @@ public class StageExecutorSerializerTest {
 
   @Test
   public void deserializeExecutorParams() {
-    StageEntity stageEntity = new StageEntity();
-    stageEntity.setExecutorParams(
-        "{\n" + "  \"maximumRetries\" : 3,\n" + "  \"immediateRetries\" : 3\n" + "}");
-    TestExecutor executor = new TestExecutor(StageState.SUCCESS);
-    Stage stage = Stage.builder().stageName("STAGE1").executor(executor).build();
-    stage.setStageEntity(stageEntity);
+    String json = "{\n" + "  \"maximumRetries\" : 3,\n" + "  \"immediateRetries\" : 3\n" + "}";
     ExecutorParameters deserializedExecutorParams =
-        StageExecutorSerializer.deserializeExecutorParameters(
-            stage, executor.getExecutorParamsType());
+        StageExecutorSerializer.deserializeExecutorParameters(json, ExecutorParameters.class);
     assertThat(deserializedExecutorParams).isNotNull();
     assertThat(deserializedExecutorParams.getImmediateRetries()).isEqualTo(3);
     assertThat(deserializedExecutorParams.getMaximumRetries()).isEqualTo(3);
   }
 
   @Test
-  public void deserializeExecutorJson() {
-    StageExecutorResult result = StageExecutorResult.success();
-    StageEntity stageEntity = new StageEntity();
-    stageEntity.setExecutorName(TestExecutor.class.getName());
-    stageEntity.setExecutorData(
-        "{\n" + "  \"stageState\" : \"" + StageState.from(result).name() + "\"\n}");
-    Stage stage =
-        Stage.builder()
-            .stageName("STAGE1")
-            .executor(new TestExecutor(StageState.from(result)))
-            .build();
-    stage.setStageEntity(stageEntity);
-    StageExecutor deserializedExecutor = StageExecutorSerializer.deserializeExecutorData(stage);
-    assertThat(deserializedExecutor).isNotNull();
-    assertThat(stage.getExecutor()).isInstanceOf(TestExecutor.class);
-    assertThat(((TestExecutor) stage.getExecutor()).getStageState())
-        .isEqualTo(StageState.from(result));
+  public void deserializeSimpleLsfExecutorParamsBackwardsCompatibility() {
+    String json =
+        "{\n"
+            + "  \"timeout\" : 432000000,\n"
+            + "  \"maximumRetries\" : 6,\n"
+            + "  \"immediateRetries\" : 2,\n"
+            + "  \"host\" : \"yoda-login-2.ebi.ac.uk\",\n"
+            + "  \"user\" : \"era\",\n"
+            // workDir has been replaced by logDir
+            + "  \"workDir\" : \"/hps/nobackup2/era/flow/log\",\n"
+            // logBytes has been replaced by logLines
+            + "  \"logBytes\" : 1000,\n"
+            + "  \"permanentErrors\" : [ 52, 53, 54, 60, 74, 75 ],\n"
+            + "  \"queue\" : \"standard\",\n"
+            + "  \"cpu\" : 1,\n"
+            + "  \"memory\" : 4352"
+            + "}";
+    SimpleLsfExecutorParameters deserializedExecutorParams =
+        StageExecutorSerializer.deserializeExecutorParameters(
+            json, SimpleLsfExecutorParameters.class);
+    assertThat(deserializedExecutorParams).isNotNull();
+    assertThat(deserializedExecutorParams.getTimeout()).isEqualTo(Duration.ofDays(5));
+    assertThat(deserializedExecutorParams.getMaximumRetries()).isEqualTo(6);
+    assertThat(deserializedExecutorParams.getImmediateRetries()).isEqualTo(2);
+    assertThat(deserializedExecutorParams.getHost()).isEqualTo("yoda-login-2.ebi.ac.uk");
+    assertThat(deserializedExecutorParams.getUser()).isEqualTo("era");
+    assertThat(deserializedExecutorParams.getLogDir()).isEqualTo("/hps/nobackup2/era/flow/log");
+    assertThat(deserializedExecutorParams.getPermanentErrors())
+        .containsExactly(52, 53, 54, 60, 74, 75);
+    assertThat(deserializedExecutorParams.getQueue()).isEqualTo("standard");
+    assertThat(deserializedExecutorParams.getCpu()).isEqualTo(1);
+    assertThat(deserializedExecutorParams.getMemory()).isEqualTo(4352);
   }
 
   @Test
-  public void deserializeExecutionJson() {
+  public void deserializeTestExecutor() {
     StageExecutorResult result = StageExecutorResult.success();
     StageEntity stageEntity = new StageEntity();
-    Stage stage =
-        Stage.builder()
-            .stageName("STAGE1")
-            .executor(new TestExecutor(StageState.from(result)))
-            .build();
+
+    TestExecutor testExecutor = new TestExecutor(StageState.from(result));
+
+    Stage stage = Stage.builder().stageName("STAGE1").executor(testExecutor).build();
     stage.setStageEntity(stageEntity);
+
+    ExecutorParameters params = new ExecutorParameters();
+    params.setTimeout(Duration.ofMinutes(1));
+    testExecutor.setExecutorParams(params);
+
     stageEntity.startExecution();
-    stageEntity.setExecutorName(TestExecutor.class.getName());
-    stageEntity.setExecutorData(
-        "{\n" + "  \"stageState\" : \"" + StageState.from(result).name() + "\"\n}");
-    stageEntity.setExecutorParams(
-        "{\n" + "  \"maximumRetries\" : 3,\n" + "  \"immediateRetries\" : 3\n" + "}");
+    StageService.prepareSaveStage(stage);
+
     assertThat(StageExecutorSerializer.deserializeExecutor(stage, internalErrorService)).isTrue();
     assertThat(stage.getExecutor()).isNotNull();
     assertThat(stage.getExecutor()).isInstanceOf(TestExecutor.class);
@@ -116,10 +127,22 @@ public class StageExecutorSerializerTest {
     assertThat(stage.getExecutor().getExecutorParams()).isNotNull();
     assertThat(stage.getExecutor().getExecutorParams().getImmediateRetries()).isEqualTo(3);
     assertThat(stage.getExecutor().getExecutorParams().getMaximumRetries()).isEqualTo(3);
+    assertThat(stageEntity.getExecutorName())
+        .isEqualTo("pipelite.stage.executor.StageExecutorSerializerTest$TestExecutor");
+    assertThat(stageEntity.getExecutorData())
+        .isEqualTo("{\n" + "  \"stageState\" : \"SUCCESS\"\n" + "}");
+    assertThat(stageEntity.getExecutorParams())
+        .isEqualTo(
+            "{\n"
+                + "  \"timeout\" : 60000,\n"
+                + "  \"maximumRetries\" : 3,\n"
+                + "  \"immediateRetries\" : 3,\n"
+                + "  \"logLines\" : 1000\n"
+                + "}");
   }
 
   @Test
-  public void deserializeExecutionAsync() {
+  public void deserializeSimpleLsfExecutor() {
     SimpleLsfExecutor lsfExecutor = StageExecutor.createSimpleLsfExecutor("test");
     lsfExecutor.setJobId("test");
 

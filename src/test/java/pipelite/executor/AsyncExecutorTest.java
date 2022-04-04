@@ -45,6 +45,7 @@ public class AsyncExecutorTest {
   @Test
   public void executeSubmitMissingJobId() {
     AsyncExecutor executor = executor();
+    executor.prepareExecution(null, "PIPELINE", "PROCESS", "STAGE");
     doReturn(new AsyncExecutor.SubmitResult(null, StageExecutorResult.submitted()))
         .when(executor)
         .submit(any());
@@ -61,7 +62,8 @@ public class AsyncExecutorTest {
     assertThat(result.get().isError()).isTrue();
     assertThat(result.get().isErrorType(ErrorType.INTERNAL_ERROR)).isTrue();
     assertThat(result.get().getStageLog())
-        .contains("PipeliteException: Missing job id after asynchronous submit");
+        .contains(
+            "pipelite.exception.PipeliteSubmitException: Failed to submit async job PIPELINE PROCESS STAGE: missing job id");
   }
 
   @Test
@@ -69,6 +71,7 @@ public class AsyncExecutorTest {
     for (StageExecutorState stageExecutorState :
         EnumSet.of(StageExecutorState.ACTIVE, StageExecutorState.SUCCESS)) {
       AsyncExecutor executor = executor();
+      executor.prepareExecution(null, "PIPELINE", "PROCESS", "STAGE");
       doReturn(
               new AsyncExecutor.SubmitResult("jobId", StageExecutorResult.from(stageExecutorState)))
           .when(executor)
@@ -86,7 +89,9 @@ public class AsyncExecutorTest {
       assertThat(result.get().isError()).isTrue();
       assertThat(result.get().isErrorType(ErrorType.INTERNAL_ERROR)).isTrue();
       assertThat(result.get().getStageLog())
-          .contains("PipeliteException: Unexpected state after asynchronous submit");
+          .contains(
+              "pipelite.exception.PipeliteSubmitException: Failed to submit async job PIPELINE PROCESS STAGE: unexpected state "
+                  + stageExecutorState.name());
     }
   }
 

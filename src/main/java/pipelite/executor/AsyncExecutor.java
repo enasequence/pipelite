@@ -17,10 +17,13 @@ import java.util.concurrent.locks.ReentrantLock;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.Value;
-import pipelite.exception.PipeliteException;
+import lombok.extern.flogger.Flogger;
+import pipelite.exception.PipeliteSubmitException;
 import pipelite.executor.describe.cache.DescribeJobsCache;
+import pipelite.log.LogKey;
 import pipelite.metrics.StageMetrics;
 import pipelite.service.DescribeJobsCacheService;
+import pipelite.service.InternalErrorService;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
@@ -30,6 +33,7 @@ import pipelite.stage.parameters.ExecutorParameters;
 /** Executes a stage asynchronously. Must be serializable to json. */
 @Getter
 @Setter
+@Flogger
 public abstract class AsyncExecutor<T extends ExecutorParameters, D extends DescribeJobsCache>
     extends AbstractExecutor<T> {
 
@@ -39,7 +43,11 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
    */
   private String jobId;
 
+  @JsonIgnore private String pipelineName;
+  @JsonIgnore private String processId;
+  @JsonIgnore private String stageName;
   @JsonIgnore private ExecutorService submitExecutorService;
+  @JsonIgnore private InternalErrorService internalErrorService;
   @JsonIgnore private D describeJobsCache;
   @JsonIgnore private StageMetrics stageMetrics;
 
@@ -49,9 +57,15 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
   public void prepareExecution(
       PipeliteServices pipeliteServices, String pipelineName, String processId, String stageName) {
     super.prepareExecution(pipeliteServices, pipelineName, processId, stageName);
-    this.submitExecutorService = pipeliteServices.executor().submit();
-    this.describeJobsCache = initDescribeJobsCache(pipeliteServices.jobs());
-    this.stageMetrics = pipeliteServices.metrics().process(pipelineName).stage(stageName);
+    this.pipelineName = pipelineName;
+    this.processId = processId;
+    this.stageName = stageName;
+    if (pipeliteServices != null) {
+      this.submitExecutorService = pipeliteServices.executor().submit();
+      this.internalErrorService = pipeliteServices.internalError();
+      this.describeJobsCache = initDescribeJobsCache(pipeliteServices.jobs());
+      this.stageMetrics = pipeliteServices.metrics().process(pipelineName).stage(stageName);
+    }
   }
 
   protected abstract D initDescribeJobsCache(DescribeJobsCacheService describeJobsCacheService);
@@ -76,7 +90,18 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
   public void execute(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {
     if (jobId == null) {
       if (submitLock.tryLock()) {
+        log.atInfo()
+            .with(LogKey.PIPELINE_NAME, pipelineName)
+            .with(LogKey.PROCESS_ID, processId)
+            .with(LogKey.STAGE_NAME, stageName)
+            .log("Submitting async job");
         submit(request, resultCallback);
+      } else {
+        log.atInfo()
+            .with(LogKey.PIPELINE_NAME, pipelineName)
+            .with(LogKey.PROCESS_ID, processId)
+            .with(LogKey.STAGE_NAME, stageName)
+            .log("Waiting for async job submission to complete");
       }
     } else {
       poll(request, resultCallback);
@@ -103,24 +128,29 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
               stageMetrics.executor().endSubmit(submitStartTime);
             }
 
-            if (!result.isError()) {
-              if (!result.isSubmitted()) {
-                result =
-                    StageExecutorResult.internalError(
-                        new PipeliteException(
-                            "Unexpected state after asynchronous submit: "
-                                + result.getExecutorState().name()));
-              } else if (jobId == null) {
-                result =
-                    StageExecutorResult.internalError(
-                        new PipeliteException("Missing job id after asynchronous submit"));
-              }
+            PipeliteSubmitException submitException = null;
+            if (result.isError()) {
+              submitException = submitException(result.getStageLog());
+            } else if (!result.isSubmitted()) {
+              submitException =
+                  submitException("unexpected state " + result.getExecutorState().name());
+              result = StageExecutorResult.internalError(submitException);
+            } else if (jobId == null) {
+              submitException = submitException("missing job id");
+              result = StageExecutorResult.internalError(submitException);
             }
+
+            saveInternalError(submitException);
             resultCallback.accept(result);
           } catch (Exception ex) {
             StageExecutorResult result = StageExecutorResult.internalError(ex);
             resultCallback.accept(result);
           } finally {
+            log.atInfo()
+                .with(LogKey.PIPELINE_NAME, pipelineName)
+                .with(LogKey.PROCESS_ID, processId)
+                .with(LogKey.STAGE_NAME, stageName)
+                .log("Submitted async job with job id: " + getJobId());
             submitLock.unlock();
           }
         });
@@ -129,17 +159,21 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
   private void poll(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {
     try {
       StageExecutorResult result = poll(request);
-      if (result.isSubmitted()) {
-        result =
-            StageExecutorResult.internalError(
-                new PipeliteException(
-                    "Unexpected state during asynchronous poll: "
-                        + result.getExecutorState().name()));
-      }
       resultCallback.accept(result);
     } catch (Exception ex) {
       StageExecutorResult result = StageExecutorResult.internalError(ex);
       resultCallback.accept(result);
+    }
+  }
+
+  private PipeliteSubmitException submitException(String message) {
+    return new PipeliteSubmitException(pipelineName, processId, stageName, message);
+  }
+
+  private void saveInternalError(Throwable throwable) {
+    if (throwable != null && internalErrorService != null) {
+      internalErrorService.saveInternalError(
+          pipelineName, processId, stageName, AsyncExecutor.class, throwable);
     }
   }
 }

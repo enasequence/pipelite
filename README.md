@@ -175,8 +175,8 @@ public class MySchedule implements Pipelite.Schedule {
                     .host("TODO")
                     // The LSF queue.
                     .queue("TODO")
-                    // The LSF working directoy where stage specific output files are written.
-                    .workDir("pipelite_tmp")
+                    // The LSF log directory where stage specific output files are written.
+                    .logDir("pipelite_tmp")
                     .build();
 }
 ```
