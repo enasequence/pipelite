@@ -13,7 +13,6 @@ package pipelite.executor;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.locks.ReentrantLock;
 import lombok.Getter;
 import lombok.Setter;
@@ -47,7 +46,6 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
   @JsonIgnore private String pipelineName;
   @JsonIgnore private String processId;
   @JsonIgnore private String stageName;
-  @JsonIgnore private ExecutorService submitExecutorService;
   @JsonIgnore private InternalErrorService internalErrorService;
   @JsonIgnore private D describeJobsCache;
   @JsonIgnore private StageMetrics stageMetrics;
@@ -63,7 +61,6 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
     this.processId = processId;
     this.stageName = stageName;
     if (pipeliteServices != null) {
-      this.submitExecutorService = pipeliteServices.executor().submit();
       this.internalErrorService = pipeliteServices.internalError();
       this.describeJobsCache = initDescribeJobsCache(pipeliteServices.jobs());
       this.stageMetrics = pipeliteServices.metrics().process(pipelineName).stage(stageName);
@@ -118,51 +115,47 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
   }
 
   private void submit(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {
-    submitExecutorService.submit(
-        () -> {
-          try {
-            ZonedDateTime submitStartTime = ZonedDateTime.now();
-            prepareSubmit(request);
-            SubmitResult submitResult = submit(request);
-            jobId = submitResult.getJobId();
-            StageExecutorResult result = submitResult.getResult();
+    try {
+      ZonedDateTime submitStartTime = ZonedDateTime.now();
+      prepareSubmit(request);
+      SubmitResult submitResult = submit(request);
+      jobId = submitResult.getJobId();
+      StageExecutorResult result = submitResult.getResult();
 
-            if (stageMetrics != null) {
-              stageMetrics.executor().endSubmit(submitStartTime);
-            }
+      if (stageMetrics != null) {
+        stageMetrics.executor().endSubmit(submitStartTime);
+      }
 
-            PipeliteSubmitException submitException = null;
-            if (result.isError()) {
-              submitException = submitException(result.getStageLog());
-            } else if (!result.isSubmitted()) {
-              submitException =
-                  submitException("unexpected state " + result.getExecutorState().name());
-              result = StageExecutorResult.internalError(submitException);
-            } else if (jobId == null) {
-              submitException = submitException("missing job id");
-              result = StageExecutorResult.internalError(submitException);
-            }
+      PipeliteSubmitException submitException = null;
+      if (result.isError()) {
+        submitException = submitException(result.getStageLog());
+      } else if (!result.isSubmitted()) {
+        submitException = submitException("unexpected state " + result.getExecutorState().name());
+        result = StageExecutorResult.internalError(submitException);
+      } else if (jobId == null) {
+        submitException = submitException("missing job id");
+        result = StageExecutorResult.internalError(submitException);
+      }
 
-            saveInternalError(submitException);
-            resultCallback.accept(result);
-          } catch (Exception ex) {
-            StageExecutorResult result = StageExecutorResult.internalError(ex);
-            resultCallback.accept(result);
-          } finally {
-            Duration submitDuration = Duration.between(submitStartTime, ZonedDateTime.now());
-            log.atInfo()
-                .with(LogKey.PIPELINE_NAME, pipelineName)
-                .with(LogKey.PROCESS_ID, processId)
-                .with(LogKey.STAGE_NAME, stageName)
-                .log(
-                    "Submitted async job with job id "
-                        + getJobId()
-                        + " in "
-                        + submitDuration.toSeconds()
-                        + " seconds");
-            submitLock.unlock();
-          }
-        });
+      saveInternalError(submitException);
+      resultCallback.accept(result);
+    } catch (Exception ex) {
+      StageExecutorResult result = StageExecutorResult.internalError(ex);
+      resultCallback.accept(result);
+    } finally {
+      Duration submitDuration = Duration.between(submitStartTime, ZonedDateTime.now());
+      log.atInfo()
+          .with(LogKey.PIPELINE_NAME, pipelineName)
+          .with(LogKey.PROCESS_ID, processId)
+          .with(LogKey.STAGE_NAME, stageName)
+          .log(
+              "Submitted async job with job id "
+                  + getJobId()
+                  + " in "
+                  + submitDuration.toSeconds()
+                  + " seconds");
+      submitLock.unlock();
+    }
   }
 
   private void poll(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {

@@ -21,7 +21,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import pipelite.PipeliteIdCreator;
-import pipelite.service.PipeliteExecutorService;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.*;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
@@ -37,8 +36,6 @@ public class AsyncExecutorTest {
     SimpleLsfExecutor simpleLsfExecutor =
         Mockito.spy(StageExecutor.createSimpleLsfExecutor("test"));
     simpleLsfExecutor.setExecutorParams(new SimpleLsfExecutorParameters());
-    simpleLsfExecutor.setSubmitExecutorService(
-        PipeliteExecutorService.createExecutorService("test-%d", 10, null));
     return simpleLsfExecutor;
   }
 

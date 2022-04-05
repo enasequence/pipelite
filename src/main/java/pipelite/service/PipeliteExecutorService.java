@@ -33,10 +33,12 @@ public class PipeliteExecutorService {
     this.internalErrorService = internalErrorService;
   }
 
-  private AtomicReference<ExecutorService> runProcessExecutorService = new AtomicReference<>();
-  private AtomicReference<ExecutorService> submitStageExecutorService = new AtomicReference<>();
-  private AtomicReference<ExecutorService> refreshQueueExecutorService = new AtomicReference<>();
-  private AtomicReference<ExecutorService> replenishQueueExecutorService = new AtomicReference<>();
+  private final AtomicReference<ExecutorService> runProcessExecutorService =
+      new AtomicReference<>();
+  private final AtomicReference<ExecutorService> refreshQueueExecutorService =
+      new AtomicReference<>();
+  private final AtomicReference<ExecutorService> replenishQueueExecutorService =
+      new AtomicReference<>();
 
   @PostConstruct
   private void initExecutorServices() {
@@ -44,10 +46,6 @@ public class PipeliteExecutorService {
         createExecutorService(
             "pipelite-process-%d",
             pipeliteConfiguration.advanced().getProcessRunnerWorkers(), internalErrorService));
-    submitStageExecutorService.set(
-        createExecutorService(
-            "pipelite-submit-%d",
-            pipeliteConfiguration.advanced().getStageSubmitWorkers(), internalErrorService));
     refreshQueueExecutorService.set(
         createExecutorService("pipelite-refresh-%d", 5, internalErrorService));
     replenishQueueExecutorService.set(
@@ -73,11 +71,6 @@ public class PipeliteExecutorService {
   /** Used in ProcessRunnerPool.runOneIteration to run processes. */
   public ExecutorService process() {
     return runProcessExecutorService.get();
-  }
-
-  /** Used AbstractAsyncExecutor.execute to submit stages. */
-  public ExecutorService submit() {
-    return submitStageExecutorService.get();
   }
 
   /** Used in PipelineRunner runOneIteration to refresh process queue. */

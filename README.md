@@ -4,36 +4,36 @@ Pipelite workflow manager
 - [Overview](#overview)
 - [How to start up Pipelite](#how-to-start-up-pipelite)
 - [How to configure schedules](#how-to-configure-schedules)
-    * [SimpleLsfExecutor example](#simplelsfexecutor-example)
+  * [SimpleLsfExecutor example](#simplelsfexecutor-example)
 - [How to configure pipelines](#how-to-configure-pipelines)
 - [Stage dependency types](#stage-dependency-types)
 - [Stage executor backends](#stage-executor-backends)
 - [Configuration parameters](#configuration-parameters)
-    * [Executor parameters](#executor-parameters)
-        + [Cmd executor parameters](#cmd-executor-parameters)
-        + [Simple LSF executor parameters](#simple-lsf-executor-parameters)
-        + [LSF executor parameters](#lsf-executor-parameters)
-        + [AwsBatch executor parameters](#awsbatch-executor-parameters)
-    * [Service parameters](#service-parameters)
-    * [Mail parameters](#mail-parameters)
-    * [Database parameters](#database-parameters)
-    * [Advanced parameters](#advanced-parameters)
-    * [Test profiles](#test-profiles)
-    * [Environment variables for unit testing](#environment-variables-for-unit-testing)
+  * [Executor parameters](#executor-parameters)
+    + [Cmd executor parameters](#cmd-executor-parameters)
+    + [Simple LSF executor parameters](#simple-lsf-executor-parameters)
+    + [LSF executor parameters](#lsf-executor-parameters)
+    + [AwsBatch executor parameters](#awsbatch-executor-parameters)
+  * [Service parameters](#service-parameters)
+  * [Mail parameters](#mail-parameters)
+  * [Database parameters](#database-parameters)
+  * [Advanced parameters](#advanced-parameters)
+  * [Test profiles](#test-profiles)
+  * [Environment variables for unit testing](#environment-variables-for-unit-testing)
 - [Database schema](#database-schema)
-    * [PIPELITE2_SCHEDULE table](#pipelite2-schedule-table)
-    * [PIPELITE2_PROCESS table](#pipelite2-process-table)
-    * [PIPELITE2_STAGE table](#pipelite2-stage-table)
-    * [PIPELITE2_STAGE_LOG table](#pipelite2-stage-log-table)
-    * [PIPELITE2_SERVICE_LOCK table](#pipelite2-service-lock-table)
-    * [PIPELITE2_PROCESS_LOCK table](#pipelite2-process-lock-table)
+  * [PIPELITE2_SCHEDULE table](#pipelite2-schedule-table)
+  * [PIPELITE2_PROCESS table](#pipelite2-process-table)
+  * [PIPELITE2_STAGE table](#pipelite2-stage-table)
+  * [PIPELITE2_STAGE_LOG table](#pipelite2-stage-log-table)
+  * [PIPELITE2_SERVICE_LOCK table](#pipelite2-service-lock-table)
+  * [PIPELITE2_PROCESS_LOCK table](#pipelite2-process-lock-table)
 - [Web interface](#web-interface)
-    * [Schedules](#schedules)
-    * [Schedule](#schedule)
-    * [Pipelines](#pipelines)
-    * [Processes](#processes)
-    * [Process](#process)
-    * [Admin](#admin)
+  * [Schedules](#schedules)
+  * [Schedule](#schedule)
+  * [Pipelines](#pipelines)
+  * [Processes](#processes)
+  * [Process](#process)
+  * [Admin](#admin)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with
 markdown-toc</a></i></small>
@@ -77,9 +77,9 @@ and the minimal application would call  ```Pipelite.main``` to start up the Pipe
 
 @SpringBootApplication
 public class Application {
-    public static void main(String[] args) {
-        Pipelite.main(args);
-    }
+  public static void main(String[] args) {
+    Pipelite.main(args);
+  }
 }
 ```
 
@@ -89,10 +89,10 @@ The ```SpringApplication``` can be configured using a ```Consumer<SpringApplicat
 
 @SpringBootApplication
 public class Application {
-    public static void main(String[] args) {
-        Consumer<SpringApplication> applicationConsumer = ...;
-        Pipelite.main(args, applicationConsumer);
-    }
+  public static void main(String[] args) {
+    Consumer<SpringApplication> applicationConsumer = ...;
+    Pipelite.main(args, applicationConsumer);
+  }
 }
 ```
 
@@ -115,69 +115,69 @@ A schedule executed using ```SimpleLsfExecutor``` over ssh would look like the f
 @Component
 public class MySchedule implements Pipelite.Schedule {
 
-    @Override
-    public String pipelineName() {
-        // A unique name for the schedule.  
-        return "MySchedule";
-    }
+  @Override
+  public String pipelineName() {
+    // A unique name for the schedule.  
+    return "MySchedule";
+  }
 
-    @Override
-    public Options configurePipeline() {
-        // The cron expression for the schedule.
-        return new Options().cron("* * * * *");
-    }
+  @Override
+  public Options configurePipeline() {
+    // The cron expression for the schedule.
+    return new Options().cron("* * * * *");
+  }
 
-    @Override
-    public void configureProcess(ProcessBuilder builder) {
-        // A process with two stages is configured here. As the stages do not 
-        // depend on each other they will be executed in parallel.
-        builder
-                // Execute STAGE1 stage that does not depend on any other stage.
-                // Different executeXXX methods exist for different types of stage dependencies.
-                .execute("STAGE1")
-                // Execute STAGE1 using SimpleLsfExecutor with the provided stage execution parameters.
-                // Different withXXX methods exist for different execution backends.
-                .withSimpleLsfExecutor(STAGE_CMD1, STAGE_PARAMS)
-                // Execute STAGE2 stage that does not depend on any other stage.
-                // Different executeXXX methods exist for different types of stage dependencies.
-                .execute("STAGE2")
-                // Execute STAGE2 using SimpleLsfExecutor with the provided stage execution parameters.
-                // Different withXXX methods exist for different execution backends.
-                .withSimpleLsfExecutor(STAGE_CMD2, STAGE_PARAMS);
-    }
+  @Override
+  public void configureProcess(ProcessBuilder builder) {
+    // A process with two stages is configured here. As the stages do not 
+    // depend on each other they will be executed in parallel.
+    builder
+            // Execute STAGE1 stage that does not depend on any other stage.
+            // Different executeXXX methods exist for different types of stage dependencies.
+            .execute("STAGE1")
+            // Execute STAGE1 using SimpleLsfExecutor with the provided stage execution parameters.
+            // Different withXXX methods exist for different execution backends.
+            .withSimpleLsfExecutor(STAGE_CMD1, STAGE_PARAMS)
+            // Execute STAGE2 stage that does not depend on any other stage.
+            // Different executeXXX methods exist for different types of stage dependencies.
+            .execute("STAGE2")
+            // Execute STAGE2 using SimpleLsfExecutor with the provided stage execution parameters.
+            // Different withXXX methods exist for different execution backends.
+            .withSimpleLsfExecutor(STAGE_CMD2, STAGE_PARAMS);
+  }
 
-    // The command line command to execute in STAGE1.
-    private static final String STAGE_CMD1 = "...";
+  // The command line command to execute in STAGE1.
+  private static final String STAGE_CMD1 = "...";
 
-    // The command line command to execute in STAGE2.
-    private static final String STAGE_CMD2 = "...";
+  // The command line command to execute in STAGE2.
+  private static final String STAGE_CMD2 = "...";
 
-    // SimpleLsfExecutor stage execution parameters are defined here. They can be shared
-    // between stages or each stage can be configured with different parameters.
-    private static final SimpleLsfExecutorParameters STAGE_PARAMS =
-            SimpleLsfExecutorParameters.builder()
-                    // How may times stages are immediately retried if their execution fails.
-                    .immediateRetries(2)
-                    // Applies only to pipelines.
-                    // The maximum number of times a stage is retried if its execution fails.
-                    // Stage executions are temporary stopped if immediate retries have 
-                    // been exhausted and retried later until maximum retries is exceeded.                    
-                    .maximumRetries(5)
-                    // The number of CPU cores required to execute the stage.
-                    .cpu(1)
-                    // The amount of memory required to execute the stage.
-                    .memory(16)
-                    // The requested memory units.
-                    .memoryUnits("M")
-                    // The timeout after which the stage execution will be considered as failed.
-                    .timeout(Duration.ofMinutes(30))
-                    // The LSF login node.
-                    .host("TODO")
-                    // The LSF queue.
-                    .queue("TODO")
-                    // The LSF log directory where stage specific output files are written.
-                    .logDir("pipelite_tmp")
-                    .build();
+  // SimpleLsfExecutor stage execution parameters are defined here. They can be shared
+  // between stages or each stage can be configured with different parameters.
+  private static final SimpleLsfExecutorParameters STAGE_PARAMS =
+          SimpleLsfExecutorParameters.builder()
+                  // How may times stages are immediately retried if their execution fails.
+                  .immediateRetries(2)
+                  // Applies only to pipelines.
+                  // The maximum number of times a stage is retried if its execution fails.
+                  // Stage executions are temporary stopped if immediate retries have 
+                  // been exhausted and retried later until maximum retries is exceeded.                    
+                  .maximumRetries(5)
+                  // The number of CPU cores required to execute the stage.
+                  .cpu(1)
+                  // The amount of memory required to execute the stage.
+                  .memory(16)
+                  // The requested memory units.
+                  .memoryUnits("M")
+                  // The timeout after which the stage execution will be considered as failed.
+                  .timeout(Duration.ofMinutes(30))
+                  // The LSF login node.
+                  .host("TODO")
+                  // The LSF queue.
+                  .queue("TODO")
+                  // The LSF log directory where stage specific output files are written.
+                  .logDir("pipelite_tmp")
+                  .build();
 }
 ```
 
@@ -198,24 +198,24 @@ A pipeline would look like the following:
 @Component
 public class MyPipeline implements Pipelite.Pipeline {
 
-    // Identical to schedule configuration except for the configurePipeline method.
-    // Please refer to the schedule configuration examples for more information.
+  // Identical to schedule configuration except for the configurePipeline method.
+  // Please refer to the schedule configuration examples for more information.
 
-    @Override
-    public Options configurePipeline() {
-        // The maximum number of parallel process executions.
-        return new Options().pipelineParallelism(10);
-    }
+  @Override
+  public Options configurePipeline() {
+    // The maximum number of parallel process executions.
+    return new Options().pipelineParallelism(10);
+  }
 
-    @Override
-    public PrioritizedProcess nextProcess() {
-        // To be implemented by the user.
-    }
+  @Override
+  public PrioritizedProcess nextProcess() {
+    // To be implemented by the user.
+  }
 
-    @Override
-    public void confirmProcess(String processId) {
-        // To be implemented by the user.
-    }
+  @Override
+  public void confirmProcess(String processId) {
+    // To be implemented by the user.
+  }
 ```
 
 The ```nextProcess``` method is called by Pipelite and should return ```Process``` instances or null if no new processes
@@ -418,8 +418,6 @@ The unit for the resource usage limit can be one of:
 - pipelite.advanced.processRunnerFrequency: the running frequency for executing new processes. Default value: 1 second
 - pipelite.advanced.processRunnerWorkers: the number or parallel workers running processes in the main event loop.
   Default value: 25
-- pipelite.advanced.stageSubmitWorkers: the number or parallel workers submitting asynchronous stages in the main event
-  loop. Default value: 100
 - pipelite.advanced.processQueueMinRefreshFrequency: the minimum frequency for process queue to be refreshed to allow
   process re-prioritisation. Default value: 10 minutes
 - pipelite.advanced.processQueueMaxRefreshFrequency: the maximum frequency for process queue to be refreshed to allow

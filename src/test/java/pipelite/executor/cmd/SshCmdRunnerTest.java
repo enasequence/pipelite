@@ -110,14 +110,6 @@ public class SshCmdRunnerTest {
     assertThat(result.getStageLog()).startsWith("test");
   }
 
-  // noah-login: 3 parallel workers, 10 ssh echos, Total time: 6 seconds, 7 seconds, 3 seconds, 7
-  // seconds
-  // sra-login: 3 parallel workers, 10 ssh echos, Total time: 3 seconds, 3 seconds, 3 seconds, 3
-  // seconds
-  // yoda-login: 3 parallel workers, 10 ssh echos, Total time: 11 seconds, 8 seconds, 7 seconds, 5
-  // seconds
-  // codon-login: 3 parallel workers, 10 ssh echos, Total time: 239 seconds, 210 seconds
-  // codon-login: 23 seconds
   @Test
   public void multiThreadedEcho() {
     ExecutorService executorService = createExecutorService("multiThreadedEcho", 10, null);

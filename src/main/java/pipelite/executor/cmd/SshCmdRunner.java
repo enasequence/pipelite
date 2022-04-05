@@ -13,6 +13,9 @@ package pipelite.executor.cmd;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
+import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import org.apache.commons.exec.CommandLine;
 import pipelite.exception.PipeliteException;
@@ -22,6 +25,16 @@ import pipelite.stage.parameters.CmdExecutorParameters;
 /** Executes a command over ssh. */
 @Flogger
 public class SshCmdRunner implements CmdRunner {
+
+  @Value
+  private static final class SshExecutorKey {
+    private final String host;
+    private final String user;
+  }
+
+  private static final int MAX_SSH_EXECUTORS = 10;
+  private static final ConcurrentHashMap<SshExecutorKey, Semaphore> sshExecutor =
+      new ConcurrentHashMap<>();
 
   private final CmdExecutorParameters executorParams;
 
@@ -38,11 +51,21 @@ public class SshCmdRunner implements CmdRunner {
     String user = executorParams.resolveUser();
     String host = executorParams.getHost();
 
+    SshExecutorKey key = new SshExecutorKey(host, user);
+
+    sshExecutor.computeIfAbsent(key, k -> new Semaphore(MAX_SSH_EXECUTORS, true));
+
+    // Limit the number of parallel ssh sessions.
     try {
+      // Acquire a permit to execute an ssh command.
+      sshExecutor.get(key).acquire();
       CommandLine commandLine = new CommandLine("ssh");
       return LocalCmdRunner.execute(cmd, executorParams, commandLine, user + "@" + host, cmd);
     } catch (Exception ex) {
       throw new PipeliteException("Failed to execute command: " + cmd, ex);
+    } finally {
+      // Release the permit to execute an ssh command.
+      sshExecutor.get(key).release();
     }
   }
 
