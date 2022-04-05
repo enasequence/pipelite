@@ -123,7 +123,7 @@ public interface CmdRunner {
    *     failed
    */
   default boolean createFile(Path file) {
-    String filePath = file.toAbsolutePath().toString();
+    String filePath = file.toString();
     try {
       return execute("touch " + filePath).isSuccess();
     } catch (Exception ex) {

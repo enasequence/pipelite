@@ -59,7 +59,7 @@ public class SshCmdRunner implements CmdRunner {
       tempFileName = tempFile.toAbsolutePath().toString();
 
       String arg1 = tempFileName;
-      String arg2 = user + "@" + host + ":" + path.toString().replaceAll("^\\/*", "");
+      String arg2 = user + "@" + host + ":" + path.toString();
       String originalCmd = "scp " + arg1 + " " + arg2;
 
       Files.write(tempFile, str.getBytes(StandardCharsets.UTF_8));

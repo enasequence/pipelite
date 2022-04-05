@@ -60,8 +60,9 @@ public class SshCmdRunnerTest {
 
     // Create file in temp dir
     String fileName = PipeliteIdCreator.id();
-    Path file = Paths.get(TMP_DIR, fileName);
+    Path file = Paths.get("pipelite", fileName);
     assertThat(cmdRunner.fileExists(file)).isFalse();
+    cmdRunner.createDir(Paths.get("pipelite"));
     cmdRunner.createFile(file);
     assertThat(cmdRunner.fileExists(file)).isTrue();
 
