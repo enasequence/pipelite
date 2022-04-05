@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import lombok.extern.flogger.Flogger;
+import org.apache.commons.exec.CommandLine;
 import pipelite.exception.PipeliteException;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.CmdExecutorParameters;
@@ -21,10 +22,6 @@ import pipelite.stage.parameters.CmdExecutorParameters;
 /** Executes a command over ssh. */
 @Flogger
 public class SshCmdRunner implements CmdRunner {
-
-  public static final int SSH_PORT = 22;
-  public static final int SSH_VERIFY_TIMEOUT = 120;
-  public static final int SSH_HEARTBEAT_SECONDS = 10;
 
   private final CmdExecutorParameters executorParams;
 
@@ -40,16 +37,12 @@ public class SshCmdRunner implements CmdRunner {
 
     String user = executorParams.resolveUser();
     String host = executorParams.getHost();
-    String localCmd = "ssh " + user + "@" + host + " " + cmd;
 
     try {
-      LocalCmdRunner localCmdRunner = new LocalCmdRunner(executorParams);
-      StageExecutorResult result = localCmdRunner.execute(localCmd);
-      return result;
-    } catch (PipeliteException ex) {
-      throw ex;
+      CommandLine commandLine = new CommandLine("ssh");
+      return LocalCmdRunner.execute(cmd, executorParams, commandLine, user + "@" + host, cmd);
     } catch (Exception ex) {
-      throw new PipeliteException("Failed to execute command: " + localCmd, ex);
+      throw new PipeliteException("Failed to execute command: " + cmd, ex);
     }
   }
 
@@ -60,24 +53,20 @@ public class SshCmdRunner implements CmdRunner {
     String user = executorParams.resolveUser();
     String host = executorParams.getHost();
     String tempFileName;
+
     try {
       Path tempFile = Files.createTempFile(null, null);
       tempFileName = tempFile.toAbsolutePath().toString();
 
-      String localCmd =
-          "scp "
-              + tempFileName
-              + " "
-              + user
-              + "@"
-              + host
-              + ":/"
-              + path.toString().replaceAll("^\\/+", "");
+      String arg1 = tempFileName;
+      String arg2 = user + "@" + host + ":" + path.toString().replaceAll("^\\/*", "");
+      String originalCmd = "scp " + arg1 + " " + arg2;
 
       Files.write(tempFile, str.getBytes(StandardCharsets.UTF_8));
 
-      LocalCmdRunner localCmdRunner = new LocalCmdRunner(executorParams);
-      StageExecutorResult result = localCmdRunner.execute(localCmd);
+      CommandLine commandLine = new CommandLine("scp");
+      StageExecutorResult result =
+          LocalCmdRunner.execute(originalCmd, executorParams, commandLine, arg1, arg2);
       if (!result.isSuccess()) {
         log.atSevere().log("Failed to write file " + path);
         throw new PipeliteException("Failed to write file " + path);
