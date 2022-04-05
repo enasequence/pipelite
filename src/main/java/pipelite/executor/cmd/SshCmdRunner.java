@@ -64,62 +64,50 @@ public class SshCmdRunner implements CmdRunner {
 
     ZonedDateTime startTIme = ZonedDateTime.now();
 
-    try (ClientSession session = createSession(executorParams)) {
-      authSession(session);
-
-      ClientChannel channel = session.createExecChannel(cmd, null, executorParams.getEnv());
+    try (ClientSession session = createSession(executorParams);
+        ClientChannel channel = session.createExecChannel(cmd, null, executorParams.getEnv())) {
 
       OutputStream stdoutStream = new ByteArrayOutputStream();
       OutputStream stderrStream = new ByteArrayOutputStream();
       channel.setOut(stdoutStream);
       channel.setErr(stderrStream);
 
-      try {
-        channel.open().verify(SSH_VERIFY_TIMEOUT, TimeUnit.SECONDS);
+      channel.open().verify(SSH_VERIFY_TIMEOUT, TimeUnit.SECONDS);
 
-        Set<ClientChannelEvent> events =
-            channel.waitFor(
-                EnumSet.of(
-                    ClientChannelEvent.EXIT_STATUS,
-                    ClientChannelEvent.EXIT_SIGNAL,
-                    ClientChannelEvent.CLOSED),
-                executorParams.getTimeout());
-        if (events.contains(ClientChannelEvent.TIMEOUT)) {
-          throw new PipeliteException("Failed to execute ssh call because of timeout: " + cmd);
-        }
-
-        Integer exitCode = channel.getExitStatus();
-
-        if (exitCode == null) {
-          String exitSignal = channel.getExitSignal();
-          String exitSignalStr = "";
-          if (exitSignal != null) {
-            exitSignalStr = " (exit signal " + exitSignal + ")";
-          }
-          throw new PipeliteException(
-              "Failed to execute ssh call because of missing exit code"
-                  + exitSignalStr
-                  + ": "
-                  + cmd);
-        }
-
-        Duration callDuration = Duration.between(startTIme, ZonedDateTime.now());
-
-        log.atInfo().log(
-            "Finished executing ssh call (exit code "
-                + exitCode
-                + ") in "
-                + callDuration.toSeconds()
-                + " seconds: %s",
-            cmd);
-        return CmdRunner.result(cmd, exitCode, getStream(stdoutStream), getStream(stderrStream));
-      } finally {
-        try {
-          channel.close();
-        } catch (Exception ex) {
-          // Do nothing.
-        }
+      Set<ClientChannelEvent> events =
+          channel.waitFor(
+              EnumSet.of(
+                  ClientChannelEvent.EXIT_STATUS,
+                  ClientChannelEvent.EXIT_SIGNAL,
+                  ClientChannelEvent.CLOSED),
+              executorParams.getTimeout());
+      if (events.contains(ClientChannelEvent.TIMEOUT)) {
+        throw new PipeliteException("Failed to execute ssh call because of timeout: " + cmd);
       }
+
+      Integer exitCode = channel.getExitStatus();
+
+      if (exitCode == null) {
+        String exitSignal = channel.getExitSignal();
+        String exitSignalStr = "";
+        if (exitSignal != null) {
+          exitSignalStr = " (exit signal " + exitSignal + ")";
+        }
+        throw new PipeliteException(
+            "Failed to execute ssh call because of missing exit code" + exitSignalStr + ": " + cmd);
+      }
+
+      Duration callDuration = Duration.between(startTIme, ZonedDateTime.now());
+
+      log.atInfo().log(
+          "Finished executing ssh call (exit code "
+              + exitCode
+              + ") in "
+              + callDuration.toSeconds()
+              + " seconds: %s",
+          cmd);
+      return CmdRunner.result(cmd, exitCode, getStream(stdoutStream), getStream(stderrStream));
+
     } catch (PipeliteException ex) {
       throw ex;
     } catch (Exception ex) {
@@ -130,17 +118,15 @@ public class SshCmdRunner implements CmdRunner {
   @Override
   public void writeFile(String str, Path path) {
     log.atInfo().log("Writing file %s", path);
-    try (ClientSession session = createSession(executorParams)) {
-      authSession(session);
-      try (SftpClient sftpClient = DefaultSftpClientFactory.INSTANCE.createSftpClient(session)) {
-        CmdRunnerUtils.write(
-            str,
-            sftpClient.write(
-                path.toString(),
-                SftpClient.OpenMode.Write,
-                SftpClient.OpenMode.Create,
-                SftpClient.OpenMode.Truncate));
-      }
+    try (ClientSession session = createSession(executorParams);
+        SftpClient sftpClient = DefaultSftpClientFactory.INSTANCE.createSftpClient(session)) {
+      CmdRunnerUtils.write(
+          str,
+          sftpClient.write(
+              path.toString(),
+              SftpClient.OpenMode.Write,
+              SftpClient.OpenMode.Create,
+              SftpClient.OpenMode.Truncate));
     } catch (IOException ex) {
       throw new PipeliteException("Failed to write file " + path, ex);
     }
@@ -148,16 +134,15 @@ public class SshCmdRunner implements CmdRunner {
 
   private ClientSession createSession(CmdExecutorParameters executorParams) throws IOException {
     String user = executorParams.resolveUser();
-    return sshClient
-        .connect(user, executorParams.getHost(), SSH_PORT)
-        .verify(SSH_VERIFY_TIMEOUT, TimeUnit.SECONDS)
-        .getSession();
-  }
-
-  private void authSession(ClientSession session) throws IOException {
+    ClientSession session =
+        sshClient
+            .connect(user, executorParams.getHost(), SSH_PORT)
+            .verify(SSH_VERIFY_TIMEOUT, TimeUnit.SECONDS)
+            .getSession();
     session.auth().verify(SSH_VERIFY_TIMEOUT, TimeUnit.SECONDS);
     session.setSessionHeartbeat(
         SessionHeartbeatController.HeartbeatType.IGNORE, Duration.ofSeconds(SSH_HEARTBEAT_SECONDS));
+    return session;
   }
 
   private String getStream(OutputStream stdoutStream) {
