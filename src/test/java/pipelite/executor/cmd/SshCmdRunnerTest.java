@@ -11,9 +11,14 @@
 package pipelite.executor.cmd;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static pipelite.service.PipeliteExecutorService.createExecutorService;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,9 +26,11 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteIdCreator;
 import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.properties.SshTestConfiguration;
+import pipelite.exception.PipeliteException;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.CmdExecutorParameters;
+import pipelite.time.Time;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
@@ -38,8 +45,11 @@ public class SshCmdRunnerTest {
   private SshCmdRunner cmdRunner() {
     return new SshCmdRunner(
         CmdExecutorParameters.builder()
-            .host(sshTestConfiguration.getHost())
-            .user(sshTestConfiguration.getUser())
+            // .host("noah-login")
+            //       .host("sra-login")
+            //      .host("yoda-login")
+            .host("codon-login")
+            .user("era")
             .build());
   }
 
@@ -97,6 +107,58 @@ public class SshCmdRunnerTest {
     assertThat(result.isError()).isFalse();
     assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
     assertThat(result.getStageLog()).startsWith("test");
+  }
+
+  // noah-login: 3 parallel workers, 10 ssh echos, Total time: 6 seconds, 7 seconds, 3 seconds, 7
+  // seconds
+  // sra-login: 3 parallel workers, 10 ssh echos, Total time: 3 seconds, 3 seconds, 3 seconds, 3
+  // seconds
+  // yoda-login: 3 parallel workers, 10 ssh echos, Total time: 11 seconds, 8 seconds, 7 seconds, 5
+  // seconds
+  // codon-login: 3 parallel workers, 10 ssh echos, Total time: 239 seconds, 210 seconds
+  // codon-login: 23 seconds
+  @Test
+  public void multiThreadedEcho() {
+    ExecutorService executorService = createExecutorService("multiThreadedEcho", 10, null);
+
+    int cnt = 20;
+    AtomicInteger successCnt = new AtomicInteger();
+    AtomicInteger totalCnt = new AtomicInteger();
+    ZonedDateTime startTime = ZonedDateTime.now();
+
+    for (int i = 0; i < cnt; ++i) {
+      final int j = i;
+      executorService.submit(
+          () -> {
+            SshCmdRunner cmdRunner = cmdRunner();
+            try {
+              StageExecutorResult result = cmdRunner.execute("echo test" + j);
+              String exitCode = result.getAttribute(StageExecutorResultAttribute.EXIT_CODE);
+              if (!exitCode.equals("0")) {
+                throw new PipeliteException("Unexpected exit code: " + exitCode);
+              }
+              if (!result.getStageLog().contains("test" + j)) {
+                throw new PipeliteException("Unexpected log: " + result.getStageLog());
+              }
+              successCnt.incrementAndGet();
+
+            } catch (Exception ex) {
+              ex.printStackTrace();
+            } finally {
+              totalCnt.incrementAndGet();
+            }
+          });
+    }
+
+    while (totalCnt.get() < cnt) {
+      Time.wait(Duration.ofSeconds(1));
+    }
+    executorService.shutdownNow();
+
+    System.out.println(
+        "Total time: " + Duration.between(startTime, ZonedDateTime.now()).toSeconds() + " seconds");
+
+    assertThat(successCnt.get()).isEqualTo(cnt);
   }
 
   @Test

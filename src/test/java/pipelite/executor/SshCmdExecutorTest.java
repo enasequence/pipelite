@@ -62,7 +62,7 @@ public class SshCmdExecutorTest {
           }
           assertThat(result.isSuccess()).isTrue();
           assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND))
-              .isEqualTo("echo test");
+              .isEqualTo("ssh era@codon-login echo test");
           assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
           assertThat(result.getStageLog()).contains("test\n");
         });

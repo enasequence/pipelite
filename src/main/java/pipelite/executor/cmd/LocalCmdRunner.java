@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.ZonedDateTime;
 import lombok.extern.flogger.Flogger;
 import org.apache.commons.exec.*;
 import pipelite.exception.PipeliteException;
@@ -38,6 +39,8 @@ public class LocalCmdRunner implements CmdRunner {
     }
 
     try {
+      ZonedDateTime startTime = ZonedDateTime.now();
+
       CommandLine commandLine = new CommandLine("/bin/sh");
       commandLine.addArgument("-c");
       commandLine.addArgument(cmd, false);
@@ -46,11 +49,8 @@ public class LocalCmdRunner implements CmdRunner {
       OutputStream stderrStream = new ByteArrayOutputStream();
 
       Executor apacheExecutor = new DefaultExecutor();
-
       apacheExecutor.setExitValues(null);
-
       apacheExecutor.setStreamHandler(new PumpStreamHandler(stdoutStream, stderrStream));
-      // executor.setStreamHandler(new PumpStreamHandler(System.out, System.err));
 
       Duration timeout = executorParams.getTimeout();
       if (timeout != null) {
@@ -61,13 +61,24 @@ public class LocalCmdRunner implements CmdRunner {
                     : ExecuteWatchdog.INFINITE_TIMEOUT));
       }
 
-      log.atInfo().log("Executing local call: %s", cmd);
+      log.atInfo().log("Executing command: %s", cmd);
 
       int exitCode = apacheExecutor.execute(commandLine, executorParams.getEnv());
+
+      Duration callDuration = Duration.between(startTime, ZonedDateTime.now());
+
+      log.atInfo().log(
+          "Finished executing command in "
+              + callDuration.toSeconds()
+              + " seconds with exit code "
+              + exitCode
+              + ": %s",
+          cmd);
+
       return CmdRunner.result(cmd, exitCode, getStream(stdoutStream), getStream(stderrStream));
 
     } catch (Exception ex) {
-      throw new PipeliteException("Failed to execute local call: " + cmd, ex);
+      throw new PipeliteException("Failed to execute command: " + cmd, ex);
     }
   }
 
