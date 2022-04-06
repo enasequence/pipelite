@@ -34,66 +34,68 @@ public class LocalCmdRunner implements CmdRunner {
 
   @Override
   public StageExecutorResult execute(String cmd) {
+    // Use /bin/sh -c to delegate argument parsing to the shell. The command
+    // and the arguments are treated as a single argument passed to the
+    // shell. The shell will then parse the command and the arguments. Argument
+    // parsing is difficult because single and double quotes affect splitting
+    // the command by whitespace.
+    return execute(cmd, executorParams, "/bin/sh", "-c", cmd);
+  }
+
+  public static StageExecutorResult execute(
+      String originalCmd, CmdExecutorParameters executorParams, String cmd, String... args) {
     if (cmd == null || cmd.isEmpty()) {
       throw new PipeliteException("No command to execute");
     }
 
-    try {
-      CommandLine commandLine = new CommandLine("/bin/sh");
-      return execute(cmd, executorParams, commandLine, "-c", cmd);
-
-    } catch (Exception ex) {
-      throw new PipeliteException("Failed to execute command: " + cmd, ex);
-    }
-  }
-
-  public static StageExecutorResult execute(
-      String originalCmd,
-      CmdExecutorParameters executorParams,
-      CommandLine commandLine,
-      String... args)
-      throws IOException {
-    ZonedDateTime startTime = ZonedDateTime.now();
-
+    String fullCmd = cmd;
+    CommandLine commandLine = new CommandLine(cmd);
     for (String arg : args) {
+      fullCmd += " " + arg;
       commandLine.addArgument(arg, false);
     }
 
-    OutputStream stdoutStream = new ByteArrayOutputStream();
-    OutputStream stderrStream = new ByteArrayOutputStream();
+    try {
+      ZonedDateTime startTime = ZonedDateTime.now();
 
-    Executor apacheExecutor = new DefaultExecutor();
-    apacheExecutor.setExitValues(null);
-    apacheExecutor.setStreamHandler(new PumpStreamHandler(stdoutStream, stderrStream));
+      OutputStream stdoutStream = new ByteArrayOutputStream();
+      OutputStream stderrStream = new ByteArrayOutputStream();
 
-    Duration timeout = executorParams.getTimeout();
-    if (timeout != null) {
-      apacheExecutor.setWatchdog(
-          new ExecuteWatchdog(
-              executorParams.getTimeout() != null
-                  ? executorParams.getTimeout().toMillis()
-                  : ExecuteWatchdog.INFINITE_TIMEOUT));
+      Executor apacheExecutor = new DefaultExecutor();
+      apacheExecutor.setExitValues(null);
+      apacheExecutor.setStreamHandler(new PumpStreamHandler(stdoutStream, stderrStream));
+
+      Duration timeout = executorParams.getTimeout();
+      if (timeout != null) {
+        apacheExecutor.setWatchdog(
+            new ExecuteWatchdog(
+                executorParams.getTimeout() != null
+                    ? executorParams.getTimeout().toMillis()
+                    : ExecuteWatchdog.INFINITE_TIMEOUT));
+      }
+
+      log.atInfo().log("Executing command: " + fullCmd);
+
+      int exitCode = apacheExecutor.execute(commandLine, executorParams.getEnv());
+
+      Duration callDuration = Duration.between(startTime, ZonedDateTime.now());
+
+      log.atInfo().log(
+          "Finished executing command in "
+              + callDuration.toSeconds()
+              + " seconds with exit code "
+              + exitCode
+              + ": "
+              + fullCmd);
+
+      return CmdRunner.result(
+          originalCmd,
+          exitCode,
+          getStringFromStream(stdoutStream),
+          getStringFromStream(stderrStream));
+    } catch (Exception ex) {
+      throw new PipeliteException("Failed to execute command: " + fullCmd, ex);
     }
-
-    log.atInfo().log("Executing command: " + originalCmd);
-
-    int exitCode = apacheExecutor.execute(commandLine, executorParams.getEnv());
-
-    Duration callDuration = Duration.between(startTime, ZonedDateTime.now());
-
-    log.atInfo().log(
-        "Finished executing command in "
-            + callDuration.toSeconds()
-            + " seconds with exit code "
-            + exitCode
-            + ": "
-            + originalCmd);
-
-    return CmdRunner.result(
-        originalCmd,
-        exitCode,
-        getStringFromStream(stdoutStream),
-        getStringFromStream(stderrStream));
   }
 
   @Override

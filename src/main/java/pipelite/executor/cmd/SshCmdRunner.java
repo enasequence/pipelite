@@ -17,7 +17,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import lombok.Value;
 import lombok.extern.flogger.Flogger;
-import org.apache.commons.exec.CommandLine;
 import pipelite.exception.PipeliteException;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.CmdExecutorParameters;
@@ -59,8 +58,7 @@ public class SshCmdRunner implements CmdRunner {
     try {
       // Acquire a permit to execute an ssh command.
       sshExecutor.get(key).acquire();
-      CommandLine commandLine = new CommandLine("ssh");
-      return LocalCmdRunner.execute(cmd, executorParams, commandLine, user + "@" + host, cmd);
+      return LocalCmdRunner.execute(cmd, executorParams, "ssh", user + "@" + host, cmd);
     } catch (Exception ex) {
       throw new PipeliteException("Failed to execute command: " + cmd, ex);
     } finally {
@@ -87,9 +85,8 @@ public class SshCmdRunner implements CmdRunner {
 
       Files.write(tempFile, str.getBytes(StandardCharsets.UTF_8));
 
-      CommandLine commandLine = new CommandLine("scp");
       StageExecutorResult result =
-          LocalCmdRunner.execute(originalCmd, executorParams, commandLine, arg1, arg2);
+          LocalCmdRunner.execute(originalCmd, executorParams, "scp", arg1, arg2);
       if (!result.isSuccess()) {
         log.atSevere().log("Failed to write file " + path);
         throw new PipeliteException("Failed to write file " + path);
