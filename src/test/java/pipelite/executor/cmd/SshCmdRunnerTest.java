@@ -45,11 +45,8 @@ public class SshCmdRunnerTest {
   private SshCmdRunner cmdRunner() {
     return new SshCmdRunner(
         CmdExecutorParameters.builder()
-            // .host("noah-login")
-            //       .host("sra-login")
-            //      .host("yoda-login")
-            .host("codon-login")
-            .user("era")
+            .host(sshTestConfiguration.getHost())
+            .user(sshTestConfiguration.getUser())
             .build());
   }
 
@@ -112,7 +109,7 @@ public class SshCmdRunnerTest {
 
   @Test
   public void multiThreadedEcho() {
-    ExecutorService executorService = createExecutorService("multiThreadedEcho", 10, null);
+    ExecutorService executorService = createExecutorService("multiThreadedEcho", 5, null);
 
     int cnt = 20;
     AtomicInteger successCnt = new AtomicInteger();

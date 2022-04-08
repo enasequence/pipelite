@@ -121,7 +121,8 @@ class StageServiceTest {
 
     Optional<StageLogEntity> stageLogEntity =
         service.getSavedStageLog(pipelineName, processId, stageName);
-    assertThat(stageLogEntity).isPresent();
+    // No log entry expected.
+    assertThat(stageLogEntity).isNotPresent();
 
     // Prepare second execution.
 
@@ -138,7 +139,7 @@ class StageServiceTest {
         .isEqualTo(stage.getStageEntity());
 
     stageLogEntity = service.getSavedStageLog(pipelineName, processId, stageName);
-    assertThat(stageLogEntity).isPresent();
+    assertThat(stageLogEntity).isNotPresent();
 
     // Start second execution.
 
@@ -166,7 +167,8 @@ class StageServiceTest {
         .isEqualTo(stage.getStageEntity());
 
     stageLogEntity = service.getSavedStageLog(pipelineName, processId, stageName);
-    assertThat(stageLogEntity).isPresent();
+    // No log entry expected.
+    assertThat(stageLogEntity).isNotPresent();
 
     // Reset execution.
 

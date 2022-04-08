@@ -21,7 +21,8 @@ import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 @Flogger
 @Getter
 @Setter
-public class SimpleLsfExecutor extends AbstractLsfExecutor<SimpleLsfExecutorParameters> {
+public class SimpleLsfExecutor extends AbstractLsfExecutor<SimpleLsfExecutorParameters>
+    implements TimeoutExecutor {
 
   // Json deserialization requires a no argument constructor.
   public SimpleLsfExecutor() {}

@@ -18,6 +18,7 @@ import org.springframework.util.Assert;
 import pipelite.error.InternalErrorHandler;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.AsyncExecutor;
+import pipelite.executor.TimeoutExecutor;
 import pipelite.log.LogKey;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
@@ -169,7 +170,8 @@ public class StageRunner {
                     logContext(log.atInfo()).log("Submitted async stage");
                     pipeliteServices.stage().saveStage(stage);
                   } else if (executorResult.isActive()) {
-                    if (ZonedDateTime.now().isAfter(timeout)) {
+                    boolean isTimeoutExecutor = this.stage.getExecutor() instanceof TimeoutExecutor;
+                    if (!isTimeoutExecutor && ZonedDateTime.now().isAfter(timeout)) {
                       logContext(log.atSevere()).log("Maximum stage execution time exceeded.");
                       // Terminate executor.
                       internalErrorHandler.execute(() -> stage.getExecutor().terminate());

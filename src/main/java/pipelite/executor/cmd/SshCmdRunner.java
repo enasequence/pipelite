@@ -31,7 +31,8 @@ public class SshCmdRunner implements CmdRunner {
     private final String user;
   }
 
-  private static final int MAX_SSH_EXECUTORS = 10;
+  private static final int MAX_SSH_EXECUTORS =
+      10; // Normally supported 10 maximum simultaneous ssh sessions.
   private static final ConcurrentHashMap<SshExecutorKey, Semaphore> sshExecutor =
       new ConcurrentHashMap<>();
 
@@ -58,7 +59,8 @@ public class SshCmdRunner implements CmdRunner {
     try {
       // Acquire a permit to execute an ssh command.
       sshExecutor.get(key).acquire();
-      return LocalCmdRunner.execute(cmd, executorParams, "ssh", user + "@" + host, cmd);
+      return LocalCmdRunner.execute(
+          cmd, executorParams, "ssh", "-o", "StrictHostKeyChecking=no", user + "@" + host, cmd);
     } catch (Exception ex) {
       throw new PipeliteException("Failed to execute command: " + cmd, ex);
     } finally {

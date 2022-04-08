@@ -230,8 +230,10 @@ public class StageService {
    * @return the saved stage log
    */
   @Timed("pipelite.service")
-  public StageLogEntity saveStageLog(StageLogEntity stageLogEntity) {
-    return logRepository.save(stageLogEntity);
+  public void saveStageLog(StageLogEntity stageLogEntity) {
+    if (stageLogEntity.getStageLog() != null && !stageLogEntity.getStageLog().isEmpty()) {
+      logRepository.save(stageLogEntity);
+    }
   }
 
   /**

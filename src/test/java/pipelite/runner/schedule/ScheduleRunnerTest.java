@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.Getter;
 import org.junit.jupiter.api.Test;
@@ -241,8 +242,8 @@ public class ScheduleRunnerTest {
     for (int i = 0; i < t.stageCnt; ++i) {
       StageEntity stageEntity =
           stageService.getSavedStage(f.pipelineName(), processId, "STAGE" + i).get();
-      StageLogEntity stageLogEntity =
-          stageService.getSavedStageLog(f.pipelineName(), processId, "STAGE" + i).get();
+      Optional<StageLogEntity> stageLogEntity =
+          stageService.getSavedStageLog(f.pipelineName(), processId, "STAGE" + i);
       assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
       assertThat(stageEntity.getProcessId()).isEqualTo(processId);
       assertThat(stageEntity.getExecutionCount()).isEqualTo(1);
@@ -265,7 +266,7 @@ public class ScheduleRunnerTest {
         assertThat(stageEntity.getResultParams()).isNull();
       } else if (t.stageTestResult == StageTestResult.EXCEPTION) {
         assertThat(stageEntity.getStageState()).isEqualTo(StageState.ERROR);
-        assertThat(stageLogEntity.getStageLog())
+        assertThat(stageLogEntity.get().getStageLog())
             .contains("java.lang.RuntimeException: Expected exception");
       } else {
         assertThat(stageEntity.getStageState()).isEqualTo(StageState.SUCCESS);
