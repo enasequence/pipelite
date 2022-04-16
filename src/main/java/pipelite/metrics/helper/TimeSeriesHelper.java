@@ -102,6 +102,27 @@ public class TimeSeriesHelper {
   }
 
   /** The table must contain a constant value for the 'who' column. */
+  public static void maximumTimeSeriesCount(
+      Table table, double count, String who, ZonedDateTime now) {
+    LocalDateTime window = now.with(getTimeSeriesWindow(WINDOW_MINUTES)).toLocalDateTime();
+    DateTimeColumn timeColumn = getTimeColumn(table);
+    DoubleColumn countColumn = getCountColumn(table);
+    StringColumn whoColumn = getWhoColumn(table);
+    synchronized (timeColumn) {
+      int i = timeColumn.size() - 1;
+      if (i < 0 || timeColumn.get(i).isBefore(window)) {
+        timeColumn.append(window);
+        countColumn.append(count);
+        whoColumn.append(who);
+      } else {
+        if (countColumn.get(i) < count) {
+          countColumn.set(i, count);
+        }
+      }
+    }
+  }
+
+  /** The table must contain a constant value for the 'who' column. */
   public static void incrementTimeSeriesCount(
       Table table, double count, String who, ZonedDateTime now) {
     LocalDateTime window = now.with(getTimeSeriesWindow(WINDOW_MINUTES)).toLocalDateTime();

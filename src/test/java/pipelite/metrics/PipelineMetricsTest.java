@@ -12,8 +12,8 @@ package pipelite.metrics;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
-import pipelite.PipeliteMetricsTestFactory;
 import pipelite.metrics.helper.TimeSeriesHelper;
 import pipelite.process.ProcessState;
 import pipelite.stage.executor.StageExecutorResult;
@@ -22,7 +22,7 @@ public class PipelineMetricsTest {
 
   @Test
   public void processCompleted() {
-    ProcessMetrics metrics = PipeliteMetricsTestFactory.processMetrics("PIPELINE_NAME");
+    ProcessMetrics metrics = new ProcessMetrics("PIPELINE_NAME", new SimpleMeterRegistry());
 
     String stageName = "STAGE_NAME";
 
@@ -47,7 +47,7 @@ public class PipelineMetricsTest {
 
   @Test
   public void processFailed() {
-    ProcessMetrics metrics = PipeliteMetricsTestFactory.processMetrics("PIPELINE_NAME");
+    ProcessMetrics metrics = new ProcessMetrics("PIPELINE_NAME", new SimpleMeterRegistry());
 
     String stageName = "STAGE_NAME";
 

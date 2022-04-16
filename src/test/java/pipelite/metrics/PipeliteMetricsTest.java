@@ -12,14 +12,16 @@ package pipelite.metrics;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import java.util.Collections;
 import org.junit.jupiter.api.Test;
-import pipelite.PipeliteMetricsTestFactory;
 
 public class PipeliteMetricsTest {
 
   @Test
   public void internalError() {
-    PipeliteMetrics metrics = PipeliteMetricsTestFactory.pipeliteMetrics();
+    PipeliteMetrics metrics =
+        new PipeliteMetrics(new SimpleMeterRegistry(), Collections.emptyList());
 
     assertThat(metrics.error().count()).isZero();
     assertThat(metrics.error().timeSeries().rowCount()).isZero();

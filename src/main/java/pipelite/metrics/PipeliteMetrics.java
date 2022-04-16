@@ -14,11 +14,13 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import pipelite.RegisteredPipeline;
 import pipelite.exception.PipeliteException;
 import pipelite.metrics.collector.InternalErrorMetrics;
 import pipelite.metrics.collector.ProcessRunnerPoolMetrics;
@@ -32,11 +34,15 @@ public class PipeliteMetrics {
   private final InternalErrorMetrics internalErrorMetrics;
   private final ProcessRunnerPoolMetrics processRunnerPoolMetrics;
   private final Map<String, ProcessMetrics> process = new ConcurrentHashMap<>();
+  private final List<RegisteredPipeline> registeredPipelines;
 
-  public PipeliteMetrics(@Autowired MeterRegistry meterRegistry) {
+  public PipeliteMetrics(
+      @Autowired MeterRegistry meterRegistry,
+      @Autowired List<RegisteredPipeline> registeredPipelines) {
     this.meterRegistry = meterRegistry;
     this.internalErrorMetrics = new InternalErrorMetrics(meterRegistry);
     this.processRunnerPoolMetrics = new ProcessRunnerPoolMetrics(meterRegistry);
+    this.registeredPipelines = registeredPipelines;
   }
 
   public InternalErrorMetrics error() {
@@ -72,6 +78,7 @@ public class PipeliteMetrics {
   public void setRunningProcessesCount(
       Collection<ProcessRunner> processRunners, ZonedDateTime now) {
     Map<String, Integer> counts = new HashMap<>();
+    registeredPipelines.forEach(r -> counts.put(r.pipelineName(), 0));
     processRunners.forEach(r -> counts.merge(r.getPipelineName(), 1, Integer::sum));
     counts.forEach(
         (pipelineName, count) ->
@@ -85,6 +92,7 @@ public class PipeliteMetrics {
    */
   public void setRunningStagesCount(Collection<ProcessRunner> processRunners, ZonedDateTime now) {
     Map<String, Integer> counts = new HashMap<>();
+    registeredPipelines.forEach(r -> counts.put(r.pipelineName(), 0));
     for (ProcessRunner processRunner : processRunners) {
       processRunner
           .activeStages()
@@ -101,6 +109,7 @@ public class PipeliteMetrics {
    */
   public void setSubmittedStagesCount(Collection<ProcessRunner> processRunners, ZonedDateTime now) {
     Map<String, Integer> counts = new HashMap<>();
+    registeredPipelines.forEach(r -> counts.put(r.pipelineName(), 0));
     for (ProcessRunner processRunner : processRunners) {
       processRunner
           .submittedStages()

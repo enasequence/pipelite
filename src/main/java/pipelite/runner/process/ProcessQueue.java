@@ -41,7 +41,7 @@ public class ProcessQueue {
 
   private static final int MAX_PARALLELISM = 25000;
   private static final int DEFAULT_MIN_QUEUE_SIZE_PARALLELISM_MULTIPLIER = 1;
-  private static final int DEFAULT_MAX_QUEUE_SIZE_PARALLELISM_MULTIPLIER = 10;
+  private static final int DEFAULT_MAX_QUEUE_SIZE_PARALLELISM_MULTIPLIER = 5;
   private static final int HIGHEST_MAX_QUEUE_SIZE_PARALLELISM_MULTIPLIER = 50;
 
   /** The size of the process queue. */
@@ -160,6 +160,7 @@ public class ProcessQueue {
         minRefreshFrequency,
         maxRefreshFrequency,
         processQueueSize,
+        refreshQueueSize,
         processQueue.size());
   }
 
@@ -168,10 +169,16 @@ public class ProcessQueue {
       Duration minRefreshFrequency,
       Duration maxRefreshFrequency,
       ProcessQueueSize processQueueSize,
+      int refreshQueueSize,
       int currentQueueSize) {
     ZonedDateTime now = ZonedDateTime.now();
     if (refreshTime == null) {
       // Refresh the queue because it has never been refreshed.
+      return true;
+    }
+    if (refreshQueueSize == processQueueSize.max() && currentQueueSize < processQueueSize.min()) {
+      // Refresh the queue because it was full when it was last
+      // refreshed and has less than the minimum number of processes.
       return true;
     }
     if (isRefreshQueuePremature(now, refreshTime, minRefreshFrequency)) {
@@ -201,29 +208,31 @@ public class ProcessQueue {
   public void refreshQueue() {
 
     // Adjust process queue size.
+    ProcessQueueSize newProcessQueueSize = processQueueSize;
     try {
       // Wait until processQueueLock can be acquired.
       processQueueLock.tryLock();
       if (refreshTime != null) {
-        adjustQueue();
+        newProcessQueueSize = adjustQueue();
       }
     } finally {
       processQueueLock.unlock();
     }
 
     // Get processes from database.
-    List<ProcessEntity> activeProcesses = getActiveProcesses(processQueueSize.max());
+    List<ProcessEntity> activeProcesses = getActiveProcesses(newProcessQueueSize.max());
     List<ProcessEntity> pendingProcesses =
-        getPendingProcesses(processQueueSize.max() - activeProcesses.size());
+        getPendingProcesses(newProcessQueueSize.max() - activeProcesses.size());
     List<ProcessEntity> createdProcesses =
         processEntityCreator.create(
-            processQueueSize.max() - activeProcesses.size() - pendingProcesses.size());
+            newProcessQueueSize.max() - activeProcesses.size() - pendingProcesses.size());
 
     // Refresh process queue.
     try {
       // Wait until processQueueLock can be acquired.
       processQueueLock.tryLock();
       refreshTime = ZonedDateTime.now();
+      processQueueSize = newProcessQueueSize;
       refreshQueueSize = activeProcesses.size() + pendingProcesses.size() + createdProcesses.size();
       activeProcessCnt = activeProcesses.size();
       pendingProcessCnt = pendingProcesses.size();
@@ -238,16 +247,15 @@ public class ProcessQueue {
     }
   }
 
-  void adjustQueue() {
+  ProcessQueueSize adjustQueue() {
     Duration currentRefreshFrequency = Duration.between(refreshTime, ZonedDateTime.now());
-    processQueueSize =
-        adjustQueue(
-            pipelineName,
-            processQueueSize,
-            refreshQueueSize,
-            highestMaxQueueSize(pipelineParallelism),
-            maxRefreshFrequency,
-            currentRefreshFrequency);
+    return adjustQueue(
+        pipelineName,
+        processQueueSize,
+        refreshQueueSize,
+        highestMaxQueueSize(pipelineParallelism),
+        maxRefreshFrequency,
+        currentRefreshFrequency);
   }
 
   private void queueProcesses(List<ProcessEntity> processes) {

@@ -40,7 +40,7 @@ public class PipelineRunner extends ProcessRunnerPool {
   private final ProcessQueueFactory processQueueFactory;
   private final AtomicReference<ProcessQueue> processQueue = new AtomicReference<>();
   private final ZonedDateTime startTime;
-  private AtomicBoolean activeRefreshQueue = new AtomicBoolean();
+  private AtomicBoolean refreshQueueLock = new AtomicBoolean();
   private InternalErrorHandler internalErrorHandler;
 
   public PipelineRunner(
@@ -86,37 +86,49 @@ public class PipelineRunner extends ProcessRunnerPool {
   }
 
   private void refreshQueue() {
-    if (activeRefreshQueue.compareAndSet(false, true)) {
-      if (processQueue.get() == null || processQueue.get().isRefreshQueue()) {
+    if (isRefreshQueue()) {
+      // Queue should be refreshed.
+      if (refreshQueueLock.compareAndSet(false, true)) {
         pipeliteServices
             .executor()
             .refreshQueue()
             .execute(
                 () -> {
-                  internalErrorHandler.execute(
-                      () -> {
-                        ProcessQueue p = processQueue.get();
-                        boolean firstRefresh = p == null;
-                        if (firstRefresh) {
-                          // Create process queue.
-                          // The process queue creation is intentionally deferred to
-                          // happen here so that we will only assign the process queue
-                          // after it has been refreshed once and processes have been
-                          // created if needed.
-                          p = processQueueFactory.create(pipeline);
-                        }
+                  try {
+                    if (isRefreshQueue()) {
+                      // Queue should be refreshed. Check again as the queue may be refreshed
+                      // between first check and locking.
+                      internalErrorHandler.execute(
+                          () -> {
+                            ProcessQueue p = processQueue.get();
+                            boolean firstRefresh = p == null;
+                            if (firstRefresh) {
+                              // Create process queue.
+                              // The process queue creation is intentionally deferred to
+                              // happen here so that we will only assign the process queue
+                              // after it has been refreshed once and processes have been
+                              // created if needed.
+                              p = processQueueFactory.create(pipeline);
+                            }
 
-                        // Refresh process queue.
-                        p.refreshQueue();
+                            // Refresh process queue.
+                            p.refreshQueue();
 
-                        if (firstRefresh) {
-                          processQueue.set(p);
-                        }
-                      });
-                  activeRefreshQueue.set(false);
+                            if (firstRefresh) {
+                              processQueue.set(p);
+                            }
+                          });
+                    }
+                  } finally {
+                    refreshQueueLock.set(false);
+                  }
                 });
       }
     }
+  }
+
+  private boolean isRefreshQueue() {
+    return processQueue.get() == null || processQueue.get().isRefreshQueue();
   }
 
   private void runProcesses() {

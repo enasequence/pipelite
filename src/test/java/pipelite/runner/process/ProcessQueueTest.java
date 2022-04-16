@@ -218,15 +218,38 @@ public class ProcessQueueTest {
                 Duration.ofMinutes(1), // minRefreshFrequency
                 Duration.ofMinutes(10), // maxRefreshFrequency
                 new ProcessQueue.ProcessQueueSize(10, 40),
+                0,
                 0))
         .isTrue();
-    // false: isRefreshQueuePremature
+    // true: refreshQueueSize == processQueueSize.max()
+    // && currentQueueSize < processQueueSize.min()
     assertThat(
             ProcessQueue.isRefreshQueue(
                 ZonedDateTime.now().minus(Duration.ofSeconds(1)), // refreshTime
                 Duration.ofMinutes(1), // minRefreshFrequency
                 Duration.ofMinutes(10), // maxRefreshFrequency
                 new ProcessQueue.ProcessQueueSize(10, 40),
+                40,
+                0))
+        .isTrue();
+    assertThat(
+            ProcessQueue.isRefreshQueue(
+                ZonedDateTime.now().minus(Duration.ofHours(1)), // refreshTime
+                Duration.ofMinutes(1), // minRefreshFrequency
+                Duration.ofMinutes(10), // maxRefreshFrequency
+                new ProcessQueue.ProcessQueueSize(10, 40),
+                40,
+                0))
+        .isTrue();
+    // false: isRefreshQueuePremature
+    // && !(refreshQueueSize == processQueueSize.max() && currentQueueSize < processQueueSize.min())
+    assertThat(
+            ProcessQueue.isRefreshQueue(
+                ZonedDateTime.now().minus(Duration.ofSeconds(1)), // refreshTime
+                Duration.ofMinutes(1), // minRefreshFrequency
+                Duration.ofMinutes(10), // maxRefreshFrequency
+                new ProcessQueue.ProcessQueueSize(10, 40),
+                0,
                 0))
         .isFalse();
     // true: isRefreshQueueOverdue
@@ -236,6 +259,7 @@ public class ProcessQueueTest {
                 Duration.ofMinutes(1), // minRefreshFrequency
                 Duration.ofMinutes(10), // maxRefreshFrequency
                 new ProcessQueue.ProcessQueueSize(10, 40),
+                0,
                 0))
         .isTrue();
     // true: currentQueueSize < processQueueSize.min()
@@ -245,6 +269,7 @@ public class ProcessQueueTest {
                 Duration.ofMinutes(1), // minRefreshFrequency
                 Duration.ofMinutes(10), // maxRefreshFrequency
                 new ProcessQueue.ProcessQueueSize(10, 40),
+                0,
                 1))
         .isTrue();
     // false: currentQueueSize >= processQueueSize.min()
@@ -254,6 +279,7 @@ public class ProcessQueueTest {
                 Duration.ofMinutes(1), // minRefreshFrequency
                 Duration.ofMinutes(10), // maxRefreshFrequency
                 new ProcessQueue.ProcessQueueSize(10, 40),
+                0,
                 10))
         .isFalse();
   }
