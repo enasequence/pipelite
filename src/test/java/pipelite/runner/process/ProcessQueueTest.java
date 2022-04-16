@@ -13,8 +13,6 @@ package pipelite.runner.process;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
-import static pipelite.runner.process.ProcessQueue.MAX_QUEUE_SIZE_PARALLELISM_MULTIPLIER;
-import static pipelite.runner.process.ProcessQueue.MIN_QUEUE_SIZE_INCREASE;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -61,9 +59,8 @@ public class ProcessQueueTest {
   private static final int FIRST_REFRESH_CREATE_CNT =
       ProcessQueue.defaultMaxQueueSize(PARALLELISM) - ACTIVE_PROCESS_CNT - PENDING_PROCESS_CNT;
   private static final int SECOND_REFRESH_CREATE_CNT =
-      PARALLELISM * MAX_QUEUE_SIZE_PARALLELISM_MULTIPLIER;
-  private static final int THIRD_REFRESH_CREATE_CNT =
-      PARALLELISM * MAX_QUEUE_SIZE_PARALLELISM_MULTIPLIER;
+      ProcessQueue.highestMaxQueueSize(PARALLELISM);
+  private static final int THIRD_REFRESH_CREATE_CNT = ProcessQueue.highestMaxQueueSize(PARALLELISM);
 
   // Refresh will be called twice.
   private class TestPipeline extends ConfigurableTestPipeline {
@@ -111,10 +108,10 @@ public class ProcessQueueTest {
     final TestPipeline pipeline = new TestPipeline();
     final int processQueueMaxSize1 = ProcessQueue.defaultMaxQueueSize(PARALLELISM);
     final int processQueueMinSize1 = ProcessQueue.defaultMinQueueSize(PARALLELISM);
-    final int processQueueMaxSize2 = PARALLELISM * MAX_QUEUE_SIZE_PARALLELISM_MULTIPLIER;
-    final int processQueueMinSize2 = 8;
-    final int processQueueMaxSize3 = PARALLELISM * MAX_QUEUE_SIZE_PARALLELISM_MULTIPLIER;
-    final int processQueueMinSize3 = 12;
+    final int processQueueMaxSize2 = ProcessQueue.highestMaxQueueSize(PARALLELISM);
+    final int processQueueMinSize2 = ProcessQueue.defaultMinQueueSize(PARALLELISM);
+    final int processQueueMaxSize3 = ProcessQueue.highestMaxQueueSize(PARALLELISM);
+    final int processQueueMinSize3 = ProcessQueue.defaultMinQueueSize(PARALLELISM);
 
     List<ProcessEntity> activeEntities =
         Collections.nCopies(ACTIVE_PROCESS_CNT, mock(ProcessEntity.class));
@@ -262,135 +259,90 @@ public class ProcessQueueTest {
   }
 
   @Test
-  public void adjustQueueTooFrequentNotFilledNotEmpty_NoAdjustment() {
+  public void adjustQueueWithoutAdjustment() {
     // Current refresh frequency < maximum refresh frequency.
     // Queue was not filled during last refresh.
-    // Queue was not empty when it was refreshed.
 
-    int minSize = 10;
-    int maxSize = 40;
+    int minQueueSize = 10;
+    int maxQueueSize = 40;
+    int highestQueueSize = 100;
     ProcessQueue.ProcessQueueSize defaultProcessQueueSize =
-        new ProcessQueue.ProcessQueueSize(minSize, maxSize);
+        new ProcessQueue.ProcessQueueSize(minQueueSize, maxQueueSize);
 
-    ProcessQueue.ProcessQueueSize processQueueSize =
-        ProcessQueue.adjustQueue(
-            "TEST_PIPELINE",
-            10,
-            defaultProcessQueueSize,
-            maxSize - 1, // refreshQueueSize
-            minSize, // currentQueueSize
-            Duration.ofMinutes(10), // maxRefreshFrequency
-            Duration.ofMinutes(1)); // currentRefreshFrequency
-    assertThat(processQueueSize).isEqualTo(defaultProcessQueueSize);
-
-    processQueueSize =
-        ProcessQueue.adjustQueue(
-            "TEST_PIPELINE",
-            10,
-            defaultProcessQueueSize,
-            minSize, // refreshQueueSize
-            minSize, // currentQueueSize
-            Duration.ofMinutes(10), // maxRefreshFrequency
-            Duration.ofMinutes(1)); // currentRefreshFrequency
-    assertThat(processQueueSize).isEqualTo(defaultProcessQueueSize);
-
-    processQueueSize =
-        ProcessQueue.adjustQueue(
-            "TEST_PIPELINE",
-            10,
-            defaultProcessQueueSize,
-            0, // refreshQueueSize
-            0, // currentQueueSize
-            Duration.ofMinutes(10), // maxRefreshFrequency
-            Duration.ofMinutes(1)); // currentRefreshFrequency
-    assertThat(processQueueSize).isEqualTo(defaultProcessQueueSize);
+    for (int refreshQueueSize = 0; refreshQueueSize < maxQueueSize - 1; ++refreshQueueSize) {
+      ProcessQueue.ProcessQueueSize processQueueSize =
+          ProcessQueue.adjustQueue(
+              "TEST_PIPELINE",
+              defaultProcessQueueSize,
+              refreshQueueSize,
+              highestQueueSize,
+              Duration.ofMinutes(10), // maxRefreshFrequency
+              Duration.ofMinutes(1)); // currentRefreshFrequency
+      assertThat(processQueueSize).isEqualTo(defaultProcessQueueSize);
+    }
   }
 
   @Test
-  public void adjustQueueTooFrequentFilledNotEmpty_MaxAdjustment() {
+  public void adjustQueueWithAdjustment() {
     // Current refresh frequency < maximum refresh frequency.
     // Queue was filled during last refresh.
-    // Queue was not empty when it was refreshed.
 
-    int minSize = 10;
-    int maxSize = 40;
-    int tooFrequentMultiplier1 = 5;
-    int tooFrequentMultiplier2 = 3;
+    int minQueueSize = 10;
+    int maxQueueSize = 40;
+    int refreshQueueSize = maxQueueSize;
+    int highestQueueSize = 100;
+    Duration maxRefreshFrequency = Duration.ofMinutes(10);
+    Duration currentRefreshFrequency = Duration.ofMinutes(1);
+
     ProcessQueue.ProcessQueueSize defaultProcessQueueSize =
-        new ProcessQueue.ProcessQueueSize(minSize, maxSize);
+        new ProcessQueue.ProcessQueueSize(minQueueSize, maxQueueSize);
 
     ProcessQueue.ProcessQueueSize processQueueSize =
         ProcessQueue.adjustQueue(
             "TEST_PIPELINE",
-            10,
             defaultProcessQueueSize,
-            maxSize, // refreshQueueSize
-            minSize, // currentQueueSize
-            Duration.ofMinutes(17).multipliedBy(tooFrequentMultiplier1), // maxRefreshFrequency
-            Duration.ofMinutes(17)); // currentRefreshFrequency
-    assertThat(processQueueSize)
-        .isEqualTo(new ProcessQueue.ProcessQueueSize(minSize, maxSize * tooFrequentMultiplier1));
+            refreshQueueSize,
+            highestQueueSize,
+            maxRefreshFrequency,
+            currentRefreshFrequency);
 
-    processQueueSize =
-        ProcessQueue.adjustQueue(
-            "TEST_PIPELINE",
-            10,
+    int newMaxQueueSize =
+        ProcessQueue.adjustMaxQueueSize(
             defaultProcessQueueSize,
-            maxSize, // refreshQueueSize
-            minSize, // currentQueueSize
-            Duration.ofHours(5).multipliedBy(tooFrequentMultiplier2), // maxRefreshFrequency
-            Duration.ofHours(5)); // currentRefreshFrequency
+            highestQueueSize,
+            maxRefreshFrequency,
+            currentRefreshFrequency);
+
     assertThat(processQueueSize)
-        .isEqualTo(new ProcessQueue.ProcessQueueSize(minSize, maxSize * tooFrequentMultiplier2));
+        .isEqualTo((new ProcessQueue.ProcessQueueSize(minQueueSize, newMaxQueueSize)));
   }
 
   @Test
-  public void adjustQueueTooFrequentNotFilledEmpty_NoAdjustment() {
-    // Current refresh frequency < refresh frequency.
-    // Queue was not filled during last refresh.
-    // Queue was empty when it was refreshed.
-
-    int minSize = 10;
-    int maxSize = 40;
-    ProcessQueue.ProcessQueueSize defaultProcessQueueSize =
-        new ProcessQueue.ProcessQueueSize(minSize, maxSize);
-
+  public void adjustMaximumQueueSize() {
+    Duration currentRefreshFrequency = Duration.ofMinutes(1);
+    int maxQueueSize = 10;
+    int highestQueueSize = Integer.MAX_VALUE;
     ProcessQueue.ProcessQueueSize processQueueSize =
-        ProcessQueue.adjustQueue(
-            "TEST_PIPELINE",
-            10,
-            defaultProcessQueueSize,
-            minSize, // refreshQueueSize
-            0, // currentQueueSize
-            Duration.ofMinutes(10), // maxRefreshFrequency
-            Duration.ofMinutes(1)); // currentRefreshFrequency
-    assertThat(processQueueSize).isEqualTo(defaultProcessQueueSize);
-  }
+        new ProcessQueue.ProcessQueueSize(10, maxQueueSize);
 
-  @Test
-  public void adjustQueueNotTooFrequentFilledEmpty_MinAdjustment() {
-    // Current refresh frequency >= refresh frequency.
-    // Queue was filled during last refresh.
-    // Queue was empty when it was refreshed.
+    // Test increase queue size
+    for (int i = 0; i < 10; ++i) {
+      assertThat(
+              ProcessQueue.adjustMaxQueueSize(
+                  processQueueSize,
+                  highestQueueSize,
+                  currentRefreshFrequency.multipliedBy(i),
+                  currentRefreshFrequency))
+          .isEqualTo(maxQueueSize * i);
+    }
 
-    int minSize = 10;
-    int maxSize = 40;
-    ProcessQueue.ProcessQueueSize defaultProcessQueueSize =
-        new ProcessQueue.ProcessQueueSize(minSize, maxSize);
-
-    ProcessQueue.ProcessQueueSize processQueueSize =
-        ProcessQueue.adjustQueue(
-            "TEST_PIPELINE",
-            10,
-            defaultProcessQueueSize,
-            maxSize, // refreshQueueSize
-            0, // currentQueueSize
-            Duration.ofMinutes(10), // maxRefreshFrequency
-            Duration.ofMinutes(10)); // currentRefreshFrequency
-    assertThat(processQueueSize)
-        .isEqualTo(
-            new ProcessQueue.ProcessQueueSize(
-                (int) Math.ceil(minSize * MIN_QUEUE_SIZE_INCREASE), maxSize));
-    assertThat(processQueueSize).isEqualTo(new ProcessQueue.ProcessQueueSize(15, maxSize));
+    // Test highest queue size
+    assertThat(
+            ProcessQueue.adjustMaxQueueSize(
+                processQueueSize,
+                1,
+                currentRefreshFrequency.multipliedBy(10),
+                currentRefreshFrequency))
+        .isEqualTo(1);
   }
 }

@@ -40,11 +40,9 @@ import pipelite.service.ProcessService;
 public class ProcessQueue {
 
   private static final int MAX_PARALLELISM = 25000;
-  private static final float DEFAULT_MIN_QUEUE_SIZE_PARALLELISM_MULTIPLIER = 0.5f;
-  private static final int DEFAULT_MAX_QUEUE_SIZE_PARALLELISM_MULTIPLIER = 5;
-  static final int MAX_QUEUE_SIZE_PARALLELISM_MULTIPLIER = 50;
-  static final float MIN_QUEUE_SIZE_INCREASE = 1.5f;
-  static final float MIN_QUEUE_SIZE_FRACTION = 0.5f;
+  private static final int DEFAULT_MIN_QUEUE_SIZE_PARALLELISM_MULTIPLIER = 1;
+  private static final int DEFAULT_MAX_QUEUE_SIZE_PARALLELISM_MULTIPLIER = 10;
+  private static final int HIGHEST_MAX_QUEUE_SIZE_PARALLELISM_MULTIPLIER = 50;
 
   /** The size of the process queue. */
   @Value
@@ -69,11 +67,13 @@ public class ProcessQueue {
   private final Duration maxRefreshFrequency;
   private final Queue<ProcessEntity> processQueue = new ArrayDeque<>();
   private ProcessQueueSize processQueueSize;
-  /** The size of the process queue after last refresh before excluding running processes. */
+  /** Process queue size after last refresh. */
   private int refreshQueueSize = 0;
-
+  /** Active processes in the process queue after last refresh. */
   private int activeProcessCnt = 0;
+  /** Pending processes in the process queue after last refresh. */
   private int pendingProcessCnt = 0;
+  /** Created processes in the process queue after last refresh. */
   private int createdProcessCnt = 0;
 
   private ZonedDateTime refreshTime;
@@ -129,11 +129,15 @@ public class ProcessQueue {
   }
 
   public static int defaultMinQueueSize(int pipelineParallelism) {
-    return (int) (pipelineParallelism * DEFAULT_MIN_QUEUE_SIZE_PARALLELISM_MULTIPLIER);
+    return pipelineParallelism * DEFAULT_MIN_QUEUE_SIZE_PARALLELISM_MULTIPLIER;
   }
 
   public static int defaultMaxQueueSize(int pipelineParallelism) {
     return pipelineParallelism * DEFAULT_MAX_QUEUE_SIZE_PARALLELISM_MULTIPLIER;
+  }
+
+  public static int highestMaxQueueSize(int pipelineParallelism) {
+    return pipelineParallelism * HIGHEST_MAX_QUEUE_SIZE_PARALLELISM_MULTIPLIER;
   }
 
   /**
@@ -239,10 +243,9 @@ public class ProcessQueue {
     processQueueSize =
         adjustQueue(
             pipelineName,
-            pipelineParallelism,
-            getProcessQueueSize(),
-            getRefreshQueueSize(),
-            getCurrentQueueSize(),
+            processQueueSize,
+            refreshQueueSize,
+            highestMaxQueueSize(pipelineParallelism),
             maxRefreshFrequency,
             currentRefreshFrequency);
   }
@@ -326,78 +329,65 @@ public class ProcessQueue {
   }
 
   /**
-   * Adjusts the queue size. Increases the maximum size if the current queue refresh frequency is
+   * Increases the maximum size of the process queue if the current queue refresh frequency is
    * shorter than maximum queue refresh frequency and if the queue was filled during last refresh.
-   * Increases the minimum size if the queue became empty before it was refreshed and if the queue
-   * was filled during last refresh.
    *
    * @param pipelineName the pipeline name
-   * @param queueSize the current queue size
+   * @param processQueueSize the current queue size
    * @param refreshQueueSize the queue size after last refresh
+   * @param highestQueueSize the highest permitted maximum queue size after increase
    * @param maxRefreshFrequency the maximum queue refresh frequency
    * @param currentRefreshFrequency the current queue refresh frequency
-   * @return the increased maximum queue sizes
+   * @return the adjusted queue size
    */
   static ProcessQueueSize adjustQueue(
       String pipelineName,
-      int pipelineParallelism,
-      ProcessQueueSize queueSize,
+      ProcessQueueSize processQueueSize,
       int refreshQueueSize,
-      int currentQueueSize,
+      int highestQueueSize,
       Duration maxRefreshFrequency,
       Duration currentRefreshFrequency) {
 
-    if (refreshQueueSize < queueSize.max()) {
+    if (refreshQueueSize < processQueueSize.max()) {
       // Queue was not filled during last refresh.
-      return queueSize;
+      return processQueueSize;
     }
 
-    boolean adjustQueueSize = false;
-
-    int maxSize = queueSize.max();
-    int minSize = queueSize.min();
+    int newMaxSize = processQueueSize.max();
 
     if (currentRefreshFrequency.compareTo(maxRefreshFrequency) < 0) {
       // Current queue refresh frequency is shorter than maximum queue refresh frequency.
-      // Increase maximum queue size proportionally to the current refresh frequency.
-      adjustQueueSize = true;
-      int maxSizeLimit = pipelineParallelism * MAX_QUEUE_SIZE_PARALLELISM_MULTIPLIER;
-      maxSize =
-          Math.min(
-              maxSizeLimit,
-              (int)
-                  (queueSize.max()
-                      * (maxRefreshFrequency.toSeconds()
-                          / Math.max(1, currentRefreshFrequency.toSeconds()))));
+      newMaxSize =
+          adjustMaxQueueSize(
+              processQueueSize, highestQueueSize, maxRefreshFrequency, currentRefreshFrequency);
     }
 
-    if (currentQueueSize == 0) {
-      // Queue became empty before it was refreshed.
-      // Increase minimum queue size by 25% but do not exceed 50% of the maximum queue size.
-      adjustQueueSize = true;
-      minSize =
-          (int)
-              Math.ceil(
-                  Math.min(minSize * MIN_QUEUE_SIZE_INCREASE, maxSize * MIN_QUEUE_SIZE_FRACTION));
-    }
-
-    if (!adjustQueueSize) {
+    if (newMaxSize == processQueueSize.max()) {
       // Queue size was not adjusted.
-      return queueSize;
+      return processQueueSize;
     }
 
-    ProcessQueueSize newQueueSize = new ProcessQueueSize(minSize, maxSize);
+    ProcessQueueSize newQueueSize = new ProcessQueueSize(processQueueSize.min(), newMaxSize);
     logContext(log.atInfo(), pipelineName)
         .log(
-            "Increased the process queue size from "
-                + queueSize.min()
-                + ","
-                + queueSize.max()
+            "Increased the maximum process queue size from "
+                + processQueueSize.max()
                 + " to "
-                + newQueueSize.min()
-                + ","
                 + newQueueSize.max());
     return newQueueSize;
+  }
+
+  static int adjustMaxQueueSize(
+      ProcessQueueSize processQueueSize,
+      int highestQueueSize,
+      Duration maxRefreshFrequency,
+      Duration currentRefreshFrequency) {
+    return Math.min(
+        highestQueueSize,
+        (int)
+            (processQueueSize.max()
+                * (maxRefreshFrequency.toSeconds()
+                    / Math.max(1, currentRefreshFrequency.toSeconds()))));
   }
 
   private static FluentLogger.Api logContext(FluentLogger.Api log, String pipelineName) {
