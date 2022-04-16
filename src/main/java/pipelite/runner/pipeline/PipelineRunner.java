@@ -86,8 +86,8 @@ public class PipelineRunner extends ProcessRunnerPool {
   }
 
   private void refreshQueue() {
-    if (processQueue.get() == null || processQueue.get().isRefreshQueue()) {
-      if (activeRefreshQueue.compareAndSet(false, true)) {
+    if (activeRefreshQueue.compareAndSet(false, true)) {
+      if (processQueue.get() == null || processQueue.get().isRefreshQueue()) {
         pipeliteServices
             .executor()
             .refreshQueue()
