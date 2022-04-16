@@ -98,12 +98,14 @@ public class PipelineRunnerProcessQueueTest {
         new ProcessEntityCreator(pipeline, pipeliteServices.process());
 
     ProcessQueue processQueue =
-        spy(new ProcessQueue(pipeliteConfiguration, pipeliteServices, pipeline));
+        spy(
+            new ProcessQueue(
+                pipeliteConfiguration, pipeliteServices, processEntityCreator, pipeline));
 
     // Queue should be filled
     assertThat(processQueue.isRefreshQueue()).isTrue();
     // Queue should be empty
-    assertThat(processQueue.getProcessQueueSize()).isZero();
+    assertThat(processQueue.getCurrentQueueSize()).isZero();
 
     boolean lockProcess = true;
     PipelineRunner pipelineRunner =
@@ -112,7 +114,6 @@ public class PipelineRunnerProcessQueueTest {
             pipeliteServices,
             pipeliteMetrics,
             pipeline,
-            processEntityCreator,
             (pipeline1) -> processQueue,
             (pipelineName1, process1) ->
                 new ProcessRunner(
@@ -129,10 +130,7 @@ public class PipelineRunnerProcessQueueTest {
       pipelineRunner.runOneIteration();
     }
 
-    // Refresh is called two times. Once before creating processes when
-    // the process queue is created empty and immediately after
-    // creating processing.
-    verify(processQueue, times(2)).refreshQueue();
+    verify(processQueue, times(1)).refreshQueue();
     assertThat(
             pipeliteMetrics
                 .process(pipeline.pipelineName())
@@ -141,6 +139,6 @@ public class PipelineRunnerProcessQueueTest {
                 .successCount())
         .isEqualTo(PROCESS_CNT);
     assertThat(processQueue.isRefreshQueue()).isFalse();
-    assertThat(processQueue.getProcessQueueSize()).isZero();
+    assertThat(processQueue.getCurrentQueueSize()).isZero();
   }
 }

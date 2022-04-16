@@ -52,7 +52,7 @@ public class ProcessEntityCreatorTest {
               return processEntity(pipelineName, processId);
             });
 
-    assertThat(creator.create(PROCESS_CNT)).isEqualTo(PROCESS_CNT);
+    assertThat(creator.create(PROCESS_CNT).size()).isEqualTo(PROCESS_CNT);
     assertThat(testPipeline.confirmedProcessCount()).isEqualTo(PROCESS_CNT);
   }
 

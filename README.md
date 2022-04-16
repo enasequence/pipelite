@@ -422,8 +422,6 @@ The unit for the resource usage limit can be one of:
   process re-prioritisation. Default value: 10 minutes
 - pipelite.advanced.processQueueMaxRefreshFrequency: the maximum frequency for process queue to be refreshed to allow
   process re-prioritisation. Default value: 4 hours
-- pipelite.advanced.processQueueMinReplenishFrequency: the minimum frequency for process queue to be replenished.
-  Default value: 10 minutes
 - pipelite.advanced.processQueuePriorityPolicy: the process queue prioritisation policy. Default value: BALANCED
 - pipelite.advanced.mailLogBytes: the maximum number of log bytes in mail for failed stage executions
 

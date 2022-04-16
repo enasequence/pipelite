@@ -37,8 +37,6 @@ public class PipeliteExecutorService {
       new AtomicReference<>();
   private final AtomicReference<ExecutorService> refreshQueueExecutorService =
       new AtomicReference<>();
-  private final AtomicReference<ExecutorService> replenishQueueExecutorService =
-      new AtomicReference<>();
 
   @PostConstruct
   private void initExecutorServices() {
@@ -48,8 +46,6 @@ public class PipeliteExecutorService {
             pipeliteConfiguration.advanced().getProcessRunnerWorkers(), internalErrorService));
     refreshQueueExecutorService.set(
         createExecutorService("pipelite-refresh-%d", 5, internalErrorService));
-    replenishQueueExecutorService.set(
-        createExecutorService("pipelite-replenish-%d", 5, internalErrorService));
   }
 
   public static ExecutorService createExecutorService(
@@ -76,10 +72,5 @@ public class PipeliteExecutorService {
   /** Used in PipelineRunner runOneIteration to refresh process queue. */
   public ExecutorService refreshQueue() {
     return refreshQueueExecutorService.get();
-  }
-
-  /** Used in PipelineRunner runOneIteration to replenish process queue. */
-  public ExecutorService replenishQueue() {
-    return replenishQueueExecutorService.get();
   }
 }

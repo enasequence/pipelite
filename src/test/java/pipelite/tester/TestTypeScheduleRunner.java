@@ -46,7 +46,7 @@ public class TestTypeScheduleRunner {
 
     // Register test pipelines.
     List<ConfigurableTestSchedule<T>> testSchedules = new ArrayList<>();
-    for (TestType testType : TestType.tests) {
+    for (TestType testType : TestType.init()) {
       ConfigurableTestSchedule<T> schedule =
           new ConfigurableTestSchedule<>(
               "0/" + schedulerSeconds + " * * * * ?",

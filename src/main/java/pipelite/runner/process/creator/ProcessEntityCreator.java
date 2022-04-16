@@ -11,6 +11,8 @@
 package pipelite.runner.process.creator;
 
 import com.google.common.flogger.FluentLogger;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
@@ -40,27 +42,26 @@ public class ProcessEntityCreator {
    * Creates and saves process entities.
    *
    * @param processCnt the number of process entities to create
-   * @return the number of created process entities
+   * @return the created process entities
    */
-  public int create(int processCnt) {
+  public List<ProcessEntity> create(int processCnt) {
+    ArrayList<ProcessEntity> processes = new ArrayList<>();
     if (pipeline == null) {
-      return 0;
+      return processes;
     }
-    int createCnt = 0;
-    logContext(log.atInfo()).log("Creating new processes");
     while (processCnt-- > 0) {
       Pipeline.Process process = pipeline.nextProcess();
       if (process == null) {
-        return createCnt;
+        return processes;
       }
       ProcessEntity processEntity = create(processService, pipelineName, process);
       if (processEntity != null) {
         pipeline.confirmProcess(processEntity.getProcessId());
-        createCnt++;
+        processes.add(processEntity);
       }
     }
-    logContext(log.atInfo()).log("Created " + createCnt + " new processes");
-    return createCnt;
+    logContext(log.atInfo()).log("Created " + processes.size() + " new processes");
+    return processes;
   }
 
   /**

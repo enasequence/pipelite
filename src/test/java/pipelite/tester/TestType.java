@@ -40,62 +40,6 @@ public class TestType {
   static final int DEFAULT_IMMEDIATE_RETRIES = 3;
   static final int DEFAULT_MAXIMUM_RETRIES = 3;
 
-  private final String description;
-  private final List<Integer> exitCodes;
-  private final int immediateRetries;
-  private final int maximumRetries;
-
-  private List<String> failedAsserts = new ArrayList<>();
-
-  public static final List<TestType> tests = new ArrayList<>();
-  static final TestType firstExecutionIsSuccessful;
-  static final TestType firstExecutionIsPermanentError;
-  static final TestType nonPermanentErrorUntilMaximumRetries;
-  static final TestType nonPermanentErrorAndThenSuccess;
-  static final TestType nonPermanentErrorAndThenPermanentError;
-
-  static {
-    firstExecutionIsSuccessful =
-        new TestType(
-            "First execution is successful",
-            Arrays.asList(EXIT_CODE_SUCCESS),
-            DEFAULT_IMMEDIATE_RETRIES,
-            DEFAULT_MAXIMUM_RETRIES);
-    tests.add(firstExecutionIsSuccessful);
-
-    firstExecutionIsPermanentError =
-        new TestType(
-            "First execution is permanent error",
-            Arrays.asList(EXIT_CODE_PERMANENT_ERROR),
-            DEFAULT_IMMEDIATE_RETRIES,
-            DEFAULT_MAXIMUM_RETRIES);
-    tests.add(firstExecutionIsPermanentError);
-
-    nonPermanentErrorUntilMaximumRetries =
-        new TestType(
-            "Non permanent error until maximum retries",
-            Collections.nCopies(DEFAULT_MAXIMUM_RETRIES + 1, EXIT_CODE_NON_PERMANENT_ERROR),
-            DEFAULT_IMMEDIATE_RETRIES,
-            DEFAULT_MAXIMUM_RETRIES);
-    tests.add(nonPermanentErrorUntilMaximumRetries);
-
-    nonPermanentErrorAndThenSuccess =
-        new TestType(
-            "Non permanent error and then success",
-            Arrays.asList(EXIT_CODE_NON_PERMANENT_ERROR, EXIT_CODE_SUCCESS),
-            DEFAULT_IMMEDIATE_RETRIES,
-            DEFAULT_MAXIMUM_RETRIES);
-    tests.add(nonPermanentErrorAndThenSuccess);
-
-    nonPermanentErrorAndThenPermanentError =
-        new TestType(
-            "Non permanent error and then permanent error",
-            Arrays.asList(EXIT_CODE_NON_PERMANENT_ERROR, EXIT_CODE_PERMANENT_ERROR),
-            DEFAULT_IMMEDIATE_RETRIES,
-            DEFAULT_MAXIMUM_RETRIES);
-    tests.add(nonPermanentErrorAndThenPermanentError);
-  }
-
   @Value
   private static class StageMapKey {
     private final String pipelineName;
@@ -103,14 +47,74 @@ public class TestType {
     private final String stageName;
   }
 
-  private static ConcurrentHashMap<StageMapKey, TestType> stageTestType = new ConcurrentHashMap<>();
-  private static ConcurrentHashMap<StageMapKey, Integer> stageExecCount = new ConcurrentHashMap<>();
-  private static ConcurrentHashMap<StageMapKey, String> stageLastExitCode =
-      new ConcurrentHashMap<>();
-  private static ConcurrentHashMap<StageMapKey, String> stageNextExitCode =
-      new ConcurrentHashMap<>();
+  private static ConcurrentHashMap<StageMapKey, TestType> stageTestType;
+  private static ConcurrentHashMap<StageMapKey, Integer> stageExecCount;
+  private static ConcurrentHashMap<StageMapKey, String> stageLastExitCode;
+  private static ConcurrentHashMap<StageMapKey, String> stageNextExitCode;
 
-  TestType(String description, List<Integer> exitCodes, int immediateRetries, int maximumRetries) {
+  private final String description;
+  private final List<Integer> exitCodes;
+  private final int immediateRetries;
+  private final int maximumRetries;
+  private final List<String> failedAsserts = new ArrayList<>();
+
+  public static List<TestType> init() {
+    stageTestType = new ConcurrentHashMap<>();
+    stageExecCount = new ConcurrentHashMap<>();
+    stageLastExitCode = new ConcurrentHashMap<>();
+    stageNextExitCode = new ConcurrentHashMap<>();
+
+    List<TestType> tests = new ArrayList<>();
+    tests.add(firstExecutionIsSuccessfulTest());
+    tests.add(firstExecutionIsPermanentErrorTest());
+    tests.add(nonPermanentErrorUntilMaximumRetriesTest());
+    tests.add(nonPermanentErrorAndThenSuccessTest());
+    tests.add(nonPermanentErrorAndThenPermanentErrorTest());
+    return tests;
+  }
+
+  static TestType firstExecutionIsSuccessfulTest() {
+    return new TestType(
+        "First execution is successful",
+        Arrays.asList(EXIT_CODE_SUCCESS),
+        DEFAULT_IMMEDIATE_RETRIES,
+        DEFAULT_MAXIMUM_RETRIES);
+  }
+
+  static TestType firstExecutionIsPermanentErrorTest() {
+    return new TestType(
+        "First execution is permanent error",
+        Arrays.asList(EXIT_CODE_PERMANENT_ERROR),
+        DEFAULT_IMMEDIATE_RETRIES,
+        DEFAULT_MAXIMUM_RETRIES);
+  }
+
+  static TestType nonPermanentErrorUntilMaximumRetriesTest() {
+    return new TestType(
+        "Non permanent error until maximum retries",
+        Collections.nCopies(DEFAULT_MAXIMUM_RETRIES + 1, EXIT_CODE_NON_PERMANENT_ERROR),
+        DEFAULT_IMMEDIATE_RETRIES,
+        DEFAULT_MAXIMUM_RETRIES);
+  }
+
+  static TestType nonPermanentErrorAndThenSuccessTest() {
+    return new TestType(
+        "Non permanent error and then success",
+        Arrays.asList(EXIT_CODE_NON_PERMANENT_ERROR, EXIT_CODE_SUCCESS),
+        DEFAULT_IMMEDIATE_RETRIES,
+        DEFAULT_MAXIMUM_RETRIES);
+  }
+
+  static TestType nonPermanentErrorAndThenPermanentErrorTest() {
+    return new TestType(
+        "Non permanent error and then permanent error",
+        Arrays.asList(EXIT_CODE_NON_PERMANENT_ERROR, EXIT_CODE_PERMANENT_ERROR),
+        DEFAULT_IMMEDIATE_RETRIES,
+        DEFAULT_MAXIMUM_RETRIES);
+  }
+
+  private TestType(
+      String description, List<Integer> exitCodes, int immediateRetries, int maximumRetries) {
     this.description =
         description
             + ", ExitCodes: "

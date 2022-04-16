@@ -42,8 +42,6 @@ public class AdvancedConfiguration {
   private static final Duration DEFAULT_PROCESS_QUEUE_MAX_REFRESH_FREQUENCY = Duration.ofHours(4);
   private static final Duration DEFAULT_PROCESS_QUEUE_MIN_REFRESH_FREQUENCY =
       Duration.ofMinutes(10);
-  private static final Duration DEFAULT_PROCESS_QUEUE_MIN_REPLENISH_FREQUENCY =
-      Duration.ofMinutes(10);
 
   public static final int DEFAULT_MAIL_LOG_BYTES = 5 * 1024;
 
@@ -72,10 +70,6 @@ public class AdvancedConfiguration {
 
   /** The maximum refresh frequency of process queue in {@link PipelineRunner}. */
   private Duration processQueueMaxRefreshFrequency = DEFAULT_PROCESS_QUEUE_MAX_REFRESH_FREQUENCY;
-
-  /** The minimum replenish frequency of process queue in {@link PipelineRunner}. */
-  private Duration processQueueMinReplenishFrequency =
-      DEFAULT_PROCESS_QUEUE_MIN_REPLENISH_FREQUENCY;
 
   /** The {@link PipelineRunner} can be shut down if it is idle. */
   private boolean shutdownIfIdle;

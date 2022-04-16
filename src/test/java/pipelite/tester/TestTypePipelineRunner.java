@@ -43,7 +43,7 @@ public class TestTypePipelineRunner {
       Function<TestType, T> testProcessConfigurationFactory) {
     // Register test pipelines.
     List<ConfigurableTestPipeline<T>> testPipelines = new ArrayList<>();
-    for (TestType testType : TestType.tests) {
+    for (TestType testType : TestType.init()) {
       ConfigurableTestPipeline<T> pipeline =
           new ConfigurableTestPipeline<T>(
               parallelism, processCnt, testProcessConfigurationFactory.apply(testType));

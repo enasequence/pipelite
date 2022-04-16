@@ -184,37 +184,40 @@ public class TestTypeTest {
 
   @Test
   public void exitCode() {
-    assertThat(TestType.firstExecutionIsSuccessful.exitCode(0))
+    assertThat(TestType.firstExecutionIsSuccessfulTest().exitCode(0))
         .isEqualTo(String.valueOf(EXIT_CODE_SUCCESS));
-    assertThat(TestType.firstExecutionIsSuccessful.exitCode(1)).isEqualTo("");
+    assertThat(TestType.firstExecutionIsSuccessfulTest().exitCode(1)).isEqualTo("");
 
-    assertThat(TestType.firstExecutionIsPermanentError.exitCode(0))
+    assertThat(TestType.firstExecutionIsPermanentErrorTest().exitCode(0))
         .isEqualTo(String.valueOf(EXIT_CODE_PERMANENT_ERROR));
-    assertThat(TestType.firstExecutionIsPermanentError.exitCode(1)).isEqualTo("");
+    assertThat(TestType.firstExecutionIsPermanentErrorTest().exitCode(1)).isEqualTo("");
 
     for (int i = 0; i < DEFAULT_MAXIMUM_RETRIES + 1; i++) {
-      assertThat(TestType.nonPermanentErrorUntilMaximumRetries.exitCode(i))
+      assertThat(TestType.nonPermanentErrorUntilMaximumRetriesTest().exitCode(i))
           .isEqualTo(String.valueOf(EXIT_CODE_NON_PERMANENT_ERROR));
     }
-    assertThat(TestType.nonPermanentErrorUntilMaximumRetries.exitCode(DEFAULT_MAXIMUM_RETRIES + 1))
+    assertThat(
+            TestType.nonPermanentErrorUntilMaximumRetriesTest()
+                .exitCode(DEFAULT_MAXIMUM_RETRIES + 1))
         .isEqualTo("");
 
-    assertThat(TestType.nonPermanentErrorAndThenSuccess.exitCode(0))
+    assertThat(TestType.nonPermanentErrorAndThenSuccessTest().exitCode(0))
         .isEqualTo(String.valueOf(EXIT_CODE_NON_PERMANENT_ERROR));
-    assertThat(TestType.nonPermanentErrorAndThenSuccess.exitCode(1))
+    assertThat(TestType.nonPermanentErrorAndThenSuccessTest().exitCode(1))
         .isEqualTo(String.valueOf(EXIT_CODE_SUCCESS));
-    assertThat(TestType.nonPermanentErrorAndThenSuccess.exitCode(2)).isEqualTo(String.valueOf(""));
+    assertThat(TestType.nonPermanentErrorAndThenSuccessTest().exitCode(2))
+        .isEqualTo(String.valueOf(""));
 
-    assertThat(TestType.nonPermanentErrorAndThenPermanentError.exitCode(0))
+    assertThat(TestType.nonPermanentErrorAndThenPermanentErrorTest().exitCode(0))
         .isEqualTo(String.valueOf(EXIT_CODE_NON_PERMANENT_ERROR));
-    assertThat(TestType.nonPermanentErrorAndThenPermanentError.exitCode(1))
+    assertThat(TestType.nonPermanentErrorAndThenPermanentErrorTest().exitCode(1))
         .isEqualTo(String.valueOf(EXIT_CODE_PERMANENT_ERROR));
-    assertThat(TestType.nonPermanentErrorAndThenPermanentError.exitCode(2)).isEqualTo("");
+    assertThat(TestType.nonPermanentErrorAndThenPermanentErrorTest().exitCode(2)).isEqualTo("");
   }
 
   @Test
   public void next() {
-    TestType testType = TestType.nonPermanentErrorAndThenSuccess;
+    TestType testType = TestType.nonPermanentErrorAndThenSuccessTest();
     String pipelineName = PipeliteIdCreator.pipelineName();
     String processId = PipeliteIdCreator.processId();
     String stageName = PipeliteIdCreator.stageName();

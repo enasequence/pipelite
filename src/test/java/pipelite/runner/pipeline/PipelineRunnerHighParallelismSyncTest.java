@@ -54,7 +54,7 @@ public class PipelineRunnerHighParallelismSyncTest {
   // for the asynchronous vs synchronous stage execution.
 
   private static final int PROCESS_CNT = 20; // Increase process count for a more intensive test
-  private static final int PARALLELISM = Integer.MAX_VALUE;
+  private static final int PARALLELISM = PROCESS_CNT;
   private static final Duration EXECUTION_TIME = Duration.ofSeconds(5);
   private static final String STAGE_NAME = "STAGE";
 

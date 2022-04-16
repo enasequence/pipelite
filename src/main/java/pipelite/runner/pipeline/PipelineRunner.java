@@ -11,7 +11,6 @@
 package pipelite.runner.pipeline;
 
 import com.google.common.flogger.FluentLogger;
-import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -29,7 +28,6 @@ import pipelite.runner.process.ProcessQueue;
 import pipelite.runner.process.ProcessQueueFactory;
 import pipelite.runner.process.ProcessRunnerFactory;
 import pipelite.runner.process.ProcessRunnerPool;
-import pipelite.runner.process.creator.ProcessEntityCreator;
 import pipelite.service.PipeliteServices;
 
 /** Executes processes in parallel for one pipeline. */
@@ -39,14 +37,10 @@ public class PipelineRunner extends ProcessRunnerPool {
   private final PipeliteServices pipeliteServices;
   private final String pipelineName;
   private final Pipeline pipeline;
-  private final ProcessEntityCreator processEntityCreator;
   private final ProcessQueueFactory processQueueFactory;
   private final AtomicReference<ProcessQueue> processQueue = new AtomicReference<>();
-  private final Duration minReplenishFrequency;
   private final ZonedDateTime startTime;
-  private ZonedDateTime replenishTime;
   private AtomicBoolean activeRefreshQueue = new AtomicBoolean();
-  private AtomicBoolean activeReplenishQueue = new AtomicBoolean();
   private InternalErrorHandler internalErrorHandler;
 
   public PipelineRunner(
@@ -54,7 +48,6 @@ public class PipelineRunner extends ProcessRunnerPool {
       PipeliteServices pipeliteServices,
       PipeliteMetrics pipeliteMetrics,
       Pipeline pipeline,
-      ProcessEntityCreator processEntityCreator,
       ProcessQueueFactory processQueueFactory,
       ProcessRunnerFactory processRunnerFactory) {
     super(
@@ -65,14 +58,10 @@ public class PipelineRunner extends ProcessRunnerPool {
         processRunnerFactory);
     Assert.notNull(pipeline, "Missing pipeline");
     Assert.notNull(processQueueFactory, "Missing process queue factory");
-    Assert.notNull(processEntityCreator, "Missing process entity creator");
     this.pipeliteServices = pipeliteServices;
     this.pipeline = pipeline;
-    this.processEntityCreator = processEntityCreator;
     this.processQueueFactory = processQueueFactory;
     this.pipelineName = pipeline.pipelineName();
-    this.minReplenishFrequency =
-        pipeliteConfiguration.advanced().getProcessQueueMinReplenishFrequency();
     this.startTime = ZonedDateTime.now();
     this.internalErrorHandler =
         new InternalErrorHandler(
@@ -90,7 +79,6 @@ public class PipelineRunner extends ProcessRunnerPool {
             return;
           }
           refreshQueue();
-          replenishQueue();
           runProcesses();
           // Must call ProcessRunnerPool.runOneIteration()
           super.runOneIteration();
@@ -121,45 +109,11 @@ public class PipelineRunner extends ProcessRunnerPool {
                         // Refresh process queue.
                         p.refreshQueue();
 
-                        if (p.getProcessQueueSize() == 0) {
-                          // The process queue is empty.
-                          // Create new process entities.
-                          int createdProcessCount =
-                              processEntityCreator.create(p.getProcessQueueMaxSize());
-                          replenishTime = ZonedDateTime.now();
-                          if (createdProcessCount > 0) {
-                            // Refresh process queue.
-                            p.refreshQueue();
-                          }
-                        }
-
                         if (firstRefresh) {
                           processQueue.set(p);
                         }
                       });
                   activeRefreshQueue.set(false);
-                });
-      }
-    }
-  }
-
-  private void replenishQueue() {
-    if (processQueue.get() != null
-        && (replenishTime == null
-            || replenishTime.plus(minReplenishFrequency).isBefore(ZonedDateTime.now()))) {
-      if (activeReplenishQueue.compareAndSet(false, true)) {
-        pipeliteServices
-            .executor()
-            .replenishQueue()
-            .execute(
-                () -> {
-                  internalErrorHandler.execute(
-                      () -> {
-                        // Create new process entities.
-                        processEntityCreator.create(processQueue.get().getProcessQueueMaxSize());
-                        replenishTime = ZonedDateTime.now();
-                      });
-                  activeReplenishQueue.set(false);
                 });
       }
     }
@@ -186,7 +140,7 @@ public class PipelineRunner extends ProcessRunnerPool {
   @Override
   public boolean isIdle() {
     return processQueue.get() != null
-        && processQueue.get().getProcessQueueSize() == 0
+        && processQueue.get().getCurrentQueueSize() == 0
         && super.isIdle();
   }
 
@@ -214,7 +168,7 @@ public class PipelineRunner extends ProcessRunnerPool {
     if (processQueue.get() == null) {
       return 0;
     }
-    return processQueue.get().getProcessQueueSize();
+    return processQueue.get().getCurrentQueueSize();
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {

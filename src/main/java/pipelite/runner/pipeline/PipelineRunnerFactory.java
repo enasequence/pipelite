@@ -45,7 +45,9 @@ public class PipelineRunnerFactory {
         new ProcessEntityCreator(pipeline, pipeliteServices.process());
 
     ProcessQueueFactory processQueueFactory =
-        (pipeline1) -> new ProcessQueue(pipeliteConfiguration, pipeliteServices, pipeline1);
+        (pipeline1) ->
+            new ProcessQueue(
+                pipeliteConfiguration, pipeliteServices, processEntityCreator, pipeline1);
 
     boolean lockProcess = true;
     ProcessRunnerFactory processRunnerFactory =
@@ -63,7 +65,6 @@ public class PipelineRunnerFactory {
         pipeliteServices,
         pipeliteMetrics,
         pipeline,
-        processEntityCreator,
         processQueueFactory,
         processRunnerFactory);
   }
@@ -73,7 +74,6 @@ public class PipelineRunnerFactory {
       PipeliteServices pipeliteServices,
       PipeliteMetrics pipeliteMetrics,
       Pipeline pipeline,
-      ProcessEntityCreator processEntityCreator,
       ProcessQueueFactory processQueueFactory,
       ProcessRunnerFactory processRunnerFactory) {
     return new PipelineRunner(
@@ -81,7 +81,6 @@ public class PipelineRunnerFactory {
         pipeliteServices,
         pipeliteMetrics,
         pipeline,
-        processEntityCreator,
         processQueueFactory,
         processRunnerFactory);
   }

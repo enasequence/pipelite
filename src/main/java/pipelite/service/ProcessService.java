@@ -80,6 +80,9 @@ public class ProcessService {
    */
   @Timed("pipelite.service")
   public List<ProcessEntity> getPendingProcesses(String pipelineName, int maxProcessCount) {
+    if (maxProcessCount == 0) {
+      return new ArrayList<>();
+    }
     try (Stream<ProcessEntity> fifoProcessStream =
             processRepository.findAllByPipelineNameAndProcessStateOrderByCreateTimeAsc(
                 pipelineName, ProcessState.PENDING);
@@ -150,6 +153,9 @@ public class ProcessService {
    */
   @Timed("pipelite.service")
   public List<ProcessEntity> getUnlockedActiveProcesses(String pipelineName, int maxProcessCount) {
+    if (maxProcessCount == 0) {
+      return new ArrayList<>();
+    }
     try (Stream<ProcessEntity> processes =
         processRepository.findUnlockedActiveByPipelineNameOrderByPriorityDesc(
             pipelineName, ZonedDateTime.now())) {
