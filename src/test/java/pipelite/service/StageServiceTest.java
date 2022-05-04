@@ -30,7 +30,6 @@ import pipelite.executor.JsonSerializableExecutor;
 import pipelite.executor.SyncExecutor;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
-import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultCallback;
 import pipelite.stage.parameters.ExecutorParameters;
@@ -55,7 +54,7 @@ class StageServiceTest {
     }
 
     @Override
-    public void execute(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {}
+    public void execute(StageExecutorResultCallback resultCallback) {}
 
     @Override
     public void terminate() {}

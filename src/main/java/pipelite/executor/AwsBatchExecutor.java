@@ -58,7 +58,8 @@ public class AwsBatchExecutor
   }
 
   @Override
-  protected SubmitResult submit(StageExecutorRequest request) {
+  protected SubmitResult submit() {
+    StageExecutorRequest request = getRequest();
     logContext(log.atFine(), request).log("Submitting AWSBatch job.");
 
     AwsBatchExecutorParameters params = getExecutorParams();
@@ -88,18 +89,17 @@ public class AwsBatchExecutor
   }
 
   @Override
-  protected StageExecutorResult poll(StageExecutorRequest request) {
+  protected StageExecutorResult describeJob() {
     String jobId = getJobId();
-    logContext(log.atFine(), request).log("Polling AWSBatch job result " + jobId);
-    StageExecutorResult result =
-        describeJobs().getResult(jobId, getExecutorParams().getPermanentErrors());
-    if (result.isActive()) {
-      return StageExecutorResult.active();
-    }
+    return describeJobs().getResult(jobId, getExecutorParams().getPermanentErrors());
+  }
+
+  @Override
+  protected boolean endPoll(StageExecutorResult result) {
     if (isSaveLogFile(result)) {
       // TODO: save log
     }
-    return result;
+    return true;
   }
 
   @Override

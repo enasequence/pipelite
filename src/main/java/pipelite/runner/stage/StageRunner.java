@@ -154,8 +154,7 @@ public class StageRunner {
     logContext(log.atInfo()).log("Preparing stage execution");
     stage
         .getExecutor()
-        .prepareExecution(
-            pipeliteServices, pipelineName, process.getProcessId(), stage.getStageName());
+        .prepareExecution(pipeliteServices, pipelineName, process.getProcessId(), stage);
   }
 
   private void executeStage(StageExecutorResultCallback processRunnerResultCallback) {
@@ -195,7 +194,7 @@ public class StageRunner {
       StageExecutorResultCallback processRunnerResultCallback,
       StageExecutorResultCallback stageRunnerResultCallback) {
     internalErrorHandler.execute(
-        () -> stage.execute(pipelineName, process.getProcessId(), stageRunnerResultCallback),
+        () -> stage.execute(stageRunnerResultCallback),
         (ex) ->
             endStageExecution(processRunnerResultCallback, StageExecutorResult.internalError(ex)));
   }

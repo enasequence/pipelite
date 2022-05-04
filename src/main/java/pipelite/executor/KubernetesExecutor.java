@@ -90,12 +90,12 @@ public class KubernetesExecutor
   }
 
   @Override
-  protected SubmitResult submit(StageExecutorRequest request) {
+  protected SubmitResult submit() {
     KubernetesExecutorParameters executorParams = getExecutorParams();
     context = executorParams.getContext();
     namespace = executorParams.getNamespace() != null ? executorParams.getNamespace() : "default";
     String jobId = createJobId();
-    logContext(log.atFine(), request).log("Submitting Kubernetes job " + jobId);
+    logContext(log.atFine(), getRequest()).log("Submitting Kubernetes job " + jobId);
 
     // Map<String, String> labelMap = new HashMap<>();
     // labelMap.put(..., ...);
@@ -141,7 +141,7 @@ public class KubernetesExecutor
       RetryableExternalAction.execute(
           () -> client.batch().v1().jobs().inNamespace(namespace).create(job));
 
-      logContext(log.atInfo(), request).log("Submitted Kubernetes job " + jobId);
+      logContext(log.atInfo(), getRequest()).log("Submitted Kubernetes job " + jobId);
     } catch (KubernetesClientException e) {
       throw new PipeliteException("Kubernetes error", e);
     }
@@ -150,16 +150,15 @@ public class KubernetesExecutor
   }
 
   @Override
-  protected StageExecutorResult poll(StageExecutorRequest request) {
+  protected StageExecutorResult describeJob() {
     String jobId = getJobId();
-    logContext(log.atFine(), request).log("Polling Kubernetes job result " + jobId);
-    StageExecutorResult result =
-        describeJobs().getResult(jobId, getExecutorParams().getPermanentErrors());
-    if (result.isActive()) {
-      return StageExecutorResult.active();
-    }
+    return describeJobs().getResult(jobId, getExecutorParams().getPermanentErrors());
+  }
 
+  @Override
+  protected boolean endPoll(StageExecutorResult result) {
     try (KubernetesClient client = kubernetesClient(context)) {
+      String jobId = getJobId();
       if (isSaveLogFile(result)) {
         List<Pod> pods =
             client.pods().inNamespace(namespace).withLabel("job-name", jobId).list().getItems();
@@ -177,7 +176,7 @@ public class KubernetesExecutor
     } catch (KubernetesClientException e) {
       throw new PipeliteException("Kubernetes error", e);
     }
-    return result;
+    return true;
   }
 
   @Override

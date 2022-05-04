@@ -52,18 +52,17 @@ public interface StageExecutor<T extends ExecutorParameters> {
    * @param pipeliteServices the pipelite services
    * @param pipelineName the pipeline name
    * @param processId the process id
-   * @param stageName the stage name
+   * @param stage the stage
    */
   void prepareExecution(
-      PipeliteServices pipeliteServices, String pipelineName, String processId, String stageName);
+      PipeliteServices pipeliteServices, String pipelineName, String processId, Stage stage);
 
   /**
    * Called repeatedly to execute the stage until it is not ACTIVE.
    *
-   * @param request the execution request
    * @param resultCallback execution result callback
    */
-  void execute(StageExecutorRequest request, StageExecutorResultCallback resultCallback);
+  void execute(StageExecutorResultCallback resultCallback);
 
   /**
    * Returns true if the execution has been submitted to the execution backed.

@@ -21,9 +21,6 @@ import pipelite.stage.parameters.CmdExecutorParameters;
 
 public class LocalCmdExecutorTest {
 
-  private final String PIPELINE_NAME = PipeliteIdCreator.pipelineName();
-  private final String PROCESS_ID = PipeliteIdCreator.processId();
-
   @Test
   public void test() {
     String stageName = PipeliteIdCreator.stageName();
@@ -33,8 +30,6 @@ public class LocalCmdExecutorTest {
     Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
 
     stage.execute(
-        PIPELINE_NAME,
-        PROCESS_ID,
         (result) -> {
           assertThat(result.isSuccess()).isTrue();
           assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND))

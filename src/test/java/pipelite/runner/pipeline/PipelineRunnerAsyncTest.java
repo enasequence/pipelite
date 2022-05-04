@@ -31,7 +31,6 @@ import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.ProcessMetrics;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.PipeliteServices;
-import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultCallback;
 import pipelite.stage.parameters.ExecutorParameters;
@@ -133,8 +132,8 @@ public class PipelineRunnerAsyncTest {
 
   public static class SubmitSuccessPollSuccessExecutor extends TestExecutor {
     @Override
-    public void execute(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {
-      if (!isExecuteCalled(request.getProcessId())) {
+    public void execute(StageExecutorResultCallback resultCallback) {
+      if (!isExecuteCalled(getRequest().getProcessId())) {
         firstExecuteCalledCount.incrementAndGet();
         resultCallback.accept(StageExecutorResult.active());
       } else {
@@ -146,8 +145,8 @@ public class PipelineRunnerAsyncTest {
 
   public static class SubmitErrorExecutor extends TestExecutor {
     @Override
-    public void execute(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {
-      if (!isExecuteCalled(request.getProcessId())) {
+    public void execute(StageExecutorResultCallback resultCallback) {
+      if (!isExecuteCalled(getRequest().getProcessId())) {
         firstExecuteCalledCount.incrementAndGet();
         resultCallback.accept(StageExecutorResult.error());
       } else {
@@ -159,8 +158,8 @@ public class PipelineRunnerAsyncTest {
 
   public static class SubmitExceptionExecutor extends TestExecutor {
     @Override
-    public void execute(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {
-      if (!isExecuteCalled(request.getProcessId())) {
+    public void execute(StageExecutorResultCallback resultCallback) {
+      if (!isExecuteCalled(getRequest().getProcessId())) {
         firstExecuteCalledCount.incrementAndGet();
         throw new RuntimeException("Expected exception from submit");
       } else {
@@ -172,8 +171,8 @@ public class PipelineRunnerAsyncTest {
 
   public static class PollErrorExecutor extends TestExecutor {
     @Override
-    public void execute(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {
-      if (!isExecuteCalled(request.getProcessId())) {
+    public void execute(StageExecutorResultCallback resultCallback) {
+      if (!isExecuteCalled(getRequest().getProcessId())) {
         firstExecuteCalledCount.incrementAndGet();
         resultCallback.accept(StageExecutorResult.active());
       } else {
@@ -185,8 +184,8 @@ public class PipelineRunnerAsyncTest {
 
   public static class PollExceptionExecutor extends TestExecutor {
     @Override
-    public void execute(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {
-      if (!isExecuteCalled(request.getProcessId())) {
+    public void execute(StageExecutorResultCallback resultCallback) {
+      if (!isExecuteCalled(getRequest().getProcessId())) {
         firstExecuteCalledCount.incrementAndGet();
         resultCallback.accept(StageExecutorResult.active());
       } else {

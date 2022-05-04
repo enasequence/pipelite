@@ -17,7 +17,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.cmd.CmdRunner;
-import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultCallback;
 import pipelite.stage.parameters.CmdExecutorParameters;
@@ -36,7 +35,7 @@ public class CmdExecutor<T extends CmdExecutorParameters> extends SyncExecutor<T
   private String cmd;
 
   @Override
-  public void execute(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {
+  public void execute(StageExecutorResultCallback resultCallback) {
     CmdRunner cmdRunner = CmdRunner.create(getExecutorParams());
     StageExecutorResult result = cmdRunner.execute(cmd);
     if (getExecutorParams()

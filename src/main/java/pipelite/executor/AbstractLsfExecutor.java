@@ -142,7 +142,8 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
   }
 
   @Override
-  protected SubmitResult submit(StageExecutorRequest request) {
+  protected SubmitResult submit() {
+    StageExecutorRequest request = getRequest();
     outFile =
         getExecutorParams().resolveLogFile(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN);
     StageExecutorResult result =
@@ -157,23 +158,18 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
   }
 
   @Override
-  protected StageExecutorResult poll(StageExecutorRequest request) {
-    String jobId = getJobId();
-    logContext(log.atFine(), request).log("Polling LSF job result " + jobId);
+  protected StageExecutorResult describeJob() {
+    return describeJobs()
+        .getResult(describeJobsRequestContext(), getExecutorParams().getPermanentErrors());
+  }
 
-    StageExecutorResult result =
-        describeJobs()
-            .getResult(describeJobsRequestContext(), getExecutorParams().getPermanentErrors());
-    if (result.isActive()) {
-      return result;
-    }
-
+  @Override
+  protected boolean endPoll(StageExecutorResult result) {
     ZonedDateTime outFileTimeout = ZonedDateTime.now().plus(getExecutorParams().getLogTimeout());
-
-    if (!isSaveLogFile(result) || readOutFile(request, result, outFileTimeout)) {
-      return result;
+    if (!isSaveLogFile(result) || readOutFile(getRequest(), result, outFileTimeout)) {
+      return true;
     }
-    return StageExecutorResult.active();
+    return false;
   }
 
   @Override

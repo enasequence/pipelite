@@ -80,19 +80,23 @@ public class LocalCmdRunner implements CmdRunner {
 
       Duration callDuration = Duration.between(startTime, ZonedDateTime.now());
 
+      String stdOut = getStringFromStream(stdoutStream);
+      String stdErr = getStringFromStream(stderrStream);
+
+      boolean logStdOut = exitCode > 0 && stdOut != null && !stdOut.isEmpty();
+      boolean logStdErr = exitCode > 0 && stdErr != null && !stdErr.isEmpty();
+
       log.atInfo().log(
           "Finished executing command in "
               + callDuration.toSeconds()
               + " seconds with exit code "
               + exitCode
               + ": "
-              + fullCmd);
+              + fullCmd
+              + (logStdOut ? ", stdout: " + stdOut : "")
+              + (logStdErr ? ", stderr: " + stdErr : ""));
 
-      return CmdRunner.result(
-          originalCmd,
-          exitCode,
-          getStringFromStream(stdoutStream),
-          getStringFromStream(stderrStream));
+      return CmdRunner.result(originalCmd, exitCode, stdOut, stdErr);
     } catch (Exception ex) {
       throw new PipeliteException("Failed to execute command: " + fullCmd, ex);
     }

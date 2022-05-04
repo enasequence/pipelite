@@ -53,8 +53,6 @@ public class SshCmdExecutorTest {
     Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
 
     stage.execute(
-        PIPELINE_NAME,
-        PROCESS_ID,
         (result) -> {
           // Ignore timeout errors.
           if (result.isErrorType(ErrorType.TIMEOUT_ERROR)) {

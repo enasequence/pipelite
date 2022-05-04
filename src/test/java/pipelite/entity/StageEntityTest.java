@@ -21,7 +21,6 @@ import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.StageState;
 import pipelite.stage.executor.ErrorType;
-import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultCallback;
 import pipelite.stage.parameters.ExecutorParameters;
@@ -33,7 +32,7 @@ class StageEntityTest {
     private static final String test = "TEST_EXECUTOR_DATA";
 
     @Override
-    public void execute(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {}
+    public void execute(StageExecutorResultCallback resultCallback) {}
 
     @Override
     public void terminate() {}

@@ -13,7 +13,9 @@ package pipelite.executor;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.reflect.TypeToken;
 import pipelite.service.PipeliteServices;
+import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
+import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.ExecutorParameters;
 
 /** Executes a stage. Must be serializable to json. */
@@ -25,6 +27,7 @@ public abstract class AbstractExecutor<T extends ExecutorParameters> implements 
   private final Class<T> executorParamsType = (Class<T>) executorParamsTypeToken.getRawType();
 
   @JsonIgnore private T executorParams;
+  @JsonIgnore private StageExecutorRequest request;
 
   @Override
   public Class<T> getExecutorParamsType() {
@@ -41,7 +44,18 @@ public abstract class AbstractExecutor<T extends ExecutorParameters> implements 
     this.executorParams = executorParams;
   }
 
+  public StageExecutorRequest getRequest() {
+    return request;
+  }
+
   @Override
   public void prepareExecution(
-      PipeliteServices pipeliteServices, String pipelineName, String processId, String stageName) {}
+      PipeliteServices pipeliteServices, String pipelineName, String processId, Stage stage) {
+    request =
+        StageExecutorRequest.builder()
+            .pipelineName(pipelineName)
+            .processId(processId)
+            .stage(stage)
+            .build();
+  }
 }

@@ -59,7 +59,7 @@ public class AsyncTestExecutor extends AsyncExecutor<ExecutorParameters, TestDes
   }
 
   @Override
-  protected SubmitResult submit(StageExecutorRequest request) {
+  protected SubmitResult submit() {
     if (submitTime != null) {
       Time.wait(submitTime);
     }
@@ -68,9 +68,15 @@ public class AsyncTestExecutor extends AsyncExecutor<ExecutorParameters, TestDes
   }
 
   @Override
-  protected StageExecutorResult poll(StageExecutorRequest request) {
+  protected StageExecutorResult describeJob() {
     return describeJobs()
-        .getResult(describeJobsRequestContext(request), getExecutorParams().getPermanentErrors());
+        .getResult(
+            describeJobsRequestContext(getRequest()), getExecutorParams().getPermanentErrors());
+  }
+
+  @Override
+  protected boolean endPoll(StageExecutorResult result) {
+    return true;
   }
 
   public static Map<TestDescribeJobsCache.RequestContext, StageExecutorResult> describeJobs(

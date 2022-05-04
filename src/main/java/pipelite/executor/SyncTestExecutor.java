@@ -35,11 +35,11 @@ public class SyncTestExecutor extends SyncExecutor<ExecutorParameters> {
   }
 
   @Override
-  public void execute(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {
+  public void execute(StageExecutorResultCallback resultCallback) {
     if (executionTime != null) {
       Time.wait(executionTime);
     }
-    resultCallback.accept(callback.apply(request));
+    resultCallback.accept(callback.apply(getRequest()));
   }
 
   @Override

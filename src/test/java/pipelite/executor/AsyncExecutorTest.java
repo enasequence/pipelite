@@ -11,7 +11,6 @@
 package pipelite.executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 
@@ -22,14 +21,15 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import pipelite.PipeliteIdCreator;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.*;
+import pipelite.stage.executor.ErrorType;
+import pipelite.stage.executor.StageExecutor;
+import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 import pipelite.time.Time;
 
 public class AsyncExecutorTest {
 
-  private static final String PIPELINE_NAME = PipeliteIdCreator.pipelineName();
-  private static final String PROCESS_ID = PipeliteIdCreator.processId();
   private static final String STAGE_NAME = PipeliteIdCreator.stageName();
 
   private AsyncExecutor executor() {
@@ -42,16 +42,15 @@ public class AsyncExecutorTest {
   @Test
   public void executeSubmitMissingJobId() {
     AsyncExecutor executor = executor();
-    executor.prepareExecution(null, "PIPELINE", "PROCESS", "STAGE");
+    Stage stage = new Stage(STAGE_NAME, executor);
+
+    executor.prepareExecution(null, "PIPELINE", "PROCESS", stage);
     doReturn(new AsyncExecutor.SubmitResult(null, StageExecutorResult.submitted()))
         .when(executor)
-        .submit(any());
-
-    Stage stage = new Stage(STAGE_NAME, executor);
-    StageExecutorRequest request = new StageExecutorRequest(PIPELINE_NAME, PROCESS_ID, stage);
+        .submit();
 
     AtomicReference<StageExecutorResult> result = new AtomicReference<>();
-    executor.execute(request, (r) -> result.set(r));
+    executor.execute((r) -> result.set(r));
 
     while (result.get() == null) {
       Time.wait(Duration.ofSeconds(1));
@@ -60,7 +59,9 @@ public class AsyncExecutorTest {
     assertThat(result.get().isErrorType(ErrorType.INTERNAL_ERROR)).isTrue();
     assertThat(result.get().getStageLog())
         .contains(
-            "pipelite.exception.PipeliteSubmitException: Failed to submit async job PIPELINE PROCESS STAGE: missing job id");
+            "pipelite.exception.PipeliteSubmitException: Failed to submit async job PIPELINE PROCESS "
+                + STAGE_NAME
+                + ": missing job id");
   }
 
   @Test
@@ -68,17 +69,16 @@ public class AsyncExecutorTest {
     for (StageExecutorState stageExecutorState :
         EnumSet.of(StageExecutorState.ACTIVE, StageExecutorState.SUCCESS)) {
       AsyncExecutor executor = executor();
-      executor.prepareExecution(null, "PIPELINE", "PROCESS", "STAGE");
+      Stage stage = new Stage(STAGE_NAME, executor);
+
+      executor.prepareExecution(null, "PIPELINE", "PROCESS", stage);
       doReturn(
               new AsyncExecutor.SubmitResult("jobId", StageExecutorResult.from(stageExecutorState)))
           .when(executor)
-          .submit(any());
-
-      Stage stage = new Stage(STAGE_NAME, executor);
-      StageExecutorRequest request = new StageExecutorRequest(PIPELINE_NAME, PROCESS_ID, stage);
+          .submit();
 
       AtomicReference<StageExecutorResult> result = new AtomicReference<>();
-      executor.execute(request, (r) -> result.set(r));
+      executor.execute((r) -> result.set(r));
 
       while (result.get() == null) {
         Time.wait(Duration.ofSeconds(1));
@@ -87,7 +87,9 @@ public class AsyncExecutorTest {
       assertThat(result.get().isErrorType(ErrorType.INTERNAL_ERROR)).isTrue();
       assertThat(result.get().getStageLog())
           .contains(
-              "pipelite.exception.PipeliteSubmitException: Failed to submit async job PIPELINE PROCESS STAGE: unexpected state "
+              "pipelite.exception.PipeliteSubmitException: Failed to submit async job PIPELINE PROCESS "
+                  + STAGE_NAME
+                  + ": unexpected state "
                   + stageExecutorState.name());
     }
   }
@@ -95,13 +97,13 @@ public class AsyncExecutorTest {
   @Test
   public void executeSubmitException() {
     AsyncExecutor executor = executor();
-    doThrow(new RuntimeException("test exception")).when(executor).submit(any());
+    doThrow(new RuntimeException("test exception")).when(executor).submit();
 
     Stage stage = new Stage(STAGE_NAME, executor);
-    StageExecutorRequest request = new StageExecutorRequest(PIPELINE_NAME, PROCESS_ID, stage);
+    executor.prepareExecution(null, "PIPELINE", "PROCESS", stage);
 
     AtomicReference<StageExecutorResult> result = new AtomicReference<>();
-    executor.execute(request, (r) -> result.set(r));
+    executor.execute((r) -> result.set(r));
 
     while (result.get() == null) {
       Time.wait(Duration.ofSeconds(1));
@@ -116,13 +118,13 @@ public class AsyncExecutorTest {
     AsyncExecutor executor = executor();
     doReturn(new AsyncExecutor.SubmitResult(null, StageExecutorResult.error()))
         .when(executor)
-        .submit(any());
+        .submit();
 
     Stage stage = new Stage(STAGE_NAME, executor);
-    StageExecutorRequest request = new StageExecutorRequest(PIPELINE_NAME, PROCESS_ID, stage);
+    executor.prepareExecution(null, "PIPELINE", "PROCESS", stage);
 
     AtomicReference<StageExecutorResult> result = new AtomicReference<>();
-    executor.execute(request, (r) -> result.set(r));
+    executor.execute((r) -> result.set(r));
 
     while (result.get() == null) {
       Time.wait(Duration.ofSeconds(1));

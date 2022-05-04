@@ -25,7 +25,7 @@ import pipelite.metrics.StageMetrics;
 import pipelite.service.DescribeJobsCacheService;
 import pipelite.service.InternalErrorService;
 import pipelite.service.PipeliteServices;
-import pipelite.stage.executor.StageExecutorRequest;
+import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultCallback;
 import pipelite.stage.parameters.ExecutorParameters;
@@ -46,8 +46,10 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
   @JsonIgnore private String pipelineName;
   @JsonIgnore private String processId;
   @JsonIgnore private String stageName;
-  @JsonIgnore private InternalErrorService internalErrorService;
   @JsonIgnore private D describeJobsCache;
+  @JsonIgnore private StageExecutorResult result;
+
+  @JsonIgnore private InternalErrorService internalErrorService;
   @JsonIgnore private StageMetrics stageMetrics;
 
   @JsonIgnore private ReentrantLock submitLock = new ReentrantLock();
@@ -55,11 +57,11 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
 
   /** Prepares stage executor for asynchronous execution. */
   public void prepareExecution(
-      PipeliteServices pipeliteServices, String pipelineName, String processId, String stageName) {
-    super.prepareExecution(pipeliteServices, pipelineName, processId, stageName);
+      PipeliteServices pipeliteServices, String pipelineName, String processId, Stage stage) {
+    super.prepareExecution(pipeliteServices, pipelineName, processId, stage);
     this.pipelineName = pipelineName;
     this.processId = processId;
-    this.stageName = stageName;
+    this.stageName = stage.getStageName();
     if (pipeliteServices != null) {
       this.internalErrorService = pipeliteServices.internalError();
       this.describeJobsCache = initDescribeJobsCache(pipeliteServices.jobs());
@@ -73,20 +75,22 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
     return describeJobsCache;
   }
 
-  protected void prepareSubmit(StageExecutorRequest request) {}
-
   @Value
   protected static class SubmitResult {
     private final String jobId;
     private final StageExecutorResult result;
   }
 
-  protected abstract SubmitResult submit(StageExecutorRequest request);
+  protected void prepareSubmit() {}
 
-  protected abstract StageExecutorResult poll(StageExecutorRequest request);
+  protected abstract SubmitResult submit();
+
+  protected abstract StageExecutorResult describeJob();
+
+  protected abstract boolean endPoll(StageExecutorResult result);
 
   @Override
-  public void execute(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {
+  public void execute(StageExecutorResultCallback resultCallback) {
     if (jobId == null) {
       if (submitLock.tryLock()) {
         log.atInfo()
@@ -95,7 +99,7 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
             .with(LogKey.STAGE_NAME, stageName)
             .log("Submitting async job");
         submitStartTime = ZonedDateTime.now();
-        submit(request, resultCallback);
+        submit(resultCallback);
       } else {
         log.atFine()
             .with(LogKey.PIPELINE_NAME, pipelineName)
@@ -104,7 +108,7 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
             .log("Waiting for async job submission to complete");
       }
     } else {
-      poll(request, resultCallback);
+      poll(resultCallback);
     }
   }
 
@@ -114,11 +118,11 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
     return jobId != null;
   }
 
-  private void submit(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {
+  private void submit(StageExecutorResultCallback resultCallback) {
     try {
       ZonedDateTime submitStartTime = ZonedDateTime.now();
-      prepareSubmit(request);
-      SubmitResult submitResult = submit(request);
+      prepareSubmit();
+      SubmitResult submitResult = submit();
       jobId = submitResult.getJobId();
       StageExecutorResult result = submitResult.getResult();
 
@@ -158,10 +162,20 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
     }
   }
 
-  private void poll(StageExecutorRequest request, StageExecutorResultCallback resultCallback) {
+  private void poll(StageExecutorResultCallback resultCallback) {
     try {
-      StageExecutorResult result = poll(request);
-      resultCallback.accept(result);
+      if (result == null) {
+        StageExecutorResult describeJobResult = describeJob();
+        if (!describeJobResult.isActive()) {
+          // Async job execution has completed.
+          result = describeJobResult;
+        }
+      }
+      if (result != null) {
+        if (endPoll(result)) {
+          resultCallback.accept(result);
+        }
+      }
     } catch (Exception ex) {
       StageExecutorResult result = StageExecutorResult.internalError(ex);
       resultCallback.accept(result);

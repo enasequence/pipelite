@@ -42,11 +42,11 @@ public class AsyncExecutorTestHelper {
             .stage(stage)
             .build();
 
-    executor.prepareExecution(pipeliteServices, pipelineName, processId, stageName);
+    executor.prepareExecution(pipeliteServices, pipelineName, processId, stage);
 
     AtomicReference<StageExecutorResult> result = new AtomicReference<>();
 
-    executor.execute(request, (r) -> result.set(r));
+    executor.execute((r) -> result.set(r));
 
     while (result.get() == null) {
       Time.wait(Duration.ofSeconds(1));
@@ -56,7 +56,7 @@ public class AsyncExecutorTestHelper {
     assertAfterSubmit.accept(result.get());
 
     while (!result.get().isSuccess() && !result.get().isError()) {
-      executor.execute(request, (r) -> result.set(r));
+      executor.execute((r) -> result.set(r));
       Time.wait(Duration.ofSeconds(1));
     }
 
