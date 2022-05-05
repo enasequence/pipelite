@@ -58,7 +58,7 @@ public class AwsBatchExecutor
   }
 
   @Override
-  protected SubmitResult submit() {
+  protected SubmitJobResult submitJob() {
     StageExecutorRequest request = getRequest();
     logContext(log.atFine(), request).log("Submitting AWSBatch job.");
 
@@ -77,7 +77,7 @@ public class AwsBatchExecutor
     // TODO: .withContainerOverrides()
 
     AWSBatch awsBatch = awsBatchClient(region);
-    SubmitJobResult submitJobResult =
+    com.amazonaws.services.batch.model.SubmitJobResult submitJobResult =
         RetryableExternalAction.execute(() -> awsBatch.submitJob(submitJobRequest));
 
     if (submitJobResult == null || submitJobResult.getJobId() == null) {
@@ -85,17 +85,17 @@ public class AwsBatchExecutor
     }
     String jobId = submitJobResult.getJobId();
     logContext(log.atInfo(), request).log("Submitted AWSBatch job " + getJobId());
-    return new SubmitResult(jobId, StageExecutorResult.submitted());
+    return new SubmitJobResult(jobId, StageExecutorResult.submitted());
   }
 
   @Override
-  protected StageExecutorResult describeJob() {
+  protected StageExecutorResult pollJob() {
     String jobId = getJobId();
     return describeJobs().getResult(jobId, getExecutorParams().getPermanentErrors());
   }
 
-  @Override
-  protected boolean endPoll(StageExecutorResult result) {
+  protected boolean endJob(PollJobResult pollJobResult) {
+    StageExecutorResult result = pollJobResult.getResult();
     if (isSaveLogFile(result)) {
       // TODO: save log
     }

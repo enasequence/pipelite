@@ -11,7 +11,6 @@
 package pipelite.configuration;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.logging.LoggingMeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -24,10 +23,13 @@ public class MetricsConfiguration {
 
   @Bean
   public MeterRegistry meterRegistry() {
+    return new SimpleMeterRegistry();
+    /*
     if (profileConfiguration.isTestProfile()) {
       return new SimpleMeterRegistry();
     } else {
       return new LoggingMeterRegistry();
     }
+    */
   }
 }

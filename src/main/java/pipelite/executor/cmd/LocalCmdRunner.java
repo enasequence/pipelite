@@ -83,18 +83,19 @@ public class LocalCmdRunner implements CmdRunner {
       String stdOut = getStringFromStream(stdoutStream);
       String stdErr = getStringFromStream(stderrStream);
 
-      boolean logStdOut = exitCode > 0 && stdOut != null && !stdOut.isEmpty();
-      boolean logStdErr = exitCode > 0 && stdErr != null && !stdErr.isEmpty();
-
       log.atInfo().log(
           "Finished executing command in "
               + callDuration.toSeconds()
               + " seconds with exit code "
               + exitCode
               + ": "
-              + fullCmd
-              + (logStdOut ? ", stdout: " + stdOut : "")
-              + (logStdErr ? ", stderr: " + stdErr : ""));
+              + fullCmd);
+      if (stdOut != null && !stdOut.isEmpty()) {
+        log.atFine().log("stdout: " + stdOut);
+      }
+      if (stdErr != null && !stdErr.isEmpty()) {
+        log.atFine().log("stderr: " + stdErr);
+      }
 
       return CmdRunner.result(originalCmd, exitCode, stdOut, stdErr);
     } catch (Exception ex) {

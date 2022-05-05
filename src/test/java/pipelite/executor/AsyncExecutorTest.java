@@ -45,9 +45,9 @@ public class AsyncExecutorTest {
     Stage stage = new Stage(STAGE_NAME, executor);
 
     executor.prepareExecution(null, "PIPELINE", "PROCESS", stage);
-    doReturn(new AsyncExecutor.SubmitResult(null, StageExecutorResult.submitted()))
+    doReturn(new AsyncExecutor.SubmitJobResult(null, StageExecutorResult.submitted()))
         .when(executor)
-        .submit();
+        .submitJob();
 
     AtomicReference<StageExecutorResult> result = new AtomicReference<>();
     executor.execute((r) -> result.set(r));
@@ -73,9 +73,10 @@ public class AsyncExecutorTest {
 
       executor.prepareExecution(null, "PIPELINE", "PROCESS", stage);
       doReturn(
-              new AsyncExecutor.SubmitResult("jobId", StageExecutorResult.from(stageExecutorState)))
+              new AsyncExecutor.SubmitJobResult(
+                  "jobId", StageExecutorResult.from(stageExecutorState)))
           .when(executor)
-          .submit();
+          .submitJob();
 
       AtomicReference<StageExecutorResult> result = new AtomicReference<>();
       executor.execute((r) -> result.set(r));
@@ -97,7 +98,7 @@ public class AsyncExecutorTest {
   @Test
   public void executeSubmitException() {
     AsyncExecutor executor = executor();
-    doThrow(new RuntimeException("test exception")).when(executor).submit();
+    doThrow(new RuntimeException("test exception")).when(executor).submitJob();
 
     Stage stage = new Stage(STAGE_NAME, executor);
     executor.prepareExecution(null, "PIPELINE", "PROCESS", stage);
@@ -116,9 +117,9 @@ public class AsyncExecutorTest {
   @Test
   public void executeSubmitError() {
     AsyncExecutor executor = executor();
-    doReturn(new AsyncExecutor.SubmitResult(null, StageExecutorResult.error()))
+    doReturn(new AsyncExecutor.SubmitJobResult(null, StageExecutorResult.error()))
         .when(executor)
-        .submit();
+        .submitJob();
 
     Stage stage = new Stage(STAGE_NAME, executor);
     executor.prepareExecution(null, "PIPELINE", "PROCESS", stage);

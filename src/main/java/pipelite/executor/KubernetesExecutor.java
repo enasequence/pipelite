@@ -90,7 +90,7 @@ public class KubernetesExecutor
   }
 
   @Override
-  protected SubmitResult submit() {
+  protected SubmitJobResult submitJob() {
     KubernetesExecutorParameters executorParams = getExecutorParams();
     context = executorParams.getContext();
     namespace = executorParams.getNamespace() != null ? executorParams.getNamespace() : "default";
@@ -146,17 +146,18 @@ public class KubernetesExecutor
       throw new PipeliteException("Kubernetes error", e);
     }
 
-    return new SubmitResult(jobId, StageExecutorResult.submitted());
+    return new SubmitJobResult(jobId, StageExecutorResult.submitted());
   }
 
   @Override
-  protected StageExecutorResult describeJob() {
+  protected StageExecutorResult pollJob() {
     String jobId = getJobId();
     return describeJobs().getResult(jobId, getExecutorParams().getPermanentErrors());
   }
 
   @Override
-  protected boolean endPoll(StageExecutorResult result) {
+  protected boolean endJob(PollJobResult pollJobResult) {
+    StageExecutorResult result = pollJobResult.getResult();
     try (KubernetesClient client = kubernetesClient(context)) {
       String jobId = getJobId();
       if (isSaveLogFile(result)) {

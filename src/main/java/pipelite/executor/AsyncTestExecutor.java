@@ -59,23 +59,22 @@ public class AsyncTestExecutor extends AsyncExecutor<ExecutorParameters, TestDes
   }
 
   @Override
-  protected SubmitResult submit() {
+  protected SubmitJobResult submitJob() {
     if (submitTime != null) {
       Time.wait(submitTime);
     }
-    return new SubmitResult(
+    return new SubmitJobResult(
         String.valueOf(nextJobId.incrementAndGet()), StageExecutorResult.submitted());
   }
 
   @Override
-  protected StageExecutorResult describeJob() {
+  protected StageExecutorResult pollJob() {
     return describeJobs()
         .getResult(
             describeJobsRequestContext(getRequest()), getExecutorParams().getPermanentErrors());
   }
 
-  @Override
-  protected boolean endPoll(StageExecutorResult result) {
+  protected boolean endJob(PollJobResult pollJobResult) {
     return true;
   }
 

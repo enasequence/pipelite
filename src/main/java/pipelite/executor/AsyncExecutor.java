@@ -47,7 +47,7 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
   @JsonIgnore private String processId;
   @JsonIgnore private String stageName;
   @JsonIgnore private D describeJobsCache;
-  @JsonIgnore private StageExecutorResult result;
+  @JsonIgnore private PollJobResult pollJobResult;
 
   @JsonIgnore private InternalErrorService internalErrorService;
   @JsonIgnore private StageMetrics stageMetrics;
@@ -76,18 +76,32 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
   }
 
   @Value
-  protected static class SubmitResult {
+  protected static class SubmitJobResult {
     private final String jobId;
     private final StageExecutorResult result;
   }
 
-  protected void prepareSubmit() {}
+  @Value
+  protected static class PollJobResult {
+    private final ZonedDateTime endTime = ZonedDateTime.now();
+    private final StageExecutorResult result;
+  }
 
-  protected abstract SubmitResult submit();
+  /** Prepares the async job. */
+  protected void prepareJob() {}
 
-  protected abstract StageExecutorResult describeJob();
+  /** Submits the async job. */
+  protected abstract SubmitJobResult submitJob();
 
-  protected abstract boolean endPoll(StageExecutorResult result);
+  /** Polls the async job. */
+  protected abstract StageExecutorResult pollJob();
+
+  /**
+   * Ends the async job.
+   *
+   * @return true if the async job execution is finished.
+   */
+  protected abstract boolean endJob(PollJobResult pollJobResult);
 
   @Override
   public void execute(StageExecutorResultCallback resultCallback) {
@@ -121,10 +135,10 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
   private void submit(StageExecutorResultCallback resultCallback) {
     try {
       ZonedDateTime submitStartTime = ZonedDateTime.now();
-      prepareSubmit();
-      SubmitResult submitResult = submit();
-      jobId = submitResult.getJobId();
-      StageExecutorResult result = submitResult.getResult();
+      prepareJob();
+      SubmitJobResult submitJobResult = submitJob();
+      jobId = submitJobResult.getJobId();
+      StageExecutorResult result = submitJobResult.getResult();
 
       if (stageMetrics != null) {
         stageMetrics.executor().endSubmit(submitStartTime);
@@ -164,16 +178,16 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
 
   private void poll(StageExecutorResultCallback resultCallback) {
     try {
-      if (result == null) {
-        StageExecutorResult describeJobResult = describeJob();
-        if (!describeJobResult.isActive()) {
+      if (pollJobResult == null) {
+        StageExecutorResult result = pollJob();
+        if (!result.isActive()) {
           // Async job execution has completed.
-          result = describeJobResult;
+          pollJobResult = new PollJobResult(result);
         }
       }
-      if (result != null) {
-        if (endPoll(result)) {
-          resultCallback.accept(result);
+      if (pollJobResult != null) {
+        if (endJob(pollJobResult)) {
+          resultCallback.accept(pollJobResult.getResult());
         }
       }
     } catch (Exception ex) {
