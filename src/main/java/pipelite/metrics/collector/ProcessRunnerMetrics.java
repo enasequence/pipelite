@@ -120,7 +120,7 @@ public class ProcessRunnerMetrics extends AbstractMetrics {
    * @paran now the time when the running process count was measured
    */
   public void setRunningProcessesCount(int count, ZonedDateTime now) {
-    log.atInfo().log("Running processes count for " + pipelineName + ": " + count);
+    log.atFiner().log("Running processes count for " + pipelineName + ": " + count);
     runningGauge.set(count);
     TimeSeriesHelper.maximumTimeSeriesCount(runningTimeSeries, count, pipelineName, now);
   }
@@ -132,7 +132,7 @@ public class ProcessRunnerMetrics extends AbstractMetrics {
    * @paran now the time when the submitted stage count was measured
    */
   public void setRunningStagesCount(int count, ZonedDateTime now) {
-    log.atInfo().log("Running stages count for " + pipelineName + ": " + count);
+    log.atFiner().log("Running stages count for " + pipelineName + ": " + count);
     runningStagesGauge.set(count);
     TimeSeriesHelper.maximumTimeSeriesCount(runningStagesTimeSeries, count, pipelineName, now);
   }
@@ -144,7 +144,7 @@ public class ProcessRunnerMetrics extends AbstractMetrics {
    * @paran now the time when the submitted stage count was measured
    */
   public void setSubmittedStagesCount(int count, ZonedDateTime now) {
-    log.atInfo().log("Submitted stages count for " + pipelineName + ": " + count);
+    log.atFiner().log("Submitted stages count for " + pipelineName + ": " + count);
     submittedStagesGauge.set(count);
     TimeSeriesHelper.maximumTimeSeriesCount(submittedStagesTimeSeries, count, pipelineName, now);
   }
