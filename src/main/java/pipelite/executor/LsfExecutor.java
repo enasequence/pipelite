@@ -59,7 +59,7 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
   }
 
   @Override
-  protected void prepareJob() {
+  protected void beforeSubmit() {
     StageExecutorRequest request = getRequest();
     LsfDefinitionFilePathResolver resolver =
         new LsfDefinitionFilePathResolver(request, getExecutorParams());

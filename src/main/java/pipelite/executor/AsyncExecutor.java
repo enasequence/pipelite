@@ -16,9 +16,10 @@ import java.time.ZonedDateTime;
 import java.util.concurrent.locks.ReentrantLock;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import pipelite.exception.PipeliteSubmitException;
+import pipelite.executor.async.PollResult;
+import pipelite.executor.async.SubmitResult;
 import pipelite.executor.describe.cache.DescribeJobsCache;
 import pipelite.log.LogKey;
 import pipelite.metrics.StageMetrics;
@@ -47,7 +48,7 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
   @JsonIgnore private String processId;
   @JsonIgnore private String stageName;
   @JsonIgnore private D describeJobsCache;
-  @JsonIgnore private PollJobResult pollJobResult;
+  @JsonIgnore private PollResult pollResult;
 
   @JsonIgnore private InternalErrorService internalErrorService;
   @JsonIgnore private StageMetrics stageMetrics;
@@ -74,34 +75,6 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
   public D getDescribeJobsCache() {
     return describeJobsCache;
   }
-
-  @Value
-  protected static class SubmitJobResult {
-    private final String jobId;
-    private final StageExecutorResult result;
-  }
-
-  @Value
-  protected static class PollJobResult {
-    private final ZonedDateTime endTime = ZonedDateTime.now();
-    private final StageExecutorResult result;
-  }
-
-  /** Prepares the async job. */
-  protected void prepareJob() {}
-
-  /** Submits the async job. */
-  protected abstract SubmitJobResult submitJob();
-
-  /** Polls the async job. */
-  protected abstract StageExecutorResult pollJob();
-
-  /**
-   * Ends the async job.
-   *
-   * @return true if the async job execution is finished.
-   */
-  protected abstract boolean endJob(PollJobResult pollJobResult);
 
   @Override
   public void execute(StageExecutorResultCallback resultCallback) {
@@ -132,31 +105,49 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
     return jobId != null;
   }
 
+  /** Called before the asynchronous job is submitted. */
+  protected void beforeSubmit() {}
+
+  /**
+   * Submits the asynchronous job.
+   *
+   * @return the job id.
+   */
+  protected abstract SubmitResult submit();
+
+  /**
+   * Called repeatedly after submit until the asynchronous job is no longer active.
+   *
+   * @return the poll result.
+   */
+  protected abstract PollResult poll();
+
+  /**
+   * Called repeatedly after poll until the asynchronous job is completed.
+   *
+   * @return true if the asynchronous job is completed.
+   */
+  protected boolean afterPoll(PollResult pollResult) {
+    return true;
+  }
+
   private void submit(StageExecutorResultCallback resultCallback) {
     try {
       ZonedDateTime submitStartTime = ZonedDateTime.now();
-      prepareJob();
-      SubmitJobResult submitJobResult = submitJob();
-      jobId = submitJobResult.getJobId();
-      StageExecutorResult result = submitJobResult.getResult();
+      beforeSubmit();
+      SubmitResult submitResult = submit();
+      jobId = submitResult.getJobId();
 
       if (stageMetrics != null) {
         stageMetrics.executor().endSubmit(submitStartTime);
       }
 
-      PipeliteSubmitException submitException = null;
-      if (result.isError()) {
-        submitException = submitException(result.getStageLog());
-      } else if (!result.isSubmitted()) {
-        submitException = submitException("unexpected state " + result.getExecutorState().name());
-        result = StageExecutorResult.internalError(submitException);
-      } else if (jobId == null) {
-        submitException = submitException("missing job id");
-        result = StageExecutorResult.internalError(submitException);
+      if (jobId == null) {
+        PipeliteSubmitException submitException = submitException("missing job id");
+        StageExecutorResult result = StageExecutorResult.internalError(submitException);
+        saveInternalError(submitException);
+        resultCallback.accept(result);
       }
-
-      saveInternalError(submitException);
-      resultCallback.accept(result);
     } catch (Exception ex) {
       StageExecutorResult result = StageExecutorResult.internalError(ex);
       resultCallback.accept(result);
@@ -178,16 +169,16 @@ public abstract class AsyncExecutor<T extends ExecutorParameters, D extends Desc
 
   private void poll(StageExecutorResultCallback resultCallback) {
     try {
-      if (pollJobResult == null) {
-        StageExecutorResult result = pollJob();
-        if (!result.isActive()) {
+      if (pollResult == null) {
+        PollResult nextPollResult = poll();
+        if (!nextPollResult.getResult().isActive()) {
           // Async job execution has completed.
-          pollJobResult = new PollJobResult(result);
+          pollResult = nextPollResult;
         }
       }
-      if (pollJobResult != null) {
-        if (endJob(pollJobResult)) {
-          resultCallback.accept(pollJobResult.getResult());
+      if (pollResult != null) {
+        if (afterPoll(pollResult)) {
+          resultCallback.accept(pollResult.getResult());
         }
       }
     } catch (Exception ex) {

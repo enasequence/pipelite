@@ -19,6 +19,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import lombok.Getter;
 import org.springframework.util.Assert;
+import pipelite.executor.async.PollResult;
+import pipelite.executor.async.SubmitResult;
 import pipelite.executor.describe.DescribeJobs;
 import pipelite.executor.describe.cache.TestDescribeJobsCache;
 import pipelite.service.DescribeJobsCacheService;
@@ -59,22 +61,24 @@ public class AsyncTestExecutor extends AsyncExecutor<ExecutorParameters, TestDes
   }
 
   @Override
-  protected SubmitJobResult submitJob() {
+  protected SubmitResult submit() {
     if (submitTime != null) {
       Time.wait(submitTime);
     }
-    return new SubmitJobResult(
-        String.valueOf(nextJobId.incrementAndGet()), StageExecutorResult.submitted());
+    return SubmitResult.valueOf(String.valueOf(nextJobId.incrementAndGet()));
   }
 
   @Override
-  protected StageExecutorResult pollJob() {
-    return describeJobs()
-        .getResult(
-            describeJobsRequestContext(getRequest()), getExecutorParams().getPermanentErrors());
+  protected PollResult poll() {
+    return PollResult.valueOf(
+        describeJobs()
+            .getResult(
+                describeJobsRequestContext(getRequest()),
+                getExecutorParams().getPermanentErrors()));
   }
 
-  protected boolean endJob(PollJobResult pollJobResult) {
+  @Override
+  protected boolean afterPoll(PollResult pollResult) {
     return true;
   }
 

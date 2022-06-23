@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import pipelite.PipeliteIdCreator;
+import pipelite.executor.async.SubmitResult;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.ErrorType;
 import pipelite.stage.executor.StageExecutor;
@@ -45,9 +46,7 @@ public class AsyncExecutorTest {
     Stage stage = new Stage(STAGE_NAME, executor);
 
     executor.prepareExecution(null, "PIPELINE", "PROCESS", stage);
-    doReturn(new AsyncExecutor.SubmitJobResult(null, StageExecutorResult.submitted()))
-        .when(executor)
-        .submitJob();
+    doReturn(SubmitResult.valueOf(null)).when(executor).submit();
 
     AtomicReference<StageExecutorResult> result = new AtomicReference<>();
     executor.execute((r) -> result.set(r));
@@ -72,11 +71,7 @@ public class AsyncExecutorTest {
       Stage stage = new Stage(STAGE_NAME, executor);
 
       executor.prepareExecution(null, "PIPELINE", "PROCESS", stage);
-      doReturn(
-              new AsyncExecutor.SubmitJobResult(
-                  "jobId", StageExecutorResult.from(stageExecutorState)))
-          .when(executor)
-          .submitJob();
+      doReturn(SubmitResult.valueOf("jobId")).when(executor).submit();
 
       AtomicReference<StageExecutorResult> result = new AtomicReference<>();
       executor.execute((r) -> result.set(r));
@@ -98,7 +93,7 @@ public class AsyncExecutorTest {
   @Test
   public void executeSubmitException() {
     AsyncExecutor executor = executor();
-    doThrow(new RuntimeException("test exception")).when(executor).submitJob();
+    doThrow(new RuntimeException("test exception")).when(executor).submit();
 
     Stage stage = new Stage(STAGE_NAME, executor);
     executor.prepareExecution(null, "PIPELINE", "PROCESS", stage);
@@ -117,9 +112,7 @@ public class AsyncExecutorTest {
   @Test
   public void executeSubmitError() {
     AsyncExecutor executor = executor();
-    doReturn(new AsyncExecutor.SubmitJobResult(null, StageExecutorResult.error()))
-        .when(executor)
-        .submitJob();
+    doReturn(SubmitResult.valueOf(null)).when(executor).submit();
 
     Stage stage = new Stage(STAGE_NAME, executor);
     executor.prepareExecution(null, "PIPELINE", "PROCESS", stage);

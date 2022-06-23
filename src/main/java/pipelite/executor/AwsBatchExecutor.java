@@ -22,6 +22,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
 import pipelite.exception.PipeliteException;
+import pipelite.executor.async.PollResult;
+import pipelite.executor.async.SubmitResult;
 import pipelite.executor.describe.DescribeJobs;
 import pipelite.executor.describe.cache.AwsBatchDescribeJobsCache;
 import pipelite.log.LogKey;
@@ -58,7 +60,7 @@ public class AwsBatchExecutor
   }
 
   @Override
-  protected SubmitJobResult submitJob() {
+  protected SubmitResult submit() {
     StageExecutorRequest request = getRequest();
     logContext(log.atFine(), request).log("Submitting AWSBatch job.");
 
@@ -77,7 +79,7 @@ public class AwsBatchExecutor
     // TODO: .withContainerOverrides()
 
     AWSBatch awsBatch = awsBatchClient(region);
-    com.amazonaws.services.batch.model.SubmitJobResult submitJobResult =
+    SubmitJobResult submitJobResult =
         RetryableExternalAction.execute(() -> awsBatch.submitJob(submitJobRequest));
 
     if (submitJobResult == null || submitJobResult.getJobId() == null) {
@@ -85,17 +87,18 @@ public class AwsBatchExecutor
     }
     String jobId = submitJobResult.getJobId();
     logContext(log.atInfo(), request).log("Submitted AWSBatch job " + getJobId());
-    return new SubmitJobResult(jobId, StageExecutorResult.submitted());
+    return SubmitResult.valueOf(jobId);
   }
 
   @Override
-  protected StageExecutorResult pollJob() {
-    String jobId = getJobId();
-    return describeJobs().getResult(jobId, getExecutorParams().getPermanentErrors());
+  protected PollResult poll() {
+    return PollResult.valueOf(
+        describeJobs().getResult(getJobId(), getExecutorParams().getPermanentErrors()));
   }
 
-  protected boolean endJob(PollJobResult pollJobResult) {
-    StageExecutorResult result = pollJobResult.getResult();
+  @Override
+  protected boolean afterPoll(PollResult pollResult) {
+    StageExecutorResult result = pollResult.getResult();
     if (isSaveLogFile(result)) {
       // TODO: save log
     }

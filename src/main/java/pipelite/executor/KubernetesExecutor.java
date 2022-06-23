@@ -27,6 +27,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
 import pipelite.exception.PipeliteException;
+import pipelite.executor.async.PollResult;
+import pipelite.executor.async.SubmitResult;
 import pipelite.executor.describe.DescribeJobs;
 import pipelite.executor.describe.cache.KubernetesDescribeJobsCache;
 import pipelite.log.LogKey;
@@ -90,7 +92,7 @@ public class KubernetesExecutor
   }
 
   @Override
-  protected SubmitJobResult submitJob() {
+  protected SubmitResult submit() {
     KubernetesExecutorParameters executorParams = getExecutorParams();
     context = executorParams.getContext();
     namespace = executorParams.getNamespace() != null ? executorParams.getNamespace() : "default";
@@ -146,18 +148,18 @@ public class KubernetesExecutor
       throw new PipeliteException("Kubernetes error", e);
     }
 
-    return new SubmitJobResult(jobId, StageExecutorResult.submitted());
+    return SubmitResult.valueOf(jobId);
   }
 
   @Override
-  protected StageExecutorResult pollJob() {
-    String jobId = getJobId();
-    return describeJobs().getResult(jobId, getExecutorParams().getPermanentErrors());
+  protected PollResult poll() {
+    return PollResult.valueOf(
+        describeJobs().getResult(getJobId(), getExecutorParams().getPermanentErrors()));
   }
 
   @Override
-  protected boolean endJob(PollJobResult pollJobResult) {
-    StageExecutorResult result = pollJobResult.getResult();
+  protected boolean afterPoll(PollResult pollResult) {
+    StageExecutorResult result = pollResult.getResult();
     try (KubernetesClient client = kubernetesClient(context)) {
       String jobId = getJobId();
       if (isSaveLogFile(result)) {

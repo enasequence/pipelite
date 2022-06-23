@@ -30,6 +30,8 @@ import lombok.Setter;
 import lombok.extern.flogger.Flogger;
 import pipelite.exception.PipeliteException;
 import pipelite.exception.PipeliteTimeoutException;
+import pipelite.executor.async.PollResult;
+import pipelite.executor.async.SubmitResult;
 import pipelite.executor.cmd.CmdRunner;
 import pipelite.executor.describe.DescribeJobs;
 import pipelite.executor.describe.cache.LsfDescribeJobsCache;
@@ -142,7 +144,7 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
   }
 
   @Override
-  protected SubmitJobResult submitJob() {
+  protected SubmitResult submit() {
     StageExecutorRequest request = getRequest();
     outFile =
         getExecutorParams().resolveLogFile(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN);
@@ -154,20 +156,20 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
       logContext(log.atInfo(), request).log("Submitted LSF job " + jobId);
       result.setSubmitted();
     }
-    return new SubmitJobResult(jobId, result);
+    return SubmitResult.valueOf(jobId);
   }
 
   @Override
-  protected StageExecutorResult pollJob() {
-    return describeJobs()
-        .getResult(describeJobsRequestContext(), getExecutorParams().getPermanentErrors());
+  protected PollResult poll() {
+    return PollResult.valueOf(
+        describeJobs()
+            .getResult(describeJobsRequestContext(), getExecutorParams().getPermanentErrors()));
   }
 
   @Override
-  protected boolean endJob(PollJobResult pollJobResult) {
-    ZonedDateTime outFileTimeout =
-        pollJobResult.getEndTime().plus(getExecutorParams().getLogTimeout());
-    StageExecutorResult result = pollJobResult.getResult();
+  protected boolean afterPoll(PollResult pollResult) {
+    ZonedDateTime outFileTimeout = pollResult.getTime().plus(getExecutorParams().getLogTimeout());
+    StageExecutorResult result = pollResult.getResult();
     if (!isSaveLogFile(result) || readOutFile(getRequest(), result, outFileTimeout)) {
       return true;
     }
