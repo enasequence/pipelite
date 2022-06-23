@@ -51,6 +51,9 @@ public class DataSourceConfiguration {
   private static final Duration CONNECTION_TIMEOUT = Duration.ofMinutes(1);
   private static final Duration CONNECTION_LEAK_THRESHOLD = Duration.ofMinutes(1);
 
+  // Create data source only once in tests.
+  private static DataSource pipeliteDataSource;
+
   @Autowired ProfileConfiguration profileConfiguration;
   @Autowired RetryableDataSourceConfiguration retryableDataSourceConfiguration;
 
@@ -131,19 +134,28 @@ public class DataSourceConfiguration {
   @Primary
   @Bean("pipeliteDataSource")
   public DataSource pipeliteDataSource() {
-    HikariConfig hikariConfig = new HikariConfig();
-    hikariConfig.setDriverClassName(driverClassName);
-    hikariConfig.setJdbcUrl(url);
-    hikariConfig.setUsername(username);
-    hikariConfig.setPassword(password);
-    hikariConfig.setMinimumIdle(minimumIdle);
-    hikariConfig.setMaximumPoolSize(maximumPoolSize);
-    hikariConfig.setConnectionTimeout(CONNECTION_TIMEOUT.toMillis());
-    hikariConfig.setLeakDetectionThreshold(CONNECTION_LEAK_THRESHOLD.toMillis());
-    hikariConfig.setPoolName("pipelite");
-    hikariConfig.setAutoCommit(false);
-    return new RetryableDataSource(
-        new HikariDataSource(hikariConfig), retryableDataSourceConfiguration);
+    // Create data source only once in tests.
+    if (pipeliteDataSource == null) {
+      synchronized (DataSourceConfiguration.class) {
+        if (pipeliteDataSource == null) {
+          HikariConfig hikariConfig = new HikariConfig();
+          hikariConfig.setDriverClassName(driverClassName);
+          hikariConfig.setJdbcUrl(url);
+          hikariConfig.setUsername(username);
+          hikariConfig.setPassword(password);
+          hikariConfig.setMinimumIdle(minimumIdle);
+          hikariConfig.setMaximumPoolSize(maximumPoolSize);
+          hikariConfig.setConnectionTimeout(CONNECTION_TIMEOUT.toMillis());
+          hikariConfig.setLeakDetectionThreshold(CONNECTION_LEAK_THRESHOLD.toMillis());
+          hikariConfig.setPoolName("pipelite");
+          hikariConfig.setAutoCommit(false);
+          pipeliteDataSource =
+              new RetryableDataSource(
+                  new HikariDataSource(hikariConfig), retryableDataSourceConfiguration);
+        }
+      }
+    }
+    return pipeliteDataSource;
   }
 
   @Primary
