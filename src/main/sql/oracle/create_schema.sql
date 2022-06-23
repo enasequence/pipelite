@@ -296,19 +296,6 @@ check ( state in ('PENDING', 'ACTIVE', 'SUCCESS', 'ERROR') )
 
 -- @formatter:on
 
--- @formatter:off
-
-create or replace trigger pipelite2_stage_audit
-before insert or update on pipelite2_stage
-for each row
-declare
-begin
-    :new.audit_time := cast(sysdate as timestamp with time zone);
-end;
-/
-
--- @formatter:on
-
 create table pipelite2_stage_log
 (
     pipeline_name varchar2(256) not null,
@@ -330,9 +317,6 @@ primary key (process_id, stage_name, pipeline_name) using index pk_pipelite2_sta
 -- @formatter:on
 
 -- @formatter:off
-
-create index i_pipelite2_stage_log_audit on pipelite2_stage_log_audit (process_id, pipeline_name)
-tablespace &index_tablespace;
 
 create or replace trigger pipelite2_stage_log_audit
 before insert or update on pipelite2_stage_log
