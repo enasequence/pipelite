@@ -78,13 +78,13 @@ AS $$
             new.audit_time := current_timestamp;
         end if;
 
-        if updating then
+        if tg_op = 'UPDATE' then
             audit_stmt := 'U';
-        elsif deleting then
+        elsif tg_op = 'DELETE' then
             audit_stmt := 'D';
         end if;
 
-        if updating or deleting
+        if tg_op in ('UPDATE', 'DELETE')
         then
             insert into pipelite2_process_audit (
                 pipeline_name,
@@ -117,7 +117,7 @@ AS $$
     end;
 $$;
 
-create or replace trigger pipelite2_process_audit
+create trigger pipelite2_process_audit
 before insert or update or delete
 on pipelite2_process
 for each row
@@ -186,19 +186,20 @@ CREATE FUNCTION pipelite2_schedule_audit()
     LANGUAGE PLPGSQL
 AS $$
 declare
-audit_stmt varchar(1);
+    audit_stmt varchar(1);
 begin
     if tg_op in ('INSERT', 'UPDATE') then
         new.audit_time := current_timestamp;
     end if;
 
-    if updating then
+    if tg_op = 'UPDATE' then
         audit_stmt := 'U';
-    elsif deleting then
+    elsif tg_op = 'DELETE' then
         audit_stmt := 'D';
     end if;
 
-    if updating or deleting then
+    if tg_op in ('UPDATE', 'DELETE')
+    then
         insert into pipelite2_schedule_audit (
             pipeline_name,
             service_name,
