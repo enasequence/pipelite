@@ -67,7 +67,7 @@ create table pipelite2_process_audit
 
 -- @formatter:off
 
-CREATE FUNCTION pipelite2_process_audit()
+CREATE OR REPLACE FUNCTION pipelite2_process_audit()
     RETURNS TRIGGER
     LANGUAGE PLPGSQL
 AS $$
@@ -113,6 +113,13 @@ AS $$
                 old.audit_time,
                 audit_stmt
             );
+        end if;
+
+        if tg_op = 'DELETE'
+        then
+            return old;
+        else
+            return new;
         end if;
     end;
 $$;
@@ -181,7 +188,7 @@ create table pipelite2_schedule_audit
 
 -- @formatter:off
 
-CREATE FUNCTION pipelite2_schedule_audit()
+CREATE OR REPLACE FUNCTION pipelite2_schedule_audit()
     RETURNS TRIGGER
     LANGUAGE PLPGSQL
 AS $$
@@ -235,6 +242,13 @@ begin
             old.audit_time,
             audit_stmt
         );
+    end if;
+
+    if tg_op = 'DELETE'
+    then
+        return old;
+    else
+        return new;
     end if;
 end;
 $$;
@@ -291,12 +305,18 @@ create table pipelite2_stage_log
 -- @formatter:off
 
 
-CREATE FUNCTION pipelite2_stage_log_audit()
+CREATE OR REPLACE FUNCTION pipelite2_stage_log_audit()
     RETURNS TRIGGER
     LANGUAGE PLPGSQL
 AS $$
 begin
     new.audit_time := current_timestamp;
+    if tg_op = 'DELETE'
+    then
+        return old;
+    else
+        return new;
+    end if;
 end;
 $$;
 
