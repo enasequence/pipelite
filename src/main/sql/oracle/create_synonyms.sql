@@ -7,3 +7,4 @@ create public synonym pipelite2_schedule_audit for pipelite2_schedule_audit;
 create public synonym pipelite2_stage for pipelite2_stage;
 create public synonym pipelite2_stage_log for pipelite2_stage_log;
 create public synonym pipelite2_internal_error for era.pipelite2_internal_error;
+create public synonym pipelite2_internal_error for era.pipelite2_internal_error;
