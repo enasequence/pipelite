@@ -14,4 +14,5 @@ drop procedure pipelite2_prioritize;
 drop procedure pipelite2_cancel;
 drop procedure pipelite2_remove;
 drop procedure pipelite2_init;
+drop procedure pipelite2_init_or_reset;
 
