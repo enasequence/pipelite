@@ -84,7 +84,7 @@ public class InternalErrorHandler {
         internalErrorService.saveInternalError(
             pipelineName, processId, stageName, caller.getClass(), ex);
       } catch (Exception ex2) {
-        // Do nothing
+        log.atSevere().withCause(ex2).log("Failed to save internal error: " + ex.getMessage());
       }
       try {
         if (recover != null) {

@@ -86,8 +86,12 @@ public class ScheduleRunner extends ProcessRunnerPool {
                 .log("Waiting data source to be healthy before starting new schedules");
             return;
           }
+          // Schedule execution errors should not affect other schedules.
           getExecutableSchedules()
-              .forEach(s -> executeSchedule(s, createProcessEntity(s), ExecuteMode.NEW));
+              .forEach(
+                  s ->
+                      internalErrorHandler.execute(
+                          () -> executeSchedule(s, createProcessEntity(s), ExecuteMode.NEW)));
           // Must call ProcessRunnerPool.runOneIteration()
           super.runOneIteration();
         });
@@ -245,6 +249,7 @@ public class ScheduleRunner extends ProcessRunnerPool {
     RETRY
   };
 
+  /** Executes a schedule expecting the process to already exist. */
   protected void executeSchedule(
       ScheduleCron scheduleCron, ProcessEntity processEntity, ExecuteMode executeMode) {
     internalErrorHandler.execute(
