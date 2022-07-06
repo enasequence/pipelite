@@ -241,7 +241,9 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
       CmdRunner cmdRunner,
       Map<String, LsfDescribeJobsCache.RequestContext> requestMap,
       List<JobResult> jobResults) {
-    log.atInfo().log("Recovering LSF job results.");
+    log.atInfo().log(
+        "Recovering LSF job results "
+            + jobResults.stream().map(r -> r.jobId).collect(Collectors.joining(",")));
 
     AtomicInteger remainingCount = new AtomicInteger();
     AtomicInteger attemptedCount = new AtomicInteger();
@@ -259,14 +261,12 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
                 executorService.submit(
                     () -> {
                       try {
-                        // Attempt to recover missing job result using bhist.
-                        if (recoverJobUsingBhist(cmdRunner, r)) {
+                        // Attempt to recover missing job result using output file.
+                        if (recoverJobUsingOutFile(cmdRunner, r, requestMap)) {
+                          log.atInfo().log("Successfully recovered LSF job result " + r.jobId);
                           recoveredCount.incrementAndGet();
                         } else {
-                          // Attempt to recover missing job result using output file.
-                          if (recoverJobUsingOutFile(cmdRunner, r, requestMap)) {
-                            recoveredCount.incrementAndGet();
-                          }
+                          log.atSevere().log("Failed to recover LSF job result " + r.jobId);
                         }
                       } finally {
                         remainingCount.decrementAndGet();
