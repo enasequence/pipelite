@@ -271,23 +271,6 @@ class ScheduleServiceTest {
   }
 
   @Test
-  public void isRetryScheduleWithNotFailedSchedule() {
-    String serviceName = PipeliteIdCreator.serviceName();
-    String pipelineName = PipeliteIdCreator.pipelineName();
-    String processId = PipeliteIdCreator.processId();
-
-    String cron = PipeliteTestConstants.CRON_EVERY_TWO_SECONDS;
-    ScheduleEntity scheduleEntity = scheduleService.createSchedule(serviceName, pipelineName, cron);
-    assertThat(scheduleEntity.isFailed()).isFalse();
-
-    PipeliteProcessRetryException ex =
-        assertThrows(
-            PipeliteProcessRetryException.class,
-            () -> scheduleService.isRetrySchedule(pipelineName, processId));
-    assertThat(ex.getMessage()).contains("the process for the schedule is not failed");
-  }
-
-  @Test
   public void isRetryScheduleWithDifferentProcessId() {
     String serviceName = PipeliteIdCreator.serviceName();
     String pipelineName = PipeliteIdCreator.pipelineName();

@@ -140,7 +140,9 @@ public class ScheduleService {
   }
 
   /**
-   * Returns true if there is a schedule that has failed and can be retried.
+   * Returns true if there is a schedule that has failed and can be retried. Returns false if a
+   * schedule does not exist. If there is a schedule that can't be retried then throws a
+   * PipeliteProcessRetryException.
    *
    * @param pipelineName the pipeline name
    * @param processId the process id
@@ -155,11 +157,6 @@ public class ScheduleService {
     }
 
     ScheduleEntity scheduleEntity = scheduleEntityOpt.get();
-
-    if (!scheduleEntity.isFailed()) {
-      throw new PipeliteProcessRetryException(
-          pipelineName, processId, "the process for the schedule is not failed");
-    }
 
     if (!processId.equals(scheduleEntity.getProcessId())) {
       throw new PipeliteProcessRetryException(

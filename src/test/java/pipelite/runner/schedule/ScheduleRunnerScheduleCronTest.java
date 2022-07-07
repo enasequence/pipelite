@@ -31,7 +31,7 @@ public class ScheduleRunnerScheduleCronTest {
 
     assertThat(scheduleCron.getPipelineName()).isEqualTo(pipelineName);
     assertThat(scheduleCron.isExecutable()).isFalse();
-    assertThat(scheduleCron.getLaunchTime()).isNull();
+    assertThat(scheduleCron.getNextTime()).isNull();
     assertThat(scheduleCron.getCron()).isNull();
 
     // Set cron.
@@ -40,18 +40,18 @@ public class ScheduleRunnerScheduleCronTest {
 
     assertThat(scheduleCron.getPipelineName()).isEqualTo(pipelineName);
     assertThat(scheduleCron.isExecutable()).isFalse();
-    assertThat(scheduleCron.getLaunchTime()).isNull();
+    assertThat(scheduleCron.getNextTime()).isNull();
     assertThat(scheduleCron.getCron()).isEqualTo(cron);
 
     // Enable.
     ZonedDateTime first = ZonedDateTime.now();
 
-    scheduleCron.setLaunchTime(CronUtils.launchTime(scheduleCron.getCron(), null));
+    scheduleCron.setNextTime(CronUtils.launchTime(scheduleCron.getCron(), null));
 
     assertThat(scheduleCron.getPipelineName()).isEqualTo(pipelineName);
     assertThat(scheduleCron.isExecutable()).isFalse();
-    assertThat(scheduleCron.getLaunchTime()).isNotNull();
-    assertThat(scheduleCron.getLaunchTime()).isAfter(first);
+    assertThat(scheduleCron.getNextTime()).isNotNull();
+    assertThat(scheduleCron.getNextTime()).isAfter(first);
     assertThat(scheduleCron.getCron()).isEqualTo(cron);
 
     // Wait until the schedule is executable.
@@ -60,29 +60,29 @@ public class ScheduleRunnerScheduleCronTest {
 
     assertThat(scheduleCron.getPipelineName()).isEqualTo(pipelineName);
     assertThat(scheduleCron.isExecutable()).isTrue();
-    assertThat(scheduleCron.getLaunchTime()).isNotNull();
-    assertThat(scheduleCron.getLaunchTime()).isAfter(first);
-    assertThat(scheduleCron.getLaunchTime()).isBeforeOrEqualTo(ZonedDateTime.now());
+    assertThat(scheduleCron.getNextTime()).isNotNull();
+    assertThat(scheduleCron.getNextTime()).isAfter(first);
+    assertThat(scheduleCron.getNextTime()).isBeforeOrEqualTo(ZonedDateTime.now());
     assertThat(scheduleCron.getCron()).isEqualTo(cron);
 
     // Disable the schedule.
 
-    scheduleCron.setLaunchTime(null);
+    scheduleCron.setNextTime(null);
 
     assertThat(scheduleCron.getPipelineName()).isEqualTo(pipelineName);
     assertThat(scheduleCron.isExecutable()).isFalse();
-    assertThat(scheduleCron.getLaunchTime()).isNull();
+    assertThat(scheduleCron.getNextTime()).isNull();
     assertThat(scheduleCron.getCron()).isEqualTo(cron);
 
     // Enable.
     ZonedDateTime second = ZonedDateTime.now();
 
-    scheduleCron.setLaunchTime(CronUtils.launchTime(scheduleCron.getCron(), null));
+    scheduleCron.setNextTime(CronUtils.launchTime(scheduleCron.getCron(), null));
 
     assertThat(scheduleCron.getPipelineName()).isEqualTo(pipelineName);
     assertThat(scheduleCron.isExecutable()).isFalse();
-    assertThat(scheduleCron.getLaunchTime()).isNotNull();
-    assertThat(scheduleCron.getLaunchTime()).isAfterOrEqualTo(second);
+    assertThat(scheduleCron.getNextTime()).isNotNull();
+    assertThat(scheduleCron.getNextTime()).isAfterOrEqualTo(second);
     assertThat(scheduleCron.getCron()).isEqualTo(cron);
 
     // Wait until the schedule is executable.
@@ -91,9 +91,9 @@ public class ScheduleRunnerScheduleCronTest {
 
     assertThat(scheduleCron.getPipelineName()).isEqualTo(pipelineName);
     assertThat(scheduleCron.isExecutable()).isTrue();
-    assertThat(scheduleCron.getLaunchTime()).isNotNull();
-    assertThat(scheduleCron.getLaunchTime()).isAfterOrEqualTo(second);
-    assertThat(scheduleCron.getLaunchTime()).isBeforeOrEqualTo(ZonedDateTime.now());
+    assertThat(scheduleCron.getNextTime()).isNotNull();
+    assertThat(scheduleCron.getNextTime()).isAfterOrEqualTo(second);
+    assertThat(scheduleCron.getNextTime()).isBeforeOrEqualTo(ZonedDateTime.now());
     assertThat(scheduleCron.getCron()).isEqualTo(cron);
   }
 }

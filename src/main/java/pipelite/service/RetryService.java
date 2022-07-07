@@ -56,7 +56,10 @@ public class RetryService {
    */
   public void retry(String pipelineName, String processId) {
 
+    // Check if the process can be retried.
     processService.isRetryProcess(pipelineName, processId);
+
+    // Check if there is a schedule that can be retried.
     boolean isRetrySchedule = scheduleService.isRetrySchedule(pipelineName, processId);
 
     RegisteredPipeline registeredPipeline =

@@ -15,6 +15,7 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
@@ -26,7 +27,7 @@ import pipelite.entity.ScheduleEntity;
 import pipelite.error.InternalErrorHandler;
 import pipelite.exception.PipeliteException;
 import pipelite.exception.PipeliteProcessRetryException;
-import pipelite.exception.PipeliteScheduleStartException;
+import pipelite.exception.PipeliteUnrecoverableException;
 import pipelite.log.LogKey;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
@@ -86,12 +87,7 @@ public class ScheduleRunner extends ProcessRunnerPool {
                 .log("Waiting data source to be healthy before starting new schedules");
             return;
           }
-          // Schedule execution errors should not affect other schedules.
-          getExecutableSchedules()
-              .forEach(
-                  s ->
-                      internalErrorHandler.execute(
-                          () -> executeSchedule(s, createProcessEntity(s), ExecuteMode.NEW)));
+          startExecutions();
           // Must call ProcessRunnerPool.runOneIteration()
           super.runOneIteration();
         });
@@ -104,8 +100,8 @@ public class ScheduleRunner extends ProcessRunnerPool {
   @Override
   public void startUp() {
     super.startUp();
-    initSchedules();
-    resumeSchedules();
+    scheduleExecutions();
+    resumeExecutions();
   }
 
   @Override
@@ -115,85 +111,84 @@ public class ScheduleRunner extends ProcessRunnerPool {
         && super.isIdle();
   }
 
-  /** Initialises schedules. */
-  private void initSchedules() {
-    logContext(log.atInfo()).log("Initialising schedules");
+  /** Sets the next schedule execution times. */
+  private void scheduleExecutions() {
+    logContext(log.atInfo()).log("Scheduling executions");
     for (ScheduleCron scheduleCron : scheduleCrons) {
-      Optional<ScheduleEntity> scheduleEntity =
-          scheduleService.getSavedSchedule(scheduleCron.getPipelineName());
-      if (!scheduleEntity.isPresent()) {
-        throw new PipeliteException("Unknown schedule: " + scheduleCron.getPipelineName());
-      }
-      initSchedule(scheduleCron, scheduleEntity.get());
+      internalErrorHandler.execute(
+          () -> {
+            Optional<ScheduleEntity> scheduleEntity =
+                scheduleService.getSavedSchedule(scheduleCron.getPipelineName());
+            if (!scheduleEntity.isPresent()) {
+              throw new PipeliteException("Missing schedule: " + scheduleCron.getPipelineName());
+            }
+            scheduleExecution(scheduleCron, scheduleEntity.get());
+          });
     }
   }
 
   /**
-   * Initialises a schedule.
+   * Sets the next schedule execution time.
    *
    * @param scheduleCron the schedule cron
    * @param scheduleEntity the schedule entity
    */
-  private void initSchedule(ScheduleCron scheduleCron, ScheduleEntity scheduleEntity) {
+  private void scheduleExecution(ScheduleCron scheduleCron, ScheduleEntity scheduleEntity) {
     scheduleCron.setCron(scheduleEntity.getCron());
     if (!scheduleEntity.isActive() && scheduleEntity.getNextTime() == null) {
+      logContext(log.atInfo(), scheduleEntity.getPipelineName())
+          .log("Scheduling schedule execution");
       scheduleService.scheduleExecution(scheduleEntity);
     }
-    scheduleCron.setLaunchTime(scheduleEntity.getNextTime());
+    scheduleCron.setNextTime(scheduleEntity.getNextTime());
   }
 
-  protected void resumeSchedules() {
-    getScheduleCrons()
-        .forEach(
-            s -> {
-              try {
-                resumeSchedule(s);
-              } catch (Exception ex) {
-                logContext(log.atSevere(), s.getPipelineName()).log("Could not resume schedule");
-              }
-            });
+  /** Resumes schedule executions. */
+  protected void resumeExecutions() {
+    logContext(log.atInfo()).log("Resuming executions");
+    getScheduleCrons().forEach(s -> internalErrorHandler.execute(() -> resumeExecution(s)));
   }
 
-  protected void resumeSchedule(ScheduleCron scheduleCron) {
+  /** Resumes schedule execution. */
+  protected void resumeExecution(ScheduleCron scheduleCron) {
     String pipelineName = scheduleCron.getPipelineName();
-    ScheduleEntity scheduleEntity = scheduleService.getSavedSchedule(pipelineName).get();
-    if (!scheduleEntity.isActive()) {
+    Optional<ScheduleEntity> scheduleEntity = scheduleService.getSavedSchedule(pipelineName);
+    if (!scheduleEntity.isPresent()) {
+      throw new PipeliteException("Missing schedule: " + scheduleCron.getPipelineName());
+    }
+    if (!scheduleEntity.get().isActive()) {
       return;
     }
-    logContext(log.atInfo(), pipelineName).log("Resuming schedule");
-    Optional<ProcessEntity> processEntity = getSavedProcess(scheduleEntity);
-    if (!processEntity.isPresent()) {
-      logContext(log.atSevere(), pipelineName, scheduleEntity.getProcessId())
-          .log("Could not resume schedule because process does not exist");
-    } else {
-      executeSchedule(scheduleCron, processEntity.get(), ExecuteMode.RESUME);
-    }
+    logContext(log.atInfo(), pipelineName).log("Resuming schedule execution");
+    executeSchedule(scheduleCron, ExecuteMode.RESUME);
   }
 
+  /** Starts new schedule executions. */
+  protected void startExecutions() {
+    getExecutableSchedules()
+        .forEach(s -> internalErrorHandler.execute(() -> executeSchedule(s, ExecuteMode.NEW)));
+  }
+
+  /** Starts a new schedule execution. Called by web API. */
   public void startSchedule(String pipelineName) {
     Optional<ScheduleCron> scheduleCron =
         scheduleCrons.stream().filter(s -> s.getPipelineName().equals(pipelineName)).findAny();
     if (!scheduleCron.isPresent()) {
-      throw new PipeliteScheduleStartException(pipelineName, "unknown schedule");
+      throw new PipeliteUnrecoverableException("Missing schedule: " + pipelineName);
     }
     if (!scheduleCron.get().isExecutable()) {
-      scheduleCron.get().setLaunchTime(ZonedDateTime.now());
-    } else {
-      throw new PipeliteScheduleStartException(pipelineName, "schedule is already being started");
+      scheduleCron.get().setNextTime(ZonedDateTime.now());
     }
   }
 
+  /** Retries a new schedule execution. Called by web API. */
   public void retrySchedule(String pipelineName, String processId) {
     Optional<ScheduleCron> scheduleCron =
         scheduleCrons.stream().filter(s -> s.getPipelineName().equals(pipelineName)).findAny();
     if (!scheduleCron.isPresent()) {
       throw new PipeliteProcessRetryException(pipelineName, processId, "unknown schedule");
     }
-    Optional<ProcessEntity> processEntity = processService.getSavedProcess(pipelineName, processId);
-    if (!processEntity.isPresent()) {
-      throw new PipeliteProcessRetryException(pipelineName, processId, "unknown process");
-    }
-    executeSchedule(scheduleCron.get(), processEntity.get(), ExecuteMode.RETRY);
+    executeSchedule(scheduleCron.get(), ExecuteMode.RETRY);
   }
 
   public boolean isActiveSchedule(String pipelineName) {
@@ -206,23 +201,6 @@ public class ScheduleRunner extends ProcessRunnerPool {
   private Optional<ProcessEntity> getSavedProcess(ScheduleEntity scheduleEntity) {
     return processService.getSavedProcess(
         scheduleEntity.getPipelineName(), scheduleEntity.getProcessId());
-  }
-
-  private ProcessEntity createProcessEntity(ScheduleCron scheduleCron) {
-    String pipelineName = scheduleCron.getPipelineName();
-    ScheduleEntity scheduleEntity = scheduleService.getSavedSchedule(pipelineName).get();
-
-    String lastProcessId = scheduleEntity.getProcessId();
-    String nextProcessId = nextProcessId(lastProcessId);
-
-    Optional<ProcessEntity> processEntity =
-        processService.getSavedProcess(pipelineName, nextProcessId);
-    if (processEntity.isPresent()) {
-      throw new PipeliteException(
-          "Scheduled new process already exists: " + pipelineName + " " + nextProcessId);
-    }
-    return processService.createExecution(
-        pipelineName, nextProcessId, ProcessEntity.DEFAULT_PRIORITY);
   }
 
   /**
@@ -249,47 +227,81 @@ public class ScheduleRunner extends ProcessRunnerPool {
     RETRY
   };
 
-  /** Executes a schedule expecting the process to already exist. */
-  protected void executeSchedule(
-      ScheduleCron scheduleCron, ProcessEntity processEntity, ExecuteMode executeMode) {
+  /** Executes a schedule. Creates a new process if needed. */
+  protected synchronized void executeSchedule(ScheduleCron scheduleCron, ExecuteMode executeMode) {
     internalErrorHandler.execute(
         () -> {
-          String pipelineName = processEntity.getPipelineName();
-          String processId = processEntity.getProcessId();
-          logContext(log.atInfo(), pipelineName, processId).log("Executing scheduled process");
+          String pipelineName = scheduleCron.getPipelineName();
+          logContext(log.atInfo(), pipelineName).log("Executing schedule");
 
           Schedule schedule = getSchedule(pipelineName);
           if (schedule == null) {
             return;
           }
 
-          Process process = getProcess(processEntity, schedule);
+          AtomicReference<ScheduleEntity> scheduleEntity =
+              new AtomicReference<>(scheduleService.getSavedSchedule(pipelineName).orElse(null));
+          if (executeMode == ExecuteMode.NEW) {
+            scheduleEntity.set(executeNewSchedule(scheduleEntity.get()));
+          }
+          if (executeMode == ExecuteMode.RETRY) {
+            scheduleEntity.set(executeRetrySchedule(scheduleEntity.get()));
+          }
+
+          AtomicReference<ProcessEntity> processEntity =
+              new AtomicReference<>(getSavedProcess(scheduleEntity.get()).orElse(null));
+          if (processEntity.get() == null) {
+            // Create process for the schedule execution.
+            processEntity.set(
+                processService.createExecution(
+                    pipelineName,
+                    scheduleEntity.get().getProcessId(),
+                    ProcessEntity.DEFAULT_PRIORITY));
+          }
+
+          Process process = getProcess(processEntity.get(), schedule);
           if (process == null) {
             return;
           }
 
           setMaximumRetries(process);
 
-          if (executeMode != ExecuteMode.RESUME) {
-            scheduleService.startExecution(pipelineName, processId);
-          }
-
-          scheduleCron.setLaunchTime(null);
+          // Remove next time to prevent the schedule from being executed again until it
+          // has completed.
+          scheduleCron.setNextTime(null);
 
           runProcess(
               pipelineName,
               process,
               (p) -> {
-                ScheduleEntity scheduleEntity =
-                    scheduleService.getSavedSchedule(pipelineName).get();
                 ZonedDateTime nextLaunchTime =
-                    CronUtils.launchTime(scheduleCron.getCron(), scheduleEntity.getStartTime());
+                    CronUtils.launchTime(
+                        scheduleCron.getCron(), scheduleEntity.get().getStartTime());
                 internalErrorHandler.execute(
-                    () -> scheduleService.endExecution(processEntity, nextLaunchTime));
-                scheduleCron.setLaunchTime(nextLaunchTime);
+                    () -> scheduleService.endExecution(processEntity.get(), nextLaunchTime));
+                scheduleCron.setNextTime(nextLaunchTime);
                 decreaseMaximumExecutions(pipelineName);
               });
         });
+  }
+
+  private ScheduleEntity executeNewSchedule(ScheduleEntity scheduleEntity) {
+    String pipelineName = scheduleEntity.getPipelineName();
+    String nextProcessId = nextProcessId(scheduleEntity.getProcessId());
+    if (processService.getSavedProcess(pipelineName, nextProcessId).isPresent()) {
+      throw new PipeliteException(
+          "Failed to execute hew "
+              + pipelineName
+              + " schedule. The "
+              + nextProcessId
+              + " process already exists.");
+    }
+    return scheduleService.startExecution(pipelineName, nextProcessId);
+  }
+
+  private ScheduleEntity executeRetrySchedule(ScheduleEntity scheduleEntity) {
+    String pipelineName = scheduleEntity.getPipelineName();
+    return scheduleService.startExecution(pipelineName, scheduleEntity.getProcessId());
   }
 
   private Schedule getSchedule(String pipelineName) {

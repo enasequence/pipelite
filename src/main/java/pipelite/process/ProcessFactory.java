@@ -59,6 +59,8 @@ public class ProcessFactory {
                 + ". Pipeline returned a null process.");
       }
       return process;
+    } catch (PipeliteException ex) {
+      throw ex;
     } catch (Exception ex) {
       throw new PipeliteException(
           "Failed to create " + pipelineName + " process " + processId + ". Unexpected exception.",

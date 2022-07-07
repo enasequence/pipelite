@@ -17,15 +17,15 @@ import org.springframework.util.Assert;
 /**
  * Schedule for one pipeline. The schedule becomes executable after it has been provided with a
  * valid cron expression and has been enabled. When the schedule is enabled the cron expression is
- * evaluated and the launch time is set. The schedule should be executed once the launch time is in
- * the past. The schedule should be disabled when it is executed and enabled again after the
- * execution completes.
+ * evaluated and the next time is set. The schedule should be executed once the next time is in the
+ * past and the next time should be removed.
  */
 @Flogger
 public class ScheduleCron {
   private final String pipelineName;
   private String cron;
-  private ZonedDateTime launchTime;
+  /** Next schedule execution time. */
+  private ZonedDateTime nextTime;
 
   public ScheduleCron(String pipelineName) {
     Assert.notNull(pipelineName, "Missing pipeline name");
@@ -60,7 +60,7 @@ public class ScheduleCron {
    * @return true if the schedule can be executed
    */
   public boolean isExecutable() {
-    return launchTime != null && !launchTime.isAfter(ZonedDateTime.now());
+    return nextTime != null && !nextTime.isAfter(ZonedDateTime.now());
   }
 
   /**
@@ -68,17 +68,17 @@ public class ScheduleCron {
    *
    * @return the current launch time
    */
-  public ZonedDateTime getLaunchTime() {
-    return launchTime;
+  public ZonedDateTime getNextTime() {
+    return nextTime;
   }
 
   /**
    * Sets the current launch time.
    *
-   * @param launchTime the current launch time
+   * @param nextTime the current launch time
    */
-  public void setLaunchTime(ZonedDateTime launchTime) {
-    this.launchTime = launchTime;
+  public void setNextTime(ZonedDateTime nextTime) {
+    this.nextTime = nextTime;
   }
 
   @Override

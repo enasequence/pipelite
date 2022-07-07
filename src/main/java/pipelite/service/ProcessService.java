@@ -357,7 +357,8 @@ public class ProcessService {
   }
 
   /**
-   * Returns true if there is a process that has failed and can be retried.
+   * Returns true if there is a process that has failed and can be retried. If not then throws a
+   * PipeliteProcessRetryException.
    *
    * @param pipelineName the pipeline name
    * @param processId the process id
