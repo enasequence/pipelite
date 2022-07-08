@@ -290,7 +290,7 @@ public class ScheduleRunner extends ProcessRunnerPool {
     String nextProcessId = nextProcessId(scheduleEntity.getProcessId());
     if (processService.getSavedProcess(pipelineName, nextProcessId).isPresent()) {
       throw new PipeliteException(
-          "Failed to execute hew "
+          "Failed to execute new "
               + pipelineName
               + " schedule. The "
               + nextProcessId
