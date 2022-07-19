@@ -10,11 +10,20 @@
  */
 package pipelite.stage.path;
 
-import static pipelite.stage.path.LsfLogFilePathResolver.USER_PLACEHOLDER;
+import java.nio.file.Paths;
 
-public class LsfDefinitionFilePathResolver extends AsyncCmdDefinitionFilePathResolver {
+/** Normalizes a file or directory path. */
+public class FilePathNormalizer {
 
-  public LsfDefinitionFilePathResolver() {
-    super(USER_PLACEHOLDER);
+  private FilePathNormalizer() {}
+
+  /**
+   * Normalizes a file or directory path.
+   *
+   * @name file or directory path
+   * @return the sanitized path
+   */
+  public static String normalize(String name) {
+    return Paths.get(name).normalize().toString();
   }
 }

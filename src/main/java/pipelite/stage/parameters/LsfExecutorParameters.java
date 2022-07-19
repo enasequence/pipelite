@@ -17,9 +17,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import pipelite.configuration.ExecutorConfiguration;
-import pipelite.stage.executor.StageExecutorRequest;
-import pipelite.stage.path.LsfDefinitionFilePathResolver;
-import pipelite.stage.path.LsfFilePathResolver;
 
 /**
  * LSF executor parameters given using a job definition file and job definition parameters. The job
@@ -36,7 +33,7 @@ public class LsfExecutorParameters extends AbstractLsfExecutorParameters {
     YAML,
     JSON,
     JSDL
-  };
+  }
 
   /** The LSF job definition file URL. */
   private String definition;
@@ -84,12 +81,5 @@ public class LsfExecutorParameters extends AbstractLsfExecutorParameters {
     if (definitionDir != null) {
       ExecutorParametersValidator.validatePath(definitionDir, "definitionDir");
     }
-  }
-
-  public String resolveDefinitionFile(
-      StageExecutorRequest request, LsfFilePathResolver.Format format) {
-    return ExecutorParametersValidator.validatePath(
-            new LsfDefinitionFilePathResolver(request, this).getFile(format), "definitionFile")
-        .toString();
   }
 }

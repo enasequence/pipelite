@@ -43,23 +43,23 @@ public class KubernetesExecutorTest {
   @Test
   public void describeJobsStateActive() {
     JobStatus jobStatus = new JobStatus();
-    assertThat(KubernetesExecutor.describeJobsResultFromStatus(jobStatus).isActive()).isTrue();
+    assertThat(KubernetesExecutor.extractJobResultFromStatus(jobStatus).isActive()).isTrue();
     jobStatus.setActive(1);
-    assertThat(KubernetesExecutor.describeJobsResultFromStatus(jobStatus).isActive()).isTrue();
+    assertThat(KubernetesExecutor.extractJobResultFromStatus(jobStatus).isActive()).isTrue();
   }
 
   @Test
   public void describeJobsStateSuccess() {
     JobStatus jobStatus = new JobStatus();
     jobStatus.setCompletionTime("test");
-    assertThat(KubernetesExecutor.describeJobsResultFromStatus(jobStatus).isSuccess()).isTrue();
+    assertThat(KubernetesExecutor.extractJobResultFromStatus(jobStatus).isSuccess()).isTrue();
 
     jobStatus = new JobStatus();
     JobCondition jobCondition = new JobCondition();
     jobCondition.setType("Complete");
     jobCondition.setStatus("true");
     jobStatus.setConditions(Arrays.asList(jobCondition));
-    assertThat(KubernetesExecutor.describeJobsResultFromStatus(jobStatus).isSuccess()).isTrue();
+    assertThat(KubernetesExecutor.extractJobResultFromStatus(jobStatus).isSuccess()).isTrue();
   }
 
   @Test
@@ -69,12 +69,12 @@ public class KubernetesExecutorTest {
     jobCondition.setType("Failed");
     jobCondition.setStatus("true");
     jobStatus.setConditions(Arrays.asList(jobCondition));
-    assertThat(KubernetesExecutor.describeJobsResultFromStatus(jobStatus).isError()).isTrue();
+    assertThat(KubernetesExecutor.extractJobResultFromStatus(jobStatus).isError()).isTrue();
   }
 
   @Test
   public void kubernetesJobId() {
-    String jobId = KubernetesExecutor.createJobId();
+    String jobId = KubernetesExecutor.kubernetesJobName();
     assertThat(jobId)
         .matches(
             "^pipelite-\\b[0-9a-f]{8}\\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\\b[0-9a-f]{12}\\b$");

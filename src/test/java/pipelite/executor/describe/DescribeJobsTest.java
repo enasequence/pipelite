@@ -10,18 +10,33 @@
  */
 package pipelite.executor.describe;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.Mockito.mock;
-
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import pipelite.configuration.ServiceConfiguration;
+import pipelite.executor.describe.context.DefaultExecutorContext;
+import pipelite.executor.describe.context.DefaultRequestContext;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.executor.StageExecutorResult;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.Mockito.mock;
+
 public class DescribeJobsTest {
+  private static class TestRequestContext extends DefaultRequestContext {
+    public TestRequestContext(int i) {
+      super("jobId" + i);
+    }
+  }
+
+  private static class TestExecutorContext extends DefaultExecutorContext<TestRequestContext> {
+    public TestExecutorContext(
+        PollJobsCallback<TestRequestContext> pollJobsCallback,
+        RecoverJobCallback<TestRequestContext> recoverJobCallback) {
+      super("TestExecutor", pollJobsCallback, recoverJobCallback);
+    }
+  }
 
   @Test
   public void success() {
@@ -31,29 +46,33 @@ public class DescribeJobsTest {
     AtomicInteger actualDescribeJobsCallCnt = new AtomicInteger();
     AtomicInteger actualRequestCnt = new AtomicInteger();
 
-    DescribeJobsCallback<Integer, String> describeJobsCallback =
-        (requestList, context) -> {
+    DefaultExecutorContext.PollJobsCallback<TestRequestContext> pollJobsCallback =
+        requests -> {
+          DescribeJobsResults<TestRequestContext> results = new DescribeJobsResults<>();
           actualDescribeJobsCallCnt.incrementAndGet();
-          actualRequestCnt.addAndGet(requestList.size());
-          return requestList.stream()
-              .collect(Collectors.toMap(i -> i, i -> StageExecutorResult.success()));
+          actualRequestCnt.addAndGet(requests.requests.size());
+          requests
+              .requests
+              .values()
+              .forEach(
+                  r -> results.add(new DescribeJobsResult<>(r, StageExecutorResult.success())));
+          return results;
         };
 
-    String executorContext = "test";
+    TestExecutorContext executorContext = new TestExecutorContext(pollJobsCallback, null);
 
-    final DescribeJobs<Integer, String> describeJobs =
-        new DescribeJobs(
+    final DescribeJobs<TestRequestContext, TestExecutorContext> describeJobs =
+        new DescribeJobs<>(
             mock(ServiceConfiguration.class),
             mock(InternalErrorService.class),
             requestLimit,
-            executorContext,
-            describeJobsCallback);
+            executorContext);
 
-    IntStream.range(0, requestCnt).forEach(i -> describeJobs.addRequest(i));
+    IntStream.range(0, requestCnt).forEach(i -> describeJobs.addRequest(new TestRequestContext(i)));
 
     assertThat(describeJobs.getActiveRequests().size()).isEqualTo(requestCnt);
 
-    describeJobs.makeRequests();
+    describeJobs.retrieveResults();
 
     assertThat(actualDescribeJobsCallCnt.get()).isEqualTo(requestCnt / requestLimit);
     assertThat(actualRequestCnt.get()).isEqualTo(requestCnt);
@@ -65,12 +84,13 @@ public class DescribeJobsTest {
     IntStream.range(0, requestCnt)
         .forEach(
             i -> {
-              StageExecutorResult result = describeJobs.getResult(i, null);
+              StageExecutorResult result = describeJobs.getResult(new TestRequestContext(i), null);
               assertThat(result.isSuccess()).isTrue();
             });
 
     // Check that the requests have been removed.
-    IntStream.range(0, requestCnt).forEach(i -> assertThat(describeJobs.isRequest(i)).isFalse());
+    IntStream.range(0, requestCnt)
+        .forEach(i -> assertThat(describeJobs.isRequest(new TestRequestContext(i))).isFalse());
   }
 
   @Test
@@ -81,29 +101,32 @@ public class DescribeJobsTest {
     AtomicInteger actualDescribeJobsCallCnt = new AtomicInteger();
     AtomicInteger actualRequestCnt = new AtomicInteger();
 
-    DescribeJobsCallback<Integer, String> describeJobsCallback =
-        (requestList, context) -> {
+    DefaultExecutorContext.PollJobsCallback<TestRequestContext> pollJobsCallback =
+        requests -> {
+          DescribeJobsResults<TestRequestContext> results = new DescribeJobsResults<>();
           actualDescribeJobsCallCnt.incrementAndGet();
-          actualRequestCnt.addAndGet(requestList.size());
-          return requestList.stream()
-              .collect(Collectors.toMap(i -> i, i -> StageExecutorResult.error()));
+          actualRequestCnt.addAndGet(requests.requests.size());
+          requests
+              .requests
+              .values()
+              .forEach(r -> results.add(new DescribeJobsResult<>(r, StageExecutorResult.error())));
+          return results;
         };
 
-    String executorContext = "test";
+    TestExecutorContext executorContext = new TestExecutorContext(pollJobsCallback, null);
 
-    final DescribeJobs<Integer, String> describeJobs =
-        new DescribeJobs(
+    final DescribeJobs<TestRequestContext, TestExecutorContext> describeJobs =
+        new DescribeJobs<>(
             mock(ServiceConfiguration.class),
             mock(InternalErrorService.class),
             requestLimit,
-            executorContext,
-            describeJobsCallback);
+            executorContext);
 
-    IntStream.range(0, requestCnt).forEach(i -> describeJobs.addRequest(i));
+    IntStream.range(0, requestCnt).forEach(i -> describeJobs.addRequest(new TestRequestContext(i)));
 
     assertThat(describeJobs.getActiveRequests().size()).isEqualTo(requestCnt);
 
-    describeJobs.makeRequests();
+    describeJobs.retrieveResults();
 
     assertThat(actualDescribeJobsCallCnt.get()).isEqualTo(requestCnt / requestLimit);
     assertThat(actualRequestCnt.get()).isEqualTo(requestCnt);
@@ -115,12 +138,13 @@ public class DescribeJobsTest {
     IntStream.range(0, requestCnt)
         .forEach(
             i -> {
-              StageExecutorResult result = describeJobs.getResult(i, null);
+              StageExecutorResult result = describeJobs.getResult(new TestRequestContext(i), null);
               assertThat(result.isError()).isTrue();
             });
 
     // Check that the requests have been removed.
-    IntStream.range(0, requestCnt).forEach(i -> assertThat(describeJobs.isRequest(i)).isFalse());
+    IntStream.range(0, requestCnt)
+        .forEach(i -> assertThat(describeJobs.isRequest(new TestRequestContext(i))).isFalse());
   }
 
   @Test
@@ -131,29 +155,32 @@ public class DescribeJobsTest {
     AtomicInteger actualDescribeJobsCallCnt = new AtomicInteger();
     AtomicInteger actualRequestCnt = new AtomicInteger();
 
-    DescribeJobsCallback<Integer, String> describeJobsCallback =
-        (requestList, context) -> {
+    DefaultExecutorContext.PollJobsCallback<TestRequestContext> pollJobsCallback =
+        requests -> {
+          DescribeJobsResults<TestRequestContext> results = new DescribeJobsResults<>();
           actualDescribeJobsCallCnt.incrementAndGet();
-          actualRequestCnt.addAndGet(requestList.size());
-          return requestList.stream()
-              .collect(Collectors.toMap(i -> i, i -> StageExecutorResult.active()));
+          actualRequestCnt.addAndGet(requests.requests.size());
+          requests
+              .requests
+              .values()
+              .forEach(r -> results.add(new DescribeJobsResult<>(r, StageExecutorResult.active())));
+          return results;
         };
 
-    String executorContext = "test";
+    TestExecutorContext executorContext = new TestExecutorContext(pollJobsCallback, null);
 
-    final DescribeJobs<Integer, String> describeJobs =
-        new DescribeJobs(
+    final DescribeJobs<TestRequestContext, TestExecutorContext> describeJobs =
+        new DescribeJobs<>(
             mock(ServiceConfiguration.class),
             mock(InternalErrorService.class),
             requestLimit,
-            executorContext,
-            describeJobsCallback);
+            executorContext);
 
-    IntStream.range(0, requestCnt).forEach(i -> describeJobs.addRequest(i));
+    IntStream.range(0, requestCnt).forEach(i -> describeJobs.addRequest(new TestRequestContext(i)));
 
     assertThat(describeJobs.getActiveRequests().size()).isEqualTo(requestCnt);
 
-    describeJobs.makeRequests();
+    describeJobs.retrieveResults();
 
     assertThat(actualDescribeJobsCallCnt.get()).isEqualTo(requestCnt / requestLimit);
     assertThat(actualRequestCnt.get()).isEqualTo(requestCnt);
@@ -165,12 +192,13 @@ public class DescribeJobsTest {
     IntStream.range(0, requestCnt)
         .forEach(
             i -> {
-              StageExecutorResult result = describeJobs.getResult(i, null);
+              StageExecutorResult result = describeJobs.getResult(new TestRequestContext(i), null);
               assertThat(result.isActive()).isTrue();
             });
 
     // Check that the requests have not been removed.
-    IntStream.range(0, requestCnt).forEach(i -> assertThat(describeJobs.isRequest(i)).isTrue());
+    IntStream.range(0, requestCnt)
+        .forEach(i -> assertThat(describeJobs.isRequest(new TestRequestContext(i))).isTrue());
   }
 
   @Test
@@ -181,28 +209,27 @@ public class DescribeJobsTest {
     AtomicInteger actualDescribeJobsCallCnt = new AtomicInteger();
     AtomicInteger actualRequestCnt = new AtomicInteger();
 
-    DescribeJobsCallback<Integer, String> describeJobsCallback =
-        (requestList, context) -> {
+    DefaultExecutorContext.PollJobsCallback<TestRequestContext> pollJobsCallback =
+        requests -> {
           actualDescribeJobsCallCnt.incrementAndGet();
-          actualRequestCnt.addAndGet(requestList.size());
+          actualRequestCnt.addAndGet(requests.requests.size());
           throw new RuntimeException("Expected exception");
         };
 
-    String executorContext = "test";
+    TestExecutorContext executorContext = new TestExecutorContext(pollJobsCallback, null);
 
-    final DescribeJobs describeJobs =
-        new DescribeJobs(
+    final DescribeJobs<TestRequestContext, TestExecutorContext> describeJobs =
+        new DescribeJobs<>(
             mock(ServiceConfiguration.class),
             mock(InternalErrorService.class),
             requestLimit,
-            executorContext,
-            describeJobsCallback);
+            executorContext);
 
-    IntStream.range(0, requestCnt).forEach(i -> describeJobs.addRequest(i));
+    IntStream.range(0, requestCnt).forEach(i -> describeJobs.addRequest(new TestRequestContext(i)));
 
     assertThat(describeJobs.getActiveRequests().size()).isEqualTo(requestCnt);
 
-    describeJobs.makeRequests();
+    describeJobs.retrieveResults();
 
     // DescribeJobsCallback should be called only once with requestLimit because exception is
     // thrown.
@@ -213,6 +240,7 @@ public class DescribeJobsTest {
     assertThat(describeJobs.getActiveRequests().size()).isEqualTo(requestCnt);
 
     // Check that the requests have not been removed.
-    IntStream.range(0, requestCnt).forEach(i -> assertThat(describeJobs.isRequest(i)).isTrue());
+    IntStream.range(0, requestCnt)
+        .forEach(i -> assertThat(describeJobs.isRequest(new TestRequestContext(i))).isTrue());
   }
 }

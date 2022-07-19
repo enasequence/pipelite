@@ -10,28 +10,32 @@
  */
 package pipelite.executor;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import pipelite.exception.PipeliteException;
+import pipelite.executor.describe.DescribeJobsPollRequests;
+import pipelite.executor.describe.DescribeJobsResult;
+import pipelite.executor.describe.DescribeJobsResults;
+import pipelite.executor.describe.context.LsfRequestContext;
 import pipelite.stage.executor.StageExecutorResult;
+
+import java.util.Arrays;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class AbstractLsfExecutorExtractTest {
 
   @Test
-  public void extractSubmittedJobIdFromBsubOutput() {
+  public void extractJobIdFromBsubOutput() {
     assertThat(
-            AbstractLsfExecutor.extractSubmittedJobIdFromBsubOutput(
+            AbstractLsfExecutor.extractJobIdFromBsubOutput(
                 "Job <2848143> is submitted to default queue <research-rh74>."))
         .isEqualTo("2848143");
-    assertThat(
-            AbstractLsfExecutor.extractSubmittedJobIdFromBsubOutput("Job <2848143> is submitted "))
+    assertThat(AbstractLsfExecutor.extractJobIdFromBsubOutput("Job <2848143> is submitted "))
         .isEqualTo("2848143");
     assertThrows(
-        PipeliteException.class,
-        () -> AbstractLsfExecutor.extractSubmittedJobIdFromBsubOutput("INVALID"));
+        PipeliteException.class, () -> AbstractLsfExecutor.extractJobIdFromBsubOutput("INVALID"));
   }
 
   @Test
@@ -47,76 +51,104 @@ public class AbstractLsfExecutorExtractTest {
   }
 
   @Test
-  public void extractExitCodeFromBhistOutputOrOutFile() {
-    assertThat(
-            AbstractLsfExecutor.extractExitCodeFromBhistOutputOrOutFile("Exited with exit code 1"))
+  public void extractExitCodeFromOutFile() {
+    assertThat(AbstractLsfExecutor.extractExitCodeFromOutFile("Exited with exit code 1"))
         .isEqualTo(1);
-    assertThat(
-            AbstractLsfExecutor.extractExitCodeFromBhistOutputOrOutFile("Exited with exit code 3."))
+    assertThat(AbstractLsfExecutor.extractExitCodeFromOutFile("Exited with exit code 3."))
         .isEqualTo(3);
-    assertThat(AbstractLsfExecutor.extractExitCodeFromBhistOutputOrOutFile("INVALID")).isNull();
+    assertThat(AbstractLsfExecutor.extractExitCodeFromOutFile("INVALID")).isNull();
   }
 
   @Test
-  public void extractResultFromBjobsOutput() {
-    AbstractLsfExecutor.JobResult result =
-        AbstractLsfExecutor.extractResultFromBjobsOutput("861487|PEND|-|-|-|-|-\n");
-    assertThat(result.jobId).isEqualTo("861487");
+  public void extractJobResultFromBjobsOutputPending() {
+    LsfRequestContext requestContext = new LsfRequestContext("861487", "outFile");
+    DescribeJobsPollRequests<LsfRequestContext> requests =
+        new DescribeJobsPollRequests<>(List.of(requestContext));
+    DescribeJobsResult<LsfRequestContext> result =
+        AbstractLsfExecutor.extractJobResultFromBjobsOutput("861487|PEND|-|-|-|-|-\n", requests);
+    assertThat(result.request.getJobId()).isEqualTo("861487");
     assertThat(result.result.isActive()).isTrue();
   }
 
   @Test
-  public void extractResultsFromBjobsOutput() {
-    List<AbstractLsfExecutor.JobResult> result =
-        AbstractLsfExecutor.extractResultsFromBjobsOutput(
-            "861487|PEND|-|-|-|-|-\n" + "861488|PEND|-|-|-|-|-\n" + "861489|PEND|-|-|-|-|-");
-    assertThat(result.size()).isEqualTo(3);
-    assertThat(result.get(0).jobId).isEqualTo("861487");
-    assertThat(result.get(1).jobId).isEqualTo("861488");
-    assertThat(result.get(2).jobId).isEqualTo("861489");
-    assertThat(result.get(0).result.isActive()).isTrue();
-    assertThat(result.get(1).result.isActive()).isTrue();
-    assertThat(result.get(2).result.isActive()).isTrue();
+  public void extractResultsFromBjobsOutputPending() {
+    DescribeJobsPollRequests<LsfRequestContext> requests =
+        new DescribeJobsPollRequests<>(
+            Arrays.asList(
+                new LsfRequestContext("861487", "outFile"),
+                new LsfRequestContext("861488", "outFile")));
 
-    result =
-        AbstractLsfExecutor.extractResultsFromBjobsOutput(
+    DescribeJobsResults<LsfRequestContext> results =
+        AbstractLsfExecutor.extractJobResultsFromBjobsOutput(
+            "861487|PEND|-|-|-|-|-\n" + "861488|PEND|-|-|-|-|-\n" + "861489|PEND|-|-|-|-|-",
+            requests);
+
+    assertThat(results.found.size()).isEqualTo(2);
+    assertThat(results.notFound.size()).isEqualTo(0);
+    assertThat(results.found.get(0).request.getJobId()).isEqualTo("861487");
+    assertThat(results.found.get(1).request.getJobId()).isEqualTo("861488");
+    assertThat(results.found.get(0).result.isActive()).isTrue();
+    assertThat(results.found.get(1).result.isActive()).isTrue();
+  }
+
+  @Test
+  public void extractResultsFromBjobsOutputDone() {
+    DescribeJobsPollRequests<LsfRequestContext> requests =
+            new DescribeJobsPollRequests<>(
+            Arrays.asList(
+                new LsfRequestContext("872793", "outFile"),
+                new LsfRequestContext("872794", "outFile"),
+                new LsfRequestContext("872795", "outFile")));
+
+    DescribeJobsResults<LsfRequestContext> results =
+        AbstractLsfExecutor.extractJobResultsFromBjobsOutput(
             "872793|DONE|-|0.0 second(s)|-|-|hx-noah-05-14\n"
                 + "872794|DONE|-|0.0 second(s)|-|-|hx-noah-05-14\n"
-                + "872795|DONE|-|0.0 second(s)|-|-|hx-noah-05-14\n");
+                + "872795|DONE|-|0.0 second(s)|-|-|hx-noah-05-14\n",
+            requests);
 
-    assertThat(result.size()).isEqualTo(3);
-    assertThat(result.get(0).jobId).isEqualTo("872793");
-    assertThat(result.get(1).jobId).isEqualTo("872794");
-    assertThat(result.get(2).jobId).isEqualTo("872795");
-    assertThat(result.get(0).result.isSuccess()).isTrue();
-    assertThat(result.get(1).result.isSuccess()).isTrue();
-    assertThat(result.get(2).result.isSuccess()).isTrue();
+    assertThat(results.found.size()).isEqualTo(3);
+    assertThat(results.found.get(0).request.getJobId()).isEqualTo("872793");
+    assertThat(results.found.get(1).request.getJobId()).isEqualTo("872794");
+    assertThat(results.found.get(2).request.getJobId()).isEqualTo("872795");
+    assertThat(results.found.get(0).result.isSuccess()).isTrue();
+    assertThat(results.found.get(1).result.isSuccess()).isTrue();
+    assertThat(results.found.get(2).result.isSuccess()).isTrue();
+  }
 
-    result =
-        AbstractLsfExecutor.extractResultsFromBjobsOutput(
+  @Test
+  public void extractResultsFromBjobsExitAndNotFound() {
+    DescribeJobsPollRequests<LsfRequestContext> requests =
+            new DescribeJobsPollRequests<>(
+            Arrays.asList(
+                new LsfRequestContext("873206", "outFile"),
+                new LsfRequestContext("873207", "outFile"),
+                new LsfRequestContext("6065212", "outFile"),
+                new LsfRequestContext("873209", "outFile")));
+
+    DescribeJobsResults<LsfRequestContext> results =
+        AbstractLsfExecutor.extractJobResultsFromBjobsOutput(
             "873206|EXIT|127|0.0 second(s)|-|-|hx-noah-43-02\n"
                 + "873207|EXIT|127|0.0 second(s)|-|-|hx-noah-43-02\n"
                 + "Job <6065212> is not found\n"
-                + "873209|EXIT|127|0.0 second(s)|-|-|hx-noah-10-04\n"
-                + "Job <6065212> is not found\n");
+                + "873209|EXIT|127|0.0 second(s)|-|-|hx-noah-10-04\n",
+            requests);
 
-    assertThat(result.size()).isEqualTo(5);
-    assertThat(result.get(0).jobId).isEqualTo("873206");
-    assertThat(result.get(1).jobId).isEqualTo("873207");
-    assertThat(result.get(2).jobId).isEqualTo("6065212");
-    assertThat(result.get(3).jobId).isEqualTo("873209");
-    assertThat(result.get(4).jobId).isEqualTo("6065212");
-    assertThat(result.get(0).result.isError()).isTrue();
-    assertThat(result.get(1).result.isError()).isTrue();
-    assertThat(result.get(2).result).isNull();
-    assertThat(result.get(3).result.isError()).isTrue();
-    assertThat(result.get(4).result).isNull();
+    assertThat(results.found.size()).isEqualTo(3);
+    assertThat(results.notFound.size()).isEqualTo(1);
+    assertThat(results.found.get(0).request.getJobId()).isEqualTo("873206");
+    assertThat(results.found.get(1).request.getJobId()).isEqualTo("873207");
+    assertThat(results.notFound.get(0).getJobId()).isEqualTo("6065212");
+    assertThat(results.found.get(2).request.getJobId()).isEqualTo("873209");
+    assertThat(results.found.get(0).result.isError()).isTrue();
+    assertThat(results.found.get(1).result.isError()).isTrue();
+    assertThat(results.found.get(2).result.isError()).isTrue();
   }
 
   @Test
   public void extractResultFromBhistError() {
     StageExecutorResult result =
-        AbstractLsfExecutor.extractResultFromBhistOutputOrOutFile(
+        AbstractLsfExecutor.recoverJobUsingOutFile(
             "Summary of time in seconds spent in various states:\n"
                 + "JOBID   USER    JOB_NAME  PEND    PSUSP   RUN     USUSP   SSUSP   UNKWN   TOTAL\n"
                 + "873209  rasko   fdfs      1       0       0       0       0       0       1\n"
@@ -150,7 +182,7 @@ public class AbstractLsfExecutorExtractTest {
   @Test
   public void extractResultFromBhistSuccess() {
     StageExecutorResult result =
-        AbstractLsfExecutor.extractResultFromBhistOutputOrOutFile(
+        AbstractLsfExecutor.recoverJobUsingOutFile(
             "Job <872795>, User <rasko>, Project <default>, Command <echo hello>, Esub <esub\n"
                 + "                     >\n"
                 + "Sun Jan 10 17:47:38: Submitted from host <noah-login-01>, to Queue <research-rh\n"
@@ -178,7 +210,7 @@ public class AbstractLsfExecutorExtractTest {
   @Test
   public void extractResultFromOutFileError() {
     StageExecutorResult result =
-        AbstractLsfExecutor.extractResultFromBhistOutputOrOutFile(
+        AbstractLsfExecutor.recoverJobUsingOutFile(
             "\n"
                 + "\n"
                 + "Job <dfsddf> was submitted from host <noah-login-02> by user <rasko> in cluster <EBI> at Sun Jan 24 18:06:13 2021\n"
@@ -221,7 +253,7 @@ public class AbstractLsfExecutorExtractTest {
   @Test
   public void extractResultFromOutFileSuccess() {
     StageExecutorResult result =
-        AbstractLsfExecutor.extractResultFromBhistOutputOrOutFile(
+        AbstractLsfExecutor.recoverJobUsingOutFile(
             "\n"
                 + "\n"
                 + "Job <echo test> was submitted from host <noah-login-02> by user <rasko> in cluster <EBI> at Sun Jan 24 18:03:50 2021\n"
@@ -263,8 +295,8 @@ public class AbstractLsfExecutorExtractTest {
 
   @Test
   public void extractResultFromBhistOutputOrOutFile() {
-    assertThat(AbstractLsfExecutor.extractResultFromBhistOutputOrOutFile(null)).isNull();
-    assertThat(AbstractLsfExecutor.extractResultFromBhistOutputOrOutFile("")).isNull();
-    assertThat(AbstractLsfExecutor.extractResultFromBhistOutputOrOutFile("invalid")).isNull();
+    assertThat(AbstractLsfExecutor.recoverJobUsingOutFile(null)).isNull();
+    assertThat(AbstractLsfExecutor.recoverJobUsingOutFile("")).isNull();
+    assertThat(AbstractLsfExecutor.recoverJobUsingOutFile("invalid")).isNull();
   }
 }

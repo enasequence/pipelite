@@ -10,61 +10,36 @@
  */
 package pipelite.executor.describe.cache;
 
-import com.amazonaws.services.batch.AWSBatch;
-import com.amazonaws.services.batch.AWSBatchClientBuilder;
-import lombok.Value;
-import lombok.extern.flogger.Flogger;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.AwsBatchExecutor;
-import pipelite.executor.describe.DescribeJobs;
+import pipelite.executor.describe.DescribeJobsCache;
+import pipelite.executor.describe.context.AwsBatchCacheContext;
+import pipelite.executor.describe.context.AwsBatchExecutorContext;
+import pipelite.executor.describe.context.DefaultRequestContext;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.parameters.AwsBatchExecutorParameters;
 
-@Flogger
 public class AwsBatchDescribeJobsCache
     extends DescribeJobsCache<
-        String, // RequestContext: jobId
-        AwsBatchDescribeJobsCache.ExecutorContext,
-        AwsBatchDescribeJobsCache.CacheContext,
-        AwsBatchExecutor> {
-
-  @Value
-  public static final class ExecutorContext {
-    private final AWSBatch awsBatch;
-  }
-
-  @Value
-  public static final class CacheContext {
-    private final String region;
-  }
+        DefaultRequestContext, AwsBatchExecutorContext, AwsBatchCacheContext, AwsBatchExecutor> {
 
   public AwsBatchDescribeJobsCache(
       ServiceConfiguration serviceConfiguration, InternalErrorService internalErrorService) {
     super(
-        e -> {
-          AWSBatchClientBuilder awsBuilder = AWSBatchClientBuilder.standard();
-          String region = e.getExecutorParams().getRegion();
-          if (region != null) {
-            awsBuilder.setRegion(region);
-          }
-          return new DescribeJobs<>(
-              serviceConfiguration,
-              internalErrorService,
-              100,
-              executorContext(e),
-              AwsBatchExecutor::describeJobs);
-        },
-        e -> cacheContext(e));
+        serviceConfiguration,
+        internalErrorService,
+        100,
+        executor -> executorContext(executor),
+        executor -> cacheContext(executor));
   }
 
-  private static AwsBatchDescribeJobsCache.ExecutorContext executorContext(
-      AwsBatchExecutor executor) {
+  private static AwsBatchExecutorContext executorContext(AwsBatchExecutor executor) {
     AwsBatchExecutorParameters params = executor.getExecutorParams();
-    return new ExecutorContext(AwsBatchExecutor.awsBatchClient(params.getRegion()));
+    return new AwsBatchExecutorContext(AwsBatchExecutor.client(params.getRegion()));
   }
 
-  private static AwsBatchDescribeJobsCache.CacheContext cacheContext(AwsBatchExecutor executor) {
+  private static AwsBatchCacheContext cacheContext(AwsBatchExecutor executor) {
     AwsBatchExecutorParameters params = executor.getExecutorParams();
-    return new CacheContext(params.getRegion());
+    return new AwsBatchCacheContext(params.getRegion());
   }
 }

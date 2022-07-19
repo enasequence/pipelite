@@ -10,14 +10,15 @@
  */
 package pipelite.executor;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import org.junit.jupiter.api.Test;
 import pipelite.exception.PipeliteException;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.AbstractLsfExecutorParameters;
-import pipelite.stage.path.LsfFilePathResolver;
+import pipelite.stage.path.FilePathResolverTestHelper;
+import pipelite.stage.path.LsfLogFilePathResolver;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class AbstractLsfExecutorFilesTest {
 
@@ -32,20 +33,15 @@ public class AbstractLsfExecutorFilesTest {
   public void resolveDefaultLogDir() {
     TestLsfExecutor executor = new TestLsfExecutor();
     Stage stage = Stage.builder().stageName("STAGE_NAME").executor(executor).build();
-    StageExecutorRequest request =
-        StageExecutorRequest.builder()
-            .pipelineName("PIPELINE_NAME")
-            .processId("PROCESS_ID")
-            .stage(stage)
-            .build();
-    AbstractLsfExecutorParameters params = AbstractLsfExecutorParameters.builder().build();
 
-    assertThat(params.resolveLogDir(request, LsfFilePathResolver.Format.WITH_LSF_PATTERN))
+    StageExecutorRequest request =
+        FilePathResolverTestHelper.request(
+            "PIPELINE_NAME", "PROCESS_ID", stage.getStageName(), "user", null);
+
+    assertThat(new LsfLogFilePathResolver().placeholderPath().dir(request))
         .isEqualTo("%U/PIPELINE_NAME/PROCESS_ID");
 
-    params = AbstractLsfExecutorParameters.builder().user("user").build();
-
-    assertThat(params.resolveLogDir(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN))
+    assertThat(new LsfLogFilePathResolver().resolvedPath().dir(request))
         .isEqualTo("user/PIPELINE_NAME/PROCESS_ID");
   }
 
@@ -53,20 +49,15 @@ public class AbstractLsfExecutorFilesTest {
   public void resolveDefaultLogFile() {
     TestLsfExecutor executor = new TestLsfExecutor();
     Stage stage = Stage.builder().stageName("STAGE_NAME").executor(executor).build();
-    StageExecutorRequest request =
-        StageExecutorRequest.builder()
-            .pipelineName("PIPELINE_NAME")
-            .processId("PROCESS_ID")
-            .stage(stage)
-            .build();
-    AbstractLsfExecutorParameters params = AbstractLsfExecutorParameters.builder().build();
 
-    assertThat(params.resolveLogFile(request, LsfFilePathResolver.Format.WITH_LSF_PATTERN))
+    StageExecutorRequest request =
+        FilePathResolverTestHelper.request(
+            "PIPELINE_NAME", "PROCESS_ID", stage.getStageName(), "user", null);
+
+    assertThat(new LsfLogFilePathResolver().placeholderPath().file(request))
         .isEqualTo("%U/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.out");
 
-    params = AbstractLsfExecutorParameters.builder().user("user").build();
-
-    assertThat(params.resolveLogFile(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN))
+    assertThat(new LsfLogFilePathResolver().resolvedPath().file(request))
         .isEqualTo("user/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.out");
   }
 }

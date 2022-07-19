@@ -34,8 +34,8 @@ public class SimpleLsfExecutor extends AbstractLsfExecutor<SimpleLsfExecutorPara
 
     Integer cpu = getExecutorParams().getCpu();
     if (cpu != null && cpu > 0) {
-      addArgument(cmd, "-n");
-      addArgument(cmd, Integer.toString(cpu));
+      addCmdArgument(cmd, "-n");
+      addCmdArgument(cmd, Integer.toString(cpu));
     }
 
     Integer memory = getExecutorParams().getMemory();
@@ -47,10 +47,10 @@ public class SimpleLsfExecutor extends AbstractLsfExecutor<SimpleLsfExecutorPara
       if (null != memoryUnits) {
         memStr += memoryUnits;
       }
-      addArgument(cmd, "-M");
-      addArgument(cmd, memStr);
-      addArgument(cmd, "-R");
-      addArgument(
+      addCmdArgument(cmd, "-M");
+      addCmdArgument(cmd, memStr);
+      addCmdArgument(cmd, "-R");
+      addCmdArgument(
           cmd,
           "\"rusage[mem="
               + memStr
@@ -65,20 +65,20 @@ public class SimpleLsfExecutor extends AbstractLsfExecutor<SimpleLsfExecutorPara
       if (timeout.toMinutes() == 0) {
         timeout = Duration.ofMinutes(1);
       }
-      addArgument(cmd, "-W");
-      addArgument(cmd, String.valueOf(timeout.toMinutes()));
+      addCmdArgument(cmd, "-W");
+      addCmdArgument(cmd, String.valueOf(timeout.toMinutes()));
     }
 
     String jobGroup = getExecutorParams().getJobGroup();
     if (jobGroup != null) {
-      addArgument(cmd, "-g");
-      addArgument(cmd, jobGroup);
+      addCmdArgument(cmd, "-g");
+      addCmdArgument(cmd, jobGroup);
     }
 
     String queue = getExecutorParams().getQueue();
     if (queue != null) {
-      addArgument(cmd, "-q");
-      addArgument(cmd, queue);
+      addCmdArgument(cmd, "-q");
+      addCmdArgument(cmd, queue);
     }
 
     return cmd.toString() + " " + getCmd();

@@ -10,26 +10,29 @@
  */
 package pipelite.executor;
 
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 import lombok.Getter;
 import org.springframework.util.Assert;
 import pipelite.executor.describe.DescribeJobs;
-import pipelite.executor.describe.cache.TestDescribeJobsCache;
-import pipelite.service.DescribeJobsCacheService;
+import pipelite.executor.describe.DescribeJobsPollRequests;
+import pipelite.executor.describe.DescribeJobsResult;
+import pipelite.executor.describe.DescribeJobsResults;
+import pipelite.executor.describe.context.AsyncTestExecutorContext;
+import pipelite.executor.describe.context.AsyncTestRequestContext;
+import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.time.Time;
 
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+
 /** Asynchronous test executor. */
 @Getter
-public class AsyncTestExecutor extends AsyncExecutor<ExecutorParameters, TestDescribeJobsCache> {
+public class AsyncTestExecutor
+    extends AsyncExecutor<ExecutorParameters, AsyncTestRequestContext, AsyncTestExecutorContext> {
 
   private static final AtomicInteger nextJobId = new AtomicInteger();
   private final Function<StageExecutorRequest, StageExecutorResult> callback;
@@ -47,59 +50,41 @@ public class AsyncTestExecutor extends AsyncExecutor<ExecutorParameters, TestDes
   }
 
   @Override
-  protected TestDescribeJobsCache initDescribeJobsCache(
-      DescribeJobsCacheService describeJobsCacheService) {
-    return describeJobsCacheService.test();
-  }
-
-  protected DescribeJobs<
-          TestDescribeJobsCache.RequestContext, TestDescribeJobsCache.ExecutorContext>
-      describeJobs() {
-    return getDescribeJobsCache().getDescribeJobs(this);
+  protected AsyncTestRequestContext prepareRequestContext() {
+    ZonedDateTime startTime = ZonedDateTime.now();
+    return new AsyncTestRequestContext(
+        getJobId(), getRequest(), startTime, executionTime, callback);
   }
 
   @Override
-  protected SubmitJobResult submitJob() {
+  protected DescribeJobs<AsyncTestRequestContext, AsyncTestExecutorContext> prepareDescribeJobs(
+      PipeliteServices pipeliteServices) {
+    return pipeliteServices.jobs().test().getDescribeJobs(this);
+  }
+
+  @Override
+  protected String submitJob() {
     if (submitTime != null) {
       Time.wait(submitTime);
     }
-    return new SubmitJobResult(
-        String.valueOf(nextJobId.incrementAndGet()), StageExecutorResult.submitted());
+    return String.valueOf(nextJobId.incrementAndGet());
   }
 
   @Override
-  protected StageExecutorResult pollJob() {
-    return describeJobs()
-        .getResult(
-            describeJobsRequestContext(getRequest()), getExecutorParams().getPermanentErrors());
-  }
+  protected void terminateJob() {}
 
-  protected boolean endJob(PollJobResult pollJobResult) {
-    return true;
-  }
-
-  public static Map<TestDescribeJobsCache.RequestContext, StageExecutorResult> describeJobs(
-      List<TestDescribeJobsCache.RequestContext> requests,
-      TestDescribeJobsCache.ExecutorContext executorContext) {
-    Map<TestDescribeJobsCache.RequestContext, StageExecutorResult> result = new HashMap<>();
-    for (TestDescribeJobsCache.RequestContext request : requests) {
+  public static DescribeJobsResults<AsyncTestRequestContext> pollJobs(
+      DescribeJobsPollRequests<AsyncTestRequestContext> requests) {
+    DescribeJobsResults<AsyncTestRequestContext> results = new DescribeJobsResults<>();
+    for (AsyncTestRequestContext request : requests.requests.values()) {
       if (request.getExecutionTime() != null
           && ZonedDateTime.now()
               .isBefore(request.getStartTime().plus(request.getExecutionTime()))) {
         continue;
       }
-      result.put(request, request.getCallback().apply(request.getRequest()));
+      results.add(
+          new DescribeJobsResult<>(request, request.getCallback().apply(request.getRequest())));
     }
-    return result;
+    return results;
   }
-
-  private TestDescribeJobsCache.RequestContext describeJobsRequestContext(
-      StageExecutorRequest request) {
-    ZonedDateTime startTime = ZonedDateTime.now();
-    return new TestDescribeJobsCache.RequestContext(
-        getJobId(), request, startTime, executionTime, callback);
-  }
-
-  @Override
-  public void terminate() {}
 }

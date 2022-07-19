@@ -8,19 +8,17 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.exception;
+package pipelite.stage.path;
 
-public class PipeliteSubmitException extends PipeliteException {
+/**
+ * Resolves the log file path and name: <dir>/<user>/<pipeline>/<process>/<stage>.log where the
+ * <dir> is defined by executor parameters.
+ */
+public abstract class AsyncCmdDefinitionFilePathResolver extends AsyncCmdFilePathResolver {
 
-  public PipeliteSubmitException(
-      String pipelineName, String processId, String stageName, String message) {
-    super(
-        "Failed to submit async job "
-            + pipelineName
-            + " "
-            + processId
-            + " "
-            + stageName
-            + ((message != null) ? ": " + message : ""));
+  private static final String FILE_SUFFIX = ".job";
+
+  public AsyncCmdDefinitionFilePathResolver(String submitUserPlaceholder) {
+    super(FILE_SUFFIX, submitUserPlaceholder);
   }
 }

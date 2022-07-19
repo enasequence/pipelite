@@ -10,56 +10,42 @@
  */
 package pipelite.executor.describe.cache;
 
-import io.fabric8.kubernetes.client.KubernetesClient;
-import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.KubernetesExecutor;
-import pipelite.executor.describe.DescribeJobs;
+import pipelite.executor.describe.DescribeJobsCache;
+import pipelite.executor.describe.context.DefaultRequestContext;
+import pipelite.executor.describe.context.KubernetesCacheContext;
+import pipelite.executor.describe.context.KubernetesExecutorContext;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
 
 @Flogger
 public class KubernetesDescribeJobsCache
     extends DescribeJobsCache<
-        String, // RequestContext: jobId
-        KubernetesDescribeJobsCache.ExecutorContext,
-        KubernetesDescribeJobsCache.CacheContext,
+        DefaultRequestContext,
+        KubernetesExecutorContext,
+        KubernetesCacheContext,
         KubernetesExecutor> {
-
-  @Value
-  public static final class ExecutorContext {
-    private final KubernetesClient kubernetesClient;
-    private final String namespace;
-  }
-
-  @Value
-  public static final class CacheContext {
-    private final String context;
-    private final String namespace;
-  }
 
   public KubernetesDescribeJobsCache(
       ServiceConfiguration serviceConfiguration, InternalErrorService internalErrorService) {
     super(
-        e ->
-            new DescribeJobs<>(
-                serviceConfiguration,
-                internalErrorService,
-                null, // Request all at once
-                executorContext(e),
-                KubernetesExecutor::describeJobs),
-        e -> cacheContext(e));
+        serviceConfiguration,
+        internalErrorService,
+        100,
+        executor -> executorContext(executor),
+        executor -> cacheContext(executor));
   }
 
-  private static ExecutorContext executorContext(KubernetesExecutor executor) {
+  private static KubernetesExecutorContext executorContext(KubernetesExecutor executor) {
     KubernetesExecutorParameters params = executor.getExecutorParams();
-    return new ExecutorContext(
-        KubernetesExecutor.kubernetesClient(params.getContext()), params.getNamespace());
+    return new KubernetesExecutorContext(
+        KubernetesExecutor.client(params.getContext()), params.getNamespace());
   }
 
-  private static CacheContext cacheContext(KubernetesExecutor executor) {
+  private static KubernetesCacheContext cacheContext(KubernetesExecutor executor) {
     KubernetesExecutorParameters params = executor.getExecutorParams();
-    return new CacheContext(params.getContext(), params.getNamespace());
+    return new KubernetesCacheContext(params.getContext(), params.getNamespace());
   }
 }

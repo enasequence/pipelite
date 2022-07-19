@@ -11,79 +11,242 @@
 package pipelite.executor.describe;
 
 import com.google.common.primitives.Ints;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.error.InternalErrorHandler;
+import pipelite.exception.PipeliteException;
+import pipelite.exception.PipeliteInterruptedException;
 import pipelite.exception.PipeliteTimeoutException;
+import pipelite.executor.describe.context.DefaultExecutorContext;
+import pipelite.executor.describe.context.DefaultRequestContext;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
+import pipelite.time.Time;
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
- * Aggregates and executes describe job requests and returns the results (active, success, error).
- * If the result is success or error then the request is removed.
- *
- * @param <RequestContext> The request context.
- * @param <ExecutorContext>> The executor context.
+ * Contains active job requests and periodically retrieves job results (active, success, error). Job
+ * results are retrieved * in batches to increase performance. This is called job polling. If the
+ * job result can't be * retrieved then there is an attempt to recover the job result. This is
+ * called job recovery.
  */
 @Flogger
-public class DescribeJobs<RequestContext, ExecutorContext> {
+public class DescribeJobs<
+    RequestContext extends DefaultRequestContext, ExecutorContext extends DefaultExecutorContext> {
+
+  private static final Duration REQUEST_FREQUENCY = Duration.ofSeconds(5);
+
+  private static final int RECOVERY_PARALLELISM = 10;
+  private static final Duration RECOVERY_TIMEOUT = Duration.ofMinutes(10);
+  private static final Duration RECOVERY_WAIT = Duration.ofSeconds(5);
 
   private final String serviceName;
-  private final Integer requestLimit;
+  private final Integer requestBatchSize;
   private final ExecutorContext executorContext;
-  private final DescribeJobsCallback<RequestContext, ExecutorContext> describeJobsCallback;
   private final InternalErrorHandler internalErrorHandler;
   private final Map<RequestContext, StageExecutorResult> requests = new ConcurrentHashMap<>();
 
   public DescribeJobs(
       ServiceConfiguration serviceConfiguration,
       InternalErrorService internalErrorService,
-      Integer requestLimit,
-      ExecutorContext executorContext,
-      DescribeJobsCallback<RequestContext, ExecutorContext> describeJobsCallback) {
+      Integer requestBatchSize,
+      ExecutorContext executorContext) {
     Assert.notNull(serviceConfiguration, "Missing service configuration");
     Assert.notNull(internalErrorService, "Missing internal error service");
     this.serviceName = serviceConfiguration.getName();
-    this.requestLimit = requestLimit;
+    this.requestBatchSize = requestBatchSize;
     this.executorContext = executorContext;
-    this.describeJobsCallback = describeJobsCallback;
     this.internalErrorHandler = new InternalErrorHandler(internalErrorService, serviceName, this);
+
+    new Thread(
+            () -> {
+              try {
+                AtomicBoolean interrupted = new AtomicBoolean(false);
+                while (!interrupted.get()) {
+                  internalErrorHandler.execute(
+                      () -> {
+                        try {
+                          Time.wait(REQUEST_FREQUENCY);
+                        } catch (PipeliteInterruptedException ex) {
+                          log.atInfo().log(
+                              executorContext.executorName()
+                                  + " job result retrieval has been interrupted");
+                          interrupted.set(true);
+                          return;
+                        }
+                        try {
+                          retrieveResults();
+                        } catch (Exception ex) {
+                          throw new PipeliteException(
+                              "Unexpected error when retrieving "
+                                  + executorContext.executorName()
+                                  + " job results",
+                              ex);
+                        }
+                      });
+                }
+              } finally {
+                log.atInfo().log(
+                    executorContext.executorName() + " job result retrieval has stopped");
+              }
+            })
+        .start();
   }
 
   protected void addRequest(RequestContext request) {
     requests.put(request, StageExecutorResult.active());
   }
 
-  public void makeRequests() {
-    internalErrorHandler.execute(
-        () -> {
-          List<RequestContext> activeRequests = getActiveRequests();
-          while (!activeRequests.isEmpty()) {
-            int toIndex =
-                requestLimit == null
-                    ? activeRequests.size()
-                    : Math.min(requestLimit, activeRequests.size());
-            final List<RequestContext> activeSubRequests = activeRequests.subList(0, toIndex);
-            Map<RequestContext, StageExecutorResult> results =
-                describeJobsCallback.execute(activeSubRequests, executorContext);
-            // Set results for the requests.
-            results.entrySet().stream()
-                .filter(
-                    // Filter out empty and active results.
-                    e -> e.getKey() != null && e.getValue() != null && !e.getValue().isActive())
-                .forEach(e -> this.requests.put(e.getKey(), e.getValue()));
-            if (toIndex == activeRequests.size()) {
-              return;
-            }
-            activeRequests = activeRequests.subList(toIndex, activeRequests.size());
-          }
-        });
+  /**
+   * Called periodically to retrieve job results (active, success, error). Job results are retrieved
+   * in batches to increase performance. This is called job polling. If the job result can't be
+   * retrieved then there is an attempt to recover the job result. This is called job recovery.
+   */
+  public void retrieveResults() {
+    log.atInfo().log("Retrieving " + executorContext.executorName() + " job results");
+
+    List<RequestContext> activeRequests = getActiveRequests();
+    while (!activeRequests.isEmpty()) {
+      int toIndex =
+          requestBatchSize == null
+              ? activeRequests.size()
+              : Math.min(requestBatchSize, activeRequests.size());
+      final List<RequestContext> requestBatch = activeRequests.subList(0, toIndex);
+      Map<RequestContext, StageExecutorResult> results =
+          retrieveResults(requestBatch, executorContext);
+      // Set results for the requests.
+      results.entrySet().stream()
+          .filter(
+              // Filter out empty and active results.
+              e -> e.getKey() != null && e.getValue() != null && !e.getValue().isActive())
+          .forEach(e -> this.requests.put(e.getKey(), e.getValue()));
+      if (toIndex == activeRequests.size()) {
+        return;
+      }
+      activeRequests = activeRequests.subList(toIndex, activeRequests.size());
+    }
+  }
+
+  /** Retrieves job results (active, success, error) for one batch. */
+  private Map<RequestContext, StageExecutorResult> retrieveResults(
+      List<RequestContext> requestBatch, ExecutorContext executorContext) {
+    String executorName = executorContext.executorName();
+    Map<RequestContext, StageExecutorResult> results = new HashMap<>();
+
+    // Create a map for job id -> RequestContext.
+    Map<String, RequestContext> requestMap = new HashMap<>();
+    requestBatch.forEach(request -> requestMap.put(request.getJobId(), request));
+
+    log.atFine().log(
+        "Retrieving a batch of "
+            + requestBatch.size()
+            + " "
+            + executorName
+            + " job results "
+            + requestBatch.stream().map(r -> r.getJobId()).collect(Collectors.toList()));
+
+    // Poll jobs.
+    DescribeJobsPollRequests<RequestContext> pollRequests =
+        new DescribeJobsPollRequests<>(requestBatch);
+    DescribeJobsResults<RequestContext> pollResults = executorContext.pollJobs(pollRequests);
+    // Add poll results.
+    pollResults.found.forEach(r -> results.put(requestMap.get(r.request.getJobId()), r.result));
+
+    List<RequestContext> notFoundPollRequests = pollResults.notFound;
+    if (!notFoundPollRequests.isEmpty()) {
+      notFoundPollRequests.forEach(
+          r ->
+              log.atSevere().log(
+                  "Failed to retrieve " + executorName + " job result " + r.getJobId()));
+
+      // Recover jobs.
+      DescribeJobsResults<RequestContext> recoverResults =
+          recoverJobs(notFoundPollRequests, executorContext);
+      // Add recover results.
+      recoverResults.found.forEach(
+          r -> results.put(requestMap.get(r.request.getJobId()), r.result));
+      recoverResults.notFound.forEach(
+          r -> results.put(requestMap.get(r.getJobId()), StageExecutorResult.error()));
+
+      recoverResults.found.forEach(
+          r ->
+              log.atInfo().log(
+                  "Recovered " + executorName + " job result " + r.request.getJobId()));
+
+      recoverResults.notFound.forEach(
+          r ->
+              log.atSevere().log(
+                  "Failed to recover " + executorName + " job result " + r.getJobId()));
+    }
+
+    return results;
+  }
+
+  /**
+   * Attempts to recover job results if polling has failed. Recovery is typically attempted from the
+   * output file. If the recovery fails then the job is considered to have failed.
+   *
+   * @param requests job requests to recover.
+   * @param executorContext executor context.
+   * @return execution results for recovered jobs or if the recovery fails then the job is
+   *     considered failed.
+   */
+  private DescribeJobsResults recoverJobs(
+      List<RequestContext> requests, ExecutorContext executorContext) {
+
+    DescribeJobsResults<RequestContext> results = new DescribeJobsResults<>();
+
+    AtomicInteger remainingCount = new AtomicInteger(requests.size());
+    ZonedDateTime start = ZonedDateTime.now();
+    ZonedDateTime until = start.plus(RECOVERY_TIMEOUT);
+    ExecutorService executorService = Executors.newFixedThreadPool(RECOVERY_PARALLELISM);
+    try {
+      requests.forEach(
+          r -> {
+            executorService.submit(
+                () -> {
+                  try {
+                    // Attempt to recover job result using the output file.
+                    DescribeJobsResult<RequestContext> recoverJobResult =
+                        executorContext.recoverJob(r);
+                    results.add(recoverJobResult);
+                  } catch (Exception ex) {
+                    log.atSevere().withCause(ex).log(
+                        "Failed to recover "
+                            + executorContext.executorName()
+                            + " job "
+                            + r.getJobId());
+                  } finally {
+                    remainingCount.decrementAndGet();
+                  }
+                });
+          });
+
+      try {
+        while (remainingCount.get() > 0) {
+          Time.waitUntil(RECOVERY_WAIT, until);
+        }
+      } catch (PipeliteTimeoutException ex) {
+        log.atWarning().log("LSF job recovery timeout exceeded.");
+      }
+    } finally {
+      executorService.shutdownNow();
+    }
+
+    return results;
   }
 
   protected List<RequestContext> getActiveRequests() {

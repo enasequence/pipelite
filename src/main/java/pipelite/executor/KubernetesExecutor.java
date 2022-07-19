@@ -14,28 +14,36 @@ import com.google.common.flogger.FluentLogger;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.batch.v1.*;
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
+import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
+import io.fabric8.kubernetes.api.model.batch.v1.JobCondition;
+import io.fabric8.kubernetes.api.model.batch.v1.JobList;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.describe.DescribeJobs;
-import pipelite.executor.describe.cache.KubernetesDescribeJobsCache;
+import pipelite.executor.describe.DescribeJobsPollRequests;
+import pipelite.executor.describe.DescribeJobsResult;
+import pipelite.executor.describe.DescribeJobsResults;
+import pipelite.executor.describe.context.DefaultRequestContext;
+import pipelite.executor.describe.context.KubernetesExecutorContext;
 import pipelite.log.LogKey;
 import pipelite.retryable.RetryableExternalAction;
-import pipelite.service.DescribeJobsCacheService;
+import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 // https://github.com/fabric8io
 // https://github.com/fabric8io/kubernetes-client/blob/master/README.md
@@ -46,7 +54,8 @@ import pipelite.stage.parameters.KubernetesExecutorParameters;
 @Getter
 @Setter
 public class KubernetesExecutor
-    extends AsyncExecutor<KubernetesExecutorParameters, KubernetesDescribeJobsCache>
+    extends AsyncExecutor<
+        KubernetesExecutorParameters, DefaultRequestContext, KubernetesExecutorContext>
     implements JsonSerializableExecutor {
 
   private static final int KUBERNETES_TTL_SECONDS_AFTER_FINISHED =
@@ -76,25 +85,23 @@ public class KubernetesExecutor
    */
   private String namespace;
 
-  // Json deserialization requires a no argument constructor.
-  public KubernetesExecutor() {}
-
   @Override
-  protected KubernetesDescribeJobsCache initDescribeJobsCache(
-      DescribeJobsCacheService describeJobsCacheService) {
-    return describeJobsCacheService.kubernetes();
-  }
-
-  private DescribeJobs<String, KubernetesDescribeJobsCache.ExecutorContext> describeJobs() {
-    return getDescribeJobsCache().getDescribeJobs(this);
+  protected DefaultRequestContext prepareRequestContext() {
+    return new DefaultRequestContext(getJobId());
   }
 
   @Override
-  protected SubmitJobResult submitJob() {
+  protected DescribeJobs<DefaultRequestContext, KubernetesExecutorContext> prepareDescribeJobs(
+      PipeliteServices pipeliteServices) {
+    return pipeliteServices.jobs().kubernetes().getDescribeJobs(this);
+  }
+
+  @Override
+  protected String submitJob() {
     KubernetesExecutorParameters executorParams = getExecutorParams();
     context = executorParams.getContext();
     namespace = executorParams.getNamespace() != null ? executorParams.getNamespace() : "default";
-    String jobId = createJobId();
+    String jobId = kubernetesJobName();
     logContext(log.atFine(), getRequest()).log("Submitting Kubernetes job " + jobId);
 
     // Map<String, String> labelMap = new HashMap<>();
@@ -108,7 +115,7 @@ public class KubernetesExecutor
     limitsMap.put("cpu", executorParams.getMemoryLimit());
     limitsMap.put("memory", executorParams.getCpuLimit());
 
-    try (KubernetesClient client = kubernetesClient(context)) {
+    try (KubernetesClient client = client(context)) {
       Job job =
           new JobBuilder()
               .withApiVersion("batch/v1")
@@ -146,19 +153,13 @@ public class KubernetesExecutor
       throw new PipeliteException("Kubernetes error", e);
     }
 
-    return new SubmitJobResult(jobId, StageExecutorResult.submitted());
+    return jobId;
   }
 
   @Override
-  protected StageExecutorResult pollJob() {
-    String jobId = getJobId();
-    return describeJobs().getResult(jobId, getExecutorParams().getPermanentErrors());
-  }
-
-  @Override
-  protected boolean endJob(PollJobResult pollJobResult) {
-    StageExecutorResult result = pollJobResult.getResult();
-    try (KubernetesClient client = kubernetesClient(context)) {
+  protected void endJob() {
+    StageExecutorResult result = this.getJobCompletedResult();
+    try (KubernetesClient client = client(context)) {
       String jobId = getJobId();
       if (isSaveLogFile(result)) {
         List<Pod> pods =
@@ -177,44 +178,47 @@ public class KubernetesExecutor
     } catch (KubernetesClientException e) {
       throw new PipeliteException("Kubernetes error", e);
     }
-    return true;
   }
 
   @Override
-  public void terminate() {
+  public void terminateJob() {
     String jobId = getJobId();
     if (jobId == null) {
       return;
     }
-    try (KubernetesClient client = kubernetesClient(context)) {
+    try (KubernetesClient client = client(context)) {
       terminateJob(client);
-      describeJobs().removeRequest(jobId);
+      getDescribeJobs().removeRequest(getRequestContext());
     } catch (KubernetesClientException e) {
       throw new PipeliteException("Kubernetes error", e);
     }
   }
 
-  public static Map<String, StageExecutorResult> describeJobs(
-      List<String> requests, KubernetesDescribeJobsCache.ExecutorContext executorContext) {
-    log.atFine().log("Describing Kubernetes job results");
-
-    Map<String, StageExecutorResult> results = new HashMap<>();
-    Set<String> jobIds = new HashSet();
-    String namespace = executorContext.getNamespace();
+  public static DescribeJobsResults<DefaultRequestContext> pollJobs(
+      KubernetesClient client,
+      String namespace,
+      DescribeJobsPollRequests<DefaultRequestContext> requests) {
+    DescribeJobsResults<DefaultRequestContext> results = new DescribeJobsResults<>();
+    Set<String> kubernetesJobIds = new HashSet<>();
     try {
-      KubernetesClient client = executorContext.getKubernetesClient();
       JobList jobList =
           RetryableExternalAction.execute(
               () -> client.batch().v1().jobs().inNamespace(namespace).list());
       for (Job job : jobList.getItems()) {
-        String jobId = job.getMetadata().getName();
-        jobIds.add(jobId);
-        results.put(jobId, describeJobsResult(namespace, jobId, client, job.getStatus()));
+        String kubernetesJobId = job.getMetadata().getName();
+        kubernetesJobIds.add(kubernetesJobId);
+        if (requests.requests.get(kubernetesJobId) != null) {
+          results.add(
+              new DescribeJobsResult<>(
+                  requests,
+                  kubernetesJobId,
+                  extractJobResult(namespace, kubernetesJobId, client, job.getStatus())));
+        }
       }
-      for (String jobId : requests) {
-        if (!jobIds.contains(jobId)) {
+      for (String jobId : requests.jobIds) {
+        if (!kubernetesJobIds.contains(jobId)) {
           // Consider jobs that can't be found as failed.
-          results.put(jobId, StageExecutorResult.error());
+          results.add(new DescribeJobsResult<>(requests, jobId, StageExecutorResult.error()));
         }
       }
     } catch (KubernetesClientException e) {
@@ -223,11 +227,14 @@ public class KubernetesExecutor
     return results;
   }
 
-  static StageExecutorResult describeJobsResult(
-      String namespace, String jobId, KubernetesClient client, JobStatus jobStatus) {
+  static StageExecutorResult extractJobResult(
+      String namespace,
+      String jobId,
+      KubernetesClient client,
+      io.fabric8.kubernetes.api.model.batch.v1.JobStatus jobStatus) {
     // Only one pod per job.
 
-    StageExecutorResult result = describeJobsResultFromStatus(jobStatus);
+    StageExecutorResult result = extractJobResultFromStatus(jobStatus);
     if (result.isActive()) {
       return result;
     }
@@ -263,7 +270,8 @@ public class KubernetesExecutor
     return result;
   }
 
-  static StageExecutorResult describeJobsResultFromStatus(JobStatus jobStatus) {
+  static StageExecutorResult extractJobResultFromStatus(
+      io.fabric8.kubernetes.api.model.batch.v1.JobStatus jobStatus) {
     // https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/V1JobStatus.md
 
     // The completion time is only set when the job finishes successfully.
@@ -290,13 +298,13 @@ public class KubernetesExecutor
     return StageExecutorResult.active();
   }
 
-  public static KubernetesClient kubernetesClient(String context) {
+  public static KubernetesClient client(String context) {
     return context != null
         ? new DefaultKubernetesClient(Config.autoConfigure(context))
         : new DefaultKubernetesClient();
   }
 
-  static String createJobId() {
+  static String kubernetesJobName() {
     // Job name requirements
     // =====================
     // must contain no more than 253 characters

@@ -10,15 +10,17 @@
  */
 package pipelite.executor;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-
-import java.io.IOException;
-import java.nio.file.Files;
 import org.junit.jupiter.api.Test;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.LsfExecutorParameters;
-import pipelite.stage.path.LsfFilePathResolver;
+import pipelite.stage.path.LsfDefinitionFilePathResolver;
+import pipelite.stage.path.LsfLogFilePathResolver;
+
+import java.io.IOException;
+import java.nio.file.Files;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 public class LsfExecutorSubmitCmdTest {
 
@@ -45,13 +47,11 @@ public class LsfExecutorSubmitCmdTest {
             .stage(stage)
             .build();
 
-    String definitionFile =
-        params.resolveDefinitionFile(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN);
-    String logDir =
-        "\"" + params.resolveLogDir(request, LsfFilePathResolver.Format.WITH_LSF_PATTERN) + "\"";
-    String logFileName = params.resolveLogFileName(request);
-    executor.setOutFile(
-        params.resolveLogDir(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN));
+    String definitionFile = new LsfDefinitionFilePathResolver().resolvedPath().file(request);
+    String logDir = "\"" + new LsfLogFilePathResolver().placeholderPath().dir(request) + "\"";
+    String logFileName = new LsfLogFilePathResolver().placeholderPath().file(request);
+
+    executor.setOutFile(new LsfLogFilePathResolver().resolvedPath().file(request));
     executor.setDefinitionFile(definitionFile);
     String submitCmd = executor.getSubmitCmd(request);
 

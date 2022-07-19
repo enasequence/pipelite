@@ -10,15 +10,17 @@
  */
 package pipelite.executor.describe;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.KubernetesExecutor;
 import pipelite.executor.describe.cache.KubernetesDescribeJobsCache;
+import pipelite.executor.describe.context.DefaultRequestContext;
+import pipelite.executor.describe.context.KubernetesExecutorContext;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class KubernetesDescribeJobsCacheTest {
 
@@ -52,13 +54,13 @@ public class KubernetesDescribeJobsCacheTest {
     assertThat(cache.getCacheContext(executor4Namespace1).getNamespace())
         .isEqualTo(namespace1.getNamespace());
 
-    DescribeJobs<String, KubernetesDescribeJobsCache.ExecutorContext> describeJobs1 =
+    DescribeJobs<DefaultRequestContext, KubernetesExecutorContext> describeJobs1 =
         cache.getDescribeJobs(executor1Namespace1);
-    DescribeJobs<String, KubernetesDescribeJobsCache.ExecutorContext> describeJobs2 =
+    DescribeJobs<DefaultRequestContext, KubernetesExecutorContext> describeJobs2 =
         cache.getDescribeJobs(executor2Namespace1);
-    DescribeJobs<String, KubernetesDescribeJobsCache.ExecutorContext> describeJobs3 =
+    DescribeJobs<DefaultRequestContext, KubernetesExecutorContext> describeJobs3 =
         cache.getDescribeJobs(executor3Namespace2);
-    DescribeJobs<String, KubernetesDescribeJobsCache.ExecutorContext> describeJobs4 =
+    DescribeJobs<DefaultRequestContext, KubernetesExecutorContext> describeJobs4 =
         cache.getDescribeJobs(executor4Namespace1);
 
     assertThat(describeJobs1 == describeJobs2).isTrue();

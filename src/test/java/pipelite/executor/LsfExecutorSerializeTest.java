@@ -10,17 +10,16 @@
  */
 package pipelite.executor;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import org.junit.jupiter.api.Test;
 import pipelite.json.Json;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorRequest;
-import pipelite.stage.parameters.LsfExecutorParameters;
+import pipelite.stage.path.FilePathResolverTestHelper;
 import pipelite.stage.path.LsfDefinitionFilePathResolver;
-import pipelite.stage.path.LsfFilePathResolver;
 import pipelite.stage.path.LsfLogFilePathResolver;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class LsfExecutorSerializeTest {
 
@@ -29,24 +28,14 @@ public class LsfExecutorSerializeTest {
     String cmd = "echo test";
     LsfExecutor executor = StageExecutor.createLsfExecutor(cmd);
     Stage stage = Stage.builder().stageName("STAGE_NAME").executor(executor).build();
-    StageExecutorRequest request =
-        StageExecutorRequest.builder()
-            .pipelineName("PIPELINE_NAME")
-            .processId("PROCESS_ID")
-            .stage(stage)
-            .build();
 
-    LsfExecutorParameters params =
-        LsfExecutorParameters.builder()
-            .user("user")
-            .logDir("logDir")
-            .definitionDir("definitionDir")
-            .build();
-    LsfFilePathResolver.Format format = LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN;
+    StageExecutorRequest request =
+        FilePathResolverTestHelper.request(
+            "PIPELINE_NAME", "PROCESS_ID", stage.getStageName(), "user", "logDir");
 
     executor.setJobId("test");
-    executor.setOutFile(new LsfLogFilePathResolver(request, params).getFile(format));
-    executor.setDefinitionFile(new LsfDefinitionFilePathResolver(request, params).getFile(format));
+    executor.setOutFile(new LsfLogFilePathResolver().resolvedPath().file(request));
+    executor.setDefinitionFile(new LsfDefinitionFilePathResolver().resolvedPath().file(request));
     String json = Json.serialize(executor);
     assertThat(json)
         .isEqualTo(

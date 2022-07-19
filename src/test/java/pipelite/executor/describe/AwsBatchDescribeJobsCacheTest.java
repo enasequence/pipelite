@@ -10,16 +10,18 @@
  */
 package pipelite.executor.describe;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.AwsBatchExecutor;
 import pipelite.executor.describe.cache.AwsBatchDescribeJobsCache;
+import pipelite.executor.describe.context.AwsBatchExecutorContext;
+import pipelite.executor.describe.context.DefaultRequestContext;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.parameters.AwsBatchExecutorParameters;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("aws-test")
 public class AwsBatchDescribeJobsCacheTest {
@@ -48,13 +50,13 @@ public class AwsBatchDescribeJobsCacheTest {
     assertThat(cache.getCacheContext(executor3Region2).getRegion()).isEqualTo(region2.getRegion());
     assertThat(cache.getCacheContext(executor4Region1).getRegion()).isEqualTo(region1.getRegion());
 
-    DescribeJobs<String, AwsBatchDescribeJobsCache.ExecutorContext> describeJobs1 =
+    DescribeJobs<DefaultRequestContext, AwsBatchExecutorContext> describeJobs1 =
         cache.getDescribeJobs(executor1Region1);
-    DescribeJobs<String, AwsBatchDescribeJobsCache.ExecutorContext> describeJobs2 =
+    DescribeJobs<DefaultRequestContext, AwsBatchExecutorContext> describeJobs2 =
         cache.getDescribeJobs(executor2Region1);
-    DescribeJobs<String, AwsBatchDescribeJobsCache.ExecutorContext> describeJobs3 =
+    DescribeJobs<DefaultRequestContext, AwsBatchExecutorContext> describeJobs3 =
         cache.getDescribeJobs(executor3Region2);
-    DescribeJobs<String, AwsBatchDescribeJobsCache.ExecutorContext> describeJobs4 =
+    DescribeJobs<DefaultRequestContext, AwsBatchExecutorContext> describeJobs4 =
         cache.getDescribeJobs(executor4Region1);
 
     assertThat(describeJobs1 == describeJobs2).isTrue();

@@ -10,16 +10,14 @@
  */
 package pipelite.executor;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import org.junit.jupiter.api.Test;
 import pipelite.json.Json;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
-import pipelite.stage.executor.StageExecutorRequest;
-import pipelite.stage.parameters.SimpleLsfExecutorParameters;
-import pipelite.stage.path.LsfFilePathResolver;
+import pipelite.stage.path.FilePathResolverTestHelper;
 import pipelite.stage.path.LsfLogFilePathResolver;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class SimpleLsfExecutorSerializeTest {
 
@@ -28,19 +26,15 @@ public class SimpleLsfExecutorSerializeTest {
     String cmd = "echo test";
     SimpleLsfExecutor executor = StageExecutor.createSimpleLsfExecutor(cmd);
     Stage stage = Stage.builder().stageName("STAGE_NAME").executor(executor).build();
-    StageExecutorRequest request =
-        StageExecutorRequest.builder()
-            .pipelineName("PIPELINE_NAME")
-            .processId("PROCESS_ID")
-            .stage(stage)
-            .build();
-
-    SimpleLsfExecutorParameters params =
-        SimpleLsfExecutorParameters.builder().user("user").logDir("logDir").build();
-    LsfFilePathResolver.Format format = LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN;
 
     executor.setJobId("test");
-    executor.setOutFile(new LsfLogFilePathResolver(request, params).getFile(format));
+    executor.setOutFile(
+        new LsfLogFilePathResolver()
+            .resolvedPath()
+            .file(
+                FilePathResolverTestHelper.request(
+                    "PIPELINE_NAME", "PROCESS_ID", stage.getStageName(), "user", "logDir")));
+
     String json = Json.serialize(executor);
     assertThat(json)
         .isEqualTo(

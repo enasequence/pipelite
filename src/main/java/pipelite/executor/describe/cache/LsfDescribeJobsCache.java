@@ -10,60 +10,42 @@
  */
 package pipelite.executor.describe.cache;
 
-import lombok.EqualsAndHashCode;
-import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.AbstractLsfExecutor;
 import pipelite.executor.cmd.CmdRunner;
-import pipelite.executor.describe.DescribeJobs;
+import pipelite.executor.describe.DescribeJobsCache;
+import pipelite.executor.describe.context.LsfCacheContext;
+import pipelite.executor.describe.context.LsfExecutorContext;
+import pipelite.executor.describe.context.LsfRequestContext;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.parameters.AbstractLsfExecutorParameters;
 
 @Flogger
 public class LsfDescribeJobsCache
     extends DescribeJobsCache<
-        LsfDescribeJobsCache.RequestContext,
-        LsfDescribeJobsCache.ExecutorContext,
-        LsfDescribeJobsCache.CacheContext,
+        LsfRequestContext,
+        LsfExecutorContext,
+        LsfCacheContext,
         AbstractLsfExecutor<AbstractLsfExecutorParameters>> {
-
-  @Value
-  public static final class RequestContext {
-    private final String jobId;
-    @EqualsAndHashCode.Exclude private final String outFile;
-  }
-
-  @Value
-  public static final class ExecutorContext {
-    private final CmdRunner cmdRunner;
-  }
-
-  @Value
-  public static final class CacheContext {
-    private final String host;
-  }
 
   public LsfDescribeJobsCache(
       ServiceConfiguration serviceConfiguration, InternalErrorService internalErrorService) {
     super(
-        e ->
-            new DescribeJobs<RequestContext, ExecutorContext>(
-                serviceConfiguration,
-                internalErrorService,
-                100,
-                executorContext(e),
-                AbstractLsfExecutor::describeJobs),
-        e -> cacheContext(e));
+        serviceConfiguration,
+        internalErrorService,
+        100,
+        executor -> executorContext(executor),
+        executor -> cacheContext(executor));
   }
 
-  private static LsfDescribeJobsCache.ExecutorContext executorContext(
+  private static LsfExecutorContext executorContext(
       AbstractLsfExecutor<AbstractLsfExecutorParameters> executor) {
-    return new ExecutorContext(CmdRunner.create(executor.getExecutorParams()));
+    return new LsfExecutorContext(CmdRunner.create(executor.getExecutorParams()));
   }
 
-  private static LsfDescribeJobsCache.CacheContext cacheContext(
+  private static LsfCacheContext cacheContext(
       AbstractLsfExecutor<AbstractLsfExecutorParameters> executor) {
-    return new CacheContext(executor.getExecutorParams().getHost());
+    return new LsfCacheContext(executor.getExecutorParams().getHost());
   }
 }

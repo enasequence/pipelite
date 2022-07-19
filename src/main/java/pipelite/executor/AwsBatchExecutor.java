@@ -14,32 +14,32 @@ import com.amazonaws.services.batch.AWSBatch;
 import com.amazonaws.services.batch.AWSBatchClientBuilder;
 import com.amazonaws.services.batch.model.*;
 import com.google.common.flogger.FluentLogger;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.describe.DescribeJobs;
-import pipelite.executor.describe.cache.AwsBatchDescribeJobsCache;
+import pipelite.executor.describe.DescribeJobsPollRequests;
+import pipelite.executor.describe.DescribeJobsResult;
+import pipelite.executor.describe.DescribeJobsResults;
+import pipelite.executor.describe.context.AwsBatchExecutorContext;
+import pipelite.executor.describe.context.DefaultRequestContext;
 import pipelite.log.LogKey;
 import pipelite.retryable.RetryableExternalAction;
-import pipelite.service.DescribeJobsCacheService;
+import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.AwsBatchExecutorParameters;
+
+import java.util.UUID;
 
 @Flogger
 @Getter
 @Setter
 public class AwsBatchExecutor
-    extends AsyncExecutor<AwsBatchExecutorParameters, AwsBatchDescribeJobsCache>
+    extends AsyncExecutor<
+        AwsBatchExecutorParameters, DefaultRequestContext, AwsBatchExecutorContext>
     implements JsonSerializableExecutor {
-
-  // Json deserialization requires a no argument constructor.
-  public AwsBatchExecutor() {}
 
   /**
    * The AWSBatch region. Set during submit. Serialize in database to continue execution after
@@ -48,17 +48,18 @@ public class AwsBatchExecutor
   private String region;
 
   @Override
-  protected AwsBatchDescribeJobsCache initDescribeJobsCache(
-      DescribeJobsCacheService describeJobsCacheService) {
-    return describeJobsCacheService.awsBatch();
-  }
-
-  private DescribeJobs<String, AwsBatchDescribeJobsCache.ExecutorContext> describeJobs() {
-    return getDescribeJobsCache().getDescribeJobs(this);
+  protected DefaultRequestContext prepareRequestContext() {
+    return new DefaultRequestContext(getJobId());
   }
 
   @Override
-  protected SubmitJobResult submitJob() {
+  protected DescribeJobs<DefaultRequestContext, AwsBatchExecutorContext> prepareDescribeJobs(
+      PipeliteServices pipeliteServices) {
+    return pipeliteServices.jobs().awsBatch().getDescribeJobs(this);
+  }
+
+  @Override
+  protected String submitJob() {
     StageExecutorRequest request = getRequest();
     logContext(log.atFine(), request).log("Submitting AWSBatch job.");
 
@@ -76,7 +77,7 @@ public class AwsBatchExecutor
                     .withAttemptDurationSeconds((int) params.getTimeout().getSeconds()));
     // TODO: .withContainerOverrides()
 
-    AWSBatch awsBatch = awsBatchClient(region);
+    AWSBatch awsBatch = client(region);
     com.amazonaws.services.batch.model.SubmitJobResult submitJobResult =
         RetryableExternalAction.execute(() -> awsBatch.submitJob(submitJobRequest));
 
@@ -85,54 +86,37 @@ public class AwsBatchExecutor
     }
     String jobId = submitJobResult.getJobId();
     logContext(log.atInfo(), request).log("Submitted AWSBatch job " + getJobId());
-    return new SubmitJobResult(jobId, StageExecutorResult.submitted());
+    return jobId;
   }
 
   @Override
-  protected StageExecutorResult pollJob() {
-    String jobId = getJobId();
-    return describeJobs().getResult(jobId, getExecutorParams().getPermanentErrors());
-  }
-
-  protected boolean endJob(PollJobResult pollJobResult) {
-    StageExecutorResult result = pollJobResult.getResult();
-    if (isSaveLogFile(result)) {
-      // TODO: save log
-    }
-    return true;
-  }
-
-  @Override
-  public void terminate() {
+  public void terminateJob() {
     String jobId = getJobId();
     if (jobId == null) {
       return;
     }
     TerminateJobRequest terminateJobRequest =
         new TerminateJobRequest().withJobId(jobId).withReason("Job terminated by pipelite");
-    RetryableExternalAction.execute(
-        () -> describeJobs().getExecutorContext().getAwsBatch().terminateJob(terminateJobRequest));
-    // Remove request because the execution is being terminated.
-    describeJobs().removeRequest(jobId);
+    RetryableExternalAction.execute(() -> client(region).terminateJob(terminateJobRequest));
   }
 
-  public static Map<String, StageExecutorResult> describeJobs(
-      List<String> requests, AwsBatchDescribeJobsCache.ExecutorContext executorContext) {
-    log.atFine().log("Describing AWSBatch job results");
-
-    Map<String, StageExecutorResult> results = new HashMap<>();
-    DescribeJobsResult jobResult =
+  /** Polls job execution results. */
+  public static DescribeJobsResults<DefaultRequestContext> pollJobs(
+      AWSBatch awsBatch, DescribeJobsPollRequests<DefaultRequestContext> requests) {
+    DescribeJobsResults<DefaultRequestContext> results = new DescribeJobsResults<>();
+    com.amazonaws.services.batch.model.DescribeJobsResult jobResult =
         RetryableExternalAction.execute(
-            () ->
-                executorContext
-                    .getAwsBatch()
-                    .describeJobs(new DescribeJobsRequest().withJobs(requests)));
-    jobResult.getJobs().forEach(j -> results.put(j.getJobId(), describeJobsResult(j)));
+            () -> awsBatch.describeJobs(new DescribeJobsRequest().withJobs(requests.jobIds)));
+    jobResult
+        .getJobs()
+        .forEach(
+            j ->
+                results.add(new DescribeJobsResult<>(requests, j.getJobId(), extractJobResult(j))));
     return results;
   }
 
   // TOOO: exit codes
-  protected static StageExecutorResult describeJobsResult(JobDetail jobDetail) {
+  protected static StageExecutorResult extractJobResult(JobDetail jobDetail) {
     switch (jobDetail.getStatus()) {
       case "SUCCEEDED":
         return StageExecutorResult.success();
@@ -142,7 +126,7 @@ public class AwsBatchExecutor
     return StageExecutorResult.active();
   }
 
-  public static AWSBatch awsBatchClient(String region) {
+  public static AWSBatch client(String region) {
     AWSBatchClientBuilder awsBuilder = AWSBatchClientBuilder.standard();
     if (region != null) {
       awsBuilder.setRegion(region);

@@ -19,7 +19,9 @@ import org.junit.jupiter.api.Test;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
-import pipelite.stage.path.LsfFilePathResolver;
+import pipelite.stage.path.AsyncCmdLogFilePathResolver;
+import pipelite.stage.path.LsfDefinitionFilePathResolver;
+import pipelite.stage.path.LsfLogFilePathResolver;
 
 public class SimpleLsfExecutorSubmitCmdTest {
 
@@ -52,12 +54,11 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .stage(stage)
             .build();
 
-    String logDir =
-        "\"" + params.resolveLogDir(request, LsfFilePathResolver.Format.WITH_LSF_PATTERN) + "\"";
-    String logFileName = params.resolveLogFileName(request);
+    String logDir = "\"" + new LsfLogFilePathResolver().placeholderPath().dir(request) + "\"";
+    String logFileName = new LsfLogFilePathResolver().placeholderPath().file(request);
 
-    executor.setOutFile(
-        params.resolveLogDir(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN));
+    executor.setOutFile(new LsfLogFilePathResolver().resolvedPath().dir(request));
+
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
         .isEqualTo(
@@ -94,11 +95,12 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .processId(PROCESS_ID)
             .stage(stage)
             .build();
-    String logDir =
-        "\"" + params.resolveLogDir(request, LsfFilePathResolver.Format.WITH_LSF_PATTERN) + "\"";
-    String logFileName = params.resolveLogFileName(request);
-    executor.setOutFile(
-        params.resolveLogDir(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN));
+
+    String logDir = "\"" + new LsfLogFilePathResolver().placeholderPath().dir(request) + "\"";
+    String logFileName = new LsfLogFilePathResolver().placeholderPath().file(request);
+
+    executor.setOutFile(new LsfLogFilePathResolver().resolvedPath().dir(request));
+
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
         .isEqualTo(
@@ -135,11 +137,12 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .processId(PROCESS_ID)
             .stage(stage)
             .build();
-    String logDir =
-        "\"" + params.resolveLogDir(request, LsfFilePathResolver.Format.WITH_LSF_PATTERN) + "\"";
-    String logFileName = params.resolveLogFileName(request);
-    executor.setOutFile(
-        params.resolveLogDir(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN));
+
+    String logDir = "\"" + new LsfLogFilePathResolver().placeholderPath().dir(request) + "\"";
+    String logFileName = new LsfLogFilePathResolver().placeholderPath().file(request);
+
+    executor.setOutFile(new LsfLogFilePathResolver().resolvedPath().dir(request));
+
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
         .isEqualTo(
@@ -175,11 +178,12 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .processId(PROCESS_ID)
             .stage(stage)
             .build();
-    String logDir =
-        "\"" + params.resolveLogDir(request, LsfFilePathResolver.Format.WITH_LSF_PATTERN) + "\"";
-    String logFileName = params.resolveLogFileName(request);
-    executor.setOutFile(
-        params.resolveLogDir(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN));
+
+    String logDir = "\"" + new LsfLogFilePathResolver().placeholderPath().dir(request) + "\"";
+    String logFileName = new LsfLogFilePathResolver().placeholderPath().file(request);
+
+    executor.setOutFile(new LsfLogFilePathResolver().resolvedPath().dir(request));
+
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
         .isEqualTo(
@@ -215,12 +219,12 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .processId(PROCESS_ID)
             .stage(stage)
             .build();
-    String logDir =
-        "\"" + params.resolveLogDir(request, LsfFilePathResolver.Format.WITH_LSF_PATTERN) + "\"";
-    String logFileName = params.resolveLogFileName(request);
-    executor.setOutFile(
-        params.resolveLogDir(request, LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN));
-    ;
+
+    String logDir = "\"" + new LsfLogFilePathResolver().placeholderPath().dir(request) + "\"";
+    String logFileName = new LsfLogFilePathResolver().placeholderPath().file(request);
+
+    executor.setOutFile(new LsfLogFilePathResolver().resolvedPath().dir(request));
+    
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
         .isEqualTo(

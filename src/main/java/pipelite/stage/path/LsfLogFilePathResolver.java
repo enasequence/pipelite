@@ -10,23 +10,10 @@
  */
 package pipelite.stage.path;
 
-import pipelite.stage.executor.StageExecutorRequest;
-import pipelite.stage.parameters.AbstractLsfExecutorParameters;
+public class LsfLogFilePathResolver extends AsyncCmdLogFilePathResolver {
+  static final String USER_PLACEHOLDER = "%U";
 
-/**
- * Resolves the stage log directory <logDir>/"%U"/<pipeline>/<process> or
- * <logDir>/<user>/<pipeline>/<process>.
- */
-public class LsfLogFilePathResolver extends LsfFilePathResolver {
-
-  private static final String FILE_SUFFIX = ".out";
-
-  public LsfLogFilePathResolver(
-      StageExecutorRequest request, AbstractLsfExecutorParameters params) {
-    super(
-        request,
-        params,
-        (params == null || params.getLogDir() == null) ? "" : params.getLogDir(),
-        FILE_SUFFIX);
+  public LsfLogFilePathResolver() {
+    super(USER_PLACEHOLDER);
   }
 }

@@ -10,9 +10,10 @@
  */
 package pipelite.error;
 
-import java.util.function.Consumer;
 import lombok.extern.flogger.Flogger;
 import pipelite.service.InternalErrorService;
+
+import java.util.function.Consumer;
 
 @Flogger
 public class InternalErrorHandler {
@@ -70,6 +71,7 @@ public class InternalErrorHandler {
     void apply();
   }
 
+  /** Returns true if no exception was thrown. */
   public boolean execute(Action action) {
     return execute(action, null);
   }
@@ -84,7 +86,7 @@ public class InternalErrorHandler {
         internalErrorService.saveInternalError(
             pipelineName, processId, stageName, caller.getClass(), ex);
       } catch (Exception ex2) {
-        log.atSevere().withCause(ex2).log("Failed to save internal error: " + ex.getMessage());
+        // Do nothing
       }
       try {
         if (recover != null) {

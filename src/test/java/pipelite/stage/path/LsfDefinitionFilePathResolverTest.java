@@ -10,14 +10,10 @@
  */
 package pipelite.stage.path;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
-
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorRequest;
-import pipelite.stage.parameters.LsfExecutorParameters;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class LsfDefinitionFilePathResolverTest {
 
@@ -25,74 +21,70 @@ public class LsfDefinitionFilePathResolverTest {
   private static final String PROCESS_ID = "TEST_PROCESS";
   private static final String STAGE_NAME = "TEST_STAGE";
 
-  private final StageExecutorRequest request() {
-    Stage stage = Mockito.mock(Stage.class);
-    when(stage.getStageName()).thenReturn(STAGE_NAME);
-    StageExecutorRequest request = new StageExecutorRequest(PIPELITE_NAME, PROCESS_ID, stage);
-    return request;
+  private final StageExecutorRequest request(String user, String logDir) {
+    return FilePathResolverTestHelper.request(PIPELITE_NAME, PROCESS_ID, STAGE_NAME, user, logDir);
   }
 
   @Test
   public void testWithoutDirWithUser() {
-    StageExecutorRequest request = request();
-    LsfExecutorParameters params = LsfExecutorParameters.builder().user("user").build();
-    LsfDefinitionFilePathResolver resolver = new LsfDefinitionFilePathResolver(request, params);
-    assertThat(resolver.getDir(LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN))
+    StageExecutorRequest request = request("user", null);
+
+    LsfDefinitionFilePathResolver resolver = new LsfDefinitionFilePathResolver();
+    assertThat(resolver.resolvedPath().dir(request))
         .isEqualTo("user/" + PIPELITE_NAME + "/" + PROCESS_ID);
-    assertThat(resolver.getFile(LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN))
+    assertThat(resolver.resolvedPath().file(request))
         .isEqualTo("user/" + PIPELITE_NAME + "/" + PROCESS_ID + "/" + STAGE_NAME + ".job");
-    assertThat(resolver.getDir(LsfFilePathResolver.Format.WITH_LSF_PATTERN))
+    assertThat(resolver.placeholderPath().dir(request))
         .isEqualTo("%U/" + PIPELITE_NAME + "/" + PROCESS_ID);
-    assertThat(resolver.getFile(LsfFilePathResolver.Format.WITH_LSF_PATTERN))
+    assertThat(resolver.placeholderPath().file(request))
         .isEqualTo("%U/" + PIPELITE_NAME + "/" + PROCESS_ID + "/" + STAGE_NAME + ".job");
   }
 
   @Test
   public void testWithoutDirWithoutUser() {
-    StageExecutorRequest request = request();
-    LsfExecutorParameters params = LsfExecutorParameters.builder().build();
-    LsfDefinitionFilePathResolver resolver = new LsfDefinitionFilePathResolver(request, params);
+    StageExecutorRequest request = request(null, null);
+
+    LsfDefinitionFilePathResolver resolver = new LsfDefinitionFilePathResolver();
     String user = System.getProperty("user.name");
-    assertThat(resolver.getDir(LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN))
+    assertThat(resolver.resolvedPath().dir(request))
         .isEqualTo(user + "/" + PIPELITE_NAME + "/" + PROCESS_ID);
-    assertThat(resolver.getFile(LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN))
+    assertThat(resolver.resolvedPath().file(request))
         .isEqualTo(user + "/" + PIPELITE_NAME + "/" + PROCESS_ID + "/" + STAGE_NAME + ".job");
-    assertThat(resolver.getDir(LsfFilePathResolver.Format.WITH_LSF_PATTERN))
+    assertThat(resolver.placeholderPath().dir(request))
         .isEqualTo("%U/" + PIPELITE_NAME + "/" + PROCESS_ID);
-    assertThat(resolver.getFile(LsfFilePathResolver.Format.WITH_LSF_PATTERN))
+    assertThat(resolver.placeholderPath().file(request))
         .isEqualTo("%U/" + PIPELITE_NAME + "/" + PROCESS_ID + "/" + STAGE_NAME + ".job");
   }
 
   @Test
   public void testWithDirWithUser() {
-    StageExecutorRequest request = request();
-    LsfExecutorParameters params =
-        LsfExecutorParameters.builder().definitionDir("a/b").user("user").build();
-    LsfDefinitionFilePathResolver resolver = new LsfDefinitionFilePathResolver(request, params);
-    assertThat(resolver.getDir(LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN))
+    StageExecutorRequest request = request("user", "a/b");
+
+    LsfDefinitionFilePathResolver resolver = new LsfDefinitionFilePathResolver();
+    assertThat(resolver.resolvedPath().dir(request))
         .isEqualTo("a/b/user/" + PIPELITE_NAME + "/" + PROCESS_ID);
-    assertThat(resolver.getFile(LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN))
+    assertThat(resolver.resolvedPath().file(request))
         .isEqualTo("a/b/user/" + PIPELITE_NAME + "/" + PROCESS_ID + "/" + STAGE_NAME + ".job");
-    assertThat(resolver.getDir(LsfFilePathResolver.Format.WITH_LSF_PATTERN))
+    assertThat(resolver.placeholderPath().dir(request))
         .isEqualTo("a/b/%U/" + PIPELITE_NAME + "/" + PROCESS_ID);
-    assertThat(resolver.getFile(LsfFilePathResolver.Format.WITH_LSF_PATTERN))
+    assertThat(resolver.placeholderPath().file(request))
         .isEqualTo("a/b/%U/" + PIPELITE_NAME + "/" + PROCESS_ID + "/" + STAGE_NAME + ".job");
   }
 
   @Test
   public void testWithDirWithoutUser() {
-    StageExecutorRequest request = request();
-    LsfExecutorParameters params = LsfExecutorParameters.builder().definitionDir("a/b").build();
-    LsfDefinitionFilePathResolver resolver = new LsfDefinitionFilePathResolver(request, params);
+    StageExecutorRequest request = request(null, "a/b");
+
+    LsfDefinitionFilePathResolver resolver = new LsfDefinitionFilePathResolver();
     String user = System.getProperty("user.name");
-    assertThat(resolver.getDir(LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN))
+    assertThat(resolver.resolvedPath().dir(request))
         .isEqualTo("a/b/" + user + "/" + PIPELITE_NAME + "/" + PROCESS_ID);
-    assertThat(resolver.getFile(LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN))
+    assertThat(resolver.resolvedPath().file(request))
         .isEqualTo(
             "a/b/" + user + "/" + PIPELITE_NAME + "/" + PROCESS_ID + "/" + STAGE_NAME + ".job");
-    assertThat(resolver.getDir(LsfFilePathResolver.Format.WITH_LSF_PATTERN))
+    assertThat(resolver.placeholderPath().dir(request))
         .isEqualTo("a/b/%U/" + PIPELITE_NAME + "/" + PROCESS_ID);
-    assertThat(resolver.getFile(LsfFilePathResolver.Format.WITH_LSF_PATTERN))
+    assertThat(resolver.placeholderPath().file(request))
         .isEqualTo("a/b/%U/" + PIPELITE_NAME + "/" + PROCESS_ID + "/" + STAGE_NAME + ".job");
   }
 }

@@ -10,10 +10,6 @@
  */
 package pipelite.executor;
 
-import java.net.URL;
-import java.nio.file.Paths;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
@@ -24,7 +20,11 @@ import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.ExecutorParametersValidator;
 import pipelite.stage.parameters.LsfExecutorParameters;
 import pipelite.stage.path.LsfDefinitionFilePathResolver;
-import pipelite.stage.path.LsfFilePathResolver;
+
+import java.net.URL;
+import java.nio.file.Paths;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 /** Executes a command using LSF. */
 @Flogger
@@ -45,29 +45,27 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
 
     switch (getExecutorParams().getFormat()) {
       case JSDL:
-        addArgument(cmd, "-jsdl");
+        addCmdArgument(cmd, "-jsdl");
         break;
       case YAML:
-        addArgument(cmd, "-yaml");
+        addCmdArgument(cmd, "-yaml");
         break;
       case JSON:
-        addArgument(cmd, "-json");
+        addCmdArgument(cmd, "-json");
         break;
     }
-    addArgument(cmd, definitionFile);
-    return cmd.toString() + " " + getCmd();
+    addCmdArgument(cmd, definitionFile);
+    return cmd + " " + getCmd();
   }
 
   @Override
   protected void prepareJob() {
     StageExecutorRequest request = getRequest();
-    LsfDefinitionFilePathResolver resolver =
-        new LsfDefinitionFilePathResolver(request, getExecutorParams());
-    LsfFilePathResolver.Format format = LsfFilePathResolver.Format.WITHOUT_LSF_PATTERN;
-    if (!getCmdRunner().createDir(Paths.get(resolver.getDir(format)))) {
+    LsfDefinitionFilePathResolver definitionFilePathResolver = new LsfDefinitionFilePathResolver();
+    if (!getCmdRunner().createDir(Paths.get(definitionFilePathResolver.resolvedPath().dir(request)))) {
       throw new PipeliteException("Failed to create LSF definition dir");
     }
-    definitionFile = resolver.getFile(format);
+    definitionFile = definitionFilePathResolver.resolvedPath().file(request);
     URL definitionUrl =
         ExecutorParametersValidator.validateUrl(getExecutorParams().getDefinition(), "definition");
     final String definition =

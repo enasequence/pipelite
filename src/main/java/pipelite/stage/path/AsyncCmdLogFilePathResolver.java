@@ -10,11 +10,15 @@
  */
 package pipelite.stage.path;
 
-import static pipelite.stage.path.LsfLogFilePathResolver.USER_PLACEHOLDER;
+/**
+ * Resolves the log file path and name: <dir>/<user>/<pipeline>/<process>/<stage>.log where the
+ * <dir> is defined by executor parameters.
+ */
+public abstract class AsyncCmdLogFilePathResolver extends AsyncCmdFilePathResolver {
 
-public class LsfDefinitionFilePathResolver extends AsyncCmdDefinitionFilePathResolver {
+  private static final String FILE_SUFFIX = ".out";
 
-  public LsfDefinitionFilePathResolver() {
-    super(USER_PLACEHOLDER);
+  public AsyncCmdLogFilePathResolver(String submitUserPlaceholder) {
+    super(FILE_SUFFIX, submitUserPlaceholder);
   }
 }

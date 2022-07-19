@@ -10,18 +10,20 @@
  */
 package pipelite.executor.describe;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.AbstractLsfExecutor;
 import pipelite.executor.SimpleLsfExecutor;
 import pipelite.executor.describe.cache.LsfDescribeJobsCache;
+import pipelite.executor.describe.context.LsfExecutorContext;
+import pipelite.executor.describe.context.LsfRequestContext;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 
-public class LsfDescribeJobsCacheTest {
+import static org.assertj.core.api.Assertions.assertThat;
+
+public class AbstractLsfDescribeJobsCacheTest {
 
   @Test
   public void test() {
@@ -47,14 +49,14 @@ public class LsfDescribeJobsCacheTest {
     assertThat(cache.getCacheContext(executor3Host2).getHost()).isEqualTo(host2.getHost());
     assertThat(cache.getCacheContext(executor4Host1).getHost()).isEqualTo(host1.getHost());
 
-    DescribeJobs<LsfDescribeJobsCache.RequestContext, LsfDescribeJobsCache.ExecutorContext>
-        describeJobs1 = cache.getDescribeJobs(executor1Host1);
-    DescribeJobs<LsfDescribeJobsCache.RequestContext, LsfDescribeJobsCache.ExecutorContext>
-        describeJobs2 = cache.getDescribeJobs(executor2Host1);
-    DescribeJobs<LsfDescribeJobsCache.RequestContext, LsfDescribeJobsCache.ExecutorContext>
-        describeJobs3 = cache.getDescribeJobs(executor3Host2);
-    DescribeJobs<LsfDescribeJobsCache.RequestContext, LsfDescribeJobsCache.ExecutorContext>
-        describeJobs4 = cache.getDescribeJobs(executor4Host1);
+    DescribeJobs<LsfRequestContext, LsfExecutorContext> describeJobs1 =
+        cache.getDescribeJobs(executor1Host1);
+    DescribeJobs<LsfRequestContext, LsfExecutorContext> describeJobs2 =
+        cache.getDescribeJobs(executor2Host1);
+    DescribeJobs<LsfRequestContext, LsfExecutorContext> describeJobs3 =
+        cache.getDescribeJobs(executor3Host2);
+    DescribeJobs<LsfRequestContext, LsfExecutorContext> describeJobs4 =
+        cache.getDescribeJobs(executor4Host1);
 
     assertThat(describeJobs1 == describeJobs2).isTrue();
     assertThat(describeJobs1 != describeJobs3).isTrue();

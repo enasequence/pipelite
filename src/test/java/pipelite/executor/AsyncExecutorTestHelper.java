@@ -26,7 +26,7 @@ import pipelite.time.Time;
 public class AsyncExecutorTestHelper {
 
   public static void testExecute(
-      AsyncExecutor<?, ?> executor,
+      AsyncExecutor<?, ?, ?> executor,
       PipeliteServices pipeliteServices,
       StageExecutorResultCallback assertAfterSubmit,
       StageExecutorResultCallback assertAfterPoll) {
