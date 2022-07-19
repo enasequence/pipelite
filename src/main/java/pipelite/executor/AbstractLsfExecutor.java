@@ -97,7 +97,7 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
     cmd.append(BSUB_CMD);
 
     String logDir = logFilePathResolver.placeholderPath().dir(request);
-    String logFileName = logFilePathResolver.fileName(request);
+    String logFileName = logFilePathResolver.placeholderPath().file(request);
     if (logDir != null) {
       addCmdArgument(cmd, "-outdir");
       addCmdArgument(cmd, "\"" + logDir + "\"");

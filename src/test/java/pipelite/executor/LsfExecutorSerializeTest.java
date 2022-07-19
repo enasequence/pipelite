@@ -43,7 +43,7 @@ public class LsfExecutorSerializeTest {
                 + "  \"jobId\" : \"test\",\n"
                 + "  \"cmd\" : \"echo test\",\n"
                 + "  \"outFile\" : \"logDir/user/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.out\",\n"
-                + "  \"definitionFile\" : \"definitionDir/user/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.job\"\n"
+                + "  \"definitionFile\" : \"logDir/user/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.job\"\n"
                 + "}");
     LsfExecutor deserializedLsfExecutor = Json.deserialize(json, LsfExecutor.class);
     assertThat(deserializedLsfExecutor.getCmd()).isEqualTo(cmd);
@@ -51,6 +51,6 @@ public class LsfExecutorSerializeTest {
     assertThat(deserializedLsfExecutor.getOutFile())
         .isEqualTo("logDir/user/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.out");
     assertThat(deserializedLsfExecutor.getDefinitionFile())
-        .isEqualTo("definitionDir/user/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.job");
+        .isEqualTo("logDir/user/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.job");
   }
 }
