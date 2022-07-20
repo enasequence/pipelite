@@ -208,7 +208,7 @@ public class KubernetesExecutor
         kubernetesJobIds.add(kubernetesJobId);
         if (requests.requests.get(kubernetesJobId) != null) {
           results.add(
-              new DescribeJobsResult<>(
+              DescribeJobsResult.create(
                   requests,
                   kubernetesJobId,
                   extractJobResult(namespace, kubernetesJobId, client, job.getStatus())));
@@ -217,7 +217,7 @@ public class KubernetesExecutor
       for (String jobId : requests.jobIds) {
         if (!kubernetesJobIds.contains(jobId)) {
           // Consider jobs that can't be found as failed.
-          results.add(new DescribeJobsResult<>(requests, jobId, StageExecutorResult.error()));
+          results.add(DescribeJobsResult.create(requests, jobId, StageExecutorResult.error()));
         }
       }
     } catch (KubernetesClientException e) {

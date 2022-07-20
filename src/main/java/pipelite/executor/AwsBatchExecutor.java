@@ -111,7 +111,7 @@ public class AwsBatchExecutor
         .getJobs()
         .forEach(
             j ->
-                results.add(new DescribeJobsResult<>(requests, j.getJobId(), extractJobResult(j))));
+                results.add(DescribeJobsResult.create(requests, j.getJobId(), extractJobResult(j))));
     return results;
   }
 

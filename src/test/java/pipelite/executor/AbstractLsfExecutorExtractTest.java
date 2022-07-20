@@ -80,8 +80,7 @@ public class AbstractLsfExecutorExtractTest {
 
     DescribeJobsResults<LsfRequestContext> results =
         AbstractLsfExecutor.extractJobResultsFromBjobsOutput(
-            "861487|PEND|-|-|-|-|-\n" + "861488|PEND|-|-|-|-|-\n" + "861489|PEND|-|-|-|-|-",
-            requests);
+            "861487|PEND|-|-|-|-|-\n" + "861488|PEND|-|-|-|-|-\n", requests);
 
     assertThat(results.found.size()).isEqualTo(2);
     assertThat(results.notFound.size()).isEqualTo(0);
@@ -94,7 +93,7 @@ public class AbstractLsfExecutorExtractTest {
   @Test
   public void extractResultsFromBjobsOutputDone() {
     DescribeJobsPollRequests<LsfRequestContext> requests =
-            new DescribeJobsPollRequests<>(
+        new DescribeJobsPollRequests<>(
             Arrays.asList(
                 new LsfRequestContext("872793", "outFile"),
                 new LsfRequestContext("872794", "outFile"),
@@ -119,7 +118,7 @@ public class AbstractLsfExecutorExtractTest {
   @Test
   public void extractResultsFromBjobsExitAndNotFound() {
     DescribeJobsPollRequests<LsfRequestContext> requests =
-            new DescribeJobsPollRequests<>(
+        new DescribeJobsPollRequests<>(
             Arrays.asList(
                 new LsfRequestContext("873206", "outFile"),
                 new LsfRequestContext("873207", "outFile"),

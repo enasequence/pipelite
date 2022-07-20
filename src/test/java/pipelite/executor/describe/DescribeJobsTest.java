@@ -55,7 +55,7 @@ public class DescribeJobsTest {
               .requests
               .values()
               .forEach(
-                  r -> results.add(new DescribeJobsResult<>(r, StageExecutorResult.success())));
+                  r -> results.add(DescribeJobsResult.create(r, StageExecutorResult.success())));
           return results;
         };
 
@@ -109,7 +109,7 @@ public class DescribeJobsTest {
           requests
               .requests
               .values()
-              .forEach(r -> results.add(new DescribeJobsResult<>(r, StageExecutorResult.error())));
+              .forEach(r -> results.add(DescribeJobsResult.create(r, StageExecutorResult.error())));
           return results;
         };
 
@@ -163,7 +163,7 @@ public class DescribeJobsTest {
           requests
               .requests
               .values()
-              .forEach(r -> results.add(new DescribeJobsResult<>(r, StageExecutorResult.active())));
+              .forEach(r -> results.add(DescribeJobsResult.create(r, StageExecutorResult.active())));
           return results;
         };
 

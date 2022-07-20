@@ -148,7 +148,7 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
     String outFile = request.getOutFile();
     log.atWarning().log("Recovering LSF job result from output file: " + outFile);
     String str = readOutFile(cmdRunner, outFile, JOB_RECOVERY_LINES);
-    return new DescribeJobsResult<>(request, recoverJobUsingOutFile(str));
+    return DescribeJobsResult.create(request, recoverJobUsingOutFile(str));
   }
 
   /**
@@ -221,9 +221,10 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
       String notFoundJobId = extractNotFoundJobIdFromBjobsOutput(line);
       if (notFoundJobId != null) {
         log.atWarning().log("LSF bsubs job not found: " + notFoundJobId);
-        results.add(new DescribeJobsResult<>(requests, notFoundJobId, null));
+        results.add(DescribeJobsResult.create(requests, notFoundJobId, null));
       } else {
-        DescribeJobsResult<LsfRequestContext> result = extractJobResultFromBjobsOutput(line, requests);
+        DescribeJobsResult<LsfRequestContext> result =
+            extractJobResultFromBjobsOutput(line, requests);
         if (result != null) {
           results.add(result);
         }
@@ -263,6 +264,6 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
       result.addAttribute(StageExecutorResultAttribute.AVG_MEM, column[BJOBS_COLUMN_AVG_MEM]);
     }
 
-    return new DescribeJobsResult<>(requests, jobId, result);
+    return DescribeJobsResult.create(requests, jobId, result);
   }
 }

@@ -118,26 +118,29 @@ public class DescribeJobs<
   public void retrieveResults() {
     log.atInfo().log("Retrieving " + executorContext.executorName() + " job results");
 
-    List<RequestContext> activeRequests = getActiveRequests();
-    while (!activeRequests.isEmpty()) {
-      int toIndex =
-          requestBatchSize == null
-              ? activeRequests.size()
-              : Math.min(requestBatchSize, activeRequests.size());
-      final List<RequestContext> requestBatch = activeRequests.subList(0, toIndex);
-      Map<RequestContext, StageExecutorResult> results =
-          retrieveResults(requestBatch, executorContext);
-      // Set results for the requests.
-      results.entrySet().stream()
-          .filter(
-              // Filter out empty and active results.
-              e -> e.getKey() != null && e.getValue() != null && !e.getValue().isActive())
-          .forEach(e -> this.requests.put(e.getKey(), e.getValue()));
-      if (toIndex == activeRequests.size()) {
-        return;
-      }
-      activeRequests = activeRequests.subList(toIndex, activeRequests.size());
-    }
+    internalErrorHandler.execute(
+        () -> {
+          List<RequestContext> activeRequests = getActiveRequests();
+          while (!activeRequests.isEmpty()) {
+            int toIndex =
+                requestBatchSize == null
+                    ? activeRequests.size()
+                    : Math.min(requestBatchSize, activeRequests.size());
+            final List<RequestContext> requestBatch = activeRequests.subList(0, toIndex);
+            Map<RequestContext, StageExecutorResult> results =
+                retrieveResults(requestBatch, executorContext);
+            // Set results for the requests.
+            results.entrySet().stream()
+                .filter(
+                    // Filter out empty and active results.
+                    e -> e.getKey() != null && e.getValue() != null && !e.getValue().isActive())
+                .forEach(e -> this.requests.put(e.getKey(), e.getValue()));
+            if (toIndex == activeRequests.size()) {
+              return;
+            }
+            activeRequests = activeRequests.subList(toIndex, activeRequests.size());
+          }
+        });
   }
 
   /** Retrieves job results (active, success, error) for one batch. */

@@ -84,7 +84,7 @@ public class AsyncTestExecutor
         continue;
       }
       results.add(
-          new DescribeJobsResult<>(request, request.getCallback().apply(request.getRequest())));
+          DescribeJobsResult.create(request, request.getCallback().apply(request.getRequest())));
     }
     return results;
   }
