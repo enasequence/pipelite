@@ -59,7 +59,7 @@ public class AwsBatchExecutor
   }
 
   @Override
-  protected String submitJob() {
+  protected SubmitJobResult submitJob() {
     StageExecutorRequest request = getRequest();
     logContext(log.atFine(), request).log("Submitting AWSBatch job.");
 
@@ -86,7 +86,7 @@ public class AwsBatchExecutor
     }
     String jobId = submitJobResult.getJobId();
     logContext(log.atInfo(), request).log("Submitted AWSBatch job " + getJobId());
-    return jobId;
+    return new SubmitJobResult(jobId);
   }
 
   @Override

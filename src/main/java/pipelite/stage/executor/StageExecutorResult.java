@@ -10,13 +10,14 @@
  */
 package pipelite.stage.executor;
 
+import lombok.Getter;
+import lombok.extern.flogger.Flogger;
+import pipelite.json.Json;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.Getter;
-import lombok.extern.flogger.Flogger;
-import pipelite.json.Json;
 
 @Getter
 @Flogger
@@ -69,12 +70,6 @@ public class StageExecutorResult {
 
   public boolean isError() {
     return executorState == StageExecutorState.ERROR;
-  }
-
-  public StageExecutorResult setSubmitted() {
-    executorState = StageExecutorState.SUBMITTED;
-    errorType = null;
-    return this;
   }
 
   /**
@@ -153,6 +148,13 @@ public class StageExecutorResult {
       return;
     }
     attributes.put(key, value.toString());
+  }
+
+  public void setAttributes(Map<String, String> attributes) {
+    if (attributes != null) {
+      this.attributes.clear();
+      this.attributes.putAll(attributes);
+    }
   }
 
   public ErrorType getErrorType() {

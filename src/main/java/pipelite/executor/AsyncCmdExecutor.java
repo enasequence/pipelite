@@ -23,11 +23,12 @@ import pipelite.log.LogKey;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorRequest;
-import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.AsyncCmdExecutorParameters;
 import pipelite.stage.path.AsyncCmdLogFilePathResolver;
+import pipelite.time.Time;
 
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.ZonedDateTime;
 
 /** Executes a command asynchronously. */
@@ -83,45 +84,26 @@ public abstract class AsyncCmdExecutor<
 
   @Override
   protected final void endJob() {
-    ZonedDateTime outFileTimeout =
-        this.getJobCompletedTime().plus(getExecutorParams().getLogTimeout());
-    StageExecutorResult result = this.getJobCompletedResult();
-    if (isSaveLogFile(result)) {
-      readOutFile(getRequest(), result, outFileTimeout);
+    // Read the output file.
+    logContext(log.atInfo(), getRequest())
+        .log("Attempting to read async job " + getJobId() + " output file: " + outFile);
+
+    // Wait no longer than log timeout for the output file.
+    ZonedDateTime endTime = this.getJobCompletedTime().plus(getExecutorParams().getLogTimeout());
+    long logTimeoutSeconds = getExecutorParams().getLogTimeout().toMillis() / 1000;
+    if (isSaveLogFile(getJobCompletedResult())) {
+      while (ZonedDateTime.now().isBefore(endTime)) {
+        if (getCmdRunner().fileExists(Paths.get(outFile))) {
+          getJobCompletedResult()
+              .setStageLog(readOutFile(getCmdRunner(), outFile, getExecutorParams().getLogLines()));
+          return;
+        }
+        Time.wait(Duration.ofSeconds(Math.min(5, logTimeoutSeconds / 3)));
+      }
+      getJobCompletedResult()
+          .setStageLog(
+              "The output file was not available within " + logTimeoutSeconds + " seconds.");
     }
-  }
-
-  /**
-   * Read the output file at end job execution.
-   *
-   * @param request the stage executor request
-   * @param outFileTimeout the output file read timeout
-   * @return true if the output file was available or if the output file poll timeout was exceeded
-   */
-  protected boolean readOutFile(
-      StageExecutorRequest request, StageExecutorResult result, ZonedDateTime outFileTimeout) {
-    logContext(log.atFine(), request).log("Reading output file: " + outFile);
-
-    // The output file may not be immediately available after the job execution finishes.
-
-    if (outFileTimeout.isBefore(ZonedDateTime.now())) {
-      // The output file poll timeout was exceeded
-      result.setStageLog(
-          "Missing output file. Not available within "
-              + (getExecutorParams().getLogTimeout().toMillis() / 1000)
-              + " seconds.");
-      return true;
-    }
-
-    // Check if the out file exists.
-    if (!getCmdRunner().fileExists(Paths.get(outFile))) {
-      // The output file is not available yet
-      return false;
-    }
-
-    // The output file is available
-    result.setStageLog(readOutFile(getCmdRunner(), outFile, getExecutorParams().getLogLines()));
-    return true;
   }
 
   protected static String readOutFile(CmdRunner cmdRunner, String outFile, int logLines) {

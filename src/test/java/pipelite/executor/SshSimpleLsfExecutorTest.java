@@ -10,9 +10,6 @@
  */
 package pipelite.executor;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +22,10 @@ import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 import pipelite.stage.parameters.cmd.LogFileSavePolicy;
+
+import java.time.Duration;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
@@ -47,6 +48,7 @@ public class SshSimpleLsfExecutorTest {
             .queue(lsfTestConfiguration.getQueue())
             .timeout(Duration.ofSeconds(30))
             .logSave(LogFileSavePolicy.ALWAYS)
+            .logTimeout(Duration.ofSeconds(60))
             .build());
 
     AsyncExecutorTestHelper.testExecute(
@@ -78,6 +80,7 @@ public class SshSimpleLsfExecutorTest {
             .queue(lsfTestConfiguration.getQueue())
             .timeout(Duration.ofSeconds(30))
             .logSave(LogFileSavePolicy.ALWAYS)
+            .logTimeout(Duration.ofSeconds(60))
             .build());
 
     AsyncExecutorTestHelper.testExecute(

@@ -97,7 +97,7 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
     cmd.append(BSUB_CMD);
 
     String logDir = logFilePathResolver.placeholderPath().dir(request);
-    String logFileName = logFilePathResolver.placeholderPath().file(request);
+    String logFileName = logFilePathResolver.fileName(request);
     if (logDir != null) {
       addCmdArgument(cmd, "-outdir");
       addCmdArgument(cmd, "\"" + logDir + "\"");
@@ -115,7 +115,7 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
   }
 
   @Override
-  protected String submitJob() {
+  protected SubmitJobResult submitJob() {
     StageExecutorRequest request = getRequest();
     outFile = logFilePathResolver.resolvedPath().file(request);
     StageExecutorResult result =
@@ -124,9 +124,8 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
     if (!result.isError()) {
       jobId = extractJobIdFromBsubOutput(result.getStageLog());
       logContext(log.atInfo(), request).log("Submitted LSF job " + jobId);
-      result.setSubmitted();
     }
-    return jobId;
+    return new SubmitJobResult(jobId, result);
   }
 
   @Override

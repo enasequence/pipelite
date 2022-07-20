@@ -63,11 +63,12 @@ public class AsyncTestExecutor
   }
 
   @Override
-  protected String submitJob() {
+  protected SubmitJobResult submitJob() {
     if (submitTime != null) {
       Time.wait(submitTime);
     }
-    return String.valueOf(nextJobId.incrementAndGet());
+    String jobId = String.valueOf(nextJobId.incrementAndGet());
+    return new SubmitJobResult(jobId);
   }
 
   @Override

@@ -35,12 +35,6 @@ public class AsyncExecutorTestHelper {
     String processId = PipeliteIdCreator.processId();
     String stageName = PipeliteIdCreator.stageName();
     Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
-    StageExecutorRequest request =
-        StageExecutorRequest.builder()
-            .pipelineName(pipelineName)
-            .processId(processId)
-            .stage(stage)
-            .build();
 
     executor.prepareExecution(pipeliteServices, pipelineName, processId, stage);
 

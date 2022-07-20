@@ -14,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.flogger.FluentLogger;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import pipelite.error.InternalErrorHandler;
 import pipelite.exception.PipeliteException;
@@ -114,12 +115,39 @@ public abstract class AsyncExecutor<
   /** Prepares the async job for submission. */
   protected void prepareJob() {}
 
+  @Value
+  protected static class SubmitJobResult {
+    private final String jobId;
+    private final StageExecutorResult result;
+
+    public SubmitJobResult(String jobId) {
+      this(jobId, null);
+    }
+
+    public SubmitJobResult(String jobId, StageExecutorResult result) {
+      this.jobId = jobId;
+      if (jobId != null) {
+        // Job was submitted successfully because the job id exists.
+        this.result = StageExecutorResult.submitted();
+      } else {
+        // Job submission failed because the job id does not exist.
+        this.result = StageExecutorResult.error();
+      }
+      if (result != null) {
+        // Preserve stage executor result attributes.
+        this.result.setAttributes(result.getAttributes());
+        // Preserve stage executor result log.
+        this.result.setStageLog(result.getStageLog());
+      }
+    }
+  }
+
   /**
    * Submits the async job.
    *
    * @return the job id if successful.
    */
-  protected abstract String submitJob();
+  protected abstract SubmitJobResult submitJob();
 
   /** Ends the async job. */
   protected void endJob() {}
@@ -149,11 +177,13 @@ public abstract class AsyncExecutor<
 
       ZonedDateTime submitStartTime = ZonedDateTime.now();
 
+      AtomicReference<SubmitJobResult> submitJobResult = new AtomicReference<>();
       internalErrorHandler.execute(
           () -> {
             prepareJob();
+            submitJobResult.set(submitJob());
             // Set the job id.
-            jobId = submitJob();
+            jobId = submitJobResult.get().getJobId();
           });
 
       internalErrorHandler.execute(
@@ -169,7 +199,6 @@ public abstract class AsyncExecutor<
                           + processId
                           + " stage "
                           + stageName);
-              resultCallback.accept(StageExecutorResult.submitted());
             } else {
               logContext(log.atSevere())
                   .log(
@@ -180,8 +209,8 @@ public abstract class AsyncExecutor<
                           + processId
                           + " stage "
                           + stageName);
-              resultCallback.accept(StageExecutorResult.error());
             }
+            resultCallback.accept(submitJobResult.get().getResult());
           });
 
       if (stageMetrics != null) {

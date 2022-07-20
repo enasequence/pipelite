@@ -97,7 +97,7 @@ public class KubernetesExecutor
   }
 
   @Override
-  protected String submitJob() {
+  protected SubmitJobResult submitJob() {
     KubernetesExecutorParameters executorParams = getExecutorParams();
     context = executorParams.getContext();
     namespace = executorParams.getNamespace() != null ? executorParams.getNamespace() : "default";
@@ -152,8 +152,7 @@ public class KubernetesExecutor
     } catch (KubernetesClientException e) {
       throw new PipeliteException("Kubernetes error", e);
     }
-
-    return jobId;
+    return new SubmitJobResult(jobId);
   }
 
   @Override
