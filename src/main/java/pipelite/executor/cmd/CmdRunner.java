@@ -116,43 +116,23 @@ public interface CmdRunner {
   }
 
   /**
-   * Creates a file using 'touch' command.
+   * Creates a temp file using the mktemp command.
    *
-   * @param file the file path
-   * @return true if the file was created, false if the file was not created or if the command
-   *     failed
+   * @return the temp file path or null if the file could not be created.
+   * @throws PipeliteException if could not create the temp file
    */
-  default boolean createFile(Path file) {
-    String filePath = file.toString();
+  default String createTempFile() {
     try {
-      return execute("touch " + filePath).isSuccess();
+      StageExecutorResult result = execute("mktemp");
+      if (!result.isSuccess() || result.getStageLog() == null || result.getStageLog().isEmpty()) {
+        throw new PipeliteException("Failed to create temp file");
+      } else {
+        return result.getStageLog().trim();
+      }
+    } catch (PipeliteException ex) {
+      throw ex;
     } catch (Exception ex) {
-      Logger.log.atSevere().withCause(ex).log("Failed to create file: " + filePath);
-      return false;
-    }
-  }
-
-  /**
-   * Creates a directory using 'mkdir -p' command.
-   *
-   * @param dir the directory path
-   * @return true if the directory was created, false if the directory was not created or if the
-   *     command failed
-   */
-  default boolean createDir(Path dir) {
-    try {
-      RetryableExternalAction.execute(
-          () -> {
-            StageExecutorResult retryResult = execute("mkdir -p " + dir);
-            if (!retryResult.isSuccess()) {
-              throw new PipeliteException("Failed to create directory: " + dir);
-            }
-            return retryResult;
-          });
-      return true;
-    } catch (Exception ex) {
-      Logger.log.atSevere().withCause(ex).log("Failed to create directory: " + dir);
-      return false;
+      throw new PipeliteException("Failed to create temp file", ex);
     }
   }
 

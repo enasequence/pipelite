@@ -13,7 +13,6 @@ package pipelite.executor.cmd;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
 import pipelite.PipeliteIdCreator;
 import pipelite.stage.executor.StageExecutorResult;
@@ -30,17 +29,14 @@ public class LocalCmdRunnerTest {
     String str = "test";
 
     // Create file in temp dir
-    String fileName = PipeliteIdCreator.id();
-    Path file = Paths.get(TMP_DIR, fileName);
-    assertThat(cmdRunner.fileExists(file)).isFalse();
-    cmdRunner.createFile(file);
-    assertThat(cmdRunner.fileExists(file)).isTrue();
+    String tempFile = cmdRunner.createTempFile();
+    assertThat(cmdRunner.fileExists(Path.of(tempFile))).isTrue();
 
     // Write file
-    cmdRunner.writeFile(str, file);
+    cmdRunner.writeFile(str, Path.of(tempFile));
 
     // Read file
-    assertThat(cmdRunner.readFile(file, 10)).isEqualTo("test");
+    assertThat(cmdRunner.readFile(Path.of(tempFile), 10)).isEqualTo("test");
   }
 
   @Test
@@ -48,27 +44,12 @@ public class LocalCmdRunnerTest {
     LocalCmdRunner cmdRunner = new LocalCmdRunner(CmdExecutorParameters.builder().build());
 
     // Create file in temp dir
-    String fileName = PipeliteIdCreator.id();
-    Path file = Paths.get(TMP_DIR, fileName);
-    assertThat(cmdRunner.fileExists(file)).isFalse();
-    cmdRunner.createFile(file);
-    assertThat(cmdRunner.fileExists(file)).isTrue();
+    String tempFile = cmdRunner.createTempFile();
+    assertThat(cmdRunner.fileExists(Path.of(tempFile))).isTrue();
 
     // Delete file
-    cmdRunner.deleteFile(file);
-    assertThat(cmdRunner.fileExists(file)).isFalse();
-  }
-
-  @Test
-  public void createDirAndDirExists() {
-    LocalCmdRunner cmdRunner = new LocalCmdRunner(CmdExecutorParameters.builder().build());
-
-    // Create directory in temp dir
-    String dirName = PipeliteIdCreator.id();
-    Path dir = Paths.get(TMP_DIR, dirName);
-    assertThat(cmdRunner.dirExists(dir)).isFalse();
-    cmdRunner.createDir(dir);
-    assertThat(cmdRunner.dirExists(dir)).isTrue();
+    cmdRunner.deleteFile(Path.of(tempFile));
+    assertThat(cmdRunner.fileExists(Path.of(tempFile))).isFalse();
   }
 
   @Test

@@ -21,7 +21,7 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.metrics.PipeliteMetrics;
-import pipelite.service.DescribeJobsCacheService;
+import pipelite.service.DescribeJobsService;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResultAttribute;
@@ -36,7 +36,7 @@ public class SshLsfExecutorTest {
 
   @Autowired PipeliteServices pipeliteServices;
   @Autowired LsfTestConfiguration lsfTestConfiguration;
-  @Autowired DescribeJobsCacheService describeJobsCacheService;
+  @Autowired DescribeJobsService describeJobsCacheService;
   @Autowired PipeliteMetrics pipeliteMetrics;
 
   @Test

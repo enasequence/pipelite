@@ -10,6 +10,8 @@
  */
 package pipelite.executor.describe;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import pipelite.configuration.ServiceConfiguration;
@@ -19,8 +21,6 @@ import pipelite.executor.describe.context.DefaultRequestContext;
 import pipelite.executor.describe.context.KubernetesExecutorContext;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class KubernetesDescribeJobsCacheTest {
 

@@ -12,6 +12,7 @@ package pipelite.executor;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.reflect.TypeToken;
+import org.springframework.util.Assert;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
@@ -51,6 +52,11 @@ public abstract class AbstractExecutor<T extends ExecutorParameters> implements 
   @Override
   public void prepareExecution(
       PipeliteServices pipeliteServices, String pipelineName, String processId, Stage stage) {
+    Assert.notNull(pipeliteServices, "Missing pipelite services");
+    Assert.notNull(pipelineName, "Missing pipeline name");
+    Assert.notNull(processId, "Missing process id");
+    Assert.notNull(stage, "Missing stage");
+
     request =
         StageExecutorRequest.builder()
             .pipelineName(pipelineName)

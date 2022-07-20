@@ -12,6 +12,9 @@ package pipelite.executor;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.flogger.FluentLogger;
+import java.time.ZonedDateTime;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.Value;
@@ -30,10 +33,6 @@ import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultCallback;
 import pipelite.stage.parameters.ExecutorParameters;
-
-import java.time.ZonedDateTime;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.ReentrantLock;
 
 /** Executes a stage asynchronously. Must be serializable to json. */
 @Getter
@@ -211,11 +210,11 @@ public abstract class AsyncExecutor<
                           + stageName);
             }
             resultCallback.accept(submitJobResult.get().getResult());
-          });
 
-      if (stageMetrics != null) {
-        stageMetrics.executor().endSubmit(submitStartTime);
-      }
+            if (stageMetrics != null) {
+              stageMetrics.executor().endSubmit(submitStartTime);
+            }
+          });
     } finally {
       submitLock.unlock();
     }

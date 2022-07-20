@@ -10,11 +10,10 @@
  */
 package pipelite.stage.path;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.Test;
 import pipelite.stage.executor.StageExecutorRequest;
-import pipelite.stage.parameters.AbstractLsfExecutorParameters;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class LsfLogFilePathResolverTest {
 

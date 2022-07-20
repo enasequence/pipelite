@@ -10,18 +10,17 @@
  */
 package pipelite.executor.describe;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.Mockito.mock;
+
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.describe.context.DefaultExecutorContext;
 import pipelite.executor.describe.context.DefaultRequestContext;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.executor.StageExecutorResult;
-
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.IntStream;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.Mockito.mock;
 
 public class DescribeJobsTest {
   private static class TestRequestContext extends DefaultRequestContext {
@@ -163,7 +162,8 @@ public class DescribeJobsTest {
           requests
               .requests
               .values()
-              .forEach(r -> results.add(DescribeJobsResult.create(r, StageExecutorResult.active())));
+              .forEach(
+                  r -> results.add(DescribeJobsResult.create(r, StageExecutorResult.active())));
           return results;
         };
 

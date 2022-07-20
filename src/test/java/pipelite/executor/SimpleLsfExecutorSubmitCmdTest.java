@@ -19,8 +19,6 @@ import org.junit.jupiter.api.Test;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
-import pipelite.stage.path.AsyncCmdLogFilePathResolver;
-import pipelite.stage.path.LsfDefinitionFilePathResolver;
 import pipelite.stage.path.LsfLogFilePathResolver;
 
 public class SimpleLsfExecutorSubmitCmdTest {
@@ -55,7 +53,7 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .build();
 
     String logDir = "\"" + new LsfLogFilePathResolver().placeholderPath().dir(request) + "\"";
-    String logFileName = new LsfLogFilePathResolver().placeholderPath().file(request);
+    String logFileName = new LsfLogFilePathResolver().fileName(request);
 
     executor.setOutFile(new LsfLogFilePathResolver().resolvedPath().dir(request));
 
@@ -97,7 +95,7 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .build();
 
     String logDir = "\"" + new LsfLogFilePathResolver().placeholderPath().dir(request) + "\"";
-    String logFileName = new LsfLogFilePathResolver().placeholderPath().file(request);
+    String logFileName = new LsfLogFilePathResolver().fileName(request);
 
     executor.setOutFile(new LsfLogFilePathResolver().resolvedPath().dir(request));
 
@@ -139,7 +137,7 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .build();
 
     String logDir = "\"" + new LsfLogFilePathResolver().placeholderPath().dir(request) + "\"";
-    String logFileName = new LsfLogFilePathResolver().placeholderPath().file(request);
+    String logFileName = new LsfLogFilePathResolver().fileName(request);
 
     executor.setOutFile(new LsfLogFilePathResolver().resolvedPath().dir(request));
 
@@ -180,7 +178,7 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .build();
 
     String logDir = "\"" + new LsfLogFilePathResolver().placeholderPath().dir(request) + "\"";
-    String logFileName = new LsfLogFilePathResolver().placeholderPath().file(request);
+    String logFileName = new LsfLogFilePathResolver().fileName(request);
 
     executor.setOutFile(new LsfLogFilePathResolver().resolvedPath().dir(request));
 
@@ -221,10 +219,10 @@ public class SimpleLsfExecutorSubmitCmdTest {
             .build();
 
     String logDir = "\"" + new LsfLogFilePathResolver().placeholderPath().dir(request) + "\"";
-    String logFileName = new LsfLogFilePathResolver().placeholderPath().file(request);
+    String logFileName = new LsfLogFilePathResolver().fileName(request);
 
     executor.setOutFile(new LsfLogFilePathResolver().resolvedPath().dir(request));
-    
+
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
         .isEqualTo(

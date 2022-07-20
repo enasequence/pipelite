@@ -14,6 +14,7 @@ import com.amazonaws.services.batch.AWSBatch;
 import com.amazonaws.services.batch.AWSBatchClientBuilder;
 import com.amazonaws.services.batch.model.*;
 import com.google.common.flogger.FluentLogger;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
@@ -30,8 +31,6 @@ import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.AwsBatchExecutorParameters;
-
-import java.util.UUID;
 
 @Flogger
 @Getter
@@ -111,7 +110,8 @@ public class AwsBatchExecutor
         .getJobs()
         .forEach(
             j ->
-                results.add(DescribeJobsResult.create(requests, j.getJobId(), extractJobResult(j))));
+                results.add(
+                    DescribeJobsResult.create(requests, j.getJobId(), extractJobResult(j))));
     return results;
   }
 

@@ -11,6 +11,8 @@
 package pipelite.executor;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
@@ -29,9 +31,6 @@ import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.AbstractLsfExecutorParameters;
 import pipelite.stage.path.LsfLogFilePathResolver;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /** Executes a command using LSF. */
 @Flogger

@@ -13,6 +13,9 @@ package pipelite.executor;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.flogger.FluentLogger;
+import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
@@ -24,12 +27,8 @@ import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.AsyncCmdExecutorParameters;
-import pipelite.stage.path.AsyncCmdLogFilePathResolver;
+import pipelite.stage.path.LogFilePathResolver;
 import pipelite.time.Time;
-
-import java.nio.file.Paths;
-import java.time.Duration;
-import java.time.ZonedDateTime;
 
 /** Executes a command asynchronously. */
 @Flogger
@@ -42,7 +41,7 @@ public abstract class AsyncCmdExecutor<
         ExecutorContext extends DefaultExecutorContext<RequestContext>>
     extends AsyncExecutor<T, RequestContext, ExecutorContext> implements JsonSerializableExecutor {
 
-  @JsonIgnore protected final AsyncCmdLogFilePathResolver logFilePathResolver;
+  @JsonIgnore protected final LogFilePathResolver logFilePathResolver;
 
   /**
    * The command to execute. Set during executor creation. Serialize in database to continue
@@ -56,7 +55,7 @@ public abstract class AsyncCmdExecutor<
    */
   protected String outFile;
 
-  public AsyncCmdExecutor(AsyncCmdLogFilePathResolver logFilePathResolver) {
+  public AsyncCmdExecutor(LogFilePathResolver logFilePathResolver) {
     this.logFilePathResolver = logFilePathResolver;
   }
 

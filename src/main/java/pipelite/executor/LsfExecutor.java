@@ -10,21 +10,18 @@
  */
 package pipelite.executor;
 
+import java.net.URL;
+import java.nio.file.Paths;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
-import pipelite.exception.PipeliteException;
 import pipelite.executor.cmd.CmdRunnerUtils;
 import pipelite.retryable.RetryableExternalAction;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.ExecutorParametersValidator;
 import pipelite.stage.parameters.LsfExecutorParameters;
-import pipelite.stage.path.LsfDefinitionFilePathResolver;
-
-import java.net.URL;
-import java.nio.file.Paths;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 /** Executes a command using LSF. */
 @Flogger
@@ -60,22 +57,22 @@ public class LsfExecutor extends AbstractLsfExecutor<LsfExecutorParameters>
 
   @Override
   protected void prepareJob() {
-    StageExecutorRequest request = getRequest();
-    LsfDefinitionFilePathResolver definitionFilePathResolver = new LsfDefinitionFilePathResolver();
-    if (!getCmdRunner().createDir(Paths.get(definitionFilePathResolver.resolvedPath().dir(request)))) {
-      throw new PipeliteException("Failed to create LSF definition dir");
-    }
-    definitionFile = definitionFilePathResolver.resolvedPath().file(request);
-    URL definitionUrl =
-        ExecutorParametersValidator.validateUrl(getExecutorParams().getDefinition(), "definition");
-    final String definition =
-        applyDefinitionParameters(
-            CmdRunnerUtils.read(definitionUrl), getExecutorParams().getParameters());
-    RetryableExternalAction.execute(
-        () -> {
-          getCmdRunner().writeFile(definition, Paths.get(definitionFile));
-          return null;
-        });
+    definitionFile =
+        RetryableExternalAction.execute(
+            () -> {
+              // Create temp file.
+              String tempFile = getCmdRunner().createTempFile();
+
+              URL definitionUrl =
+                  ExecutorParametersValidator.validateUrl(
+                      getExecutorParams().getDefinition(), "definition");
+              final String definition =
+                  applyDefinitionParameters(
+                      CmdRunnerUtils.read(definitionUrl), getExecutorParams().getParameters());
+
+              getCmdRunner().writeFile(definition, Paths.get(tempFile));
+              return tempFile;
+            });
   }
 
   public void setDefinitionFile(String definitionFile) {

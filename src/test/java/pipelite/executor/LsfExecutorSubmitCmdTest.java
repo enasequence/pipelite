@@ -10,17 +10,15 @@
  */
 package pipelite.executor;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
+import java.io.IOException;
+import java.nio.file.Files;
 import org.junit.jupiter.api.Test;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.LsfExecutorParameters;
-import pipelite.stage.path.LsfDefinitionFilePathResolver;
 import pipelite.stage.path.LsfLogFilePathResolver;
-
-import java.io.IOException;
-import java.nio.file.Files;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 public class LsfExecutorSubmitCmdTest {
 
@@ -47,9 +45,9 @@ public class LsfExecutorSubmitCmdTest {
             .stage(stage)
             .build();
 
-    String definitionFile = new LsfDefinitionFilePathResolver().resolvedPath().file(request);
+    String definitionFile = "tempFile";
     String logDir = "\"" + new LsfLogFilePathResolver().placeholderPath().dir(request) + "\"";
-    String logFileName = new LsfLogFilePathResolver().placeholderPath().file(request);
+    String logFileName = new LsfLogFilePathResolver().fileName(request);
 
     executor.setOutFile(new LsfLogFilePathResolver().resolvedPath().file(request));
     executor.setDefinitionFile(definitionFile);

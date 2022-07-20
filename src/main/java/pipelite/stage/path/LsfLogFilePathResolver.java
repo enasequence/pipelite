@@ -10,7 +10,7 @@
  */
 package pipelite.stage.path;
 
-public class LsfLogFilePathResolver extends AsyncCmdLogFilePathResolver {
+public class LsfLogFilePathResolver extends LogFilePathResolver {
   static final String USER_PLACEHOLDER = "%U";
 
   public LsfLogFilePathResolver() {

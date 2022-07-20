@@ -10,28 +10,26 @@
  */
 package pipelite.stage.path;
 
-import pipelite.stage.executor.StageExecutorRequest;
-import pipelite.stage.parameters.AsyncCmdExecutorParameters;
-
-import java.nio.file.Paths;
-
 import static pipelite.stage.path.FilePathNormalizer.normalize;
 import static pipelite.stage.path.FilePathSanitizer.sanitize;
+
+import java.nio.file.Paths;
+import pipelite.stage.executor.StageExecutorRequest;
+import pipelite.stage.parameters.AsyncCmdExecutorParameters;
 
 /**
  * Resolves the log file path and name: <dir>/<user>/<pipeline>/<process>/<stage>.log where the
  * <dir> is defined by executor parameters.
  */
-public abstract class AsyncCmdFilePathResolver {
+public abstract class LogFilePathResolver {
 
-  private final String fileSuffix;
+  private static final String FILE_SUFFIX = ".out";
 
   /** Submit user placeholder used by the LSF executor to create the log output directory. */
-  private final String userPlaceholder;
+  private final String submitUserPlaceholder;
 
-  public AsyncCmdFilePathResolver(String fileSuffix, String userPlaceholder) {
-    this.fileSuffix = fileSuffix;
-    this.userPlaceholder = userPlaceholder;
+  public LogFilePathResolver(String submitUserPlaceholder) {
+    this.submitUserPlaceholder = submitUserPlaceholder;
   }
 
   /**
@@ -40,22 +38,22 @@ public abstract class AsyncCmdFilePathResolver {
    */
   public class PlaceholderPath {
     public String dir(StageExecutorRequest request) {
-      return AsyncCmdFilePathResolver.this.dir(request, true);
+      return LogFilePathResolver.this.dir(request, true);
     }
 
     public String file(StageExecutorRequest request) {
-      return AsyncCmdFilePathResolver.this.file(request, true);
+      return LogFilePathResolver.this.file(request, true);
     }
   }
 
   /** A resolved file path without any placeholders. */
   public class ResolvedPath {
     public String dir(StageExecutorRequest request) {
-      return AsyncCmdFilePathResolver.this.dir(request, false);
+      return LogFilePathResolver.this.dir(request, false);
     }
 
     public String file(StageExecutorRequest request) {
-      return AsyncCmdFilePathResolver.this.file(request, false);
+      return LogFilePathResolver.this.file(request, false);
     }
   }
 
@@ -87,7 +85,7 @@ public abstract class AsyncCmdFilePathResolver {
   public String fileName(StageExecutorRequest request) {
     StringBuilder fileName = new StringBuilder();
     fileName.append(sanitize(request.getStage().getStageName()));
-    fileName.append(fileSuffix);
+    fileName.append(FILE_SUFFIX);
     return normalize(fileName.toString());
   }
 
@@ -99,8 +97,10 @@ public abstract class AsyncCmdFilePathResolver {
     return normalize(
         Paths.get(
                 getLogDirFromParams(params),
-                (isPlaceHolders && userPlaceholder != null && !userPlaceholder.isEmpty())
-                    ? userPlaceholder
+                (isPlaceHolders
+                        && submitUserPlaceholder != null
+                        && !submitUserPlaceholder.isEmpty())
+                    ? submitUserPlaceholder
                     : getUserFromParams(params),
                 sanitize(request.getPipelineName()),
                 sanitize(request.getProcessId()))

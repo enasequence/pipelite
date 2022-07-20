@@ -30,7 +30,8 @@ public class DescribeJobsCache<
   private final Function<Executor, DescribeJobs<RequestContext, ExecutorContext>>
       describeJobsFactory;
   private final Function<Executor, CacheContext> cacheContextFactory;
-  private final Map<CacheContext, DescribeJobs<RequestContext, ExecutorContext>> cache = new ConcurrentHashMap<>();
+  private final Map<CacheContext, DescribeJobs<RequestContext, ExecutorContext>> cache =
+      new ConcurrentHashMap<>();
 
   public DescribeJobsCache(
       ServiceConfiguration serviceConfiguration,
@@ -55,5 +56,9 @@ public class DescribeJobsCache<
   public DescribeJobs<RequestContext, ExecutorContext> getDescribeJobs(Executor executor) {
     return cache.computeIfAbsent(
         getCacheContext(executor), k -> describeJobsFactory.apply(executor));
+  }
+
+  public void shutdown() {
+    cache.values().forEach(describeJobs -> describeJobs.shutdown());
   }
 }

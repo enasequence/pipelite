@@ -10,16 +10,15 @@
  */
 package pipelite.executor;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.Test;
 import pipelite.json.Json;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.path.FilePathResolverTestHelper;
-import pipelite.stage.path.LsfDefinitionFilePathResolver;
 import pipelite.stage.path.LsfLogFilePathResolver;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class LsfExecutorSerializeTest {
 
@@ -35,7 +34,7 @@ public class LsfExecutorSerializeTest {
 
     executor.setJobId("test");
     executor.setOutFile(new LsfLogFilePathResolver().resolvedPath().file(request));
-    executor.setDefinitionFile(new LsfDefinitionFilePathResolver().resolvedPath().file(request));
+    executor.setDefinitionFile("tempFile");
     String json = Json.serialize(executor);
     assertThat(json)
         .isEqualTo(
@@ -43,14 +42,13 @@ public class LsfExecutorSerializeTest {
                 + "  \"jobId\" : \"test\",\n"
                 + "  \"cmd\" : \"echo test\",\n"
                 + "  \"outFile\" : \"logDir/user/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.out\",\n"
-                + "  \"definitionFile\" : \"logDir/user/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.job\"\n"
+                + "  \"definitionFile\" : \"tempFile\"\n"
                 + "}");
     LsfExecutor deserializedLsfExecutor = Json.deserialize(json, LsfExecutor.class);
     assertThat(deserializedLsfExecutor.getCmd()).isEqualTo(cmd);
     assertThat(deserializedLsfExecutor.getJobId()).isEqualTo("test");
     assertThat(deserializedLsfExecutor.getOutFile())
         .isEqualTo("logDir/user/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.out");
-    assertThat(deserializedLsfExecutor.getDefinitionFile())
-        .isEqualTo("logDir/user/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.job");
+    assertThat(deserializedLsfExecutor.getDefinitionFile()).isEqualTo("tempFile");
   }
 }

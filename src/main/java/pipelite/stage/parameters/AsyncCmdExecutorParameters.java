@@ -10,13 +10,12 @@
  */
 package pipelite.stage.parameters;
 
+import java.time.Duration;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-
-import java.time.Duration;
 
 /** Asynchronous polling executor parameters. */
 @Data

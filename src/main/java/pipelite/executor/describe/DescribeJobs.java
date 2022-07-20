@@ -15,7 +15,6 @@ import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.error.InternalErrorHandler;
-import pipelite.exception.PipeliteException;
 import pipelite.exception.PipeliteInterruptedException;
 import pipelite.exception.PipeliteTimeoutException;
 import pipelite.executor.describe.context.DefaultExecutorContext;
@@ -58,6 +57,7 @@ public class DescribeJobs<
   private final ExecutorContext executorContext;
   private final InternalErrorHandler internalErrorHandler;
   private final Map<RequestContext, StageExecutorResult> requests = new ConcurrentHashMap<>();
+  private final Thread worker;
 
   public DescribeJobs(
       ServiceConfiguration serviceConfiguration,
@@ -70,40 +70,39 @@ public class DescribeJobs<
     this.requestBatchSize = requestBatchSize;
     this.executorContext = executorContext;
     this.internalErrorHandler = new InternalErrorHandler(internalErrorService, serviceName, this);
-
-    new Thread(
+    this.worker =
+        new Thread(
             () -> {
               try {
+                log.atInfo().log(
+                    "Starting " + executorContext.executorName() + " job result retrieval");
+
                 AtomicBoolean interrupted = new AtomicBoolean(false);
                 while (!interrupted.get()) {
+                  if (Thread.interrupted()) {
+                    return;
+                  }
                   internalErrorHandler.execute(
                       () -> {
                         try {
                           Time.wait(REQUEST_FREQUENCY);
                         } catch (PipeliteInterruptedException ex) {
-                          log.atInfo().log(
-                              executorContext.executorName()
-                                  + " job result retrieval has been interrupted");
                           interrupted.set(true);
                           return;
                         }
-                        try {
-                          retrieveResults();
-                        } catch (Exception ex) {
-                          throw new PipeliteException(
-                              "Unexpected error when retrieving "
-                                  + executorContext.executorName()
-                                  + " job results",
-                              ex);
-                        }
+                        retrieveResults();
                       });
                 }
               } finally {
                 log.atInfo().log(
-                    executorContext.executorName() + " job result retrieval has stopped");
+                    "Shutting down " + executorContext.executorName() + " job result retrieval");
               }
-            })
-        .start();
+            });
+    worker.start();
+  }
+
+  public void shutdown() {
+    worker.interrupt();
   }
 
   protected void addRequest(RequestContext request) {

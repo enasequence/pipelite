@@ -10,6 +10,8 @@
  */
 package pipelite.executor.describe;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -20,8 +22,6 @@ import pipelite.executor.describe.context.AwsBatchExecutorContext;
 import pipelite.executor.describe.context.DefaultRequestContext;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.parameters.AwsBatchExecutorParameters;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("aws-test")
 public class AwsBatchDescribeJobsCacheTest {

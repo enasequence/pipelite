@@ -19,7 +19,7 @@ public class PipeliteServices {
   private final ScheduleService scheduleService;
   private final ProcessService processService;
   private final StageService stageService;
-  private final DescribeJobsCacheService describeJobsCacheService;
+  private final DescribeJobsService describeJobsService;
   private final MailService mailService;
   private final PipeliteLockerService pipeliteLockerService;
   private final RegisteredPipelineService registeredPipelineService;
@@ -33,7 +33,7 @@ public class PipeliteServices {
       @Autowired ScheduleService scheduleService,
       @Autowired ProcessService processService,
       @Autowired StageService stageService,
-      @Autowired DescribeJobsCacheService describeJobsCacheService,
+      @Autowired DescribeJobsService describeJobsService,
       @Autowired MailService mailService,
       @Autowired PipeliteLockerService pipeliteLockerService,
       @Autowired RegisteredPipelineService registeredPipelineService,
@@ -45,7 +45,7 @@ public class PipeliteServices {
     this.scheduleService = scheduleService;
     this.processService = processService;
     this.stageService = stageService;
-    this.describeJobsCacheService = describeJobsCacheService;
+    this.describeJobsService = describeJobsService;
     this.mailService = mailService;
     this.pipeliteLockerService = pipeliteLockerService;
     this.registeredPipelineService = registeredPipelineService;
@@ -68,8 +68,8 @@ public class PipeliteServices {
     return stageService;
   }
 
-  public DescribeJobsCacheService jobs() {
-    return describeJobsCacheService;
+  public DescribeJobsService jobs() {
+    return describeJobsService;
   }
 
   public MailService mail() {

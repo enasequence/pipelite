@@ -8,17 +8,22 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.stage.path;
+package pipelite.utils;
 
-/**
- * Resolves the log file path and name: <dir>/<user>/<pipeline>/<process>/<stage>.log where the
- * <dir> is defined by executor parameters.
- */
-public abstract class AsyncCmdDefinitionFilePathResolver extends AsyncCmdFilePathResolver {
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
-  private static final String FILE_SUFFIX = ".job";
+public class LazyFactory {
 
-  public AsyncCmdDefinitionFilePathResolver(String submitUserPlaceholder) {
-    super(FILE_SUFFIX, submitUserPlaceholder);
+  public static <T> T get(AtomicReference<T> ref, Supplier<T> sup) {
+    T result = ref.get();
+    if (result == null) {
+      synchronized (LazyFactory.class) {
+        if (result == null) {
+          ref.set(sup.get());
+        }
+      }
+    }
+    return ref.get();
   }
 }

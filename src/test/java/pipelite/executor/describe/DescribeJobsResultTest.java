@@ -10,15 +10,14 @@
  */
 package pipelite.executor.describe;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+
+import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.describe.context.DefaultRequestContext;
 import pipelite.stage.executor.StageExecutorResult;
-
-import java.util.Arrays;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 public class DescribeJobsResultTest {
 

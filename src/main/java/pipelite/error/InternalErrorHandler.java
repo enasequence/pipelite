@@ -10,10 +10,9 @@
  */
 package pipelite.error;
 
+import java.util.function.Consumer;
 import lombok.extern.flogger.Flogger;
 import pipelite.service.InternalErrorService;
-
-import java.util.function.Consumer;
 
 @Flogger
 public class InternalErrorHandler {
