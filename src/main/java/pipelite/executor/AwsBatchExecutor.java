@@ -121,7 +121,7 @@ public class AwsBatchExecutor
       case "SUCCEEDED":
         return StageExecutorResult.success();
       case "FAILED":
-        return StageExecutorResult.error();
+        return StageExecutorResult.executionError();
     }
     return StageExecutorResult.active();
   }

@@ -11,19 +11,6 @@
 package pipelite.executor.describe;
 
 import com.google.common.primitives.Ints;
-import lombok.extern.flogger.Flogger;
-import org.springframework.util.Assert;
-import pipelite.configuration.ServiceConfiguration;
-import pipelite.error.InternalErrorHandler;
-import pipelite.exception.PipeliteInterruptedException;
-import pipelite.exception.PipeliteTimeoutException;
-import pipelite.executor.describe.context.DefaultExecutorContext;
-import pipelite.executor.describe.context.DefaultRequestContext;
-import pipelite.service.InternalErrorService;
-import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultAttribute;
-import pipelite.time.Time;
-
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
@@ -35,6 +22,19 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import lombok.extern.flogger.Flogger;
+import org.springframework.util.Assert;
+import pipelite.configuration.ServiceConfiguration;
+import pipelite.error.InternalErrorHandler;
+import pipelite.exception.PipeliteInterruptedException;
+import pipelite.exception.PipeliteTimeoutException;
+import pipelite.executor.describe.context.DefaultExecutorContext;
+import pipelite.executor.describe.context.DefaultRequestContext;
+import pipelite.service.InternalErrorService;
+import pipelite.stage.executor.ErrorType;
+import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultAttribute;
+import pipelite.time.Time;
 
 /**
  * Contains active job requests and periodically retrieves job results (active, success, error). Job
@@ -181,7 +181,7 @@ public class DescribeJobs<
       recoverResults.found.forEach(
           r -> results.put(requestMap.get(r.request.getJobId()), r.result));
       recoverResults.notFound.forEach(
-          r -> results.put(requestMap.get(r.getJobId()), StageExecutorResult.error()));
+          r -> results.put(requestMap.get(r.getJobId()), StageExecutorResult.executionError()));
 
       recoverResults.found.forEach(
           r ->
@@ -283,12 +283,12 @@ public class DescribeJobs<
     if (permanentErrors == null) {
       return;
     }
-    String exitCode = result.getAttribute(StageExecutorResultAttribute.EXIT_CODE);
+    String exitCode = result.attribute(StageExecutorResultAttribute.EXIT_CODE);
     if (exitCode != null) {
       Integer exitCodeInt = Ints.tryParse(exitCode);
       if (exitCodeInt != null) {
         if (permanentErrors.contains(exitCodeInt)) {
-          result.setPermanentError();
+          result.errorType(ErrorType.PERMANENT_ERROR);
         }
       }
     }

@@ -54,16 +54,15 @@ public class SshSimpleLsfExecutorTest {
         executor,
         pipeliteServices,
         result -> {
-          assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).startsWith("bsub");
-          assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND))
-              .endsWith("echo test");
-          assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
-          assertThat(result.getStageLog()).contains("is submitted to");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).startsWith("bsub");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).endsWith("echo test");
+          assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+          assertThat(result.stageLog()).contains("is submitted to");
         },
         result -> {
           assertThat(result.isSuccess()).isTrue();
-          assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
-          assertThat(result.getStageLog()).contains("test\n");
+          assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+          assertThat(result.stageLog()).contains("test\n");
         });
   }
 
@@ -86,12 +85,12 @@ public class SshSimpleLsfExecutorTest {
         executor,
         pipeliteServices,
         result -> {
-          assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).startsWith("bsub");
-          assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).endsWith("exit 5");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).startsWith("bsub");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).endsWith("exit 5");
         },
         result -> {
           assertThat(result.isSuccess()).isFalse();
-          assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("5");
+          assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("5");
         });
   }
 }

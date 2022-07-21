@@ -115,7 +115,7 @@ class StageEntityTest {
 
     // End first execution.
 
-    StageExecutorResult firstExecutionResult = StageExecutorResult.error();
+    StageExecutorResult firstExecutionResult = StageExecutorResult.executionError();
     stageEntity.endExecution(firstExecutionResult);
 
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
@@ -237,16 +237,8 @@ class StageEntityTest {
     stageEntity = stage.getStageEntity();
 
     assertThat(stageEntity.getErrorType()).isNull();
-    stageEntity.endExecution(StageExecutorResult.internalError(new RuntimeException()));
+    stageEntity.endExecution(StageExecutorResult.internalError());
     assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.INTERNAL_ERROR);
-
-    stage.setStageEntity(
-        StageEntity.createExecution(pipelineName, processId, stage.getStageName()));
-    stageEntity = stage.getStageEntity();
-
-    assertThat(stageEntity.getErrorType()).isNull();
-    stageEntity.endExecution(StageExecutorResult.interruptedError());
-    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.INTERRUPTED_ERROR);
 
     stage.setStageEntity(
         StageEntity.createExecution(pipelineName, processId, stage.getStageName()));
@@ -261,7 +253,7 @@ class StageEntityTest {
     stageEntity = stage.getStageEntity();
 
     assertThat(stageEntity.getErrorType()).isNull();
-    stageEntity.endExecution(StageExecutorResult.error());
+    stageEntity.endExecution(StageExecutorResult.executionError());
     assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.EXECUTION_ERROR);
   }
 }

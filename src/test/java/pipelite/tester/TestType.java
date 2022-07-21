@@ -29,7 +29,6 @@ import pipelite.executor.CmdExecutor;
 import pipelite.executor.KubernetesExecutor;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.ErrorType;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 
@@ -390,12 +389,11 @@ public class TestType {
                     TestType testType = testType(key);
                     testTypeRef.set(testType);
 
-                    String lastExitCode =
-                        result.getAttribute(StageExecutorResultAttribute.EXIT_CODE);
+                    String lastExitCode = result.attribute(StageExecutorResultAttribute.EXIT_CODE);
                     if (lastExitCode != null) {
                       setLastExitCode(lastExitCode, key);
                     }
-                    if (result.isErrorType(ErrorType.TIMEOUT_ERROR)) {
+                    if (result.isTimeoutError()) {
                       testType.failedAsserts.add("Stage timeout error");
                     }
                     if (lastExitCode == null) {

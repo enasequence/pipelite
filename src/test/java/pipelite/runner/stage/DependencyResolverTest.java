@@ -877,7 +877,7 @@ public class DependencyResolverTest {
     if (stageState == SUCCESS) {
       stageEntity.endExecution(StageExecutorResult.success());
     } else if (stageState == ERROR) {
-      stageEntity.endExecution(StageExecutorResult.error());
+      stageEntity.endExecution(StageExecutorResult.executionError());
     }
   }
 
@@ -887,6 +887,6 @@ public class DependencyResolverTest {
     stageEntity.setStageState(ERROR);
     stageEntity.startExecution();
     stage.incrementImmediateExecutionCount();
-    stageEntity.endExecution(StageExecutorResult.error().setErrorType(errorType));
+    stageEntity.endExecution(StageExecutorResult.error(errorType));
   }
 }

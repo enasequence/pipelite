@@ -60,7 +60,7 @@ public interface CmdRunner {
                 }
                 return retryResult;
               });
-      return result.getStageLog();
+      return result.stageLog();
     } catch (Exception ex) {
       Logger.log.atSevere().withCause(ex).log("Failed to read file: " + file);
       return null;
@@ -124,10 +124,10 @@ public interface CmdRunner {
   default String createTempFile() {
     try {
       StageExecutorResult result = execute("mktemp");
-      if (!result.isSuccess() || result.getStageLog() == null || result.getStageLog().isEmpty()) {
+      if (!result.isSuccess() || result.stageLog() == null || result.stageLog().isEmpty()) {
         throw new PipeliteException("Failed to create temp file");
       } else {
-        return result.getStageLog().trim();
+        return result.stageLog().trim();
       }
     } catch (PipeliteException ex) {
       throw ex;
@@ -150,10 +150,10 @@ public interface CmdRunner {
     result =
         (exitCode == EXIT_CODE_SUCCESS)
             ? StageExecutorResult.success()
-            : StageExecutorResult.error();
-    result.addAttribute(StageExecutorResultAttribute.COMMAND, cmd);
-    result.addAttribute(StageExecutorResultAttribute.EXIT_CODE, exitCode);
-    result.setStageLog((stdout != null ? stdout : "") + (stderr != null ? stderr : ""));
+            : StageExecutorResult.executionError();
+    result.attribute(StageExecutorResultAttribute.COMMAND, cmd);
+    result.attribute(StageExecutorResultAttribute.EXIT_CODE, exitCode);
+    result.stageLog((stdout != null ? stdout : "") + (stderr != null ? stderr : ""));
     return result;
   }
 

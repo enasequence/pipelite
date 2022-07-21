@@ -116,10 +116,10 @@ public class StageEntity {
    */
   public void endExecution(StageExecutorResult result) {
     this.stageState = StageState.from(result);
-    this.errorType = result.getErrorType();
+    this.errorType = result.errorType();
     this.endTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.resultParams = result.attributesJson();
-    String exitCodeAttribute = result.getAttribute(StageExecutorResultAttribute.EXIT_CODE);
+    String exitCodeAttribute = result.attribute(StageExecutorResultAttribute.EXIT_CODE);
     try {
       this.exitCode = Integer.parseInt(exitCodeAttribute);
     } catch (Exception e) {

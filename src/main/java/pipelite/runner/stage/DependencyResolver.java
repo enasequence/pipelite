@@ -228,6 +228,7 @@ public class DependencyResolver {
    *     type prevents further executions
    */
   public static boolean isPermanentlyFailedStage(Stage stage) {
-    return (stage.isError() && !stage.hasMaximumRetriesLeft()) || !stage.isExecutableErrorType();
+    return (stage.isError() && !stage.hasMaximumRetriesLeft())
+        || (stage.isError() && !stage.isExecutableErrorType());
   }
 }

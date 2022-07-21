@@ -32,10 +32,9 @@ public class LocalCmdExecutorTest {
     stage.execute(
         (result) -> {
           assertThat(result.isSuccess()).isTrue();
-          assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND))
-              .isEqualTo("echo test");
-          assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
-          assertThat(result.getStageLog()).contains("test\n");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).isEqualTo("echo test");
+          assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+          assertThat(result.stageLog()).contains("test\n");
         });
   }
 }

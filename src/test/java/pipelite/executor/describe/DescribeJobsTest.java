@@ -108,7 +108,10 @@ public class DescribeJobsTest {
           requests
               .requests
               .values()
-              .forEach(r -> results.add(DescribeJobsResult.create(r, StageExecutorResult.error())));
+              .forEach(
+                  r ->
+                      results.add(
+                          DescribeJobsResult.create(r, StageExecutorResult.executionError())));
           return results;
         };
 

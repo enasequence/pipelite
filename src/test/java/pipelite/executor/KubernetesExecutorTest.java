@@ -102,8 +102,8 @@ public class KubernetesExecutorTest {
         result -> {},
         result -> {
           assertThat(result.isSuccess()).isTrue();
-          assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
-          assertThat(result.getStageLog())
+          assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+          assertThat(result.stageLog())
               .startsWith(
                   "\n"
                       + "Hello from Docker!\n"
@@ -131,7 +131,7 @@ public class KubernetesExecutorTest {
         result -> {},
         result -> {
           assertThat(result.isSuccess()).isFalse();
-          assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("5");
+          assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("5");
         });
   }
 }

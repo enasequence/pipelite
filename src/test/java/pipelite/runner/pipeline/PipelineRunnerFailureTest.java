@@ -137,19 +137,19 @@ public class PipelineRunnerFailureTest {
       this.stageTestResult = stageTestResult;
       this.firstStageExecResult =
           stageTestResult == StageTestResult.FIRST_ERROR
-              ? StageExecutorResult.error()
+              ? StageExecutorResult.executionError()
               : StageExecutorResult.success();
       this.secondStageExecResult =
           stageTestResult == StageTestResult.SECOND_ERROR
-              ? StageExecutorResult.error()
+              ? StageExecutorResult.executionError()
               : StageExecutorResult.success();
       this.thirdStageExecResult =
           stageTestResult == StageTestResult.THIRD_ERROR
-              ? StageExecutorResult.error()
+              ? StageExecutorResult.executionError()
               : StageExecutorResult.success();
       this.fourthStageExecResult =
           stageTestResult == StageTestResult.FOURTH_ERROR
-              ? StageExecutorResult.error()
+              ? StageExecutorResult.executionError()
               : StageExecutorResult.success();
     }
 

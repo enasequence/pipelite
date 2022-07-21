@@ -14,165 +14,158 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.Getter;
-import lombok.extern.flogger.Flogger;
+import org.springframework.util.Assert;
 import pipelite.json.Json;
 
-@Getter
-@Flogger
 public class StageExecutorResult {
 
-  private StageExecutorState executorState;
-  private String stageLog;
+  private StageExecutorState state;
   private ErrorType errorType;
 
+  private String stageLog;
   private final Map<String, String> attributes = new HashMap<>();
 
-  public StageExecutorResult(StageExecutorState executorState) {
-    if (executorState == null) {
-      throw new IllegalArgumentException("Missing executor state");
-    }
-    this.executorState = executorState;
+  private StageExecutorResult(StageExecutorState state, ErrorType errorType) {
+    this.state = state;
+    this.errorType = errorType;
   }
 
   public static StageExecutorResult submitted() {
-    return new StageExecutorResult(StageExecutorState.SUBMITTED);
+    return new StageExecutorResult(StageExecutorState.SUBMITTED, null);
   }
 
   public static StageExecutorResult active() {
-    return new StageExecutorResult(StageExecutorState.ACTIVE);
+    return new StageExecutorResult(StageExecutorState.ACTIVE, null);
   }
 
   public static StageExecutorResult success() {
-    return new StageExecutorResult(StageExecutorState.SUCCESS);
+    return new StageExecutorResult(StageExecutorState.SUCCESS, null);
   }
 
-  public static StageExecutorResult error() {
-    return new StageExecutorResult(StageExecutorState.ERROR);
+  public static StageExecutorResult error(ErrorType errorType) {
+    Assert.notNull(errorType, "Missing error type");
+    return new StageExecutorResult(StageExecutorState.ERROR, errorType);
   }
 
-  public static StageExecutorResult from(StageExecutorState stageExecutorState) {
-    return new StageExecutorResult(stageExecutorState);
+  public static StageExecutorResult executionError() {
+    return new StageExecutorResult(StageExecutorState.ERROR, ErrorType.EXECUTION_ERROR);
+  }
+
+  public static StageExecutorResult timeoutError() {
+    return new StageExecutorResult(StageExecutorState.ERROR, ErrorType.TIMEOUT_ERROR);
+  }
+
+  public static StageExecutorResult permanentError() {
+    return new StageExecutorResult(StageExecutorState.ERROR, ErrorType.PERMANENT_ERROR);
+  }
+
+  public static StageExecutorResult internalError() {
+    return new StageExecutorResult(StageExecutorState.ERROR, ErrorType.INTERNAL_ERROR);
+  }
+
+  public static StageExecutorResult from(StageExecutorState state) {
+    Assert.notNull(state, "Missing stage executor state");
+    if (state == StageExecutorState.ERROR) {
+      // Use the default error type.
+      return new StageExecutorResult(state, ErrorType.EXECUTION_ERROR);
+    } else {
+      return new StageExecutorResult(state, null);
+    }
   }
 
   public boolean isSubmitted() {
-    return executorState == StageExecutorState.SUBMITTED;
+    return state == StageExecutorState.SUBMITTED;
   }
 
   public boolean isActive() {
-    return executorState == StageExecutorState.ACTIVE;
+    return state == StageExecutorState.ACTIVE;
   }
 
   public boolean isSuccess() {
-    return executorState == StageExecutorState.SUCCESS;
+    return state == StageExecutorState.SUCCESS;
   }
 
   public boolean isError() {
-    return executorState == StageExecutorState.ERROR;
+    return state == StageExecutorState.ERROR;
   }
 
-  /**
-   * Creates an internal error. The exception stack trace is written to the stage log.
-   *
-   * @param ex the exception
-   * @return the stage execution result
-   */
-  public static StageExecutorResult internalError(Exception ex) {
-    StageExecutorResult result = error().setInternalError();
-    StringWriter str = new StringWriter();
-    ex.printStackTrace(new PrintWriter(str));
-    result.setStageLog(str.toString());
-    return result;
+  public boolean isExecutionError() {
+    return errorType == ErrorType.EXECUTION_ERROR;
   }
 
-  /**
-   * Creates an timeout error that is a type of permanent error.
-   *
-   * @return the stage execution result
-   */
-  public static StageExecutorResult timeoutError() {
-    return error().setTimeoutError();
+  public boolean isTimeoutError() {
+    return errorType == ErrorType.TIMEOUT_ERROR;
   }
 
-  /**
-   * Creates an interrupted error.
-   *
-   * @return the stage execution result
-   */
-  public static StageExecutorResult interruptedError() {
-    return error().setInterruptedError();
+  public boolean isPermanentError() {
+    return errorType == ErrorType.PERMANENT_ERROR;
   }
 
-  /**
-   * Creates a permanent error.
-   *
-   * @return the stage execution result
-   */
-  public static StageExecutorResult permanentError() {
-    return error().setPermanentError();
+  public boolean isInternalError() {
+    return errorType == ErrorType.INTERNAL_ERROR;
   }
 
-  public StageExecutorResult setErrorType(ErrorType errorType) {
-    executorState = StageExecutorState.ERROR;
-    this.errorType = errorType;
+  public boolean isCompleted() {
+    return isSuccess() || isError();
+  }
+
+  public StageExecutorResult errorType(ErrorType errorType) {
+    if (errorType != null) {
+      this.state = StageExecutorState.ERROR;
+      this.errorType = errorType;
+    }
     return this;
   }
 
-  public StageExecutorResult setInternalError() {
-    return setErrorType(ErrorType.INTERNAL_ERROR);
-  }
-
-  public StageExecutorResult setTimeoutError() {
-    return setErrorType(ErrorType.TIMEOUT_ERROR);
-  }
-
-  public StageExecutorResult setInterruptedError() {
-    return setErrorType(ErrorType.INTERRUPTED_ERROR);
-  }
-
-  public StageExecutorResult setPermanentError() {
-    return setErrorType(ErrorType.PERMANENT_ERROR);
-  }
-
-  public void setStageLog(String stageLog) {
+  public StageExecutorResult stageLog(String stageLog) {
     this.stageLog = stageLog;
+    return this;
   }
 
-  public String getAttribute(String value) {
-    return attributes.get(value);
+  public StageExecutorResult stageLog(StageExecutorResult result) {
+    if (result != null) {
+      this.stageLog = result.stageLog;
+    }
+    return this;
   }
 
-  public void addAttribute(String key, Object value) {
+  public StageExecutorResult stageLog(Exception ex) {
+    StringWriter str = new StringWriter();
+    ex.printStackTrace(new PrintWriter(str));
+    this.stageLog = str.toString();
+    return this;
+  }
+
+  public StageExecutorResult attribute(String key, Object value) {
     if (key == null || value == null) {
-      return;
+      return this;
     }
     attributes.put(key, value.toString());
+    return this;
   }
 
-  public void setAttributes(Map<String, String> attributes) {
-    if (attributes != null) {
+  public StageExecutorResult attributes(StageExecutorResult result) {
+    if (result != null) {
       this.attributes.clear();
-      this.attributes.putAll(attributes);
+      this.attributes.putAll(result.attributes);
     }
+    return this;
   }
 
-  public ErrorType getErrorType() {
-    if (executorState == StageExecutorState.ERROR && errorType == null) {
-      return ErrorType.EXECUTION_ERROR;
-    }
+  public StageExecutorState state() {
+    return state;
+  }
+
+  public ErrorType errorType() {
     return errorType;
   }
 
-  public boolean isErrorType(ErrorType errorType) {
-    return this.errorType == errorType;
+  public String stageLog() {
+    return stageLog;
   }
 
-  public static boolean isExecutableErrorType(ErrorType errorType) {
-    if (errorType == null) {
-      return true;
-    }
-    return !errorType.equals(ErrorType.PERMANENT_ERROR)
-        && !errorType.equals(ErrorType.TIMEOUT_ERROR);
+  public String attribute(String value) {
+    return attributes.get(value);
   }
 
   public String attributesJson() {

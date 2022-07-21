@@ -19,8 +19,8 @@ public enum StageState {
   SUCCESS,
   ERROR;
 
-  public static StageState from(StageExecutorState stageExecutorState) {
-    switch (stageExecutorState) {
+  public static StageState from(StageExecutorState state) {
+    switch (state) {
       case SUBMITTED:
       case ACTIVE:
         return StageState.ACTIVE;
@@ -32,7 +32,7 @@ public enum StageState {
     return null;
   }
 
-  public static StageState from(StageExecutorResult stageExecutorResult) {
-    return from(stageExecutorResult.getExecutorState());
+  public static StageState from(StageExecutorResult result) {
+    return from(result.state());
   }
 }

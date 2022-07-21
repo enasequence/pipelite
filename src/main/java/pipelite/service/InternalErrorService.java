@@ -55,13 +55,16 @@ public class InternalErrorService {
   public InternalErrorEntity saveInternalError(
       String pipelineName, String processId, String stageName, Class cls, Throwable exception) {
     try {
+      StringWriter stackTrace = new StringWriter();
+      exception.printStackTrace(new PrintWriter(stackTrace));
       log.atSevere().withCause(exception).log(
-          "Internal error in service: %s, pipeline: %s, process: %s, stage: %s, class %s",
+          "Internal error in service: %s, pipeline: %s, process: %s, stage: %s, class %s\n%s",
           serviceName != null ? serviceName : "?",
           pipelineName != null ? pipelineName : "?",
           processId != null ? processId : "?",
           stageName != null ? stageName : "?",
-          cls != null ? cls.getName() : "?");
+          cls != null ? cls.getName() : "?",
+          stackTrace);
       metrics.error().incrementCount();
 
       InternalErrorEntity internalErrorEntity = new InternalErrorEntity();

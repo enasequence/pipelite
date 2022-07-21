@@ -10,16 +10,17 @@
  */
 package pipelite.stage;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.flogger.Flogger;
+import org.springframework.util.Assert;
 import pipelite.entity.StageEntity;
 import pipelite.runner.stage.StageRunner;
 import pipelite.stage.executor.StageExecutor;
-import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultCallback;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Flogger
 @Data
@@ -67,7 +68,12 @@ public class Stage {
   }
 
   public boolean isExecutableErrorType() {
-    return StageExecutorResult.isExecutableErrorType(stageEntity.getErrorType());
+    Assert.isTrue(stageEntity.getStageState() == StageState.ERROR, "Unexpected stage state");
+    if (stageEntity.getErrorType() != null) {
+      return stageEntity.getErrorType().isExecutable();
+    } else {
+      return true;
+    }
   }
 
   /**

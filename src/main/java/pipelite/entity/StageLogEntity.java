@@ -49,7 +49,7 @@ public class StageLogEntity {
     stageLogEntity.pipelineName = stageEntity.getPipelineName();
     stageLogEntity.processId = stageEntity.getProcessId();
     stageLogEntity.stageName = stageEntity.getStageName();
-    stageLogEntity.stageLog = result.getStageLog();
+    stageLogEntity.stageLog = result.stageLog();
     return stageLogEntity;
   }
 

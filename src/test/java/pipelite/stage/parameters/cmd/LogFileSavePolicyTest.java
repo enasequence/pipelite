@@ -19,7 +19,7 @@ import pipelite.stage.executor.StageExecutorResult;
 public class LogFileSavePolicyTest {
 
   private StageExecutorResult error() {
-    return StageExecutorResult.error();
+    return StageExecutorResult.executionError();
   }
 
   private StageExecutorResult success() {

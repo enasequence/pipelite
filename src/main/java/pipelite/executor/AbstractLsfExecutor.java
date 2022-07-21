@@ -121,7 +121,7 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
         RetryableExternalAction.execute(() -> getCmdRunner().execute(getSubmitCmd(request)));
     String jobId = null;
     if (!result.isError()) {
-      jobId = extractJobIdFromBsubOutput(result.getStageLog());
+      jobId = extractJobIdFromBsubOutput(result.stageLog());
       logContext(log.atInfo(), request).log("Submitted LSF job " + jobId);
     }
     return new SubmitJobResult(jobId, result);
@@ -138,7 +138,7 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
       CmdRunner cmdRunner, DescribeJobsPollRequests<LsfRequestContext> requests) {
     // Ignore exit code as bjobs returns 255 if some jobs are not found.
     StageExecutorResult result = cmdRunner.execute(BJOBS_CMD + String.join(" ", requests.jobIds));
-    return extractJobResultsFromBjobsOutput(result.getStageLog(), requests);
+    return extractJobResultsFromBjobsOutput(result.stageLog(), requests);
   }
 
   /** Recovers job execution result. */
@@ -163,14 +163,14 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
         || str.contains("Successfully completed") // output file result
     ) {
       StageExecutorResult result = StageExecutorResult.success();
-      result.addAttribute(StageExecutorResultAttribute.EXIT_CODE, "0");
+      result.attribute(StageExecutorResultAttribute.EXIT_CODE, "0");
       return result;
     }
 
     Integer exitCode = extractExitCodeFromOutFile(str);
     if (exitCode != null) {
-      StageExecutorResult result = StageExecutorResult.error();
-      result.addAttribute(StageExecutorResultAttribute.EXIT_CODE, String.valueOf(exitCode));
+      StageExecutorResult result = StageExecutorResult.executionError();
+      result.attribute(StageExecutorResultAttribute.EXIT_CODE, String.valueOf(exitCode));
       return result;
     }
     return null;
@@ -244,23 +244,23 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
     StageExecutorResult result;
     if (column[BJOBS_COLUMN_STATUS].equals(BJOBS_STATUS_DONE)) {
       result = StageExecutorResult.success();
-      result.addAttribute(StageExecutorResultAttribute.EXIT_CODE, String.valueOf(0));
+      result.attribute(StageExecutorResultAttribute.EXIT_CODE, String.valueOf(0));
     } else if (column[BJOBS_COLUMN_STATUS].equals(BJOBS_STATUS_EXIT)) {
-      result = StageExecutorResult.error();
-      result.addAttribute(
+      result = StageExecutorResult.executionError();
+      result.attribute(
           StageExecutorResultAttribute.EXIT_CODE, String.valueOf(column[BJOBS_COLUMN_EXIT_CODE]));
     } else {
       result = StageExecutorResult.active();
     }
 
     String jobId = column[BJOBS_COLUMN_JOB_ID];
-    result.addAttribute(StageExecutorResultAttribute.JOB_ID, jobId);
+    result.attribute(StageExecutorResultAttribute.JOB_ID, jobId);
 
     if (result.isSuccess() || result.isError()) {
-      result.addAttribute(StageExecutorResultAttribute.EXEC_HOST, column[BJOBS_COLUMN_HOST]);
-      result.addAttribute(StageExecutorResultAttribute.CPU_TIME, column[BJOBS_COLUMN_CPU_TIME]);
-      result.addAttribute(StageExecutorResultAttribute.MAX_MEM, column[BJOBS_COLUMN_MAX_MEM]);
-      result.addAttribute(StageExecutorResultAttribute.AVG_MEM, column[BJOBS_COLUMN_AVG_MEM]);
+      result.attribute(StageExecutorResultAttribute.EXEC_HOST, column[BJOBS_COLUMN_HOST]);
+      result.attribute(StageExecutorResultAttribute.CPU_TIME, column[BJOBS_COLUMN_CPU_TIME]);
+      result.attribute(StageExecutorResultAttribute.MAX_MEM, column[BJOBS_COLUMN_MAX_MEM]);
+      result.attribute(StageExecutorResultAttribute.AVG_MEM, column[BJOBS_COLUMN_AVG_MEM]);
     }
 
     return DescribeJobsResult.create(requests, jobId, result);

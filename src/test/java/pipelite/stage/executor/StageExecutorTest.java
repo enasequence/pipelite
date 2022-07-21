@@ -61,7 +61,7 @@ public class StageExecutorTest {
   }
 
   private StageExecutorResult error() {
-    return StageExecutorResult.error();
+    return StageExecutorResult.executionError();
   }
 
   private StageExecutorResult success() {

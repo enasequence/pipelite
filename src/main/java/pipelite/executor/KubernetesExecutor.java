@@ -170,7 +170,7 @@ public class KubernetesExecutor
                 .withName(pod.getMetadata().getName())
                 .tailingLines(getExecutorParams().getLogLines())
                 .getLog();
-        result.setStageLog(log);
+        result.stageLog(log);
       }
       terminateJob(client);
     } catch (KubernetesClientException e) {
@@ -216,7 +216,8 @@ public class KubernetesExecutor
       for (String jobId : requests.jobIds) {
         if (!kubernetesJobIds.contains(jobId)) {
           // Consider jobs that can't be found as failed.
-          results.add(DescribeJobsResult.create(requests, jobId, StageExecutorResult.error()));
+          results.add(
+              DescribeJobsResult.create(requests, jobId, StageExecutorResult.executionError()));
         }
       }
     } catch (KubernetesClientException e) {
@@ -262,9 +263,9 @@ public class KubernetesExecutor
       throw new PipeliteException("Kubernetes error", e);
     }
 
-    result.addAttribute(
+    result.attribute(
         StageExecutorResultAttribute.EXIT_CODE, exitCode != null ? String.valueOf(exitCode) : "");
-    result.addAttribute(StageExecutorResultAttribute.JOB_ID, jobId);
+    result.attribute(StageExecutorResultAttribute.JOB_ID, jobId);
     return result;
   }
 
@@ -281,7 +282,7 @@ public class KubernetesExecutor
     for (JobCondition jobCondition : jobStatus.getConditions()) {
       if ("Failed".equalsIgnoreCase(jobCondition.getType())
           && "true".equalsIgnoreCase(jobCondition.getStatus())) {
-        return StageExecutorResult.error();
+        return StageExecutorResult.executionError();
       }
     }
 

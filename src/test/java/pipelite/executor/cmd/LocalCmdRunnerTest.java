@@ -57,8 +57,8 @@ public class LocalCmdRunnerTest {
     LocalCmdRunner cmdRunner = new LocalCmdRunner(CmdExecutorParameters.builder().build());
     StageExecutorResult result = cmdRunner.execute("echo test");
     assertThat(result.isError()).isFalse();
-    assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
-    assertThat(result.getStageLog()).startsWith("test");
+    assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+    assertThat(result.stageLog()).startsWith("test");
   }
 
   @Test
@@ -66,6 +66,6 @@ public class LocalCmdRunnerTest {
     LocalCmdRunner cmdRunner = new LocalCmdRunner(CmdExecutorParameters.builder().build());
     StageExecutorResult result = cmdRunner.execute(PipeliteIdCreator.id());
     assertThat(result.isError()).isTrue();
-    assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isNotEqualTo("0");
+    assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isNotEqualTo("0");
   }
 }

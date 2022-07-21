@@ -126,18 +126,12 @@ public abstract class AsyncExecutor<
     public SubmitJobResult(String jobId, StageExecutorResult result) {
       this.jobId = jobId;
       if (jobId != null) {
-        // Job was submitted successfully because the job id exists.
         this.result = StageExecutorResult.submitted();
       } else {
-        // Job submission failed because the job id does not exist.
-        this.result = StageExecutorResult.error();
+        this.result = StageExecutorResult.executionError();
       }
-      if (result != null) {
-        // Preserve stage executor result attributes.
-        this.result.setAttributes(result.getAttributes());
-        // Preserve stage executor result log.
-        this.result.setStageLog(result.getStageLog());
-      }
+      // Preserve log and attributes.
+      this.result.stageLog(result).attributes(result);
     }
   }
 
@@ -239,7 +233,7 @@ public abstract class AsyncExecutor<
                             "Completed async job with job id "
                                 + getJobId()
                                 + " and state "
-                                + result.getExecutorState().name());
+                                + result.state().name());
                     jobCompletedResult = result;
                     jobCompletedTime = ZonedDateTime.now();
                   }
@@ -251,7 +245,7 @@ public abstract class AsyncExecutor<
           }
         },
         ex -> {
-          jobCompletedResult = StageExecutorResult.internalError(ex);
+          jobCompletedResult = StageExecutorResult.internalError().stageLog(ex);
           internalErrorHandler.execute(() -> resultCallback.accept(jobCompletedResult));
         });
   }

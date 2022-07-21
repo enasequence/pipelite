@@ -109,7 +109,7 @@ class StageServiceTest {
 
     // End first execution.
 
-    StageExecutorResult firstExecutionResult = StageExecutorResult.error();
+    StageExecutorResult firstExecutionResult = StageExecutorResult.executionError();
     service.endExecution(stage, firstExecutionResult);
 
     assertStageEntityAfterFirstEndExecution(

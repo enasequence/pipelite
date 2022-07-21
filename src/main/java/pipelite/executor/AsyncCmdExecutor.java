@@ -94,14 +94,13 @@ public abstract class AsyncCmdExecutor<
       while (ZonedDateTime.now().isBefore(endTime)) {
         if (getCmdRunner().fileExists(Paths.get(outFile))) {
           getJobCompletedResult()
-              .setStageLog(readOutFile(getCmdRunner(), outFile, getExecutorParams().getLogLines()));
+              .stageLog(readOutFile(getCmdRunner(), outFile, getExecutorParams().getLogLines()));
           return;
         }
         Time.wait(Duration.ofSeconds(Math.min(5, logTimeoutSeconds / 3)));
       }
       getJobCompletedResult()
-          .setStageLog(
-              "The output file was not available within " + logTimeoutSeconds + " seconds.");
+          .stageLog("The output file was not available within " + logTimeoutSeconds + " seconds.");
     }
   }
 

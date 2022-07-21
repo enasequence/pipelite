@@ -17,7 +17,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import pipelite.PipeliteIdCreator;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
-import pipelite.stage.executor.ErrorType;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultCallback;
 import pipelite.time.Time;
@@ -54,7 +53,7 @@ public class AsyncExecutorTestHelper {
     }
 
     // Ignore timeout errors.
-    if (result.get().isErrorType(ErrorType.TIMEOUT_ERROR)) {
+    if (result.get().isTimeoutError()) {
       return;
     }
 

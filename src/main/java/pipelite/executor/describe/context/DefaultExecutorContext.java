@@ -58,6 +58,6 @@ public class DefaultExecutorContext<RequestContext extends DefaultRequestContext
     if (recoverJobCallback != null) {
       return recoverJobCallback.recoverJob(request);
     }
-    return DescribeJobsResult.create(request, StageExecutorResult.error());
+    return DescribeJobsResult.create(request, StageExecutorResult.executionError());
   }
 }

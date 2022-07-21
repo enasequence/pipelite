@@ -22,7 +22,7 @@ public class StageStateTest {
     assertThat(StageState.from(StageExecutorResult.submitted())).isEqualTo(StageState.ACTIVE);
     assertThat(StageState.from(StageExecutorResult.active())).isEqualTo(StageState.ACTIVE);
     assertThat(StageState.from(StageExecutorResult.success())).isEqualTo(StageState.SUCCESS);
-    assertThat(StageState.from(StageExecutorResult.error())).isEqualTo(StageState.ERROR);
+    assertThat(StageState.from(StageExecutorResult.executionError())).isEqualTo(StageState.ERROR);
   }
 
   @Test

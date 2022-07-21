@@ -34,7 +34,7 @@ public class PipelineMetricsTest {
     assertThat(TimeSeriesHelper.getCount(metrics.runner().failedTimeSeries())).isZero();
 
     metrics.stage(stageName).runner().endStageExecution(StageExecutorResult.success());
-    metrics.stage(stageName).runner().endStageExecution(StageExecutorResult.error());
+    metrics.stage(stageName).runner().endStageExecution(StageExecutorResult.executionError());
     metrics.runner().endProcessExecution(ProcessState.COMPLETED);
 
     assertThat(metrics.runner().completedCount()).isEqualTo(1);
@@ -59,7 +59,7 @@ public class PipelineMetricsTest {
     assertThat(TimeSeriesHelper.getCount(metrics.runner().failedTimeSeries())).isZero();
 
     metrics.stage(stageName).runner().endStageExecution(StageExecutorResult.success());
-    metrics.stage(stageName).runner().endStageExecution(StageExecutorResult.error());
+    metrics.stage(stageName).runner().endStageExecution(StageExecutorResult.executionError());
     metrics.runner().endProcessExecution(ProcessState.FAILED);
 
     assertThat(metrics.runner().completedCount()).isZero();

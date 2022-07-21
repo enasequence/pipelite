@@ -148,7 +148,7 @@ public class PipelineRunnerAsyncTest {
     public void execute(StageExecutorResultCallback resultCallback) {
       if (!isExecuteCalled(getRequest().getProcessId())) {
         firstExecuteCalledCount.incrementAndGet();
-        resultCallback.accept(StageExecutorResult.error());
+        resultCallback.accept(StageExecutorResult.executionError());
       } else {
         subsequentExecuteCalledCount.incrementAndGet();
         throw new RuntimeException("Unexpected call to execute");
@@ -177,7 +177,7 @@ public class PipelineRunnerAsyncTest {
         resultCallback.accept(StageExecutorResult.active());
       } else {
         subsequentExecuteCalledCount.incrementAndGet();
-        resultCallback.accept(StageExecutorResult.error());
+        resultCallback.accept(StageExecutorResult.executionError());
       }
     }
   }

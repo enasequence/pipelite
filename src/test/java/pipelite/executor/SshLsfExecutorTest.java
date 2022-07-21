@@ -59,15 +59,15 @@ public class SshLsfExecutorTest {
         executor,
         pipeliteServices,
         result -> {
-          assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).startsWith("bsub");
-          assertThat(result.getAttribute(StageExecutorResultAttribute.COMMAND)).contains("-yaml");
-          assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
-          assertThat(result.getStageLog()).contains("is submitted to default queue");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).startsWith("bsub");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains("-yaml");
+          assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+          assertThat(result.stageLog()).contains("is submitted to default queue");
         },
         result -> {
           assertThat(result.isSuccess()).isTrue();
-          assertThat(result.getAttribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
-          assertThat(result.getStageLog()).contains("test\n");
+          assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+          assertThat(result.stageLog()).contains("test\n");
         });
   }
 }

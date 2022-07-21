@@ -146,7 +146,7 @@ class RetryServiceTest {
     Stage stage = process.getStage(STAGE_NAME).get();
     stageService.prepareExecution(PIPELINE_NAME, processId, stage);
     stageService.startExecution(stage);
-    stageService.endExecution(stage, StageExecutorResult.error());
+    stageService.endExecution(stage, StageExecutorResult.executionError());
     StageEntity stageEntity = stage.getStageEntity();
 
     assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.FAILED);
@@ -281,7 +281,7 @@ class RetryServiceTest {
     Stage stage = process.getStage(STAGE_NAME).get();
     stageService.prepareExecution(SCHEDULE_NAME, processId, stage);
     stageService.startExecution(stage);
-    stageService.endExecution(stage, StageExecutorResult.error());
+    stageService.endExecution(stage, StageExecutorResult.executionError());
     StageEntity stageEntity = stage.getStageEntity();
 
     assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.FAILED);

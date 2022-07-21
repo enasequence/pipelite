@@ -159,7 +159,7 @@ public class ProcessRunnerPoolTest {
     AtomicInteger runProcessCnt = new AtomicInteger();
 
     for (int i = 0; i < PROCESS_CNT; i++) {
-      Process process = createProcess((request) -> StageExecutorResult.error());
+      Process process = createProcess((request) -> StageExecutorResult.executionError());
       pool.runProcess(PIPELINE_NAME, process, (p) -> runProcessCnt.incrementAndGet());
     }
 

@@ -135,7 +135,7 @@ public class ScheduleRunnerTest {
                 (request) -> {
                   stageExecCnt.incrementAndGet();
                   if (stageTestResult == StageTestResult.ERROR) {
-                    return StageExecutorResult.error();
+                    return StageExecutorResult.executionError();
                   }
                   if (stageTestResult == StageTestResult.SUCCESS) {
                     return StageExecutorResult.success();

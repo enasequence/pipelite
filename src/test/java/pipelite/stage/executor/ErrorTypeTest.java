@@ -10,19 +10,17 @@
  */
 package pipelite.stage.executor;
 
-public enum ErrorType {
-  EXECUTION_ERROR(true),
-  TIMEOUT_ERROR(false),
-  PERMANENT_ERROR(false),
-  INTERNAL_ERROR(true);
+import static org.assertj.core.api.Assertions.assertThat;
 
-  private final boolean isExecutable;
+import org.junit.jupiter.api.Test;
 
-  ErrorType(boolean isExecutable) {
-    this.isExecutable = isExecutable;
-  }
+public class ErrorTypeTest {
 
-  public boolean isExecutable() {
-    return isExecutable;
+  @Test
+  public void isExecutable() {
+    assertThat(ErrorType.EXECUTION_ERROR.isExecutable()).isTrue();
+    assertThat(ErrorType.INTERNAL_ERROR.isExecutable()).isTrue();
+    assertThat(ErrorType.PERMANENT_ERROR.isExecutable()).isFalse();
+    assertThat(ErrorType.TIMEOUT_ERROR.isExecutable()).isFalse();
   }
 }

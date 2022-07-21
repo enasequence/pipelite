@@ -23,7 +23,7 @@ public class StageExecutorResultTest {
     assertThat(result.isActive()).isFalse();
     assertThat(result.isSuccess()).isFalse();
     assertThat(result.isError()).isFalse();
-    assertThat(result.getExecutorState()).isEqualTo(StageExecutorState.SUBMITTED);
+    assertThat(result.state()).isEqualTo(StageExecutorState.SUBMITTED);
   }
 
   @Test
@@ -33,7 +33,7 @@ public class StageExecutorResultTest {
     assertThat(result.isActive()).isTrue();
     assertThat(result.isSuccess()).isFalse();
     assertThat(result.isError()).isFalse();
-    assertThat(result.getExecutorState()).isEqualTo(StageExecutorState.ACTIVE);
+    assertThat(result.state()).isEqualTo(StageExecutorState.ACTIVE);
   }
 
   @Test
@@ -43,76 +43,61 @@ public class StageExecutorResultTest {
     assertThat(result.isActive()).isFalse();
     assertThat(result.isSuccess()).isTrue();
     assertThat(result.isError()).isFalse();
-    assertThat(result.getExecutorState()).isEqualTo(StageExecutorState.SUCCESS);
+    assertThat(result.state()).isEqualTo(StageExecutorState.SUCCESS);
   }
 
   @Test
   public void isError() {
-    StageExecutorResult result = StageExecutorResult.error();
+    StageExecutorResult result = StageExecutorResult.executionError();
     assertThat(result.isSubmitted()).isFalse();
     assertThat(result.isActive()).isFalse();
     assertThat(result.isSuccess()).isFalse();
     assertThat(result.isError()).isTrue();
-    assertThat(result.getExecutorState()).isEqualTo(StageExecutorState.ERROR);
-  }
-
-  @Test
-  public void isExecutableErrorType() {
-    assertThat(StageExecutorResult.isExecutableErrorType(ErrorType.PERMANENT_ERROR)).isFalse();
-    assertThat(StageExecutorResult.isExecutableErrorType(ErrorType.TIMEOUT_ERROR)).isFalse();
-    assertThat(StageExecutorResult.isExecutableErrorType(ErrorType.INTERNAL_ERROR)).isTrue();
-    assertThat(StageExecutorResult.isExecutableErrorType(ErrorType.INTERRUPTED_ERROR)).isTrue();
-    assertThat(StageExecutorResult.isExecutableErrorType(null)).isTrue();
+    assertThat(result.state()).isEqualTo(StageExecutorState.ERROR);
   }
 
   @Test
   public void getErrorType() {
     // Set and check error type using static factory methods.
-    assertThat(StageExecutorResult.submitted().getErrorType()).isNull();
-    assertThat(StageExecutorResult.active().getErrorType()).isNull();
-    assertThat(StageExecutorResult.success().getErrorType()).isNull();
-    assertThat(StageExecutorResult.error().getErrorType()).isEqualTo(ErrorType.EXECUTION_ERROR);
-    assertThat(StageExecutorResult.internalError(new RuntimeException()).getErrorType())
-        .isEqualTo(ErrorType.INTERNAL_ERROR);
-    assertThat(StageExecutorResult.timeoutError().getErrorType())
-        .isEqualTo(ErrorType.TIMEOUT_ERROR);
-    assertThat(StageExecutorResult.interruptedError().getErrorType())
-        .isEqualTo(ErrorType.INTERRUPTED_ERROR);
-    assertThat(StageExecutorResult.permanentError().getErrorType())
+    assertThat(StageExecutorResult.submitted().errorType()).isNull();
+    assertThat(StageExecutorResult.active().errorType()).isNull();
+    assertThat(StageExecutorResult.success().errorType()).isNull();
+
+    assertThat(StageExecutorResult.executionError().errorType())
+        .isEqualTo(ErrorType.EXECUTION_ERROR);
+    assertThat(StageExecutorResult.internalError().errorType()).isEqualTo(ErrorType.INTERNAL_ERROR);
+    assertThat(StageExecutorResult.timeoutError().errorType()).isEqualTo(ErrorType.TIMEOUT_ERROR);
+    assertThat(StageExecutorResult.permanentError().errorType())
         .isEqualTo(ErrorType.PERMANENT_ERROR);
 
-    // Set and check error type using set*Error.
-    assertThat(StageExecutorResult.submitted().setInternalError().getErrorType())
+    // Set and check error type using errorType method.
+    assertThat(StageExecutorResult.submitted().errorType(ErrorType.EXECUTION_ERROR).errorType())
+        .isEqualTo(ErrorType.EXECUTION_ERROR);
+    assertThat(StageExecutorResult.submitted().errorType(ErrorType.INTERNAL_ERROR).errorType())
         .isEqualTo(ErrorType.INTERNAL_ERROR);
-    assertThat(StageExecutorResult.submitted().setTimeoutError().getErrorType())
+    assertThat(StageExecutorResult.submitted().errorType(ErrorType.TIMEOUT_ERROR).errorType())
         .isEqualTo(ErrorType.TIMEOUT_ERROR);
-    assertThat(StageExecutorResult.submitted().setInterruptedError().getErrorType())
-        .isEqualTo(ErrorType.INTERRUPTED_ERROR);
-    assertThat(StageExecutorResult.submitted().setPermanentError().getErrorType())
+    assertThat(StageExecutorResult.submitted().errorType(ErrorType.PERMANENT_ERROR).errorType())
         .isEqualTo(ErrorType.PERMANENT_ERROR);
+    assertThat(StageExecutorResult.submitted().errorType(ErrorType.EXECUTION_ERROR).state())
+        .isEqualTo(StageExecutorState.ERROR);
+    assertThat(StageExecutorResult.submitted().errorType(ErrorType.INTERNAL_ERROR).state())
+        .isEqualTo(StageExecutorState.ERROR);
+    assertThat(StageExecutorResult.submitted().errorType(ErrorType.TIMEOUT_ERROR).state())
+        .isEqualTo(StageExecutorState.ERROR);
+    assertThat(StageExecutorResult.submitted().errorType(ErrorType.PERMANENT_ERROR).state())
+        .isEqualTo(StageExecutorState.ERROR);
 
-    // Set and check error type using setErrorType.
+    // Set and check error type using error with errorType.
     for (ErrorType errorType : ErrorType.values()) {
-      assertThat(StageExecutorResult.submitted().setErrorType(errorType).getErrorType())
-          .isEqualTo(errorType);
-    }
-
-    // Set error type to null after setting it using setErrorType.
-    // Error type should be the default EXECUTION_ERROR.
-    for (ErrorType errorType : ErrorType.values()) {
-      assertThat(
-              StageExecutorResult.submitted()
-                  .setErrorType(errorType)
-                  .setErrorType(null)
-                  .getErrorType())
-          .isEqualTo(ErrorType.EXECUTION_ERROR);
+      assertThat(StageExecutorResult.error(errorType).errorType()).isEqualTo(errorType);
     }
   }
 
   @Test
   public void getAttributesAsJson() {
     StageExecutorResult result = StageExecutorResult.success();
-    result.addAttribute(StageExecutorResultAttribute.HOST, "test");
+    result.attribute(StageExecutorResultAttribute.HOST, "test");
     assertThat(result.attributesJson()).isEqualTo("{\n" + "  \"host\" : \"test\"\n" + "}");
   }
 }

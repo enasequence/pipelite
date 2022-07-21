@@ -186,7 +186,8 @@ public class StageRunner {
                 },
                 (ex) ->
                     endStageExecution(
-                        processRunnerResultCallback, StageExecutorResult.internalError(ex)));
+                        processRunnerResultCallback,
+                        StageExecutorResult.internalError().stageLog(ex)));
     executeStage(processRunnerResultCallback, stageRunnerResultCallback);
   }
 
@@ -196,7 +197,8 @@ public class StageRunner {
     internalErrorHandler.execute(
         () -> stage.execute(stageRunnerResultCallback),
         (ex) ->
-            endStageExecution(processRunnerResultCallback, StageExecutorResult.internalError(ex)));
+            endStageExecution(
+                processRunnerResultCallback, StageExecutorResult.internalError().stageLog(ex)));
   }
 
   private void endStageExecution(
@@ -204,7 +206,7 @@ public class StageRunner {
     internalErrorHandler.execute(
         () -> {
           logContext(log.atFine())
-              .log("Stage execution ended with " + executorResult.getExecutorState().name());
+              .log("Stage execution ended with " + executorResult.state().name());
           pipeliteServices.stage().endExecution(stage, executorResult);
           internalErrorHandler.execute(() -> processRunnerResultCallback.accept(executorResult));
           if (!executorResult.isSuccess()) {
