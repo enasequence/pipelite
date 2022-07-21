@@ -67,7 +67,7 @@ public class AsyncTestExecutor
       Time.wait(submitTime);
     }
     String jobId = String.valueOf(nextJobId.incrementAndGet());
-    return new SubmitJobResult(jobId);
+    return new SubmitJobResult(jobId, null);
   }
 
   @Override

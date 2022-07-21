@@ -16,7 +16,6 @@ import lombok.Getter;
 import org.springframework.util.Assert;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultCallback;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.time.Time;
 
@@ -35,11 +34,11 @@ public class SyncTestExecutor extends SyncExecutor<ExecutorParameters> {
   }
 
   @Override
-  public void execute(StageExecutorResultCallback resultCallback) {
+  public StageExecutorResult execute() {
     if (executionTime != null) {
       Time.wait(executionTime);
     }
-    resultCallback.accept(callback.apply(getRequest()));
+    return callback.apply(getRequest());
   }
 
   @Override

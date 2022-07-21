@@ -85,7 +85,7 @@ public class AwsBatchExecutor
     }
     String jobId = submitJobResult.getJobId();
     logContext(log.atInfo(), request).log("Submitted AWSBatch job " + getJobId());
-    return new SubmitJobResult(jobId);
+    return new SubmitJobResult(jobId, null);
   }
 
   @Override

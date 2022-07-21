@@ -14,7 +14,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.flogger.FluentLogger;
 import java.time.ZonedDateTime;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.ReentrantLock;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.Value;
@@ -31,7 +30,6 @@ import pipelite.service.InternalErrorService;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultCallback;
 import pipelite.stage.parameters.ExecutorParameters;
 
 /** Executes a stage asynchronously. Must be serializable to json. */
@@ -65,7 +63,6 @@ public abstract class AsyncExecutor<
   @JsonIgnore private InternalErrorService internalErrorService;
   @JsonIgnore private StageMetrics stageMetrics;
 
-  @JsonIgnore private ReentrantLock submitLock = new ReentrantLock();
   @JsonIgnore private ZonedDateTime submitStartTime;
 
   @Override
@@ -119,10 +116,6 @@ public abstract class AsyncExecutor<
     private final String jobId;
     private final StageExecutorResult result;
 
-    public SubmitJobResult(String jobId) {
-      this(jobId, null);
-    }
-
     public SubmitJobResult(String jobId, StageExecutorResult result) {
       this.jobId = jobId;
       if (jobId != null) {
@@ -149,72 +142,54 @@ public abstract class AsyncExecutor<
   protected abstract void terminateJob();
 
   @Override
-  public void execute(StageExecutorResultCallback resultCallback) {
+  public StageExecutorResult execute() {
     if (jobId == null) {
-      if (submitLock.tryLock()) {
-        logContext(log.atInfo()).log("Submitting async job");
-        submitStartTime = ZonedDateTime.now();
-        submit(resultCallback);
-      } else {
-        logContext(log.atFine()).log("Waiting for async job submission to complete");
-      }
+      logContext(log.atInfo()).log("Submitting async job");
+      submitStartTime = ZonedDateTime.now();
+      return submit();
+    } else if (jobCompletedResult != null) {
+      logContext(log.atInfo()).log("Returning async job result " + jobCompletedResult.state());
+      return jobCompletedResult;
     } else {
-      poll(resultCallback);
+      poll();
+      return StageExecutorResult.active();
     }
   }
 
-  private void submit(StageExecutorResultCallback resultCallback) {
-    try {
-      InternalErrorHandler internalErrorHandler =
-          new InternalErrorHandler(internalErrorService, pipelineName, processId, stageName, this);
+  private StageExecutorResult submit() {
+    InternalErrorHandler internalErrorHandler =
+        new InternalErrorHandler(internalErrorService, pipelineName, processId, stageName, this);
+    ZonedDateTime submitStartTime = ZonedDateTime.now();
+    AtomicReference<SubmitJobResult> submitJobResult = new AtomicReference<>();
+    internalErrorHandler.execute(
+        () -> {
+          prepareJob();
+          submitJobResult.set(submitJob());
+          // Set the job id.
+          jobId = submitJobResult.get().getJobId();
+          if (jobId != null) {
+            logContext(log.atInfo()).log("Submitted async job");
+          } else {
+            String stageLog = submitJobResult.get().result.stageLog();
+            logContext(log.atSevere())
+                .log("Failed to submit async job" + (stageLog != null ? "\n" + stageLog : ""));
+          }
+        },
+        (ex) ->
+            submitJobResult.set(
+                new SubmitJobResult(null, StageExecutorResult.internalError().stageLog(ex))));
 
-      ZonedDateTime submitStartTime = ZonedDateTime.now();
+    internalErrorHandler.execute(
+        () -> {
+          if (stageMetrics != null) {
+            stageMetrics.executor().endSubmit(submitStartTime);
+          }
+        });
 
-      AtomicReference<SubmitJobResult> submitJobResult = new AtomicReference<>();
-      internalErrorHandler.execute(
-          () -> {
-            prepareJob();
-            submitJobResult.set(submitJob());
-            // Set the job id.
-            jobId = submitJobResult.get().getJobId();
-          });
-
-      internalErrorHandler.execute(
-          () -> {
-            if (jobId != null) {
-              logContext(log.atInfo())
-                  .log(
-                      "Submitted async job "
-                          + jobId
-                          + " pipeline "
-                          + pipelineName
-                          + " process "
-                          + processId
-                          + " stage "
-                          + stageName);
-            } else {
-              logContext(log.atSevere())
-                  .log(
-                      "Failed to submit async job"
-                          + " pipeline "
-                          + pipelineName
-                          + " process "
-                          + processId
-                          + " stage "
-                          + stageName);
-            }
-            resultCallback.accept(submitJobResult.get().getResult());
-
-            if (stageMetrics != null) {
-              stageMetrics.executor().endSubmit(submitStartTime);
-            }
-          });
-    } finally {
-      submitLock.unlock();
-    }
+    return submitJobResult.get().result;
   }
 
-  private void poll(StageExecutorResultCallback resultCallback) {
+  private void poll() {
     InternalErrorHandler internalErrorHandler =
         new InternalErrorHandler(internalErrorService, pipelineName, processId, stageName, this);
 
@@ -241,13 +216,9 @@ public abstract class AsyncExecutor<
           }
           if (jobCompletedResult != null) {
             internalErrorHandler.execute(() -> endJob());
-            internalErrorHandler.execute(() -> resultCallback.accept(jobCompletedResult));
           }
         },
-        ex -> {
-          jobCompletedResult = StageExecutorResult.internalError().stageLog(ex);
-          internalErrorHandler.execute(() -> resultCallback.accept(jobCompletedResult));
-        });
+        ex -> jobCompletedResult = StageExecutorResult.internalError().stageLog(ex));
   }
 
   @Override

@@ -151,7 +151,7 @@ public class KubernetesExecutor
     } catch (KubernetesClientException e) {
       throw new PipeliteException("Kubernetes error", e);
     }
-    return new SubmitJobResult(jobId);
+    return new SubmitJobResult(jobId, null);
   }
 
   @Override

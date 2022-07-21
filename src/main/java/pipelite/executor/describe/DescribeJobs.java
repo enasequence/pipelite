@@ -115,11 +115,17 @@ public class DescribeJobs<
    * retrieved then there is an attempt to recover the job result. This is called job recovery.
    */
   public void retrieveResults() {
-    log.atInfo().log("Retrieving " + executorContext.executorName() + " job results");
-
     internalErrorHandler.execute(
         () -> {
           List<RequestContext> activeRequests = getActiveRequests();
+
+          log.atInfo().log(
+              "Polling "
+                  + activeRequests.size()
+                  + " active "
+                  + executorContext.executorName()
+                  + " job");
+
           while (!activeRequests.isEmpty()) {
             int toIndex =
                 requestBatchSize == null

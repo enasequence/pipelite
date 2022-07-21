@@ -43,7 +43,9 @@ public class StageExecutorSerializerTest {
     }
 
     @Override
-    public void execute(StageExecutorResultCallback resultCallback) {}
+    public StageExecutorResult execute() {
+      return null;
+    }
 
     @Override
     public void terminate() {}

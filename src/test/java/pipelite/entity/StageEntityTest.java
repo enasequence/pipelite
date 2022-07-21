@@ -22,7 +22,6 @@ import pipelite.executor.SyncExecutor;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultCallback;
 import pipelite.stage.parameters.ExecutorParameters;
 
 class StageEntityTest {
@@ -32,7 +31,9 @@ class StageEntityTest {
     private static final String test = "TEST_EXECUTOR_DATA";
 
     @Override
-    public void execute(StageExecutorResultCallback resultCallback) {}
+    public StageExecutorResult execute() {
+      return null;
+    }
 
     @Override
     public void terminate() {}

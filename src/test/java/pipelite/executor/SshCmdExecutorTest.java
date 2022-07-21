@@ -23,6 +23,7 @@ import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.properties.SshTestConfiguration;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
+import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
@@ -51,16 +52,15 @@ public class SshCmdExecutorTest {
             .build());
     Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
 
-    stage.execute(
-        (result) -> {
-          // Ignore timeout errors.
-          if (result.isTimeoutError()) {
-            return;
-          }
-          assertThat(result.isSuccess()).isTrue();
-          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).isEqualTo("echo test");
-          assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
-          assertThat(result.stageLog()).contains("test\n");
-        });
+    StageExecutorResult result = stage.execute();
+
+    // Ignore timeout errors.
+    if (result.isTimeoutError()) {
+      return;
+    }
+    assertThat(result.isSuccess()).isTrue();
+    assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).isEqualTo("echo test");
+    assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+    assertThat(result.stageLog()).contains("test\n");
   }
 }

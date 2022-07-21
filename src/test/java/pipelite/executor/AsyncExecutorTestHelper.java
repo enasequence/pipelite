@@ -13,7 +13,6 @@ package pipelite.executor;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
-import java.util.concurrent.atomic.AtomicReference;
 import pipelite.PipeliteIdCreator;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
@@ -36,27 +35,25 @@ public class AsyncExecutorTestHelper {
 
     executor.prepareExecution(pipeliteServices, pipelineName, processId, stage);
 
-    AtomicReference<StageExecutorResult> result = new AtomicReference<>();
+    StageExecutorResult result = executor.execute();
 
-    executor.execute((r) -> result.set(r));
-
-    while (result.get() == null) {
+    while (result == null) {
       Time.wait(Duration.ofSeconds(1));
     }
 
-    assertThat(result.get().isSubmitted()).isTrue();
-    assertAfterSubmit.accept(result.get());
+    assertThat(result.isSubmitted()).isTrue();
+    assertAfterSubmit.accept(result);
 
-    while (!result.get().isSuccess() && !result.get().isError()) {
-      executor.execute((r) -> result.set(r));
+    while (!result.isSuccess() && !result.isError()) {
+      result = executor.execute();
       Time.wait(Duration.ofSeconds(1));
     }
 
     // Ignore timeout errors.
-    if (result.get().isTimeoutError()) {
+    if (result.isTimeoutError()) {
       return;
     }
 
-    assertAfterPoll.accept(result.get());
+    assertAfterPoll.accept(result);
   }
 }

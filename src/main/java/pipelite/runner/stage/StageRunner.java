@@ -158,44 +158,28 @@ public class StageRunner {
   }
 
   private void executeStage(StageExecutorResultCallback processRunnerResultCallback) {
-    StageExecutorResultCallback stageRunnerResultCallback =
-        (executorResult) ->
-            internalErrorHandler.execute(
-                () -> {
-                  if (executorResult == null) {
-                    throw new PipeliteException("Missing executor result");
-                  }
-                  if (executorResult.isSubmitted()) {
-                    logContext(log.atInfo()).log("Submitted async stage");
-                    pipeliteServices.stage().saveStage(stage);
-                  } else if (executorResult.isActive()) {
-                    boolean isTimeoutExecutor = this.stage.getExecutor() instanceof TimeoutExecutor;
-                    if (!isTimeoutExecutor && ZonedDateTime.now().isAfter(timeout)) {
-                      logContext(log.atSevere()).log("Maximum stage execution time exceeded.");
-                      // Terminate executor.
-                      internalErrorHandler.execute(() -> stage.getExecutor().terminate());
-                      endStageExecution(
-                          processRunnerResultCallback, StageExecutorResult.timeoutError());
-                    } else {
-                      logContext(log.atFiner())
-                          .log("Waiting asynchronous stage execution to complete");
-                    }
-                  } else if (executorResult.isSuccess() || executorResult.isError()) {
-                    endStageExecution(processRunnerResultCallback, executorResult);
-                  }
-                },
-                (ex) ->
-                    endStageExecution(
-                        processRunnerResultCallback,
-                        StageExecutorResult.internalError().stageLog(ex)));
-    executeStage(processRunnerResultCallback, stageRunnerResultCallback);
-  }
-
-  private void executeStage(
-      StageExecutorResultCallback processRunnerResultCallback,
-      StageExecutorResultCallback stageRunnerResultCallback) {
     internalErrorHandler.execute(
-        () -> stage.execute(stageRunnerResultCallback),
+        () -> {
+          StageExecutorResult result = stage.execute();
+
+          if (result == null) {
+            throw new PipeliteException("Missing async stage result");
+          } else if (result.isSubmitted()) {
+            logContext(log.atInfo()).log("Submitted async stage");
+            pipeliteServices.stage().saveStage(stage);
+          } else if (result.isActive()) {
+            boolean isTimeoutExecutor = this.stage.getExecutor() instanceof TimeoutExecutor;
+            if (!isTimeoutExecutor && ZonedDateTime.now().isAfter(timeout)) {
+              logContext(log.atSevere()).log("Maximum async stage execution time exceeded");
+              internalErrorHandler.execute(() -> stage.getExecutor().terminate());
+              endStageExecution(processRunnerResultCallback, StageExecutorResult.timeoutError());
+            } else {
+              logContext(log.atFiner()).log("Active async stage");
+            }
+          } else if (result.isSuccess() || result.isError()) {
+            endStageExecution(processRunnerResultCallback, result);
+          }
+        },
         (ex) ->
             endStageExecution(
                 processRunnerResultCallback, StageExecutorResult.internalError().stageLog(ex)));

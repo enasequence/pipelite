@@ -49,7 +49,9 @@ public class StageExecutorTest {
         PipeliteServices pipeliteServices, String pipelineName, String processId, Stage stage) {}
 
     @Override
-    public void execute(StageExecutorResultCallback resultCallback) {}
+    public StageExecutorResult execute() {
+      return null;
+    }
 
     @Override
     public void terminate() {}

@@ -15,12 +15,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.flogger.Flogger;
-import org.springframework.util.Assert;
 import pipelite.entity.StageEntity;
 import pipelite.entity.field.StageState;
 import pipelite.runner.stage.StageRunner;
 import pipelite.stage.executor.StageExecutor;
-import pipelite.stage.executor.StageExecutorResultCallback;
+import pipelite.stage.executor.StageExecutorResult;
 
 @Flogger
 @Data
@@ -43,8 +42,8 @@ public class Stage {
     }
   }
 
-  public void execute(StageExecutorResultCallback resultCallback) {
-    executor.execute(resultCallback);
+  public StageExecutorResult execute() {
+    return executor.execute();
   }
 
   public int getImmediateExecutionCount() {

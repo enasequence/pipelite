@@ -57,12 +57,8 @@ public interface StageExecutor<T extends ExecutorParameters> {
   void prepareExecution(
       PipeliteServices pipeliteServices, String pipelineName, String processId, Stage stage);
 
-  /**
-   * Called repeatedly to execute the stage until it is not ACTIVE.
-   *
-   * @param resultCallback execution result callback
-   */
-  void execute(StageExecutorResultCallback resultCallback);
+  /** Called repeatedly to execute the stage until it has completed. */
+  StageExecutorResult execute();
 
   /**
    * Returns true if the execution has been submitted to the execution backed.

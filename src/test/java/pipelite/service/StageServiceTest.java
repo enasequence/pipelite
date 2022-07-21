@@ -31,7 +31,6 @@ import pipelite.executor.JsonSerializableExecutor;
 import pipelite.executor.SyncExecutor;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultCallback;
 import pipelite.stage.parameters.ExecutorParameters;
 
 @SpringBootTest(
@@ -54,7 +53,9 @@ class StageServiceTest {
     }
 
     @Override
-    public void execute(StageExecutorResultCallback resultCallback) {}
+    public StageExecutorResult execute() {
+      return null;
+    }
 
     @Override
     public void terminate() {}

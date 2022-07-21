@@ -32,7 +32,6 @@ import pipelite.metrics.ProcessMetrics;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultCallback;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.tester.pipeline.ConfigurableTestPipeline;
 import pipelite.tester.process.TestProcessConfiguration;
@@ -132,23 +131,23 @@ public class PipelineRunnerAsyncTest {
 
   public static class SubmitSuccessPollSuccessExecutor extends TestExecutor {
     @Override
-    public void execute(StageExecutorResultCallback resultCallback) {
+    public StageExecutorResult execute() {
       if (!isExecuteCalled(getRequest().getProcessId())) {
         firstExecuteCalledCount.incrementAndGet();
-        resultCallback.accept(StageExecutorResult.active());
+        return StageExecutorResult.active();
       } else {
         subsequentExecuteCalledCount.incrementAndGet();
-        resultCallback.accept(StageExecutorResult.success());
+        return StageExecutorResult.success();
       }
     }
   }
 
   public static class SubmitErrorExecutor extends TestExecutor {
     @Override
-    public void execute(StageExecutorResultCallback resultCallback) {
+    public StageExecutorResult execute() {
       if (!isExecuteCalled(getRequest().getProcessId())) {
         firstExecuteCalledCount.incrementAndGet();
-        resultCallback.accept(StageExecutorResult.executionError());
+        return StageExecutorResult.executionError();
       } else {
         subsequentExecuteCalledCount.incrementAndGet();
         throw new RuntimeException("Unexpected call to execute");
@@ -158,7 +157,7 @@ public class PipelineRunnerAsyncTest {
 
   public static class SubmitExceptionExecutor extends TestExecutor {
     @Override
-    public void execute(StageExecutorResultCallback resultCallback) {
+    public StageExecutorResult execute() {
       if (!isExecuteCalled(getRequest().getProcessId())) {
         firstExecuteCalledCount.incrementAndGet();
         throw new RuntimeException("Expected exception from submit");
@@ -171,23 +170,23 @@ public class PipelineRunnerAsyncTest {
 
   public static class PollErrorExecutor extends TestExecutor {
     @Override
-    public void execute(StageExecutorResultCallback resultCallback) {
+    public StageExecutorResult execute() {
       if (!isExecuteCalled(getRequest().getProcessId())) {
         firstExecuteCalledCount.incrementAndGet();
-        resultCallback.accept(StageExecutorResult.active());
+        return StageExecutorResult.active();
       } else {
         subsequentExecuteCalledCount.incrementAndGet();
-        resultCallback.accept(StageExecutorResult.executionError());
+        return StageExecutorResult.executionError();
       }
     }
   }
 
   public static class PollExceptionExecutor extends TestExecutor {
     @Override
-    public void execute(StageExecutorResultCallback resultCallback) {
+    public StageExecutorResult execute() {
       if (!isExecuteCalled(getRequest().getProcessId())) {
         firstExecuteCalledCount.incrementAndGet();
-        resultCallback.accept(StageExecutorResult.active());
+        return StageExecutorResult.active();
       } else {
         subsequentExecuteCalledCount.incrementAndGet();
         throw new RuntimeException("Expected exception from poll");
