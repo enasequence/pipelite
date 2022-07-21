@@ -46,7 +46,7 @@ public class PipeliteWebServerTest {
 
   @Bean
   public TestPipeline errorPipeline() {
-    return new TestPipeline("PIPELINE_ERROR_1_" + ID, StageExecutorState.ERROR);
+    return new TestPipeline("PIPELINE_ERROR_1_" + ID, StageExecutorState.EXECUTION_ERROR);
   }
 
   @Bean
@@ -66,7 +66,8 @@ public class PipeliteWebServerTest {
         builder ->
             builder
                 .execute("SCHEDULE_STAGE_ERROR_1")
-                .withAsyncTestExecutor(StageExecutorState.ERROR, SUBMIT_TIME, EXECUTION_TIME));
+                .withAsyncTestExecutor(
+                    StageExecutorState.EXECUTION_ERROR, SUBMIT_TIME, EXECUTION_TIME));
   }
 
   public static class TestPipeline extends ConfigurableTestPipeline<TestProcessConfiguration> {

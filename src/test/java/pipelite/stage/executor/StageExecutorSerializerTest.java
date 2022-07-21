@@ -16,13 +16,13 @@ import static org.mockito.Mockito.mock;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import pipelite.entity.StageEntity;
+import pipelite.entity.field.StageState;
 import pipelite.executor.JsonSerializableExecutor;
 import pipelite.executor.SimpleLsfExecutor;
 import pipelite.executor.SyncExecutor;
 import pipelite.service.InternalErrorService;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
-import pipelite.stage.StageState;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 

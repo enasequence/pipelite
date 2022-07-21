@@ -11,7 +11,7 @@
 package pipelite.log;
 
 import com.google.common.flogger.MetadataKey;
-import pipelite.stage.StageState;
+import pipelite.entity.field.StageState;
 
 public class LogKey {
 

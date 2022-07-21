@@ -14,5 +14,19 @@ public enum StageExecutorState {
   SUBMITTED,
   ACTIVE,
   SUCCESS,
-  ERROR;
+  /** Execution errors are retried. */
+  EXECUTION_ERROR,
+  /** Timeout errors are not retried. */
+  TIMEOUT_ERROR,
+  /** Permanent errors are not retried. */
+  PERMANENT_ERROR,
+  /** Internal errors are retried. */
+  INTERNAL_ERROR;
+
+  public boolean isError() {
+    return this == EXECUTION_ERROR
+        || this == TIMEOUT_ERROR
+        || this == PERMANENT_ERROR
+        || this == INTERNAL_ERROR;
+  }
 }

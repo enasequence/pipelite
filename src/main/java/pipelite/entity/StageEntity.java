@@ -17,9 +17,9 @@ import javax.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.flogger.Flogger;
+import pipelite.entity.field.ErrorType;
+import pipelite.entity.field.StageState;
 import pipelite.json.Json;
-import pipelite.stage.StageState;
-import pipelite.stage.executor.ErrorType;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 
@@ -116,7 +116,7 @@ public class StageEntity {
    */
   public void endExecution(StageExecutorResult result) {
     this.stageState = StageState.from(result);
-    this.errorType = result.errorType();
+    this.errorType = ErrorType.from(result);
     this.endTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.resultParams = result.attributesJson();
     String exitCodeAttribute = result.attribute(StageExecutorResultAttribute.EXIT_CODE);

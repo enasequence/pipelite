@@ -8,8 +8,9 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.stage;
+package pipelite.entity.field;
 
+import pipelite.exception.PipeliteException;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorState;
 
@@ -20,16 +21,17 @@ public enum StageState {
   ERROR;
 
   public static StageState from(StageExecutorState state) {
+    if (state.isError()) {
+      return ERROR;
+    }
     switch (state) {
       case SUBMITTED:
       case ACTIVE:
         return StageState.ACTIVE;
-      case ERROR:
-        return StageState.ERROR;
       case SUCCESS:
         return StageState.SUCCESS;
     }
-    return null;
+    throw new PipeliteException("Unexpected stage executor state: " + state.name());
   }
 
   public static StageState from(StageExecutorResult result) {

@@ -17,9 +17,9 @@ import java.util.stream.Collectors;
 import pipelite.configuration.properties.KubernetesTestConfiguration;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.entity.StageEntity;
+import pipelite.entity.field.ErrorType;
+import pipelite.entity.field.StageState;
 import pipelite.service.StageService;
-import pipelite.stage.StageState;
-import pipelite.stage.executor.ErrorType;
 import pipelite.tester.TestType;
 
 public class StageEntityAsserter {

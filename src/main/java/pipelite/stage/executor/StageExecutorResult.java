@@ -15,62 +15,65 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.util.Assert;
+import pipelite.entity.field.ErrorType;
+import pipelite.exception.PipeliteException;
 import pipelite.json.Json;
 
 public class StageExecutorResult {
 
   private StageExecutorState state;
-  private ErrorType errorType;
-
   private String stageLog;
   private final Map<String, String> attributes = new HashMap<>();
 
-  private StageExecutorResult(StageExecutorState state, ErrorType errorType) {
+  private StageExecutorResult(StageExecutorState state) {
     this.state = state;
-    this.errorType = errorType;
+  }
+
+  public static StageExecutorResult create(StageExecutorState state) {
+    Assert.notNull(state, "Missing state");
+    return new StageExecutorResult(state);
+  }
+
+  public static StageExecutorResult create(ErrorType errorType) {
+    switch (errorType) {
+      case EXECUTION_ERROR:
+        return new StageExecutorResult(StageExecutorState.EXECUTION_ERROR);
+      case TIMEOUT_ERROR:
+        return new StageExecutorResult(StageExecutorState.TIMEOUT_ERROR);
+      case PERMANENT_ERROR:
+        return new StageExecutorResult(StageExecutorState.PERMANENT_ERROR);
+      case INTERNAL_ERROR:
+        return new StageExecutorResult(StageExecutorState.INTERNAL_ERROR);
+    }
+    throw new PipeliteException("Invalid error type");
   }
 
   public static StageExecutorResult submitted() {
-    return new StageExecutorResult(StageExecutorState.SUBMITTED, null);
+    return new StageExecutorResult(StageExecutorState.SUBMITTED);
   }
 
   public static StageExecutorResult active() {
-    return new StageExecutorResult(StageExecutorState.ACTIVE, null);
+    return new StageExecutorResult(StageExecutorState.ACTIVE);
   }
 
   public static StageExecutorResult success() {
-    return new StageExecutorResult(StageExecutorState.SUCCESS, null);
-  }
-
-  public static StageExecutorResult error(ErrorType errorType) {
-    Assert.notNull(errorType, "Missing error type");
-    return new StageExecutorResult(StageExecutorState.ERROR, errorType);
+    return new StageExecutorResult(StageExecutorState.SUCCESS);
   }
 
   public static StageExecutorResult executionError() {
-    return new StageExecutorResult(StageExecutorState.ERROR, ErrorType.EXECUTION_ERROR);
+    return new StageExecutorResult(StageExecutorState.EXECUTION_ERROR);
   }
 
   public static StageExecutorResult timeoutError() {
-    return new StageExecutorResult(StageExecutorState.ERROR, ErrorType.TIMEOUT_ERROR);
+    return new StageExecutorResult(StageExecutorState.TIMEOUT_ERROR);
   }
 
   public static StageExecutorResult permanentError() {
-    return new StageExecutorResult(StageExecutorState.ERROR, ErrorType.PERMANENT_ERROR);
+    return new StageExecutorResult(StageExecutorState.PERMANENT_ERROR);
   }
 
   public static StageExecutorResult internalError() {
-    return new StageExecutorResult(StageExecutorState.ERROR, ErrorType.INTERNAL_ERROR);
-  }
-
-  public static StageExecutorResult from(StageExecutorState state) {
-    Assert.notNull(state, "Missing stage executor state");
-    if (state == StageExecutorState.ERROR) {
-      // Use the default error type.
-      return new StageExecutorResult(state, ErrorType.EXECUTION_ERROR);
-    } else {
-      return new StageExecutorResult(state, null);
-    }
+    return new StageExecutorResult(StageExecutorState.INTERNAL_ERROR);
   }
 
   public boolean isSubmitted() {
@@ -86,34 +89,27 @@ public class StageExecutorResult {
   }
 
   public boolean isError() {
-    return state == StageExecutorState.ERROR;
+    return state.isError();
   }
 
   public boolean isExecutionError() {
-    return errorType == ErrorType.EXECUTION_ERROR;
+    return state == StageExecutorState.EXECUTION_ERROR;
   }
 
   public boolean isTimeoutError() {
-    return errorType == ErrorType.TIMEOUT_ERROR;
+    return state == StageExecutorState.TIMEOUT_ERROR;
   }
 
   public boolean isPermanentError() {
-    return errorType == ErrorType.PERMANENT_ERROR;
+    return state == StageExecutorState.PERMANENT_ERROR;
   }
 
   public boolean isInternalError() {
-    return errorType == ErrorType.INTERNAL_ERROR;
+    return state == StageExecutorState.INTERNAL_ERROR;
   }
 
-  public boolean isCompleted() {
-    return isSuccess() || isError();
-  }
-
-  public StageExecutorResult errorType(ErrorType errorType) {
-    if (errorType != null) {
-      this.state = StageExecutorState.ERROR;
-      this.errorType = errorType;
-    }
+  public StageExecutorResult state(StageExecutorState state) {
+    this.state = state;
     return this;
   }
 
@@ -154,10 +150,6 @@ public class StageExecutorResult {
 
   public StageExecutorState state() {
     return state;
-  }
-
-  public ErrorType errorType() {
-    return errorType;
   }
 
   public String stageLog() {

@@ -191,7 +191,7 @@ public interface StageExecutor<T extends ExecutorParameters> {
   static AsyncTestExecutor createAsyncTestExecutor(
       StageExecutorState executorState, Duration submitTime, Duration executionTime) {
     return new AsyncTestExecutor(
-        (request) -> StageExecutorResult.from(executorState), submitTime, executionTime);
+        (request) -> StageExecutorResult.create(executorState), submitTime, executionTime);
   }
 
   /**
@@ -227,7 +227,7 @@ public interface StageExecutor<T extends ExecutorParameters> {
   static SyncTestExecutor createSyncTestExecutor(
       StageExecutorState executorState, Duration executionTime) {
     return new SyncTestExecutor(
-        (request) -> StageExecutorResult.from(executorState), executionTime);
+        (request) -> StageExecutorResult.create(executorState), executionTime);
   }
 
   /**

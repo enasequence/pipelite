@@ -11,7 +11,7 @@
 package pipelite.runner.stage;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static pipelite.stage.StageState.*;
+import static pipelite.entity.field.StageState.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -20,13 +20,13 @@ import lombok.experimental.Accessors;
 import org.junit.jupiter.api.Test;
 import pipelite.PipeliteIdCreator;
 import pipelite.entity.StageEntity;
+import pipelite.entity.field.ErrorType;
+import pipelite.entity.field.StageState;
 import pipelite.executor.SyncTestExecutor;
 import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.process.builder.ProcessBuilderHelper;
 import pipelite.stage.Stage;
-import pipelite.stage.StageState;
-import pipelite.stage.executor.ErrorType;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorState;
@@ -165,7 +165,7 @@ public class DependencyResolverTest {
       Process process =
           builder
               .execute("STAGE1")
-              .withSyncTestExecutor(StageExecutorState.ERROR, NO_RETRIES_EXECUTOR_PARAMS)
+              .withSyncTestExecutor(StageExecutorState.EXECUTION_ERROR, NO_RETRIES_EXECUTOR_PARAMS)
               .executeAfter("STAGE2", "STAGE1")
               .withSyncTestExecutor()
               .executeAfter("STAGE3", "STAGE1")
@@ -209,7 +209,7 @@ public class DependencyResolverTest {
           builder
               .execute("STAGE1")
               .withSyncTestExecutor(
-                  StageExecutorState.ERROR,
+                  StageExecutorState.EXECUTION_ERROR,
                   ExecutorParameters.builder().maximumRetries(3).immediateRetries(0).build())
               .executeAfter("STAGE2", "STAGE1")
               .withSyncTestExecutor()
@@ -252,7 +252,7 @@ public class DependencyResolverTest {
       Process process =
           builder
               .execute("STAGE1")
-              .withSyncTestExecutor(StageExecutorState.ERROR)
+              .withSyncTestExecutor(StageExecutorState.EXECUTION_ERROR)
               .executeAfter("STAGE2", "STAGE1")
               .withSyncTestExecutor()
               .executeAfter("STAGE3", "STAGE1")
@@ -295,7 +295,7 @@ public class DependencyResolverTest {
           builder
               .execute("STAGE1")
               .withSyncTestExecutor(
-                  StageExecutorState.ERROR,
+                  StageExecutorState.EXECUTION_ERROR,
                   ExecutorParameters.builder().maximumRetries(1).immediateRetries(1).build())
               .execute("STAGE2")
               .withSyncTestExecutor()
@@ -339,7 +339,7 @@ public class DependencyResolverTest {
           builder
               .execute("STAGE1")
               .withSyncTestExecutor(
-                  StageExecutorState.ERROR,
+                  StageExecutorState.EXECUTION_ERROR,
                   ExecutorParameters.builder().maximumRetries(1).immediateRetries(0).build())
               .execute("STAGE2")
               .withSyncTestExecutor()
@@ -389,7 +389,7 @@ public class DependencyResolverTest {
           builder
               .execute("STAGE1")
               .withSyncTestExecutor(
-                  StageExecutorState.ERROR,
+                  StageExecutorState.EXECUTION_ERROR,
                   ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build())
               .execute("STAGE2")
               .withSyncTestExecutor()
@@ -436,7 +436,7 @@ public class DependencyResolverTest {
       Process process =
           builder
               .execute("STAGE1")
-              .withSyncTestExecutor(StageExecutorState.ERROR)
+              .withSyncTestExecutor(StageExecutorState.EXECUTION_ERROR)
               .execute("STAGE2")
               .withSyncTestExecutor()
               .execute("STAGE3")
@@ -565,13 +565,13 @@ public class DependencyResolverTest {
     Process process =
         builder
             .execute("STAGE1")
-            .withSyncTestExecutor(StageExecutorState.ERROR, NO_RETRIES_EXECUTOR_PARAMS)
+            .withSyncTestExecutor(StageExecutorState.EXECUTION_ERROR, NO_RETRIES_EXECUTOR_PARAMS)
             .execute("STAGE2")
-            .withSyncTestExecutor(StageExecutorState.ERROR, NO_RETRIES_EXECUTOR_PARAMS)
+            .withSyncTestExecutor(StageExecutorState.EXECUTION_ERROR, NO_RETRIES_EXECUTOR_PARAMS)
             .execute("STAGE3")
-            .withSyncTestExecutor(StageExecutorState.ERROR, NO_RETRIES_EXECUTOR_PARAMS)
+            .withSyncTestExecutor(StageExecutorState.EXECUTION_ERROR, NO_RETRIES_EXECUTOR_PARAMS)
             .execute("STAGE4")
-            .withSyncTestExecutor(StageExecutorState.ERROR, NO_RETRIES_EXECUTOR_PARAMS)
+            .withSyncTestExecutor(StageExecutorState.EXECUTION_ERROR, NO_RETRIES_EXECUTOR_PARAMS)
             .build();
     Set<Stage> stages = process.getStages();
     for (Stage stage : stages) {
@@ -603,13 +603,13 @@ public class DependencyResolverTest {
     Process process =
         builder
             .execute("STAGE1")
-            .withSyncTestExecutor(StageExecutorState.ERROR)
+            .withSyncTestExecutor(StageExecutorState.EXECUTION_ERROR)
             .execute("STAGE2")
-            .withSyncTestExecutor(StageExecutorState.ERROR)
+            .withSyncTestExecutor(StageExecutorState.EXECUTION_ERROR)
             .execute("STAGE3")
-            .withSyncTestExecutor(StageExecutorState.ERROR)
+            .withSyncTestExecutor(StageExecutorState.EXECUTION_ERROR)
             .execute("STAGE4")
-            .withSyncTestExecutor(StageExecutorState.ERROR)
+            .withSyncTestExecutor(StageExecutorState.EXECUTION_ERROR)
             .build();
     Set<Stage> stages = process.getStages();
     for (Stage stage : stages) {
@@ -887,6 +887,6 @@ public class DependencyResolverTest {
     stageEntity.setStageState(ERROR);
     stageEntity.startExecution();
     stage.incrementImmediateExecutionCount();
-    stageEntity.endExecution(StageExecutorResult.error(errorType));
+    stageEntity.endExecution(StageExecutorResult.create(errorType));
   }
 }

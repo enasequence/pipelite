@@ -18,10 +18,10 @@ import io.micrometer.core.instrument.Timer;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import lombok.extern.flogger.Flogger;
+import pipelite.entity.field.StageState;
 import pipelite.metrics.helper.MicroMeterHelper;
 import pipelite.metrics.helper.TimeSeriesHelper;
 import pipelite.process.ProcessState;
-import pipelite.stage.StageState;
 import tech.tablesaw.api.Table;
 
 @Flogger

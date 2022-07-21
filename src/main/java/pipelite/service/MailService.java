@@ -21,12 +21,12 @@ import pipelite.configuration.MailConfiguration;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageLogEntity;
+import pipelite.entity.field.StageState;
 import pipelite.error.InternalErrorHandler;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.retryable.RetryableExternalAction;
 import pipelite.stage.Stage;
-import pipelite.stage.StageState;
 
 @Component
 @Flogger

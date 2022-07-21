@@ -11,18 +11,18 @@
 package pipelite.runner.process;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static pipelite.stage.StageState.*;
+import static pipelite.entity.field.StageState.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import pipelite.entity.StageEntity;
+import pipelite.entity.field.StageState;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.Stage;
-import pipelite.stage.StageState;
 import pipelite.stage.parameters.ExecutorParameters;
 
 public class ProcessRunnerTest {

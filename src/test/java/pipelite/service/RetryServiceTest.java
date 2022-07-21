@@ -31,6 +31,7 @@ import pipelite.cron.CronUtils;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.entity.StageEntity;
+import pipelite.entity.field.StageState;
 import pipelite.exception.PipeliteProcessRetryException;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.process.Process;
@@ -39,7 +40,6 @@ import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.runner.schedule.ScheduleRunner;
 import pipelite.stage.Stage;
-import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.ExecutorParameters;
@@ -117,7 +117,7 @@ class RetryServiceTest {
       builder
           .execute(STAGE_NAME)
           .withSyncTestExecutor(
-              StageExecutorState.ERROR,
+              StageExecutorState.EXECUTION_ERROR,
               ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build())
           .build();
     }

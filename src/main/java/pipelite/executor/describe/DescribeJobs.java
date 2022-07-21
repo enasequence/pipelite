@@ -31,9 +31,9 @@ import pipelite.exception.PipeliteTimeoutException;
 import pipelite.executor.describe.context.DefaultExecutorContext;
 import pipelite.executor.describe.context.DefaultRequestContext;
 import pipelite.service.InternalErrorService;
-import pipelite.stage.executor.ErrorType;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
+import pipelite.stage.executor.StageExecutorState;
 import pipelite.time.Time;
 
 /**
@@ -288,7 +288,7 @@ public class DescribeJobs<
       Integer exitCodeInt = Ints.tryParse(exitCode);
       if (exitCodeInt != null) {
         if (permanentErrors.contains(exitCodeInt)) {
-          result.errorType(ErrorType.PERMANENT_ERROR);
+          result.state(StageExecutorState.PERMANENT_ERROR);
         }
       }
     }

@@ -10,8 +10,8 @@
  */
 package pipelite.runner.process;
 
-import static pipelite.stage.StageState.PENDING;
-import static pipelite.stage.StageState.SUCCESS;
+import static pipelite.entity.field.StageState.PENDING;
+import static pipelite.entity.field.StageState.SUCCESS;
 
 import com.google.common.flogger.FluentLogger;
 import java.time.ZonedDateTime;
@@ -26,6 +26,7 @@ import org.springframework.util.Assert;
 import pipelite.configuration.ExecutorConfiguration;
 import pipelite.configuration.PipeliteConfiguration;
 import pipelite.entity.StageEntity;
+import pipelite.entity.field.StageState;
 import pipelite.error.InternalErrorHandler;
 import pipelite.exception.PipeliteProcessLockedException;
 import pipelite.log.LogKey;
@@ -36,7 +37,6 @@ import pipelite.runner.stage.DependencyResolver;
 import pipelite.runner.stage.StageRunner;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
-import pipelite.stage.StageState;
 import pipelite.stage.executor.StageExecutorResult;
 
 /** Executes a process and returns the process state. */
