@@ -42,6 +42,7 @@ public class AsyncTestExecutor
       Function<StageExecutorRequest, StageExecutorResult> callback,
       Duration submitTime,
       Duration executionTime) {
+    super("AsyncTest");
     Assert.notNull(callback, "Missing callback");
     this.callback = callback;
     this.submitTime = submitTime;

@@ -26,6 +26,7 @@ import pipelite.log.LogKey;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorRequest;
+import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.AsyncCmdExecutorParameters;
 import pipelite.stage.path.LogFilePathResolver;
 import pipelite.time.Time;
@@ -56,6 +57,7 @@ public abstract class AsyncCmdExecutor<
   protected String outFile;
 
   public AsyncCmdExecutor(LogFilePathResolver logFilePathResolver) {
+    super("AsyncCmdExecutor");
     this.logFilePathResolver = logFilePathResolver;
   }
 
@@ -88,19 +90,19 @@ public abstract class AsyncCmdExecutor<
         .log("Attempting to read async job " + getJobId() + " output file: " + outFile);
 
     // Wait no longer than log timeout for the output file.
-    ZonedDateTime endTime = this.getJobCompletedTime().plus(getExecutorParams().getLogTimeout());
+    ZonedDateTime endTime = getExecEndTime().plus(getExecutorParams().getLogTimeout());
+    StageExecutorResult result = getStageExecutorResult();
     long logTimeoutSeconds = getExecutorParams().getLogTimeout().toMillis() / 1000;
-    if (isSaveLogFile(getJobCompletedResult())) {
+    if (isSaveLogFile(result)) {
       while (ZonedDateTime.now().isBefore(endTime)) {
         if (getCmdRunner().fileExists(Paths.get(outFile))) {
-          getJobCompletedResult()
-              .stageLog(readOutFile(getCmdRunner(), outFile, getExecutorParams().getLogLines()));
+          result.stageLog(readOutFile(getCmdRunner(), outFile, getExecutorParams().getLogLines()));
           return;
         }
         Time.wait(Duration.ofSeconds(Math.min(5, logTimeoutSeconds / 3)));
       }
-      getJobCompletedResult()
-          .stageLog("The output file was not available within " + logTimeoutSeconds + " seconds.");
+      result.stageLog(
+          "The output file was not available within " + logTimeoutSeconds + " seconds.");
     }
   }
 

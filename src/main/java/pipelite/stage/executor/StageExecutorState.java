@@ -23,10 +23,18 @@ public enum StageExecutorState {
   /** Internal errors are retried. */
   INTERNAL_ERROR;
 
+  public boolean isSuccess() {
+    return this == SUCCESS;
+  }
+
   public boolean isError() {
     return this == EXECUTION_ERROR
         || this == TIMEOUT_ERROR
         || this == PERMANENT_ERROR
         || this == INTERNAL_ERROR;
+  }
+
+  public boolean isCompleted() {
+    return isSuccess() || isError();
   }
 }

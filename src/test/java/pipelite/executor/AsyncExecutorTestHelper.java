@@ -13,14 +13,17 @@ package pipelite.executor;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
+import java.util.function.Consumer;
 import pipelite.PipeliteIdCreator;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultCallback;
 import pipelite.time.Time;
 
 public class AsyncExecutorTestHelper {
+
+  @FunctionalInterface
+  public interface StageExecutorResultCallback extends Consumer<StageExecutorResult> {}
 
   public static void testExecute(
       AsyncExecutor<?, ?, ?> executor,

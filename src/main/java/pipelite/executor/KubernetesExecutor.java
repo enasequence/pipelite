@@ -84,6 +84,10 @@ public class KubernetesExecutor
    */
   private String namespace;
 
+  public KubernetesExecutor() {
+    super("Kubernetes");
+  }
+
   @Override
   protected DefaultRequestContext prepareRequestContext() {
     return new DefaultRequestContext(getJobId());
@@ -156,7 +160,7 @@ public class KubernetesExecutor
 
   @Override
   protected void endJob() {
-    StageExecutorResult result = this.getJobCompletedResult();
+    StageExecutorResult result = getStageExecutorResult();
     try (KubernetesClient client = client(context)) {
       String jobId = getJobId();
       if (isSaveLogFile(result)) {

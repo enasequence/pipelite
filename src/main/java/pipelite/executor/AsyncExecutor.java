@@ -26,7 +26,6 @@ import pipelite.executor.describe.context.DefaultRequestContext;
 import pipelite.log.LogKey;
 import pipelite.metrics.StageMetrics;
 import pipelite.retryable.RetryableExternalAction;
-import pipelite.service.InternalErrorService;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
@@ -48,6 +47,8 @@ public abstract class AsyncExecutor<
    */
   private String jobId;
 
+  @JsonIgnore private final String executorName;
+
   @JsonIgnore private DescribeJobs<RequestContext, ExecutorContext> describeJobs;
   @JsonIgnore private AtomicReference<RequestContext> requestContext = new AtomicReference<>();
 
@@ -55,15 +56,18 @@ public abstract class AsyncExecutor<
   @JsonIgnore private String processId;
   @JsonIgnore private String stageName;
 
-  /** The async job completion result. */
-  @JsonIgnore private StageExecutorResult jobCompletedResult;
-  /** The async job completion time. */
-  @JsonIgnore private ZonedDateTime jobCompletedTime;
+  /** Completed stage execution result. */
+  @JsonIgnore private StageExecutorResult stageExecutorResult;
 
-  @JsonIgnore private InternalErrorService internalErrorService;
+  @JsonIgnore private InternalErrorHandler internalErrorHandler;
   @JsonIgnore private StageMetrics stageMetrics;
 
-  @JsonIgnore private ZonedDateTime submitStartTime;
+  @JsonIgnore private ZonedDateTime execStartTime;
+  @JsonIgnore private ZonedDateTime execEndTime;
+
+  public AsyncExecutor(String executorName) {
+    this.executorName = executorName;
+  }
 
   @Override
   public void prepareExecution(
@@ -73,10 +77,10 @@ public abstract class AsyncExecutor<
     this.pipelineName = pipelineName;
     this.processId = processId;
     this.stageName = stage.getStageName();
-    if (pipeliteServices != null) {
-      this.internalErrorService = pipeliteServices.internalError();
-      this.stageMetrics = pipeliteServices.metrics().process(pipelineName).stage(stageName);
-    }
+    this.stageMetrics = pipeliteServices.metrics().process(pipelineName).stage(stageName);
+    this.internalErrorHandler =
+        new InternalErrorHandler(
+            pipeliteServices.internalError(), pipelineName, processId, stageName, this);
   }
 
   /** Allow retrieval of async job result by setting the DescribeJobs object. */
@@ -144,40 +148,48 @@ public abstract class AsyncExecutor<
   @Override
   public StageExecutorResult execute() {
     if (jobId == null) {
-      logContext(log.atInfo()).log("Submitting async job");
-      submitStartTime = ZonedDateTime.now();
+      execStartTime = ZonedDateTime.now();
       return submit();
-    } else if (jobCompletedResult != null) {
-      logContext(log.atInfo()).log("Returning async job result " + jobCompletedResult.state());
-      return jobCompletedResult;
+    }
+
+    if (stageExecutorResult != null) {
+      // Async job has already completed.
+      return stageExecutorResult;
     } else {
       poll();
+      if (stageExecutorResult != null) {
+        return stageExecutorResult;
+      }
       return StageExecutorResult.active();
     }
   }
 
   private StageExecutorResult submit() {
-    InternalErrorHandler internalErrorHandler =
-        new InternalErrorHandler(internalErrorService, pipelineName, processId, stageName, this);
+    logContext(log.atInfo()).log("Submitting " + executorName + " job");
+
     ZonedDateTime submitStartTime = ZonedDateTime.now();
-    AtomicReference<SubmitJobResult> submitJobResult = new AtomicReference<>();
+    AtomicReference<StageExecutorResult> result = new AtomicReference<>();
+
     internalErrorHandler.execute(
         () -> {
           prepareJob();
-          submitJobResult.set(submitJob());
+          SubmitJobResult submitJobResult = submitJob();
+          result.set(submitJobResult.getResult());
           // Set the job id.
-          jobId = submitJobResult.get().getJobId();
+          jobId = submitJobResult.getJobId();
           if (jobId != null) {
-            logContext(log.atInfo()).log("Submitted async job");
+            logContext(log.atInfo()).log("Submitted " + executorName + " job");
           } else {
-            String stageLog = submitJobResult.get().result.stageLog();
+            String stageLog = submitJobResult.result.stageLog();
             logContext(log.atSevere())
-                .log("Failed to submit async job" + (stageLog != null ? "\n" + stageLog : ""));
+                .log(
+                    "Failed to submit "
+                        + executorName
+                        + " job"
+                        + (stageLog != null ? "\n" + stageLog : ""));
           }
         },
-        (ex) ->
-            submitJobResult.set(
-                new SubmitJobResult(null, StageExecutorResult.internalError().stageLog(ex))));
+        (ex) -> result.set(StageExecutorResult.internalError().stageLog(ex)));
 
     internalErrorHandler.execute(
         () -> {
@@ -186,43 +198,39 @@ public abstract class AsyncExecutor<
           }
         });
 
-    return submitJobResult.get().result;
+    return result.get();
   }
 
   private void poll() {
-    InternalErrorHandler internalErrorHandler =
-        new InternalErrorHandler(internalErrorService, pipelineName, processId, stageName, this);
-
+    if (stageExecutorResult != null) {
+      // Async job has already completed.
+      return;
+    }
     internalErrorHandler.execute(
         () -> {
-          if (jobCompletedResult == null) {
-            internalErrorHandler.execute(
-                () -> {
-                  StageExecutorResult result =
-                      getDescribeJobs()
-                          .getResult(getRequestContext(), getExecutorParams().getPermanentErrors());
-                  if (!result.isActive()) {
-                    // Async job has completed.
-                    logContext(log.atInfo())
-                        .log(
-                            "Completed async job with job id "
-                                + getJobId()
-                                + " and state "
-                                + result.state().name());
-                    jobCompletedResult = result;
-                    jobCompletedTime = ZonedDateTime.now();
-                  }
-                });
+          StageExecutorResult result =
+              getDescribeJobs()
+                  .getResult(getRequestContext(), getExecutorParams().getPermanentErrors());
+          if (result.isCompleted()) {
+            logContext(log.atInfo())
+                .log("Completed " + executorName + " job with state " + result.state().name());
+            stageExecutorResult = result;
+            execEndTime = ZonedDateTime.now();
           }
-          if (jobCompletedResult != null) {
+
+          if (stageExecutorResult != null) {
             internalErrorHandler.execute(() -> endJob());
           }
         },
-        ex -> jobCompletedResult = StageExecutorResult.internalError().stageLog(ex));
+        ex -> {
+          stageExecutorResult = StageExecutorResult.internalError().stageLog(ex);
+          execEndTime = ZonedDateTime.now();
+        });
   }
 
   @Override
   public final void terminate() {
+    logContext(log.atInfo()).log("Terminating " + executorName + " job");
     RetryableExternalAction.execute(
         () -> {
           terminateJob();
@@ -234,6 +242,6 @@ public abstract class AsyncExecutor<
   private FluentLogger.Api logContext(FluentLogger.Api log) {
     return log.with(LogKey.PIPELINE_NAME, pipelineName)
         .with(LogKey.PROCESS_ID, processId)
-        .with(LogKey.STAGE_NAME, stageName);
+        .with(LogKey.JOB_ID, jobId);
   }
 }

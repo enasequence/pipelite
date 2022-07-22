@@ -146,18 +146,15 @@ public class ProcessRunner {
   }
 
   private void runOneIterationForActiveStageRunner(ActiveStageRunner activeStageRunner) {
+    // Process runner must delegate internal error handing to stage runner.
     internalErrorHandler.execute(
-        () ->
-            activeStageRunner
-                .getStageRunner()
-                .runOneIteration(
-                    (result) -> stageRunnerEndExecutionHandler(activeStageRunner, result)));
-  }
-
-  private void stageRunnerEndExecutionHandler(
-      ActiveStageRunner activeStageRunner, StageExecutorResult result) {
-    internalErrorHandler.execute(() -> endStageExecution(activeStageRunner.getStage(), result));
-    active.remove(activeStageRunner);
+        () -> {
+          StageExecutorResult result = activeStageRunner.getStageRunner().runOneIteration();
+          if (result.state().isCompleted()) {
+            endStageExecution(activeStageRunner.getStage(), result);
+            active.remove(activeStageRunner);
+          }
+        });
   }
 
   public static void startProcessExecution(
@@ -231,10 +228,13 @@ public class ProcessRunner {
     if (result.isSuccess()) {
       resetDependentStageExecution(process, stage);
     }
-    pipeliteMetrics
-        .process(pipelineName)
-        .runner()
-        .endStageExecution(stage.getStageEntity().getStageState());
+
+    internalErrorHandler.execute(
+        () ->
+            pipeliteMetrics
+                .process(pipelineName)
+                .runner()
+                .endStageExecution(stage.getStageEntity().getStageState()));
   }
 
   /**

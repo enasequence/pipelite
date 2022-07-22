@@ -46,6 +46,10 @@ public class AwsBatchExecutor
    */
   private String region;
 
+  public AwsBatchExecutor() {
+    super("AwsBatch");
+  }
+
   @Override
   protected DefaultRequestContext prepareRequestContext() {
     return new DefaultRequestContext(getJobId());

@@ -32,8 +32,7 @@ public class LogKey {
   public static final MetadataKey<String> STAGE_NAME =
       MetadataKey.single("stage_name", String.class);
 
-  public static final MetadataKey<String> EXECUTOR_NAME =
-      MetadataKey.single("executor_name", String.class);
+  public static final MetadataKey<String> JOB_ID = MetadataKey.single("job_id", String.class);
 
   public static final MetadataKey<StageState> STAGE_STATE =
       MetadataKey.single("stage_state", StageState.class);

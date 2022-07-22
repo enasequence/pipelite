@@ -70,12 +70,24 @@ public class InternalErrorHandler {
     void apply();
   }
 
-  /** Returns true if no exception was thrown. */
+  /**
+   * Executes the action and saves and logs any exceptions.
+   *
+   * @param action the action to execute
+   * @return true if no exception was thrown
+   */
   public boolean execute(Action action) {
     return execute(action, null);
   }
 
-  /** Returns true if no exception was thrown. */
+  /**
+   * Executes the action and saves and logs any exceptions. Executes the recovery action if there
+   * were any exceptions.
+   *
+   * @param action the action to execute
+   * @param recover the recovery action
+   * @return true if no exception was thrown
+   */
   public boolean execute(Action action, Consumer<Exception> recover) {
     try {
       action.apply();

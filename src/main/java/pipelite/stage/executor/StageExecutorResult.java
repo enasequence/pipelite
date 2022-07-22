@@ -108,6 +108,10 @@ public class StageExecutorResult {
     return state == StageExecutorState.INTERNAL_ERROR;
   }
 
+  public boolean isCompleted() {
+    return state.isCompleted();
+  }
+
   public StageExecutorResult state(StageExecutorState state) {
     this.state = state;
     return this;
