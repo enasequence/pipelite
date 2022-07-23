@@ -14,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.AwsBatchExecutor;
-import pipelite.executor.describe.DescribeJobsCache;
 import pipelite.executor.describe.context.AwsBatchCacheContext;
 import pipelite.executor.describe.context.AwsBatchExecutorContext;
 import pipelite.executor.describe.context.DefaultRequestContext;
@@ -29,20 +28,17 @@ public class AwsBatchDescribeJobsCache
   public AwsBatchDescribeJobsCache(
       @Autowired ServiceConfiguration serviceConfiguration,
       @Autowired InternalErrorService internalErrorService) {
-    super(
-        serviceConfiguration,
-        internalErrorService,
-        100,
-        executor -> executorContext(executor),
-        executor -> cacheContext(executor));
+    super(serviceConfiguration, internalErrorService, 100);
   }
 
-  private static AwsBatchExecutorContext executorContext(AwsBatchExecutor executor) {
+  @Override
+  public AwsBatchExecutorContext getExecutorContext(AwsBatchExecutor executor) {
     AwsBatchExecutorParameters params = executor.getExecutorParams();
     return new AwsBatchExecutorContext(AwsBatchExecutor.client(params.getRegion()));
   }
 
-  private static AwsBatchCacheContext cacheContext(AwsBatchExecutor executor) {
+  @Override
+  public AwsBatchCacheContext getCacheContext(AwsBatchExecutor executor) {
     AwsBatchExecutorParameters params = executor.getExecutorParams();
     return new AwsBatchCacheContext(params.getRegion());
   }

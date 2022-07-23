@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.KubernetesExecutor;
-import pipelite.executor.describe.DescribeJobsCache;
 import pipelite.executor.describe.context.DefaultRequestContext;
 import pipelite.executor.describe.context.KubernetesCacheContext;
 import pipelite.executor.describe.context.KubernetesExecutorContext;
@@ -34,21 +33,18 @@ public class KubernetesDescribeJobsCache
   public KubernetesDescribeJobsCache(
       @Autowired ServiceConfiguration serviceConfiguration,
       @Autowired InternalErrorService internalErrorService) {
-    super(
-        serviceConfiguration,
-        internalErrorService,
-        100,
-        executor -> executorContext(executor),
-        executor -> cacheContext(executor));
+    super(serviceConfiguration, internalErrorService, 100);
   }
 
-  private static KubernetesExecutorContext executorContext(KubernetesExecutor executor) {
+  @Override
+  public KubernetesExecutorContext getExecutorContext(KubernetesExecutor executor) {
     KubernetesExecutorParameters params = executor.getExecutorParams();
     return new KubernetesExecutorContext(
         KubernetesExecutor.client(params.getContext()), params.getNamespace());
   }
 
-  private static KubernetesCacheContext cacheContext(KubernetesExecutor executor) {
+  @Override
+  public KubernetesCacheContext getCacheContext(KubernetesExecutor executor) {
     KubernetesExecutorParameters params = executor.getExecutorParams();
     return new KubernetesCacheContext(params.getContext(), params.getNamespace());
   }

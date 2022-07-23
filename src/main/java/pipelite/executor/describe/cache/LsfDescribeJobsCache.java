@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.AbstractLsfExecutor;
 import pipelite.executor.cmd.CmdRunner;
-import pipelite.executor.describe.DescribeJobsCache;
 import pipelite.executor.describe.context.LsfCacheContext;
 import pipelite.executor.describe.context.LsfExecutorContext;
 import pipelite.executor.describe.context.LsfRequestContext;
@@ -35,20 +34,17 @@ public class LsfDescribeJobsCache
   public LsfDescribeJobsCache(
       @Autowired ServiceConfiguration serviceConfiguration,
       @Autowired InternalErrorService internalErrorService) {
-    super(
-        serviceConfiguration,
-        internalErrorService,
-        100,
-        executor -> executorContext(executor),
-        executor -> cacheContext(executor));
+    super(serviceConfiguration, internalErrorService, 100);
   }
 
-  private static LsfExecutorContext executorContext(
+  @Override
+  public LsfExecutorContext getExecutorContext(
       AbstractLsfExecutor<AbstractLsfExecutorParameters> executor) {
     return new LsfExecutorContext(CmdRunner.create(executor.getExecutorParams()));
   }
 
-  private static LsfCacheContext cacheContext(
+  @Override
+  public LsfCacheContext getCacheContext(
       AbstractLsfExecutor<AbstractLsfExecutorParameters> executor) {
     return new LsfCacheContext(executor.getExecutorParams().getHost());
   }

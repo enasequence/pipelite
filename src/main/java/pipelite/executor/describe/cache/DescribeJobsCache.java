@@ -8,54 +8,54 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.executor.describe;
+package pipelite.executor.describe.cache;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 import javax.annotation.PreDestroy;
 import pipelite.configuration.ServiceConfiguration;
+import pipelite.executor.describe.DescribeJobs;
 import pipelite.executor.describe.context.DefaultCacheContext;
 import pipelite.executor.describe.context.DefaultExecutorContext;
 import pipelite.executor.describe.context.DefaultRequestContext;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.executor.StageExecutor;
 
-public class DescribeJobsCache<
+public abstract class DescribeJobsCache<
     RequestContext extends DefaultRequestContext,
     ExecutorContext extends DefaultExecutorContext<RequestContext>,
     CacheContext extends DefaultCacheContext,
     Executor extends StageExecutor> {
 
-  private final Function<Executor, DescribeJobs<RequestContext, ExecutorContext>>
-      describeJobsFactory;
-  private final Function<Executor, CacheContext> cacheContextFactory;
+  private final ServiceConfiguration serviceConfiguration;
+  private final InternalErrorService internalErrorService;
+  private final Integer requestLimit;
+
   private final Map<CacheContext, DescribeJobs<RequestContext, ExecutorContext>> cache =
       new ConcurrentHashMap<>();
 
   public DescribeJobsCache(
       ServiceConfiguration serviceConfiguration,
       InternalErrorService internalErrorService,
-      Integer requestLimit,
-      Function<Executor, ExecutorContext> executorContextFactory,
-      Function<Executor, CacheContext> cacheContextFactory) {
-    this.cacheContextFactory = cacheContextFactory;
-    this.describeJobsFactory =
-        executor ->
+      Integer requestLimit) {
+    this.serviceConfiguration = serviceConfiguration;
+    this.internalErrorService = internalErrorService;
+    this.requestLimit = requestLimit;
+  }
+
+  public abstract ExecutorContext getExecutorContext(Executor executor);
+
+  public abstract CacheContext getCacheContext(Executor executor);
+
+  public DescribeJobs<RequestContext, ExecutorContext> getDescribeJobs(Executor executor) {
+    return cache.computeIfAbsent(
+        getCacheContext(executor),
+        k ->
             new DescribeJobs<>(
                 serviceConfiguration,
                 internalErrorService,
                 requestLimit,
-                executorContextFactory.apply(executor));
-  }
-
-  public CacheContext getCacheContext(Executor executor) {
-    return cacheContextFactory.apply(executor);
-  }
-
-  public DescribeJobs<RequestContext, ExecutorContext> getDescribeJobs(Executor executor) {
-    return cache.computeIfAbsent(
-        getCacheContext(executor), k -> describeJobsFactory.apply(executor));
+                getExecutorContext(executor)));
   }
 
   @PreDestroy
