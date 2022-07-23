@@ -11,6 +11,8 @@
 package pipelite.executor.describe.cache;
 
 import lombok.extern.flogger.Flogger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.AbstractLsfExecutor;
 import pipelite.executor.cmd.CmdRunner;
@@ -21,6 +23,7 @@ import pipelite.executor.describe.context.LsfRequestContext;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.parameters.AbstractLsfExecutorParameters;
 
+@Component
 @Flogger
 public class LsfDescribeJobsCache
     extends DescribeJobsCache<
@@ -30,7 +33,8 @@ public class LsfDescribeJobsCache
         AbstractLsfExecutor<AbstractLsfExecutorParameters>> {
 
   public LsfDescribeJobsCache(
-      ServiceConfiguration serviceConfiguration, InternalErrorService internalErrorService) {
+      @Autowired ServiceConfiguration serviceConfiguration,
+      @Autowired InternalErrorService internalErrorService) {
     super(
         serviceConfiguration,
         internalErrorService,

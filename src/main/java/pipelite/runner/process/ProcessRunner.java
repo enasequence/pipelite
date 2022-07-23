@@ -123,7 +123,7 @@ public class ProcessRunner {
     internalErrorHandler.execute(
         () -> runProcess(),
         (ex) -> {
-          if (activeStages().isEmpty()) {
+          if (active.isEmpty()) {
             logContext(log.atSevere())
                 .withCause(ex)
                 .log("Process failed because of an unexpected exception");

@@ -10,6 +10,8 @@
  */
 package pipelite.executor.describe.cache;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.AsyncTestExecutor;
 import pipelite.executor.describe.DescribeJobsCache;
@@ -18,6 +20,7 @@ import pipelite.executor.describe.context.AsyncTestExecutorContext;
 import pipelite.executor.describe.context.AsyncTestRequestContext;
 import pipelite.service.InternalErrorService;
 
+@Component
 public class AsyncTestDescribeJobsCache
     extends DescribeJobsCache<
         AsyncTestRequestContext,
@@ -29,7 +32,8 @@ public class AsyncTestDescribeJobsCache
   private static final AsyncTestCacheContext cacheContext = new AsyncTestCacheContext();
 
   public AsyncTestDescribeJobsCache(
-      ServiceConfiguration serviceConfiguration, InternalErrorService internalErrorService) {
+      @Autowired ServiceConfiguration serviceConfiguration,
+      @Autowired InternalErrorService internalErrorService) {
     super(
         serviceConfiguration,
         internalErrorService,

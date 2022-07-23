@@ -10,6 +10,8 @@
  */
 package pipelite.executor.describe.cache;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.AwsBatchExecutor;
 import pipelite.executor.describe.DescribeJobsCache;
@@ -19,12 +21,14 @@ import pipelite.executor.describe.context.DefaultRequestContext;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.parameters.AwsBatchExecutorParameters;
 
+@Component
 public class AwsBatchDescribeJobsCache
     extends DescribeJobsCache<
         DefaultRequestContext, AwsBatchExecutorContext, AwsBatchCacheContext, AwsBatchExecutor> {
 
   public AwsBatchDescribeJobsCache(
-      ServiceConfiguration serviceConfiguration, InternalErrorService internalErrorService) {
+      @Autowired ServiceConfiguration serviceConfiguration,
+      @Autowired InternalErrorService internalErrorService) {
     super(
         serviceConfiguration,
         internalErrorService,

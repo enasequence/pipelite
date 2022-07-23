@@ -23,6 +23,7 @@ import pipelite.configuration.WebServerCustomizer;
       "pipelite.configuration",
       "pipelite.metrics",
       "pipelite.repository",
+      "pipelite.executor.describe.cache",
       "pipelite.service",
       "pipelite.manager",
       "pipelite.runner", // for beans created in tests

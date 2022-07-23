@@ -11,6 +11,8 @@
 package pipelite.executor.describe.cache;
 
 import lombok.extern.flogger.Flogger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.KubernetesExecutor;
 import pipelite.executor.describe.DescribeJobsCache;
@@ -20,6 +22,7 @@ import pipelite.executor.describe.context.KubernetesExecutorContext;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
 
+@Component
 @Flogger
 public class KubernetesDescribeJobsCache
     extends DescribeJobsCache<
@@ -29,7 +32,8 @@ public class KubernetesDescribeJobsCache
         KubernetesExecutor> {
 
   public KubernetesDescribeJobsCache(
-      ServiceConfiguration serviceConfiguration, InternalErrorService internalErrorService) {
+      @Autowired ServiceConfiguration serviceConfiguration,
+      @Autowired InternalErrorService internalErrorService) {
     super(
         serviceConfiguration,
         internalErrorService,

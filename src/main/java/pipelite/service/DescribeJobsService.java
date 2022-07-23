@@ -10,63 +10,47 @@
  */
 package pipelite.service;
 
-import java.util.concurrent.atomic.AtomicReference;
-import javax.annotation.PreDestroy;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.describe.cache.AsyncTestDescribeJobsCache;
 import pipelite.executor.describe.cache.AwsBatchDescribeJobsCache;
 import pipelite.executor.describe.cache.KubernetesDescribeJobsCache;
 import pipelite.executor.describe.cache.LsfDescribeJobsCache;
-import pipelite.utils.LazyFactory;
 
 @Service
 @Flogger
 public class DescribeJobsService {
 
-  private final AtomicReference<LsfDescribeJobsCache> lsf = new AtomicReference<>();
-  private final AtomicReference<AwsBatchDescribeJobsCache> awsBatch = new AtomicReference<>();
-  private final AtomicReference<KubernetesDescribeJobsCache> kubernetes = new AtomicReference<>();
-  private final AtomicReference<AsyncTestDescribeJobsCache> test = new AtomicReference<>();
-
-  private final ServiceConfiguration serviceConfiguration;
-  private final InternalErrorService internalErrorService;
+  private final AsyncTestDescribeJobsCache asyncTestDescribeJobsCache;
+  private final AwsBatchDescribeJobsCache awsBatchDescribeJobsCache;
+  private final KubernetesDescribeJobsCache kubernetesDescribeJobsCache;
+  private final LsfDescribeJobsCache lsfDescribeJobsCache;
 
   public DescribeJobsService(
-      @Autowired ServiceConfiguration serviceConfiguration,
-      @Autowired InternalErrorService internalErrorService) {
-    this.serviceConfiguration = serviceConfiguration;
-    this.internalErrorService = internalErrorService;
-  }
-
-  @PreDestroy
-  private void shutdown() {
-    if (lsf.get() != null) lsf.get().shutdown();
-    if (awsBatch.get() != null) awsBatch.get().shutdown();
-    if (kubernetes.get() != null) kubernetes.get().shutdown();
-    if (test.get() != null) test.get().shutdown();
+      @Autowired AsyncTestDescribeJobsCache asyncTestDescribeJobsCache,
+      @Autowired AwsBatchDescribeJobsCache awsBatchDescribeJobsCache,
+      @Autowired KubernetesDescribeJobsCache kubernetesDescribeJobsCache,
+      @Autowired LsfDescribeJobsCache lsfDescribeJobsCache) {
+    this.asyncTestDescribeJobsCache = asyncTestDescribeJobsCache;
+    this.awsBatchDescribeJobsCache = awsBatchDescribeJobsCache;
+    this.kubernetesDescribeJobsCache = kubernetesDescribeJobsCache;
+    this.lsfDescribeJobsCache = lsfDescribeJobsCache;
   }
 
   public LsfDescribeJobsCache lsf() {
-    return LazyFactory.get(
-        lsf, () -> new LsfDescribeJobsCache(serviceConfiguration, internalErrorService));
+    return lsfDescribeJobsCache;
   }
 
   public AwsBatchDescribeJobsCache awsBatch() {
-    return LazyFactory.get(
-        awsBatch, () -> new AwsBatchDescribeJobsCache(serviceConfiguration, internalErrorService));
+    return awsBatchDescribeJobsCache;
   }
 
   public KubernetesDescribeJobsCache kubernetes() {
-    return LazyFactory.get(
-        kubernetes,
-        () -> new KubernetesDescribeJobsCache(serviceConfiguration, internalErrorService));
+    return kubernetesDescribeJobsCache;
   }
 
   public AsyncTestDescribeJobsCache test() {
-    return LazyFactory.get(
-        test, () -> new AsyncTestDescribeJobsCache(serviceConfiguration, internalErrorService));
+    return asyncTestDescribeJobsCache;
   }
 }

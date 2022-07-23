@@ -13,6 +13,7 @@ package pipelite.executor.describe;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import javax.annotation.PreDestroy;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.describe.context.DefaultCacheContext;
 import pipelite.executor.describe.context.DefaultExecutorContext;
@@ -57,6 +58,7 @@ public class DescribeJobsCache<
         getCacheContext(executor), k -> describeJobsFactory.apply(executor));
   }
 
+  @PreDestroy
   public void shutdown() {
     cache.values().forEach(describeJobs -> describeJobs.shutdown());
   }
