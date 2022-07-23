@@ -14,6 +14,10 @@ import java.util.function.Consumer;
 import lombok.extern.flogger.Flogger;
 import pipelite.service.InternalErrorService;
 
+/**
+ * Executes an action and suppresses exceptions. Saves and logs any exceptions as internal errors.
+ * Executes an optional recovery action.
+ */
 @Flogger
 public class InternalErrorHandler {
 

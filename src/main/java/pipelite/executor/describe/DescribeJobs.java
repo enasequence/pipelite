@@ -82,6 +82,8 @@ public class DescribeJobs<
                   if (Thread.interrupted()) {
                     return;
                   }
+                  // Unexpected exceptions are logged as internal errors but otherwise ignored to
+                  // keep describe jobs alive.
                   internalErrorHandler.execute(
                       () -> {
                         try {
@@ -115,6 +117,8 @@ public class DescribeJobs<
    * retrieved then there is an attempt to recover the job result. This is called job recovery.
    */
   public void retrieveResults() {
+    // Unexpected exceptions are logged as internal errors but otherwise ignored to
+    // keep describe jobs alive.
     internalErrorHandler.execute(
         () -> {
           List<RequestContext> activeRequests = getActiveRequests();
@@ -124,7 +128,7 @@ public class DescribeJobs<
                   + activeRequests.size()
                   + " active "
                   + executorContext.executorName()
-                  + " job");
+                  + " jobs");
 
           while (!activeRequests.isEmpty()) {
             int toIndex =

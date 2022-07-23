@@ -54,6 +54,14 @@ public class ProcessRunner {
   private final Set<ActiveStageRunner> active = ConcurrentHashMap.newKeySet();
   private final InternalErrorHandler internalErrorHandler;
 
+  private enum ProcessRunnerState {
+    PREPARE,
+    EXECUTE,
+    COMPLETED
+  }
+
+  ProcessRunnerState processRunnerState = ProcessRunnerState.PREPARE;
+
   @Data
   public static class ActiveStageRunner {
     private final Stage stage;
@@ -100,34 +108,53 @@ public class ProcessRunner {
   }
 
   /**
-   * Called until the process has been executed and the result callback has been called.
+   * Called until the process execution has been completed.
    *
-   * @param resultCallback process runner result callback
+   * @return true when the process execution has been completed or if an unexpected exception is
+   *     thrown.
    */
-  public void runOneIteration(ProcessRunnerResultCallback resultCallback) {
-    internalErrorHandler.execute(
-        () -> {
-          boolean isFirstIteration = startTime == null;
-          ZonedDateTime runOneIterationStartTime = ZonedDateTime.now();
-          if (isFirstIteration) {
-            startTime = ZonedDateTime.now();
-            logContext(log.atInfo()).log("Executing process");
-            startProcessExecution(pipeliteServices, executorConfiguration, pipelineName, process);
-          }
-          executeProcess(resultCallback);
+  public boolean runOneIteration() {
+    if (processRunnerState == ProcessRunnerState.COMPLETED) {
+      return true;
+    }
 
-          // ProcessRunner runOneIteration is called from AbstractScheduledService schedule.
-          // It is guaranteed not to be called concurrently. We use an executor service to call
-          // StageRunner runOneIteration. The StageRunner runOneIteration will not execute stages
-          // in the same thread and should complete fairly quickly. We capture the StageRunner
-          // runOneIteration future to make sure not to call StageRunner runOneIteration again
-          // until the future has completed.
-          runOneIterationForActiveStageRunners();
-          pipeliteMetrics
-              .process(pipelineName)
-              .runner()
-              .endRunOneIteration(runOneIterationStartTime);
+    // Unexpected exceptions are logged as internal errors and the process execution is considered
+    // completed if there are no active stages.
+    internalErrorHandler.execute(
+        () -> runProcess(),
+        (ex) -> {
+          if (activeStages().isEmpty()) {
+            logContext(log.atSevere())
+                .withCause(ex)
+                .log("Process failed because of an unexpected exception");
+            processRunnerState = ProcessRunnerState.COMPLETED;
+          }
         });
+
+    return (processRunnerState == ProcessRunnerState.COMPLETED);
+  }
+
+  public void runProcess() {
+    ZonedDateTime runOneIterationStartTime = ZonedDateTime.now();
+
+    if (processRunnerState == ProcessRunnerState.PREPARE) {
+      logContext(log.atInfo()).log("Executing process");
+      startTime = ZonedDateTime.now();
+      prepareProcessExecution(pipeliteServices, executorConfiguration, pipelineName, process);
+      processRunnerState = ProcessRunnerState.EXECUTE;
+    }
+
+    if (processRunnerState == ProcessRunnerState.EXECUTE) {
+      createStageRunners();
+      if (!active.isEmpty()) {
+        runStageRunners();
+      } else {
+        endProcessExecution();
+        processRunnerState = ProcessRunnerState.COMPLETED;
+      }
+    }
+
+    pipeliteMetrics.process(pipelineName).runner().endRunOneIteration(runOneIterationStartTime);
   }
 
   public List<Stage> activeStages() {
@@ -141,23 +168,7 @@ public class ProcessRunner {
         .collect(Collectors.toList());
   }
 
-  private void runOneIterationForActiveStageRunners() {
-    active.stream().forEach(a -> runOneIterationForActiveStageRunner(a));
-  }
-
-  private void runOneIterationForActiveStageRunner(ActiveStageRunner activeStageRunner) {
-    // Process runner must delegate internal error handing to stage runner.
-    internalErrorHandler.execute(
-        () -> {
-          StageExecutorResult result = activeStageRunner.getStageRunner().runOneIteration();
-          if (result.state().isCompleted()) {
-            endStageExecution(activeStageRunner.getStage(), result);
-            active.remove(activeStageRunner);
-          }
-        });
-  }
-
-  public static void startProcessExecution(
+  public static void prepareProcessExecution(
       PipeliteServices pipeliteServices,
       ExecutorConfiguration executorConfiguration,
       String pipelineName,
@@ -166,17 +177,39 @@ public class ProcessRunner {
     pipeliteServices.process().startExecution(process.getProcessEntity());
   }
 
-  private void executeProcess(ProcessRunnerResultCallback resultCallback) {
-    createStageRunners();
-    if (activeStages().isEmpty()) {
-      logContext(log.atInfo()).log("No more executable stages");
-      endProcessExecution();
-      unlockProcess();
-      pipeliteMetrics
-          .process(pipelineName)
-          .runner()
-          .endProcessExecution(process.getProcessEntity().getProcessState());
-      resultCallback.accept(process);
+  private void runStageRunners() {
+    // ProcessRunner runOneIteration is called from AbstractScheduledService schedule.
+    // It is guaranteed not to be called concurrently. We use an executor service to call
+    // StageRunner runOneIteration. The StageRunner runOneIteration will not execute stages
+    // in the same thread and should complete fairly quickly. We capture the StageRunner
+    // runOneIteration future to make sure not to call StageRunner runOneIteration again
+    // until the future has completed.
+    active.stream().forEach(a -> runOneIterationForStageRunner(a));
+  }
+
+  private void endProcessExecution() {
+    ProcessState processState = evaluateProcessState(process);
+    logContext(log.atInfo()).log("Process execution finished: %s", processState.name());
+
+    pipeliteServices.process().endExecution(process, processState);
+    unlockProcess();
+
+    pipeliteMetrics
+        .process(pipelineName)
+        .runner()
+        .endProcessExecution(process.getProcessEntity().getProcessState());
+  }
+
+  private void runOneIterationForStageRunner(ActiveStageRunner activeStageRunner) {
+    // Called until the stage execution has been completed. An internal error result will be
+    // returned if an unexpected exception is thrown.
+    StageExecutorResult result = activeStageRunner.getStageRunner().runOneIteration();
+    if (result.isCompleted()) {
+      try {
+        endStageExecution(activeStageRunner.getStage(), result);
+      } finally {
+        active.remove(activeStageRunner);
+      }
     }
   }
 
@@ -193,12 +226,6 @@ public class ProcessRunner {
         new StageRunner(
             pipeliteServices, pipeliteMetrics, serviceName, pipelineName, process, stage);
     active.add(new ActiveStageRunner(stage, stageRunner));
-  }
-
-  private void endProcessExecution() {
-    ProcessState processState = evaluateProcessState(process);
-    logContext(log.atInfo()).log("Process execution finished: %s", processState.name());
-    pipeliteServices.process().endExecution(process, processState);
   }
 
   private static void prepareStagesExecution(
@@ -229,12 +256,10 @@ public class ProcessRunner {
       resetDependentStageExecution(process, stage);
     }
 
-    internalErrorHandler.execute(
-        () ->
-            pipeliteMetrics
-                .process(pipelineName)
-                .runner()
-                .endStageExecution(stage.getStageEntity().getStageState()));
+    pipeliteMetrics
+        .process(pipelineName)
+        .runner()
+        .endStageExecution(stage.getStageEntity().getStageState());
   }
 
   /**

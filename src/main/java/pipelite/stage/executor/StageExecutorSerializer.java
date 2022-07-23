@@ -53,6 +53,8 @@ public class StageExecutorSerializer {
             StageExecutorSerializer.class);
 
     AtomicBoolean isDeserialize = new AtomicBoolean(false);
+    // Unexpected exceptions are logged as internal errors but otherwise ignored when deserializing
+    // the executor.
     internalErrorHandler.execute(
         () -> {
           StageEntity stageEntity = stage.getStageEntity();

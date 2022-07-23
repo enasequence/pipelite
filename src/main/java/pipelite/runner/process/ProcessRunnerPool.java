@@ -10,7 +10,6 @@
  */
 package pipelite.runner.process;
 
-import com.google.common.flogger.FluentLogger;
 import com.google.common.util.concurrent.AbstractScheduledService;
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -25,7 +24,6 @@ import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
 import pipelite.configuration.PipeliteConfiguration;
 import pipelite.error.InternalErrorHandler;
-import pipelite.log.LogKey;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.service.PipeliteServices;
@@ -93,38 +91,41 @@ public class ProcessRunnerPool extends AbstractScheduledService {
   // From AbstractScheduledService.
   @Override
   public void runOneIteration() {
-    internalErrorHandler.execute(
-        () -> {
-          ZonedDateTime runOneIterationStartTime = ZonedDateTime.now();
+    // Unexpected exceptions are logged as internal errors but otherwise ignored to
+    // keep process runner pool alive.
+    internalErrorHandler.execute(() -> runProcessRunnerPool());
+  }
 
-          // ProcessRunnerPool runOneIteration is called from AbstractScheduledService schedule.
-          // It is guaranteed not to be called concurrently. We use an executor service to call
-          // ProcessRunner runOneIteration. The ProcessRunner runOneIteration will not execute
-          // stages
-          // in the same thread and should complete fairly quickly. We capture the ProcessRunner
-          // runOneIteration future to make sure not to call ProcessRunner runOneIteration again
-          // until the future has completed.
+  private void runProcessRunnerPool() {
+    ZonedDateTime runOneIterationStartTime = ZonedDateTime.now();
 
-          runOneIterationForActiveProcessRunners();
+    // ProcessRunnerPool runOneIteration is called from AbstractScheduledService schedule.
+    // It is guaranteed not to be called concurrently. We use an executor service to call
+    // ProcessRunner runOneIteration. The ProcessRunner runOneIteration will not execute
+    // stages
+    // in the same thread and should complete fairly quickly. We capture the ProcessRunner
+    // runOneIteration future to make sure not to call ProcessRunner runOneIteration again
+    // until the future has completed.
 
-          if (lastRunOneIteration.plus(timeSeriesUpdateFrequency).isBefore(ZonedDateTime.now())) {
-            lastRunOneIteration = ZonedDateTime.now();
-            List<ProcessRunner> activeProcessRunners = getActiveProcessRunners();
-            pipeliteMetrics.setRunningProcessesCount(activeProcessRunners, lastRunOneIteration);
-            pipeliteMetrics.setRunningStagesCount(activeProcessRunners, lastRunOneIteration);
-            pipeliteMetrics.setSubmittedStagesCount(activeProcessRunners, lastRunOneIteration);
-          }
+    runOneIterationForActiveProcessRunners();
 
-          if (shutdownIfIdle && isIdle()) {
-            log.atInfo().log("Stopping idle process runner pool: %s", serviceName());
-            stopAsync();
-          }
-          pipeliteMetrics.processRunnerPool().endRunOneIteration(runOneIterationStartTime);
-        });
+    if (lastRunOneIteration.plus(timeSeriesUpdateFrequency).isBefore(ZonedDateTime.now())) {
+      lastRunOneIteration = ZonedDateTime.now();
+      List<ProcessRunner> activeProcessRunners = getActiveProcessRunners();
+      pipeliteMetrics.setRunningProcessesCount(activeProcessRunners, lastRunOneIteration);
+      pipeliteMetrics.setRunningStagesCount(activeProcessRunners, lastRunOneIteration);
+      pipeliteMetrics.setSubmittedStagesCount(activeProcessRunners, lastRunOneIteration);
+    }
+
+    if (shutdownIfIdle && isIdle()) {
+      log.atInfo().log("Stopping idle process runner pool: %s", serviceName());
+      stopAsync();
+    }
+    pipeliteMetrics.processRunnerPool().endRunOneIteration(runOneIterationStartTime);
   }
 
   private void runOneIterationForActiveProcessRunners() {
-    active.stream().forEach(a -> runOneIterationForActiveProcessRunner(a));
+    active.forEach(a -> runOneIterationForActiveProcessRunner(a));
   }
 
   private void runOneIterationForActiveProcessRunner(ActiveProcessRunner activeProcessRunner) {
@@ -136,23 +137,22 @@ public class ProcessRunnerPool extends AbstractScheduledService {
                 .process()
                 .submit(
                     () -> {
+                      // Unexpected exceptions are logged as internal errors but otherwise ignored.
                       internalErrorHandler.execute(
-                          () ->
+                          () -> {
+                            ProcessRunner processRunner = activeProcessRunner.getProcessRunner();
+                            // Process runner returns true when the process execution has been
+                            // completed or if an unexpected exception is thrown.
+                            if (processRunner.runOneIteration()) {
+                              active.remove(activeProcessRunner);
                               activeProcessRunner
-                                  .getProcessRunner()
-                                  .runOneIteration(
-                                      (process) ->
-                                          processRunnerEndExecutionHandler(
-                                              activeProcessRunner, process)));
+                                  .getResultCallback()
+                                  .accept(processRunner.getProcess());
+                            }
+                          });
                     }));
       }
     }
-  }
-
-  private void processRunnerEndExecutionHandler(
-      ActiveProcessRunner activeProcessRunner, Process process) {
-    internalErrorHandler.execute(() -> activeProcessRunner.getResultCallback().accept(process));
-    active.remove(activeProcessRunner);
   }
 
   /** Returns true if the process runner is idle. */
@@ -169,21 +169,18 @@ public class ProcessRunnerPool extends AbstractScheduledService {
    */
   public void runProcess(
       String pipelineName, Process process, ProcessRunnerResultCallback resultCallback) {
-    internalErrorHandler.execute(
-        () -> {
-          Assert.notNull(pipelineName, "Missing pipeline name");
-          Assert.notNull(process, "Missing process");
-          Assert.notNull(process.getProcessId(), "Missing process id");
-          Assert.notNull(resultCallback, "Missing process runner result callback");
+    Assert.notNull(pipelineName, "Missing pipeline name");
+    Assert.notNull(process, "Missing process");
+    Assert.notNull(process.getProcessId(), "Missing process id");
+    Assert.notNull(resultCallback, "Missing process runner result callback");
 
-          // Create process runner.
-          String processId = process.getProcessId();
-          ProcessRunnerPool.ActiveProcessRunner activeProcessRunner =
-              new ProcessRunnerPool.ActiveProcessRunner(pipelineName, processId, resultCallback);
-          ProcessRunner processRunner = processRunnerFactory.create(pipelineName, process);
-          activeProcessRunner.setProcessRunner(processRunner);
-          active.add(activeProcessRunner);
-        });
+    // Create process runner.
+    String processId = process.getProcessId();
+    ProcessRunnerPool.ActiveProcessRunner activeProcessRunner =
+        new ProcessRunnerPool.ActiveProcessRunner(pipelineName, processId, resultCallback);
+    ProcessRunner processRunner = processRunnerFactory.create(pipelineName, process);
+    activeProcessRunner.setProcessRunner(processRunner);
+    active.add(activeProcessRunner);
   }
 
   /**
@@ -194,19 +191,6 @@ public class ProcessRunnerPool extends AbstractScheduledService {
    */
   public boolean isPipelineActive(String pipelineName) {
     return active.stream().anyMatch(p -> p.getPipelineName().equals(pipelineName));
-  }
-
-  /**
-   * Returns true if the process is active.
-   *
-   * @param pipelineName the pipeline name
-   * @param processId the process id
-   * @return true if the process is active.
-   */
-  public boolean isProcessActive(String pipelineName, String processId) {
-    return active.stream()
-        .anyMatch(
-            p -> p.getPipelineName().equals(pipelineName) && p.getProcessId().equals(processId));
   }
 
   /**
@@ -245,9 +229,5 @@ public class ProcessRunnerPool extends AbstractScheduledService {
   public void shutDown() {
     // Guaranteed not to be called concurrently with runOneIteration.
     detach();
-  }
-
-  private FluentLogger.Api logContext(FluentLogger.Api log) {
-    return log.with(LogKey.SERVICE_NAME, serviceName);
   }
 }

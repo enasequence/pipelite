@@ -170,6 +170,8 @@ public abstract class AsyncExecutor<
     ZonedDateTime submitStartTime = ZonedDateTime.now();
     AtomicReference<StageExecutorResult> result = new AtomicReference<>();
 
+    // Unexpected exceptions are logged as internal errors and the stage execution
+    // is considered failed.
     internalErrorHandler.execute(
         () -> {
           prepareJob();
@@ -191,12 +193,9 @@ public abstract class AsyncExecutor<
         },
         (ex) -> result.set(StageExecutorResult.internalError().stageLog(ex)));
 
-    internalErrorHandler.execute(
-        () -> {
-          if (stageMetrics != null) {
-            stageMetrics.executor().endSubmit(submitStartTime);
-          }
-        });
+    if (stageMetrics != null) {
+      stageMetrics.executor().endSubmit(submitStartTime);
+    }
 
     return result.get();
   }
@@ -206,6 +205,9 @@ public abstract class AsyncExecutor<
       // Async job has already completed.
       return;
     }
+
+    // Unexpected exceptions are logged as internal errors and the stage execution
+    // is considered as failed.
     internalErrorHandler.execute(
         () -> {
           StageExecutorResult result =
@@ -219,7 +221,7 @@ public abstract class AsyncExecutor<
           }
 
           if (stageExecutorResult != null) {
-            internalErrorHandler.execute(() -> endJob());
+            endJob();
           }
         },
         ex -> {

@@ -62,6 +62,9 @@ public class MailService {
     if (mailSender == null) {
       return;
     }
+
+    // Unexpected exceptions are logged as internal errors but otherwise ignored when sending
+    // emails.
     internalErrorHandler.execute(
         () -> {
           if ((mailConfiguration.isProcessCompleted()
@@ -94,6 +97,9 @@ public class MailService {
     if (mailSender == null) {
       return;
     }
+
+    // Unexpected exceptions are logged as internal errors but otherwise ignored when sending
+    // emails.
     internalErrorHandler.execute(
         () -> {
           if ((mailConfiguration.isStageSuccess()

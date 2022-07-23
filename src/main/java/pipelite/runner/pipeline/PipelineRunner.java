@@ -71,6 +71,8 @@ public class PipelineRunner extends ProcessRunnerPool {
   // From AbstractScheduledService.
   @Override
   public void runOneIteration() {
+    // Unexpected exceptions are logged as internal errors but otherwise ignored to
+    // keep pipeline runner alive.
     internalErrorHandler.execute(
         () -> {
           if (!pipeliteServices.healthCheck().isHealthy()) {
@@ -98,6 +100,7 @@ public class PipelineRunner extends ProcessRunnerPool {
                     if (isRefreshQueue()) {
                       // Queue should be refreshed. Check again as the queue may be refreshed
                       // between first check and locking.
+                      // Unexpected exceptions are logged as internal errors but otherwise ignored.
                       internalErrorHandler.execute(
                           () -> {
                             ProcessQueue p = processQueue.get();
@@ -140,7 +143,9 @@ public class PipelineRunner extends ProcessRunnerPool {
       if (processEntity == null) {
         return;
       }
-      runProcess(processEntity);
+      // Unexpected exceptions are logged as internal errors but otherwise ignored to
+      // avoid affecting other processes.
+      internalErrorHandler.execute(() -> runProcess(processEntity));
     }
   }
 
@@ -161,11 +166,8 @@ public class PipelineRunner extends ProcessRunnerPool {
   }
 
   protected void runProcess(ProcessEntity processEntity) {
-    internalErrorHandler.execute(
-        () -> {
-          Process process = ProcessFactory.create(processEntity, pipeline);
-          runProcess(pipelineName, process, (p) -> {});
-        });
+    Process process = ProcessFactory.create(processEntity, pipeline);
+    runProcess(pipelineName, process, (p) -> {});
   }
 
   public String getPipelineName() {

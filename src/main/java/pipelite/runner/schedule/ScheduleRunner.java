@@ -80,17 +80,20 @@ public class ScheduleRunner extends ProcessRunnerPool {
   // From AbstractScheduledService.
   @Override
   public void runOneIteration() {
-    internalErrorHandler.execute(
-        () -> {
-          if (!healthCheckService.isHealthy()) {
-            logContext(log.atSevere())
-                .log("Waiting data source to be healthy before starting new schedules");
-            return;
-          }
-          startExecutions();
-          // Must call ProcessRunnerPool.runOneIteration()
-          super.runOneIteration();
-        });
+    // Unexpected exceptions are logged as internal errors but otherwise ignored to
+    // keep schedule runner alive.
+    internalErrorHandler.execute(() -> runScheduleRunner());
+  }
+
+  private void runScheduleRunner() {
+    if (!healthCheckService.isHealthy()) {
+      logContext(log.atSevere())
+          .log("Waiting data source to be healthy before starting new schedules");
+      return;
+    }
+    startExecutions();
+    // Must call ProcessRunnerPool.runOneIteration()
+    super.runOneIteration();
   }
 
   private static String serviceName(PipeliteConfiguration pipeliteConfiguration) {
@@ -115,6 +118,8 @@ public class ScheduleRunner extends ProcessRunnerPool {
   private void scheduleExecutions() {
     logContext(log.atInfo()).log("Scheduling executions");
     for (ScheduleCron scheduleCron : scheduleCrons) {
+      // Unexpected exceptions are logged as internal errors but otherwise ignored to
+      // not affect other schedules.
       internalErrorHandler.execute(
           () -> {
             Optional<ScheduleEntity> scheduleEntity =
@@ -146,6 +151,8 @@ public class ScheduleRunner extends ProcessRunnerPool {
   /** Resumes schedule executions. */
   protected void resumeExecutions() {
     logContext(log.atInfo()).log("Resuming executions");
+    // Unexpected exceptions are logged as internal errors but otherwise ignored to
+    // not affect other schedules.
     getScheduleCrons().forEach(s -> internalErrorHandler.execute(() -> resumeExecution(s)));
   }
 
@@ -165,6 +172,8 @@ public class ScheduleRunner extends ProcessRunnerPool {
 
   /** Starts new schedule executions. */
   protected void startExecutions() {
+    // Unexpected exceptions are logged as internal errors but otherwise ignored to
+    // not affect other schedules.
     getExecutableSchedules()
         .forEach(s -> internalErrorHandler.execute(() -> executeSchedule(s, ExecuteMode.NEW)));
   }
@@ -189,13 +198,6 @@ public class ScheduleRunner extends ProcessRunnerPool {
       throw new PipeliteProcessRetryException(pipelineName, processId, "unknown schedule");
     }
     executeSchedule(scheduleCron.get(), ExecuteMode.RETRY);
-  }
-
-  public boolean isActiveSchedule(String pipelineName) {
-    return getActiveProcessRunners().stream()
-        .filter(p -> p.getPipelineName().equals(pipelineName))
-        .findFirst()
-        .isPresent();
   }
 
   private Optional<ProcessEntity> getSavedProcess(ScheduleEntity scheduleEntity) {
@@ -229,59 +231,55 @@ public class ScheduleRunner extends ProcessRunnerPool {
 
   /** Executes a schedule. Creates a new process if needed. */
   protected synchronized void executeSchedule(ScheduleCron scheduleCron, ExecuteMode executeMode) {
-    internalErrorHandler.execute(
-        () -> {
-          String pipelineName = scheduleCron.getPipelineName();
-          logContext(log.atInfo(), pipelineName).log("Executing schedule");
+    String pipelineName = scheduleCron.getPipelineName();
+    logContext(log.atInfo(), pipelineName).log("Executing schedule");
 
-          Schedule schedule = getSchedule(pipelineName);
-          if (schedule == null) {
-            return;
+    Schedule schedule = getSchedule(pipelineName);
+    if (schedule == null) {
+      return;
+    }
+
+    AtomicReference<ScheduleEntity> scheduleEntity =
+        new AtomicReference<>(scheduleService.getSavedSchedule(pipelineName).orElse(null));
+    if (executeMode == ExecuteMode.NEW) {
+      scheduleEntity.set(executeNewSchedule(scheduleEntity.get()));
+    }
+    if (executeMode == ExecuteMode.RETRY) {
+      scheduleEntity.set(executeRetrySchedule(scheduleEntity.get()));
+    }
+
+    AtomicReference<ProcessEntity> processEntity =
+        new AtomicReference<>(getSavedProcess(scheduleEntity.get()).orElse(null));
+    if (processEntity.get() == null) {
+      // Create process for the schedule execution.
+      processEntity.set(
+          processService.createExecution(
+              pipelineName, scheduleEntity.get().getProcessId(), ProcessEntity.DEFAULT_PRIORITY));
+    }
+
+    Process process = getProcess(processEntity.get(), schedule);
+    if (process == null) {
+      return;
+    }
+
+    setMaximumRetries(process);
+
+    // Remove next time to prevent the schedule from being executed again until it
+    // has completed.
+    scheduleCron.setNextTime(null);
+
+    runProcess(
+        pipelineName,
+        process,
+        (p) -> {
+          ZonedDateTime nextLaunchTime =
+              CronUtils.launchTime(scheduleCron.getCron(), scheduleEntity.get().getStartTime());
+          try {
+            scheduleService.endExecution(processEntity.get(), nextLaunchTime);
+          } finally {
+            scheduleCron.setNextTime(nextLaunchTime);
+            decreaseMaximumExecutions(pipelineName);
           }
-
-          AtomicReference<ScheduleEntity> scheduleEntity =
-              new AtomicReference<>(scheduleService.getSavedSchedule(pipelineName).orElse(null));
-          if (executeMode == ExecuteMode.NEW) {
-            scheduleEntity.set(executeNewSchedule(scheduleEntity.get()));
-          }
-          if (executeMode == ExecuteMode.RETRY) {
-            scheduleEntity.set(executeRetrySchedule(scheduleEntity.get()));
-          }
-
-          AtomicReference<ProcessEntity> processEntity =
-              new AtomicReference<>(getSavedProcess(scheduleEntity.get()).orElse(null));
-          if (processEntity.get() == null) {
-            // Create process for the schedule execution.
-            processEntity.set(
-                processService.createExecution(
-                    pipelineName,
-                    scheduleEntity.get().getProcessId(),
-                    ProcessEntity.DEFAULT_PRIORITY));
-          }
-
-          Process process = getProcess(processEntity.get(), schedule);
-          if (process == null) {
-            return;
-          }
-
-          setMaximumRetries(process);
-
-          // Remove next time to prevent the schedule from being executed again until it
-          // has completed.
-          scheduleCron.setNextTime(null);
-
-          runProcess(
-              pipelineName,
-              process,
-              (p) -> {
-                ZonedDateTime nextLaunchTime =
-                    CronUtils.launchTime(
-                        scheduleCron.getCron(), scheduleEntity.get().getStartTime());
-                internalErrorHandler.execute(
-                    () -> scheduleService.endExecution(processEntity.get(), nextLaunchTime));
-                scheduleCron.setNextTime(nextLaunchTime);
-                decreaseMaximumExecutions(pipelineName);
-              });
         });
   }
 

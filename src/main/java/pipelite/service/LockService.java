@@ -121,6 +121,7 @@ public class LockService {
    */
   @Timed("pipelite.service")
   public boolean relockService(ServiceLockEntity serviceLock) {
+    // Unexpected exceptions are logged as internal errors but otherwise ignored.
     return internalErrorHandler.execute(
         () -> {
           String serviceName = serviceLock.getServiceName();
