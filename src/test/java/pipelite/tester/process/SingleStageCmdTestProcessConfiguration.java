@@ -14,6 +14,7 @@ import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.tester.TestType;
 import pipelite.tester.entity.StageEntityAsserter;
+import pipelite.tester.pipeline.ExecutorTestParameters;
 
 public class SingleStageCmdTestProcessConfiguration extends SingleStageTestProcessConfiguration {
 
@@ -28,15 +29,12 @@ public class SingleStageCmdTestProcessConfiguration extends SingleStageTestProce
 
   @Override
   protected void configure(ProcessBuilder builder) {
-    CmdExecutorParameters.CmdExecutorParametersBuilder<?, ?> executorParamsBuilder =
-        CmdExecutorParameters.builder();
-    executorParamsBuilder.maximumRetries(maximumRetries()).immediateRetries(immediateRetries());
-    CmdExecutorParameters executorParams = executorParamsBuilder.build();
-    executorParams.setPermanentErrors(testType().permanentErrors());
+    CmdExecutorParameters params =
+        ExecutorTestParameters.cmdParams(
+            immediateRetries(), maximumRetries(), testType().permanentErrors());
     builder
         .execute(stageName())
         .withCmdExecutor(
-            testType().nextCmd(pipelineName(), builder.getProcessId(), stageName()),
-            executorParams);
+            testType().nextCmd(pipelineName(), builder.getProcessId(), stageName()), params);
   }
 }

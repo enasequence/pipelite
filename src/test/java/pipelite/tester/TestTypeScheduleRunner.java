@@ -85,8 +85,8 @@ public class TestTypeScheduleRunner {
     ScheduleRunner scheduleRunner = runnerService.getScheduleRunner();
 
     assertThat(scheduleRunner.getActiveProcessRunners().size()).isEqualTo(0);
-    SingleStageTestProcessConfiguration testProcessConfiguration = f.getTestProcessConfiguration();
-    assertThat(testProcessConfiguration.configuredProcessIds().size()).isEqualTo(processCnt);
+    SingleStageTestProcessConfiguration testProcessConfiguration = f.testProcessConfiguration();
+    assertThat(f.configuredProcessIds().size()).isEqualTo(processCnt);
 
     testProcessConfiguration.assertCompleted(processService, stageServiceSpy, metrics, processCnt);
     testProcessConfiguration.assertCompletedScheduleEntity(

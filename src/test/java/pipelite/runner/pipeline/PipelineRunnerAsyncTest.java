@@ -102,7 +102,7 @@ public class PipelineRunnerAsyncTest {
           PROCESS_CNT,
           new TestProcessConfiguration() {
             @Override
-            protected void configure(ProcessBuilder builder) {
+            public void configureProcess(ProcessBuilder builder) {
               ExecutorParameters executorParams =
                   ExecutorParameters.builder().immediateRetries(0).maximumRetries(0).build();
               builder.execute(STAGE_NAME).with(stageExecutor, executorParams);

@@ -93,7 +93,7 @@ public class PipelineRunnerHighParallelismAsyncTest {
           PROCESS_CNT,
           new TestProcessConfiguration() {
             @Override
-            public void configure(ProcessBuilder builder) {
+            public void configureProcess(ProcessBuilder builder) {
               builder
                   .execute(STAGE_NAME)
                   .withAsyncTestExecutor(StageExecutorState.SUCCESS, SUBMIT_TIME, EXECUTION_TIME);

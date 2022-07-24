@@ -10,12 +10,12 @@
  */
 package pipelite.tester.process;
 
-import java.time.Duration;
 import pipelite.configuration.properties.KubernetesTestConfiguration;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
 import pipelite.tester.TestType;
 import pipelite.tester.entity.StageEntityAsserter;
+import pipelite.tester.pipeline.ExecutorTestParameters;
 
 public class SingleStageKubernetesTestProcessConfiguration
     extends SingleStageTestProcessConfiguration {
@@ -47,20 +47,17 @@ public class SingleStageKubernetesTestProcessConfiguration
 
   @Override
   protected void configure(ProcessBuilder builder) {
-    KubernetesExecutorParameters.KubernetesExecutorParametersBuilder<?, ?> executorParamsBuilder =
-        KubernetesExecutorParameters.builder();
-    executorParamsBuilder
-        .namespace(kubernetesTestConfiguration.getNamespace())
-        .timeout(Duration.ofSeconds(180))
-        .maximumRetries(maximumRetries())
-        .immediateRetries(immediateRetries());
-    KubernetesExecutorParameters executorParams = executorParamsBuilder.build();
-    executorParams.setPermanentErrors(testType().permanentErrors());
+    KubernetesExecutorParameters params =
+        ExecutorTestParameters.kubernetesParams(
+            kubernetesTestConfiguration,
+            immediateRetries(),
+            maximumRetries(),
+            testType().permanentErrors());
     builder
         .execute(stageName())
         .withKubernetesExecutor(
             testType().image(),
             testType().nextImageArgs(pipelineName(), builder.getProcessId(), stageName()),
-            executorParams);
+            params);
   }
 }

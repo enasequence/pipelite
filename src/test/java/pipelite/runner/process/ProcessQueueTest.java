@@ -70,7 +70,7 @@ public class ProcessQueueTest {
           FIRST_REFRESH_CREATE_CNT + SECOND_REFRESH_CREATE_CNT + THIRD_REFRESH_CREATE_CNT,
           new TestProcessConfiguration() {
             @Override
-            protected void configure(ProcessBuilder builder) {
+            public void configureProcess(ProcessBuilder builder) {
               builder.execute("STAGE").withSyncTestExecutor().build();
             }
           });

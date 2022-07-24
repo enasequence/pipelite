@@ -121,7 +121,7 @@ public class ScheduleRunnerTest {
     }
 
     @Override
-    protected void configure(ProcessBuilder builder) {
+    public void configureProcess(ProcessBuilder builder) {
       ExecutorParameters executorParams =
           ExecutorParameters.builder()
               .immediateRetries(0)
@@ -173,7 +173,7 @@ public class ScheduleRunnerTest {
 
     ProcessMetrics processMetrics = metrics.process(pipelineName);
 
-    TestProcessConfiguration t = f.getTestProcessConfiguration();
+    TestProcessConfiguration t = f.testProcessConfiguration();
     if (t.stageTestResult != StageTestResult.SUCCESS) {
       assertThat(processMetrics.runner().failedCount())
           .isEqualTo(t.stageExecCnt.get() / t.stageCnt);
@@ -226,7 +226,7 @@ public class ScheduleRunnerTest {
     assertThat(processEntity.getProcessId()).isEqualTo(processId);
     assertThat(processEntity.getExecutionCount()).isEqualTo(1);
 
-    TestProcessConfiguration t = f.getTestProcessConfiguration();
+    TestProcessConfiguration t = f.testProcessConfiguration();
     if (t.stageTestResult != StageTestResult.SUCCESS) {
       assertThat(processEntity.getProcessState())
           .isEqualTo(ProcessState.FAILED); // no re-executions allowed
@@ -238,7 +238,7 @@ public class ScheduleRunnerTest {
   private void assertStageEntities(TestSchedule f, String processId) {
     String pipelineName = f.pipelineName();
 
-    TestProcessConfiguration t = f.getTestProcessConfiguration();
+    TestProcessConfiguration t = f.testProcessConfiguration();
     for (int i = 0; i < t.stageCnt; ++i) {
       StageEntity stageEntity =
           stageService.getSavedStage(f.pipelineName(), processId, "STAGE" + i).get();
@@ -282,12 +282,12 @@ public class ScheduleRunnerTest {
     List<ScheduleEntity> scheduleEntities =
         scheduleService.getSchedules(serviceConfiguration.getName());
 
-    TestProcessConfiguration t = f.getTestProcessConfiguration();
+    TestProcessConfiguration t = f.testProcessConfiguration();
     assertThat(t.stageExecCnt.get() / t.stageCnt).isEqualTo(f.processCnt);
-    assertThat(t.configuredProcessIds().size()).isEqualTo(f.processCnt);
+    assertThat(f.configuredProcessIds().size()).isEqualTo(f.processCnt);
     assertSchedulerMetrics(f);
     assertScheduleEntity(scheduleEntities, f);
-    for (String processId : t.configuredProcessIds()) {
+    for (String processId : f.configuredProcessIds()) {
       assertProcessEntity(f, processId);
       assertStageEntities(f, processId);
     }

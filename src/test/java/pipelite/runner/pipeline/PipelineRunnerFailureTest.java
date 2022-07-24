@@ -154,7 +154,7 @@ public class PipelineRunnerFailureTest {
     }
 
     @Override
-    public void configure(ProcessBuilder builder) {
+    public void configureProcess(ProcessBuilder builder) {
       ExecutorParameters executorParams =
           ExecutorParameters.builder()
               .immediateRetries(0)
@@ -234,9 +234,9 @@ public class PipelineRunnerFailureTest {
       assertThat(t.fourthStageExecCnt.get()).isEqualTo(PROCESS_CNT);
     }
 
-    assertThat(t.configuredProcessCount()).isEqualTo(PROCESS_CNT);
+    assertThat(f.configuredProcessCount()).isEqualTo(PROCESS_CNT);
     assertMetrics(f);
-    for (String processId : t.configuredProcessIds()) {
+    for (String processId : f.configuredProcessIds()) {
       assertProcessEntity(f, processId);
       assertStageEntities(f, processId);
     }

@@ -100,7 +100,7 @@ public class PipelineRunnerHighParallelismSyncTest {
           PROCESS_CNT,
           new TestProcessConfiguration() {
             @Override
-            public void configure(ProcessBuilder builder) {
+            public void configureProcess(ProcessBuilder builder) {
               builder
                   .execute(STAGE_NAME)
                   .withSyncTestExecutor(StageExecutorState.SUCCESS, EXECUTION_TIME);

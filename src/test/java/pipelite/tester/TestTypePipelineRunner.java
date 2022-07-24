@@ -72,7 +72,7 @@ public class TestTypePipelineRunner {
       StageService stageServiceSpy, ConfigurableTestPipeline<T> testPipeline, int processCnt) {
     SingleStageTestProcessConfiguration testProcessConfiguration =
         testPipeline.testProcessConfiguration();
-    assertThat(testProcessConfiguration.configuredProcessIds().size()).isEqualTo(processCnt);
+    assertThat(testPipeline.configuredProcessIds().size()).isEqualTo(processCnt);
     testProcessConfiguration.assertCompleted(processService, stageServiceSpy, metrics, processCnt);
   }
 }

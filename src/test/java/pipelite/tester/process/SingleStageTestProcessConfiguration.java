@@ -22,7 +22,7 @@ import pipelite.tester.entity.ProcessEntityAsserter;
 import pipelite.tester.entity.ScheduleEntityAsserter;
 import pipelite.tester.metrics.MetricsTestAsserter;
 
-public abstract class SingleStageTestProcessConfiguration extends TestProcessConfiguration {
+public abstract class SingleStageTestProcessConfiguration extends TestTypeProcessConfiguration {
 
   private final TestType testType;
   private final AssertSubmittedStageEntity assertSubmittedStageEntity;

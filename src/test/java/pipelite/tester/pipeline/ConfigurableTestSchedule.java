@@ -11,35 +11,20 @@
 package pipelite.tester.pipeline;
 
 import pipelite.Schedule;
-import pipelite.process.builder.ProcessBuilder;
 import pipelite.tester.process.TestProcessConfiguration;
 
-public class ConfigurableTestSchedule<T extends TestProcessConfiguration> implements Schedule {
+/**
+ * Creates scheduled processes for testing purposes. The process configuration is defined by
+ * TestProcessConfiguration.
+ */
+public class ConfigurableTestSchedule<T extends TestProcessConfiguration>
+    extends ConfigurableTestRegisteredPipeline<T> implements Schedule {
 
   private final String cron;
-  private final T testProcessConfiguration;
 
   public ConfigurableTestSchedule(String cron, T testProcessConfiguration) {
+    super(testProcessConfiguration);
     this.cron = cron;
-    this.testProcessConfiguration = testProcessConfiguration;
-  }
-
-  public String cron() {
-    return cron;
-  }
-
-  public T getTestProcessConfiguration() {
-    return testProcessConfiguration;
-  }
-
-  @Override
-  public final String pipelineName() {
-    return testProcessConfiguration.pipelineName();
-  }
-
-  @Override
-  public final void configureProcess(ProcessBuilder builder) {
-    testProcessConfiguration.configureProcess(builder);
   }
 
   @Override

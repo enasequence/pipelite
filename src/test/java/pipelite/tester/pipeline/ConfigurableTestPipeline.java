@@ -15,21 +15,16 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import pipelite.Pipeline;
 import pipelite.PipeliteIdCreator;
-import pipelite.process.builder.ProcessBuilder;
 import pipelite.tester.process.TestProcessConfiguration;
 
 /**
- * The configurable test pipeline creates processes for testing purposes. The created processes are
- * configured using the given RegisteredPipeline. The process execution parallelism and the number
- * of processes are defined. The configurable test pipeline should to be registered in tests for the
- * processes to be created and executed. Alternatively, processes can be created by calling
- * createProcess and executed explicitly.
+ * Creates processes for testing purposes. The process configuration is defined by
+ * TestProcessConfiguration.
  */
-public class ConfigurableTestPipeline<T extends TestProcessConfiguration> implements Pipeline {
+public class ConfigurableTestPipeline<T extends TestProcessConfiguration>
+    extends ConfigurableTestRegisteredPipeline<T> implements Pipeline {
 
   private final int parallelism;
-  private final int processCount;
-  private final T testProcessConfiguration;
 
   private final Set<String> createdProcessIds = ConcurrentHashMap.newKeySet();
   private final Set<String> returnedProcessIds = ConcurrentHashMap.newKeySet();
@@ -37,9 +32,8 @@ public class ConfigurableTestPipeline<T extends TestProcessConfiguration> implem
   private final Monitor monitor = new Monitor();
 
   public ConfigurableTestPipeline(int parallelism, int processCount, T testProcessConfiguration) {
+    super(testProcessConfiguration);
     this.parallelism = parallelism;
-    this.processCount = processCount;
-    this.testProcessConfiguration = testProcessConfiguration;
     for (int i = 0; i < processCount; ++i) {
       String processId = PipeliteIdCreator.processId();
       createdProcessIds.add(processId);
@@ -48,24 +42,6 @@ public class ConfigurableTestPipeline<T extends TestProcessConfiguration> implem
 
   public int parallelism() {
     return parallelism;
-  }
-
-  public int processCnt() {
-    return processCount;
-  }
-
-  public T testProcessConfiguration() {
-    return testProcessConfiguration;
-  }
-
-  @Override
-  public final String pipelineName() {
-    return testProcessConfiguration.pipelineName();
-  }
-
-  @Override
-  public final void configureProcess(ProcessBuilder builder) {
-    testProcessConfiguration.configureProcess(builder);
   }
 
   @Override

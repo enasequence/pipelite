@@ -32,7 +32,7 @@ public class ProcessEntityCreatorTest {
           PROCESS_CNT,
           new TestProcessConfiguration() {
             @Override
-            protected void configure(ProcessBuilder builder) {}
+            public void configureProcess(ProcessBuilder builder) {}
           });
     }
   }

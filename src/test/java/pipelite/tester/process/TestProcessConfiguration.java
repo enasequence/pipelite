@@ -10,17 +10,13 @@
  */
 package pipelite.tester.process;
 
-import java.util.Collection;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import pipelite.PipeliteIdCreator;
-import pipelite.RegisteredPipeline;
 import pipelite.process.builder.ProcessBuilder;
 
-public abstract class TestProcessConfiguration implements RegisteredPipeline {
+/** Process configuration for the configurable test pipeline and schedule. */
+public abstract class TestProcessConfiguration {
 
   private final String pipelineName;
-  private final Set<String> configuredProcessIds = ConcurrentHashMap.newKeySet();
 
   public TestProcessConfiguration() {
     pipelineName = PipeliteIdCreator.pipelineName();
@@ -30,27 +26,9 @@ public abstract class TestProcessConfiguration implements RegisteredPipeline {
     this.pipelineName = pipelineName;
   }
 
-  @Override
   public final String pipelineName() {
     return pipelineName;
   }
 
-  @Override
-  public final void configureProcess(ProcessBuilder builder) {
-    register(builder.getProcessId());
-    configuredProcessIds.add(builder.getProcessId());
-    configure(builder);
-  }
-
-  protected abstract void configure(ProcessBuilder builder);
-
-  public final int configuredProcessCount() {
-    return configuredProcessIds.size();
-  }
-
-  public final Collection<String> configuredProcessIds() {
-    return configuredProcessIds;
-  }
-
-  protected void register(String processId) {}
+  public abstract void configureProcess(ProcessBuilder builder);
 }

@@ -65,7 +65,7 @@ public class ProcessRunnerPoolManagerTest {
           CRON_EVERY_TWO_SECONDS,
           new TestProcessConfiguration() {
             @Override
-            protected void configure(ProcessBuilder builder) {
+            public void configureProcess(ProcessBuilder builder) {
               builder.execute(STAGE_NAME).withSyncTestExecutor(StageExecutorState.SUCCESS);
             }
           });
@@ -78,7 +78,7 @@ public class ProcessRunnerPoolManagerTest {
           PROCESS_CNT,
           new TestProcessConfiguration() {
             @Override
-            protected void configure(ProcessBuilder builder) {
+            public void configureProcess(ProcessBuilder builder) {
               builder.execute(STAGE_NAME).withSyncTestExecutor(StageExecutorState.SUCCESS);
             }
           });

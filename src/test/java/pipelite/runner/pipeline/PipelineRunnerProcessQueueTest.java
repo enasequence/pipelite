@@ -64,14 +64,14 @@ public class PipelineRunnerProcessQueueTest {
 
   private static final class SyncTestProcessConfiguration extends TestProcessConfiguration {
     @Override
-    protected void configure(ProcessBuilder builder) {
+    public void configureProcess(ProcessBuilder builder) {
       builder.execute(STAGE_NAME).withSyncTestExecutor(StageExecutorState.SUCCESS);
     }
   }
 
   private static final class AsyncTestProcessConfiguration extends TestProcessConfiguration {
     @Override
-    protected void configure(ProcessBuilder builder) {
+    public void configureProcess(ProcessBuilder builder) {
       builder.execute(STAGE_NAME).withAsyncTestExecutor(StageExecutorState.SUCCESS, null, null);
     }
   }
