@@ -15,6 +15,7 @@ import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 import pipelite.tester.TestType;
 import pipelite.tester.entity.StageEntityAsserter;
+import pipelite.tester.pipeline.ExecutorTestExitCode;
 import pipelite.tester.pipeline.ExecutorTestParameters;
 
 public class SingleStageSimpleLsfTestProcessConfiguration
@@ -43,9 +44,7 @@ public class SingleStageSimpleLsfTestProcessConfiguration
             immediateRetries(),
             maximumRetries(),
             testType().permanentErrors());
-    builder
-        .execute(stageName())
-        .withSimpleLsfExecutor(
-            testType().nextCmd(pipelineName(), builder.getProcessId(), stageName()), params);
+    int exitCode = testType().nextExitCode(pipelineName(), builder.getProcessId(), stageName());
+    ExecutorTestExitCode.withSimpleLsfExecutor(builder.execute(stageName()), exitCode, params);
   }
 }

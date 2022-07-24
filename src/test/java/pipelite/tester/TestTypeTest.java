@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import pipelite.PipeliteIdCreator;
 import pipelite.executor.SimpleLsfExecutor;
 import pipelite.stage.Stage;
+import pipelite.tester.pipeline.ExecutorTestExitCode;
 
 public class TestTypeTest {
 
@@ -217,6 +218,7 @@ public class TestTypeTest {
 
   @Test
   public void next() {
+    TestType.init();
     TestType testType = TestType.nonPermanentErrorAndThenSuccessTest();
     String pipelineName = PipeliteIdCreator.pipelineName();
     String processId = PipeliteIdCreator.processId();
@@ -226,18 +228,16 @@ public class TestTypeTest {
     assertThatThrownBy(() -> testType.lastExitCode(pipelineName, processId, stageName))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Stage has no last exit code");
-    assertThatThrownBy(() -> testType.lastCmd(pipelineName, processId, stageName))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Stage has no last exit code");
-    assertThatThrownBy(() -> testType.lastImageArgs(pipelineName, processId, stageName))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Stage has no last exit code");
 
     assertThat(testType.nextExitCode(pipelineName, processId, stageName))
-        .isEqualTo(String.valueOf(EXIT_CODE_NON_PERMANENT_ERROR));
-    assertThat(testType.nextCmd(pipelineName, processId, stageName))
+        .isEqualTo(EXIT_CODE_NON_PERMANENT_ERROR);
+    assertThat(
+            ExecutorTestExitCode.cmdAsString(
+                testType.nextExitCode(pipelineName, processId, stageName)))
         .isEqualTo("bash -c 'exit " + EXIT_CODE_NON_PERMANENT_ERROR + "'");
-    assertThat(testType.nextImageArgs(pipelineName, processId, stageName))
+    assertThat(
+            ExecutorTestExitCode.cmdAsArray(
+                testType.nextExitCode(pipelineName, processId, stageName)))
         .containsExactly("bash", "-c", "exit " + EXIT_CODE_NON_PERMANENT_ERROR);
 
     assertThat(testType.permanentErrors()).containsExactly(EXIT_CODE_PERMANENT_ERROR);
@@ -250,17 +250,25 @@ public class TestTypeTest {
     TestType.setNextExitCode(testType, stage, pipelineName, processId, stageName);
 
     assertThat(testType.lastExitCode(pipelineName, processId, stageName))
-        .isEqualTo(String.valueOf(EXIT_CODE_NON_PERMANENT_ERROR));
-    assertThat(testType.lastCmd(pipelineName, processId, stageName))
+        .isEqualTo(EXIT_CODE_NON_PERMANENT_ERROR);
+    assertThat(
+            ExecutorTestExitCode.cmdAsString(
+                testType.lastExitCode(pipelineName, processId, stageName)))
         .isEqualTo("bash -c 'exit " + EXIT_CODE_NON_PERMANENT_ERROR + "'");
-    assertThat(testType.lastImageArgs(pipelineName, processId, stageName))
+    assertThat(
+            ExecutorTestExitCode.cmdAsArray(
+                testType.lastExitCode(pipelineName, processId, stageName)))
         .containsExactly("bash", "-c", "exit " + EXIT_CODE_NON_PERMANENT_ERROR);
 
     assertThat(testType.nextExitCode(pipelineName, processId, stageName))
-        .isEqualTo(String.valueOf(EXIT_CODE_SUCCESS));
-    assertThat(testType.nextCmd(pipelineName, processId, stageName))
+        .isEqualTo(EXIT_CODE_SUCCESS);
+    assertThat(
+            ExecutorTestExitCode.cmdAsString(
+                testType.nextExitCode(pipelineName, processId, stageName)))
         .isEqualTo("bash -c 'exit " + EXIT_CODE_SUCCESS + "'");
-    assertThat(testType.nextImageArgs(pipelineName, processId, stageName))
+    assertThat(
+            ExecutorTestExitCode.cmdAsArray(
+                testType.nextExitCode(pipelineName, processId, stageName)))
         .containsExactly("bash", "-c", "exit " + EXIT_CODE_SUCCESS);
     assertThat(executor.getCmd()).isEqualTo("bash -c 'exit " + EXIT_CODE_SUCCESS + "'");
 
@@ -268,19 +276,17 @@ public class TestTypeTest {
     TestType.setNextExitCode(testType, stage, pipelineName, processId, stageName);
 
     assertThat(testType.lastExitCode(pipelineName, processId, stageName))
-        .isEqualTo(String.valueOf(EXIT_CODE_SUCCESS));
-    assertThat(testType.lastCmd(pipelineName, processId, stageName))
+        .isEqualTo(EXIT_CODE_SUCCESS);
+    assertThat(
+            ExecutorTestExitCode.cmdAsString(
+                testType.lastExitCode(pipelineName, processId, stageName)))
         .isEqualTo("bash -c 'exit " + EXIT_CODE_SUCCESS + "'");
-    assertThat(testType.lastImageArgs(pipelineName, processId, stageName))
+    assertThat(
+            ExecutorTestExitCode.cmdAsArray(
+                testType.lastExitCode(pipelineName, processId, stageName)))
         .containsExactly("bash", "-c", "exit " + EXIT_CODE_SUCCESS);
 
     assertThatThrownBy(() -> testType.nextExitCode(pipelineName, processId, stageName))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Stage has no next exit code");
-    assertThatThrownBy(() -> testType.nextCmd(pipelineName, processId, stageName))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Stage has no next exit code");
-    assertThatThrownBy(() -> testType.nextImageArgs(pipelineName, processId, stageName))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Stage has no next exit code");
   }

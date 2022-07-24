@@ -21,6 +21,7 @@ import pipelite.entity.field.ErrorType;
 import pipelite.entity.field.StageState;
 import pipelite.service.StageService;
 import pipelite.tester.TestType;
+import pipelite.tester.pipeline.ExecutorTestExitCode;
 
 public class StageEntityAsserter {
   private StageEntityAsserter() {}
@@ -78,8 +79,11 @@ public class StageEntityAsserter {
   private static void assertSimpleLsfStageEntity(
       TestType testType, LsfTestConfiguration lsfTestConfiguration, StageEntity stageEntity) {
     String cmd =
-        testType.lastCmd(
-            stageEntity.getPipelineName(), stageEntity.getProcessId(), stageEntity.getStageName());
+        ExecutorTestExitCode.cmdAsString(
+            testType.lastExitCode(
+                stageEntity.getPipelineName(),
+                stageEntity.getProcessId(),
+                stageEntity.getStageName()));
     List<Integer> permanentErrors = testType.permanentErrors();
 
     assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.SimpleLsfExecutor");
@@ -134,7 +138,8 @@ public class StageEntityAsserter {
     assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.KubernetesExecutor");
 
     assertThat(stageEntity.getExecutorData()).contains("\"jobId\" : \"");
-    assertThat(stageEntity.getExecutorData()).contains("\"image\" : \"" + testType.image() + "\"");
+    assertThat(stageEntity.getExecutorData())
+        .contains("\"image\" : \"" + ExecutorTestExitCode.IMAGE + "\"");
     assertThat(stageEntity.getExecutorData()).contains("\"imageArgs\" : [");
     assertThat(stageEntity.getExecutorData()).contains("\"namespace\" : \"" + namespace + "\"");
 
@@ -166,8 +171,11 @@ public class StageEntityAsserter {
 
   private static void assertCmdStageEntity(TestType testType, StageEntity stageEntity) {
     String cmd =
-        testType.lastCmd(
-            stageEntity.getPipelineName(), stageEntity.getProcessId(), stageEntity.getStageName());
+        ExecutorTestExitCode.cmdAsString(
+            testType.lastExitCode(
+                stageEntity.getPipelineName(),
+                stageEntity.getProcessId(),
+                stageEntity.getStageName()));
     List<Integer> permanentErrors = testType.permanentErrors();
 
     assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.CmdExecutor");
@@ -232,7 +240,7 @@ public class StageEntityAsserter {
       String pipelineName,
       String processId,
       String stageName) {
-    String exitCode = testType.lastExitCode(pipelineName, processId, stageName);
+    String exitCode = String.valueOf(testType.lastExitCode(pipelineName, processId, stageName));
 
     StageEntity stageEntity =
         assertCompletedStageEntity(stageService, testType, pipelineName, processId, stageName);
@@ -251,7 +259,7 @@ public class StageEntityAsserter {
       String pipelineName,
       String processId,
       String stageName) {
-    String exitCode = testType.lastExitCode(pipelineName, processId, stageName);
+    String exitCode = String.valueOf(testType.lastExitCode(pipelineName, processId, stageName));
 
     StageEntity stageEntity =
         assertCompletedStageEntity(stageService, testType, pipelineName, processId, stageName);
@@ -269,7 +277,7 @@ public class StageEntityAsserter {
       String pipelineName,
       String processId,
       String stageName) {
-    String exitCode = testType.lastExitCode(pipelineName, processId, stageName);
+    String exitCode = String.valueOf(testType.lastExitCode(pipelineName, processId, stageName));
 
     StageEntity stageEntity =
         assertCompletedStageEntity(stageService, testType, pipelineName, processId, stageName);

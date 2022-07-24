@@ -31,6 +31,7 @@ import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
+import pipelite.tester.pipeline.ExecutorTestExitCode;
 
 public class TestType {
   static final int EXIT_CODE_SUCCESS = 0;
@@ -282,40 +283,20 @@ public class TestType {
     return "";
   }
 
-  public String nextExitCode(String pipelineName, String processId, String stageName) {
+  public int nextExitCode(String pipelineName, String processId, String stageName) {
     String nextExitCode = stageNextExitCode.get(registeredKey(pipelineName, processId, stageName));
     if (nextExitCode == null || nextExitCode.equals("")) {
       throw new RuntimeException("Stage has no next exit code");
     }
-    return nextExitCode;
+    return Integer.valueOf(nextExitCode);
   }
 
-  public String lastExitCode(String pipelineName, String processId, String stageName) {
+  public int lastExitCode(String pipelineName, String processId, String stageName) {
     String lastExitCode = stageLastExitCode.get(registeredKey(pipelineName, processId, stageName));
     if (lastExitCode == null || lastExitCode.equals("")) {
       throw new RuntimeException("Stage has no last exit code");
     }
-    return lastExitCode;
-  }
-
-  public String nextCmd(String pipelineName, String processId, String stageName) {
-    return "bash -c 'exit " + nextExitCode(pipelineName, processId, stageName) + "'";
-  }
-
-  public String lastCmd(String pipelineName, String processId, String stageName) {
-    return "bash -c 'exit " + lastExitCode(pipelineName, processId, stageName) + "'";
-  }
-
-  public String image() {
-    return "debian:10.11";
-  }
-
-  public List<String> nextImageArgs(String pipelineName, String processId, String stageName) {
-    return Arrays.asList("bash", "-c", "exit " + nextExitCode(pipelineName, processId, stageName));
-  }
-
-  public List<String> lastImageArgs(String pipelineName, String processId, String stageName) {
-    return Arrays.asList("bash", "-c", "exit " + lastExitCode(pipelineName, processId, stageName));
+    return Integer.valueOf(lastExitCode);
   }
 
   public List<Integer> permanentErrors() {
@@ -472,13 +453,19 @@ public class TestType {
     if (!nextExitCode.equals("")) {
       if (stage.getExecutor() instanceof KubernetesExecutor) {
         KubernetesExecutor executor = (KubernetesExecutor) stage.getExecutor();
-        executor.setImageArgs(testType.nextImageArgs(pipelineName, processId, stageName));
+        executor.setImageArgs(
+            ExecutorTestExitCode.cmdAsArray(
+                testType.nextExitCode(pipelineName, processId, stageName)));
       } else if (stage.getExecutor() instanceof AbstractLsfExecutor<?>) {
         AbstractLsfExecutor<?> executor = (AbstractLsfExecutor<?>) stage.getExecutor();
-        executor.setCmd(testType.nextCmd(pipelineName, processId, stageName));
+        executor.setCmd(
+            ExecutorTestExitCode.cmdAsString(
+                testType.nextExitCode(pipelineName, processId, stageName)));
       } else if (stage.getExecutor() instanceof CmdExecutor<?>) {
         CmdExecutor<?> executor = (CmdExecutor<?>) stage.getExecutor();
-        executor.setCmd(testType.nextCmd(pipelineName, processId, stageName));
+        executor.setCmd(
+            ExecutorTestExitCode.cmdAsString(
+                testType.nextExitCode(pipelineName, processId, stageName)));
       } else {
         testType.failedAsserts.add(
             "Unexpected executor type when changing executor exit code: "

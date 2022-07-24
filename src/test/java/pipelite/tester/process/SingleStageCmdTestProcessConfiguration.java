@@ -14,6 +14,7 @@ import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.tester.TestType;
 import pipelite.tester.entity.StageEntityAsserter;
+import pipelite.tester.pipeline.ExecutorTestExitCode;
 import pipelite.tester.pipeline.ExecutorTestParameters;
 
 public class SingleStageCmdTestProcessConfiguration extends SingleStageTestProcessConfiguration {
@@ -32,9 +33,7 @@ public class SingleStageCmdTestProcessConfiguration extends SingleStageTestProce
     CmdExecutorParameters params =
         ExecutorTestParameters.cmdParams(
             immediateRetries(), maximumRetries(), testType().permanentErrors());
-    builder
-        .execute(stageName())
-        .withCmdExecutor(
-            testType().nextCmd(pipelineName(), builder.getProcessId(), stageName()), params);
+    int exitCode = testType().nextExitCode(pipelineName(), builder.getProcessId(), stageName());
+    ExecutorTestExitCode.withCmdExecutor(builder.execute(stageName()), exitCode, params);
   }
 }

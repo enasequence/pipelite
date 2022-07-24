@@ -15,6 +15,7 @@ import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
 import pipelite.tester.TestType;
 import pipelite.tester.entity.StageEntityAsserter;
+import pipelite.tester.pipeline.ExecutorTestExitCode;
 import pipelite.tester.pipeline.ExecutorTestParameters;
 
 public class SingleStageKubernetesTestProcessConfiguration
@@ -53,11 +54,7 @@ public class SingleStageKubernetesTestProcessConfiguration
             immediateRetries(),
             maximumRetries(),
             testType().permanentErrors());
-    builder
-        .execute(stageName())
-        .withKubernetesExecutor(
-            testType().image(),
-            testType().nextImageArgs(pipelineName(), builder.getProcessId(), stageName()),
-            params);
+    int exitCode = testType().nextExitCode(pipelineName(), builder.getProcessId(), stageName());
+    ExecutorTestExitCode.withKubernetesExecutor(builder.execute(stageName()), exitCode, params);
   }
 }
