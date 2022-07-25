@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EMBL - European Bioinformatics Institute
+ * Copyright 2020-2022 EMBL - European Bioinformatics Institute
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
  * file except in compliance with the License. You may obtain a copy of the License at
  * http://www.apache.org/licenses/LICENSE-2.0
@@ -9,6 +9,8 @@
  * specific language governing permissions and limitations under the License.
  */
 package pipelite.service;
+
+import static org.apache.commons.text.WordUtils.capitalizeFully;
 
 import com.google.common.flogger.FluentLogger;
 import io.micrometer.core.annotation.Timed;
@@ -80,8 +82,8 @@ public class StageService {
   }
 
   public enum PrepareExecutionResult {
-    CREATE_EXECUTION,
-    CONTINUE_EXECUTION
+    NEW,
+    CONTINUE
   };
   /**
    * Prepares stage entity before the stage execution starts.
@@ -104,12 +106,12 @@ public class StageService {
         // Attempt to deserialize executor.
         StageExecutorSerializer.deserializeExecutor(stage, internalErrorService);
       }
-      return prepareExecution(stage, PrepareExecutionResult.CONTINUE_EXECUTION);
+      return prepareExecution(stage, PrepareExecutionResult.CONTINUE);
     }
 
     // Create new stage execution.
     createExecution(pipelineName, processId, stage);
-    return prepareExecution(stage, PrepareExecutionResult.CREATE_EXECUTION);
+    return prepareExecution(stage, PrepareExecutionResult.NEW);
   }
 
   private PrepareExecutionResult prepareExecution(
@@ -119,7 +121,7 @@ public class StageService {
           "Failed to prepare stage execution because stage entity is missing");
     }
     logContext(log.atInfo(), stage)
-        .log("Prepared stage execution: " + prepareExecutionResult.name());
+        .log(capitalizeFully(prepareExecutionResult.name()) + " stage execution");
     return prepareExecutionResult;
   }
 

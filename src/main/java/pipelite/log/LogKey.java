@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EMBL - European Bioinformatics Institute
+ * Copyright 2020-2022 EMBL - European Bioinformatics Institute
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
  * file except in compliance with the License. You may obtain a copy of the License at
  * http://www.apache.org/licenses/LICENSE-2.0
@@ -31,6 +31,9 @@ public class LogKey {
 
   public static final MetadataKey<String> STAGE_NAME =
       MetadataKey.single("stage_name", String.class);
+
+  public static final MetadataKey<String> EXECUTOR_NAME =
+      MetadataKey.single("executor_name", String.class);
 
   public static final MetadataKey<String> JOB_ID = MetadataKey.single("job_id", String.class);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EMBL - European Bioinformatics Institute
+ * Copyright 2020-2022 EMBL - European Bioinformatics Institute
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
  * file except in compliance with the License. You may obtain a copy of the License at
  * http://www.apache.org/licenses/LICENSE-2.0
@@ -56,8 +56,8 @@ public abstract class AsyncCmdExecutor<
    */
   protected String outFile;
 
-  public AsyncCmdExecutor(LogFilePathResolver logFilePathResolver) {
-    super("AsyncCmdExecutor");
+  public AsyncCmdExecutor(String executorName, LogFilePathResolver logFilePathResolver) {
+    super(executorName);
     this.logFilePathResolver = logFilePathResolver;
   }
 
@@ -87,7 +87,7 @@ public abstract class AsyncCmdExecutor<
   protected final void endJob() {
     // Read the output file.
     logContext(log.atInfo(), getRequest())
-        .log("Attempting to read async job " + getJobId() + " output file: " + outFile);
+        .log("Attempting to read " + logJobContext() + " output file: " + outFile);
 
     // Wait no longer than log timeout for the output file.
     ZonedDateTime endTime = getExecEndTime().plus(getExecutorParams().getLogTimeout());
@@ -102,7 +102,11 @@ public abstract class AsyncCmdExecutor<
         Time.wait(Duration.ofSeconds(Math.min(5, logTimeoutSeconds / 3)));
       }
       result.stageLog(
-          "The output file was not available within " + logTimeoutSeconds + " seconds.");
+          "The "
+              + logJobContext()
+              + " output file was not available within "
+              + logTimeoutSeconds
+              + " seconds timeout");
     }
   }
 
@@ -113,6 +117,10 @@ public abstract class AsyncCmdExecutor<
       log.atSevere().withCause(ex).log("Failed to read output file: " + outFile);
       return null;
     }
+  }
+
+  protected String logJobContext() {
+    return getExecutorName() + " job " + getJobId();
   }
 
   protected static FluentLogger.Api logContext(FluentLogger.Api log, StageExecutorRequest request) {

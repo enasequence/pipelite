@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EMBL - European Bioinformatics Institute
+ * Copyright 2020-2022 EMBL - European Bioinformatics Institute
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
  * file except in compliance with the License. You may obtain a copy of the License at
  * http://www.apache.org/licenses/LICENSE-2.0
@@ -67,7 +67,7 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
   private static final int BJOBS_COLUMN_HOST = 6;
 
   public AbstractLsfExecutor() {
-    super(new LsfLogFilePathResolver());
+    super("LSF", new LsfLogFilePathResolver());
   }
 
   @Override
@@ -145,7 +145,8 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
   public static DescribeJobsResult<LsfRequestContext> recoverJob(
       CmdRunner cmdRunner, LsfRequestContext request) {
     String outFile = request.getOutFile();
-    log.atWarning().log("Recovering LSF job result from output file: " + outFile);
+    log.atWarning().log(
+        "Recovering LSF job " + request.getJobId() + " result from output file: " + outFile);
     String str = readOutFile(cmdRunner, outFile, JOB_RECOVERY_LINES);
     return DescribeJobsResult.create(request, recoverJobUsingOutFile(str));
   }
@@ -219,7 +220,7 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
     for (String line : str.split("\\r?\\n")) {
       String notFoundJobId = extractNotFoundJobIdFromBjobsOutput(line);
       if (notFoundJobId != null) {
-        log.atWarning().log("LSF bsubs job not found: " + notFoundJobId);
+        log.atWarning().log("LSF job " + notFoundJobId + " was not found");
         results.add(DescribeJobsResult.create(requests, notFoundJobId, null));
       } else {
         DescribeJobsResult<LsfRequestContext> result =
@@ -237,7 +238,7 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
       String str, DescribeJobsPollRequests<LsfRequestContext> requests) {
     String[] column = str.split("\\|");
     if (column.length != 7) {
-      log.atWarning().log("Unexpected bjobs output line: " + str);
+      log.atWarning().log("Unexpected LSF bjobs output line: " + str);
       return null;
     }
 

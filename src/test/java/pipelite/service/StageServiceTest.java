@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EMBL - European Bioinformatics Institute
+ * Copyright 2020-2022 EMBL - European Bioinformatics Institute
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
  * file except in compliance with the License. You may obtain a copy of the License at
  * http://www.apache.org/licenses/LICENSE-2.0
@@ -87,7 +87,7 @@ class StageServiceTest {
     // Prepare first execution.
 
     assertEquals(
-        StageService.PrepareExecutionResult.CREATE_EXECUTION,
+        StageService.PrepareExecutionResult.NEW,
         service.prepareExecution(pipelineName, processId, stage));
 
     assertStageEntityAfterPrepareExecution(
@@ -127,7 +127,7 @@ class StageServiceTest {
     // Prepare second execution.
 
     assertEquals(
-        StageService.PrepareExecutionResult.CONTINUE_EXECUTION,
+        StageService.PrepareExecutionResult.CONTINUE,
         service.prepareExecution(pipelineName, processId, stage));
 
     // Stage state has not been changed.

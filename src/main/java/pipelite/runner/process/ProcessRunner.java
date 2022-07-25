@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EMBL - European Bioinformatics Institute
+ * Copyright 2020-2022 EMBL - European Bioinformatics Institute
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
  * file except in compliance with the License. You may obtain a copy of the License at
  * http://www.apache.org/licenses/LICENSE-2.0
@@ -189,7 +189,7 @@ public class ProcessRunner {
 
   private void endProcessExecution() {
     ProcessState processState = evaluateProcessState(process);
-    logContext(log.atInfo()).log("Process execution finished: %s", processState.name());
+    logContext(log.atInfo()).log("Process execution finished with state " + processState.name());
 
     pipeliteServices.process().endExecution(process, processState);
     unlockProcess();

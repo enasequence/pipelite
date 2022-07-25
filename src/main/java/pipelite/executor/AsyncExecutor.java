@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EMBL - European Bioinformatics Institute
+ * Copyright 2020-2022 EMBL - European Bioinformatics Institute
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
  * file except in compliance with the License. You may obtain a copy of the License at
  * http://www.apache.org/licenses/LICENSE-2.0
@@ -180,7 +180,7 @@ public abstract class AsyncExecutor<
           // Set the job id.
           jobId = submitJobResult.getJobId();
           if (jobId != null) {
-            logContext(log.atInfo()).log("Submitted " + executorName + " job");
+            logContext(log.atInfo()).log("Submitted " + executorName + " job " + jobId);
           } else {
             String stageLog = submitJobResult.result.stageLog();
             logContext(log.atSevere())
@@ -215,7 +215,13 @@ public abstract class AsyncExecutor<
                   .getResult(getRequestContext(), getExecutorParams().getPermanentErrors());
           if (result.isCompleted()) {
             logContext(log.atInfo())
-                .log("Completed " + executorName + " job with state " + result.state().name());
+                .log(
+                    "Completed "
+                        + executorName
+                        + " job "
+                        + jobId
+                        + " with state "
+                        + result.state().name());
             stageExecutorResult = result;
             execEndTime = ZonedDateTime.now();
           }
@@ -232,7 +238,7 @@ public abstract class AsyncExecutor<
 
   @Override
   public final void terminate() {
-    logContext(log.atInfo()).log("Terminating " + executorName + " job");
+    logContext(log.atInfo()).log("Terminating " + executorName + " job " + jobId);
     RetryableExternalAction.execute(
         () -> {
           terminateJob();
@@ -244,6 +250,7 @@ public abstract class AsyncExecutor<
   private FluentLogger.Api logContext(FluentLogger.Api log) {
     return log.with(LogKey.PIPELINE_NAME, pipelineName)
         .with(LogKey.PROCESS_ID, processId)
+        .with(LogKey.EXECUTOR_NAME, executorName)
         .with(LogKey.JOB_ID, jobId);
   }
 }

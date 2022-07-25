@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EMBL - European Bioinformatics Institute
+ * Copyright 2020-2022 EMBL - European Bioinformatics Institute
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
  * file except in compliance with the License. You may obtain a copy of the License at
  * http://www.apache.org/licenses/LICENSE-2.0
@@ -71,6 +71,9 @@ public class PipelineRunner extends ProcessRunnerPool {
   // From AbstractScheduledService.
   @Override
   public void runOneIteration() {
+    logContext(log.atInfo())
+        .log("Running " + getActiveProcessCount() + " " + pipelineName + " processes");
+
     // Unexpected exceptions are logged as internal errors but otherwise ignored to
     // keep pipeline runner alive.
     internalErrorHandler.execute(
