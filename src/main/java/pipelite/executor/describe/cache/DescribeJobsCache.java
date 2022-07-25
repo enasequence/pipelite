@@ -48,14 +48,16 @@ public abstract class DescribeJobsCache<
   public abstract CacheContext getCacheContext(Executor executor);
 
   public DescribeJobs<RequestContext, ExecutorContext> getDescribeJobs(Executor executor) {
-    return cache.computeIfAbsent(
-        getCacheContext(executor),
-        k ->
-            new DescribeJobs<>(
-                serviceConfiguration,
-                internalErrorService,
-                requestLimit,
-                getExecutorContext(executor)));
+    return cache.computeIfAbsent(getCacheContext(executor), k -> createDescribeJobs(executor));
+  }
+
+  public DescribeJobs<RequestContext, ExecutorContext> createDescribeJobs(Executor executor) {
+    return new DescribeJobs<>(
+        serviceConfiguration, internalErrorService, requestLimit, getExecutorContext(executor));
+  }
+
+  public Integer requestLimit() {
+    return requestLimit;
   }
 
   @PreDestroy

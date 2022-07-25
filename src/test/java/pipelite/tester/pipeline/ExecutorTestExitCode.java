@@ -27,14 +27,14 @@ public class ExecutorTestExitCode {
     return stageBuilder.withSimpleLsfExecutor(cmdAsString(exitCode), executorParams);
   }
 
-  public static ProcessBuilder withCmdExecutor(
-      StageBuilder stageBuilder, int exitCode, CmdExecutorParameters executorParams) {
-    return stageBuilder.withCmdExecutor(cmdAsString(exitCode), executorParams);
-  }
-
   public static ProcessBuilder withKubernetesExecutor(
       StageBuilder stageBuilder, int exitCode, KubernetesExecutorParameters executorParams) {
     return stageBuilder.withKubernetesExecutor(IMAGE, cmdAsArray(exitCode), executorParams);
+  }
+
+  public static ProcessBuilder withCmdExecutor(
+      StageBuilder stageBuilder, int exitCode, CmdExecutorParameters executorParams) {
+    return stageBuilder.withCmdExecutor(cmdAsString(exitCode), executorParams);
   }
 
   public static String cmdAsString(int exitCode) {
