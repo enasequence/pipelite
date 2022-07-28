@@ -45,26 +45,26 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
   private static final Pattern JOB_RECOVERY_EXIT_CODE_PATTERN =
       Pattern.compile("Exited with exit code (\\d+)");
 
-  private static final String BSUB_CMD = "bsub";
-  private static final String BKILL_CMD = "bkill ";
-  private static final String BJOBS_CMD =
+  private static final String SUBMIT_CMD = "bsub";
+  private static final String TERMINATE_CMD = "bkill ";
+  private static final String POLL_CMD =
       "bjobs -o \"jobid stat exit_code cpu_used max_mem avg_mem exec_host delimiter='|'\" -noheader ";
 
-  private static final Pattern BSUB_JOB_ID_SUBMITTED_PATTERN =
+  private static final Pattern SUBMIT_JOB_SUBMITTED_PATTERN =
       Pattern.compile("Job <(\\d+)\\> is submitted");
-  private static final Pattern BJOBS_JOB_ID_NOT_FOUND_PATTERN =
+  private static final Pattern POLL_JOB_NOT_FOUND_PATTERN =
       Pattern.compile("Job <(\\d+)\\> is not found");
 
-  private static final String BJOBS_STATUS_DONE = "DONE";
-  private static final String BJOBS_STATUS_EXIT = "EXIT";
+  private static final String POLL_JOB_STATUS_SUCCESS = "DONE";
+  private static final String POLL_JOB_STATUS_ERROR = "EXIT";
 
-  private static final int BJOBS_COLUMN_JOB_ID = 0;
-  private static final int BJOBS_COLUMN_STATUS = 1;
-  private static final int BJOBS_COLUMN_EXIT_CODE = 2;
-  private static final int BJOBS_COLUMN_CPU_TIME = 3;
-  private static final int BJOBS_COLUMN_MAX_MEM = 4;
-  private static final int BJOBS_COLUMN_AVG_MEM = 5;
-  private static final int BJOBS_COLUMN_HOST = 6;
+  private static final int POLL_COLUMN_JOB_ID = 0;
+  private static final int POLL_COLUMN_STATUS = 1;
+  private static final int POLL_COLUMN_EXIT_CODE = 2;
+  private static final int POLL_COLUMN_CPU_TIME = 3;
+  private static final int POLL_COLUMN_MAX_MEM = 4;
+  private static final int POLL_COLUMN_AVG_MEM = 5;
+  private static final int POLL_COLUMN_HOST = 6;
 
   public AbstractLsfExecutor() {
     super("LSF", new LsfLogFilePathResolver());
@@ -93,7 +93,7 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
 
   protected StringBuilder getSharedSubmitCmd(StageExecutorRequest request) {
     StringBuilder cmd = new StringBuilder();
-    cmd.append(BSUB_CMD);
+    cmd.append(SUBMIT_CMD);
 
     String logDir = logFilePathResolver.placeholderPath().dir(request);
     String logFileName = logFilePathResolver.fileName(request);
@@ -121,7 +121,7 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
         RetryableExternalAction.execute(() -> getCmdRunner().execute(getSubmitCmd(request)));
     String jobId = null;
     if (!result.isError()) {
-      jobId = extractJobIdFromBsubOutput(result.stageLog());
+      jobId = extractJobIdFromSubmitOutput(result.stageLog());
       logContext(log.atInfo(), request).log("Submitted LSF job " + jobId);
     }
     return new SubmitJobResult(jobId, result);
@@ -130,15 +130,19 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
   @Override
   protected void terminateJob() {
     log.atWarning().log("Terminating LSF job " + getJobId());
-    getCmdRunner().execute(BKILL_CMD + getCmd());
+    getCmdRunner().execute(getTerminateCmd(getJobId()));
+  }
+
+  static String getTerminateCmd(String jobId) {
+    return TERMINATE_CMD + jobId;
   }
 
   /** Polls job execution results. */
   public static DescribeJobsResults<LsfRequestContext> pollJobs(
       CmdRunner cmdRunner, DescribeJobsPollRequests<LsfRequestContext> requests) {
     // Ignore exit code as bjobs returns 255 if some jobs are not found.
-    StageExecutorResult result = cmdRunner.execute(BJOBS_CMD + String.join(" ", requests.jobIds));
-    return extractJobResultsFromBjobsOutput(result.stageLog(), requests);
+    StageExecutorResult result = cmdRunner.execute(POLL_CMD + String.join(" ", requests.jobIds));
+    return extractJobResultsFromPollOutput(result.stageLog(), requests);
   }
 
   /** Recovers job execution result. */
@@ -177,9 +181,9 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
     return null;
   }
 
-  public static String extractJobIdFromBsubOutput(String str) {
+  public static String extractJobIdFromSubmitOutput(String str) {
     try {
-      Matcher m = BSUB_JOB_ID_SUBMITTED_PATTERN.matcher(str);
+      Matcher m = SUBMIT_JOB_SUBMITTED_PATTERN.matcher(str);
       if (!m.find()) {
         throw new PipeliteException("No LSF submit job id.");
       }
@@ -189,9 +193,9 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
     }
   }
 
-  public static String extractNotFoundJobIdFromBjobsOutput(String str) {
+  public static String extractNotFoundJobIdFromPollOutput(String str) {
     try {
-      Matcher m = BJOBS_JOB_ID_NOT_FOUND_PATTERN.matcher(str);
+      Matcher m = POLL_JOB_NOT_FOUND_PATTERN.matcher(str);
       if (m.find()) {
         return m.group(1);
       }
@@ -214,17 +218,17 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
   }
 
   /** Extracts job results from bjobs output. */
-  public static DescribeJobsResults<LsfRequestContext> extractJobResultsFromBjobsOutput(
+  public static DescribeJobsResults<LsfRequestContext> extractJobResultsFromPollOutput(
       String str, DescribeJobsPollRequests<LsfRequestContext> requests) {
     DescribeJobsResults<LsfRequestContext> results = new DescribeJobsResults<>();
     for (String line : str.split("\\r?\\n")) {
-      String notFoundJobId = extractNotFoundJobIdFromBjobsOutput(line);
+      String notFoundJobId = extractNotFoundJobIdFromPollOutput(line);
       if (notFoundJobId != null) {
         log.atWarning().log("LSF job " + notFoundJobId + " was not found");
         results.add(DescribeJobsResult.create(requests, notFoundJobId, null));
       } else {
         DescribeJobsResult<LsfRequestContext> result =
-            extractJobResultFromBjobsOutput(line, requests);
+            extractJobResultFromPollOutput(line, requests);
         if (result != null) {
           results.add(result);
         }
@@ -234,7 +238,7 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
   }
 
   /** Extracts job result from a single line of bjobs output. */
-  public static DescribeJobsResult<LsfRequestContext> extractJobResultFromBjobsOutput(
+  public static DescribeJobsResult<LsfRequestContext> extractJobResultFromPollOutput(
       String str, DescribeJobsPollRequests<LsfRequestContext> requests) {
     String[] column = str.split("\\|");
     if (column.length != 7) {
@@ -243,25 +247,25 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
     }
 
     StageExecutorResult result;
-    if (column[BJOBS_COLUMN_STATUS].equals(BJOBS_STATUS_DONE)) {
+    if (column[POLL_COLUMN_STATUS].equals(POLL_JOB_STATUS_SUCCESS)) {
       result = StageExecutorResult.success();
       result.attribute(StageExecutorResultAttribute.EXIT_CODE, String.valueOf(0));
-    } else if (column[BJOBS_COLUMN_STATUS].equals(BJOBS_STATUS_EXIT)) {
+    } else if (column[POLL_COLUMN_STATUS].equals(POLL_JOB_STATUS_ERROR)) {
       result = StageExecutorResult.executionError();
       result.attribute(
-          StageExecutorResultAttribute.EXIT_CODE, String.valueOf(column[BJOBS_COLUMN_EXIT_CODE]));
+          StageExecutorResultAttribute.EXIT_CODE, String.valueOf(column[POLL_COLUMN_EXIT_CODE]));
     } else {
       result = StageExecutorResult.active();
     }
 
-    String jobId = column[BJOBS_COLUMN_JOB_ID];
+    String jobId = column[POLL_COLUMN_JOB_ID];
     result.attribute(StageExecutorResultAttribute.JOB_ID, jobId);
 
     if (result.isSuccess() || result.isError()) {
-      result.attribute(StageExecutorResultAttribute.EXEC_HOST, column[BJOBS_COLUMN_HOST]);
-      result.attribute(StageExecutorResultAttribute.CPU_TIME, column[BJOBS_COLUMN_CPU_TIME]);
-      result.attribute(StageExecutorResultAttribute.MAX_MEM, column[BJOBS_COLUMN_MAX_MEM]);
-      result.attribute(StageExecutorResultAttribute.AVG_MEM, column[BJOBS_COLUMN_AVG_MEM]);
+      result.attribute(StageExecutorResultAttribute.EXEC_HOST, column[POLL_COLUMN_HOST]);
+      result.attribute(StageExecutorResultAttribute.CPU_TIME, column[POLL_COLUMN_CPU_TIME]);
+      result.attribute(StageExecutorResultAttribute.MAX_MEM, column[POLL_COLUMN_MAX_MEM]);
+      result.attribute(StageExecutorResultAttribute.AVG_MEM, column[POLL_COLUMN_AVG_MEM]);
     }
 
     return DescribeJobsResult.create(requests, jobId, result);

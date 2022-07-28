@@ -19,6 +19,7 @@ import lombok.Value;
 import lombok.extern.flogger.Flogger;
 import pipelite.exception.PipeliteException;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
 /** Executes a command over ssh. */
@@ -59,8 +60,18 @@ public class SshCmdRunner implements CmdRunner {
     try {
       // Acquire a permit to execute an ssh command.
       sshExecutor.get(key).acquire();
-      return LocalCmdRunner.execute(
-          cmd, executorParams, "ssh", "-o", "StrictHostKeyChecking=no", user + "@" + host, cmd);
+      StageExecutorResult result =
+          LocalCmdRunner.execute(
+              "ssh",
+              executorParams.getEnv(),
+              "-o",
+              "StrictHostKeyChecking=no",
+              user + "@" + host,
+              cmd);
+      // Override the command attribute to preserve the original command in the stage execution
+      // result.
+      result.attribute(StageExecutorResultAttribute.COMMAND, cmd);
+      return result;
     } catch (Exception ex) {
       throw new PipeliteException("Failed to execute command: " + cmd, ex);
     } finally {
@@ -83,12 +94,10 @@ public class SshCmdRunner implements CmdRunner {
 
       String arg1 = tempFileName;
       String arg2 = user + "@" + host + ":" + path.toString();
-      String originalCmd = "scp " + arg1 + " " + arg2;
 
       Files.write(tempFile, str.getBytes(StandardCharsets.UTF_8));
 
-      StageExecutorResult result =
-          LocalCmdRunner.execute(originalCmd, executorParams, "scp", arg1, arg2);
+      StageExecutorResult result = LocalCmdRunner.execute("scp", arg1, arg2);
       if (!result.isSuccess()) {
         log.atSevere().log("Failed to write file " + path);
         throw new PipeliteException("Failed to write file " + path);

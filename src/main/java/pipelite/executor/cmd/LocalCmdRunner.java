@@ -17,6 +17,7 @@ import java.io.OutputStream;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.util.Map;
 import lombok.extern.flogger.Flogger;
 import org.apache.commons.exec.*;
 import pipelite.exception.PipeliteException;
@@ -32,21 +33,47 @@ public class LocalCmdRunner implements CmdRunner {
     this.executorParams = executorParams;
   }
 
+  /**
+   * Executes a command using the /bin/sh shell with a five minutes timeout. The command arguments
+   * are interpreted by the /bin/sh shell.
+   *
+   * @param cmd the command to execute
+   * @return the stage execution result
+   */
   @Override
   public StageExecutorResult execute(String cmd) {
     // Use /bin/sh -c to delegate argument parsing to the shell. The command
     // and the arguments are treated as a single argument passed to the
     // shell. The shell will then parse the command and the arguments. Argument
-    // parsing is difficult because single and double quotes affect splitting
-    // the command by whitespace.
-    return execute(cmd, executorParams, "/bin/sh", "-c", cmd);
+    // parsing without using the shell is very challenging because of single and
+    // double quotes and other complications.
+    return execute("/bin/sh", executorParams.getEnv(), "-c", cmd);
   }
 
-  public static StageExecutorResult execute(
-      String originalCmd, CmdExecutorParameters executorParams, String cmd, String... args) {
+  /**
+   * Executes a command with a five minutes timeout. The command and the command arguments must be
+   * provided separately.
+   *
+   * @return the stage execution result
+   */
+  public static StageExecutorResult execute(String cmd, String... args) {
+    return execute(cmd, null, args);
+  }
+
+  /**
+   * Executes a command with a five minutes timeout. The command and the command arguments must be
+   * provided separately.
+   *
+   * @param cmd the command to execute
+   * @param env the environmental variables
+   * @return the stage execution result
+   */
+  public static StageExecutorResult execute(String cmd, Map<String, String> env, String... args) {
     if (cmd == null || cmd.isEmpty()) {
       throw new PipeliteException("No command to execute");
     }
+
+    Duration timeout = Duration.ofMinutes(5);
 
     String fullCmd = cmd;
     CommandLine commandLine = new CommandLine(cmd);
@@ -65,18 +92,16 @@ public class LocalCmdRunner implements CmdRunner {
       apacheExecutor.setExitValues(null);
       apacheExecutor.setStreamHandler(new PumpStreamHandler(stdoutStream, stderrStream));
 
-      Duration timeout = executorParams.getTimeout();
       if (timeout != null) {
-        apacheExecutor.setWatchdog(
-            new ExecuteWatchdog(
-                executorParams.getTimeout() != null
-                    ? executorParams.getTimeout().toMillis()
-                    : ExecuteWatchdog.INFINITE_TIMEOUT));
+        apacheExecutor.setWatchdog(new ExecuteWatchdog(timeout.toMillis()));
       }
 
       log.atInfo().log("Executing command: " + fullCmd);
 
-      int exitCode = apacheExecutor.execute(commandLine, executorParams.getEnv());
+      int exitCode =
+          (env != null)
+              ? apacheExecutor.execute(commandLine, env)
+              : apacheExecutor.execute(commandLine);
 
       Duration callDuration = Duration.between(startTime, ZonedDateTime.now());
 
@@ -97,7 +122,7 @@ public class LocalCmdRunner implements CmdRunner {
         log.atFine().log("stderr: " + stdErr);
       }
 
-      return CmdRunner.result(originalCmd, exitCode, stdOut, stdErr);
+      return CmdRunner.result(fullCmd, exitCode, stdOut, stdErr);
     } catch (Exception ex) {
       throw new PipeliteException("Failed to execute command: " + fullCmd, ex);
     }
