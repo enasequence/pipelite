@@ -13,10 +13,7 @@ package pipelite.service;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import pipelite.executor.describe.cache.AsyncTestDescribeJobsCache;
-import pipelite.executor.describe.cache.AwsBatchDescribeJobsCache;
-import pipelite.executor.describe.cache.KubernetesDescribeJobsCache;
-import pipelite.executor.describe.cache.LsfDescribeJobsCache;
+import pipelite.executor.describe.cache.*;
 
 @Service
 @Flogger
@@ -26,20 +23,27 @@ public class DescribeJobsService {
   private final AwsBatchDescribeJobsCache awsBatchDescribeJobsCache;
   private final KubernetesDescribeJobsCache kubernetesDescribeJobsCache;
   private final LsfDescribeJobsCache lsfDescribeJobsCache;
+  private final SlurmDescribeJobsCache slurmDescribeJobsCache;
 
   public DescribeJobsService(
       @Autowired AsyncTestDescribeJobsCache asyncTestDescribeJobsCache,
       @Autowired AwsBatchDescribeJobsCache awsBatchDescribeJobsCache,
       @Autowired KubernetesDescribeJobsCache kubernetesDescribeJobsCache,
-      @Autowired LsfDescribeJobsCache lsfDescribeJobsCache) {
+      @Autowired LsfDescribeJobsCache lsfDescribeJobsCache,
+      @Autowired SlurmDescribeJobsCache slurmDescribeJobsCache) {
     this.asyncTestDescribeJobsCache = asyncTestDescribeJobsCache;
     this.awsBatchDescribeJobsCache = awsBatchDescribeJobsCache;
     this.kubernetesDescribeJobsCache = kubernetesDescribeJobsCache;
     this.lsfDescribeJobsCache = lsfDescribeJobsCache;
+    this.slurmDescribeJobsCache = slurmDescribeJobsCache;
   }
 
   public LsfDescribeJobsCache lsf() {
     return lsfDescribeJobsCache;
+  }
+
+  public SlurmDescribeJobsCache slurm() {
+    return slurmDescribeJobsCache;
   }
 
   public AwsBatchDescribeJobsCache awsBatch() {

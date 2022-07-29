@@ -141,6 +141,9 @@ public class ProcessRunnerPool extends AbstractScheduledService {
                       internalErrorHandler.execute(
                           () -> {
                             ProcessRunner processRunner = activeProcessRunner.getProcessRunner();
+                            Thread.currentThread()
+                                .setName("pipelite-" + processRunner.getProcessId());
+
                             // Process runner returns true when the process execution has been
                             // completed or if an unexpected exception is thrown.
                             if (processRunner.runOneIteration()) {
