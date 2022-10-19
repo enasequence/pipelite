@@ -1,7 +1,7 @@
 plugins {
     id 'org.springframework.boot' version '2.4.0'
     id 'io.spring.dependency-management' version '1.0.10.RELEASE'
-    id "com.diffplug.spotless" version "5.1.1"
+    id "com.diffplug.spotless" version "6.11.0"
     id "io.freefair.lombok" version "6.4.0"
 
     id 'java'
@@ -10,7 +10,7 @@ plugins {
 }
 
 group = 'pipelite'
-version = '2.5.2'
+version = '2.5.3'
 sourceCompatibility = '1.11'
 
 java.withSourcesJar()
@@ -105,8 +105,9 @@ dependencies {
     testImplementation group: 'org.assertj', name: 'assertj-core', version: '3.16.1'
     testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.5.0'
 
-    implementation(group: 'com.oracle', name: 'ojdbc8', version: '12.2.0.1.0')
-    implementation(group: 'com.oracle', name: 'xdb', version: '12.2.0.1.0')
+    testImplementation group: 'com.oracle', name: 'ojdbc8', version: '12.2.0.1.0'
+    testImplementation group: 'com.oracle', name: 'xdb', version: '12.2.0.1.0'
+    testImplementation group: 'org.postgresql', name: 'postgresql', version: '42.5.0'
 }
 
 publishing {

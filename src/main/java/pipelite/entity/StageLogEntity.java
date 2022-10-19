@@ -40,7 +40,6 @@ public class StageLogEntity {
   private String stageName;
 
   @Column(name = "STAGE_LOG", columnDefinition = "CLOB")
-  @Lob
   private String stageLog;
 
   /** Stage execution ends. */

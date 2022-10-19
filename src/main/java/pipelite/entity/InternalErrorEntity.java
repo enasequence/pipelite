@@ -46,10 +46,8 @@ public class InternalErrorEntity {
   private ZonedDateTime errorTime;
 
   @Column(name = "ERROR_MESSAGE", columnDefinition = "CLOB")
-  @Lob
   private String errorMessage;
 
   @Column(name = "ERROR_LOG", columnDefinition = "CLOB")
-  @Lob
   private String errorLog;
 }
