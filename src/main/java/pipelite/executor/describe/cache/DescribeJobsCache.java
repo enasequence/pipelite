@@ -15,9 +15,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.PreDestroy;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.describe.DescribeJobs;
-import pipelite.executor.describe.context.DefaultCacheContext;
-import pipelite.executor.describe.context.DefaultExecutorContext;
-import pipelite.executor.describe.context.DefaultRequestContext;
+import pipelite.executor.describe.context.cache.DefaultCacheContext;
+import pipelite.executor.describe.context.executor.DefaultExecutorContext;
+import pipelite.executor.describe.context.request.DefaultRequestContext;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.executor.StageExecutor;
 

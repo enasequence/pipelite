@@ -16,7 +16,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import pipelite.exception.PipeliteException;
-import pipelite.executor.describe.context.DefaultRequestContext;
+import pipelite.executor.describe.context.request.DefaultRequestContext;
 import pipelite.stage.executor.StageExecutorResult;
 
 public class DescribeJobsResultTest {

@@ -8,26 +8,21 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.executor.describe.context;
+package pipelite.executor.describe.context.request;
 
-import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.NonFinal;
-import pipelite.executor.cmd.CmdRunner;
 
 @Value
 @NonFinal
-@EqualsAndHashCode(callSuper = true)
-public class AsyncCmdExecutorContext<RequestContext extends AsyncCmdRequestContext>
-    extends DefaultExecutorContext<RequestContext> {
-  private final CmdRunner cmdRunner;
+public class DefaultRequestContext {
+  private final String jobId;
 
-  public AsyncCmdExecutorContext(
-      String executorName,
-      PollJobsCallback<RequestContext> pollJobsCallback,
-      RecoverJobCallback<RequestContext> recoverJobCallback,
-      CmdRunner cmdRunner) {
-    super(executorName, pollJobsCallback, recoverJobCallback);
-    this.cmdRunner = cmdRunner;
+  public DefaultRequestContext(String jobId) {
+    this.jobId = jobId;
+  }
+
+  public String getJobId() {
+    return jobId;
   }
 }

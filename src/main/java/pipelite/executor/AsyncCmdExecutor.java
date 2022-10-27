@@ -20,8 +20,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.cmd.CmdRunner;
-import pipelite.executor.describe.context.DefaultExecutorContext;
-import pipelite.executor.describe.context.DefaultRequestContext;
+import pipelite.executor.describe.context.executor.DefaultExecutorContext;
+import pipelite.executor.describe.context.request.DefaultRequestContext;
 import pipelite.log.LogKey;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
@@ -110,7 +110,7 @@ public abstract class AsyncCmdExecutor<
     }
   }
 
-  protected static String readOutFile(CmdRunner cmdRunner, String outFile, int logLines) {
+  public static String readOutFile(CmdRunner cmdRunner, String outFile, int logLines) {
     try {
       return cmdRunner.readFile(Paths.get(outFile), logLines);
     } catch (Exception ex) {

@@ -17,11 +17,8 @@ import java.util.function.Function;
 import lombok.Getter;
 import org.springframework.util.Assert;
 import pipelite.executor.describe.DescribeJobs;
-import pipelite.executor.describe.DescribeJobsPollRequests;
-import pipelite.executor.describe.DescribeJobsResult;
-import pipelite.executor.describe.DescribeJobsResults;
-import pipelite.executor.describe.context.AsyncTestExecutorContext;
-import pipelite.executor.describe.context.AsyncTestRequestContext;
+import pipelite.executor.describe.context.executor.AsyncTestExecutorContext;
+import pipelite.executor.describe.context.request.AsyncTestRequestContext;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
@@ -73,19 +70,4 @@ public class AsyncTestExecutor
 
   @Override
   protected void terminateJob() {}
-
-  public static DescribeJobsResults<AsyncTestRequestContext> pollJobs(
-      DescribeJobsPollRequests<AsyncTestRequestContext> requests) {
-    DescribeJobsResults<AsyncTestRequestContext> results = new DescribeJobsResults<>();
-    for (AsyncTestRequestContext request : requests.requests.values()) {
-      if (request.getExecutionTime() != null
-          && ZonedDateTime.now()
-              .isBefore(request.getStartTime().plus(request.getExecutionTime()))) {
-        continue;
-      }
-      results.add(
-          DescribeJobsResult.create(request, request.getCallback().apply(request.getRequest())));
-    }
-    return results;
-  }
 }

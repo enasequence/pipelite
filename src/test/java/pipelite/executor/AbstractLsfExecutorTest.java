@@ -11,10 +11,24 @@
 package pipelite.executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
+import pipelite.exception.PipeliteException;
 
 public class AbstractLsfExecutorTest {
+
+  @Test
+  public void extractJobIdFromSubmitOutput() {
+    assertThat(
+            AbstractLsfExecutor.extractJobIdFromSubmitOutput(
+                "Job <2848143> is submitted to default queue <research-rh74>."))
+        .isEqualTo("2848143");
+    assertThat(AbstractLsfExecutor.extractJobIdFromSubmitOutput("Job <2848143> is submitted "))
+        .isEqualTo("2848143");
+    assertThrows(
+        PipeliteException.class, () -> AbstractLsfExecutor.extractJobIdFromSubmitOutput("INVALID"));
+  }
 
   @Test
   public void getTerminateCmd() {

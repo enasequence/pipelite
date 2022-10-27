@@ -17,8 +17,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import pipelite.configuration.ServiceConfiguration;
-import pipelite.executor.describe.context.DefaultExecutorContext;
-import pipelite.executor.describe.context.DefaultRequestContext;
+import pipelite.executor.describe.context.executor.DefaultExecutorContext;
+import pipelite.executor.describe.context.request.DefaultRequestContext;
+import pipelite.executor.describe.poll.PollJobs;
+import pipelite.executor.describe.recover.RecoverJob;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.executor.StageExecutorResult;
 
@@ -30,10 +32,27 @@ public class DescribeJobsTest {
   }
 
   private static class TestExecutorContext extends DefaultExecutorContext<TestRequestContext> {
+    private final PollJobs<DefaultExecutorContext<TestRequestContext>, TestRequestContext> pollJobs;
+    private final RecoverJob<DefaultExecutorContext<TestRequestContext>, TestRequestContext>
+        recoverJob;
+
     public TestExecutorContext(
-        PollJobsCallback<TestRequestContext> pollJobsCallback,
-        RecoverJobCallback<TestRequestContext> recoverJobCallback) {
-      super("TestExecutor", pollJobsCallback, recoverJobCallback);
+        PollJobs<DefaultExecutorContext<TestRequestContext>, TestRequestContext> pollJobs,
+        RecoverJob<DefaultExecutorContext<TestRequestContext>, TestRequestContext> recoverJob) {
+      super("TestExecutor");
+      this.pollJobs = pollJobs;
+      this.recoverJob = recoverJob;
+    }
+
+    @Override
+    public DescribeJobsResults<TestRequestContext> pollJobs(
+        DescribeJobsPollRequests<TestRequestContext> requests) {
+      return pollJobs.pollJobs(this, requests);
+    }
+
+    @Override
+    public DescribeJobsResult<TestRequestContext> recoverJob(TestRequestContext request) {
+      return recoverJob.recoverJob(this, request);
     }
   }
 
@@ -45,8 +64,8 @@ public class DescribeJobsTest {
     AtomicInteger actualDescribeJobsCallCnt = new AtomicInteger();
     AtomicInteger actualRequestCnt = new AtomicInteger();
 
-    DefaultExecutorContext.PollJobsCallback<TestRequestContext> pollJobsCallback =
-        requests -> {
+    PollJobs<DefaultExecutorContext<TestRequestContext>, TestRequestContext> pollJobs =
+        (executorContext, requests) -> {
           DescribeJobsResults<TestRequestContext> results = new DescribeJobsResults<>();
           actualDescribeJobsCallCnt.incrementAndGet();
           actualRequestCnt.addAndGet(requests.requests.size());
@@ -58,7 +77,7 @@ public class DescribeJobsTest {
           return results;
         };
 
-    TestExecutorContext executorContext = new TestExecutorContext(pollJobsCallback, null);
+    TestExecutorContext executorContext = new TestExecutorContext(pollJobs, null);
 
     final DescribeJobs<TestRequestContext, TestExecutorContext> describeJobs =
         new DescribeJobs<>(
@@ -100,8 +119,8 @@ public class DescribeJobsTest {
     AtomicInteger actualDescribeJobsCallCnt = new AtomicInteger();
     AtomicInteger actualRequestCnt = new AtomicInteger();
 
-    DefaultExecutorContext.PollJobsCallback<TestRequestContext> pollJobsCallback =
-        requests -> {
+    PollJobs<DefaultExecutorContext<TestRequestContext>, TestRequestContext> pollJobs =
+        (executorContext, requests) -> {
           DescribeJobsResults<TestRequestContext> results = new DescribeJobsResults<>();
           actualDescribeJobsCallCnt.incrementAndGet();
           actualRequestCnt.addAndGet(requests.requests.size());
@@ -115,7 +134,7 @@ public class DescribeJobsTest {
           return results;
         };
 
-    TestExecutorContext executorContext = new TestExecutorContext(pollJobsCallback, null);
+    TestExecutorContext executorContext = new TestExecutorContext(pollJobs, null);
 
     final DescribeJobs<TestRequestContext, TestExecutorContext> describeJobs =
         new DescribeJobs<>(
@@ -157,8 +176,8 @@ public class DescribeJobsTest {
     AtomicInteger actualDescribeJobsCallCnt = new AtomicInteger();
     AtomicInteger actualRequestCnt = new AtomicInteger();
 
-    DefaultExecutorContext.PollJobsCallback<TestRequestContext> pollJobsCallback =
-        requests -> {
+    PollJobs<DefaultExecutorContext<TestRequestContext>, TestRequestContext> pollJobs =
+        (executorContext, requests) -> {
           DescribeJobsResults<TestRequestContext> results = new DescribeJobsResults<>();
           actualDescribeJobsCallCnt.incrementAndGet();
           actualRequestCnt.addAndGet(requests.requests.size());
@@ -170,7 +189,7 @@ public class DescribeJobsTest {
           return results;
         };
 
-    TestExecutorContext executorContext = new TestExecutorContext(pollJobsCallback, null);
+    TestExecutorContext executorContext = new TestExecutorContext(pollJobs, null);
 
     final DescribeJobs<TestRequestContext, TestExecutorContext> describeJobs =
         new DescribeJobs<>(
@@ -212,14 +231,14 @@ public class DescribeJobsTest {
     AtomicInteger actualDescribeJobsCallCnt = new AtomicInteger();
     AtomicInteger actualRequestCnt = new AtomicInteger();
 
-    DefaultExecutorContext.PollJobsCallback<TestRequestContext> pollJobsCallback =
-        requests -> {
+    PollJobs<DefaultExecutorContext<TestRequestContext>, TestRequestContext> pollJobs =
+        (executorContext, requests) -> {
           actualDescribeJobsCallCnt.incrementAndGet();
           actualRequestCnt.addAndGet(requests.requests.size());
           throw new RuntimeException("Expected exception");
         };
 
-    TestExecutorContext executorContext = new TestExecutorContext(pollJobsCallback, null);
+    TestExecutorContext executorContext = new TestExecutorContext(pollJobs, null);
 
     final DescribeJobs<TestRequestContext, TestExecutorContext> describeJobs =
         new DescribeJobs<>(

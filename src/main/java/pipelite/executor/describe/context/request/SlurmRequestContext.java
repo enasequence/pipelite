@@ -8,24 +8,17 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.executor.describe.context;
+package pipelite.executor.describe.context.request;
 
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.NonFinal;
-import pipelite.executor.AbstractLsfExecutor;
-import pipelite.executor.cmd.CmdRunner;
 
 @Value
 @NonFinal
 @EqualsAndHashCode(callSuper = true)
-public class LsfExecutorContext extends AsyncCmdExecutorContext<LsfRequestContext> {
-
-  public LsfExecutorContext(CmdRunner cmdRunner) {
-    super(
-        "LSF",
-        requests -> AbstractLsfExecutor.pollJobs(cmdRunner, requests),
-        request -> AbstractLsfExecutor.recoverJob(cmdRunner, request),
-        cmdRunner);
+public class SlurmRequestContext extends AsyncCmdRequestContext {
+  public SlurmRequestContext(String jobId, String outFile) {
+    super(jobId, outFile);
   }
 }

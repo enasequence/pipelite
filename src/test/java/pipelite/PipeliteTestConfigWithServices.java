@@ -23,7 +23,7 @@ import pipelite.configuration.WebServerCustomizer;
       "pipelite.configuration",
       "pipelite.metrics",
       "pipelite.repository",
-      "pipelite.executor.describe.cache",
+      "pipelite.executor",
       "pipelite.service"
     },
     excludeFilters =

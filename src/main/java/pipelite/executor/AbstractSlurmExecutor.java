@@ -14,13 +14,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
-import pipelite.executor.cmd.CmdRunner;
 import pipelite.executor.describe.DescribeJobs;
-import pipelite.executor.describe.DescribeJobsPollRequests;
-import pipelite.executor.describe.DescribeJobsResult;
-import pipelite.executor.describe.DescribeJobsResults;
-import pipelite.executor.describe.context.SlurmExecutorContext;
-import pipelite.executor.describe.context.SlurmRequestContext;
+import pipelite.executor.describe.context.executor.SlurmExecutorContext;
+import pipelite.executor.describe.context.request.SlurmRequestContext;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.AbstractSlurmExecutorParameters;
@@ -59,18 +55,4 @@ public abstract class AbstractSlurmExecutor<T extends AbstractSlurmExecutorParam
    * @return the submit command.
    */
   public abstract String getSubmitCmd(StageExecutorRequest request);
-
-  /** Polls job execution results. */
-  public static DescribeJobsResults<SlurmRequestContext> pollJobs(
-      CmdRunner cmdRunner, DescribeJobsPollRequests<SlurmRequestContext> requests) {
-    // TODO
-    return null;
-  }
-
-  /** Recovers job execution result. */
-  public static DescribeJobsResult<SlurmRequestContext> recoverJob(
-      CmdRunner cmdRunner, SlurmRequestContext request) {
-    // TODO
-    return null;
-  }
 }

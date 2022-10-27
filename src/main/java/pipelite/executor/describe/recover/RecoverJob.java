@@ -8,21 +8,14 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.executor.describe.context;
+package pipelite.executor.describe.recover;
 
-import lombok.Value;
-import lombok.experimental.NonFinal;
+import pipelite.executor.describe.DescribeJobsResult;
+import pipelite.executor.describe.context.executor.DefaultExecutorContext;
+import pipelite.executor.describe.context.request.DefaultRequestContext;
 
-@Value
-@NonFinal
-public class DefaultRequestContext {
-  private final String jobId;
-
-  public DefaultRequestContext(String jobId) {
-    this.jobId = jobId;
-  }
-
-  public String getJobId() {
-    return jobId;
-  }
+public interface RecoverJob<
+    ExecutorContext extends DefaultExecutorContext, RequestContext extends DefaultRequestContext> {
+  DescribeJobsResult<RequestContext> recoverJob(
+      ExecutorContext executorContext, RequestContext request);
 }

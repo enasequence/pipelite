@@ -18,18 +18,23 @@ import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.AbstractLsfExecutor;
 import pipelite.executor.SimpleLsfExecutor;
 import pipelite.executor.describe.cache.LsfDescribeJobsCache;
-import pipelite.executor.describe.context.LsfExecutorContext;
-import pipelite.executor.describe.context.LsfRequestContext;
+import pipelite.executor.describe.context.executor.LsfExecutorContext;
+import pipelite.executor.describe.context.request.LsfRequestContext;
+import pipelite.executor.describe.poll.LsfExecutorPollJobs;
+import pipelite.executor.describe.recover.LsfExecutorRecoverJob;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 
-public class AbstractLsfDescribeJobsCacheTest {
+public class LsfDescribeJobsCacheTest {
 
   @Test
   public void test() {
     LsfDescribeJobsCache cache =
         new LsfDescribeJobsCache(
-            Mockito.mock(ServiceConfiguration.class), Mockito.mock(InternalErrorService.class));
+            Mockito.mock(ServiceConfiguration.class),
+            Mockito.mock(InternalErrorService.class),
+            new LsfExecutorPollJobs(),
+            new LsfExecutorRecoverJob());
 
     SimpleLsfExecutorParameters host1 = SimpleLsfExecutorParameters.builder().host("1").build();
     SimpleLsfExecutorParameters host2 = SimpleLsfExecutorParameters.builder().host("2").build();

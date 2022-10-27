@@ -14,9 +14,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.AsyncTestExecutor;
-import pipelite.executor.describe.context.AsyncTestCacheContext;
-import pipelite.executor.describe.context.AsyncTestExecutorContext;
-import pipelite.executor.describe.context.AsyncTestRequestContext;
+import pipelite.executor.describe.context.cache.AsyncTestCacheContext;
+import pipelite.executor.describe.context.executor.AsyncTestExecutorContext;
+import pipelite.executor.describe.context.request.AsyncTestRequestContext;
+import pipelite.executor.describe.poll.AsyncTestExecutorPollJobs;
 import pipelite.service.InternalErrorService;
 
 @Component
@@ -27,13 +28,15 @@ public class AsyncTestDescribeJobsCache
         AsyncTestCacheContext,
         AsyncTestExecutor> {
 
-  private static final AsyncTestExecutorContext executorContext = new AsyncTestExecutorContext();
-  private static final AsyncTestCacheContext cacheContext = new AsyncTestCacheContext();
+  private final AsyncTestExecutorContext executorContext;
+  private final AsyncTestCacheContext cacheContext = new AsyncTestCacheContext();
 
   public AsyncTestDescribeJobsCache(
       @Autowired ServiceConfiguration serviceConfiguration,
-      @Autowired InternalErrorService internalErrorService) {
+      @Autowired InternalErrorService internalErrorService,
+      @Autowired AsyncTestExecutorPollJobs pollJobs) {
     super(serviceConfiguration, internalErrorService, 100);
+    this.executorContext = new AsyncTestExecutorContext(pollJobs);
   }
 
   @Override

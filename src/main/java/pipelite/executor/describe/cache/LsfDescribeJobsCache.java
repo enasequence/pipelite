@@ -16,9 +16,11 @@ import org.springframework.stereotype.Component;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.AbstractLsfExecutor;
 import pipelite.executor.cmd.CmdRunner;
-import pipelite.executor.describe.context.LsfCacheContext;
-import pipelite.executor.describe.context.LsfExecutorContext;
-import pipelite.executor.describe.context.LsfRequestContext;
+import pipelite.executor.describe.context.cache.LsfCacheContext;
+import pipelite.executor.describe.context.executor.LsfExecutorContext;
+import pipelite.executor.describe.context.request.LsfRequestContext;
+import pipelite.executor.describe.poll.LsfExecutorPollJobs;
+import pipelite.executor.describe.recover.LsfExecutorRecoverJob;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.parameters.AbstractLsfExecutorParameters;
 
@@ -31,16 +33,24 @@ public class LsfDescribeJobsCache
         LsfCacheContext,
         AbstractLsfExecutor<AbstractLsfExecutorParameters>> {
 
+  private final LsfExecutorPollJobs pollJobs;
+  private final LsfExecutorRecoverJob recoverJob;
+
   public LsfDescribeJobsCache(
       @Autowired ServiceConfiguration serviceConfiguration,
-      @Autowired InternalErrorService internalErrorService) {
+      @Autowired InternalErrorService internalErrorService,
+      @Autowired LsfExecutorPollJobs pollJobs,
+      @Autowired LsfExecutorRecoverJob recoverJob) {
     super(serviceConfiguration, internalErrorService, 100);
+    this.pollJobs = pollJobs;
+    this.recoverJob = recoverJob;
   }
 
   @Override
   public LsfExecutorContext getExecutorContext(
       AbstractLsfExecutor<AbstractLsfExecutorParameters> executor) {
-    return new LsfExecutorContext(CmdRunner.create(executor.getExecutorParams()));
+    return new LsfExecutorContext(
+        CmdRunner.create(executor.getExecutorParams()), pollJobs, recoverJob);
   }
 
   @Override

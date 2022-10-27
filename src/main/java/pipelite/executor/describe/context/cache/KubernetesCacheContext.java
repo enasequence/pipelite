@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.executor.describe.context;
+package pipelite.executor.describe.context.cache;
 
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -17,10 +17,12 @@ import lombok.experimental.NonFinal;
 @Value
 @NonFinal
 @EqualsAndHashCode(callSuper = true)
-public final class AwsBatchCacheContext extends DefaultCacheContext {
-  private final String region;
+public final class KubernetesCacheContext extends DefaultCacheContext {
+  private final String context;
+  private final String namespace;
 
-  public AwsBatchCacheContext(String region) {
-    this.region = region;
+  public KubernetesCacheContext(String context, String namespace) {
+    this.context = context;
+    this.namespace = namespace;
   }
 }

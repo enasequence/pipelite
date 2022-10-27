@@ -16,7 +16,11 @@ import org.springframework.stereotype.Component;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.AbstractSlurmExecutor;
 import pipelite.executor.cmd.CmdRunner;
-import pipelite.executor.describe.context.*;
+import pipelite.executor.describe.context.cache.SlurmCacheContext;
+import pipelite.executor.describe.context.executor.SlurmExecutorContext;
+import pipelite.executor.describe.context.request.SlurmRequestContext;
+import pipelite.executor.describe.poll.SlurmExecutorPollJobs;
+import pipelite.executor.describe.recover.SlurmExecutorRecoverJob;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.parameters.AbstractSlurmExecutorParameters;
 
@@ -28,17 +32,24 @@ public class SlurmDescribeJobsCache
         SlurmExecutorContext,
         SlurmCacheContext,
         AbstractSlurmExecutor<AbstractSlurmExecutorParameters>> {
+  private final SlurmExecutorPollJobs pollJobs;
+  private final SlurmExecutorRecoverJob recoverJob;
 
   public SlurmDescribeJobsCache(
       @Autowired ServiceConfiguration serviceConfiguration,
-      @Autowired InternalErrorService internalErrorService) {
+      @Autowired InternalErrorService internalErrorService,
+      @Autowired SlurmExecutorPollJobs pollJobs,
+      @Autowired SlurmExecutorRecoverJob recoverJob) {
     super(serviceConfiguration, internalErrorService, 100);
+    this.pollJobs = pollJobs;
+    this.recoverJob = recoverJob;
   }
 
   @Override
   public SlurmExecutorContext getExecutorContext(
       AbstractSlurmExecutor<AbstractSlurmExecutorParameters> executor) {
-    return new SlurmExecutorContext(CmdRunner.create(executor.getExecutorParams()));
+    return new SlurmExecutorContext(
+        CmdRunner.create(executor.getExecutorParams()), pollJobs, recoverJob);
   }
 
   @Override

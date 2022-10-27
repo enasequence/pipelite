@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import pipelite.executor.describe.context.DefaultRequestContext;
+import pipelite.executor.describe.context.request.DefaultRequestContext;
 
 public class DescribeJobsPollRequests<RequestContext extends DefaultRequestContext> {
   public final List<String> jobIds;

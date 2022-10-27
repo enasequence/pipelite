@@ -12,8 +12,6 @@ package pipelite.executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.fabric8.kubernetes.api.model.batch.v1.JobCondition;
-import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,38 +37,6 @@ public class KubernetesExecutorTest {
 
   @Autowired PipeliteServices pipeliteServices;
   @Autowired KubernetesTestConfiguration testConfiguration;
-
-  @Test
-  public void describeJobsStateActive() {
-    JobStatus jobStatus = new JobStatus();
-    assertThat(KubernetesExecutor.extractJobResultFromStatus(jobStatus).isActive()).isTrue();
-    jobStatus.setActive(1);
-    assertThat(KubernetesExecutor.extractJobResultFromStatus(jobStatus).isActive()).isTrue();
-  }
-
-  @Test
-  public void describeJobsStateSuccess() {
-    JobStatus jobStatus = new JobStatus();
-    jobStatus.setCompletionTime("test");
-    assertThat(KubernetesExecutor.extractJobResultFromStatus(jobStatus).isSuccess()).isTrue();
-
-    jobStatus = new JobStatus();
-    JobCondition jobCondition = new JobCondition();
-    jobCondition.setType("Complete");
-    jobCondition.setStatus("true");
-    jobStatus.setConditions(Arrays.asList(jobCondition));
-    assertThat(KubernetesExecutor.extractJobResultFromStatus(jobStatus).isSuccess()).isTrue();
-  }
-
-  @Test
-  public void describeJobsStateError() {
-    JobStatus jobStatus = new JobStatus();
-    JobCondition jobCondition = new JobCondition();
-    jobCondition.setType("Failed");
-    jobCondition.setStatus("true");
-    jobStatus.setConditions(Arrays.asList(jobCondition));
-    assertThat(KubernetesExecutor.extractJobResultFromStatus(jobStatus).isError()).isTrue();
-  }
 
   @Test
   public void kubernetesJobId() {

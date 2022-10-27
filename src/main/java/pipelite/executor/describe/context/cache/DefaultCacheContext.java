@@ -8,17 +8,11 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.executor.describe.context;
+package pipelite.executor.describe.context.cache;
 
-import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 
 @Value
 @NonFinal
-@EqualsAndHashCode(callSuper = true)
-public class SlurmRequestContext extends AsyncCmdRequestContext {
-  public SlurmRequestContext(String jobId, String outFile) {
-    super(jobId, outFile);
-  }
-}
+public class DefaultCacheContext {}

@@ -12,7 +12,7 @@ package pipelite.executor.describe;
 
 import java.util.ArrayList;
 import java.util.List;
-import pipelite.executor.describe.context.DefaultRequestContext;
+import pipelite.executor.describe.context.request.DefaultRequestContext;
 
 /** Job results. */
 public class DescribeJobsResults<RequestContext extends DefaultRequestContext> {

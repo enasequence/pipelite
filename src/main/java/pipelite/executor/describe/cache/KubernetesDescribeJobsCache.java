@@ -15,9 +15,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.KubernetesExecutor;
-import pipelite.executor.describe.context.DefaultRequestContext;
-import pipelite.executor.describe.context.KubernetesCacheContext;
-import pipelite.executor.describe.context.KubernetesExecutorContext;
+import pipelite.executor.describe.context.cache.KubernetesCacheContext;
+import pipelite.executor.describe.context.executor.KubernetesExecutorContext;
+import pipelite.executor.describe.context.request.DefaultRequestContext;
+import pipelite.executor.describe.poll.KubernetesExecutorPollJobs;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
 
@@ -30,17 +31,21 @@ public class KubernetesDescribeJobsCache
         KubernetesCacheContext,
         KubernetesExecutor> {
 
+  private final KubernetesExecutorPollJobs pollJobs;
+
   public KubernetesDescribeJobsCache(
       @Autowired ServiceConfiguration serviceConfiguration,
-      @Autowired InternalErrorService internalErrorService) {
+      @Autowired InternalErrorService internalErrorService,
+      @Autowired KubernetesExecutorPollJobs pollJobs) {
     super(serviceConfiguration, internalErrorService, 100);
+    this.pollJobs = pollJobs;
   }
 
   @Override
   public KubernetesExecutorContext getExecutorContext(KubernetesExecutor executor) {
     KubernetesExecutorParameters params = executor.getExecutorParams();
     return new KubernetesExecutorContext(
-        KubernetesExecutor.client(params.getContext()), params.getNamespace());
+        KubernetesExecutor.client(params.getContext()), params.getNamespace(), pollJobs);
   }
 
   @Override

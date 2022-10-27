@@ -20,16 +20,12 @@ import lombok.Setter;
 import lombok.extern.flogger.Flogger;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.describe.DescribeJobs;
-import pipelite.executor.describe.DescribeJobsPollRequests;
-import pipelite.executor.describe.DescribeJobsResult;
-import pipelite.executor.describe.DescribeJobsResults;
-import pipelite.executor.describe.context.AwsBatchExecutorContext;
-import pipelite.executor.describe.context.DefaultRequestContext;
+import pipelite.executor.describe.context.executor.AwsBatchExecutorContext;
+import pipelite.executor.describe.context.request.DefaultRequestContext;
 import pipelite.log.LogKey;
 import pipelite.retryable.RetryableExternalAction;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorRequest;
-import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.AwsBatchExecutorParameters;
 
 @Flogger
@@ -101,33 +97,6 @@ public class AwsBatchExecutor
     TerminateJobRequest terminateJobRequest =
         new TerminateJobRequest().withJobId(jobId).withReason("Job terminated by pipelite");
     RetryableExternalAction.execute(() -> client(region).terminateJob(terminateJobRequest));
-  }
-
-  /** Polls job execution results. */
-  public static DescribeJobsResults<DefaultRequestContext> pollJobs(
-      AWSBatch awsBatch, DescribeJobsPollRequests<DefaultRequestContext> requests) {
-    DescribeJobsResults<DefaultRequestContext> results = new DescribeJobsResults<>();
-    com.amazonaws.services.batch.model.DescribeJobsResult jobResult =
-        RetryableExternalAction.execute(
-            () -> awsBatch.describeJobs(new DescribeJobsRequest().withJobs(requests.jobIds)));
-    jobResult
-        .getJobs()
-        .forEach(
-            j ->
-                results.add(
-                    DescribeJobsResult.create(requests, j.getJobId(), extractJobResult(j))));
-    return results;
-  }
-
-  // TOOO: exit codes
-  protected static StageExecutorResult extractJobResult(JobDetail jobDetail) {
-    switch (jobDetail.getStatus()) {
-      case "SUCCEEDED":
-        return StageExecutorResult.success();
-      case "FAILED":
-        return StageExecutorResult.executionError();
-    }
-    return StageExecutorResult.active();
   }
 
   public static AWSBatch client(String region) {

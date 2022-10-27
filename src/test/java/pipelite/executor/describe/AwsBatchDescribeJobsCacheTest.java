@@ -18,8 +18,9 @@ import org.mockito.Mockito;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.AwsBatchExecutor;
 import pipelite.executor.describe.cache.AwsBatchDescribeJobsCache;
-import pipelite.executor.describe.context.AwsBatchExecutorContext;
-import pipelite.executor.describe.context.DefaultRequestContext;
+import pipelite.executor.describe.context.executor.AwsBatchExecutorContext;
+import pipelite.executor.describe.context.request.DefaultRequestContext;
+import pipelite.executor.describe.poll.AwsBatchExecutorPollJobs;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.parameters.AwsBatchExecutorParameters;
 
@@ -30,7 +31,9 @@ public class AwsBatchDescribeJobsCacheTest {
   public void test() {
     AwsBatchDescribeJobsCache cache =
         new AwsBatchDescribeJobsCache(
-            Mockito.mock(ServiceConfiguration.class), Mockito.mock(InternalErrorService.class));
+            Mockito.mock(ServiceConfiguration.class),
+            Mockito.mock(InternalErrorService.class),
+            new AwsBatchExecutorPollJobs());
 
     AwsBatchExecutorParameters region1 = AwsBatchExecutorParameters.builder().region("1").build();
     AwsBatchExecutorParameters region2 = AwsBatchExecutorParameters.builder().region("2").build();

@@ -17,8 +17,9 @@ import org.mockito.Mockito;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.KubernetesExecutor;
 import pipelite.executor.describe.cache.KubernetesDescribeJobsCache;
-import pipelite.executor.describe.context.DefaultRequestContext;
-import pipelite.executor.describe.context.KubernetesExecutorContext;
+import pipelite.executor.describe.context.executor.KubernetesExecutorContext;
+import pipelite.executor.describe.context.request.DefaultRequestContext;
+import pipelite.executor.describe.poll.KubernetesExecutorPollJobs;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
 
@@ -28,7 +29,9 @@ public class KubernetesDescribeJobsCacheTest {
   public void test() {
     KubernetesDescribeJobsCache cache =
         new KubernetesDescribeJobsCache(
-            Mockito.mock(ServiceConfiguration.class), Mockito.mock(InternalErrorService.class));
+            Mockito.mock(ServiceConfiguration.class),
+            Mockito.mock(InternalErrorService.class),
+            new KubernetesExecutorPollJobs());
 
     KubernetesExecutorParameters namespace1 =
         KubernetesExecutorParameters.builder().namespace("1").build();

@@ -14,9 +14,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.executor.AwsBatchExecutor;
-import pipelite.executor.describe.context.AwsBatchCacheContext;
-import pipelite.executor.describe.context.AwsBatchExecutorContext;
-import pipelite.executor.describe.context.DefaultRequestContext;
+import pipelite.executor.describe.context.cache.AwsBatchCacheContext;
+import pipelite.executor.describe.context.executor.AwsBatchExecutorContext;
+import pipelite.executor.describe.context.request.DefaultRequestContext;
+import pipelite.executor.describe.poll.AwsBatchExecutorPollJobs;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.parameters.AwsBatchExecutorParameters;
 
@@ -25,16 +26,20 @@ public class AwsBatchDescribeJobsCache
     extends DescribeJobsCache<
         DefaultRequestContext, AwsBatchExecutorContext, AwsBatchCacheContext, AwsBatchExecutor> {
 
+  private final AwsBatchExecutorPollJobs pollJobs;
+
   public AwsBatchDescribeJobsCache(
       @Autowired ServiceConfiguration serviceConfiguration,
-      @Autowired InternalErrorService internalErrorService) {
+      @Autowired InternalErrorService internalErrorService,
+      @Autowired AwsBatchExecutorPollJobs pollJobs) {
     super(serviceConfiguration, internalErrorService, 100);
+    this.pollJobs = pollJobs;
   }
 
   @Override
   public AwsBatchExecutorContext getExecutorContext(AwsBatchExecutor executor) {
     AwsBatchExecutorParameters params = executor.getExecutorParams();
-    return new AwsBatchExecutorContext(AwsBatchExecutor.client(params.getRegion()));
+    return new AwsBatchExecutorContext(AwsBatchExecutor.client(params.getRegion()), pollJobs);
   }
 
   @Override

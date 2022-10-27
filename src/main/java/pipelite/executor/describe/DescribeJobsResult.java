@@ -11,7 +11,7 @@
 package pipelite.executor.describe;
 
 import pipelite.exception.PipeliteException;
-import pipelite.executor.describe.context.DefaultRequestContext;
+import pipelite.executor.describe.context.request.DefaultRequestContext;
 import pipelite.stage.executor.StageExecutorResult;
 
 /** Job result. */
