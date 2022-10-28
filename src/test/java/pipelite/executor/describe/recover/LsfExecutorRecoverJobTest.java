@@ -11,25 +11,33 @@
 package pipelite.executor.describe.recover;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static pipelite.executor.describe.recover.LsfExecutorRecoverJob.extractExitCodeFromOutFile;
-import static pipelite.executor.describe.recover.LsfExecutorRecoverJob.recoverJobUsingOutFile;
+import static pipelite.executor.describe.recover.LsfExecutorRecoverJob.extractExitCode;
+import static pipelite.executor.describe.recover.LsfExecutorRecoverJob.extractJobResult;
 
 import org.junit.jupiter.api.Test;
-import pipelite.stage.executor.StageExecutorResult;
+import pipelite.executor.describe.DescribeJobsResult;
+import pipelite.executor.describe.context.request.LsfRequestContext;
+import pipelite.stage.executor.StageExecutorResultAttribute;
 
 public class LsfExecutorRecoverJobTest {
 
-  @Test
-  public void testExtractExitCodeFromOutFile() {
-    assertThat(extractExitCodeFromOutFile("Exited with exit code 1")).isEqualTo(1);
-    assertThat(extractExitCodeFromOutFile("Exited with exit code 3.")).isEqualTo(3);
-    assertThat(extractExitCodeFromOutFile("INVALID")).isNull();
+  private static LsfRequestContext request() {
+    return new LsfRequestContext("validJobId", "validOutFile");
   }
 
   @Test
-  public void testRecoverJobUsingOutFileBhistError() {
-    StageExecutorResult result =
-        recoverJobUsingOutFile(
+  public void testExtractExitCode() {
+    assertThat(extractExitCode("Exited with exit code 1")).isEqualTo(1);
+    assertThat(extractExitCode("Exited with exit code 3.")).isEqualTo(3);
+    assertThat(extractExitCode("INVALID")).isNull();
+  }
+
+  @Test
+  public void testExtractJobResultCompletedWithExitCode() {
+    LsfRequestContext request = request();
+    DescribeJobsResult<LsfRequestContext> result =
+        extractJobResult(
+            request,
             "Summary of time in seconds spent in various states:\n"
                 + "JOBID   USER    JOB_NAME  PEND    PSUSP   RUN     USUSP   SSUSP   UNKWN   TOTAL\n"
                 + "873209  rasko   fdfs      1       0       0       0       0       0       1\n"
@@ -57,13 +65,16 @@ public class LsfExecutorRecoverJobTest {
                 + "Summary of time in seconds spent in various states by  Sun Jan 10 17:50:12\n"
                 + "  PEND     PSUSP    RUN      USUSP    SSUSP    UNKWN    TOTAL\n"
                 + "  1        0        0        0        0        0        1");
-    assertThat(result.isError()).isTrue();
+    assertThat(result.result.isError()).isTrue();
+    assertThat(result.result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("127");
   }
 
   @Test
-  public void testRecoverJobUsingOutFileBhistSuccess() {
-    StageExecutorResult result =
-        recoverJobUsingOutFile(
+  public void testExtractJobResultDoneSuccessfully() {
+    LsfRequestContext request = request();
+    DescribeJobsResult<LsfRequestContext> result =
+        extractJobResult(
+            request,
             "Job <872795>, User <rasko>, Project <default>, Command <echo hello>, Esub <esub\n"
                 + "                     >\n"
                 + "Sun Jan 10 17:47:38: Submitted from host <noah-login-01>, to Queue <research-rh\n"
@@ -85,56 +96,16 @@ public class LsfExecutorRecoverJobTest {
                 + "Summary of time in seconds spent in various states by  Sun Jan 10 17:47:40\n"
                 + "  PEND     PSUSP    RUN      USUSP    SSUSP    UNKWN    TOTAL\n"
                 + "  1        0        0        0        0        0        1");
-    assertThat(result.isSuccess()).isTrue();
+    assertThat(result.result.isSuccess()).isTrue();
+    assertThat(result.result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
   }
 
   @Test
-  public void testRecoverJobUsingOutFileBjobsError() {
-    StageExecutorResult result =
-        recoverJobUsingOutFile(
-            "\n"
-                + "\n"
-                + "Job <dfsddf> was submitted from host <noah-login-02> by user <rasko> in cluster <EBI> at Sun Jan 24 18:06:13 2021\n"
-                + "Job was executed on host(s) <hx-noah-24-04>, in queue <research-rh74>, as user <rasko> in cluster <EBI> at Sun Jan 24 18:06:14 2021\n"
-                + "</homes/rasko> was used as the home directory.\n"
-                + "</homes/rasko> was used as the working directory.\n"
-                + "Started at Sun Jan 24 18:06:14 2021\n"
-                + "Terminated at Sun Jan 24 18:06:14 2021\n"
-                + "Results reported at Sun Jan 24 18:06:14 2021\n"
-                + "\n"
-                + "Your job looked like:\n"
-                + "\n"
-                + "------------------------------------------------------------\n"
-                + "# LSBATCH: User input\n"
-                + "dfsddf\n"
-                + "------------------------------------------------------------\n"
-                + "\n"
-                + "Exited with exit code 127.\n"
-                + "\n"
-                + "Resource usage summary:\n"
-                + "\n"
-                + "    CPU time :                                   0.03 sec.\n"
-                + "    Max Memory :                                 -\n"
-                + "    Average Memory :                             -\n"
-                + "    Total Requested Memory :                     -\n"
-                + "    Delta Memory :                               -\n"
-                + "    Max Swap :                                   -\n"
-                + "    Max Processes :                              -\n"
-                + "    Max Threads :                                -\n"
-                + "    Run time :                                   0 sec.\n"
-                + "    Turnaround time :                            1 sec.\n"
-                + "\n"
-                + "The output (if any) follows:\n"
-                + "\n"
-                + "/ebi/lsf/ebi-spool2/01/1611511573.6138156: line 8: dfsddf: command not found\n"
-                + "\n");
-    assertThat(result.isError()).isTrue();
-  }
-
-  @Test
-  public void testRecoverJobUsingOutFileBjobsSuccess() {
-    StageExecutorResult result =
-        recoverJobUsingOutFile(
+  public void testExtractJobResultCompletedSuccesfully() {
+    LsfRequestContext request = request();
+    DescribeJobsResult<LsfRequestContext> result =
+        extractJobResult(
+            request,
             "\n"
                 + "\n"
                 + "Job <echo test> was submitted from host <noah-login-02> by user <rasko> in cluster <EBI> at Sun Jan 24 18:03:50 2021\n"
@@ -171,13 +142,61 @@ public class LsfExecutorRecoverJobTest {
                 + "\n"
                 + "test\n"
                 + "\n");
-    assertThat(result.isSuccess()).isTrue();
+    assertThat(result.result.isSuccess()).isTrue();
+    assertThat(result.result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
   }
 
   @Test
-  public void testRecoverJobUsingOutFile() {
-    assertThat(recoverJobUsingOutFile(null)).isNull();
-    assertThat(recoverJobUsingOutFile("")).isNull();
-    assertThat(recoverJobUsingOutFile("invalid")).isNull();
+  public void testExtractJobResultExitedWithExitCode() {
+    LsfRequestContext request = request();
+    DescribeJobsResult<LsfRequestContext> result =
+        extractJobResult(
+            request,
+            "\n"
+                + "\n"
+                + "Job <dfsddf> was submitted from host <noah-login-02> by user <rasko> in cluster <EBI> at Sun Jan 24 18:06:13 2021\n"
+                + "Job was executed on host(s) <hx-noah-24-04>, in queue <research-rh74>, as user <rasko> in cluster <EBI> at Sun Jan 24 18:06:14 2021\n"
+                + "</homes/rasko> was used as the home directory.\n"
+                + "</homes/rasko> was used as the working directory.\n"
+                + "Started at Sun Jan 24 18:06:14 2021\n"
+                + "Terminated at Sun Jan 24 18:06:14 2021\n"
+                + "Results reported at Sun Jan 24 18:06:14 2021\n"
+                + "\n"
+                + "Your job looked like:\n"
+                + "\n"
+                + "------------------------------------------------------------\n"
+                + "# LSBATCH: User input\n"
+                + "dfsddf\n"
+                + "------------------------------------------------------------\n"
+                + "\n"
+                + "Exited with exit code 127.\n"
+                + "\n"
+                + "Resource usage summary:\n"
+                + "\n"
+                + "    CPU time :                                   0.03 sec.\n"
+                + "    Max Memory :                                 -\n"
+                + "    Average Memory :                             -\n"
+                + "    Total Requested Memory :                     -\n"
+                + "    Delta Memory :                               -\n"
+                + "    Max Swap :                                   -\n"
+                + "    Max Processes :                              -\n"
+                + "    Max Threads :                                -\n"
+                + "    Run time :                                   0 sec.\n"
+                + "    Turnaround time :                            1 sec.\n"
+                + "\n"
+                + "The output (if any) follows:\n"
+                + "\n"
+                + "/ebi/lsf/ebi-spool2/01/1611511573.6138156: line 8: dfsddf: command not found\n"
+                + "\n");
+    assertThat(result.result.isError()).isTrue();
+    assertThat(result.result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("127");
+  }
+
+  @Test
+  public void extractJobResultInvalidInput() {
+    LsfRequestContext request = request();
+    assertThat(extractJobResult(request, null)).isNull();
+    assertThat(extractJobResult(request, "")).isNull();
+    assertThat(extractJobResult(request, "invalid")).isNull();
   }
 }

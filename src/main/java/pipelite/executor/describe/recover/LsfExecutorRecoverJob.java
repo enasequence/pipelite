@@ -19,8 +19,6 @@ import org.springframework.stereotype.Component;
 import pipelite.executor.describe.DescribeJobsResult;
 import pipelite.executor.describe.context.executor.LsfExecutorContext;
 import pipelite.executor.describe.context.request.LsfRequestContext;
-import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultAttribute;
 
 @Component
 @Flogger
@@ -37,39 +35,36 @@ public class LsfExecutorRecoverJob implements RecoverJob<LsfExecutorContext, Lsf
     log.atWarning().log(
         "Recovering LSF job " + request.getJobId() + " result from output file: " + outFile);
     String str = readOutFile(executorContext.cmdRunner(), outFile, JOB_RECOVERY_LINES);
-    return DescribeJobsResult.create(request, recoverJobUsingOutFile(str));
+    return extractJobResult(request, str);
   }
 
-  /**
-   * Recovers stage execution result from output file. Returns null if the result could not be
-   * recovered.
-   */
-  public static StageExecutorResult recoverJobUsingOutFile(String str) {
+  /** Extract job result from the output file. Returns null if the result could not be extracted. */
+  public static DescribeJobsResult<LsfRequestContext> extractJobResult(
+      LsfRequestContext request, String str) {
     if (str == null) {
       return null;
     }
 
+    DescribeJobsResult.Builder<LsfRequestContext> result = DescribeJobsResult.builder(request);
+
     if (str.contains("Done successfully") // bhist -f result
         || str.contains("Successfully completed") // output file result
     ) {
-      StageExecutorResult result = StageExecutorResult.success();
-      result.attribute(StageExecutorResultAttribute.EXIT_CODE, "0");
-      return result;
+      return result.success().build();
     }
 
-    Integer exitCode = extractExitCodeFromOutFile(str);
+    Integer exitCode = extractExitCode(str);
     if (exitCode != null) {
-      StageExecutorResult result = StageExecutorResult.executionError();
-      result.attribute(StageExecutorResultAttribute.EXIT_CODE, String.valueOf(exitCode));
-      return result;
+      return result.executionError(exitCode).build();
     }
+
     return null;
   }
 
   /**
    * Extracts exit code from the output file. Returns null if the exit code could not be extracted.
    */
-  public static Integer extractExitCodeFromOutFile(String str) {
+  public static Integer extractExitCode(String str) {
     try {
       Matcher m = JOB_RECOVERY_EXIT_CODE_PATTERN.matcher(str);
       return m.find() ? Integer.valueOf(m.group(1)) : null;

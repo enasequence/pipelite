@@ -13,27 +13,26 @@ package pipelite.executor.describe;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
-import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.describe.context.request.DefaultRequestContext;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultAttribute;
+import pipelite.stage.executor.StageExecutorState;
 
 public class DescribeJobsResultTest {
 
   private final StageExecutorResult result = StageExecutorResult.success();
 
   private final String validJobId = "validJobId";
-  private final String invalidJobId = "invalidJobId";
 
   private final DefaultRequestContext request = new DefaultRequestContext(validJobId);
-  private final DescribeJobsPollRequests<DefaultRequestContext> requests =
-      new DescribeJobsPollRequests<>(Arrays.asList(request));
 
   @Test
   public void create() {
     assertThat(DescribeJobsResult.create(request, null).request).isSameAs(request);
     assertThat(DescribeJobsResult.create(request, null).result).isNull();
+
     assertThat(DescribeJobsResult.create(request, result).request).isSameAs(request);
     assertThat(DescribeJobsResult.create(request, result).result).isSameAs(result);
 
@@ -41,9 +40,85 @@ public class DescribeJobsResultTest {
         .isInstanceOf(PipeliteException.class);
     assertThatThrownBy(() -> DescribeJobsResult.create(null, result))
         .isInstanceOf(PipeliteException.class);
-    assertThatThrownBy(() -> DescribeJobsResult.create(requests, invalidJobId, null))
-        .isInstanceOf(PipeliteException.class);
-    assertThatThrownBy(() -> DescribeJobsResult.create(requests, invalidJobId, result))
-        .isInstanceOf(PipeliteException.class);
+  }
+
+  @Test
+  public void build() {
+    assertThat(DescribeJobsResult.builder(request).unknown().build().request).isSameAs(request);
+    assertThat(DescribeJobsResult.builder(request).active().build().request).isSameAs(request);
+    assertThat(DescribeJobsResult.builder(request).executionError().build().request)
+        .isSameAs(request);
+    assertThat(DescribeJobsResult.builder(request).success().build().request).isSameAs(request);
+
+    assertThat(DescribeJobsResult.builder(request).unknown().build().result).isNull();
+    assertThat(DescribeJobsResult.builder(request).active().build().result.state())
+        .isSameAs(StageExecutorState.ACTIVE);
+    assertThat(DescribeJobsResult.builder(request).executionError().build().result.state())
+        .isSameAs(StageExecutorState.EXECUTION_ERROR);
+    assertThat(DescribeJobsResult.builder(request).success().build().result.state())
+        .isSameAs(StageExecutorState.SUCCESS);
+
+    assertThat(DescribeJobsResult.builder(request).unknown().isCompleted()).isFalse();
+    assertThat(DescribeJobsResult.builder(request).active().isCompleted()).isFalse();
+    assertThat(DescribeJobsResult.builder(request).executionError().isCompleted()).isTrue();
+    assertThat(DescribeJobsResult.builder(request).success().isCompleted()).isTrue();
+
+    assertThat(DescribeJobsResult.builder(request).unknown().build().result).isNull();
+    assertThat(
+            DescribeJobsResult.builder(request)
+                .active()
+                .build()
+                .result
+                .attribute(StageExecutorResultAttribute.EXIT_CODE))
+        .isNull();
+    assertThat(
+            DescribeJobsResult.builder(request)
+                .executionError()
+                .build()
+                .result
+                .attribute(StageExecutorResultAttribute.EXIT_CODE))
+        .isNull();
+    assertThat(
+            DescribeJobsResult.builder(request)
+                .executionError(1)
+                .build()
+                .result
+                .attribute(StageExecutorResultAttribute.EXIT_CODE))
+        .isEqualTo("1");
+    assertThat(
+            DescribeJobsResult.builder(request)
+                .success()
+                .build()
+                .result
+                .attribute(StageExecutorResultAttribute.EXIT_CODE))
+        .isEqualTo("0");
+
+    assertThat(
+            DescribeJobsResult.builder(request).unknown().attribute("test", "test").build().result)
+        .isNull();
+    assertThat(
+            DescribeJobsResult.builder(request)
+                .active()
+                .attribute("test", "test")
+                .build()
+                .result
+                .attribute("test"))
+        .isEqualTo("test");
+    assertThat(
+            DescribeJobsResult.builder(request)
+                .executionError()
+                .attribute("test", "test")
+                .build()
+                .result
+                .attribute("test"))
+        .isEqualTo("test");
+    assertThat(
+            DescribeJobsResult.builder(request)
+                .success()
+                .attribute("test", "test")
+                .build()
+                .result
+                .attribute("test"))
+        .isEqualTo("test");
   }
 }

@@ -73,7 +73,7 @@ public class DescribeJobsTest {
               .requests
               .values()
               .forEach(
-                  r -> results.add(DescribeJobsResult.create(r, StageExecutorResult.success())));
+                  request -> results.add(DescribeJobsResult.builder(request).success().build()));
           return results;
         };
 
@@ -128,9 +128,8 @@ public class DescribeJobsTest {
               .requests
               .values()
               .forEach(
-                  r ->
-                      results.add(
-                          DescribeJobsResult.create(r, StageExecutorResult.executionError())));
+                  request ->
+                      results.add(DescribeJobsResult.builder(request).executionError().build()));
           return results;
         };
 
@@ -185,7 +184,7 @@ public class DescribeJobsTest {
               .requests
               .values()
               .forEach(
-                  r -> results.add(DescribeJobsResult.create(r, StageExecutorResult.active())));
+                  request -> results.add(DescribeJobsResult.builder(request).active().build()));
           return results;
         };
 

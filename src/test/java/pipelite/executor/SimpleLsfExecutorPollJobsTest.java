@@ -15,11 +15,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
-import java.util.function.Supplier;
+import java.util.function.Consumer;
+import javax.annotation.PostConstruct;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -29,6 +31,7 @@ import pipelite.executor.describe.DescribeJobsResult;
 import pipelite.executor.describe.DescribeJobsResults;
 import pipelite.executor.describe.context.request.LsfRequestContext;
 import pipelite.executor.describe.poll.LsfExecutorPollJobs;
+import pipelite.executor.describe.recover.LsfExecutorRecoverJob;
 import pipelite.service.*;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
@@ -39,8 +42,7 @@ import pipelite.stage.parameters.SimpleLsfExecutorParameters;
     classes = PipeliteTestConfigWithManager.class,
     properties = {
       "pipelite.service.force=true",
-      "pipelite.service.name=SimpleLsfExecutorPollTest",
-      "pipelite.advanced.processRunnerFrequency=2s",
+      "pipelite.service.name=SimpleLsfExecutorPollJobsTest",
       "pipelite.advanced.shutdownIfIdle=true"
     })
 @ActiveProfiles({"test"})
@@ -54,7 +56,20 @@ public class SimpleLsfExecutorPollJobsTest {
   private static final String JOB_ID = "JOB_ID";
 
   @SpyBean private LsfExecutorPollJobs pollJobs;
+  @MockBean private LsfExecutorRecoverJob recoverJob;
   @Autowired PipeliteServices pipeliteServices;
+
+  @PostConstruct
+  private void init() {
+    // Mock recover job that always fails.
+    doAnswer(
+            invocation -> {
+              LsfRequestContext request = invocation.getArgument(1);
+              return DescribeJobsResult.builder(request).executionError().build();
+            })
+        .when(recoverJob)
+        .recoverJob(any(), any());
+  }
 
   private SimpleLsfExecutor mockSubmitJob() {
     SimpleLsfExecutor executor = Mockito.spy(new SimpleLsfExecutor());
@@ -69,7 +84,8 @@ public class SimpleLsfExecutorPollJobsTest {
     return executor;
   }
 
-  private void mockPollJobs(Supplier<StageExecutorResult> resultCallback) {
+  private void mockPollJobs(
+      Consumer<DescribeJobsResult.Builder<LsfRequestContext>> resultCallback) {
     doAnswer(
             invocation -> {
               DescribeJobsResults<LsfRequestContext> results = new DescribeJobsResults<>();
@@ -78,7 +94,10 @@ public class SimpleLsfExecutorPollJobsTest {
               requests.requests.forEach(
                   (jobId, v) -> {
                     assertThat(jobId).isEqualTo(JOB_ID);
-                    results.add(DescribeJobsResult.create(requests, jobId, resultCallback.get()));
+                    DescribeJobsResult.Builder<LsfRequestContext> result =
+                        DescribeJobsResult.builder(requests, jobId);
+                    resultCallback.accept(result);
+                    results.add(result.build());
                   });
               return results;
             })
@@ -98,7 +117,7 @@ public class SimpleLsfExecutorPollJobsTest {
   @Test
   public void testSuccess() {
     SimpleLsfExecutor executor = mockSubmitJob();
-    mockPollJobs(() -> LsfExecutorPollJobs.stageExecutorResultSuccess());
+    mockPollJobs(result -> result.success());
     StageExecutorResult result = execute(executor);
     assertThat(result.isSuccess()).isTrue();
     assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
@@ -107,16 +126,16 @@ public class SimpleLsfExecutorPollJobsTest {
   @Test
   public void testError() {
     SimpleLsfExecutor executor = mockSubmitJob();
-    mockPollJobs(() -> LsfExecutorPollJobs.stageExecutorResultError("1"));
+    mockPollJobs(result -> result.executionError(1));
     StageExecutorResult result = execute(executor);
     assertThat(result.isError()).isTrue();
     assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("1");
   }
 
   @Test
-  public void testNotFound() {
+  public void testUnknown() {
     SimpleLsfExecutor executor = mockSubmitJob();
-    mockPollJobs(() -> LsfExecutorPollJobs.stageExecutorResultNotFound());
+    mockPollJobs(result -> result.unknown());
     StageExecutorResult result = execute(executor);
     assertThat(result.isError()).isTrue();
     assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isNull();

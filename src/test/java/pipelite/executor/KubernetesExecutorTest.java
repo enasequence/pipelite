@@ -17,7 +17,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -49,7 +48,6 @@ public class KubernetesExecutorTest {
   }
 
   @Test
-  @EnabledIfEnvironmentVariable(named = "PIPELITE_TEST_KUBERNETES_KUBECONFIG", matches = ".+")
   public void testExecuteSuccess() {
     String image = "hello-world:linux";
     List<String> imageArgs = Collections.emptyList();
@@ -78,7 +76,6 @@ public class KubernetesExecutorTest {
   }
 
   @Test
-  @EnabledIfEnvironmentVariable(named = "PIPELITE_TEST_KUBERNETES_KUBECONFIG", matches = ".+")
   public void testExecuteError() {
     String image = "debian:10.11";
     List<String> imageArgs = Arrays.asList("bash", "-c", "exit 5");

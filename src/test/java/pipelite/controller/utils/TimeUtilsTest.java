@@ -24,7 +24,7 @@ public class TimeUtilsTest {
   public void humanReadableDate() {
     ZonedDateTime dateTime =
         ZonedDateTime.of(LocalDateTime.of(2020, 1, 1, 1, 1), ZoneId.systemDefault());
-    assertThat(TimeUtils.humanReadableDate(dateTime)).isEqualTo("2020-01-01T01:01:00Z");
+    assertThat(TimeUtils.humanReadableDate(dateTime)).startsWith("2020-01-01T01:01:00");
   }
 
   @Test

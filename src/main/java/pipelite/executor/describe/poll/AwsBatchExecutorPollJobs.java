@@ -20,7 +20,6 @@ import pipelite.executor.describe.DescribeJobsResults;
 import pipelite.executor.describe.context.executor.AwsBatchExecutorContext;
 import pipelite.executor.describe.context.request.DefaultRequestContext;
 import pipelite.retryable.RetryableExternalAction;
-import pipelite.stage.executor.StageExecutorResult;
 
 @Component
 @Flogger
@@ -38,23 +37,24 @@ public class AwsBatchExecutorPollJobs
                 executorContext
                     .awsBatch()
                     .describeJobs(new DescribeJobsRequest().withJobs(requests.jobIds)));
-    jobResult
-        .getJobs()
-        .forEach(
-            j ->
-                results.add(
-                    DescribeJobsResult.create(requests, j.getJobId(), extractJobResult(j))));
+    jobResult.getJobs().forEach(jobDetail -> results.add(extractJobResult(requests, jobDetail)));
     return results;
   }
 
-  // TOOO: exit codes
-  protected static StageExecutorResult extractJobResult(JobDetail jobDetail) {
+  public static DescribeJobsResult<DefaultRequestContext> extractJobResult(
+      DescribeJobsPollRequests<DefaultRequestContext> requests, JobDetail jobDetail) {
+    DescribeJobsResult.Builder result = DescribeJobsResult.builder(requests, jobDetail.getJobId());
     switch (jobDetail.getStatus()) {
       case "SUCCEEDED":
-        return StageExecutorResult.success();
+        result.success();
+        break;
       case "FAILED":
-        return StageExecutorResult.executionError();
+        // TOOO: exit code
+        result.executionError();
+        break;
+      default:
+        result.active();
     }
-    return StageExecutorResult.active();
+    return result.build();
   }
 }

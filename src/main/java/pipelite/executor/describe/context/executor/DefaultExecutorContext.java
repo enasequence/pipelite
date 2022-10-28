@@ -18,7 +18,6 @@ import pipelite.executor.describe.DescribeJobsPollRequests;
 import pipelite.executor.describe.DescribeJobsResult;
 import pipelite.executor.describe.DescribeJobsResults;
 import pipelite.executor.describe.context.request.DefaultRequestContext;
-import pipelite.stage.executor.StageExecutorResult;
 
 @Value
 @Accessors(fluent = true)
@@ -37,6 +36,7 @@ public abstract class DefaultExecutorContext<RequestContext extends DefaultReque
 
   /** Recover asynchronous job execution status. */
   public DescribeJobsResult<RequestContext> recoverJob(RequestContext request) {
-    return DescribeJobsResult.create(request, StageExecutorResult.executionError());
+    // By default, asynchronous job execution recovery will fail.
+    return DescribeJobsResult.builder(request).executionError().build();
   }
 }

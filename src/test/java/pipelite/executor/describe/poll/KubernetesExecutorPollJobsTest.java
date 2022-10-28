@@ -11,46 +11,51 @@
 package pipelite.executor.describe.poll;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static pipelite.executor.describe.poll.KubernetesExecutorPollJobs.extractJobResultFromStatus;
+import static pipelite.executor.describe.poll.KubernetesExecutorPollJobs.extractJobResult;
 
 import io.fabric8.kubernetes.api.model.batch.v1.JobCondition;
 import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
-import java.util.Arrays;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.context.ActiveProfiles;
+import pipelite.executor.describe.context.request.DefaultRequestContext;
 
 @ActiveProfiles("test")
 public class KubernetesExecutorPollJobsTest {
 
-  @Test
-  public void testDescribeJobsStateActive() {
-    JobStatus jobStatus = new JobStatus();
-    assertThat(extractJobResultFromStatus(jobStatus).isActive()).isTrue();
-    jobStatus.setActive(1);
-    assertThat(extractJobResultFromStatus(jobStatus).isActive()).isTrue();
+  private static DefaultRequestContext request() {
+    return new DefaultRequestContext("validJobId");
   }
 
   @Test
-  public void testDescribeJobsStateSuccess() {
+  public void testExtractJobResultActive() {
+    JobStatus jobStatus = new JobStatus();
+    assertThat(extractJobResult(request(), jobStatus, () -> null).result.isActive()).isTrue();
+    jobStatus.setActive(1);
+    assertThat(extractJobResult(request(), jobStatus, () -> null).result.isActive()).isTrue();
+  }
+
+  @Test
+  public void testExtractJobResultSuccess() {
     JobStatus jobStatus = new JobStatus();
     jobStatus.setCompletionTime("test");
-    assertThat(extractJobResultFromStatus(jobStatus).isSuccess()).isTrue();
+    assertThat(extractJobResult(request(), jobStatus, () -> null).result.isSuccess()).isTrue();
 
     jobStatus = new JobStatus();
     JobCondition jobCondition = new JobCondition();
     jobCondition.setType("Complete");
     jobCondition.setStatus("true");
-    jobStatus.setConditions(Arrays.asList(jobCondition));
-    assertThat(extractJobResultFromStatus(jobStatus).isSuccess()).isTrue();
+    jobStatus.setConditions(List.of(jobCondition));
+    assertThat(extractJobResult(request(), jobStatus, () -> null).result.isSuccess()).isTrue();
   }
 
   @Test
-  public void testDescribeJobsStateError() {
+  public void testExtractJobResultError() {
     JobStatus jobStatus = new JobStatus();
     JobCondition jobCondition = new JobCondition();
     jobCondition.setType("Failed");
     jobCondition.setStatus("true");
-    jobStatus.setConditions(Arrays.asList(jobCondition));
-    assertThat(extractJobResultFromStatus(jobStatus).isError()).isTrue();
+    jobStatus.setConditions(List.of(jobCondition));
+    assertThat(extractJobResult(request(), jobStatus, () -> null).result.isError()).isTrue();
   }
 }

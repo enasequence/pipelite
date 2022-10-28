@@ -11,7 +11,6 @@
 package pipelite.runner.schedule;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
@@ -45,7 +44,6 @@ public class ScheduleRunnerKubernetesExecutorTest {
   @SpyBean private StageService stageServiceSpy;
 
   @Test
-  @EnabledIfEnvironmentVariable(named = "PIPELITE_TEST_KUBERNETES_KUBECONFIG", matches = ".+")
   public void runSchedules() {
     testRunner.runSchedules(
         stageServiceSpy,

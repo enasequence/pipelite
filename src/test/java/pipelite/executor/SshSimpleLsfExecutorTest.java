@@ -14,7 +14,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -36,7 +35,6 @@ public class SshSimpleLsfExecutorTest {
   @Autowired PipeliteServices pipeliteServices;
 
   @Test
-  @EnabledIfEnvironmentVariable(named = "PIPELITE_TEST_LSF_HOST", matches = ".+")
   public void testExecuteSuccess() {
     SimpleLsfExecutor executor = StageExecutor.createSimpleLsfExecutor("echo test");
     executor.setExecutorParams(
@@ -67,7 +65,6 @@ public class SshSimpleLsfExecutorTest {
   }
 
   @Test
-  @EnabledIfEnvironmentVariable(named = "PIPELITE_TEST_LSF_HOST", matches = ".+")
   public void testExecuteError() {
     SimpleLsfExecutor executor = StageExecutor.createSimpleLsfExecutor("exit 5");
     executor.setExecutorParams(

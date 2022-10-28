@@ -10,11 +10,15 @@
  */
 package pipelite.executor.describe;
 
+import java.util.HashMap;
+import lombok.extern.flogger.Flogger;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.describe.context.request.DefaultRequestContext;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultAttribute;
 
 /** Job result. */
+@Flogger
 public class DescribeJobsResult<RequestContext extends DefaultRequestContext> {
   public final RequestContext request;
   public final StageExecutorResult result;
@@ -25,11 +29,11 @@ public class DescribeJobsResult<RequestContext extends DefaultRequestContext> {
   }
 
   /**
-   * Creates a job result. Throws a PipeliteException if the job request is null.
+   * Creates a job result.
    *
    * @param request the job request.
-   * @param result the stage execution result. If the stage execution results is null then no result
-   *     is available for the request.
+   * @param result the stage execution result. If the result is null then no result is available for
+   *     the request.
    * @return the job result.
    * @throws pipelite.exception.PipeliteException n if the job request is null.
    */
@@ -41,18 +45,109 @@ public class DescribeJobsResult<RequestContext extends DefaultRequestContext> {
     return new DescribeJobsResult(request, result);
   }
 
-  /**
-   * Creates a job result. Throws a PipeliteException if the job request is null.
-   *
-   * @param requests the job requests.
-   * @param jobId the job id.
-   * @param result the stage execution result. If the stage execution results is null then no result
-   *     is available for the request.
-   * @return the job result.
-   * @throws pipelite.exception.PipeliteException n if the job request is null.
-   */
-  public static <RequestContext extends DefaultRequestContext> DescribeJobsResult create(
-      DescribeJobsPollRequests<RequestContext> requests, String jobId, StageExecutorResult result) {
-    return create(requests.requests.get(jobId), result);
+  public static <RequestContext extends DefaultRequestContext> Builder<RequestContext> builder(
+      RequestContext request) {
+    return new Builder<>(request);
+  }
+
+  public static <RequestContext extends DefaultRequestContext> Builder<RequestContext> builder(
+      DescribeJobsPollRequests<RequestContext> requests, String jobId) {
+    if (requests == null) {
+      throw new PipeliteException("Missing job requests");
+    }
+    if (jobId == null) {
+      throw new PipeliteException("Missing job id");
+    }
+    return new Builder<>(requests.requests.get(jobId));
+  }
+
+  public static class Builder<RequestContext extends DefaultRequestContext> {
+    private final RequestContext request;
+    private final String jobId;
+    private final HashMap<String, String> attributes = new HashMap<>();
+    private StageExecutorResult result;
+    private Integer exitCode;
+
+    private Builder(RequestContext request) {
+      if (request == null) {
+        throw new PipeliteException("Missing job request");
+      }
+      if (request.getJobId() == null) {
+        throw new PipeliteException("Missing job id");
+      }
+      this.request = request;
+      this.jobId = request.getJobId();
+    }
+
+    public Builder<RequestContext> attribute(String key, Object value) {
+      if (key == null || value == null) {
+        return this;
+      }
+      this.attributes.put(key, value.toString());
+      return this;
+    }
+
+    public Builder<RequestContext> unknown() {
+      log.atWarning().log("Job " + this.jobId + " was not found");
+      this.result = null;
+      this.exitCode = null;
+      return this;
+    }
+
+    public Builder<RequestContext> active() {
+      this.result = StageExecutorResult.active();
+      this.exitCode = null;
+      return this;
+    }
+
+    public Builder<RequestContext> success() {
+      this.result = StageExecutorResult.success();
+      this.exitCode = Integer.valueOf(0);
+      return this;
+    }
+
+    public Builder<RequestContext> executionError() {
+      this.result = StageExecutorResult.executionError();
+      this.exitCode = null;
+      return this;
+    }
+
+    public Builder<RequestContext> executionError(Integer exitCode) {
+      this.result = StageExecutorResult.executionError();
+      this.exitCode = exitCode;
+      return this;
+    }
+
+    public Builder<RequestContext> executionError(String exitCode) {
+      this.result = StageExecutorResult.executionError();
+      this.exitCode = null;
+      if (exitCode != null && !exitCode.trim().isEmpty()) {
+        try {
+          this.exitCode = Integer.valueOf(exitCode);
+        } catch (NumberFormatException ex) {
+          log.atSevere().log("Invalid exit code: " + exitCode);
+        }
+      }
+      return this;
+    }
+
+    public boolean isCompleted() {
+      return result != null && result.isCompleted();
+    }
+
+    public DescribeJobsResult build() {
+      if (result != null) {
+        if (attributes != null) {
+          attributes.forEach((key, value) -> result.attribute(key, value));
+        }
+        if (jobId != null) {
+          result.attribute(StageExecutorResultAttribute.JOB_ID, jobId);
+        }
+        if (exitCode != null) {
+          result.attribute(StageExecutorResultAttribute.EXIT_CODE, String.valueOf(exitCode));
+        }
+      }
+      return DescribeJobsResult.create(request, result);
+    }
   }
 }

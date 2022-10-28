@@ -20,31 +20,37 @@ import pipelite.executor.describe.DescribeJobsPollRequests;
 import pipelite.executor.describe.DescribeJobsResult;
 import pipelite.executor.describe.DescribeJobsResults;
 import pipelite.executor.describe.context.request.LsfRequestContext;
+import pipelite.stage.executor.StageExecutorResultAttribute;
 
 public class LsfExecutorPollJobsTest {
 
   @Test
-  public void testExtractNotFoundJobIdFromPollOutput() {
-    assertThat(extractNotFoundJobIdFromPollOutput("Job <345654> is not found."))
-        .isEqualTo("345654");
-    assertThat(extractNotFoundJobIdFromPollOutput("Job <345654> is not found")).isEqualTo("345654");
-    assertThat(extractNotFoundJobIdFromPollOutput("Job <345654> is ")).isNull();
-    assertThat(extractNotFoundJobIdFromPollOutput("INVALID")).isNull();
+  public void testExtractUnknownJobResult() {
+    DescribeJobsPollRequests<LsfRequestContext> requests =
+        new DescribeJobsPollRequests<>(List.of(new LsfRequestContext("345654", "outFile")));
+
+    assertThat(extractUnknownJobResult(requests, "Job <345654> is not found.")).isNotNull();
+    assertThat(extractUnknownJobResult(requests, "Job <345654> is not found")).isNotNull();
+    assertThat(extractUnknownJobResult(requests, "Job <345654> is not found.").result).isNull();
+    assertThat(extractUnknownJobResult(requests, "Job <345654> is not found").result).isNull();
+    assertThat(extractUnknownJobResult(requests, "Job <345654> is ")).isNull();
+    assertThat(extractUnknownJobResult(requests, "INVALID")).isNull();
   }
 
   @Test
-  public void testExtractJobResultFromPollOutputPending() {
-    LsfRequestContext requestContext = new LsfRequestContext("861487", "outFile");
+  public void testExtractJobResultPending() {
     DescribeJobsPollRequests<LsfRequestContext> requests =
-        new DescribeJobsPollRequests<>(List.of(requestContext));
+        new DescribeJobsPollRequests<>(List.of(new LsfRequestContext("861487", "outFile")));
+
     DescribeJobsResult<LsfRequestContext> result =
-        extractJobResultFromPollOutput("861487|PEND|-|-|-|-|-\n", requests);
+        extractJobResult(requests, "861487|PEND|-|-|-|-|-\n");
     assertThat(result.request.getJobId()).isEqualTo("861487");
     assertThat(result.result.isActive()).isTrue();
+    assertThat(result.result.attribute(StageExecutorResultAttribute.JOB_ID)).isEqualTo("861487");
   }
 
   @Test
-  public void testExtractResultsFromPollOutputPending() {
+  public void testExtractJobResultsPending() {
     DescribeJobsPollRequests<LsfRequestContext> requests =
         new DescribeJobsPollRequests<>(
             Arrays.asList(
@@ -52,8 +58,7 @@ public class LsfExecutorPollJobsTest {
                 new LsfRequestContext("861488", "outFile")));
 
     DescribeJobsResults<LsfRequestContext> results =
-        extractJobResultsFromPollOutput(
-            "861487|PEND|-|-|-|-|-\n" + "861488|PEND|-|-|-|-|-\n", requests);
+        extractJobResults(requests, "861487|PEND|-|-|-|-|-\n" + "861488|PEND|-|-|-|-|-\n");
 
     assertThat(results.found.size()).isEqualTo(2);
     assertThat(results.notFound.size()).isEqualTo(0);
@@ -61,10 +66,14 @@ public class LsfExecutorPollJobsTest {
     assertThat(results.found.get(1).request.getJobId()).isEqualTo("861488");
     assertThat(results.found.get(0).result.isActive()).isTrue();
     assertThat(results.found.get(1).result.isActive()).isTrue();
+    assertThat(results.found.get(0).result.attribute(StageExecutorResultAttribute.JOB_ID))
+        .isEqualTo("861487");
+    assertThat(results.found.get(1).result.attribute(StageExecutorResultAttribute.JOB_ID))
+        .isEqualTo("861488");
   }
 
   @Test
-  public void testExtractResultsFromPollOutputDone() {
+  public void testExtractJobResultsDone() {
     DescribeJobsPollRequests<LsfRequestContext> requests =
         new DescribeJobsPollRequests<>(
             Arrays.asList(
@@ -73,11 +82,11 @@ public class LsfExecutorPollJobsTest {
                 new LsfRequestContext("872795", "outFile")));
 
     DescribeJobsResults<LsfRequestContext> results =
-        extractJobResultsFromPollOutput(
+        extractJobResults(
+            requests,
             "872793|DONE|-|0.0 second(s)|-|-|hx-noah-05-14\n"
                 + "872794|DONE|-|0.0 second(s)|-|-|hx-noah-05-14\n"
-                + "872795|DONE|-|0.0 second(s)|-|-|hx-noah-05-14\n",
-            requests);
+                + "872795|DONE|-|0.0 second(s)|-|-|hx-noah-05-14\n");
 
     assertThat(results.found.size()).isEqualTo(3);
     assertThat(results.found.get(0).request.getJobId()).isEqualTo("872793");
@@ -86,10 +95,16 @@ public class LsfExecutorPollJobsTest {
     assertThat(results.found.get(0).result.isSuccess()).isTrue();
     assertThat(results.found.get(1).result.isSuccess()).isTrue();
     assertThat(results.found.get(2).result.isSuccess()).isTrue();
+    assertThat(results.found.get(0).result.attribute(StageExecutorResultAttribute.JOB_ID))
+        .isEqualTo("872793");
+    assertThat(results.found.get(1).result.attribute(StageExecutorResultAttribute.JOB_ID))
+        .isEqualTo("872794");
+    assertThat(results.found.get(2).result.attribute(StageExecutorResultAttribute.JOB_ID))
+        .isEqualTo("872795");
   }
 
   @Test
-  public void testExtractResultsFromPollExitAndNotFound() {
+  public void testExtractJobResultsExitAndNotFound() {
     DescribeJobsPollRequests<LsfRequestContext> requests =
         new DescribeJobsPollRequests<>(
             Arrays.asList(
@@ -99,12 +114,12 @@ public class LsfExecutorPollJobsTest {
                 new LsfRequestContext("873209", "outFile")));
 
     DescribeJobsResults<LsfRequestContext> results =
-        extractJobResultsFromPollOutput(
+        extractJobResults(
+            requests,
             "873206|EXIT|127|0.0 second(s)|-|-|hx-noah-43-02\n"
                 + "873207|EXIT|127|0.0 second(s)|-|-|hx-noah-43-02\n"
                 + "Job <6065212> is not found\n"
-                + "873209|EXIT|127|0.0 second(s)|-|-|hx-noah-10-04\n",
-            requests);
+                + "873209|EXIT|127|0.0 second(s)|-|-|hx-noah-10-04\n");
 
     assertThat(results.found.size()).isEqualTo(3);
     assertThat(results.notFound.size()).isEqualTo(1);
@@ -115,5 +130,11 @@ public class LsfExecutorPollJobsTest {
     assertThat(results.found.get(0).result.isError()).isTrue();
     assertThat(results.found.get(1).result.isError()).isTrue();
     assertThat(results.found.get(2).result.isError()).isTrue();
+    assertThat(results.found.get(0).result.attribute(StageExecutorResultAttribute.JOB_ID))
+        .isEqualTo("873206");
+    assertThat(results.found.get(1).result.attribute(StageExecutorResultAttribute.JOB_ID))
+        .isEqualTo("873207");
+    assertThat(results.found.get(2).result.attribute(StageExecutorResultAttribute.JOB_ID))
+        .isEqualTo("873209");
   }
 }
