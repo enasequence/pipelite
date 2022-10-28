@@ -102,7 +102,7 @@ public class DescribeJobsTest {
     IntStream.range(0, requestCnt)
         .forEach(
             i -> {
-              StageExecutorResult result = describeJobs.getResult(new TestRequestContext(i), null);
+              StageExecutorResult result = describeJobs.getResult(new TestRequestContext(i));
               assertThat(result.isSuccess()).isTrue();
             });
 
@@ -158,7 +158,7 @@ public class DescribeJobsTest {
     IntStream.range(0, requestCnt)
         .forEach(
             i -> {
-              StageExecutorResult result = describeJobs.getResult(new TestRequestContext(i), null);
+              StageExecutorResult result = describeJobs.getResult(new TestRequestContext(i));
               assertThat(result.isError()).isTrue();
             });
 
@@ -213,7 +213,7 @@ public class DescribeJobsTest {
     IntStream.range(0, requestCnt)
         .forEach(
             i -> {
-              StageExecutorResult result = describeJobs.getResult(new TestRequestContext(i), null);
+              StageExecutorResult result = describeJobs.getResult(new TestRequestContext(i));
               assertThat(result.isActive()).isTrue();
             });
 

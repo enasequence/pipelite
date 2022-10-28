@@ -10,8 +10,11 @@
  */
 package pipelite.entity.field;
 
+import com.google.common.primitives.Ints;
+import java.util.List;
 import pipelite.exception.PipeliteException;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.executor.StageExecutorState;
 
 public enum ErrorType {
@@ -21,27 +24,37 @@ public enum ErrorType {
   PERMANENT_ERROR,
   INTERNAL_ERROR;
 
-  public static ErrorType from(StageExecutorState state) {
+  public static ErrorType from(StageExecutorResult result, List<Integer> permanentErrors) {
+    StageExecutorState state = result.state();
+
     if (!state.isError()) {
       return null;
     }
+
     switch (state) {
       case EXECUTION_ERROR:
-        return ErrorType.EXECUTION_ERROR;
+        {
+          if (permanentErrors != null && !permanentErrors.isEmpty()) {
+            String exitCode = result.attribute(StageExecutorResultAttribute.EXIT_CODE);
+            if (exitCode != null) {
+              Integer exitCodeInt = Ints.tryParse(exitCode);
+              if (exitCodeInt != null) {
+                if (permanentErrors.contains(exitCodeInt)) {
+                  return ErrorType.PERMANENT_ERROR;
+                }
+              }
+            }
+          }
+          return ErrorType.EXECUTION_ERROR;
+        }
       case TIMEOUT_ERROR:
         return ErrorType.TIMEOUT_ERROR;
       case LOST_ERROR:
         return ErrorType.LOST_ERROR;
-      case PERMANENT_ERROR:
-        return ErrorType.PERMANENT_ERROR;
       case INTERNAL_ERROR:
         return ErrorType.INTERNAL_ERROR;
     }
     throw new PipeliteException("Unexpected stage executor state: " + state.name());
-  }
-
-  public static ErrorType from(StageExecutorResult result) {
-    return from(result.state());
   }
 
   public boolean isPermanentError() {

@@ -210,7 +210,7 @@ public class PipelineRunnerDescribeJobsGetResultExceptionTest {
                     throw new PipeliteException("Expected exception from getResult");
                   })
               .when(lsfDescribeJobs)
-              .getResult(any(), any());
+              .getResult(any());
 
           return lsfDescribeJobs;
         };
@@ -234,7 +234,7 @@ public class PipelineRunnerDescribeJobsGetResultExceptionTest {
                         throw new PipeliteException("Expected exception from getResult");
                       })
                   .when(lsfDescribeJobs)
-                  .getResult(any(), any());
+                  .getResult(any());
 
               return lsfDescribeJobs;
             };

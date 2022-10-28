@@ -10,15 +10,11 @@
  */
 package pipelite.executor;
 
-import static pipelite.stage.executor.StageExecutorResultAttribute.EXIT_CODE;
-
-import com.google.common.primitives.Ints;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
 import pipelite.executor.cmd.CmdRunner;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.CmdExecutorParameters;
 
 /** Executes a command. Must be serializable to json. */
@@ -38,11 +34,6 @@ public class CmdExecutor<T extends CmdExecutorParameters> extends SyncExecutor<T
   public StageExecutorResult execute() {
     CmdRunner cmdRunner = CmdRunner.create(getExecutorParams());
     StageExecutorResult result = cmdRunner.execute(cmd);
-    if (getExecutorParams()
-        .getPermanentErrors()
-        .contains(Ints.tryParse(result.attribute(EXIT_CODE)))) {
-      result.state(StageExecutorState.PERMANENT_ERROR);
-    }
     return result;
   }
 

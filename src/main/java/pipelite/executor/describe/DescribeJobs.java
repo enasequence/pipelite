@@ -10,7 +10,6 @@
  */
 package pipelite.executor.describe;
 
-import com.google.common.primitives.Ints;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
@@ -32,8 +31,6 @@ import pipelite.executor.describe.context.executor.DefaultExecutorContext;
 import pipelite.executor.describe.context.request.DefaultRequestContext;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultAttribute;
-import pipelite.stage.executor.StageExecutorState;
 import pipelite.time.Time;
 
 /**
@@ -285,31 +282,15 @@ public class DescribeJobs<
    * @throws PipeliteTimeoutException if no result has been available for a request within the
    *     request timeout
    */
-  public StageExecutorResult getResult(RequestContext request, List<Integer> permanentErrors) {
+  public StageExecutorResult getResult(RequestContext request) {
     if (!this.requests.containsKey(request)) {
       addRequest(request);
     }
     StageExecutorResult result = this.requests.get(request);
     if (!result.isActive()) {
       removeRequest(request);
-      setPermanentError(result, permanentErrors);
     }
     return result;
-  }
-
-  static void setPermanentError(StageExecutorResult result, List<Integer> permanentErrors) {
-    if (permanentErrors == null) {
-      return;
-    }
-    String exitCode = result.attribute(StageExecutorResultAttribute.EXIT_CODE);
-    if (exitCode != null) {
-      Integer exitCodeInt = Ints.tryParse(exitCode);
-      if (exitCodeInt != null) {
-        if (permanentErrors.contains(exitCodeInt)) {
-          result.state(StageExecutorState.PERMANENT_ERROR);
-        }
-      }
-    }
   }
 
   public void removeRequest(RequestContext request) {

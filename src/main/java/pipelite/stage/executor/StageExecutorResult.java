@@ -40,8 +40,8 @@ public class StageExecutorResult {
         return new StageExecutorResult(StageExecutorState.EXECUTION_ERROR);
       case TIMEOUT_ERROR:
         return new StageExecutorResult(StageExecutorState.TIMEOUT_ERROR);
-      case PERMANENT_ERROR:
-        return new StageExecutorResult(StageExecutorState.PERMANENT_ERROR);
+      case LOST_ERROR:
+        return new StageExecutorResult(StageExecutorState.LOST_ERROR);
       case INTERNAL_ERROR:
         return new StageExecutorResult(StageExecutorState.INTERNAL_ERROR);
     }
@@ -70,10 +70,6 @@ public class StageExecutorResult {
 
   public static StageExecutorResult lostError() {
     return new StageExecutorResult(StageExecutorState.LOST_ERROR);
-  }
-
-  public static StageExecutorResult permanentError() {
-    return new StageExecutorResult(StageExecutorState.PERMANENT_ERROR);
   }
 
   public static StageExecutorResult internalError() {

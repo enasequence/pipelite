@@ -12,39 +12,39 @@ package pipelite.entity.field;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorState;
+import pipelite.stage.executor.StageExecutorResultAttribute;
 
 public class ErrorTypeTest {
-  @Test
-  public void fromStageExecutorResult() {
-    assertThat(ErrorType.from(StageExecutorResult.submitted())).isNull();
-    assertThat(ErrorType.from(StageExecutorResult.active())).isNull();
-    assertThat(ErrorType.from(StageExecutorResult.success())).isNull();
-    assertThat(ErrorType.from(StageExecutorResult.executionError()))
-        .isEqualTo(ErrorType.EXECUTION_ERROR);
-    assertThat(ErrorType.from(StageExecutorResult.permanentError()))
-        .isEqualTo(ErrorType.PERMANENT_ERROR);
-    assertThat(ErrorType.from(StageExecutorResult.internalError()))
-        .isEqualTo(ErrorType.INTERNAL_ERROR);
-    assertThat(ErrorType.from(StageExecutorResult.timeoutError()))
-        .isEqualTo(ErrorType.TIMEOUT_ERROR);
-    assertThat(ErrorType.from(StageExecutorResult.lostError())).isEqualTo(ErrorType.LOST_ERROR);
-  }
 
   @Test
-  public void fromStageExecutorState() {
-    assertThat(ErrorType.from(StageExecutorState.SUBMITTED)).isNull();
-    assertThat(ErrorType.from(StageExecutorState.ACTIVE)).isNull();
-    assertThat(ErrorType.from(StageExecutorState.SUCCESS)).isNull();
-    assertThat(ErrorType.from(StageExecutorState.EXECUTION_ERROR))
+  public void from() {
+    assertThat(ErrorType.from(StageExecutorResult.submitted(), Collections.emptyList())).isNull();
+    assertThat(ErrorType.from(StageExecutorResult.active(), Collections.emptyList())).isNull();
+    assertThat(ErrorType.from(StageExecutorResult.success(), Collections.emptyList())).isNull();
+
+    // Execution error
+    assertThat(ErrorType.from(StageExecutorResult.executionError(), Collections.emptyList()))
         .isEqualTo(ErrorType.EXECUTION_ERROR);
-    assertThat(ErrorType.from(StageExecutorState.PERMANENT_ERROR))
-        .isEqualTo(ErrorType.PERMANENT_ERROR);
-    assertThat(ErrorType.from(StageExecutorState.INTERNAL_ERROR))
+
+    // Permanent error
+    StageExecutorResult permanentError = StageExecutorResult.executionError();
+    permanentError.attribute(StageExecutorResultAttribute.EXIT_CODE, "1");
+    assertThat(ErrorType.from(permanentError, List.of(1))).isEqualTo(ErrorType.PERMANENT_ERROR);
+
+    // Internal error
+    assertThat(ErrorType.from(StageExecutorResult.internalError(), Collections.emptyList()))
         .isEqualTo(ErrorType.INTERNAL_ERROR);
-    assertThat(ErrorType.from(StageExecutorState.TIMEOUT_ERROR)).isEqualTo(ErrorType.TIMEOUT_ERROR);
-    assertThat(ErrorType.from(StageExecutorState.LOST_ERROR)).isEqualTo(ErrorType.LOST_ERROR);
+
+    // Timeout error
+    assertThat(ErrorType.from(StageExecutorResult.timeoutError(), Collections.emptyList()))
+        .isEqualTo(ErrorType.TIMEOUT_ERROR);
+
+    // Lost error
+    assertThat(ErrorType.from(StageExecutorResult.lostError(), Collections.emptyList()))
+        .isEqualTo(ErrorType.LOST_ERROR);
   }
 }

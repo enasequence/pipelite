@@ -29,6 +29,7 @@ import pipelite.process.builder.ProcessBuilderHelper;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.ExecutorParameters;
 
@@ -875,9 +876,9 @@ public class DependencyResolverTest {
     }
     stage.incrementImmediateExecutionCount();
     if (stageState == SUCCESS) {
-      stageEntity.endExecution(StageExecutorResult.success());
+      stageEntity.endExecution(StageExecutorResult.success(), Collections.emptyList());
     } else if (stageState == ERROR) {
-      stageEntity.endExecution(StageExecutorResult.executionError());
+      stageEntity.endExecution(StageExecutorResult.executionError(), Collections.emptyList());
     }
   }
 
@@ -887,6 +888,14 @@ public class DependencyResolverTest {
     stageEntity.setStageState(ERROR);
     stageEntity.startExecution();
     stage.incrementImmediateExecutionCount();
-    stageEntity.endExecution(StageExecutorResult.create(errorType));
+    if (errorType == ErrorType.PERMANENT_ERROR) {
+      // Create execution error with permanent error exit code.
+      stageEntity.endExecution(
+          StageExecutorResult.executionError()
+              .attribute(StageExecutorResultAttribute.EXIT_CODE, "1"),
+          List.of(1));
+    } else {
+      stageEntity.endExecution(StageExecutorResult.create(errorType), Collections.emptyList());
+    }
   }
 }

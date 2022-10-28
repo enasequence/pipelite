@@ -51,7 +51,7 @@ public class StageExecutorResultTest {
         Arrays.asList(
             StageExecutorResult.executionError(),
             StageExecutorResult.timeoutError(),
-            StageExecutorResult.permanentError(),
+            StageExecutorResult.lostError(),
             StageExecutorResult.internalError())) {
       assertThat(result.isSubmitted()).isFalse();
       assertThat(result.isActive()).isFalse();
@@ -84,8 +84,8 @@ public class StageExecutorResultTest {
         .isSameAs(StageExecutorState.EXECUTION_ERROR);
     assertThat(StageExecutorResult.create(StageExecutorState.TIMEOUT_ERROR).state())
         .isSameAs(StageExecutorState.TIMEOUT_ERROR);
-    assertThat(StageExecutorResult.create(StageExecutorState.PERMANENT_ERROR).state())
-        .isSameAs(StageExecutorState.PERMANENT_ERROR);
+    assertThat(StageExecutorResult.create(StageExecutorState.LOST_ERROR).state())
+        .isSameAs(StageExecutorState.LOST_ERROR);
     assertThat(StageExecutorResult.create(StageExecutorState.INTERNAL_ERROR).state())
         .isSameAs(StageExecutorState.INTERNAL_ERROR);
   }
@@ -99,8 +99,7 @@ public class StageExecutorResultTest {
         .isSameAs(StageExecutorState.EXECUTION_ERROR);
     assertThat(StageExecutorResult.timeoutError().state())
         .isSameAs(StageExecutorState.TIMEOUT_ERROR);
-    assertThat(StageExecutorResult.permanentError().state())
-        .isSameAs(StageExecutorState.PERMANENT_ERROR);
+    assertThat(StageExecutorResult.lostError().state()).isSameAs(StageExecutorState.LOST_ERROR);
     assertThat(StageExecutorResult.internalError().state())
         .isSameAs(StageExecutorState.INTERNAL_ERROR);
   }
@@ -113,8 +112,8 @@ public class StageExecutorResultTest {
         .isEqualTo(StageExecutorState.INTERNAL_ERROR);
     assertThat(StageExecutorResult.create(ErrorType.TIMEOUT_ERROR).state())
         .isEqualTo(StageExecutorState.TIMEOUT_ERROR);
-    assertThat(StageExecutorResult.create(ErrorType.PERMANENT_ERROR).state())
-        .isEqualTo(StageExecutorState.PERMANENT_ERROR);
+    assertThat(StageExecutorResult.create(ErrorType.LOST_ERROR).state())
+        .isEqualTo(StageExecutorState.LOST_ERROR);
   }
 
   @Test

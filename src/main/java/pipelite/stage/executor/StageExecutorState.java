@@ -23,8 +23,6 @@ public enum StageExecutorState {
   TIMEOUT_ERROR,
   /** The job has been lost. */
   LOST_ERROR,
-  /** The job has completed with a permanent error. */
-  PERMANENT_ERROR,
   /** The job has completed with an internal error. */
   INTERNAL_ERROR;
 
@@ -36,7 +34,6 @@ public enum StageExecutorState {
     return this == EXECUTION_ERROR
         || this == TIMEOUT_ERROR
         || this == LOST_ERROR
-        || this == PERMANENT_ERROR
         || this == INTERNAL_ERROR;
   }
 

@@ -23,7 +23,7 @@ public class StageStateTest {
     assertThat(StageState.from(StageExecutorResult.active())).isEqualTo(StageState.ACTIVE);
     assertThat(StageState.from(StageExecutorResult.success())).isEqualTo(StageState.SUCCESS);
     assertThat(StageState.from(StageExecutorResult.executionError())).isEqualTo(StageState.ERROR);
-    assertThat(StageState.from(StageExecutorResult.permanentError())).isEqualTo(StageState.ERROR);
+    assertThat(StageState.from(StageExecutorResult.lostError())).isEqualTo(StageState.ERROR);
     assertThat(StageState.from(StageExecutorResult.internalError())).isEqualTo(StageState.ERROR);
     assertThat(StageState.from(StageExecutorResult.timeoutError())).isEqualTo(StageState.ERROR);
   }
@@ -34,7 +34,7 @@ public class StageStateTest {
     assertThat(StageState.from(StageExecutorState.ACTIVE)).isEqualTo(StageState.ACTIVE);
     assertThat(StageState.from(StageExecutorState.SUCCESS)).isEqualTo(StageState.SUCCESS);
     assertThat(StageState.from(StageExecutorState.EXECUTION_ERROR)).isEqualTo(StageState.ERROR);
-    assertThat(StageState.from(StageExecutorState.PERMANENT_ERROR)).isEqualTo(StageState.ERROR);
+    assertThat(StageState.from(StageExecutorState.LOST_ERROR)).isEqualTo(StageState.ERROR);
     assertThat(StageState.from(StageExecutorState.INTERNAL_ERROR)).isEqualTo(StageState.ERROR);
     assertThat(StageState.from(StageExecutorState.TIMEOUT_ERROR)).isEqualTo(StageState.ERROR);
   }

@@ -210,9 +210,7 @@ public abstract class AsyncExecutor<
     // is considered as failed.
     internalErrorHandler.execute(
         () -> {
-          StageExecutorResult result =
-              getDescribeJobs()
-                  .getResult(getRequestContext(), getExecutorParams().getPermanentErrors());
+          StageExecutorResult result = getDescribeJobs().getResult(getRequestContext());
           if (result.isCompleted()) {
             logContext(log.atInfo())
                 .log(

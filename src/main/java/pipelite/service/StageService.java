@@ -158,7 +158,7 @@ public class StageService {
   public void endExecution(Stage stage, StageExecutorResult result) {
     stage.incrementImmediateExecutionCount();
     StageEntity stageEntity = stage.getStageEntity();
-    stageEntity.endExecution(result);
+    stageEntity.endExecution(result, stage.getExecutor().getExecutorParams().getPermanentErrors());
     saveStage(stage);
     saveStageLog(StageLogEntity.endExecution(stageEntity, result));
   }

@@ -13,6 +13,8 @@ package pipelite.entity;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import pipelite.PipeliteIdCreator;
 import pipelite.entity.field.ErrorType;
@@ -22,6 +24,7 @@ import pipelite.executor.SyncExecutor;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.ExecutorParameters;
 
 class StageEntityTest {
@@ -49,13 +52,15 @@ class StageEntityTest {
     String processId = PipeliteIdCreator.processId();
     String stageName = PipeliteIdCreator.stageName();
 
-    TestExecutor executor = new TestExecutor();
-    executor.setExecutorParams(
+    ExecutorParameters executorParams =
         ExecutorParameters.builder()
             .timeout(Duration.ofSeconds(0))
             .immediateRetries(0)
             .maximumRetries(0)
-            .build());
+            .build();
+
+    TestExecutor executor = new TestExecutor();
+    executor.setExecutorParams(executorParams);
 
     Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
 
@@ -117,7 +122,7 @@ class StageEntityTest {
     // End first execution.
 
     StageExecutorResult firstExecutionResult = StageExecutorResult.executionError();
-    stageEntity.endExecution(firstExecutionResult);
+    stageEntity.endExecution(firstExecutionResult, executorParams.getPermanentErrors());
 
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
@@ -171,7 +176,7 @@ class StageEntityTest {
     // End second execution.
 
     StageExecutorResult secondExecutionResult = StageExecutorResult.success();
-    stageEntity.endExecution(secondExecutionResult);
+    stageEntity.endExecution(secondExecutionResult, executorParams.getPermanentErrors());
 
     assertThat(stageEntity.getPipelineName()).isEqualTo(pipelineName);
     assertThat(stageEntity.getProcessId()).isEqualTo(processId);
@@ -223,38 +228,39 @@ class StageEntityTest {
     TestExecutor executor = new TestExecutor();
     Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
 
-    // Create execution.
+    // Internal error
+    StageEntity stageEntity = initErrorTypeTest(pipelineName, processId, stage);
+    stageEntity.endExecution(StageExecutorResult.internalError(), Collections.emptyList());
+    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.INTERNAL_ERROR);
 
+    // Timeout error
+    stageEntity = initErrorTypeTest(pipelineName, processId, stage);
+    stageEntity.endExecution(StageExecutorResult.timeoutError(), Collections.emptyList());
+    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.TIMEOUT_ERROR);
+
+    // Lost error
+    stageEntity = initErrorTypeTest(pipelineName, processId, stage);
+    stageEntity.endExecution(StageExecutorResult.lostError(), Collections.emptyList());
+    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.LOST_ERROR);
+
+    // Execution error
+    stageEntity = initErrorTypeTest(pipelineName, processId, stage);
+    stageEntity.endExecution(StageExecutorResult.executionError(), Collections.emptyList());
+    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.EXECUTION_ERROR);
+
+    // Permanent error
+    stageEntity = initErrorTypeTest(pipelineName, processId, stage);
+    StageExecutorResult permanentError = StageExecutorResult.executionError();
+    permanentError.attribute(StageExecutorResultAttribute.EXIT_CODE, "1");
+    stageEntity.endExecution(permanentError, List.of(1));
+    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.PERMANENT_ERROR);
+  }
+
+  private static StageEntity initErrorTypeTest(String pipelineName, String processId, Stage stage) {
     stage.setStageEntity(
         StageEntity.createExecution(pipelineName, processId, stage.getStageName()));
     StageEntity stageEntity = stage.getStageEntity();
-
     assertThat(stageEntity.getErrorType()).isNull();
-    stageEntity.endExecution(StageExecutorResult.permanentError());
-    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.PERMANENT_ERROR);
-
-    stage.setStageEntity(
-        StageEntity.createExecution(pipelineName, processId, stage.getStageName()));
-    stageEntity = stage.getStageEntity();
-
-    assertThat(stageEntity.getErrorType()).isNull();
-    stageEntity.endExecution(StageExecutorResult.internalError());
-    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.INTERNAL_ERROR);
-
-    stage.setStageEntity(
-        StageEntity.createExecution(pipelineName, processId, stage.getStageName()));
-    stageEntity = stage.getStageEntity();
-
-    assertThat(stageEntity.getErrorType()).isNull();
-    stageEntity.endExecution(StageExecutorResult.timeoutError());
-    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.TIMEOUT_ERROR);
-
-    stage.setStageEntity(
-        StageEntity.createExecution(pipelineName, processId, stage.getStageName()));
-    stageEntity = stage.getStageEntity();
-
-    assertThat(stageEntity.getErrorType()).isNull();
-    stageEntity.endExecution(StageExecutorResult.executionError());
-    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.EXECUTION_ERROR);
+    return stageEntity;
   }
 }

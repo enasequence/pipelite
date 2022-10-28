@@ -13,6 +13,7 @@ package pipelite.entity;
 import com.fasterxml.jackson.annotation.JsonRawValue;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import javax.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -110,10 +111,11 @@ public class StageEntity {
    * Called when the stage execution ends.
    *
    * @param result the stage execution result
+   * @param permanentErrors the permanent error exit codes
    */
-  public void endExecution(StageExecutorResult result) {
+  public void endExecution(StageExecutorResult result, List<Integer> permanentErrors) {
     this.stageState = StageState.from(result);
-    this.errorType = ErrorType.from(result);
+    this.errorType = ErrorType.from(result, permanentErrors);
     this.endTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.resultParams = result.attributesJson();
     String exitCodeAttribute = result.attribute(StageExecutorResultAttribute.EXIT_CODE);
