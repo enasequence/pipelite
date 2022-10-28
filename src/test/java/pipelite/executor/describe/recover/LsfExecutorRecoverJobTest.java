@@ -11,8 +11,7 @@
 package pipelite.executor.describe.recover;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static pipelite.executor.describe.recover.LsfExecutorRecoverJob.extractExitCode;
-import static pipelite.executor.describe.recover.LsfExecutorRecoverJob.extractJobResult;
+import static pipelite.executor.describe.recover.LsfExecutorRecoverJob.*;
 
 import org.junit.jupiter.api.Test;
 import pipelite.executor.describe.DescribeJobsResult;
@@ -33,40 +32,18 @@ public class LsfExecutorRecoverJobTest {
   }
 
   @Test
-  public void testExtractJobResultCompletedWithExitCode() {
-    LsfRequestContext request = request();
-    DescribeJobsResult<LsfRequestContext> result =
-        extractJobResult(
-            request,
-            "Summary of time in seconds spent in various states:\n"
-                + "JOBID   USER    JOB_NAME  PEND    PSUSP   RUN     USUSP   SSUSP   UNKWN   TOTAL\n"
-                + "873209  rasko   fdfs      1       0       0       0       0       0       1\n"
-                + "\n"
-                + "[rasko@noah-login-01 ~]$ bhist -l 873209\n"
-                + "\n"
-                + "Job <873209>, User <rasko>, Project <default>, Command <fdfs>, Esub <esub>\n"
-                + "Sun Jan 10 17:50:11: Submitted from host <noah-login-01>, to Queue <research-rh\n"
-                + "                     74>, CWD <$HOME>, Requested Resources <rusage[numcpus=1:du\n"
-                + "                     ration=480]>;\n"
-                + "Sun Jan 10 17:50:12: Dispatched to <hx-noah-10-04>, Effective RES_REQ <select[t\n"
-                + "                     ype == local] order[r15s:pg] rusage[numcpus=1.00:duration=\n"
-                + "                     8h:decay=0] span[hosts=1] >;\n"
-                + "Sun Jan 10 17:50:12: Starting (Pid 87178);\n"
-                + "Sun Jan 10 17:50:12: Running with execution home </homes/rasko>, Execution CWD\n"
-                + "                     </homes/rasko>, Execution Pid <87178>;\n"
-                + "Sun Jan 10 17:50:12: Exited with exit code 127. The CPU time used is 0.0 second\n"
-                + "                     s;\n"
-                + "Sun Jan 10 17:50:12: Completed <exit>;\n"
-                + "\n"
-                + "\n"
-                + " CORELIMIT\n"
-                + "      0 M\n"
-                + "\n"
-                + "Summary of time in seconds spent in various states by  Sun Jan 10 17:50:12\n"
-                + "  PEND     PSUSP    RUN      USUSP    SSUSP    UNKWN    TOTAL\n"
-                + "  1        0        0        0        0        0        1");
-    assertThat(result.result.isError()).isTrue();
-    assertThat(result.result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("127");
+  public void testGetRecoveryLines() {
+    assertThat(getRecoveryLines("text\n" + "\n")).isEqualTo("text\n" + "\n");
+
+    assertThat(
+            getRecoveryLines(
+                "text before\n"
+                    + "\n"
+                    + "The output (if any) follows:\n"
+                    + "\n"
+                    + "text after\n"
+                    + "\n"))
+        .isEqualTo("text before\n" + "\n");
   }
 
   @Test
@@ -101,7 +78,7 @@ public class LsfExecutorRecoverJobTest {
   }
 
   @Test
-  public void testExtractJobResultCompletedSuccesfully() {
+  public void testExtractJobResultCompletedSuccessfully() {
     LsfRequestContext request = request();
     DescribeJobsResult<LsfRequestContext> result =
         extractJobResult(
@@ -147,6 +124,43 @@ public class LsfExecutorRecoverJobTest {
   }
 
   @Test
+  public void testExtractJobResultCompletedWithExitCode() {
+    LsfRequestContext request = request();
+    DescribeJobsResult<LsfRequestContext> result =
+        extractJobResult(
+            request,
+            "Summary of time in seconds spent in various states:\n"
+                + "JOBID   USER    JOB_NAME  PEND    PSUSP   RUN     USUSP   SSUSP   UNKWN   TOTAL\n"
+                + "873209  rasko   fdfs      1       0       0       0       0       0       1\n"
+                + "\n"
+                + "[rasko@noah-login-01 ~]$ bhist -l 873209\n"
+                + "\n"
+                + "Job <873209>, User <rasko>, Project <default>, Command <fdfs>, Esub <esub>\n"
+                + "Sun Jan 10 17:50:11: Submitted from host <noah-login-01>, to Queue <research-rh\n"
+                + "                     74>, CWD <$HOME>, Requested Resources <rusage[numcpus=1:du\n"
+                + "                     ration=480]>;\n"
+                + "Sun Jan 10 17:50:12: Dispatched to <hx-noah-10-04>, Effective RES_REQ <select[t\n"
+                + "                     ype == local] order[r15s:pg] rusage[numcpus=1.00:duration=\n"
+                + "                     8h:decay=0] span[hosts=1] >;\n"
+                + "Sun Jan 10 17:50:12: Starting (Pid 87178);\n"
+                + "Sun Jan 10 17:50:12: Running with execution home </homes/rasko>, Execution CWD\n"
+                + "                     </homes/rasko>, Execution Pid <87178>;\n"
+                + "Sun Jan 10 17:50:12: Exited with exit code 127. The CPU time used is 0.0 second\n"
+                + "                     s;\n"
+                + "Sun Jan 10 17:50:12: Completed <exit>;\n"
+                + "\n"
+                + "\n"
+                + " CORELIMIT\n"
+                + "      0 M\n"
+                + "\n"
+                + "Summary of time in seconds spent in various states by  Sun Jan 10 17:50:12\n"
+                + "  PEND     PSUSP    RUN      USUSP    SSUSP    UNKWN    TOTAL\n"
+                + "  1        0        0        0        0        0        1");
+    assertThat(result.result.isExecutionError()).isTrue();
+    assertThat(result.result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("127");
+  }
+
+  @Test
   public void testExtractJobResultExitedWithExitCode() {
     LsfRequestContext request = request();
     DescribeJobsResult<LsfRequestContext> result =
@@ -188,8 +202,52 @@ public class LsfExecutorRecoverJobTest {
                 + "\n"
                 + "/ebi/lsf/ebi-spool2/01/1611511573.6138156: line 8: dfsddf: command not found\n"
                 + "\n");
-    assertThat(result.result.isError()).isTrue();
+    assertThat(result.result.isExecutionError()).isTrue();
     assertThat(result.result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("127");
+  }
+
+  @Test
+  public void testExtractJobResultExitedWithTimeout() {
+    LsfRequestContext request = request();
+    DescribeJobsResult<LsfRequestContext> result =
+        extractJobResult(
+            request,
+            "\n"
+                + "ob <sleep 120> was submitted from host <codon-login-02> by user <rasko> in cluster <codon> at Wed Oct 26 18:09:37 2022\n"
+                + "Job was executed on host(s) <hl-codon-113-03>, in queue <production>, as user <rasko> in cluster <codon> at Wed Oct 26 18:11:57 2022\n"
+                + "</homes/rasko> was used as the home directory.\n"
+                + "</homes/rasko> was used as the working directory.\n"
+                + "Started at Wed Oct 26 18:11:57 2022\n"
+                + "Terminated at Wed Oct 26 18:17:15 2022\n"
+                + "Results reported at Wed Oct 26 18:17:15 2022\n"
+                + " \n"
+                + "Your job looked like:\n"
+                + " \n"
+                + "------------------------------------------------------------\n"
+                + "# LSBATCH: User input\n"
+                + "sleep 120\n"
+                + "------------------------------------------------------------\n"
+                + " \n"
+                + "TERM_RUNLIMIT: job killed after reaching LSF run time limit.\n"
+                + "Exited with signal termination: 12.\n"
+                + " \n"
+                + "Resource usage summary:\n"
+                + " \n"
+                + "    CPU time :                                   0.03 sec.\n"
+                + "    Max Memory :                                 -\n"
+                + "    Average Memory :                             -\n"
+                + "    Total Requested Memory :                     -\n"
+                + "    Delta Memory :                               -\n"
+                + "    Max Swap :                                   -\n"
+                + "    Max Processes :                              1\n"
+                + "    Max Threads :                                1\n"
+                + "    Run time :                                   338 sec.\n"
+                + "    Turnaround time :                            458 sec.\n"
+                + " \n"
+                + "The output (if any) follows:\n"
+                + "\n");
+    assertThat(result.result.isTimeoutError()).isTrue();
+    assertThat(result.result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isNull();
   }
 
   @Test

@@ -106,6 +106,12 @@ public class DescribeJobsResult<RequestContext extends DefaultRequestContext> {
       return this;
     }
 
+    public Builder<RequestContext> timeoutError() {
+      this.result = StageExecutorResult.timeoutError();
+      this.exitCode = null;
+      return this;
+    }
+
     public Builder<RequestContext> executionError() {
       this.result = StageExecutorResult.executionError();
       this.exitCode = null;

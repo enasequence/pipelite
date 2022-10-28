@@ -43,7 +43,7 @@ public class LsfExecutorPollJobsTest {
         new DescribeJobsPollRequests<>(List.of(new LsfRequestContext("861487", "outFile")));
 
     DescribeJobsResult<LsfRequestContext> result =
-        extractJobResult(requests, "861487|PEND|-|-|-|-|-\n");
+        extractJobResult(requests, "861487|PEND|-|-|-|-|-|-\n");
     assertThat(result.request.getJobId()).isEqualTo("861487");
     assertThat(result.result.isActive()).isTrue();
     assertThat(result.result.attribute(StageExecutorResultAttribute.JOB_ID)).isEqualTo("861487");
@@ -58,7 +58,7 @@ public class LsfExecutorPollJobsTest {
                 new LsfRequestContext("861488", "outFile")));
 
     DescribeJobsResults<LsfRequestContext> results =
-        extractJobResults(requests, "861487|PEND|-|-|-|-|-\n" + "861488|PEND|-|-|-|-|-\n");
+        extractJobResults(requests, "861487|PEND|-|-|-|-|-|-\n" + "861488|PEND|-|-|-|-|-|-\n");
 
     assertThat(results.found.size()).isEqualTo(2);
     assertThat(results.notFound.size()).isEqualTo(0);
@@ -84,9 +84,9 @@ public class LsfExecutorPollJobsTest {
     DescribeJobsResults<LsfRequestContext> results =
         extractJobResults(
             requests,
-            "872793|DONE|-|0.0 second(s)|-|-|hx-noah-05-14\n"
-                + "872794|DONE|-|0.0 second(s)|-|-|hx-noah-05-14\n"
-                + "872795|DONE|-|0.0 second(s)|-|-|hx-noah-05-14\n");
+            "872793|DONE|-|0.0 second(s)|-|-|hx-noah-05-14|-\n"
+                + "872794|DONE|-|0.0 second(s)|-|-|hx-noah-05-14|-\n"
+                + "872795|DONE|-|0.0 second(s)|-|-|hx-noah-05-14|-\n");
 
     assertThat(results.found.size()).isEqualTo(3);
     assertThat(results.found.get(0).request.getJobId()).isEqualTo("872793");
@@ -116,10 +116,10 @@ public class LsfExecutorPollJobsTest {
     DescribeJobsResults<LsfRequestContext> results =
         extractJobResults(
             requests,
-            "873206|EXIT|127|0.0 second(s)|-|-|hx-noah-43-02\n"
-                + "873207|EXIT|127|0.0 second(s)|-|-|hx-noah-43-02\n"
+            "873206|EXIT|127|0.0 second(s)|-|-|hx-noah-43-02|-\n"
+                + "873207|EXIT|127|0.0 second(s)|-|-|hx-noah-43-02|-\n"
                 + "Job <6065212> is not found\n"
-                + "873209|EXIT|127|0.0 second(s)|-|-|hx-noah-10-04\n");
+                + "873209|EXIT|127|0.0 second(s)|-|-|hx-noah-10-04|-\n");
 
     assertThat(results.found.size()).isEqualTo(3);
     assertThat(results.notFound.size()).isEqualTo(1);
@@ -136,5 +136,19 @@ public class LsfExecutorPollJobsTest {
         .isEqualTo("873207");
     assertThat(results.found.get(2).result.attribute(StageExecutorResultAttribute.JOB_ID))
         .isEqualTo("873209");
+  }
+
+  @Test
+  public void testExtractJobResultTimeout() {
+    DescribeJobsPollRequests<LsfRequestContext> requests =
+        new DescribeJobsPollRequests<>(List.of(new LsfRequestContext("861487", "outFile")));
+
+    DescribeJobsResult<LsfRequestContext> result =
+        extractJobResult(
+            requests,
+            "861487|EXIT|12|0.0 second(s)|-|-|hl-codon-102-04|TERM_RUNLIMIT: job killed after reaching LSF run time limit\n");
+    assertThat(result.request.getJobId()).isEqualTo("861487");
+    assertThat(result.result.isTimeoutError()).isTrue();
+    assertThat(result.result.attribute(StageExecutorResultAttribute.JOB_ID)).isEqualTo("861487");
   }
 }

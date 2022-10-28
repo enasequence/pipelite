@@ -26,14 +26,18 @@ import pipelite.stage.executor.StageExecutorResultAttribute;
 @Flogger
 public class LsfExecutorPollJobs implements PollJobs<LsfExecutorContext, LsfRequestContext> {
   private static final String BJOBS_CMD =
-      "bjobs -o \"jobid stat exit_code cpu_used max_mem avg_mem exec_host delimiter='|'\" -noheader ";
+      "bjobs -o \"jobid stat exit_code cpu_used max_mem avg_mem exec_host exit_reason delimiter='|'\" -noheader ";
 
   private static final Pattern BJOBS_UNKNOWN_JOB_PATTERN =
       Pattern.compile("Job <(\\d+)\\> is not found");
 
-  private static final String BJOBS_JOB_SUCCESS = "DONE";
-  private static final String BJOBS_JOB_ERROR = "EXIT";
+  private static final String BJOBS_EXIT_REASON_TIMEOUT =
+      "TERM_RUNLIMIT: job killed after reaching LSF run time limit";
 
+  private static final String BJOBS_STATUS_DONE = "DONE";
+  private static final String BJOBS_STATUS_EXIT = "EXIT";
+
+  private static final int BJOBS_COLUMNS = 8;
   private static final int BJOBS_COLUMN_JOB_ID = 0;
   private static final int BJOBS_COLUMN_STATUS = 1;
   private static final int BJOBS_COLUMN_EXIT_CODE = 2;
@@ -41,6 +45,7 @@ public class LsfExecutorPollJobs implements PollJobs<LsfExecutorContext, LsfRequ
   private static final int BJOBS_COLUMN_MAX_MEM = 4;
   private static final int BJOBS_COLUMN_AVG_MEM = 5;
   private static final int BJOBS_COLUMN_HOST = 6;
+  private static final int BJOBS_COLUMN_EXIT_REASON = 7;
 
   @Override
   public DescribeJobsResults<LsfRequestContext> pollJobs(
@@ -88,8 +93,8 @@ public class LsfExecutorPollJobs implements PollJobs<LsfExecutorContext, LsfRequ
 
   public static DescribeJobsResult<LsfRequestContext> extractKnownJobResult(
       DescribeJobsPollRequests<LsfRequestContext> requests, String line) {
-    String[] column = line.split("\\|");
-    if (column.length != 7) {
+    String[] column = line.trim().split("\\|");
+    if (column.length != BJOBS_COLUMNS) {
       log.atWarning().log("Unexpected LSF bjobs output line: " + line);
       return null;
     }
@@ -98,10 +103,15 @@ public class LsfExecutorPollJobs implements PollJobs<LsfExecutorContext, LsfRequ
 
     DescribeJobsResult.Builder result = DescribeJobsResult.builder(requests, jobId);
 
-    if (column[BJOBS_COLUMN_STATUS].equals(BJOBS_JOB_SUCCESS)) {
+    if (column[BJOBS_COLUMN_STATUS].equals(BJOBS_STATUS_DONE)) {
       result.success();
-    } else if (column[BJOBS_COLUMN_STATUS].equals(BJOBS_JOB_ERROR)) {
-      result.executionError(column[BJOBS_COLUMN_EXIT_CODE]);
+    } else if (column[BJOBS_COLUMN_STATUS].equals(BJOBS_STATUS_EXIT)) {
+      if (column[BJOBS_COLUMN_EXIT_REASON].startsWith(BJOBS_EXIT_REASON_TIMEOUT)) {
+        result.timeoutError();
+      } else {
+        String exitCode = column[BJOBS_COLUMN_EXIT_CODE];
+        result.executionError(exitCode);
+      }
     } else {
       result.active();
     }

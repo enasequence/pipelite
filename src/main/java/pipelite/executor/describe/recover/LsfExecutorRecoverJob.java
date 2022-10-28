@@ -25,8 +25,15 @@ import pipelite.executor.describe.context.request.LsfRequestContext;
 public class LsfExecutorRecoverJob implements RecoverJob<LsfExecutorContext, LsfRequestContext> {
 
   private static final int JOB_RECOVERY_LINES = 1000;
-  private static final Pattern JOB_RECOVERY_EXIT_CODE_PATTERN =
+  private static final String JOB_RECOVERY_LAST_LINE = "The output (if any) follows";
+
+  private static final Pattern JOB_EXIT_CODE_PATTERN =
       Pattern.compile("Exited with exit code (\\d+)");
+
+  private static final String JOB_COMPLETED = "Successfully completed";
+  private static final String JOB_DONE = "Done successfully"; // bhist -f result
+  private static final String JOB_TIMEOUT =
+      "TERM_RUNLIMIT: job killed after reaching LSF run time limit";
 
   @Override
   public DescribeJobsResult<LsfRequestContext> recoverJob(
@@ -34,26 +41,42 @@ public class LsfExecutorRecoverJob implements RecoverJob<LsfExecutorContext, Lsf
     String outFile = request.getOutFile();
     log.atWarning().log(
         "Recovering LSF job " + request.getJobId() + " result from output file: " + outFile);
-    String str = readOutFile(executorContext.cmdRunner(), outFile, JOB_RECOVERY_LINES);
-    return extractJobResult(request, str);
+
+    // The recovery is done by reading lines from the beginning of the output file.
+    String lines = readOutFile(executorContext.cmdRunner(), outFile, JOB_RECOVERY_LINES);
+    lines = getRecoveryLines(lines);
+    return extractJobResult(request, lines);
+  }
+
+  public static String getRecoveryLines(String lines) {
+    if (lines == null) {
+      return null;
+    }
+    int i = lines.indexOf(JOB_RECOVERY_LAST_LINE);
+    if (i > -1) {
+      lines = lines.substring(0, i);
+    }
+    return lines;
   }
 
   /** Extract job result from the output file. Returns null if the result could not be extracted. */
   public static DescribeJobsResult<LsfRequestContext> extractJobResult(
-      LsfRequestContext request, String str) {
-    if (str == null) {
+      LsfRequestContext request, String lines) {
+    if (lines == null) {
       return null;
     }
 
     DescribeJobsResult.Builder<LsfRequestContext> result = DescribeJobsResult.builder(request);
 
-    if (str.contains("Done successfully") // bhist -f result
-        || str.contains("Successfully completed") // output file result
-    ) {
+    if (extractSuccess(lines)) {
       return result.success().build();
     }
 
-    Integer exitCode = extractExitCode(str);
+    if (extractTimeout(lines)) {
+      return result.timeoutError().build();
+    }
+
+    Integer exitCode = extractExitCode(lines);
     if (exitCode != null) {
       return result.executionError(exitCode).build();
     }
@@ -61,12 +84,20 @@ public class LsfExecutorRecoverJob implements RecoverJob<LsfExecutorContext, Lsf
     return null;
   }
 
+  public static boolean extractSuccess(String lines) {
+    return lines.contains(JOB_COMPLETED) || lines.contains(JOB_DONE);
+  }
+
+  public static boolean extractTimeout(String lines) {
+    return lines.contains(JOB_TIMEOUT);
+  }
+
   /**
    * Extracts exit code from the output file. Returns null if the exit code could not be extracted.
    */
-  public static Integer extractExitCode(String str) {
+  public static Integer extractExitCode(String lines) {
     try {
-      Matcher m = JOB_RECOVERY_EXIT_CODE_PATTERN.matcher(str);
+      Matcher m = JOB_EXIT_CODE_PATTERN.matcher(lines);
       return m.find() ? Integer.valueOf(m.group(1)) : null;
     } catch (Exception ex) {
       return null;
