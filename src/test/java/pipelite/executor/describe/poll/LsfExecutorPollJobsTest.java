@@ -25,16 +25,16 @@ import pipelite.stage.executor.StageExecutorResultAttribute;
 public class LsfExecutorPollJobsTest {
 
   @Test
-  public void testExtractUnknownJobResult() {
+  public void testExtractLostJobResult() {
     DescribeJobsPollRequests<LsfRequestContext> requests =
         new DescribeJobsPollRequests<>(List.of(new LsfRequestContext("345654", "outFile")));
 
-    assertThat(extractUnknownJobResult(requests, "Job <345654> is not found.")).isNotNull();
-    assertThat(extractUnknownJobResult(requests, "Job <345654> is not found")).isNotNull();
-    assertThat(extractUnknownJobResult(requests, "Job <345654> is not found.").result).isNull();
-    assertThat(extractUnknownJobResult(requests, "Job <345654> is not found").result).isNull();
-    assertThat(extractUnknownJobResult(requests, "Job <345654> is ")).isNull();
-    assertThat(extractUnknownJobResult(requests, "INVALID")).isNull();
+    assertThat(extractLostJobResult(requests, "Job <345654> is not found.").result.isLostError())
+        .isTrue();
+    assertThat(extractLostJobResult(requests, "Job <345654> is not found").result.isLostError())
+        .isTrue();
+    assertThat(extractLostJobResult(requests, "Job <345654> is ")).isNull();
+    assertThat(extractLostJobResult(requests, "INVALID")).isNull();
   }
 
   @Test
@@ -50,6 +50,20 @@ public class LsfExecutorPollJobsTest {
   }
 
   @Test
+  public void testExtractJobResultTimeout() {
+    DescribeJobsPollRequests<LsfRequestContext> requests =
+        new DescribeJobsPollRequests<>(List.of(new LsfRequestContext("861487", "outFile")));
+
+    DescribeJobsResult<LsfRequestContext> result =
+        extractJobResult(
+            requests,
+            "861487|EXIT|12|0.0 second(s)|-|-|hl-codon-102-04|TERM_RUNLIMIT: job killed after reaching LSF run time limit\n");
+    assertThat(result.request.getJobId()).isEqualTo("861487");
+    assertThat(result.result.isTimeoutError()).isTrue();
+    assertThat(result.result.attribute(StageExecutorResultAttribute.JOB_ID)).isEqualTo("861487");
+  }
+
+  @Test
   public void testExtractJobResultsPending() {
     DescribeJobsPollRequests<LsfRequestContext> requests =
         new DescribeJobsPollRequests<>(
@@ -61,7 +75,6 @@ public class LsfExecutorPollJobsTest {
         extractJobResults(requests, "861487|PEND|-|-|-|-|-|-\n" + "861488|PEND|-|-|-|-|-|-\n");
 
     assertThat(results.found.size()).isEqualTo(2);
-    assertThat(results.notFound.size()).isEqualTo(0);
     assertThat(results.found.get(0).request.getJobId()).isEqualTo("861487");
     assertThat(results.found.get(1).request.getJobId()).isEqualTo("861488");
     assertThat(results.found.get(0).result.isActive()).isTrue();
@@ -70,6 +83,8 @@ public class LsfExecutorPollJobsTest {
         .isEqualTo("861487");
     assertThat(results.found.get(1).result.attribute(StageExecutorResultAttribute.JOB_ID))
         .isEqualTo("861488");
+
+    assertThat(results.lost.size()).isEqualTo(0);
   }
 
   @Test
@@ -101,10 +116,12 @@ public class LsfExecutorPollJobsTest {
         .isEqualTo("872794");
     assertThat(results.found.get(2).result.attribute(StageExecutorResultAttribute.JOB_ID))
         .isEqualTo("872795");
+
+    assertThat(results.lost.size()).isEqualTo(0);
   }
 
   @Test
-  public void testExtractJobResultsExitAndNotFound() {
+  public void testExtractJobResultsFoundAndLost() {
     DescribeJobsPollRequests<LsfRequestContext> requests =
         new DescribeJobsPollRequests<>(
             Arrays.asList(
@@ -122,33 +139,23 @@ public class LsfExecutorPollJobsTest {
                 + "873209|EXIT|127|0.0 second(s)|-|-|hx-noah-10-04|-\n");
 
     assertThat(results.found.size()).isEqualTo(3);
-    assertThat(results.notFound.size()).isEqualTo(1);
     assertThat(results.found.get(0).request.getJobId()).isEqualTo("873206");
     assertThat(results.found.get(1).request.getJobId()).isEqualTo("873207");
-    assertThat(results.notFound.get(0).getJobId()).isEqualTo("6065212");
     assertThat(results.found.get(2).request.getJobId()).isEqualTo("873209");
-    assertThat(results.found.get(0).result.isError()).isTrue();
-    assertThat(results.found.get(1).result.isError()).isTrue();
-    assertThat(results.found.get(2).result.isError()).isTrue();
+    assertThat(results.found.get(0).result.isExecutionError()).isTrue();
+    assertThat(results.found.get(1).result.isExecutionError()).isTrue();
+    assertThat(results.found.get(2).result.isExecutionError()).isTrue();
     assertThat(results.found.get(0).result.attribute(StageExecutorResultAttribute.JOB_ID))
         .isEqualTo("873206");
     assertThat(results.found.get(1).result.attribute(StageExecutorResultAttribute.JOB_ID))
         .isEqualTo("873207");
     assertThat(results.found.get(2).result.attribute(StageExecutorResultAttribute.JOB_ID))
         .isEqualTo("873209");
-  }
 
-  @Test
-  public void testExtractJobResultTimeout() {
-    DescribeJobsPollRequests<LsfRequestContext> requests =
-        new DescribeJobsPollRequests<>(List.of(new LsfRequestContext("861487", "outFile")));
-
-    DescribeJobsResult<LsfRequestContext> result =
-        extractJobResult(
-            requests,
-            "861487|EXIT|12|0.0 second(s)|-|-|hl-codon-102-04|TERM_RUNLIMIT: job killed after reaching LSF run time limit\n");
-    assertThat(result.request.getJobId()).isEqualTo("861487");
-    assertThat(result.result.isTimeoutError()).isTrue();
-    assertThat(result.result.attribute(StageExecutorResultAttribute.JOB_ID)).isEqualTo("861487");
+    assertThat(results.lost.size()).isEqualTo(1);
+    assertThat(results.lost.get(0).request.getJobId()).isEqualTo("6065212");
+    assertThat(results.lost.get(0).result.isLostError()).isTrue();
+    assertThat(results.lost.get(0).result.attribute(StageExecutorResultAttribute.JOB_ID))
+        .isEqualTo("6065212");
   }
 }

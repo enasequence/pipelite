@@ -17,12 +17,9 @@ import pipelite.stage.executor.StageExecutorState;
 public enum ErrorType {
   EXECUTION_ERROR,
   TIMEOUT_ERROR,
+  LOST_ERROR,
   PERMANENT_ERROR,
   INTERNAL_ERROR;
-
-  public boolean isExecutable() {
-    return this != TIMEOUT_ERROR && this != PERMANENT_ERROR;
-  }
 
   public static ErrorType from(StageExecutorState state) {
     if (!state.isError()) {
@@ -33,6 +30,8 @@ public enum ErrorType {
         return ErrorType.EXECUTION_ERROR;
       case TIMEOUT_ERROR:
         return ErrorType.TIMEOUT_ERROR;
+      case LOST_ERROR:
+        return ErrorType.LOST_ERROR;
       case PERMANENT_ERROR:
         return ErrorType.PERMANENT_ERROR;
       case INTERNAL_ERROR:
@@ -43,5 +42,9 @@ public enum ErrorType {
 
   public static ErrorType from(StageExecutorResult result) {
     return from(result.state());
+  }
+
+  public boolean isPermanentError() {
+    return this == TIMEOUT_ERROR || this == PERMANENT_ERROR;
   }
 }

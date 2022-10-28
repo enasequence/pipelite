@@ -30,6 +30,7 @@ public class ErrorTypeTest {
         .isEqualTo(ErrorType.INTERNAL_ERROR);
     assertThat(ErrorType.from(StageExecutorResult.timeoutError()))
         .isEqualTo(ErrorType.TIMEOUT_ERROR);
+    assertThat(ErrorType.from(StageExecutorResult.lostError())).isEqualTo(ErrorType.LOST_ERROR);
   }
 
   @Test
@@ -44,5 +45,6 @@ public class ErrorTypeTest {
     assertThat(ErrorType.from(StageExecutorState.INTERNAL_ERROR))
         .isEqualTo(ErrorType.INTERNAL_ERROR);
     assertThat(ErrorType.from(StageExecutorState.TIMEOUT_ERROR)).isEqualTo(ErrorType.TIMEOUT_ERROR);
+    assertThat(ErrorType.from(StageExecutorState.LOST_ERROR)).isEqualTo(ErrorType.LOST_ERROR);
   }
 }

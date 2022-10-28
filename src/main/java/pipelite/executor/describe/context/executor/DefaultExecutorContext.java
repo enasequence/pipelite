@@ -36,7 +36,7 @@ public abstract class DefaultExecutorContext<RequestContext extends DefaultReque
 
   /** Recover asynchronous job execution status. */
   public DescribeJobsResult<RequestContext> recoverJob(RequestContext request) {
-    // By default, asynchronous job execution recovery will fail.
-    return DescribeJobsResult.builder(request).executionError().build();
+    // By default, recovery will fail.
+    return DescribeJobsResult.builder(request).lostError().build();
   }
 }

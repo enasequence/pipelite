@@ -42,6 +42,9 @@ public class DescribeJobsResult<RequestContext extends DefaultRequestContext> {
     if (request == null) {
       throw new PipeliteException("Missing job request");
     }
+    if (result == null) {
+      throw new PipeliteException("Missing job result");
+    }
     return new DescribeJobsResult(request, result);
   }
 
@@ -87,13 +90,6 @@ public class DescribeJobsResult<RequestContext extends DefaultRequestContext> {
       return this;
     }
 
-    public Builder<RequestContext> unknown() {
-      log.atWarning().log("Job " + this.jobId + " was not found");
-      this.result = null;
-      this.exitCode = null;
-      return this;
-    }
-
     public Builder<RequestContext> active() {
       this.result = StageExecutorResult.active();
       this.exitCode = null;
@@ -107,7 +103,15 @@ public class DescribeJobsResult<RequestContext extends DefaultRequestContext> {
     }
 
     public Builder<RequestContext> timeoutError() {
+      log.atSevere().log("Job " + this.jobId + " timeout");
       this.result = StageExecutorResult.timeoutError();
+      this.exitCode = null;
+      return this;
+    }
+
+    public Builder<RequestContext> lostError() {
+      log.atSevere().log("Job " + this.jobId + " was lost");
+      this.result = StageExecutorResult.lostError();
       this.exitCode = null;
       return this;
     }
@@ -142,16 +146,17 @@ public class DescribeJobsResult<RequestContext extends DefaultRequestContext> {
     }
 
     public DescribeJobsResult build() {
-      if (result != null) {
-        if (attributes != null) {
-          attributes.forEach((key, value) -> result.attribute(key, value));
-        }
-        if (jobId != null) {
-          result.attribute(StageExecutorResultAttribute.JOB_ID, jobId);
-        }
-        if (exitCode != null) {
-          result.attribute(StageExecutorResultAttribute.EXIT_CODE, String.valueOf(exitCode));
-        }
+      if (result == null) {
+        throw new PipeliteException("Missing job result");
+      }
+      if (attributes != null) {
+        attributes.forEach((key, value) -> result.attribute(key, value));
+      }
+      if (jobId != null) {
+        result.attribute(StageExecutorResultAttribute.JOB_ID, jobId);
+      }
+      if (exitCode != null) {
+        result.attribute(StageExecutorResultAttribute.EXIT_CODE, String.valueOf(exitCode));
       }
       return DescribeJobsResult.create(request, result);
     }

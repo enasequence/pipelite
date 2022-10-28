@@ -174,34 +174,43 @@ public class DescribeJobs<
     DescribeJobsPollRequests<RequestContext> pollRequests =
         new DescribeJobsPollRequests<>(requestBatch);
     DescribeJobsResults<RequestContext> pollResults = executorContext.pollJobs(pollRequests);
-    // Add poll results.
+
+    // Found results.
     pollResults.found.forEach(r -> results.put(requestMap.get(r.request.getJobId()), r.result));
 
-    List<RequestContext> notFoundPollRequests = pollResults.notFound;
-    if (!notFoundPollRequests.isEmpty()) {
-      notFoundPollRequests.forEach(
+    // Lost results.
+    List<DescribeJobsResult<RequestContext>> lostPollResults = pollResults.lost;
+    if (!lostPollResults.isEmpty()) {
+      lostPollResults.forEach(
           r ->
               log.atSevere().log(
-                  "Failed to retrieve " + executorName + " job result " + r.getJobId()));
+                  "Failed to retrieve result for "
+                      + executorName
+                      + " job "
+                      + r.request.getJobId()));
 
       // Recover jobs.
+      List<RequestContext> recoverRequests =
+          lostPollResults.stream().map(r -> r.request).collect(Collectors.toList());
       DescribeJobsResults<RequestContext> recoverResults =
-          recoverJobs(notFoundPollRequests, executorContext);
-      // Add recover results.
+          recoverJobs(recoverRequests, executorContext);
+
+      // Recovered results.
       recoverResults.found.forEach(
           r -> results.put(requestMap.get(r.request.getJobId()), r.result));
-      recoverResults.notFound.forEach(
-          r -> results.put(requestMap.get(r.getJobId()), StageExecutorResult.executionError()));
+
+      // Lost results.
+      recoverResults.lost.forEach(r -> results.put(requestMap.get(r.request.getJobId()), r.result));
 
       recoverResults.found.forEach(
           r ->
               log.atInfo().log(
-                  "Recovered " + executorName + " job result " + r.request.getJobId()));
+                  "Recovered result for " + executorName + " job " + r.request.getJobId()));
 
-      recoverResults.notFound.forEach(
+      recoverResults.lost.forEach(
           r ->
               log.atSevere().log(
-                  "Failed to recover " + executorName + " job result " + r.getJobId()));
+                  "Failed to recover result for " + executorName + " job " + r.request.getJobId()));
     }
 
     return results;
@@ -227,32 +236,31 @@ public class DescribeJobs<
     ExecutorService executorService = Executors.newFixedThreadPool(RECOVERY_PARALLELISM);
     try {
       requests.forEach(
-          r -> {
-            executorService.submit(
-                () -> {
-                  try {
-                    // Attempt to recover job result using the output file.
-                    DescribeJobsResult<RequestContext> recoverJobResult =
-                        executorContext.recoverJob(r);
-                    results.add(recoverJobResult);
-                  } catch (Exception ex) {
-                    log.atSevere().withCause(ex).log(
-                        "Failed to recover "
-                            + executorContext.executorName()
-                            + " job "
-                            + r.getJobId());
-                  } finally {
-                    remainingCount.decrementAndGet();
-                  }
-                });
-          });
+          r ->
+              executorService.submit(
+                  () -> {
+                    try {
+                      // Attempt to recover job result.
+                      DescribeJobsResult<RequestContext> recoverJobResult =
+                          executorContext.recoverJob(r);
+                      results.add(recoverJobResult);
+                    } catch (Exception ex) {
+                      log.atSevere().withCause(ex).log(
+                          "Failed to recover result for "
+                              + executorContext.executorName()
+                              + " job "
+                              + r.getJobId());
+                    } finally {
+                      remainingCount.decrementAndGet();
+                    }
+                  }));
 
       try {
         while (remainingCount.get() > 0) {
           Time.waitUntil(RECOVERY_WAIT, until);
         }
       } catch (PipeliteTimeoutException ex) {
-        log.atWarning().log("LSF job recovery timeout exceeded.");
+        log.atWarning().log("Job recovery timeout exceeded.");
       }
     } finally {
       executorService.shutdownNow();

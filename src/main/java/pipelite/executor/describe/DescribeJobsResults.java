@@ -12,6 +12,7 @@ package pipelite.executor.describe;
 
 import java.util.ArrayList;
 import java.util.List;
+import pipelite.exception.PipeliteException;
 import pipelite.executor.describe.context.request.DefaultRequestContext;
 
 /** Job results. */
@@ -19,21 +20,21 @@ public class DescribeJobsResults<RequestContext extends DefaultRequestContext> {
   /** Jobs found by the executor backend. */
   public final List<DescribeJobsResult<RequestContext>> found = new ArrayList<>();
 
-  /** Jobs not found by the executor backend. */
-  public final List<RequestContext> notFound = new ArrayList<>();
+  /** Jobs lost by the executor backend. */
+  public final List<DescribeJobsResult<RequestContext>> lost = new ArrayList<>();
 
-  /**
-   * Adds a job result. If the stage execution result is null then the job is considered not to have
-   * been found by the executor backend.
-   */
+  /** Adds a job result. */
   public void add(DescribeJobsResult<RequestContext> result) {
     if (result == null) {
       return;
     }
-    if (result.result != null) {
-      found.add(result); // A job result is available.
+    if (result.result == null) {
+      throw new PipeliteException("Missing job result");
+    }
+    if (result.result.isLostError()) {
+      lost.add(result); // Job result is not available.
     } else {
-      notFound.add(result.request); // A job result is not available.
+      found.add(result); // Job result is available.
     }
   }
 }

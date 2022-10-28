@@ -64,8 +64,8 @@ public class KubernetesExecutorPollJobs
       }
       for (String jobId : requests.jobIds) {
         if (!jobIds.contains(jobId)) {
-          // Unknown job id.
-          results.add(DescribeJobsResult.builder(requests, jobId).unknown().build());
+          // The job has been lost.
+          results.add(DescribeJobsResult.builder(requests, jobId).lostError().build());
         }
       }
     } catch (KubernetesClientException e) {

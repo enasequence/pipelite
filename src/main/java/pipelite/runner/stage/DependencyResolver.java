@@ -157,8 +157,8 @@ public class DependencyResolver {
       return false;
     }
     if (stage.isError()) {
-      if (!stage.isExecutableErrorType()) {
-        // Stage error type prevents further executions.
+      if (stage.isPermanentError()) {
+        // Permanent error prevents further executions.
         return false;
       }
 
@@ -205,8 +205,8 @@ public class DependencyResolver {
     }
 
     if (stage.isError()) {
-      if (!stage.isExecutableErrorType()) {
-        // Stage error type prevents further executions.
+      if (stage.isPermanentError()) {
+        // Permanent error prevents further executions.
         return false;
       }
 
@@ -221,14 +221,13 @@ public class DependencyResolver {
 
   /**
    * Returns true if the stage has failed and exceeded the maximum execution count or if the error
-   * type prevents further executions
+   * is a permanent error
    *
    * @param stage the stage of interest
    * @return true if the stage has failed and exceeded the maximum execution count or if the error
-   *     type prevents further executions
+   *     is a permanent error
    */
   public static boolean isPermanentlyFailedStage(Stage stage) {
-    return (stage.isError() && !stage.hasMaximumRetriesLeft())
-        || (stage.isError() && !stage.isExecutableErrorType());
+    return (stage.isError() && !stage.hasMaximumRetriesLeft()) || stage.isPermanentError();
   }
 }

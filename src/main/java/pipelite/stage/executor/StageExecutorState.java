@@ -11,16 +11,21 @@
 package pipelite.stage.executor;
 
 public enum StageExecutorState {
+  /** The job has been submitted. */
   SUBMITTED,
+  /** The job is active. */
   ACTIVE,
+  /** The job has completed successfully. */
   SUCCESS,
-  /** Execution errors are retried. */
+  /** The job has completed with an execution error. */
   EXECUTION_ERROR,
-  /** Timeout errors are not retried. */
+  /** The job has completed with a timeout error. */
   TIMEOUT_ERROR,
-  /** Permanent errors are not retried. */
+  /** The job has been lost. */
+  LOST_ERROR,
+  /** The job has completed with a permanent error. */
   PERMANENT_ERROR,
-  /** Internal errors are retried. */
+  /** The job has completed with an internal error. */
   INTERNAL_ERROR;
 
   public boolean isSuccess() {
@@ -30,6 +35,7 @@ public enum StageExecutorState {
   public boolean isError() {
     return this == EXECUTION_ERROR
         || this == TIMEOUT_ERROR
+        || this == LOST_ERROR
         || this == PERMANENT_ERROR
         || this == INTERNAL_ERROR;
   }

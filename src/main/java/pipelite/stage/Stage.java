@@ -58,20 +58,18 @@ public class Stage {
     return stageEntity.getStageState() == StageState.ACTIVE;
   }
 
-  public boolean isError() {
-    return stageEntity.getStageState() == StageState.ERROR;
-  }
-
   public boolean isSuccess() {
     return stageEntity.getStageState() == StageState.SUCCESS;
   }
 
-  public boolean isExecutableErrorType() {
-    if (stageEntity.getErrorType() != null) {
-      return stageEntity.getErrorType().isExecutable();
-    } else {
-      return true;
-    }
+  public boolean isError() {
+    return stageEntity.getStageState() == StageState.ERROR;
+  }
+
+  public boolean isPermanentError() {
+    return isError()
+        && stageEntity.getErrorType() != null
+        && stageEntity.getErrorType().isPermanentError();
   }
 
   /**

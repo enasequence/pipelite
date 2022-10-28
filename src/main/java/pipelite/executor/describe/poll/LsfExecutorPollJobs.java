@@ -28,7 +28,7 @@ public class LsfExecutorPollJobs implements PollJobs<LsfExecutorContext, LsfRequ
   private static final String BJOBS_CMD =
       "bjobs -o \"jobid stat exit_code cpu_used max_mem avg_mem exec_host exit_reason delimiter='|'\" -noheader ";
 
-  private static final Pattern BJOBS_UNKNOWN_JOB_PATTERN =
+  private static final Pattern BJOBS_LOST_JOB_PATTERN =
       Pattern.compile("Job <(\\d+)\\> is not found");
 
   private static final String BJOBS_EXIT_REASON_TIMEOUT =
@@ -70,20 +70,21 @@ public class LsfExecutorPollJobs implements PollJobs<LsfExecutorContext, LsfRequ
 
   public static DescribeJobsResult<LsfRequestContext> extractJobResult(
       DescribeJobsPollRequests<LsfRequestContext> requests, String line) {
-    DescribeJobsResult<LsfRequestContext> result = extractUnknownJobResult(requests, line);
+    DescribeJobsResult<LsfRequestContext> result = extractLostJobResult(requests, line);
     if (result == null) {
-      result = extractKnownJobResult(requests, line);
+      result = extractFoundJobResult(requests, line);
     }
     return result;
   }
 
-  public static DescribeJobsResult<LsfRequestContext> extractUnknownJobResult(
+  public static DescribeJobsResult<LsfRequestContext> extractLostJobResult(
       DescribeJobsPollRequests<LsfRequestContext> requests, String line) {
     try {
-      Matcher m = BJOBS_UNKNOWN_JOB_PATTERN.matcher(line);
+      Matcher m = BJOBS_LOST_JOB_PATTERN.matcher(line);
       if (m.find()) {
+        // The job has been lost.
         String jobId = m.group(1);
-        return DescribeJobsResult.builder(requests, jobId).unknown().build();
+        return DescribeJobsResult.builder(requests, jobId).lostError().build();
       }
       return null;
     } catch (Exception ex) {
@@ -91,7 +92,7 @@ public class LsfExecutorPollJobs implements PollJobs<LsfExecutorContext, LsfRequ
     }
   }
 
-  public static DescribeJobsResult<LsfRequestContext> extractKnownJobResult(
+  public static DescribeJobsResult<LsfRequestContext> extractFoundJobResult(
       DescribeJobsPollRequests<LsfRequestContext> requests, String line) {
     String[] column = line.trim().split("\\|");
     if (column.length != BJOBS_COLUMNS) {

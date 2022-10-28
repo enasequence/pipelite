@@ -30,9 +30,6 @@ public class DescribeJobsResultTest {
 
   @Test
   public void create() {
-    assertThat(DescribeJobsResult.create(request, null).request).isSameAs(request);
-    assertThat(DescribeJobsResult.create(request, null).result).isNull();
-
     assertThat(DescribeJobsResult.create(request, result).request).isSameAs(request);
     assertThat(DescribeJobsResult.create(request, result).result).isSameAs(result);
 
@@ -40,30 +37,32 @@ public class DescribeJobsResultTest {
         .isInstanceOf(PipeliteException.class);
     assertThatThrownBy(() -> DescribeJobsResult.create(null, result))
         .isInstanceOf(PipeliteException.class);
+    assertThatThrownBy(() -> DescribeJobsResult.create(request, null))
+        .isInstanceOf(PipeliteException.class);
   }
 
   @Test
   public void build() {
-    assertThat(DescribeJobsResult.builder(request).unknown().build().request).isSameAs(request);
     assertThat(DescribeJobsResult.builder(request).active().build().request).isSameAs(request);
     assertThat(DescribeJobsResult.builder(request).executionError().build().request)
         .isSameAs(request);
+    assertThat(DescribeJobsResult.builder(request).lostError().build().request).isSameAs(request);
     assertThat(DescribeJobsResult.builder(request).success().build().request).isSameAs(request);
 
-    assertThat(DescribeJobsResult.builder(request).unknown().build().result).isNull();
     assertThat(DescribeJobsResult.builder(request).active().build().result.state())
         .isSameAs(StageExecutorState.ACTIVE);
     assertThat(DescribeJobsResult.builder(request).executionError().build().result.state())
         .isSameAs(StageExecutorState.EXECUTION_ERROR);
+    assertThat(DescribeJobsResult.builder(request).lostError().build().result.state())
+        .isSameAs(StageExecutorState.LOST_ERROR);
     assertThat(DescribeJobsResult.builder(request).success().build().result.state())
         .isSameAs(StageExecutorState.SUCCESS);
 
-    assertThat(DescribeJobsResult.builder(request).unknown().isCompleted()).isFalse();
     assertThat(DescribeJobsResult.builder(request).active().isCompleted()).isFalse();
     assertThat(DescribeJobsResult.builder(request).executionError().isCompleted()).isTrue();
+    assertThat(DescribeJobsResult.builder(request).lostError().isCompleted()).isTrue();
     assertThat(DescribeJobsResult.builder(request).success().isCompleted()).isTrue();
 
-    assertThat(DescribeJobsResult.builder(request).unknown().build().result).isNull();
     assertThat(
             DescribeJobsResult.builder(request)
                 .active()
@@ -87,15 +86,19 @@ public class DescribeJobsResultTest {
         .isEqualTo("1");
     assertThat(
             DescribeJobsResult.builder(request)
+                .lostError()
+                .build()
+                .result
+                .attribute(StageExecutorResultAttribute.EXIT_CODE))
+        .isNull();
+    assertThat(
+            DescribeJobsResult.builder(request)
                 .success()
                 .build()
                 .result
                 .attribute(StageExecutorResultAttribute.EXIT_CODE))
         .isEqualTo("0");
 
-    assertThat(
-            DescribeJobsResult.builder(request).unknown().attribute("test", "test").build().result)
-        .isNull();
     assertThat(
             DescribeJobsResult.builder(request)
                 .active()
@@ -107,6 +110,14 @@ public class DescribeJobsResultTest {
     assertThat(
             DescribeJobsResult.builder(request)
                 .executionError()
+                .attribute("test", "test")
+                .build()
+                .result
+                .attribute("test"))
+        .isEqualTo("test");
+    assertThat(
+            DescribeJobsResult.builder(request)
+                .lostError()
                 .attribute("test", "test")
                 .build()
                 .result

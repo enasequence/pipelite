@@ -68,6 +68,10 @@ public class StageExecutorResult {
     return new StageExecutorResult(StageExecutorState.TIMEOUT_ERROR);
   }
 
+  public static StageExecutorResult lostError() {
+    return new StageExecutorResult(StageExecutorState.LOST_ERROR);
+  }
+
   public static StageExecutorResult permanentError() {
     return new StageExecutorResult(StageExecutorState.PERMANENT_ERROR);
   }
@@ -100,8 +104,8 @@ public class StageExecutorResult {
     return state == StageExecutorState.TIMEOUT_ERROR;
   }
 
-  public boolean isPermanentError() {
-    return state == StageExecutorState.PERMANENT_ERROR;
+  public boolean isLostError() {
+    return state == StageExecutorState.LOST_ERROR;
   }
 
   public boolean isInternalError() {

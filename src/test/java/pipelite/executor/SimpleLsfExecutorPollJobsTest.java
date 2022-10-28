@@ -37,6 +37,7 @@ import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
+import pipelite.stage.parameters.cmd.LogFileSavePolicy;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithManager.class,
@@ -65,7 +66,7 @@ public class SimpleLsfExecutorPollJobsTest {
     doAnswer(
             invocation -> {
               LsfRequestContext request = invocation.getArgument(1);
-              return DescribeJobsResult.builder(request).executionError().build();
+              return DescribeJobsResult.builder(request).lostError().build();
             })
         .when(recoverJob)
         .recoverJob(any(), any());
@@ -74,7 +75,8 @@ public class SimpleLsfExecutorPollJobsTest {
   private SimpleLsfExecutor mockSubmitJob() {
     SimpleLsfExecutor executor = Mockito.spy(new SimpleLsfExecutor());
     executor.setCmd("TEST");
-    SimpleLsfExecutorParameters params = SimpleLsfExecutorParameters.builder().build();
+    SimpleLsfExecutorParameters params =
+        SimpleLsfExecutorParameters.builder().logSave(LogFileSavePolicy.NEVER).build();
     executor.setExecutorParams(params);
     Stage stage = Stage.builder().stageName(STAGE_NAME).executor(executor).build();
     executor.prepareExecution(pipeliteServices, PIPELINE_NAME, PROCESS_ID, stage);
@@ -133,11 +135,11 @@ public class SimpleLsfExecutorPollJobsTest {
   }
 
   @Test
-  public void testUnknown() {
+  public void testLostError() {
     SimpleLsfExecutor executor = mockSubmitJob();
-    mockPollJobs(result -> result.unknown());
+    mockPollJobs(result -> result.lostError());
     StageExecutorResult result = execute(executor);
-    assertThat(result.isError()).isTrue();
+    assertThat(result.isLostError()).isTrue();
     assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isNull();
   }
 }
