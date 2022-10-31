@@ -505,7 +505,7 @@ The Pipeline process stages are stored in this table with associated execution i
 - EXEC_DATA: the stage executor data
 - EXEC_PARAMS: the stage executor parameters
 - EXEC_RESULT_PARAMS: the stage executor result parameters
-- EXIT_CDDE: the command exit code
+- EXIT_CODE: the command exit code
 - ERROR_TYPE: 
   - EXECUTION_ERROR: command execution failed with an exit code not registered as a permanent error.
   - PERMANENT_ERROR: command execution failed with an exit code registered as a permanent error.
