@@ -40,7 +40,7 @@ public class SlurmDescribeJobsCache
       @Autowired InternalErrorService internalErrorService,
       @Autowired SlurmExecutorPollJobs pollJobs,
       @Autowired SlurmExecutorRecoverJob recoverJob) {
-    super(serviceConfiguration, internalErrorService, 100);
+    super(serviceConfiguration, internalErrorService, null);
     this.pollJobs = pollJobs;
     this.recoverJob = recoverJob;
   }

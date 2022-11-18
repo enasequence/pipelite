@@ -28,6 +28,10 @@ public class DescribeJobsResult<RequestContext extends DefaultRequestContext> {
     this.result = result;
   }
 
+  public String jobId() {
+    return result.attribute(StageExecutorResultAttribute.JOB_ID);
+  }
+
   /**
    * Creates a job result.
    *

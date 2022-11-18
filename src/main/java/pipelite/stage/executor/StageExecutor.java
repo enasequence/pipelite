@@ -78,6 +78,8 @@ public interface StageExecutor<T extends ExecutorParameters> {
       stage.setExecutor(resetLsfExecutorState((LsfExecutor) executor));
     } else if (executor instanceof SimpleLsfExecutor) {
       stage.setExecutor(resetSimpleLsfExecutorState((SimpleLsfExecutor) executor));
+    } else if (executor instanceof SimpleSlurmExecutor) {
+      stage.setExecutor(resetSimpleSlurmExecutorState((SimpleSlurmExecutor) executor));
     } else if (executor instanceof KubernetesExecutor) {
       stage.setExecutor(resetKubernetesExecutorState((KubernetesExecutor) executor));
     } else if (executor instanceof AwsBatchExecutor) {
@@ -139,6 +141,26 @@ public interface StageExecutor<T extends ExecutorParameters> {
   }
 
   /**
+   * Creates an executor that executes the command using SLURM locally or on a remote host using
+   * ssh.
+   *
+   * @param cmd the command
+   * @return the command executor
+   */
+  static SimpleSlurmExecutor createSimpleSlurmExecutor(String cmd) {
+    SimpleSlurmExecutor slurmExecutor = new SimpleSlurmExecutor();
+    slurmExecutor.setCmd(cmd);
+    return slurmExecutor;
+  }
+
+  private static SimpleSlurmExecutor resetSimpleSlurmExecutorState(
+      SimpleSlurmExecutor oldExecutor) {
+    SimpleSlurmExecutor newExecutor = StageExecutor.createSimpleSlurmExecutor(oldExecutor.getCmd());
+    newExecutor.setExecutorParams(oldExecutor.getExecutorParams());
+    return newExecutor;
+  }
+
+  /**
    * Creates an executor that executes the command using Kubernetes.
    *
    * @param image the image
@@ -180,9 +202,9 @@ public interface StageExecutor<T extends ExecutorParameters> {
    * Creates an asynchronous test executor that returns the given stage state.
    *
    * @param executorState the state returned by the executor
+   * @return an asynchronous test executor that returns the given stage state
    * @paran submitTime the stage submit time
    * @paran executionTime the stage execution time
-   * @return an asynchronous test executor that returns the given stage state
    */
   static AsyncTestExecutor createAsyncTestExecutor(
       StageExecutorState executorState, Duration submitTime, Duration executionTime) {
@@ -194,9 +216,9 @@ public interface StageExecutor<T extends ExecutorParameters> {
    * Creates an asynchronous test executor that executes the given callback.
    *
    * @param callback the callback to execute
+   * @return an asynchronous test executor that executes the given callback
    * @paran submitTime the stage submit time
    * @paran executionTime the stage execution time
-   * @return an asynchronous test executor that executes the given callback
    */
   static AsyncTestExecutor createAsyncTestExecutor(
       Function<StageExecutorRequest, StageExecutorResult> callback,
@@ -217,8 +239,8 @@ public interface StageExecutor<T extends ExecutorParameters> {
    * Creates a synchronous test executor that returns the given stage state.
    *
    * @param executorState the state returned by the executor
-   * @paran executionTime the stage execution time
    * @return a synchronous test executor that returns the given stage state
+   * @paran executionTime the stage execution time
    */
   static SyncTestExecutor createSyncTestExecutor(
       StageExecutorState executorState, Duration executionTime) {
@@ -230,8 +252,8 @@ public interface StageExecutor<T extends ExecutorParameters> {
    * Creates a synchronous test executor that executes the given callback.
    *
    * @param callback the callback to execute
-   * @paran executionTime the stage execution time
    * @return a synchronous test executor that executes the given callback
+   * @paran executionTime the stage execution time
    */
   static SyncTestExecutor createSyncTestExecutor(
       Function<StageExecutorRequest, StageExecutorResult> callback, Duration executionTime) {

@@ -37,8 +37,8 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
     implements JsonSerializableExecutor {
 
   private static final String SUBMIT_CMD = "bsub";
-  private static final String TERMINATE_CMD = "bkill ";
-  private static final Pattern SUBMIT_JOB_SUBMITTED_PATTERN =
+  private static final String TERMINATE_CMD = "bkill";
+  private static final Pattern SUBMIT_JOB_ID_PATTERN =
       Pattern.compile("Job <(\\d+)\\> is submitted");
 
   public AbstractLsfExecutor() {
@@ -109,12 +109,12 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
   }
 
   static String getTerminateCmd(String jobId) {
-    return TERMINATE_CMD + jobId;
+    return TERMINATE_CMD + " " + jobId;
   }
 
   public static String extractJobIdFromSubmitOutput(String str) {
     try {
-      Matcher m = SUBMIT_JOB_SUBMITTED_PATTERN.matcher(str);
+      Matcher m = SUBMIT_JOB_ID_PATTERN.matcher(str);
       if (!m.find()) {
         throw new PipeliteException("No LSF submit job id.");
       }

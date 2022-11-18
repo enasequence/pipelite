@@ -11,14 +11,20 @@
 package pipelite.executor;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.time.Duration;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
+import pipelite.exception.PipeliteException;
 import pipelite.executor.describe.DescribeJobs;
 import pipelite.executor.describe.context.executor.SlurmExecutorContext;
 import pipelite.executor.describe.context.request.SlurmRequestContext;
+import pipelite.retryable.RetryableExternalAction;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorRequest;
+import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.AbstractSlurmExecutorParameters;
 import pipelite.stage.path.SlurmLogFilePathResolver;
 
@@ -30,6 +36,13 @@ import pipelite.stage.path.SlurmLogFilePathResolver;
 public abstract class AbstractSlurmExecutor<T extends AbstractSlurmExecutorParameters>
     extends AsyncCmdExecutor<T, SlurmRequestContext, SlurmExecutorContext>
     implements JsonSerializableExecutor {
+
+  private static final String SUBMIT_CMD = "sbatch";
+  private static final String TERMINATE_CMD = "scancel";
+  private static final Pattern SUBMIT_JOB_ID_PATTERN =
+      Pattern.compile("Submitted batch job (\\d+)");
+
+  public static final Duration DEFAULT_TIMEOUT = Duration.ofDays(7);
 
   public AbstractSlurmExecutor() {
     super("SLURM", new SlurmLogFilePathResolver());
@@ -55,4 +68,46 @@ public abstract class AbstractSlurmExecutor<T extends AbstractSlurmExecutorParam
    * @return the submit command.
    */
   public abstract String getSubmitCmd(StageExecutorRequest request);
+
+  protected StringBuilder getSharedSubmitCmd(StageExecutorRequest request) {
+    StringBuilder cmd = new StringBuilder();
+    cmd.append(SUBMIT_CMD);
+    return cmd;
+  }
+
+  @Override
+  protected SubmitJobResult submitJob() {
+    StageExecutorRequest request = getRequest();
+    outFile = logFilePathResolver.resolvedPath().file(request);
+    StageExecutorResult result =
+        RetryableExternalAction.execute(() -> getCmdRunner().execute(getSubmitCmd(request)));
+    String jobId = null;
+    if (!result.isError()) {
+      jobId = extractJobIdFromSubmitOutput(result.stageLog());
+      logContext(log.atInfo(), request).log("Submitted SLURM job " + jobId);
+    }
+    return new SubmitJobResult(jobId, result);
+  }
+
+  @Override
+  protected void terminateJob() {
+    log.atWarning().log("Terminating SLURM job " + getJobId());
+    getCmdRunner().execute(getTerminateCmd(getJobId()));
+  }
+
+  static String getTerminateCmd(String jobId) {
+    return TERMINATE_CMD + " " + jobId;
+  }
+
+  public static String extractJobIdFromSubmitOutput(String str) {
+    try {
+      Matcher m = SUBMIT_JOB_ID_PATTERN.matcher(str);
+      if (!m.find()) {
+        throw new PipeliteException("No SLURM submit job id.");
+      }
+      return m.group(1);
+    } catch (Exception ex) {
+      throw new PipeliteException("No SLURM submit job id.");
+    }
+  }
 }
