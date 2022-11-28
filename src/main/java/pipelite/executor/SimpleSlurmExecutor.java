@@ -88,6 +88,9 @@ public class SimpleSlurmExecutor extends AbstractSlurmExecutor<SimpleSlurmExecut
 
     // Options
 
+    // TODO: SLURM to create the output directory once version 23.02 is available
+    // to preserve SLURM script execution output instead of sending it to dev/null.
+
     script.longOption("job-name", jobName);
     script.longOption("output", "/dev/null");
     script.longOption("error", "/dev/null");

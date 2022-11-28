@@ -29,13 +29,46 @@ import pipelite.stage.executor.StageExecutorResultAttribute;
 @Flogger
 public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, SlurmRequestContext> {
 
-  private static final String SQUEUE_CMD =
-      "squeue --me --states=all -O \"JobID:|,State:|,exit_code:|,AllocNodes:|\"";
+  // Job steps https://slurm.schedmd.com/job_launch.html#job_records
 
-  private static final String SQUEUE_HEADER = "JOBID|STATE|EXIT_CODE|ALLOC_NODES|";
-  private static final String SQUEUE_STATUS_COMPLETED = "COMPLETED";
-  private static final String SQUEUE_STATUS_TIMEOUT = "TIMEOUT";
-  private static final List<String> SQUEUE_STATUS_FAILED =
+  private static final String SQUEUE_CMD =
+      "squeue --me --states=all -O \"JobID:|,State:|,exit_code:|\"";
+
+  private static final String SQUEUE_HEADER = "JOBID|STATE|EXIT_CODE|";
+  private static final int SQUEUE_COLUMNS = 3;
+  private static final int SQUEUE_COLUMN_JOB_ID = 0;
+  private static final int SQUEUE_COLUMN_STATE = 1;
+  // private static final int SQUEUE_COLUMN_EXIT_CODE = 2;
+
+  private static final String SACCT_CMD =
+      "sacct -p --format JobId,State,ExitCode,TotalCPU,MaxRSS,Elapsed,NodeList -j ";
+
+  // sacct -p --units=K --format JobId,State,ExitCode,TotalCPU,MaxRSS,NodeList,Elapsed -j 9332
+  // JobID|State|ExitCode|TotalCPU|MaxRSS|NodeList|Elapsed|
+  // 9332|COMPLETED|0:0|00:00.004||hl-codon-100-01|00:00:05|
+  // 9332.batch|COMPLETED|0:0|00:00.003|132K|hl-codon-100-01|00:00:05|
+  // 9332.extern|COMPLETED|0:0|00:00:00|0|hl-codon-100-01|00:00:05|
+  private static final String SACCT_HEADER =
+      "JobID|State|ExitCode|TotalCPU|MaxRSS|Elapsed|NodeList|";
+
+  private static final int SACCT_COLUMNS = 7;
+  private static final int SACCT_COLUMN_JOB_ID = 0;
+  private static final int SACCT_COLUMN_STATE = 1;
+  private static final int SACCT_COLUMN_EXIT_CODE = 2;
+  private static final int SACCT_COLUMN_CPU_TIME = 3;
+  private static final int SACCT_COLUMN_MAX_MEMORY = 4;
+  private static final int SACCT_COLUMN_ELAPSED = 5;
+  private static final int SACCT_COLUMN_HOST = 6;
+
+  /** State, exit code and elapsed time are extracted from the output line without step. */
+  private static final String SACCT_NO_STEP = "";
+
+  /** Cpu time, max memory and host are extracted from the output line with batch step. */
+  private static final String SACCT_BATCH_STEP = "batch";
+
+  private static final String JOB_STATE_COMPLETED = "COMPLETED";
+  private static final String JOB_STATE_TIMEOUT = "TIMEOUT";
+  private static final List<String> JOB_STATE_FAILED =
       Arrays.asList(
           "FAILED",
           "BOOT_FAIL",
@@ -46,13 +79,7 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
           "OUT_OF_MEMORY",
           "PREEMPTED",
           "REVOKED",
-          SQUEUE_STATUS_TIMEOUT);
-
-  private static final int SQUEUE_COLUMNS = 4;
-  private static final int SQUEUE_COLUMN_JOB_ID = 0;
-  private static final int SQUEUE_COLUMN_STATUS = 1;
-  private static final int SQUEUE_COLUMN_EXIT_CODE = 2;
-  private static final int SQUEUE_COLUMN_HOST = 3;
+          JOB_STATE_TIMEOUT);
 
   @Override
   public DescribeJobsResults<SlurmRequestContext> pollJobs(
@@ -61,13 +88,17 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
 
     StageExecutorResult result = executorContext.cmdRunner().execute(SQUEUE_CMD);
     if (result.isError()) {
-      throw new PipeliteException("Failed to poll SLURM jobs: " + result.stageLog());
+      throw new PipeliteException("Failed to poll SLURM jobs using squeue: " + result.stageLog());
     }
-    return extractJobResults(requests, result.stageLog());
+
+    String str = result.stageLog();
+    return extractSqueueJobResults(executorContext, requests, str);
   }
 
-  public static DescribeJobsResults<SlurmRequestContext> extractJobResults(
-      DescribeJobsPollRequests<SlurmRequestContext> requests, String str) {
+  public static DescribeJobsResults<SlurmRequestContext> extractSqueueJobResults(
+      SlurmExecutorContext executorContext,
+      DescribeJobsPollRequests<SlurmRequestContext> requests,
+      String str) {
     DescribeJobsResults<SlurmRequestContext> results = new DescribeJobsResults<>();
     Set<String> jobIds = new HashSet<>();
 
@@ -79,7 +110,8 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
           throw new PipeliteException("Unexpected SLURM squeue header line: " + line);
         }
       } else {
-        DescribeJobsResult<SlurmRequestContext> result = extractJobResult(requests, line);
+        DescribeJobsResult<SlurmRequestContext> result =
+            extractSqueueJobResult(executorContext, requests, line);
         if (result != null) {
           results.add(result);
           jobIds.add(result.jobId());
@@ -97,8 +129,10 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
     return results;
   }
 
-  public static DescribeJobsResult<SlurmRequestContext> extractJobResult(
-      DescribeJobsPollRequests<SlurmRequestContext> requests, String line) {
+  public static DescribeJobsResult<SlurmRequestContext> extractSqueueJobResult(
+      SlurmExecutorContext executorContext,
+      DescribeJobsPollRequests<SlurmRequestContext> requests,
+      String line) {
     String[] column = line.trim().split("\\|");
     if (column.length != SQUEUE_COLUMNS) {
       throw new PipeliteException("Unexpected SLURM squeue output line: " + line);
@@ -111,25 +145,121 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
       return null;
     }
 
-    DescribeJobsResult.Builder result = DescribeJobsResult.builder(requests, jobId);
+    DescribeJobsResult.Builder resultBuilder = DescribeJobsResult.builder(requests, jobId);
 
-    if (column[SQUEUE_COLUMN_STATUS].equals(SQUEUE_STATUS_COMPLETED)) {
-      result.success();
-    } else if (SQUEUE_STATUS_FAILED.contains(column[SQUEUE_COLUMN_STATUS])) {
-      if (column[SQUEUE_COLUMN_STATUS].equals(SQUEUE_STATUS_TIMEOUT)) {
-        result.timeoutError();
+    String state = column[SQUEUE_COLUMN_STATE];
+    if (JOB_STATE_COMPLETED.equals(state)) {
+      resultBuilder.success();
+    } else if (JOB_STATE_FAILED.contains(state)) {
+      if (JOB_STATE_TIMEOUT.equals(state)) {
+        resultBuilder.timeoutError();
       } else {
-        String exitCode = column[SQUEUE_COLUMN_EXIT_CODE];
-        result.executionError(exitCode);
+        // TODO: SLURM exit code is not correctly reported by squeue.
+        // https://bugs.schedmd.com/show_bug.cgi?id=15462
+        // String exitCode = column[SQUEUE_COLUMN_EXIT_CODE];
+        // result.executionError(exitCode);
+        resultBuilder.executionError();
       }
     } else {
-      result.active();
+      resultBuilder.active();
     }
 
-    if (result.isCompleted()) {
-      result.attribute(StageExecutorResultAttribute.EXEC_HOST, column[SQUEUE_COLUMN_HOST]);
+    if (resultBuilder.isCompleted()) {
+      extractSacctJobResult(executorContext, resultBuilder);
     }
 
-    return result.build();
+    return resultBuilder.build();
+  }
+
+  public static DescribeJobsResult<SlurmRequestContext> extractSacctJobResult(
+      SlurmExecutorContext executorContext, DescribeJobsResult.Builder resultBuilder) {
+    StageExecutorResult result =
+        executorContext.cmdRunner().execute(SACCT_CMD + resultBuilder.jobId());
+    if (result.isError()) {
+      throw new PipeliteException(
+          "Failed to get SLURM job status using sacct: " + result.stageLog());
+    }
+
+    String str = result.stageLog();
+
+    int lineNumber = 0;
+    for (String line : str.split("\\r?\\n")) {
+      lineNumber++;
+      if (lineNumber == 1) {
+        if (!SACCT_HEADER.equals(line)) {
+          throw new PipeliteException("Unexpected SLURM sacct header line: " + line);
+        }
+      } else {
+        extractSacctJobResult(resultBuilder, line);
+      }
+    }
+
+    return resultBuilder.build();
+  }
+
+  public static void extractSacctJobResult(DescribeJobsResult.Builder resultBuilder, String line) {
+    String[] column = line.trim().split("\\|");
+    if (column.length != SACCT_COLUMNS) {
+      throw new PipeliteException("Unexpected SLURM sacct output line: " + line);
+    }
+    String jobIdWithStep = column[SACCT_COLUMN_JOB_ID];
+    String jobId = extractSacctJobId(jobIdWithStep);
+
+    if (!resultBuilder.jobId().equals(jobId)) {
+      throw new PipeliteException("Unexpected SLURM sacct job id: " + jobId);
+    }
+
+    String step = extractSacctStep(jobIdWithStep);
+    if (step.equals(SACCT_NO_STEP)) {
+      String state = column[SACCT_COLUMN_STATE];
+      if (JOB_STATE_COMPLETED.equals(state)) {
+        resultBuilder.success();
+      } else if (JOB_STATE_FAILED.contains(state)) {
+        if (JOB_STATE_TIMEOUT.equals(state)) {
+          resultBuilder.timeoutError();
+        } else {
+          String exitCodeWithSignal = column[SACCT_COLUMN_EXIT_CODE];
+          String exitCode = extractSacctExitCode(exitCodeWithSignal);
+          resultBuilder.executionError(exitCode);
+        }
+      } else {
+        resultBuilder.active();
+      }
+      if (resultBuilder.isCompleted()) {
+        resultBuilder.attribute(
+            StageExecutorResultAttribute.ELAPSED_TIME, column[SACCT_COLUMN_ELAPSED]);
+      }
+    }
+
+    if (step.equals(SACCT_BATCH_STEP)) {
+      resultBuilder.attribute(StageExecutorResultAttribute.EXEC_HOST, column[SACCT_COLUMN_HOST]);
+      resultBuilder.attribute(StageExecutorResultAttribute.CPU_TIME, column[SACCT_COLUMN_CPU_TIME]);
+      resultBuilder.attribute(
+          StageExecutorResultAttribute.MAX_MEM, column[SACCT_COLUMN_MAX_MEMORY]);
+    }
+  }
+
+  public static String extractSacctJobId(String jobIdWithStep) {
+    return jobIdWithStep.replaceAll("\\..*$", "");
+  }
+
+  public static String extractSacctStep(String jobIdWithStep) {
+    if (jobIdWithStep.contains(".")) {
+      try {
+        return jobIdWithStep.split("\\.")[1];
+      } catch (Exception ex) {
+        throw new PipeliteException("Unexpected sacct job id with step: " + jobIdWithStep);
+      }
+    } else {
+      return "";
+    }
+  }
+
+  public static String extractSacctExitCode(String exitCodeWithSignal) {
+    try {
+      return exitCodeWithSignal.split(":")[0];
+    } catch (Exception ex) {
+      throw new PipeliteException("Unexpected sacct exit code with signal: " + exitCodeWithSignal);
+    }
   }
 }

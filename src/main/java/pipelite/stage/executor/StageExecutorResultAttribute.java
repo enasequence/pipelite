@@ -20,6 +20,7 @@ public class StageExecutorResultAttribute {
   public static final String CPU_TIME = "cpu time";
   public static final String AVG_MEM = "avg mem";
   public static final String MAX_MEM = "max mem";
+  public static final String ELAPSED_TIME = "elapsed time";
 
   private StageExecutorResultAttribute() {}
 }

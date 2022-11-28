@@ -16,6 +16,7 @@ import pipelite.exception.PipeliteException;
 import pipelite.executor.describe.DescribeJobsResult;
 import pipelite.executor.describe.context.executor.SlurmExecutorContext;
 import pipelite.executor.describe.context.request.SlurmRequestContext;
+import pipelite.executor.describe.poll.SlurmExecutorPollJobs;
 
 @Component
 @Flogger
@@ -25,7 +26,14 @@ public class SlurmExecutorRecoverJob
   @Override
   public DescribeJobsResult<SlurmRequestContext> recoverJob(
       SlurmExecutorContext executorContext, SlurmRequestContext request) {
-    // TODO
-    throw new PipeliteException("TODO: implement");
+    DescribeJobsResult.Builder resultBuilder = DescribeJobsResult.builder(request);
+    DescribeJobsResult<SlurmRequestContext> result =
+        SlurmExecutorPollJobs.extractSacctJobResult(executorContext, resultBuilder);
+
+    if (!result.result.isCompleted()) {
+      throw new PipeliteException(
+          "Unexpected SLURM recover job result: " + result.result.state().name());
+    }
+    return result;
   }
 }

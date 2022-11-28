@@ -86,6 +86,10 @@ public class DescribeJobsResult<RequestContext extends DefaultRequestContext> {
       this.jobId = request.getJobId();
     }
 
+    public String jobId() {
+      return jobId;
+    }
+
     public Builder<RequestContext> attribute(String key, Object value) {
       if (key == null || value == null) {
         return this;
@@ -139,7 +143,7 @@ public class DescribeJobsResult<RequestContext extends DefaultRequestContext> {
         try {
           this.exitCode = Integer.valueOf(exitCode);
         } catch (NumberFormatException ex) {
-          log.atSevere().log("Invalid exit code: " + exitCode);
+          throw new PipeliteException("Invalid exit code: " + exitCode);
         }
       }
       return this;
