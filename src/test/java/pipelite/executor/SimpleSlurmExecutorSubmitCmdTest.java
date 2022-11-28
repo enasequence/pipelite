@@ -10,17 +10,16 @@
  */
 package pipelite.executor;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.SimpleSlurmExecutorParameters;
 import pipelite.stage.path.SlurmLogFilePathResolver;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.time.Duration;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 public class SimpleSlurmExecutorSubmitCmdTest {
 
@@ -60,18 +59,30 @@ public class SimpleSlurmExecutorSubmitCmdTest {
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
         .isEqualTo(
-                "sbatch << EOF\n" +
-                        "#!/bin/bash\n" +
-                        "#SBATCH --job-name=\"" + PIPELINE_NAME + ":" + STAGE_NAME + ":" + PROCESS_ID + "\"\n" +
-                        "#SBATCH --output=\"/dev/null\"\n" +
-                        "#SBATCH --error=\"/dev/null\"\n" +
-                        "#SBATCH -n 2\n" +
-                        "#SBATCH --mem=\"1M\"\n" +
-                        "#SBATCH -t 1\n" +
-                        "#SBATCH -p TEST\n" +
-                        "mkdir -p " + logDir + "\n" +
-                        "test > " + logDir + "/" + logFileName + " 2>&1\n" +
-                        "EOF");
+            "sbatch << EOF\n"
+                + "#!/bin/bash\n"
+                + "#SBATCH --job-name=\""
+                + PIPELINE_NAME
+                + ":"
+                + STAGE_NAME
+                + ":"
+                + PROCESS_ID
+                + "\"\n"
+                + "#SBATCH --output=\"/dev/null\"\n"
+                + "#SBATCH --error=\"/dev/null\"\n"
+                + "#SBATCH -n 2\n"
+                + "#SBATCH --mem=\"1M\"\n"
+                + "#SBATCH -t 1\n"
+                + "#SBATCH -p TEST\n"
+                + "mkdir -p "
+                + logDir
+                + "\n"
+                + "test > "
+                + logDir
+                + "/"
+                + logFileName
+                + " 2>&1\n"
+                + "EOF");
   }
 
   @Test
@@ -80,22 +91,22 @@ public class SimpleSlurmExecutorSubmitCmdTest {
     SimpleSlurmExecutor executor = new SimpleSlurmExecutor();
     executor.setCmd("test");
     SimpleSlurmExecutorParameters params =
-            SimpleSlurmExecutorParameters.builder()
-                    .logDir(Files.createTempDirectory("TEMP").toString())
-                    .cpu(2)
-                    .memory(1)
-                    .queue("TEST")
-                    .timeout(Duration.ofMinutes(1))
-                    .build();
+        SimpleSlurmExecutorParameters.builder()
+            .logDir(Files.createTempDirectory("TEMP").toString())
+            .cpu(2)
+            .memory(1)
+            .queue("TEST")
+            .timeout(Duration.ofMinutes(1))
+            .build();
     executor.setExecutorParams(params);
 
     Stage stage = Stage.builder().stageName(STAGE_NAME).executor(executor).build();
     StageExecutorRequest request =
-            StageExecutorRequest.builder()
-                    .pipelineName(PIPELINE_NAME)
-                    .processId(PROCESS_ID)
-                    .stage(stage)
-                    .build();
+        StageExecutorRequest.builder()
+            .pipelineName(PIPELINE_NAME)
+            .processId(PROCESS_ID)
+            .stage(stage)
+            .build();
 
     String logDir = new SlurmLogFilePathResolver().resolvedPath().dir(request);
     String logFileName = new SlurmLogFilePathResolver().fileName(request);
@@ -104,18 +115,30 @@ public class SimpleSlurmExecutorSubmitCmdTest {
 
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
-            .isEqualTo(
-                    "sbatch << EOF\n" +
-                            "#!/bin/bash\n" +
-                            "#SBATCH --job-name=\"" + PIPELINE_NAME + ":" + STAGE_NAME + ":" + PROCESS_ID + "\"\n" +
-                            "#SBATCH --output=\"/dev/null\"\n" +
-                            "#SBATCH --error=\"/dev/null\"\n" +
-                            "#SBATCH -n 2\n" +
-                            "#SBATCH --mem=\"1\"\n" +
-                            "#SBATCH -t 1\n" +
-                            "#SBATCH -p TEST\n" +
-                            "mkdir -p " + logDir + "\n" +
-                            "test > " + logDir + "/" + logFileName + " 2>&1\n" +
-                            "EOF");
+        .isEqualTo(
+            "sbatch << EOF\n"
+                + "#!/bin/bash\n"
+                + "#SBATCH --job-name=\""
+                + PIPELINE_NAME
+                + ":"
+                + STAGE_NAME
+                + ":"
+                + PROCESS_ID
+                + "\"\n"
+                + "#SBATCH --output=\"/dev/null\"\n"
+                + "#SBATCH --error=\"/dev/null\"\n"
+                + "#SBATCH -n 2\n"
+                + "#SBATCH --mem=\"1\"\n"
+                + "#SBATCH -t 1\n"
+                + "#SBATCH -p TEST\n"
+                + "mkdir -p "
+                + logDir
+                + "\n"
+                + "test > "
+                + logDir
+                + "/"
+                + logFileName
+                + " 2>&1\n"
+                + "EOF");
   }
 }

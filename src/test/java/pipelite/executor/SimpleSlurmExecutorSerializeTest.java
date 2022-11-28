@@ -10,14 +10,14 @@
  */
 package pipelite.executor;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.Test;
 import pipelite.json.Json;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.path.FilePathResolverTestHelper;
 import pipelite.stage.path.SlurmLogFilePathResolver;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class SimpleSlurmExecutorSerializeTest {
 
@@ -43,7 +43,8 @@ public class SimpleSlurmExecutorSerializeTest {
                 + "  \"cmd\" : \"echo test\",\n"
                 + "  \"outFile\" : \"logDir/user/PIPELINE_NAME/PROCESS_ID/STAGE_NAME.out\"\n"
                 + "}");
-    SimpleSlurmExecutor deserializedSlurmExecutor = Json.deserialize(json, SimpleSlurmExecutor.class);
+    SimpleSlurmExecutor deserializedSlurmExecutor =
+        Json.deserialize(json, SimpleSlurmExecutor.class);
     assertThat(deserializedSlurmExecutor.getCmd()).isEqualTo(cmd);
     assertThat(deserializedSlurmExecutor.getJobId()).isEqualTo("test");
     assertThat(deserializedSlurmExecutor.getOutFile())
