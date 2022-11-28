@@ -14,9 +14,11 @@ import java.time.Duration;
 import java.util.List;
 import pipelite.configuration.properties.KubernetesTestConfiguration;
 import pipelite.configuration.properties.LsfTestConfiguration;
+import pipelite.configuration.properties.SlurmTestConfiguration;
 import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
+import pipelite.stage.parameters.SimpleSlurmExecutorParameters;
 
 public class ExecutorTestParameters {
 
@@ -36,6 +38,25 @@ public class ExecutorTestParameters {
     params.setImmediateRetries(immediateRetries);
     params.setMaximumRetries(maximumRetries);
     params.setPermanentErrors(permanentErrors);
+    return params;
+  }
+
+  public static SimpleSlurmExecutorParameters simpleSlurmParams(
+      SlurmTestConfiguration testConfiguration,
+      int immediateRetries,
+      int maximumRetries,
+      List<Integer> permanentErrors) {
+    SimpleSlurmExecutorParameters params = new SimpleSlurmExecutorParameters();
+    params.setHost(testConfiguration.getHost());
+    params.setUser(testConfiguration.getUser());
+    params.setLogDir(testConfiguration.getLogDir());
+    params.setQueue(testConfiguration.getQueue());
+    params.setTimeout(Duration.ofSeconds(180));
+    params.setImmediateRetries(immediateRetries);
+    params.setMaximumRetries(maximumRetries);
+    params.setPermanentErrors(permanentErrors);
+    params.setMemory(1);
+    params.setCpu(1);
     return params;
   }
 

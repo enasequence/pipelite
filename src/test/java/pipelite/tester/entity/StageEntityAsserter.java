@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import pipelite.configuration.properties.KubernetesTestConfiguration;
 import pipelite.configuration.properties.LsfTestConfiguration;
+import pipelite.configuration.properties.SlurmTestConfiguration;
 import pipelite.entity.StageEntity;
 import pipelite.entity.field.ErrorType;
 import pipelite.entity.field.StageState;
@@ -128,6 +129,60 @@ public class StageEntityAsserter {
                 + "}");
   }
 
+  private static void assertSimpleSlurmStageEntity(
+      TestType testType, SlurmTestConfiguration slurmTestConfiguration, StageEntity stageEntity) {
+    String cmd =
+        ExecutorTestExitCode.cmdAsString(
+            testType.lastExitCode(
+                stageEntity.getPipelineName(),
+                stageEntity.getProcessId(),
+                stageEntity.getStageName()));
+    List<Integer> permanentErrors = testType.permanentErrors();
+
+    assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.SimpleSlurmExecutor");
+
+    assertThat(stageEntity.getExecutorData()).contains("\"jobId\" : \"");
+    assertThat(stageEntity.getExecutorData()).contains("  \"cmd\" : \"" + cmd + "\"");
+    assertThat(stageEntity.getExecutorData()).contains("  \"outFile\" : \"");
+
+    assertThat(stageEntity.getExecutorParams())
+        .isEqualTo(
+            "{\n"
+                + "  \"timeout\" : 180000,\n"
+                + "  \"maximumRetries\" : "
+                + testType.maximumRetries()
+                + ",\n"
+                + "  \"immediateRetries\" : "
+                + testType.immediateRetries()
+                + ",\n"
+                + (permanentErrors != null && !permanentErrors.isEmpty()
+                    ? "  \"permanentErrors\" : [ "
+                        + String.join(
+                            ", ",
+                            permanentErrors.stream()
+                                .map(i -> i.toString())
+                                .collect(Collectors.toList()))
+                        + " ],\n"
+                    : "")
+                + "  \"logLines\" : 1000,\n"
+                + "  \"host\" : \""
+                + slurmTestConfiguration.getHost()
+                + "\",\n"
+                + "  \"user\" : \""
+                + slurmTestConfiguration.getUser()
+                + "\",\n"
+                + "  \"logDir\" : \""
+                + slurmTestConfiguration.getLogDir()
+                + "\",\n"
+                + "  \"logTimeout\" : 10000,\n"
+                + "  \"queue\" : \""
+                + slurmTestConfiguration.getQueue()
+                + "\",\n"
+                + "  \"cpu\" : 1,\n"
+                + "  \"memory\" : 1\n"
+                + "}");
+  }
+
   private static void assertKubernetesStageEntity(
       TestType testType,
       KubernetesTestConfiguration kubernetesTestConfiguration,
@@ -219,6 +274,20 @@ public class StageEntityAsserter {
     assertSimpleLsfStageEntity(testType, lsfTestConfiguration, stageEntity);
   }
 
+  public static void assertSubmittedSimpleSlurmStageEntity(
+      StageService stageService,
+      TestType testType,
+      SlurmTestConfiguration slurmTestConfiguration,
+      String pipelineName,
+      String processId,
+      String stageName) {
+
+    StageEntity stageEntity =
+        assertSubmittedStageEntity(stageService, testType, pipelineName, processId, stageName);
+
+    assertSimpleSlurmStageEntity(testType, slurmTestConfiguration, stageEntity);
+  }
+
   public static void assertSubmittedKubernetesStageEntity(
       StageService stageService,
       TestType testType,
@@ -246,6 +315,25 @@ public class StageEntityAsserter {
         assertCompletedStageEntity(stageService, testType, pipelineName, processId, stageName);
 
     assertSimpleLsfStageEntity(testType, lsfTestConfiguration, stageEntity);
+
+    assertThat(stageEntity.getResultParams()).contains("\"exit code\" : \"" + exitCode + "\"");
+    assertThat(stageEntity.getResultParams()).contains("\"job id\" :");
+    assertThat(String.valueOf(stageEntity.getExitCode())).isEqualTo(exitCode);
+  }
+
+  public static void assertCompletedSimpleSlurmStageEntity(
+      StageService stageService,
+      TestType testType,
+      SlurmTestConfiguration slurmTestConfiguration,
+      String pipelineName,
+      String processId,
+      String stageName) {
+    String exitCode = String.valueOf(testType.lastExitCode(pipelineName, processId, stageName));
+
+    StageEntity stageEntity =
+        assertCompletedStageEntity(stageService, testType, pipelineName, processId, stageName);
+
+    assertSimpleSlurmStageEntity(testType, slurmTestConfiguration, stageEntity);
 
     assertThat(stageEntity.getResultParams()).contains("\"exit code\" : \"" + exitCode + "\"");
     assertThat(stageEntity.getResultParams()).contains("\"job id\" :");
