@@ -14,7 +14,6 @@ import java.time.Duration;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.flogger.Flogger;
-import org.apache.commons.lang3.StringUtils;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 
