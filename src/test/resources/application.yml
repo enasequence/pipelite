@@ -18,6 +18,12 @@ pipelite:
       logDir: ${PIPELITE_TEST_LSF_LOG_DIR:}
       definitionDir: ${PIPELITE_TEST_LSF_DEFINITION_DIR:}
       queue: ${PIPELITE_TEST_LSF_QUEUE:}
+    slurm:
+      host: ${PIPELITE_TEST_SLURM_HOST:}
+      user: ${PIPELITE_TEST_SLURM_USER:}
+      logDir: ${PIPELITE_TEST_SLURM_LOG_DIR:}
+      definitionDir: ${PIPELITE_TEST_SLURM_DEFINITION_DIR:}
+      queue: ${PIPELITE_TEST_SLURM_QUEUE:}
     ssh:
       host: ${PIPELITE_TEST_SSH_HOST:}
       user: ${PIPELITE_TEST_SSH_USER:}
