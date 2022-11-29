@@ -26,6 +26,7 @@ public class SimpleLsfExecutorSubmitCmdTest {
   private static final String PIPELINE_NAME = "PIPELINE_NAME";
   private static final String PROCESS_ID = "PROCESS_ID";
   private static final String STAGE_NAME = "STAGE_NAME";
+  private static final String JOB_NAME = PIPELINE_NAME + ":" + STAGE_NAME + ":" + PROCESS_ID;
 
   @Test
   public void cmdMemUnitsM() throws IOException {
@@ -67,7 +68,10 @@ public class SimpleLsfExecutorSubmitCmdTest {
                 + logDir
                 + " -oo "
                 + logFileName
-                + " -n 2 -M 1M -R \"rusage[mem=1M:duration=1]\" -W 1 -q TEST -J STAGE_NAME test");
+                + " -n 2 -M 1M -R \"rusage[mem=1M:duration=1]\" -W 1 -q TEST"
+                + " -J "
+                + JOB_NAME
+                + " test");
   }
 
   @Test
@@ -109,7 +113,10 @@ public class SimpleLsfExecutorSubmitCmdTest {
                 + logDir
                 + " -oo "
                 + logFileName
-                + " -n 2 -M 1M -R \"rusage[mem=1M]\" -W 1 -q TEST -J STAGE_NAME test");
+                + " -n 2 -M 1M -R \"rusage[mem=1M]\" -W 1 -q TEST"
+                + " -J "
+                + JOB_NAME
+                + " test");
   }
 
   @Test
@@ -151,7 +158,10 @@ public class SimpleLsfExecutorSubmitCmdTest {
                 + logDir
                 + " -oo "
                 + logFileName
-                + " -n 2 -M 1 -R \"rusage[mem=1:duration=1]\" -W 1 -q TEST -J STAGE_NAME test");
+                + " -n 2 -M 1 -R \"rusage[mem=1:duration=1]\" -W 1 -q TEST"
+                + " -J "
+                + JOB_NAME
+                + " test");
   }
 
   @Test
@@ -192,7 +202,10 @@ public class SimpleLsfExecutorSubmitCmdTest {
                 + logDir
                 + " -oo "
                 + logFileName
-                + " -n 2 -M 1 -R \"rusage[mem=1]\" -W 1 -q TEST -J STAGE_NAME test");
+                + " -n 2 -M 1 -R \"rusage[mem=1]\" -W 1 -q TEST"
+                + " -J "
+                + JOB_NAME
+                + " test");
   }
 
   @Test
@@ -233,6 +246,9 @@ public class SimpleLsfExecutorSubmitCmdTest {
                 + logDir
                 + " -oo "
                 + logFileName
-                + " -n 2 -W 1 -g testGroup -q TEST -J STAGE_NAME test");
+                + " -n 2 -W 1 -g testGroup -q TEST"
+                + " -J "
+                + JOB_NAME
+                + " test");
   }
 }
