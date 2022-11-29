@@ -67,7 +67,7 @@ public class SimpleLsfExecutorSubmitCmdTest {
                 + logDir
                 + " -oo "
                 + logFileName
-                + " -n 2 -M 1M -R \"rusage[mem=1M:duration=1]\" -W 1 -q TEST test");
+                + " -n 2 -M 1M -R \"rusage[mem=1M:duration=1]\" -W 1 -q TEST -J STAGE_NAME test");
   }
 
   @Test
@@ -109,7 +109,7 @@ public class SimpleLsfExecutorSubmitCmdTest {
                 + logDir
                 + " -oo "
                 + logFileName
-                + " -n 2 -M 1M -R \"rusage[mem=1M]\" -W 1 -q TEST test");
+                + " -n 2 -M 1M -R \"rusage[mem=1M]\" -W 1 -q TEST -J STAGE_NAME test");
   }
 
   @Test
@@ -151,7 +151,7 @@ public class SimpleLsfExecutorSubmitCmdTest {
                 + logDir
                 + " -oo "
                 + logFileName
-                + " -n 2 -M 1 -R \"rusage[mem=1:duration=1]\" -W 1 -q TEST test");
+                + " -n 2 -M 1 -R \"rusage[mem=1:duration=1]\" -W 1 -q TEST -J STAGE_NAME test");
   }
 
   @Test
@@ -192,7 +192,7 @@ public class SimpleLsfExecutorSubmitCmdTest {
                 + logDir
                 + " -oo "
                 + logFileName
-                + " -n 2 -M 1 -R \"rusage[mem=1]\" -W 1 -q TEST test");
+                + " -n 2 -M 1 -R \"rusage[mem=1]\" -W 1 -q TEST -J STAGE_NAME test");
   }
 
   @Test
@@ -233,6 +233,6 @@ public class SimpleLsfExecutorSubmitCmdTest {
                 + logDir
                 + " -oo "
                 + logFileName
-                + " -n 2 -W 1 -g testGroup -q TEST test");
+                + " -n 2 -W 1 -g testGroup -q TEST -J STAGE_NAME test");
   }
 }
