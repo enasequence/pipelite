@@ -5,6 +5,7 @@ Pipelite workflow manager
 - [How to start up Pipelite](#how-to-start-up-pipelite)
 - [How to configure schedules](#how-to-configure-schedules)
   * [SimpleLsfExecutor example](#simplelsfexecutor-example)
+  * [SimpleSlurmExecutor example](#simpleslurmexecutor-example)
 - [How to configure pipelines](#how-to-configure-pipelines)
 - [Stage dependency types](#stage-dependency-types)
 - [Stage executor backends](#stage-executor-backends)
@@ -13,6 +14,7 @@ Pipelite workflow manager
     + [Cmd executor parameters](#cmd-executor-parameters)
     + [Simple LSF executor parameters](#simple-lsf-executor-parameters)
     + [LSF executor parameters](#lsf-executor-parameters)
+    + [Simple SLURM executor parameters](#simple-slurm-executor-parameters)
     + [AwsBatch executor parameters](#awsbatch-executor-parameters)
   * [Service parameters](#service-parameters)
   * [Mail parameters](#mail-parameters)
@@ -181,6 +183,82 @@ public class MySchedule implements Pipelite.Schedule {
 }
 ```
 
+
+#### SimpleSlurmExecutor example
+
+A schedule executed using ```SimpleSlurmExecutor``` over ssh would look like the following:
+
+```java
+
+@Component
+public class MySchedule implements Pipelite.Schedule {
+
+  @Override
+  public String pipelineName() {
+    // A unique name for the schedule.  
+    return "MySchedule";
+  }
+
+  @Override
+  public Options configurePipeline() {
+    // The cron expression for the schedule.
+    return new Options().cron("* * * * *");
+  }
+
+  @Override
+  public void configureProcess(ProcessBuilder builder) {
+    // A process with two stages is configured here. As the stages do not 
+    // depend on each other they will be executed in parallel.
+    builder
+            // Execute STAGE1 stage that does not depend on any other stage.
+            // Different executeXXX methods exist for different types of stage dependencies.
+            .execute("STAGE1")
+            // Execute STAGE1 using SimpleLsfExecutor with the provided stage execution parameters.
+            // Different withXXX methods exist for different execution backends.
+            .withSimpleSlurmExecutor(STAGE_CMD1, STAGE_PARAMS)
+            // Execute STAGE2 stage that does not depend on any other stage.
+            // Different executeXXX methods exist for different types of stage dependencies.
+            .execute("STAGE2")
+            // Execute STAGE2 using SimpleLsfExecutor with the provided stage execution parameters.
+            // Different withXXX methods exist for different execution backends.
+            .withSimpleSlurmExecutor(STAGE_CMD2, STAGE_PARAMS);
+  }
+
+  // The command line command to execute in STAGE1.
+  private static final String STAGE_CMD1 = "...";
+
+  // The command line command to execute in STAGE2.
+  private static final String STAGE_CMD2 = "...";
+
+  // SimpleSlurmExecutor stage execution parameters are defined here. They can be shared
+  // between stages or each stage can be configured with different parameters.
+  private static final SimpleSlurmExecutorParameters STAGE_PARAMS =
+          SimpleSlurmExecutorParameters.builder()
+                  // How may times stages are immediately retried if their execution fails.
+                  .immediateRetries(2)
+                  // Applies only to pipelines.
+                  // The maximum number of times a stage is retried if its execution fails.
+                  // Stage executions are temporary stopped if immediate retries have 
+                  // been exhausted and retried later until maximum retries is exceeded.                    
+                  .maximumRetries(5)
+                  // The number of CPU cores required to execute the stage.
+                  .cpu(1)
+                  // The amount of memory required to execute the stage.
+                  .memory(16)
+                  // The requested memory units.
+                  .memoryUnits("M")
+                  // The timeout after which the stage execution will be considered as failed.
+                  .timeout(Duration.ofMinutes(30))
+                  // The LSF login node.
+                  .host("TODO")
+                  // The LSF queue.
+                  .queue("TODO")
+                  // The LSF log directory where stage specific output files are written.
+                  .logDir("pipelite_tmp")
+                  .build();
+}
+```
+
 ### How to configure pipelines
 
 Pipelines are used for executing unscheduled process instances.
@@ -264,6 +342,8 @@ The following executor backends are supported by the ProcessBuilder:
   used if ```host``` has been set in ```LsfExecutorParameters```.
 - ```withSimpleLsfExecutor```: an LSF executor that uses a small subset of common LSF parameters. Ssh will be used
   if ```host``` has been set in ```SimpleLsfExecutorParameters```.
+- ```withSimpleSlurmExecutor```: an SLURM executor that uses a small subset of common SLURM parameters. Ssh will be used  
+  if ```host``` has been set in ```SimpleSlurmExecutorParameters```.
 - ```withAwsBatchExecutor```: an experimental AwsBatch executor that uses JSON configuration files with parameter
   placeholders.
 - ```with```: any executor that implements the ```StageExecutor``` interface.
@@ -341,9 +421,6 @@ The unit for the resource usage limit can be one of:
 - MB or M (megabytes)
 - GB or G (gigabytes)
 - TB or T (terabytes)
-- PB or P (petabytes)
-- EB or E (exabytes)
-- ZB or Z (zettabytes)
 
 ##### LSF executor parameters
 
@@ -362,6 +439,29 @@ The unit for the resource usage limit can be one of:
   /<pipeline>/<process>. The <logDir> must exist on the LSF cluster and must be writable on the LSF execution nodes.
 - pipelite.executor.lsf.logTimeout: the maximum wait time for the stage log to become available. Default value: 10
   seconds
+
+
+##### Simple SLURM executor parameters
+
+- pipelite.executor.simpleSlurm.host: the remote host. Ssh will be used if the ```host``` has been set.
+- pipelite.executor.simpleSlurm.user: the user used to connect to the remote host. Default value: user who restarted the
+  Pipelite service
+- pipelite.executor.simpleSlurm.env: the environmental variables passed to the command executor
+- pipelite.executor.simpleSlurm.queue: the queue name (-p option)
+- pipelite.executor.simpleSlurm.cpu: the number of requested cpus (-n option)
+- pipelite.executor.simpleSlurm.memory: the amount of requested memory (-mem option)
+- pipelite.executor.simpleSlurm.memoryUnits: the SLURM memory units (-mem option)
+- pipelite.executor.simpleSlurm.logDir: the directory where stage log files are written: <logDir>/<user>
+  /<pipeline>/<process>. The <logDir> must exist on the SLURM cluster and must be writable on the SLURM execution nodes.
+- pipelite.executor.simpleSlurm.logTimeout: the maximum wait time for the stage log to become available. Default value: 10
+  seconds
+
+The unit for the resource usage limit can be one of:
+
+- K (kilobytes)
+- M (megabytes)
+- G (gigabytes)
+- T (terabytes)
 
 ##### AwsBatch executor parameters
 
@@ -457,6 +557,14 @@ Lsf unit tests require the following environment variables:
 - PIPELITE_TEST_LSF_LOG_DIR
 - PIPELITE_TEST_LSF_DEFINITION_DIR
 - PIPELITE_TEST_LSF_QUEUE
+
+SLURM unit tests require the following environment variables:
+
+- PIPELITE_TEST_SLURM_HOST
+- PIPELITE_TEST_SLURM_USER
+- PIPELITE_TEST_SLURM_LOG_DIR
+- PIPELITE_TEST_SLURM_DEFINITION_DIR
+- PIPELITE_TEST_SLURM_QUEUE
 
 ### Database schema
 

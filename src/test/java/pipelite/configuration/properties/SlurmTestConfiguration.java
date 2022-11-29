@@ -8,19 +8,19 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite.stage.executor;
+package pipelite.configuration.properties;
 
-public class StageExecutorResultAttribute {
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
 
-  public static final String JOB_ID = "job id";
-  public static final String EXIT_CODE = "exit code";
-  public static final String COMMAND = "command";
-  public static final String HOST = "host";
-  public static final String EXEC_HOST = "execution host";
-  public static final String CPU_TIME = "cpu time";
-  public static final String AVG_MEM = "avg mem";
-  public static final String MAX_MEM = "max mem";
-  public static final String ELAPSED_TIME = "elapsed time";
-
-  private StageExecutorResultAttribute() {}
+@Data
+@Configuration
+@ConfigurationProperties(prefix = "pipelite.test.slurm")
+public class SlurmTestConfiguration {
+  private String host;
+  private String user;
+  private String logDir;
+  private String definitionDir;
+  private String queue;
 }

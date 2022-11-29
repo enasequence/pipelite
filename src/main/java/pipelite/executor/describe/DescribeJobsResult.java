@@ -28,6 +28,10 @@ public class DescribeJobsResult<RequestContext extends DefaultRequestContext> {
     this.result = result;
   }
 
+  public String jobId() {
+    return result.attribute(StageExecutorResultAttribute.JOB_ID);
+  }
+
   /**
    * Creates a job result.
    *
@@ -80,6 +84,10 @@ public class DescribeJobsResult<RequestContext extends DefaultRequestContext> {
       }
       this.request = request;
       this.jobId = request.getJobId();
+    }
+
+    public String jobId() {
+      return jobId;
     }
 
     public Builder<RequestContext> attribute(String key, Object value) {
@@ -135,7 +143,7 @@ public class DescribeJobsResult<RequestContext extends DefaultRequestContext> {
         try {
           this.exitCode = Integer.valueOf(exitCode);
         } catch (NumberFormatException ex) {
-          log.atSevere().log("Invalid exit code: " + exitCode);
+          throw new PipeliteException("Invalid exit code: " + exitCode);
         }
       }
       return this;

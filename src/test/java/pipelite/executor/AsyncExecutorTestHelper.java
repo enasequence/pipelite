@@ -25,11 +25,16 @@ public class AsyncExecutorTestHelper {
   @FunctionalInterface
   public interface StageExecutorResultCallback extends Consumer<StageExecutorResult> {}
 
-  public static void testExecute(
+  public static StageExecutorResult testExecute(
+      AsyncExecutor<?, ?, ?> executor, PipeliteServices pipeliteServices) {
+    return testExecute(executor, pipeliteServices, result -> {}, result -> {});
+  }
+
+  public static StageExecutorResult testExecute(
       AsyncExecutor<?, ?, ?> executor,
       PipeliteServices pipeliteServices,
       StageExecutorResultCallback assertAfterSubmit,
-      StageExecutorResultCallback assertAfterPoll) {
+      StageExecutorResultCallback assertAfterCompletion) {
 
     String pipelineName = PipeliteIdCreator.pipelineName();
     String processId = PipeliteIdCreator.processId();
@@ -52,11 +57,11 @@ public class AsyncExecutorTestHelper {
       Time.wait(Duration.ofSeconds(1));
     }
 
-    // Ignore timeout errors.
     if (result.isTimeoutError()) {
-      return;
+      return result;
     }
 
-    assertAfterPoll.accept(result);
+    assertAfterCompletion.accept(result);
+    return result;
   }
 }

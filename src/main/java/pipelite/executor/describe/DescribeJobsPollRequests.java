@@ -25,4 +25,14 @@ public class DescribeJobsPollRequests<RequestContext extends DefaultRequestConte
     this.jobIds = requests.stream().map(r -> r.getJobId()).collect(Collectors.toList());
     requests.forEach(r -> this.requests.put(r.getJobId(), r));
   }
+
+  /**
+   * Returns the request for the given job id.
+   *
+   * @param jobId the job id.
+   * @return request for the given job id.
+   */
+  public RequestContext request(String jobId) {
+    return requests.get(jobId);
+  }
 }

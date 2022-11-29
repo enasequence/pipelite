@@ -25,6 +25,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.mockito.Mockito;
 import pipelite.entity.StageEntity;
 import pipelite.executor.AbstractLsfExecutor;
+import pipelite.executor.AbstractSlurmExecutor;
 import pipelite.executor.CmdExecutor;
 import pipelite.executor.KubernetesExecutor;
 import pipelite.service.StageService;
@@ -458,6 +459,11 @@ public class TestType {
                 testType.nextExitCode(pipelineName, processId, stageName)));
       } else if (stage.getExecutor() instanceof AbstractLsfExecutor<?>) {
         AbstractLsfExecutor<?> executor = (AbstractLsfExecutor<?>) stage.getExecutor();
+        executor.setCmd(
+            ExecutorTestExitCode.cmdAsString(
+                testType.nextExitCode(pipelineName, processId, stageName)));
+      } else if (stage.getExecutor() instanceof AbstractSlurmExecutor<?>) {
+        AbstractSlurmExecutor<?> executor = (AbstractSlurmExecutor<?>) stage.getExecutor();
         executor.setCmd(
             ExecutorTestExitCode.cmdAsString(
                 testType.nextExitCode(pipelineName, processId, stageName)));

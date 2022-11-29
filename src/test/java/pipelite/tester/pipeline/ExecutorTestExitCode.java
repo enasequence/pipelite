@@ -17,6 +17,7 @@ import pipelite.process.builder.StageBuilder;
 import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
+import pipelite.stage.parameters.SimpleSlurmExecutorParameters;
 
 public class ExecutorTestExitCode {
 
@@ -25,6 +26,11 @@ public class ExecutorTestExitCode {
   public static ProcessBuilder withSimpleLsfExecutor(
       StageBuilder stageBuilder, int exitCode, SimpleLsfExecutorParameters executorParams) {
     return stageBuilder.withSimpleLsfExecutor(cmdAsString(exitCode), executorParams);
+  }
+
+  public static ProcessBuilder withSimpleSlurmExecutor(
+      StageBuilder stageBuilder, int exitCode, SimpleSlurmExecutorParameters executorParams) {
+    return stageBuilder.withSimpleSlurmExecutor(cmdAsString(exitCode), executorParams);
   }
 
   public static ProcessBuilder withKubernetesExecutor(

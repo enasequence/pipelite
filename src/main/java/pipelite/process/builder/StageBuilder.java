@@ -105,6 +105,27 @@ public class StageBuilder {
   }
 
   /**
+   * An executor that runs a command line command using SLURM locally or on a remote host using ssh.
+   *
+   * @param cmd the command line command to execute
+   * @param params the executor parameters
+   */
+  public ProcessBuilder withSimpleSlurmExecutor(String cmd, SimpleSlurmExecutorParameters params) {
+    SimpleSlurmExecutor executor = StageExecutor.createSimpleSlurmExecutor(cmd);
+    executor.setExecutorParams(params);
+    return addStage(executor);
+  }
+
+  /**
+   * An executor that runs a command line command using SLURM locally or on a remote host using ssh.
+   *
+   * @param cmd the command line command to execute
+   */
+  public ProcessBuilder withSimpleSlurmExecutor(String cmd) {
+    return withSimpleSlurmExecutor(cmd, new SimpleSlurmExecutorParameters());
+  }
+
+  /**
    * An executor that runs a command using Kubernetes.
    *
    * @param image the image
