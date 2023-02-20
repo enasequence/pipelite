@@ -65,6 +65,9 @@ tablespace &index_tablespace;
 create index i_pipelite2_process_name on pipelite2_process (pipeline_name)
 tablespace &index_tablespace;
 
+create index i_pipelite2_process_state_comment on pipelite2_process (state_comment)
+    tablespace &index_tablespace;
+
 -- @formatter:on
 
 create table pipelite2_process_audit
