@@ -48,6 +48,7 @@ public interface CmdRunner {
    *
    * @param file the file path
    * @param lastLines the number of last lines
+   * @throws PipeliteException if the file could not be read
    */
   default String readFile(Path file, int lastLines) {
     try {
@@ -61,9 +62,10 @@ public interface CmdRunner {
                 return retryResult;
               });
       return result.stageLog();
+    } catch (PipeliteException ex) {
+      throw ex;
     } catch (Exception ex) {
-      Logger.log.atSevere().withCause(ex).log("Failed to read file: " + file);
-      return null;
+      throw new PipeliteException("Failed to read file: " + file, ex);
     }
   }
 

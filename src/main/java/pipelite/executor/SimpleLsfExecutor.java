@@ -81,7 +81,12 @@ public class SimpleLsfExecutor extends AbstractLsfExecutor<SimpleLsfExecutorPara
       addCmdArgument(cmd, queue);
     }
 
-    String jobName = request.getPipelineName() + ":" + request.getStage().getStageName() + ":" + request.getProcessId();
+    String jobName =
+        request.getPipelineName()
+            + ":"
+            + request.getStage().getStageName()
+            + ":"
+            + request.getProcessId();
     addCmdArgument(cmd, "-J");
     addCmdArgument(cmd, jobName);
 

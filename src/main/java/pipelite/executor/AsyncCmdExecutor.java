@@ -96,7 +96,14 @@ public abstract class AsyncCmdExecutor<
     if (isSaveLogFile(result)) {
       while (ZonedDateTime.now().isBefore(endTime)) {
         if (getCmdRunner().fileExists(Paths.get(outFile))) {
-          result.stageLog(readOutFile(getCmdRunner(), outFile, getExecutorParams().getLogLines()));
+          try {
+            result.stageLog(
+                readOutFile(getCmdRunner(), outFile, getExecutorParams().getLogLines()));
+          } catch (Exception ex) {
+            logContext(log.atSevere(), getRequest())
+                .withCause(ex)
+                .log("Failed to read the output file: " + outFile);
+          }
           return;
         }
         Time.wait(Duration.ofSeconds(Math.min(5, logTimeoutSeconds / 3)));
@@ -111,12 +118,7 @@ public abstract class AsyncCmdExecutor<
   }
 
   public static String readOutFile(CmdRunner cmdRunner, String outFile, int logLines) {
-    try {
-      return cmdRunner.readFile(Paths.get(outFile), logLines);
-    } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Failed to read output file: " + outFile);
-      return null;
-    }
+    return cmdRunner.readFile(Paths.get(outFile), logLines);
   }
 
   protected String logJobContext() {

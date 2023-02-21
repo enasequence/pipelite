@@ -243,7 +243,7 @@ public class DescribeJobs<
                       results.add(recoverJobResult);
                     } catch (Exception ex) {
                       log.atSevere().withCause(ex).log(
-                          "Failed to recover result for "
+                          "Failed to recover "
                               + executorContext.executorName()
                               + " job "
                               + r.getJobId());
