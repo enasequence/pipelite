@@ -11,7 +11,8 @@
 package pipelite.executor.describe;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
@@ -23,6 +24,7 @@ import pipelite.executor.describe.poll.PollJobs;
 import pipelite.executor.describe.recover.RecoverJob;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.stage.executor.StageExecutorResultAttribute;
 
 public class DescribeJobsTest {
   private static class TestRequestContext extends DefaultRequestContext {
@@ -263,5 +265,89 @@ public class DescribeJobsTest {
     // Check that the requests have not been removed.
     IntStream.range(0, requestCnt)
         .forEach(i -> assertThat(describeJobs.isRequest(new TestRequestContext(i))).isTrue());
+  }
+
+  @Test
+  public void testRecoverJob() {
+    DefaultRequestContext request = new DefaultRequestContext("anyJobId");
+    DefaultExecutorContext executorContext = mock(DefaultExecutorContext.class);
+
+    DescribeJobsResults<DefaultRequestContext> results;
+
+    // Success
+    when(executorContext.recoverJob(any()))
+        .thenReturn(DescribeJobsResult.builder(request).success().build());
+    results = new DescribeJobsResults<>();
+    DescribeJobs.recoverJob(executorContext, request, results);
+    assertThat(results.lost.size()).isEqualTo(0);
+    assertThat(results.found.size()).isEqualTo(1);
+    assertThat(results.found.get(0).jobId()).isEqualTo(request.getJobId());
+    assertThat(results.found.get(0).result.isSuccess()).isTrue();
+
+    // Timeout error
+    when(executorContext.recoverJob(any()))
+        .thenReturn(DescribeJobsResult.builder(request).timeoutError().build());
+    results = new DescribeJobsResults<>();
+    DescribeJobs.recoverJob(executorContext, request, results);
+    assertThat(results.lost.size()).isEqualTo(0);
+    assertThat(results.found.size()).isEqualTo(1);
+    assertThat(results.found.get(0).jobId()).isEqualTo(request.getJobId());
+    assertThat(results.found.get(0).result.isTimeoutError()).isTrue();
+    assertThat(results.found.get(0).result.isError()).isTrue();
+
+    // Execution error with exit code
+    when(executorContext.recoverJob(any()))
+        .thenReturn(DescribeJobsResult.builder(request).executionError(1).build());
+    results = new DescribeJobsResults<>();
+    DescribeJobs.recoverJob(executorContext, request, results);
+    assertThat(results.lost.size()).isEqualTo(0);
+    assertThat(results.found.size()).isEqualTo(1);
+    assertThat(results.found.get(0).jobId()).isEqualTo(request.getJobId());
+    assertThat(results.found.get(0).result.isExecutionError()).isTrue();
+    assertThat(results.found.get(0).result.isError()).isTrue();
+    assertThat(results.found.get(0).result.attribute(StageExecutorResultAttribute.EXIT_CODE))
+        .isEqualTo("1");
+
+    // Execution error without exit code
+    when(executorContext.recoverJob(any()))
+        .thenReturn(DescribeJobsResult.builder(request).executionError().build());
+    results = new DescribeJobsResults<>();
+    DescribeJobs.recoverJob(executorContext, request, results);
+    assertThat(results.lost.size()).isEqualTo(0);
+    assertThat(results.found.size()).isEqualTo(1);
+    assertThat(results.found.get(0).jobId()).isEqualTo(request.getJobId());
+    assertThat(results.found.get(0).result.isExecutionError()).isTrue();
+    assertThat(results.found.get(0).result.isError()).isTrue();
+
+    // Lost error
+    when(executorContext.recoverJob(any()))
+        .thenReturn(DescribeJobsResult.builder(request).lostError().build());
+    results = new DescribeJobsResults<>();
+    DescribeJobs.recoverJob(executorContext, request, results);
+    assertThat(results.lost.size()).isEqualTo(1);
+    assertThat(results.lost.get(0).jobId()).isEqualTo(request.getJobId());
+    assertThat(results.lost.get(0).result.isLostError()).isTrue();
+    assertThat(results.lost.get(0).result.isError()).isTrue();
+    assertThat(results.found.size()).isEqualTo(0);
+
+    // Lost error (exception)
+    when(executorContext.recoverJob(any())).thenThrow(new RuntimeException("any"));
+    results = new DescribeJobsResults<>();
+    DescribeJobs.recoverJob(executorContext, request, results);
+    assertThat(results.lost.size()).isEqualTo(1);
+    assertThat(results.lost.get(0).jobId()).isEqualTo(request.getJobId());
+    assertThat(results.lost.get(0).result.isLostError()).isTrue();
+    assertThat(results.lost.get(0).result.isError()).isTrue();
+    assertThat(results.found.size()).isEqualTo(0);
+
+    // Lost error (null)
+    doReturn(null).when(executorContext).recoverJob(any());
+    results = new DescribeJobsResults<>();
+    DescribeJobs.recoverJob(executorContext, request, results);
+    assertThat(results.lost.size()).isEqualTo(1);
+    assertThat(results.lost.get(0).jobId()).isEqualTo(request.getJobId());
+    assertThat(results.lost.get(0).result.isLostError()).isTrue();
+    assertThat(results.lost.get(0).result.isError()).isTrue();
+    assertThat(results.found.size()).isEqualTo(0);
   }
 }

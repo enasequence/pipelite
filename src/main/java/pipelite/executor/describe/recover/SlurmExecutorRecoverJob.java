@@ -27,13 +27,17 @@ public class SlurmExecutorRecoverJob
   public DescribeJobsResult<SlurmRequestContext> recoverJob(
       SlurmExecutorContext executorContext, SlurmRequestContext request) {
     DescribeJobsResult.Builder resultBuilder = DescribeJobsResult.builder(request);
-    DescribeJobsResult<SlurmRequestContext> result =
-        SlurmExecutorPollJobs.extractSacctJobResult(executorContext, resultBuilder);
-
-    if (!result.result.isCompleted()) {
-      throw new PipeliteException(
-          "Unexpected SLURM recover job result: " + result.result.state().name());
+    try {
+      DescribeJobsResult<SlurmRequestContext> result =
+          SlurmExecutorPollJobs.extractJobResultUsingSacct(executorContext, resultBuilder);
+      if (!result.result.isCompleted()) {
+        throw new PipeliteException(
+            "Unexpected SLURM recover job result: " + result.result.state().name());
+      }
+      return result;
+    } catch (Exception ex) {
+      log.atSevere().withCause(ex).log("Failed to recover SLURM job " + request.getJobId());
+      return DescribeJobsResult.builder(request).lostError().build();
     }
-    return result;
   }
 }

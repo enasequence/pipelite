@@ -194,20 +194,19 @@ public class DescribeJobs<
 
       // Recovered results.
       recoverResults.found.forEach(
-          r -> results.put(requestMap.get(r.request.getJobId()), r.result));
+          r -> {
+            log.atInfo().log(
+                "Recovered result for " + executorName + " job " + r.request.getJobId());
+            results.put(requestMap.get(r.request.getJobId()), r.result);
+          });
 
       // Lost results.
-      recoverResults.lost.forEach(r -> results.put(requestMap.get(r.request.getJobId()), r.result));
-
-      recoverResults.found.forEach(
-          r ->
-              log.atInfo().log(
-                  "Recovered result for " + executorName + " job " + r.request.getJobId()));
-
       recoverResults.lost.forEach(
-          r ->
-              log.atSevere().log(
-                  "Failed to recover result for " + executorName + " job " + r.request.getJobId()));
+          r -> {
+            log.atSevere().log(
+                "Failed to recover result for " + executorName + " job " + r.request.getJobId());
+            results.put(requestMap.get(r.request.getJobId()), r.result);
+          });
     }
 
     return results;
@@ -215,12 +214,12 @@ public class DescribeJobs<
 
   /**
    * Attempts to recover job results if polling has failed. Recovery is typically attempted from the
-   * output file. If the recovery fails then the job is considered to have failed.
+   * output file. If the recovery fails then the job is considered lost.
    *
    * @param requests job requests to recover.
    * @param executorContext executor context.
    * @return execution results for recovered jobs or if the recovery fails then the job is
-   *     considered failed.
+   *     considered lost.
    */
   private DescribeJobsResults recoverJobs(
       List<RequestContext> requests, ExecutorContext executorContext) {
@@ -233,20 +232,11 @@ public class DescribeJobs<
     ExecutorService executorService = Executors.newFixedThreadPool(RECOVERY_PARALLELISM);
     try {
       requests.forEach(
-          r ->
+          request ->
               executorService.submit(
                   () -> {
                     try {
-                      // Attempt to recover job result.
-                      DescribeJobsResult<RequestContext> recoverJobResult =
-                          executorContext.recoverJob(r);
-                      results.add(recoverJobResult);
-                    } catch (Exception ex) {
-                      log.atSevere().withCause(ex).log(
-                          "Failed to recover "
-                              + executorContext.executorName()
-                              + " job "
-                              + r.getJobId());
+                      recoverJob(executorContext, request, results);
                     } finally {
                       remainingCount.decrementAndGet();
                     }
@@ -264,6 +254,28 @@ public class DescribeJobs<
     }
 
     return results;
+  }
+
+  static <
+          RequestContext extends DefaultRequestContext,
+          ExecutorContext extends DefaultExecutorContext>
+      void recoverJob(
+          ExecutorContext executorContext,
+          RequestContext request,
+          DescribeJobsResults<RequestContext> results) {
+    DescribeJobsResult<RequestContext> recoverJobResult = null;
+    try {
+      // Attempt to recover job result.
+      recoverJobResult = executorContext.recoverJob(request);
+    } catch (Exception ex) {
+      log.atSevere().withCause(ex).log(
+          "Failed to recover " + executorContext.executorName() + " job " + request.getJobId());
+    } finally {
+      if (recoverJobResult == null) {
+        recoverJobResult = DescribeJobsResult.builder(request).lostError().build();
+      }
+      results.add(recoverJobResult);
+    }
   }
 
   protected List<RequestContext> getActiveRequests() {

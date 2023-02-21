@@ -13,44 +13,131 @@ package pipelite.executor.describe.recover;
 import static org.assertj.core.api.Assertions.assertThat;
 import static pipelite.executor.describe.recover.LsfExecutorRecoverJob.*;
 
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import pipelite.PipeliteIdCreator;
+import pipelite.PipeliteTestConfigWithServices;
+import pipelite.configuration.properties.LsfTestConfiguration;
+import pipelite.executor.AbstractLsfExecutor;
+import pipelite.executor.AsyncExecutorTestHelper;
+import pipelite.executor.SimpleLsfExecutor;
 import pipelite.executor.describe.DescribeJobsResult;
+import pipelite.executor.describe.cache.LsfDescribeJobsCache;
+import pipelite.executor.describe.context.executor.LsfExecutorContext;
 import pipelite.executor.describe.context.request.LsfRequestContext;
+import pipelite.service.PipeliteServices;
+import pipelite.stage.Stage;
+import pipelite.stage.executor.StageExecutor;
+import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
+import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 
+@SpringBootTest(
+    classes = PipeliteTestConfigWithServices.class,
+    properties = {"pipelite.service.force=true", "pipelite.service.name=LsfExecutorRecoverJobTest"})
+@ActiveProfiles("test")
 public class LsfExecutorRecoverJobTest {
 
-  private static LsfRequestContext request() {
-    return new LsfRequestContext("validJobId", "validOutFile");
+  @Autowired LsfTestConfiguration lsfTestConfiguration;
+  @Autowired LsfDescribeJobsCache lsfDescribeJobsCache;
+  @Autowired PipeliteServices pipeliteServices;
+
+  private SimpleLsfExecutor executor(int exitCode) {
+    String pipelineName = PipeliteIdCreator.pipelineName();
+    String processId = PipeliteIdCreator.processId();
+    String stageName = PipeliteIdCreator.stageName();
+    SimpleLsfExecutor executor = StageExecutor.createSimpleLsfExecutor("exit " + exitCode);
+    executor.setExecutorParams(
+        SimpleLsfExecutorParameters.builder()
+            .host(lsfTestConfiguration.getHost())
+            .user(lsfTestConfiguration.getUser())
+            .logDir(lsfTestConfiguration.getLogDir())
+            .queue(lsfTestConfiguration.getQueue())
+            .memory(1)
+            .cpu(1)
+            .timeout(Duration.ofSeconds(30))
+            .build());
+    Stage stage = new Stage(stageName, executor);
+    executor.prepareExecution(pipeliteServices, pipelineName, processId, stage);
+    return executor;
+  }
+
+  private StageExecutorResult execute(SimpleLsfExecutor executor) {
+    return AsyncExecutorTestHelper.testExecute(executor, pipeliteServices);
   }
 
   @Test
-  public void testExtractExitCode() {
-    assertThat(extractExitCode("Exited with exit code 1")).isEqualTo(1);
-    assertThat(extractExitCode("Exited with exit code 3.")).isEqualTo(3);
-    assertThat(extractExitCode("INVALID")).isNull();
+  public void testRecoverJobCompletedSuccessfully() {
+    SimpleLsfExecutor executor = executor(0);
+    StageExecutorResult result = execute(executor);
+
+    String jobId = result.attribute(StageExecutorResultAttribute.JOB_ID);
+
+    assertThat(result.isSuccess()).isTrue();
+    assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+    assertThat(jobId).isNotNull();
+
+    LsfRequestContext requestContext = new LsfRequestContext(jobId, executor.getOutFile());
+    LsfExecutorContext executorContext =
+        lsfDescribeJobsCache.getExecutorContext((AbstractLsfExecutor) executor);
+
+    DescribeJobsResult<LsfRequestContext> describeJobsResult =
+        (new LsfExecutorRecoverJob()).recoverJob(executorContext, requestContext);
+
+    assertThat(describeJobsResult.jobId()).isEqualTo(jobId);
+    assertThat(describeJobsResult.result.isSuccess()).isTrue();
+    assertThat(describeJobsResult.result.attribute(StageExecutorResultAttribute.EXIT_CODE))
+        .isEqualTo("0");
   }
 
   @Test
-  public void testGetRecoveryLines() {
-    assertThat(getRecoveryLines("text\n" + "\n")).isEqualTo("text\n" + "\n");
+  public void testRecoverJobExitedWithExitCode() {
+    SimpleLsfExecutor executor = executor(1);
+    StageExecutorResult result = execute(executor);
 
-    assertThat(
-            getRecoveryLines(
-                "text before\n"
-                    + "\n"
-                    + "The output (if any) follows:\n"
-                    + "\n"
-                    + "text after\n"
-                    + "\n"))
-        .isEqualTo("text before\n" + "\n");
+    String jobId = result.attribute(StageExecutorResultAttribute.JOB_ID);
+
+    assertThat(result.isExecutionError()).isTrue();
+    assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("1");
+    assertThat(jobId).isNotNull();
+
+    LsfRequestContext requestContext = new LsfRequestContext(jobId, executor.getOutFile());
+    LsfExecutorContext executorContext =
+        lsfDescribeJobsCache.getExecutorContext((AbstractLsfExecutor) executor);
+
+    DescribeJobsResult<LsfRequestContext> describeJobsResult =
+        (new LsfExecutorRecoverJob()).recoverJob(executorContext, requestContext);
+
+    assertThat(describeJobsResult.jobId()).isEqualTo(jobId);
+    assertThat(describeJobsResult.result.isExecutionError()).isTrue();
+    assertThat(describeJobsResult.result.attribute(StageExecutorResultAttribute.EXIT_CODE))
+        .isEqualTo("1");
   }
 
   @Test
-  public void testExtractJobResultDoneSuccessfully() {
-    LsfRequestContext request = request();
+  public void testRecoverJobLost() {
+    SimpleLsfExecutor executor = executor(0);
+    String jobId = "invalid";
+
+    LsfRequestContext requestContext = new LsfRequestContext(jobId, executor.getOutFile());
+    LsfExecutorContext executorContext =
+        lsfDescribeJobsCache.getExecutorContext((AbstractLsfExecutor) executor);
+
+    DescribeJobsResult<LsfRequestContext> describeJobsResult =
+        (new LsfExecutorRecoverJob()).recoverJob(executorContext, requestContext);
+
+    assertThat(describeJobsResult.jobId()).isEqualTo(jobId);
+    assertThat(describeJobsResult.result.isLostError()).isTrue();
+  }
+
+  @Test
+  public void testRecoverJobFromOutFileDoneSuccessfully() {
+    LsfRequestContext request = new LsfRequestContext("anyJobId", "anyOutFile");
     DescribeJobsResult<LsfRequestContext> result =
-        extractJobResult(
+        recoverJobFromOutFile(
             request,
             "Job <872795>, User <rasko>, Project <default>, Command <echo hello>, Esub <esub\n"
                 + "                     >\n"
@@ -78,10 +165,10 @@ public class LsfExecutorRecoverJobTest {
   }
 
   @Test
-  public void testExtractJobResultCompletedSuccessfully() {
-    LsfRequestContext request = request();
+  public void testRecoverJobFromOutFileCompletedSuccessfully() {
+    LsfRequestContext request = new LsfRequestContext("anyJobId", "anyOutFile");
     DescribeJobsResult<LsfRequestContext> result =
-        extractJobResult(
+        recoverJobFromOutFile(
             request,
             "\n"
                 + "\n"
@@ -124,10 +211,10 @@ public class LsfExecutorRecoverJobTest {
   }
 
   @Test
-  public void testExtractJobResultCompletedWithExitCode() {
-    LsfRequestContext request = request();
+  public void testRecoverJobFromOutFileCompletedWithExitCode() {
+    LsfRequestContext request = new LsfRequestContext("anyJobId", "anyOutFile");
     DescribeJobsResult<LsfRequestContext> result =
-        extractJobResult(
+        recoverJobFromOutFile(
             request,
             "Summary of time in seconds spent in various states:\n"
                 + "JOBID   USER    JOB_NAME  PEND    PSUSP   RUN     USUSP   SSUSP   UNKWN   TOTAL\n"
@@ -161,10 +248,10 @@ public class LsfExecutorRecoverJobTest {
   }
 
   @Test
-  public void testExtractJobResultExitedWithExitCode() {
-    LsfRequestContext request = request();
+  public void testRecoverJobFromOutFileExitedWithExitCode() {
+    LsfRequestContext request = new LsfRequestContext("anyJobId", "anyOutFile");
     DescribeJobsResult<LsfRequestContext> result =
-        extractJobResult(
+        recoverJobFromOutFile(
             request,
             "\n"
                 + "\n"
@@ -207,10 +294,10 @@ public class LsfExecutorRecoverJobTest {
   }
 
   @Test
-  public void testExtractJobResultExitedWithTimeout() {
-    LsfRequestContext request = request();
+  public void testRecoverJobFromOutFileExitedWithTimeout() {
+    LsfRequestContext request = new LsfRequestContext("anyJobId", "anyOutFile");
     DescribeJobsResult<LsfRequestContext> result =
-        extractJobResult(
+        recoverJobFromOutFile(
             request,
             "\n"
                 + "ob <sleep 120> was submitted from host <codon-login-02> by user <rasko> in cluster <codon> at Wed Oct 26 18:09:37 2022\n"
@@ -251,10 +338,32 @@ public class LsfExecutorRecoverJobTest {
   }
 
   @Test
-  public void extractJobResultInvalidInput() {
-    LsfRequestContext request = request();
-    assertThat(extractJobResult(request, null)).isNull();
-    assertThat(extractJobResult(request, "")).isNull();
-    assertThat(extractJobResult(request, "invalid")).isNull();
+  public void testRecoverJobFromOutFileLost() {
+    LsfRequestContext request = new LsfRequestContext("anyJobId", "anyOutFile");
+    assertThat(recoverJobFromOutFile(request, null).result.isLostError()).isTrue();
+    assertThat(recoverJobFromOutFile(request, "").result.isLostError()).isTrue();
+    assertThat(recoverJobFromOutFile(request, "invalid").result.isLostError()).isTrue();
+  }
+
+  @Test
+  public void testRecoverExitCode() {
+    assertThat(recoverExitCode("Exited with exit code 1")).isEqualTo(1);
+    assertThat(recoverExitCode("Exited with exit code 3.")).isEqualTo(3);
+    assertThat(recoverExitCode("INVALID")).isNull();
+  }
+
+  @Test
+  public void testFilterOutFile() {
+    assertThat(filterOutFile("text\n" + "\n")).isEqualTo("text\n" + "\n");
+
+    assertThat(
+            filterOutFile(
+                "text before\n"
+                    + "\n"
+                    + "The output (if any) follows:\n"
+                    + "\n"
+                    + "text after\n"
+                    + "\n"))
+        .isEqualTo("text before\n" + "\n");
   }
 }

@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import pipelite.PipeliteIdCreator;
 import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.properties.SlurmTestConfiguration;
 import pipelite.executor.AbstractSlurmExecutor;
@@ -27,6 +28,7 @@ import pipelite.executor.describe.cache.SlurmDescribeJobsCache;
 import pipelite.executor.describe.context.executor.SlurmExecutorContext;
 import pipelite.executor.describe.context.request.SlurmRequestContext;
 import pipelite.service.PipeliteServices;
+import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
@@ -48,10 +50,10 @@ public class SlurmExecutorRecoverJobTest {
   @Autowired PipeliteServices pipeliteServices;
 
   private SimpleSlurmExecutor executor(int exitCode) {
-    return StageExecutor.createSimpleSlurmExecutor("exit " + exitCode);
-  }
-
-  private StageExecutorResult execute(SimpleSlurmExecutor executor) {
+    String pipelineName = PipeliteIdCreator.pipelineName();
+    String processId = PipeliteIdCreator.processId();
+    String stageName = PipeliteIdCreator.stageName();
+    SimpleSlurmExecutor executor = StageExecutor.createSimpleSlurmExecutor("exit " + exitCode);
     executor.setExecutorParams(
         SimpleSlurmExecutorParameters.builder()
             .host(slurmTestConfiguration.getHost())
@@ -62,12 +64,17 @@ public class SlurmExecutorRecoverJobTest {
             .cpu(1)
             .timeout(Duration.ofSeconds(30))
             .build());
+    Stage stage = new Stage(stageName, executor);
+    executor.prepareExecution(pipeliteServices, pipelineName, processId, stage);
+    return executor;
+  }
 
+  private StageExecutorResult execute(SimpleSlurmExecutor executor) {
     return AsyncExecutorTestHelper.testExecute(executor, pipeliteServices);
   }
 
   @Test
-  public void testExtractJobResultCompletedSuccessfully() {
+  public void testRecoverJobCompletedSuccessfully() {
     SimpleSlurmExecutor executor = executor(0);
     StageExecutorResult result = execute(executor);
 
@@ -77,7 +84,7 @@ public class SlurmExecutorRecoverJobTest {
     assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
     assertThat(jobId).isNotNull();
 
-    SlurmRequestContext requestContext = new SlurmRequestContext(jobId, null);
+    SlurmRequestContext requestContext = new SlurmRequestContext(jobId, executor.getOutFile());
     SlurmExecutorContext executorContext =
         slurmDescribeJobsCache.getExecutorContext((AbstractSlurmExecutor) executor);
 
@@ -91,7 +98,7 @@ public class SlurmExecutorRecoverJobTest {
   }
 
   @Test
-  public void testExtractJobResultExitedWithExitCode() {
+  public void testRecoverJobExitedWithExitCode() {
     SimpleSlurmExecutor executor = executor(1);
     StageExecutorResult result = execute(executor);
 
@@ -101,7 +108,7 @@ public class SlurmExecutorRecoverJobTest {
     assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("1");
     assertThat(jobId).isNotNull();
 
-    SlurmRequestContext requestContext = new SlurmRequestContext(jobId, null);
+    SlurmRequestContext requestContext = new SlurmRequestContext(jobId, executor.getOutFile());
     SlurmExecutorContext executorContext =
         slurmDescribeJobsCache.getExecutorContext((AbstractSlurmExecutor) executor);
 
@@ -112,5 +119,21 @@ public class SlurmExecutorRecoverJobTest {
     assertThat(describeJobsResult.result.isExecutionError()).isTrue();
     assertThat(describeJobsResult.result.attribute(StageExecutorResultAttribute.EXIT_CODE))
         .isEqualTo("1");
+  }
+
+  @Test
+  public void testRecoverJobLost() {
+    SimpleSlurmExecutor executor = executor(0);
+    String jobId = "invalid";
+
+    SlurmRequestContext requestContext = new SlurmRequestContext(jobId, executor.getOutFile());
+    SlurmExecutorContext executorContext =
+        slurmDescribeJobsCache.getExecutorContext((AbstractSlurmExecutor) executor);
+
+    DescribeJobsResult<SlurmRequestContext> describeJobsResult =
+        (new SlurmExecutorRecoverJob()).recoverJob(executorContext, requestContext);
+
+    assertThat(describeJobsResult.jobId()).isEqualTo(jobId);
+    assertThat(describeJobsResult.result.isLostError()).isTrue();
   }
 }

@@ -92,10 +92,10 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
     }
 
     String str = result.stageLog();
-    return extractSqueueJobResults(executorContext, requests, str);
+    return extractJobResultsUsingSqueue(executorContext, requests, str);
   }
 
-  public static DescribeJobsResults<SlurmRequestContext> extractSqueueJobResults(
+  public static DescribeJobsResults<SlurmRequestContext> extractJobResultsUsingSqueue(
       SlurmExecutorContext executorContext,
       DescribeJobsPollRequests<SlurmRequestContext> requests,
       String str) {
@@ -111,7 +111,7 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
         }
       } else {
         DescribeJobsResult<SlurmRequestContext> result =
-            extractSqueueJobResult(executorContext, requests, line);
+            extractJobResultUsingSqueue(executorContext, requests, line);
         if (result != null) {
           results.add(result);
           jobIds.add(result.jobId());
@@ -129,7 +129,7 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
     return results;
   }
 
-  public static DescribeJobsResult<SlurmRequestContext> extractSqueueJobResult(
+  public static DescribeJobsResult<SlurmRequestContext> extractJobResultUsingSqueue(
       SlurmExecutorContext executorContext,
       DescribeJobsPollRequests<SlurmRequestContext> requests,
       String line) {
@@ -165,13 +165,13 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
     }
 
     if (resultBuilder.isCompleted()) {
-      extractSacctJobResult(executorContext, resultBuilder);
+      extractJobResultUsingSacct(executorContext, resultBuilder);
     }
 
     return resultBuilder.build();
   }
 
-  public static DescribeJobsResult<SlurmRequestContext> extractSacctJobResult(
+  public static DescribeJobsResult<SlurmRequestContext> extractJobResultUsingSacct(
       SlurmExecutorContext executorContext, DescribeJobsResult.Builder resultBuilder) {
     StageExecutorResult result =
         executorContext.cmdRunner().execute(SACCT_CMD + resultBuilder.jobId());
@@ -190,14 +190,15 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
           throw new PipeliteException("Unexpected SLURM sacct header line: " + line);
         }
       } else {
-        extractSacctJobResult(resultBuilder, line);
+        extractJobResultUsingSacct(resultBuilder, line);
       }
     }
 
     return resultBuilder.build();
   }
 
-  public static void extractSacctJobResult(DescribeJobsResult.Builder resultBuilder, String line) {
+  public static void extractJobResultUsingSacct(
+      DescribeJobsResult.Builder resultBuilder, String line) {
     String[] column = line.trim().split("\\|");
     if (column.length != SACCT_COLUMNS) {
       throw new PipeliteException("Unexpected SLURM sacct output line: " + line);

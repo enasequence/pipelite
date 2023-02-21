@@ -39,16 +39,22 @@ public class LsfExecutorRecoverJob implements RecoverJob<LsfExecutorContext, Lsf
   public DescribeJobsResult<LsfRequestContext> recoverJob(
       LsfExecutorContext executorContext, LsfRequestContext request) {
     String outFile = request.getOutFile();
-    log.atWarning().log(
+    log.atInfo().log(
         "Recovering LSF job " + request.getJobId() + " result from output file: " + outFile);
 
-    // The recovery is done by reading lines from the beginning of the output file.
-    String lines = readOutFile(executorContext.cmdRunner(), outFile, JOB_RECOVERY_LINES);
-    lines = getRecoveryLines(lines);
-    return extractJobResult(request, lines);
+    // Recover by reading lines from the end of the output file.
+    try {
+      String lines = readOutFile(executorContext.cmdRunner(), outFile, JOB_RECOVERY_LINES);
+      return recoverJobFromOutFile(request, lines);
+    } catch (Exception ex) {
+      log.atSevere().withCause(ex).log(
+          "Failed to recover LSF job " + request.getJobId() + " from output file: " + outFile);
+      return DescribeJobsResult.builder(request).lostError().build();
+    }
   }
 
-  public static String getRecoveryLines(String lines) {
+  /** Remove job output lines. */
+  public static String filterOutFile(String lines) {
     if (lines == null) {
       return null;
     }
@@ -59,43 +65,43 @@ public class LsfExecutorRecoverJob implements RecoverJob<LsfExecutorContext, Lsf
     return lines;
   }
 
-  /** Extract job result from the output file. Returns null if the result could not be extracted. */
-  public static DescribeJobsResult<LsfRequestContext> extractJobResult(
+  /**
+   * Extract job result from the output file. Return lost error if the output file does not exist or
+   * can't be parsed.
+   */
+  public static DescribeJobsResult<LsfRequestContext> recoverJobFromOutFile(
       LsfRequestContext request, String lines) {
-    if (lines == null) {
-      return null;
-    }
-
+    lines = filterOutFile(lines);
     DescribeJobsResult.Builder<LsfRequestContext> result = DescribeJobsResult.builder(request);
-
-    if (extractSuccess(lines)) {
-      return result.success().build();
+    if (lines == null || lines.isEmpty()) {
+      result.lostError();
+    } else if (isRecoverJobSuccess(lines)) {
+      result.success();
+    } else if (isRecoverJobTimeoutError(lines)) {
+      result.timeoutError();
+    } else {
+      Integer exitCode = recoverExitCode(lines);
+      if (exitCode != null) {
+        result.executionError(exitCode);
+      } else {
+        result.lostError();
+      }
     }
-
-    if (extractTimeout(lines)) {
-      return result.timeoutError().build();
-    }
-
-    Integer exitCode = extractExitCode(lines);
-    if (exitCode != null) {
-      return result.executionError(exitCode).build();
-    }
-
-    return null;
+    return result.build();
   }
 
-  public static boolean extractSuccess(String lines) {
+  public static boolean isRecoverJobSuccess(String lines) {
     return lines.contains(JOB_COMPLETED) || lines.contains(JOB_DONE);
   }
 
-  public static boolean extractTimeout(String lines) {
+  public static boolean isRecoverJobTimeoutError(String lines) {
     return lines.contains(JOB_TIMEOUT);
   }
 
   /**
-   * Extracts exit code from the output file. Returns null if the exit code could not be extracted.
+   * Recover exit code from the output file. Returns null if the exit code could not be extracted.
    */
-  public static Integer extractExitCode(String lines) {
+  public static Integer recoverExitCode(String lines) {
     try {
       Matcher m = JOB_EXIT_CODE_PATTERN.matcher(lines);
       return m.find() ? Integer.valueOf(m.group(1)) : null;
