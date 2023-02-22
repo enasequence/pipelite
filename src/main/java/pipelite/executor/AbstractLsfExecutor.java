@@ -123,4 +123,13 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
       throw new PipeliteException("No LSF submit job id.");
     }
   }
+
+  @Override
+  public boolean isSaveLogFile(StageExecutorResult result) {
+    if (result.isLostError()) {
+      // Do not attempt to read output file is the job has been lost.
+      return false;
+    }
+    return super.isSaveLogFile(result);
+  }
 }

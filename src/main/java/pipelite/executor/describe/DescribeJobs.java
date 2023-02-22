@@ -132,11 +132,9 @@ public class DescribeJobs<
             final List<RequestContext> requests = activeRequests.subList(0, toIndex);
             List<DescribeJobsResult<RequestContext>> results =
                 retrieveResults(requests, executorContext);
-            // Set results for the requests.
+            // Set results for completed requests.
             results.stream()
-                .filter(
-                    // Filter out empty and active results.
-                    r -> r != null && r.result != null && !r.result.isActive())
+                .filter(r -> r != null && r.result.isCompleted())
                 .forEach(e -> this.requests.put(e.request, e.result));
             if (toIndex == activeRequests.size()) {
               return;
@@ -295,7 +293,7 @@ public class DescribeJobs<
       addRequest(request);
     }
     StageExecutorResult result = this.requests.get(request);
-    if (!result.isActive()) {
+    if (result.isCompleted()) {
       removeRequest(request);
     }
     return result;

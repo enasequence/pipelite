@@ -114,14 +114,12 @@ public class DescribeJobsResult<RequestContext extends DefaultRequestContext> {
     }
 
     public Builder<RequestContext> timeoutError() {
-      log.atSevere().log("Job " + this.jobId + " timeout");
       this.result = StageExecutorResult.timeoutError();
       this.exitCode = null;
       return this;
     }
 
     public Builder<RequestContext> lostError() {
-      log.atSevere().log("Job " + this.jobId + " was lost");
       this.result = StageExecutorResult.lostError();
       this.exitCode = null;
       return this;
