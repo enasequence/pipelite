@@ -11,18 +11,16 @@
 package pipelite.executor.describe.context.request;
 
 import lombok.Value;
+import lombok.experimental.Accessors;
 import lombok.experimental.NonFinal;
 
 @Value
+@Accessors(fluent = true)
 @NonFinal
 public class DefaultRequestContext {
   private final String jobId;
 
   public DefaultRequestContext(String jobId) {
     this.jobId = jobId;
-  }
-
-  public String getJobId() {
-    return jobId;
   }
 }

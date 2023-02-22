@@ -14,7 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.extern.flogger.Flogger;
 import org.springframework.stereotype.Component;
-import pipelite.executor.describe.DescribeJobsPollRequests;
+import pipelite.executor.describe.DescribeJobsRequests;
 import pipelite.executor.describe.DescribeJobsResult;
 import pipelite.executor.describe.DescribeJobsResults;
 import pipelite.executor.describe.context.executor.LsfExecutorContext;
@@ -49,15 +49,15 @@ public class LsfExecutorPollJobs implements PollJobs<LsfExecutorContext, LsfRequ
 
   @Override
   public DescribeJobsResults<LsfRequestContext> pollJobs(
-      LsfExecutorContext executorContext, DescribeJobsPollRequests<LsfRequestContext> requests) {
+      LsfExecutorContext executorContext, DescribeJobsRequests<LsfRequestContext> requests) {
     // Ignore exit code as bjobs returns 255 if some jobs are not found.
     StageExecutorResult result =
-        executorContext.cmdRunner().execute(BJOBS_CMD + String.join(" ", requests.jobIds));
+        executorContext.cmdRunner().execute(BJOBS_CMD + String.join(" ", requests.jobIds()));
     return extractJobResults(requests, result.stageLog());
   }
 
   public static DescribeJobsResults<LsfRequestContext> extractJobResults(
-      DescribeJobsPollRequests<LsfRequestContext> requests, String str) {
+      DescribeJobsRequests<LsfRequestContext> requests, String str) {
     DescribeJobsResults<LsfRequestContext> results = new DescribeJobsResults<>();
     for (String line : str.split("\\r?\\n")) {
       DescribeJobsResult<LsfRequestContext> result = extractJobResult(requests, line);
@@ -69,7 +69,7 @@ public class LsfExecutorPollJobs implements PollJobs<LsfExecutorContext, LsfRequ
   }
 
   public static DescribeJobsResult<LsfRequestContext> extractJobResult(
-      DescribeJobsPollRequests<LsfRequestContext> requests, String line) {
+      DescribeJobsRequests<LsfRequestContext> requests, String line) {
     DescribeJobsResult<LsfRequestContext> result = extractLostJobResult(requests, line);
     if (result == null) {
       result = extractFoundJobResult(requests, line);
@@ -78,7 +78,7 @@ public class LsfExecutorPollJobs implements PollJobs<LsfExecutorContext, LsfRequ
   }
 
   public static DescribeJobsResult<LsfRequestContext> extractLostJobResult(
-      DescribeJobsPollRequests<LsfRequestContext> requests, String line) {
+      DescribeJobsRequests<LsfRequestContext> requests, String line) {
     try {
       Matcher m = BJOBS_LOST_JOB_PATTERN.matcher(line);
       if (m.find()) {
@@ -93,7 +93,7 @@ public class LsfExecutorPollJobs implements PollJobs<LsfExecutorContext, LsfRequ
   }
 
   public static DescribeJobsResult<LsfRequestContext> extractFoundJobResult(
-      DescribeJobsPollRequests<LsfRequestContext> requests, String line) {
+      DescribeJobsRequests<LsfRequestContext> requests, String line) {
     String[] column = line.trim().split("\\|");
     if (column.length != BJOBS_COLUMNS) {
       log.atWarning().log("Unexpected LSF bjobs output line: " + line);

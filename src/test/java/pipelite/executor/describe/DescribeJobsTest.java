@@ -48,7 +48,7 @@ public class DescribeJobsTest {
 
     @Override
     public DescribeJobsResults<TestRequestContext> pollJobs(
-        DescribeJobsPollRequests<TestRequestContext> requests) {
+        DescribeJobsRequests<TestRequestContext> requests) {
       return pollJobs.pollJobs(this, requests);
     }
 
@@ -70,10 +70,9 @@ public class DescribeJobsTest {
         (executorContext, requests) -> {
           DescribeJobsResults<TestRequestContext> results = new DescribeJobsResults<>();
           actualDescribeJobsCallCnt.incrementAndGet();
-          actualRequestCnt.addAndGet(requests.requests.size());
+          actualRequestCnt.addAndGet(requests.size());
           requests
-              .requests
-              .values()
+              .get()
               .forEach(
                   request -> results.add(DescribeJobsResult.builder(request).success().build()));
           return results;
@@ -125,10 +124,9 @@ public class DescribeJobsTest {
         (executorContext, requests) -> {
           DescribeJobsResults<TestRequestContext> results = new DescribeJobsResults<>();
           actualDescribeJobsCallCnt.incrementAndGet();
-          actualRequestCnt.addAndGet(requests.requests.size());
+          actualRequestCnt.addAndGet(requests.size());
           requests
-              .requests
-              .values()
+              .get()
               .forEach(
                   request ->
                       results.add(DescribeJobsResult.builder(request).executionError().build()));
@@ -181,10 +179,9 @@ public class DescribeJobsTest {
         (executorContext, requests) -> {
           DescribeJobsResults<TestRequestContext> results = new DescribeJobsResults<>();
           actualDescribeJobsCallCnt.incrementAndGet();
-          actualRequestCnt.addAndGet(requests.requests.size());
+          actualRequestCnt.addAndGet(requests.size());
           requests
-              .requests
-              .values()
+              .get()
               .forEach(
                   request -> results.add(DescribeJobsResult.builder(request).active().build()));
           return results;
@@ -235,7 +232,7 @@ public class DescribeJobsTest {
     PollJobs<DefaultExecutorContext<TestRequestContext>, TestRequestContext> pollJobs =
         (executorContext, requests) -> {
           actualDescribeJobsCallCnt.incrementAndGet();
-          actualRequestCnt.addAndGet(requests.requests.size());
+          actualRequestCnt.addAndGet(requests.size());
           throw new RuntimeException("Expected exception");
         };
 
@@ -268,86 +265,127 @@ public class DescribeJobsTest {
   }
 
   @Test
-  public void testRecoverJob() {
+  public void testRecoverJobSuccess() {
     DefaultRequestContext request = new DefaultRequestContext("anyJobId");
     DefaultExecutorContext executorContext = mock(DefaultExecutorContext.class);
 
-    DescribeJobsResults<DefaultRequestContext> results;
-
-    // Success
     when(executorContext.recoverJob(any()))
         .thenReturn(DescribeJobsResult.builder(request).success().build());
-    results = new DescribeJobsResults<>();
+    DescribeJobsResults<DefaultRequestContext> results = new DescribeJobsResults<>();
     DescribeJobs.recoverJob(executorContext, request, results);
-    assertThat(results.lost.size()).isEqualTo(0);
-    assertThat(results.found.size()).isEqualTo(1);
-    assertThat(results.found.get(0).jobId()).isEqualTo(request.getJobId());
-    assertThat(results.found.get(0).result.isSuccess()).isTrue();
+    assertThat(results.lostCount()).isEqualTo(0);
+    assertThat(results.foundCount()).isEqualTo(1);
+    DescribeJobsResult<DefaultRequestContext> foundFirstResult = results.found().findFirst().get();
+    assertThat(foundFirstResult.jobId()).isEqualTo(request.jobId());
+    assertThat(foundFirstResult.result.isSuccess()).isTrue();
+  }
 
-    // Timeout error
+  @Test
+  public void testRecoverJobTimeoutError() {
+    DefaultRequestContext request = new DefaultRequestContext("anyJobId");
+    DefaultExecutorContext executorContext = mock(DefaultExecutorContext.class);
+
     when(executorContext.recoverJob(any()))
         .thenReturn(DescribeJobsResult.builder(request).timeoutError().build());
-    results = new DescribeJobsResults<>();
+    DescribeJobsResults<DefaultRequestContext> results = new DescribeJobsResults<>();
     DescribeJobs.recoverJob(executorContext, request, results);
-    assertThat(results.lost.size()).isEqualTo(0);
-    assertThat(results.found.size()).isEqualTo(1);
-    assertThat(results.found.get(0).jobId()).isEqualTo(request.getJobId());
-    assertThat(results.found.get(0).result.isTimeoutError()).isTrue();
-    assertThat(results.found.get(0).result.isError()).isTrue();
+    assertThat(results.lostCount()).isEqualTo(0);
+    assertThat(results.foundCount()).isEqualTo(1);
+    DescribeJobsResult<DefaultRequestContext> foundFirstResult = results.found().findFirst().get();
+    assertThat(foundFirstResult.jobId()).isEqualTo(request.jobId());
+    assertThat(foundFirstResult.result.isTimeoutError()).isTrue();
+    assertThat(foundFirstResult.result.isError()).isTrue();
+  }
 
-    // Execution error with exit code
+  @Test
+  public void testRecoverJobExecutionErrorWithExitCode() {
+    DefaultRequestContext request = new DefaultRequestContext("anyJobId");
+    DefaultExecutorContext executorContext = mock(DefaultExecutorContext.class);
+
     when(executorContext.recoverJob(any()))
         .thenReturn(DescribeJobsResult.builder(request).executionError(1).build());
-    results = new DescribeJobsResults<>();
+    DescribeJobsResults<DefaultRequestContext> results = new DescribeJobsResults<>();
     DescribeJobs.recoverJob(executorContext, request, results);
-    assertThat(results.lost.size()).isEqualTo(0);
-    assertThat(results.found.size()).isEqualTo(1);
-    assertThat(results.found.get(0).jobId()).isEqualTo(request.getJobId());
-    assertThat(results.found.get(0).result.isExecutionError()).isTrue();
-    assertThat(results.found.get(0).result.isError()).isTrue();
-    assertThat(results.found.get(0).result.attribute(StageExecutorResultAttribute.EXIT_CODE))
+    assertThat(results.lostCount()).isEqualTo(0);
+    assertThat(results.foundCount()).isEqualTo(1);
+    DescribeJobsResult<DefaultRequestContext> foundFirstResult = results.found().findFirst().get();
+    assertThat(foundFirstResult.jobId()).isEqualTo(request.jobId());
+    assertThat(foundFirstResult.result.isExecutionError()).isTrue();
+    assertThat(foundFirstResult.result.isError()).isTrue();
+    assertThat(
+            results
+                .found()
+                .findFirst()
+                .get()
+                .result
+                .attribute(StageExecutorResultAttribute.EXIT_CODE))
         .isEqualTo("1");
+  }
 
-    // Execution error without exit code
+  @Test
+  public void testRecoverJobExecutionErrorWithoutExitCode() {
+    DefaultRequestContext request = new DefaultRequestContext("anyJobId");
+    DefaultExecutorContext executorContext = mock(DefaultExecutorContext.class);
+
     when(executorContext.recoverJob(any()))
         .thenReturn(DescribeJobsResult.builder(request).executionError().build());
-    results = new DescribeJobsResults<>();
+    DescribeJobsResults<DefaultRequestContext> results = new DescribeJobsResults<>();
     DescribeJobs.recoverJob(executorContext, request, results);
-    assertThat(results.lost.size()).isEqualTo(0);
-    assertThat(results.found.size()).isEqualTo(1);
-    assertThat(results.found.get(0).jobId()).isEqualTo(request.getJobId());
-    assertThat(results.found.get(0).result.isExecutionError()).isTrue();
-    assertThat(results.found.get(0).result.isError()).isTrue();
+    assertThat(results.lostCount()).isEqualTo(0);
+    assertThat(results.foundCount()).isEqualTo(1);
+    DescribeJobsResult<DefaultRequestContext> foundFirstResult = results.found().findFirst().get();
+    assertThat(foundFirstResult.jobId()).isEqualTo(request.jobId());
+    assertThat(foundFirstResult.result.isExecutionError()).isTrue();
+    assertThat(foundFirstResult.result.isError()).isTrue();
+  }
+
+  @Test
+  public void testRecoverJobLostError() {
+    DefaultRequestContext request = new DefaultRequestContext("anyJobId");
+    DefaultExecutorContext executorContext = mock(DefaultExecutorContext.class);
 
     // Lost error
     when(executorContext.recoverJob(any()))
         .thenReturn(DescribeJobsResult.builder(request).lostError().build());
-    results = new DescribeJobsResults<>();
+    DescribeJobsResults<DefaultRequestContext> results = new DescribeJobsResults<>();
     DescribeJobs.recoverJob(executorContext, request, results);
-    assertThat(results.lost.size()).isEqualTo(1);
-    assertThat(results.lost.get(0).jobId()).isEqualTo(request.getJobId());
-    assertThat(results.lost.get(0).result.isLostError()).isTrue();
-    assertThat(results.lost.get(0).result.isError()).isTrue();
-    assertThat(results.found.size()).isEqualTo(0);
+    assertThat(results.lostCount()).isEqualTo(1);
+    DescribeJobsResult<DefaultRequestContext> lostFirstResult = results.lost().findFirst().get();
+    assertThat(lostFirstResult.jobId()).isEqualTo(request.jobId());
+    assertThat(lostFirstResult.result.isLostError()).isTrue();
+    assertThat(lostFirstResult.result.isError()).isTrue();
+    assertThat(results.foundCount()).isEqualTo(0);
+  }
 
-    // Lost error (exception)
+  @Test
+  public void testRecoverJobLostErrorException() {
+    DefaultRequestContext request = new DefaultRequestContext("anyJobId");
+    DefaultExecutorContext executorContext = mock(DefaultExecutorContext.class);
+
     when(executorContext.recoverJob(any())).thenThrow(new RuntimeException("any"));
-    results = new DescribeJobsResults<>();
+    DescribeJobsResults<DefaultRequestContext> results = new DescribeJobsResults<>();
     DescribeJobs.recoverJob(executorContext, request, results);
-    assertThat(results.lost.size()).isEqualTo(1);
-    assertThat(results.lost.get(0).jobId()).isEqualTo(request.getJobId());
-    assertThat(results.lost.get(0).result.isLostError()).isTrue();
-    assertThat(results.lost.get(0).result.isError()).isTrue();
-    assertThat(results.found.size()).isEqualTo(0);
+    assertThat(results.lostCount()).isEqualTo(1);
+    DescribeJobsResult<DefaultRequestContext> lostFirstResult = results.lost().findFirst().get();
+    assertThat(lostFirstResult.jobId()).isEqualTo(request.jobId());
+    assertThat(lostFirstResult.result.isLostError()).isTrue();
+    assertThat(lostFirstResult.result.isError()).isTrue();
+    assertThat(results.foundCount()).isEqualTo(0);
+  }
 
-    // Lost error (null)
+  @Test
+  public void testRecoverJobLostErrorNull() {
+    DefaultRequestContext request = new DefaultRequestContext("anyJobId");
+    DefaultExecutorContext executorContext = mock(DefaultExecutorContext.class);
+
     doReturn(null).when(executorContext).recoverJob(any());
-    results = new DescribeJobsResults<>();
+    DescribeJobsResults<DefaultRequestContext> results = new DescribeJobsResults<>();
     DescribeJobs.recoverJob(executorContext, request, results);
-    assertThat(results.lost.size()).isEqualTo(1);
-    assertThat(results.lost.get(0).jobId()).isEqualTo(request.getJobId());
-    assertThat(results.lost.get(0).result.isLostError()).isTrue();
-    assertThat(results.lost.get(0).result.isError()).isTrue();
-    assertThat(results.found.size()).isEqualTo(0);
+    assertThat(results.lostCount()).isEqualTo(1);
+    DescribeJobsResult<DefaultRequestContext> lostFirstResult = results.lost().findFirst().get();
+    assertThat(lostFirstResult.jobId()).isEqualTo(request.jobId());
+    assertThat(lostFirstResult.result.isLostError()).isTrue();
+    assertThat(lostFirstResult.result.isError()).isTrue();
+    assertThat(results.foundCount()).isEqualTo(0);
   }
 }

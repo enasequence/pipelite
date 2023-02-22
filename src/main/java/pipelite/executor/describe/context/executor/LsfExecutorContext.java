@@ -15,7 +15,7 @@ import lombok.Value;
 import lombok.experimental.Accessors;
 import lombok.experimental.NonFinal;
 import pipelite.executor.cmd.CmdRunner;
-import pipelite.executor.describe.DescribeJobsPollRequests;
+import pipelite.executor.describe.DescribeJobsRequests;
 import pipelite.executor.describe.DescribeJobsResult;
 import pipelite.executor.describe.DescribeJobsResults;
 import pipelite.executor.describe.context.request.LsfRequestContext;
@@ -42,7 +42,7 @@ public class LsfExecutorContext extends DefaultExecutorContext<LsfRequestContext
 
   @Override
   public DescribeJobsResults<LsfRequestContext> pollJobs(
-      DescribeJobsPollRequests<LsfRequestContext> requests) {
+      DescribeJobsRequests<LsfRequestContext> requests) {
     return pollJobs.pollJobs(this, requests);
   }
 

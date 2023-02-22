@@ -28,7 +28,7 @@ import java.util.function.Supplier;
 import lombok.extern.flogger.Flogger;
 import org.springframework.stereotype.Component;
 import pipelite.exception.PipeliteException;
-import pipelite.executor.describe.DescribeJobsPollRequests;
+import pipelite.executor.describe.DescribeJobsRequests;
 import pipelite.executor.describe.DescribeJobsResult;
 import pipelite.executor.describe.DescribeJobsResults;
 import pipelite.executor.describe.context.executor.KubernetesExecutorContext;
@@ -43,7 +43,7 @@ public class KubernetesExecutorPollJobs
   @Override
   public DescribeJobsResults<DefaultRequestContext> pollJobs(
       KubernetesExecutorContext executorContext,
-      DescribeJobsPollRequests<DefaultRequestContext> requests) {
+      DescribeJobsRequests<DefaultRequestContext> requests) {
     DescribeJobsResults<DefaultRequestContext> results = new DescribeJobsResults<>();
     Set<String> jobIds = new HashSet<>();
     try {
@@ -55,14 +55,14 @@ public class KubernetesExecutorPollJobs
       for (Job job : jobList.getItems()) {
         String jobId = job.getMetadata().getName();
         jobIds.add(jobId);
-        DefaultRequestContext request = requests.requests.get(jobId);
+        DefaultRequestContext request = requests.get(jobId);
         if (request != null) {
           results.add(
               extractJobResult(
                   request, job.getStatus(), () -> extratExitCode(namespace, jobId, client)));
         }
       }
-      for (String jobId : requests.jobIds) {
+      for (String jobId : requests.jobIds()) {
         if (!jobIds.contains(jobId)) {
           // The job has been lost.
           results.add(DescribeJobsResult.builder(requests, jobId).lostError().build());

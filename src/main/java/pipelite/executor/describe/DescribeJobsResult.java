@@ -24,12 +24,21 @@ public class DescribeJobsResult<RequestContext extends DefaultRequestContext> {
   public final StageExecutorResult result;
 
   private DescribeJobsResult(RequestContext request, StageExecutorResult result) {
+    if (request == null) {
+      throw new PipeliteException("Missing job request");
+    }
+    if (result == null) {
+      throw new PipeliteException("Missing job result");
+    }
+    if (request.jobId() == null) {
+      throw new PipeliteException("Missing job id");
+    }
     this.request = request;
     this.result = result;
   }
 
   public String jobId() {
-    return result.attribute(StageExecutorResultAttribute.JOB_ID);
+    return request.jobId();
   }
 
   /**
@@ -43,12 +52,6 @@ public class DescribeJobsResult<RequestContext extends DefaultRequestContext> {
    */
   public static <RequestContext extends DefaultRequestContext> DescribeJobsResult create(
       RequestContext request, StageExecutorResult result) {
-    if (request == null) {
-      throw new PipeliteException("Missing job request");
-    }
-    if (result == null) {
-      throw new PipeliteException("Missing job result");
-    }
     return new DescribeJobsResult(request, result);
   }
 
@@ -58,14 +61,14 @@ public class DescribeJobsResult<RequestContext extends DefaultRequestContext> {
   }
 
   public static <RequestContext extends DefaultRequestContext> Builder<RequestContext> builder(
-      DescribeJobsPollRequests<RequestContext> requests, String jobId) {
+      DescribeJobsRequests<RequestContext> requests, String jobId) {
     if (requests == null) {
       throw new PipeliteException("Missing job requests");
     }
     if (jobId == null) {
       throw new PipeliteException("Missing job id");
     }
-    return new Builder<>(requests.requests.get(jobId));
+    return new Builder<>(requests.get(jobId));
   }
 
   public static class Builder<RequestContext extends DefaultRequestContext> {
@@ -79,11 +82,11 @@ public class DescribeJobsResult<RequestContext extends DefaultRequestContext> {
       if (request == null) {
         throw new PipeliteException("Missing job request");
       }
-      if (request.getJobId() == null) {
+      if (request.jobId() == null) {
         throw new PipeliteException("Missing job id");
       }
       this.request = request;
-      this.jobId = request.getJobId();
+      this.jobId = request.jobId();
     }
 
     public String jobId() {
@@ -153,7 +156,7 @@ public class DescribeJobsResult<RequestContext extends DefaultRequestContext> {
       return result != null && result.isCompleted();
     }
 
-    public DescribeJobsResult build() {
+    public DescribeJobsResult<RequestContext> build() {
       if (result == null) {
         throw new PipeliteException("Missing job result");
       }

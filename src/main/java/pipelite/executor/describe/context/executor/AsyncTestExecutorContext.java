@@ -13,7 +13,7 @@ package pipelite.executor.describe.context.executor;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.NonFinal;
-import pipelite.executor.describe.DescribeJobsPollRequests;
+import pipelite.executor.describe.DescribeJobsRequests;
 import pipelite.executor.describe.DescribeJobsResults;
 import pipelite.executor.describe.context.request.AsyncTestRequestContext;
 import pipelite.executor.describe.poll.AsyncTestExecutorPollJobs;
@@ -32,7 +32,7 @@ public class AsyncTestExecutorContext extends DefaultExecutorContext<AsyncTestRe
 
   @Override
   public DescribeJobsResults<AsyncTestRequestContext> pollJobs(
-      DescribeJobsPollRequests<AsyncTestRequestContext> requests) {
+      DescribeJobsRequests<AsyncTestRequestContext> requests) {
     return pollJobs.pollJobs(this, requests);
   }
 }

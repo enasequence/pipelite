@@ -26,7 +26,7 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
-import pipelite.executor.describe.DescribeJobsPollRequests;
+import pipelite.executor.describe.DescribeJobsRequests;
 import pipelite.executor.describe.DescribeJobsResult;
 import pipelite.executor.describe.DescribeJobsResults;
 import pipelite.executor.describe.context.request.SlurmRequestContext;
@@ -91,16 +91,18 @@ public class SimpleSlurmExecutorPollJobsTest {
     doAnswer(
             invocation -> {
               DescribeJobsResults<SlurmRequestContext> results = new DescribeJobsResults<>();
-              DescribeJobsPollRequests<SlurmRequestContext> requests = invocation.getArgument(1);
-              assertThat(requests.requests.size()).isOne();
-              requests.requests.forEach(
-                  (jobId, v) -> {
-                    assertThat(jobId).isEqualTo(JOB_ID);
-                    DescribeJobsResult.Builder<SlurmRequestContext> result =
-                        DescribeJobsResult.builder(requests, jobId);
-                    resultCallback.accept(result);
-                    results.add(result.build());
-                  });
+              DescribeJobsRequests<SlurmRequestContext> requests = invocation.getArgument(1);
+              assertThat(requests.size()).isOne();
+              requests
+                  .get()
+                  .forEach(
+                      r -> {
+                        assertThat(r.jobId()).isEqualTo(JOB_ID);
+                        DescribeJobsResult.Builder<SlurmRequestContext> result =
+                            DescribeJobsResult.builder(requests, r.jobId());
+                        resultCallback.accept(result);
+                        results.add(result.build());
+                      });
               return results;
             })
         .when(pollJobs)

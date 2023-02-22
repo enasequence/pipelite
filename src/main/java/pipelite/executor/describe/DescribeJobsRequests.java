@@ -10,20 +10,33 @@
  */
 package pipelite.executor.describe;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import pipelite.executor.describe.context.request.DefaultRequestContext;
 
-public class DescribeJobsPollRequests<RequestContext extends DefaultRequestContext> {
-  public final List<String> jobIds;
-  /** Jobs indexed by job id. */
-  public final Map<String, RequestContext> requests = new HashMap<>();
+public class DescribeJobsRequests<RequestContext extends DefaultRequestContext> {
+  private final List<String> jobIds = new ArrayList<>();
 
-  public DescribeJobsPollRequests(List<RequestContext> requests) {
-    this.jobIds = requests.stream().map(r -> r.getJobId()).collect(Collectors.toList());
-    requests.forEach(r -> this.requests.put(r.getJobId(), r));
+  /** Jobs indexed by job id. */
+  private final HashMap<String, RequestContext> requests = new HashMap<>();
+
+  public DescribeJobsRequests(List<RequestContext> requests) {
+    requests.forEach(
+        r -> {
+          this.jobIds.add(r.jobId());
+          this.requests.put(r.jobId(), r);
+        });
+  }
+
+  /**
+   * Returns the requests.
+   *
+   * @return the requests.
+   */
+  public Collection<RequestContext> get() {
+    return requests.values();
   }
 
   /**
@@ -32,7 +45,20 @@ public class DescribeJobsPollRequests<RequestContext extends DefaultRequestConte
    * @param jobId the job id.
    * @return request for the given job id.
    */
-  public RequestContext request(String jobId) {
+  public RequestContext get(String jobId) {
     return requests.get(jobId);
+  }
+
+  /**
+   * Returns the number or requests.
+   *
+   * @return the number of requests.
+   */
+  public int size() {
+    return requests.size();
+  }
+
+  public Collection<String> jobIds() {
+    return jobIds;
   }
 }

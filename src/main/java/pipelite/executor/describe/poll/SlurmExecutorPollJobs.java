@@ -17,7 +17,7 @@ import java.util.Set;
 import lombok.extern.flogger.Flogger;
 import org.springframework.stereotype.Component;
 import pipelite.exception.PipeliteException;
-import pipelite.executor.describe.DescribeJobsPollRequests;
+import pipelite.executor.describe.DescribeJobsRequests;
 import pipelite.executor.describe.DescribeJobsResult;
 import pipelite.executor.describe.DescribeJobsResults;
 import pipelite.executor.describe.context.executor.SlurmExecutorContext;
@@ -83,8 +83,7 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
 
   @Override
   public DescribeJobsResults<SlurmRequestContext> pollJobs(
-      SlurmExecutorContext executorContext,
-      DescribeJobsPollRequests<SlurmRequestContext> requests) {
+      SlurmExecutorContext executorContext, DescribeJobsRequests<SlurmRequestContext> requests) {
 
     StageExecutorResult result = executorContext.cmdRunner().execute(SQUEUE_CMD);
     if (result.isError()) {
@@ -97,7 +96,7 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
 
   public static DescribeJobsResults<SlurmRequestContext> extractJobResultsUsingSqueue(
       SlurmExecutorContext executorContext,
-      DescribeJobsPollRequests<SlurmRequestContext> requests,
+      DescribeJobsRequests<SlurmRequestContext> requests,
       String str) {
     DescribeJobsResults<SlurmRequestContext> results = new DescribeJobsResults<>();
     Set<String> jobIds = new HashSet<>();
@@ -119,7 +118,7 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
       }
     }
 
-    for (String jobId : requests.jobIds) {
+    for (String jobId : requests.jobIds()) {
       if (!jobIds.contains(jobId)) {
         // The job has been lost.
         results.add(DescribeJobsResult.builder(requests, jobId).lostError().build());
@@ -131,7 +130,7 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
 
   public static DescribeJobsResult<SlurmRequestContext> extractJobResultUsingSqueue(
       SlurmExecutorContext executorContext,
-      DescribeJobsPollRequests<SlurmRequestContext> requests,
+      DescribeJobsRequests<SlurmRequestContext> requests,
       String line) {
     String[] column = line.trim().split("\\|");
     if (column.length != SQUEUE_COLUMNS) {
@@ -140,7 +139,7 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
 
     String jobId = column[SQUEUE_COLUMN_JOB_ID];
 
-    if (requests.request(jobId) == null) {
+    if (requests.get(jobId) == null) {
       // Result is for an unrelated job.
       return null;
     }

@@ -11,30 +11,64 @@
 package pipelite.executor.describe;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+import java.util.stream.Stream;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.describe.context.request.DefaultRequestContext;
 
 /** Job results. */
 public class DescribeJobsResults<RequestContext extends DefaultRequestContext> {
-  /** Jobs found by the executor backend. */
-  public final List<DescribeJobsResult<RequestContext>> found = new ArrayList<>();
 
-  /** Jobs lost by the executor backend. */
-  public final List<DescribeJobsResult<RequestContext>> lost = new ArrayList<>();
+  private final ArrayList<DescribeJobsResult<RequestContext>> results = new ArrayList<>();
+
+  private int foundCount = 0;
+  private int lostCount = 0;
 
   /** Adds a job result. */
   public void add(DescribeJobsResult<RequestContext> result) {
     if (result == null) {
-      return;
-    }
-    if (result.result == null) {
       throw new PipeliteException("Missing job result");
     }
     if (result.result.isLostError()) {
-      lost.add(result); // Job result is not available.
+      lostCount++;
     } else {
-      found.add(result); // Job result is available.
+      foundCount++;
     }
+    results.add(result);
+  }
+
+  /**
+   * Returns all describe job results.
+   *
+   * @return all describe job results.
+   */
+  public Collection<DescribeJobsResult<RequestContext>> get() {
+    return results;
+  }
+
+  /**
+   * Returns found describe job results.
+   *
+   * @return found describe job results.
+   */
+  public Stream<DescribeJobsResult<RequestContext>> found() {
+    return results.stream().filter(r -> !r.result.isLostError());
+  }
+
+  /**
+   * Returns lost describe job results.
+   *
+   * @return lost describe job results.
+   */
+  public Stream<DescribeJobsResult<RequestContext>> lost() {
+    return results.stream().filter(r -> r.result.isLostError());
+  }
+
+  public int foundCount() {
+    return foundCount;
+  }
+
+  public int lostCount() {
+    return lostCount;
   }
 }

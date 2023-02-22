@@ -10,7 +10,7 @@
  */
 package pipelite.executor.describe.poll;
 
-import pipelite.executor.describe.DescribeJobsPollRequests;
+import pipelite.executor.describe.DescribeJobsRequests;
 import pipelite.executor.describe.DescribeJobsResults;
 import pipelite.executor.describe.context.executor.DefaultExecutorContext;
 import pipelite.executor.describe.context.request.DefaultRequestContext;
@@ -18,5 +18,5 @@ import pipelite.executor.describe.context.request.DefaultRequestContext;
 public interface PollJobs<
     ExecutorContext extends DefaultExecutorContext, RequestContext extends DefaultRequestContext> {
   DescribeJobsResults<RequestContext> pollJobs(
-      ExecutorContext executorContext, DescribeJobsPollRequests<RequestContext> requests);
+      ExecutorContext executorContext, DescribeJobsRequests<RequestContext> requests);
 }

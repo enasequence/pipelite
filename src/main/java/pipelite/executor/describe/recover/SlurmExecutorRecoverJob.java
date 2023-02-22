@@ -36,7 +36,7 @@ public class SlurmExecutorRecoverJob
       }
       return result;
     } catch (Exception ex) {
-      log.atSevere().withCause(ex).log("Failed to recover SLURM job " + request.getJobId());
+      log.atSevere().withCause(ex).log("Failed to recover SLURM job " + request.jobId());
       return DescribeJobsResult.builder(request).lostError().build();
     }
   }

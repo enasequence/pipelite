@@ -40,7 +40,7 @@ public class LsfExecutorRecoverJob implements RecoverJob<LsfExecutorContext, Lsf
       LsfExecutorContext executorContext, LsfRequestContext request) {
     String outFile = request.getOutFile();
     log.atInfo().log(
-        "Recovering LSF job " + request.getJobId() + " result from output file: " + outFile);
+        "Recovering LSF job " + request.jobId() + " result from output file: " + outFile);
 
     // Recover by reading lines from the end of the output file.
     try {
@@ -48,7 +48,7 @@ public class LsfExecutorRecoverJob implements RecoverJob<LsfExecutorContext, Lsf
       return recoverJobFromOutFile(request, lines);
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log(
-          "Failed to recover LSF job " + request.getJobId() + " from output file: " + outFile);
+          "Failed to recover LSF job " + request.jobId() + " from output file: " + outFile);
       return DescribeJobsResult.builder(request).lostError().build();
     }
   }

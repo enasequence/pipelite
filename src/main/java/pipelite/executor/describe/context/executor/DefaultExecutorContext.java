@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Value;
 import lombok.experimental.Accessors;
 import lombok.experimental.NonFinal;
-import pipelite.executor.describe.DescribeJobsPollRequests;
+import pipelite.executor.describe.DescribeJobsRequests;
 import pipelite.executor.describe.DescribeJobsResult;
 import pipelite.executor.describe.DescribeJobsResults;
 import pipelite.executor.describe.context.request.DefaultRequestContext;
@@ -32,7 +32,7 @@ public abstract class DefaultExecutorContext<RequestContext extends DefaultReque
 
   /** Poll asynchronous job execution status until completion. */
   public abstract DescribeJobsResults<RequestContext> pollJobs(
-      DescribeJobsPollRequests<RequestContext> requests);
+      DescribeJobsRequests<RequestContext> requests);
 
   /** Recover asynchronous job execution status. */
   public DescribeJobsResult<RequestContext> recoverJob(RequestContext request) {

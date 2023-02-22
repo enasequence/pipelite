@@ -12,9 +12,7 @@ package pipelite.executor.describe;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,15 +39,14 @@ import pipelite.time.Time;
  */
 @Flogger
 public class DescribeJobs<
-    RequestContext extends DefaultRequestContext, ExecutorContext extends DefaultExecutorContext> {
+    RequestContext extends DefaultRequestContext,
+    ExecutorContext extends DefaultExecutorContext<RequestContext>> {
 
   private static final Duration REQUEST_FREQUENCY = Duration.ofSeconds(5);
 
   private static final int RECOVERY_PARALLELISM = 10;
   private static final Duration RECOVERY_TIMEOUT = Duration.ofMinutes(10);
   private static final Duration RECOVERY_WAIT = Duration.ofSeconds(5);
-
-  private final String serviceName;
   private final Integer requestBatchSize;
   private final ExecutorContext executorContext;
   private final InternalErrorHandler internalErrorHandler;
@@ -63,10 +60,10 @@ public class DescribeJobs<
       ExecutorContext executorContext) {
     Assert.notNull(serviceConfiguration, "Missing service configuration");
     Assert.notNull(internalErrorService, "Missing internal error service");
-    this.serviceName = serviceConfiguration.getName();
     this.requestBatchSize = requestBatchSize;
     this.executorContext = executorContext;
-    this.internalErrorHandler = new InternalErrorHandler(internalErrorService, serviceName, this);
+    this.internalErrorHandler =
+        new InternalErrorHandler(internalErrorService, serviceConfiguration.getName(), this);
     this.worker =
         new Thread(
             () -> {
@@ -132,15 +129,15 @@ public class DescribeJobs<
                 requestBatchSize == null
                     ? activeRequests.size()
                     : Math.min(requestBatchSize, activeRequests.size());
-            final List<RequestContext> requestBatch = activeRequests.subList(0, toIndex);
-            Map<RequestContext, StageExecutorResult> results =
-                retrieveResults(requestBatch, executorContext);
+            final List<RequestContext> requests = activeRequests.subList(0, toIndex);
+            List<DescribeJobsResult<RequestContext>> results =
+                retrieveResults(requests, executorContext);
             // Set results for the requests.
-            results.entrySet().stream()
+            results.stream()
                 .filter(
                     // Filter out empty and active results.
-                    e -> e.getKey() != null && e.getValue() != null && !e.getValue().isActive())
-                .forEach(e -> this.requests.put(e.getKey(), e.getValue()));
+                    r -> r != null && r.result != null && !r.result.isActive())
+                .forEach(e -> this.requests.put(e.request, e.result));
             if (toIndex == activeRequests.size()) {
               return;
             }
@@ -150,63 +147,62 @@ public class DescribeJobs<
   }
 
   /** Retrieves job results (active, success, error) for one batch. */
-  private Map<RequestContext, StageExecutorResult> retrieveResults(
-      List<RequestContext> requestBatch, ExecutorContext executorContext) {
+  private List<DescribeJobsResult<RequestContext>> retrieveResults(
+      List<RequestContext> requests, ExecutorContext executorContext) {
     String executorName = executorContext.executorName();
-    Map<RequestContext, StageExecutorResult> results = new HashMap<>();
 
-    // Create a map for job id -> RequestContext.
-    Map<String, RequestContext> requestMap = new HashMap<>();
-    requestBatch.forEach(request -> requestMap.put(request.getJobId(), request));
+    List<DescribeJobsResult<RequestContext>> results = new ArrayList<>();
 
     log.atFine().log(
         "Retrieving a batch of "
-            + requestBatch.size()
+            + requests.size()
             + " "
             + executorName
             + " job results "
-            + requestBatch.stream().map(r -> r.getJobId()).collect(Collectors.toList()));
+            + requests.stream().map(r -> r.jobId()).collect(Collectors.toList()));
 
     // Poll jobs.
-    DescribeJobsPollRequests<RequestContext> pollRequests =
-        new DescribeJobsPollRequests<>(requestBatch);
-    DescribeJobsResults<RequestContext> pollResults = executorContext.pollJobs(pollRequests);
+    DescribeJobsResults<RequestContext> pollResults =
+        executorContext.pollJobs(new DescribeJobsRequests<>(requests));
 
     // Found results.
-    pollResults.found.forEach(r -> results.put(requestMap.get(r.request.getJobId()), r.result));
+    pollResults.found().forEach(r -> results.add(r));
 
     // Lost results.
-    List<DescribeJobsResult<RequestContext>> lostPollResults = pollResults.lost;
-    if (!lostPollResults.isEmpty()) {
-      lostPollResults.forEach(
-          r ->
-              log.atSevere().log(
-                  "Failed to retrieve result for "
-                      + executorName
-                      + " job "
-                      + r.request.getJobId()));
+    if (pollResults.lostCount() > 0) {
+      pollResults
+          .lost()
+          .forEach(
+              r ->
+                  log.atSevere().log(
+                      "Failed to retrieve result for "
+                          + executorName
+                          + " job "
+                          + r.request.jobId()));
 
       // Recover jobs.
       List<RequestContext> recoverRequests =
-          lostPollResults.stream().map(r -> r.request).collect(Collectors.toList());
+          pollResults.lost().map(r -> r.request).collect(Collectors.toList());
       DescribeJobsResults<RequestContext> recoverResults =
           recoverJobs(recoverRequests, executorContext);
+      results.addAll(recoverResults.get());
 
-      // Recovered results.
-      recoverResults.found.forEach(
-          r -> {
-            log.atInfo().log(
-                "Recovered result for " + executorName + " job " + r.request.getJobId());
-            results.put(requestMap.get(r.request.getJobId()), r.result);
-          });
+      recoverResults
+          .found()
+          .forEach(
+              r ->
+                  log.atInfo().log(
+                      "Recovered result for " + executorName + " job " + r.request.jobId()));
 
-      // Lost results.
-      recoverResults.lost.forEach(
-          r -> {
-            log.atSevere().log(
-                "Failed to recover result for " + executorName + " job " + r.request.getJobId());
-            results.put(requestMap.get(r.request.getJobId()), r.result);
-          });
+      recoverResults
+          .lost()
+          .forEach(
+              r ->
+                  log.atSevere().log(
+                      "Failed to recover result for "
+                          + executorName
+                          + " job "
+                          + r.request.jobId()));
     }
 
     return results;
@@ -221,7 +217,7 @@ public class DescribeJobs<
    * @return execution results for recovered jobs or if the recovery fails then the job is
    *     considered lost.
    */
-  private DescribeJobsResults recoverJobs(
+  private DescribeJobsResults<RequestContext> recoverJobs(
       List<RequestContext> requests, ExecutorContext executorContext) {
 
     DescribeJobsResults<RequestContext> results = new DescribeJobsResults<>();
@@ -258,7 +254,7 @@ public class DescribeJobs<
 
   static <
           RequestContext extends DefaultRequestContext,
-          ExecutorContext extends DefaultExecutorContext>
+          ExecutorContext extends DefaultExecutorContext<RequestContext>>
       void recoverJob(
           ExecutorContext executorContext,
           RequestContext request,
@@ -269,7 +265,7 @@ public class DescribeJobs<
       recoverJobResult = executorContext.recoverJob(request);
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log(
-          "Failed to recover " + executorContext.executorName() + " job " + request.getJobId());
+          "Failed to recover " + executorContext.executorName() + " job " + request.jobId());
     } finally {
       if (recoverJobResult == null) {
         recoverJobResult = DescribeJobsResult.builder(request).lostError().build();

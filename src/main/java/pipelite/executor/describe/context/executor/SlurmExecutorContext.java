@@ -15,7 +15,7 @@ import lombok.Value;
 import lombok.experimental.Accessors;
 import lombok.experimental.NonFinal;
 import pipelite.executor.cmd.CmdRunner;
-import pipelite.executor.describe.DescribeJobsPollRequests;
+import pipelite.executor.describe.DescribeJobsRequests;
 import pipelite.executor.describe.DescribeJobsResult;
 import pipelite.executor.describe.DescribeJobsResults;
 import pipelite.executor.describe.context.request.SlurmRequestContext;
@@ -42,7 +42,7 @@ public class SlurmExecutorContext extends DefaultExecutorContext<SlurmRequestCon
 
   @Override
   public DescribeJobsResults<SlurmRequestContext> pollJobs(
-      DescribeJobsPollRequests<SlurmRequestContext> requests) {
+      DescribeJobsRequests<SlurmRequestContext> requests) {
     return pollJobs.pollJobs(this, requests);
   }
 

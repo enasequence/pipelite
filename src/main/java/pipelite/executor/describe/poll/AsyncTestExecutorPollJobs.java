@@ -13,7 +13,7 @@ package pipelite.executor.describe.poll;
 import java.time.ZonedDateTime;
 import lombok.extern.flogger.Flogger;
 import org.springframework.stereotype.Component;
-import pipelite.executor.describe.DescribeJobsPollRequests;
+import pipelite.executor.describe.DescribeJobsRequests;
 import pipelite.executor.describe.DescribeJobsResult;
 import pipelite.executor.describe.DescribeJobsResults;
 import pipelite.executor.describe.context.executor.AsyncTestExecutorContext;
@@ -27,9 +27,9 @@ public class AsyncTestExecutorPollJobs
   @Override
   public DescribeJobsResults<AsyncTestRequestContext> pollJobs(
       AsyncTestExecutorContext executorContext,
-      DescribeJobsPollRequests<AsyncTestRequestContext> requests) {
+      DescribeJobsRequests<AsyncTestRequestContext> requests) {
     DescribeJobsResults<AsyncTestRequestContext> results = new DescribeJobsResults<>();
-    for (AsyncTestRequestContext request : requests.requests.values()) {
+    for (AsyncTestRequestContext request : requests.get()) {
       if (request.getExecutionTime() != null
           && ZonedDateTime.now()
               .isBefore(request.getStartTime().plus(request.getExecutionTime()))) {

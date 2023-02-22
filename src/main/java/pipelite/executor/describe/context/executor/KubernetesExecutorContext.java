@@ -15,7 +15,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.Accessors;
 import lombok.experimental.NonFinal;
-import pipelite.executor.describe.DescribeJobsPollRequests;
+import pipelite.executor.describe.DescribeJobsRequests;
 import pipelite.executor.describe.DescribeJobsResults;
 import pipelite.executor.describe.context.request.DefaultRequestContext;
 import pipelite.executor.describe.poll.KubernetesExecutorPollJobs;
@@ -40,7 +40,7 @@ public class KubernetesExecutorContext extends DefaultExecutorContext<DefaultReq
 
   @Override
   public DescribeJobsResults<DefaultRequestContext> pollJobs(
-      DescribeJobsPollRequests<DefaultRequestContext> requests) {
+      DescribeJobsRequests<DefaultRequestContext> requests) {
     return pollJobs.pollJobs(this, requests);
   }
 }
