@@ -1,4 +1,6 @@
 spring:
+  main:
+    allow-circular-references: true
   config:
     activate:
       on-profile: test
@@ -7,6 +9,9 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
 pipelite:
   test:
     kubernetes:
