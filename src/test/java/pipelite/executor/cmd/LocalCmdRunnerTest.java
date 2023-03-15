@@ -58,6 +58,7 @@ public class LocalCmdRunnerTest {
     StageExecutorResult result = cmdRunner.execute("echo test");
     assertThat(result.isError()).isFalse();
     assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+    assertThat(result.stdOut()).startsWith("test");
     assertThat(result.stageLog()).startsWith("test");
   }
 

@@ -68,6 +68,7 @@ public class SshCmdRunnerTest {
     StageExecutorResult result = cmdRunner.execute("echo test");
     assertThat(result.isError()).isFalse();
     assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+    assertThat(result.stdOut()).startsWith("test");
     assertThat(result.stageLog()).startsWith("test");
   }
 
@@ -90,6 +91,9 @@ public class SshCmdRunnerTest {
               String exitCode = result.attribute(StageExecutorResultAttribute.EXIT_CODE);
               if (!exitCode.equals("0")) {
                 throw new PipeliteException("Unexpected exit code: " + exitCode);
+              }
+              if (!result.stdOut().contains("test" + j)) {
+                throw new PipeliteException("Unexpected stdout: " + result.stageLog());
               }
               if (!result.stageLog().contains("test" + j)) {
                 throw new PipeliteException("Unexpected log: " + result.stageLog());

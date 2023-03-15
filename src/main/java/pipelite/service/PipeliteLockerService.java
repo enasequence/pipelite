@@ -10,7 +10,6 @@
  */
 package pipelite.service;
 
-import io.micrometer.core.annotation.Timed;
 import java.time.Duration;
 import javax.annotation.PreDestroy;
 import lombok.extern.flogger.Flogger;
@@ -113,7 +112,6 @@ public class PipeliteLockerService {
     }
   }
 
-  @Timed("pipelite.service")
   public boolean lockProcess(String pipelineName, String processId) {
     Assert.notNull(serviceLock, "Missing lock");
     Assert.notNull(pipelineName, "Missing pipeline name");
@@ -121,7 +119,6 @@ public class PipeliteLockerService {
     return LockService.lockProcess(lockService, serviceLock, pipelineName, processId);
   }
 
-  @Timed("pipelite.service")
   public void unlockProcess(String pipelineName, String processId) {
     Assert.notNull(serviceLock, "Missing lock");
     Assert.notNull(pipelineName, "Missing pipeline name");

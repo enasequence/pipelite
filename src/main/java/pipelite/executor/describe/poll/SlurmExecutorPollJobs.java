@@ -90,7 +90,7 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
       throw new PipeliteException("Failed to poll SLURM jobs using squeue: " + result.stageLog());
     }
 
-    String str = result.stageLog();
+    String str = result.stdOut();
     return extractJobResultsUsingSqueue(executorContext, requests, str);
   }
 
@@ -179,7 +179,7 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
           "Failed to get SLURM job status using sacct: " + result.stageLog());
     }
 
-    String str = result.stageLog();
+    String str = result.stdOut();
 
     int lineNumber = 0;
     for (String line : str.split("\\r?\\n")) {

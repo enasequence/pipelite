@@ -97,8 +97,7 @@ public abstract class AsyncCmdExecutor<
       while (ZonedDateTime.now().isBefore(endTime)) {
         if (getCmdRunner().fileExists(Paths.get(outFile))) {
           try {
-            result.stageLog(
-                readOutFile(getCmdRunner(), outFile, getExecutorParams().getLogLines()));
+            result.stdOut(readOutFile(getCmdRunner(), outFile, getExecutorParams().getLogLines()));
           } catch (Exception ex) {
             logContext(log.atSevere(), getRequest())
                 .withCause(ex)
@@ -108,7 +107,7 @@ public abstract class AsyncCmdExecutor<
         }
         Time.wait(Duration.ofSeconds(Math.min(5, logTimeoutSeconds / 3)));
       }
-      result.stageLog(
+      result.stdOut(
           "The "
               + logJobContext()
               + " output file was not available within "

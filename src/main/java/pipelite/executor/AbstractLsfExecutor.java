@@ -96,7 +96,7 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
         RetryableExternalAction.execute(() -> getCmdRunner().execute(getSubmitCmd(request)));
     String jobId = null;
     if (!result.isError()) {
-      jobId = extractJobIdFromSubmitOutput(result.stageLog());
+      jobId = extractJobIdFromSubmitOutput(result.stdOut());
       logContext(log.atInfo(), request).log("Submitted LSF job " + jobId);
     }
     return new SubmitJobResult(jobId, result);

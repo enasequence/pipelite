@@ -12,7 +12,6 @@ package pipelite.service;
 
 import static java.util.stream.Collectors.groupingBy;
 
-import io.micrometer.core.annotation.Timed;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -62,7 +61,6 @@ public class ProcessService {
    * @param processId the process id
    * @return the saved process
    */
-  @Timed("pipelite.service")
   public Optional<ProcessEntity> getSavedProcess(String pipelineName, String processId) {
     return processRepository.findById(new ProcessEntityId(processId, pipelineName));
   }
@@ -78,7 +76,6 @@ public class ProcessService {
    * @param maxProcessCount the maximum number of processes to return
    * @return the pending processes for a pipeline in priority order
    */
-  @Timed("pipelite.service")
   public List<ProcessEntity> getPendingProcesses(String pipelineName, int maxProcessCount) {
     if (maxProcessCount == 0) {
       return new ArrayList<>();
@@ -151,7 +148,6 @@ public class ProcessService {
    * @param maxProcessCount the maximum number of processes to return
    * @return active processes that are not locked in priority order
    */
-  @Timed("pipelite.service")
   public List<ProcessEntity> getUnlockedActiveProcesses(String pipelineName, int maxProcessCount) {
     if (maxProcessCount == 0) {
       return new ArrayList<>();
@@ -170,7 +166,6 @@ public class ProcessService {
    * @param maxProcessCount the maximum number of processes to return
    * @return the completed processes for a pipeline
    */
-  @Timed("pipelite.service")
   public List<ProcessEntity> getCompletedProcesses(String pipelineName, int maxProcessCount) {
     try (Stream<ProcessEntity> processes =
         processRepository.findAllByPipelineNameAndProcessStateOrderByStartTimeDesc(
@@ -186,7 +181,6 @@ public class ProcessService {
    * @param maxProcessCount the maximum number of processes to return
    * @return the failed processes for a pipeline
    */
-  @Timed("pipelite.service")
   public List<ProcessEntity> getFailedProcesses(String pipelineName, int maxProcessCount) {
     try (Stream<ProcessEntity> processes =
         processRepository.findAllByPipelineNameAndProcessStateOrderByPriorityDesc(
@@ -203,7 +197,6 @@ public class ProcessService {
    * @param maxProcessCount the maximum number of processes to return
    * @return processes
    */
-  @Timed("pipelite.service")
   public List<ProcessEntity> getProcesses(
       String pipelineName, ProcessState state, int maxProcessCount) {
     List<ProcessEntity> processes = new ArrayList<>();
@@ -241,7 +234,6 @@ public class ProcessService {
     long failedCount;
   }
 
-  @Timed("pipelite.service")
   public List<ProcessStateSummary> getProcessStateSummary() {
     List<ProcessStateSummary> list = new ArrayList<>();
     String sql =
@@ -298,7 +290,6 @@ public class ProcessService {
    * @param processEntity the process
    * @return the saved process
    */
-  @Timed("pipelite.service")
   public ProcessEntity saveProcess(ProcessEntity processEntity) {
     log.atFiner().log("Saving process: " + processEntity.toString());
     return processRepository.save(processEntity);
@@ -312,7 +303,6 @@ public class ProcessService {
    * @param priority te process priority
    * @return the new process
    */
-  @Timed("pipelite.service")
   public ProcessEntity createExecution(String pipelineName, String processId, Integer priority) {
     ProcessEntity processEntity = ProcessEntity.createExecution(pipelineName, processId, priority);
     return saveProcess(processEntity);
@@ -324,7 +314,6 @@ public class ProcessService {
    *
    * @param processEntity the process
    */
-  @Timed("pipelite.service")
   public ProcessEntity startExecution(ProcessEntity processEntity) {
     processEntity.startExecution();
     return saveProcess(processEntity);
@@ -337,7 +326,6 @@ public class ProcessService {
    * @param process the process
    * @param processState the process state
    */
-  @Timed("pipelite.service")
   public ProcessEntity endExecution(Process process, ProcessState processState) {
     ProcessEntity processEntity = process.getProcessEntity();
     processEntity.endExecution(processState);
@@ -351,7 +339,6 @@ public class ProcessService {
    *
    * @param processEntity the process
    */
-  @Timed("pipelite.service")
   public void delete(ProcessEntity processEntity) {
     processRepository.delete(processEntity);
   }
@@ -365,7 +352,6 @@ public class ProcessService {
    * @return true if there is a process that has failed and can be retried
    * @throws PipeliteProcessRetryException if there is a process that can't be retried
    */
-  @Timed("pipelite.service")
   public boolean isRetryProcess(String pipelineName, String processId) {
     Optional<ProcessEntity> processEntity = getSavedProcess(pipelineName, processId);
     if (!processEntity.isPresent()) {

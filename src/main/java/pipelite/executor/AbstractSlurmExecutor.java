@@ -83,7 +83,7 @@ public abstract class AbstractSlurmExecutor<T extends AbstractSlurmExecutorParam
         RetryableExternalAction.execute(() -> getCmdRunner().execute(getSubmitCmd(request)));
     String jobId = null;
     if (!result.isError()) {
-      jobId = extractJobIdFromSubmitOutput(result.stageLog());
+      jobId = extractJobIdFromSubmitOutput(result.stdOut());
       logContext(log.atInfo(), request).log("Submitted SLURM job " + jobId);
     }
     return new SubmitJobResult(jobId, result);

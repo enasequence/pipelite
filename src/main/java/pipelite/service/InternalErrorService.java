@@ -10,7 +10,6 @@
  */
 package pipelite.service;
 
-import io.micrometer.core.annotation.Timed;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.ZonedDateTime;
@@ -46,12 +45,10 @@ public class InternalErrorService {
     this.serviceName = pipeliteConfiguration.service().getName();
   }
 
-  @Timed("pipelite.service")
   public InternalErrorEntity saveInternalError(Class cls, Throwable exception) {
     return saveInternalError(null, null, null, cls, exception);
   }
 
-  @Timed("pipelite.service")
   public InternalErrorEntity saveInternalError(
       String pipelineName, String processId, String stageName, Class cls, Throwable exception) {
     try {

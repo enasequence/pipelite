@@ -22,7 +22,11 @@ import pipelite.json.Json;
 public class StageExecutorResult {
 
   private StageExecutorState state;
-  private String stageLog;
+
+  private String stdOut;
+
+  private String stdErr;
+
   private final Map<String, String> attributes = new HashMap<>();
 
   private StageExecutorResult(StageExecutorState state) {
@@ -117,14 +121,20 @@ public class StageExecutorResult {
     return this;
   }
 
-  public StageExecutorResult stageLog(String stageLog) {
-    this.stageLog = stageLog;
+  public StageExecutorResult stdOut(String stdOut) {
+    this.stdOut = stdOut;
+    return this;
+  }
+
+  public StageExecutorResult stdErr(String stdErr) {
+    this.stdErr = stdErr;
     return this;
   }
 
   public StageExecutorResult stageLog(StageExecutorResult result) {
     if (result != null) {
-      this.stageLog = result.stageLog;
+      this.stdOut = result.stdOut;
+      this.stdErr = result.stdErr;
     }
     return this;
   }
@@ -132,7 +142,7 @@ public class StageExecutorResult {
   public StageExecutorResult stageLog(Exception ex) {
     StringWriter str = new StringWriter();
     ex.printStackTrace(new PrintWriter(str));
-    this.stageLog = str.toString();
+    this.stdErr = str.toString();
     return this;
   }
 
@@ -156,8 +166,16 @@ public class StageExecutorResult {
     return state;
   }
 
+  public String stdOut() {
+    return stdOut;
+  }
+
+  public String stdErr() {
+    return stdErr;
+  }
+
   public String stageLog() {
-    return stageLog;
+    return (stdOut != null ? stdOut : "") + (stdErr != null ? stdErr : "");
   }
 
   public String attribute(String value) {

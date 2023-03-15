@@ -61,7 +61,7 @@ public interface CmdRunner {
                 }
                 return retryResult;
               });
-      return result.stageLog();
+      return result.stdOut();
     } catch (PipeliteException ex) {
       throw ex;
     } catch (Exception ex) {
@@ -126,10 +126,10 @@ public interface CmdRunner {
   default String createTempFile() {
     try {
       StageExecutorResult result = execute("mktemp");
-      if (!result.isSuccess() || result.stageLog() == null || result.stageLog().isEmpty()) {
+      if (!result.isSuccess() || result.stdOut() == null || result.stdOut().isEmpty()) {
         throw new PipeliteException("Failed to create temp file");
       } else {
-        return result.stageLog().trim();
+        return result.stdOut().trim();
       }
     } catch (PipeliteException ex) {
       throw ex;
@@ -155,7 +155,8 @@ public interface CmdRunner {
             : StageExecutorResult.executionError();
     result.attribute(StageExecutorResultAttribute.COMMAND, cmd);
     result.attribute(StageExecutorResultAttribute.EXIT_CODE, exitCode);
-    result.stageLog((stdout != null ? stdout : "") + (stderr != null ? stderr : ""));
+    result.stdOut(stdout);
+    result.stdErr(stderr);
     return result;
   }
 

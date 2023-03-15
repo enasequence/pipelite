@@ -78,11 +78,13 @@ public class SshSimpleSlurmExecutorTest {
               .contains("echo test >");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).endsWith("2>&1\nEOF");
           assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+          assertThat(result.stdOut()).contains("Submitted batch job");
           assertThat(result.stageLog()).contains("Submitted batch job");
         },
         result -> {
           assertThat(result.isSuccess()).isTrue();
           assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+          assertThat(result.stdOut()).contains("test\n");
           assertThat(result.stageLog()).contains("test\n");
         });
   }
@@ -127,6 +129,7 @@ public class SshSimpleSlurmExecutorTest {
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains("exit 5 >");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).endsWith("2>&1\nEOF");
           assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+          assertThat(result.stdOut()).contains("Submitted batch job");
           assertThat(result.stageLog()).contains("Submitted batch job");
         },
         result -> {

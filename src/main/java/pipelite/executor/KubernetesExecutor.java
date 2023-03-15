@@ -168,7 +168,7 @@ public class KubernetesExecutor
                 .withName(pod.getMetadata().getName())
                 .tailingLines(getExecutorParams().getLogLines())
                 .getLog();
-        result.stageLog(log);
+        result.stdOut(log);
       }
       terminateJob(client);
     } catch (KubernetesClientException e) {

@@ -60,11 +60,13 @@ public class SshLsfExecutorTest {
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).startsWith("bsub");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains("-yaml");
           assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+          assertThat(result.stdOut()).contains("is submitted to default queue");
           assertThat(result.stageLog()).contains("is submitted to default queue");
         },
         result -> {
           assertThat(result.isSuccess()).isTrue();
           assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+          assertThat(result.stdOut()).contains("test");
           assertThat(result.stageLog()).contains("test\n");
         });
   }

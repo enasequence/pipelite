@@ -12,7 +12,6 @@ package pipelite.configuration;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import io.micrometer.core.annotation.Timed;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.ConnectionBuilder;
@@ -177,7 +176,6 @@ public class DataSourceConfiguration {
     }
 
     @Override
-    @Timed("pipelite.datasource")
     public Connection getConnection() throws SQLException {
       return retryable.execute(() -> dataSource.getConnection());
     }
