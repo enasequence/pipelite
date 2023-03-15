@@ -5,4 +5,5 @@
 /lock.file
 /.classpath
 /.project
-.settings/ 
+.settings/
+.idea/

@@ -108,10 +108,6 @@ public class DataSourceConfiguration {
   @Bean
   @Primary
   public LocalContainerEntityManagerFactoryBean pipeliteEntityManager() {
-    if (!checkRequiredProperties()) {
-      throw new RuntimeException("Missing required pipelite properties: pipelite.datasource.*");
-    }
-
     LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
     em.setDataSource(pipeliteDataSource());
     em.setPackagesToScan("pipelite.entity");
@@ -133,6 +129,10 @@ public class DataSourceConfiguration {
   @Primary
   @Bean("pipeliteDataSource")
   public DataSource pipeliteDataSource() {
+    if (!checkRequiredProperties()) {
+      throw new RuntimeException("Missing required pipelite properties: pipelite.datasource.*");
+    }
+
     // Create data source only once in tests.
     if (pipeliteDataSource == null) {
       synchronized (DataSourceConfiguration.class) {
