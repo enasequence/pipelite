@@ -74,7 +74,8 @@ public class Pipelite {
         "com.google.common.flogger.backend.slf4j.Slf4jBackendFactory#getInstance");
     // Since Spring Boot 2.6, circular references are not allowed by default.
     properties.put("spring.main.allow-circular-references", "true");
-    // Spring Framework 5.3 added multiple matcher strategies. Use the one that was the only available option in previous versions.
+    // Spring Framework 5.3 added multiple matcher strategies. Use the one that was the only
+    // available option in previous versions.
     properties.put("spring.mvc.pathmatch.matching-strategy", "ant_path_matcher");
     return properties;
   }

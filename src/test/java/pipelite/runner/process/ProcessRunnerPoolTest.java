@@ -14,7 +14,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -127,10 +126,6 @@ public class ProcessRunnerPoolTest {
     assertThat(processMetrics.runner().completedCount()).isEqualTo(PROCESS_CNT);
     assertThat(processMetrics.runner().failedCount()).isZero();
     assertThat(metrics.error().count()).isZero();
-    assertThat(metrics.processRunnerPool().runOneIterationTimer().mean(TimeUnit.SECONDS))
-        .isLessThan(5);
-    assertThat(metrics.processRunnerPool().runOneIterationTimer().mean(TimeUnit.SECONDS))
-        .isLessThan(5);
 
     assertThat(TimeSeriesHelper.getCount(processMetrics.runner().completedTimeSeries()))
         .isEqualTo(PROCESS_CNT);
@@ -174,10 +169,6 @@ public class ProcessRunnerPoolTest {
     assertThat(processMetrics.runner().completedCount()).isZero();
     assertThat(processMetrics.runner().failedCount()).isEqualTo(PROCESS_CNT);
     assertThat(metrics.error().count()).isZero();
-    assertThat(metrics.processRunnerPool().runOneIterationTimer().mean(TimeUnit.SECONDS))
-        .isLessThan(5);
-    assertThat(metrics.processRunnerPool().runOneIterationTimer().mean(TimeUnit.SECONDS))
-        .isLessThan(5);
 
     assertThat(TimeSeriesHelper.getCount(processMetrics.runner().completedTimeSeries())).isZero();
     assertThat(TimeSeriesHelper.getCount(processMetrics.runner().failedTimeSeries()))

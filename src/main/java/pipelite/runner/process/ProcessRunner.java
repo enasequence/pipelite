@@ -135,8 +135,6 @@ public class ProcessRunner {
   }
 
   public void runProcess() {
-    ZonedDateTime runOneIterationStartTime = ZonedDateTime.now();
-
     if (processRunnerState == ProcessRunnerState.PREPARE) {
       logContext(log.atInfo()).log("Executing process");
       startTime = ZonedDateTime.now();
@@ -153,8 +151,6 @@ public class ProcessRunner {
         processRunnerState = ProcessRunnerState.COMPLETED;
       }
     }
-
-    pipeliteMetrics.process(pipelineName).runner().endRunOneIteration(runOneIterationStartTime);
   }
 
   public List<Stage> activeStages() {

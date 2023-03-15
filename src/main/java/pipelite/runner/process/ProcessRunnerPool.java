@@ -97,8 +97,6 @@ public class ProcessRunnerPool extends AbstractScheduledService {
   }
 
   private void runProcessRunnerPool() {
-    ZonedDateTime runOneIterationStartTime = ZonedDateTime.now();
-
     // ProcessRunnerPool runOneIteration is called from AbstractScheduledService schedule.
     // It is guaranteed not to be called concurrently. We use an executor service to call
     // ProcessRunner runOneIteration. The ProcessRunner runOneIteration will not execute
@@ -121,7 +119,6 @@ public class ProcessRunnerPool extends AbstractScheduledService {
       log.atInfo().log("Stopping idle process runner pool: %s", serviceName());
       stopAsync();
     }
-    pipeliteMetrics.processRunnerPool().endRunOneIteration(runOneIterationStartTime);
   }
 
   private void runOneIterationForActiveProcessRunners() {

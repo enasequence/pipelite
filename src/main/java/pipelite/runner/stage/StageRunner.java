@@ -161,8 +161,6 @@ public class StageRunner {
   }
 
   public void runStage() {
-    ZonedDateTime runOneIterationStartTime = ZonedDateTime.now();
-
     if (stageRunnerState == StageRunnerState.PREPARE) {
       prepareStageExecution();
       stageRunnerState = StageRunnerState.EXECUTE;
@@ -174,12 +172,6 @@ public class StageRunner {
         endStageExecution(result);
       }
     }
-
-    pipeliteMetrics
-        .process(pipelineName)
-        .stage(stage.getStageName())
-        .runner()
-        .endRunOneIteration(runOneIterationStartTime);
   }
 
   private void prepareStageExecution() {

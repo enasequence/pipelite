@@ -14,8 +14,6 @@ import com.google.common.util.concurrent.AtomicDouble;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
-import java.time.Duration;
 import java.time.ZonedDateTime;
 import lombok.extern.flogger.Flogger;
 import pipelite.entity.field.StageState;
@@ -37,8 +35,6 @@ public class ProcessRunnerMetrics extends AbstractMetrics {
   private final AtomicDouble runningStagesGauge = new AtomicDouble();
   private final AtomicDouble submittedStagesGauge = new AtomicDouble();
 
-  private final Timer runOneIterationTimer;
-
   private final Counter completedCounter;
   private final Counter failedCounter;
 
@@ -55,8 +51,6 @@ public class ProcessRunnerMetrics extends AbstractMetrics {
     super(PREFIX);
     this.pipelineName = pipelineName;
     String[] tags = MicroMeterHelper.pipelineTags(pipelineName);
-
-    runOneIterationTimer = meterRegistry.timer(name("runOneIteration"), tags);
 
     Gauge.builder(name("running"), runningGauge, AtomicDouble::get)
         .tags(tags)
@@ -147,10 +141,6 @@ public class ProcessRunnerMetrics extends AbstractMetrics {
     log.atFiner().log("Submitted stages count for " + pipelineName + ": " + count);
     submittedStagesGauge.set(count);
     TimeSeriesHelper.maximumTimeSeriesCount(submittedStagesTimeSeries, count, pipelineName, now);
-  }
-
-  public void endRunOneIteration(ZonedDateTime startTime) {
-    runOneIterationTimer.record(Duration.between(startTime, ZonedDateTime.now()));
   }
 
   public void endProcessExecution(ProcessState state) {

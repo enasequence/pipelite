@@ -23,7 +23,6 @@ import org.springframework.stereotype.Component;
 import pipelite.RegisteredPipeline;
 import pipelite.exception.PipeliteException;
 import pipelite.metrics.collector.InternalErrorMetrics;
-import pipelite.metrics.collector.ProcessRunnerPoolMetrics;
 import pipelite.runner.process.ProcessRunner;
 
 @Component
@@ -32,7 +31,6 @@ public class PipeliteMetrics {
 
   private final MeterRegistry meterRegistry;
   private final InternalErrorMetrics internalErrorMetrics;
-  private final ProcessRunnerPoolMetrics processRunnerPoolMetrics;
   private final Map<String, ProcessMetrics> process = new ConcurrentHashMap<>();
   private final List<RegisteredPipeline> registeredPipelines;
 
@@ -41,16 +39,11 @@ public class PipeliteMetrics {
       @Autowired List<RegisteredPipeline> registeredPipelines) {
     this.meterRegistry = meterRegistry;
     this.internalErrorMetrics = new InternalErrorMetrics(meterRegistry);
-    this.processRunnerPoolMetrics = new ProcessRunnerPoolMetrics(meterRegistry);
     this.registeredPipelines = registeredPipelines;
   }
 
   public InternalErrorMetrics error() {
     return internalErrorMetrics;
-  }
-
-  public ProcessRunnerPoolMetrics processRunnerPool() {
-    return processRunnerPoolMetrics;
   }
 
   public ProcessMetrics process(String pipelineName) {
