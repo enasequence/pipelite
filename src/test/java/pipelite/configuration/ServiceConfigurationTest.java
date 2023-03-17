@@ -30,4 +30,13 @@ public class ServiceConfigurationTest {
     int port = ServiceConfiguration.DEFAULT_PORT;
     assertThat(serviceConfiguration.getName()).isEqualTo(hostName + ":" + port);
   }
+
+  @Test
+  public void getUrl() {
+    String hostName = ServiceConfiguration.getCanonicalHostName();
+    int port = ServiceConfiguration.DEFAULT_PORT;
+    String contextPath =
+        serviceConfiguration.getContextPath().replaceAll("^/*", "").replaceAll("/*$", "");
+    assertThat(serviceConfiguration.getUrl()).isEqualTo(hostName + ":" + port + "/" + contextPath);
+  }
 }

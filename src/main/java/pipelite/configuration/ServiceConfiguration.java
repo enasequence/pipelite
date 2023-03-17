@@ -101,6 +101,14 @@ public class ServiceConfiguration {
     return ServiceConfiguration.getCanonicalHostName() + ":" + port;
   }
 
+  public String getUrl() {
+    return ServiceConfiguration.getCanonicalHostName()
+        + ":"
+        + port
+        + "/"
+        + contextPath.replaceAll("^/*", "").replaceAll("/*$", "");
+  }
+
   public Duration getShutdownPeriod() {
     if (shutdownPeriod.compareTo(MIN_SHUTDOWN_PERIOD) < 0) {
       return MIN_SHUTDOWN_PERIOD;
