@@ -10,15 +10,18 @@
  */
 package pipelite.metrics.collector;
 
+import com.google.common.util.concurrent.AtomicDouble;
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import pipelite.metrics.helper.MicroMeterHelper;
 import pipelite.stage.executor.StageExecutorResult;
 
 public class StageRunnerMetrics extends AbstractMetrics {
 
-  private static final String PREFIX = "pipelite.stage.runner";
+  private static final String PREFIX = "pipelite.stage";
 
+  private final AtomicDouble runningGauge = new AtomicDouble();
   private final Counter successCounter;
   private final Counter failedCounter;
 
@@ -26,8 +29,22 @@ public class StageRunnerMetrics extends AbstractMetrics {
     super(PREFIX);
     String[] tags = MicroMeterHelper.stageTags(pipelineName, stageName);
 
+    Gauge.builder(name("running"), runningGauge, AtomicDouble::get)
+        .tags(tags)
+        .register(meterRegistry);
+
     failedCounter = meterRegistry.counter(name("failed"), tags);
     successCounter = meterRegistry.counter(name("success"), tags);
+  }
+
+  /**
+   * Set the number of running stages.
+   *
+   * @param count the number of running stages
+   * @paran now the time when the running stage count was measured
+   */
+  public void setRunningStagesCount(int count) {
+    runningGauge.set(count);
   }
 
   public double successCount() {

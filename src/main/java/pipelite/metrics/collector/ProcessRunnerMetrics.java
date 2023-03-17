@@ -25,15 +25,12 @@ import tech.tablesaw.api.Table;
 @Flogger
 public class ProcessRunnerMetrics extends AbstractMetrics {
 
-  private static final String PREFIX = "pipelite.process.runner";
+  private static final String PREFIX = "pipelite.process";
 
   private final String pipelineName;
 
   // Micrometer
   private final AtomicDouble runningGauge = new AtomicDouble();
-
-  private final AtomicDouble runningStagesGauge = new AtomicDouble();
-
   private final Counter completedCounter;
   private final Counter failedCounter;
 
@@ -110,14 +107,13 @@ public class ProcessRunnerMetrics extends AbstractMetrics {
   }
 
   /**
-   * Set the number of submitted stages.
+   * Set the number of running stages.
    *
-   * @param count the number of submitted stages
-   * @paran now the time when the submitted stage count was measured
+   * @param count the number of running stages
+   * @paran now the time when the running stage count was measured
    */
   public void setRunningStagesCount(int count, ZonedDateTime now) {
     log.atFiner().log("Running stages count for " + pipelineName + ": " + count);
-    runningStagesGauge.set(count);
     TimeSeriesHelper.maximumTimeSeriesCount(runningStagesTimeSeries, count, pipelineName, now);
   }
 
