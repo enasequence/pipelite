@@ -13,7 +13,7 @@ package pipelite.executor.cmd;
 import java.nio.file.Path;
 import lombok.extern.flogger.Flogger;
 import pipelite.exception.PipeliteException;
-import pipelite.retryable.RetryableExternalAction;
+import pipelite.retryable.Retry;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.CmdExecutorParameters;
@@ -52,15 +52,10 @@ public interface CmdRunner {
    */
   default String readFile(Path file, int lastLines) {
     try {
-      StageExecutorResult result =
-          RetryableExternalAction.execute(
-              () -> {
-                StageExecutorResult retryResult = execute("tail -n " + lastLines + " " + file);
-                if (!retryResult.isSuccess()) {
-                  throw new PipeliteException("Failed to read file: " + file);
-                }
-                return retryResult;
-              });
+      StageExecutorResult result = Retry.DEFAULT.execute(this, "tail -n " + lastLines + " " + file);
+      if (!result.isSuccess()) {
+        throw new PipeliteException("Failed to read file: " + file);
+      }
       return result.stdOut();
     } catch (PipeliteException ex) {
       throw ex;

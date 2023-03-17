@@ -33,7 +33,7 @@ import pipelite.executor.describe.DescribeJobsResult;
 import pipelite.executor.describe.DescribeJobsResults;
 import pipelite.executor.describe.context.executor.KubernetesExecutorContext;
 import pipelite.executor.describe.context.request.DefaultRequestContext;
-import pipelite.retryable.RetryableExternalAction;
+import pipelite.retryable.Retry;
 
 @Component
 @Flogger
@@ -50,8 +50,7 @@ public class KubernetesExecutorPollJobs
       KubernetesClient client = executorContext.client();
       String namespace = executorContext.namespace();
       JobList jobList =
-          RetryableExternalAction.execute(
-              () -> client.batch().v1().jobs().inNamespace(namespace).list());
+          Retry.DEFAULT.execute(() -> client.batch().v1().jobs().inNamespace(namespace).list());
       for (Job job : jobList.getItems()) {
         String jobId = job.getMetadata().getName();
         jobIds.add(jobId);

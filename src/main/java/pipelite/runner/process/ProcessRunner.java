@@ -157,11 +157,8 @@ public class ProcessRunner {
     return active.stream().map(a -> a.getStage()).collect(Collectors.toList());
   }
 
-  public List<Stage> submittedStages() {
-    return active.stream()
-        .map(a -> a.getStage())
-        .filter(s -> s.getExecutor().isSubmitted())
-        .collect(Collectors.toList());
+  public int getActiveStagesCount() {
+    return active.size();
   }
 
   public static void prepareProcessExecution(

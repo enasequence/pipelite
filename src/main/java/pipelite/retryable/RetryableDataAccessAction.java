@@ -31,11 +31,11 @@ public class RetryableDataAccessAction<T> {
     this.configuration = configuration;
   }
 
-  public <T> T execute(RetryableAction<T, SQLException> action) throws SQLException {
+  public <T> T execute(RetryAction<T, SQLException> action) throws SQLException {
     ZonedDateTime since = ZonedDateTime.now();
     while (true) {
       try {
-        return action.get();
+        return action.execute();
       } catch (TransientDataAccessException /* From Spring */
           | RecoverableDataAccessException /* From Spring */
           | SQLTransientException /* From JDBC/HikariCP */

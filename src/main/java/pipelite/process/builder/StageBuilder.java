@@ -68,27 +68,6 @@ public class StageBuilder {
    * @param cmd the command line command to execute
    * @param params the executor parameters
    */
-  public ProcessBuilder withLsfExecutor(String cmd, LsfExecutorParameters params) {
-    LsfExecutor executor = StageExecutor.createLsfExecutor(cmd);
-    executor.setExecutorParams(params);
-    return addStage(executor);
-  }
-
-  /**
-   * An executor that runs a command line command using LSF locally or on a remote host using ssh.
-   *
-   * @param cmd the command line command to execute
-   */
-  public ProcessBuilder withLsfExecutor(String cmd) {
-    return withLsfExecutor(cmd, new LsfExecutorParameters());
-  }
-
-  /**
-   * An executor that runs a command line command using LSF locally or on a remote host using ssh.
-   *
-   * @param cmd the command line command to execute
-   * @param params the executor parameters
-   */
   public ProcessBuilder withSimpleLsfExecutor(String cmd, SimpleLsfExecutorParameters params) {
     SimpleLsfExecutor executor = StageExecutor.createSimpleLsfExecutor(cmd);
     executor.setExecutorParams(params);

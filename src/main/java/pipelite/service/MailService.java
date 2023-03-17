@@ -25,7 +25,7 @@ import pipelite.entity.field.StageState;
 import pipelite.error.InternalErrorHandler;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
-import pipelite.retryable.RetryableExternalAction;
+import pipelite.retryable.Retry;
 import pipelite.stage.Stage;
 
 @Component
@@ -78,7 +78,7 @@ public class MailService {
             message.setSubject(subject);
             String text = getExecutionBody(process, subject);
             message.setText(text);
-            RetryableExternalAction.execute(
+            Retry.DEFAULT.execute(
                 () -> {
                   mailSender.send(message);
                   return null;
@@ -113,7 +113,7 @@ public class MailService {
             message.setSubject(subject);
             String text = getExecutionBody(process, subject);
             message.setText(text);
-            RetryableExternalAction.execute(
+            Retry.DEFAULT.execute(
                 () -> {
                   mailSender.send(message);
                   return null;

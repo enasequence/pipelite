@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.RegisteredPipeline;
@@ -44,7 +43,6 @@ public class StageController {
 
   @Autowired StageService stageService;
   @Autowired RegisteredPipelineService registeredPipelineService;
-  @Autowired Environment environment;
 
   @GetMapping("/{pipelineName}/{processId}")
   @ResponseStatus(HttpStatus.OK)

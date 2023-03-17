@@ -25,7 +25,7 @@ import pipelite.executor.describe.context.executor.DefaultExecutorContext;
 import pipelite.executor.describe.context.request.DefaultRequestContext;
 import pipelite.log.LogKey;
 import pipelite.metrics.StageMetrics;
-import pipelite.retryable.RetryableExternalAction;
+import pipelite.retryable.Retry;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
@@ -187,15 +187,11 @@ public abstract class AsyncExecutor<
                 .log(
                     "Failed to submit "
                         + executorName
-                        + " job"
-                        + (stageLog != null ? "\n" + stageLog : ""));
+                        + " job: "
+                        + (stageLog != null ? stageLog : ""));
           }
         },
         (ex) -> result.set(StageExecutorResult.internalError().stageLog(ex)));
-
-    if (stageMetrics != null) {
-      stageMetrics.executor().endSubmit(submitStartTime);
-    }
 
     return result.get();
   }
@@ -237,7 +233,7 @@ public abstract class AsyncExecutor<
   @Override
   public final void terminate() {
     logContext(log.atInfo()).log("Terminating " + executorName + " job " + jobId);
-    RetryableExternalAction.execute(
+    Retry.DEFAULT.execute(
         () -> {
           terminateJob();
           return null;

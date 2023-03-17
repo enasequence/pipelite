@@ -112,7 +112,6 @@ public class ProcessRunnerPool extends AbstractScheduledService {
       List<ProcessRunner> activeProcessRunners = getActiveProcessRunners();
       pipeliteMetrics.setRunningProcessesCount(activeProcessRunners, lastRunOneIteration);
       pipeliteMetrics.setRunningStagesCount(activeProcessRunners, lastRunOneIteration);
-      pipeliteMetrics.setSubmittedStagesCount(activeProcessRunners, lastRunOneIteration);
     }
 
     if (shutdownIfIdle && isIdle()) {

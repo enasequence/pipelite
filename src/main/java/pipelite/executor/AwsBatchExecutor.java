@@ -23,7 +23,7 @@ import pipelite.executor.describe.DescribeJobs;
 import pipelite.executor.describe.context.executor.AwsBatchExecutorContext;
 import pipelite.executor.describe.context.request.DefaultRequestContext;
 import pipelite.log.LogKey;
-import pipelite.retryable.RetryableExternalAction;
+import pipelite.retryable.Retry;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.parameters.AwsBatchExecutorParameters;
@@ -78,7 +78,7 @@ public class AwsBatchExecutor
 
     AWSBatch awsBatch = client(region);
     com.amazonaws.services.batch.model.SubmitJobResult submitJobResult =
-        RetryableExternalAction.execute(() -> awsBatch.submitJob(submitJobRequest));
+        Retry.DEFAULT.execute(() -> awsBatch.submitJob(submitJobRequest));
 
     if (submitJobResult == null || submitJobResult.getJobId() == null) {
       throw new PipeliteException("Missing AWSBatch submit job id.");
@@ -96,7 +96,7 @@ public class AwsBatchExecutor
     }
     TerminateJobRequest terminateJobRequest =
         new TerminateJobRequest().withJobId(jobId).withReason("Job terminated by pipelite");
-    RetryableExternalAction.execute(() -> client(region).terminateJob(terminateJobRequest));
+    Retry.DEFAULT.execute(() -> client(region).terminateJob(terminateJobRequest));
   }
 
   public static AWSBatch client(String region) {

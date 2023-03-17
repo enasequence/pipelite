@@ -16,7 +16,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.controller.api.info.LogInfo;
@@ -27,9 +26,7 @@ import pipelite.service.StageService;
 @RequestMapping(value = "/api/log")
 @Tag(name = "LogAPI", description = "Process logs")
 public class LogController {
-
   @Autowired StageService stageService;
-  @Autowired Environment environment;
 
   @GetMapping("/{pipelineName}/{processId}/{stageName}")
   @ResponseStatus(HttpStatus.OK)

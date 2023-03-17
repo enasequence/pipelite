@@ -94,22 +94,4 @@ public class PipeliteMetrics {
     counts.forEach(
         (pipelineName, count) -> process(pipelineName).runner().setRunningStagesCount(count, now));
   }
-
-  /**
-   * Set the number of submitted stages.
-   *
-   * @param processRunners the active process runners
-   */
-  public void setSubmittedStagesCount(Collection<ProcessRunner> processRunners, ZonedDateTime now) {
-    Map<String, Integer> counts = new HashMap<>();
-    registeredPipelines.forEach(r -> counts.put(r.pipelineName(), 0));
-    for (ProcessRunner processRunner : processRunners) {
-      processRunner
-          .submittedStages()
-          .forEach(r -> counts.merge(processRunner.getPipelineName(), 1, Integer::sum));
-    }
-    counts.forEach(
-        (pipelineName, count) ->
-            process(pipelineName).runner().setSubmittedStagesCount(count, now));
-  }
 }

@@ -11,6 +11,6 @@
 package pipelite.retryable;
 
 @FunctionalInterface
-public interface RetryableAction<T, E extends Throwable> {
-  T get() throws E;
+public interface RetryAction<T, E extends Throwable> {
+  T execute() throws E;
 }

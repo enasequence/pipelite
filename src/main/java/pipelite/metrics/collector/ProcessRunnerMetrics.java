@@ -33,7 +33,6 @@ public class ProcessRunnerMetrics extends AbstractMetrics {
   private final AtomicDouble runningGauge = new AtomicDouble();
 
   private final AtomicDouble runningStagesGauge = new AtomicDouble();
-  private final AtomicDouble submittedStagesGauge = new AtomicDouble();
 
   private final Counter completedCounter;
   private final Counter failedCounter;
@@ -43,7 +42,6 @@ public class ProcessRunnerMetrics extends AbstractMetrics {
   private final Table completedTimeSeries;
   private final Table failedTimeSeries;
   private final Table runningStagesTimeSeries;
-  private final Table submittedStagesTimeSeries;
   private final Table completedStagesTimeSeries;
   private final Table failedStagesTimeSeries;
 
@@ -55,9 +53,6 @@ public class ProcessRunnerMetrics extends AbstractMetrics {
     Gauge.builder(name("running"), runningGauge, AtomicDouble::get)
         .tags(tags)
         .register(meterRegistry);
-    Gauge.builder(name("submitted"), submittedStagesGauge, AtomicDouble::get)
-        .tags(tags)
-        .register(meterRegistry);
 
     completedCounter = meterRegistry.counter(name("completed"), tags);
     failedCounter = meterRegistry.counter(name("failed"), tags);
@@ -66,7 +61,6 @@ public class ProcessRunnerMetrics extends AbstractMetrics {
     completedTimeSeries = TimeSeriesHelper.getEmptyTimeSeries(pipelineName);
     failedTimeSeries = TimeSeriesHelper.getEmptyTimeSeries(pipelineName);
     runningStagesTimeSeries = TimeSeriesHelper.getEmptyTimeSeries(pipelineName);
-    submittedStagesTimeSeries = TimeSeriesHelper.getEmptyTimeSeries(pipelineName);
     completedStagesTimeSeries = TimeSeriesHelper.getEmptyTimeSeries(pipelineName);
     failedStagesTimeSeries = TimeSeriesHelper.getEmptyTimeSeries(pipelineName);
   }
@@ -93,10 +87,6 @@ public class ProcessRunnerMetrics extends AbstractMetrics {
 
   public Table runningStagesTimeSeries() {
     return runningStagesTimeSeries;
-  }
-
-  public Table submittedStagesTimeSeries() {
-    return submittedStagesTimeSeries;
   }
 
   public Table completedStagesTimeSeries() {
@@ -129,18 +119,6 @@ public class ProcessRunnerMetrics extends AbstractMetrics {
     log.atFiner().log("Running stages count for " + pipelineName + ": " + count);
     runningStagesGauge.set(count);
     TimeSeriesHelper.maximumTimeSeriesCount(runningStagesTimeSeries, count, pipelineName, now);
-  }
-
-  /**
-   * Set the number of submitted stages.
-   *
-   * @param count the number of submitted stages
-   * @paran now the time when the submitted stage count was measured
-   */
-  public void setSubmittedStagesCount(int count, ZonedDateTime now) {
-    log.atFiner().log("Submitted stages count for " + pipelineName + ": " + count);
-    submittedStagesGauge.set(count);
-    TimeSeriesHelper.maximumTimeSeriesCount(submittedStagesTimeSeries, count, pipelineName, now);
   }
 
   public void endProcessExecution(ProcessState state) {

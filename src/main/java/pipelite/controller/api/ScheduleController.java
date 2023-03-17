@@ -17,7 +17,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.PipeliteApplication;
@@ -33,7 +32,6 @@ import pipelite.service.ScheduleService;
 public class ScheduleController {
 
   @Autowired PipeliteApplication application;
-  @Autowired Environment environment;
   @Autowired ServiceConfiguration serviceConfiguration;
   @Autowired ScheduleService scheduleService;
 

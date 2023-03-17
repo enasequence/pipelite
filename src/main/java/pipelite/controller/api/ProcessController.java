@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pipelite.controller.api.info.ProcessInfo;
@@ -38,7 +37,6 @@ public class ProcessController {
 
   private static final int DEFAULT_MAX_PROCESS_CNT = 1000;
 
-  @Autowired private Environment environment;
   @Autowired private ProcessService processService;
   @Autowired private RunnerService runnerService;
 

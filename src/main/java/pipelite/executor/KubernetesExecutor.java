@@ -32,7 +32,7 @@ import pipelite.executor.describe.DescribeJobs;
 import pipelite.executor.describe.context.executor.KubernetesExecutorContext;
 import pipelite.executor.describe.context.request.DefaultRequestContext;
 import pipelite.log.LogKey;
-import pipelite.retryable.RetryableExternalAction;
+import pipelite.retryable.Retry;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
@@ -142,8 +142,7 @@ public class KubernetesExecutor
               .endSpec()
               .build();
 
-      RetryableExternalAction.execute(
-          () -> client.batch().v1().jobs().inNamespace(namespace).create(job));
+      Retry.DEFAULT.execute(() -> client.batch().v1().jobs().inNamespace(namespace).create(job));
 
       logContext(log.atInfo(), getRequest()).log("Submitted Kubernetes job " + jobId);
     } catch (KubernetesClientException e) {
@@ -221,7 +220,7 @@ public class KubernetesExecutor
     }
     log.atFine().log("Terminating Kubernetes job " + jobId);
     ScalableResource<Job> job = client.batch().v1().jobs().inNamespace(namespace).withName(jobId);
-    RetryableExternalAction.execute(() -> job.delete());
+    Retry.DEFAULT.execute(() -> job.delete());
   }
 
   public static Pod lastPodToStart(List<Pod> pods) {

@@ -11,25 +11,18 @@
 package pipelite.metrics;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import pipelite.metrics.collector.StageExecutorMetrics;
 import pipelite.metrics.collector.StageRunnerMetrics;
 
 public class StageMetrics {
 
   // Micrometer
   private final StageRunnerMetrics stageRunnerMetrics;
-  private final StageExecutorMetrics stageExecutorMetrics;
 
   public StageMetrics(String pipelineName, String stageName, MeterRegistry meterRegistry) {
     stageRunnerMetrics = new StageRunnerMetrics(pipelineName, stageName, meterRegistry);
-    stageExecutorMetrics = new StageExecutorMetrics(pipelineName, stageName, meterRegistry);
   }
 
   public StageRunnerMetrics runner() {
     return stageRunnerMetrics;
-  }
-
-  public StageExecutorMetrics executor() {
-    return stageExecutorMetrics;
   }
 }

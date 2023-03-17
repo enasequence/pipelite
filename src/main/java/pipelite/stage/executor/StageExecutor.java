@@ -74,9 +74,7 @@ public interface StageExecutor<T extends ExecutorParameters> {
   /** Resets asynchronous executor state. */
   static void resetAsyncExecutorState(Stage stage) {
     StageExecutor executor = stage.getExecutor();
-    if (executor instanceof LsfExecutor) {
-      stage.setExecutor(resetLsfExecutorState((LsfExecutor) executor));
-    } else if (executor instanceof SimpleLsfExecutor) {
+    if (executor instanceof SimpleLsfExecutor) {
       stage.setExecutor(resetSimpleLsfExecutorState((SimpleLsfExecutor) executor));
     } else if (executor instanceof SimpleSlurmExecutor) {
       stage.setExecutor(resetSimpleSlurmExecutorState((SimpleSlurmExecutor) executor));
@@ -102,24 +100,6 @@ public interface StageExecutor<T extends ExecutorParameters> {
     CmdExecutor<CmdExecutorParameters> cmdExecutor = new CmdExecutor<>();
     cmdExecutor.setCmd(cmd);
     return cmdExecutor;
-  }
-
-  /**
-   * Creates an executor that executes the command using LSF locally or on a remote host using ssh.
-   *
-   * @param cmd the command
-   * @return the command executor
-   */
-  static LsfExecutor createLsfExecutor(String cmd) {
-    LsfExecutor lsfExecutor = new LsfExecutor();
-    lsfExecutor.setCmd(cmd);
-    return lsfExecutor;
-  }
-
-  private static LsfExecutor resetLsfExecutorState(LsfExecutor oldExecutor) {
-    LsfExecutor newExecutor = StageExecutor.createLsfExecutor(oldExecutor.getCmd());
-    newExecutor.setExecutorParams(oldExecutor.getExecutorParams());
-    return newExecutor;
   }
 
   /**

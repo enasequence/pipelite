@@ -19,7 +19,7 @@ import pipelite.executor.describe.DescribeJobsResult;
 import pipelite.executor.describe.DescribeJobsResults;
 import pipelite.executor.describe.context.executor.AwsBatchExecutorContext;
 import pipelite.executor.describe.context.request.DefaultRequestContext;
-import pipelite.retryable.RetryableExternalAction;
+import pipelite.retryable.Retry;
 
 @Component
 @Flogger
@@ -32,7 +32,7 @@ public class AwsBatchExecutorPollJobs
       DescribeJobsRequests<DefaultRequestContext> requests) {
     DescribeJobsResults<DefaultRequestContext> results = new DescribeJobsResults<>();
     com.amazonaws.services.batch.model.DescribeJobsResult jobResult =
-        RetryableExternalAction.execute(
+        Retry.DEFAULT.execute(
             () ->
                 executorContext
                     .awsBatch()

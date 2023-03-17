@@ -20,11 +20,4 @@ public class PipelineInfo {
   private Integer maxProcessRunningCount;
   private Integer processRunningCount;
   private Integer stageRunningCount;
-  private Integer stageSubmitCount;
-  /*
-  private Long pendingCount;
-  private Long activeCount;
-  private Long completedCount;
-  private Long failedCount;
-   */
 }

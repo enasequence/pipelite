@@ -11,14 +11,7 @@ $(document).ready(function () {
                     return '<button type="button" class="btn btn-link" onclick="' + onClick + '">' + row.processRunningCount + '</button>';
                 }
             },
-            {data: "stageRunningCount"},
-            {data: "stageSubmitCount"}
-            /*,
-            {data: "pendingCount"},
-            {data: "activeCount"},
-            {data: "completedCount"},
-            {data: "failedCount"}
-             */
+            {data: "stageRunningCount"}
         ],
         dom: 'tip',
         orderCellsTop: true,

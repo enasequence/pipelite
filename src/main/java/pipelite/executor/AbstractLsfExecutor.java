@@ -20,7 +20,7 @@ import pipelite.exception.PipeliteException;
 import pipelite.executor.describe.DescribeJobs;
 import pipelite.executor.describe.context.executor.LsfExecutorContext;
 import pipelite.executor.describe.context.request.LsfRequestContext;
-import pipelite.retryable.RetryableExternalAction;
+import pipelite.retryable.Retry;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
@@ -92,8 +92,7 @@ public abstract class AbstractLsfExecutor<T extends AbstractLsfExecutorParameter
   protected SubmitJobResult submitJob() {
     StageExecutorRequest request = getRequest();
     outFile = logFilePathResolver.resolvedPath().file(request);
-    StageExecutorResult result =
-        RetryableExternalAction.execute(() -> getCmdRunner().execute(getSubmitCmd(request)));
+    StageExecutorResult result = Retry.DEFAULT.execute(getCmdRunner(), getSubmitCmd(request));
     String jobId = null;
     if (!result.isError()) {
       jobId = extractJobIdFromSubmitOutput(result.stdOut());

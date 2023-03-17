@@ -36,7 +36,6 @@ import pipelite.runner.process.ProcessRunner;
 import pipelite.service.ProcessService;
 import pipelite.service.RegisteredPipelineService;
 import pipelite.service.RunnerService;
-import pipelite.stage.Stage;
 import tech.tablesaw.api.Table;
 import tech.tablesaw.plotly.components.Figure;
 
@@ -85,24 +84,14 @@ public class PipelineController {
               int maxProcessRunningCount = p.configurePipeline().pipelineParallelism();
               int processRunningCount = 0;
               int stageRunningCount = 0;
-              int stageSubmitCount = 0;
               if (pipelineRunner != null) {
                 processRunningCount = pipelineRunner.getActiveProcessCount();
                 for (ProcessRunner processRunner : pipelineRunner.getActiveProcessRunners()) {
-                  for (Stage stage : processRunner.activeStages()) {
-                    stageRunningCount++;
-                    if (stage.getExecutor().isSubmitted()) {
-                      stageSubmitCount++;
-                    }
-                  }
+                  stageRunningCount += processRunner.getActiveStagesCount();
                 }
               }
               return getPipelineInfo(
-                  p.pipelineName(),
-                  maxProcessRunningCount,
-                  processRunningCount,
-                  stageRunningCount,
-                  stageSubmitCount);
+                  p.pipelineName(), maxProcessRunningCount, processRunningCount, stageRunningCount);
             })
         .collect(Collectors.toCollection(() -> list));
 
@@ -113,8 +102,7 @@ public class PipelineController {
       String pipelineName,
       int maxProcessRunningCount,
       int processRunningCount,
-      int stageRunningCount,
-      int stageSubmitCount) {
+      int stageRunningCount) {
     // Process state summary takes a long time to construct.
     // ProcessService.ProcessStateSummary summary = summaryMap.get(pipelineName);
     return PipelineInfo.builder()
@@ -122,13 +110,6 @@ public class PipelineController {
         .maxProcessRunningCount(maxProcessRunningCount)
         .processRunningCount(processRunningCount)
         .stageRunningCount(stageRunningCount)
-        .stageSubmitCount(stageSubmitCount)
-        /*
-        .pendingCount(summary.getPendingCount())
-        .activeCount(summary.getActiveCount())
-        .completedCount(summary.getCompletedCount())
-        .failedCount(summary.getFailedCount())
-          */
         .build();
   }
 
@@ -176,9 +157,6 @@ public class PipelineController {
         break;
       case "runningStages":
         tables.add(getTimeSeriesSince(metrics.runner().runningStagesTimeSeries(), since));
-        break;
-      case "submittedStages":
-        tables.add(getTimeSeriesSince(metrics.runner().submittedStagesTimeSeries(), since));
         break;
       case "completedStages":
         tables.add(getTimeSeriesSince(metrics.runner().completedStagesTimeSeries(), since));
