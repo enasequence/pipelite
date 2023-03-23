@@ -13,7 +13,6 @@ Pipelite workflow manager
   * [Executor parameters](#executor-parameters)
     + [Cmd executor parameters](#cmd-executor-parameters)
     + [Simple LSF executor parameters](#simple-lsf-executor-parameters)
-    + [LSF executor parameters](#lsf-executor-parameters)
     + [Simple SLURM executor parameters](#simple-slurm-executor-parameters)
     + [AwsBatch executor parameters](#awsbatch-executor-parameters)
   * [Service parameters](#service-parameters)
@@ -213,13 +212,13 @@ public class MySchedule implements Pipelite.Schedule {
             // Execute STAGE1 stage that does not depend on any other stage.
             // Different executeXXX methods exist for different types of stage dependencies.
             .execute("STAGE1")
-            // Execute STAGE1 using SimpleLsfExecutor with the provided stage execution parameters.
+            // Execute STAGE1 using SimpleSlurmExecutor with the provided stage execution parameters.
             // Different withXXX methods exist for different execution backends.
             .withSimpleSlurmExecutor(STAGE_CMD1, STAGE_PARAMS)
             // Execute STAGE2 stage that does not depend on any other stage.
             // Different executeXXX methods exist for different types of stage dependencies.
             .execute("STAGE2")
-            // Execute STAGE2 using SimpleLsfExecutor with the provided stage execution parameters.
+            // Execute STAGE2 using SimpleSlurmExecutor with the provided stage execution parameters.
             // Different withXXX methods exist for different execution backends.
             .withSimpleSlurmExecutor(STAGE_CMD2, STAGE_PARAMS);
   }
@@ -338,8 +337,6 @@ The following executor backends are supported by the ProcessBuilder:
 - ```withKubernetesExecutor```: a Kubernetes executor that runs images.
 - ```withCmdExecutor```: a local or ssh command executor. Ssh will be used if ```host``` has been set
   in ```CmdExecutorParameters```.
-- ```withLsfExecutor```: an LSF executor that uses YAML configuration files with parameter placeholders. Ssh will be
-  used if ```host``` has been set in ```LsfExecutorParameters```.
 - ```withSimpleLsfExecutor```: an LSF executor that uses a small subset of common LSF parameters. Ssh will be used
   if ```host``` has been set in ```SimpleLsfExecutorParameters```.
 - ```withSimpleSlurmExecutor```: an SLURM executor that uses a small subset of common SLURM parameters. Ssh will be used  
@@ -421,25 +418,6 @@ The unit for the resource usage limit can be one of:
 - MB or M (megabytes)
 - GB or G (gigabytes)
 - TB or T (terabytes)
-
-##### LSF executor parameters
-
-- pipelite.executor.lsf.host: the remote host. Ssh will be used if the ```host``` has been set.
-- pipelite.executor.lsf.user: the user used to connect to the remote host. Default value: user who restarted the
-  Pipelite service
-- pipelite.executor.lsf.env: the environmental variables passed to the command executor
-- pipelite.executor.lsf.definition: the job definition resource name, file name or URL
-- pipelite.executor.lsf.format: the job definition file format: YAML, JSON, or JSDL
-- pipelite.executor.lsf.parameters: the job definition parameters applied to the job definition file. The key is the
-  parameter placeholder that if found in the job definition file will be replaced with the corresponding value.
-- pipelite.executor.lsf.definitionDir: the directory where stage definition files are written: <definitionDir>/<user>
-  /<pipeline>/<process>. The <definitionDir> must exist on the LSF cluster and must be writable on the LSF submission
-  nodes.
-- pipelite.executor.lsf.logDir: the directory where stage log files are written: <logDir>/<user>
-  /<pipeline>/<process>. The <logDir> must exist on the LSF cluster and must be writable on the LSF execution nodes.
-- pipelite.executor.lsf.logTimeout: the maximum wait time for the stage log to become available. Default value: 10
-  seconds
-
 
 ##### Simple SLURM executor parameters
 

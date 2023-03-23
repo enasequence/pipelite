@@ -19,7 +19,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithConfigurations;
-import pipelite.stage.parameters.LsfExecutorParameters;
 
 // TODO: move to and test YAML
 
@@ -65,10 +64,6 @@ public class ExecutorConfigurationTest {
 
   @Test
   public void lsfProperties() {
-    assertThat(config.getLsf().getDefinition()).isEqualTo("TEST");
-    assertThat(config.getLsf().getFormat()).isEqualTo(LsfExecutorParameters.Format.YAML);
-    assertThat(config.getLsf().getLogDir()).isEqualTo("TEST_DIR1");
-    assertThat(config.getLsf().getDefinitionDir()).isEqualTo("TEST_DIR2");
     assertThat(config.getSimpleLsf().getMemory()).isEqualTo(1);
     assertThat(config.getSimpleLsf().getCpu()).isEqualTo(1);
     assertThat(config.getSimpleLsf().getQueue()).isEqualTo("TEST");

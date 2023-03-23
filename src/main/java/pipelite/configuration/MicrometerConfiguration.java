@@ -27,6 +27,9 @@ public class MicrometerConfiguration {
         registry
             .config()
             .commonTags(
-                "application", serviceConfiguration.getName(), "url", serviceConfiguration.getUrl());
+                "application",
+                serviceConfiguration.getName(),
+                "url",
+                serviceConfiguration.getUrl());
   }
 }

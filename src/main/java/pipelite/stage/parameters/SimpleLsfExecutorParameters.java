@@ -57,5 +57,6 @@ public class SimpleLsfExecutorParameters extends AbstractLsfExecutorParameters {
     applyDefault(this::getMemory, this::setMemory, defaultParams::getMemory);
     applyDefault(this::getMemoryUnits, this::setMemoryUnits, defaultParams::getMemoryUnits);
     applyDefault(this::getMemoryTimeout, this::setMemoryTimeout, defaultParams::getMemoryTimeout);
+    applyDefault(this::getJobGroup, this::setJobGroup, defaultParams::getJobGroup);
   }
 }

@@ -29,7 +29,6 @@ public class ExecutorConfiguration {
 
   @NestedConfigurationProperty private AwsBatchExecutorParameters awsBatch;
   @NestedConfigurationProperty private KubernetesExecutorParameters kubernetes;
-  @NestedConfigurationProperty private LsfExecutorParameters lsf;
   @NestedConfigurationProperty private SimpleLsfExecutorParameters simpleLsf;
   @NestedConfigurationProperty private SimpleSlurmExecutorParameters simpleSlurm;
   @NestedConfigurationProperty private CmdExecutorParameters cmd;

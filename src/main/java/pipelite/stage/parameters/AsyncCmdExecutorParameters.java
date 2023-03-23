@@ -44,6 +44,7 @@ public abstract class AsyncCmdExecutorParameters extends CmdExecutorParameters {
     if (params == null) {
       return;
     }
+    super.applyDefaults(params);
     applyDefault(this::getLogDir, this::setLogDir, params::getLogDir);
     applyDefault(this::getLogTimeout, this::setLogTimeout, params::getLogTimeout);
   }
