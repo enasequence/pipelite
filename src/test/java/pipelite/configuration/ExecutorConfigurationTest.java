@@ -25,14 +25,15 @@ import pipelite.PipeliteTestConfigWithConfigurations;
 @SpringBootTest(
     classes = PipeliteTestConfigWithConfigurations.class,
     properties = {
+      // CMD
+      "pipelite.executor.cmd.user=TEST",
       "pipelite.executor.cmd.host=TEST",
       "pipelite.executor.cmd.immediateRetries=2",
       "pipelite.executor.cmd.maximumRetries=3",
       "pipelite.executor.cmd.timeout=10s",
-      "pipelite.executor.lsf.definition=TEST",
-      "pipelite.executor.lsf.format=YAML",
-      "pipelite.executor.lsf.logDir=TEST_DIR1",
-      "pipelite.executor.lsf.definitionDir=TEST_DIR2",
+      // LSF
+      "pipelite.executor.simpleLsf.user=TEST",
+      "pipelite.executor.simpleLsf.host=TEST",
       "pipelite.executor.simpleLsf.memory=1",
       "pipelite.executor.simpleLsf.cpu=1",
       "pipelite.executor.simpleLsf.queue=TEST",
@@ -41,6 +42,17 @@ import pipelite.PipeliteTestConfigWithConfigurations;
       "pipelite.executor.simpleLsf.maximumRetries=3",
       "pipelite.executor.simpleLsf.timeout=10s",
       "pipelite.executor.simpleLsf.logDir=TEST_DIR1",
+      // SLURM
+      "pipelite.executor.simpleSlurm.user=TEST",
+      "pipelite.executor.simpleSlurm.host=TEST",
+      "pipelite.executor.simpleSlurm.memory=1",
+      "pipelite.executor.simpleSlurm.cpu=1",
+      "pipelite.executor.simpleSlurm.queue=TEST",
+      "pipelite.executor.simpleSlurm.immediateRetries=2",
+      "pipelite.executor.simpleSlurm.maximumRetries=3",
+      "pipelite.executor.simpleSlurm.timeout=10s",
+      "pipelite.executor.simpleSlurm.logDir=TEST_DIR1",
+      // AWS
       "pipelite.executor.awsBatch.region=TEST",
       "pipelite.executor.awsBatch.queue=TEST",
       "pipelite.executor.awsBatch.definition=TEST",
@@ -56,6 +68,7 @@ public class ExecutorConfigurationTest {
 
   @Test
   public void cmdProperties() {
+    assertThat(config.getCmd().getUser()).isEqualTo("TEST");
     assertThat(config.getCmd().getHost()).isEqualTo("TEST");
     assertThat(config.getCmd().getImmediateRetries()).isEqualTo(2);
     assertThat(config.getCmd().getMaximumRetries()).isEqualTo(3);
@@ -64,6 +77,8 @@ public class ExecutorConfigurationTest {
 
   @Test
   public void lsfProperties() {
+    assertThat(config.getSimpleLsf().getUser()).isEqualTo("TEST");
+    assertThat(config.getSimpleLsf().getHost()).isEqualTo("TEST");
     assertThat(config.getSimpleLsf().getMemory()).isEqualTo(1);
     assertThat(config.getSimpleLsf().getCpu()).isEqualTo(1);
     assertThat(config.getSimpleLsf().getQueue()).isEqualTo("TEST");
@@ -73,6 +88,20 @@ public class ExecutorConfigurationTest {
     assertThat(config.getSimpleLsf().getMaximumRetries()).isEqualTo(3);
     assertThat(config.getSimpleLsf().getLogDir()).isEqualTo("TEST_DIR1");
     assertThat(config.getSimpleLsf().getTimeout()).isEqualTo(Duration.ofSeconds(10));
+  }
+
+  @Test
+  public void slurmProperties() {
+    assertThat(config.getSimpleSlurm().getUser()).isEqualTo("TEST");
+    assertThat(config.getSimpleSlurm().getHost()).isEqualTo("TEST");
+    assertThat(config.getSimpleSlurm().getMemory()).isEqualTo(1);
+    assertThat(config.getSimpleSlurm().getCpu()).isEqualTo(1);
+    assertThat(config.getSimpleSlurm().getQueue()).isEqualTo("TEST");
+    assertThat(config.getSimpleSlurm().getImmediateRetries()).isEqualTo(2);
+    assertThat(config.getSimpleSlurm().getImmediateRetries()).isEqualTo(2);
+    assertThat(config.getSimpleSlurm().getMaximumRetries()).isEqualTo(3);
+    assertThat(config.getSimpleSlurm().getLogDir()).isEqualTo("TEST_DIR1");
+    assertThat(config.getSimpleSlurm().getTimeout()).isEqualTo(Duration.ofSeconds(10));
   }
 
   @Test
