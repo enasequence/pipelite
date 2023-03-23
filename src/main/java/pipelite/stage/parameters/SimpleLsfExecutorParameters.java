@@ -51,12 +51,12 @@ public class SimpleLsfExecutorParameters extends AbstractLsfExecutorParameters {
     if (defaultParams == null) {
       return;
     }
-    super.applyDefaults(defaultParams);
-    applyDefault(this::getQueue, this::setQueue, defaultParams::getQueue);
-    applyDefault(this::getCpu, this::setCpu, defaultParams::getCpu);
-    applyDefault(this::getMemory, this::setMemory, defaultParams::getMemory);
-    applyDefault(this::getMemoryUnits, this::setMemoryUnits, defaultParams::getMemoryUnits);
-    applyDefault(this::getMemoryTimeout, this::setMemoryTimeout, defaultParams::getMemoryTimeout);
-    applyDefault(this::getJobGroup, this::setJobGroup, defaultParams::getJobGroup);
+    applyAsyncCmdExecutorDefaults(defaultParams);
+    if (queue == null) setQueue(defaultParams.getQueue());
+    if (cpu == null) setCpu(defaultParams.getCpu());
+    if (memory == null) setMemory(defaultParams.getMemory());
+    if (memoryUnits == null) setMemoryUnits(defaultParams.getMemoryUnits());
+    if (memoryTimeout == null) setMemoryTimeout(defaultParams.getMemoryTimeout());
+    if (jobGroup == null) setJobGroup(defaultParams.getJobGroup());
   }
 }

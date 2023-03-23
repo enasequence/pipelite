@@ -20,14 +20,4 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
-public class AbstractSlurmExecutorParameters extends AsyncCmdExecutorParameters {
-
-  /**
-   * Call to apply default values from stage configuration.
-   *
-   * @param params executor parameters extracted from stage configuration
-   */
-  protected void applyDefaults(AbstractSlurmExecutorParameters params) {
-    super.applyDefaults(params);
-  }
-}
+public class AbstractSlurmExecutorParameters extends AsyncCmdExecutorParameters {}

@@ -139,6 +139,7 @@ public class StageExecutorSerializerTest {
                 + "  \"timeout\" : 60000,\n"
                 + "  \"maximumRetries\" : 3,\n"
                 + "  \"immediateRetries\" : 3,\n"
+                + "  \"logSave\" : \"ERROR\",\n"
                 + "  \"logLines\" : 1000\n"
                 + "}");
   }
@@ -172,6 +173,7 @@ public class StageExecutorSerializerTest {
                 + "  \"timeout\" : 604800000,\n"
                 + "  \"maximumRetries\" : 3,\n"
                 + "  \"immediateRetries\" : 3,\n"
+                + "  \"logSave\" : \"ERROR\",\n"
                 + "  \"logLines\" : 1000,\n"
                 + "  \"host\" : \"host\",\n"
                 + "  \"logTimeout\" : 10000,\n"

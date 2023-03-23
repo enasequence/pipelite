@@ -203,6 +203,7 @@ class StageServiceTest {
                 + "  \"timeout\" : 0,\n"
                 + "  \"maximumRetries\" : 1,\n"
                 + "  \"immediateRetries\" : 0,\n"
+                + "  \"logSave\" : \"ERROR\",\n"
                 + "  \"logLines\" : 1000\n"
                 + "}");
   }
@@ -227,6 +228,7 @@ class StageServiceTest {
                 + "  \"timeout\" : 0,\n"
                 + "  \"maximumRetries\" : 1,\n"
                 + "  \"immediateRetries\" : 0,\n"
+                + "  \"logSave\" : \"ERROR\",\n"
                 + "  \"logLines\" : 1000\n"
                 + "}");
   }
@@ -252,6 +254,7 @@ class StageServiceTest {
                 + "  \"timeout\" : 0,\n"
                 + "  \"maximumRetries\" : 1,\n"
                 + "  \"immediateRetries\" : 0,\n"
+                + "  \"logSave\" : \"ERROR\",\n"
                 + "  \"logLines\" : 1000\n"
                 + "}");
   }
@@ -276,6 +279,7 @@ class StageServiceTest {
                 + "  \"timeout\" : 0,\n"
                 + "  \"maximumRetries\" : 1,\n"
                 + "  \"immediateRetries\" : 0,\n"
+                + "  \"logSave\" : \"ERROR\",\n"
                 + "  \"logLines\" : 1000\n"
                 + "}");
   }
@@ -301,6 +305,7 @@ class StageServiceTest {
                 + "  \"timeout\" : 0,\n"
                 + "  \"maximumRetries\" : 1,\n"
                 + "  \"immediateRetries\" : 0,\n"
+                + "  \"logSave\" : \"ERROR\",\n"
                 + "  \"logLines\" : 1000\n"
                 + "}");
   }
@@ -325,6 +330,7 @@ class StageServiceTest {
                 + "  \"timeout\" : 0,\n"
                 + "  \"maximumRetries\" : 1,\n"
                 + "  \"immediateRetries\" : 0,\n"
+                + "  \"logSave\" : \"ERROR\",\n"
                 + "  \"logLines\" : 1000\n"
                 + "}");
   }

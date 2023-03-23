@@ -112,6 +112,7 @@ public class StageEntityAsserter {
                                 .collect(Collectors.toList()))
                         + " ],\n"
                     : "")
+                + "  \"logSave\" : \"ERROR\",\n"
                 + "  \"logLines\" : 1000,\n"
                 + "  \"host\" : \""
                 + lsfTestConfiguration.getHost()
@@ -164,6 +165,7 @@ public class StageEntityAsserter {
                                 .collect(Collectors.toList()))
                         + " ],\n"
                     : "")
+                + "  \"logSave\" : \"ERROR\",\n"
                 + "  \"logLines\" : 1000,\n"
                 + "  \"host\" : \""
                 + slurmTestConfiguration.getHost()
@@ -217,6 +219,7 @@ public class StageEntityAsserter {
                                 .collect(Collectors.toList()))
                         + " ],\n"
                     : "")
+                + "  \"logSave\" : \"ERROR\",\n"
                 + "  \"logLines\" : 1000,\n"
                 + "  \"namespace\" : \""
                 + namespace
@@ -256,6 +259,7 @@ public class StageEntityAsserter {
                                 .collect(Collectors.toList()))
                         + " ],\n"
                     : "")
+                + "  \"logSave\" : \"ERROR\",\n"
                 + "  \"logLines\" : 1000\n"
                 + "}");
   }

@@ -47,13 +47,13 @@ public class KubernetesExecutorParameters extends ExecutorParameters {
     if (defaultParams == null) {
       return;
     }
-    super.applyDefaults(defaultParams);
-    applyDefault(this::getContext, this::setContext, defaultParams::getContext);
-    applyDefault(this::getNamespace, this::setNamespace, defaultParams::getNamespace);
-    applyDefault(this::getCpu, this::setCpu, defaultParams::getCpu);
-    applyDefault(this::getMemory, this::setMemory, defaultParams::getMemory);
-    applyDefault(this::getCpuLimit, this::setCpuLimit, defaultParams::getCpuLimit);
-    applyDefault(this::getMemoryLimit, this::setMemoryLimit, defaultParams::getMemoryLimit);
+    applyExecutorDefaults(defaultParams);
+    if (context == null) setContext(defaultParams.getContext());
+    if (namespace == null) setNamespace(defaultParams.getNamespace());
+    if (cpu == null) setCpu(defaultParams.getCpu());
+    if (memory == null) setMemory(defaultParams.getMemory());
+    if (cpuLimit == null) setCpuLimit(defaultParams.getCpuLimit());
+    if (memoryLimit == null) setMemoryLimit(defaultParams.getMemoryLimit());
   }
 
   @Override

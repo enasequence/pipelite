@@ -35,12 +35,21 @@ public class CmdExecutorParameters extends ExecutorParameters {
 
   public void applyDefaults(ExecutorConfiguration executorConfiguration) {
     CmdExecutorParameters defaultParams = executorConfiguration.getCmd();
+    applyCmdExecutorDefaults(defaultParams);
+  }
+
+  /**
+   * Call to apply default values from stage configuration file.
+   *
+   * @param defaultParams executor parameters from configuration file
+   */
+  public void applyCmdExecutorDefaults(CmdExecutorParameters defaultParams) {
     if (defaultParams == null) {
       return;
     }
-    super.applyDefaults(defaultParams);
-    applyDefault(this::getHost, this::setHost, defaultParams::getHost);
-    applyDefault(this::getUser, this::setUser, defaultParams::getUser);
+    applyExecutorDefaults(defaultParams);
+    if (host == null) setHost(defaultParams.getHost());
+    if (user == null) setUser(defaultParams.getUser());
     if (env == null) {
       env = new HashMap<>();
     }

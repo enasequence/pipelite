@@ -11,7 +11,6 @@
 package pipelite.stage.parameters;
 
 import java.time.Duration;
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -28,25 +27,29 @@ public abstract class AsyncCmdExecutorParameters extends CmdExecutorParameters {
 
   /**
    * The directory where stage log files are written: <logDir>/<user>/<pipeline>/<process>. The
-   * <logDir> must exist on the LSF cluster. Default value: pipelite.
+   * <logDir> must exist on the LSF cluster.
    */
   private String logDir;
 
   /** The maximum wait time for the stage log file to become available. */
-  @Builder.Default private Duration logTimeout = DEFAULT_LOG_TIMEOUT;
+  private Duration logTimeout;
+
+  public Duration getLogTimeout() {
+    return logTimeout == null ? DEFAULT_LOG_TIMEOUT : logTimeout;
+  }
 
   /**
-   * Call to apply default values from stage configuration.
+   * Call to apply default values from stage configuration file.
    *
-   * @param params executor parameters extracted from stage configuration
+   * @param defaultParams executor parameters from configuration file
    */
-  protected void applyDefaults(AsyncCmdExecutorParameters params) {
-    if (params == null) {
+  public void applyAsyncCmdExecutorDefaults(AsyncCmdExecutorParameters defaultParams) {
+    if (defaultParams == null) {
       return;
     }
-    super.applyDefaults(params);
-    applyDefault(this::getLogDir, this::setLogDir, params::getLogDir);
-    applyDefault(this::getLogTimeout, this::setLogTimeout, params::getLogTimeout);
+    applyCmdExecutorDefaults(defaultParams);
+    if (logDir == null) setLogDir(defaultParams.getLogDir());
+    if (logTimeout == null) setLogTimeout(defaultParams.getLogTimeout());
   }
 
   @Override

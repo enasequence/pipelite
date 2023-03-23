@@ -90,6 +90,7 @@ class StageEntityTest {
                 + "  \"timeout\" : 0,\n"
                 + "  \"maximumRetries\" : 0,\n"
                 + "  \"immediateRetries\" : 0,\n"
+                + "  \"logSave\" : \"ERROR\",\n"
                 + "  \"logLines\" : 1000\n"
                 + "}");
 
@@ -116,6 +117,7 @@ class StageEntityTest {
                 + "  \"timeout\" : 0,\n"
                 + "  \"maximumRetries\" : 0,\n"
                 + "  \"immediateRetries\" : 0,\n"
+                + "  \"logSave\" : \"ERROR\",\n"
                 + "  \"logLines\" : 1000\n"
                 + "}");
 
@@ -144,6 +146,7 @@ class StageEntityTest {
                 + "  \"timeout\" : 0,\n"
                 + "  \"maximumRetries\" : 0,\n"
                 + "  \"immediateRetries\" : 0,\n"
+                + "  \"logSave\" : \"ERROR\",\n"
                 + "  \"logLines\" : 1000\n"
                 + "}");
 
@@ -170,6 +173,7 @@ class StageEntityTest {
                 + "  \"timeout\" : 0,\n"
                 + "  \"maximumRetries\" : 0,\n"
                 + "  \"immediateRetries\" : 0,\n"
+                + "  \"logSave\" : \"ERROR\",\n"
                 + "  \"logLines\" : 1000\n"
                 + "}");
 
@@ -198,6 +202,7 @@ class StageEntityTest {
                 + "  \"timeout\" : 0,\n"
                 + "  \"maximumRetries\" : 0,\n"
                 + "  \"immediateRetries\" : 0,\n"
+                + "  \"logSave\" : \"ERROR\",\n"
                 + "  \"logLines\" : 1000\n"
                 + "}");
 

@@ -14,9 +14,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.Singular;
@@ -36,16 +33,17 @@ public class ExecutorParameters {
   public static final Duration DEFAULT_TIMEOUT = Duration.ofDays(7);
   public static final int DEFAULT_MAX_RETRIES = 3;
   public static final int DEFAULT_IMMEDIATE_RETRIES = 3;
+  public static final LogFileSavePolicy DEFAULT_LOG_SAVE = LogFileSavePolicy.ERROR;
   public static final int DEFAULT_LOG_LINES = 1000;
 
   /** The execution timeout. */
-  @Builder.Default private Duration timeout = DEFAULT_TIMEOUT;
+  private Duration timeout;
 
   /** The maximum number of retries */
-  @Builder.Default private Integer maximumRetries = DEFAULT_MAX_RETRIES;
+  private Integer maximumRetries;
 
   /** The maximum number of immediate retries. */
-  @Builder.Default private Integer immediateRetries = DEFAULT_IMMEDIATE_RETRIES;
+  private Integer immediateRetries;
 
   /** The permanent error exit codes. Permanent errors are never retried. */
   @Singular protected List<Integer> permanentErrors;
@@ -54,13 +52,30 @@ public class ExecutorParameters {
   private LogFileSavePolicy logSave;
 
   /** The number of last lines from the stage log file saved in the database. */
-  @Builder.Default private int logLines = DEFAULT_LOG_LINES;
+  private Integer logLines;
 
-  public static <T> void applyDefault(
-      Supplier<T> thisGetter, Consumer<T> thisSetter, Supplier<T> defaultGetter) {
-    if (thisGetter.get() == null) {
-      thisSetter.accept(defaultGetter.get());
-    }
+  public Duration getTimeout() {
+    return timeout == null ? DEFAULT_TIMEOUT : timeout;
+  }
+
+  public Integer getMaximumRetries() {
+    return maximumRetries == null ? DEFAULT_MAX_RETRIES : maximumRetries;
+  }
+
+  public Integer getImmediateRetries() {
+    return immediateRetries == null ? DEFAULT_IMMEDIATE_RETRIES : immediateRetries;
+  }
+
+  public List<Integer> getPermanentErrors() {
+    return permanentErrors;
+  }
+
+  public LogFileSavePolicy getLogSave() {
+    return logSave == null ? DEFAULT_LOG_SAVE : logSave;
+  }
+
+  public int getLogLines() {
+    return (logLines == null || logLines < 1) ? DEFAULT_LOG_LINES : logLines;
   }
 
   public static <K, V> void applyMapDefaults(Map<K, V> map, Map<K, V> defaultMap) {
@@ -91,36 +106,28 @@ public class ExecutorParameters {
   public void applyDefaults(ExecutorConfiguration executorConfiguration) {}
 
   /**
-   * Call to apply default values from stage configuration.
+   * Call to apply default values from stage configuration file.
    *
-   * @param params executor parameters extracted from stage configuration
+   * @param defaultParams executor parameters from configuration file
    */
-  protected void applyDefaults(ExecutorParameters params) {
-    if (params == null) {
+  public void applyExecutorDefaults(ExecutorParameters defaultParams) {
+    if (defaultParams == null) {
       return;
     }
-    applyDefault(this::getTimeout, this::setTimeout, params::getTimeout);
-    applyDefault(this::getMaximumRetries, this::setMaximumRetries, params::getMaximumRetries);
-    applyDefault(this::getImmediateRetries, this::setImmediateRetries, params::getImmediateRetries);
-    applyDefault(this::getLogSave, this::setLogSave, params::getLogSave);
-    applyDefault(this::getLogLines, this::setLogLines, params::getLogLines);
+    if (timeout == null) setTimeout(defaultParams.getTimeout());
+    if (maximumRetries == null) setMaximumRetries(defaultParams.getMaximumRetries());
+    if (immediateRetries == null) setImmediateRetries(defaultParams.getImmediateRetries());
+    if (logSave == null) setLogSave(defaultParams.getLogSave());
+    if (logLines == null) setLogLines(defaultParams.getLogLines());
 
     if (permanentErrors == null) {
       permanentErrors = new ArrayList<>();
     }
-    applyListDefaults(permanentErrors, params.permanentErrors);
+    applyListDefaults(permanentErrors, defaultParams.permanentErrors);
   }
 
   /** Validates the parameters after applying defaults. */
-  public void validate() {
-    ExecutorParametersValidator.validateNotNull(timeout, "timeout");
-    ExecutorParametersValidator.validateNotNull(maximumRetries, "maximumRetries");
-    ExecutorParametersValidator.validateNotNull(immediateRetries, "immediateRetries");
-  }
-
-  public int getLogLines() {
-    return (logLines < 1) ? DEFAULT_LOG_LINES : logLines;
-  }
+  public void validate() {}
 
   /** Serializes the executor to json. */
   public String serialize() {

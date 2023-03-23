@@ -43,10 +43,10 @@ public class AwsBatchExecutorParameters extends ExecutorParameters {
     if (defaultParams == null) {
       return;
     }
-    super.applyDefaults(defaultParams);
-    applyDefault(this::getRegion, this::setRegion, defaultParams::getRegion);
-    applyDefault(this::getQueue, this::setQueue, defaultParams::getQueue);
-    applyDefault(this::getDefinition, this::setDefinition, defaultParams::getDefinition);
+    applyExecutorDefaults(defaultParams);
+    if (region == null) setRegion(defaultParams.getRegion());
+    if (queue == null) setQueue(defaultParams.getQueue());
+    if (definition == null) setDefinition(defaultParams.getDefinition());
     if (parameters == null) {
       parameters = new HashMap<>();
     }
@@ -56,7 +56,7 @@ public class AwsBatchExecutorParameters extends ExecutorParameters {
   @Override
   public void validate() {
     super.validate();
-    ExecutorParametersValidator.validateNotNull(queue, "queue");
-    ExecutorParametersValidator.validateNotNull(definition, "definition");
+    ExecutorParametersValidator.validateNotNull(getQueue(), "queue");
+    ExecutorParametersValidator.validateNotNull(getDefinition(), "definition");
   }
 }
