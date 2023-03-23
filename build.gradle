@@ -10,7 +10,7 @@ plugins {
 }
 
 group = 'pipelite'
-version = '2.8.6'
+version = '2.8.7'
 sourceCompatibility = '1.11'
 
 java.withSourcesJar()
@@ -76,6 +76,7 @@ dependencies {
     implementation 'com.cronutils:cron-utils:9.1.1'
     implementation 'io.fabric8:kubernetes-client:5.11.2'
     implementation 'com.amazonaws:aws-java-sdk-batch:1.11.929'
+    implementation 'io.micrometer:micrometer-registry-stackdriver:1.10.3'
 
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'

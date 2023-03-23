@@ -68,6 +68,8 @@ public class Pipelite {
     properties.put("management.endpoints.web.exposure.include", "*");
     properties.put("management.health.defaults.enabled", "false");
     properties.put("management.metrics.enable.all", "false");
+    properties.put("management.metrics.export.stackdriver.useSemanticMetricTypes", "true");
+    properties.put("management.metrics.export.stackdriver.step", "5m");
     properties.put("spring.mvc.static-path-pattern", "/static/**");
     properties.put("spring.resources.static-locations", "classpath:/static/");
     properties.put(
