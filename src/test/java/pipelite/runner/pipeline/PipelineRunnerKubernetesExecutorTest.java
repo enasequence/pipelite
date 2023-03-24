@@ -15,10 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
-import pipelite.PipeliteTestConfigWithManager;
 import pipelite.configuration.properties.KubernetesTestConfiguration;
 import pipelite.service.StageService;
+import pipelite.test.configuration.PipeliteTestConfigWithManager;
 import pipelite.tester.TestTypePipelineRunner;
 import pipelite.tester.process.SingleStageKubernetesTestProcessConfiguration;
 
@@ -30,7 +29,6 @@ import pipelite.tester.process.SingleStageKubernetesTestProcessConfiguration;
       "pipelite.advanced.processRunnerFrequency=250ms",
       "pipelite.advanced.shutdownIfIdle=true"
     })
-@ActiveProfiles({"test"})
 @DirtiesContext
 public class PipelineRunnerKubernetesExecutorTest {
 

@@ -18,17 +18,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
-import pipelite.PipeliteIdCreator;
-import pipelite.PipeliteTestConfigWithServices;
 import pipelite.entity.InternalErrorEntity;
+import pipelite.test.PipeliteTestIdCreator;
+import pipelite.test.configuration.PipeliteTestConfigWithServices;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
     properties = {"pipelite.service.force=true", "pipelite.service.name=InternalErrorServiceTest"})
 @DirtiesContext
-@ActiveProfiles("test")
 @Transactional
 class InternalErrorServiceTest {
 
@@ -54,10 +52,10 @@ class InternalErrorServiceTest {
 
   @Test
   public void withStageName() {
-    String serviceName = PipeliteIdCreator.serviceName();
-    String pipelineName = PipeliteIdCreator.pipelineName();
-    String processId = PipeliteIdCreator.processId();
-    String stageName = PipeliteIdCreator.stageName();
+    String serviceName = PipeliteTestIdCreator.serviceName();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
+    String processId = PipeliteTestIdCreator.processId();
+    String stageName = PipeliteTestIdCreator.stageName();
 
     try {
       throw new RuntimeException("Test");

@@ -16,9 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
-import pipelite.PipeliteIdCreator;
-import pipelite.PipeliteTestConfigWithServices;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageLogEntity;
@@ -27,13 +24,14 @@ import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.Stage;
+import pipelite.test.PipeliteTestIdCreator;
+import pipelite.test.configuration.PipeliteTestConfigWithServices;
 
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     classes = PipeliteTestConfigWithServices.class,
     properties = {"pipelite.service.force=true", "pipelite.service.name=MailServiceTest"})
 @DirtiesContext
-@ActiveProfiles("test")
 public class MailServiceTest {
 
   @Autowired MailService mailService;
@@ -121,8 +119,8 @@ public class MailServiceTest {
 
   @Test
   public void sendFailedStageExecutionMessageWithLog() {
-    String pipelineName = PipeliteIdCreator.pipelineName();
-    String processId = PipeliteIdCreator.processId();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
+    String processId = PipeliteTestIdCreator.processId();
 
     Process process =
         new ProcessBuilder(processId).execute("STAGE1").withSyncTestExecutor().build();
@@ -188,8 +186,8 @@ public class MailServiceTest {
 
   @Test
   public void sendFailedStageExecutionMessageWithEmptyLog() {
-    String pipelineName = PipeliteIdCreator.pipelineName();
-    String processId = PipeliteIdCreator.processId();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
+    String processId = PipeliteTestIdCreator.processId();
 
     Process process =
         new ProcessBuilder(processId).execute("STAGE1").withSyncTestExecutor().build();
@@ -251,8 +249,8 @@ public class MailServiceTest {
 
   @Test
   public void sendFailedStageExecutionMessageWithNullLog() {
-    String pipelineName = PipeliteIdCreator.pipelineName();
-    String processId = PipeliteIdCreator.processId();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
+    String processId = PipeliteTestIdCreator.processId();
 
     Process process =
         new ProcessBuilder(processId).execute("STAGE1").withSyncTestExecutor().build();
@@ -314,8 +312,8 @@ public class MailServiceTest {
 
   @Test
   public void sendFailedStageExecutionMessageWithNoLog() {
-    String pipelineName = PipeliteIdCreator.pipelineName();
-    String processId = PipeliteIdCreator.processId();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
+    String processId = PipeliteTestIdCreator.processId();
 
     Process process =
         new ProcessBuilder(processId).execute("STAGE1").withSyncTestExecutor().build();

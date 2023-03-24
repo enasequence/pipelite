@@ -24,8 +24,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
-import pipelite.PipeliteTestConfigWithManager;
 import pipelite.executor.describe.DescribeJobsRequests;
 import pipelite.executor.describe.DescribeJobsResult;
 import pipelite.executor.describe.DescribeJobsResults;
@@ -38,6 +36,7 @@ import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 import pipelite.stage.parameters.cmd.LogFileSavePolicy;
+import pipelite.test.configuration.PipeliteTestConfigWithManager;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithManager.class,
@@ -46,7 +45,6 @@ import pipelite.stage.parameters.cmd.LogFileSavePolicy;
       "pipelite.service.name=SimpleLsfExecutorPollJobsTest",
       "pipelite.advanced.shutdownIfIdle=true"
     })
-@ActiveProfiles({"test"})
 @DirtiesContext
 public class SimpleLsfExecutorPollJobsTest {
 

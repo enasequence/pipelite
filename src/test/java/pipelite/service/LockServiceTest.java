@@ -24,10 +24,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
-import pipelite.PipeliteIdCreator;
-import pipelite.PipeliteTestConfigWithServices;
 import pipelite.entity.ServiceLockEntity;
+import pipelite.test.PipeliteTestIdCreator;
+import pipelite.test.configuration.PipeliteTestConfigWithServices;
 import pipelite.time.Time;
 
 @SpringBootTest(
@@ -38,7 +37,6 @@ import pipelite.time.Time;
       "pipelite.advanced.lockDuration=15s"
     })
 @DirtiesContext
-@ActiveProfiles("test")
 public class LockServiceTest {
 
   private static final Duration LOCK_DURATION = Duration.ofSeconds(15);
@@ -48,18 +46,18 @@ public class LockServiceTest {
 
   @Test
   public void testParallelLockProcess() throws Exception {
-    String serviceName1 = PipeliteIdCreator.serviceName();
+    String serviceName1 = PipeliteTestIdCreator.serviceName();
 
     ServiceLockEntity serviceLock1 = LockService.lockService(lockService, serviceName1);
 
-    String pipelineName = PipeliteIdCreator.pipelineName();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
     ExecutorService executorService = Executors.newFixedThreadPool(500);
     for (int i = 0; i < 500; ++i) {
       executorService.submit(
           () -> {
             assertThat(
                     LockService.lockProcess(
-                        lockService, serviceLock1, pipelineName, PipeliteIdCreator.processId()))
+                        lockService, serviceLock1, pipelineName, PipeliteTestIdCreator.processId()))
                 .isEqualTo(true);
           });
     }
@@ -69,8 +67,8 @@ public class LockServiceTest {
 
   @Test
   public void testServiceLocks() {
-    String serviceName1 = PipeliteIdCreator.serviceName();
-    String serviceName2 = PipeliteIdCreator.serviceName();
+    String serviceName1 = PipeliteTestIdCreator.serviceName();
+    String serviceName2 = PipeliteTestIdCreator.serviceName();
 
     lockService.unlockService(serviceName1);
     lockService.unlockService(serviceName2);
@@ -106,9 +104,9 @@ public class LockServiceTest {
 
   @Test
   public void testProcessLocks() {
-    String pipelineName = PipeliteIdCreator.pipelineName();
-    String serviceName1 = PipeliteIdCreator.serviceName();
-    String serviceName2 = PipeliteIdCreator.serviceName();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
+    String serviceName1 = PipeliteTestIdCreator.serviceName();
+    String serviceName2 = PipeliteTestIdCreator.serviceName();
 
     lockService.unlockService(serviceName1);
     lockService.unlockService(serviceName2);
@@ -162,7 +160,7 @@ public class LockServiceTest {
   // Test fails if the lock is not created and checked for the first time within the lock duration.
   @Test
   public void testRemoveExpiredServiceLock() {
-    String serviceName1 = PipeliteIdCreator.serviceName();
+    String serviceName1 = PipeliteTestIdCreator.serviceName();
 
     lockService.unlockService(serviceName1);
 
@@ -186,9 +184,9 @@ public class LockServiceTest {
 
   @Test
   public void testRemoveExpiredProcessLock() {
-    String pipelineName = PipeliteIdCreator.pipelineName();
-    String serviceName1 = PipeliteIdCreator.serviceName();
-    String serviceName2 = PipeliteIdCreator.serviceName();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
+    String serviceName1 = PipeliteTestIdCreator.serviceName();
+    String serviceName2 = PipeliteTestIdCreator.serviceName();
 
     lockService.unlockService(serviceName1);
     lockService.unlockService(serviceName2);

@@ -43,6 +43,9 @@ import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.ExecutorParameters;
+import pipelite.test.PipeliteTestConstants;
+import pipelite.test.PipeliteTestIdCreator;
+import pipelite.test.configuration.PipeliteTestConfigWithManager;
 import pipelite.time.Time;
 
 @SpringBootTest(
@@ -53,12 +56,12 @@ import pipelite.time.Time;
       "pipelite.service.name=RetryServiceTest"
     })
 @DirtiesContext
-@ActiveProfiles({"test", "RetryServiceTest"})
+@ActiveProfiles({"pipelite", "RetryServiceTest"})
 @Transactional
 class RetryServiceTest {
 
-  private static final String PIPELINE_NAME = PipeliteIdCreator.pipelineName();
-  private static final String SCHEDULE_NAME = PipeliteIdCreator.pipelineName();
+  private static final String PIPELINE_NAME = PipeliteTestIdCreator.pipelineName();
+  private static final String SCHEDULE_NAME = PipeliteTestIdCreator.pipelineName();
   private static final String STAGE_NAME = "STAGE";
   private static final String CRON = PipeliteTestConstants.CRON_EVERY_HOUR;
 
@@ -132,7 +135,7 @@ class RetryServiceTest {
 
   @Test
   public void retryFailedProcess() {
-    String processId = PipeliteIdCreator.processId();
+    String processId = PipeliteTestIdCreator.processId();
     RegisteredPipeline registeredPipeline =
         registeredPipelineService.getRegisteredPipeline(PIPELINE_NAME);
     Process process = ProcessFactory.create(processId, registeredPipeline);
@@ -175,7 +178,7 @@ class RetryServiceTest {
 
   @Test
   public void retryFailedProcessThrowsBecauseNotFailed() {
-    String processId = PipeliteIdCreator.processId();
+    String processId = PipeliteTestIdCreator.processId();
     RegisteredPipeline registeredPipeline =
         registeredPipelineService.getRegisteredPipeline(PIPELINE_NAME);
     Process process = ProcessFactory.create(processId, registeredPipeline);
@@ -199,7 +202,7 @@ class RetryServiceTest {
 
   @Test
   public void retryFailedProcessThrowsUnknownStage() {
-    String processId = PipeliteIdCreator.processId();
+    String processId = PipeliteTestIdCreator.processId();
     RegisteredPipeline registeredPipeline =
         registeredPipelineService.getRegisteredPipeline(PIPELINE_NAME);
     Process process = ProcessFactory.create(processId, registeredPipeline);
@@ -223,7 +226,7 @@ class RetryServiceTest {
 
   @Test
   public void retryFailedProcessNoPermanentlyFailedStages() {
-    String processId = PipeliteIdCreator.processId();
+    String processId = PipeliteTestIdCreator.processId();
     RegisteredPipeline registeredPipeline =
         registeredPipelineService.getRegisteredPipeline(PIPELINE_NAME);
     Process process = ProcessFactory.create(processId, registeredPipeline);
@@ -266,8 +269,8 @@ class RetryServiceTest {
 
   @Test
   public void retryFailedSchedule() {
-    String serviceName = PipeliteIdCreator.serviceName();
-    String processId = PipeliteIdCreator.processId();
+    String serviceName = PipeliteTestIdCreator.serviceName();
+    String processId = PipeliteTestIdCreator.processId();
     RegisteredPipeline registeredPipeline =
         registeredPipelineService.getRegisteredPipeline(SCHEDULE_NAME);
     Process process = ProcessFactory.create(processId, registeredPipeline);

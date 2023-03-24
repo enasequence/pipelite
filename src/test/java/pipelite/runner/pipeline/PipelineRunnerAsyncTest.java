@@ -24,7 +24,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import pipelite.PipeliteTestConfigWithManager;
 import pipelite.executor.SyncExecutor;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipeliteMetrics;
@@ -33,6 +32,7 @@ import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
+import pipelite.test.configuration.PipeliteTestConfigWithManager;
 import pipelite.tester.pipeline.ConfigurableTestPipeline;
 import pipelite.tester.process.TestProcessConfiguration;
 
@@ -44,7 +44,7 @@ import pipelite.tester.process.TestProcessConfiguration;
       "pipelite.advanced.processRunnerFrequency=250ms",
       "pipelite.advanced.shutdownIfIdle=true"
     })
-@ActiveProfiles({"test", "PipelineRunnerAsyncTest"})
+@ActiveProfiles({"pipelite", "PipelineRunnerAsyncTest"})
 @DirtiesContext
 public class PipelineRunnerAsyncTest {
 

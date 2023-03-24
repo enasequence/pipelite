@@ -16,9 +16,6 @@ import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import pipelite.PipeliteIdCreator;
-import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.properties.SlurmTestConfiguration;
 import pipelite.executor.AbstractSlurmExecutor;
 import pipelite.executor.AsyncExecutorTestHelper;
@@ -33,6 +30,8 @@ import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.SimpleSlurmExecutorParameters;
+import pipelite.test.PipeliteTestIdCreator;
+import pipelite.test.configuration.PipeliteTestConfigWithServices;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
@@ -40,7 +39,6 @@ import pipelite.stage.parameters.SimpleSlurmExecutorParameters;
       "pipelite.service.force=true",
       "pipelite.service.name=SlurmExecutorRecoverJobTest"
     })
-@ActiveProfiles("test")
 public class SlurmExecutorRecoverJobTest {
 
   @Autowired SlurmTestConfiguration slurmTestConfiguration;
@@ -50,9 +48,9 @@ public class SlurmExecutorRecoverJobTest {
   @Autowired PipeliteServices pipeliteServices;
 
   private SimpleSlurmExecutor executor(int exitCode) {
-    String pipelineName = PipeliteIdCreator.pipelineName();
-    String processId = PipeliteIdCreator.processId();
-    String stageName = PipeliteIdCreator.stageName();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
+    String processId = PipeliteTestIdCreator.processId();
+    String stageName = PipeliteTestIdCreator.stageName();
     SimpleSlurmExecutor executor = StageExecutor.createSimpleSlurmExecutor("exit " + exitCode);
     executor.setExecutorParams(
         SimpleSlurmExecutorParameters.builder()

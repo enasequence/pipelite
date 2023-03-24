@@ -16,10 +16,8 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.test.context.ActiveProfiles;
 import pipelite.service.InternalErrorService;
 
-@ActiveProfiles("test")
 public class InternalErrorHandlerTest {
 
   private static final String SERVICE_NAME = "test1";

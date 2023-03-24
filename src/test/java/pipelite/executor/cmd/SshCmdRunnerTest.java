@@ -21,20 +21,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import pipelite.PipeliteIdCreator;
-import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.properties.SshTestConfiguration;
 import pipelite.exception.PipeliteException;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.CmdExecutorParameters;
+import pipelite.test.PipeliteTestIdCreator;
+import pipelite.test.configuration.PipeliteTestConfigWithServices;
 import pipelite.time.Time;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
     properties = {"pipelite.service.force=true", "pipelite.service.name=SshCmdRunnerTest"})
-@ActiveProfiles("test")
 public class SshCmdRunnerTest {
 
   private static final String TMP_DIR = "/tmp";
@@ -122,7 +120,7 @@ public class SshCmdRunnerTest {
   @Test
   public void unknownCommand() {
     SshCmdRunner cmdRunner = cmdRunner();
-    StageExecutorResult result = cmdRunner.execute(PipeliteIdCreator.id());
+    StageExecutorResult result = cmdRunner.execute(PipeliteTestIdCreator.id());
     assertThat(result.isError()).isTrue();
     assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isNotEqualTo("0");
   }

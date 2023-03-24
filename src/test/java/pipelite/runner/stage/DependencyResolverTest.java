@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 import lombok.Value;
 import lombok.experimental.Accessors;
 import org.junit.jupiter.api.Test;
-import pipelite.PipeliteIdCreator;
 import pipelite.entity.StageEntity;
 import pipelite.entity.field.ErrorType;
 import pipelite.entity.field.StageState;
@@ -32,6 +31,7 @@ import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.ExecutorParameters;
+import pipelite.test.PipeliteTestIdCreator;
 
 public class DependencyResolverTest {
 
@@ -39,7 +39,7 @@ public class DependencyResolverTest {
       ExecutorParameters.builder().maximumRetries(0).immediateRetries(0).build();
 
   private ProcessBuilder createProcessBuilder() {
-    return new ProcessBuilder(PipeliteIdCreator.processId());
+    return new ProcessBuilder(PipeliteTestIdCreator.processId());
   }
 
   @Test

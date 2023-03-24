@@ -26,6 +26,9 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.*;
 import pipelite.exception.PipeliteException;
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.test.PipeliteTestConstants;
+import pipelite.test.PipeliteTestIdCreator;
+import pipelite.test.configuration.PipeliteTestConfigWithServices;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
@@ -34,7 +37,7 @@ import pipelite.process.builder.ProcessBuilder;
       "pipelite.service.name=RegisteredPipelineServiceTest"
     })
 @DirtiesContext
-@ActiveProfiles({"test", "RegisteredPipelineServiceTest"})
+@ActiveProfiles({"pipelite", "RegisteredPipelineServiceTest"})
 public class RegisteredPipelineServiceTest {
 
   @Autowired RegisteredPipelineService registeredPipelineService;
@@ -69,7 +72,7 @@ public class RegisteredPipelineServiceTest {
 
   public static class TestPipeline implements Pipeline {
 
-    private final String pipelineName = PipeliteIdCreator.pipelineName();
+    private final String pipelineName = PipeliteTestIdCreator.pipelineName();
 
     @Override
     public String pipelineName() {
@@ -87,7 +90,7 @@ public class RegisteredPipelineServiceTest {
 
   public static class TestSchedule implements Schedule {
 
-    private final String pipelineName = PipeliteIdCreator.pipelineName();
+    private final String pipelineName = PipeliteTestIdCreator.pipelineName();
 
     @Override
     public String pipelineName() {
@@ -147,7 +150,9 @@ public class RegisteredPipelineServiceTest {
         .withMessage("Missing pipeline name");
     assertThatExceptionOfType(PipeliteException.class)
         .isThrownBy(
-            () -> registeredPipelineService.getRegisteredPipeline(PipeliteIdCreator.pipelineName()))
+            () ->
+                registeredPipelineService.getRegisteredPipeline(
+                    PipeliteTestIdCreator.pipelineName()))
         .withMessageStartingWith("Unknown pipeline");
   }
 

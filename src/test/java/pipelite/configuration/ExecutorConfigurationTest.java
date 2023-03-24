@@ -18,9 +18,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
-import pipelite.PipeliteTestConfigWithConfigurations;
 import pipelite.stage.parameters.*;
+import pipelite.test.configuration.PipeliteTestConfigWithConfigurations;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithConfigurations.class,
@@ -78,7 +77,6 @@ import pipelite.stage.parameters.*;
       "pipelite.executor.awsBatch.timeout=10s", // ExecutorParameters
       "pipelite.executor.awsBatch.permanentErrors=10,11", // ExecutorParameters
     })
-@ActiveProfiles("test")
 @DirtiesContext
 public class ExecutorConfigurationTest {
 

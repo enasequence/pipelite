@@ -13,19 +13,19 @@ package pipelite.entity;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import pipelite.PipeliteIdCreator;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorState;
+import pipelite.test.PipeliteTestIdCreator;
 
 class StageLogEntityTest {
 
   @Test
   public void lifecycle() {
-    String pipelineName = PipeliteIdCreator.pipelineName();
-    String processId = PipeliteIdCreator.processId();
-    String stageName = PipeliteIdCreator.stageName();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
+    String processId = PipeliteTestIdCreator.processId();
+    String stageName = PipeliteTestIdCreator.stageName();
 
     Stage stage =
         Stage.builder()

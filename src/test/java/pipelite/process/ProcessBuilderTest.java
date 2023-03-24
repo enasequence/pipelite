@@ -15,15 +15,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
-import pipelite.PipeliteIdCreator;
 import pipelite.exception.PipeliteProcessStagesException;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.runner.stage.DependencyResolver;
 import pipelite.stage.Stage;
+import pipelite.test.PipeliteTestIdCreator;
 
 public class ProcessBuilderTest {
 
-  private static final String PROCESS_ID = PipeliteIdCreator.processId();
+  private static final String PROCESS_ID = PipeliteTestIdCreator.processId();
 
   @Test
   public void test() {

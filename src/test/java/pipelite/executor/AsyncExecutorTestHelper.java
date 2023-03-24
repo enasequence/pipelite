@@ -14,10 +14,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
 import java.util.function.Consumer;
-import pipelite.PipeliteIdCreator;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
+import pipelite.test.PipeliteTestIdCreator;
 import pipelite.time.Time;
 
 public class AsyncExecutorTestHelper {
@@ -36,9 +36,9 @@ public class AsyncExecutorTestHelper {
       StageExecutorResultCallback assertAfterSubmit,
       StageExecutorResultCallback assertAfterCompletion) {
 
-    String pipelineName = PipeliteIdCreator.pipelineName();
-    String processId = PipeliteIdCreator.processId();
-    String stageName = PipeliteIdCreator.stageName();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
+    String processId = PipeliteTestIdCreator.processId();
+    String stageName = PipeliteTestIdCreator.stageName();
     Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
 
     executor.prepareExecution(pipeliteServices, pipelineName, processId, stage);

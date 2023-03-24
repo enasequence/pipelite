@@ -12,11 +12,11 @@ package pipelite.tester.process;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import pipelite.PipeliteIdCreator;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.ProcessService;
 import pipelite.service.ScheduleService;
 import pipelite.service.StageService;
+import pipelite.test.PipeliteTestIdCreator;
 import pipelite.tester.TestType;
 import pipelite.tester.entity.ProcessEntityAsserter;
 import pipelite.tester.entity.ScheduleEntityAsserter;
@@ -27,7 +27,7 @@ public abstract class SingleStageTestProcessConfiguration extends TestTypeProces
   private final TestType testType;
   private final AssertSubmittedStageEntity assertSubmittedStageEntity;
   private final AssertCompletedStageEntity assertCompletedStageEntity;
-  private final String stageName = PipeliteIdCreator.stageName();
+  private final String stageName = PipeliteTestIdCreator.stageName();
 
   protected interface AssertSubmittedStageEntity {
     void assertSubmittedStageEntity(

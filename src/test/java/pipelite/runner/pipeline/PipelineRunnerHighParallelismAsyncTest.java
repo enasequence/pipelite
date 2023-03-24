@@ -22,13 +22,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import pipelite.PipeliteTestConfigWithManager;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.collector.ProcessRunnerMetrics;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorState;
+import pipelite.test.configuration.PipeliteTestConfigWithManager;
 import pipelite.tester.pipeline.ConfigurableTestPipeline;
 import pipelite.tester.process.TestProcessConfiguration;
 
@@ -39,7 +39,7 @@ import pipelite.tester.process.TestProcessConfiguration;
       "pipelite.service.name=PipelineRunnerAsyncTest",
       "pipelite.advanced.shutdownIfIdle=true"
     })
-@ActiveProfiles({"test", "PipelineRunnerHighParallelismAsyncTest"})
+@ActiveProfiles({"pipelite", "PipelineRunnerHighParallelismAsyncTest"})
 @DirtiesContext
 public class PipelineRunnerHighParallelismAsyncTest {
   // Testing high pipeline parallelism with limited number of process runner

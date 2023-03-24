@@ -11,7 +11,7 @@
 package pipelite;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static pipelite.PipeliteTestConstants.CRON_EVERY_TWO_SECONDS;
+import static pipelite.test.PipeliteTestConstants.CRON_EVERY_TWO_SECONDS;
 
 import java.util.Arrays;
 import java.util.List;

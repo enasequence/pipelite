@@ -20,9 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
 import pipelite.Pipeline;
-import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.PipeliteConfiguration;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.builder.ProcessBuilder;
@@ -31,6 +29,7 @@ import pipelite.runner.process.ProcessRunner;
 import pipelite.runner.process.creator.ProcessEntityCreator;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorState;
+import pipelite.test.configuration.PipeliteTestConfigWithServices;
 import pipelite.tester.pipeline.ConfigurableTestPipeline;
 import pipelite.tester.process.TestProcessConfiguration;
 import pipelite.time.Time;
@@ -50,7 +49,6 @@ import pipelite.time.Time;
       "pipelite.advanced.processCreateMaxSize=10",
       "pipelite.advanced.shutdownIfIdle=true"
     })
-@ActiveProfiles({"test"})
 @DirtiesContext
 public class PipelineRunnerProcessQueueTest {
 

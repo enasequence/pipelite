@@ -24,13 +24,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import pipelite.PipeliteTestConfigWithManager;
 import pipelite.Schedule;
 import pipelite.configuration.PipeliteConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.ScheduleEntity;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.service.PipeliteServices;
+import pipelite.test.configuration.PipeliteTestConfigWithManager;
 import pipelite.time.Time;
 
 @SpringBootTest(
@@ -41,7 +41,7 @@ import pipelite.time.Time;
       "pipelite.advanced.processRunnerFrequency=250ms",
       "pipelite.advanced.shutdownIfIdle=true"
     })
-@ActiveProfiles({"test", "ScheduleRunnerResumeTest"})
+@ActiveProfiles({"pipelite", "ScheduleRunnerResumeTest"})
 @DirtiesContext
 public class ScheduleRunnerResumeTest {
 

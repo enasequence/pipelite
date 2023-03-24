@@ -16,7 +16,6 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import pipelite.PipeliteIdCreator;
 import pipelite.entity.field.ErrorType;
 import pipelite.entity.field.StageState;
 import pipelite.executor.JsonSerializableExecutor;
@@ -26,6 +25,7 @@ import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.ExecutorParameters;
+import pipelite.test.PipeliteTestIdCreator;
 
 class StageEntityTest {
 
@@ -48,9 +48,9 @@ class StageEntityTest {
 
   @Test
   public void lifecycle() {
-    String pipelineName = PipeliteIdCreator.pipelineName();
-    String processId = PipeliteIdCreator.processId();
-    String stageName = PipeliteIdCreator.stageName();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
+    String processId = PipeliteTestIdCreator.processId();
+    String stageName = PipeliteTestIdCreator.stageName();
 
     ExecutorParameters executorParams =
         ExecutorParameters.builder()
@@ -226,9 +226,9 @@ class StageEntityTest {
 
   @Test
   public void errorType() {
-    String pipelineName = PipeliteIdCreator.pipelineName();
-    String processId = PipeliteIdCreator.processId();
-    String stageName = PipeliteIdCreator.stageName();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
+    String processId = PipeliteTestIdCreator.processId();
+    String stageName = PipeliteTestIdCreator.stageName();
 
     TestExecutor executor = new TestExecutor();
     Stage stage = Stage.builder().stageName(stageName).executor(executor).build();

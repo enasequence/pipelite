@@ -8,33 +8,12 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite;
+package pipelite.test;
 
-import java.util.UUID;
+public final class PipeliteTestConstants {
 
-public class PipeliteIdCreator {
+  private PipeliteTestConstants() {}
 
-  public static <T> String serviceName() {
-    return "service-" + id();
-  }
-
-  public static <T> String pipelineName() {
-    return "pipeline-" + id();
-  }
-
-  public static <T> String processRunnerPoolName() {
-    return "pool-" + id();
-  }
-
-  public static <T> String processId() {
-    return "process-" + id();
-  }
-
-  public static <T> String stageName() {
-    return "stage-" + id();
-  }
-
-  public static String id() {
-    return UUID.randomUUID().toString();
-  }
+  public static final String CRON_EVERY_TWO_SECONDS = "0/2 * * * * ?";
+  public static final String CRON_EVERY_HOUR = "0 */1 * * *";
 }

@@ -17,9 +17,6 @@ import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import pipelite.PipeliteIdCreator;
-import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.executor.AbstractLsfExecutor;
 import pipelite.executor.AsyncExecutorTestHelper;
@@ -34,11 +31,12 @@ import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
+import pipelite.test.PipeliteTestIdCreator;
+import pipelite.test.configuration.PipeliteTestConfigWithServices;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
     properties = {"pipelite.service.force=true", "pipelite.service.name=LsfExecutorRecoverJobTest"})
-@ActiveProfiles("test")
 public class LsfExecutorRecoverJobTest {
 
   @Autowired LsfTestConfiguration lsfTestConfiguration;
@@ -46,9 +44,9 @@ public class LsfExecutorRecoverJobTest {
   @Autowired PipeliteServices pipeliteServices;
 
   private SimpleLsfExecutor executor(int exitCode) {
-    String pipelineName = PipeliteIdCreator.pipelineName();
-    String processId = PipeliteIdCreator.processId();
-    String stageName = PipeliteIdCreator.stageName();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
+    String processId = PipeliteTestIdCreator.processId();
+    String stageName = PipeliteTestIdCreator.stageName();
     SimpleLsfExecutor executor = StageExecutor.createSimpleLsfExecutor("exit " + exitCode);
     executor.setExecutorParams(
         SimpleLsfExecutorParameters.builder()

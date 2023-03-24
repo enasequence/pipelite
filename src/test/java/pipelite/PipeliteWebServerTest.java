@@ -17,6 +17,8 @@ import org.springframework.context.annotation.Configuration;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.ExecutorParameters;
+import pipelite.test.PipeliteTestConstants;
+import pipelite.test.PipeliteTestIdCreator;
 import pipelite.tester.pipeline.ConfigurableTestPipeline;
 import pipelite.tester.process.TestProcessConfiguration;
 
@@ -27,7 +29,7 @@ public class PipeliteWebServerTest {
   private static final int PROCESS_PARALLELISM = 50;
   private static final Duration SUBMIT_TIME = Duration.ofSeconds(45);
   private static final Duration EXECUTION_TIME = Duration.ofSeconds(65);
-  private static final String ID = PipeliteIdCreator.id();
+  private static final String ID = PipeliteTestIdCreator.id();
 
   @Bean
   public TestPipeline successPipeline1() {

@@ -20,10 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
-import pipelite.PipeliteIdCreator;
-import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.PipeliteConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.metrics.PipeliteMetrics;
@@ -34,6 +31,8 @@ import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorRequest;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
+import pipelite.test.PipeliteTestIdCreator;
+import pipelite.test.configuration.PipeliteTestConfigWithServices;
 import pipelite.time.Time;
 
 @SpringBootTest(
@@ -45,12 +44,11 @@ import pipelite.time.Time;
       "pipelite.advanced.shutdownIfIdle=true"
     })
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ActiveProfiles("test")
 @Transactional
 public class ProcessRunnerPoolTest {
 
   private static final int PROCESS_CNT = 100;
-  private static final String PIPELINE_NAME = PipeliteIdCreator.pipelineName();
+  private static final String PIPELINE_NAME = PipeliteTestIdCreator.pipelineName();
 
   @Autowired private PipeliteConfiguration pipeliteConfiguration;
   @Autowired private PipeliteServices pipeliteServices;
@@ -81,12 +79,12 @@ public class ProcessRunnerPoolTest {
         pipeliteConfiguration,
         pipeliteServices,
         metrics,
-        PipeliteIdCreator.processRunnerPoolName(),
+        PipeliteTestIdCreator.processRunnerPoolName(),
         createProcessRunnerFactory(lockProcessCnt, unlockProcessCnt));
   }
 
   private Process createProcess(Function<StageExecutorRequest, StageExecutorResult> callback) {
-    String processId = PipeliteIdCreator.processId();
+    String processId = PipeliteTestIdCreator.processId();
     ExecutorParameters executorParams = new ExecutorParameters();
     executorParams.setMaximumRetries(0);
     Process process =

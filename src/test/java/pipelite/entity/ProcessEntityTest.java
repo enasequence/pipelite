@@ -14,15 +14,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.ZonedDateTime;
 import org.junit.jupiter.api.Test;
-import pipelite.PipeliteIdCreator;
 import pipelite.process.ProcessState;
+import pipelite.test.PipeliteTestIdCreator;
 
 class ProcessEntityTest {
 
   @Test
   public void lifecycle() {
-    String pipelineName = PipeliteIdCreator.pipelineName();
-    String processId = PipeliteIdCreator.processId();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
+    String processId = PipeliteTestIdCreator.processId();
     int priority = 1;
 
     ProcessEntity processEntity = ProcessEntity.createExecution(pipelineName, processId, priority);
@@ -62,8 +62,8 @@ class ProcessEntityTest {
 
   @Test
   public void priority() {
-    String pipelineName = PipeliteIdCreator.pipelineName();
-    String processId = PipeliteIdCreator.processId();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
+    String processId = PipeliteTestIdCreator.processId();
 
     assertThat(ProcessEntity.getBoundedPriority(null)).isEqualTo(ProcessEntity.DEFAULT_PRIORITY);
     assertThat(ProcessEntity.getBoundedPriority(ProcessEntity.MIN_PRIORITY - 1))

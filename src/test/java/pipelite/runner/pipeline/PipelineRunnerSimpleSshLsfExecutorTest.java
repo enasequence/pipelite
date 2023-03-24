@@ -15,10 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
-import pipelite.PipeliteTestConfigWithManager;
 import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.service.StageService;
+import pipelite.test.configuration.PipeliteTestConfigWithManager;
 import pipelite.tester.TestTypePipelineRunner;
 import pipelite.tester.process.SingleStageSimpleLsfTestProcessConfiguration;
 
@@ -30,7 +29,6 @@ import pipelite.tester.process.SingleStageSimpleLsfTestProcessConfiguration;
       "pipelite.advanced.processRunnerFrequency=2s",
       "pipelite.advanced.shutdownIfIdle=true"
     })
-@ActiveProfiles({"test"})
 @DirtiesContext
 public class PipelineRunnerSimpleSshLsfExecutorTest {
 

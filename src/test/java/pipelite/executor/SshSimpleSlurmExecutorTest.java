@@ -16,14 +16,13 @@ import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.properties.SlurmTestConfiguration;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.SimpleSlurmExecutorParameters;
 import pipelite.stage.parameters.cmd.LogFileSavePolicy;
+import pipelite.test.configuration.PipeliteTestConfigWithServices;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
@@ -31,7 +30,6 @@ import pipelite.stage.parameters.cmd.LogFileSavePolicy;
       "pipelite.service.force=true",
       "pipelite.service.name=SshSimpleSlurmExecutorTest"
     })
-@ActiveProfiles("test")
 public class SshSimpleSlurmExecutorTest {
 
   @Autowired SlurmTestConfiguration slurmTestConfiguration;

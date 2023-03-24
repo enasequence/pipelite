@@ -24,15 +24,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
-import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.PipeliteConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.runner.process.creator.ProcessEntityCreator;
 import pipelite.service.PipeliteServices;
 import pipelite.service.ProcessService;
+import pipelite.test.configuration.PipeliteTestConfigWithServices;
 import pipelite.tester.pipeline.ConfigurableTestPipeline;
 import pipelite.tester.process.TestProcessConfiguration;
 
@@ -45,7 +44,6 @@ import pipelite.tester.process.TestProcessConfiguration;
       "pipelite.advanced.processQueueMaxRefreshFrequency=1d"
     })
 @DirtiesContext
-@ActiveProfiles("test")
 @Transactional
 public class ProcessQueueTest {
 

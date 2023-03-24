@@ -15,9 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
-import pipelite.PipeliteTestConfigWithManager;
 import pipelite.service.StageService;
+import pipelite.test.configuration.PipeliteTestConfigWithManager;
 import pipelite.tester.TestTypeScheduleRunner;
 import pipelite.tester.process.SingleStageCmdTestProcessConfiguration;
 
@@ -29,7 +28,6 @@ import pipelite.tester.process.SingleStageCmdTestProcessConfiguration;
       "pipelite.advanced.processRunnerFrequency=250ms",
       "pipelite.advanced.shutdownIfIdle=true"
     })
-@ActiveProfiles({"test"})
 @DirtiesContext
 public class ScheduleRunnerCmdExecutorTest {
 

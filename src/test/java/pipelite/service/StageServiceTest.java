@@ -20,10 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
-import pipelite.PipeliteIdCreator;
-import pipelite.PipeliteTestConfigWithServices;
 import pipelite.entity.StageEntity;
 import pipelite.entity.StageLogEntity;
 import pipelite.entity.field.StageState;
@@ -32,12 +29,13 @@ import pipelite.executor.SyncExecutor;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
+import pipelite.test.PipeliteTestIdCreator;
+import pipelite.test.configuration.PipeliteTestConfigWithServices;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
     properties = {"pipelite.service.force=true", "pipelite.service.name=StageServiceTest"})
 @DirtiesContext
-@ActiveProfiles("test")
 @Transactional
 class StageServiceTest {
 
@@ -68,9 +66,9 @@ class StageServiceTest {
   @Test
   public void lifecycle() {
 
-    String pipelineName = PipeliteIdCreator.pipelineName();
-    String processId = PipeliteIdCreator.processId();
-    String stageName = PipeliteIdCreator.stageName();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
+    String processId = PipeliteTestIdCreator.processId();
+    String stageName = PipeliteTestIdCreator.stageName();
 
     TestExecutor executor = new TestExecutor(StageState.SUCCESS);
     executor.setExecutorParams(

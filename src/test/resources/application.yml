@@ -1,17 +1,11 @@
 spring:
-  main:
-    allow-circular-references: true
-  config:
-    activate:
-      on-profile: test
+  profiles:
+      default: pipelite
   jpa:
     show-sql: true
     properties:
       hibernate:
         format_sql: true
-  mvc:
-    pathmatch:
-      matching-strategy: ant_path_matcher
 pipelite:
   test:
     kubernetes:
@@ -39,5 +33,3 @@ pipelite:
     password: ${PIPELITE_TEST_DATABASE_PASSWORD:}
     maxActive: 25
     ddlAuto: none
-# logging:
-#   level:

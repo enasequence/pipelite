@@ -14,10 +14,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
-import pipelite.PipeliteIdCreator;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.CmdExecutorParameters;
+import pipelite.test.PipeliteTestIdCreator;
 
 public class LocalCmdRunnerTest {
 
@@ -65,7 +65,7 @@ public class LocalCmdRunnerTest {
   @Test
   public void unknownCommand() {
     LocalCmdRunner cmdRunner = new LocalCmdRunner(CmdExecutorParameters.builder().build());
-    StageExecutorResult result = cmdRunner.execute(PipeliteIdCreator.id());
+    StageExecutorResult result = cmdRunner.execute(PipeliteTestIdCreator.id());
     assertThat(result.isError()).isTrue();
     assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isNotEqualTo("0");
   }

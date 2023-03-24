@@ -17,10 +17,8 @@ import io.fabric8.kubernetes.api.model.batch.v1.JobCondition;
 import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.context.ActiveProfiles;
 import pipelite.executor.describe.context.request.DefaultRequestContext;
 
-@ActiveProfiles("test")
 public class KubernetesExecutorPollJobsTest {
 
   private static DefaultRequestContext request() {

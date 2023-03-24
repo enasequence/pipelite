@@ -8,7 +8,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package pipelite;
+package pipelite.test.configuration;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
@@ -19,9 +19,18 @@ import pipelite.configuration.WebServerCustomizer;
 @EnableAutoConfiguration
 @EnableRetry
 @ComponentScan(
-    basePackages = {"pipelite.configuration", "pipelite.metrics"},
+    basePackages = {
+      "pipelite.configuration",
+      "pipelite.metrics",
+      "pipelite.repository",
+      "pipelite.executor",
+      "pipelite.service",
+      "pipelite.manager",
+      "pipelite.runner", // for beans created in tests
+      "pipelite.tester"
+    },
     excludeFilters =
         @ComponentScan.Filter(
             type = FilterType.ASSIGNABLE_TYPE,
             classes = {WebServerCustomizer.class}))
-public class PipeliteTestConfigWithConfigurations {}
+public class PipeliteTestConfigWithManager {}

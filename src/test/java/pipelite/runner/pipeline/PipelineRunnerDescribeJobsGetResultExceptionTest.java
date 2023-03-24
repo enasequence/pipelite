@@ -31,8 +31,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
-import pipelite.PipeliteIdCreator;
-import pipelite.PipeliteTestConfigWithManager;
 import pipelite.configuration.ServiceConfiguration;
 import pipelite.configuration.properties.KubernetesTestConfiguration;
 import pipelite.configuration.properties.LsfTestConfiguration;
@@ -55,6 +53,8 @@ import pipelite.service.RunnerService;
 import pipelite.stage.parameters.AbstractLsfExecutorParameters;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
+import pipelite.test.PipeliteTestIdCreator;
+import pipelite.test.configuration.PipeliteTestConfigWithManager;
 import pipelite.tester.pipeline.ConfigurableTestPipeline;
 import pipelite.tester.pipeline.ExecutorTestExitCode;
 import pipelite.tester.pipeline.ExecutorTestParameters;
@@ -74,15 +74,15 @@ import pipelite.tester.process.TestProcessConfiguration;
       "pipelite.service.name=DescribeJobsInternalErrorTest"
     })
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ActiveProfiles({"test", "PipelineRunnerDescribeJobsGetResultExceptionTest"})
+@ActiveProfiles({"pipelite", "PipelineRunnerDescribeJobsGetResultExceptionTest"})
 @Transactional
 public class PipelineRunnerDescribeJobsGetResultExceptionTest {
 
   private static final int PROCESS_CNT = 2;
   private static final int PARALLELISM = 2;
-  private static final String PIPELINE_NAME_SIMPLE_LSF = PipeliteIdCreator.pipelineName();
-  private static final String PIPELINE_NAME_KUBERNETES = PipeliteIdCreator.pipelineName();
-  private static final String STAGE_NAME = PipeliteIdCreator.stageName();
+  private static final String PIPELINE_NAME_SIMPLE_LSF = PipeliteTestIdCreator.pipelineName();
+  private static final String PIPELINE_NAME_KUBERNETES = PipeliteTestIdCreator.pipelineName();
+  private static final String STAGE_NAME = PipeliteTestIdCreator.stageName();
   private static final int IMMEDIATE_RETRIES = 0;
   private static final int MAXIMUM_RETRIES = 0;
   private static final List<Integer> NO_PERMANENT_ERRORS = Collections.emptyList();

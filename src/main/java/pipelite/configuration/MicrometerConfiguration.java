@@ -11,7 +11,11 @@
 package pipelite.configuration;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.stackdriver.StackdriverConfig;
+import io.micrometer.stackdriver.StackdriverMeterRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,7 +23,31 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class MicrometerConfiguration {
 
-  @Autowired ServiceConfiguration serviceConfiguration;
+  @Autowired private ServiceConfiguration serviceConfiguration;
+
+  @Value("${management.metrics.export.stackdriver.projectId:#{null}}")
+  private String stackDriverProjectId;
+
+  @Bean
+  public MeterRegistry meterRegistry() {
+    if (stackDriverProjectId != null) {
+      final StackdriverConfig stackdriverConfig =
+          new StackdriverConfig() {
+            @Override
+            public String projectId() {
+              return stackDriverProjectId;
+            }
+
+            @Override
+            public String get(final String key) {
+              return null;
+            }
+          };
+      return StackdriverMeterRegistry.builder(stackdriverConfig).build();
+    }
+
+    return new SimpleMeterRegistry();
+  }
 
   @Bean
   public MeterRegistryCustomizer<MeterRegistry> customizeMeterRegistry() {

@@ -13,18 +13,18 @@ package pipelite.executor;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import pipelite.PipeliteIdCreator;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.CmdExecutorParameters;
+import pipelite.test.PipeliteTestIdCreator;
 
 public class LocalCmdExecutorTest {
 
   @Test
   public void test() {
-    String stageName = PipeliteIdCreator.stageName();
+    String stageName = PipeliteTestIdCreator.stageName();
 
     CmdExecutor<CmdExecutorParameters> executor = StageExecutor.createCmdExecutor("echo test");
     executor.setExecutorParams(CmdExecutorParameters.builder().build());

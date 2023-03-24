@@ -25,7 +25,6 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import pipelite.PipeliteTestConfigWithManager;
 import pipelite.entity.ProcessEntity;
 import pipelite.entity.StageEntity;
 import pipelite.entity.field.StageState;
@@ -39,6 +38,7 @@ import pipelite.service.RunnerService;
 import pipelite.service.StageService;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.parameters.ExecutorParameters;
+import pipelite.test.configuration.PipeliteTestConfigWithManager;
 import pipelite.tester.pipeline.ConfigurableTestPipeline;
 import pipelite.tester.process.TestProcessConfiguration;
 
@@ -50,7 +50,7 @@ import pipelite.tester.process.TestProcessConfiguration;
       "pipelite.advanced.processRunnerFrequency=250ms",
       "pipelite.advanced.shutdownIfIdle=true"
     })
-@ActiveProfiles({"test", "PipelineRunnerFailureTest"})
+@ActiveProfiles({"pipelite", "PipelineRunnerFailureTest"})
 @DirtiesContext
 public class PipelineRunnerFailureTest {
 

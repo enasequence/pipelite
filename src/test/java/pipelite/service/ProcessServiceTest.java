@@ -20,16 +20,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
-import pipelite.PipeliteIdCreator;
-import pipelite.PipeliteTestConfigWithServices;
 import pipelite.entity.ProcessEntity;
 import pipelite.exception.PipeliteProcessRetryException;
 import pipelite.process.Process;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.runner.process.ProcessQueuePriorityPolicy;
+import pipelite.test.PipeliteTestIdCreator;
+import pipelite.test.configuration.PipeliteTestConfigWithServices;
 
 @SpringBootTest(
     classes = PipeliteTestConfigWithServices.class,
@@ -39,7 +38,6 @@ import pipelite.runner.process.ProcessQueuePriorityPolicy;
       "pipelite.advanced.processQueuePriorityPolicy=PRIORITY"
     })
 @DirtiesContext
-@ActiveProfiles("test")
 @Transactional
 class ProcessServiceTest {
 
@@ -51,8 +49,8 @@ class ProcessServiceTest {
   @Test
   public void lifecycle() {
 
-    String pipelineName = PipeliteIdCreator.pipelineName();
-    String processId = PipeliteIdCreator.processId();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
+    String processId = PipeliteTestIdCreator.processId();
     int priority = 1;
 
     ProcessEntity processEntity = processService.createExecution(pipelineName, processId, priority);
@@ -97,7 +95,7 @@ class ProcessServiceTest {
 
   @Test
   public void getUnlockedActiveCompletedFailedPendingProcessesWithSamePriority() {
-    String pipelineName = PipeliteIdCreator.pipelineName();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
 
     saveProcess(pipelineName, ProcessState.ACTIVE, 1);
     saveProcess(pipelineName, ProcessState.ACTIVE, 1);
@@ -120,7 +118,7 @@ class ProcessServiceTest {
 
   @Test
   public void getUnlockedActiveCompletedFailedPendingProcessesWithDifferentPriority() {
-    String pipelineName = PipeliteIdCreator.pipelineName();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
 
     saveProcess(pipelineName, ProcessState.ACTIVE, 1);
     saveProcess(pipelineName, ProcessState.ACTIVE, 2);
@@ -150,7 +148,7 @@ class ProcessServiceTest {
 
   @Test
   public void getProcesses() {
-    String pipelineName = PipeliteIdCreator.pipelineName();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
 
     List<ProcessEntity> processes =
         Arrays.asList(
@@ -187,7 +185,7 @@ class ProcessServiceTest {
 
   private ProcessEntity saveProcess(String pipelineName, ProcessState state, int priority) {
     ProcessEntity processEntity =
-        ProcessEntity.createExecution(pipelineName, PipeliteIdCreator.processId(), priority);
+        ProcessEntity.createExecution(pipelineName, PipeliteTestIdCreator.processId(), priority);
     processEntity.setProcessState(state);
     processEntity.setExecutionCount(0);
     return processService.saveProcess(processEntity);
@@ -218,8 +216,8 @@ class ProcessServiceTest {
 
   @Test
   public void isRetryProcessWithFailedProcess() {
-    String pipelineName = PipeliteIdCreator.pipelineName();
-    String processId = PipeliteIdCreator.processId();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
+    String processId = PipeliteTestIdCreator.processId();
     int priority = 1;
 
     ProcessEntity processEntity = processService.createExecution(pipelineName, processId, priority);
@@ -232,8 +230,8 @@ class ProcessServiceTest {
 
   @Test
   public void isRetryProcessWithNotFailedProcess() {
-    String pipelineName = PipeliteIdCreator.pipelineName();
-    String processId = PipeliteIdCreator.processId();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
+    String processId = PipeliteTestIdCreator.processId();
     int priority = 1;
 
     ProcessEntity processEntity = processService.createExecution(pipelineName, processId, priority);
@@ -248,8 +246,8 @@ class ProcessServiceTest {
 
   @Test
   public void isRetryProcessWithMissingProcess() {
-    String pipelineName = PipeliteIdCreator.pipelineName();
-    String processId = PipeliteIdCreator.processId();
+    String pipelineName = PipeliteTestIdCreator.pipelineName();
+    String processId = PipeliteTestIdCreator.processId();
 
     assertThat(processService.getSavedProcess(pipelineName, processId).isPresent()).isFalse();
     assertThrows(
@@ -259,7 +257,7 @@ class ProcessServiceTest {
 
   private ProcessEntity createProcessEntity(Integer priority, ZonedDateTime initTime) {
     ProcessEntity processEntity = new ProcessEntity();
-    processEntity.setProcessId(PipeliteIdCreator.processId());
+    processEntity.setProcessId(PipeliteTestIdCreator.processId());
     processEntity.setPriority(priority);
     processEntity.setCreateTime(initTime);
     return processEntity;

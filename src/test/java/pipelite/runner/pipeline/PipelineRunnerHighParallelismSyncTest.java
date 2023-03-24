@@ -23,13 +23,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import pipelite.PipeliteTestConfigWithManager;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.collector.ProcessRunnerMetrics;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorState;
+import pipelite.test.configuration.PipeliteTestConfigWithManager;
 import pipelite.tester.pipeline.ConfigurableTestPipeline;
 import pipelite.tester.process.TestProcessConfiguration;
 
@@ -44,7 +44,7 @@ import pipelite.tester.process.TestProcessConfiguration;
       "pipelite.advanced.stageRunnerWorkers=5",
       "pipelite.repository.maxActive=10"
     })
-@ActiveProfiles({"test", "PipelineRunnerHighParallelismSyncTest"})
+@ActiveProfiles({"pipelite", "PipelineRunnerHighParallelismSyncTest"})
 @DirtiesContext
 public class PipelineRunnerHighParallelismSyncTest {
   // Testing high pipeline parallelism with limited number of process runner

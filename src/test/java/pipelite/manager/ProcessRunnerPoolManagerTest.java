@@ -11,7 +11,7 @@
 package pipelite.manager;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static pipelite.PipeliteTestConstants.CRON_EVERY_TWO_SECONDS;
+import static pipelite.test.PipeliteTestConstants.CRON_EVERY_TWO_SECONDS;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,13 +22,13 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pipelite.Pipeline;
-import pipelite.PipeliteTestConfigWithManager;
 import pipelite.Schedule;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.runner.schedule.ScheduleRunner;
 import pipelite.service.RunnerService;
 import pipelite.stage.executor.StageExecutorState;
+import pipelite.test.configuration.PipeliteTestConfigWithManager;
 import pipelite.tester.pipeline.ConfigurableTestPipeline;
 import pipelite.tester.pipeline.ConfigurableTestSchedule;
 import pipelite.tester.process.TestProcessConfiguration;
@@ -41,7 +41,7 @@ import pipelite.tester.process.TestProcessConfiguration;
       "pipelite.service.force=true",
       "pipelite.service.name=ProcessRunnerPoolManagerTest"
     })
-@ActiveProfiles({"test", "ProcessRunnerPoolManagerTest"})
+@ActiveProfiles({"pipelite", "ProcessRunnerPoolManagerTest"})
 @DirtiesContext
 public class ProcessRunnerPoolManagerTest {
 

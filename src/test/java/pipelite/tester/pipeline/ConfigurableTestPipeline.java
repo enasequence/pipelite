@@ -14,7 +14,7 @@ import com.google.common.util.concurrent.Monitor;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import pipelite.Pipeline;
-import pipelite.PipeliteIdCreator;
+import pipelite.test.PipeliteTestIdCreator;
 import pipelite.tester.process.TestProcessConfiguration;
 
 /**
@@ -35,7 +35,7 @@ public class ConfigurableTestPipeline<T extends TestProcessConfiguration>
     super(testProcessConfiguration);
     this.parallelism = parallelism;
     for (int i = 0; i < processCount; ++i) {
-      String processId = PipeliteIdCreator.processId();
+      String processId = PipeliteTestIdCreator.processId();
       createdProcessIds.add(processId);
     }
   }

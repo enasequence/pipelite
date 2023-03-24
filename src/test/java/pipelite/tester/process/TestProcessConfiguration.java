@@ -10,8 +10,8 @@
  */
 package pipelite.tester.process;
 
-import pipelite.PipeliteIdCreator;
 import pipelite.process.builder.ProcessBuilder;
+import pipelite.test.PipeliteTestIdCreator;
 
 /** Process configuration for the configurable test pipeline and schedule. */
 public abstract class TestProcessConfiguration {
@@ -19,7 +19,7 @@ public abstract class TestProcessConfiguration {
   private final String pipelineName;
 
   public TestProcessConfiguration() {
-    pipelineName = PipeliteIdCreator.pipelineName();
+    pipelineName = PipeliteTestIdCreator.pipelineName();
   }
 
   public TestProcessConfiguration(String pipelineName) {
