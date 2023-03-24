@@ -48,7 +48,7 @@ import pipelite.executor.describe.context.request.DefaultRequestContext;
 import pipelite.executor.describe.context.request.LsfRequestContext;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipeliteMetrics;
-import pipelite.metrics.ProcessMetrics;
+import pipelite.metrics.collector.ProcessRunnerMetrics;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.PipeliteServices;
 import pipelite.service.RunnerService;
@@ -177,11 +177,11 @@ public class PipelineRunnerDescribeJobsGetResultExceptionTest {
                   .isEmpty())
           .isTrue();
 
-      ProcessMetrics processMetrics = pipeliteMetrics.process(pipelineName);
-      assertThat(processMetrics.runner().completedCount()).isEqualTo(PROCESS_CNT);
-      assertThat(processMetrics.runner().failedCount()).isZero();
-      assertThat(processMetrics.stage(STAGE_NAME).runner().failedCount()).isEqualTo(0);
-      assertThat(processMetrics.stage(STAGE_NAME).runner().successCount()).isEqualTo(PROCESS_CNT);
+      ProcessRunnerMetrics processRunnerMetrics = pipeliteMetrics.process(pipelineName);
+      assertThat(processRunnerMetrics.completedCount()).isEqualTo(PROCESS_CNT);
+      assertThat(processRunnerMetrics.failedCount()).isZero();
+      assertThat(processRunnerMetrics.stage(STAGE_NAME).failedCount()).isEqualTo(0);
+      assertThat(processRunnerMetrics.stage(STAGE_NAME).successCount()).isEqualTo(PROCESS_CNT);
     }
   }
 
@@ -260,11 +260,11 @@ public class PipelineRunnerDescribeJobsGetResultExceptionTest {
                   .isEmpty())
           .isTrue();
 
-      ProcessMetrics processMetrics = pipeliteMetrics.process(pipelineName);
-      assertThat(processMetrics.runner().failedCount()).isEqualTo(PROCESS_CNT);
-      assertThat(processMetrics.runner().completedCount()).isZero();
-      assertThat(processMetrics.stage(STAGE_NAME).runner().successCount()).isEqualTo(0);
-      assertThat(processMetrics.stage(STAGE_NAME).runner().failedCount()).isEqualTo(PROCESS_CNT);
+      ProcessRunnerMetrics processRunnerMetrics = pipeliteMetrics.process(pipelineName);
+      assertThat(processRunnerMetrics.failedCount()).isEqualTo(PROCESS_CNT);
+      assertThat(processRunnerMetrics.completedCount()).isZero();
+      assertThat(processRunnerMetrics.stage(STAGE_NAME).successCount()).isEqualTo(0);
+      assertThat(processRunnerMetrics.stage(STAGE_NAME).failedCount()).isEqualTo(PROCESS_CNT);
       assertThat(pipeliteMetrics.error().count()).isEqualTo(PROCESS_CNT * pipelineNames.size());
     }
   }
@@ -356,11 +356,11 @@ public class PipelineRunnerDescribeJobsGetResultExceptionTest {
                   .isEmpty())
           .isTrue();
 
-      ProcessMetrics processMetrics = pipeliteMetrics.process(pipelineName);
-      assertThat(processMetrics.runner().completedCount()).isEqualTo(PROCESS_CNT);
-      assertThat(processMetrics.runner().failedCount()).isZero();
-      assertThat(processMetrics.stage(STAGE_NAME).runner().failedCount()).isEqualTo(0);
-      assertThat(processMetrics.stage(STAGE_NAME).runner().successCount()).isEqualTo(PROCESS_CNT);
+      ProcessRunnerMetrics processRunnerMetrics = pipeliteMetrics.process(pipelineName);
+      assertThat(processRunnerMetrics.completedCount()).isEqualTo(PROCESS_CNT);
+      assertThat(processRunnerMetrics.failedCount()).isZero();
+      assertThat(processRunnerMetrics.stage(STAGE_NAME).failedCount()).isEqualTo(0);
+      assertThat(processRunnerMetrics.stage(STAGE_NAME).successCount()).isEqualTo(PROCESS_CNT);
       assertThat(pipeliteMetrics.error().count()).isEqualTo(PROCESS_CNT);
     }
   }

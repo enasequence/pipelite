@@ -14,53 +14,48 @@ import com.google.common.util.concurrent.AtomicDouble;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import java.time.ZonedDateTime;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.flogger.Flogger;
-import pipelite.entity.field.StageState;
+import pipelite.exception.PipeliteException;
 import pipelite.metrics.helper.MicroMeterHelper;
-import pipelite.metrics.helper.TimeSeriesHelper;
 import pipelite.process.ProcessState;
-import tech.tablesaw.api.Table;
 
 @Flogger
 public class ProcessRunnerMetrics extends AbstractMetrics {
 
   private static final String PREFIX = "pipelite.process";
 
+  private final MeterRegistry meterRegistry;
   private final String pipelineName;
+  private final Map<String, StageRunnerMetrics> stageRunnerMetrics = new ConcurrentHashMap<>();
 
-  // Micrometer
+  // Micrometer metrics
   private final AtomicDouble runningGauge = new AtomicDouble();
   private final Counter completedCounter;
   private final Counter failedCounter;
 
-  // Tablesaw time series
-  private final Table runningTimeSeries;
-  private final Table completedTimeSeries;
-  private final Table failedTimeSeries;
-  private final Table runningStagesTimeSeries;
-  private final Table completedStagesTimeSeries;
-  private final Table failedStagesTimeSeries;
-
   public ProcessRunnerMetrics(String pipelineName, MeterRegistry meterRegistry) {
     super(PREFIX);
     this.pipelineName = pipelineName;
+    this.meterRegistry = meterRegistry;
     String[] tags = MicroMeterHelper.pipelineTags(pipelineName);
-
-    Gauge.builder(name("running"), runningGauge, AtomicDouble::get)
-        .tags(tags)
-        .strongReference(true) // prevent garbage collection.
-        .register(meterRegistry);
-
+    Gauge.builder(name("running"), () -> runningGauge.get()).tags(tags).register(meterRegistry);
     completedCounter = meterRegistry.counter(name("completed"), tags);
     failedCounter = meterRegistry.counter(name("failed"), tags);
+  }
 
-    runningTimeSeries = TimeSeriesHelper.getEmptyTimeSeries(pipelineName);
-    completedTimeSeries = TimeSeriesHelper.getEmptyTimeSeries(pipelineName);
-    failedTimeSeries = TimeSeriesHelper.getEmptyTimeSeries(pipelineName);
-    runningStagesTimeSeries = TimeSeriesHelper.getEmptyTimeSeries(pipelineName);
-    completedStagesTimeSeries = TimeSeriesHelper.getEmptyTimeSeries(pipelineName);
-    failedStagesTimeSeries = TimeSeriesHelper.getEmptyTimeSeries(pipelineName);
+  public StageRunnerMetrics stage(String stageName) {
+    if (stageName == null) {
+      throw new PipeliteException("Missing stage name");
+    }
+    StageRunnerMetrics m = stageRunnerMetrics.get(stageName);
+    if (m == null) {
+      stageRunnerMetrics.putIfAbsent(
+          stageName, new StageRunnerMetrics(pipelineName, stageName, meterRegistry));
+      return stageRunnerMetrics.get(stageName);
+    }
+    return m;
   }
 
   public double completedCount() {
@@ -71,28 +66,16 @@ public class ProcessRunnerMetrics extends AbstractMetrics {
     return failedCounter.count();
   }
 
-  public Table runningTimeSeries() {
-    return runningTimeSeries;
+  public double stageSuccessCount() {
+    return stageRunnerMetrics.values().stream()
+        .mapToDouble(m -> m.successCount())
+        .reduce(0, Double::sum);
   }
 
-  public Table completedTimeSeries() {
-    return completedTimeSeries;
-  }
-
-  public Table failedTimeSeries() {
-    return failedTimeSeries;
-  }
-
-  public Table runningStagesTimeSeries() {
-    return runningStagesTimeSeries;
-  }
-
-  public Table completedStagesTimeSeries() {
-    return completedStagesTimeSeries;
-  }
-
-  public Table failedStagesTimeSeries() {
-    return failedStagesTimeSeries;
+  public double stageFailedCount() {
+    return stageRunnerMetrics.values().stream()
+        .mapToDouble(m -> m.failedCount())
+        .reduce(0, Double::sum);
   }
 
   /**
@@ -101,46 +84,16 @@ public class ProcessRunnerMetrics extends AbstractMetrics {
    * @param count the number of running processes
    * @paran now the time when the running process count was measured
    */
-  public void setRunningProcessesCount(int count, ZonedDateTime now) {
+  public void setRunningProcessesCount(int count) {
     log.atFiner().log("Running processes count for " + pipelineName + ": " + count);
     runningGauge.set(count);
-    TimeSeriesHelper.maximumTimeSeriesCount(runningTimeSeries, count, pipelineName, now);
-  }
-
-  /**
-   * Set the number of running stages.
-   *
-   * @param count the number of running stages
-   * @paran now the time when the running stage count was measured
-   */
-  public void setRunningStagesCount(int count, ZonedDateTime now) {
-    log.atFiner().log("Running stages count for " + pipelineName + ": " + count);
-    TimeSeriesHelper.maximumTimeSeriesCount(runningStagesTimeSeries, count, pipelineName, now);
   }
 
   public void endProcessExecution(ProcessState state) {
-    endProcessExecution(state, ZonedDateTime.now());
-  }
-
-  public void endProcessExecution(ProcessState state, ZonedDateTime now) {
     if (state == ProcessState.COMPLETED) {
       completedCounter.increment(1);
-      TimeSeriesHelper.incrementTimeSeriesCount(completedTimeSeries, 1, pipelineName, now);
     } else if (state == ProcessState.FAILED) {
       failedCounter.increment(1);
-      TimeSeriesHelper.incrementTimeSeriesCount(failedTimeSeries, 1, pipelineName, now);
-    }
-  }
-
-  public void endStageExecution(StageState state) {
-    endStageExecution(state, ZonedDateTime.now());
-  }
-
-  public void endStageExecution(StageState state, ZonedDateTime now) {
-    if (state == StageState.SUCCESS) {
-      TimeSeriesHelper.incrementTimeSeriesCount(completedStagesTimeSeries, 1, pipelineName, now);
-    } else if (state == StageState.ERROR) {
-      TimeSeriesHelper.incrementTimeSeriesCount(failedStagesTimeSeries, 1, pipelineName, now);
     }
   }
 }

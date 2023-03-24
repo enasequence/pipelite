@@ -24,7 +24,7 @@ import pipelite.executor.describe.DescribeJobs;
 import pipelite.executor.describe.context.executor.DefaultExecutorContext;
 import pipelite.executor.describe.context.request.DefaultRequestContext;
 import pipelite.log.LogKey;
-import pipelite.metrics.StageMetrics;
+import pipelite.metrics.collector.StageRunnerMetrics;
 import pipelite.retryable.Retry;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.Stage;
@@ -60,7 +60,7 @@ public abstract class AsyncExecutor<
   @JsonIgnore private StageExecutorResult stageExecutorResult;
 
   @JsonIgnore private InternalErrorHandler internalErrorHandler;
-  @JsonIgnore private StageMetrics stageMetrics;
+  @JsonIgnore private StageRunnerMetrics stageRunnerMetrics;
 
   @JsonIgnore private ZonedDateTime execStartTime;
   @JsonIgnore private ZonedDateTime execEndTime;
@@ -77,7 +77,7 @@ public abstract class AsyncExecutor<
     this.pipelineName = pipelineName;
     this.processId = processId;
     this.stageName = stage.getStageName();
-    this.stageMetrics = pipeliteServices.metrics().process(pipelineName).stage(stageName);
+    this.stageRunnerMetrics = pipeliteServices.metrics().process(pipelineName).stage(stageName);
     this.internalErrorHandler =
         new InternalErrorHandler(
             pipeliteServices.internalError(), pipelineName, processId, stageName, this);

@@ -25,7 +25,7 @@ import org.springframework.test.context.ActiveProfiles;
 import pipelite.PipeliteTestConfigWithManager;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipeliteMetrics;
-import pipelite.metrics.ProcessMetrics;
+import pipelite.metrics.collector.ProcessRunnerMetrics;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorState;
@@ -107,13 +107,13 @@ public class PipelineRunnerHighParallelismAsyncTest {
     PipelineRunner pipelineRunner = pipeliteServices.runner().getPipelineRunner(pipelineName).get();
     assertThat(pipelineRunner.getActiveProcessRunners().size()).isEqualTo(0);
 
-    ProcessMetrics processMetrics = metrics.process(pipelineName);
+    ProcessRunnerMetrics processRunnerMetrics = metrics.process(pipelineName);
     assertThat(metrics.error().count()).isEqualTo(0);
     // TODO: higher than expected completed count
-    assertThat(processMetrics.runner().completedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(processMetrics.runner().failedCount()).isZero();
-    assertThat(processMetrics.stage(STAGE_NAME).runner().failedCount()).isEqualTo(0);
-    assertThat(processMetrics.stage(STAGE_NAME).runner().successCount()).isEqualTo(PROCESS_CNT);
+    assertThat(processRunnerMetrics.completedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(processRunnerMetrics.failedCount()).isZero();
+    assertThat(processRunnerMetrics.stage(STAGE_NAME).failedCount()).isEqualTo(0);
+    assertThat(processRunnerMetrics.stage(STAGE_NAME).successCount()).isEqualTo(PROCESS_CNT);
   }
 
   @Test

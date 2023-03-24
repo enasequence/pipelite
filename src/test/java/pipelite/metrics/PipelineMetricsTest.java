@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
-import pipelite.metrics.helper.TimeSeriesHelper;
+import pipelite.metrics.collector.ProcessRunnerMetrics;
 import pipelite.process.ProcessState;
 import pipelite.stage.executor.StageExecutorResult;
 
@@ -22,52 +22,45 @@ public class PipelineMetricsTest {
 
   @Test
   public void processCompleted() {
-    ProcessMetrics metrics = new ProcessMetrics("PIPELINE_NAME", new SimpleMeterRegistry());
+    ProcessRunnerMetrics metrics =
+        new ProcessRunnerMetrics("PIPELINE_NAME", new SimpleMeterRegistry());
 
     String stageName = "STAGE_NAME";
 
-    assertThat(metrics.runner().completedCount()).isZero();
-    assertThat(metrics.runner().failedCount()).isZero();
-    assertThat(metrics.stage(stageName).runner().successCount()).isZero();
-    assertThat(metrics.stage(stageName).runner().failedCount()).isZero();
-    assertThat(TimeSeriesHelper.getCount(metrics.runner().completedTimeSeries())).isZero();
-    assertThat(TimeSeriesHelper.getCount(metrics.runner().failedTimeSeries())).isZero();
+    assertThat(metrics.completedCount()).isZero();
+    assertThat(metrics.failedCount()).isZero();
+    assertThat(metrics.stage(stageName).successCount()).isZero();
+    assertThat(metrics.stage(stageName).failedCount()).isZero();
 
-    metrics.stage(stageName).runner().endStageExecution(StageExecutorResult.success());
-    metrics.stage(stageName).runner().endStageExecution(StageExecutorResult.executionError());
-    metrics.runner().endProcessExecution(ProcessState.COMPLETED);
+    metrics.stage(stageName).endStageExecution(StageExecutorResult.success());
+    metrics.stage(stageName).endStageExecution(StageExecutorResult.executionError());
+    metrics.endProcessExecution(ProcessState.COMPLETED);
 
-    assertThat(metrics.runner().completedCount()).isEqualTo(1);
-    assertThat(metrics.runner().failedCount()).isZero();
-    assertThat(metrics.stage(stageName).runner().successCount()).isEqualTo(1);
-    assertThat(metrics.stage(stageName).runner().failedCount()).isEqualTo(1);
-    assertThat(TimeSeriesHelper.getCount(metrics.runner().completedTimeSeries())).isEqualTo(1);
-    assertThat(TimeSeriesHelper.getCount(metrics.runner().failedTimeSeries())).isZero();
+    assertThat(metrics.completedCount()).isEqualTo(1);
+    assertThat(metrics.failedCount()).isZero();
+    assertThat(metrics.stage(stageName).successCount()).isEqualTo(1);
+    assertThat(metrics.stage(stageName).failedCount()).isEqualTo(1);
   }
 
   @Test
   public void processFailed() {
-    ProcessMetrics metrics = new ProcessMetrics("PIPELINE_NAME", new SimpleMeterRegistry());
+    ProcessRunnerMetrics metrics =
+        new ProcessRunnerMetrics("PIPELINE_NAME", new SimpleMeterRegistry());
 
     String stageName = "STAGE_NAME";
 
-    assertThat(metrics.runner().completedCount()).isZero();
-    assertThat(metrics.runner().failedCount()).isZero();
-    assertThat(metrics.stage(stageName).runner().successCount()).isZero();
-    assertThat(metrics.stage(stageName).runner().failedCount()).isZero();
-    assertThat(TimeSeriesHelper.getCount(metrics.runner().completedTimeSeries())).isZero();
-    assertThat(TimeSeriesHelper.getCount(metrics.runner().failedTimeSeries())).isZero();
+    assertThat(metrics.completedCount()).isZero();
+    assertThat(metrics.failedCount()).isZero();
+    assertThat(metrics.stage(stageName).successCount()).isZero();
+    assertThat(metrics.stage(stageName).failedCount()).isZero();
 
-    metrics.stage(stageName).runner().endStageExecution(StageExecutorResult.success());
-    metrics.stage(stageName).runner().endStageExecution(StageExecutorResult.executionError());
-    metrics.runner().endProcessExecution(ProcessState.FAILED);
+    metrics.stage(stageName).endStageExecution(StageExecutorResult.success());
+    metrics.stage(stageName).endStageExecution(StageExecutorResult.executionError());
+    metrics.endProcessExecution(ProcessState.FAILED);
 
-    assertThat(metrics.runner().completedCount()).isZero();
-    assertThat(metrics.runner().failedCount()).isEqualTo(1);
-    assertThat(metrics.stage(stageName).runner().successCount()).isEqualTo(1);
-    assertThat(metrics.stage(stageName).runner().failedCount()).isEqualTo(1);
-
-    assertThat(TimeSeriesHelper.getCount(metrics.runner().completedTimeSeries())).isZero();
-    assertThat(TimeSeriesHelper.getCount(metrics.runner().failedTimeSeries())).isEqualTo(1);
+    assertThat(metrics.completedCount()).isZero();
+    assertThat(metrics.failedCount()).isEqualTo(1);
+    assertThat(metrics.stage(stageName).successCount()).isEqualTo(1);
+    assertThat(metrics.stage(stageName).failedCount()).isEqualTo(1);
   }
 }

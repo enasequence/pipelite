@@ -15,32 +15,4 @@
             </table>
         </div>
     </div>
-    <div class="card m-2">
-        <div class="card-body">
-            <div class="form-inline m-2">
-                <select class="custom-select m-2" id="pipelinesRunningHistoryType">
-                    <option value="running">Running processes</option>
-                    <option value="completed">Completed processes</option>
-                    <option value="failed">Failed processes</option>
-                    <option value="runningStages">Running stages</option>
-                    <option value="completedStages">Completed stages</option>
-                    <option value="failedStages">Failed stages</option>
-                </select>
-                <select class="custom-select m-2" id="pipelinesRunningHistorySince">
-                    <option value="60">Last 1 hour</option>
-                    <option value="240">Last 4 hours</option>
-                    <option value="720">Last 12 hours</option>
-                    <option value="1440">Last 1 day</option>
-                    <option value="10080">Last 7 days</option>
-                </select>
-                <button type="submit" class="btn btn-primary m-2" onclick="pipelinesPlot()">Show plot</button>
-            </div>
-        </div>
-
-        <h5 class="mb-4">
-            <span class="badge badge-secondary" id="pipelinesRunningHistoryTypeBadge"></span>
-            <span class="badge badge-secondary" id="pipelinesRunningHistorySinceBadge"></span>
-        </h5>
-        <div id="pipelinesRunningHistoryPlot"></div>
-    </div>
 </th:block>

@@ -21,6 +21,7 @@ public class StageRunnerMetrics extends AbstractMetrics {
 
   private static final String PREFIX = "pipelite.stage";
 
+  // Micrometer metrics
   private final AtomicDouble runningGauge = new AtomicDouble();
   private final Counter successCounter;
   private final Counter failedCounter;
@@ -28,12 +29,7 @@ public class StageRunnerMetrics extends AbstractMetrics {
   public StageRunnerMetrics(String pipelineName, String stageName, MeterRegistry meterRegistry) {
     super(PREFIX);
     String[] tags = MicroMeterHelper.stageTags(pipelineName, stageName);
-
-    Gauge.builder(name("running"), runningGauge, AtomicDouble::get)
-        .tags(tags)
-        .strongReference(true) // prevent garbage collection.
-        .register(meterRegistry);
-
+    Gauge.builder(name("running"), () -> runningGauge.get()).tags(tags).register(meterRegistry);
     failedCounter = meterRegistry.counter(name("failed"), tags);
     successCounter = meterRegistry.counter(name("success"), tags);
   }

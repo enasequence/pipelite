@@ -13,7 +13,6 @@ package pipelite.runner.process;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
-import java.time.ZonedDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -28,8 +27,7 @@ import pipelite.PipeliteTestConfigWithServices;
 import pipelite.configuration.PipeliteConfiguration;
 import pipelite.entity.ProcessEntity;
 import pipelite.metrics.PipeliteMetrics;
-import pipelite.metrics.ProcessMetrics;
-import pipelite.metrics.helper.TimeSeriesHelper;
+import pipelite.metrics.collector.ProcessRunnerMetrics;
 import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.PipeliteServices;
@@ -119,26 +117,13 @@ public class ProcessRunnerPoolTest {
       pool.runOneIteration();
     }
 
-    ProcessMetrics processMetrics = metrics.process(PIPELINE_NAME);
+    ProcessRunnerMetrics processRunnerMetrics = metrics.process(PIPELINE_NAME);
 
     assertThat(runProcessCnt.get()).isEqualTo(PROCESS_CNT);
 
-    assertThat(processMetrics.runner().completedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(processMetrics.runner().failedCount()).isZero();
+    assertThat(processRunnerMetrics.completedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(processRunnerMetrics.failedCount()).isZero();
     assertThat(metrics.error().count()).isZero();
-
-    assertThat(TimeSeriesHelper.getCount(processMetrics.runner().completedTimeSeries()))
-        .isEqualTo(PROCESS_CNT);
-    assertThat(
-            TimeSeriesHelper.getCount(
-                processMetrics.runner().completedTimeSeries(), ZonedDateTime.now().minusHours(1)))
-        .isEqualTo(PROCESS_CNT);
-    assertThat(
-            TimeSeriesHelper.getCount(
-                processMetrics.runner().completedTimeSeries(), ZonedDateTime.now().plusHours(1)))
-        .isZero();
-    assertThat(TimeSeriesHelper.getCount(processMetrics.runner().failedTimeSeries())).isZero();
-    assertThat(TimeSeriesHelper.getCount(metrics.error().timeSeries())).isZero();
 
     assertThat(lockProcessCnt.get()).isEqualTo(PROCESS_CNT);
     assertThat(unlockProcessCnt.get()).isEqualTo(PROCESS_CNT);
@@ -162,26 +147,13 @@ public class ProcessRunnerPoolTest {
       Time.wait(Duration.ofSeconds(1));
       pool.runOneIteration();
     }
-    ProcessMetrics processMetrics = metrics.process(PIPELINE_NAME);
+    ProcessRunnerMetrics processRunnerMetrics = metrics.process(PIPELINE_NAME);
 
     assertThat(runProcessCnt.get()).isEqualTo(PROCESS_CNT);
 
-    assertThat(processMetrics.runner().completedCount()).isZero();
-    assertThat(processMetrics.runner().failedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(processRunnerMetrics.completedCount()).isZero();
+    assertThat(processRunnerMetrics.failedCount()).isEqualTo(PROCESS_CNT);
     assertThat(metrics.error().count()).isZero();
-
-    assertThat(TimeSeriesHelper.getCount(processMetrics.runner().completedTimeSeries())).isZero();
-    assertThat(TimeSeriesHelper.getCount(processMetrics.runner().failedTimeSeries()))
-        .isEqualTo(PROCESS_CNT);
-    assertThat(
-            TimeSeriesHelper.getCount(
-                processMetrics.runner().failedTimeSeries(), ZonedDateTime.now().minusHours(1)))
-        .isEqualTo(PROCESS_CNT);
-    assertThat(
-            TimeSeriesHelper.getCount(
-                processMetrics.runner().failedTimeSeries(), ZonedDateTime.now().plusHours(1)))
-        .isZero();
-    assertThat(TimeSeriesHelper.getCount(metrics.error().timeSeries())).isZero();
 
     assertThat(lockProcessCnt.get()).isEqualTo(PROCESS_CNT);
     assertThat(unlockProcessCnt.get()).isEqualTo(PROCESS_CNT);

@@ -219,7 +219,6 @@ public class StageRunner {
     pipeliteMetrics
         .process(pipelineName)
         .stage(stage.getStageName())
-        .runner()
         .endStageExecution(stageExecutorResult);
   }
 

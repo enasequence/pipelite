@@ -13,8 +13,7 @@ package pipelite.tester.metrics;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import pipelite.metrics.PipeliteMetrics;
-import pipelite.metrics.ProcessMetrics;
-import pipelite.metrics.helper.TimeSeriesHelper;
+import pipelite.metrics.collector.ProcessRunnerMetrics;
 import pipelite.tester.TestType;
 
 public class MetricsTestAsserter {
@@ -24,23 +23,18 @@ public class MetricsTestAsserter {
   public static void assertCompletedMetrics(
       TestType testType, PipeliteMetrics metrics, String pipelineName, int processCnt) {
 
-    ProcessMetrics processMetrics = metrics.process(pipelineName);
+    ProcessRunnerMetrics processRunnerMetrics = metrics.process(pipelineName);
 
     // Assuming single stage in process.
 
-    assertThat(processMetrics.runner().completedCount())
+    assertThat(processRunnerMetrics.completedCount())
         .isEqualTo(processCnt * testType.expectedProcessCompletedCnt());
-    assertThat(processMetrics.runner().failedCount())
+    assertThat(processRunnerMetrics.failedCount())
         .isEqualTo(processCnt * testType.expectedProcessFailedCnt());
 
-    assertThat(processMetrics.stageFailedCount())
+    assertThat(processRunnerMetrics.stageFailedCount())
         .isEqualTo(processCnt * testType.expectedStageFailedCnt());
-    assertThat(processMetrics.stageSuccessCount())
+    assertThat(processRunnerMetrics.stageSuccessCount())
         .isEqualTo(processCnt * testType.expectedStageSuccessCnt());
-
-    assertThat(TimeSeriesHelper.getCount(processMetrics.runner().completedTimeSeries()))
-        .isEqualTo(processCnt * testType.expectedProcessCompletedCnt());
-    assertThat(TimeSeriesHelper.getCount(processMetrics.runner().failedTimeSeries()))
-        .isEqualTo(processCnt * testType.expectedProcessFailedCnt());
   }
 }

@@ -12,9 +12,6 @@ package pipelite.metrics.collector;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import java.time.ZonedDateTime;
-import pipelite.metrics.helper.TimeSeriesHelper;
-import tech.tablesaw.api.Table;
 
 public class InternalErrorMetrics extends AbstractMetrics {
 
@@ -23,26 +20,17 @@ public class InternalErrorMetrics extends AbstractMetrics {
   // Micrometer
   private final Counter counter;
 
-  // Tablesaw time series
-  private final Table timeSeries;
-
   public InternalErrorMetrics(MeterRegistry meterRegistry) {
     super(PREFIX);
     this.counter = meterRegistry.counter(name("internal"));
-    this.timeSeries = TimeSeriesHelper.getEmptyTimeSeries("internal errors");
   }
 
   public double count() {
     return counter.count();
   }
 
-  public Table timeSeries() {
-    return timeSeries;
-  }
-
   /** Called from InternalErrorService. */
   public void incrementCount() {
     counter.increment(1);
-    TimeSeriesHelper.incrementTimeSeriesCount(timeSeries, 1, "error", ZonedDateTime.now());
   }
 }

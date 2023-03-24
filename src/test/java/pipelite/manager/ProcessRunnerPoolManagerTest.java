@@ -99,18 +99,10 @@ public class ProcessRunnerPoolManagerTest {
     processRunnerPoolManager.waitPoolsToStop();
 
     assertThat(
-            pipeliteMetrics
-                .process(testSchedule.pipelineName())
-                .stage(STAGE_NAME)
-                .runner()
-                .successCount())
+            pipeliteMetrics.process(testSchedule.pipelineName()).stage(STAGE_NAME).successCount())
         .isEqualTo(1);
     assertThat(
-            pipeliteMetrics
-                .process(testPipeline.pipelineName())
-                .stage(STAGE_NAME)
-                .runner()
-                .successCount())
+            pipeliteMetrics.process(testPipeline.pipelineName()).stage(STAGE_NAME).successCount())
         .isEqualTo(1);
   }
 }

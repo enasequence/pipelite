@@ -11,7 +11,6 @@
 package pipelite.metrics;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +24,7 @@ import org.springframework.stereotype.Component;
 import pipelite.RegisteredPipeline;
 import pipelite.exception.PipeliteException;
 import pipelite.metrics.collector.InternalErrorMetrics;
+import pipelite.metrics.collector.ProcessRunnerMetrics;
 import pipelite.runner.process.ProcessRunner;
 import pipelite.stage.Stage;
 
@@ -34,8 +34,8 @@ public class PipeliteMetrics {
 
   private final MeterRegistry meterRegistry;
   private final InternalErrorMetrics internalErrorMetrics;
-  private final Map<String, ProcessMetrics> process = new ConcurrentHashMap<>();
   private final List<RegisteredPipeline> registeredPipelines;
+  private final Map<String, ProcessRunnerMetrics> processRunnerMetrics = new ConcurrentHashMap<>();
 
   public PipeliteMetrics(
       @Autowired MeterRegistry meterRegistry,
@@ -49,21 +49,17 @@ public class PipeliteMetrics {
     return internalErrorMetrics;
   }
 
-  public ProcessMetrics process(String pipelineName) {
+  public ProcessRunnerMetrics process(String pipelineName) {
     if (pipelineName == null) {
       throw new PipeliteException("Missing pipeline name");
     }
-    try {
-      ProcessMetrics m = process.get(pipelineName);
-      if (m == null) {
-        process.putIfAbsent(pipelineName, new ProcessMetrics(pipelineName, meterRegistry));
-        return process.get(pipelineName);
-      }
-      return m;
-    } catch (Exception ex) {
-      process.putIfAbsent(pipelineName, new ProcessMetrics(pipelineName, meterRegistry));
-      return process.get(pipelineName);
+    ProcessRunnerMetrics m = processRunnerMetrics.get(pipelineName);
+    if (m == null) {
+      processRunnerMetrics.putIfAbsent(
+          pipelineName, new ProcessRunnerMetrics(pipelineName, meterRegistry));
+      return processRunnerMetrics.get(pipelineName);
     }
+    return m;
   }
 
   /**
@@ -71,14 +67,11 @@ public class PipeliteMetrics {
    *
    * @param processRunners the active process runners
    */
-  public void setRunningProcessesCount(
-      Collection<ProcessRunner> processRunners, ZonedDateTime now) {
+  public void setRunningProcessesCount(Collection<ProcessRunner> processRunners) {
     Map<String, Integer> counts = new HashMap<>();
     registeredPipelines.forEach(r -> counts.put(r.pipelineName(), 0));
     processRunners.forEach(r -> counts.merge(r.getPipelineName(), 1, Integer::sum));
-    counts.forEach(
-        (pipelineName, count) ->
-            process(pipelineName).runner().setRunningProcessesCount(count, now));
+    counts.forEach((pipelineName, count) -> process(pipelineName).setRunningProcessesCount(count));
   }
 
   @Value
@@ -97,40 +90,21 @@ public class PipeliteMetrics {
    *
    * @param processRunners the active process runners
    */
-  public void setRunningStagesCount(Collection<ProcessRunner> processRunners, ZonedDateTime now) {
-    // Running stages count for each specific stage.
-    {
-      Map<RunningStagesKey, Integer> counts = new HashMap<>();
-      for (ProcessRunner processRunner : processRunners) {
-        processRunner
-            .getProcess()
-            .getStages()
-            .forEach(
-                stage ->
-                    counts.merge(RunningStagesKey.create(processRunner, stage), 0, Integer::sum));
-        for (Stage stage : processRunner.activeStages()) {
-          counts.merge(RunningStagesKey.create(processRunner, stage), 1, Integer::sum);
-        }
-        counts.forEach(
-            (key, count) ->
-                process(key.processName())
-                    .stage(key.stageName())
-                    .runner()
-                    .setRunningStagesCount(count));
-      }
-    }
-    // Total running stages count.
-    {
-      Map<String, Integer> counts = new HashMap<>();
-      registeredPipelines.forEach(r -> counts.put(r.pipelineName(), 0));
-      for (ProcessRunner processRunner : processRunners) {
-        processRunner
-            .activeStages()
-            .forEach(r -> counts.merge(processRunner.getPipelineName(), 1, Integer::sum));
+  public void setRunningStagesCount(Collection<ProcessRunner> processRunners) {
+    Map<RunningStagesKey, Integer> counts = new HashMap<>();
+    for (ProcessRunner processRunner : processRunners) {
+      processRunner
+          .getProcess()
+          .getStages()
+          .forEach(
+              stage ->
+                  counts.merge(RunningStagesKey.create(processRunner, stage), 0, Integer::sum));
+      for (Stage stage : processRunner.activeStages()) {
+        counts.merge(RunningStagesKey.create(processRunner, stage), 1, Integer::sum);
       }
       counts.forEach(
-          (pipelineName, count) ->
-              process(pipelineName).runner().setRunningStagesCount(count, now));
+          (key, count) ->
+              process(key.processName()).stage(key.stageName()).setRunningStagesCount(count));
     }
   }
 }

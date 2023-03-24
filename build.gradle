@@ -10,7 +10,7 @@ plugins {
 }
 
 group = 'pipelite'
-version = '2.8.11'
+version = '2.8.11-metrics'
 sourceCompatibility = '1.11'
 
 java.withSourcesJar()
@@ -71,8 +71,6 @@ dependencies {
     implementation 'org.apache.commons:commons-text:1.9'
     implementation 'org.hsqldb:hsqldb:2.5.1'
     implementation 'org.jgrapht:jgrapht-core:1.5.1'
-    implementation 'tech.tablesaw:tablesaw-core:0.38.1'
-    implementation 'tech.tablesaw:tablesaw-jsplot:0.38.1'
     implementation 'com.cronutils:cron-utils:9.1.1'
     implementation 'io.fabric8:kubernetes-client:5.11.2'
     implementation 'com.amazonaws:aws-java-sdk-batch:1.11.929'

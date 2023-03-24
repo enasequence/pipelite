@@ -10,14 +10,10 @@
  */
 package pipelite.controller.api;
 
-import static pipelite.metrics.helper.TimeSeriesHelper.getTimeSeriesSince;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.time.Duration;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -29,15 +25,11 @@ import org.springframework.web.bind.annotation.*;
 import pipelite.Pipeline;
 import pipelite.controller.api.info.PipelineInfo;
 import pipelite.metrics.PipeliteMetrics;
-import pipelite.metrics.ProcessMetrics;
-import pipelite.metrics.helper.TimeSeriesHelper;
 import pipelite.runner.pipeline.PipelineRunner;
 import pipelite.runner.process.ProcessRunner;
 import pipelite.service.ProcessService;
 import pipelite.service.RegisteredPipelineService;
 import pipelite.service.RunnerService;
-import tech.tablesaw.api.Table;
-import tech.tablesaw.plotly.components.Figure;
 
 @RestController
 @RequestMapping(value = "/api/pipeline")
@@ -111,59 +103,5 @@ public class PipelineController {
         .processRunningCount(processRunningCount)
         .stageRunningCount(stageRunningCount)
         .build();
-  }
-
-  @GetMapping("/run/history/plot")
-  @ResponseStatus(HttpStatus.OK)
-  @Operation(description = "History plot for pipelines running in this server")
-  @ApiResponses(
-      value = {
-        @ApiResponse(responseCode = "200", description = "OK"),
-        @ApiResponse(responseCode = "500", description = "Internal Server error")
-      })
-  public String runningProcessesHistoryPlot(
-      @RequestParam int since, @RequestParam String type, @RequestParam String id) {
-    Duration duration = Duration.ofMinutes(since);
-    return getRunningProcessesHistoryPlot(duration, type, id);
-  }
-
-  private String getRunningProcessesHistoryPlot(Duration duration, String type, String id) {
-    Collection<Table> tables = new ArrayList<>();
-    ZonedDateTime since = ZonedDateTime.now().minus(duration);
-
-    runnerService
-        .getPipelineRunners()
-        .forEach(
-            p -> {
-              ProcessMetrics metrics = pipeliteMetrics.process(p.getPipelineName());
-              addRunningProcessesHistoryTable(metrics, tables, since, type);
-            });
-
-    Figure figure = TimeSeriesHelper.getPlot("", tables);
-    return TimeSeriesHelper.getPlotJavaScript(figure, id);
-  }
-
-  private void addRunningProcessesHistoryTable(
-      ProcessMetrics metrics, Collection<Table> tables, ZonedDateTime since, String type) {
-    switch (type) {
-      case "running":
-        tables.add(getTimeSeriesSince(metrics.runner().runningTimeSeries(), since));
-        break;
-      case "completed":
-        tables.add(getTimeSeriesSince(metrics.runner().completedTimeSeries(), since));
-        break;
-      case "failed":
-        tables.add(getTimeSeriesSince(metrics.runner().failedTimeSeries(), since));
-        break;
-      case "runningStages":
-        tables.add(getTimeSeriesSince(metrics.runner().runningStagesTimeSeries(), since));
-        break;
-      case "completedStages":
-        tables.add(getTimeSeriesSince(metrics.runner().completedStagesTimeSeries(), since));
-        break;
-      case "failedStages":
-        tables.add(getTimeSeriesSince(metrics.runner().failedStagesTimeSeries(), since));
-        break;
-    }
   }
 }

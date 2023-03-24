@@ -28,7 +28,7 @@ import pipelite.PipeliteTestConfigWithManager;
 import pipelite.executor.SyncExecutor;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipeliteMetrics;
-import pipelite.metrics.ProcessMetrics;
+import pipelite.metrics.collector.ProcessRunnerMetrics;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutorResult;
@@ -202,11 +202,11 @@ public class PipelineRunnerAsyncTest {
 
     assertThat(pipelineRunner.getActiveProcessRunners().size()).isEqualTo(0);
 
-    ProcessMetrics processMetrics = metrics.process(f.pipelineName());
-    assertThat(processMetrics.runner().completedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(processMetrics.runner().failedCount()).isZero();
-    assertThat(processMetrics.stage(STAGE_NAME).runner().failedCount()).isEqualTo(0);
-    assertThat(processMetrics.stage(STAGE_NAME).runner().successCount()).isEqualTo(PROCESS_CNT);
+    ProcessRunnerMetrics processRunnerMetrics = metrics.process(f.pipelineName());
+    assertThat(processRunnerMetrics.completedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(processRunnerMetrics.failedCount()).isZero();
+    assertThat(processRunnerMetrics.stage(STAGE_NAME).failedCount()).isEqualTo(0);
+    assertThat(processRunnerMetrics.stage(STAGE_NAME).successCount()).isEqualTo(PROCESS_CNT);
 
     assertThat(f.stageExecutor.firstExecuteCalledCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(f.stageExecutor.subsequentExecuteCalledCount.get()).isEqualTo(PROCESS_CNT);
@@ -220,12 +220,12 @@ public class PipelineRunnerAsyncTest {
 
     assertThat(pipelineRunner.getActiveProcessRunners().size()).isEqualTo(0);
 
-    ProcessMetrics processMetrics = metrics.process(f.pipelineName());
+    ProcessRunnerMetrics processRunnerMetrics = metrics.process(f.pipelineName());
 
-    assertThat(processMetrics.runner().completedCount()).isZero();
-    assertThat(processMetrics.runner().failedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(processMetrics.stage(STAGE_NAME).runner().failedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(processMetrics.stage(STAGE_NAME).runner().successCount()).isEqualTo(0);
+    assertThat(processRunnerMetrics.completedCount()).isZero();
+    assertThat(processRunnerMetrics.failedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(processRunnerMetrics.stage(STAGE_NAME).failedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(processRunnerMetrics.stage(STAGE_NAME).successCount()).isEqualTo(0);
 
     assertThat(f.stageExecutor.firstExecuteCalledCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(f.stageExecutor.subsequentExecuteCalledCount.get()).isEqualTo(0);
@@ -239,11 +239,11 @@ public class PipelineRunnerAsyncTest {
 
     assertThat(pipelineRunner.getActiveProcessRunners().size()).isEqualTo(0);
 
-    ProcessMetrics processMetrics = metrics.process(f.pipelineName());
-    assertThat(processMetrics.runner().completedCount()).isZero();
-    assertThat(processMetrics.runner().failedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(processMetrics.stage(STAGE_NAME).runner().failedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(processMetrics.stage(STAGE_NAME).runner().successCount()).isEqualTo(0);
+    ProcessRunnerMetrics processRunnerMetrics = metrics.process(f.pipelineName());
+    assertThat(processRunnerMetrics.completedCount()).isZero();
+    assertThat(processRunnerMetrics.failedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(processRunnerMetrics.stage(STAGE_NAME).failedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(processRunnerMetrics.stage(STAGE_NAME).successCount()).isEqualTo(0);
 
     assertThat(f.stageExecutor.firstExecuteCalledCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(f.stageExecutor.subsequentExecuteCalledCount.get()).isEqualTo(0);
@@ -257,11 +257,11 @@ public class PipelineRunnerAsyncTest {
 
     assertThat(pipelineRunner.getActiveProcessRunners().size()).isEqualTo(0);
 
-    ProcessMetrics processMetrics = metrics.process(f.pipelineName());
-    assertThat(processMetrics.runner().completedCount()).isZero();
-    assertThat(processMetrics.runner().failedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(processMetrics.stage(STAGE_NAME).runner().failedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(processMetrics.stage(STAGE_NAME).runner().successCount()).isEqualTo(0);
+    ProcessRunnerMetrics processRunnerMetrics = metrics.process(f.pipelineName());
+    assertThat(processRunnerMetrics.completedCount()).isZero();
+    assertThat(processRunnerMetrics.failedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(processRunnerMetrics.stage(STAGE_NAME).failedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(processRunnerMetrics.stage(STAGE_NAME).successCount()).isEqualTo(0);
 
     assertThat(f.stageExecutor.firstExecuteCalledCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(f.stageExecutor.subsequentExecuteCalledCount.get()).isEqualTo(PROCESS_CNT);
@@ -275,11 +275,11 @@ public class PipelineRunnerAsyncTest {
 
     assertThat(pipelineRunner.getActiveProcessRunners().size()).isEqualTo(0);
 
-    ProcessMetrics processMetrics = metrics.process(f.pipelineName());
-    assertThat(processMetrics.runner().completedCount()).isZero();
-    assertThat(processMetrics.runner().failedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(processMetrics.stage(STAGE_NAME).runner().failedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(processMetrics.stage(STAGE_NAME).runner().successCount()).isEqualTo(0);
+    ProcessRunnerMetrics processRunnerMetrics = metrics.process(f.pipelineName());
+    assertThat(processRunnerMetrics.completedCount()).isZero();
+    assertThat(processRunnerMetrics.failedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(processRunnerMetrics.stage(STAGE_NAME).failedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(processRunnerMetrics.stage(STAGE_NAME).successCount()).isEqualTo(0);
 
     assertThat(f.stageExecutor.firstExecuteCalledCount.get()).isEqualTo(PROCESS_CNT);
     assertThat(f.stageExecutor.subsequentExecuteCalledCount.get()).isEqualTo(PROCESS_CNT);

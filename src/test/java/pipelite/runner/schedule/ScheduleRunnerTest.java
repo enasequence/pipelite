@@ -34,8 +34,7 @@ import pipelite.entity.StageLogEntity;
 import pipelite.entity.field.StageState;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipeliteMetrics;
-import pipelite.metrics.ProcessMetrics;
-import pipelite.metrics.helper.TimeSeriesHelper;
+import pipelite.metrics.collector.ProcessRunnerMetrics;
 import pipelite.process.ProcessState;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.ProcessService;
@@ -171,29 +170,22 @@ public class ScheduleRunnerTest {
   private void assertSchedulerMetrics(TestSchedule f) {
     String pipelineName = f.pipelineName();
 
-    ProcessMetrics processMetrics = metrics.process(pipelineName);
+    ProcessRunnerMetrics processRunnerMetrics = metrics.process(pipelineName);
 
     TestProcessConfiguration t = f.testProcessConfiguration();
     if (t.stageTestResult != StageTestResult.SUCCESS) {
-      assertThat(processMetrics.runner().failedCount())
-          .isEqualTo(t.stageExecCnt.get() / t.stageCnt);
+      assertThat(processRunnerMetrics.failedCount()).isEqualTo(t.stageExecCnt.get() / t.stageCnt);
       for (int i = 0; i < t.stageCnt; ++i) {
-        assertThat(processMetrics.stage("STAGE" + i).runner().failedCount())
-            .isEqualTo(f.processCnt);
-        assertThat(processMetrics.stage("STAGE" + i).runner().successCount()).isEqualTo(0L);
+        assertThat(processRunnerMetrics.stage("STAGE" + i).failedCount()).isEqualTo(f.processCnt);
+        assertThat(processRunnerMetrics.stage("STAGE" + i).successCount()).isEqualTo(0L);
       }
-      assertThat(TimeSeriesHelper.getCount(processMetrics.runner().failedTimeSeries()))
-          .isEqualTo(t.stageExecCnt.get() / t.stageCnt);
     } else {
-      assertThat(processMetrics.runner().completedCount())
+      assertThat(processRunnerMetrics.completedCount())
           .isEqualTo(t.stageExecCnt.get() / t.stageCnt);
       for (int i = 0; i < t.stageCnt; ++i) {
-        assertThat(processMetrics.stage("STAGE" + i).runner().failedCount()).isEqualTo(0L);
-        assertThat(processMetrics.stage("STAGE" + i).runner().successCount())
-            .isEqualTo(f.processCnt);
+        assertThat(processRunnerMetrics.stage("STAGE" + i).failedCount()).isEqualTo(0L);
+        assertThat(processRunnerMetrics.stage("STAGE" + i).successCount()).isEqualTo(f.processCnt);
       }
-      assertThat(TimeSeriesHelper.getCount(processMetrics.runner().completedTimeSeries()))
-          .isEqualTo(t.stageExecCnt.get() / t.stageCnt);
     }
   }
 

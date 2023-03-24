@@ -131,12 +131,7 @@ public class PipelineRunnerProcessQueueTest {
     }
 
     verify(processQueue, times(1)).refreshQueue();
-    assertThat(
-            pipeliteMetrics
-                .process(pipeline.pipelineName())
-                .stage(STAGE_NAME)
-                .runner()
-                .successCount())
+    assertThat(pipeliteMetrics.process(pipeline.pipelineName()).stage(STAGE_NAME).successCount())
         .isEqualTo(PROCESS_CNT);
     assertThat(processQueue.isRefreshQueue()).isFalse();
     assertThat(processQueue.getCurrentQueueSize()).isZero();

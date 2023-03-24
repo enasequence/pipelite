@@ -189,7 +189,6 @@ public class ProcessRunner {
 
     pipeliteMetrics
         .process(pipelineName)
-        .runner()
         .endProcessExecution(process.getProcessEntity().getProcessState());
   }
 
@@ -248,11 +247,6 @@ public class ProcessRunner {
     if (result.isSuccess()) {
       resetDependentStageExecution(process, stage);
     }
-
-    pipeliteMetrics
-        .process(pipelineName)
-        .runner()
-        .endStageExecution(stage.getStageEntity().getStageState());
   }
 
   /**

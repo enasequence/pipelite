@@ -110,8 +110,8 @@ public class ProcessRunnerPool extends AbstractScheduledService {
     if (lastRunOneIteration.plus(timeSeriesUpdateFrequency).isBefore(ZonedDateTime.now())) {
       lastRunOneIteration = ZonedDateTime.now();
       List<ProcessRunner> activeProcessRunners = getActiveProcessRunners();
-      pipeliteMetrics.setRunningProcessesCount(activeProcessRunners, lastRunOneIteration);
-      pipeliteMetrics.setRunningStagesCount(activeProcessRunners, lastRunOneIteration);
+      pipeliteMetrics.setRunningProcessesCount(activeProcessRunners);
+      pipeliteMetrics.setRunningStagesCount(activeProcessRunners);
     }
 
     if (shutdownIfIdle && isIdle()) {

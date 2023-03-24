@@ -22,15 +22,8 @@ public class PipeliteMetricsTest {
   public void internalError() {
     PipeliteMetrics metrics =
         new PipeliteMetrics(new SimpleMeterRegistry(), Collections.emptyList());
-
     assertThat(metrics.error().count()).isZero();
-    assertThat(metrics.error().timeSeries().rowCount()).isZero();
-    assertThat(metrics.error().timeSeries().dateTimeColumn("time")).isNotNull();
-    assertThat(metrics.error().timeSeries().doubleColumn("count")).isNotNull();
-
     metrics.error().incrementCount();
-
     assertThat(metrics.error().count()).isOne();
-    assertThat(metrics.error().timeSeries().rowCount()).isOne();
   }
 }
