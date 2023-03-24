@@ -49,6 +49,7 @@ public class ProcessRunnerMetrics extends AbstractMetrics {
 
     Gauge.builder(name("running"), runningGauge, AtomicDouble::get)
         .tags(tags)
+        .strongReference(true) // prevent garbage collection.
         .register(meterRegistry);
 
     completedCounter = meterRegistry.counter(name("completed"), tags);

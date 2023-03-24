@@ -10,7 +10,6 @@
  */
 package pipelite;
 
-import java.util.Properties;
 import java.util.function.Consumer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -50,37 +49,6 @@ public class Pipelite {
     if (applicationConsumer != null) {
       applicationConsumer.accept(application);
     }
-    application.setDefaultProperties(getDefaultProperties());
-
     return application.run(args);
-  }
-
-  /**
-   * Returns application properties needed by pipelite.
-   *
-   * @return application properties needed by pipelite
-   */
-  private static Properties getDefaultProperties() {
-    Properties properties = new Properties();
-    properties.put("management.endpoints.enabled-by-default", "false");
-    properties.put("management.endpoint.health.enabled", "true");
-    properties.put("management.endpoint.metrics.enabled", "true");
-    properties.put("management.endpoints.web.exposure.include", "*");
-    properties.put("management.health.defaults.enabled", "false");
-    properties.put("management.metrics.enable.all", "false");
-    properties.put("management.metrics.enable.pipelite", "true");
-    properties.put("management.metrics.export.stackdriver.useSemanticMetricTypes", "true");
-    properties.put("management.metrics.export.stackdriver.step", "5m");
-    properties.put("spring.mvc.static-path-pattern", "/static/**");
-    properties.put("spring.resources.static-locations", "classpath:/static/");
-    properties.put(
-        "flogger.backend_factory",
-        "com.google.common.flogger.backend.slf4j.Slf4jBackendFactory#getInstance");
-    // Since Spring Boot 2.6, circular references are not allowed by default.
-    properties.put("spring.main.allow-circular-references", "true");
-    // Spring Framework 5.3 added multiple matcher strategies. Use the one that was the only
-    // available option in previous versions.
-    properties.put("spring.mvc.pathmatch.matching-strategy", "ant_path_matcher");
-    return properties;
   }
 }

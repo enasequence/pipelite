@@ -31,6 +31,7 @@ public class StageRunnerMetrics extends AbstractMetrics {
 
     Gauge.builder(name("running"), runningGauge, AtomicDouble::get)
         .tags(tags)
+        .strongReference(true) // prevent garbage collection.
         .register(meterRegistry);
 
     failedCounter = meterRegistry.counter(name("failed"), tags);
