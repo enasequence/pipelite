@@ -560,6 +560,13 @@ All metrics have the following default tags:
 - application: the service name
 - url: the service url
 
+#### GCO Monitoring
+
+Metrics can be send to GCP monitoring by defining a GCP project using 
+the```management.metrics.export.stackdriver.projectId``` configuration parameter.
+
+Authentication credentials should be provided using the ```GOOGLE_APPLICATION_CREDENTIALS``` environmental variable.
+
 ### Database schema
 
 #### PIPELITE2_SCHEDULE table
