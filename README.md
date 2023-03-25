@@ -21,6 +21,7 @@ Pipelite workflow manager
   * [Advanced parameters](#advanced-parameters)
   * [Test profiles](#test-profiles)
   * [Environment variables for unit testing](#environment-variables-for-unit-testing)
+- [Metrics](#metrics)
 - [Database schema](#database-schema)
   * [PIPELITE2_SCHEDULE table](#pipelite2-schedule-table)
   * [PIPELITE2_PROCESS table](#pipelite2-process-table)
@@ -543,6 +544,21 @@ SLURM unit tests require the following environment variables:
 - PIPELITE_TEST_SLURM_LOG_DIR
 - PIPELITE_TEST_SLURM_DEFINITION_DIR
 - PIPELITE_TEST_SLURM_QUEUE
+
+### Metrics
+
+Pipelite collects the following metrics using Micrometer:
+- pipelite.process.running: a gauge of the number of running processing (tags: pipelineName)
+- pipelite.process.completed: a counter of completed processes since the last server restart (tags: pipelineName)
+- pipelite.process.failed: a counter of failed processes since the last server restart (tags: pipelineName)
+- pipelite.stage.running: a gauge of the number of running stages (tags: pipelineName, stageName)
+- pipelite.stage.failed: a counter of failed stages since the last server restart (tags: pipelineName, stageName)
+- pipelite.stage.success: a counter of successful stages since the last server restart (tags: pipelineName, stageName)
+- pipelite.error.internal: an internal errors counter since the last server restart
+
+All metrics have the following default tags:
+- application: the service name
+- url: the service url
 
 ### Database schema
 
