@@ -22,6 +22,7 @@ Pipelite workflow manager
   * [Test profiles](#test-profiles)
   * [Environment variables for unit testing](#environment-variables-for-unit-testing)
 - [Metrics](#metrics)
+  * [GCP Monitoring](#gcp-monitoring)
 - [Database schema](#database-schema)
   * [PIPELITE2_SCHEDULE table](#pipelite2-schedule-table)
   * [PIPELITE2_PROCESS table](#pipelite2-process-table)
@@ -560,7 +561,7 @@ All metrics have the following default tags:
 - application: the service name
 - url: the service url
 
-#### GCO Monitoring
+#### GCP Monitoring
 
 Metrics can be send to GCP monitoring by defining a GCP project using 
 the```management.metrics.export.stackdriver.projectId``` configuration parameter.
