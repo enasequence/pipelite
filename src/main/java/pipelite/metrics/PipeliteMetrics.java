@@ -54,12 +54,11 @@ public class PipeliteMetrics {
       throw new PipeliteException("Missing pipeline name");
     }
     ProcessRunnerMetrics m = processRunnerMetrics.get(pipelineName);
-    if (m == null) {
-      processRunnerMetrics.putIfAbsent(
-          pipelineName, new ProcessRunnerMetrics(pipelineName, meterRegistry));
-      return processRunnerMetrics.get(pipelineName);
+    if (m != null) {
+      return m;
     }
-    return m;
+    return processRunnerMetrics.computeIfAbsent(
+        pipelineName, k -> new ProcessRunnerMetrics(pipelineName, meterRegistry));
   }
 
   /**

@@ -50,12 +50,11 @@ public class ProcessRunnerMetrics extends AbstractMetrics {
       throw new PipeliteException("Missing stage name");
     }
     StageRunnerMetrics m = stageRunnerMetrics.get(stageName);
-    if (m == null) {
-      stageRunnerMetrics.putIfAbsent(
-          stageName, new StageRunnerMetrics(pipelineName, stageName, meterRegistry));
-      return stageRunnerMetrics.get(stageName);
+    if (m != null) {
+      return m;
     }
-    return m;
+    return stageRunnerMetrics.computeIfAbsent(
+        stageName, k -> new StageRunnerMetrics(pipelineName, stageName, meterRegistry));
   }
 
   public double completedCount() {
