@@ -14,62 +14,65 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.micrometer.stackdriver.StackdriverConfig;
 import io.micrometer.stackdriver.StackdriverMeterRegistry;
+import java.time.Duration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.time.Duration;
-
 @Configuration
 public class MicrometerConfiguration {
 
-    @Autowired
-    private ServiceConfiguration serviceConfiguration;
+  @Autowired private ServiceConfiguration serviceConfiguration;
 
-    @Value("${management.metrics.export.stackdriver.projectId:#{null}}")
-    private String stackDriverProjectId;
+  @Value("${management.metrics.export.stackdriver.projectId:#{null}}")
+  private String stackDriverProjectId;
 
-    @Value("${management.metrics.export.stackdriver.step:#{null}}")
-    private Duration stackDriverStep;
+  @Value("${management.metrics.export.stackdriver.step:#{null}}")
+  private Duration stackDriverStep;
 
-    @Bean
-    public MeterRegistry meterRegistry() {
-        if (stackDriverProjectId != null) {
-            final StackdriverConfig stackdriverConfig =
-                    new StackdriverConfig() {
-                        @Override
-                        public String projectId() {
-                            return stackDriverProjectId;
-                        }
+  @Bean
+  public MeterRegistry meterRegistry() {
+    if (stackDriverProjectId != null) {
+      final StackdriverConfig stackdriverConfig =
+          new StackdriverConfig() {
+            @Override
+            public String projectId() {
+              return stackDriverProjectId;
+            }
 
-                        @Override
-                        public Duration step() {
-                            return (stackDriverStep != null) ? stackDriverStep : Duration.ofMinutes(1);
-                        }
+            @Override
+            public Duration step() {
+              return (stackDriverStep != null) ? stackDriverStep : Duration.ofMinutes(5);
+            }
 
-                        @Override
-                        public String get(final String key) {
-                            return null;
-                        }
-                    };
+            @Override
+            public String get(final String key) {
+              return null;
+            }
 
-            return StackdriverMeterRegistry.builder(stackdriverConfig).build();
-        }
+            @Override
+            public boolean useSemanticMetricTypes() {
+              return true;
+            }
+          };
 
-        return new SimpleMeterRegistry();
+      return StackdriverMeterRegistry.builder(stackdriverConfig).build();
     }
 
-    @Bean
-    public MeterRegistryCustomizer<MeterRegistry> customizeMeterRegistry() {
-        return (registry) ->
-                registry
-                        .config()
-                        .commonTags(
-                                "application",
-                                serviceConfiguration.getName(),
-                                "url",
-                                serviceConfiguration.getUrl());
-    }
+    return new SimpleMeterRegistry();
+  }
+
+  @Bean
+  public MeterRegistryCustomizer<MeterRegistry> customizeMeterRegistry() {
+    return (registry) ->
+        registry
+            .config()
+            .commonTags(
+                "application",
+                serviceConfiguration.getName(),
+                "url",
+                serviceConfiguration.getUrl());
+  }
 }
