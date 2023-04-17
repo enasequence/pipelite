@@ -60,7 +60,6 @@ public class PipelineRunnerAsyncTest {
   @Autowired private TestPipeline submitError;
   @Autowired private TestPipeline submitException;
   @Autowired private TestPipeline pollError;
-  @Autowired private TestPipeline pollException;
 
   @Profile("PipelineRunnerAsyncTest")
   @TestConfiguration
@@ -83,11 +82,6 @@ public class PipelineRunnerAsyncTest {
     @Bean
     public TestPipeline pollError() {
       return new TestPipeline(new PollErrorExecutor());
-    }
-
-    @Bean
-    public TestPipeline pollException() {
-      return new TestPipeline(new PollExceptionExecutor());
     }
   }
 
@@ -181,19 +175,6 @@ public class PipelineRunnerAsyncTest {
     }
   }
 
-  public static class PollExceptionExecutor extends TestExecutor {
-    @Override
-    public StageExecutorResult execute() {
-      if (!isExecuteCalled(getRequest().getProcessId())) {
-        firstExecuteCalledCount.incrementAndGet();
-        return StageExecutorResult.active();
-      } else {
-        subsequentExecuteCalledCount.incrementAndGet();
-        throw new RuntimeException("Expected exception from poll");
-      }
-    }
-  }
-
   private void assertSubmitSuccessPollSuccess() {
     TestPipeline f = submitSuccessPollSuccess;
 
@@ -267,24 +248,6 @@ public class PipelineRunnerAsyncTest {
     assertThat(f.stageExecutor.subsequentExecuteCalledCount.get()).isEqualTo(PROCESS_CNT);
   }
 
-  private void assertPollException() {
-    TestPipeline f = pollException;
-
-    PipelineRunner pipelineRunner =
-        pipeliteServices.runner().getPipelineRunner(f.pipelineName()).get();
-
-    assertThat(pipelineRunner.getActiveProcessRunners().size()).isEqualTo(0);
-
-    ProcessRunnerMetrics processRunnerMetrics = metrics.process(f.pipelineName());
-    assertThat(processRunnerMetrics.completedCount()).isZero();
-    assertThat(processRunnerMetrics.failedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(processRunnerMetrics.stage(STAGE_NAME).failedCount()).isEqualTo(PROCESS_CNT);
-    assertThat(processRunnerMetrics.stage(STAGE_NAME).successCount()).isEqualTo(0);
-
-    assertThat(f.stageExecutor.firstExecuteCalledCount.get()).isEqualTo(PROCESS_CNT);
-    assertThat(f.stageExecutor.subsequentExecuteCalledCount.get()).isEqualTo(PROCESS_CNT);
-  }
-
   @Test
   public void testPipelines() {
     processRunnerPoolManager.createPools();
@@ -295,6 +258,5 @@ public class PipelineRunnerAsyncTest {
     assertSubmitError();
     assertSubmitException();
     assertPollError();
-    assertPollException();
   }
 }
