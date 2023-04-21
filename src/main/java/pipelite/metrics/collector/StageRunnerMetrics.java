@@ -28,17 +28,21 @@ public class StageRunnerMetrics extends AbstractMetrics {
 
   public StageRunnerMetrics(String pipelineName, String stageName, MeterRegistry meterRegistry) {
     super(PREFIX);
-    String[] tags = MicroMeterHelper.stageTags(pipelineName, stageName);
-    Gauge.builder(name("running"), () -> runningGauge.get()).tags(tags).register(meterRegistry);
-    failedCounter = meterRegistry.counter(name("failed"), tags);
-    successCounter = meterRegistry.counter(name("success"), tags);
+    String[] runningTags = MicroMeterHelper.stageTags(pipelineName, stageName);
+    String[] successTags = MicroMeterHelper.stageTags(pipelineName, stageName, "SUCCESS");
+    String[] failedTags = MicroMeterHelper.stageTags(pipelineName, stageName, "FAILED");
+
+    Gauge.builder(name("running"), () -> runningGauge.get())
+        .tags(runningTags)
+        .register(meterRegistry);
+    successCounter = meterRegistry.counter(name("status"), successTags);
+    failedCounter = meterRegistry.counter(name("status"), failedTags);
   }
 
   /**
    * Set the number of running stages.
    *
    * @param count the number of running stages
-   * @paran now the time when the running stage count was measured
    */
   public void setRunningStagesCount(int count) {
     runningGauge.set(count);

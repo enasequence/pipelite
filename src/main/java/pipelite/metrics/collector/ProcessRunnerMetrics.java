@@ -32,6 +32,7 @@ public class ProcessRunnerMetrics extends AbstractMetrics {
 
   // Micrometer metrics
   private final AtomicDouble runningGauge = new AtomicDouble();
+
   private final Counter completedCounter;
   private final Counter failedCounter;
 
@@ -39,10 +40,14 @@ public class ProcessRunnerMetrics extends AbstractMetrics {
     super(PREFIX);
     this.pipelineName = pipelineName;
     this.meterRegistry = meterRegistry;
-    String[] tags = MicroMeterHelper.pipelineTags(pipelineName);
-    Gauge.builder(name("running"), () -> runningGauge.get()).tags(tags).register(meterRegistry);
-    completedCounter = meterRegistry.counter(name("completed"), tags);
-    failedCounter = meterRegistry.counter(name("failed"), tags);
+    String[] runningTags = MicroMeterHelper.pipelineTags(pipelineName);
+    String[] completedTags = MicroMeterHelper.pipelineTags(pipelineName, "COMPLETED");
+    String[] failedTags = MicroMeterHelper.pipelineTags(pipelineName, "FAILED");
+    Gauge.builder(name("running"), () -> runningGauge.get())
+        .tags(runningTags)
+        .register(meterRegistry);
+    completedCounter = meterRegistry.counter(name("status"), completedTags);
+    failedCounter = meterRegistry.counter(name("status"), failedTags);
   }
 
   public StageRunnerMetrics stage(String stageName) {
@@ -81,7 +86,6 @@ public class ProcessRunnerMetrics extends AbstractMetrics {
    * Set the number of running processes.
    *
    * @param count the number of running processes
-   * @paran now the time when the running process count was measured
    */
   public void setRunningProcessesCount(int count) {
     log.atFiner().log("Running processes count for " + pipelineName + ": " + count);

@@ -16,7 +16,15 @@ public class MicroMeterHelper {
     return new String[] {"pipelineName", pipelineName};
   }
 
+  public static String[] pipelineTags(String pipelineName, String state) {
+    return new String[] {"pipelineName", pipelineName, "state", state};
+  }
+
   public static String[] stageTags(String pipelineName, String stageName) {
     return new String[] {"pipelineName", pipelineName, "stageName", stageName};
+  }
+
+  public static String[] stageTags(String pipelineName, String stageName, String state) {
+    return new String[] {"pipelineName", pipelineName, "stageName", stageName, "state", state};
   }
 }
